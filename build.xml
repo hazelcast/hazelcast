@@ -1,0 +1,126 @@
+<project basedir="." name="hazelcast" default="dist">
+
+	<property name="hazelcast.jar.name" value="hazelcast.jar" />
+	<property name="rar.name" value="hazelcast-ra" />
+	<property name="src.dir" value="src" />
+	<property name="classes.dir" value="classes" />
+	<property name="version" value="1.5" />
+
+	<path id="all.class.path">
+		<pathelement location="lib/servlet-api.jar" />
+		<pathelement location="lib/jsp-api.jar" /> 
+		<pathelement location="lib/connector-api.jar" />
+	</path>
+
+	<target name="compile">
+		<delete dir="${classes.dir}" failonerror="false" />
+		<mkdir dir="${classes.dir}" />
+		<javac destdir="${classes.dir}" compiler="javac1.5" debug="on" nowarn="yes" >
+			<src path="${src.dir}" />
+			<src path="dist" />
+			<classpath refid="all.class.path" />
+		</javac>
+	</target>
+
+	<target name="dist">
+		<tstamp>
+			<format property="TODAY" pattern="yyyyMMdd" locale="en" />
+		</tstamp>
+		<echo>${TODAY}</echo>
+
+		<property name="dist.dir" value="dummy/hazelcast-${version}" />
+
+		<replace file="${src.dir}/com/hazelcast/impl/Build.java" token="DEBUG = true" value="DEBUG = false" />
+		<replace file="${src.dir}/com/hazelcast/impl/Build.java" token="// @build" value="build = String.valueOf(${TODAY});" />
+		<replace file="${src.dir}/com/hazelcast/impl/Build.java" token="// @version" value="version = &quot;${version}&quot;;" />
+
+		<antcall target="compile" />
+
+		<replace file="${src.dir}/com/hazelcast/impl/Build.java" token="DEBUG = false" value="DEBUG = true" />
+		<replace file="${src.dir}/com/hazelcast/impl/Build.java" token="build = String.valueOf(${TODAY});" value="// @build" />
+		<replace file="${src.dir}/com/hazelcast/impl/Build.java" token="version = &quot;${version}&quot;;" value="// @version" />
+
+		<delete dir="dummy" failonerror="false" />
+		<mkdir dir="dummy" />
+		<mkdir dir="${dist.dir}" />
+		<mkdir dir="${dist.dir}/testapp" />
+
+		<move todir="${dist.dir}/testapp">
+			<fileset dir="${classes.dir}">
+				<include name="TestApp**" />
+			</fileset>
+		</move>
+
+		<antcall target="jar" />
+		<antcall target="rar" />
+		
+		<copy file="dist/TestApp.java" todir="${dist.dir}/testapp" />
+		<move file="${hazelcast.jar.name}" todir="${dist.dir}" />
+		<move file="${rar.name}.rar" todir="${dist.dir}" />
+		<copy file="dist/run.bat" todir="${dist.dir}" />
+		<copy file="dist/run.sh" todir="${dist.dir}" />
+		<copy file="dist/clusterWebapp.bat" todir="${dist.dir}" />
+		<copy file="dist/clusterWebapp.sh" todir="${dist.dir}" />
+
+		<zip zipfile="hazelcast-${version}.zip" basedir="dummy" />
+		<delete dir="dummy" failonerror="false" />
+		<delete dir="hazelcast-${version}" failonerror="false" />
+		<unzip src="hazelcast-${version}.zip" dest="." />
+		<delete dir="${classes.dir}" failonerror="false" />
+	</target>
+	
+	
+	<target name="rar">
+		<delete dir="${rar.name}" failonerror="false" />
+		<mkdir dir="${rar.name}" />
+		<mkdir dir="${rar.name}/META-INF" />
+		<copy file="dist/ra.xml" todir="${rar.name}/META-INF" />
+		<jar jarfile="${rar.name}/${rar.name}.jar">
+			<fileset dir="${classes.dir}">
+				<include name="**/jca/**" />
+			</fileset>
+		</jar>
+		<zip destfile="${rar.name}.rar">
+			<fileset dir="${rar.name}" />
+		</zip>  
+		<delete dir="${rar.name}" failonerror="false" />
+	</target>
+
+
+	<target name="jar">
+		<delete file="${hazelcast.jar.name}" failonerror="false" />
+		<copy file="dist/hazelcast.xml" todir="${classes.dir}" />
+		<jar jarfile="${hazelcast.jar.name}">
+			<fileset dir="${classes.dir}">
+				<exclude name="**/tests/**" />
+				<exclude name="**/test/**" /> 
+				<exclude name="**/jca/**" /> 
+			</fileset>
+			<manifest>
+				<attribute name="Built-By" value="Hazelcast.com" /> 
+			</manifest>
+		</jar>	 
+	</target>
+
+	<target name="javadoc">
+		<!-- stylesheetfile="docs/javadoc.css"-->
+		<javadoc destdir="website/api" author="true" version="true" use="true" windowtitle="Hazelcast API">
+			<fileset dir="src" defaultexcludes="yes">
+				<include name="com/hazelcast/core/**" />
+				<exclude name="com/hazelcast/impl/**" />
+				<include name="com/hazelcast/web/SnapshotEvent.java" />
+				<include name="com/hazelcast/web/SnapshotListener.java" />
+				<include name="com/hazelcast/web/Context.java" /> 
+			</fileset>
+			<doctitle>
+				<![CDATA[<h1>Hazelcast</h1>]]>
+			</doctitle>
+			<bottom>
+			<![CDATA[<i>Copyright &#169; 2008-2009 Hazel Ltd. All Rights Reserved.</i>]]></bottom>
+			<link offline="false" href="http://java.sun.com/j2se/1.5.0/docs/api/" packagelistLoc="C:\tmp" />
+			<link href="http://java.sun.com/j2se/1.5.0/docs/api/" />
+			<link href="http://java.sun.com/products/servlet/2.3/javadoc/" />
+		</javadoc>
+	</target>
+
+</project>

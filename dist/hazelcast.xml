@@ -1,0 +1,29 @@
+<hazelcast>
+	<group>
+		<name>dev</name>
+		<password>dev-pass</password>
+	</group>
+	<network>
+		<port auto-increment="true">5701</port>
+		<join>
+			<multicast enabled="true">
+				<multicast-group>224.2.2.3</multicast-group>
+				<multicast-port>54327</multicast-port>
+			</multicast>
+			<tcp-ip enabled="false">
+				<interface>192.168.1.2</interface>
+			</tcp-ip>
+		</join>
+		<interfaces enabled="false">
+			<interface>10.3.17.*</interface>
+		</interfaces>
+	</network>
+	<executor-service>
+		<core-pool-size>16</core-pool-size>
+		<max-pool-size>64</max-pool-size>
+		<keep-alive-seconds>60</keep-alive-seconds>
+	</executor-service>
+	<queue name="default">
+		<max-size-per-jvm>15000</max-size-per-jvm>
+	</queue>
+</hazelcast>
