@@ -102,9 +102,8 @@
 		</jar>	 
 	</target>
 
-	<target name="javadoc">
-		<!-- stylesheetfile="docs/javadoc.css"-->
-		<javadoc destdir="website/api" author="true" version="true" use="true" windowtitle="Hazelcast API">
+	<target name="javadoc"> 
+		<javadoc destdir="javadoc" author="true" version="true" use="true" windowtitle="Hazelcast API">
 			<fileset dir="src" defaultexcludes="yes">
 				<include name="com/hazelcast/core/**" />
 				<exclude name="com/hazelcast/impl/**" />
