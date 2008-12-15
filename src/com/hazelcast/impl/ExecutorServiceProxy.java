@@ -39,22 +39,22 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
 	public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
 		return false;
 	}
-
-	public <T> List<Future<T>> invokeAll(Collection<Callable<T>> tasks) throws InterruptedException {
+ 
+	public  List invokeAll(Collection tasks) throws InterruptedException {
 		return null;
 	}
 
-	public <T> List<Future<T>> invokeAll(Collection<Callable<T>> tasks, long timeout, TimeUnit unit)
+	public List invokeAll(Collection tasks, long timeout, TimeUnit unit)
 			throws InterruptedException {
 		return null;
 	}
 
-	public <T> T invokeAny(Collection<Callable<T>> tasks) throws InterruptedException,
+	public Object invokeAny(Collection tasks) throws InterruptedException,
 			ExecutionException {
 		return null;
 	}
 
-	public <T> T invokeAny(Collection<Callable<T>> tasks, long timeout, TimeUnit unit)
+	public Object invokeAny(Collection tasks, long timeout, TimeUnit unit)
 			throws InterruptedException, ExecutionException, TimeoutException {
 		return null;
 	}
