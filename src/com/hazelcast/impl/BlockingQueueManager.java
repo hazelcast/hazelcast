@@ -177,12 +177,12 @@ class BlockingQueueManager extends BaseManager {
 			List<Block> lsBlocks = q.lsBlocks;
 			for (Block block : lsBlocks) {
 				if (block.address.equals(addressDead)) {
-					// I was the backup of dead, so
-					// I am the new owner
+					// set the new owner
 					block.address = addressNewOwner;
+					block.resetAddIndex();
 					if (lsMembers.size() > 1) {
 						if (addressNewOwner.equals(thisAddress)) {
-							// I am the new owner so backup to next member
+							// I am the new owner so backup to next member 
 							int indexUpto = block.size() - 1;
 							if (DEBUG) {
 								log("IndexUpto " + indexUpto);
@@ -1293,7 +1293,7 @@ class BlockingQueueManager extends BaseManager {
 				fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, value, null);
 			}
 		}
-
+		 
 		int offer(Request req) {
 			int addIndex = blCurrentPut.add(req.value);
 			doFireEntryEvent(true, req.value);
@@ -1441,6 +1441,7 @@ class BlockingQueueManager extends BaseManager {
 		}
 
 		void sendBackup(boolean add, Address invoker, Data data, int blockId, int addIndex) {
+			if (addIndex == -1) throw new RuntimeException("addIndex cannot be -1");
 			if (lsMembers.size() > 1) {
 				if (getNextMember().getAddress().equals(invoker)) {
 					return;
@@ -1540,6 +1541,21 @@ class BlockingQueueManager extends BaseManager {
 			return values[index];
 		}
 
+		void resetAddIndex() {
+			int index = BLOCK_SIZE -1;
+			while (index > 0) {
+				if (values[index] != null) {
+					addIndex = index + 1; 
+					if (addIndex >= BLOCK_SIZE) {
+						full = true;
+					}
+					return;
+				}
+				index--;
+			}
+			index = 0;
+		}
+		
 		public int add(Data data) {
 			if (values[addIndex] != null)
 				return -1;
