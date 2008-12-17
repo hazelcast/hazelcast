@@ -173,8 +173,7 @@ public class ClusterManager extends BaseManager {
 		
 		Node.get().getClusterImpl().setMembers(lsMembers); 
 		
-		// toArray will avoid concurrent modification 
-		// exception as onDisconnect does remove the calls
+		// toArray will avoid CME as onDisconnect does remove the calls
 		Object[] calls = mapCalls.values().toArray(); 		
 		for (Object call : calls) { 
 			((Call)call).onDisconnect(deadAddress);

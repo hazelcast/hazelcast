@@ -322,12 +322,12 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		public boolean hasNext() {
-			if (next != null) { 
+			if (next != null) {
 				if (next.copyCount-- <= 0) {
 					next = null;
 				}
 			}
-			
+
 			while (next == null) {
 				boolean canRead = setNextBlock();
 				if (!canRead)
@@ -407,7 +407,8 @@ class ConcurrentMapManager extends BaseManager {
 				if (containsValue) {
 					value = ThreadContext.get().hardCopy(record.getValue());
 				}
-				setResult(new SimpleDataEntry(request.name, request.blockId, key, value, record.getCopyCount()));
+				setResult(new SimpleDataEntry(request.name, request.blockId, key, value, record
+						.getCopyCount()));
 			}
 		}
 
@@ -423,7 +424,8 @@ class ConcurrentMapManager extends BaseManager {
 				if (containsValue) {
 					value = inv.doTake(inv.data);
 				}
-				setResult(new SimpleDataEntry(request.name, request.blockId, key, value, (int) inv.longValue));
+				setResult(new SimpleDataEntry(request.name, request.blockId, key, value,
+						(int) inv.longValue));
 			}
 		}
 
@@ -1544,9 +1546,14 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		public Data remove(Request req) {
-			Record record = removeRecord(req.key);
+			Record record = mapRecords.get(req.key);
 			if (record == null) {
 				return null;
+			}
+			if (record.getCopyCount() > 0) {
+				record.decrementCopyAndGet();
+			} else {
+				record = removeRecord(req.key);
 			}
 			if (record.getValue() != null) {
 				fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record, null);
