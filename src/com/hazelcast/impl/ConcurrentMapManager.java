@@ -14,9 +14,11 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.impl;
 
+import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_ADD_TO_LIST;
+import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_ADD_TO_SET;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_BACKUP_ADD;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_BACKUP_LOCK;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_BACKUP_REMOVE;
@@ -95,6 +97,10 @@ class ConcurrentMapManager extends BaseManager {
 			handleBackupLock(inv);
 		} else if (inv.operation == OP_CMAP_READ) {
 			handleRead(inv);
+		} else if (inv.operation == OP_CMAP_SIZE) {
+			handleSize(inv);
+		} else if (inv.operation == OP_CMAP_ADD_TO_LIST || inv.operation == OP_CMAP_ADD_TO_SET) {
+			handleAdd(inv);
 		} else if (inv.operation == OP_CMAP_CONTAINS_KEY) {
 			handleContains(true, inv);
 		} else if (inv.operation == OP_CMAP_CONTAINS_VALUE) {
@@ -105,8 +111,6 @@ class ConcurrentMapManager extends BaseManager {
 			handleBlocks(inv);
 		} else if (inv.operation == OP_CMAP_OWN_KEY) {
 			handleOwnKey(inv);
-		} else if (inv.operation == OP_CMAP_SIZE) {
-			handleSize(inv);
 		} else if (inv.operation == OP_CMAP_PUT_IF_ABSENT) {
 			handlePut(inv);
 		} else if (inv.operation == OP_CMAP_REPLACE_IF_NOT_NULL) {
@@ -318,7 +322,12 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		public boolean hasNext() {
-			next = null;
+			if (next != null) { 
+				if (next.copyCount-- <= 0) {
+					next = null;
+				}
+			}
+			
 			while (next == null) {
 				boolean canRead = setNextBlock();
 				if (!canRead)
@@ -398,12 +407,13 @@ class ConcurrentMapManager extends BaseManager {
 				if (containsValue) {
 					value = ThreadContext.get().hardCopy(record.getValue());
 				}
-				setResult(new SimpleDataEntry(request.name, request.blockId, key, value));
+				setResult(new SimpleDataEntry(request.name, request.blockId, key, value, record.getCopyCount()));
 			}
 		}
 
 		@Override
 		void handleNoneRedoResponse(Invocation inv) {
+			removeCall(getId());
 			lastReadRecordIndex = inv.recordId;
 			Data key = inv.doTake(inv.key);
 			if (key == null) {
@@ -413,7 +423,7 @@ class ConcurrentMapManager extends BaseManager {
 				if (containsValue) {
 					value = inv.doTake(inv.data);
 				}
-				setResult(new SimpleDataEntry(request.name, request.blockId, key, value));
+				setResult(new SimpleDataEntry(request.name, request.blockId, key, value, (int) inv.longValue));
 			}
 		}
 
@@ -445,6 +455,24 @@ class ConcurrentMapManager extends BaseManager {
 				value = ThreadContext.get().hardCopy(value);
 			}
 			setResult(value);
+		}
+	}
+
+	class MAdd extends MTargetAwareOp {
+		boolean addToList(String name, Object value) {
+			Data key = ThreadContext.get().toData(value);
+			return booleanCall(OP_CMAP_ADD_TO_LIST, name, key, null, 0, -1, -1);
+		}
+
+		boolean addToSet(String name, Object value) {
+			Data key = ThreadContext.get().toData(value);
+			return booleanCall(OP_CMAP_ADD_TO_SET, name, key, null, 0, -1, -1);
+		}
+
+		@Override
+		void doLocalOp() {
+			doAdd(request);
+			setResult(request.response);
 		}
 	}
 
@@ -1090,11 +1118,25 @@ class ConcurrentMapManager extends BaseManager {
 		Record record = (Record) remoteReq.response;
 		if (record != null) {
 			inv.recordId = record.id;
+			inv.longValue = record.getCopyCount();
 			inv.doHardCopy(record.getKey(), inv.key);
 			inv.doHardCopy(record.getValue(), inv.data);
 		}
 		sendResponse(inv);
 		remoteReq.reset();
+	}
+
+	void handleAdd(Invocation inv) {
+		if (rightRemoteTarget(inv)) {
+			remoteReq.setInvocation(inv);
+			doAdd(remoteReq);
+			if (remoteReq.response == Boolean.TRUE) {
+				sendResponse(inv);
+			} else {
+				sendResponseFailure(inv);
+			}
+			remoteReq.reset();
+		}
 	}
 
 	void handleGet(Invocation inv) {
@@ -1285,6 +1327,12 @@ class ConcurrentMapManager extends BaseManager {
 		request.response = cmap.read(request);
 	}
 
+	void doAdd(Request request) {
+		CMap cmap = getMap(request.name);
+		boolean added = cmap.add(request);
+		request.response = (added) ? Boolean.TRUE : Boolean.FALSE;
+	}
+
 	void doGet(Request request) {
 		CMap cmap = getMap(request.name);
 		request.response = cmap.get(request);
@@ -1430,6 +1478,7 @@ class ConcurrentMapManager extends BaseManager {
 			for (Record record : records) {
 				if (record.owner.equals(thisAddress)) {
 					size++;
+					size += record.getCopyCount();
 				}
 			}
 			return size;
@@ -1459,6 +1508,21 @@ class ConcurrentMapManager extends BaseManager {
 			if (record == null)
 				return null;
 			return record.getValue();
+		}
+
+		public boolean add(Request req) {
+			Record record = getRecord(req.key);
+			if (record == null) {
+				req.value = ThreadContext.get().hardCopy(req.key);
+				record = createNewRecord(req.key, req.value);
+			} else {
+				if (req.operation == OP_CMAP_ADD_TO_LIST) {
+					record.incrementCopyAndGet();
+				} else {
+					return false;
+				}
+			}
+			return true;
 		}
 
 		public Data put(Request req) {
@@ -1628,7 +1692,7 @@ class ConcurrentMapManager extends BaseManager {
 			this.value = value;
 			version++;
 		}
-		
+
 		public void onDisconnect(Address deadAddress) {
 			if (lsScheduledActions != null) {
 				if (lsScheduledActions.size() > 0) {
@@ -1648,8 +1712,8 @@ class ConcurrentMapManager extends BaseManager {
 				}
 			}
 		}
-		
-		public void unlock () {
+
+		public void unlock() {
 			lockThreadId = -1;
 			lockCount = 0;
 			lockAddress = null;

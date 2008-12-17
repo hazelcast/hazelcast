@@ -162,7 +162,10 @@ public interface Constants {
 		public static final int OP_CMAP_LOCK_RETURN_OLD = 523;
 
 		public static final int OP_CMAP_READ = 524;
-
+		
+		public static final int OP_CMAP_ADD_TO_LIST = 525;
+		
+		public static final int OP_CMAP_ADD_TO_SET = 526;
 	}
 
 	public interface ResponseTypes {

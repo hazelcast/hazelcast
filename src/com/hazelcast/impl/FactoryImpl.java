@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.impl;
 
 import static com.hazelcast.impl.Constants.MapTypes.MAP_TYPE_LIST;
@@ -57,6 +57,7 @@ import com.hazelcast.impl.BlockingQueueManager.Poll;
 import com.hazelcast.impl.BlockingQueueManager.QIterator;
 import com.hazelcast.impl.BlockingQueueManager.Size;
 import com.hazelcast.impl.ClusterManager.CreateProxy;
+import com.hazelcast.impl.ConcurrentMapManager.MAdd;
 import com.hazelcast.impl.ConcurrentMapManager.MContainsKey;
 import com.hazelcast.impl.ConcurrentMapManager.MContainsValue;
 import com.hazelcast.impl.ConcurrentMapManager.MGet;
@@ -709,14 +710,12 @@ public class FactoryImpl implements Constants {
 		public boolean add(Object value) {
 			if (value == null)
 				throw new NullPointerException();
-			try {
-				Data dataValue = ThreadContext.get().toData(value);
-				Data dataKey = ThreadContext.get().toData(dataValue);
-				return put(dataKey, dataValue) == null;
-			} catch (Exception e) {
-				e.printStackTrace();
+			MAdd madd = ThreadContext.get().getMAdd();
+			if (mapType == MAP_TYPE_LIST) {
+				return madd.addToList(name, value);
+			} else {
+				return madd.addToSet(name, value);
 			}
-			return false;
 		}
 
 		public boolean removeValue(Object value) {

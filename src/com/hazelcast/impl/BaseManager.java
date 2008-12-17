@@ -473,13 +473,15 @@ abstract class BaseManager implements Constants {
 		Data valueData;
 		Object key = null;
 		Object value = null;
+		int copyCount = 0;
 
-		public SimpleDataEntry(String name, int blockId, Data key, Data value) {
+		public SimpleDataEntry(String name, int blockId, Data key, Data value, int copyCount) {
 			super();
 			this.blockId = blockId;
 			this.keyData = key;
 			this.name = name;
 			this.valueData = value;
+			this.copyCount = copyCount;
 		}
 
 		public String getName() {

@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.BlockingQueueManager.Offer;
 import com.hazelcast.impl.BlockingQueueManager.Poll;
+import com.hazelcast.impl.ConcurrentMapManager.MAdd;
 import com.hazelcast.impl.ConcurrentMapManager.MGet;
 import com.hazelcast.impl.ConcurrentMapManager.MLock;
 import com.hazelcast.impl.ConcurrentMapManager.MPut;
@@ -122,6 +123,10 @@ public class ThreadContext {
 
 	public MLock getMLock() {
 		return ConcurrentMapManager.get().new MLock();
+	}
+	
+	public MAdd getMAdd() {
+		return ConcurrentMapManager.get().new MAdd();
 	}
 
 	class ObjectReaderWriter {
