@@ -27,6 +27,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -172,9 +173,11 @@ public class ClusterManager extends BaseManager {
 		
 		Node.get().getClusterImpl().setMembers(lsMembers); 
 		
-		Collection<Call> calls = mapCalls.values();
-		for (Call call : calls) { 
-			call.onDisconnect(deadAddress);
+		// toArray will avoid concurrent modification 
+		// exception as onDisconnect does remove the calls
+		Object[] calls = mapCalls.values().toArray(); 		
+		for (Object call : calls) { 
+			((Call)call).onDisconnect(deadAddress);
 		}
 		System.out.println(this);
 	}
