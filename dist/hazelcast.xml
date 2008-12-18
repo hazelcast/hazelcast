@@ -24,6 +24,6 @@
 		<keep-alive-seconds>60</keep-alive-seconds>
 	</executor-service>
 	<queue name="default">
-		<max-size-per-jvm>15000</max-size-per-jvm>
+		<max-size-per-jvm>10000</max-size-per-jvm>
 	</queue>
 </hazelcast>
