@@ -55,6 +55,8 @@ public class SelectorBase implements Runnable {
 			throws Exception {
 		socketChannel.socket().setReceiveBufferSize(32 * 1024);
 		socketChannel.socket().setSendBufferSize(64 * 1024);
+		socketChannel.socket().setKeepAlive(true);
+//		socketChannel.socket().setTcpNoDelay(true);
 		socketChannel.configureBlocking(false);
 		Connection connection = ConnectionManager.get().createConnection(socketChannel, acceptor);
 		return connection;

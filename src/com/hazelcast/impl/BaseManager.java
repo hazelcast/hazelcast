@@ -763,8 +763,9 @@ abstract class BaseManager implements Constants {
 					result = responses.poll(timeout + 10, TimeUnit.MILLISECONDS);
 				}
 				if (result == OBJECT_REDO) {
+					Thread.sleep(2000);
 					if (DEBUG) {
-						log("Redoing.. " );
+						log("Redoing.. ");
 					}
 					return doOp();
 				}

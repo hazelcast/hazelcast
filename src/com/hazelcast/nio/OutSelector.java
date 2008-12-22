@@ -78,7 +78,8 @@ public class OutSelector extends SelectorBase {
 				if (!finished)
 					throw new RuntimeException("Couldn't finish connection to " + address);
 				if (DEBUG)
-					System.out.println("connected to " + address);
+					System.out.println("connected to " + address); 
+				
 				Connection connection = initChannel(socketChannel, false);
 				connection.setEndPoint(address);
 				ConnectionManager.get().finalizeAndBind(connection);

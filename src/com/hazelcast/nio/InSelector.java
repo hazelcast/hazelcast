@@ -59,7 +59,7 @@ public class InSelector extends SelectorBase {
 
 		public void handle() {
 			try {
-				SocketChannel channel = serverSocketChannel.accept();
+				SocketChannel channel = serverSocketChannel.accept(); 
 				if (DEBUG)
 					System.out.println(channel.socket().getLocalPort()
 							+ " this socket is connected to "
