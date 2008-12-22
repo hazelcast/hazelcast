@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.impl;
 
 import java.io.ByteArrayInputStream;
@@ -131,13 +131,13 @@ public class Config {
 					handleExecutor(node);
 				} else if (node.getNodeName().equals("queue")) {
 					handleQueue(node);
-				} 
+				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public void handleNetwork(org.w3c.dom.Node node) {
 		NodeList nodelist = node.getChildNodes();
 		for (int i = 0; i < nodelist.getLength(); i++) {
@@ -150,7 +150,7 @@ public class Config {
 				handleInterfaces(child);
 			}
 		}
-		
+
 	}
 
 	public QConfig getQConfig(String name) {
@@ -260,14 +260,17 @@ public class Config {
 		members: for (int i = 0; i < nodelist.getLength(); i++) {
 			org.w3c.dom.Node n = nodelist.item(i);
 			String value = getTextContent(n).trim();
-			if (n.getNodeName().equalsIgnoreCase("hostname")) {
-				join.joinMembers.lsMembers.add(value);
+			
+			if (n.getNodeName().equalsIgnoreCase("required-member")) {
+				join.joinMembers.requiredMember = value;
+			} else if (n.getNodeName().equalsIgnoreCase("hostname")) {
+				join.joinMembers.add(value);
 			} else if (n.getNodeName().equalsIgnoreCase("interface")) {
 				int indexStar = value.indexOf('*');
 				int indexDash = value.indexOf('-');
 
 				if (indexStar == -1 && indexDash == -1)
-					join.joinMembers.lsMembers.add(value);
+					join.joinMembers.add(value);
 				else {
 					String first3 = value.substring(0, value.lastIndexOf('.'));
 					String lastOne = value.substring(value.lastIndexOf('.') + 1);
@@ -279,13 +282,13 @@ public class Config {
 					}
 					if (lastOne.equals("*")) {
 						for (int j = 0; j < 256; j++) {
-							join.joinMembers.lsMembers.add(first3 + "." + String.valueOf(j));
+							join.joinMembers.add(first3 + "." + String.valueOf(j));
 						}
 					} else if (lastOne.indexOf('-') != -1) {
 						int start = Integer.parseInt(lastOne.substring(0, lastOne.indexOf('-')));
 						int end = Integer.parseInt(lastOne.substring(lastOne.indexOf('-') + 1));
 						for (int j = start; j <= end; j++) {
-							join.joinMembers.lsMembers.add(first3 + "." + String.valueOf(j));
+							join.joinMembers.add(first3 + "." + String.valueOf(j));
 						}
 					}
 				}
@@ -436,6 +439,7 @@ public class Config {
 		public MulticastConfig multicastConfig = new MulticastConfig();
 
 		public JoinMembers joinMembers = new JoinMembers();
+
 	}
 
 	public class JoinMembers {
@@ -444,6 +448,12 @@ public class Config {
 		public boolean enabled = false;
 
 		public List<String> lsMembers = new ArrayList<String>();
+
+		public String requiredMember = null;
+
+		public void add(String member){
+				lsMembers.add(member);
+		}
 	}
 
 	public class MulticastConfig {

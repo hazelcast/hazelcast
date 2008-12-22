@@ -188,8 +188,13 @@ public class ClusterManager extends BaseManager {
 	private void handleJoinRequest(JoinRequest joinRequest) {
 		if (DEBUG) {
 			log("Handling  " + joinRequest);
-		}
+		} 
 		Connection conn = joinRequest.getConnection();
+		if (!Config.get().join.multicastConfig.enabled) {
+			if (Node.get().getMasterAddress() != null && !isMaster()) {
+				sendProcessableTo(new Master(Node.get().getMasterAddress()), conn);
+			}
+		}
 		if (isMaster()) {
 			if (DEBUG)
 				log(" request object " + joinRequest);
@@ -200,6 +205,7 @@ public class ClusterManager extends BaseManager {
 			}
 			boolean newOne = false;
 			if (!lsJoins.contains(newAddress)) {
+				sendProcessableTo(new Master(Node.get().getMasterAddress()), conn);
 				sendAddRemoveToAllConns(newAddress);
 				lsJoins.add(newAddress);
 				newOne = true;
@@ -225,13 +231,7 @@ public class ClusterManager extends BaseManager {
 					}
 				}
 			}
-		} else {
-			if (!Config.get().join.multicastConfig.enabled) {
-				if (Node.get().getMasterAddress() != null) {
-					sendProcessableTo(new Master(Node.get().getMasterAddress()), conn);
-				}
-			}
-		}
+		} 
 	}
 
 	private void clearJoinState() {

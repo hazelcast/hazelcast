@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.impl;
 
 import java.io.FileOutputStream;
@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import sun.util.logging.resources.logging;
 
 import com.hazelcast.impl.MulticastService.JoinInfo;
 import com.hazelcast.nio.Address;
@@ -58,7 +60,7 @@ public class Node {
 
 	private Thread firstMainThread = null;
 
-	private Node() { 
+	private Node() {
 	}
 
 	public static Node get() {
@@ -93,13 +95,14 @@ public class Node {
 			if (preferIPv6Address == null && preferIPv4Stack == null) {
 				System.setProperty("java.net.preferIPv4Stack", "true");
 			}
-			Config config = Config.get(); 
+			Config config = Config.get();
 			ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
 			address = AddressPicker.pickAddress(serverSocketChannel);
 			InSelector.get().init(serverSocketChannel);
 			if (address == null)
 				return false;
-			System.out.println("Hazelcast " + Build.get().version + " (" + Build.get().build + ") starting at " + address);
+			System.out.println("Hazelcast " + Build.get().version + " (" + Build.get().build
+					+ ") starting at " + address);
 			System.out.println("Copyright (C) 2008 Hazelcast.com");
 
 			if (config.join.multicastConfig.enabled) {
@@ -266,23 +269,51 @@ public class Node {
 		return true;
 	}
 
-	private List<Address> getPossibleMembers() {
+	private Address getAddressFor(String host) {
+		Config config = Config.get();
+		int port = config.port;
+		int indexColon = host.indexOf(':');
+		if (indexColon != -1) {
+			port = Integer.parseInt(host.substring(indexColon + 1));
+		}
+		boolean ip = isIP(host);
+		try {
+			if (ip) {
+				return new Address(host, port, true);
+			} else {
+				InetAddress[] allAddresses = InetAddress.getAllByName(host);
+				for (InetAddress inetAddress : allAddresses) {
+					boolean shouldCheck = true;
+					Address address = null;
+					if (config.interfaces.enabled) {
+						address = new Address(inetAddress.getAddress(), config.port);
+						shouldCheck = AddressPicker.matchAddress(address.getHost());
+					}
+					if (shouldCheck) {
+						return new Address(inetAddress.getAddress(), port);
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	private List<Address> getPossibleMembers(List<String> lsJoinMembers) {
 		Config config = Config.get();
 		List<Address> lsPossibleAddresses = new ArrayList<Address>();
-		List<String> lsJoinMembers = config.join.joinMembers.lsMembers;
 		for (String host : lsJoinMembers) {
 			// check if host is hostname of ip address
 			boolean ip = isIP(host);
 			try {
 				if (ip) {
-
 					for (int i = 0; i < 3; i++) {
 						Address address = new Address(host, config.port + i, true);
 						lsPossibleAddresses.add(address);
 					}
-
 				} else {
-					InetAddress[] allAddresses = InetAddress.getAllByName(host); 
+					InetAddress[] allAddresses = InetAddress.getAllByName(host);
 					for (InetAddress inetAddress : allAddresses) {
 						boolean shouldCheck = true;
 						Address address = null;
@@ -299,7 +330,6 @@ public class Node {
 						}
 					}
 				}
-
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -307,10 +337,53 @@ public class Node {
 		return lsPossibleAddresses;
 	}
 
+	private void joinViaRequiredMember() {
+		
+		try {
+			Config config = Config.get();
+			Address requiredAddress = getAddressFor(config.join.joinMembers.requiredMember);
+			if (DEBUG) {
+				System.out.println("Joining over required member " + requiredAddress);
+			}
+			if (requiredAddress == null) {
+				throw new RuntimeException ("Invalid required member " + config.join.joinMembers.requiredMember);
+			}
+			if (requiredAddress.equals(address)) {
+				setAsMaster();
+				return;
+			}
+			ConnectionManager.get().getOrConnect(requiredAddress);
+			Connection conn = null;
+			while (conn == null) {
+				conn = ConnectionManager.get().getOrConnect(requiredAddress);
+				Thread.sleep(1000);				
+			}
+			while (!joined) {
+				Connection connection = ConnectionManager.get().getOrConnect(requiredAddress);
+				if (connection == null)
+					joinViaRequiredMember();
+				ClusterManager.get().sendJoinRequest(requiredAddress);
+
+				Thread.sleep(2000);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 	private void joinWithTCP() {
 		Config config = Config.get();
+		if (config.join.joinMembers.requiredMember != null) {
+			joinViaRequiredMember();
+		} else {
+			joinViaPossibleMembers();
+		}
+	}
+
+	private void joinViaPossibleMembers() {
+		Config config = Config.get();
 		try {
-			List<Address> lsPossibleAddresses = getPossibleMembers();
+			List<Address> lsPossibleAddresses = getPossibleMembers(config.join.joinMembers.lsMembers);
 			lsPossibleAddresses.remove(address);
 			for (Address adrs : lsPossibleAddresses) {
 				if (DEBUG)
@@ -344,12 +417,7 @@ public class Node {
 			if (DEBUG)
 				System.out.println("FOUND " + found);
 			if (!found) {
-				masterAddress = address;
-				if (DEBUG)
-					System.out.println("adding member myself");
-				ClusterService.get().addMember(address); // add myself
-				clusterImpl.setMembers(ClusterService.get().lsMembers);
-				unlock();
+				setAsMaster();
 			} else {
 				while (!joined) {
 					int numberOfJoinReq = 0;
@@ -372,13 +440,7 @@ public class Node {
 								masterCandidate = false;
 						}
 						if (masterCandidate) {
-							masterAddress = address;
-							if (DEBUG)
-								System.out.println("adding member myself");
-							ClusterService.get().addMember(address); // add
-																		// myself
-							clusterImpl.setMembers(ClusterService.get().lsMembers);
-							unlock();
+							setAsMaster();
 						}
 					}
 				}
@@ -398,6 +460,15 @@ public class Node {
 		System.out.println(sb.toString());
 	}
 
+	void setAsMaster () {
+		masterAddress = address;
+		if (DEBUG)
+			System.out.println("adding member myself");
+		ClusterService.get().addMember(address); // add
+		// myself
+		clusterImpl.setMembers(ClusterService.get().lsMembers);
+		unlock();
+	}
 	public void reJoin() {
 		System.out.println("REJOINING...");
 		joined = false;
@@ -431,9 +502,7 @@ public class Node {
 					if (masterAddress == null) {
 						join();
 					} else if (masterAddress.equals(address)) {
-						ClusterService.get().addMember(address); // add myself
-						masterAddress = address;
-						unlock();
+						setAsMaster();
 					}
 				} catch (Exception e) {
 					e.printStackTrace();

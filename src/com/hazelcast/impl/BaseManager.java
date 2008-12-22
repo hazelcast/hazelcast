@@ -70,7 +70,7 @@ abstract class BaseManager implements Constants {
 	protected static EventQueue[] eventQueues = new EventQueue[100];
 
 	protected static Map<Long, StreamResponseHandler> mapStreams = new ConcurrentHashMap<Long, StreamResponseHandler>();
-
+	
 	protected BaseManager() {
 		clusterService = ClusterService.get();
 		BaseManager.lsMembers = clusterService.lsMembers;
@@ -745,8 +745,8 @@ abstract class BaseManager implements Constants {
 			if (dead.equals(target)) {
 				redo();
 			}
-		}
-
+		} 
+		
 		@Override
 		public Object doOp() {
 			responses.clear();
@@ -763,9 +763,8 @@ abstract class BaseManager implements Constants {
 					result = responses.poll(timeout + 10, TimeUnit.MILLISECONDS);
 				}
 				if (result == OBJECT_REDO) {
-					Thread.sleep(2000);
 					if (DEBUG) {
-						log("Redoing..");
+						log("Redoing.. " );
 					}
 					return doOp();
 				}
@@ -779,10 +778,7 @@ abstract class BaseManager implements Constants {
 		abstract void setTarget();
 
 		public void process() {
-			setTarget();
-			if (DEBUG) {
-				// log(target + " target and timeout= " + request.timeout);
-			}
+			setTarget(); 
 			if (target.equals(thisAddress)) {
 				doLocalOp();
 			} else {
@@ -791,6 +787,9 @@ abstract class BaseManager implements Constants {
 				inv.eventId = getId();
 				boolean sent = send(inv, target);
 				if (!sent) {
+					if (DEBUG) {
+						log("invocation cannot be sent to " + target );
+					}
 					inv.returnToContainer();
 					redo();
 				}
@@ -892,8 +891,7 @@ abstract class BaseManager implements Constants {
 	}
 
 	abstract class RequestBasedCall extends AbstractCall {
-		final Request request = new Request();
-
+		final Request request = new Request();		
 		public void setLocal(int operation, String name, Object key, Object value, long timeout,
 				long txnId, long recordId) {
 			Data keyData = null;
