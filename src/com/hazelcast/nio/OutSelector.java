@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.nio;
 
 import java.net.InetSocketAddress;
@@ -81,15 +81,14 @@ public class OutSelector extends SelectorBase {
 					System.out.println("connected to " + address);
 				Connection connection = initChannel(socketChannel, false);
 				connection.setEndPoint(address);
-				ConnectionManager.get().finalizeAndBind(connection); 
+				ConnectionManager.get().finalizeAndBind(connection);
 			} catch (Exception e) {
 				if (DEBUG) {
 					System.out.println("Couldn't connect to " + address);
 					e.printStackTrace();
-				}
-				if (!Node.get().joined()) {
-					Node.get().failedConnection(address);
-				}
+				} 
+				ConnectionManager.get().failedConnection(address);
+
 			}
 		}
 

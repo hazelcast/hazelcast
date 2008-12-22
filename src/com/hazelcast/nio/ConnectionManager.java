@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.nio;
 
 import java.nio.channels.SocketChannel;
@@ -39,7 +39,7 @@ public class ConnectionManager {
 		return instance;
 	}
 
-	private ConnectionManager() { 
+	private ConnectionManager() {
 	}
 
 	private Map<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(10);
@@ -73,6 +73,13 @@ public class ConnectionManager {
 
 	public Connection getConnection(Address address) {
 		return mapConnections.get(address);
+	}
+
+	public synchronized void failedConnection(Address address) {
+		setConnectionInProgress.remove(address);
+		if (!Node.get().joined()) {
+			Node.get().failedConnection(address);
+		}
 	}
 
 	public synchronized Connection getOrConnect(Address address) {
@@ -116,7 +123,7 @@ public class ConnectionManager {
 		for (Connection conn : mapConnections.values()) {
 			sb.append("\n" + conn);
 		}
-		sb.append("\nlive=" + live); 
+		sb.append("\nlive=" + live);
 		sb.append("\n}");
 		return sb.toString();
 	}
@@ -126,7 +133,7 @@ public class ConnectionManager {
 			mapConnections.put(endPoint, connection);
 			if (!lsConnections.contains(connection)) {
 				lsConnections.add(connection);
-			} 
+			}
 		} else
 			throw new RuntimeException("ConnMan setting self!!");
 	}
@@ -136,7 +143,7 @@ public class ConnectionManager {
 			return;
 		if (connection.getEndPoint() != null) {
 			mapConnections.remove(connection.getEndPoint());
-			lsConnections.remove(connection); 
+			lsConnections.remove(connection);
 		}
 		if (connection.live())
 			connection.close();
