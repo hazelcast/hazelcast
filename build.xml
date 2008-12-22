@@ -4,7 +4,7 @@
 	<property name="rar.name" value="hazelcast-ra" />
 	<property name="src.dir" value="src" />
 	<property name="classes.dir" value="classes" />
-	<property name="version" value="1.5" />
+	<property name="version" value="1.5-snapshot" />
 
 	<path id="all.class.path">
 		<pathelement location="lib/servlet-api.jar" />
