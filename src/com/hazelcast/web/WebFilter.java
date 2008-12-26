@@ -78,7 +78,7 @@ import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.nio.InvocationQueue.Data;
 
 public class WebFilter implements Filter {
-	private static final boolean DEBUG = Build.get().BASE_DEBUG;
+	private static final boolean DEBUG = Build.get().DEBUG;
 
 	private static final String SESSION_URL_PHRASE = ";jsessionid=";
 

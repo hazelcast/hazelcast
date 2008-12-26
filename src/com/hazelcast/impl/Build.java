@@ -14,26 +14,35 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.impl;
 
 public class Build {
-	
-	public static final boolean BASE_DEBUG = true;
-	
-	public String build = "2008";
+
+	public static final boolean DEBUG;
+
+	public String build = "do-not-change";
 
 	public String version = "do-not-change";
-	
+
+	static {
+		if ("true".equals(System.getProperty("hazelcast.debug"))) { 
+			DEBUG = true;
+		} else {
+			DEBUG = false;
+		}
+	}
+
 	private Build() {
 		// IMPORTANT: DO NOT REMOVE THE FOLLOWING LINES
 		// THEY ARE USED AT BUILD TIME
 		// @build
 		// @version
-		//=============================================
+		// =============================================
 	}
+
 	private static final Build instance = new Build();
-	
+
 	public static Build get() {
 		return instance;
 	}

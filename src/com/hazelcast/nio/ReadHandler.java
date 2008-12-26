@@ -47,6 +47,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 	private int lastReamining = 0;
 
 	public final void handle() {
+		if (!connection.live()) return;
 		try {
 			int readBytes = socketChannel.read(inBuffer);
 			if (readBytes == -1) {
@@ -70,7 +71,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 				}
 				if (inv == null) {
 					if (remaining >= 24) {
-						inv = obtainReadable(inBuffer);
+						inv = obtainReadable();
 						if (inv == null) {
 							throw new RuntimeException(messageRead + " Unknown message type  from "
 									+ connection.getEndPoint());
@@ -82,13 +83,12 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 				}
 				boolean full = inv.read(inBuffer);
 				// System.out.println("Reading.. full " + full);
-				if (DEBUG)
-					System.out.println("READING " + full);
+//				if (DEBUG)
+//					System.out.println("READING " + full);
 				if (full) {
 					messageRead++; 
 					inv.flipBuffers();
-					inv.read(); 
-					inv.local = false;
+					inv.read();  
 					inv.setFromConnection(connection); 
 					ClusterService.get().enqueueAndReturn(inv);
 					inv = null;
@@ -131,7 +131,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 		}
 	}
 
-	private Invocation obtainReadable(ByteBuffer bb) {
+	private Invocation obtainReadable() {
 		Invocation inv = InvocationQueue.instance().obtainInvocation();
 		inv.reset();
 		inv.data.prepareForRead();

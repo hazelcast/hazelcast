@@ -20,8 +20,10 @@ package com.hazelcast.nio;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
+import com.hazelcast.impl.Build;
+
 public abstract class AbstractSelectionHandler implements SelectionHandler {
-	public static final boolean DEBUG = false;
+	public static final boolean DEBUG = Build.DEBUG;
 
 	protected SocketChannel socketChannel;
 
@@ -45,7 +47,7 @@ public abstract class AbstractSelectionHandler implements SelectionHandler {
 
 	protected void handleSocketException(Exception e) {
 		if (DEBUG) {
-			System.out.println("CLOSING " + e);
+			System.out.println(Thread.currentThread().getName() + " Closing Socket. cause:  " + e);
 		}
 		socketException = true;
 		if (DEBUG) {

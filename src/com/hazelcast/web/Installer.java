@@ -51,7 +51,7 @@ import com.hazelcast.impl.Util;
 
 public class Installer {
 
-	private static final boolean DEBUG = Build.get().BASE_DEBUG;
+	private static final boolean DEBUG = Build.get().DEBUG;
 	private String clusteredFilePrefix = "clustered-";
 	private boolean addHazellib = true;
 	private boolean replaceOld = false;

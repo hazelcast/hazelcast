@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.nio;
 
 import java.io.DataInput;
@@ -37,13 +37,15 @@ import com.hazelcast.impl.Node;
 
 public class InvocationQueue {
 
-	BlockingQueue<Invocation> qinvocations = new ArrayBlockingQueue<Invocation>(1000);
+	private static final int INV_COUNT = 2000;
+
+	BlockingQueue<Invocation> qinvocations = new ArrayBlockingQueue<Invocation>(INV_COUNT);
 
 	private static final InvocationQueue instance = new InvocationQueue();
 
 	private InvocationQueue() {
 		try {
-			for (int i = 0; i < 1000; i++) {
+			for (int i = 0; i < INV_COUNT; i++) {
 				qinvocations.add(new Invocation(this));
 			}
 		} catch (Exception e) {
@@ -57,23 +59,22 @@ public class InvocationQueue {
 
 	public Invocation obtainInvocation() {
 		Invocation inv = null;
-		try {
-			inv = qinvocations.poll(10, TimeUnit.MILLISECONDS);
-			if (inv == null)
-				throw new RuntimeException("Couldn't obtain ServiceInvocation !!");
-		} catch (InterruptedException e) {
-			Node.get().handleInterruptedException(Thread.currentThread(), e);
-		}
+		inv = qinvocations.poll();
+		if (inv == null) {
+			inv = new Invocation(this);
+			// throw new RuntimeException(Thread.currentThread().getName() +
+			// " Couldn't obtain ServiceInvocation !!");
+		}  
 		inv.reset();
 		return inv;
 	}
 
 	public void returnInvocation(Invocation inv) throws InterruptedException {
 		inv.reset();
-		qinvocations.put(inv);
+		qinvocations.offer(inv);
 	}
-	
-	public Invocation createNewInvocation () {
+
+	public Invocation createNewInvocation() {
 		return new Invocation(this);
 	}
 
@@ -81,7 +82,7 @@ public class InvocationQueue {
 
 	private static BlockingQueue<ByteBuffer> bufferq = new ArrayBlockingQueue<ByteBuffer>(10000);
 	private static AtomicInteger bufferCounter = new AtomicInteger();
-	
+
 	public ByteBuffer obtainBuffer() {
 		ByteBuffer bb = bufferq.poll();
 		if (bb == null) {
@@ -91,11 +92,11 @@ public class InvocationQueue {
 			bb.clear();
 		return bb;
 	}
-	
+
 	public Data createNewData() {
 		return new Data();
-	} 
-	
+	}
+
 	public void purge(Data data) {
 		if (data == null)
 			throw new RuntimeException("Data cannot be null");
@@ -104,10 +105,9 @@ public class InvocationQueue {
 		}
 		data.lsData.clear();
 		data.prepareForRead();
-	} 
+	}
 
-	public final class Invocation implements Runnable, Constants,
-			Constants.ResponseTypes { 
+	public final class Invocation implements Runnable, Constants, Constants.ResponseTypes {
 
 		private Serializer serializer = null;
 
@@ -141,7 +141,7 @@ public class InvocationQueue {
 
 		public boolean local = true;
 
-		public int blockId = -1;   
+		public int blockId = -1;
 
 		public byte responseType = RESPONSE_NONE;
 
@@ -155,22 +155,24 @@ public class InvocationQueue {
 
 		public long recordId = -1;
 
-		public long eventId = -1; 
+		public long eventId = -1;
 
 		public Invocation(InvocationQueue container) {
-			this.container = container; 
+			this.container = container;
 		}
-		
+
 		public void setData(Data newData) {
 			data = newData;
 			data.inv = this;
 		}
 
-		public void write(ByteBuffer socketBB) { 
+		public void write(ByteBuffer socketBB) {
 			socketBB.put(bbSizes.array(), 0, bbSizes.limit());
-			socketBB.put(bbHeader.array(), 0, bbHeader.limit()); 
-			if (key.size()>0) key.copyToBuffer(socketBB);
-			if (data.size()>0) data.copyToBuffer(socketBB);
+			socketBB.put(bbHeader.array(), 0, bbHeader.limit());
+			if (key.size() > 0)
+				key.copyToBuffer(socketBB);
+			if (data.size() > 0)
+				data.copyToBuffer(socketBB);
 		}
 
 		protected void putString(ByteBuffer bb, String str) {
@@ -194,7 +196,7 @@ public class InvocationQueue {
 		protected boolean readBoolean(ByteBuffer bb) {
 			return (bb.get() == (byte) 1) ? true : false;
 		}
- 
+
 		public void write() {
 			bbSizes.clear();
 			bbHeader.clear();
@@ -214,7 +216,7 @@ public class InvocationQueue {
 			writeBoolean(bbHeader, fromNull);
 			if (!fromNull) {
 				lockAddress.writeObject(bbHeader);
-			} 
+			}
 			bbHeader.flip();
 
 			bbSizes.putInt(bbHeader.limit());
@@ -239,7 +241,7 @@ public class InvocationQueue {
 			if (!fromNull) {
 				lockAddress = new Address();
 				lockAddress.readObject(bbHeader);
-			} 
+			}
 		}
 
 		public void reset() {
@@ -253,7 +255,7 @@ public class InvocationQueue {
 			responseType = RESPONSE_NONE;
 			local = true;
 			scheduled = false;
-			blockId = -1; 
+			blockId = -1;
 			longValue = Long.MIN_VALUE;
 			recordId = -1;
 			eventId = -1;
@@ -273,7 +275,7 @@ public class InvocationQueue {
 		@Override
 		public String toString() {
 			return "Invocation " + operation + " name=" + name + "  local=" + local + "  blockId="
-					+ blockId  + " data=" + data;
+					+ blockId + " data=" + data;
 		}
 
 		public void flipBuffers() {
@@ -286,13 +288,13 @@ public class InvocationQueue {
 		public boolean read(ByteBuffer bb) {
 			while (!sizeRead && bbSizes.hasRemaining()) {
 				BufferUtil.copy(bb, bbSizes);
-			} 
+			}
 			if (!sizeRead && !bbSizes.hasRemaining()) {
 				sizeRead = true;
 				bbSizes.flip();
 				bbHeader.limit(bbSizes.getInt());
 				key.size = bbSizes.getInt();
-				data.size = bbSizes.getInt(); 
+				data.size = bbSizes.getInt();
 			}
 			// System.out.println(sizeRead + " size " + bbSizes);
 			if (sizeRead) {
@@ -306,7 +308,7 @@ public class InvocationQueue {
 
 				while (bb.hasRemaining() && data.shouldRead()) {
 					data.read(bb);
-				} 
+				}
 			}
 
 			if (sizeRead && !bbHeader.hasRemaining() && !key.shouldRead() && !data.shouldRead()) {
@@ -325,10 +327,9 @@ public class InvocationQueue {
 				} catch (InterruptedException e) {
 					Node.get().handleInterruptedException(Thread.currentThread(), e);
 				}
-			} else throw new RuntimeException("Should not return to container");
+			} else
+				throw new RuntimeException("Should not return to container");
 		}
-
-		
 
 		public Object getValueObject() {
 			return getObject(data, dataBufferProvider);
@@ -359,8 +360,7 @@ public class InvocationQueue {
 			serializer.writeObject(bufferProvider, obj);
 		}
 
-		public void set(String name, int operation, Object k, Object value)
-				throws Exception {
+		public void set(String name, int operation, Object k, Object value) throws Exception {
 			this.threadId = Thread.currentThread().hashCode();
 			this.name = name;
 			this.operation = operation;
@@ -384,7 +384,7 @@ public class InvocationQueue {
 					serializer.writeObject(keyBufferProvider, k);
 					key.postRead();
 				}
-			} 
+			}
 		}
 
 		public class DataBufferProvider implements BufferProvider {
@@ -433,15 +433,11 @@ public class InvocationQueue {
 			}
 		}
 
-		
-
 		public void setFromConnection(Connection conn) {
 			this.conn = conn;
 			if (lockAddress == null)
 				lockAddress = conn.getEndPoint();
 		}
-
-		
 
 		public ByteBuffer takeEmptyBuffer() {
 			ByteBuffer bb = null;
@@ -481,8 +477,7 @@ public class InvocationQueue {
 				bufferq.offer(bb);
 			}
 		}
-		
-		
+
 		public Data doHardCopy(Data from) {
 			if (from == null || from.size == 0)
 				return null;
@@ -516,7 +511,7 @@ public class InvocationQueue {
 			return newData;
 		}
 
-		public void moveContent(Data from, Data to) { 
+		public void moveContent(Data from, Data to) {
 			while (from.lsData.size() > 0) {
 				ByteBuffer bb = from.lsData.remove(0);
 				to.lsData.add(bb);
@@ -658,12 +653,13 @@ public class InvocationQueue {
 		Invocation inv = null;
 
 		public Data() {
-		} 
+		}
+
 		public Data(Invocation inv) {
 			this();
 			this.inv = inv;
 		}
-		
+
 		public void digest(MessageDigest md) {
 			for (ByteBuffer bb : lsData) {
 				md.update(bb.array(), 0, bb.limit());
@@ -762,7 +758,7 @@ public class InvocationQueue {
 		}
 
 		@Override
-		public String toString() { 
+		public String toString() {
 			return "Data ls.size=" + lsData.size() + " size = " + size;
 		}
 

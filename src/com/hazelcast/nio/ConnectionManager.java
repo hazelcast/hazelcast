@@ -42,10 +42,8 @@ public class ConnectionManager {
 	private ConnectionManager() {
 	}
 
-	private Map<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(10);
-
-	public List<Connection> lsConnections = new ArrayList<Connection>(10);
-
+	private Map<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(100);
+ 
 	private volatile boolean live = true;
 
 	public Set<Address> setConnectionInProgress = new CopyOnWriteArraySet<Address>();
@@ -69,6 +67,10 @@ public class ConnectionManager {
 			e.printStackTrace();
 		}
 		return connection;
+	}
+	
+	public Connection[] getConnections() {
+		return (Connection[]) mapConnections.values().toArray();
 	}
 
 	public Connection getConnection(Address address) {
@@ -104,8 +106,7 @@ public class ConnectionManager {
 			Address address = connection.getEndPoint();
 			setConnectionInProgress.remove(address);
 			if (!address.equals(Node.get().getThisAddress())) {
-				mapConnections.put(address, connection);
-				lsConnections.add(connection);
+				mapConnections.put(address, connection); 
 				ClusterService.get().enqueueAndReturn(new AddRemoveConnection(address, true));
 			}
 			Invocation invBind = InvocationQueue.instance().obtainInvocation();
@@ -130,10 +131,7 @@ public class ConnectionManager {
 
 	public synchronized void setConnection(Address endPoint, Connection connection) {
 		if (!endPoint.equals(Node.get().getThisAddress())) {
-			mapConnections.put(endPoint, connection);
-			if (!lsConnections.contains(connection)) {
-				lsConnections.add(connection);
-			}
+			mapConnections.put(endPoint, connection); 
 		} else
 			throw new RuntimeException("ConnMan setting self!!");
 	}
@@ -142,8 +140,7 @@ public class ConnectionManager {
 		if (connection == null)
 			return;
 		if (connection.getEndPoint() != null) {
-			mapConnections.remove(connection.getEndPoint());
-			lsConnections.remove(connection);
+			mapConnections.remove(connection.getEndPoint()); 
 		}
 		if (connection.live())
 			connection.close();

@@ -20,7 +20,7 @@ package com.hazelcast.jca;
 import com.hazelcast.impl.Build;
 
 public class JcaBase {
-	private static final boolean DEBUG = Build.get().BASE_DEBUG;
+	private static final boolean DEBUG = Build.get().DEBUG;
 
 	public void log(Object caller, Object msg) {
 		if (DEBUG)

@@ -66,7 +66,7 @@ public class OutSelector extends SelectorBase {
 					System.out.println("connecting to " + address);
 				socketChannel.connect(new InetSocketAddress(address.getInetAddress(), address
 						.getPort()));
-				socketChannel.register(selector, SelectionKey.OP_CONNECT, Connector.this);
+				socketChannel.register(selector, SelectionKey.OP_CONNECT, Connector.this);				
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

@@ -14,13 +14,15 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.impl;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.BaseManager.Processable;
@@ -44,16 +46,18 @@ public class ClusterService implements Runnable, Constants {
 
 	protected int thisMemberIndex = -1;
 
-	protected final boolean DEBUG = Build.get().BASE_DEBUG;
+	protected final boolean DEBUG = Build.get().DEBUG;
 
 	protected MemberImpl nextMember = null;
 
-	protected BlockingQueue queue = null;
+	protected final BlockingQueue queue;
 
 	protected volatile boolean running = true;
 
+	protected final List lsBuffer = new ArrayList(2000);
+
 	private ClusterService() {
-		this.queue = new ArrayBlockingQueue(500);
+		this.queue = new LinkedBlockingQueue();
 		this.thisAddress = Node.get().getThisAddress();
 	}
 
@@ -73,24 +77,86 @@ public class ClusterService implements Runnable, Constants {
 				ConcurrentMapManager.get().handle(inv);
 			} else
 				throw new RuntimeException("Unknown operation " + operation);
-
-			return;
 		} else if (obj instanceof Processable) {
 			((Processable) obj).process();
 		} else if (obj instanceof Runnable) {
 			synchronized (obj) {
 				((Runnable) obj).run();
 				obj.notify();
-			}
-			return;
+			} 
 		} else
 			throw new RuntimeException("Unkown obj " + obj);
 	}
 
 	public void run() {
+		Object obj = null;
 		while (running) {
 			try {
-				process(queue.take());
+				obj = queue.take();
+				process(obj);
+			} catch (InterruptedException e) {
+				Node.get().handleInterruptedException(Thread.currentThread(), e);
+			} catch (Exception e) {
+				if (DEBUG) {
+					System.out.println(e + ",  message: " + e.getMessage() + "  obj=" + obj);
+				}
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public void run5() {
+		while (running) {
+			Object obj = null;
+			try {
+				lsBuffer.clear();
+				queue.drainTo(lsBuffer);
+				int size = lsBuffer.size();
+				if (size > 0) {
+					for (int i = 0; i < size; i++) {
+						obj = lsBuffer.get(i);
+						if (obj == null) {
+							System.out.println(size + " Object is null!" + i);
+						}
+						process(obj);
+					}
+					lsBuffer.clear();
+				} else {
+					obj = queue.take();
+					process(obj);
+				}
+			} catch (InterruptedException e) {
+				Node.get().handleInterruptedException(Thread.currentThread(), e);
+			} catch (Exception e) {
+				if (DEBUG) {
+					System.out.println(e + ",  message: " + e.getMessage() + ", obj=" + obj);
+				}
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public void run2() {
+		while (running) {
+			try {
+				Object obj = null;
+				if (lsBuffer.size() > 0) {
+					obj = lsBuffer.remove(0);
+				} else {
+					queue.drainTo(lsBuffer);
+					if (DEBUG) {
+						if (lsBuffer.size() > 16) {
+							System.out.println("lsBuffer size " + lsBuffer.size());
+						}
+					}
+					if (lsBuffer.size() > 0) {
+						obj = lsBuffer.remove(0);
+					}
+				}
+				if (obj == null) {
+					obj = queue.take();
+				}
+				process(obj);
 			} catch (InterruptedException e) {
 				Node.get().handleInterruptedException(Thread.currentThread(), e);
 			} catch (Exception e) {
@@ -166,7 +232,7 @@ public class ClusterService implements Runnable, Constants {
 
 	public void enqueueAndReturn(Object message) {
 		try {
-			if (queue.size() > 200)
+			if (queue.size() > 600)
 				if (DEBUG)
 					System.out.println("queue size " + queue.size());
 			queue.put(message);

@@ -72,7 +72,7 @@ class ConcurrentMapManager extends BaseManager {
 		return instance;
 	}
 
-	private static int BLOCK_COUNT = 10;
+	private static final int BLOCK_COUNT = 100;
 
 	private Request remoteReq = new Request();
 	private Map<Integer, Block> mapBlocks = new HashMap<Integer, Block>(BLOCK_COUNT);
@@ -227,26 +227,8 @@ class ConcurrentMapManager extends BaseManager {
 		for (CMap cmap : cmaps) {
 			executeLocally(new Syncer(syncMonitor, cmap.name));
 		}
-	}
-
-	class MRemove extends MTargetAwareOp {
-
-		public Object remove(String name, Object key, long timeout, long txnId) {
-			return objectCall(OP_CMAP_REMOVE, name, key, null, timeout, txnId, -1);
-		}
-
-		public Object removeIfSame(String name, Object key, Object value, long timeout, long txnId) {
-			return objectCall(OP_CMAP_REMOVE_IF_SAME, name, key, value, timeout, txnId, -1);
-		}
-
-		@Override
-		public void doLocalOp() {
-			doRemove(request);
-			if (!request.scheduled) {
-				setResult(request.response);
-			}
-		}
-	}
+	} 
+	
 
 	abstract class MBooleanOp extends MTargetAwareOp {
 		@Override
@@ -459,6 +441,26 @@ class ConcurrentMapManager extends BaseManager {
 			setResult(value);
 		}
 	}
+	
+	class MRemove extends MTargetAwareOp {
+
+		public Object remove(String name, Object key, long timeout, long txnId) {
+			return objectCall(OP_CMAP_REMOVE, name, key, null, timeout, txnId, -1);
+		}
+
+		public Object removeIfSame(String name, Object key, Object value, long timeout, long txnId) {
+			return objectCall(OP_CMAP_REMOVE_IF_SAME, name, key, value, timeout, txnId, -1);
+		}
+
+		@Override
+		public void doLocalOp() {
+			doRemove(request);
+			if (!request.scheduled) {
+				setResult(request.response);
+			}
+		}
+	}
+	
 
 	class MAdd extends MTargetAwareOp {
 		boolean addToList(String name, Object value) {
@@ -931,7 +933,7 @@ class ConcurrentMapManager extends BaseManager {
 					enqueueAndReturn(Syncer.this);
 					try {
 						Syncer.this.wait();
-						Thread.sleep(1);
+						Thread.sleep(2);
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}

@@ -61,7 +61,7 @@ abstract class BaseManager implements Constants {
 
 	protected static List<MemberImpl> lsMembers = null;
 
-	protected static final boolean DEBUG = Build.get().BASE_DEBUG;
+	protected static final boolean DEBUG = Build.get().DEBUG;
 
 	private static long eventId = 1;
 
@@ -841,6 +841,7 @@ abstract class BaseManager implements Constants {
 						boolean sent = send(inv, address);
 						if (!sent) {
 							inv.returnToContainer();
+							System.out.println(address + " not reachable: operation redoing:  " + AllOp.this);
 							redo();
 						}
 					}

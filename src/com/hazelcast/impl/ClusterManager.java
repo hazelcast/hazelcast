@@ -62,6 +62,8 @@ public class ClusterManager extends BaseManager {
 
 	private List<MemberImpl> lsMembersBefore = new ArrayList<MemberImpl>();
 
+	private long waitTimeBeforeJoin = 5000;
+
 	public void handle(Invocation inv) {
 		try {
 			if (inv.operation == OP_RESPONSE) {
@@ -97,8 +99,8 @@ public class ClusterManager extends BaseManager {
 	}
 
 	void sendAddRemoveToAllConns(Address newAddress) {
-		List<Connection> lsConns = ConnectionManager.get().lsConnections;
-		for (Connection conn : lsConns) {
+		Connection[] conns= ConnectionManager.get().getConnections();
+		for (Connection conn : conns) {
 			if (!newAddress.equals(conn.getEndPoint())) {
 				AddRemoveConnection arc = new AddRemoveConnection(newAddress, true);
 				sendProcessableTo(arc, conn);
@@ -224,7 +226,7 @@ public class ClusterManager extends BaseManager {
 			} else {
 				if (newOne) {
 					// do nothing..
-					timeToStartJoin = System.currentTimeMillis() + 1000;
+					timeToStartJoin = System.currentTimeMillis() + waitTimeBeforeJoin ;
 				} else {
 					if (System.currentTimeMillis() > timeToStartJoin) {
 						startJoin();
@@ -357,7 +359,7 @@ public class ClusterManager extends BaseManager {
 		joinInProgress = false;
 		lsJoins.clear();
 		lsJoins.addAll(lsJoinsScheduled);
-		timeToStartJoin = System.currentTimeMillis() + 2000;
+		timeToStartJoin = System.currentTimeMillis() + waitTimeBeforeJoin + 1000;
 	}
 
 	void startJoin() { 

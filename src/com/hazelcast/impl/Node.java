@@ -52,7 +52,7 @@ public class Node {
 
 	private volatile boolean joined = false;
 
-	static final boolean DEBUG = Build.get().BASE_DEBUG;
+	static final boolean DEBUG = Build.get().DEBUG;
 
 	private ClusterImpl clusterImpl = null;
 

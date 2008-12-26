@@ -31,7 +31,7 @@ import com.hazelcast.impl.Node;
 
 public class SelectorBase implements Runnable {
 
-	protected static final boolean DEBUG = Build.get().BASE_DEBUG;
+	protected static final boolean DEBUG = Build.get().DEBUG;
 
 	protected Selector selector = null;
 
