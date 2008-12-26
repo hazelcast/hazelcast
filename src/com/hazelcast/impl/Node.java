@@ -362,6 +362,9 @@ public class Node {
 				Connection connection = ConnectionManager.get().getOrConnect(requiredAddress);
 				if (connection == null)
 					joinViaRequiredMember();
+				if (DEBUG) {
+					System.out.println("Sending joinRequest " + requiredAddress);
+				}
 				ClusterManager.get().sendJoinRequest(requiredAddress);
 
 				Thread.sleep(2000);

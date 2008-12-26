@@ -552,12 +552,11 @@ abstract class BaseManager implements Constants {
 		if (call != null)
 			call.handleResponse(invResponse);
 		else {
-			invResponse.returnToContainer();
 			if (DEBUG) {
-				throw new RuntimeException("No call for eventId " + invResponse.eventId);
+				throw new RuntimeException("No call for eventId " + invResponse.eventId);				
 			}
-		}
-
+			invResponse.returnToContainer();			
+		} 
 	}
 
 	protected void throwCME(Object key) {

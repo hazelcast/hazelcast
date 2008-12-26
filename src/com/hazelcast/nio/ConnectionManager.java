@@ -70,7 +70,12 @@ public class ConnectionManager {
 	}
 	
 	public Connection[] getConnections() {
-		return (Connection[]) mapConnections.values().toArray();
+		Object[] connObjs = mapConnections.values().toArray();
+		Connection[] conns = new Connection[connObjs.length];
+		for (int i = 0; i < conns.length; i++) {
+			conns[i] = (Connection) connObjs[i];
+		}
+		return conns;
 	}
 
 	public Connection getConnection(Address address) {

@@ -64,8 +64,7 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 				ClusterService.get().rollbackInvocation(inv);
 				return;
 			}
-			inv.write();
-
+			inv.write(); 
 			writeHandlerQueue.put(inv);
 		} catch (InterruptedException e) {
 			Node.get().handleInterruptedException(Thread.currentThread(), e);
@@ -142,7 +141,9 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 					handleSocketException(e);
 				}
 			}
-		} finally {
+		} catch (Throwable t) {
+			System.out.println("Fatal Error: WriteHandler " + t);
+		} finally { 
 			if (hasMore()) {
 				registerWrite();
 			} else {

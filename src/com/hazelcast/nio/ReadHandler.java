@@ -17,6 +17,7 @@
  
 package com.hazelcast.nio;
 
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
@@ -101,8 +102,10 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 				}
 			}
 
-		} catch (Exception e) {
+		} catch (SocketException e) { 
 			handleSocketException(e);
+		} catch (Throwable t) { 
+			System.out.println("Fatal Error at ReadHandler : " + t);
 		} finally {
 			try {
 				if (connection.live())

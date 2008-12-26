@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.impl;
 
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_BIND;
@@ -26,12 +26,11 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
-import com.hazelcast.impl.BaseManager.Call;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
@@ -50,9 +49,9 @@ public class ClusterManager extends BaseManager {
 	private ClusterManager() {
 	}
 
-	private List<Address> lsJoins = new ArrayList<Address>(5);
+	private Set<Address> lsJoins = new HashSet<Address>(5);
 
-	private List<Address> lsJoinsScheduled = new ArrayList<Address>(5);
+	private Set<Address> lsJoinsScheduled = new HashSet<Address>(5);
 
 	private boolean joinInProgress = false;
 
@@ -87,6 +86,7 @@ public class ClusterManager extends BaseManager {
 			} else
 				throw new RuntimeException("Unhandled message " + inv.name);
 		} catch (Exception e) {
+			log(e);
 			e.printStackTrace();
 		}
 	}
@@ -99,7 +99,7 @@ public class ClusterManager extends BaseManager {
 	}
 
 	void sendAddRemoveToAllConns(Address newAddress) {
-		Connection[] conns= ConnectionManager.get().getConnections();
+		Connection[] conns = ConnectionManager.get().getConnections();
 		for (Connection conn : conns) {
 			if (!newAddress.equals(conn.getEndPoint())) {
 				AddRemoveConnection arc = new AddRemoveConnection(newAddress, true);
@@ -155,7 +155,7 @@ public class ClusterManager extends BaseManager {
 
 	}
 
-	void doRemoveAddress(Address deadAddress) {  
+	void doRemoveAddress(Address deadAddress) {
 		lsMembersBefore.clear();
 		for (MemberImpl member : lsMembers) {
 			lsMembersBefore.add(member);
@@ -172,13 +172,13 @@ public class ClusterManager extends BaseManager {
 		ConcurrentMapManager.get().syncForDead(deadAddress);
 		ListenerManager.get().syncForDead(deadAddress);
 		TopicManager.get().syncForDead(deadAddress);
-		
-		Node.get().getClusterImpl().setMembers(lsMembers); 
-		
+
+		Node.get().getClusterImpl().setMembers(lsMembers);
+
 		// toArray will avoid CME as onDisconnect does remove the calls
-		Object[] calls = mapCalls.values().toArray(); 		
-		for (Object call : calls) { 
-			((Call)call).onDisconnect(deadAddress);
+		Object[] calls = mapCalls.values().toArray();
+		for (Object call : calls) {
+			((Call) call).onDisconnect(deadAddress);
 		}
 		System.out.println(this);
 	}
@@ -188,9 +188,10 @@ public class ClusterManager extends BaseManager {
 	}
 
 	private void handleJoinRequest(JoinRequest joinRequest) {
+
 		if (DEBUG) {
-			log("Handling  " + joinRequest);
-		} 
+			// log("Handling  " + joinRequest);
+		}
 		Connection conn = joinRequest.getConnection();
 		if (!Config.get().join.multicastConfig.enabled) {
 			if (Node.get().getMasterAddress() != null && !isMaster()) {
@@ -198,8 +199,9 @@ public class ClusterManager extends BaseManager {
 			}
 		}
 		if (isMaster()) {
-			if (DEBUG)
-				log(" request object " + joinRequest);
+			if (DEBUG) {
+				// log(" request object " + joinRequest);
+			}
 			Address newAddress = conn.getEndPoint();
 			if (newAddress == null) {
 				newAddress = joinRequest.address;
@@ -226,14 +228,14 @@ public class ClusterManager extends BaseManager {
 			} else {
 				if (newOne) {
 					// do nothing..
-					timeToStartJoin = System.currentTimeMillis() + waitTimeBeforeJoin ;
+					timeToStartJoin = System.currentTimeMillis() + waitTimeBeforeJoin;
 				} else {
 					if (System.currentTimeMillis() > timeToStartJoin) {
 						startJoin();
 					}
 				}
 			}
-		} 
+		}
 	}
 
 	private void clearJoinState() {
@@ -345,8 +347,8 @@ public class ClusterManager extends BaseManager {
 			}
 			super.process();
 		}
-		
-		public void onDisconnect(Address deadAddress) { 
+
+		public void onDisconnect(Address deadAddress) {
 		}
 
 		@Override
@@ -362,7 +364,7 @@ public class ClusterManager extends BaseManager {
 		timeToStartJoin = System.currentTimeMillis() + waitTimeBeforeJoin + 1000;
 	}
 
-	void startJoin() { 
+	void startJoin() {
 		final MembersUpdate membersUpdate = new MembersUpdate(lsMembers);
 		if (lsJoins != null && lsJoins.size() > 0) {
 			for (Address addressJoined : lsJoins) {
@@ -375,9 +377,9 @@ public class ClusterManager extends BaseManager {
 
 		executeLocally(new Runnable() {
 			public void run() {
-				ProcessEverywhere pe = new ProcessEverywhere(); 
-				pe.process(membersUpdate.lsAddresses, mrp); 
-				pe.process(membersUpdate.lsAddresses, new SyncProcess()); 
+				ProcessEverywhere pe = new ProcessEverywhere();
+				pe.process(membersUpdate.lsAddresses, mrp);
+				pe.process(membersUpdate.lsAddresses, new SyncProcess());
 			}
 		});
 	}
@@ -390,7 +392,7 @@ public class ClusterManager extends BaseManager {
 		public void writeData(DataOutput out) throws IOException {
 		}
 
-		public void process() { 
+		public void process() {
 			ConcurrentMapManager.get().syncForAdd();
 			BlockingQueueManager.get().syncForAdd();
 			ListenerManager.get().syncForAdd();
@@ -409,7 +411,6 @@ public class ClusterManager extends BaseManager {
 		public void setConnection(Connection conn) {
 			this.conn = conn;
 		}
-
 	}
 
 	public static class MultiRemotelyProcessable extends AbstractRemotelyProcessable {
