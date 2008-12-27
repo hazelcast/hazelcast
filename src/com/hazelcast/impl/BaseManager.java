@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.impl;
 
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_RESPONSE;
@@ -70,7 +70,7 @@ abstract class BaseManager implements Constants {
 	protected static EventQueue[] eventQueues = new EventQueue[100];
 
 	protected static Map<Long, StreamResponseHandler> mapStreams = new ConcurrentHashMap<Long, StreamResponseHandler>();
-	
+
 	protected BaseManager() {
 		clusterService = ClusterService.get();
 		BaseManager.lsMembers = clusterService.lsMembers;
@@ -553,10 +553,10 @@ abstract class BaseManager implements Constants {
 			call.handleResponse(invResponse);
 		else {
 			if (DEBUG) {
-				throw new RuntimeException("No call for eventId " + invResponse.eventId);				
+				log(invResponse.operation + " No call for eventId " + invResponse.eventId);
 			}
-			invResponse.returnToContainer();			
-		} 
+			invResponse.returnToContainer();
+		}
 	}
 
 	protected void throwCME(Object key) {
@@ -744,8 +744,8 @@ abstract class BaseManager implements Constants {
 			if (dead.equals(target)) {
 				redo();
 			}
-		} 
-		
+		}
+
 		@Override
 		public Object doOp() {
 			responses.clear();
@@ -778,7 +778,7 @@ abstract class BaseManager implements Constants {
 		abstract void setTarget();
 
 		public void process() {
-			setTarget(); 
+			setTarget();
 			if (target.equals(thisAddress)) {
 				doLocalOp();
 			} else {
@@ -788,7 +788,7 @@ abstract class BaseManager implements Constants {
 				boolean sent = send(inv, target);
 				if (!sent) {
 					if (DEBUG) {
-						log("invocation cannot be sent to " + target );
+						log("invocation cannot be sent to " + target);
 					}
 					inv.returnToContainer();
 					redo();
@@ -829,20 +829,22 @@ abstract class BaseManager implements Constants {
 					setAddresses.add(member.getAddress());
 				}
 			}
-			numberOfResponses++;
+			numberOfResponses = 1;
+			numberOfExpectedResponses = 1;
 			if (setAddresses.size() > 1) {
 				addCall(AllOp.this);
-				numberOfExpectedResponses = setAddresses.size();
 				for (Address address : setAddresses) {
 					if (!address.equals(thisAddress)) {
 						Invocation inv = request.toInvocation();
 						inv.eventId = getId();
 						boolean sent = send(inv, address);
+						numberOfExpectedResponses++;
 						if (!sent) {
 							inv.returnToContainer();
-							System.out.println(address + " not reachable: operation redoing:  " + AllOp.this);
+							log(address + " not reachable: operation redoing:  " + AllOp.this);
 							redo();
 						}
+
 					}
 				}
 			} else {
@@ -852,6 +854,7 @@ abstract class BaseManager implements Constants {
 
 		@Override
 		public void onDisconnect(Address dead) {
+			log(dead + " onDisconnect " + AllOp.this);
 			reset();
 			redo();
 		}
@@ -892,7 +895,8 @@ abstract class BaseManager implements Constants {
 	}
 
 	abstract class RequestBasedCall extends AbstractCall {
-		final Request request = new Request();		
+		final Request request = new Request();
+
 		public void setLocal(int operation, String name, Object key, Object value, long timeout,
 				long txnId, long recordId) {
 			Data keyData = null;

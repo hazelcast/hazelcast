@@ -111,6 +111,12 @@ public class ConnectionManager {
 			Address address = connection.getEndPoint();
 			setConnectionInProgress.remove(address);
 			if (!address.equals(Node.get().getThisAddress())) {
+				if (mapConnections.containsKey(address)) {
+					if (mapConnections.get(address) != connection) {
+						System.out.println("Two connections from the same address " + address);
+					}
+					return;
+				}
 				mapConnections.put(address, connection); 
 				ClusterService.get().enqueueAndReturn(new AddRemoveConnection(address, true));
 			}

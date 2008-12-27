@@ -49,7 +49,7 @@ public class ClusterManager extends BaseManager {
 	private ClusterManager() {
 	}
 
-	private Set<Address> lsJoins = new HashSet<Address>(5);
+	private Set<Address> setJoins = new HashSet<Address>(5);
 
 	private Set<Address> lsJoinsScheduled = new HashSet<Address>(5);
 
@@ -146,8 +146,8 @@ public class ClusterManager extends BaseManager {
 				}
 			}
 			if (Node.get().master()) {
-				if (lsJoins.contains(deadAddress)) {
-					lsJoins.remove(deadAddress);
+				if (setJoins.contains(deadAddress)) {
+					setJoins.remove(deadAddress);
 				}
 			}
 			doRemoveAddress(deadAddress);
@@ -208,10 +208,10 @@ public class ClusterManager extends BaseManager {
 				bind(newAddress, conn);
 			}
 			boolean newOne = false;
-			if (!lsJoins.contains(newAddress)) {
+			if (!setJoins.contains(newAddress)) {
 				sendProcessableTo(new Master(Node.get().getMasterAddress()), conn);
 				sendAddRemoveToAllConns(newAddress);
-				lsJoins.add(newAddress);
+				setJoins.add(newAddress);
 				newOne = true;
 			}
 			if (DEBUG)
@@ -239,7 +239,7 @@ public class ClusterManager extends BaseManager {
 	}
 
 	private void clearJoinState() {
-		lsJoins.clear();
+		setJoins.clear();
 		joinInProgress = false;
 	}
 
@@ -348,6 +348,11 @@ public class ClusterManager extends BaseManager {
 			super.process();
 		}
 
+		void consumeResponse(Invocation inv) {
+			complete(true);
+			inv.returnToContainer();
+		}
+
 		public void onDisconnect(Address deadAddress) {
 		}
 
@@ -359,15 +364,15 @@ public class ClusterManager extends BaseManager {
 
 	void joinReset() {
 		joinInProgress = false;
-		lsJoins.clear();
-		lsJoins.addAll(lsJoinsScheduled);
+		setJoins.clear();
+		setJoins.addAll(lsJoinsScheduled);
 		timeToStartJoin = System.currentTimeMillis() + waitTimeBeforeJoin + 1000;
 	}
 
 	void startJoin() {
 		final MembersUpdate membersUpdate = new MembersUpdate(lsMembers);
-		if (lsJoins != null && lsJoins.size() > 0) {
-			for (Address addressJoined : lsJoins) {
+		if (setJoins != null && setJoins.size() > 0) {
+			for (Address addressJoined : setJoins) {
 				membersUpdate.addAddress(addressJoined);
 			}
 		}
@@ -497,7 +502,9 @@ public class ClusterManager extends BaseManager {
 		}
 
 		public void addAddress(Address address) {
-			lsAddresses.add(address);
+			if (!lsAddresses.contains(address)) {
+				lsAddresses.add(address);
+			}
 		}
 
 		public void removeAddress(Address address) {

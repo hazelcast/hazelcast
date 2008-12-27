@@ -35,7 +35,7 @@ public class SelectorBase implements Runnable {
 
 	protected Selector selector = null;
 
-	protected BlockingQueue<Runnable> selectorQueue = new ArrayBlockingQueue<Runnable>(1000);
+	protected BlockingQueue<Runnable> selectorQueue = new ArrayBlockingQueue<Runnable>(10000);
 
 	protected boolean live = true;
 
