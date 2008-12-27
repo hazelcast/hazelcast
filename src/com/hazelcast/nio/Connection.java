@@ -132,8 +132,7 @@ public class Connection {
 
 	@Override
 	public String toString() {
-		return "Connection [" + this.endPoint + "] live=" + live + " qsize="
-				+ writeHandler.getQueueSize();
+		return "Connection [" + this.endPoint + "] live=" + live ;
 	}
 
 }

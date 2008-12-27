@@ -39,12 +39,8 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
 	AtomicBoolean alreadyRegistered = new AtomicBoolean(false);
 
-	public WriteHandler(Connection connection) {
+	WriteHandler(Connection connection) {
 		super(connection);
-	}
-
-	public int getQueueSize() {
-		return writeHandlerQueue.size();
 	}
 
 	@Override
@@ -58,7 +54,7 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 		writeHandlerQueue.clear();
 	}
 
-	public void writeInvocation(Invocation inv) {
+	public final void writeInvocation(Invocation inv) {
 		try {
 			if (!connection.live()) {
 				ClusterService.get().rollbackInvocation(inv);
@@ -72,7 +68,7 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 		signalWriteRequest();
 	}
 
-	public void signalWriteRequest() {
+	final void signalWriteRequest() {
 		if (!alreadyRegistered.get()) {
 			int size = outSelector.addTask(this);
 			if (size < 5) {
@@ -81,26 +77,16 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 		}
 	}
 
-	public void run() {
+	public final void run() {
 		registerWrite();
 	}
 
-	public void registerWrite() {
-		try {
-			if (!connection.live())
-				return;
-			if (sk == null) {
-				sk = socketChannel.register(outSelector.selector, SelectionKey.OP_WRITE, this);
-			} else {
-				sk.interestOps(SelectionKey.OP_WRITE);
-			}
-			alreadyRegistered.set(true);
-		} catch (Exception e) {
-			handleSocketException(e);
-		}
+	private final void registerWrite() {
+		super.registerOp(outSelector.selector, SelectionKey.OP_WRITE);
+		alreadyRegistered.set(true);
 	}
 
-	private void doPostWrite(Invocation inv) {
+	private final void doPostWrite(Invocation inv) {
 		if (inv.container != null) {
 			try {
 				inv.container.returnInvocation(inv);
@@ -110,7 +96,7 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 		}
 	}
 
-	public void handle() {
+	public final void handle() {
 		if (!connection.live())
 			return;
 		try {
@@ -139,6 +125,7 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 					}
 				} catch (Exception e) {
 					handleSocketException(e);
+					return;
 				}
 			}
 		} catch (Throwable t) {
@@ -152,7 +139,7 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 		}
 	}
 
-	public boolean hasMore() {
+	private final boolean hasMore() {
 		return (writeHandlerQueue.size() > 0);
 	}
 

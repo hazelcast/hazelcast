@@ -18,6 +18,7 @@
 package com.hazelcast.nio;
 
 import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
 import com.hazelcast.impl.Build;
@@ -44,8 +45,22 @@ public abstract class AbstractSelectionHandler implements SelectionHandler {
 		this.inSelector = InSelector.get();
 		this.outSelector = OutSelector.get();
 	}
+	
+	final void registerOp(Selector selector, int operation) {
+		try {
+			if (!connection.live())
+				return;
+			if (sk == null) {
+				sk = socketChannel.register(selector, operation, this);
+			} else {
+				sk.interestOps(operation);
+			}  
+		} catch (Exception e) {
+			handleSocketException(e);
+		}
+	}
 
-	protected void handleSocketException(Exception e) {
+	final void handleSocketException(Exception e) {
 		if (DEBUG) {
 			System.out.println(Thread.currentThread().getName() + " Closing Socket. cause:  " + e);
 		}
@@ -56,7 +71,7 @@ public abstract class AbstractSelectionHandler implements SelectionHandler {
 		connection.close();
 	}
 
-	public void shutdown() {
+	protected void shutdown() {
 
 	}
 

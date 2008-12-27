@@ -14,9 +14,10 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.nio;
 
+import java.io.IOException;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -45,23 +46,25 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 		}
 	}
 
-	private int lastReamining = 0;
-
 	public final void handle() {
-		if (!connection.live()) return;
+		if (!connection.live())
+			return;
 		try {
-			int readBytes = socketChannel.read(inBuffer);
-			if (readBytes == -1) {
-				// End of stream. Closing channel...
-				connection.close();
+			try {
+				int readBytes = socketChannel.read(inBuffer);
+				if (readBytes == -1) {
+					// End of stream. Closing channel...
+					connection.close();
+					return;
+				}
+				if (readBytes <= 0) {
+					return;
+				}
+				length += readBytes;
+			} catch (Exception e) {
+				handleSocketException(e);
 				return;
 			}
-
-			if (readBytes <= 0) {
-				return;
-			}
-			length += readBytes;
-
 			inBuffer.flip();
 
 			while (true) {
@@ -82,59 +85,35 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 						return;
 					}
 				}
-				boolean full = inv.read(inBuffer);
-				// System.out.println("Reading.. full " + full);
-//				if (DEBUG)
-//					System.out.println("READING " + full);
+				boolean full = inv.read(inBuffer); 
 				if (full) {
-					messageRead++; 
+					messageRead++;
 					inv.flipBuffers();
-					inv.read();  
-					inv.setFromConnection(connection); 
+					inv.read();
+					inv.setFromConnection(connection);
 					ClusterService.get().enqueueAndReturn(inv);
 					inv = null;
 				} else {
-					if (inBuffer.hasRemaining()) { 
+					if (inBuffer.hasRemaining()) {
 						if (DEBUG) {
-							throw new RuntimeException("inbuffer has remaining " + inBuffer.remaining()); 
+							throw new RuntimeException("inbuffer has remaining "
+									+ inBuffer.remaining());
 						}
 					}
 				}
-			}
-
-		} catch (SocketException e) { 
-			handleSocketException(e);
-		} catch (Throwable t) { 
+			} 
+		} catch (Throwable t) {
 			System.out.println("Fatal Error at ReadHandler : " + t);
 		} finally {
-			try {
-				if (connection.live())
-					registerRead();
-			} catch (Exception e) {
-				handleSocketException(e);
-			}
+			registerOp(inSelector.selector, SelectionKey.OP_READ);
 		}
 	}
 
-	public void run() {
-		registerRead();
-	}
+	public final void run() {
+		registerOp(inSelector.selector, SelectionKey.OP_READ);
+	} 
 
-	private final void registerRead() {
-		if (!connection.live())
-			return;
-		try {
-			if (sk == null) {
-				sk = socketChannel.register(inSelector.selector, SelectionKey.OP_READ, this);
-			} else {
-				sk.interestOps(SelectionKey.OP_READ);
-			}
-		} catch (Exception e) {
-			handleSocketException(e);
-		}
-	}
-
-	private Invocation obtainReadable() {
+	private final Invocation obtainReadable() {
 		Invocation inv = InvocationQueue.instance().obtainInvocation();
 		inv.reset();
 		inv.data.prepareForRead();
