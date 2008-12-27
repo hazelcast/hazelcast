@@ -14,13 +14,14 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.nio;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -39,9 +40,9 @@ public class SelectorBase implements Runnable {
 
 	protected boolean live = true;
 
-	private SelectionKey[] selectionKeyArray = new SelectionKey[10000];
-
 	protected int waitTime = 16;
+	
+	AtomicInteger size = new AtomicInteger();
 
 	public SelectorBase() {
 		try {
@@ -56,13 +57,11 @@ public class SelectorBase implements Runnable {
 		socketChannel.socket().setReceiveBufferSize(32 * 1024);
 		socketChannel.socket().setSendBufferSize(64 * 1024);
 		socketChannel.socket().setKeepAlive(true);
-//		socketChannel.socket().setTcpNoDelay(true);
+		// socketChannel.socket().setTcpNoDelay(true);
 		socketChannel.configureBlocking(false);
 		Connection connection = ConnectionManager.get().createConnection(socketChannel, acceptor);
 		return connection;
-	}
-
-	AtomicInteger size = new AtomicInteger();
+	}	
 
 	public void processSelectionQueue() {
 		while (live) {
@@ -73,7 +72,6 @@ public class SelectorBase implements Runnable {
 			size.decrementAndGet();
 		}
 	}
- 
 
 	public int addTask(Runnable runnable) {
 		try {
@@ -83,16 +81,12 @@ public class SelectorBase implements Runnable {
 			Node.get().handleInterruptedException(Thread.currentThread(), e);
 			return 0;
 		}
-	}
-
-	public int getQueueSize() {
-		return selectorQueue.size();
-	}
+	} 
 
 	public void run() {
 		int loopCount = 100;
 		select: while (live) {
-			if (loopCount > 50) { 
+			if (loopCount > 50) {
 				processSelectionQueue();
 				loopCount = 0;
 				continue select;
@@ -111,38 +105,26 @@ public class SelectorBase implements Runnable {
 				ioe.printStackTrace();
 				continue select;
 			}
-			if (selectedKeys == 0) { 
+			if (selectedKeys == 0) {
 				processSelectionQueue();
 				loopCount = 0;
 				continue select;
 			}
 			loopCount++;
 			Set<SelectionKey> setSelectedKeys = selector.selectedKeys();
-			int selectedKeyCount = setSelectedKeys.size();
-			setSelectedKeys.toArray(selectionKeyArray);
-
-			for (int i = 0; i < selectedKeyCount; i++) {
-				SelectionKey sk = selectionKeyArray[i];
-				setSelectedKeys.remove(sk);
-				selectionKeyArray[i] = null;
+			Iterator<SelectionKey> it = setSelectedKeys.iterator();
+			while (it.hasNext()) {
+				SelectionKey sk = (SelectionKey) it.next();
+				it.remove();
 				try { 
 					sk.interestOps(sk.interestOps() & ~sk.readyOps());
-					SelectionHandler selectionHandler = null;
-					try {
-						selectionHandler = (SelectionHandler) sk.attachment(); 
-						selectionHandler.handle();
-					} catch (Exception e) {
-						handleSocketException(e);
-					}
-
+					SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
+					selectionHandler.handle();
 				} catch (Exception e) {
-					// something is really bad
-					// do something serious
 					handleSocketException(e);
 				}
 			}
 		}
-
 	}
 
 	protected void handleSocketException(Exception e) {

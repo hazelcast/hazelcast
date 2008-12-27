@@ -82,7 +82,7 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 	}
 
 	private final void registerWrite() {
-		super.registerOp(outSelector.selector, SelectionKey.OP_WRITE);
+		registerOp(outSelector.selector, SelectionKey.OP_WRITE);
 		alreadyRegistered.set(true);
 	}
 
@@ -135,6 +135,9 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 				registerWrite();
 			} else {
 				alreadyRegistered.set(false);
+				if (hasMore()) { // double check!
+					registerWrite();
+				}
 			}
 		}
 	}

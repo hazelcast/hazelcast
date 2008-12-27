@@ -32,9 +32,7 @@ public abstract class AbstractSelectionHandler implements SelectionHandler {
 
 	protected OutSelector outSelector;
 
-	protected Connection connection;
-
-	protected boolean socketException = false;
+	protected Connection connection; 
 
 	protected SelectionKey sk = null;
 
@@ -63,8 +61,7 @@ public abstract class AbstractSelectionHandler implements SelectionHandler {
 	final void handleSocketException(Exception e) {
 		if (DEBUG) {
 			System.out.println(Thread.currentThread().getName() + " Closing Socket. cause:  " + e);
-		}
-		socketException = true;
+		} 
 		if (DEBUG) {
 			e.printStackTrace();
 		}
