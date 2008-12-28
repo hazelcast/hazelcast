@@ -17,8 +17,6 @@
 
 package com.hazelcast.nio;
 
-import java.io.IOException;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 

@@ -65,6 +65,7 @@ public abstract class AbstractSelectionHandler implements SelectionHandler {
 		if (DEBUG) {
 			e.printStackTrace();
 		}
+		if (sk != null) sk.cancel();
 		connection.close();
 	}
 

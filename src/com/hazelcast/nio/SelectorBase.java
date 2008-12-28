@@ -48,7 +48,7 @@ public class SelectorBase implements Runnable {
 		try {
 			selector = Selector.open();
 		} catch (IOException e) {
-			handleSocketException(e);
+			handleSelectorException(e);
 		}
 	}
 
@@ -91,7 +91,6 @@ public class SelectorBase implements Runnable {
 				loopCount = 0;
 				continue select;
 			}
-
 			int selectedKeys = 0;
 			try {
 				selectedKeys = selector.select(waitTime);
@@ -121,15 +120,15 @@ public class SelectorBase implements Runnable {
 					SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
 					selectionHandler.handle();
 				} catch (Exception e) {
-					handleSocketException(e);
+					handleSelectorException(e);
 				}
 			}
 		}
 	}
 
-	protected void handleSocketException(Exception e) {
+	protected void handleSelectorException(Exception e) {
 		if (DEBUG) {
-			System.out.println(" Thread name " + Thread.currentThread().getName());
+			System.out.println("Selector Exception at  " + Thread.currentThread().getName());
 		}
 		e.printStackTrace();
 		System.out.println("Node is restarting...");

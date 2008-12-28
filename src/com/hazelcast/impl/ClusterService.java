@@ -83,7 +83,7 @@ public class ClusterService implements Runnable, Constants {
 			synchronized (obj) {
 				((Runnable) obj).run();
 				obj.notify();
-			} 
+			}
 		} else
 			throw new RuntimeException("Unkown obj " + obj);
 	}
@@ -232,9 +232,11 @@ public class ClusterService implements Runnable, Constants {
 
 	public void enqueueAndReturn(Object message) {
 		try {
-			if (queue.size() > 600)
-				if (DEBUG)
+			if (DEBUG) {
+				if (queue.size() > 600) { 
 					System.out.println("queue size " + queue.size());
+				}
+			}
 			queue.put(message);
 		} catch (InterruptedException e) {
 			Node.get().handleInterruptedException(Thread.currentThread(), e);
@@ -242,8 +244,9 @@ public class ClusterService implements Runnable, Constants {
 	}
 
 	protected Member addMember(MemberImpl member) {
-		if (DEBUG)
+		if (DEBUG) {
 			System.out.println("ClusterService adding " + member);
+		}
 		if (lsMembers.contains(member)) {
 			for (MemberImpl m : lsMembers) {
 				if (m.equals(member))
