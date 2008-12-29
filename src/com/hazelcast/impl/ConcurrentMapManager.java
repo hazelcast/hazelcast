@@ -183,7 +183,7 @@ class ConcurrentMapManager extends BaseManager {
 			setNewMembers: for (Address address : allAddress) {
 				Integer countInt = addressBlocks.get(address);
 				int count = (countInt == null) ? 0 : countInt.intValue();
-				while (count <= aveBlockOwnCount) {
+				while (count < aveBlockOwnCount) {
 					if (lsBlocksToRedistribute.size() > 0) {
 						Block blockToMigrate = lsBlocksToRedistribute.remove(0);
 						blockToMigrate.migrationAddress = address;

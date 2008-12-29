@@ -764,7 +764,7 @@ abstract class BaseManager implements Constants {
 				if (result == OBJECT_REDO) {
 					Thread.sleep(2000);
 					if (DEBUG) {
-						log("Redoing.. ");
+						log(getId() + " Redoing.. " + this);
 					}
 					return doOp();
 				}
@@ -830,7 +830,7 @@ abstract class BaseManager implements Constants {
 				}
 			}
 			numberOfResponses = 1;
-			numberOfExpectedResponses = 1;
+			numberOfExpectedResponses = setAddresses.size();
 			if (setAddresses.size() > 1) {
 				addCall(AllOp.this);
 				for (Address address : setAddresses) {
@@ -838,7 +838,6 @@ abstract class BaseManager implements Constants {
 						Invocation inv = request.toInvocation();
 						inv.eventId = getId();
 						boolean sent = send(inv, address);
-						numberOfExpectedResponses++;
 						if (!sent) {
 							inv.returnToContainer();
 							log(address + " not reachable: operation redoing:  " + AllOp.this);

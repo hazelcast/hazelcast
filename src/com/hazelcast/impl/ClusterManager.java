@@ -51,7 +51,7 @@ public class ClusterManager extends BaseManager {
 
 	private Set<Address> setJoins = new HashSet<Address>(5);
 
-	private Set<Address> lsJoinsScheduled = new HashSet<Address>(5);
+	private Set<Address> setJoinsScheduled = new HashSet<Address>(5);
 
 	private boolean joinInProgress = false;
 
@@ -152,7 +152,6 @@ public class ClusterManager extends BaseManager {
 			}
 			doRemoveAddress(deadAddress);
 		} // end of REMOVE CONNECTION
-
 	}
 
 	void doRemoveAddress(Address deadAddress) {
@@ -208,18 +207,16 @@ public class ClusterManager extends BaseManager {
 				bind(newAddress, conn);
 			}
 			boolean newOne = false;
-			if (!setJoins.contains(newAddress)) {
+			if (setJoins.add(newAddress)) {
 				sendProcessableTo(new Master(Node.get().getMasterAddress()), conn);
-				sendAddRemoveToAllConns(newAddress);
-				setJoins.add(newAddress);
+				sendAddRemoveToAllConns(newAddress); 
 				newOne = true;
 			}
 			if (DEBUG)
 				log(joinInProgress + "  " + newOne);
 			if (joinInProgress) {
 				if (newOne) {
-					if (!lsJoinsScheduled.contains(newAddress)) {
-						lsJoinsScheduled.add(newAddress);
+					if (setJoinsScheduled.add(newAddress)) { 
 						sendAddRemoveToAllConns(newAddress);
 					}
 				} else {
@@ -341,11 +338,11 @@ public class ClusterManager extends BaseManager {
 		}
 
 		@Override
-		public void process() {
+		public void process() { 
 			if (addresses != null) {
 				setAddresses.addAll(addresses);
 			}
-			super.process();
+			super.process();  
 		}
 
 		void consumeResponse(Invocation inv) {
@@ -365,11 +362,12 @@ public class ClusterManager extends BaseManager {
 	void joinReset() {
 		joinInProgress = false;
 		setJoins.clear();
-		setJoins.addAll(lsJoinsScheduled);
+		setJoins.addAll(setJoinsScheduled);
 		timeToStartJoin = System.currentTimeMillis() + waitTimeBeforeJoin + 1000;
 	}
 
 	void startJoin() {
+		joinInProgress = true;
 		final MembersUpdate membersUpdate = new MembersUpdate(lsMembers);
 		if (setJoins != null && setJoins.size() > 0) {
 			for (Address addressJoined : setJoins) {
@@ -384,6 +382,7 @@ public class ClusterManager extends BaseManager {
 			public void run() {
 				ProcessEverywhere pe = new ProcessEverywhere();
 				pe.process(membersUpdate.lsAddresses, mrp);
+				pe = new ProcessEverywhere();				
 				pe.process(membersUpdate.lsAddresses, new SyncProcess());
 			}
 		});
@@ -562,8 +561,7 @@ public class ClusterManager extends BaseManager {
 
 		public static final int NO_STORAGE_MEMBER = 3;
 
-		public int type = MEMBER;
-
+		int type = MEMBER;
 		Address address;
 		String groupName;
 		String groupPassword;

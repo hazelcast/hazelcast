@@ -83,13 +83,10 @@ public class SelectorBase implements Runnable {
 		}
 	} 
 
-	public void run() {
-		int loopCount = 100;
-		select: while (live) {
-			if (loopCount > 50) {
+	public void run() { 
+		select: while (live) { 
+			if (size.get() > 0) {
 				processSelectionQueue();
-				loopCount = 0;
-				continue select;
 			}
 			int selectedKeys = 0;
 			try {
@@ -104,12 +101,9 @@ public class SelectorBase implements Runnable {
 				ioe.printStackTrace();
 				continue select;
 			}
-			if (selectedKeys == 0) {
-				processSelectionQueue();
-				loopCount = 0;
+			if (selectedKeys == 0) { 
 				continue select;
-			}
-			loopCount++;
+			} 
 			Set<SelectionKey> setSelectedKeys = selector.selectedKeys();
 			Iterator<SelectionKey> it = setSelectedKeys.iterator();
 			while (it.hasNext()) {

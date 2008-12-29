@@ -65,21 +65,20 @@ public interface Constants {
 		public static final int OP_REMOTELY_PROCESS_AND_RESPONSE = 20;
 
 		public static final int OP_RESPONSE = 21;
-
 	}
 
 	interface EventOperations {
 		public static final int OP_LISTENER_ADD = 201;
+		
 		public static final int OP_LISTENER_REMOVE = 202;
+		
 		public static final int OP_EVENT = 203;
-
 	}
 
 	interface ExecutorOperations {
-
 		public static final int OP_EXE_REMOTE_EXECUTION = 350;
+		
 		public static final int OP_STREAM = 351;
-
 	}
 
 	interface BlockingQueueOperations {
