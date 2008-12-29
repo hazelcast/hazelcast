@@ -232,11 +232,11 @@ public class ClusterService implements Runnable, Constants {
 
 	public void enqueueAndReturn(Object message) {
 		try {
-			if (DEBUG) {
-				if (queue.size() > 600) { 
-					System.out.println("queue size " + queue.size());
-				}
-			}
+//			if (DEBUG) {
+//				if (queue.size() > 600) { 
+//					System.out.println("queue size " + queue.size());
+//				}
+//			}
 			queue.put(message);
 		} catch (InterruptedException e) {
 			Node.get().handleInterruptedException(Thread.currentThread(), e);

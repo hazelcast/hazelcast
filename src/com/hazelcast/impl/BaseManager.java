@@ -763,9 +763,9 @@ abstract class BaseManager implements Constants {
 				}
 				if (result == OBJECT_REDO) {
 					Thread.sleep(2000);
-					if (DEBUG) {
-						log(getId() + " Redoing.. " + this);
-					}
+//					if (DEBUG) {
+//						log(getId() + " Redoing.. " + this);
+//					}
 					return doOp();
 				}
 				return result;

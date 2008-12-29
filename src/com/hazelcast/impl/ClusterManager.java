@@ -49,9 +49,9 @@ public class ClusterManager extends BaseManager {
 	private ClusterManager() {
 	}
 
-	private Set<Address> setJoins = new HashSet<Address>(5);
+	private Set<Address> setJoins = new HashSet<Address>(100);
 
-	private Set<Address> setJoinsScheduled = new HashSet<Address>(5);
+	private Set<Address> setJoinsScheduled = new HashSet<Address>(100);
 
 	private boolean joinInProgress = false;
 
@@ -206,25 +206,17 @@ public class ClusterManager extends BaseManager {
 				newAddress = joinRequest.address;
 				bind(newAddress, conn);
 			}
-			boolean newOne = false;
-			if (setJoins.add(newAddress)) {
-				sendProcessableTo(new Master(Node.get().getMasterAddress()), conn);
-				sendAddRemoveToAllConns(newAddress); 
-				newOne = true;
-			}
-			if (DEBUG)
-				log(joinInProgress + "  " + newOne);
+
 			if (joinInProgress) {
-				if (newOne) {
-					if (setJoinsScheduled.add(newAddress)) { 
+				if (!setJoins.contains(newAddress)) {
+					if (setJoinsScheduled.add(newAddress)) {
 						sendAddRemoveToAllConns(newAddress);
 					}
-				} else {
-					// do nothing
 				}
 			} else {
-				if (newOne) {
-					// do nothing..
+				if (setJoins.add(newAddress)) {
+					sendProcessableTo(new Master(Node.get().getMasterAddress()), conn);
+					sendAddRemoveToAllConns(newAddress);
 					timeToStartJoin = System.currentTimeMillis() + waitTimeBeforeJoin;
 				} else {
 					if (System.currentTimeMillis() > timeToStartJoin) {
@@ -338,11 +330,11 @@ public class ClusterManager extends BaseManager {
 		}
 
 		@Override
-		public void process() { 
+		public void process() {
 			if (addresses != null) {
 				setAddresses.addAll(addresses);
 			}
-			super.process();  
+			super.process();
 		}
 
 		void consumeResponse(Invocation inv) {
@@ -363,6 +355,7 @@ public class ClusterManager extends BaseManager {
 		joinInProgress = false;
 		setJoins.clear();
 		setJoins.addAll(setJoinsScheduled);
+		setJoinsScheduled.clear();
 		timeToStartJoin = System.currentTimeMillis() + waitTimeBeforeJoin + 1000;
 	}
 
@@ -382,7 +375,7 @@ public class ClusterManager extends BaseManager {
 			public void run() {
 				ProcessEverywhere pe = new ProcessEverywhere();
 				pe.process(membersUpdate.lsAddresses, mrp);
-				pe = new ProcessEverywhere();				
+				pe = new ProcessEverywhere();
 				pe.process(membersUpdate.lsAddresses, new SyncProcess());
 			}
 		});
