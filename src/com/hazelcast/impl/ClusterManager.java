@@ -49,9 +49,7 @@ public class ClusterManager extends BaseManager {
 	private ClusterManager() {
 	}
 
-	private Set<Address> setJoins = new HashSet<Address>(100);
-
-	private Set<Address> setJoinsScheduled = new HashSet<Address>(100);
+	private Set<Address> setJoins = new HashSet<Address>(100); 
 
 	private boolean joinInProgress = false;
 
@@ -69,7 +67,7 @@ public class ClusterManager extends BaseManager {
 				handleResponse(inv);
 			} else if (inv.operation == OP_BIND) {
 				Address addressEndPoint = (Address) inv.getValueObject();
-				bind(addressEndPoint, inv.conn);
+				ConnectionManager.get().bind(addressEndPoint, inv.conn);
 				inv.returnToContainer();
 			} else if (inv.operation == OP_REMOTELY_PROCESS_AND_RESPONSE) {
 				Data data = inv.doTake(inv.data);
@@ -91,12 +89,7 @@ public class ClusterManager extends BaseManager {
 		}
 	}
 
-	private void bind(Address endPoint, Connection conn) {
-		if (conn.getEndPoint() == null) {
-			conn.setEndPoint(endPoint);
-			conn.bind();
-		}
-	}
+
 
 	void sendAddRemoveToAllConns(Address newAddress) {
 		Connection[] conns = ConnectionManager.get().getConnections();
@@ -204,16 +197,10 @@ public class ClusterManager extends BaseManager {
 			Address newAddress = conn.getEndPoint();
 			if (newAddress == null) {
 				newAddress = joinRequest.address;
-				bind(newAddress, conn);
+				ConnectionManager.get().bind(newAddress, conn);
 			}
 
-			if (joinInProgress) {
-				if (!setJoins.contains(newAddress)) {
-					if (setJoinsScheduled.add(newAddress)) {
-						sendAddRemoveToAllConns(newAddress);
-					}
-				}
-			} else {
+			if (!joinInProgress) {
 				if (setJoins.add(newAddress)) {
 					sendProcessableTo(new Master(Node.get().getMasterAddress()), conn);
 					sendAddRemoveToAllConns(newAddress);
@@ -353,9 +340,7 @@ public class ClusterManager extends BaseManager {
 
 	void joinReset() {
 		joinInProgress = false;
-		setJoins.clear();
-		setJoins.addAll(setJoinsScheduled);
-		setJoinsScheduled.clear();
+		setJoins.clear(); 
 		timeToStartJoin = System.currentTimeMillis() + waitTimeBeforeJoin + 1000;
 	}
 
@@ -533,10 +518,6 @@ public class ClusterManager extends BaseManager {
 			return sb.toString();
 		}
 
-	}
-
-	public void connectTo(Address address) {
-		ConnectionManager.get().getOrConnect(address);
 	}
 
 	public void sendJoinRequest(Address toAddress) {

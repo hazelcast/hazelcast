@@ -1047,7 +1047,7 @@ class BlockingQueueManager extends BaseManager {
 
 	public void sendFullMessage(Block block) {
 		try {
-			Invocation inv = InvocationQueue.instance().obtainInvocation();
+			Invocation inv = InvocationQueue.get().obtainInvocation();
 			inv.set(block.name, OP_B_FULL_BLOCK, null, null);
 			inv.blockId = block.blockId;
 			Address master = getMasterAddress();

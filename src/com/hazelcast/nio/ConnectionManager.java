@@ -95,8 +95,7 @@ public class ConnectionManager {
 		Connection connection = mapConnections.get(address);
 		if (connection == null) {
 			try {
-				if (!setConnectionInProgress.contains(address)) {
-					setConnectionInProgress.add(address);
+				if (setConnectionInProgress.add(address)) { 
 					OutSelector.get().connect(address);
 				}
 			} catch (Exception e) {
@@ -106,7 +105,7 @@ public class ConnectionManager {
 		return connection;
 	}
 
-	public synchronized void finalizeAndBind(Connection connection) {
+	public synchronized void finalizeAndSendBind(Connection connection) {
 		try {
 			Address address = connection.getEndPoint();
 			setConnectionInProgress.remove(address);
@@ -117,10 +116,9 @@ public class ConnectionManager {
 					}
 					return;
 				}
-				mapConnections.put(address, connection); 
-				ClusterService.get().enqueueAndReturn(new AddRemoveConnection(address, true));
+				mapConnections.put(address, connection); 				
 			}
-			Invocation invBind = InvocationQueue.instance().obtainInvocation();
+			Invocation invBind = InvocationQueue.get().obtainInvocation();
 			invBind.set("bind", Constants.ClusterOperations.OP_BIND, null, Node.get()
 					.getThisAddress());
 			connection.getWriteHandler().writeInvocation(invBind);
@@ -140,9 +138,11 @@ public class ConnectionManager {
 		return sb.toString();
 	}
 
-	public synchronized void setConnection(Address endPoint, Connection connection) {
+	public synchronized void bind(Address endPoint, Connection connection) {
+		connection.setEndPoint(endPoint);
 		if (!endPoint.equals(Node.get().getThisAddress())) {
 			mapConnections.put(endPoint, connection); 
+			setConnectionInProgress.remove(endPoint);
 		} else
 			throw new RuntimeException("ConnMan setting self!!");
 	}
@@ -152,6 +152,7 @@ public class ConnectionManager {
 			return;
 		if (connection.getEndPoint() != null) {
 			mapConnections.remove(connection.getEndPoint()); 
+			setConnectionInProgress.remove(connection.getEndPoint());
 		}
 		if (connection.live())
 			connection.close();

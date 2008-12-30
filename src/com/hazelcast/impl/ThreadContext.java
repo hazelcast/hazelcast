@@ -137,7 +137,7 @@ public class ThreadContext {
 		private final DataBufferProvider bufferProvider;
 
 		public ObjectReaderWriter() {
-			invocation = InvocationQueue.instance().createNewInvocation();
+			invocation = InvocationQueue.get().createNewInvocation();
 			bufferProvider = invocation.dataBufferProvider;
 			serializer.bbos.setBufferProvider(bufferProvider);
 		}

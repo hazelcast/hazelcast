@@ -88,7 +88,7 @@ public class ClusterService implements Runnable, Constants {
 			throw new RuntimeException("Unkown obj " + obj);
 	}
 
-	public void run() {
+	public void run3() {
 		Object obj = null;
 		while (running) {
 			try {
@@ -105,7 +105,7 @@ public class ClusterService implements Runnable, Constants {
 		}
 	}
 
-	public void run5() {
+	public void run() {
 		while (running) {
 			Object obj = null;
 			try {
@@ -136,34 +136,6 @@ public class ClusterService implements Runnable, Constants {
 		}
 	}
 
-	public void run2() {
-		while (running) {
-			try {
-				Object obj = null;
-				if (lsBuffer.size() > 0) {
-					obj = lsBuffer.remove(0);
-				} else {
-					queue.drainTo(lsBuffer);
-					if (DEBUG) {
-						if (lsBuffer.size() > 16) {
-							System.out.println("lsBuffer size " + lsBuffer.size());
-						}
-					}
-					if (lsBuffer.size() > 0) {
-						obj = lsBuffer.remove(0);
-					}
-				}
-				if (obj == null) {
-					obj = queue.take();
-				}
-				process(obj);
-			} catch (InterruptedException e) {
-				Node.get().handleInterruptedException(Thread.currentThread(), e);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
 
 	public void stop() {
 		this.running = false;

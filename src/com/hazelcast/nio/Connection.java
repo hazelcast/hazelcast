@@ -85,10 +85,6 @@ public class Connection {
 		this.endPoint = endPoint;
 	}
 
-	public void bind() {
-		ConnectionManager.get().setConnection(endPoint, this);
-	}
-
 	@Override
 	public int hashCode() {
 		final int PRIME = 31;

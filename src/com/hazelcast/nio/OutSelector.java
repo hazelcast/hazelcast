@@ -82,7 +82,7 @@ public class OutSelector extends SelectorBase {
 				
 				Connection connection = initChannel(socketChannel, false);
 				connection.setEndPoint(address);
-				ConnectionManager.get().finalizeAndBind(connection);
+				ConnectionManager.get().finalizeAndSendBind(connection);
 			} catch (Exception e) {
 				if (DEBUG) {
 					System.out.println("Couldn't connect to " + address);

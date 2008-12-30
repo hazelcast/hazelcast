@@ -92,7 +92,7 @@ abstract class BaseManager implements Constants {
 
 	protected final boolean send(String name, int operation, DataSerializable ds, Address address) {
 		try {
-			Invocation inv = InvocationQueue.instance().obtainInvocation();
+			Invocation inv = InvocationQueue.get().obtainInvocation();
 			inv.set(name, operation, null, ds);
 			boolean sent = send(inv, address);
 			if (!sent)
@@ -217,7 +217,7 @@ abstract class BaseManager implements Constants {
 	}
 
 	protected Invocation obtainServiceInvocation() {
-		InvocationQueue sq = InvocationQueue.instance();
+		InvocationQueue sq = InvocationQueue.get();
 		return sq.obtainInvocation();
 	}
 
@@ -425,7 +425,7 @@ abstract class BaseManager implements Constants {
 
 		public void run() {
 			if (mapListeners != null) {
-				InvocationQueue sq = InvocationQueue.instance();
+				InvocationQueue sq = InvocationQueue.get();
 				Set<Map.Entry<Address, Boolean>> entries = mapListeners.entrySet();
 
 				for (Map.Entry<Address, Boolean> entry : entries) {

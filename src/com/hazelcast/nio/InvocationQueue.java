@@ -53,7 +53,7 @@ public class InvocationQueue {
 		}
 	}
 
-	public static InvocationQueue instance() {
+	public static InvocationQueue get() {
 		return instance;
 	}
 
