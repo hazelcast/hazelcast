@@ -118,10 +118,10 @@ public class ConnectionManager {
 				}
 				mapConnections.put(address, connection); 				
 			}
-			Invocation invBind = InvocationQueue.get().obtainInvocation();
-			invBind.set("bind", Constants.ClusterOperations.OP_BIND, null, Node.get()
-					.getThisAddress());
-			connection.getWriteHandler().writeInvocation(invBind);
+//			Invocation invBind = InvocationQueue.get().obtainInvocation();
+//			invBind.set("bind", Constants.ClusterOperations.OP_BIND, null, Node.get()
+//					.getThisAddress());
+//			connection.getWriteHandler().writeInvocation(invBind);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

@@ -18,10 +18,13 @@
 package com.hazelcast.nio;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+
+import com.hazelcast.impl.Config;
 
 public class InSelector extends SelectorBase {
 
@@ -66,8 +69,11 @@ public class InSelector extends SelectorBase {
 							+ channel.socket().getRemoteSocketAddress());
 				if (channel != null) {
 					Connection connection = initChannel(channel, true);
+					InetSocketAddress remoteSocket =  (InetSocketAddress) channel.socket().getRemoteSocketAddress();
+					int remoteRealPort = Config.get().port + ((remoteSocket.getPort() - 10000) % 49);
+					Address remoteAddress = new Address(remoteSocket.getAddress(), remoteRealPort);
+					ConnectionManager.get().bind(remoteAddress, connection);
 					channel.register(selector, SelectionKey.OP_READ, connection.getReadHandler());
-
 				}
 				serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, Acceptor.this);
 				selector.wakeup();

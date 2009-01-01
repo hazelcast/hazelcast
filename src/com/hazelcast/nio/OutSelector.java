@@ -21,6 +21,7 @@ import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
+import com.hazelcast.impl.Config;
 import com.hazelcast.impl.Node;
 
 public class OutSelector extends SelectorBase {
@@ -60,13 +61,25 @@ public class OutSelector extends SelectorBase {
 			try {
 				socketChannel = SocketChannel.open();
 				Address thisAddress = Node.get().getThisAddress();
-				socketChannel.socket().bind(new InetSocketAddress(thisAddress.getInetAddress(), 0));
+				int addition = (thisAddress.getPort() - Config.get().port);
+				int portToBind = 10000 + addition;
+				boolean bindOk = false;
+				while (!bindOk) {
+					try {
+						portToBind += 49;
+						socketChannel.socket().bind(
+								new InetSocketAddress(thisAddress.getInetAddress(), portToBind));
+						bindOk = true;
+					} catch (Exception e) {
+						// ignore
+					}
+				}
 				socketChannel.configureBlocking(false);
 				if (DEBUG)
 					System.out.println("connecting to " + address);
 				socketChannel.connect(new InetSocketAddress(address.getInetAddress(), address
 						.getPort()));
-				socketChannel.register(selector, SelectionKey.OP_CONNECT, Connector.this);				
+				socketChannel.register(selector, SelectionKey.OP_CONNECT, Connector.this);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -78,8 +91,8 @@ public class OutSelector extends SelectorBase {
 				if (!finished)
 					throw new RuntimeException("Couldn't finish connection to " + address);
 				if (DEBUG)
-					System.out.println("connected to " + address); 
-				
+					System.out.println("connected to " + address);
+
 				Connection connection = initChannel(socketChannel, false);
 				connection.setEndPoint(address);
 				ConnectionManager.get().finalizeAndSendBind(connection);
@@ -87,7 +100,7 @@ public class OutSelector extends SelectorBase {
 				if (DEBUG) {
 					System.out.println("Couldn't connect to " + address);
 					e.printStackTrace();
-				} 
+				}
 				ConnectionManager.get().failedConnection(address);
 
 			}

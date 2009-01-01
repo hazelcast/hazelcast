@@ -21,6 +21,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -44,6 +45,12 @@ public class Address implements DataSerializable {
 
 	public Address() {
 		this.ip = new byte[4];
+	}
+	
+	public Address (InetAddress inetAddress, int port) {
+		this.ip = inetAddress.getAddress();
+		this.port = port;
+		this.inetAddress = inetAddress;
 	}
 
 	public Address(Address address) {
