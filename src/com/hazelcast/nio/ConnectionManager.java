@@ -18,18 +18,14 @@
 package com.hazelcast.nio;
 
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import com.hazelcast.impl.ClusterService;
-import com.hazelcast.impl.Constants;
+import com.hazelcast.impl.Build;
+import com.hazelcast.impl.ClusterManager;
 import com.hazelcast.impl.Node;
-import com.hazelcast.impl.ClusterManager.AddRemoveConnection;
-import com.hazelcast.nio.InvocationQueue.Invocation;
 
 public class ConnectionManager {
 
@@ -112,7 +108,11 @@ public class ConnectionManager {
 			if (!address.equals(Node.get().getThisAddress())) {
 				if (mapConnections.containsKey(address)) {
 					if (mapConnections.get(address) != connection) {
-						System.out.println("Two connections from the same address " + address);
+						if (Build.DEBUG) {
+							final String msg = "Two connections from the same address " + address ;							
+							System.out.println(msg);
+							ClusterManager.get().publishLog(msg);
+						} 
 					}
 					return;
 				}

@@ -19,6 +19,7 @@ package com.hazelcast.nio;
 
 import java.nio.channels.SocketChannel;
 
+import com.hazelcast.impl.ClusterManager;
 import com.hazelcast.impl.ClusterService;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.ClusterManager.AddRemoveConnection;
@@ -112,7 +113,7 @@ public class Connection {
 
 	public void close() {
 		if (!live)
-			return;
+			return;		
 		live = false;
 		try {
 			if (socketChannel != null && socketChannel.isOpen())

@@ -31,6 +31,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
@@ -49,7 +50,7 @@ public class ClusterManager extends BaseManager {
 	private ClusterManager() {
 	}
 
-	private Set<Address> setJoins = new HashSet<Address>(100); 
+	private Set<Address> setJoins = new HashSet<Address>(100);
 
 	private boolean joinInProgress = false;
 
@@ -89,16 +90,43 @@ public class ClusterManager extends BaseManager {
 		}
 	}
 
-
+	public void publishLog(final String log) {
+		if (DEBUG) {
+			final String msg = thisAddress.toString() + ": " + log;			
+			ExecutorManager.get().executeLocaly(new Runnable() {
+				public void run() {
+					Hazelcast.getTopic("_hz_logs").publish(msg);
+				}
+			});
+		}
+	}
 
 	void sendAddRemoveToAllConns(Address newAddress) {
-		Connection[] conns = ConnectionManager.get().getConnections();
-		for (Connection conn : conns) {
-			if (!newAddress.equals(conn.getEndPoint())) {
-				AddRemoveConnection arc = new AddRemoveConnection(newAddress, true);
-				sendProcessableTo(arc, conn);
+		for (MemberImpl member : lsMembers) {
+			Address target = member.getAddress();
+			if (!thisAddress.equals(target)) {
+				if (!target.equals(newAddress)) {
+					AddRemoveConnection arc = new AddRemoveConnection(newAddress, true);
+					sendProcessableTo(arc, target);
+				}
 			}
 		}
+
+		for (Address target : setJoins) {
+			if (!thisAddress.equals(target)) {
+				if (!target.equals(newAddress)) {
+					AddRemoveConnection arc = new AddRemoveConnection(newAddress, true);
+					sendProcessableTo(arc, target);
+				}
+			}
+		}
+		// Connection[] conns = ConnectionManager.get().getConnections();
+		// for (Connection conn : conns) {
+		// if (!newAddress.equals(conn.getEndPoint())) {
+		// AddRemoveConnection arc = new AddRemoveConnection(newAddress, true);
+		// sendProcessableTo(arc, conn);
+		// }
+		// }
 	}
 
 	public void handleMaster(Master master) {
@@ -340,7 +368,7 @@ public class ClusterManager extends BaseManager {
 
 	void joinReset() {
 		joinInProgress = false;
-		setJoins.clear(); 
+		setJoins.clear();
 		timeToStartJoin = System.currentTimeMillis() + waitTimeBeforeJoin + 1000;
 	}
 
@@ -432,12 +460,10 @@ public class ClusterManager extends BaseManager {
 				remotelyProcessable.process();
 			}
 		}
-
 	}
 
 	interface RemotelyProcessable extends DataSerializable, Processable {
 		void setConnection(Connection conn);
-
 	}
 
 	void updateMembers(List<Address> lsAddresses) {
@@ -457,6 +483,9 @@ public class ClusterManager extends BaseManager {
 		Node.get().getClusterImpl().setMembers(lsMembers);
 		Node.get().unlock();
 		System.out.println(this);
+		if (DEBUG) {
+			publishLog("Join complete");
+		}
 	}
 
 	public static class MembersUpdate extends AbstractRemotelyProcessable {
@@ -595,10 +624,12 @@ public class ClusterManager extends BaseManager {
 		public void readData(DataInput in) throws IOException {
 			address = new Address();
 			address.readData(in);
+			add = in.readBoolean();
 		}
 
 		public void writeData(DataOutput out) throws IOException {
 			address.writeData(out);
+			out.writeBoolean(add);
 		}
 
 		@Override

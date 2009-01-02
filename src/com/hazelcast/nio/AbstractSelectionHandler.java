@@ -22,6 +22,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
 import com.hazelcast.impl.Build;
+import com.hazelcast.impl.ClusterManager;
 
 public abstract class AbstractSelectionHandler implements SelectionHandler {
 	public static final boolean DEBUG = Build.DEBUG;
@@ -66,6 +67,11 @@ public abstract class AbstractSelectionHandler implements SelectionHandler {
 			e.printStackTrace();
 		}
 		if (sk != null) sk.cancel();
+		if (connection.live()) {
+			if (DEBUG) {
+				ClusterManager.get().publishLog("Connection.close endPoint:" + connection.getEndPoint() + ", cause" + e.toString());						
+			}
+		}
 		connection.close();
 	}
 
