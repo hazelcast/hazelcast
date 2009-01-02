@@ -101,31 +101,6 @@ public class ConnectionManager {
 		return connection;
 	}
 
-	public synchronized void finalizeAndSendBind(Connection connection) {
-		try {
-			Address address = connection.getEndPoint();
-			setConnectionInProgress.remove(address);
-			if (!address.equals(Node.get().getThisAddress())) {
-				if (mapConnections.containsKey(address)) {
-					if (mapConnections.get(address) != connection) {
-						if (Build.DEBUG) {
-							final String msg = "Two connections from the same address " + address ;							
-							System.out.println(msg);
-							ClusterManager.get().publishLog(msg);
-						} 
-					}
-					return;
-				}
-				mapConnections.put(address, connection); 				
-			}
-//			Invocation invBind = InvocationQueue.get().obtainInvocation();
-//			invBind.set("bind", Constants.ClusterOperations.OP_BIND, null, Node.get()
-//					.getThisAddress());
-//			connection.getWriteHandler().writeInvocation(invBind);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
 
 	@Override
 	public synchronized String toString() {
@@ -138,8 +113,17 @@ public class ConnectionManager {
 		return sb.toString();
 	}
 
-	public synchronized void bind(Address endPoint, Connection connection) {
+	public synchronized void bind(Address endPoint, Connection connection, boolean accept) {
 		connection.setEndPoint(endPoint);
+		Connection connExisting = mapConnections.get(endPoint);
+		if (connExisting != null && connExisting != connection) {
+			if (Build.DEBUG) {
+				final String msg = "Two connections from the same address " + endPoint + ", accept= " + accept ;							
+				System.out.println(msg);
+				ClusterManager.get().publishLog(msg);
+			} 
+			return;
+		} 
 		if (!endPoint.equals(Node.get().getThisAddress())) {
 			mapConnections.put(endPoint, connection); 
 			setConnectionInProgress.remove(endPoint);

@@ -21,6 +21,7 @@ import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
+import com.hazelcast.impl.ClusterManager;
 import com.hazelcast.impl.Config;
 import com.hazelcast.impl.Node;
 
@@ -93,16 +94,16 @@ public class OutSelector extends SelectorBase {
 				if (DEBUG)
 					System.out.println("connected to " + address);
 
-				Connection connection = initChannel(socketChannel, false);
-				connection.setEndPoint(address);
-				ConnectionManager.get().finalizeAndSendBind(connection);
+				Connection connection = initChannel(socketChannel, false);  
+				ConnectionManager.get().bind(address, connection, false);
 			} catch (Exception e) {
 				if (DEBUG) {
-					System.out.println("Couldn't connect to " + address);
+					String msg = "Couldn't connect to " + address;
+					System.out.println(msg);
+					ClusterManager.get().publishLog(msg);
 					e.printStackTrace();
 				}
-				ConnectionManager.get().failedConnection(address);
-
+				ConnectionManager.get().failedConnection(address); 
 			}
 		}
 

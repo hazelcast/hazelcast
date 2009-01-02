@@ -66,10 +66,6 @@ public class ClusterManager extends BaseManager {
 		try {
 			if (inv.operation == OP_RESPONSE) {
 				handleResponse(inv);
-			} else if (inv.operation == OP_BIND) {
-				Address addressEndPoint = (Address) inv.getValueObject();
-				ConnectionManager.get().bind(addressEndPoint, inv.conn);
-				inv.returnToContainer();
 			} else if (inv.operation == OP_REMOTELY_PROCESS_AND_RESPONSE) {
 				Data data = inv.doTake(inv.data);
 				RemotelyProcessable rp = (RemotelyProcessable) ThreadContext.get().toObject(data);
@@ -224,8 +220,7 @@ public class ClusterManager extends BaseManager {
 			}
 			Address newAddress = conn.getEndPoint();
 			if (newAddress == null) {
-				newAddress = joinRequest.address;
-				ConnectionManager.get().bind(newAddress, conn);
+				newAddress = joinRequest.address; 
 			}
 
 			if (!joinInProgress) {

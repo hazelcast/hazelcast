@@ -28,6 +28,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.hazelcast.impl.Build;
+import com.hazelcast.impl.ClusterManager;
 import com.hazelcast.impl.Node;
 
 public class SelectorBase implements Runnable {
@@ -121,17 +122,21 @@ public class SelectorBase implements Runnable {
 	}
 
 	protected void handleSelectorException(Exception e) {
-		if (DEBUG) {
-			System.out.println("Selector Exception at  " + Thread.currentThread().getName());
-		}
-		e.printStackTrace();
-		System.out.println("Node is restarting...");
-		Node.get().restart();
+		String msg = "Selector exception at  " + Thread.currentThread().getName();
+		msg += ", cause= " + e.toString();
+		if (Build.DEBUG) { 							
+			System.out.println(msg);
+			ClusterManager.get().publishLog(msg); 
+			e.printStackTrace(); 
+		}   
 	}
 
-	protected void shutdown() {
-		if (DEBUG)
-			System.out.println("Shutting down " + this);
+	protected void shutdown() {		
+		String msg = "Selector shutting down  " + Thread.currentThread().getName();
+		if (Build.DEBUG) { 							
+			System.out.println(msg);
+			ClusterManager.get().publishLog(msg);
+		}  		
 		live = false;
 		selectorQueue.clear();
 		try {
