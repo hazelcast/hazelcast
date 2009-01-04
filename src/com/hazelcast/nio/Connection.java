@@ -33,30 +33,22 @@ public class Connection {
 
 	ReadHandler readHandler;
 
-	WriteHandler writeHandler;
-
-	Node node;
+	WriteHandler writeHandler; 
 
 	private volatile boolean live = true;
 
 	Address endPoint = null;
 
-	public Connection(SocketChannel socketChannel, Node node) {
+	public Connection(SocketChannel socketChannel) {
 		super();
-		this.socketChannel = socketChannel;
-		this.node = node;
-
+		this.socketChannel = socketChannel; 
+		this.writeHandler = new WriteHandler(this);
+		this.readHandler = new ReadHandler(this); 
 	}
 
 	public SocketChannel getSocketChannel() {
 		return socketChannel;
-	}
-
-	public void setHandlers(WriteHandler writeHandler, ReadHandler readHandler) {
-		this.writeHandler = writeHandler;
-		this.readHandler = readHandler;
-
-	}
+	} 
 
 	public ReadHandler getReadHandler() {
 		return readHandler;
@@ -64,10 +56,6 @@ public class Connection {
 
 	public WriteHandler getWriteHandler() {
 		return writeHandler;
-	}
-
-	public Address getThisAddress() {
-		return node.getThisAddress();
 	}
 
 	public void setLive(boolean live) {

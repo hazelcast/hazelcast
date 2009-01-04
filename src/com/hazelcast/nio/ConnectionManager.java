@@ -38,24 +38,24 @@ public class ConnectionManager {
 	private ConnectionManager() {
 	}
 
-	private Map<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(100);
- 
+	private Map<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(
+			100);
+
 	private volatile boolean live = true;
 
-	public Set<Address> setConnectionInProgress = new CopyOnWriteArraySet<Address>();
+	private Set<Address> setConnectionInProgress = new CopyOnWriteArraySet<Address>();
+
+	private boolean acceptTypeConnection = false;
 
 	public synchronized Connection createConnection(SocketChannel socketChannel, boolean acceptor) {
-		Connection connection = new Connection(socketChannel, Node.get());
-		WriteHandler writeHandler = new WriteHandler(connection);
-		ReadHandler readHandler = new ReadHandler(connection);
-		connection.setHandlers(writeHandler, readHandler);
+		Connection connection = new Connection(socketChannel);
 		try {
 			if (acceptor) {
 				// do nothing. you will be registering for the
 				// write operation when you have something to
 				// write already in the outSelector thread.
 			} else {
-				InSelector.get().addTask(readHandler);
+				InSelector.get().addTask(connection.getReadHandler());
 				// socketChannel.register(inSelector.selector,
 				// SelectionKey.OP_READ, readHandler);
 			}
@@ -64,7 +64,7 @@ public class ConnectionManager {
 		}
 		return connection;
 	}
-	
+
 	public Connection[] getConnections() {
 		Object[] connObjs = mapConnections.values().toArray();
 		Connection[] conns = new Connection[connObjs.length];
@@ -90,17 +90,12 @@ public class ConnectionManager {
 			throw new RuntimeException("Connecting to self! " + address);
 		Connection connection = mapConnections.get(address);
 		if (connection == null) {
-			try {
-				if (setConnectionInProgress.add(address)) { 
-					OutSelector.get().connect(address);
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
+			if (setConnectionInProgress.add(address)) {
+				OutSelector.get().connect(address);
 			}
 		}
 		return connection;
 	}
-
 
 	@Override
 	public synchronized String toString() {
@@ -118,14 +113,17 @@ public class ConnectionManager {
 		Connection connExisting = mapConnections.get(endPoint);
 		if (connExisting != null && connExisting != connection) {
 			if (Build.DEBUG) {
-				final String msg = "Two connections from the same address " + endPoint + ", accept= " + accept ;							
+				final String msg = "Two connections from the same endpoint " + endPoint
+						+ ", acceptTypeConnection=" + acceptTypeConnection + ",  now accept="
+						+ accept;
 				System.out.println(msg);
 				ClusterManager.get().publishLog(msg);
-			} 
+			}
 			return;
-		} 
+		}
 		if (!endPoint.equals(Node.get().getThisAddress())) {
-			mapConnections.put(endPoint, connection); 
+			acceptTypeConnection = accept;
+			mapConnections.put(endPoint, connection);
 			setConnectionInProgress.remove(endPoint);
 		} else
 			throw new RuntimeException("ConnMan setting self!!");
@@ -135,7 +133,7 @@ public class ConnectionManager {
 		if (connection == null)
 			return;
 		if (connection.getEndPoint() != null) {
-			mapConnections.remove(connection.getEndPoint()); 
+			mapConnections.remove(connection.getEndPoint());
 			setConnectionInProgress.remove(connection.getEndPoint());
 		}
 		if (connection.live())

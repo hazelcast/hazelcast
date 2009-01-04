@@ -570,7 +570,13 @@ class ConcurrentMapManager extends BaseManager {
 				}
 			}
 			if (target == null) {
-				target = getTarget(request.name, request.key);
+				try {
+					target = getTarget(request.name, request.key);
+				} catch (Exception e) {
+					System.out.println(MTargetAwareOp.this);
+					e.printStackTrace();
+				}
+				
 			}
 		}
 	}
@@ -641,9 +647,9 @@ class ConcurrentMapManager extends BaseManager {
 	void handleSize(Invocation inv) {
 		CMap cmap = getMap(inv.name);
 		inv.longValue = cmap.size();
-		if (DEBUG) {
-			printBlocks();
-		}
+//		if (DEBUG) {
+//			printBlocks();
+//		}
 		sendResponse(inv);
 	}
 

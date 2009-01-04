@@ -204,7 +204,7 @@ public class ClusterManager extends BaseManager {
 	}
 
 	private void handleJoinRequest(JoinRequest joinRequest) {
-
+		if (getMember(joinRequest.address) != null) return;
 		if (DEBUG) {
 			// log("Handling  " + joinRequest);
 		}
@@ -222,7 +222,6 @@ public class ClusterManager extends BaseManager {
 			if (newAddress == null) {
 				newAddress = joinRequest.address; 
 			}
-
 			if (!joinInProgress) {
 				if (setJoins.add(newAddress)) {
 					sendProcessableTo(new Master(Node.get().getMasterAddress()), conn);

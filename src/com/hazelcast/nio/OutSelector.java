@@ -41,8 +41,6 @@ public class OutSelector extends SelectorBase {
 	public void connect(Address address) {
 		if (DEBUG)
 			System.out.println("connect to " + address);
-		if (Node.get().getThisAddress().equals(address))
-			throw new RuntimeException("Connecting to self! " + address);
 		Connector connector = new Connector(address);
 		this.addTask(connector);
 
@@ -94,7 +92,7 @@ public class OutSelector extends SelectorBase {
 				if (DEBUG)
 					System.out.println("connected to " + address);
 
-				Connection connection = initChannel(socketChannel, false);  
+				Connection connection = initChannel(socketChannel, false);
 				ConnectionManager.get().bind(address, connection, false);
 			} catch (Exception e) {
 				if (DEBUG) {
@@ -103,7 +101,7 @@ public class OutSelector extends SelectorBase {
 					ClusterManager.get().publishLog(msg);
 					e.printStackTrace();
 				}
-				ConnectionManager.get().failedConnection(address); 
+				ConnectionManager.get().failedConnection(address);
 			}
 		}
 
