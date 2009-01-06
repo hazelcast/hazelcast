@@ -212,7 +212,7 @@ class ConcurrentMapManager extends BaseManager {
 			}
 			doResetRecordOwners();
 			if (DEBUG) {
-				printBlocks();
+//				printBlocks();
 			}
 		}
 	}
@@ -227,8 +227,7 @@ class ConcurrentMapManager extends BaseManager {
 		for (CMap cmap : cmaps) {
 			executeLocally(new Syncer(syncMonitor, cmap.name));
 		}
-	} 
-	
+	}
 
 	abstract class MBooleanOp extends MTargetAwareOp {
 		@Override
@@ -428,7 +427,8 @@ class ConcurrentMapManager extends BaseManager {
 
 	class MGet extends MTargetAwareOp {
 		public Object get(String name, Object key, long timeout, long txnId) {
-			return objectCall(OP_CMAP_GET, name, key, null, timeout, txnId, -1);
+			setLocal(OP_CMAP_GET, name, key, null, timeout, txnId, -1);
+			return objectCall();
 		}
 
 		@Override
@@ -440,8 +440,19 @@ class ConcurrentMapManager extends BaseManager {
 			}
 			setResult(value);
 		}
+
+		int processCount = 0;
+
+		public void process() {
+			processCount++;
+			if (request.key == null) {
+				ClusterManager.get().publishLog(processCount + " MGet request key is null");
+				System.exit(0);
+			}
+			super.process();
+		}
 	}
-	
+
 	class MRemove extends MTargetAwareOp {
 
 		public Object remove(String name, Object key, long timeout, long txnId) {
@@ -460,7 +471,6 @@ class ConcurrentMapManager extends BaseManager {
 			}
 		}
 	}
-	
 
 	class MAdd extends MTargetAwareOp {
 		boolean addToList(String name, Object value) {
@@ -570,13 +580,22 @@ class ConcurrentMapManager extends BaseManager {
 				}
 			}
 			if (target == null) {
+				if (request.key == null) {
+					if (DEBUG) {
+						ClusterManager.get().publishLog(
+								"Key cannot be null!! " + MTargetAwareOp.this);
+					}
+				}
 				try {
 					target = getTarget(request.name, request.key);
 				} catch (Exception e) {
-					System.out.println(MTargetAwareOp.this);
-					e.printStackTrace();
+					if (DEBUG) {
+						ClusterManager.get().publishLog(
+								request.key + " Exception when setting target for "
+										+ MTargetAwareOp.this);
+					}
+					e.printStackTrace(System.out);
 				}
-				
 			}
 		}
 	}
@@ -647,9 +666,9 @@ class ConcurrentMapManager extends BaseManager {
 	void handleSize(Invocation inv) {
 		CMap cmap = getMap(inv.name);
 		inv.longValue = cmap.size();
-//		if (DEBUG) {
-//			printBlocks();
-//		}
+		// if (DEBUG) {
+		// printBlocks();
+		// }
 		sendResponse(inv);
 	}
 
@@ -799,7 +818,7 @@ class ConcurrentMapManager extends BaseManager {
 		inv.returnToContainer();
 		doResetRecordOwners();
 		if (DEBUG) {
-			printBlocks();
+//			printBlocks();
 		}
 	}
 
@@ -902,7 +921,7 @@ class ConcurrentMapManager extends BaseManager {
 			doMigrationComplete(thisAddress);
 			sendMigrationComplete();
 			if (DEBUG) {
-				printSync();
+//				printSync();
 			}
 
 		}
@@ -1486,9 +1505,11 @@ class ConcurrentMapManager extends BaseManager {
 			int size = 0;
 			Collection<Record> records = mapRecords.values();
 			for (Record record : records) {
-				if (record.owner.equals(thisAddress)) {
-					size++;
-					size += record.getCopyCount();
+				if (record.value != null) {
+					if (record.owner.equals(thisAddress)) {
+						size++;
+						size += record.getCopyCount();
+					}
 				}
 			}
 			return size;

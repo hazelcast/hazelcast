@@ -25,11 +25,7 @@ import com.hazelcast.impl.Node;
 import com.hazelcast.impl.ClusterManager.AddRemoveConnection;
 
 public class Connection {
-	SocketChannel socketChannel;
-
-	InSelector inSelector;
-
-	OutSelector outSelector;
+	SocketChannel socketChannel; 
 
 	ReadHandler readHandler;
 
@@ -39,11 +35,17 @@ public class Connection {
 
 	Address endPoint = null;
 
+	private long lastRead = 0;
+	private long lastWrite = 0;
+	
+	int localPort = -1;
+
 	public Connection(SocketChannel socketChannel) {
 		super();
 		this.socketChannel = socketChannel; 
 		this.writeHandler = new WriteHandler(this);
-		this.readHandler = new ReadHandler(this); 
+		this.readHandler = new ReadHandler(this);  
+		lastRead = System.currentTimeMillis() + 5000;		
 	}
 
 	public SocketChannel getSocketChannel() {
@@ -120,4 +122,19 @@ public class Connection {
 		return "Connection [" + this.endPoint + "] live=" + live ;
 	}
 
+	public void didRead() {
+		lastRead  = System.currentTimeMillis();
+	}
+
+	public void didWrite() {
+		lastWrite = System.currentTimeMillis();
+	}
+
+	public long getLastRead() {
+		return lastRead;
+	}
+	
+	public long getLastWrite() {
+		return lastWrite;
+	}
 }

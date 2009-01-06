@@ -138,17 +138,17 @@ public class ConnectionManager {
 		}
 		if (connection.live())
 			connection.close();
-
 	}
 
 	public synchronized void shutdown() {
 		live = false;
-		InSelector.get().shutdown();
-		OutSelector.get().shutdown();
 		for (Connection conn : mapConnections.values()) {
-			remove(conn);
-		}
-
+			try {
+				remove(conn);
+			} catch (Exception e) { 
+			} 
+		} 
+		InSelector.get().shutdown();
+		OutSelector.get().shutdown(); 
 	}
-
 }

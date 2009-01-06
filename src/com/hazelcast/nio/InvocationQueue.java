@@ -572,21 +572,22 @@ public class InvocationQueue {
 				((DataSerializable) obj).writeData(bbos);
 				bbos.writeInt(STREAM_END);
 			} else if (obj instanceof String) {
-				String str = (String) obj;
-				int len = str.length();
 				bbos.write((byte) 46);
-				int block = 10000;
-				int blockCount = ((len / block)) + 1;
-				bbos.writeShort(blockCount);
-				if (blockCount == 1) {
-					bbos.writeUTF(str);
-				} else {
-					for (int i = 0; i < blockCount; i++) {
-						int start = i * block;
-						int end = Math.min((i + 1) * block, len);
-						bbos.writeUTF(str.substring(start, end));
-					}
-				}
+				String str = (String) obj;
+				bbos.writeUTF(str);
+//				int len = str.length(); 
+//				int block = 10000;
+//				int blockCount = ((len / block)) + 1;
+//				bbos.writeShort(blockCount);
+//				if (blockCount == 1) {
+//					bbos.writeUTF(str);
+//				} else {
+//					for (int i = 0; i < blockCount; i++) {
+//						int start = i * block;
+//						int end = Math.min((i + 1) * block, len);
+//						bbos.writeUTF(str.substring(start, end));
+//					}
+//				}
 			} else {
 				bbos.write((byte) 66);
 				ObjectOutputStream os = new ObjectOutputStream(bbos);
@@ -623,12 +624,13 @@ public class InvocationQueue {
 						throw new RuntimeException("Unproper stream-end!");
 					result = ds;
 				} else if (type == 46) {
-					int utfCount = bbis.readShort();
-					StringBuilder sb = new StringBuilder();
-					for (int i = 0; i < utfCount; i++) {
-						sb.append(bbis.readUTF());
-					}
-					result = sb.toString();
+					result = bbis.readUTF();
+//					int utfCount = bbis.readShort();
+//					StringBuilder sb = new StringBuilder();
+//					for (int i = 0; i < utfCount; i++) {
+//						sb.append(bbis.readUTF());
+//					}
+//					result = sb.toString();
 				} else {
 					throw new RuntimeException("Unknown readObject type " + type);
 				}

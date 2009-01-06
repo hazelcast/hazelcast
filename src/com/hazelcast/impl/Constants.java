@@ -58,13 +58,19 @@ public interface Constants {
 
 	interface ClusterOperations {
 
-		public static final int OP_BIND = 18;
+		public static final int OP_RESPONSE = 15;
+		
+		public static final int OP_HEARTBEAT = 18;
 
 		public static final int OP_REMOTELY_PROCESS = 19;
 
 		public static final int OP_REMOTELY_PROCESS_AND_RESPONSE = 20;
 
-		public static final int OP_RESPONSE = 21;
+		public static final int OP_REMOTELY_BOOLEAN_CALLABLE = 21;
+		
+		public static final int OP_REMOTELY_OBJECT_CALLABLE = 22;
+
+		
 	}
 
 	interface EventOperations {

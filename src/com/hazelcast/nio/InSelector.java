@@ -70,9 +70,9 @@ public class InSelector extends SelectorBase {
 				if (channel != null) {
 					Connection connection = initChannel(channel, true);
 					InetSocketAddress remoteSocket =  (InetSocketAddress) channel.socket().getRemoteSocketAddress();
-					int remoteRealPort = Config.get().port + ((remoteSocket.getPort() - 10000) % 49);
-					Address remoteAddress = new Address(remoteSocket.getAddress(), remoteRealPort);
-					ConnectionManager.get().bind(remoteAddress, connection, true);
+					int remoteRealPort = Config.get().port + ((remoteSocket.getPort() - 10000) % 20);
+					Address endPoint = new Address(remoteSocket.getAddress(), remoteRealPort);
+					ConnectionManager.get().bind(endPoint, connection, true);
 					channel.register(selector, SelectionKey.OP_READ, connection.getReadHandler());
 				}
 				serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, Acceptor.this);
@@ -93,6 +93,7 @@ public class InSelector extends SelectorBase {
 		super.shutdown();
 		try {
 			serverSocketChannel.close();
+			super.shutdown();
 		} catch (IOException e) {
 		}
 	}

@@ -20,6 +20,10 @@ package com.hazelcast.nio;
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import com.hazelcast.impl.ClusterManager;
 import com.hazelcast.impl.Config;
@@ -28,6 +32,7 @@ import com.hazelcast.impl.Node;
 public class OutSelector extends SelectorBase {
 
 	private static final OutSelector instance = new OutSelector();
+	private Set<Integer> boundPorts = new HashSet<Integer>();
 
 	public static OutSelector get() {
 		return instance;
@@ -51,9 +56,18 @@ public class OutSelector extends SelectorBase {
 
 		SocketChannel socketChannel = null;
 
+		int localPort = 0;
+
 		public Connector(Address address) {
 			super();
 			this.address = address;
+		}
+		
+		public void stillBound (int port) {
+			
+			Set<Integer> portsToRemove = new HashSet<Integer>();
+			
+			
 		}
 
 		public void run() {
@@ -61,14 +75,24 @@ public class OutSelector extends SelectorBase {
 				socketChannel = SocketChannel.open();
 				Address thisAddress = Node.get().getThisAddress();
 				int addition = (thisAddress.getPort() - Config.get().port);
-				int portToBind = 10000 + addition;
+				localPort = 10000 + addition;
 				boolean bindOk = false;
 				while (!bindOk) {
 					try {
-						portToBind += 49;
-						socketChannel.socket().bind(
-								new InetSocketAddress(thisAddress.getInetAddress(), portToBind));
-						bindOk = true;
+						localPort += 20;
+						if (boundPorts.size() > 1000 || localPort > 60000) { 
+							boundPorts.clear();
+							Connection[] conns = ConnectionManager.get().getConnections();
+							for (Connection conn : conns) {
+								//conn is live or not, assume it is bounded
+								boundPorts.add(conn.localPort);
+							}   
+						}
+						if (boundPorts.add(localPort)) {
+							socketChannel.socket().bind(
+									new InetSocketAddress(thisAddress.getInetAddress(), localPort));
+							bindOk = true;
+						}
 					} catch (Exception e) {
 						// ignore
 					}
@@ -89,14 +113,15 @@ public class OutSelector extends SelectorBase {
 				boolean finished = socketChannel.finishConnect();
 				if (!finished)
 					throw new RuntimeException("Couldn't finish connection to " + address);
-				if (DEBUG)
+				if (DEBUG) {
 					System.out.println("connected to " + address);
-
+				}
 				Connection connection = initChannel(socketChannel, false);
+				connection.localPort = localPort;
 				ConnectionManager.get().bind(address, connection, false);
 			} catch (Exception e) {
 				if (DEBUG) {
-					String msg = "Couldn't connect to " + address;
+					String msg = "Couldn't connect to " + address + ", cause: " + e.getMessage();
 					System.out.println(msg);
 					ClusterManager.get().publishLog(msg);
 					e.printStackTrace();

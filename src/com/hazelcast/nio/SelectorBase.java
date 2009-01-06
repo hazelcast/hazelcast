@@ -127,16 +127,11 @@ public class SelectorBase implements Runnable {
 		if (Build.DEBUG) { 							
 			System.out.println(msg);
 			ClusterManager.get().publishLog(msg); 
-			e.printStackTrace(); 
+			e.printStackTrace(System.out); 
 		}   
 	}
 
-	protected void shutdown() {		
-		String msg = "Selector shutting down  " + Thread.currentThread().getName();
-		if (Build.DEBUG) { 							
-			System.out.println(msg);
-			ClusterManager.get().publishLog(msg);
-		}  		
+	public void shutdown() {		  		
 		live = false;
 		selectorQueue.clear();
 		try {

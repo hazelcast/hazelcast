@@ -140,17 +140,17 @@ public class Node {
 		boolean inited = init();
 		if (!inited)
 			return;
-		Thread inThread = new Thread(InSelector.get(), "InThread");
+		final Thread inThread = new Thread(InSelector.get(), "InThread");
 		inThread.start();
 		inThread.setPriority(8);
 		lsThreads.add(inThread);
 
-		Thread outThread = new Thread(OutSelector.get(), "OutThread");
+		final Thread outThread = new Thread(OutSelector.get(), "OutThread");
 		outThread.start();
 		outThread.setPriority(8);
 		lsThreads.add(outThread);
 
-		Thread clusterServiceThread = new Thread(ClusterService.get(), "ClusterService");
+		final Thread clusterServiceThread = new Thread(ClusterService.get(), "ClusterService");
 		clusterServiceThread.start();
 		clusterServiceThread.setPriority(7);
 		lsThreads.add(clusterServiceThread);
@@ -161,6 +161,14 @@ public class Node {
 			startMulticastService();
 		}
 		firstMainThread = null;
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+		    public void run() { 
+		    	System.out.println("ShutdownHook is shutting down!"); 
+		    	ConnectionManager.get().shutdown();
+		    	ClusterService.get().running = false;			    	
+		    }
+		});
+
 	}
 
 	public synchronized void handleInterruptedException(Thread thread, Exception e) {

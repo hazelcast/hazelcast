@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -66,6 +67,8 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 	private Map<Long, DistributedExecutorAction> mapExecutions = new ConcurrentHashMap<Long, DistributedExecutorAction>(
 			100);
 
+	private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+	
 	private ExecutorService eventFireExecutor = Executors.newSingleThreadExecutor();
 
 	private BlockingQueue<Long> executionIds = new ArrayBlockingQueue<Long>(100);
@@ -74,7 +77,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 		return instance;
 	}
 
-	private ExecutorManager() {
+	private ExecutorManager() { 
 		int corePoolSize = Config.get().executorConfig.corePoolSize;
 		int maxPoolSize = Config.get().executorConfig.maxPoolsize;
 		long keepAliveSeconds = Config.get().executorConfig.keepAliveSeconds;
@@ -526,6 +529,10 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 		eventFireExecutor.execute(eventFireTask);
 	}
 
+	public ScheduledExecutorService getScheduledExecutorService() {
+		return scheduledExecutorService;
+	}
+	
 	public void executeLocaly(Runnable runnable) {
 		executor.execute(runnable);
 	}

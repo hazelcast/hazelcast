@@ -63,7 +63,7 @@ public class ClusterService implements Runnable, Constants {
 
 	public void process(Object obj) {
 		if (obj instanceof Invocation) {
-			Invocation inv = (Invocation) obj;
+			Invocation inv = (Invocation) obj; 
 			int operation = inv.operation;
 			if (operation < 50) {
 				ClusterManager.get().handle(inv);
@@ -127,11 +127,11 @@ public class ClusterService implements Runnable, Constants {
 				}
 			} catch (InterruptedException e) {
 				Node.get().handleInterruptedException(Thread.currentThread(), e);
-			} catch (Exception e) {
+			} catch (Throwable e) {
 				if (DEBUG) {
-					System.out.println(e + ",  message: " + e.getMessage() + ", obj=" + obj);
+					System.out.println(e + ",  message: " + e + ", obj=" + obj);
 				}
-				e.printStackTrace();
+				e.printStackTrace(System.out);
 			}
 		}
 	}

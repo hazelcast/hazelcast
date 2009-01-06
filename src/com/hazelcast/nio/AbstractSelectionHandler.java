@@ -24,7 +24,7 @@ import java.nio.channels.SocketChannel;
 import com.hazelcast.impl.Build;
 import com.hazelcast.impl.ClusterManager;
 
-public abstract class AbstractSelectionHandler implements SelectionHandler {
+abstract class AbstractSelectionHandler implements SelectionHandler {
 	public static final boolean DEBUG = Build.DEBUG;
 
 	protected SocketChannel socketChannel;
@@ -64,7 +64,7 @@ public abstract class AbstractSelectionHandler implements SelectionHandler {
 			System.out.println(Thread.currentThread().getName() + " Closing Socket. cause:  " + e);
 		} 
 		if (DEBUG) {
-			e.printStackTrace();
+			e.printStackTrace(System.out);
 		}
 		if (sk != null) sk.cancel();
 		if (connection.live()) {

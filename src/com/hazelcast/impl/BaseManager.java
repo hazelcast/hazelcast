@@ -42,6 +42,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import sun.reflect.ReflectionFactory.GetReflectionFactoryAction;
+
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IMap;
 import com.hazelcast.impl.ConcurrentMapManager.Record;
@@ -722,10 +724,6 @@ abstract class BaseManager implements Constants {
 		public TargetAwareOp() {
 		}
 
-		public TargetAwareOp(boolean limited) {
-			super(limited);
-		}
-
 		void handleNoneRedoResponse(Invocation inv) {
 			handleObjectNoneRedoResponse(inv);
 		}
@@ -747,12 +745,19 @@ abstract class BaseManager implements Constants {
 		}
 
 		@Override
-		public Object doOp() {
+		public void doOp() {
 			responses.clear();
-			long timeout = request.timeout;
 			try {
 				enqueueAndReturn(TargetAwareOp.this);
-				Object result = null;
+			} catch (Exception e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		public Object getResult() {
+			long timeout = request.timeout;
+			Object result = null;
+			try {
 				if (timeout >= 0 && timeout < 100) {
 					timeout = 0;
 					result = responses.poll(1, TimeUnit.SECONDS);
@@ -763,16 +768,16 @@ abstract class BaseManager implements Constants {
 				}
 				if (result == OBJECT_REDO) {
 					Thread.sleep(2000);
-//					if (DEBUG) {
-//						log(getId() + " Redoing.. " + this);
-//					}
-					return doOp();
+					// if (DEBUG) {
+					// log(getId() + " Redoing.. " + this);
+					// }
+					doOp();
+					return getResult();
 				}
-				return result;
 			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			return null;
+				e.printStackTrace(System.out);
+			} 
+			return result;
 		}
 
 		abstract void setTarget();
@@ -787,6 +792,7 @@ abstract class BaseManager implements Constants {
 				inv.eventId = getId();
 				boolean sent = send(inv, target);
 				if (!sent) {
+					ConnectionManager.get().getOrConnect(target);
 					if (DEBUG) {
 						log("invocation cannot be sent to " + target);
 					}
@@ -809,7 +815,7 @@ abstract class BaseManager implements Constants {
 		}
 
 		@Override
-		Object doOp() {
+		void doOp() {
 			reset();
 			try {
 				synchronized (this) {
@@ -818,7 +824,10 @@ abstract class BaseManager implements Constants {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-			}
+			} 
+		}
+		
+		public Object getResult() {
 			return null;
 		}
 
@@ -889,7 +898,6 @@ abstract class BaseManager implements Constants {
 					notify();
 				}
 			}
-
 		}
 	}
 
@@ -911,8 +919,35 @@ abstract class BaseManager implements Constants {
 		}
 
 		public Object objectCall() {
-			try {
-				Object result = doOp();
+			doOp();
+			return getResultAsObject();
+		}
+
+		public Object objectCall(int operation, String name, Object key, Object value,
+				long timeout, long txnId, long recordId) {
+			setLocal(operation, name, key, value, timeout, txnId, recordId);
+			return objectCall();
+		}
+		
+		public boolean booleanCall(int operation, String name, Object key, Object value,
+				long timeout, long txnId, long recordId) {
+			doOp(operation, name, key, value, timeout, txnId, recordId);
+			return getResultAsBoolean();
+		}
+
+		abstract void doOp();
+		
+		abstract Object getResult();
+		
+		public void doOp(int operation, String name, Object key, Object value,
+				long timeout, long txnId, long recordId) {
+			setLocal(operation, name, key, value, timeout, txnId, recordId);
+			doOp();
+		}
+		
+		public Object getResultAsObject() {
+			try { 
+				Object result = getResult();
 				if (result == OBJECT_NULL || result == null) {
 					return null;
 				}
@@ -923,27 +958,20 @@ abstract class BaseManager implements Constants {
 					return ThreadContext.get().toObject(data);
 				}
 				return result;
-			} catch (Exception e) {
-				e.printStackTrace();
+			} catch (Throwable e) {
+				if (DEBUG) {
+					ClusterManager.get().publishLog(e.toString());
+				}
+				e.printStackTrace(System.out);
 			} finally {
 				request.reset();
 			}
 			return null;
 		}
-
-		public Object objectCall(int operation, String name, Object key, Object value,
-				long timeout, long txnId, long recordId) {
-			setLocal(operation, name, key, value, timeout, txnId, recordId);
-			return objectCall();
-		}
-
-		abstract Object doOp();
-
-		public boolean booleanCall(int operation, String name, Object key, Object value,
-				long timeout, long txnId, long recordId) {
-			setLocal(operation, name, key, value, timeout, txnId, recordId);
-			try {
-				Object result = doOp();
+		
+		public boolean getResultAsBoolean() {
+			try { 
+				Object result = getResult();
 				if (result == OBJECT_NULL || result == null) {
 					return false;
 				}
@@ -958,6 +986,8 @@ abstract class BaseManager implements Constants {
 			}
 			return false;
 		}
+
+		
 	}
 
 	interface Call extends Processable {

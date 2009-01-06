@@ -37,11 +37,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
 	public ReadHandler(Connection connection) {
 		super(connection);
-		try {
-			inBuffer = ByteBuffer.allocate(1024 * 1024);
-		} catch (Exception e) {
-			handleSocketException(e);
-		}
+		inBuffer = ByteBuffer.allocate(32 * 1024);
 	}
 
 	public final void handle() {
@@ -58,6 +54,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 				if (readBytes <= 0) {
 					return;
 				}
+				connection.didRead();
 				length += readBytes;
 			} catch (Exception e) {
 				handleSocketException(e);
@@ -83,7 +80,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 						return;
 					}
 				}
-				boolean full = inv.read(inBuffer); 
+				boolean full = inv.read(inBuffer);
 				if (full) {
 					messageRead++;
 					inv.flipBuffers();
@@ -99,7 +96,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 						}
 					}
 				}
-			} 
+			}
 		} catch (Throwable t) {
 			System.out.println("Fatal Error at ReadHandler : " + t);
 		} finally {
@@ -109,7 +106,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
 	public final void run() {
 		registerOp(inSelector.selector, SelectionKey.OP_READ);
-	} 
+	}
 
 	private final Invocation obtainReadable() {
 		Invocation inv = InvocationQueue.get().obtainInvocation();

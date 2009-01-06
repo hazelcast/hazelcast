@@ -113,9 +113,10 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 			bbOut.flip();
 			int remaining = bbOut.remaining();
 			int loopCount = 0;
+			connection.didWrite();
 			while (remaining > 0) {
 				try {
-					int written = socketChannel.write(bbOut);
+					int written = socketChannel.write(bbOut);					
 					remaining -= written;
 					loopCount++;
 					if (DEBUG) {

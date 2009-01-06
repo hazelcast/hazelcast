@@ -17,7 +17,9 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.impl.Constants.ClusterOperations.OP_BIND;
+import static com.hazelcast.impl.Constants.ClusterOperations.OP_HEARTBEAT;
+import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_BOOLEAN_CALLABLE;
+import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_OBJECT_CALLABLE;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_PROCESS;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_PROCESS_AND_RESPONSE;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_RESPONSE;
@@ -30,6 +32,9 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.nio.Address;
@@ -48,6 +53,8 @@ public class ClusterManager extends BaseManager {
 	}
 
 	private ClusterManager() {
+		ScheduledExecutorService ses = ExecutorManager.get().getScheduledExecutorService();
+		ses.scheduleWithFixedDelay(new HeartbeatTask(), 0, 1, TimeUnit.SECONDS);
 	}
 
 	private Set<Address> setJoins = new HashSet<Address>(100);
@@ -66,6 +73,10 @@ public class ClusterManager extends BaseManager {
 		try {
 			if (inv.operation == OP_RESPONSE) {
 				handleResponse(inv);
+			} else if (inv.operation == OP_HEARTBEAT) {
+				// last heartbeat is recorded at ReadHandler
+				// so no op.
+				inv.returnToContainer();
 			} else if (inv.operation == OP_REMOTELY_PROCESS_AND_RESPONSE) {
 				Data data = inv.doTake(inv.data);
 				RemotelyProcessable rp = (RemotelyProcessable) ThreadContext.get().toObject(data);
@@ -78,6 +89,46 @@ public class ClusterManager extends BaseManager {
 				rp.setConnection(inv.conn);
 				rp.process();
 				inv.returnToContainer();
+			} else if (inv.operation == OP_REMOTELY_BOOLEAN_CALLABLE) {
+				Boolean result = null;
+				try {
+					Data data = inv.doTake(inv.data);
+					AbstractRemotelyCallable<Boolean> callable = (AbstractRemotelyCallable<Boolean>) ThreadContext
+							.get().toObject(data);
+					callable.setConnection(inv.conn);
+					result = callable.call();
+				} catch (Exception e) {
+					e.printStackTrace(System.out);
+					result = Boolean.FALSE;
+				}
+				if (result == Boolean.TRUE) {
+					sendResponse(inv);
+				} else {
+					sendResponseFailure(inv);
+				}
+			} else if (inv.operation == OP_REMOTELY_OBJECT_CALLABLE) {
+				Object result = null;
+				try {
+					Data data = inv.doTake(inv.data);
+					AbstractRemotelyCallable callable = (AbstractRemotelyCallable) ThreadContext
+							.get().toObject(data);
+					callable.setConnection(inv.conn);
+					result = callable.call();
+				} catch (Exception e) {
+					e.printStackTrace(System.out);
+					result = null;
+				}
+				if (result != null) {
+					Data value = null;
+					if (result instanceof Data) {
+						value = (Data) result;
+					} else {
+						value = ThreadContext.get().toData(result);
+					}
+					inv.doSet(value, inv.data);
+				}
+
+				sendResponse(inv);
 			} else
 				throw new RuntimeException("Unhandled message " + inv.name);
 		} catch (Exception e) {
@@ -86,9 +137,40 @@ public class ClusterManager extends BaseManager {
 		}
 	}
 
+	public void heartBeater() {
+
+		long now = System.currentTimeMillis();
+		// I have to check the last heartbeats received!
+		List<MemberImpl> lsMembers = ClusterManager.lsMembers;
+		for (MemberImpl memberImpl : lsMembers) {
+			Address address = memberImpl.getAddress();
+			try {
+				Connection conn = ConnectionManager.get().getConnection(address);
+				if (Node.get().joined()) {
+					if (conn != null && conn.live()) {
+						if ((now - conn.getLastRead()) >= 3000) {
+							ConnectionManager.get().remove(conn);
+							conn = null;
+						}
+					}
+				}
+				if (conn != null && conn.live()) {
+					if ((now - conn.getLastWrite()) > 500) {
+						Invocation inv = obtainServiceInvocation("heartbeat", null, null,
+								OP_HEARTBEAT, 0);
+						send(inv, address);
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		}
+	}
+
 	public void publishLog(final String log) {
 		if (DEBUG) {
-			final String msg = thisAddress.toString() + ": " + log;			
+			final String msg = thisAddress.toString() + ": " + log;
 			ExecutorManager.get().executeLocaly(new Runnable() {
 				public void run() {
 					Hazelcast.getTopic("_hz_logs").publish(msg);
@@ -116,13 +198,6 @@ public class ClusterManager extends BaseManager {
 				}
 			}
 		}
-		// Connection[] conns = ConnectionManager.get().getConnections();
-		// for (Connection conn : conns) {
-		// if (!newAddress.equals(conn.getEndPoint())) {
-		// AddRemoveConnection arc = new AddRemoveConnection(newAddress, true);
-		// sendProcessableTo(arc, conn);
-		// }
-		// }
 	}
 
 	public void handleMaster(Master master) {
@@ -204,7 +279,8 @@ public class ClusterManager extends BaseManager {
 	}
 
 	private void handleJoinRequest(JoinRequest joinRequest) {
-		if (getMember(joinRequest.address) != null) return;
+		if (getMember(joinRequest.address) != null)
+			return;
 		if (DEBUG) {
 			// log("Handling  " + joinRequest);
 		}
@@ -215,12 +291,9 @@ public class ClusterManager extends BaseManager {
 			}
 		}
 		if (isMaster()) {
-			if (DEBUG) {
-				// log(" request object " + joinRequest);
-			}
 			Address newAddress = conn.getEndPoint();
 			if (newAddress == null) {
-				newAddress = joinRequest.address; 
+				newAddress = joinRequest.address;
 			}
 			if (!joinInProgress) {
 				if (setJoins.add(newAddress)) {
@@ -249,7 +322,6 @@ public class ClusterManager extends BaseManager {
 		for (MemberImpl member : lsMembers) {
 			sb.append("\n\t" + member);
 		}
-
 		sb.append("\n}\n");
 		return sb.toString();
 	}
@@ -366,7 +438,122 @@ public class ClusterManager extends BaseManager {
 		timeToStartJoin = System.currentTimeMillis() + waitTimeBeforeJoin + 1000;
 	}
 
+	public class AsyncRemotelyObjectCallable extends TargetAwareOp {
+		AbstractRemotelyCallable arp = null;
+
+		public void executeProcess(Address address, AbstractRemotelyCallable arp) {
+			this.arp = arp;
+			super.target = address;
+			doOp(OP_REMOTELY_OBJECT_CALLABLE, "call", null, arp, 0, -1, -1);
+		}
+
+		public void doLocalOp() {
+			Object result;
+			try {
+				result = arp.call();
+				setResult(result);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		@Override
+		void setTarget() {
+		}
+	}
+
+	public class AsyncRemotelyBooleanCallable extends BooleanOp {
+		AbstractRemotelyCallable<Boolean> arp = null;
+
+		public void executeProcess(Address address, AbstractRemotelyCallable<Boolean> arp) {
+			this.arp = arp;
+			super.target = address;
+			doOp(OP_REMOTELY_BOOLEAN_CALLABLE, "call", null, arp, 0, -1, -1);
+		}
+
+		public void doLocalOp() {
+			Boolean result;
+			try {
+				result = arp.call();
+				setResult(result);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		@Override
+		void setTarget() {
+		}
+	}
+
+	public class ResponsiveRemoteProcess extends TargetAwareOp {
+		AbstractRemotelyProcessable arp = null;
+
+		public boolean executeProcess(Address address, AbstractRemotelyProcessable arp) {
+			this.arp = arp;
+			super.target = address;
+			return booleanCall(OP_REMOTELY_PROCESS_AND_RESPONSE, "exe", null, arp, 0, -1, -1);
+		}
+
+		public void doLocalOp() {
+			arp.process();
+			setResult(Boolean.TRUE);
+		}
+
+		@Override
+		void setTarget() {
+		}
+	}
+
 	void startJoin() {
+
+		joinInProgress = true;
+		final MembersUpdateCall membersUpdate = new MembersUpdateCall(lsMembers);
+		if (setJoins != null && setJoins.size() > 0) {
+			for (Address addressJoined : setJoins) {
+				membersUpdate.addAddress(addressJoined);
+			}
+		}
+
+		executeLocally(new Runnable() {
+			public void run() {
+				List<Address> lsAddresses = membersUpdate.lsAddresses;
+				List<AsyncRemotelyBooleanCallable> calls = new ArrayList<AsyncRemotelyBooleanCallable>();
+				for (final Address address : lsAddresses) {
+					AsyncRemotelyBooleanCallable rrp = new AsyncRemotelyBooleanCallable();
+					rrp.executeProcess(address, membersUpdate);
+					calls.add(rrp);
+				}
+				for (AsyncRemotelyBooleanCallable call : calls) {
+					System.out.println("AsyncResult " + call.getResultAsBoolean());
+				}
+				calls.clear();
+				for (final Address address : lsAddresses) {
+					AsyncRemotelyBooleanCallable call = new AsyncRemotelyBooleanCallable();
+					call.executeProcess(address, new SyncProcess());
+					calls.add(call);
+				}
+				for (AsyncRemotelyBooleanCallable call : calls) {
+					System.out.println("AsyncResult2 " + call.getResultAsBoolean());
+				}
+				calls.clear();
+				AbstractRemotelyCallable<Boolean> connCheckcallable = new ConnectionCheckCall();
+				for (final Address address : lsAddresses) {
+					AsyncRemotelyBooleanCallable call = new AsyncRemotelyBooleanCallable();
+					call.executeProcess(address, connCheckcallable);
+					calls.add(call);
+				}
+				for (AsyncRemotelyBooleanCallable call : calls) {
+					System.out.println("AsyncResult3 " + call.getResultAsBoolean());
+				}
+			}
+		});
+	}
+
+	void startJoin2() {
+		if (DEBUG) {
+			log("Join Started!");
+		}
 		joinInProgress = true;
 		final MembersUpdate membersUpdate = new MembersUpdate(lsMembers);
 		if (setJoins != null && setJoins.size() > 0) {
@@ -388,12 +575,28 @@ public class ClusterManager extends BaseManager {
 		});
 	}
 
-	public static class SyncProcess extends AbstractRemotelyProcessable {
+	public static class SyncProcess extends AbstractRemotelyCallable<Boolean> implements
+			RemotelyProcessable {
+
+		Connection conn;
+
+		public Connection getConnection() {
+			return conn;
+		}
+
+		public void setConnection(Connection conn) {
+			this.conn = conn;
+		}
 
 		public void readData(DataInput in) throws IOException {
 		}
 
 		public void writeData(DataOutput out) throws IOException {
+		}
+
+		public Boolean call() {
+			process();
+			return Boolean.TRUE;
 		}
 
 		public void process() {
@@ -402,6 +605,25 @@ public class ClusterManager extends BaseManager {
 			ListenerManager.get().syncForAdd();
 			TopicManager.get().syncForAdd();
 			ClusterManager.get().joinReset();
+		}
+	}
+
+	public static abstract class AbstractRemotelyCallable<T> implements DataSerializable,
+			Callable<T> {
+		Connection conn;
+
+		public Connection getConnection() {
+			return conn;
+		}
+
+		public void setConnection(Connection conn) {
+			this.conn = conn;
+		}
+
+		public void readData(DataInput in) throws IOException {
+		}
+
+		public void writeData(DataOutput out) throws IOException {
 		}
 	}
 
@@ -414,6 +636,12 @@ public class ClusterManager extends BaseManager {
 
 		public void setConnection(Connection conn) {
 			this.conn = conn;
+		}
+
+		public void readData(DataInput in) throws IOException {
+		}
+
+		public void writeData(DataOutput out) throws IOException {
 		}
 	}
 
@@ -480,6 +708,80 @@ public class ClusterManager extends BaseManager {
 		if (DEBUG) {
 			publishLog("Join complete");
 		}
+	}
+
+	public static class ConnectionCheckCall extends AbstractRemotelyCallable<Boolean> {
+		public Boolean call() throws Exception {
+			for (MemberImpl member : lsMembers) {
+				if (ConnectionManager.get().getConnection(member.getAddress()) == null) {
+					return Boolean.FALSE;
+				}
+			}
+			return Boolean.TRUE;
+		}
+	}
+
+	public static class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
+
+		public List<Address> lsAddresses = null;
+
+		public MembersUpdateCall() {
+		}
+
+		public MembersUpdateCall(List<MemberImpl> lsMembers) {
+			int size = lsMembers.size();
+			lsAddresses = new ArrayList<Address>(size);
+			for (int i = 0; i < size; i++) {
+				lsAddresses.add(i, lsMembers.get(i).getAddress());
+			}
+		}
+
+		public Boolean call() {
+			System.out.println("CAlling members update ");
+			ClusterManager.get().updateMembers(lsAddresses);
+			return Boolean.TRUE;
+		}
+
+		public void addAddress(Address address) {
+			if (!lsAddresses.contains(address)) {
+				lsAddresses.add(address);
+			}
+		}
+
+		public void removeAddress(Address address) {
+			lsAddresses.remove(address);
+		}
+
+		public void readData(DataInput in) throws IOException {
+			int size = in.readInt();
+			lsAddresses = new ArrayList<Address>(size);
+			for (int i = 0; i < size; i++) {
+				Address address = new Address();
+				address.readData(in);
+				lsAddresses.add(i, address);
+			}
+		}
+
+		public void writeData(DataOutput out) throws IOException {
+			int size = lsAddresses.size();
+			out.writeInt(lsAddresses.size());
+			for (int i = 0; i < size; i++) {
+				Address address = lsAddresses.get(i);
+				address.writeData(out);
+			}
+		}
+
+		@Override
+		public String toString() {
+			StringBuffer sb = new StringBuffer("MembersUpdateCall {");
+			for (Address address : lsAddresses) {
+				sb.append("\n" + address);
+			}
+
+			sb.append("\n}");
+			return sb.toString();
+		}
+
 	}
 
 	public static class MembersUpdate extends AbstractRemotelyProcessable {
@@ -564,7 +866,6 @@ public class ClusterManager extends BaseManager {
 		String groupPassword;
 
 		public JoinRequest() {
-
 		}
 
 		public JoinRequest(Address address, String groupName, String groupPassword, int type) {
@@ -693,6 +994,16 @@ public class ClusterManager extends BaseManager {
 		@Override
 		public String toString() {
 			return "CreateProxy [" + name + "]";
+		}
+	}
+
+	class HeartbeatTask implements Runnable, Processable {
+		public void run() {
+			enqueueAndReturn(HeartbeatTask.this);
+		}
+
+		public void process() {
+			heartBeater();
 		}
 	}
 
