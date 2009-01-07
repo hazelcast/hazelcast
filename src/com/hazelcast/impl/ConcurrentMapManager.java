@@ -57,6 +57,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
+import com.hazelcast.impl.FactoryImpl.IProxy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.InvocationQueue.Data;
@@ -356,9 +357,9 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		public void remove() {
-			if (next != null) {
-				IMap map = (IMap) FactoryImpl.getProxy(name);
-				map.remove(next.getKeyData());
+			if (next != null) { 				
+				IProxy iproxy = (IProxy) FactoryImpl.getProxy(name);
+				iproxy.removeKey(next.getKeyData());
 			}
 		}
 	}

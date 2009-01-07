@@ -393,7 +393,7 @@ public class FactoryImpl implements Constants {
 		}
 	}
 
-	static class CollectionProxy extends AbstractCollection implements ICollection {
+	static class CollectionProxy extends AbstractCollection implements ICollection, IProxy {
 		String name = null;
 
 		CProxy mapProxy;
@@ -420,7 +420,11 @@ public class FactoryImpl implements Constants {
 
 		@Override
 		public boolean remove(Object obj) {
-			return mapProxy.removeValue(obj);
+			return mapProxy.removeKey(obj);
+		}
+
+		public boolean removeKey(Object obj) {
+			return mapProxy.removeKey(obj);
 		}
 
 		@Override
@@ -535,8 +539,13 @@ public class FactoryImpl implements Constants {
 		}
 
 	}
+	
+	interface IProxy {
+		boolean add(Object item);
+		boolean removeKey (Object key); 
+	}
 
-	static class CProxy implements IMap, Constants {
+	static class CProxy implements IMap, IProxy, Constants{
 
 		String name = null;
 
@@ -718,11 +727,11 @@ public class FactoryImpl implements Constants {
 			}
 		}
 
-		public boolean removeValue(Object value) {
-			if (value == null)
+		public boolean removeKey(Object key) {
+			if (key == null)
 				throw new NullPointerException();
 			try {
-				Data dataKey = ThreadContext.get().toData(value);
+				Data dataKey = ThreadContext.get().toData(key);
 				return remove(dataKey) != null;
 			} catch (Exception e) {
 				e.printStackTrace();

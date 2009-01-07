@@ -39,12 +39,13 @@ import java.util.concurrent.TimeUnit;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.InvocationQueue.Data;
 import com.hazelcast.nio.InvocationQueue.Invocation;
 
-public class ClusterManager extends BaseManager {
+public class ClusterManager extends BaseManager implements ConnectionListener {
 
 	private static final ClusterManager instance = new ClusterManager();
 
@@ -53,6 +54,7 @@ public class ClusterManager extends BaseManager {
 	}
 
 	private ClusterManager() {
+		ConnectionManager.get().addConnectionListener(this);
 		ScheduledExecutorService ses = ExecutorManager.get().getScheduledExecutorService();
 		ses.scheduleWithFixedDelay(new HeartbeatTask(), 0, 1, TimeUnit.SECONDS);
 	}
@@ -75,7 +77,7 @@ public class ClusterManager extends BaseManager {
 				handleResponse(inv);
 			} else if (inv.operation == OP_HEARTBEAT) {
 				// last heartbeat is recorded at ReadHandler
-				// so no op.
+				// so no op. 
 				inv.returnToContainer();
 			} else if (inv.operation == OP_REMOTELY_PROCESS_AND_RESPONSE) {
 				Data data = inv.doTake(inv.data);
@@ -139,8 +141,7 @@ public class ClusterManager extends BaseManager {
 
 	public void heartBeater() {
 
-		long now = System.currentTimeMillis();
-		// I have to check the last heartbeats received!
+		long now = System.currentTimeMillis(); 
 		List<MemberImpl> lsMembers = ClusterManager.lsMembers;
 		for (MemberImpl memberImpl : lsMembers) {
 			Address address = memberImpl.getAddress();
@@ -148,14 +149,14 @@ public class ClusterManager extends BaseManager {
 				Connection conn = ConnectionManager.get().getConnection(address);
 				if (Node.get().joined()) {
 					if (conn != null && conn.live()) {
-						if ((now - conn.getLastRead()) >= 3000) {
-							ConnectionManager.get().remove(conn);
-							conn = null;
+						if ((now - memberImpl.getLastRead()) >= 3000) {
+//							ConnectionManager.get().remove(conn);
+//							conn = null;
 						}
 					}
 				}
 				if (conn != null && conn.live()) {
-					if ((now - conn.getLastWrite()) > 500) {
+					if ((now - memberImpl.getLastWrite()) > 500) {
 						Invocation inv = obtainServiceInvocation("heartbeat", null, null,
 								OP_HEARTBEAT, 0);
 						send(inv, address);
@@ -1005,6 +1006,20 @@ public class ClusterManager extends BaseManager {
 		public void process() {
 			heartBeater();
 		}
+	}
+
+	public void connectionAdded(final Connection connection) {
+		enqueueAndReturn(new Processable() {
+			public void process() {
+				MemberImpl member = getMember(connection.getEndPoint());
+				if (member != null) {
+					member.didRead();
+				}
+			}
+		});
+	}
+
+	public void connectionRemoved(Connection connection) {
 	}
 
 }

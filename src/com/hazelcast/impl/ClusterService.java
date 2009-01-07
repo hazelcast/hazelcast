@@ -63,7 +63,11 @@ public class ClusterService implements Runnable, Constants {
 
 	public void process(Object obj) {
 		if (obj instanceof Invocation) {
-			Invocation inv = (Invocation) obj; 
+			Invocation inv = (Invocation) obj;
+			MemberImpl memberFrom = getMember(inv.conn.getEndPoint());
+			if (memberFrom != null) {
+				memberFrom.didRead();
+			}
 			int operation = inv.operation;
 			if (operation < 50) {
 				ClusterManager.get().handle(inv);
@@ -136,7 +140,6 @@ public class ClusterService implements Runnable, Constants {
 		}
 	}
 
-
 	public void stop() {
 		this.running = false;
 	}
@@ -204,11 +207,11 @@ public class ClusterService implements Runnable, Constants {
 
 	public void enqueueAndReturn(Object message) {
 		try {
-//			if (DEBUG) {
-//				if (queue.size() > 600) { 
-//					System.out.println("queue size " + queue.size());
-//				}
-//			}
+			// if (DEBUG) {
+			// if (queue.size() > 600) {
+			// System.out.println("queue size " + queue.size());
+			// }
+			// }
 			queue.put(message);
 		} catch (InterruptedException e) {
 			Node.get().handleInterruptedException(Thread.currentThread(), e);
@@ -270,35 +273,44 @@ public class ClusterService implements Runnable, Constants {
 		return (nextMasterMember.localMember());
 	}
 
-	protected final boolean send(Invocation inv, Address address) {
+	final boolean send(Invocation inv, Address address) {
 		Connection conn = ConnectionManager.get().getConnection(address);
 		if (conn == null)
 			return false;
 		if (!conn.live())
 			return false;
-		conn.getWriteHandler().writeInvocation(inv);
+		writeInvocation(conn, inv);
 		return true;
 	}
 
-	protected final boolean send(Invocation inv, Connection conn) {
+	final boolean send(Invocation inv, Connection conn) {
 		if (conn != null) {
-			conn.getWriteHandler().writeInvocation(inv);
+			writeInvocation(conn, inv);
 		} else {
 			return false;
 		}
 		return true;
 	}
 
-	public void addMember(Address address) {
+	final private void writeInvocation(Connection conn, Invocation inv) {
+		if (!conn.live()) {
+			inv.returnToContainer();
+			return;
+		}
+		MemberImpl memberImpl = getMember(conn.getEndPoint());
+		if (memberImpl != null) {
+			memberImpl.didWrite();
+		}
+		inv.write();
+		conn.getWriteHandler().enqueueInvocation(inv);
+	}
+
+	final public void addMember(Address address) {
 
 		MemberImpl member = getMember(address);
 		if (member == null)
 			member = createMember(address);
 		addMember(member);
-	}
-
-	public void rollbackInvocation(Invocation inv) {
-		inv.returnToContainer();
 	}
 
 	@Override

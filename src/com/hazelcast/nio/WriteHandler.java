@@ -48,19 +48,14 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 		dead = false;
 		Invocation inv = (Invocation) writeHandlerQueue.poll();
 		while (inv != null) {
-			ClusterService.get().rollbackInvocation(inv);
+			inv.returnToContainer();
 			inv = (Invocation) writeHandlerQueue.poll();
 		}
 		writeHandlerQueue.clear();
 	}
 
-	public final void writeInvocation(Invocation inv) {
-		try {
-			if (!connection.live()) {
-				ClusterService.get().rollbackInvocation(inv);
-				return;
-			}
-			inv.write();
+	public final void enqueueInvocation(Invocation inv) {
+		try {			
 			writeHandlerQueue.put(inv);
 		} catch (InterruptedException e) {
 			Node.get().handleInterruptedException(Thread.currentThread(), e);
