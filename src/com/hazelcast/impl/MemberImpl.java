@@ -114,7 +114,7 @@ public class MemberImpl implements Member {
 		if (thisMember) {
 			sb.append("this ");
 		}
-		if (Node.DEBUG && Node.get().getMasterAddress().equals(address)) {
+		if (Node.DEBUG && address.equals(Node.get().getMasterAddress())) {
 			sb.append("* ");
 		}
 		return sb.toString();

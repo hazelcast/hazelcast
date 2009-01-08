@@ -77,7 +77,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 				handleResponse(inv);
 			} else if (inv.operation == OP_HEARTBEAT) {
 				// last heartbeat is recorded at ReadHandler
-				// so no op. 
+				// so no op.
 				inv.returnToContainer();
 			} else if (inv.operation == OP_REMOTELY_PROCESS_AND_RESPONSE) {
 				Data data = inv.doTake(inv.data);
@@ -140,32 +140,72 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 	}
 
 	public void heartBeater() {
-
-		long now = System.currentTimeMillis(); 
+		long now = System.currentTimeMillis();
 		List<MemberImpl> lsMembers = ClusterManager.lsMembers;
-		for (MemberImpl memberImpl : lsMembers) {
-			Address address = memberImpl.getAddress();
-			try {
-				Connection conn = ConnectionManager.get().getConnection(address);
-				if (Node.get().joined()) {
-					if (conn != null && conn.live()) {
-						if ((now - memberImpl.getLastRead()) >= 3000) {
-//							ConnectionManager.get().remove(conn);
-//							conn = null;
-						}
-					}
-				}
-				if (conn != null && conn.live()) {
-					if ((now - memberImpl.getLastWrite()) > 500) {
-						Invocation inv = obtainServiceInvocation("heartbeat", null, null,
-								OP_HEARTBEAT, 0);
-						send(inv, address);
-					}
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
 
+		if (isMaster()) {
+			List<Address> lsDeadAddresses = null;
+			for (MemberImpl memberImpl : lsMembers) {
+				final Address address = memberImpl.getAddress();
+				if (!thisAddress.equals(address)) {
+					try {
+						Connection conn = ConnectionManager.get().getConnection(address);
+						if (Node.get().joined()) {
+							if (conn != null && conn.live()) {
+								if ((now - memberImpl.getLastRead()) >= 5000) {
+									conn = null;
+									if (lsDeadAddresses == null) {
+										lsDeadAddresses = new ArrayList<Address>();
+										lsDeadAddresses.add(address);
+									}
+								}
+							}
+						}
+						if (conn != null && conn.live()) {
+							if ((now - memberImpl.getLastWrite()) > 500) {
+								Invocation inv = obtainServiceInvocation("heartbeat", null, null,
+										OP_HEARTBEAT, 0);
+								send(inv, address);
+							}
+						}
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}
+			if (lsDeadAddresses != null) {
+				for (Address address : lsDeadAddresses) {
+					doRemoveAddress(address);
+					sendRemoveMemberToOthers(address);
+				}
+			}
+		} else {
+			if (getMasterAddress() != null) {
+				MemberImpl masterMember = getMember(getMasterAddress());
+				boolean removed = false;
+				if (masterMember != null) {
+					if ((now - masterMember.getLastRead()) >= 3000) {
+						doRemoveAddress(getMasterAddress());
+						removed = true;
+					}
+				}
+				if (!removed) {
+					Invocation inv = obtainServiceInvocation("heartbeat", null, null, OP_HEARTBEAT,
+							0);
+					send(inv, getMasterAddress());
+				}
+			}
+		}
+	}
+
+	private void sendRemoveMemberToOthers(final Address deadAddress) {
+		for (MemberImpl member : lsMembers) {
+			Address address = member.getAddress();
+			if (!thisAddress.equals(address)) {
+				if (!address.equals(deadAddress)) {
+					sendProcessableTo(new MemberRemover(deadAddress), address);
+				}
+			}
 		}
 	}
 
@@ -212,7 +252,6 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 	}
 
 	public void handleAddRemoveConnection(AddRemoveConnection addRemoveConnection) {
-		Connection conn = addRemoveConnection.getConnection();
 		boolean add = addRemoveConnection.add;
 		Address addressChanged = addRemoveConnection.address;
 		if (add) { // Just connect to the new address if not connected already.
@@ -222,32 +261,34 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		} else { // Remove dead member
 			addressChanged.setDead();
 			final Address deadAddress = addressChanged;
-			if (!deadAddress.equals(thisAddress)) {
-				if (deadAddress.equals(Node.get().getMasterAddress())) {
-					if (Node.get().joined()) {
-						MemberImpl newMaster = clusterService.getNextMemberAfter(deadAddress);
-						if (newMaster != null)
-							Node.get().setMasterAddress(newMaster.getAddress());
-						else
-							Node.get().setMasterAddress(null);
-					} else {
-						Node.get().setMasterAddress(null);
-					}
-					if (DEBUG) {
-						log("Now Master " + Node.get().getMasterAddress());
-					}
-				}
-			}
-			if (Node.get().master()) {
-				if (setJoins.contains(deadAddress)) {
-					setJoins.remove(deadAddress);
-				}
-			}
 			doRemoveAddress(deadAddress);
 		} // end of REMOVE CONNECTION
 	}
 
 	void doRemoveAddress(Address deadAddress) {
+		if (deadAddress.equals(thisAddress))
+			return;
+		if (deadAddress.equals(Node.get().getMasterAddress())) {
+			if (Node.get().joined()) {
+				MemberImpl newMaster = clusterService.getNextMemberAfter(deadAddress);
+				if (newMaster != null)
+					Node.get().setMasterAddress(newMaster.getAddress());
+				else
+					Node.get().setMasterAddress(null);
+			} else {
+				Node.get().setMasterAddress(null);
+			}
+			if (DEBUG) {
+				log("Now Master " + Node.get().getMasterAddress());
+			}
+		}
+
+		if (Node.get().master()) {
+			if (setJoins.contains(deadAddress)) {
+				setJoins.remove(deadAddress);
+			}
+		}
+
 		lsMembersBefore.clear();
 		for (MemberImpl member : lsMembers) {
 			lsMembersBefore.add(member);
@@ -733,7 +774,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			int size = lsMembers.size();
 			lsAddresses = new ArrayList<Address>(size);
 			for (int i = 0; i < size; i++) {
-				lsAddresses.add(i, lsMembers.get(i).getAddress());
+				lsAddresses.add(lsMembers.get(i).getAddress());
 			}
 		}
 
@@ -759,15 +800,16 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			for (int i = 0; i < size; i++) {
 				Address address = new Address();
 				address.readData(in);
-				lsAddresses.add(i, address);
+				lsAddresses.add(address);
 			}
 		}
 
 		public void writeData(DataOutput out) throws IOException {
 			int size = lsAddresses.size();
-			out.writeInt(lsAddresses.size());
+			out.writeInt(size);
 			for (int i = 0; i < size; i++) {
 				Address address = lsAddresses.get(i);
+				if (address == null) throw new IOException ("Address cannot be null");
 				address.writeData(out);
 			}
 		}
@@ -1022,4 +1064,31 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 	public void connectionRemoved(Connection connection) {
 	}
 
+	public static class MemberRemover implements RemotelyProcessable {
+		private Address deadAddress = null;
+
+		public MemberRemover() {
+		}
+
+		public MemberRemover(Address deadAddress) {
+			super();
+			this.deadAddress = deadAddress;
+		}
+
+		public void process() {
+			ClusterManager.get().doRemoveAddress(deadAddress);
+		}
+
+		public void setConnection(Connection conn) {
+		}
+
+		public void readData(DataInput in) throws IOException {
+			deadAddress = new Address();
+			deadAddress.readData(in);
+		}
+
+		public void writeData(DataOutput out) throws IOException {
+			deadAddress.writeData(out);
+		}
+	}
 }

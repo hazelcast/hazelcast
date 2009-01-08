@@ -113,7 +113,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 
 	public void handleRemoteExecution(Invocation inv) {
 		if (DEBUG)
-			log("Remote Handling invocaiton %%%%5555... " + inv);
+			log("Remote handling invocation " + inv);
 		Data callableData = inv.doTake(inv.data);
 		RemoteExecutionId remoteExecutionId = new RemoteExecutionId(inv.conn.getEndPoint(),
 				inv.longValue);

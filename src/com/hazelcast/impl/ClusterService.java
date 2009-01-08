@@ -306,7 +306,12 @@ public class ClusterService implements Runnable, Constants {
 	}
 
 	final public void addMember(Address address) {
-
+		if (address == null) {
+			if (DEBUG) {
+				System.out.println("Address cannot be null");
+				return;
+			}
+		}
 		MemberImpl member = getMember(address);
 		if (member == null)
 			member = createMember(address);
