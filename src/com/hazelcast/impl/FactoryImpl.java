@@ -569,14 +569,14 @@ public class FactoryImpl implements Constants {
 		public Object put(Object key, Object value) {
 			check(key);
 			check(value);
-			MPut put = ThreadContext.get().getMPut();
-			return put.put(name, key, value, -1, -1);
+			MPut mput = ThreadContext.get().getMPut();
+			return mput.put(name, key, value, -1, -1);
 		}
 
 		public Object get(Object key) {
 			check(key);
 			MGet mget = ThreadContext.get().getMGet();
-			return mget.get(name, key, 0, -1);
+			return mget.get(name, key, -1, -1);
 		}
 
 		private void check(Object obj) {
@@ -598,15 +598,15 @@ public class FactoryImpl implements Constants {
 		}
 
 		public int size() {
-			MSize size = ConcurrentMapManager.get().new MSize();
-			return size.getSize(name);
+			MSize msize = ConcurrentMapManager.get().new MSize();
+			return msize.getSize(name);
 		}
 
 		public Object putIfAbsent(Object key, Object value) {
 			check(key);
 			check(value);
-			MPut put = ThreadContext.get().getMPut();
-			return put.putIfAbsent(name, key, value, -1, -1);
+			MPut mput = ThreadContext.get().getMPut();
+			return mput.putIfAbsent(name, key, value, -1, -1);
 		}
 
 		public boolean remove(Object key, Object value) {
@@ -619,8 +619,8 @@ public class FactoryImpl implements Constants {
 		public Object replace(Object key, Object value) {
 			check(key);
 			check(value);
-			MPut put = ThreadContext.get().getMPut();
-			return put.replace(name, key, value, -1, -1);
+			MPut mput = ThreadContext.get().getMPut();
+			return mput.replace(name, key, value, -1, -1);
 		}
 
 		public boolean replace(Object key, Object oldValue, Object newValue) {

@@ -41,6 +41,7 @@ public class MemberImpl implements Member {
 		super();
 		this.thisMember = thisMember;
 		this.address = address; 
+		this.lastRead = System.currentTimeMillis() + 10000;
 	}
 
 	public MemberImpl(Address address) {

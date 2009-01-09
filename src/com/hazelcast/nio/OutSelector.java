@@ -60,6 +60,7 @@ public class OutSelector extends SelectorBase {
 		int localPort = 0;
 
 		int numberOfConnectionError = 0;
+		 
 
 		public Connector(Address address) {
 			super();
@@ -76,7 +77,7 @@ public class OutSelector extends SelectorBase {
 				while (!bindOk) {
 					try {
 						localPort += 20;
-						if (boundPorts.size() > 1000 || localPort > 60000) {
+						if (boundPorts.size() > 2000 || localPort > 60000) {
 							boundPorts.clear();
 							Connection[] conns = ConnectionManager.get().getConnections();
 							for (Connection conn : conns) {

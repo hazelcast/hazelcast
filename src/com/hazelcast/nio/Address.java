@@ -158,6 +158,7 @@ public class Address implements DataSerializable {
 	public boolean equals(Object o) {
 		if (this == o)
 			return true;
+		if (o == null) return false;		
 		if (!(o instanceof Address))
 			return false;
 

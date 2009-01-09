@@ -69,7 +69,8 @@ public class ThreadContext {
 		try {
 			return objectReaderWriter.writeObject(obj);
 		} catch (Exception e) {
-			e.printStackTrace();
+			System.out.println(e.getMessage());
+			e.printStackTrace(System.out);
 		}
 		return null;
 	}

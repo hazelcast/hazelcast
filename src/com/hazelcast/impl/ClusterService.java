@@ -118,10 +118,7 @@ public class ClusterService implements Runnable, Constants {
 				int size = lsBuffer.size();
 				if (size > 0) {
 					for (int i = 0; i < size; i++) {
-						obj = lsBuffer.get(i);
-						if (obj == null) {
-							System.out.println(size + " Object is null!" + i);
-						}
+						obj = lsBuffer.get(i); 
 						process(obj);
 					}
 					lsBuffer.clear();

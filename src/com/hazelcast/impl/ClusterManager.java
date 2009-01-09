@@ -152,12 +152,12 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 						Connection conn = ConnectionManager.get().getConnection(address);
 						if (Node.get().joined()) {
 							if (conn != null && conn.live()) {
-								if ((now - memberImpl.getLastRead()) >= 5000) {
+								if ((now - memberImpl.getLastRead()) >= 10000) {
 									conn = null;
 									if (lsDeadAddresses == null) {
-										lsDeadAddresses = new ArrayList<Address>();
-										lsDeadAddresses.add(address);
+										lsDeadAddresses = new ArrayList<Address>(); 
 									}
+									lsDeadAddresses.add(address);
 								}
 							}
 						}
@@ -184,7 +184,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 				MemberImpl masterMember = getMember(getMasterAddress());
 				boolean removed = false;
 				if (masterMember != null) {
-					if ((now - masterMember.getLastRead()) >= 3000) {
+					if ((now - masterMember.getLastRead()) >= 8000) {
 						doRemoveAddress(getMasterAddress());
 						removed = true;
 					}
@@ -266,9 +266,12 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 	}
 
 	void doRemoveAddress(Address deadAddress) {
+		if (DEBUG) {
+			log("Removing Address " + deadAddress);
+		}
 		if (deadAddress.equals(thisAddress))
 			return;
-		if (deadAddress.equals(Node.get().getMasterAddress())) {
+		if (deadAddress.equals(getMasterAddress())) {
 			if (Node.get().joined()) {
 				MemberImpl newMaster = clusterService.getNextMemberAfter(deadAddress);
 				if (newMaster != null)
@@ -283,7 +286,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			}
 		}
 
-		if (Node.get().master()) {
+		if (isMaster()) {
 			if (setJoins.contains(deadAddress)) {
 				setJoins.remove(deadAddress);
 			}
@@ -333,10 +336,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			}
 		}
 		if (isMaster()) {
-			Address newAddress = conn.getEndPoint();
-			if (newAddress == null) {
-				newAddress = joinRequest.address;
-			}
+			Address newAddress = joinRequest.address;
 			if (!joinInProgress) {
 				if (setJoins.add(newAddress)) {
 					sendProcessableTo(new Master(Node.get().getMasterAddress()), conn);
@@ -809,7 +809,8 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			out.writeInt(size);
 			for (int i = 0; i < size; i++) {
 				Address address = lsAddresses.get(i);
-				if (address == null) throw new IOException ("Address cannot be null");
+				if (address == null)
+					throw new IOException("Address cannot be null");
 				address.writeData(out);
 			}
 		}

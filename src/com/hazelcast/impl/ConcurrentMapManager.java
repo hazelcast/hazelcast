@@ -213,7 +213,7 @@ class ConcurrentMapManager extends BaseManager {
 			}
 			doResetRecordOwners();
 			if (DEBUG) {
-//				printBlocks();
+				// printBlocks();
 			}
 		}
 	}
@@ -357,7 +357,7 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		public void remove() {
-			if (next != null) { 				
+			if (next != null) {
 				IProxy iproxy = (IProxy) FactoryImpl.getProxy(name);
 				iproxy.removeKey(next.getKeyData());
 			}
@@ -428,8 +428,7 @@ class ConcurrentMapManager extends BaseManager {
 
 	class MGet extends MTargetAwareOp {
 		public Object get(String name, Object key, long timeout, long txnId) {
-			setLocal(OP_CMAP_GET, name, key, null, timeout, txnId, -1);
-			return objectCall();
+			return objectCall(OP_CMAP_GET, name, key, null, timeout, txnId, -1);
 		}
 
 		@Override
@@ -440,17 +439,6 @@ class ConcurrentMapManager extends BaseManager {
 				value = ThreadContext.get().hardCopy(value);
 			}
 			setResult(value);
-		}
-
-		int processCount = 0;
-
-		public void process() {
-			processCount++;
-			if (request.key == null) {
-				ClusterManager.get().publishLog(processCount + " MGet request key is null");
-				System.exit(0);
-			}
-			super.process();
 		}
 	}
 
@@ -566,7 +554,6 @@ class ConcurrentMapManager extends BaseManager {
 		@Override
 		void setTarget() {
 			if (target != null) {
-				// I am redoing..
 				Block block = getBlock(request.key);
 				if (target.equals(block.owner)) {
 					target = block.migrationAddress;
@@ -581,22 +568,7 @@ class ConcurrentMapManager extends BaseManager {
 				}
 			}
 			if (target == null) {
-				if (request.key == null) {
-					if (DEBUG) {
-						ClusterManager.get().publishLog(
-								"Key cannot be null!! " + MTargetAwareOp.this);
-					}
-				}
-				try {
-					target = getTarget(request.name, request.key);
-				} catch (Exception e) {
-					if (DEBUG) {
-						ClusterManager.get().publishLog(
-								request.key + " Exception when setting target for "
-										+ MTargetAwareOp.this);
-					}
-					e.printStackTrace(System.out);
-				}
+				target = getTarget(request.name, request.key);
 			}
 		}
 	}
@@ -819,7 +791,7 @@ class ConcurrentMapManager extends BaseManager {
 		inv.returnToContainer();
 		doResetRecordOwners();
 		if (DEBUG) {
-//			printBlocks();
+			// printBlocks();
 		}
 	}
 
@@ -922,7 +894,7 @@ class ConcurrentMapManager extends BaseManager {
 			doMigrationComplete(thisAddress);
 			sendMigrationComplete();
 			if (DEBUG) {
-//				printSync();
+				// printSync();
 			}
 
 		}

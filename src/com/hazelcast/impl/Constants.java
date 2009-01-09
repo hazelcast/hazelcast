@@ -40,6 +40,8 @@ public interface Constants {
 
 	interface Timeouts {
 
+		public static final long TIMEOUT_ADDITION = 10000;
+
 		public static final long DEFAULT_LOCK_WAIT = 8000;
 
 		public static final long DEFAULT_TXN_TIMEOUT = 8000;

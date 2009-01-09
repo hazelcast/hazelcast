@@ -28,6 +28,7 @@ import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_FAILURE;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_NONE;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_REDO;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_SUCCESS;
+import static com.hazelcast.impl.Constants.Timeouts.TIMEOUT_ADDITION;
 
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
@@ -747,36 +748,30 @@ abstract class BaseManager implements Constants {
 		@Override
 		public void doOp() {
 			responses.clear();
-			try {
-				enqueueAndReturn(TargetAwareOp.this);
-			} catch (Exception e) {
-				e.printStackTrace(System.out);
-			}
+			enqueueAndReturn(TargetAwareOp.this); 
 		}
 
 		public Object getResult() {
 			long timeout = request.timeout;
 			Object result = null;
 			try {
-				if (timeout >= 0 && timeout < 100) {
-					timeout = 0;
-					result = responses.poll(1, TimeUnit.SECONDS);
-				} else if (timeout == -1) {
-					result = responses.take();
+				if (timeout == -1 ) {
+					result = responses.take();					
 				} else {
-					result = responses.poll(timeout + 10, TimeUnit.MILLISECONDS);
+					result = responses.poll(timeout + TIMEOUT_ADDITION, TimeUnit.MILLISECONDS);
 				}
 				if (result == OBJECT_REDO) {
 					Thread.sleep(2000);
 					// if (DEBUG) {
 					// log(getId() + " Redoing.. " + this);
 					// }
+					request.redoCount ++;
 					doOp();
 					return getResult();
 				}
 			} catch (Exception e) {
 				e.printStackTrace(System.out);
-			} 
+			}
 			return result;
 		}
 
@@ -824,9 +819,9 @@ abstract class BaseManager implements Constants {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-			} 
+			}
 		}
-		
+
 		public Object getResult() {
 			return null;
 		}
@@ -902,7 +897,7 @@ abstract class BaseManager implements Constants {
 	}
 
 	abstract class RequestBasedCall extends AbstractCall {
-		final Request request = new Request();
+		final protected Request request = new Request();
 
 		public void setLocal(int operation, String name, Object key, Object value, long timeout,
 				long txnId, long recordId) {
@@ -928,7 +923,7 @@ abstract class BaseManager implements Constants {
 			setLocal(operation, name, key, value, timeout, txnId, recordId);
 			return objectCall();
 		}
-		
+
 		public boolean booleanCall(int operation, String name, Object key, Object value,
 				long timeout, long txnId, long recordId) {
 			doOp(operation, name, key, value, timeout, txnId, recordId);
@@ -936,17 +931,17 @@ abstract class BaseManager implements Constants {
 		}
 
 		abstract void doOp();
-		
+
 		abstract Object getResult();
-		
-		public void doOp(int operation, String name, Object key, Object value,
-				long timeout, long txnId, long recordId) {
+
+		public void doOp(int operation, String name, Object key, Object value, long timeout,
+				long txnId, long recordId) {
 			setLocal(operation, name, key, value, timeout, txnId, recordId);
 			doOp();
 		}
-		
+
 		public Object getResultAsObject() {
-			try { 
+			try {
 				Object result = getResult();
 				if (result == OBJECT_NULL || result == null) {
 					return null;
@@ -968,9 +963,9 @@ abstract class BaseManager implements Constants {
 			}
 			return null;
 		}
-		
+
 		public boolean getResultAsBoolean() {
-			try { 
+			try {
 				Object result = getResult();
 				if (result == OBJECT_NULL || result == null) {
 					return false;
@@ -987,7 +982,6 @@ abstract class BaseManager implements Constants {
 			return false;
 		}
 
-		
 	}
 
 	interface Call extends Processable {
@@ -1026,6 +1020,8 @@ abstract class BaseManager implements Constants {
 	}
 
 	class Request {
+		volatile int redoCount =0;
+		volatile int resetCount = 0;
 		boolean local = true;
 		int operation = -1;
 		String name = null;
@@ -1121,6 +1117,7 @@ abstract class BaseManager implements Constants {
 		}
 
 		public void reset() {
+			this.resetCount++;
 			this.local = true;
 			this.operation = -1;
 			this.name = null;
