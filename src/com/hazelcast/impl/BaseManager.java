@@ -33,6 +33,7 @@ import static com.hazelcast.impl.Constants.Timeouts.TIMEOUT_ADDITION;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -73,6 +74,8 @@ abstract class BaseManager implements Constants {
 	protected static EventQueue[] eventQueues = new EventQueue[100];
 
 	protected static Map<Long, StreamResponseHandler> mapStreams = new ConcurrentHashMap<Long, StreamResponseHandler>();
+
+	private static long scheduledActionIdIndex = 0;
 
 	protected BaseManager() {
 		clusterService = ClusterService.get();
@@ -195,14 +198,22 @@ abstract class BaseManager implements Constants {
 		return sent;
 	}
 
-	protected void sendResponseFailure(Invocation inv) {
+	protected boolean sendResponseFailure(Invocation inv, Address address) {
+		Connection conn = ConnectionManager.get().getConnection(address);
+		inv.conn = conn;
+		return sendResponseFailure(inv);
+	}
+
+	protected boolean sendResponseFailure(Invocation inv) {
 		inv.local = false;
 		inv.operation = OP_RESPONSE;
 		inv.responseType = RESPONSE_FAILURE;
 		boolean sent = send(inv, inv.conn);
+		System.out.println("Sending failure, sent : " + sent);
 		if (!sent) {
 			inv.returnToContainer();
 		}
+		return sent;
 	}
 
 	public Invocation obtainServiceInvocation(String name, Object key, Object value, int operation,
@@ -233,9 +244,12 @@ abstract class BaseManager implements Constants {
 
 		protected Request request = null;
 
+		protected final long id;
+
 		public ScheduledAction(Request request) {
 			this.request = request;
 			setTimeout(request.timeout);
+			id = scheduledActionIdIndex++;
 		}
 
 		public void setTimeout(long timeout) {
@@ -260,6 +274,10 @@ abstract class BaseManager implements Constants {
 
 		public abstract boolean consume();
 
+		public void onExpire() {
+
+		}
+
 		public boolean expired() {
 			if (!valid)
 				return true;
@@ -274,10 +292,40 @@ abstract class BaseManager implements Constants {
 		}
 
 		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + getOuterType().hashCode();
+			result = prime * result + (int) (id ^ (id >>> 32));
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			ScheduledAction other = (ScheduledAction) obj;
+			if (!getOuterType().equals(other.getOuterType()))
+				return false;
+			if (id != other.id)
+				return false;
+			return true;
+		}
+
+		@Override
 		public String toString() {
 			return "ScheduledAction {neverExpires=" + neverExpires() + ", timeout= " + timeout
 					+ "}";
 		}
+
+		private BaseManager getOuterType() {
+			return BaseManager.this;
+		}
+
 	}
 
 	public MemberImpl getKeyOwner(Data key) {
@@ -579,7 +627,7 @@ abstract class BaseManager implements Constants {
 					log(request.local + " returning scheduled response " + sent);
 				}
 			} else {
-				sendResponseFailure(inv);
+				sendResponseFailure(inv, request.caller);
 			}
 		}
 	}
@@ -748,24 +796,19 @@ abstract class BaseManager implements Constants {
 		@Override
 		public void doOp() {
 			responses.clear();
-			enqueueAndReturn(TargetAwareOp.this); 
+			enqueueAndReturn(TargetAwareOp.this);
 		}
 
-		public Object getResult() {
-			long timeout = request.timeout;
+		public Object getResult() { 
 			Object result = null;
 			try {
-				if (timeout == -1 ) {
-					result = responses.take();					
-				} else {
-					result = responses.poll(timeout + TIMEOUT_ADDITION, TimeUnit.MILLISECONDS);
-				}
+				result = responses.take();
 				if (result == OBJECT_REDO) {
 					Thread.sleep(2000);
 					// if (DEBUG) {
 					// log(getId() + " Redoing.. " + this);
 					// }
-					request.redoCount ++;
+					request.redoCount++;
 					doOp();
 					return getResult();
 				}
@@ -1020,7 +1063,7 @@ abstract class BaseManager implements Constants {
 	}
 
 	class Request {
-		volatile int redoCount =0;
+		volatile int redoCount = 0;
 		volatile int resetCount = 0;
 		boolean local = true;
 		int operation = -1;

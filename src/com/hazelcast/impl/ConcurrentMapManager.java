@@ -47,16 +47,24 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import sun.reflect.ReflectionFactory.GetReflectionFactoryAction;
+import sun.security.util.DerEncoder;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Transaction;
+import com.hazelcast.impl.BaseManager.Request;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
+import com.hazelcast.impl.ClusterManager.HeartbeatTask;
 import com.hazelcast.impl.FactoryImpl.IProxy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
@@ -66,7 +74,7 @@ import com.hazelcast.nio.InvocationQueue.Invocation;
 class ConcurrentMapManager extends BaseManager {
 	private static ConcurrentMapManager instance = new ConcurrentMapManager();
 
-	private ConcurrentMapManager() {
+	private ConcurrentMapManager() {  
 	}
 
 	public static ConcurrentMapManager get() {
@@ -78,6 +86,9 @@ class ConcurrentMapManager extends BaseManager {
 	private Request remoteReq = new Request();
 	private Map<Integer, Block> mapBlocks = new HashMap<Integer, Block>(BLOCK_COUNT);
 	private Map<String, CMap> maps = new HashMap<String, CMap>(10);
+	long maxId = 0;
+	Map<Long, Record> mapRecordsById = new HashMap<Long, Record>();
+	
 
 	public void handle(Invocation inv) {
 		if (inv.operation == OP_CMAP_GET) {
@@ -234,6 +245,32 @@ class ConcurrentMapManager extends BaseManager {
 		@Override
 		void handleNoneRedoResponse(Invocation inv) {
 			handleBooleanNoneRedoResponse(inv);
+		}
+	}
+
+	class ScheduledLockAction extends ScheduledAction {
+		Record record = null;
+
+		public ScheduledLockAction(Request reqScheduled, Record record) {
+			super(reqScheduled);
+			this.record = record;
+		}
+
+		@Override
+		public boolean consume() {
+			if (DEBUG) {
+				log("consuming scheduled lock ");
+			}
+			record.lock(request.lockThreadId, request.lockAddress);
+			sendLockBackup(record);
+			request.response = Boolean.TRUE;
+			returnScheduledAsBoolean(request);
+			return true;
+		}
+
+		public void onExpire() {
+			request.response = Boolean.FALSE;
+			returnScheduledAsBoolean(request);
 		}
 	}
 
@@ -958,7 +995,7 @@ class ConcurrentMapManager extends BaseManager {
 			Record rec = null;
 			while (rec == null && !done) {
 				if (recordId <= maxRecordId) {
-					rec = cmap.getRecord(recordId++);
+					rec = getRecordById(recordId++);
 				} else {
 					done = true;
 				}
@@ -1250,19 +1287,7 @@ class ConcurrentMapManager extends BaseManager {
 				if (DEBUG) {
 					log("scheduling lock");
 				}
-				record.addScheduledAction(new ScheduledAction(reqScheduled) {
-					@Override
-					public boolean consume() {
-						if (DEBUG) {
-							log("consuming scheduled lock ");
-						}
-						record.lock(reqScheduled.lockThreadId, reqScheduled.lockAddress);
-						sendLockBackup(record);
-						reqScheduled.response = Boolean.TRUE;
-						returnScheduledAsBoolean(reqScheduled);
-						return true;
-					}
-				});
+				record.addScheduledAction(new ScheduledLockAction(reqScheduled, record));
 				request.scheduled = true;
 			} else {
 				request.response = Boolean.FALSE;
@@ -1408,21 +1433,20 @@ class ConcurrentMapManager extends BaseManager {
 		return record.testLock(req.lockThreadId, req.lockAddress);
 	}
 
+	public Record getRecordById(long recordId) {
+		return mapRecordsById.get(recordId);
+	}
+
 	class CMap {
 		Map<Data, Record> mapRecords = new HashMap<Data, Record>();
-		Map<Long, Record> mapRecordsById = new HashMap<Long, Record>();
 
 		String name;
-		long maxId = 0;
+
 		Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
 
 		public CMap(String name) {
 			super();
 			this.name = name;
-		}
-
-		public Record getRecord(long recordId) {
-			return mapRecordsById.get(recordId);
 		}
 
 		public Record getRecord(Data key) {
@@ -1580,7 +1604,7 @@ class ConcurrentMapManager extends BaseManager {
 		Record nextOwnedRecord(long recordId, int blockId) {
 			Record rec = null;
 			while (rec == null && recordId <= maxId) {
-				rec = getRecord(recordId);
+				rec = getRecordById(recordId);
 				if (rec != null) {
 					if (rec.blockId == blockId) {
 						if (rec.owner.equals(thisAddress)) {
@@ -1662,7 +1686,7 @@ class ConcurrentMapManager extends BaseManager {
 			this.id = id;
 			this.key = key;
 			this.value = value;
-			createTime = System.currentTimeMillis();
+			this.createTime = System.currentTimeMillis();
 		}
 
 		public long getId() {
@@ -1709,6 +1733,7 @@ class ConcurrentMapManager extends BaseManager {
 					while (it.hasNext()) {
 						ScheduledAction sa = it.next();
 						if (sa.request.caller.equals(deadAddress)) {
+							ClusterManager.get().deregisterScheduledAction(sa);
 							sa.setValid(false);
 							it.remove();
 						}
@@ -1755,12 +1780,15 @@ class ConcurrentMapManager extends BaseManager {
 			if (lsScheduledActions != null) {
 				while (lsScheduledActions.size() > 0) {
 					ScheduledAction sa = lsScheduledActions.remove(0);
+					ClusterManager.get().deregisterScheduledAction(sa);
 					if (DEBUG) {
 						log("sa.expired " + sa.expired());
 					}
-					if (!sa.expired()) {
+					if (sa.expired()) {
+						sa.onExpire();
+					} else {
 						sa.consume();
-						return;
+						return; 
 					}
 				}
 			}
@@ -1793,7 +1821,8 @@ class ConcurrentMapManager extends BaseManager {
 		public void addScheduledAction(ScheduledAction scheduledAction) {
 			if (lsScheduledActions == null)
 				lsScheduledActions = new ArrayList<ScheduledAction>(1);
-			lsScheduledActions.add(scheduledAction);
+			lsScheduledActions.add(scheduledAction);		
+			ClusterManager.get().registerScheduledAction(scheduledAction);
 			if (DEBUG) {
 				log("scheduling " + scheduledAction);
 			}

@@ -29,6 +29,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -37,6 +38,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.impl.BaseManager.Processable;
+import com.hazelcast.impl.BaseManager.ScheduledAction; 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
@@ -48,6 +51,8 @@ import com.hazelcast.nio.InvocationQueue.Invocation;
 public class ClusterManager extends BaseManager implements ConnectionListener {
 
 	private static final ClusterManager instance = new ClusterManager();
+	
+	ScheduledActionController scheduledActionController = new ScheduledActionController();
 
 	public static ClusterManager get() {
 		return instance;
@@ -57,6 +62,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		ConnectionManager.get().addConnectionListener(this);
 		ScheduledExecutorService ses = ExecutorManager.get().getScheduledExecutorService();
 		ses.scheduleWithFixedDelay(new HeartbeatTask(), 0, 1, TimeUnit.SECONDS);
+		ses.scheduleWithFixedDelay(scheduledActionController, 0, 1, TimeUnit.SECONDS);
 	}
 
 	private Set<Address> setJoins = new HashSet<Address>(100);
@@ -668,6 +674,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		public void writeData(DataOutput out) throws IOException {
 		}
 	}
+		
 
 	public static abstract class AbstractRemotelyProcessable implements RemotelyProcessable {
 		Connection conn;
@@ -1038,6 +1045,55 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		@Override
 		public String toString() {
 			return "CreateProxy [" + name + "]";
+		}
+	}
+	
+	public void registerScheduledAction(ScheduledAction scheduledAction) {
+		 scheduledActionController.addScheduledAction(scheduledAction);
+	}
+	
+	protected void deregisterScheduledAction(ScheduledAction scheduledAction) {
+		 scheduledActionController.removeScheduledAction(scheduledAction);
+	}
+	
+	class ScheduledActionController implements Runnable, Processable {
+		Set<ScheduledAction> setScheduledActions = new HashSet<ScheduledAction>(1000);
+
+		volatile boolean dirty = false;
+
+		public void addScheduledAction(ScheduledAction scheduledAction) {
+			setScheduledActions.add(scheduledAction);
+			dirty = true;
+		}
+		
+		public void removeScheduledAction(ScheduledAction scheduledAction) {
+			setScheduledActions.remove(scheduledAction); 
+		}
+
+		public void run() {
+			if (dirty) {
+				enqueueAndReturn(ScheduledActionController.this);
+			}
+		}
+
+		public void process() {
+			if (DEBUG) {
+				log("Processing ScheduledActionController");
+			}
+			dirty = false;
+			if (setScheduledActions.size() > 0) {
+				Iterator<ScheduledAction> it = setScheduledActions.iterator();
+				while (it.hasNext()) {
+					ScheduledAction sa = it.next();
+					if (sa.expired()) {
+						sa.onExpire();
+						it.remove();
+					}
+				}
+				if (setScheduledActions.size() > 0) {
+					dirty = true;
+				}
+			}
 		}
 	}
 

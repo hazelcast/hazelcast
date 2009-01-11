@@ -215,12 +215,14 @@ class BlockingQueueManager extends BaseManager {
 			for (ScheduledPollAction scheduledAction : scheduledPollActions) {
 				if (addressDead.equals(scheduledAction.request.caller)) {
 					scheduledAction.setValid(false);
+					ClusterManager.get().deregisterScheduledAction(scheduledAction);
 				}
 			}
 			List<ScheduledOfferAction> scheduledOfferActions = q.lsScheduledOfferActions;
 			for (ScheduledOfferAction scheduledAction : scheduledOfferActions) {
 				if (addressDead.equals(scheduledAction.request.caller)) {
 					scheduledAction.setValid(false);
+					ClusterManager.get().deregisterScheduledAction(scheduledAction);
 				}
 			}
 		}
@@ -1118,11 +1120,14 @@ class BlockingQueueManager extends BaseManager {
 		public void scheduleOffer(Request request) {
 			ScheduledOfferAction action = new ScheduledOfferAction(request);
 			lsScheduledOfferActions.add(action);
+			ClusterManager.get().registerScheduledAction(action);
+			
 		}
 
 		public void schedulePoll(Request request) {
 			ScheduledPollAction action = new ScheduledPollAction(request);
 			lsScheduledPollActions.add(action);
+			ClusterManager.get().registerScheduledAction(action);
 		}
 
 		public class ScheduledPollAction extends ScheduledAction {
@@ -1140,6 +1145,14 @@ class BlockingQueueManager extends BaseManager {
 				returnScheduledAsSuccess(request);
 				return true;
 			}
+			
+			public void onExpire() {
+				request.response = null;
+				request.key = null;
+				request.value = null;
+				returnScheduledAsSuccess(request);
+			}
+			 
 		}
 
 		public class ScheduledOfferAction extends ScheduledAction {
@@ -1156,6 +1169,11 @@ class BlockingQueueManager extends BaseManager {
 				request.value = null;
 				returnScheduledAsBoolean(request);
 				return true;
+			}
+			
+			public void onExpire() {
+				request.response = Boolean.FALSE;
+				returnScheduledAsBoolean(request);
 			}
 		}
 
@@ -1300,7 +1318,10 @@ class BlockingQueueManager extends BaseManager {
 			size++;
 			while (lsScheduledPollActions.size() > 0) {
 				ScheduledAction pollAction = lsScheduledPollActions.remove(0);
-				if (!pollAction.expired()) {
+				ClusterManager.get().deregisterScheduledAction(pollAction);
+				if (pollAction.expired()) {
+					pollAction.onExpire();
+				} else {	
 					boolean consumed = pollAction.consume();
 					if (consumed)
 						return -1;
@@ -1395,7 +1416,10 @@ class BlockingQueueManager extends BaseManager {
 			doFireEntryEvent(false, value);
 			runScheduledOffer: while (lsScheduledOfferActions.size() > 0) {
 				ScheduledOfferAction offerAction = lsScheduledOfferActions.remove(0);
-				if (!offerAction.expired()) {
+				ClusterManager.get().deregisterScheduledAction(offerAction);
+				if (offerAction.expired()) {
+					offerAction.onExpire();
+				} else {
 					boolean consumed = offerAction.consume();
 					if (consumed) {
 						break runScheduledOffer;
