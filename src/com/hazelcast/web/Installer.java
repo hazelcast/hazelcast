@@ -32,7 +32,9 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -55,6 +57,7 @@ public class Installer {
 	private String clusteredFilePrefix = "clustered-";
 	private boolean addHazellib = true;
 	private boolean replaceOld = false;
+	private boolean appsSharingSessions = false;
 
 	public static void main(String[] args) {
 		Installer installer = new Installer();
@@ -66,13 +69,31 @@ public class Installer {
 			print("No application is specified!");
 			printHelp();
 		}
+		
+		Set<String> setApps = new HashSet<String>();
+		for (String arg : args) {
+			if (arg.startsWith("-")) {
+				if (arg.equals("-apps-sharing-sessions")) {
+					appsSharingSessions = true;
+					addHazellib = false;
+				}
+			} else {
+				setApps.add(arg);
+			} 
+		}
 
-		File file = new File(args[0]);
+		for (String appFilename : setApps) {
+			processApp(appFilename);
+		}
+		
+		System.out.println("Done!");
+	}
+	
+	private final void processApp(String appFilename) {
+		File file = new File(appFilename);
 		String clusteredFileName = clusteredFilePrefix + file.getName();
-		File fileOriginal = new File(file.getParentFile(), clusteredFileName);
-
-		// file.renameTo(fileOriginal);
-		// copyFile(file, fileOriginal);
+		File fileOriginal = new File(file.getParentFile(), clusteredFileName);	
+		
 		modify(file, fileOriginal);
 
 		if (isReplaceOld()) {
@@ -80,9 +101,8 @@ public class Installer {
 			if (success) {
 				System.out.println("old Application File was replaced!");
 			}
-		}
+		}	
 		System.out.println("Done. New clustered application at " + fileOriginal.getAbsolutePath());
-
 	}
 
 	public final void modify(File src, File dest) {
@@ -305,6 +325,11 @@ public class Installer {
 		Node initParam = append(doc, filter, "init-param", null);
 		append(doc, initParam, "param-name", "listener-count");
 		append(doc, initParam, "param-value", String.valueOf(lsListeners.size()));
+		
+		initParam = append(doc, filter, "init-param", null);
+		append(doc, initParam, "param-name", "apps-sharing-sessions");
+		append(doc, initParam, "param-value", String.valueOf(appsSharingSessions));
+		
 		if (sessionTimeout != sessionTimeoutDefault) {
 			initParam = append(doc, filter, "init-param", null);
 			append(doc, initParam, "param-name", "session-timeout");
@@ -467,4 +492,11 @@ public class Installer {
 		this.replaceOld = replaceOld;
 	}
 
+	public boolean isAppsSharingSessions() {
+		return appsSharingSessions;
+	}
+
+	public void setAppsSharingSessions(boolean appsSharingSessions) {
+		this.appsSharingSessions = appsSharingSessions;
+	}
 }

@@ -15,7 +15,7 @@
  *
  */
  
-package com.hazelcast.web;
+package com.hazelcast.web; 
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -89,6 +89,8 @@ public class WebFilter implements Filter {
 
 	private AppContext app = null;
 
+	private static boolean appsSharingSessions = false;
+
 	private static ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(5);
 
 	static {
@@ -103,14 +105,21 @@ public class WebFilter implements Filter {
 		}, 0, 10, TimeUnit.SECONDS);
 	}
 
+	public WebFilter() { 
+	}
+
 	private static AppContext getAppContext(ServletContext servletContext) {
-		String contextName = servletContext.getServletContextName();
-		return mapApps.get(contextName);
+		return getAppContext(servletContext.getServletContextName());
 	}
 
 	public void init(FilterConfig config) throws ServletException {
 
 		int maxInactiveInterval = 30; // minutes
+		
+		String appsSharingSessionsValue = config.getInitParameter("apps-sharing-sessions");
+		if (appsSharingSessionsValue != null) {
+			appsSharingSessions = Boolean.valueOf(appsSharingSessionsValue.trim());
+		}
 
 		String sessionTimeoutValue = config.getInitParameter("session-timeout");
 		if (sessionTimeoutValue != null) {
@@ -156,19 +165,34 @@ public class WebFilter implements Filter {
 	}
 
 	public static synchronized AppContext ensureServletContext(ServletContext servletContext) {
-		AppContext app = mapApps.get(servletContext.getServletContextName());
+		AppContext app = getAppContext(servletContext.getServletContextName());
 		if (app == null) {
 			app = new AppContext(servletContext);
-			mapApps.put(servletContext.getServletContextName(), app);
+			setAppContext(servletContext.getServletContextName(), app);
 		}
 		return app;
 	}
 
 	public static synchronized ServletContext getServletContext(ServletContext original) {
-		AppContext app = mapApps.get(original.getServletContextName());
+		AppContext app = getAppContext(original.getServletContextName());
 		if (app == null)
 			return original;
 		return app.getOriginalServletContext();
+	}
+
+	public static synchronized AppContext getAppContext(String servletContextName) {
+		if (appsSharingSessions) {
+			servletContextName = "_hz_shared_app";
+		}
+		return mapApps.get(servletContextName);
+	}
+
+	public static synchronized AppContext setAppContext(String servletContextName, AppContext app) {
+		if (appsSharingSessions) {
+			servletContextName = "_hz_shared_app";
+		}
+		log(appsSharingSessions + " PUTTING.. " + servletContextName + " appobj " + app);
+		return mapApps.put(servletContextName, app);
 	}
 
 	public void destroy() {
@@ -177,8 +201,9 @@ public class WebFilter implements Filter {
 
 	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
 			throws IOException, ServletException {
+		log("doFILTER");
 		if (DEBUG) {
-			log("FILTERING %%55555.. " + req.getClass().getName());
+			log(appsSharingSessions + " FILTERING %%55555.. " + req.getClass().getName());
 
 		}
 		if (!(req instanceof HttpServletRequest)) {
@@ -670,7 +695,6 @@ public class WebFilter implements Filter {
 			String requestedSessionId = getRequestedSessionId();
 			HazelSession session = null;
 			if (requestedSessionId != null) {
-
 				session = context.getSession(requestedSessionId, false);
 			}
 			if (DEBUG) {
@@ -1142,7 +1166,9 @@ public class WebFilter implements Filter {
 
 		public AppContext(ServletContext servletContext) {
 			this.servletContext = servletContext;
-			clusterMapName = "_web_" + servletContext.getServletContextName();
+			clusterMapName = "_web_"
+					+ ((appsSharingSessions) ? "shared" : servletContext.getServletContextName());
+			System.out.println("CLUSTER MAP NAME " + clusterMapName);
 			this.servletContext.setAttribute(Context.ATTRIBUTE_NAME, this);
 			init(1);
 			snapshot.set(new Snapshot(this, snapshotLifeTime));
@@ -1392,8 +1418,9 @@ public class WebFilter implements Filter {
 	} // END of AppContext
 
 	static void log(Object obj) {
-		if (DEBUG)
+		if (DEBUG) {
 			System.out.println(obj);
+		} 
 	}
 
 	static class IteratorEnumeration implements Enumeration<String> {
@@ -1482,4 +1509,6 @@ public class WebFilter implements Filter {
 	}
 
 }// END of WebFilter
+
+
 
