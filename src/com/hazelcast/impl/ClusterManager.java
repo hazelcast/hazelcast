@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.impl.BaseManager.Processable;
-import com.hazelcast.impl.BaseManager.ScheduledAction; 
+import com.hazelcast.impl.BaseManager.ScheduledAction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
@@ -51,7 +51,7 @@ import com.hazelcast.nio.InvocationQueue.Invocation;
 public class ClusterManager extends BaseManager implements ConnectionListener {
 
 	private static final ClusterManager instance = new ClusterManager();
-	
+
 	ScheduledActionController scheduledActionController = new ScheduledActionController();
 
 	public static ClusterManager get() {
@@ -75,7 +75,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 
 	private List<MemberImpl> lsMembersBefore = new ArrayList<MemberImpl>();
 
-	private long waitTimeBeforeJoin = 5000;
+	private long waitTimeBeforeJoin = 2000;
 
 	public void handle(Invocation inv) {
 		try {
@@ -161,9 +161,9 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 								if ((now - memberImpl.getLastRead()) >= 10000) {
 									conn = null;
 									if (lsDeadAddresses == null) {
-										lsDeadAddresses = new ArrayList<Address>(); 
+										lsDeadAddresses = new ArrayList<Address>();
 									}
-									lsDeadAddresses.add(address);
+									// lsDeadAddresses.add(address);
 								}
 							}
 						}
@@ -186,12 +186,13 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 				}
 			}
 		} else {
+			// send heartbeat to master
 			if (getMasterAddress() != null) {
 				MemberImpl masterMember = getMember(getMasterAddress());
 				boolean removed = false;
 				if (masterMember != null) {
 					if ((now - masterMember.getLastRead()) >= 8000) {
-						doRemoveAddress(getMasterAddress());
+						// doRemoveAddress(getMasterAddress());
 						removed = true;
 					}
 				}
@@ -201,7 +202,24 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 					send(inv, getMasterAddress());
 				}
 			}
+			for (MemberImpl member : lsMembers) {
+				if (!member.localMember()) {
+					Address address = member.getAddress(); 
+					if (shouldConnectTo(address)) { 
+						Connection conn = ConnectionManager.get().getOrConnect(address);
+						if (conn != null) {
+							Invocation inv = obtainServiceInvocation("heartbeat", null, null,
+									OP_HEARTBEAT, 0);
+							send(inv, conn);
+						}
+					}
+				}
+			}
 		}
+	}
+
+	private boolean shouldConnectTo(Address address) {
+		return (lsMembers.indexOf(getMember(thisAddress)) > lsMembers.indexOf(getMember(address)));
 	}
 
 	private void sendRemoveMemberToOthers(final Address deadAddress) {
@@ -226,7 +244,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		}
 	}
 
-	void sendAddRemoveToAllConns(Address newAddress) {
+	void sendAddRemoveToAllConns2(Address newAddress) {
 		for (MemberImpl member : lsMembers) {
 			Address target = member.getAddress();
 			if (!thisAddress.equals(target)) {
@@ -346,7 +364,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			if (!joinInProgress) {
 				if (setJoins.add(newAddress)) {
 					sendProcessableTo(new Master(Node.get().getMasterAddress()), conn);
-					sendAddRemoveToAllConns(newAddress);
+					// sendAddRemoveToAllConns(newAddress);
 					timeToStartJoin = System.currentTimeMillis() + waitTimeBeforeJoin;
 				} else {
 					if (System.currentTimeMillis() > timeToStartJoin) {
@@ -674,7 +692,6 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		public void writeData(DataOutput out) throws IOException {
 		}
 	}
-		
 
 	public static abstract class AbstractRemotelyProcessable implements RemotelyProcessable {
 		Connection conn;
@@ -751,6 +768,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 				clusterService.addMember(address);
 			}
 		}
+		heartBeater();
 		Node.get().getClusterImpl().setMembers(lsMembers);
 		Node.get().unlock();
 		System.out.println(this);
@@ -1047,15 +1065,15 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			return "CreateProxy [" + name + "]";
 		}
 	}
-	
+
 	public void registerScheduledAction(ScheduledAction scheduledAction) {
-		 scheduledActionController.addScheduledAction(scheduledAction);
+		scheduledActionController.addScheduledAction(scheduledAction);
 	}
-	
+
 	protected void deregisterScheduledAction(ScheduledAction scheduledAction) {
-		 scheduledActionController.removeScheduledAction(scheduledAction);
+		scheduledActionController.removeScheduledAction(scheduledAction);
 	}
-	
+
 	class ScheduledActionController implements Runnable, Processable {
 		Set<ScheduledAction> setScheduledActions = new HashSet<ScheduledAction>(1000);
 
@@ -1065,9 +1083,9 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			setScheduledActions.add(scheduledAction);
 			dirty = true;
 		}
-		
+
 		public void removeScheduledAction(ScheduledAction scheduledAction) {
-			setScheduledActions.remove(scheduledAction); 
+			setScheduledActions.remove(scheduledAction);
 		}
 
 		public void run() {

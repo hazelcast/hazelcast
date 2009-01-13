@@ -27,9 +27,7 @@ public class MemberImpl implements Member {
 
 	private boolean thisMember = false;
 
-	private Address address;
-
-	private MemberImpl nextMember = null;
+	private Address address; 
 
 	private boolean ready = false;
 	
@@ -71,14 +69,6 @@ public class MemberImpl implements Member {
 			e.printStackTrace();
 			return null;
 		}
-	}
-
-	public MemberImpl getNextMember() {
-		return nextMember;
-	}
-
-	public void setNextMember(MemberImpl nextMember) {
-		this.nextMember = nextMember;
 	}
 
 	public boolean localMember() {

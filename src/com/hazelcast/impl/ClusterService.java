@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.BaseManager.Processable;
@@ -55,13 +56,19 @@ public class ClusterService implements Runnable, Constants {
 	protected volatile boolean running = true;
 
 	protected final List lsBuffer = new ArrayList(2000);
+	
+	protected long start = 0;
+	
+	protected long totalProcessTime = 0;
 
 	private ClusterService() {
 		this.queue = new LinkedBlockingQueue();
 		this.thisAddress = Node.get().getThisAddress();
+		this.start = System.nanoTime();
 	}
 
 	public void process(Object obj) {
+		long processStart = System.nanoTime();
 		if (obj instanceof Invocation) {
 			Invocation inv = (Invocation) obj;
 			MemberImpl memberFrom = getMember(inv.conn.getEndPoint());
@@ -90,6 +97,17 @@ public class ClusterService implements Runnable, Constants {
 			}
 		} else
 			throw new RuntimeException("Unkown obj " + obj);
+		long processEnd = System.nanoTime();
+		long elipsedTime = processEnd - processStart;
+		totalProcessTime += elipsedTime;
+		long duration = (processEnd - start);
+		if (duration > TimeUnit.SECONDS.toNanos(10)) {
+			if (DEBUG) { 
+				System.out.println("ServiceProcessUtilization: " + ((totalProcessTime * 100) / duration) + " %");				
+			}
+			start = processEnd;
+			totalProcessTime = 0;
+		}
 	}
 
 	public void run3() {
