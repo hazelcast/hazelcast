@@ -39,7 +39,7 @@ public class ClusterService implements Runnable, Constants {
 		return instance;
 	}
 
-	private static final long HEARTBEAT_INTERVAL = TimeUnit.SECONDS.toNanos(1);
+	private static final long PERIODIC_CHECK_INTERVAL = TimeUnit.SECONDS.toNanos(1);
 
 	private static final long UTILIZATION_CHECK_INTERVAL = TimeUnit.SECONDS.toNanos(10);
  
@@ -65,7 +65,7 @@ public class ClusterService implements Runnable, Constants {
 	
 	protected long totalProcessTime = 0;
 	
-	protected long lastHeartbeatNanos = 0;
+	protected long lastPeriodicCheck = 0;
 
 	private ClusterService() {
 		this.queue = new LinkedBlockingQueue();
@@ -133,12 +133,12 @@ public class ClusterService implements Runnable, Constants {
 		}
 	}
 	
-	private final void checkHeartbeat() {
+	private final void checkPeriodics() {
 		long now = System.nanoTime();
-		if ((now - lastHeartbeatNanos) > HEARTBEAT_INTERVAL) {
-			System.out.println("heart beat.");
+		if ((now - lastPeriodicCheck) > PERIODIC_CHECK_INTERVAL) { 
 			ClusterManager.get().heartBeater();
-			lastHeartbeatNanos = now;
+			ClusterManager.get().checkScheduledActions();
+			lastPeriodicCheck = now;
 		}
 	}
 
@@ -152,13 +152,13 @@ public class ClusterService implements Runnable, Constants {
 				if (size > 0) {
 					for (int i = 0; i < size; i++) {
 						obj = lsBuffer.get(i); 
-						checkHeartbeat();
+						checkPeriodics();
 						process(obj);
 					}
 					lsBuffer.clear();
 				} else {
 					obj = queue.poll(100, TimeUnit.MILLISECONDS);
-					checkHeartbeat();
+					checkPeriodics();
 					if (obj != null) {
 						process(obj);
 					} 

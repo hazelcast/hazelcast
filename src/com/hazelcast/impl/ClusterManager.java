@@ -52,17 +52,14 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 
 	private static final ClusterManager instance = new ClusterManager();
 
-	ScheduledActionController scheduledActionController = new ScheduledActionController();
+	Set<ScheduledAction> setScheduledActions = new HashSet<ScheduledAction>(1000);
 
 	public static ClusterManager get() {
 		return instance;
 	}
 
 	private ClusterManager() {
-		ConnectionManager.get().addConnectionListener(this);
-		ScheduledExecutorService ses = ExecutorManager.get().getScheduledExecutorService();
-//		ses.scheduleWithFixedDelay(new HeartbeatTask(), 0, 1, TimeUnit.SECONDS);
-		ses.scheduleWithFixedDelay(scheduledActionController, 0, 1, TimeUnit.SECONDS);
+		ConnectionManager.get().addConnectionListener(this); 
 	}
 
 	private Set<Address> setJoins = new HashSet<Address>(100);
@@ -1067,15 +1064,29 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 	}
 
 	public void registerScheduledAction(ScheduledAction scheduledAction) {
-		scheduledActionController.addScheduledAction(scheduledAction);
+		setScheduledActions.add (scheduledAction);
 	}
 
 	protected void deregisterScheduledAction(ScheduledAction scheduledAction) {
-		scheduledActionController.removeScheduledAction(scheduledAction);
+		setScheduledActions.remove(scheduledAction);
+	}
+	
+	public void checkScheduledActions() {
+		if (setScheduledActions.size() > 0) {
+			Iterator<ScheduledAction> it = setScheduledActions.iterator();
+			while (it.hasNext()) {
+				ScheduledAction sa = it.next();
+				if (sa.expired()) {
+					sa.onExpire();
+					it.remove();
+				}
+			} 
+		}
 	}
 
+	//TODO: REMOVE THIS CLASS
 	class ScheduledActionController implements Runnable, Processable {
-		Set<ScheduledAction> setScheduledActions = new HashSet<ScheduledAction>(1000);
+		
 
 		volatile boolean dirty = false;
 
@@ -1115,6 +1126,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		}
 	}
 
+	//TODO: REMOVE THIS CLASS
 	class HeartbeatTask implements Runnable, Processable {
 		public void run() {
 			enqueueAndReturn(HeartbeatTask.this);
