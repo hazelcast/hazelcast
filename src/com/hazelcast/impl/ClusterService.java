@@ -39,6 +39,10 @@ public class ClusterService implements Runnable, Constants {
 		return instance;
 	}
 
+	private static final long HEARTBEAT_INTERVAL = TimeUnit.SECONDS.toNanos(1);
+
+	private static final long UTILIZATION_CHECK_INTERVAL = TimeUnit.SECONDS.toNanos(10);
+ 
 	protected LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
 
 	protected Address thisAddress = null;
@@ -60,6 +64,8 @@ public class ClusterService implements Runnable, Constants {
 	protected long start = 0;
 	
 	protected long totalProcessTime = 0;
+	
+	protected long lastHeartbeatNanos = 0;
 
 	private ClusterService() {
 		this.queue = new LinkedBlockingQueue();
@@ -101,7 +107,7 @@ public class ClusterService implements Runnable, Constants {
 		long elipsedTime = processEnd - processStart;
 		totalProcessTime += elipsedTime;
 		long duration = (processEnd - start);
-		if (duration > TimeUnit.SECONDS.toNanos(10)) {
+		if (duration > UTILIZATION_CHECK_INTERVAL) {
 			if (DEBUG) { 
 				System.out.println("ServiceProcessUtilization: " + ((totalProcessTime * 100) / duration) + " %");				
 			}
@@ -126,6 +132,15 @@ public class ClusterService implements Runnable, Constants {
 			}
 		}
 	}
+	
+	private final void checkHeartbeat() {
+		long now = System.nanoTime();
+		if ((now - lastHeartbeatNanos) > HEARTBEAT_INTERVAL) {
+			System.out.println("heart beat.");
+			ClusterManager.get().heartBeater();
+			lastHeartbeatNanos = now;
+		}
+	}
 
 	public void run() {
 		while (running) {
@@ -137,12 +152,16 @@ public class ClusterService implements Runnable, Constants {
 				if (size > 0) {
 					for (int i = 0; i < size; i++) {
 						obj = lsBuffer.get(i); 
+						checkHeartbeat();
 						process(obj);
 					}
 					lsBuffer.clear();
 				} else {
-					obj = queue.take();
-					process(obj);
+					obj = queue.poll(100, TimeUnit.MILLISECONDS);
+					checkHeartbeat();
+					if (obj != null) {
+						process(obj);
+					} 
 				}
 			} catch (InterruptedException e) {
 				Node.get().handleInterruptedException(Thread.currentThread(), e);

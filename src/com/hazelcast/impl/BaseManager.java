@@ -798,6 +798,7 @@ abstract class BaseManager implements Constants {
 			responses.clear();
 			enqueueAndReturn(TargetAwareOp.this);
 		}
+		
 
 		public Object getResult() { 
 			Object result = null;
@@ -825,19 +826,23 @@ abstract class BaseManager implements Constants {
 			if (target.equals(thisAddress)) {
 				doLocalOp();
 			} else {
-				addCall(TargetAwareOp.this);
-				Invocation inv = request.toInvocation();
-				inv.eventId = getId();
-				boolean sent = send(inv, target);
-				if (!sent) {
-					ConnectionManager.get().getOrConnect(target);
-					if (DEBUG) {
-						log("invocation cannot be sent to " + target);
-					}
-					inv.returnToContainer();
-					redo();
-				}
+				invoke();
 			}
+		}
+		
+		protected void invoke () {
+			addCall(TargetAwareOp.this);
+			Invocation inv = request.toInvocation();
+			inv.eventId = getId();
+			boolean sent = send(inv, target);
+			if (!sent) {
+				ConnectionManager.get().getOrConnect(target);
+				if (DEBUG) {
+					log("invocation cannot be sent to " + target);
+				}
+				inv.returnToContainer();
+				redo();
+			}	
 		}
 
 		abstract void doLocalOp();

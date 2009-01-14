@@ -30,6 +30,7 @@ import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_GET;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_LOCK;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_LOCK_RETURN_OLD;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_MIGRATION_COMPLETE;
+import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_MIGRATE_RECORD;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_OWN_KEY;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_PUT;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_PUT_IF_ABSENT;
@@ -74,7 +75,7 @@ import com.hazelcast.nio.InvocationQueue.Invocation;
 class ConcurrentMapManager extends BaseManager {
 	private static ConcurrentMapManager instance = new ConcurrentMapManager();
 
-	private ConcurrentMapManager() {  
+	private ConcurrentMapManager() {
 	}
 
 	public static ConcurrentMapManager get() {
@@ -88,7 +89,6 @@ class ConcurrentMapManager extends BaseManager {
 	private Map<String, CMap> maps = new HashMap<String, CMap>(10);
 	long maxId = 0;
 	Map<Long, Record> mapRecordsById = new HashMap<Long, Record>();
-	
 
 	public void handle(Invocation inv) {
 		if (inv.operation == OP_CMAP_GET) {
@@ -129,6 +129,8 @@ class ConcurrentMapManager extends BaseManager {
 			handlePut(inv);
 		} else if (inv.operation == OP_CMAP_MIGRATION_COMPLETE) {
 			doMigrationComplete(inv.conn.getEndPoint());
+		} else if (inv.operation == OP_CMAP_MIGRATE_RECORD) {
+			handleMigrateRecord(inv);
 		} else {
 			throw new RuntimeException("Unknown operation " + inv.operation);
 		}
@@ -234,10 +236,39 @@ class ConcurrentMapManager extends BaseManager {
 			log("DO RESET RECORD OWNERS!!!");
 		}
 		Collection<CMap> cmaps = maps.values();
-		SyncMonitor syncMonitor = new SyncMonitor(cmaps.size());
+
+		 SyncMonitor syncMonitor = new SyncMonitor(cmaps.size());
 		executeLocally(syncMonitor);
 		for (CMap cmap : cmaps) {
 			executeLocally(new Syncer(syncMonitor, cmap.name));
+		}
+	}
+
+	class Migrator implements Runnable {
+		Iterator<String> mapNames = null;
+
+		public Migrator(Iterator<String> mapNames) {
+			super();
+			this.mapNames = mapNames;
+		}
+
+		public void run() {
+			while (mapNames.hasNext()) {
+				String mapName = mapNames.next();
+				for (int i = 0; i < BLOCK_COUNT; i++) {
+					migrateBlock(mapName, i); 
+				}
+			}
+		}
+		
+		private void migrateBlock (String name, int blockId) {
+			while (true) {
+				MMigrate mmigration = new MMigrate();
+				boolean done = mmigration.migrate(name, blockId, 0);
+				if (!done) {
+					if (mmigration.lastMigratedRecordId == -1) return;
+				}
+			}
 		}
 	}
 
@@ -355,7 +386,7 @@ class ConcurrentMapManager extends BaseManager {
 				if (next == null) {
 					currentIndex = -1;
 				} else {
-					currentIndex = read.lastReadRecordIndex;
+					currentIndex = read.lastReadRecordId;
 					currentIndex++;
 				}
 			}
@@ -401,8 +432,45 @@ class ConcurrentMapManager extends BaseManager {
 		}
 	}
 
-	class MRead extends TargetAwareOp {
-		long lastReadRecordIndex = 0;
+	class MMigrate extends MBooleanOp {
+		long lastMigratedRecordId = 0;
+
+		public boolean migrate(String name, int blockId, long recordId) {
+			lastMigratedRecordId = recordId;
+			request.blockId = blockId;
+			return booleanCall(OP_CMAP_MIGRATE_RECORD, name, null, null, 0, -1, recordId);
+		}
+
+		public void process() {
+			Block block = mapBlocks.get(request.blockId);
+			if (!block.isMigrating()) {
+				setResult(Boolean.FALSE);
+				return;
+			}
+			CMap cmap = getMap(request.name);
+			Record record = cmap.nextOwnedRecord(request.recordId, request.blockId);
+			if (record == null) {
+				lastMigratedRecordId = -1;
+				setResult(Boolean.FALSE);
+			} else {
+				target = block.migrationAddress;
+				lastMigratedRecordId = record.id;
+				invoke();
+			}
+		}
+
+		@Override
+		void setTarget() {
+		}
+
+		@Override
+		void doLocalOp() {
+			setResult(Boolean.FALSE);
+		}
+	}
+
+	class MRead extends MTargetAwareOp {
+		long lastReadRecordId = 0;
 		boolean containsValue = true;
 
 		public SimpleDataEntry read(String name, int blockId, long recordId) {
@@ -414,13 +482,13 @@ class ConcurrentMapManager extends BaseManager {
 		@Override
 		void doLocalOp() {
 			doRead(request);
-			lastReadRecordIndex = request.recordId;
+			lastReadRecordId = request.recordId;
 			if (request.response == null) {
 				setResult(null);
 			} else {
 				Record record = (Record) request.response;
 				request.recordId = record.id;
-				lastReadRecordIndex = request.recordId;
+				lastReadRecordId = request.recordId;
 				Data key = ThreadContext.get().hardCopy(record.getKey());
 				Data value = null;
 				if (containsValue) {
@@ -434,7 +502,7 @@ class ConcurrentMapManager extends BaseManager {
 		@Override
 		void handleNoneRedoResponse(Invocation inv) {
 			removeCall(getId());
-			lastReadRecordIndex = inv.recordId;
+			lastReadRecordId = inv.recordId;
 			Data key = inv.doTake(inv.key);
 			if (key == null) {
 				setResult(null);
@@ -450,16 +518,7 @@ class ConcurrentMapManager extends BaseManager {
 
 		@Override
 		void setTarget() {
-			Block block = mapBlocks.get(request.blockId);
-			if (block == null) {
-				target = thisAddress;
-				return;
-			}
-			if (block.isMigrating()) {
-				target = block.migrationAddress;
-			} else {
-				target = block.owner;
-			}
+			setTargetBasedOnBlockId();
 		}
 	}
 
@@ -590,6 +649,10 @@ class ConcurrentMapManager extends BaseManager {
 	abstract class MTargetAwareOp extends TargetAwareOp {
 		@Override
 		void setTarget() {
+			setTargetBasedOnKey();
+		}
+
+		final void setTargetBasedOnKey() {
 			if (target != null) {
 				Block block = getBlock(request.key);
 				if (target.equals(block.owner)) {
@@ -606,6 +669,19 @@ class ConcurrentMapManager extends BaseManager {
 			}
 			if (target == null) {
 				target = getTarget(request.name, request.key);
+			}
+		}
+
+		final void setTargetBasedOnBlockId() {
+			Block block = mapBlocks.get(request.blockId);
+			if (block == null) {
+				target = thisAddress;
+				return;
+			}
+			if (block.isMigrating()) {
+				target = block.migrationAddress;
+			} else {
+				target = block.owner;
 			}
 		}
 	}
@@ -1151,6 +1227,13 @@ class ConcurrentMapManager extends BaseManager {
 		return right;
 	}
 
+	void handleMigrateRecord(Invocation inv) {
+		remoteReq.setInvocation(inv);
+		doMigrate(remoteReq);
+		sendResponse(inv);
+		remoteReq.reset();
+	}
+
 	void handleRead(Invocation inv) {
 		remoteReq.setInvocation(inv);
 		doRead(remoteReq);
@@ -1352,6 +1435,12 @@ class ConcurrentMapManager extends BaseManager {
 	void doRead(Request request) {
 		CMap cmap = getMap(request.name);
 		request.response = cmap.read(request);
+	}
+
+	void doMigrate(Request request) {
+		CMap cmap = getMap(request.name);
+		cmap.own(request);
+		request.response = Boolean.TRUE;
 	}
 
 	void doAdd(Request request) {
@@ -1788,7 +1877,7 @@ class ConcurrentMapManager extends BaseManager {
 						sa.onExpire();
 					} else {
 						sa.consume();
-						return; 
+						return;
 					}
 				}
 			}
@@ -1821,7 +1910,7 @@ class ConcurrentMapManager extends BaseManager {
 		public void addScheduledAction(ScheduledAction scheduledAction) {
 			if (lsScheduledActions == null)
 				lsScheduledActions = new ArrayList<ScheduledAction>(1);
-			lsScheduledActions.add(scheduledAction);		
+			lsScheduledActions.add(scheduledAction);
 			ClusterManager.get().registerScheduledAction(scheduledAction);
 			if (DEBUG) {
 				log("scheduling " + scheduledAction);

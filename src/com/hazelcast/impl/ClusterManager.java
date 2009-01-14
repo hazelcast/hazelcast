@@ -61,7 +61,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 	private ClusterManager() {
 		ConnectionManager.get().addConnectionListener(this);
 		ScheduledExecutorService ses = ExecutorManager.get().getScheduledExecutorService();
-		ses.scheduleWithFixedDelay(new HeartbeatTask(), 0, 1, TimeUnit.SECONDS);
+//		ses.scheduleWithFixedDelay(new HeartbeatTask(), 0, 1, TimeUnit.SECONDS);
 		ses.scheduleWithFixedDelay(scheduledActionController, 0, 1, TimeUnit.SECONDS);
 	}
 
@@ -145,7 +145,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		}
 	}
 
-	public void heartBeater() {
+	public final void heartBeater() {
 		long now = System.currentTimeMillis();
 		List<MemberImpl> lsMembers = ClusterManager.lsMembers;
 

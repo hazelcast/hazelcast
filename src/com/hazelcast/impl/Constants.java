@@ -173,6 +173,10 @@ public interface Constants {
 		public static final int OP_CMAP_ADD_TO_LIST = 525;
 		
 		public static final int OP_CMAP_ADD_TO_SET = 526;
+		
+		public static final int OP_CMAP_MIGRATE_RECORD = 527;
+		
+		
 	}
 
 	public interface ResponseTypes {
