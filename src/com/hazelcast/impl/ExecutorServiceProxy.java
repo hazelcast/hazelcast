@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.impl;
 
 import static com.hazelcast.impl.Constants.ExecutorOperations.OP_STREAM;
@@ -39,8 +39,8 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
 	public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
 		return false;
 	}
- 
-	public  List invokeAll(Collection tasks) throws InterruptedException {
+
+	public List invokeAll(Collection tasks) throws InterruptedException {
 		return null;
 	}
 
@@ -49,8 +49,7 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
 		return null;
 	}
 
-	public Object invokeAny(Collection tasks) throws InterruptedException,
-			ExecutionException {
+	public Object invokeAny(Collection tasks) throws InterruptedException, ExecutionException {
 		return null;
 	}
 

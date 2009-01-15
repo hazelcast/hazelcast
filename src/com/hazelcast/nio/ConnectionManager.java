@@ -44,7 +44,7 @@ public class ConnectionManager {
 	private volatile boolean live = true;
 
 	private Set<Address> setConnectionInProgress = new CopyOnWriteArraySet<Address>();
-	
+
 	private Set<ConnectionListener> setConnectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
 
 	private boolean acceptTypeConnection = false;
@@ -66,8 +66,8 @@ public class ConnectionManager {
 		}
 		return connection;
 	}
-	
-	public void addConnectionListener (ConnectionListener listener) {
+
+	public void addConnectionListener(ConnectionListener listener) {
 		setConnectionListeners.add(listener);
 	}
 
@@ -146,13 +146,13 @@ public class ConnectionManager {
 		for (Connection conn : mapConnections.values()) {
 			try {
 				remove(conn);
-			} catch (Exception e) { 
-			} 
-		} 
+			} catch (Exception e) {
+			}
+		}
 		InSelector.get().shutdown();
-		OutSelector.get().shutdown(); 
+		OutSelector.get().shutdown();
 	}
-	
+
 	@Override
 	public synchronized String toString() {
 		StringBuffer sb = new StringBuffer("Connections {");

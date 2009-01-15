@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.core;
 
 import static com.hazelcast.impl.Constants.Objects.OBJECT_CANCELLED;

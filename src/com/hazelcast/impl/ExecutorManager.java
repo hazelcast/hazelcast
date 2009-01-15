@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.impl;
 
 import static com.hazelcast.impl.Constants.ExecutorOperations.OP_EXE_REMOTE_EXECUTION;
@@ -38,7 +38,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -68,7 +67,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 			100);
 
 	private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
-	
+
 	private ExecutorService eventFireExecutor = Executors.newSingleThreadExecutor();
 
 	private BlockingQueue<Long> executionIds = new ArrayBlockingQueue<Long>(100);
@@ -77,7 +76,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 		return instance;
 	}
 
-	private ExecutorManager() { 
+	private ExecutorManager() {
 		int corePoolSize = Config.get().executorConfig.corePoolSize;
 		int maxPoolSize = Config.get().executorConfig.maxPoolsize;
 		long keepAliveSeconds = Config.get().executorConfig.keepAliveSeconds;
@@ -524,15 +523,15 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 		}
 		return null;
 	}
-	
-	public void executeEventFireTask (EventFireTask eventFireTask) {
+
+	public void executeEventFireTask(EventFireTask eventFireTask) {
 		eventFireExecutor.execute(eventFireTask);
 	}
 
 	public ScheduledExecutorService getScheduledExecutorService() {
 		return scheduledExecutorService;
 	}
-	
+
 	public void executeLocaly(Runnable runnable) {
 		executor.execute(runnable);
 	}

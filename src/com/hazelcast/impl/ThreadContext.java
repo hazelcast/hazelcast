@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.impl;
 
 import com.hazelcast.core.Transaction;
@@ -125,7 +125,7 @@ public class ThreadContext {
 	public MLock getMLock() {
 		return ConcurrentMapManager.get().new MLock();
 	}
-	
+
 	public MAdd getMAdd() {
 		return ConcurrentMapManager.get().new MAdd();
 	}

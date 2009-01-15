@@ -29,9 +29,8 @@ import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_CONTA
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_GET;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_LOCK;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_LOCK_RETURN_OLD;
-import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_MIGRATION_COMPLETE;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_MIGRATE_RECORD;
-import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_OWN_KEY;
+import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_MIGRATION_COMPLETE;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_PUT;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_PUT_IF_ABSENT;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_READ;
@@ -53,19 +52,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import sun.reflect.ReflectionFactory.GetReflectionFactoryAction;
-import sun.security.util.DerEncoder;
-
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.IMap;
 import com.hazelcast.core.Transaction;
-import com.hazelcast.impl.BaseManager.Request;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
-import com.hazelcast.impl.ClusterManager.HeartbeatTask;
 import com.hazelcast.impl.FactoryImpl.IProxy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
@@ -121,8 +112,6 @@ class ConcurrentMapManager extends BaseManager {
 			handleBlockInfo(inv);
 		} else if (inv.operation == OP_CMAP_BLOCKS) {
 			handleBlocks(inv);
-		} else if (inv.operation == OP_CMAP_OWN_KEY) {
-			handleOwnKey(inv);
 		} else if (inv.operation == OP_CMAP_PUT_IF_ABSENT) {
 			handlePut(inv);
 		} else if (inv.operation == OP_CMAP_REPLACE_IF_NOT_NULL) {
@@ -160,7 +149,7 @@ class ConcurrentMapManager extends BaseManager {
 				record.onDisconnect(deadAddress);
 			}
 		}
-		doResetRecordOwners();
+		doResetRecords();
 	}
 
 	public void syncForAdd() {
@@ -224,53 +213,41 @@ class ConcurrentMapManager extends BaseManager {
 					send("blocks", OP_CMAP_BLOCKS, dataAllBlocks, member.getAddress());
 				}
 			}
-			doResetRecordOwners();
+			doResetRecords();
 			if (DEBUG) {
 				// printBlocks();
 			}
 		}
 	}
 
-	void doResetRecordOwners() {
-		if (DEBUG) {
-			log("DO RESET RECORD OWNERS!!!");
-		}
-		Collection<CMap> cmaps = maps.values();
-
-		 SyncMonitor syncMonitor = new SyncMonitor(cmaps.size());
-		executeLocally(syncMonitor);
-		for (CMap cmap : cmaps) {
-			executeLocally(new Syncer(syncMonitor, cmap.name));
-		}
-	}
-
-	class Migrator implements Runnable {
-		Iterator<String> mapNames = null;
-
-		public Migrator(Iterator<String> mapNames) {
-			super();
-			this.mapNames = mapNames;
-		}
-
-		public void run() {
-			while (mapNames.hasNext()) {
-				String mapName = mapNames.next();
-				for (int i = 0; i < BLOCK_COUNT; i++) {
-					migrateBlock(mapName, i); 
-				}
-			}
-		}
-		
-		private void migrateBlock (String name, int blockId) {
-			while (true) {
-				MMigrate mmigration = new MMigrate();
-				boolean done = mmigration.migrate(name, blockId, 0);
-				if (!done) {
-					if (mmigration.lastMigratedRecordId == -1) return;
-				}
-			}
-		}
-	}
+	// class Migrator implements Runnable {
+	// Iterator<String> mapNames = null;
+	//
+	// public Migrator(Iterator<String> mapNames) {
+	// super();
+	// this.mapNames = mapNames;
+	// }
+	//
+	// public void run() {
+	// while (mapNames.hasNext()) {
+	// String mapName = mapNames.next();
+	// for (int i = 0; i < BLOCK_COUNT; i++) {
+	// migrateBlock(mapName, i);
+	// }
+	// }
+	// }
+	//
+	// private void migrateBlock(String name, int blockId) {
+	// while (true) {
+	// MMigrate mmigration = new MMigrate();
+	// boolean done = mmigration.migrate(name, blockId, 0);
+	// if (!done) {
+	// if (mmigration.lastMigratedRecordId == -1)
+	// return;
+	// }
+	// }
+	// }
+	// }
 
 	abstract class MBooleanOp extends MTargetAwareOp {
 		@Override
@@ -433,34 +410,30 @@ class ConcurrentMapManager extends BaseManager {
 	}
 
 	class MMigrate extends MBooleanOp {
-		long lastMigratedRecordId = 0;
-
-		public boolean migrate(String name, int blockId, long recordId) {
-			lastMigratedRecordId = recordId;
-			request.blockId = blockId;
-			return booleanCall(OP_CMAP_MIGRATE_RECORD, name, null, null, 0, -1, recordId);
-		}
-
-		public void process() {
-			Block block = mapBlocks.get(request.blockId);
-			if (!block.isMigrating()) {
-				setResult(Boolean.FALSE);
-				return;
-			}
-			CMap cmap = getMap(request.name);
-			Record record = cmap.nextOwnedRecord(request.recordId, request.blockId);
-			if (record == null) {
-				lastMigratedRecordId = -1;
-				setResult(Boolean.FALSE);
-			} else {
-				target = block.migrationAddress;
-				lastMigratedRecordId = record.id;
-				invoke();
-			}
+		public boolean migrate(long recordId) {
+			request.recordId = recordId;
+			doOp();
+			return getResultAsBoolean();
 		}
 
 		@Override
 		void setTarget() {
+			target = thisAddress;
+			Record record = getRecordById(request.recordId);
+			if (record == null) {
+				return;
+			} else {
+				Block block = mapBlocks.get(record.blockId);
+				if (block.migrationAddress == null) {
+					return;
+				} else {
+					target = block.migrationAddress;
+				}
+				setLocal(OP_CMAP_MIGRATE_RECORD, record.name, record.key, record.value, 0, -1,
+						record.id);
+				CMap cmap = getMap(record.name);
+				cmap.removeRecord(record.key);
+			}
 		}
 
 		@Override
@@ -890,19 +863,11 @@ class ConcurrentMapManager extends BaseManager {
 		inv.returnToContainer();
 	}
 
-	void handleOwnKey(Invocation inv) {
-		CMap cmap = getMap(inv.name);
-		remoteReq.setInvocation(inv);
-		cmap.own(remoteReq);
-		remoteReq.reset();
-		inv.returnToContainer();
-	}
-
 	void handleBlocks(Invocation inv) {
 		Blocks blocks = (Blocks) ThreadContext.get().toObject(inv.data);
 		handleBlocks(blocks);
 		inv.returnToContainer();
-		doResetRecordOwners();
+		doResetRecords();
 		if (DEBUG) {
 			// printBlocks();
 		}
@@ -967,52 +932,107 @@ class ConcurrentMapManager extends BaseManager {
 		}
 	}
 
-	class SyncMonitor implements Runnable, Processable {
-		int sendOwn = 0;
-		int migrationOwner = 0;
-		int sendBackup = 0;
-		int ownerBackup = 0;
-		int migrationBackup = 0;
-		int removed = 0;
+	class Migrator implements Runnable {
+		final Set<Long> recordsToMigrate;
+		final Set<Long> recordsToBackup;
 
-		final int expectedSyncerCount;
-		AtomicInteger doneSyncers = new AtomicInteger(0);
-
-		public SyncMonitor(int expectedSyncerCount) {
+		public Migrator(Set<Long> recordsToBackup, Set<Long> recordsToMigrate) {
 			super();
-			this.expectedSyncerCount = expectedSyncerCount;
+			this.recordsToBackup = recordsToBackup;
+			this.recordsToMigrate = recordsToMigrate;
 		}
 
 		public void run() {
-			while (doneSyncers.get() < expectedSyncerCount) {
-				synchronized (this) {
-					try {
-						this.wait(1000);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
+			for (final Long recordId : recordsToMigrate) {
+				MMigrate mmigrate = new MMigrate();
+				mmigrate.migrate(recordId);
+			}
+			for (final Long recordId : recordsToBackup) {
+				Processable backupProcess = new Processable() {
+					public void process() {
+						Record record = getRecordById(recordId);
+						if (record != null) {
+							sendBackupAdd(record, true);
+						}
 					}
+				};
+				enqueueAndReturn(backupProcess);
+				try {
+					Thread.sleep(1);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
 			}
-			enqueueAndReturn(SyncMonitor.this);
+			Processable processCompletion = new Processable() {
+				public void process() {
+					doMigrationComplete(thisAddress);
+					sendMigrationComplete();
+				}
+			};
+			enqueueAndReturn(processCompletion);
 		}
+	}
 
-		public void syncDone() {
-			synchronized (this) {
-				doneSyncers.incrementAndGet();
-				this.notify();
+	void doResetRecords() {
+		Set<Long> recordsToMigrate = new HashSet<Long>(1000);
+		Set<Long> recordsToBackup = new HashSet<Long>(1000);
+		Set<Long> recordsToRemove = new HashSet<Long>(1000);
+		int sendOwn = 0;
+		int removed = 0;
+		int sendBackup = 0;
+		int migrationOwner = 0;
+		int ownerBackup = 0;
+		int migrationBackup = 0;
+		Collection<Record> colRecords = mapRecordsById.values();
+		for (Record rec : colRecords) {
+			Block block = mapBlocks.get(rec.getBlockId());
+			if (block.owner.equals(thisAddress)) {
+				if (block.isMigrating()) {
+					// migrate
+					recordsToMigrate.add(rec.getId());
+					sendOwn++;
+				} else {
+					rec.setOwner(thisAddress);
+					// backup
+					recordsToBackup.add(rec.getId());
+					sendBackup++;
+				}
+			} else if (block.isMigrating() && block.migrationAddress.equals(thisAddress)) {
+				rec.owner = thisAddress;
+				migrationOwner++;
+			} else {
+				// am I the backup!
+				if (!block.isMigrating()) {
+					MemberImpl nextAfterOwner = getNextMemberAfter(block.owner);
+					if (nextAfterOwner != null && nextAfterOwner.getAddress().equals(thisAddress)) {
+						rec.owner = block.owner;
+						ownerBackup++;
+					} else {
+						recordsToRemove.add(rec.getId());
+					}
+				} else if (block.isMigrating()) {
+					MemberImpl nextAfterMigration = getNextMemberAfter(block.migrationAddress);
+					if (nextAfterMigration != null
+							&& nextAfterMigration.getAddress().equals(thisAddress)) {
+						rec.owner = block.migrationAddress;
+						migrationBackup++;
+					} else {
+						recordsToRemove.add(rec.getId());
+					}
+				} else {
+					recordsToRemove.add(rec.getId());
+				}
 			}
 		}
-
-		public void process() {
-			doMigrationComplete(thisAddress);
-			sendMigrationComplete();
-			if (DEBUG) {
-				// printSync();
+		for (Long recordId : recordsToRemove) {
+			Record rec = getRecordById(recordId);
+			if (rec != null) {
+				CMap cmap = getMap(rec.name);
+				cmap.removeRecord(rec.key);
+				removed++;
 			}
-
 		}
-
-		void printSync() {
+		if (DEBUG) {
 			log("SendOwn:        " + sendOwn);
 			log("SendBackup:     " + sendBackup);
 			log("MigrationOwner: " + migrationOwner);
@@ -1020,110 +1040,7 @@ class ConcurrentMapManager extends BaseManager {
 			log("MigrationBackup:" + migrationBackup);
 			log("Removed:        " + removed);
 		}
-	}
-
-	class Syncer implements Runnable, Processable {
-		String name;
-		int recordId = 0;
-		final long maxRecordId;
-		final SyncMonitor syncMonitor;
-
-		volatile boolean done = false;
-
-		public Syncer(SyncMonitor syncMonitor, String name) {
-			super();
-			this.name = name;
-			this.syncMonitor = syncMonitor;
-			CMap cmap = maps.get(name);
-			maxRecordId = cmap.maxRecordId();
-		}
-
-		public void run() {
-			while (!done) {
-				synchronized (Syncer.this) {
-					enqueueAndReturn(Syncer.this);
-					try {
-						Syncer.this.wait();
-						Thread.sleep(2);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-			}
-			syncMonitor.syncDone();
-		}
-
-		public void process() {
-			for (int i = 0; i < 10 && !done; i++) {
-				doProcess();
-			}
-			synchronized (Syncer.this) {
-				Syncer.this.notify();
-			}
-		}
-
-		public void doProcess() {
-			CMap cmap = maps.get(name);
-			if (cmap == null) {
-				done = true;
-				return;
-			}
-			Record rec = null;
-			while (rec == null && !done) {
-				if (recordId <= maxRecordId) {
-					rec = getRecordById(recordId++);
-				} else {
-					done = true;
-				}
-			}
-			if (rec == null) {
-				done = true;
-				return;
-			}
-			Block block = mapBlocks.get(rec.getBlockId());
-			if (block.owner.equals(thisAddress)) {
-				if (block.isMigrating()) {
-					// migrate
-					sendOwnMessage(rec, block.migrationAddress);
-					cmap.removeRecord(rec.getKey());
-					syncMonitor.sendOwn++;
-					syncMonitor.removed++;
-				} else {
-					rec.setOwner(thisAddress);
-					// backup
-					sendBackupAdd(rec, true);
-					syncMonitor.sendBackup++;
-				}
-			} else if (block.isMigrating() && block.migrationAddress.equals(thisAddress)) {
-				rec.owner = thisAddress;
-				syncMonitor.migrationOwner++;
-			} else {
-				// am I the backup!
-				if (!block.isMigrating()) {
-					MemberImpl nextAfterOwner = getNextMemberAfter(block.owner);
-					if (nextAfterOwner != null && nextAfterOwner.getAddress().equals(thisAddress)) {
-						rec.owner = block.owner;
-						syncMonitor.ownerBackup++;
-					} else {
-						cmap.removeRecord(rec.getKey());
-						syncMonitor.removed++;
-					}
-				} else if (block.isMigrating()) {
-					MemberImpl nextAfterMigration = getNextMemberAfter(block.migrationAddress);
-					if (nextAfterMigration != null
-							&& nextAfterMigration.getAddress().equals(thisAddress)) {
-						rec.owner = block.migrationAddress;
-						syncMonitor.migrationBackup++;
-					} else {
-						cmap.removeRecord(rec.getKey());
-						syncMonitor.removed++;
-					}
-				} else {
-					cmap.removeRecord(rec.getKey());
-					syncMonitor.removed++;
-				}
-			}
-		}
+		executeLocally(new Migrator(recordsToBackup, recordsToMigrate));
 	}
 
 	private void doMigrationComplete(Address from) {
@@ -1183,15 +1100,6 @@ class ConcurrentMapManager extends BaseManager {
 		Invocation inv = toInvocation(record, true);
 		inv.operation = OP_CMAP_BACKUP_ADD;
 		boolean sent = send(inv, getNextMember().getAddress());
-		if (!sent) {
-			inv.returnToContainer();
-		}
-	}
-
-	private void sendOwnMessage(Record record, Address newOwner) {
-		Invocation inv = toInvocation(record, true);
-		inv.operation = OP_CMAP_OWN_KEY;
-		boolean sent = send(inv, newOwner);
 		if (!sent) {
 			inv.returnToContainer();
 		}

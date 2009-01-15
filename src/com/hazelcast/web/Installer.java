@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.web;
 
 import java.io.BufferedOutputStream;
@@ -69,7 +69,7 @@ public class Installer {
 			print("No application is specified!");
 			printHelp();
 		}
-		
+
 		Set<String> setApps = new HashSet<String>();
 		for (String arg : args) {
 			if (arg.startsWith("-")) {
@@ -79,21 +79,21 @@ public class Installer {
 				}
 			} else {
 				setApps.add(arg);
-			} 
+			}
 		}
 
 		for (String appFilename : setApps) {
 			processApp(appFilename);
 		}
-		
+
 		System.out.println("Done!");
 	}
-	
+
 	private final void processApp(String appFilename) {
 		File file = new File(appFilename);
 		String clusteredFileName = clusteredFilePrefix + file.getName();
-		File fileOriginal = new File(file.getParentFile(), clusteredFileName);	
-		
+		File fileOriginal = new File(file.getParentFile(), clusteredFileName);
+
 		modify(file, fileOriginal);
 
 		if (isReplaceOld()) {
@@ -101,7 +101,7 @@ public class Installer {
 			if (success) {
 				System.out.println("old Application File was replaced!");
 			}
-		}	
+		}
 		System.out.println("Done. New clustered application at " + fileOriginal.getAbsolutePath());
 	}
 
@@ -325,11 +325,11 @@ public class Installer {
 		Node initParam = append(doc, filter, "init-param", null);
 		append(doc, initParam, "param-name", "listener-count");
 		append(doc, initParam, "param-value", String.valueOf(lsListeners.size()));
-		
+
 		initParam = append(doc, filter, "init-param", null);
 		append(doc, initParam, "param-name", "apps-sharing-sessions");
 		append(doc, initParam, "param-value", String.valueOf(appsSharingSessions));
-		
+
 		if (sessionTimeout != sessionTimeoutDefault) {
 			initParam = append(doc, filter, "init-param", null);
 			append(doc, initParam, "param-name", "session-timeout");

@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.core;
 
 import java.util.Set;
@@ -27,5 +27,5 @@ public interface Cluster {
 
 	Member getLocalMember();
 
-	long getClusterTime(); 
+	long getClusterTime();
 }

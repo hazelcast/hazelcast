@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.impl;
 
 import java.net.InetAddress;
@@ -27,18 +27,18 @@ public class MemberImpl implements Member {
 
 	private boolean thisMember = false;
 
-	private Address address; 
+	private Address address;
 
 	private boolean ready = false;
-	
+
 	private long lastRead = 0;
-	
+
 	private long lastWrite = 0;
 
 	public MemberImpl(Address address, boolean thisMember) {
 		super();
 		this.thisMember = thisMember;
-		this.address = address; 
+		this.address = address;
 		this.lastRead = System.currentTimeMillis() + 10000;
 	}
 
@@ -78,19 +78,19 @@ public class MemberImpl implements Member {
 	public void setThisMember(boolean thisMember) {
 		this.thisMember = thisMember;
 	}
-	
+
 	public void didWrite() {
 		lastWrite = System.currentTimeMillis();
 	}
-	
+
 	public void didRead() {
 		lastRead = System.currentTimeMillis();
 	}
 
-	public long getLastRead() {		
+	public long getLastRead() {
 		return lastRead;
 	}
-	
+
 	public long getLastWrite() {
 		return lastWrite;
 	}

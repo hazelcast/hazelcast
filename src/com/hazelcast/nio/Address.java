@@ -14,14 +14,13 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.nio;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -46,8 +45,8 @@ public class Address implements DataSerializable {
 	public Address() {
 		this.ip = new byte[4];
 	}
-	
-	public Address (InetAddress inetAddress, int port) {
+
+	public Address(InetAddress inetAddress, int port) {
 		this.ip = inetAddress.getAddress();
 		this.port = port;
 		this.inetAddress = inetAddress;
@@ -132,7 +131,7 @@ public class Address implements DataSerializable {
 	public String toString() {
 		if (host == null)
 			setHost();
-		return "Address[" + host + ":" +  port + "]";
+		return "Address[" + host + ":" + port + "]";
 	}
 
 	public int getPort() {
@@ -158,7 +157,8 @@ public class Address implements DataSerializable {
 	public boolean equals(Object o) {
 		if (this == o)
 			return true;
-		if (o == null) return false;		
+		if (o == null)
+			return false;
 		if (!(o instanceof Address))
 			return false;
 

@@ -14,22 +14,20 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.nio;
 
 import java.nio.channels.SocketChannel;
 
-import com.hazelcast.impl.ClusterManager;
 import com.hazelcast.impl.ClusterService;
-import com.hazelcast.impl.Node;
 import com.hazelcast.impl.ClusterManager.AddRemoveConnection;
 
 public class Connection {
-	SocketChannel socketChannel; 
+	SocketChannel socketChannel;
 
 	ReadHandler readHandler;
 
-	WriteHandler writeHandler; 
+	WriteHandler writeHandler;
 
 	private volatile boolean live = true;
 
@@ -37,20 +35,20 @@ public class Connection {
 
 	private long lastRead = 0;
 	private long lastWrite = 0;
-	
+
 	int localPort = -1;
 
 	public Connection(SocketChannel socketChannel) {
 		super();
-		this.socketChannel = socketChannel; 
+		this.socketChannel = socketChannel;
 		this.writeHandler = new WriteHandler(this);
-		this.readHandler = new ReadHandler(this);  
-		lastRead = System.currentTimeMillis() + 5000;		
+		this.readHandler = new ReadHandler(this);
+		lastRead = System.currentTimeMillis() + 5000;
 	}
 
 	public SocketChannel getSocketChannel() {
 		return socketChannel;
-	} 
+	}
 
 	public ReadHandler getReadHandler() {
 		return readHandler;
@@ -103,7 +101,7 @@ public class Connection {
 
 	public void close() {
 		if (!live)
-			return;		
+			return;
 		live = false;
 		try {
 			if (socketChannel != null && socketChannel.isOpen())
@@ -119,11 +117,11 @@ public class Connection {
 
 	@Override
 	public String toString() {
-		return "Connection [" + this.endPoint + "] live=" + live ;
+		return "Connection [" + this.endPoint + "] live=" + live;
 	}
 
 	public void didRead() {
-		lastRead  = System.currentTimeMillis();
+		lastRead = System.currentTimeMillis();
 	}
 
 	public void didWrite() {
@@ -133,7 +131,7 @@ public class Connection {
 	public long getLastRead() {
 		return lastRead;
 	}
-	
+
 	public long getLastWrite() {
 		return lastWrite;
 	}

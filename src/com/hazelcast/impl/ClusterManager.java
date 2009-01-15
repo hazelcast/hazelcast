@@ -34,12 +34,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.impl.BaseManager.Processable;
-import com.hazelcast.impl.BaseManager.ScheduledAction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
@@ -59,7 +55,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 	}
 
 	private ClusterManager() {
-		ConnectionManager.get().addConnectionListener(this); 
+		ConnectionManager.get().addConnectionListener(this);
 	}
 
 	private Set<Address> setJoins = new HashSet<Address>(100);
@@ -201,8 +197,8 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			}
 			for (MemberImpl member : lsMembers) {
 				if (!member.localMember()) {
-					Address address = member.getAddress(); 
-					if (shouldConnectTo(address)) { 
+					Address address = member.getAddress();
+					if (shouldConnectTo(address)) {
 						Connection conn = ConnectionManager.get().getOrConnect(address);
 						if (conn != null) {
 							Invocation inv = obtainServiceInvocation("heartbeat", null, null,
@@ -1064,13 +1060,13 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 	}
 
 	public void registerScheduledAction(ScheduledAction scheduledAction) {
-		setScheduledActions.add (scheduledAction);
+		setScheduledActions.add(scheduledAction);
 	}
 
 	protected void deregisterScheduledAction(ScheduledAction scheduledAction) {
 		setScheduledActions.remove(scheduledAction);
 	}
-	
+
 	public void checkScheduledActions() {
 		if (setScheduledActions.size() > 0) {
 			Iterator<ScheduledAction> it = setScheduledActions.iterator();
@@ -1080,13 +1076,12 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 					sa.onExpire();
 					it.remove();
 				}
-			} 
+			}
 		}
 	}
 
-	//TODO: REMOVE THIS CLASS
+	// TODO: REMOVE THIS CLASS
 	class ScheduledActionController implements Runnable, Processable {
-		
 
 		volatile boolean dirty = false;
 
@@ -1126,7 +1121,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		}
 	}
 
-	//TODO: REMOVE THIS CLASS
+	// TODO: REMOVE THIS CLASS
 	class HeartbeatTask implements Runnable, Processable {
 		public void run() {
 			enqueueAndReturn(HeartbeatTask.this);

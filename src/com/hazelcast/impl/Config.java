@@ -260,7 +260,7 @@ public class Config {
 		members: for (int i = 0; i < nodelist.getLength(); i++) {
 			org.w3c.dom.Node n = nodelist.item(i);
 			String value = getTextContent(n).trim();
-			
+
 			if (n.getNodeName().equalsIgnoreCase("required-member")) {
 				join.joinMembers.requiredMember = value;
 			} else if (n.getNodeName().equalsIgnoreCase("hostname")) {
@@ -451,8 +451,8 @@ public class Config {
 
 		public String requiredMember = null;
 
-		public void add(String member){
-				lsMembers.add(member);
+		public void add(String member) {
+			lsMembers.add(member);
 		}
 	}
 

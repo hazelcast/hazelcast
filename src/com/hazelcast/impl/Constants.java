@@ -14,11 +14,11 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.impl;
 
 public interface Constants {
-	
+
 	interface Objects {
 		public static final Object OBJECT_DONE = new Object();
 
@@ -61,7 +61,7 @@ public interface Constants {
 	interface ClusterOperations {
 
 		public static final int OP_RESPONSE = 15;
-		
+
 		public static final int OP_HEARTBEAT = 18;
 
 		public static final int OP_REMOTELY_PROCESS = 19;
@@ -69,23 +69,22 @@ public interface Constants {
 		public static final int OP_REMOTELY_PROCESS_AND_RESPONSE = 20;
 
 		public static final int OP_REMOTELY_BOOLEAN_CALLABLE = 21;
-		
+
 		public static final int OP_REMOTELY_OBJECT_CALLABLE = 22;
 
-		
 	}
 
 	interface EventOperations {
 		public static final int OP_LISTENER_ADD = 201;
-		
+
 		public static final int OP_LISTENER_REMOVE = 202;
-		
+
 		public static final int OP_EVENT = 203;
 	}
 
 	interface ExecutorOperations {
 		public static final int OP_EXE_REMOTE_EXECUTION = 350;
-		
+
 		public static final int OP_STREAM = 351;
 	}
 
@@ -150,7 +149,7 @@ public interface Constants {
 
 		public static final int OP_CMAP_BLOCKS = 514;
 
-		public static final int OP_CMAP_OWN_KEY = 515;
+		// public static final int OP_CMAP_OWN_KEY = 515;
 
 		public static final int OP_CMAP_MIGRATION_COMPLETE = 516;
 
@@ -169,14 +168,13 @@ public interface Constants {
 		public static final int OP_CMAP_LOCK_RETURN_OLD = 523;
 
 		public static final int OP_CMAP_READ = 524;
-		
+
 		public static final int OP_CMAP_ADD_TO_LIST = 525;
-		
+
 		public static final int OP_CMAP_ADD_TO_SET = 526;
-		
+
 		public static final int OP_CMAP_MIGRATE_RECORD = 527;
-		
-		
+
 	}
 
 	public interface ResponseTypes {

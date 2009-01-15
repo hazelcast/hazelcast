@@ -14,8 +14,8 @@
  * limitations under the License.
  *
  */
- 
-package com.hazelcast.web; 
+
+package com.hazelcast.web;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -105,7 +105,7 @@ public class WebFilter implements Filter {
 		}, 0, 10, TimeUnit.SECONDS);
 	}
 
-	public WebFilter() { 
+	public WebFilter() {
 	}
 
 	private static AppContext getAppContext(ServletContext servletContext) {
@@ -115,7 +115,7 @@ public class WebFilter implements Filter {
 	public void init(FilterConfig config) throws ServletException {
 
 		int maxInactiveInterval = 30; // minutes
-		
+
 		String appsSharingSessionsValue = config.getInitParameter("apps-sharing-sessions");
 		if (appsSharingSessionsValue != null) {
 			appsSharingSessions = Boolean.valueOf(appsSharingSessionsValue.trim());
@@ -1420,7 +1420,7 @@ public class WebFilter implements Filter {
 	static void log(Object obj) {
 		if (DEBUG) {
 			System.out.println(obj);
-		} 
+		}
 	}
 
 	static class IteratorEnumeration implements Enumeration<String> {
@@ -1509,6 +1509,4 @@ public class WebFilter implements Filter {
 	}
 
 }// END of WebFilter
-
-
 

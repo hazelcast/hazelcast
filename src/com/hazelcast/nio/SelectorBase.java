@@ -42,7 +42,7 @@ public class SelectorBase implements Runnable {
 	protected boolean live = true;
 
 	protected int waitTime = 16;
-	
+
 	AtomicInteger size = new AtomicInteger();
 
 	public SelectorBase() {
@@ -62,7 +62,7 @@ public class SelectorBase implements Runnable {
 		socketChannel.configureBlocking(false);
 		Connection connection = ConnectionManager.get().createConnection(socketChannel, acceptor);
 		return connection;
-	}	
+	}
 
 	public void processSelectionQueue() {
 		while (live) {
@@ -82,10 +82,10 @@ public class SelectorBase implements Runnable {
 			Node.get().handleInterruptedException(Thread.currentThread(), e);
 			return 0;
 		}
-	} 
+	}
 
-	public void run() { 
-		select: while (live) { 
+	public void run() {
+		select: while (live) {
 			if (size.get() > 0) {
 				processSelectionQueue();
 			}
@@ -102,15 +102,15 @@ public class SelectorBase implements Runnable {
 				ioe.printStackTrace();
 				continue select;
 			}
-			if (selectedKeys == 0) { 
+			if (selectedKeys == 0) {
 				continue select;
-			} 
+			}
 			Set<SelectionKey> setSelectedKeys = selector.selectedKeys();
 			Iterator<SelectionKey> it = setSelectedKeys.iterator();
 			while (it.hasNext()) {
 				SelectionKey sk = (SelectionKey) it.next();
 				it.remove();
-				try { 
+				try {
 					sk.interestOps(sk.interestOps() & ~sk.readyOps());
 					SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
 					selectionHandler.handle();
@@ -124,14 +124,14 @@ public class SelectorBase implements Runnable {
 	protected void handleSelectorException(Exception e) {
 		String msg = "Selector exception at  " + Thread.currentThread().getName();
 		msg += ", cause= " + e.toString();
-		if (Build.DEBUG) { 							
+		if (Build.DEBUG) {
 			System.out.println(msg);
-			ClusterManager.get().publishLog(msg); 
-			e.printStackTrace(System.out); 
-		}   
+			ClusterManager.get().publishLog(msg);
+			e.printStackTrace(System.out);
+		}
 	}
 
-	public void shutdown() {		  		
+	public void shutdown() {
 		live = false;
 		selectorQueue.clear();
 		try {

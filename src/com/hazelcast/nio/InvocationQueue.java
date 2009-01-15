@@ -24,12 +24,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.hazelcast.impl.Constants;
@@ -64,7 +62,7 @@ public class InvocationQueue {
 			inv = new Invocation(this);
 			// throw new RuntimeException(Thread.currentThread().getName() +
 			// " Couldn't obtain ServiceInvocation !!");
-		}  
+		}
 		inv.reset();
 		return inv;
 	}
@@ -575,19 +573,19 @@ public class InvocationQueue {
 				bbos.write((byte) 46);
 				String str = (String) obj;
 				bbos.writeUTF(str);
-//				int len = str.length(); 
-//				int block = 10000;
-//				int blockCount = ((len / block)) + 1;
-//				bbos.writeShort(blockCount);
-//				if (blockCount == 1) {
-//					bbos.writeUTF(str);
-//				} else {
-//					for (int i = 0; i < blockCount; i++) {
-//						int start = i * block;
-//						int end = Math.min((i + 1) * block, len);
-//						bbos.writeUTF(str.substring(start, end));
-//					}
-//				}
+				// int len = str.length();
+				// int block = 10000;
+				// int blockCount = ((len / block)) + 1;
+				// bbos.writeShort(blockCount);
+				// if (blockCount == 1) {
+				// bbos.writeUTF(str);
+				// } else {
+				// for (int i = 0; i < blockCount; i++) {
+				// int start = i * block;
+				// int end = Math.min((i + 1) * block, len);
+				// bbos.writeUTF(str.substring(start, end));
+				// }
+				// }
 			} else {
 				bbos.write((byte) 66);
 				ObjectOutputStream os = new ObjectOutputStream(bbos);
@@ -625,12 +623,12 @@ public class InvocationQueue {
 					result = ds;
 				} else if (type == 46) {
 					result = bbis.readUTF();
-//					int utfCount = bbis.readShort();
-//					StringBuilder sb = new StringBuilder();
-//					for (int i = 0; i < utfCount; i++) {
-//						sb.append(bbis.readUTF());
-//					}
-//					result = sb.toString();
+					// int utfCount = bbis.readShort();
+					// StringBuilder sb = new StringBuilder();
+					// for (int i = 0; i < utfCount; i++) {
+					// sb.append(bbis.readUTF());
+					// }
+					// result = sb.toString();
 				} else {
 					throw new RuntimeException("Unknown readObject type " + type);
 				}

@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.jca;
 
 import javax.resource.ResourceException;

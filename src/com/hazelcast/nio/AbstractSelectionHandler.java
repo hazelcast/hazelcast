@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.nio;
 
 import java.nio.channels.SelectionKey;
@@ -33,7 +33,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 
 	protected OutSelector outSelector;
 
-	protected Connection connection; 
+	protected Connection connection;
 
 	protected SelectionKey sk = null;
 
@@ -44,7 +44,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 		this.inSelector = InSelector.get();
 		this.outSelector = OutSelector.get();
 	}
-	
+
 	final void registerOp(Selector selector, int operation) {
 		try {
 			if (!connection.live())
@@ -53,7 +53,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 				sk = socketChannel.register(selector, operation, this);
 			} else {
 				sk.interestOps(operation);
-			}  
+			}
 		} catch (Exception e) {
 			handleSocketException(e);
 		}
@@ -62,14 +62,17 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 	final void handleSocketException(Exception e) {
 		if (DEBUG) {
 			System.out.println(Thread.currentThread().getName() + " Closing Socket. cause:  " + e);
-		} 
+		}
 		if (DEBUG) {
 			e.printStackTrace(System.out);
 		}
-		if (sk != null) sk.cancel();
+		if (sk != null)
+			sk.cancel();
 		if (connection.live()) {
 			if (DEBUG) {
-				ClusterManager.get().publishLog("Connection.close endPoint:" + connection.getEndPoint() + ", cause" + e.toString());						
+				ClusterManager.get().publishLog(
+						"Connection.close endPoint:" + connection.getEndPoint() + ", cause"
+								+ e.toString());
 			}
 		}
 		connection.close();

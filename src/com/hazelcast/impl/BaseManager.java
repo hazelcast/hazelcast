@@ -28,12 +28,10 @@ import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_FAILURE;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_NONE;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_REDO;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_SUCCESS;
-import static com.hazelcast.impl.Constants.Timeouts.TIMEOUT_ADDITION;
 
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,9 +40,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-
-import sun.reflect.ReflectionFactory.GetReflectionFactoryAction;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IMap;
@@ -798,9 +793,8 @@ abstract class BaseManager implements Constants {
 			responses.clear();
 			enqueueAndReturn(TargetAwareOp.this);
 		}
-		
 
-		public Object getResult() { 
+		public Object getResult() {
 			Object result = null;
 			try {
 				result = responses.take();
@@ -829,8 +823,8 @@ abstract class BaseManager implements Constants {
 				invoke();
 			}
 		}
-		
-		protected void invoke () {
+
+		protected void invoke() {
 			addCall(TargetAwareOp.this);
 			Invocation inv = request.toInvocation();
 			inv.eventId = getId();
@@ -842,7 +836,7 @@ abstract class BaseManager implements Constants {
 				}
 				inv.returnToContainer();
 				redo();
-			}	
+			}
 		}
 
 		abstract void doLocalOp();

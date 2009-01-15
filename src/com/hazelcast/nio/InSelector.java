@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.nio;
 
 import java.io.IOException;
@@ -62,15 +62,17 @@ public class InSelector extends SelectorBase {
 
 		public void handle() {
 			try {
-				SocketChannel channel = serverSocketChannel.accept(); 
+				SocketChannel channel = serverSocketChannel.accept();
 				if (DEBUG)
 					System.out.println(channel.socket().getLocalPort()
 							+ " this socket is connected to "
 							+ channel.socket().getRemoteSocketAddress());
 				if (channel != null) {
 					Connection connection = initChannel(channel, true);
-					InetSocketAddress remoteSocket =  (InetSocketAddress) channel.socket().getRemoteSocketAddress();
-					int remoteRealPort = Config.get().port + ((remoteSocket.getPort() - 10000) % 20);
+					InetSocketAddress remoteSocket = (InetSocketAddress) channel.socket()
+							.getRemoteSocketAddress();
+					int remoteRealPort = Config.get().port
+							+ ((remoteSocket.getPort() - 10000) % 20);
 					Address endPoint = new Address(remoteSocket.getAddress(), remoteRealPort);
 					ConnectionManager.get().bind(endPoint, connection, true);
 					channel.register(selector, SelectionKey.OP_READ, connection.getReadHandler());

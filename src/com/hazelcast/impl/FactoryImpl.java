@@ -539,13 +539,14 @@ public class FactoryImpl implements Constants {
 		}
 
 	}
-	
+
 	interface IProxy {
 		boolean add(Object item);
-		boolean removeKey (Object key); 
+
+		boolean removeKey(Object key);
 	}
 
-	static class CProxy implements IMap, IProxy, Constants{
+	static class CProxy implements IMap, IProxy, Constants {
 
 		String name = null;
 

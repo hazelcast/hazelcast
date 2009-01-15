@@ -23,8 +23,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import com.hazelcast.impl.ClusterManager;
 import com.hazelcast.impl.Config;
@@ -60,7 +58,6 @@ public class OutSelector extends SelectorBase {
 		int localPort = 0;
 
 		int numberOfConnectionError = 0;
-		 
 
 		public Connector(Address address) {
 			super();
@@ -104,11 +101,12 @@ public class OutSelector extends SelectorBase {
 			} catch (Exception e) {
 				try {
 					socketChannel.close();
-				} catch (IOException ignored) { 
+				} catch (IOException ignored) {
 				}
 				if (numberOfConnectionError++ < 5) {
 					if (DEBUG) {
-						System.out.println("Couldn't register connect! will trying again. cause: " + e.getMessage());
+						System.out.println("Couldn't register connect! will trying again. cause: "
+								+ e.getMessage());
 					}
 					run();
 				} else {
@@ -142,7 +140,9 @@ public class OutSelector extends SelectorBase {
 					socketChannel.close();
 					if (numberOfConnectionError++ < 5) {
 						if (DEBUG) {
-							System.out.println("Couldn't finish connecting, will try again. cause: " + e.getMessage());
+							System.out
+									.println("Couldn't finish connecting, will try again. cause: "
+											+ e.getMessage());
 						}
 						addTask(Connector.this);
 					} else {

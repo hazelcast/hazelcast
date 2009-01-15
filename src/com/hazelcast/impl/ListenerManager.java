@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.impl;
 
 import static com.hazelcast.impl.Constants.EventOperations.OP_EVENT;
@@ -69,7 +69,7 @@ class ListenerManager extends BaseManager {
 	}
 
 	void handleAddRemoveListener(boolean add, Invocation inv) {
-		Data key = (inv.key != null) ? inv.doTake(inv.key) : null; 
+		Data key = (inv.key != null) ? inv.doTake(inv.key) : null;
 		boolean returnValue = (inv.longValue == 1) ? true : false;
 		String name = inv.name;
 		Address address = inv.conn.getEndPoint();

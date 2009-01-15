@@ -19,12 +19,10 @@ package com.hazelcast.nio;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.hazelcast.impl.ClusterService;
 import com.hazelcast.impl.Node;
 import com.hazelcast.nio.InvocationQueue.Invocation;
 
@@ -55,7 +53,7 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 	}
 
 	public final void enqueueInvocation(Invocation inv) {
-		try {			
+		try {
 			writeHandlerQueue.put(inv);
 		} catch (InterruptedException e) {
 			Node.get().handleInterruptedException(Thread.currentThread(), e);
@@ -111,7 +109,7 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 			connection.didWrite();
 			while (remaining > 0) {
 				try {
-					int written = socketChannel.write(bbOut);					
+					int written = socketChannel.write(bbOut);
 					remaining -= written;
 					loopCount++;
 					if (DEBUG) {

@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
- 
+
 package com.hazelcast.impl;
 
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_ADD_BLOCK;
@@ -182,7 +182,7 @@ class BlockingQueueManager extends BaseManager {
 					block.resetAddIndex();
 					if (lsMembers.size() > 1) {
 						if (addressNewOwner.equals(thisAddress)) {
-							// I am the new owner so backup to next member 
+							// I am the new owner so backup to next member
 							int indexUpto = block.size() - 1;
 							if (DEBUG) {
 								log("IndexUpto " + indexUpto);
@@ -1080,10 +1080,10 @@ class BlockingQueueManager extends BaseManager {
 		Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
 
 		public Q(String name) {
-			QConfig qconfig = Config.get().getQConfig(name); 
+			QConfig qconfig = Config.get().getQConfig(name);
 			if (qconfig != null) {
 				maxSizePerJVM = qconfig.maxSizePerJVM;
-				log ("qConfig " + qconfig.maxSizePerJVM);
+				log("qConfig " + qconfig.maxSizePerJVM);
 			}
 			this.name = name;
 			Address master = getMasterAddress();
@@ -1121,7 +1121,7 @@ class BlockingQueueManager extends BaseManager {
 			ScheduledOfferAction action = new ScheduledOfferAction(request);
 			lsScheduledOfferActions.add(action);
 			ClusterManager.get().registerScheduledAction(action);
-			
+
 		}
 
 		public void schedulePoll(Request request) {
@@ -1145,14 +1145,14 @@ class BlockingQueueManager extends BaseManager {
 				returnScheduledAsSuccess(request);
 				return true;
 			}
-			
+
 			public void onExpire() {
 				request.response = null;
 				request.key = null;
 				request.value = null;
 				returnScheduledAsSuccess(request);
 			}
-			 
+
 		}
 
 		public class ScheduledOfferAction extends ScheduledAction {
@@ -1170,7 +1170,7 @@ class BlockingQueueManager extends BaseManager {
 				returnScheduledAsBoolean(request);
 				return true;
 			}
-			
+
 			public void onExpire() {
 				request.response = Boolean.FALSE;
 				returnScheduledAsBoolean(request);
@@ -1311,7 +1311,7 @@ class BlockingQueueManager extends BaseManager {
 				fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, value, null);
 			}
 		}
-		 
+
 		int offer(Request req) {
 			int addIndex = blCurrentPut.add(req.value);
 			doFireEntryEvent(true, req.value);
@@ -1321,7 +1321,7 @@ class BlockingQueueManager extends BaseManager {
 				ClusterManager.get().deregisterScheduledAction(pollAction);
 				if (pollAction.expired()) {
 					pollAction.onExpire();
-				} else {	
+				} else {
 					boolean consumed = pollAction.consume();
 					if (consumed)
 						return -1;
@@ -1465,7 +1465,8 @@ class BlockingQueueManager extends BaseManager {
 		}
 
 		void sendBackup(boolean add, Address invoker, Data data, int blockId, int addIndex) {
-			if (addIndex == -1) throw new RuntimeException("addIndex cannot be -1");
+			if (addIndex == -1)
+				throw new RuntimeException("addIndex cannot be -1");
 			if (lsMembers.size() > 1) {
 				if (getNextMember().getAddress().equals(invoker)) {
 					return;
@@ -1529,7 +1530,7 @@ class BlockingQueueManager extends BaseManager {
 				log("CurrentPut " + blCurrentPut);
 				log("---------------------");
 			}
-		} 
+		}
 	}
 
 	class Block {
@@ -1566,10 +1567,10 @@ class BlockingQueueManager extends BaseManager {
 		}
 
 		void resetAddIndex() {
-			int index = BLOCK_SIZE -1;
+			int index = BLOCK_SIZE - 1;
 			while (index > 0) {
 				if (values[index] != null) {
-					addIndex = index + 1; 
+					addIndex = index + 1;
 					if (addIndex >= BLOCK_SIZE) {
 						full = true;
 					}
@@ -1579,7 +1580,7 @@ class BlockingQueueManager extends BaseManager {
 			}
 			index = 0;
 		}
-		
+
 		public int add(Data data) {
 			if (values[addIndex] != null)
 				return -1;

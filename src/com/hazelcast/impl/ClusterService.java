@@ -20,7 +20,6 @@ package com.hazelcast.impl;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -42,7 +41,7 @@ public class ClusterService implements Runnable, Constants {
 	private static final long PERIODIC_CHECK_INTERVAL = TimeUnit.SECONDS.toNanos(1);
 
 	private static final long UTILIZATION_CHECK_INTERVAL = TimeUnit.SECONDS.toNanos(10);
- 
+
 	protected LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
 
 	protected Address thisAddress = null;
@@ -60,11 +59,11 @@ public class ClusterService implements Runnable, Constants {
 	protected volatile boolean running = true;
 
 	protected final List lsBuffer = new ArrayList(2000);
-	
+
 	protected long start = 0;
-	
+
 	protected long totalProcessTime = 0;
-	
+
 	protected long lastPeriodicCheck = 0;
 
 	private ClusterService() {
@@ -82,16 +81,17 @@ public class ClusterService implements Runnable, Constants {
 				memberFrom.didRead();
 			}
 			int operation = inv.operation;
-			if (operation < 50) {
-				ClusterManager.get().handle(inv);
-			} else if (operation < 300) {
-				ListenerManager.get().handle(inv);
-			} else if (operation < 400) {
-				ExecutorManager.get().handle(inv);
-			} else if (operation < 500) {
-				BlockingQueueManager.get().handle(inv);
-			} else if (operation < 600) {
+
+			if (operation > 500) {
 				ConcurrentMapManager.get().handle(inv);
+			} else if (operation > 400) {
+				BlockingQueueManager.get().handle(inv);
+			} else if (operation > 300) {
+				ExecutorManager.get().handle(inv);
+			} else if (operation > 200) {
+				ListenerManager.get().handle(inv);
+			} else if (operation > 0) {
+				ClusterManager.get().handle(inv);
 			} else
 				throw new RuntimeException("Unknown operation " + operation);
 		} else if (obj instanceof Processable) {
@@ -108,8 +108,9 @@ public class ClusterService implements Runnable, Constants {
 		totalProcessTime += elipsedTime;
 		long duration = (processEnd - start);
 		if (duration > UTILIZATION_CHECK_INTERVAL) {
-			if (DEBUG) { 
-				System.out.println("ServiceProcessUtilization: " + ((totalProcessTime * 100) / duration) + " %");				
+			if (DEBUG) {
+				System.out.println("ServiceProcessUtilization: "
+						+ ((totalProcessTime * 100) / duration) + " %");
 			}
 			start = processEnd;
 			totalProcessTime = 0;
@@ -132,10 +133,10 @@ public class ClusterService implements Runnable, Constants {
 			}
 		}
 	}
-	
+
 	private final void checkPeriodics() {
 		long now = System.nanoTime();
-		if ((now - lastPeriodicCheck) > PERIODIC_CHECK_INTERVAL) { 
+		if ((now - lastPeriodicCheck) > PERIODIC_CHECK_INTERVAL) {
 			ClusterManager.get().heartBeater();
 			ClusterManager.get().checkScheduledActions();
 			lastPeriodicCheck = now;
@@ -151,7 +152,7 @@ public class ClusterService implements Runnable, Constants {
 				int size = lsBuffer.size();
 				if (size > 0) {
 					for (int i = 0; i < size; i++) {
-						obj = lsBuffer.get(i); 
+						obj = lsBuffer.get(i);
 						checkPeriodics();
 						process(obj);
 					}
@@ -161,7 +162,7 @@ public class ClusterService implements Runnable, Constants {
 					checkPeriodics();
 					if (obj != null) {
 						process(obj);
-					} 
+					}
 				}
 			} catch (InterruptedException e) {
 				Node.get().handleInterruptedException(Thread.currentThread(), e);

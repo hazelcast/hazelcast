@@ -31,8 +31,6 @@ import java.util.StringTokenizer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import sun.util.logging.resources.logging;
-
 import com.hazelcast.impl.MulticastService.JoinInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -162,11 +160,11 @@ public class Node {
 		}
 		firstMainThread = null;
 		Runtime.getRuntime().addShutdownHook(new Thread() {
-		    public void run() { 
-		    	System.out.println("ShutdownHook is shutting down!"); 
-		    	ConnectionManager.get().shutdown();
-		    	ClusterService.get().running = false;			    	
-		    }
+			public void run() {
+				System.out.println("ShutdownHook is shutting down!");
+				ConnectionManager.get().shutdown();
+				ClusterService.get().running = false;
+			}
 		});
 
 	}
@@ -346,7 +344,7 @@ public class Node {
 	}
 
 	private void joinViaRequiredMember() {
-		
+
 		try {
 			Config config = Config.get();
 			Address requiredAddress = getAddressFor(config.join.joinMembers.requiredMember);
@@ -354,7 +352,8 @@ public class Node {
 				System.out.println("Joining over required member " + requiredAddress);
 			}
 			if (requiredAddress == null) {
-				throw new RuntimeException ("Invalid required member " + config.join.joinMembers.requiredMember);
+				throw new RuntimeException("Invalid required member "
+						+ config.join.joinMembers.requiredMember);
 			}
 			if (requiredAddress.equals(address)) {
 				setAsMaster();
@@ -364,7 +363,7 @@ public class Node {
 			Connection conn = null;
 			while (conn == null) {
 				conn = ConnectionManager.get().getOrConnect(requiredAddress);
-				Thread.sleep(1000);				
+				Thread.sleep(1000);
 			}
 			while (!joined) {
 				Connection connection = ConnectionManager.get().getOrConnect(requiredAddress);
@@ -471,7 +470,7 @@ public class Node {
 		System.out.println(sb.toString());
 	}
 
-	void setAsMaster () {
+	void setAsMaster() {
 		masterAddress = address;
 		if (DEBUG)
 			System.out.println("adding member myself");
@@ -480,6 +479,7 @@ public class Node {
 		clusterImpl.setMembers(ClusterService.get().lsMembers);
 		unlock();
 	}
+
 	public void reJoin() {
 		System.out.println("REJOINING...");
 		joined = false;
