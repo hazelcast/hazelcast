@@ -16,6 +16,8 @@
  */
 
 package com.hazelcast.impl;
+ 
+import static com.hazelcast.impl.Constants.NodeTypes.NODE_SUPER_CLIENT;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -25,33 +27,22 @@ import com.hazelcast.nio.Address;
 
 public class MemberImpl implements Member {
 
-	private boolean thisMember = false;
+	private final boolean localMember;
 
-	private Address address;
+	private final Address address;
 
-	private boolean ready = false;
+	private final int nodeType;
 
 	private long lastRead = 0;
 
 	private long lastWrite = 0;
 
-	public MemberImpl(Address address, boolean thisMember) {
+	public MemberImpl(Address address, boolean localMember, int nodeType) {
 		super();
-		this.thisMember = thisMember;
+		this.nodeType = nodeType;
+		this.localMember = localMember;
 		this.address = address;
-		this.lastRead = System.currentTimeMillis() + 10000;
-	}
-
-	public MemberImpl(Address address) {
-		this.address = address;
-	}
-
-	public boolean isReady() {
-		return ready;
-	}
-
-	public void setReady(boolean ready) {
-		this.ready = ready;
+		this.lastRead = System.currentTimeMillis();
 	}
 
 	public Address getAddress() {
@@ -60,6 +51,10 @@ public class MemberImpl implements Member {
 
 	public int getPort() {
 		return address.getPort();
+	}
+	
+	public int getNodeType() {
+		return nodeType;
 	}
 
 	public InetAddress getInetAddress() {
@@ -72,11 +67,7 @@ public class MemberImpl implements Member {
 	}
 
 	public boolean localMember() {
-		return thisMember;
-	}
-
-	public void setThisMember(boolean thisMember) {
-		this.thisMember = thisMember;
+		return localMember;
 	}
 
 	public void didWrite() {
@@ -94,6 +85,10 @@ public class MemberImpl implements Member {
 	public long getLastWrite() {
 		return lastWrite;
 	}
+	
+	public boolean superClient() {
+		return (nodeType == NODE_SUPER_CLIENT);
+	}
 
 	@Override
 	public String toString() {
@@ -102,7 +97,7 @@ public class MemberImpl implements Member {
 		sb.append(":");
 		sb.append(address.getPort());
 		sb.append("] ");
-		if (thisMember) {
+		if (localMember) {
 			sb.append("this ");
 		}
 		if (Node.DEBUG && address.equals(Node.get().getMasterAddress())) {
@@ -136,4 +131,5 @@ public class MemberImpl implements Member {
 		return true;
 	}
 
+	
 }

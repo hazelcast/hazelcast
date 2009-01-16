@@ -286,7 +286,7 @@ class BlockingQueueManager extends BaseManager {
 		}
 	}
 
-	void handleSize(Invocation inv) {
+	final void handleSize(Invocation inv) {
 		Q q = getQ(inv.name);
 		if (DEBUG) {
 			q.printStack();
@@ -296,7 +296,7 @@ class BlockingQueueManager extends BaseManager {
 	}
 
 	@Override
-	void handleListenerRegisterations(boolean add, String name, Data key, Address address,
+	final void handleListenerRegisterations(boolean add, String name, Data key, Address address,
 			boolean includeValue) {
 		Q q = getQ(name);
 		if (add) {
@@ -306,15 +306,15 @@ class BlockingQueueManager extends BaseManager {
 		}
 	}
 
-	public void handleTxnBackupPoll(Invocation inv) {
+	final void handleTxnBackupPoll(Invocation inv) {
 		doTxnBackupPoll(inv.txnId, inv.doTake(inv.data));
 	}
 
-	public void handleTxnCommit(Invocation inv) {
+	final void handleTxnCommit(Invocation inv) {
 		List<Data> lsTxnPolledElements = mapTxnPolledElements.remove(inv.txnId);
 	}
 
-	void doTxnBackupPoll(long txnId, Data value) {
+	final void doTxnBackupPoll(long txnId, Data value) {
 		// System.out.println("doTxnBackupPoll " + txnId);
 		List<Data> lsTxnPolledElements = mapTxnPolledElements.get(txnId);
 		if (lsTxnPolledElements == null) {
@@ -324,7 +324,7 @@ class BlockingQueueManager extends BaseManager {
 		lsTxnPolledElements.add(value);
 	}
 
-	public void handleBackup(Invocation inv) {
+	final void handleBackup(Invocation inv) {
 		try {
 			String name = inv.name;
 			int blockId = inv.blockId;
@@ -344,7 +344,7 @@ class BlockingQueueManager extends BaseManager {
 		}
 	}
 
-	public void handleAddBlock(Invocation inv) {
+	final void handleAddBlock(Invocation inv) {
 		try {
 			BlockUpdate addRemove = (BlockUpdate) ThreadContext.get().toObject(inv.data);
 			String name = inv.name;
@@ -372,7 +372,7 @@ class BlockingQueueManager extends BaseManager {
 		}
 	}
 
-	public void handleRemoveBlock(Invocation inv) {
+	final void handleRemoveBlock(Invocation inv) {
 		try {
 			BlockUpdate addRemove = (BlockUpdate) ThreadContext.get().toObject(inv.data);
 			String name = inv.name;
@@ -395,7 +395,7 @@ class BlockingQueueManager extends BaseManager {
 		}
 	}
 
-	public void handleFullBlock(Invocation inv) {
+	final void handleFullBlock(Invocation inv) {
 		if (isMaster()) {
 			String name = inv.name;
 			Q q = getQ(name);
@@ -404,7 +404,7 @@ class BlockingQueueManager extends BaseManager {
 		inv.returnToContainer();
 	}
 
-	public void doFullBlock(Q q, int fullBlockId, Address originalFuller) {
+	final void doFullBlock(Q q, int fullBlockId, Address originalFuller) {
 		int blockId = q.getLatestAddedBlock() + 1;
 		Address target = nextTarget();
 		Block newBlock = new Block(target, blockId, q.name);
@@ -415,7 +415,7 @@ class BlockingQueueManager extends BaseManager {
 		sendAddBlockMessageToOthers(newBlock, fullBlockId, originalFuller, true);
 	}
 
-	void handleOffer(Invocation inv) {
+	final void handleOffer(Invocation inv) {
 		if (rightRemoteOfferTarget(inv)) {
 			remoteReq.setInvocation(inv);
 			doOffer(remoteReq);
@@ -433,7 +433,7 @@ class BlockingQueueManager extends BaseManager {
 		}
 	}
 
-	boolean rightRemoteOfferTarget(Invocation inv) {
+	final boolean rightRemoteOfferTarget(Invocation inv) {
 		Q q = getQ(inv.name);
 		if (q.blCurrentPut == null) {
 			q.setCurrentPut();
@@ -494,7 +494,7 @@ class BlockingQueueManager extends BaseManager {
 		return (!invalid);
 	}
 
-	void handlePoll(Invocation inv) {
+	final void handlePoll(Invocation inv) {
 		if (rightRemotePollTarget(inv)) {
 			remoteReq.setInvocation(inv);
 			doPoll(remoteReq);
@@ -511,19 +511,19 @@ class BlockingQueueManager extends BaseManager {
 		}
 	}
 
-	public void handleRead(Invocation inv) {
+	final void handleRead(Invocation inv) {
 		Q q = getQ(inv.name);
 		q.read(inv);
 	}
 
-	public void handleRemove(Invocation inv) {
+	final void handleRemove(Invocation inv) {
 		Q q = getQ(inv.name);
 		q.remove(inv);
 	}
 
 	int nextIndex = 0;
 
-	Address nextTarget() {
+	final Address nextTarget() {
 		int size = lsMembers.size();
 		int index = nextIndex++ % size;
 		if (nextIndex >= size) {

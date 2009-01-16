@@ -146,7 +146,7 @@ class MulticastService implements Runnable {
 		}
 
 		public JoinInfo copy(boolean newRequest, Address newAddress) {
-			return new JoinInfo(newRequest, newAddress, groupName, groupPassword, type);
+			return new JoinInfo(newRequest, newAddress, groupName, groupPassword, nodeType);
 		}
 
 		void writeToPacket(DatagramPacket packet) {

@@ -41,6 +41,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import sun.rmi.runtime.GetThreadPoolAction;
+import sun.security.action.GetLongAction;
+
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IMap;
 import com.hazelcast.impl.ConcurrentMapManager.Record;
@@ -105,8 +108,12 @@ abstract class BaseManager implements Constants {
 		return true;
 	}
 
-	protected boolean isMaster() {
+	protected final boolean isMaster() {
 		return Node.get().master();
+	}
+	
+	protected final boolean isSuperClient() {
+		return Node.get().isSuperClient();
 	}
 
 	protected Address getMasterAddress() {
@@ -135,17 +142,9 @@ abstract class BaseManager implements Constants {
 				address);
 	}
 
-	public boolean newMember(MemberImpl member) {
-		return !ClusterManager.get().getMembersBeforeSync().contains(member);
-	}
-
 	protected void log(Object obj) {
 		if (DEBUG)
 			System.out.println(obj);
-	}
-
-	protected void redoInvocationLater(Invocation inv) {
-		ClusterManager.get().redoInvocationLater(inv);
 	}
 
 	protected boolean sendSerializable(String name, int operation, DataSerializable ds,
@@ -593,7 +592,7 @@ abstract class BaseManager implements Constants {
 		return mapCalls.remove(id);
 	}
 
-	void handleResponse(Invocation invResponse) {
+	final void handleResponse(Invocation invResponse) {
 		Call call = mapCalls.get(invResponse.eventId);
 		if (call != null)
 			call.handleResponse(invResponse);
@@ -816,7 +815,15 @@ abstract class BaseManager implements Constants {
 		abstract void setTarget();
 
 		public void process() {
-			setTarget();
+			setTarget();		
+			if (target == null) {
+				if (isSuperClient()) {
+					setResult(OBJECT_REDO);
+					return;					
+				} else {
+					throw new RuntimeException ("Target cannot be null!");
+				} 
+			}
 			if (target.equals(thisAddress)) {
 				doLocalOp();
 			} else {
@@ -829,8 +836,7 @@ abstract class BaseManager implements Constants {
 			Invocation inv = request.toInvocation();
 			inv.eventId = getId();
 			boolean sent = send(inv, target);
-			if (!sent) {
-				ConnectionManager.get().getOrConnect(target);
+			if (!sent) { 
 				if (DEBUG) {
 					log("invocation cannot be sent to " + target);
 				}

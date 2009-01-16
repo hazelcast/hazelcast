@@ -97,6 +97,8 @@ public class ConnectionManager {
 		Connection connection = mapConnections.get(address);
 		if (connection == null) {
 			if (setConnectionInProgress.add(address)) {
+				if (!ClusterManager.get().shouldConnectTo(address))
+					throw new RuntimeException("Should not connect to " + address);
 				OutSelector.get().connect(address);
 			}
 		}

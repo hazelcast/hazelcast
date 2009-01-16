@@ -86,10 +86,10 @@ class ConcurrentMapManager extends BaseManager {
 			handleGet(inv);
 		} else if (inv.operation == OP_CMAP_PUT) {
 			handlePut(inv);
-		} else if (inv.operation == OP_CMAP_REMOVE) {
-			handleRemove(inv);
 		} else if (inv.operation == OP_CMAP_BACKUP_ADD) {
 			handleBackupAdd(inv);
+		} else if (inv.operation == OP_CMAP_REMOVE) {
+			handleRemove(inv);
 		} else if (inv.operation == OP_CMAP_BACKUP_REMOVE) {
 			handleBackupRemove(inv);
 		} else if (inv.operation == OP_CMAP_LOCK) {
@@ -164,20 +164,30 @@ class ConcurrentMapManager extends BaseManager {
 
 			List<Block> lsBlocksToRedistribute = new ArrayList<Block>();
 			Map<Address, Integer> addressBlocks = new HashMap<Address, Integer>();
+			int storageEnabledMemberCount = 0;
 			for (MemberImpl member : lsMembers) {
-				addressBlocks.put(member.getAddress(), 0);
+				if (!member.superClient()) {
+					addressBlocks.put(member.getAddress(), 0);
+					storageEnabledMemberCount++;
+				}
 			}
-			int aveBlockOwnCount = mapBlocks.size() / (lsMembers.size());
+			if (storageEnabledMemberCount == 0)
+				return;
+			int aveBlockOwnCount = mapBlocks.size() / (storageEnabledMemberCount);
 			Collection<Block> blocks = mapBlocks.values();
 			for (Block block : blocks) {
-				if (!block.isMigrating()) {
-					Integer countInt = addressBlocks.get(block.owner);
-					int count = (countInt == null) ? 0 : countInt.intValue();
-					if (count >= aveBlockOwnCount) {
-						lsBlocksToRedistribute.add(block);
-					} else {
-						count++;
-						addressBlocks.put(block.owner, count);
+				if (block.owner == null) {
+					lsBlocksToRedistribute.add(block);
+				} else {
+					if (!block.isMigrating()) {
+						Integer countInt = addressBlocks.get(block.owner);
+						int count = (countInt == null) ? 0 : countInt.intValue();
+						if (count >= aveBlockOwnCount) {
+							lsBlocksToRedistribute.add(block);
+						} else {
+							count++;
+							addressBlocks.put(block.owner, count);
+						}
 					}
 				}
 			}
@@ -189,9 +199,13 @@ class ConcurrentMapManager extends BaseManager {
 				while (count < aveBlockOwnCount) {
 					if (lsBlocksToRedistribute.size() > 0) {
 						Block blockToMigrate = lsBlocksToRedistribute.remove(0);
-						blockToMigrate.migrationAddress = address;
-						if (blockToMigrate.owner.equals(blockToMigrate.migrationAddress)) {
-							blockToMigrate.migrationAddress = null;
+						if (blockToMigrate.owner == null) {
+							blockToMigrate.owner = address;
+						} else {
+							blockToMigrate.migrationAddress = address;
+							if (blockToMigrate.owner.equals(blockToMigrate.migrationAddress)) {
+								blockToMigrate.migrationAddress = null;
+							}
 						}
 						count++;
 					} else {
@@ -215,7 +229,7 @@ class ConcurrentMapManager extends BaseManager {
 			}
 			doResetRecords();
 			if (DEBUG) {
-				// printBlocks();
+				printBlocks();
 			}
 		}
 	}
@@ -633,8 +647,6 @@ class ConcurrentMapManager extends BaseManager {
 				} else if (target.equals(block.migrationAddress)) {
 					if (isMaster()) {
 						target = block.owner;
-					} else {
-						target = getMasterAddress();
 					}
 				} else {
 					target = null;
@@ -740,10 +752,10 @@ class ConcurrentMapManager extends BaseManager {
 		int blockId = getBlockId(key);
 		Block block = mapBlocks.get(blockId);
 		if (block == null) {
-			if (isMaster()) {
+			if (isMaster() && !isSuperClient()) {
 				block = getOrCreateBlock(blockId);
 			} else
-				return getMasterAddress();
+				return null;
 		}
 		if (block.owner.equals(thisAddress)) {
 			if (block.isMigrating()) {
@@ -789,7 +801,7 @@ class ConcurrentMapManager extends BaseManager {
 	Block getOrCreateBlock(int blockId) {
 		Block block = mapBlocks.get(blockId);
 		if (block == null) {
-			block = new Block(blockId, getMasterAddress());
+			block = new Block(blockId, null);
 			mapBlocks.put(blockId, block);
 		}
 		return block;
@@ -927,7 +939,7 @@ class ConcurrentMapManager extends BaseManager {
 				block.migrationAddress = blockInfo.migrationAddress;
 			}
 		}
-		if (block.owner.equals(block.migrationAddress)) {
+		if (block.owner != null && block.owner.equals(block.migrationAddress)) {
 			block.migrationAddress = null;
 		}
 	}
@@ -974,6 +986,8 @@ class ConcurrentMapManager extends BaseManager {
 	}
 
 	void doResetRecords() {
+		if (isSuperClient())
+			return;
 		Set<Long> recordsToMigrate = new HashSet<Long>(1000);
 		Set<Long> recordsToBackup = new HashSet<Long>(1000);
 		Set<Long> recordsToRemove = new HashSet<Long>(1000);
@@ -1002,15 +1016,7 @@ class ConcurrentMapManager extends BaseManager {
 				migrationOwner++;
 			} else {
 				// am I the backup!
-				if (!block.isMigrating()) {
-					MemberImpl nextAfterOwner = getNextMemberAfter(block.owner);
-					if (nextAfterOwner != null && nextAfterOwner.getAddress().equals(thisAddress)) {
-						rec.owner = block.owner;
-						ownerBackup++;
-					} else {
-						recordsToRemove.add(rec.getId());
-					}
-				} else if (block.isMigrating()) {
+				if (block.isMigrating()) {
 					MemberImpl nextAfterMigration = getNextMemberAfter(block.migrationAddress);
 					if (nextAfterMigration != null
 							&& nextAfterMigration.getAddress().equals(thisAddress)) {
@@ -1020,7 +1026,14 @@ class ConcurrentMapManager extends BaseManager {
 						recordsToRemove.add(rec.getId());
 					}
 				} else {
-					recordsToRemove.add(rec.getId());
+					//not migrating..
+					MemberImpl nextAfterOwner = getNextMemberAfter(block.owner);
+					if (nextAfterOwner != null && nextAfterOwner.getAddress().equals(thisAddress)) {
+						rec.owner = block.owner;
+						ownerBackup++;
+					} else {
+						recordsToRemove.add(rec.getId());
+					}
 				}
 			}
 		}
@@ -1122,7 +1135,7 @@ class ConcurrentMapManager extends BaseManager {
 	}
 
 	boolean rightRemoteTarget(Invocation inv) {
-		boolean right = getTarget(inv.name, inv.key).equals(thisAddress);
+		boolean right = thisAddress.equals(getTarget(inv.name, inv.key));
 		if (!right) {
 			// not the owner (at least not anymore)
 			if (isMaster()) {
@@ -1169,7 +1182,7 @@ class ConcurrentMapManager extends BaseManager {
 		}
 	}
 
-	void handleGet(Invocation inv) {
+	final void handleGet(Invocation inv) {
 		if (rightRemoteTarget(inv)) {
 			remoteReq.setInvocation(inv);
 			doGet(remoteReq);
@@ -1182,7 +1195,7 @@ class ConcurrentMapManager extends BaseManager {
 		}
 	}
 
-	void handleContains(boolean containsKey, Invocation inv) {
+	final void handleContains(boolean containsKey, Invocation inv) {
 		if (containsKey && !rightRemoteTarget(inv))
 			return;
 		remoteReq.setInvocation(inv);
@@ -1195,7 +1208,7 @@ class ConcurrentMapManager extends BaseManager {
 		remoteReq.reset();
 	}
 
-	void handleLock(Invocation inv) {
+	final void handleLock(Invocation inv) {
 		if (rightRemoteTarget(inv)) {
 			remoteReq.setInvocation(inv);
 			doLock(remoteReq);
@@ -1212,7 +1225,7 @@ class ConcurrentMapManager extends BaseManager {
 		}
 	}
 
-	void handlePut(Invocation inv) {
+	final void handlePut(Invocation inv) {
 		if (rightRemoteTarget(inv)) {
 			remoteReq.setInvocation(inv);
 			doPut(remoteReq);
@@ -1229,7 +1242,7 @@ class ConcurrentMapManager extends BaseManager {
 		}
 	}
 
-	void handleRemove(Invocation inv) {
+	final void handleRemove(Invocation inv) {
 		if (rightRemoteTarget(inv)) {
 			remoteReq.setInvocation(inv);
 			doRemove(remoteReq);
@@ -1246,7 +1259,7 @@ class ConcurrentMapManager extends BaseManager {
 		}
 	}
 
-	void doLock(Request request) {
+	final void doLock(Request request) {
 		boolean lock = (request.operation == OP_CMAP_LOCK) ? true : false;
 		if (!lock) {
 			// unlock
@@ -1297,7 +1310,7 @@ class ConcurrentMapManager extends BaseManager {
 		}
 	}
 
-	void doPut(Request request) {
+	final void doPut(Request request) {
 		if (request.operation == OP_CMAP_PUT_IF_ABSENT) {
 			Record record = recordExist(request);
 			if (record != null && record.getValue() != null) {
@@ -1340,29 +1353,29 @@ class ConcurrentMapManager extends BaseManager {
 		}
 	}
 
-	void doRead(Request request) {
+	final void doRead(Request request) {
 		CMap cmap = getMap(request.name);
 		request.response = cmap.read(request);
 	}
 
-	void doMigrate(Request request) {
+	final void doMigrate(Request request) {
 		CMap cmap = getMap(request.name);
 		cmap.own(request);
 		request.response = Boolean.TRUE;
 	}
 
-	void doAdd(Request request) {
+	final void doAdd(Request request) {
 		CMap cmap = getMap(request.name);
 		boolean added = cmap.add(request);
 		request.response = (added) ? Boolean.TRUE : Boolean.FALSE;
 	}
 
-	void doGet(Request request) {
+	final void doGet(Request request) {
 		CMap cmap = getMap(request.name);
 		request.response = cmap.get(request);
 	}
 
-	void doContains(boolean containsKey, Request request) {
+	final void doContains(boolean containsKey, Request request) {
 		CMap cmap = getMap(request.name);
 		if (containsKey) {
 			request.response = cmap.containsKey(request);
@@ -1371,7 +1384,7 @@ class ConcurrentMapManager extends BaseManager {
 		}
 	}
 
-	void doRemove(Request request) {
+	final void doRemove(Request request) {
 		if (request.operation == OP_CMAP_REMOVE_IF_SAME) {
 			Record record = recordExist(request);
 			if (record == null || record.getValue() == null
@@ -1423,14 +1436,14 @@ class ConcurrentMapManager extends BaseManager {
 		return record;
 	}
 
-	boolean testLock(Request req) {
+	final boolean testLock(Request req) {
 		Record record = recordExist(req);
 		if (record == null)
 			return true;
 		return record.testLock(req.lockThreadId, req.lockAddress);
 	}
 
-	public Record getRecordById(long recordId) {
+	final public Record getRecordById(long recordId) {
 		return mapRecordsById.get(recordId);
 	}
 
@@ -1916,8 +1929,11 @@ class ConcurrentMapManager extends BaseManager {
 
 		public void readData(DataInput in) throws IOException {
 			blockId = in.readInt();
-			owner = new Address();
-			owner.readData(in);
+			boolean owned = in.readBoolean();
+			if (owned) {
+				owner = new Address();
+				owner.readData(in);
+			}
 			boolean migrating = in.readBoolean();
 			if (migrating) {
 				migrationAddress = new Address();
@@ -1927,7 +1943,11 @@ class ConcurrentMapManager extends BaseManager {
 
 		public void writeData(DataOutput out) throws IOException {
 			out.writeInt(blockId);
-			owner.writeData(out);
+			boolean owned = (owner != null);
+			out.writeBoolean(owned);
+			if (owned) {
+				owner.writeData(out);
+			}
 			boolean migrating = (migrationAddress != null);
 			out.writeBoolean(migrating);
 			if (migrating)

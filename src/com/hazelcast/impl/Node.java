@@ -17,6 +17,9 @@
 
 package com.hazelcast.impl;
 
+import static com.hazelcast.impl.Constants.NodeTypes.NODE_MEMBER;
+import static com.hazelcast.impl.Constants.NodeTypes.NODE_SUPER_CLIENT;
+
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -58,7 +61,24 @@ public class Node {
 
 	private Thread firstMainThread = null;
 
+	private List<Thread> lsThreads = new ArrayList<Thread>(3);
+
+	private BlockingQueue<Address> qFailedConnections = new LinkedBlockingQueue<Address>();
+
+	private final boolean superClient;
+	
+	private final int localNodeType;
+
 	private Node() {
+		boolean sClient = false;
+		String superClientProp = System.getProperty("hazelcast.super.client");
+		if (superClientProp != null) {
+			if ("true".equalsIgnoreCase(superClientProp)) {
+				sClient = true;
+			}
+		}
+		superClient = sClient;
+		localNodeType = (superClient) ? NODE_SUPER_CLIENT : NODE_MEMBER;
 	}
 
 	public static Node get() {
@@ -88,6 +108,7 @@ public class Node {
 
 	private boolean init() {
 		try {
+
 			String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
 			String preferIPv6Address = System.getProperty("java.net.preferIPv6Addresses");
 			if (preferIPv6Address == null && preferIPv4Stack == null) {
@@ -127,10 +148,6 @@ public class Node {
 		}
 		return true;
 	}
-
-	private List<Thread> lsThreads = new ArrayList<Thread>(3);
-
-	private BlockingQueue<Address> qFailedConnections = new LinkedBlockingQueue<Address>();
 
 	public void start() {
 		firstMainThread = Thread.currentThread();
@@ -474,7 +491,7 @@ public class Node {
 		masterAddress = address;
 		if (DEBUG)
 			System.out.println("adding member myself");
-		ClusterService.get().addMember(address); // add
+		ClusterService.get().addMember(address, getLocalNodeType()); // add
 		// myself
 		clusterImpl.setMembers(ClusterService.get().lsMembers);
 		unlock();
@@ -497,7 +514,7 @@ public class Node {
 		if (DEBUG)
 			System.out.println(address + " master: " + masterAddress);
 		if (masterAddress == null || masterAddress.equals(address)) {
-			ClusterService.get().addMember(address); // add myself
+			ClusterService.get().addMember(address, getLocalNodeType()); // add myself
 			masterAddress = address;
 			clusterImpl.setMembers(ClusterService.get().lsMembers);
 			unlock();
@@ -549,7 +566,7 @@ public class Node {
 			String ip = System.getProperty("join.ip");
 			if (ip == null) {
 				JoinInfo joinInfo = new JoinInfo(true, address, config.groupName,
-						config.groupPassword, config.groupMembershipType);
+						config.groupPassword, getLocalNodeType());
 				for (int i = 0; i < 5; i++) {
 					MulticastService.get().send(joinInfo);
 					Thread.sleep(10);
@@ -569,7 +586,7 @@ public class Node {
 					return masterAddress;
 				} else {
 					joinInfo = new JoinInfo(false, address, config.groupName, config.groupPassword,
-							config.groupMembershipType);
+							getLocalNodeType());
 					for (int i = 0; i < 5; i++) {
 						MulticastService.get().send(joinInfo);
 					}
@@ -631,4 +648,11 @@ public class Node {
 		qFailedConnections.offer(address);
 	}
 
+	public final boolean isSuperClient() {
+		return superClient;
+	}
+
+	public final int getLocalNodeType() {
+		return localNodeType;
+	}
 }

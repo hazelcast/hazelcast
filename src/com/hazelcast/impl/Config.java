@@ -17,6 +17,8 @@
 
 package com.hazelcast.impl;
 
+import static com.hazelcast.impl.Constants.NodeTypes.NODE_MEMBER;
+import static com.hazelcast.impl.Constants.NodeTypes.NODE_SUPER_CLIENT;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -47,9 +49,79 @@ public class Config {
 	boolean domLevel3 = true;
 	URL urlConfig = null;
 	String xmlConfig = null;
+	
+	public static Config get() {
+		return instance;
+	}
+
+	public String groupName = "group-dev";
+
+	public String groupPassword = "group-pass"; 
+
+	public int port = 5701;
+
+	public boolean portAutoIncrement = true;
+
+	public Interfaces interfaces = new Interfaces();
+
+	public Join join = new Join();
+
+	public ExecutorConfig executorConfig = new ExecutorConfig();
+
+	public Map<String, QConfig> mapQConfigs = new HashMap<String, QConfig>();
+
+	public class QConfig {
+		public String name;
+
+		public int maxSizePerJVM = Integer.MAX_VALUE;
+	}
+
+	public class Join {
+		public MulticastConfig multicastConfig = new MulticastConfig();
+
+		public JoinMembers joinMembers = new JoinMembers();
+
+	}
+
+	public class JoinMembers {
+		public int connectionTimeoutSeconds = 5;
+
+		public boolean enabled = false;
+
+		public List<String> lsMembers = new ArrayList<String>();
+
+		public String requiredMember = null;
+
+		public void add(String member) {
+			lsMembers.add(member);
+		}
+	}
+
+	public class MulticastConfig {
+
+		public boolean enabled = true;
+
+		public String multicastGroup = "224.2.2.3";
+
+		public int multicastPort = 54327;
+	}
+
+	public class ExecutorConfig {
+		public int corePoolSize = 10;
+
+		public int maxPoolsize = 50;
+
+		public long keepAliveSeconds = 60;
+	}
+
+	public class Interfaces {
+		public boolean enabled = false;
+
+		public List<String> lsInterfaces = new ArrayList<String>();
+	}
 
 	private Config() {
-		boolean usingSystemConfig = false;
+		boolean usingSystemConfig = false;		
 		String configFile = System.getProperty("hazelcast.config");
 		try {
 			InputStream in = null;
@@ -312,7 +384,7 @@ public class Config {
 		}
 	}
 
-	private void handleGroup(org.w3c.dom.Node node) {
+	private void handleGroup(org.w3c.dom.Node node) {		
 		NodeList nodelist = node.getChildNodes();
 		for (int i = 0; i < nodelist.getLength(); i++) {
 			org.w3c.dom.Node n = nodelist.item(i);
@@ -321,8 +393,8 @@ public class Config {
 				groupName = value;
 			} else if (n.getNodeName().equalsIgnoreCase("password")) {
 				groupPassword = value;
-			}
-		}
+			}  
+		} 
 	}
 
 	private void handleQueue(org.w3c.dom.Node node) {
@@ -407,75 +479,5 @@ public class Config {
 		return false;
 	}
 
-	public static Config get() {
-		return instance;
-	}
-
-	public String groupName = "group-dev";
-
-	public String groupPassword = "group-pass";
-
-	public int groupMembershipType = JoinRequest.MEMBER;
-
-	public int port = 5701;
-
-	public boolean portAutoIncrement = true;
-
-	public Interfaces interfaces = new Interfaces();
-
-	public Join join = new Join();
-
-	public ExecutorConfig executorConfig = new ExecutorConfig();
-
-	public Map<String, QConfig> mapQConfigs = new HashMap<String, QConfig>();
-
-	public class QConfig {
-		public String name;
-
-		public int maxSizePerJVM = Integer.MAX_VALUE;
-	}
-
-	public class Join {
-		public MulticastConfig multicastConfig = new MulticastConfig();
-
-		public JoinMembers joinMembers = new JoinMembers();
-
-	}
-
-	public class JoinMembers {
-		public int connectionTimeoutSeconds = 5;
-
-		public boolean enabled = false;
-
-		public List<String> lsMembers = new ArrayList<String>();
-
-		public String requiredMember = null;
-
-		public void add(String member) {
-			lsMembers.add(member);
-		}
-	}
-
-	public class MulticastConfig {
-
-		public boolean enabled = true;
-
-		public String multicastGroup = "224.2.2.3";
-
-		public int multicastPort = 54327;
-	}
-
-	public class ExecutorConfig {
-		public int corePoolSize = 10;
-
-		public int maxPoolsize = 50;
-
-		public long keepAliveSeconds = 60;
-	}
-
-	public class Interfaces {
-		public boolean enabled = false;
-
-		public List<String> lsInterfaces = new ArrayList<String>();
-	}
+	
 }

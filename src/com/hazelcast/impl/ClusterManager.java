@@ -17,6 +17,8 @@
 
 package com.hazelcast.impl;
 
+import static com.hazelcast.impl.Constants.NodeTypes.NODE_MEMBER;
+import static com.hazelcast.impl.Constants.NodeTypes.NODE_SUPER_CLIENT;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_HEARTBEAT;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_BOOLEAN_CALLABLE;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_OBJECT_CALLABLE;
@@ -30,6 +32,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -58,7 +61,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		ConnectionManager.get().addConnectionListener(this);
 	}
 
-	private Set<Address> setJoins = new HashSet<Address>(100);
+	private Set<MemberInfo> setJoins = new LinkedHashSet<MemberInfo>(100);
 
 	private boolean joinInProgress = false;
 
@@ -68,14 +71,14 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 
 	private List<MemberImpl> lsMembersBefore = new ArrayList<MemberImpl>();
 
-	private long waitTimeBeforeJoin = 2000;
+	private long waitTimeBeforeJoin = 1000;
 
 	public void handle(Invocation inv) {
 		try {
 			if (inv.operation == OP_RESPONSE) {
 				handleResponse(inv);
 			} else if (inv.operation == OP_HEARTBEAT) {
-				// last heartbeat is recorded at ReadHandler
+				// last heartbeat is recorded at ClusterService
 				// so no op.
 				inv.returnToContainer();
 			} else if (inv.operation == OP_REMOTELY_PROCESS_AND_RESPONSE) {
@@ -151,12 +154,12 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 						Connection conn = ConnectionManager.get().getConnection(address);
 						if (Node.get().joined()) {
 							if (conn != null && conn.live()) {
-								if ((now - memberImpl.getLastRead()) >= 10000) {
+								if ((now - memberImpl.getLastRead()) >= 3000) {
 									conn = null;
 									if (lsDeadAddresses == null) {
 										lsDeadAddresses = new ArrayList<Address>();
 									}
-									// lsDeadAddresses.add(address);
+									lsDeadAddresses.add(address);
 								}
 							}
 						}
@@ -184,8 +187,9 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 				MemberImpl masterMember = getMember(getMasterAddress());
 				boolean removed = false;
 				if (masterMember != null) {
-					if ((now - masterMember.getLastRead()) >= 8000) {
-						// doRemoveAddress(getMasterAddress());
+					if ((now - masterMember.getLastRead()) >= 3000) {
+						doRemoveAddress(getMasterAddress());
+						System.out.println("REMOVE MASTER!!!");
 						removed = true;
 					}
 				}
@@ -211,7 +215,9 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		}
 	}
 
-	private boolean shouldConnectTo(Address address) {
+	public boolean shouldConnectTo(Address address) {
+		if (!Node.get().joined())
+			return true;
 		return (lsMembers.indexOf(getMember(thisAddress)) > lsMembers.indexOf(getMember(address)));
 	}
 
@@ -234,27 +240,6 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 					Hazelcast.getTopic("_hz_logs").publish(msg);
 				}
 			});
-		}
-	}
-
-	void sendAddRemoveToAllConns2(Address newAddress) {
-		for (MemberImpl member : lsMembers) {
-			Address target = member.getAddress();
-			if (!thisAddress.equals(target)) {
-				if (!target.equals(newAddress)) {
-					AddRemoveConnection arc = new AddRemoveConnection(newAddress, true);
-					sendProcessableTo(arc, target);
-				}
-			}
-		}
-
-		for (Address target : setJoins) {
-			if (!thisAddress.equals(target)) {
-				if (!target.equals(newAddress)) {
-					AddRemoveConnection arc = new AddRemoveConnection(newAddress, true);
-					sendProcessableTo(arc, target);
-				}
-			}
 		}
 	}
 
@@ -354,8 +339,10 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		}
 		if (isMaster()) {
 			Address newAddress = joinRequest.address;
+			System.out.println("Node type " + joinRequest.nodeType);
+			MemberInfo newMemberInfo = new MemberInfo (newAddress, joinRequest.nodeType);
 			if (!joinInProgress) {
-				if (setJoins.add(newAddress)) {
+				if (setJoins.add(newMemberInfo)) {
 					sendProcessableTo(new Master(Node.get().getMasterAddress()), conn);
 					// sendAddRemoveToAllConns(newAddress);
 					timeToStartJoin = System.currentTimeMillis() + waitTimeBeforeJoin;
@@ -569,67 +556,42 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		joinInProgress = true;
 		final MembersUpdateCall membersUpdate = new MembersUpdateCall(lsMembers);
 		if (setJoins != null && setJoins.size() > 0) {
-			for (Address addressJoined : setJoins) {
-				membersUpdate.addAddress(addressJoined);
+			for (MemberInfo memberJoined : setJoins) {
+				membersUpdate.addMemberInfo(memberJoined);
 			}
 		}
 
 		executeLocally(new Runnable() {
 			public void run() {
-				List<Address> lsAddresses = membersUpdate.lsAddresses;
+				List<MemberInfo> lsMemberInfos = membersUpdate.lsMemberInfos;
 				List<AsyncRemotelyBooleanCallable> calls = new ArrayList<AsyncRemotelyBooleanCallable>();
-				for (final Address address : lsAddresses) {
+				for (final MemberInfo memberInfo : lsMemberInfos) {
 					AsyncRemotelyBooleanCallable rrp = new AsyncRemotelyBooleanCallable();
-					rrp.executeProcess(address, membersUpdate);
+					rrp.executeProcess(memberInfo.address, membersUpdate);
 					calls.add(rrp);
 				}
 				for (AsyncRemotelyBooleanCallable call : calls) {
-					System.out.println("AsyncResult " + call.getResultAsBoolean());
+					call.getResultAsBoolean();
 				}
 				calls.clear();
-				for (final Address address : lsAddresses) {
+				for (final MemberInfo memberInfo : lsMemberInfos) {
 					AsyncRemotelyBooleanCallable call = new AsyncRemotelyBooleanCallable();
-					call.executeProcess(address, new SyncProcess());
+					call.executeProcess(memberInfo.address, new SyncProcess());
 					calls.add(call);
 				}
 				for (AsyncRemotelyBooleanCallable call : calls) {
-					System.out.println("AsyncResult2 " + call.getResultAsBoolean());
+					call.getResultAsBoolean();
 				}
 				calls.clear();
 				AbstractRemotelyCallable<Boolean> connCheckcallable = new ConnectionCheckCall();
-				for (final Address address : lsAddresses) {
+				for (final MemberInfo memberInfo : lsMemberInfos) {
 					AsyncRemotelyBooleanCallable call = new AsyncRemotelyBooleanCallable();
-					call.executeProcess(address, connCheckcallable);
+					call.executeProcess(memberInfo.address, connCheckcallable);
 					calls.add(call);
 				}
 				for (AsyncRemotelyBooleanCallable call : calls) {
-					System.out.println("AsyncResult3 " + call.getResultAsBoolean());
+					call.getResultAsBoolean();
 				}
-			}
-		});
-	}
-
-	void startJoin2() {
-		if (DEBUG) {
-			log("Join Started!");
-		}
-		joinInProgress = true;
-		final MembersUpdate membersUpdate = new MembersUpdate(lsMembers);
-		if (setJoins != null && setJoins.size() > 0) {
-			for (Address addressJoined : setJoins) {
-				membersUpdate.addAddress(addressJoined);
-			}
-		}
-
-		final MultiRemotelyProcessable mrp = new MultiRemotelyProcessable();
-		mrp.add(membersUpdate);
-
-		executeLocally(new Runnable() {
-			public void run() {
-				ProcessEverywhere pe = new ProcessEverywhere();
-				pe.process(membersUpdate.lsAddresses, mrp);
-				pe = new ProcessEverywhere();
-				pe.process(membersUpdate.lsAddresses, new SyncProcess());
 			}
 		});
 	}
@@ -747,7 +709,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		void setConnection(Connection conn);
 	}
 
-	void updateMembers(List<Address> lsAddresses) {
+	void updateMembers(List<MemberInfo> lsMemberInfos) {
 		if (DEBUG) {
 			log("MEMBERS UPDATE!!");
 		}
@@ -755,11 +717,12 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		for (MemberImpl member : lsMembers) {
 			lsMembersBefore.add(member);
 		}
-		for (Address address : lsAddresses) {
-			MemberImpl member = ClusterService.get().getMember(address);
+		for (MemberInfo memberInfo : lsMemberInfos) {
+			MemberImpl member = ClusterService.get().getMember(memberInfo.address);
 			if (member == null) {
-				clusterService.addMember(address);
+				member = clusterService.addMember(memberInfo.address, memberInfo.nodeType);
 			}
+			member.didRead();
 		}
 		heartBeater();
 		Node.get().getClusterImpl().setMembers(lsMembers);
@@ -768,6 +731,56 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		if (DEBUG) {
 			publishLog("Join complete");
 		}
+	}
+	
+	public static class MemberInfo implements DataSerializable {
+		Address address = null;
+		int nodeType = NODE_MEMBER;
+		
+		public MemberInfo() {
+		}
+		
+		public MemberInfo(Address address, int nodeType) {
+			super();
+			this.address = address;
+			this.nodeType = nodeType;
+		}
+
+		public void readData(DataInput in) throws IOException {
+			address = new Address();
+			address.readData(in);
+			nodeType = in.readInt(); 
+		}
+
+		public void writeData(DataOutput out) throws IOException {
+			address.writeData(out);
+			out.writeInt(nodeType);
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((address == null) ? 0 : address.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			MemberInfo other = (MemberInfo) obj;
+			if (address == null) {
+				if (other.address != null)
+					return false;
+			} else if (!address.equals(other.address))
+				return false;
+			return true;
+		}  
 	}
 
 	public static class ConnectionCheckCall extends AbstractRemotelyCallable<Boolean> {
@@ -783,124 +796,57 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 
 	public static class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
 
-		public List<Address> lsAddresses = null;
+		public List<MemberInfo> lsMemberInfos = null;
 
 		public MembersUpdateCall() {
 		}
 
 		public MembersUpdateCall(List<MemberImpl> lsMembers) {
 			int size = lsMembers.size();
-			lsAddresses = new ArrayList<Address>(size);
+			lsMemberInfos = new ArrayList<MemberInfo>(size);
 			for (int i = 0; i < size; i++) {
-				lsAddresses.add(lsMembers.get(i).getAddress());
+				MemberImpl member = lsMembers.get(i);
+				lsMemberInfos.add(new MemberInfo (member.getAddress(), member.getNodeType()));
 			}
 		}
 
 		public Boolean call() {
 			System.out.println("CAlling members update ");
-			ClusterManager.get().updateMembers(lsAddresses);
+			ClusterManager.get().updateMembers(lsMemberInfos);
 			return Boolean.TRUE;
 		}
 
-		public void addAddress(Address address) {
-			if (!lsAddresses.contains(address)) {
-				lsAddresses.add(address);
+		public void addMemberInfo(MemberInfo address) {
+			if (!lsMemberInfos.contains(address)) {
+				lsMemberInfos.add(address);
 			}
-		}
-
-		public void removeAddress(Address address) {
-			lsAddresses.remove(address);
 		}
 
 		public void readData(DataInput in) throws IOException {
 			int size = in.readInt();
-			lsAddresses = new ArrayList<Address>(size);
+			lsMemberInfos = new ArrayList<MemberInfo>(size);
 			for (int i = 0; i < size; i++) {
-				Address address = new Address();
-				address.readData(in);
-				lsAddresses.add(address);
+				MemberInfo memberInfo = new MemberInfo ();
+				memberInfo.readData(in);
+				lsMemberInfos.add(memberInfo);
 			}
 		}
 
 		public void writeData(DataOutput out) throws IOException {
-			int size = lsAddresses.size();
+			int size = lsMemberInfos.size();
 			out.writeInt(size);
 			for (int i = 0; i < size; i++) {
-				Address address = lsAddresses.get(i);
-				if (address == null)
-					throw new IOException("Address cannot be null");
-				address.writeData(out);
+				MemberInfo memberInfo = lsMemberInfos.get(i);
+				memberInfo.writeData(out);
 			}
 		}
 
 		@Override
 		public String toString() {
 			StringBuffer sb = new StringBuffer("MembersUpdateCall {");
-			for (Address address : lsAddresses) {
+			for (MemberInfo address : lsMemberInfos) {
 				sb.append("\n" + address);
 			}
-
-			sb.append("\n}");
-			return sb.toString();
-		}
-
-	}
-
-	public static class MembersUpdate extends AbstractRemotelyProcessable {
-
-		public List<Address> lsAddresses = null;
-
-		public MembersUpdate() {
-		}
-
-		public MembersUpdate(List<MemberImpl> lsMembers) {
-			int size = lsMembers.size();
-			lsAddresses = new ArrayList<Address>(size);
-			for (int i = 0; i < size; i++) {
-				lsAddresses.add(i, lsMembers.get(i).getAddress());
-			}
-		}
-
-		public void process() {
-			ClusterManager.get().updateMembers(lsAddresses);
-		}
-
-		public void addAddress(Address address) {
-			if (!lsAddresses.contains(address)) {
-				lsAddresses.add(address);
-			}
-		}
-
-		public void removeAddress(Address address) {
-			lsAddresses.remove(address);
-		}
-
-		public void readData(DataInput in) throws IOException {
-			int size = in.readInt();
-			lsAddresses = new ArrayList<Address>(size);
-			for (int i = 0; i < size; i++) {
-				Address address = new Address();
-				address.readData(in);
-				lsAddresses.add(i, address);
-			}
-		}
-
-		public void writeData(DataOutput out) throws IOException {
-			int size = lsAddresses.size();
-			out.writeInt(lsAddresses.size());
-			for (int i = 0; i < size; i++) {
-				Address address = lsAddresses.get(i);
-				address.writeData(out);
-			}
-		}
-
-		@Override
-		public String toString() {
-			StringBuffer sb = new StringBuffer("MembersUpdate {");
-			for (Address address : lsAddresses) {
-				sb.append("\n" + address);
-			}
-
 			sb.append("\n}");
 			return sb.toString();
 		}
@@ -912,17 +858,12 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			toAddress = Node.get().getMasterAddress();
 		}
 		sendProcessableTo(new JoinRequest(thisAddress, Config.get().groupName,
-				Config.get().groupPassword, JoinRequest.MEMBER), toAddress);
+				Config.get().groupPassword, Node.get().getLocalNodeType()), toAddress);
 	}
 
 	public static class JoinRequest extends AbstractRemotelyProcessable {
-		public static final int MEMBER = 1;
 
-		public static final int CLIENT = 2;
-
-		public static final int NO_STORAGE_MEMBER = 3;
-
-		int type = MEMBER;
+		int nodeType = NODE_MEMBER;
 		Address address;
 		String groupName;
 		String groupPassword;
@@ -935,20 +876,20 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			this.address = address;
 			this.groupName = groupName;
 			this.groupPassword = groupPassword;
-			this.type = type;
+			this.nodeType = type;
 		}
 
 		public void readData(DataInput in) throws IOException {
 			address = new Address();
 			address.readData(in);
-			type = in.readInt();
+			nodeType = in.readInt();
 			groupName = in.readUTF();
 			groupPassword = in.readUTF();
 		}
 
 		public void writeData(DataOutput out) throws IOException {
 			address.writeData(out);
-			out.writeInt(type);
+			out.writeInt(nodeType);
 			out.writeUTF(groupName);
 			out.writeUTF(groupPassword);
 		}
@@ -1077,58 +1018,6 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 					it.remove();
 				}
 			}
-		}
-	}
-
-	// TODO: REMOVE THIS CLASS
-	class ScheduledActionController implements Runnable, Processable {
-
-		volatile boolean dirty = false;
-
-		public void addScheduledAction(ScheduledAction scheduledAction) {
-			setScheduledActions.add(scheduledAction);
-			dirty = true;
-		}
-
-		public void removeScheduledAction(ScheduledAction scheduledAction) {
-			setScheduledActions.remove(scheduledAction);
-		}
-
-		public void run() {
-			if (dirty) {
-				enqueueAndReturn(ScheduledActionController.this);
-			}
-		}
-
-		public void process() {
-			if (DEBUG) {
-				log("Processing ScheduledActionController");
-			}
-			dirty = false;
-			if (setScheduledActions.size() > 0) {
-				Iterator<ScheduledAction> it = setScheduledActions.iterator();
-				while (it.hasNext()) {
-					ScheduledAction sa = it.next();
-					if (sa.expired()) {
-						sa.onExpire();
-						it.remove();
-					}
-				}
-				if (setScheduledActions.size() > 0) {
-					dirty = true;
-				}
-			}
-		}
-	}
-
-	// TODO: REMOVE THIS CLASS
-	class HeartbeatTask implements Runnable, Processable {
-		public void run() {
-			enqueueAndReturn(HeartbeatTask.this);
-		}
-
-		public void process() {
-			heartBeater();
 		}
 	}
 

@@ -205,16 +205,6 @@ public class Address implements DataSerializable {
 
 	public boolean isDead() {
 		return dead;
-	}
-
-	public void reset() {
-		hash = -1;
-
-	}
-
-	public void init(Address src) {
-		ip = src.ip;
-		port = src.port;
-	}
+	}  
 
 }

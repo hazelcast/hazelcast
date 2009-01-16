@@ -17,6 +17,8 @@
 
 package com.hazelcast.impl;
 
+import static com.hazelcast.impl.Constants.ClusterOperations.OP_RESPONSE;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -81,8 +83,10 @@ public class ClusterService implements Runnable, Constants {
 				memberFrom.didRead();
 			}
 			int operation = inv.operation;
-
-			if (operation > 500) {
+			if (operation == OP_RESPONSE) {
+				// special treatment to responses
+				ClusterManager.get().handleResponse(inv);
+			} else if (operation > 500) {
 				ConcurrentMapManager.get().handle(inv);
 			} else if (operation > 400) {
 				BlockingQueueManager.get().handle(inv);
@@ -194,6 +198,7 @@ public class ClusterService implements Runnable, Constants {
 	protected int getThisMemberIndex() {
 		return thisMemberIndex;
 	}
+	
 
 	protected MemberImpl getNextMember() {
 		if (lsMembers.size() < 2)
@@ -213,6 +218,23 @@ public class ClusterService implements Runnable, Constants {
 				return lsMembers.get((thisMemberIndex - 1) % lsMembers.size());
 		}
 	}
+	
+	protected final MemberImpl getNextMemberAfter(List<MemberImpl> lsMembers, Address address, boolean skipSuperClient, int distance) {
+		int indexOfMember = getIndexOf(lsMembers, address);
+		if (indexOfMember == -1)
+			return null;
+		int size = lsMembers.size();
+		int foundDistance = 0;
+		for (int i = 0; i < size; i++) {
+			MemberImpl member = lsMembers.get((indexOfMember + 1 + i) % size);
+			if (!(skipSuperClient && member.superClient())) {
+				 foundDistance++;
+			}
+			if (foundDistance == distance) return member;
+		}
+		return null;
+	}
+	 
 
 	protected MemberImpl getNextMemberAfter(Address address) {
 		MemberImpl member = getMember(address);
@@ -230,7 +252,7 @@ public class ClusterService implements Runnable, Constants {
 		return lsMembers.get((indexOfMember + 1) % lsMembers.size());
 	}
 
-	protected int getIndexOf(List<MemberImpl> lsMembers, Address address) {
+	protected final int getIndexOf(List<MemberImpl> lsMembers, Address address) {
 		for (int i = 0; i < lsMembers.size(); i++) {
 			MemberImpl member = lsMembers.get(i);
 			if (member.getAddress().equals(address)) {
@@ -282,13 +304,11 @@ public class ClusterService implements Runnable, Constants {
 		setNextMember();
 	}
 
-	protected MemberImpl createMember(Address address) {
-		MemberImpl member = new MemberImpl(address);
-		if (address == thisAddress || address.equals(thisAddress)) {
-			member.setThisMember(true);
+	protected MemberImpl createMember(Address address, int nodeType) {
+		MemberImpl member = new MemberImpl(address, thisAddress.equals(address), nodeType);
+		if (member.localMember()) { 
 			thisMember = member;
-		} else
-			member.setThisMember(false);
+		} 
 		return member;
 	}
 
@@ -340,17 +360,18 @@ public class ClusterService implements Runnable, Constants {
 		conn.getWriteHandler().enqueueInvocation(inv);
 	}
 
-	final public void addMember(Address address) {
+	final public MemberImpl addMember(Address address, int nodeType) {
 		if (address == null) {
 			if (DEBUG) {
 				System.out.println("Address cannot be null");
-				return;
+				return null;
 			}
 		}
 		MemberImpl member = getMember(address);
 		if (member == null)
-			member = createMember(address);
+			member = createMember(address, nodeType);
 		addMember(member);
+		return member;
 	}
 
 	@Override
