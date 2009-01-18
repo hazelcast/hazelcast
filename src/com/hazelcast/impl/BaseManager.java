@@ -32,6 +32,7 @@ import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_SUCCESS;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,29 +58,28 @@ import com.hazelcast.nio.InvocationQueue.Invocation;
 
 abstract class BaseManager implements Constants {
 
-	protected static ClusterService clusterService;
+	
+	protected final static LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
 
-	protected static Address thisAddress;
+	protected final static boolean DEBUG = Build.get().DEBUG;
 
-	protected static List<MemberImpl> lsMembers = null;
+	protected final static Map<Long, Call> mapCalls = new HashMap<Long, Call>();
 
-	protected static final boolean DEBUG = Build.get().DEBUG;
+	protected final static EventQueue[] eventQueues = new EventQueue[100];
 
-	private static long eventId = 1;
-
-	protected static Map<Long, Call> mapCalls = new HashMap<Long, Call>();
-
-	protected static EventQueue[] eventQueues = new EventQueue[100];
-
-	protected static Map<Long, StreamResponseHandler> mapStreams = new ConcurrentHashMap<Long, StreamResponseHandler>();
-
+	protected final static Map<Long, StreamResponseHandler> mapStreams = new ConcurrentHashMap<Long, StreamResponseHandler>();
+	
 	private static long scheduledActionIdIndex = 0;
 
-	protected BaseManager() {
-		clusterService = ClusterService.get();
-		BaseManager.lsMembers = clusterService.lsMembers;
-		thisAddress = Node.get().getThisAddress();
-		thisAddress.setThisAddress(true);
+	private static long eventId = 1;
+	
+	protected final Address thisAddress;
+
+	protected final MemberImpl thisMember;
+
+	protected BaseManager() {  	
+		thisAddress = Node.get().address;
+		thisMember = Node.get().localMember;
 		for (int i = 0; i < 100; i++) {
 			eventQueues[i] = new EventQueue();
 		}
@@ -111,7 +111,7 @@ abstract class BaseManager implements Constants {
 	protected final boolean isMaster() {
 		return Node.get().master();
 	}
-	
+
 	protected final boolean isSuperClient() {
 		return Node.get().isSuperClient();
 	}
@@ -120,26 +120,73 @@ abstract class BaseManager implements Constants {
 		return Node.get().getMasterAddress();
 	}
 
-	protected MemberImpl getNextMemberAfter(Address address) {
-		return clusterService.getNextMemberAfter(address);
+	protected final MemberImpl getPreviousMemberBefore(Address address, boolean skipSuperClient,
+			int distance) {
+		return getPreviousMemberBefore(lsMembers, address, skipSuperClient, distance);
 	}
 
-	public MemberImpl getNextMember() {
-		return clusterService.getNextMember();
+	protected final MemberImpl getPreviousMemberBefore(List<MemberImpl> lsMembers, Address address,
+			boolean skipSuperClient, int distance) {
+		int size = lsMembers.size();
+		if (size <= 1)
+			return null;
+		int indexOfMember = -1;
+		for (int i = 0; i < size; i++) {
+			MemberImpl member = lsMembers.get(i);
+			if (member.getAddress().equals(address)) {
+				indexOfMember = i;
+			}
+		}
+		if (indexOfMember == -1)
+			return null;
+		indexOfMember += (size - 1);
+		int foundDistance = 0;
+		for (int i = 0; i < size; i++) {
+			MemberImpl member = lsMembers.get((indexOfMember - i) % size);
+			if (!(skipSuperClient && member.superClient())) {
+				foundDistance++;
+			}
+			if (foundDistance == distance)
+				return member;
+		}
+		return null;
 	}
 
-	public MemberImpl getPreviousMember() {
-		return clusterService.getPreviousMember();
+	protected final MemberImpl getNextMemberAfter(Address address, boolean skipSuperClient,
+			int distance) {
+		return getNextMemberAfter(lsMembers, address, skipSuperClient, distance);
 	}
 
-	public MemberImpl getNextMemberBeforeSync() {
-		return clusterService.getNextMemberAfter(ClusterManager.get().getMembersBeforeSync(),
-				thisAddress);
+	protected final MemberImpl getNextMemberAfter(List<MemberImpl> lsMembers, Address address,
+			boolean skipSuperClient, int distance) {
+		int size = lsMembers.size();
+		if (size <= 1)
+			return null;
+		int indexOfMember = -1;
+		for (int i = 0; i < size; i++) {
+			MemberImpl member = lsMembers.get(i);
+			if (member.getAddress().equals(address)) {
+				indexOfMember = i;
+			}
+		}
+		if (indexOfMember == -1)
+			return null;
+		indexOfMember++;
+		int foundDistance = 0;
+		for (int i = 0; i < size; i++) {
+			MemberImpl member = lsMembers.get((indexOfMember + i) % size);
+			if (!(skipSuperClient && member.superClient())) {
+				foundDistance++;
+			}
+			if (foundDistance == distance)
+				return member;
+		}
+		return null;
 	}
 
-	public MemberImpl getNextMemberBeforeSync(Address address) {
-		return clusterService.getNextMemberAfter(ClusterManager.get().getMembersBeforeSync(),
-				address);
+	protected final MemberImpl getNextMemberBeforeSync(Address address, boolean skipSuperClient, int distance) {
+		return getNextMemberAfter(ClusterManager.get().getMembersBeforeSync(), address,
+				skipSuperClient, distance);
 	}
 
 	protected void log(Object obj) {
@@ -160,12 +207,36 @@ abstract class BaseManager implements Constants {
 		return send(inv, address);
 	}
 
-	protected boolean send(Invocation inv, Address address) {
-		return clusterService.send(inv, address);
+	final boolean send(Invocation inv, Address address) {
+		Connection conn = ConnectionManager.get().getConnection(address);
+		if (conn == null)
+			return false;
+		if (!conn.live())
+			return false;
+		writeInvocation(conn, inv);
+		return true;
 	}
 
-	protected boolean send(Invocation inv, Connection conn) {
-		return clusterService.send(inv, conn);
+	final boolean send(Invocation inv, Connection conn) {
+		if (conn != null) {
+			writeInvocation(conn, inv);
+		} else {
+			return false;
+		}
+		return true;
+	}
+	
+	final private void writeInvocation(Connection conn, Invocation inv) {
+		if (!conn.live()) {
+			inv.returnToContainer();
+			return;
+		}
+		MemberImpl memberImpl = getMember(conn.getEndPoint());
+		if (memberImpl != null) {
+			memberImpl.didWrite();
+		}
+		inv.write();
+		conn.getWriteHandler().enqueueInvocation(inv);
 	}
 
 	protected void sendRedoResponse(Invocation inv) {
@@ -319,16 +390,14 @@ abstract class BaseManager implements Constants {
 		private BaseManager getOuterType() {
 			return BaseManager.this;
 		}
-
 	}
 
-	public MemberImpl getKeyOwner(Data key) {
-		Address ownerAddress = ConcurrentMapManager.get().getKeyOwner(null, key);
-		return getMember(ownerAddress);
+	public Address getKeyOwner(Data key) {
+		return ConcurrentMapManager.get().getKeyOwner(null, key);
 	}
 
 	MemberImpl getMember(Address address) {
-		return ClusterService.get().getMember(address);
+		return ClusterManager.get().getMember(address);
 	}
 
 	void fireMapEvent(Map<Address, Boolean> mapListeners, String name, int eventType,
@@ -502,7 +571,7 @@ abstract class BaseManager implements Constants {
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
-						boolean sent = clusterService.send(inv, address);
+						boolean sent = send(inv, address);
 						if (!sent)
 							inv.returnToContainer();
 					}
@@ -576,9 +645,13 @@ abstract class BaseManager implements Constants {
 	}
 
 	public void enqueueAndReturn(Object obj) {
-		clusterService.enqueueAndReturn(obj);
+		ClusterService.get().enqueueAndReturn(obj);
 	}
 
+	public MemberImpl getLocalMember() {
+		return ClusterManager.get().getLocalMember();
+	}
+	
 	long idGen = 0;
 
 	public long addCall(Call call) {
@@ -815,14 +888,14 @@ abstract class BaseManager implements Constants {
 		abstract void setTarget();
 
 		public void process() {
-			setTarget();		
+			setTarget();
 			if (target == null) {
 				if (isSuperClient()) {
 					setResult(OBJECT_REDO);
-					return;					
+					return;
 				} else {
-					throw new RuntimeException ("Target cannot be null!");
-				} 
+					throw new RuntimeException("Target cannot be null!");
+				}
 			}
 			if (target.equals(thisAddress)) {
 				doLocalOp();
@@ -836,7 +909,7 @@ abstract class BaseManager implements Constants {
 			Invocation inv = request.toInvocation();
 			inv.eventId = getId();
 			boolean sent = send(inv, target);
-			if (!sent) { 
+			if (!sent) {
 				if (DEBUG) {
 					log("invocation cannot be sent to " + target);
 				}

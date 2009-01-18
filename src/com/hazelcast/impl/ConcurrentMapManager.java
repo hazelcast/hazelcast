@@ -129,13 +129,13 @@ class ConcurrentMapManager extends BaseManager {
 		Collection<Block> blocks = mapBlocks.values();
 		for (Block block : blocks) {
 			if (deadAddress.equals(block.owner)) {
-				MemberImpl member = getNextMemberBeforeSync(block.owner);
+				MemberImpl member = getNextMemberBeforeSync(block.owner, true, 1);
 				Address addressNewOwner = (member == null) ? thisAddress : member.getAddress();
 				block.owner = addressNewOwner;
 			}
 			if (block.migrationAddress != null) {
 				if (deadAddress.equals(block.migrationAddress)) {
-					MemberImpl member = getNextMemberBeforeSync(block.migrationAddress);
+					MemberImpl member = getNextMemberBeforeSync(block.migrationAddress, true, 1);
 					Address addressNewMigrationAddress = (member == null) ? thisAddress : member
 							.getAddress();
 					block.migrationAddress = addressNewMigrationAddress;
@@ -233,36 +233,7 @@ class ConcurrentMapManager extends BaseManager {
 			}
 		}
 	}
-
-	// class Migrator implements Runnable {
-	// Iterator<String> mapNames = null;
-	//
-	// public Migrator(Iterator<String> mapNames) {
-	// super();
-	// this.mapNames = mapNames;
-	// }
-	//
-	// public void run() {
-	// while (mapNames.hasNext()) {
-	// String mapName = mapNames.next();
-	// for (int i = 0; i < BLOCK_COUNT; i++) {
-	// migrateBlock(mapName, i);
-	// }
-	// }
-	// }
-	//
-	// private void migrateBlock(String name, int blockId) {
-	// while (true) {
-	// MMigrate mmigration = new MMigrate();
-	// boolean done = mmigration.migrate(name, blockId, 0);
-	// if (!done) {
-	// if (mmigration.lastMigratedRecordId == -1)
-	// return;
-	// }
-	// }
-	// }
-	// }
-
+	
 	abstract class MBooleanOp extends MTargetAwareOp {
 		@Override
 		void handleNoneRedoResponse(Invocation inv) {
@@ -620,7 +591,7 @@ class ConcurrentMapManager extends BaseManager {
 		@Override
 		public void handleNoneRedoResponse(Invocation inv) {
 			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-				if (getPreviousMember().getAddress().equals(inv.conn.getEndPoint())) {
+				if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(inv.conn.getEndPoint())) {
 					// so I am the backup so
 					CMap cmap = getMap(request.name);
 					// inv endpoint is the actuall owner of the
@@ -1017,7 +988,7 @@ class ConcurrentMapManager extends BaseManager {
 			} else {
 				// am I the backup!
 				if (block.isMigrating()) {
-					MemberImpl nextAfterMigration = getNextMemberAfter(block.migrationAddress);
+					MemberImpl nextAfterMigration = getNextMemberAfter(block.migrationAddress, true, 1);
 					if (nextAfterMigration != null
 							&& nextAfterMigration.getAddress().equals(thisAddress)) {
 						rec.owner = block.migrationAddress;
@@ -1027,7 +998,7 @@ class ConcurrentMapManager extends BaseManager {
 					}
 				} else {
 					//not migrating..
-					MemberImpl nextAfterOwner = getNextMemberAfter(block.owner);
+					MemberImpl nextAfterOwner = getNextMemberAfter(block.owner, true, 1);
 					if (nextAfterOwner != null && nextAfterOwner.getAddress().equals(thisAddress)) {
 						rec.owner = block.owner;
 						ownerBackup++;
@@ -1087,7 +1058,7 @@ class ConcurrentMapManager extends BaseManager {
 			return;
 		Invocation inv = toInvocation(record, false);
 		inv.operation = OP_CMAP_BACKUP_LOCK;
-		boolean sent = send(inv, getNextMember().getAddress());
+		boolean sent = send(inv, getNextMemberAfter(thisAddress, true, 1).getAddress());
 		if (!sent) {
 			inv.returnToContainer();
 		}
@@ -1098,7 +1069,7 @@ class ConcurrentMapManager extends BaseManager {
 			return;
 		Invocation inv = toInvocation(record, false);
 		inv.operation = OP_CMAP_BACKUP_REMOVE;
-		boolean sent = send(inv, getNextMember().getAddress());
+		boolean sent = send(inv, getNextMemberAfter(thisAddress, true, 1).getAddress());
 		if (!sent) {
 			inv.returnToContainer();
 		}
@@ -1112,7 +1083,7 @@ class ConcurrentMapManager extends BaseManager {
 			return;
 		Invocation inv = toInvocation(record, true);
 		inv.operation = OP_CMAP_BACKUP_ADD;
-		boolean sent = send(inv, getNextMember().getAddress());
+		boolean sent = send(inv, getNextMemberAfter(thisAddress, true, 1).getAddress());
 		if (!sent) {
 			inv.returnToContainer();
 		}

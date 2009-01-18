@@ -44,17 +44,7 @@ public class ClusterService implements Runnable, Constants {
 
 	private static final long UTILIZATION_CHECK_INTERVAL = TimeUnit.SECONDS.toNanos(10);
 
-	protected LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
-
-	protected Address thisAddress = null;
-
-	protected MemberImpl thisMember = null;
-
-	protected int thisMemberIndex = -1;
-
-	protected final boolean DEBUG = Build.get().DEBUG;
-
-	protected MemberImpl nextMember = null;
+	protected final boolean DEBUG = Build.get().DEBUG; 
 
 	protected final BlockingQueue queue;
 
@@ -69,8 +59,7 @@ public class ClusterService implements Runnable, Constants {
 	protected long lastPeriodicCheck = 0;
 
 	private ClusterService() {
-		this.queue = new LinkedBlockingQueue();
-		this.thisAddress = Node.get().getThisAddress();
+		this.queue = new LinkedBlockingQueue(); 
 		this.start = System.nanoTime();
 	}
 
@@ -78,7 +67,7 @@ public class ClusterService implements Runnable, Constants {
 		long processStart = System.nanoTime();
 		if (obj instanceof Invocation) {
 			Invocation inv = (Invocation) obj;
-			MemberImpl memberFrom = getMember(inv.conn.getEndPoint());
+			MemberImpl memberFrom = ClusterManager.get().getMember(inv.conn.getEndPoint());
 			if (memberFrom != null) {
 				memberFrom.didRead();
 			}
@@ -182,86 +171,7 @@ public class ClusterService implements Runnable, Constants {
 	public void stop() {
 		this.running = false;
 	}
-
-	protected int getMemberCount() {
-		return lsMembers.size();
-	}
-
-	protected void setNextMember() {
-		for (Member m : lsMembers) {
-			if (m.localMember())
-				thisMemberIndex = lsMembers.indexOf(m);
-		}
-		nextMember = getNextMember();
-	}
-
-	protected int getThisMemberIndex() {
-		return thisMemberIndex;
-	}
-	
-
-	protected MemberImpl getNextMember() {
-		if (lsMembers.size() < 2)
-			return null;
-		else {
-			return lsMembers.get((thisMemberIndex + 1) % lsMembers.size());
-		}
-	}
-
-	protected MemberImpl getPreviousMember() {
-		if (lsMembers.size() < 2)
-			return null;
-		else {
-			if (thisMemberIndex == 0)
-				return lsMembers.get(lsMembers.size() - 1);
-			else
-				return lsMembers.get((thisMemberIndex - 1) % lsMembers.size());
-		}
-	}
-	
-	protected final MemberImpl getNextMemberAfter(List<MemberImpl> lsMembers, Address address, boolean skipSuperClient, int distance) {
-		int indexOfMember = getIndexOf(lsMembers, address);
-		if (indexOfMember == -1)
-			return null;
-		int size = lsMembers.size();
-		int foundDistance = 0;
-		for (int i = 0; i < size; i++) {
-			MemberImpl member = lsMembers.get((indexOfMember + 1 + i) % size);
-			if (!(skipSuperClient && member.superClient())) {
-				 foundDistance++;
-			}
-			if (foundDistance == distance) return member;
-		}
-		return null;
-	}
-	 
-
-	protected MemberImpl getNextMemberAfter(Address address) {
-		MemberImpl member = getMember(address);
-		if (member != null) {
-			int indexOfMember = lsMembers.indexOf(member);
-			return lsMembers.get((indexOfMember + 1) % lsMembers.size());
-		} else
-			return null;
-	}
-
-	protected MemberImpl getNextMemberAfter(List<MemberImpl> lsMembers, Address address) {
-		int indexOfMember = getIndexOf(lsMembers, address);
-		if (indexOfMember == -1)
-			return null;
-		return lsMembers.get((indexOfMember + 1) % lsMembers.size());
-	}
-
-	protected final int getIndexOf(List<MemberImpl> lsMembers, Address address) {
-		for (int i = 0; i < lsMembers.size(); i++) {
-			MemberImpl member = lsMembers.get(i);
-			if (member.getAddress().equals(address)) {
-				return i;
-			}
-		}
-		return -1;
-	}
-
+ 
 	public void enqueueAndReturn(Object message) {
 		try {
 			// if (DEBUG) {
@@ -275,105 +185,7 @@ public class ClusterService implements Runnable, Constants {
 		}
 	}
 
-	protected Member addMember(MemberImpl member) {
-		if (DEBUG) {
-			System.out.println("ClusterService adding " + member);
-		}
-		if (lsMembers.contains(member)) {
-			for (MemberImpl m : lsMembers) {
-				if (m.equals(member))
-					member = m;
-			}
-		} else {
-			if (!member.getAddress().equals(thisAddress)) {
-				ConnectionManager.get().getConnection(member.getAddress());
-			}
-			lsMembers.add(member);
-		}
-		setNextMember();
-		return member;
-	}
-
-	protected void removeMember(Address address) {
-		if (DEBUG)
-			System.out.println("removing  " + address);
-		Member member = getMember(address);
-		if (member != null) {
-			lsMembers.remove(member);
-		}
-		setNextMember();
-	}
-
-	protected MemberImpl createMember(Address address, int nodeType) {
-		MemberImpl member = new MemberImpl(address, thisAddress.equals(address), nodeType);
-		if (member.localMember()) { 
-			thisMember = member;
-		} 
-		return member;
-	}
-
-	protected MemberImpl getMember(Address address) {
-		for (MemberImpl m : lsMembers) {
-			if (m.getAddress().equals(address)) {
-				return m;
-			}
-		}
-		return null;
-	}
-
-	protected boolean isThisNextMaster() {
-		MemberImpl nextMasterMember = getNextMemberAfter(Node.get().getMasterAddress());
-		if (nextMasterMember == null)
-			return false;
-		return (nextMasterMember.localMember());
-	}
-
-	final boolean send(Invocation inv, Address address) {
-		Connection conn = ConnectionManager.get().getConnection(address);
-		if (conn == null)
-			return false;
-		if (!conn.live())
-			return false;
-		writeInvocation(conn, inv);
-		return true;
-	}
-
-	final boolean send(Invocation inv, Connection conn) {
-		if (conn != null) {
-			writeInvocation(conn, inv);
-		} else {
-			return false;
-		}
-		return true;
-	}
-
-	final private void writeInvocation(Connection conn, Invocation inv) {
-		if (!conn.live()) {
-			inv.returnToContainer();
-			return;
-		}
-		MemberImpl memberImpl = getMember(conn.getEndPoint());
-		if (memberImpl != null) {
-			memberImpl.didWrite();
-		}
-		inv.write();
-		conn.getWriteHandler().enqueueInvocation(inv);
-	}
-
-	final public MemberImpl addMember(Address address, int nodeType) {
-		if (address == null) {
-			if (DEBUG) {
-				System.out.println("Address cannot be null");
-				return null;
-			}
-		}
-		MemberImpl member = getMember(address);
-		if (member == null)
-			member = createMember(address, nodeType);
-		addMember(member);
-		return member;
-	}
-
+	
 	@Override
 	public String toString() {
 		return "ClusterService queueSize=" + queue.size() + " master= " + Node.get().master()

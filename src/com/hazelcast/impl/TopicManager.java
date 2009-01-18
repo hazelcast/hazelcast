@@ -74,7 +74,7 @@ class TopicManager extends BaseManager {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		clusterService.enqueueAndReturn(new TopicPublishProcess(name, dataMsg));
+		enqueueAndReturn(new TopicPublishProcess(name, dataMsg));
 	}
 
 	class TopicPublishProcess implements Processable {

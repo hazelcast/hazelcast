@@ -166,7 +166,7 @@ class BlockingQueueManager extends BaseManager {
 	}
 
 	void syncForDead(Address addressDead) {
-		MemberImpl member = getNextMemberBeforeSync(addressDead);
+		MemberImpl member = getNextMemberBeforeSync(addressDead, true, 1);
 		if (DEBUG) {
 			log(addressDead + " is dead and its backup was " + member);
 		}
@@ -198,7 +198,7 @@ class BlockingQueueManager extends BaseManager {
 					// did my backup change..
 					// if so backup to the new next
 					if (lsMembers.size() > 1) {
-						MemberImpl memberBackupWas = getNextMemberBeforeSync(thisAddress);
+						MemberImpl memberBackupWas = getNextMemberBeforeSync(thisAddress, true, 1);
 						if (memberBackupWas == null
 								|| memberBackupWas.getAddress().equals(addressDead)) {
 							int indexUpto = block.size() - 1;
@@ -252,8 +252,8 @@ class BlockingQueueManager extends BaseManager {
 					// did my backup change..
 					// if so backup to the new next
 					if (lsMembers.size() > 1) {
-						MemberImpl memberBackupWas = getNextMemberBeforeSync(thisAddress);
-						MemberImpl memberBackupIs = getNextMemberAfter(thisAddress);
+						MemberImpl memberBackupWas = getNextMemberBeforeSync(thisAddress, true, 1);
+						MemberImpl memberBackupIs = getNextMemberAfter(thisAddress, true, 1);
 						if (memberBackupWas == null || !memberBackupWas.equals(memberBackupIs)) {
 							if (DEBUG) {
 								log("Backup changed!!! so backing up to " + memberBackupIs);
@@ -561,8 +561,9 @@ class BlockingQueueManager extends BaseManager {
 		}
 
 		public void process() {
-			if (getNextMember() != null) {
-				Address next = getNextMember().getAddress();
+			MemberImpl nextMember = getNextMemberAfter(thisAddress, true,1);
+			if (nextMember != null) {
+				Address next = nextMember.getAddress();
 				Invocation inv = obtainServiceInvocation();
 				inv.name = name;
 				inv.operation = getOperation();
@@ -895,7 +896,7 @@ class BlockingQueueManager extends BaseManager {
 		@Override
 		void handleNoneRedoResponse(Invocation inv) {
 			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-				if (getPreviousMember().getAddress().equals(inv.conn.getEndPoint())) {
+				if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(inv.conn.getEndPoint())) {
 					int itemIndex = (int) inv.longValue;
 					if (itemIndex != -1) {
 						Q q = getQ(request.name);
@@ -1400,9 +1401,9 @@ class BlockingQueueManager extends BaseManager {
 			if (request.txnId != -1) {
 				MemberImpl backup = null;
 				if (request.caller.equals(thisAddress)) {
-					backup = getNextMember();
+					backup = getNextMemberAfter(thisAddress, true, 1);
 				} else {
-					backup = getNextMemberAfter(request.caller);
+					backup = getNextMemberAfter(request.caller, true, 1);
 				}
 				if (backup != null) {
 					if (backup.getAddress().equals(thisAddress)) {
@@ -1468,7 +1469,7 @@ class BlockingQueueManager extends BaseManager {
 			if (addIndex == -1)
 				throw new RuntimeException("addIndex cannot be -1");
 			if (lsMembers.size() > 1) {
-				if (getNextMember().getAddress().equals(invoker)) {
+				if (getNextMemberAfter(thisAddress, true, 1).getAddress().equals(invoker)) {
 					return;
 				}
 				int operation = OP_B_BACKUP_REMOVE;
@@ -1481,7 +1482,7 @@ class BlockingQueueManager extends BaseManager {
 				Invocation inv = obtainServiceInvocation(name, null, data, operation, 0);
 				inv.blockId = blockId;
 				inv.longValue = addIndex;
-				boolean sent = send(inv, getNextMember().getAddress());
+				boolean sent = send(inv, getNextMemberAfter(thisAddress, true, 1).getAddress());
 				if (!sent) {
 					inv.returnToContainer();
 				}

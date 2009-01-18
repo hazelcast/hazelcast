@@ -125,7 +125,7 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
 			inv.longValue = streamId;
 			ClusterService.get().enqueueAndReturn(new Runnable() {
 				public void run() {
-					ClusterService.get().send(inv, address);
+					ClusterManager.get().send(inv, address);
 				}
 			});
 		} catch (Exception e) {

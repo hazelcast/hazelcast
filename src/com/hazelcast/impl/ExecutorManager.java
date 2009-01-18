@@ -42,6 +42,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import sun.rmi.runtime.GetThreadPoolAction;
+import sun.security.action.GetLongAction;
+
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.Member;
@@ -186,7 +189,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 
 		protected volatile Object callable = null;
 
-		protected MemberImpl randomTarget = null;
+		protected Address randomTarget = null;
 
 		protected SimpleExecution simpleExecution = null; // for local tasks
 
@@ -218,8 +221,8 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 					+ expectedResultCount + ", resultCount=" + resultCount;
 		}
 
-		protected MemberImpl getTargetMember() {
-			MemberImpl target = null;
+		protected Address getTarget() {
+			Address target = null;
 			if (innerFutureTask.getKey() != null) {
 				Data keyData = null;
 				try {
@@ -232,33 +235,33 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 				Object mem = innerFutureTask.getMember();
 				if (mem instanceof ClusterMember) {
 					ClusterMember clusterMember = (ClusterMember) mem;
-					target = getMember(clusterMember.getAddress());
+					target = clusterMember.getAddress();
 				} else if (mem instanceof MemberImpl) {
-					target = (MemberImpl) mem;
+					target = ((MemberImpl) mem).getAddress();
 				}
 				if (DEBUG)
 					log(" Target " + target);
 			} else {
 				int random = (int) (Math.random() * 100);
-				target = lsMembers.get(random % lsMembers.size());
+				target = lsMembers.get(random % lsMembers.size()).getAddress();
 				randomTarget = target;
 			}
 			if (target == null)
-				return clusterService.thisMember;
+				return thisAddress;
 			else
 				return target;
 		}
 
 		public void invoke() {
-			clusterService.enqueueAndReturn(DistributedExecutorAction.this);
+			ClusterService.get().enqueueAndReturn(DistributedExecutorAction.this);
 		}
 
 		public void process() {
 			mapExecutions.put(executionId, this);
 			mapStreams.put(executionId, this);
 			if (innerFutureTask.getMembers() == null) {
-				MemberImpl memberTarget = getTargetMember();
-				if (memberTarget.localMember()) {
+				Address target = getTarget();
+				if (thisAddress.equals(target)) {
 					executeLocal();
 				} else {
 					localOnly = false;
@@ -266,10 +269,10 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 							OP_EXE_REMOTE_EXECUTION, DEFAULT_TIMEOUT);
 					inv.timeout = DEFAULT_TIMEOUT;
 					inv.longValue = executionId.longValue();
-					boolean sent = send(inv, memberTarget.getAddress());
+					boolean sent = send(inv, target);
 					if (!sent) {
-						inv.returnToContainer();
-						handleMemberLeft(memberTarget);
+						inv.returnToContainer();						
+						handleMemberLeft(getMember(target));
 					}
 				}
 			} else {
@@ -299,8 +302,8 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 			ClusterMember clusterMember = (ClusterMember) member;
 			if (innerFutureTask.getKey() != null) {
 				Data keyData = ThreadContext.get().toData(innerFutureTask.getKey());
-				MemberImpl target = getKeyOwner(keyData);
-				if (clusterMember.getAddress().equals(target.getAddress())) {
+				Address target = getKeyOwner(keyData);
+				if (clusterMember.getAddress().equals(target)) {
 					found = true;
 				}
 			} else if (innerFutureTask.getMember() != null) {
@@ -323,7 +326,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 					}
 				}
 			} else {
-				if (clusterMember.getAddress().equals(randomTarget.getAddress())) {
+				if (clusterMember.getAddress().equals(randomTarget)) {
 					found = true;
 				}
 			}

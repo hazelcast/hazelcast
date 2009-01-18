@@ -43,9 +43,11 @@ import com.hazelcast.nio.OutSelector;
 
 public class Node {
 
-	Address address = null;
+	volatile Address address = null;
+	
+	volatile MemberImpl localMember = null;
 
-	Address masterAddress = null;
+	volatile Address masterAddress = null;
 
 	private static Node instance = new Node();
 
@@ -117,6 +119,9 @@ public class Node {
 			Config config = Config.get();
 			ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
 			address = AddressPicker.pickAddress(serverSocketChannel);
+			address.setThisAddress(true);	 
+			localMember = new MemberImpl (address, true, localNodeType);
+			ClusterManager.get().addMember(localMember);
 			InSelector.get().init(serverSocketChannel);
 			if (address == null)
 				return false;
@@ -482,7 +487,7 @@ public class Node {
 			System.out.println("DONE TCP");
 		StringBuilder sb = new StringBuilder();
 		sb.append("\n");
-		if (ClusterService.get().getMemberCount() == 1)
+		if (ClusterManager.get().lsMembers.size() == 1)
 			sb.append(ClusterManager.get());
 		System.out.println(sb.toString());
 	}
@@ -491,9 +496,9 @@ public class Node {
 		masterAddress = address;
 		if (DEBUG)
 			System.out.println("adding member myself");
-		ClusterService.get().addMember(address, getLocalNodeType()); // add
+		ClusterManager.get().addMember(address, getLocalNodeType()); // add
 		// myself
-		clusterImpl.setMembers(ClusterService.get().lsMembers);
+		clusterImpl.setMembers(ClusterManager.get().lsMembers);
 		unlock();
 	}
 
@@ -514,9 +519,9 @@ public class Node {
 		if (DEBUG)
 			System.out.println(address + " master: " + masterAddress);
 		if (masterAddress == null || masterAddress.equals(address)) {
-			ClusterService.get().addMember(address, getLocalNodeType()); // add myself
+			ClusterManager.get().addMember(address, getLocalNodeType()); // add myself
 			masterAddress = address;
-			clusterImpl.setMembers(ClusterService.get().lsMembers);
+			clusterImpl.setMembers(ClusterManager.get().lsMembers);
 			unlock();
 		} else {
 			while (!joined) {
@@ -542,7 +547,7 @@ public class Node {
 			System.out.println("Join DONE");
 		StringBuilder sb = new StringBuilder();
 		sb.append("\n");
-		if (ClusterService.get().getMemberCount() == 1)
+		if (ClusterManager.get().lsMembers.size() == 1)
 			sb.append(ClusterManager.get());
 		System.out.println(sb.toString());
 
@@ -603,6 +608,10 @@ public class Node {
 			e.printStackTrace();
 		}
 		return null;
+	}
+	
+	public MemberImpl getLocalMember() {
+		return localMember;
 	}
 
 	public Address getThisAddress() {
