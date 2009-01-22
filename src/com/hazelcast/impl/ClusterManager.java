@@ -338,8 +338,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			}
 		}
 		if (isMaster()) {
-			Address newAddress = joinRequest.address;
-			System.out.println("Node type " + joinRequest.nodeType);
+			Address newAddress = joinRequest.address; 
 			MemberInfo newMemberInfo = new MemberInfo (newAddress, joinRequest.nodeType);
 			if (!joinInProgress) {
 				if (setJoins.add(newMemberInfo)) {
@@ -819,8 +818,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			}
 		}
 
-		public Boolean call() {
-			System.out.println("CAlling members update ");
+		public Boolean call() { 
 			ClusterManager.get().updateMembers(lsMemberInfos);
 			return Boolean.TRUE;
 		}

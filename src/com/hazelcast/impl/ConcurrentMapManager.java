@@ -570,7 +570,6 @@ class ConcurrentMapManager extends BaseManager {
 					} else {
 						return txn.attachPutOp(name, key, value, false);
 					}
-
 				} catch (Exception e1) {
 					e1.printStackTrace();
 				}
@@ -725,9 +724,11 @@ class ConcurrentMapManager extends BaseManager {
 		if (block == null) {
 			if (isMaster() && !isSuperClient()) {
 				block = getOrCreateBlock(blockId);
+				block.owner = thisAddress;
 			} else
 				return null;
 		}
+		if (block.owner == null) return null;
 		if (block.owner.equals(thisAddress)) {
 			if (block.isMigrating()) {
 				if (name == null)
@@ -950,9 +951,12 @@ class ConcurrentMapManager extends BaseManager {
 				public void process() {
 					doMigrationComplete(thisAddress);
 					sendMigrationComplete();
+					if (DEBUG) {
+						printBlocks();
+					}
 				}
 			};
-			enqueueAndReturn(processCompletion);
+			enqueueAndReturn(processCompletion);			
 		}
 	}
 
@@ -1419,11 +1423,11 @@ class ConcurrentMapManager extends BaseManager {
 	}
 
 	class CMap {
-		Map<Data, Record> mapRecords = new HashMap<Data, Record>();
+		final Map<Data, Record> mapRecords = new HashMap<Data, Record>();
 
-		String name;
+		final String name;
 
-		Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
+		final Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
 
 		public CMap(String name) {
 			super();
@@ -1465,7 +1469,7 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		public void backupLock(Request req) {
-			Record record = toRecord(req);
+			toRecord(req);
 		}
 
 		public int backupSize() {
@@ -1659,6 +1663,7 @@ class ConcurrentMapManager extends BaseManager {
 		private List<ScheduledAction> lsScheduledActions = null;
 		private Map<Address, Boolean> mapListeners = null;
 		private AtomicInteger copyCount = null;
+		private List<Data> lsValues = null;
 
 		public Record(long id, String name, int blockId, Data key, Data value) {
 			super();
@@ -1705,6 +1710,17 @@ class ConcurrentMapManager extends BaseManager {
 		public void setValue(Data value) {
 			this.value = value;
 			version++;
+		}
+		
+		public void addValue (Data value) {
+			if (this.value == null) {
+				this.value = value;
+			} else {
+				if (lsValues == null) {
+					lsValues = new ArrayList<Data>(5);
+				}
+				lsValues.add(value);
+			}
 		}
 
 		public void onDisconnect(Address deadAddress) {

@@ -273,8 +273,7 @@ abstract class BaseManager implements Constants {
 		inv.local = false;
 		inv.operation = OP_RESPONSE;
 		inv.responseType = RESPONSE_FAILURE;
-		boolean sent = send(inv, inv.conn);
-		System.out.println("Sending failure, sent : " + sent);
+		boolean sent = send(inv, inv.conn); 
 		if (!sent) {
 			inv.returnToContainer();
 		}
