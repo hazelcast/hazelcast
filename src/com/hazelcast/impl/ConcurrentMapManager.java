@@ -233,7 +233,7 @@ class ConcurrentMapManager extends BaseManager {
 			}
 		}
 	}
-	
+
 	abstract class MBooleanOp extends MTargetAwareOp {
 		@Override
 		void handleNoneRedoResponse(Invocation inv) {
@@ -590,7 +590,8 @@ class ConcurrentMapManager extends BaseManager {
 		@Override
 		public void handleNoneRedoResponse(Invocation inv) {
 			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-				if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(inv.conn.getEndPoint())) {
+				if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(
+						inv.conn.getEndPoint())) {
 					// so I am the backup so
 					CMap cmap = getMap(request.name);
 					// inv endpoint is the actuall owner of the
@@ -728,7 +729,8 @@ class ConcurrentMapManager extends BaseManager {
 			} else
 				return null;
 		}
-		if (block.owner == null) return null;
+		if (block.owner == null)
+			return null;
 		if (block.owner.equals(thisAddress)) {
 			if (block.isMigrating()) {
 				if (name == null)
@@ -956,7 +958,7 @@ class ConcurrentMapManager extends BaseManager {
 					}
 				}
 			};
-			enqueueAndReturn(processCompletion);			
+			enqueueAndReturn(processCompletion);
 		}
 	}
 
@@ -992,7 +994,8 @@ class ConcurrentMapManager extends BaseManager {
 			} else {
 				// am I the backup!
 				if (block.isMigrating()) {
-					MemberImpl nextAfterMigration = getNextMemberAfter(block.migrationAddress, true, 1);
+					MemberImpl nextAfterMigration = getNextMemberAfter(block.migrationAddress,
+							true, 1);
 					if (nextAfterMigration != null
 							&& nextAfterMigration.getAddress().equals(thisAddress)) {
 						rec.owner = block.migrationAddress;
@@ -1001,7 +1004,7 @@ class ConcurrentMapManager extends BaseManager {
 						recordsToRemove.add(rec.getId());
 					}
 				} else {
-					//not migrating..
+					// not migrating..
 					MemberImpl nextAfterOwner = getNextMemberAfter(block.owner, true, 1);
 					if (nextAfterOwner != null && nextAfterOwner.getAddress().equals(thisAddress)) {
 						rec.owner = block.owner;
@@ -1034,10 +1037,25 @@ class ConcurrentMapManager extends BaseManager {
 	private void doMigrationComplete(Address from) {
 		Collection<Block> blocks = mapBlocks.values();
 		for (Block block : blocks) {
-			if (block.owner.equals(from)) {
+			if (from.equals(block.owner)) {
 				if (block.isMigrating()) {
 					block.owner = block.migrationAddress;
 					block.migrationAddress = null;
+				}
+			}
+		}
+		if (isMaster() && !from.equals(thisAddress)) {
+			// I am the master and I got migration complete from a member
+			// I will inform others, in case they didnot get it yet.
+			for (MemberImpl member : lsMembers) {
+				if (!member.localMember() || !from.equals(member.getAddress())) {
+					Invocation inv = obtainServiceInvocation();
+					inv.name = "cmap";
+					inv.operation = OP_CMAP_MIGRATION_COMPLETE;
+					boolean sent = send(inv, member.getAddress());
+					if (!sent) {
+						inv.returnToContainer();
+					}
 				}
 			}
 		}
@@ -1711,8 +1729,8 @@ class ConcurrentMapManager extends BaseManager {
 			this.value = value;
 			version++;
 		}
-		
-		public void addValue (Data value) {
+
+		public void addValue(Data value) {
 			if (this.value == null) {
 				this.value = value;
 			} else {

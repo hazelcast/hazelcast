@@ -60,6 +60,8 @@ abstract class BaseManager implements Constants {
 
 	
 	protected final static LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
+	
+	protected final static Map<Address, MemberImpl> mapMembers = new HashMap<Address, MemberImpl>(100);
 
 	protected final static boolean DEBUG = Build.get().DEBUG;
 

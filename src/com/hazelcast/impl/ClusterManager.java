@@ -732,6 +732,10 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		if (!lsMembers.contains(thisMember)) {
 			throw new RuntimeException ("Member list doesn't contain local member!");
 		}
+		mapMembers.clear();
+		for (MemberImpl member : lsMembers) {
+			mapMembers.put(member.getAddress(), member);
+		}
 		heartBeater();
 		Node.get().getClusterImpl().setMembers(lsMembers);
 		Node.get().unlock();
@@ -1103,12 +1107,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 	}
 
 	protected MemberImpl getMember(Address address) {
-		for (MemberImpl m : lsMembers) {
-			if (m.getAddress().equals(address)) {
-				return m;
-			}
-		}
-		return null;
+		return mapMembers.get(address);
 	}
 
 
