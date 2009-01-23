@@ -23,6 +23,8 @@ import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_BACKUP_R
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_FULL_BLOCK;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_OFFER;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_PEEK;
+import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_PUBLISH;
+import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_ADD_TOPIC_LISTENER;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_POLL;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_READ;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_REMOVE;
@@ -45,8 +47,11 @@ import java.util.Map;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
+import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
+import com.hazelcast.impl.ClusterManager.RemotelyProcessable;
 import com.hazelcast.impl.Config.QConfig;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.InvocationQueue;
 import com.hazelcast.nio.InvocationQueue.Data;
@@ -57,6 +62,7 @@ class BlockingQueueManager extends BaseManager {
 	private final static BlockingQueueManager instance = new BlockingQueueManager();
 	private final Map<String, Q> mapBlockingQueues = new HashMap<String, Q>(10);
 	private final Map<Long, List<Data>> mapTxnPolledElements = new HashMap<Long, List<Data>>(10);
+	private static final int BLOCK_SIZE = 1000;
 
 	private BlockingQueueManager() {
 	}
@@ -74,6 +80,10 @@ class BlockingQueueManager extends BaseManager {
 			handleBackup(inv);
 		} else if (inv.operation == OP_B_BACKUP_REMOVE) {
 			handleBackup(inv);
+		} else if (inv.operation == OP_B_PUBLISH) {
+			handlePublish(inv);
+		} else if (inv.operation == OP_B_ADD_TOPIC_LISTENER) {
+			handleAddTopicListener(inv);
 		} else if (inv.operation == OP_B_PEEK) {
 			handlePoll(inv);
 		} else if (inv.operation == OP_B_READ) {
@@ -159,7 +169,7 @@ class BlockingQueueManager extends BaseManager {
 				index++;
 				if (index > indexUpto)
 					return null;
-				if (index >= Block.BLOCK_SIZE)
+				if (index >= BLOCK_SIZE)
 					return null;
 			}
 		}
@@ -359,7 +369,7 @@ class BlockingQueueManager extends BaseManager {
 				}
 			}
 			if (!exist) {
-				Block newBlock = new Block(addressOwner, blockId, name);
+				Block newBlock = q.createBlock(addressOwner, blockId);
 				q.addBlock(newBlock);
 			}
 			if (addRemove.fullBlockId != -1) {
@@ -407,7 +417,7 @@ class BlockingQueueManager extends BaseManager {
 	final void doFullBlock(Q q, int fullBlockId, Address originalFuller) {
 		int blockId = q.getLatestAddedBlock() + 1;
 		Address target = nextTarget();
-		Block newBlock = new Block(target, blockId, q.name);
+		Block newBlock = q.createBlock(target, blockId);
 		q.addBlock(newBlock);
 		if (fullBlockId != -1) {
 			q.setBlockFull(fullBlockId);
@@ -429,6 +439,34 @@ class BlockingQueueManager extends BaseManager {
 			} else {
 				inv.returnToContainer();
 			}
+			remoteReq.reset();
+		}
+	}
+
+	final void handlePublish(Invocation inv) {
+		if (rightRemoteOfferTarget(inv)) {
+			remoteReq.setInvocation(inv);
+			doPublish(remoteReq);
+			inv.longValue = remoteReq.longValue;
+			if (!remoteReq.scheduled) {
+				if (remoteReq.response == Boolean.TRUE) {
+					sendResponse(inv);
+				} else {
+					sendResponseFailure(inv);
+				}
+			} else {
+				inv.returnToContainer();
+			}
+			remoteReq.reset();
+		}
+	}
+
+	final void handleAddTopicListener(Invocation inv) {
+		if (rightRemoteOfferTarget(inv)) {
+			remoteReq.setInvocation(inv);
+			doAddTopicListener(remoteReq);
+			inv.longValue = remoteReq.longValue;
+			sendResponse(inv);
 			remoteReq.reset();
 		}
 	}
@@ -561,7 +599,7 @@ class BlockingQueueManager extends BaseManager {
 		}
 
 		public void process() {
-			MemberImpl nextMember = getNextMemberAfter(thisAddress, true,1);
+			MemberImpl nextMember = getNextMemberAfter(thisAddress, true, 1);
 			if (nextMember != null) {
 				Address next = nextMember.getAddress();
 				Invocation inv = obtainServiceInvocation();
@@ -710,7 +748,7 @@ class BlockingQueueManager extends BaseManager {
 		}
 
 		boolean setNextBlock() {
-			if (currentIndex == -1 || currentIndex >= Block.BLOCK_SIZE) {
+			if (currentIndex == -1 || currentIndex >= BLOCK_SIZE) {
 				if (blocks.size() == 0) {
 					return false;
 				} else {
@@ -887,7 +925,28 @@ class BlockingQueueManager extends BaseManager {
 
 	}
 
+	class AddTopicListener extends LongOp {
+		public Long add(String name, Object value, long timeout, long txnId) {
+			return (Long) objectCall(OP_B_ADD_TOPIC_LISTENER, name, null, value, timeout, txnId, -1);
+		}
+
+		@Override
+		void setTarget() {
+			target = getTargetForOffer(request);
+		}
+
+		@Override
+		void doLocalOp() {
+			doAddTopicListener(request);
+			setResult(Long.valueOf(request.recordId));
+		}
+	}
+
 	class Offer extends BooleanOp {
+
+		public boolean publish(String name, Object value, long timeout, long txnId) {
+			return booleanCall(OP_B_PUBLISH, name, null, value, timeout, txnId, -1);
+		}
 
 		public boolean offer(String name, Object value, long timeout, long txnId) {
 			return booleanCall(OP_B_OFFER, name, null, value, timeout, txnId, -1);
@@ -896,7 +955,8 @@ class BlockingQueueManager extends BaseManager {
 		@Override
 		void handleNoneRedoResponse(Invocation inv) {
 			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-				if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(inv.conn.getEndPoint())) {
+				if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(
+						inv.conn.getEndPoint())) {
 					int itemIndex = (int) inv.longValue;
 					if (itemIndex != -1) {
 						Q q = getQ(request.name);
@@ -912,24 +972,35 @@ class BlockingQueueManager extends BaseManager {
 
 		@Override
 		void setTarget() {
-			Q q = getQ(request.name);
-			Block block = q.getCurrentPutBlock();
-			if (block == null) {
-				target = getMasterAddress();
-				request.blockId = 0;
-			} else {
-				target = block.address;
-				request.blockId = block.blockId;
-			}
+			target = getTargetForOffer(request);
 		}
 
 		@Override
 		void doLocalOp() {
-			doOffer(request);
-			if (!request.scheduled) {
+			if (request.operation == OP_B_OFFER) {
+				doOffer(request);
+				if (!request.scheduled) {
+					setResult(request.response);
+				}
+			} else {
+				doPublish(request);
 				setResult(request.response);
 			}
 		}
+	}
+
+	public Address getTargetForOffer(Request request) {
+		Address target = null;
+		Q q = getQ(request.name);
+		Block block = q.getCurrentPutBlock();
+		if (block == null) {
+			target = getMasterAddress();
+			request.blockId = 0;
+		} else {
+			target = block.address;
+			request.blockId = block.blockId;
+		}
+		return target;
 	}
 
 	class Poll extends TargetAwareOp {
@@ -962,6 +1033,67 @@ class BlockingQueueManager extends BaseManager {
 				setResult(request.response);
 			}
 		}
+	}
+
+	void doAddTopicListener(Request req) {
+		for (MemberImpl member : lsMembers) {
+			if (member.localMember()) {
+				handleListenerRegisterations(true, req.name, req.key, req.caller, true);
+			} else if (!member.getAddress().equals(req.caller)) {
+				sendProcessableTo(new TopicListenerRegistration(req.name, true, req.caller), member
+						.getAddress());
+			}
+		}
+		Q q = getQ(req.name);
+		if (q.blCurrentPut == null) {
+			q.setCurrentPut();
+		}
+		req.recordId = q.getRecordId(q.blCurrentPut.blockId, q.blCurrentPut.addIndex);
+	}
+
+	public static class TopicListenerRegistration extends AbstractRemotelyProcessable {
+		String name = null;
+		boolean add = true;
+		Address listenerAddress = null;
+
+		public TopicListenerRegistration() {
+		}
+
+		public TopicListenerRegistration(String name, boolean add, Address listenerAddress) {
+			super();
+			this.name = name;
+			this.add = add;
+			this.listenerAddress = listenerAddress;
+		}
+
+		public void readData(DataInput in) throws IOException {
+			add = in.readBoolean();
+			listenerAddress = new Address();
+			listenerAddress.readData(in);
+			name = in.readUTF();
+		}
+
+		public void writeData(DataOutput out) throws IOException {
+			out.writeBoolean(add);
+			listenerAddress.writeData(out);
+			out.writeUTF(name);
+		}
+
+		public void process() {
+			ListenerManager.get().handleListenerRegisterations(true, name, null, listenerAddress,
+					true);
+		}
+
+	}
+
+	void doPublish(Request req) {
+		Q q = getQ(req.name);
+		if (q.blCurrentPut == null) {
+			q.setCurrentPut();
+		}
+		int index = q.publish(req);
+		req.longValue = index;
+		req.response = Boolean.TRUE;
 	}
 
 	void doOffer(Request req) {
@@ -1079,27 +1211,36 @@ class BlockingQueueManager extends BaseManager {
 		int maxSizePerJVM = Integer.MAX_VALUE;
 
 		Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
+		boolean keepValues = true;
 
 		public Q(String name) {
-			QConfig qconfig = Config.get().getQConfig(name);
-			if (qconfig != null) {
-				maxSizePerJVM = qconfig.maxSizePerJVM;
-				log("qConfig " + qconfig.maxSizePerJVM);
+			if (name.startsWith("q:t:")) {
+				keepValues = false;
+			} else {
+				QConfig qconfig = Config.get().getQConfig(name.substring(2));
+				if (qconfig != null) {
+					maxSizePerJVM = qconfig.maxSizePerJVM;
+					log("qConfig " + qconfig.maxSizePerJVM);
+				}
 			}
 			this.name = name;
 			Address master = getMasterAddress();
 			if (master.isThisAddress()) {
-				Block block = new Block(master, 0, name);
+				Block block = createBlock(master, 0);
 				addBlock(block);
 				sendAddBlockMessageToOthers(block, -1, null, true);
 				for (int i = 0; i < 9; i++) {
 					int blockId = i + 1;
 					Address target = nextTarget();
-					block = new Block(target, blockId, name);
+					block = createBlock(target, blockId);
 					addBlock(block);
 					sendAddBlockMessageToOthers(block, -1, null, true);
 				}
 			}
+		}
+
+		public Block createBlock(Address address, int blockId) {
+			return new Block(address, blockId, name, keepValues);
 		}
 
 		public Address getBlockOwner(int blockId) {
@@ -1274,11 +1415,11 @@ class BlockingQueueManager extends BaseManager {
 				read.setResponse(null, -1);
 				return;
 			}
-			for (int i = read.index; i < Block.BLOCK_SIZE; i++) {
+			for (int i = read.index; i < BLOCK_SIZE; i++) {
 				Data data = block.get(i);
 				if (data != null) {
 					Data value = ThreadContext.get().hardCopy(data);
-					read.setResponse(data, i);
+					read.setResponse(value, i);
 					return;
 				}
 			}
@@ -1291,7 +1432,7 @@ class BlockingQueueManager extends BaseManager {
 			Block block = getBlock(blockId);
 			inv.longValue = -1;
 			if (block != null) {
-				blockLoop: for (int i = index; i < Block.BLOCK_SIZE; i++) {
+				blockLoop: for (int i = index; i < BLOCK_SIZE; i++) {
 					Data data = block.get(i);
 					if (data != null) {
 						inv.doHardCopy(data, inv.data);
@@ -1303,19 +1444,37 @@ class BlockingQueueManager extends BaseManager {
 			sendResponse(inv);
 		}
 
-		void doFireEntryEvent(boolean add, Data value) {
+		void doFireEntryEvent(boolean add, Data value, long recordId) {
 			if (mapListeners.size() == 0)
 				return;
 			if (add) {
-				fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, value, null);
+				fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, value, null, recordId);
 			} else {
-				fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, value, null);
+				fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, value, null, recordId);
 			}
+		}
+
+		long getRecordId(int blockId, int addIndex) {
+			return (blockId * BLOCK_SIZE) + addIndex;
+		}
+
+		int publish(Request req) {
+			int addIndex = blCurrentPut.add(req.value);
+			long recordId = getRecordId(blCurrentPut.blockId, addIndex);
+			doFireEntryEvent(true, req.value, recordId);
+
+			if (blCurrentPut.isFull()) {
+				fireBlockFullEvent(blCurrentPut);
+				blCurrentPut = null;
+				setCurrentPut();
+			}
+			return addIndex;
 		}
 
 		int offer(Request req) {
 			int addIndex = blCurrentPut.add(req.value);
-			doFireEntryEvent(true, req.value);
+			long recordId = getRecordId(blCurrentPut.blockId, addIndex);
+			doFireEntryEvent(true, req.value, recordId);
 			size++;
 			while (lsScheduledPollActions.size() > 0) {
 				ScheduledAction pollAction = lsScheduledPollActions.remove(0);
@@ -1335,53 +1494,6 @@ class BlockingQueueManager extends BaseManager {
 				setCurrentPut();
 			}
 			return addIndex;
-		}
-
-		void polld(Invocation inv) {
-			if (blCurrentTake == null) {
-				setCurrentTake();
-			}
-			boolean invalid = false;
-			if (inv.blockId != blCurrentTake.blockId) {
-				if (inv.blockId > blCurrentTake.blockId) {
-					int size = lsBlocks.size();
-					for (int i = 0; i < size; i++) {
-						Block block = lsBlocks.get(i);
-						if (block.blockId == inv.blockId) {
-							if (thisAddress.equals(block.address)) {
-								blCurrentTake = block;
-							}
-						}
-					}
-				} else {
-					invalid = true;
-				}
-			}
-			if ((blCurrentTake.size() == 0 && blCurrentTake.isFull())
-					|| !thisAddress.equals(blCurrentTake.address)) {
-				invalid = true;
-			}
-			if (invalid) {
-				sendRedoResponse(inv);
-				return;
-			}
-			remoteReq.setInvocation(inv);
-			if (blCurrentTake.size() == 0) {
-				if (remoteReq.hasEnoughTimeToSchedule()) {
-					schedulePoll(remoteReq.softCopy());
-					inv.returnToContainer();
-					return;
-				}
-			} else {
-				Data value = null;
-				if (inv.operation == OP_B_PEEK) {
-					value = peek();
-				} else {
-					value = poll(remoteReq);
-				}
-				inv.doSet(value, inv.data);
-			}
-			sendResponse(inv);
 		}
 
 		public Data peek() {
@@ -1414,7 +1526,8 @@ class BlockingQueueManager extends BaseManager {
 				}
 			}
 			size--;
-			doFireEntryEvent(false, value);
+			long recordId = getRecordId(blCurrentTake.blockId, blCurrentTake.removeIndex);
+			doFireEntryEvent(false, value, recordId);
 			runScheduledOffer: while (lsScheduledOfferActions.size() > 0) {
 				ScheduledOfferAction offerAction = lsScheduledOfferActions.remove(0);
 				ClusterManager.get().deregisterScheduledAction(offerAction);
@@ -1535,21 +1648,22 @@ class BlockingQueueManager extends BaseManager {
 	}
 
 	class Block {
-		final static private int BLOCK_SIZE = 1000;
 		final int blockId;
 		final String name;
 		Address address;
 		int addIndex = 0;
 		int removeIndex = 0;
-		Data[] values = new Data[BLOCK_SIZE];
+		Data[] values = null;
 		int size = 0;
 		boolean full = false;
 
-		public Block(Address address, int blockId, String name) {
+		public Block(Address address, int blockId, String name, boolean keepValues) {
 			super();
 			this.address = address;
 			this.blockId = blockId;
 			this.name = name;
+			if (keepValues)
+				values = new Data[BLOCK_SIZE];
 		}
 
 		public Data peek() {
@@ -1583,9 +1697,11 @@ class BlockingQueueManager extends BaseManager {
 		}
 
 		public int add(Data data) {
-			if (values[addIndex] != null)
-				return -1;
-			values[addIndex] = data;
+			if (values != null) {
+				if (values[addIndex] != null)
+					return -1;
+				values[addIndex] = data;
+			}
 			size++;
 			int addedCurrentIndex = addIndex;
 			addIndex++;

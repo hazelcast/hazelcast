@@ -67,7 +67,7 @@ class TopicManager extends BaseManager {
 		}
 	}
 
-	void doSend(String name, Object msg) {
+	void doPublish(String name, Object msg) {
 		Data dataMsg = null;
 		try {
 			dataMsg = ThreadContext.get().getObjectReaderWriter().writeObject(msg);

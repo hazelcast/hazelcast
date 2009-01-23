@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_PROCESS;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_RESPONSE;
 import static com.hazelcast.impl.Constants.EventOperations.OP_EVENT;
 import static com.hazelcast.impl.Constants.MapTypes.MAP_TYPE_LIST;
@@ -36,6 +37,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,6 +49,7 @@ import sun.security.action.GetLongAction;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IMap;
+import com.hazelcast.impl.ClusterManager.RemotelyProcessable;
 import com.hazelcast.impl.ConcurrentMapManager.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -58,28 +61,31 @@ import com.hazelcast.nio.InvocationQueue.Invocation;
 
 abstract class BaseManager implements Constants {
 
-	
 	protected final static LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
-	
-	protected final static Map<Address, MemberImpl> mapMembers = new HashMap<Address, MemberImpl>(100);
+
+	protected final static Map<Address, MemberImpl> mapMembers = new HashMap<Address, MemberImpl>(
+			100);
 
 	protected final static boolean DEBUG = Build.get().DEBUG;
 
 	protected final static Map<Long, Call> mapCalls = new HashMap<Long, Call>();
 
+	protected final static Map<String, OrderedEventQueue> orderedEventQueues = new HashMap<String, OrderedEventQueue>(
+			10);
+
 	protected final static EventQueue[] eventQueues = new EventQueue[100];
 
 	protected final static Map<Long, StreamResponseHandler> mapStreams = new ConcurrentHashMap<Long, StreamResponseHandler>();
-	
+
 	private static long scheduledActionIdIndex = 0;
 
 	private static long eventId = 1;
-	
+
 	protected final Address thisAddress;
 
 	protected final MemberImpl thisMember;
 
-	protected BaseManager() {  	
+	protected BaseManager() {
 		thisAddress = Node.get().address;
 		thisMember = Node.get().localMember;
 		for (int i = 0; i < 100; i++) {
@@ -186,7 +192,8 @@ abstract class BaseManager implements Constants {
 		return null;
 	}
 
-	protected final MemberImpl getNextMemberBeforeSync(Address address, boolean skipSuperClient, int distance) {
+	protected final MemberImpl getNextMemberBeforeSync(Address address, boolean skipSuperClient,
+			int distance) {
 		return getNextMemberAfter(ClusterManager.get().getMembersBeforeSync(), address,
 				skipSuperClient, distance);
 	}
@@ -201,6 +208,20 @@ abstract class BaseManager implements Constants {
 		return sendData(name, operation, ThreadContext.get().toData(ds), address);
 	}
 
+	public void sendProcessableTo(RemotelyProcessable rp, Address address) {
+		Data value = ThreadContext.get().toData(rp);
+		Invocation inv = obtainServiceInvocation();
+		try {
+			inv.set("remotelyProcess", OP_REMOTELY_PROCESS, null, value);
+			boolean sent = send(inv, address);
+			if (!sent) {
+				inv.returnToContainer();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
 	protected boolean sendData(String name, int operation, Data data, Address address) {
 		Invocation inv = obtainServiceInvocation();
 		inv.name = name;
@@ -227,7 +248,7 @@ abstract class BaseManager implements Constants {
 		}
 		return true;
 	}
-	
+
 	final private void writeInvocation(Connection conn, Invocation inv) {
 		if (!conn.live()) {
 			inv.returnToContainer();
@@ -275,7 +296,7 @@ abstract class BaseManager implements Constants {
 		inv.local = false;
 		inv.operation = OP_RESPONSE;
 		inv.responseType = RESPONSE_FAILURE;
-		boolean sent = send(inv, inv.conn); 
+		boolean sent = send(inv, inv.conn);
 		if (!sent) {
 			inv.returnToContainer();
 		}
@@ -403,6 +424,11 @@ abstract class BaseManager implements Constants {
 
 	void fireMapEvent(Map<Address, Boolean> mapListeners, String name, int eventType,
 			Object record, Data oldValue) {
+		fireMapEvent(mapListeners, name, eventType, record, oldValue, -1);
+	}
+
+	void fireMapEvent(Map<Address, Boolean> mapListeners, String name, int eventType,
+			Object record, Data oldValue, long recordId) {
 		try {
 			// System.out.println(eventType + " FireMapEvent " + record);
 			Map<Address, Boolean> mapTargetListeners = null;
@@ -440,10 +466,43 @@ abstract class BaseManager implements Constants {
 			if (dataRecordValue != null)
 				value = ThreadContext.get().hardCopy(dataRecordValue);
 			EventFireTask eventFireTask = new EventFireTask(eventType, name, key, value,
-					mapTargetListeners);
+					mapTargetListeners, recordId);
 			ExecutorManager.get().executeEventFireTask(eventFireTask);
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
+	}
+
+	static class OrderedEventQueue extends ConcurrentLinkedQueue<EventTask> implements Runnable {
+		long expectedRecordId = -1;
+		Map<Long, EventTask> mapDelayedEventTasks = new HashMap<Long, EventTask>(10);
+		long receivedMessageCount = 0;
+
+		public void run() {
+			EventTask eventTask = poll();
+			if (eventTask == null)
+				return;
+			receivedMessageCount++;
+			if (receivedMessageCount < 10) {
+				expectedRecordId = Math.max(expectedRecordId, eventTask.recordId);
+				
+
+			} else {
+				if (expectedRecordId == eventTask.recordId) {
+					eventTask.run();
+					expectedRecordId++;
+					while (eventTask != null && mapDelayedEventTasks.size() > 0) {
+						eventTask = mapDelayedEventTasks.remove(expectedRecordId);
+						if (eventTask != null) {
+							eventTask.run();
+							expectedRecordId++;
+						}
+					}
+				} else if (eventTask.recordId > expectedRecordId) {
+					mapDelayedEventTasks.put(eventTask.recordId, eventTask);
+					// ignore recordIds less than expected
+				}
+			}
 		}
 	}
 
@@ -459,13 +518,15 @@ abstract class BaseManager implements Constants {
 		protected final Data dataKey;
 		protected final Data dataValue;
 		protected final String name;
+		protected final long recordId;
 
-		public EventTask(int eventType, String name, Data dataKey, Data dataValue) {
+		public EventTask(int eventType, String name, Data dataKey, Data dataValue, long recordId) {
 			super(name);
 			this.eventType = eventType;
 			this.name = name;
 			this.dataValue = dataValue;
 			this.dataKey = dataKey;
+			this.recordId = recordId;
 		}
 
 		public void run() {
@@ -496,29 +557,31 @@ abstract class BaseManager implements Constants {
 		}
 	}
 
-	private void handleMapEvent(Invocation inv) {
-		int eventType = (int) inv.longValue;
-		Data key = inv.doTake(inv.key);
-		Data value = inv.doTake(inv.data);
-		String name = inv.name;
-		Address from = inv.conn.getEndPoint();
-		inv.returnToContainer();
-		enqueueEvent(eventType, name, key, value, from);
-	}
-
-	void enqueueEvent(int eventType, String name, Data eventKey, Data eventValue, Address from) {
-		EventTask eventTask = new EventTask(eventType, name, eventKey, eventValue);
-		int eventQueueIndex = -1;
-		if (eventKey != null) {
-			eventQueueIndex = Math.abs(eventKey.hashCode()) % 100;
+	void enqueueEvent(int eventType, String name, Data eventKey, Data eventValue, Address from,
+			long recordId) {
+		EventTask eventTask = new EventTask(eventType, name, eventKey, eventValue, recordId);
+		System.out.println(name + "  " + recordId);
+		if (name.startsWith("q:t:")) {
+			OrderedEventQueue orderedEventQueue = orderedEventQueues.get(name);
+			if (orderedEventQueue == null) {
+				orderedEventQueue = new OrderedEventQueue();
+				orderedEventQueues.put(name, orderedEventQueue);
+			}
+			orderedEventQueue.offer(eventTask);
+			executeLocally(orderedEventQueue);
 		} else {
-			eventQueueIndex = Math.abs(from.hashCode()) % 100;
+			int eventQueueIndex = -1;
+			if (eventKey != null) {
+				eventQueueIndex = Math.abs(eventKey.hashCode()) % 100;
+			} else {
+				eventQueueIndex = Math.abs(from.hashCode()) % 100;
+			}
+			EventQueue eventQueue = eventQueues[eventQueueIndex];
+			boolean offered = eventQueue.offer(eventTask);
+			if (!offered)
+				throw new RuntimeException("event cannot be offered!");
+			executeLocally(eventQueue);
 		}
-		EventQueue eventQueue = eventQueues[eventQueueIndex];
-		boolean offered = eventQueue.offer(eventTask);
-		if (!offered)
-			throw new RuntimeException("event cannot be offered!");
-		executeLocally(eventQueue);
 	}
 
 	class EventFireTask implements Runnable {
@@ -527,15 +590,17 @@ abstract class BaseManager implements Constants {
 		final Data value;
 		final String name;
 		final int eventType;
+		final long recordId;
 
 		public EventFireTask(int eventType, String name, Data key, Data value,
-				Map<Address, Boolean> mapListeners) {
+				Map<Address, Boolean> mapListeners, long recordId) {
 			super();
 			this.eventType = eventType;
 			this.name = name;
 			this.key = key;
 			this.value = value;
 			this.mapListeners = mapListeners;
+			this.recordId = recordId;
 		}
 
 		public void run() {
@@ -555,7 +620,7 @@ abstract class BaseManager implements Constants {
 							Data eventValue = null;
 							if (includeValue)
 								eventValue = ThreadContext.get().hardCopy(value);
-							enqueueEvent(eventType, name, eventKey, eventValue, address);
+							enqueueEvent(eventType, name, eventKey, eventValue, address, recordId);
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
@@ -569,6 +634,7 @@ abstract class BaseManager implements Constants {
 								eventValue = value;
 							inv.set(name, OP_EVENT, eventKey, eventValue);
 							inv.longValue = eventType;
+							inv.recordId = recordId;
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
@@ -652,7 +718,7 @@ abstract class BaseManager implements Constants {
 	public MemberImpl getLocalMember() {
 		return ClusterManager.get().getLocalMember();
 	}
-	
+
 	long idGen = 0;
 
 	public long addCall(Call call) {
@@ -811,6 +877,15 @@ abstract class BaseManager implements Constants {
 				responses.add(Boolean.FALSE);
 			}
 		}
+		
+		void handleLongNoneRedoResponse(Invocation inv) {
+			removeCall(getId());
+			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+				responses.add(Long.valueOf(inv.longValue));
+			} else {
+				throw new RuntimeException("handleLongNoneRedoResponse.responseType " + inv.responseType);
+			}
+		}
 
 		void handleObjectNoneRedoResponse(Invocation inv) {
 			removeCall(getId());
@@ -822,7 +897,7 @@ abstract class BaseManager implements Constants {
 					responses.add(oldValue);
 				}
 			} else {
-				throw new RuntimeException("responseType " + inv.responseType);
+				throw new RuntimeException("handleObjectNoneRedoResponse.responseType " + inv.responseType);
 			}
 		}
 	}
@@ -831,6 +906,13 @@ abstract class BaseManager implements Constants {
 		@Override
 		void handleNoneRedoResponse(Invocation inv) {
 			handleBooleanNoneRedoResponse(inv);
+		}
+	}
+	
+	abstract class LongOp extends TargetAwareOp {
+		@Override
+		void handleNoneRedoResponse(Invocation inv) {
+			handleLongNoneRedoResponse(inv);
 		}
 	}
 

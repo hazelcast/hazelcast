@@ -40,6 +40,8 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import sun.security.action.GetBooleanAction;
+
 import com.hazelcast.impl.ClusterManager.JoinRequest;
 
 public class Config {
@@ -68,12 +70,20 @@ public class Config {
 
 	public ExecutorConfig executorConfig = new ExecutorConfig();
 
+	public Map<String, TopicConfig> mapTopicConfigs = new HashMap<String, TopicConfig>();
+
 	public Map<String, QConfig> mapQConfigs = new HashMap<String, QConfig>();
 
 	public class QConfig {
 		public String name;
 
 		public int maxSizePerJVM = Integer.MAX_VALUE;
+	}
+	
+	public class TopicConfig {		
+		public String name;
+		
+		public boolean globalOrderingEnabled = false;
 	}
 
 	public class Join {
@@ -203,6 +213,8 @@ public class Config {
 					handleExecutor(node);
 				} else if (node.getNodeName().equals("queue")) {
 					handleQueue(node);
+				}else if (node.getNodeName().equals("topic")) {
+					handleTopic(node);
 				}
 			}
 		} catch (Exception e) {
@@ -224,6 +236,20 @@ public class Config {
 		}
 
 	}
+	
+	public TopicConfig getTopicConfig(String name) {
+		Set<String> tNames = mapTopicConfigs.keySet();
+		for (String pattern : tNames) {
+			if (nameMatches(name, pattern)) {
+				return mapTopicConfigs.get(pattern);
+			}
+		} 
+		TopicConfig defaultConfig = mapTopicConfigs.get("default");
+		if (defaultConfig == null) {
+			defaultConfig = new TopicConfig();
+		}
+		return defaultConfig;
+	}
 
 	public QConfig getQConfig(String name) {
 		Set<String> qNames = mapQConfigs.keySet();
@@ -232,7 +258,11 @@ public class Config {
 				return mapQConfigs.get(pattern);
 			}
 		}
-		return mapQConfigs.get("default");
+		QConfig defaultConfig = mapQConfigs.get("default");
+		if (defaultConfig == null) {
+			defaultConfig = new QConfig();
+		}
+		return defaultConfig;
 	}
 
 	private boolean nameMatches(String name, String pattern) {
@@ -396,7 +426,7 @@ public class Config {
 			}  
 		} 
 	}
-
+	
 	private void handleQueue(org.w3c.dom.Node node) {
 		Node attName = node.getAttributes().getNamedItem("name");
 		String name = getTextContent(attName);
@@ -412,6 +442,22 @@ public class Config {
 			}
 		}
 		mapQConfigs.put(name, qConfig);
+	}
+
+	private void handleTopic(org.w3c.dom.Node node) {
+		Node attName = node.getAttributes().getNamedItem("name");
+		String name = getTextContent(attName);
+		TopicConfig tConfig = new TopicConfig();
+		tConfig.name = name;
+		NodeList nodelist = node.getChildNodes();
+		for (int i = 0; i < nodelist.getLength(); i++) {
+			org.w3c.dom.Node n = nodelist.item(i);
+			String value = getTextContent(n).trim();
+			if (n.getNodeName().equalsIgnoreCase("global-ordering-enabled")) { 
+				tConfig.globalOrderingEnabled = checkTrue(value);
+			}
+		}
+		mapTopicConfigs.put(name, tConfig);
 	}
 
 	private void handleExecutor(org.w3c.dom.Node node) {

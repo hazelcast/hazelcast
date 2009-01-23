@@ -129,6 +129,11 @@ public interface Constants {
 		public static final int OP_B_TXN_BACKUP_POLL = 413;
 
 		public static final int OP_B_TXN_COMMIT = 414;
+		
+		public static final int OP_B_PUBLISH = 415;
+		
+		public static final int OP_B_ADD_TOPIC_LISTENER = 416;
+				
 	}
 
 	interface ConcurrentMapOperations {

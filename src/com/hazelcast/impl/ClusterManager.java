@@ -407,20 +407,6 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		}
 	}
 
-	public void sendProcessableTo(RemotelyProcessable rp, Address address) {
-		Data value = ThreadContext.get().toData(rp);
-		Invocation inv = obtainServiceInvocation();
-		try {
-			inv.set("remotelyProcess", OP_REMOTELY_PROCESS, null, value);
-			boolean sent = send(inv, address);
-			if (!sent) {
-				inv.returnToContainer();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
 	public void sendProcessableToAll(RemotelyProcessable rp, boolean processLocally) {
 		if (processLocally) {
 			rp.process();

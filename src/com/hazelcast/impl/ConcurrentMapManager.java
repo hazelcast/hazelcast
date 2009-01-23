@@ -1046,7 +1046,7 @@ class ConcurrentMapManager extends BaseManager {
 		}
 		if (isMaster() && !from.equals(thisAddress)) {
 			// I am the master and I got migration complete from a member
-			// I will inform others, in case they didnot get it yet.
+			// I will inform others, in case they did not get it yet.
 			for (MemberImpl member : lsMembers) {
 				if (!member.localMember() || !from.equals(member.getAddress())) {
 					Invocation inv = obtainServiceInvocation();

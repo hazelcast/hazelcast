@@ -64,8 +64,9 @@ class ListenerManager extends BaseManager {
 		Data value = inv.doTake(inv.data);
 		String name = inv.name;
 		Address from = inv.conn.getEndPoint();
+		long recordId = inv.recordId;
 		inv.returnToContainer();
-		enqueueEvent(eventType, name, key, value, from);
+		enqueueEvent(eventType, name, key, value, from, recordId);
 	}
 
 	void handleAddRemoveListener(boolean add, Invocation inv) {
@@ -142,13 +143,7 @@ class ListenerManager extends BaseManager {
 						if (member.localMember()) {
 							handleListenerRegisterations(add, name, key, thisAddress, includeValue);
 						} else {
-							Invocation inv = obtainServiceInvocation();
-							inv.set(name, invocationProcess, key, null);
-							inv.longValue = (includeValue) ? 1 : 0;
-							boolean sent = send(inv, member.getAddress());
-							if (!sent) {
-								inv.returnToContainer();
-							}
+							sendAddRemoveListener(member.getAddress(), add, name, key, includeValue); 
 						}
 					}
 				}
@@ -157,8 +152,22 @@ class ListenerManager extends BaseManager {
 			}
 		}
 	}
+	
+	public void sendAddRemoveListener(Address toAddress, boolean add, String name, Data key, boolean includeValue) {
+		Invocation inv = obtainServiceInvocation();
+		try {
+			inv.set(name, (add) ? OP_LISTENER_ADD : OP_LISTENER_REMOVE, key, null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		inv.longValue = (includeValue) ? 1 : 0;
+		boolean sent = send(inv, toAddress);
+		if (!sent) {
+			inv.returnToContainer();
+		}
+	}
 
-	public void addMapListener(String name, Object listener, Object key, boolean includeValue,
+	public void addListener(String name, Object listener, Object key, boolean includeValue,
 			int listenerType) {
 		/**
 		 * check if already registered send this address to the key owner as a
@@ -196,7 +205,7 @@ class ListenerManager extends BaseManager {
 		lsListeners.add(listenerItem);
 	}
 
-	public void removeMapListener(String name, Object listener, Object key) {
+	public void removeListener(String name, Object listener, Object key) {
 		/**
 		 * send this address to the key owner as a listener add this listener to
 		 * the local listeners map

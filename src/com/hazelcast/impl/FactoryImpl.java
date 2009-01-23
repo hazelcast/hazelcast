@@ -207,7 +207,7 @@ public class FactoryImpl implements Constants {
 			if (name.startsWith("q:")) {
 				proxy = proxies.get(name);
 				if (proxy == null) {
-					proxy = new BProxy(name);
+					proxy = new QProxy(name);
 					proxies.put(name, proxy);
 				}
 			} else if (name.startsWith("t:")) {
@@ -302,23 +302,40 @@ public class FactoryImpl implements Constants {
 
 	static class TopicProxy implements ITopic {
 		String name;
+		QProxy qProxy = null; // for global ordering support
 
 		public TopicProxy(String name) {
 			super();
 			this.name = name;
+			if (Config.get().getTopicConfig(getName()).globalOrderingEnabled) {
+				qProxy = new QProxy("q:" + name); 
+			}
 		}
 
-		public void publish(Object msg) {
-			TopicManager.get().doSend(name, msg);
+		public void publish(Object msg) { 
+			if (qProxy == null) {
+				TopicManager.get().doPublish(name, msg);
+			}else {
+				qProxy.publish (msg);
+			}
 		}
 
-		public void addMessageListener(MessageListener listener) {
-			ListenerManager.get().addMapListener(name, listener, null, true,
-					ListenerManager.LISTENER_TYPE_MESSAGE);
+		public void addMessageListener(MessageListener listener) { 
+			if (qProxy == null) {
+				ListenerManager.get().addListener(name, listener, null, true,
+						ListenerManager.LISTENER_TYPE_MESSAGE);
+			} else {
+				ListenerManager.get().addListener(qProxy.name, listener, null, true,
+						ListenerManager.LISTENER_TYPE_MESSAGE);
+			} 
 		}
 
-		public void removeMessageListener(MessageListener listener) {
-			ListenerManager.get().removeMapListener(name, listener, null);
+		public void removeMessageListener(MessageListener listener) { 
+			if (qProxy == null) {
+				ListenerManager.get().removeListener(name, listener, null);
+			} else {
+				ListenerManager.get().removeListener(qProxy.name, listener, null);
+			}  
 		}
 
 		@Override
@@ -328,7 +345,8 @@ public class FactoryImpl implements Constants {
 
 		public String getName() {
 			return name.substring(2);
-		}
+		} 
+		 
 	}
 
 	static class ListProxy extends CollectionProxy implements IList {
@@ -451,12 +469,17 @@ public class FactoryImpl implements Constants {
 		}
 	}
 
-	public static class BProxy extends AbstractQueue implements Constants, IQueue, BlockingQueue {
+	public static class QProxy extends AbstractQueue implements Constants, IQueue, BlockingQueue {
 
 		String name = null;
 
-		public BProxy(String qname) {
+		public QProxy(String qname) {
 			this.name = qname;
+		}
+		
+		public boolean publish (Object obj) {
+			Offer offer = ThreadContext.get().getOffer();
+			return offer.publish(name, obj, 0, ThreadContext.get().getTxnId());
 		}
 
 		public boolean offer(Object obj) {
@@ -518,12 +541,12 @@ public class FactoryImpl implements Constants {
 		}
 
 		public void addItemListener(ItemListener listener, boolean includeValue) {
-			ListenerManager.get().addMapListener(name, listener, null, includeValue,
+			ListenerManager.get().addListener(name, listener, null, includeValue,
 					ListenerManager.LISTENER_TYPE_ITEM);
 		}
 
 		public void removeItemListener(ItemListener listener) {
-			ListenerManager.get().removeMapListener(name, listener, null);
+			ListenerManager.get().removeListener(name, listener, null);
 		}
 
 		public String getName() {
@@ -659,13 +682,13 @@ public class FactoryImpl implements Constants {
 		void addGenericListener(Object listener, Object key, boolean includeValue, int listenerType) {
 			if (listener == null)
 				throw new IllegalArgumentException("Listener cannot be null");
-			ListenerManager.get().addMapListener(name, listener, key, includeValue, listenerType);
+			ListenerManager.get().addListener(name, listener, key, includeValue, listenerType);
 		}
 
 		public void removeGenericListener(Object listener, Object key) {
 			if (listener == null)
 				throw new IllegalArgumentException("Listener cannot be null");
-			ListenerManager.get().removeMapListener(name, listener, key);
+			ListenerManager.get().removeListener(name, listener, key);
 		}
 
 		public void addEntryListener(EntryListener listener, boolean includeValue) {
