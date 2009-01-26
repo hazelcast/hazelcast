@@ -60,7 +60,7 @@ import com.hazelcast.nio.InvocationQueue.Invocation;
 class BlockingQueueManager extends BaseManager {
 	private Request remoteReq = new Request();
 	private final static BlockingQueueManager instance = new BlockingQueueManager();
-	private final Map<String, Q> mapBlockingQueues = new HashMap<String, Q>(10);
+	private final Map<String, Q> mapQueues = new HashMap<String, Q>(10);
 	private final Map<Long, List<Data>> mapTxnPolledElements = new HashMap<Long, List<Data>>(10);
 	private static final int BLOCK_SIZE = 1000;
 
@@ -182,7 +182,7 @@ class BlockingQueueManager extends BaseManager {
 		}
 		Address addressNewOwner = (member == null) ? thisAddress : member.getAddress();
 
-		Collection<Q> queues = mapBlockingQueues.values();
+		Collection<Q> queues = mapQueues.values();
 		for (Q q : queues) {
 			List<Block> lsBlocks = q.lsBlocks;
 			for (Block block : lsBlocks) {
@@ -241,7 +241,7 @@ class BlockingQueueManager extends BaseManager {
 
 	public void syncForAdd() {
 		if (isMaster()) {
-			Collection<Q> queues = mapBlockingQueues.values();
+			Collection<Q> queues = mapQueues.values();
 			for (Q q : queues) {
 				List<Block> lsBlocks = q.lsBlocks;
 				for (Block block : lsBlocks) {
@@ -253,7 +253,7 @@ class BlockingQueueManager extends BaseManager {
 				}
 			}
 		}
-		Collection<Q> queues = mapBlockingQueues.values();
+		Collection<Q> queues = mapQueues.values();
 		for (Q q : queues) {
 			List<Block> lsBlocks = q.lsBlocks;
 			for (Block block : lsBlocks) {
@@ -282,7 +282,7 @@ class BlockingQueueManager extends BaseManager {
 	}
 
 	void doResetBlockSizes() {
-		Collection<Q> queues = mapBlockingQueues.values();
+		Collection<Q> queues = mapQueues.values();
 		for (Q q : queues) {
 			// q.printStack();
 			List<Block> lsBlocks = q.lsBlocks;
@@ -573,10 +573,10 @@ class BlockingQueueManager extends BaseManager {
 	public Q getQ(String name) {
 		if (name == null)
 			return null;
-		Q q = mapBlockingQueues.get(name);
+		Q q = mapQueues.get(name);
 		if (q == null) {
 			q = new Q(name);
-			mapBlockingQueues.put(name, q);
+			mapQueues.put(name, q);
 		}
 		return q;
 	}
@@ -703,7 +703,7 @@ class BlockingQueueManager extends BaseManager {
 		Object next = null;
 		boolean hasNextCalled = false;
 
-		public void set(String name) {
+		public void set(String name) { 
 			synchronized (QIterator.this) {
 				this.name = name;
 				enqueueAndReturn(QIterator.this);
@@ -954,7 +954,7 @@ class BlockingQueueManager extends BaseManager {
 
 		@Override
 		void handleNoneRedoResponse(Invocation inv) {
-			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+			if (request.operation == OP_B_OFFER && inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
 				if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(
 						inv.conn.getEndPoint())) {
 					int itemIndex = (int) inv.longValue;
@@ -1048,7 +1048,7 @@ class BlockingQueueManager extends BaseManager {
 		if (q.blCurrentPut == null) {
 			q.setCurrentPut();
 		}
-		req.recordId = q.getRecordId(q.blCurrentPut.blockId, q.blCurrentPut.addIndex);
+		req.recordId = q.getRecordId(q.blCurrentPut.blockId, q.blCurrentPut.addIndex); 
 	}
 
 	public static class TopicListenerRegistration extends AbstractRemotelyProcessable {
@@ -1461,6 +1461,7 @@ class BlockingQueueManager extends BaseManager {
 		int publish(Request req) {
 			int addIndex = blCurrentPut.add(req.value);
 			long recordId = getRecordId(blCurrentPut.blockId, addIndex);
+			System.out.println("publish fireEntry with recordId " + recordId);
 			doFireEntryEvent(true, req.value, recordId);
 
 			if (blCurrentPut.isFull()) {
@@ -1678,6 +1679,9 @@ class BlockingQueueManager extends BaseManager {
 		}
 
 		public Data get(int index) {
+			if (values == null) {
+				System.out.println("Name " + name);
+			}
 			return values[index];
 		}
 
@@ -1700,8 +1704,8 @@ class BlockingQueueManager extends BaseManager {
 			if (values != null) {
 				if (values[addIndex] != null)
 					return -1;
-				values[addIndex] = data;
-			}
+				values[addIndex] = data;				
+			}	
 			size++;
 			int addedCurrentIndex = addIndex;
 			addIndex++;

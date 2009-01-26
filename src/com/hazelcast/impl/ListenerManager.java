@@ -58,7 +58,7 @@ class ListenerManager extends BaseManager {
 			throw new RuntimeException("Unknown operation " + inv.operation);
 	}
 
-	private void handleEvent(Invocation inv) {
+	private final void handleEvent(Invocation inv) {
 		int eventType = (int) inv.longValue;
 		Data key = inv.doTake(inv.key);
 		Data value = inv.doTake(inv.data);
@@ -69,7 +69,7 @@ class ListenerManager extends BaseManager {
 		enqueueEvent(eventType, name, key, value, from, recordId);
 	}
 
-	void handleAddRemoveListener(boolean add, Invocation inv) {
+	private final void handleAddRemoveListener(boolean add, Invocation inv) {
 		Data key = (inv.key != null) ? inv.doTake(inv.key) : null;
 		boolean returnValue = (inv.longValue == 1) ? true : false;
 		String name = inv.name;
@@ -94,7 +94,7 @@ class ListenerManager extends BaseManager {
 	 * @param name
 	 * @param key
 	 */
-	void registerListener(String name, Object key, boolean add, boolean includeValue) {
+	private void registerListener(String name, Object key, boolean add, boolean includeValue) {
 		Data dataKey = null;
 		if (key != null) {
 			try {
@@ -143,7 +143,7 @@ class ListenerManager extends BaseManager {
 						if (member.localMember()) {
 							handleListenerRegisterations(add, name, key, thisAddress, includeValue);
 						} else {
-							sendAddRemoveListener(member.getAddress(), add, name, key, includeValue); 
+							sendAddRemoveListener(member.getAddress(), add, name, key, includeValue);
 						}
 					}
 				}
@@ -152,8 +152,9 @@ class ListenerManager extends BaseManager {
 			}
 		}
 	}
-	
-	public void sendAddRemoveListener(Address toAddress, boolean add, String name, Data key, boolean includeValue) {
+
+	public void sendAddRemoveListener(Address toAddress, boolean add, String name, Data key,
+			boolean includeValue) {
 		Invocation inv = obtainServiceInvocation();
 		try {
 			inv.set(name, (add) ? OP_LISTENER_ADD : OP_LISTENER_REMOVE, key, null);
@@ -169,26 +170,34 @@ class ListenerManager extends BaseManager {
 
 	public void addListener(String name, Object listener, Object key, boolean includeValue,
 			int listenerType) {
+		addListener(name, listener, key, includeValue, listenerType, true);
+	}
+
+	public void addListener(String name, Object listener, Object key, boolean includeValue,
+			int listenerType, boolean shouldRemotelyRegister) {
 		/**
 		 * check if already registered send this address to the key owner as a
 		 * listener add this listener to the local listeners map
 		 */
-		boolean remotelyRegister = true;
-		for (ListenerItem listenerItem : lsListeners) {
-			if (remotelyRegister) {
-				if (listenerItem.listener == listener) {
-					if (listenerItem.name.equals(name)) {
-						if (key == null) {
-							if (listenerItem.key == null) {
-								if (!includeValue || listenerItem.includeValue == includeValue) {
-									remotelyRegister = false;
-								}
-							}
-						} else {
-							if (listenerItem.key != null) {
-								if (listenerItem.key.equals(key)) {
+		if (shouldRemotelyRegister) {
+			boolean remotelyRegister = true;
+			for (ListenerItem listenerItem : lsListeners) {
+				if (remotelyRegister) {
+					if (listenerItem.listener == listener) {
+						if (listenerItem.name.equals(name)) {
+							if (key == null) {
+								if (listenerItem.key == null) {
 									if (!includeValue || listenerItem.includeValue == includeValue) {
 										remotelyRegister = false;
+									}
+								}
+							} else {
+								if (listenerItem.key != null) {
+									if (listenerItem.key.equals(key)) {
+										if (!includeValue
+												|| listenerItem.includeValue == includeValue) {
+											remotelyRegister = false;
+										}
 									}
 								}
 							}
@@ -196,9 +205,9 @@ class ListenerManager extends BaseManager {
 					}
 				}
 			}
-		}
-		if (remotelyRegister) {
-			registerListener(name, key, true, includeValue);
+			if (remotelyRegister) {
+				registerListener(name, key, true, includeValue);
+			}
 		}
 		ListenerItem listenerItem = new ListenerItem(name, key, listener, includeValue,
 				listenerType);

@@ -62,6 +62,9 @@ public class EntryEvent extends EventObject {
 
 	@Override
 	public Object getSource() {
+		if (name.startsWith("q:t:")) {
+			return FactoryImpl.getProxy(name.substring(2));
+		}
 		return FactoryImpl.getProxy(name);
 	}
 

@@ -52,6 +52,7 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.BaseManager.Processable;
+import com.hazelcast.impl.BlockingQueueManager.AddTopicListener;
 import com.hazelcast.impl.BlockingQueueManager.Offer;
 import com.hazelcast.impl.BlockingQueueManager.Poll;
 import com.hazelcast.impl.BlockingQueueManager.QIterator;
@@ -325,8 +326,10 @@ public class FactoryImpl implements Constants {
 				ListenerManager.get().addListener(name, listener, null, true,
 						ListenerManager.LISTENER_TYPE_MESSAGE);
 			} else {
+				AddTopicListener atl = BlockingQueueManager.get(). new AddTopicListener();
+				atl.add(qProxy.name, null, 0, -1);
 				ListenerManager.get().addListener(qProxy.name, listener, null, true,
-						ListenerManager.LISTENER_TYPE_MESSAGE);
+						ListenerManager.LISTENER_TYPE_MESSAGE, false);				
 			} 
 		}
 

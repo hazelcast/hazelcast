@@ -514,7 +514,6 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 			Long executionId = executionIds.take();
 			DistributedTask dtask = task;
 			InnerFutureTask inner = (InnerFutureTask) dtask.getInner();
-
 			Callable callable = inner.getCallable();
 			Data callableData = ThreadContext.get().toData(callable);
 			DistributedExecutorAction action = new DistributedExecutorAction(executionId, dtask,
@@ -525,10 +524,6 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 			e.printStackTrace();
 		}
 		return null;
-	}
-
-	public void executeEventFireTask(EventFireTask eventFireTask) {
-		eventFireExecutor.execute(eventFireTask);
 	}
 
 	public ScheduledExecutorService getScheduledExecutorService() {

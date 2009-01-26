@@ -78,8 +78,8 @@ class ConcurrentMapManager extends BaseManager {
 	private Request remoteReq = new Request();
 	private Map<Integer, Block> mapBlocks = new HashMap<Integer, Block>(BLOCK_COUNT);
 	private Map<String, CMap> maps = new HashMap<String, CMap>(10);
-	long maxId = 0;
-	Map<Long, Record> mapRecordsById = new HashMap<Long, Record>();
+	private long maxId = 0;
+	private Map<Long, Record> mapRecordsById = new HashMap<Long, Record>();
 
 	public void handle(Invocation inv) {
 		if (inv.operation == OP_CMAP_GET) {
