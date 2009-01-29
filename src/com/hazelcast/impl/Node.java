@@ -290,7 +290,7 @@ public class Node {
 		outThread.setPriority(8);
 		lsThreads.add(outThread);
 
-		final Thread clusterServiceThread = new Thread(ClusterService.get(), "ClusterService");
+		final Thread clusterServiceThread = new Thread(ClusterService.get(), "ServiceThread");
 		clusterServiceThread.start();
 		clusterServiceThread.setPriority(7);
 		lsThreads.add(clusterServiceThread);
@@ -312,7 +312,7 @@ public class Node {
 	}
 
 	public void startMulticastService() {
-		final Thread multicastServiceThread = new Thread(MulticastService.get(), "JoinService");
+		final Thread multicastServiceThread = new Thread(MulticastService.get(), "MulticastThread");
 		multicastServiceThread.start();
 		multicastServiceThread.setPriority(6);
 	}

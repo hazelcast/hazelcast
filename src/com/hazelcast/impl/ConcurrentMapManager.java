@@ -1039,10 +1039,6 @@ class ConcurrentMapManager extends BaseManager {
 			Collection<Record> colRecords = mapRecordsById.values();
 			for (Record rec : colRecords) {
 				Block block = mapBlocks.get(rec.getBlockId());
-				if (rec.getId() == 972) {
-					System.out.println("972 block " + block);
-					System.out.println("972 record " + rec);
-				}
 				if (block.owner.equals(thisAddress)) {
 					if (block.isMigrating()) {
 						// migrate
@@ -1085,9 +1081,6 @@ class ConcurrentMapManager extends BaseManager {
 			for (Long recordId : recordsToRemove) {
 				Record rec = getRecordById(recordId);
 				if (rec != null) {
-					if (rec.getId() == 972) {
-						System.out.println("972 removing " + rec);
-					}
 					CMap cmap = getMap(rec.name);
 					cmap.removeRecord(rec.key);
 					removed++;
@@ -1118,7 +1111,7 @@ class ConcurrentMapManager extends BaseManager {
 	}
 
 	private void doMigrationComplete(Address from) {
-		System.out.println("Migration Compelete from " + from);
+		logger.log (Level.FINEST, "Migration Compelete from " + from);
 		Collection<Block> blocks = mapBlocks.values();
 		for (Block block : blocks) {
 			if (from.equals(block.owner)) {
