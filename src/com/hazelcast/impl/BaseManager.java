@@ -62,7 +62,7 @@ import com.hazelcast.nio.InvocationQueue.Invocation;
 abstract class BaseManager implements Constants {
 
 	protected final static boolean zeroBackup = false;
-	
+
 	protected static Logger logger = Logger.getLogger(BaseManager.class.getName());
 
 	protected final static LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
@@ -88,8 +88,6 @@ abstract class BaseManager implements Constants {
 	protected final Address thisAddress;
 
 	protected final MemberImpl thisMember;
-	
-	
 
 	long idGen = 0;
 
@@ -805,6 +803,32 @@ abstract class BaseManager implements Constants {
 		}
 
 		@Override
+		public void doOp() {
+			responses.clear();
+			enqueueAndReturn(ResponseQueueCall.this);
+		}
+
+		@Override
+		public Object getResult() {
+			Object result = null;
+			try {
+				result = responses.take();
+				if (result == OBJECT_REDO) {
+					Thread.sleep(2000);
+					// if (DEBUG) {
+					// log(getId() + " Redoing.. " + this);
+					// }
+					request.redoCount++;
+					doOp();
+					return getResult();
+				}
+			} catch (final Exception e) {
+				e.printStackTrace(System.out);
+			}
+			return result;
+		}
+
+		@Override
 		public void redo() {
 			removeCall(getId());
 			responses.clear();
@@ -845,37 +869,35 @@ abstract class BaseManager implements Constants {
 		}
 	}
 
+	class CheckAllConnectionsOp extends ResponseQueueCall {
+
+		public boolean check() {
+			doOp();
+			return getResultAsBoolean();
+		}
+
+		public void process() {
+			for (MemberImpl member : lsMembers) {
+				if (!member.localMember()) {
+					Connection conn = ConnectionManager.get().getConnection(member.getAddress());
+					if (conn == null || !conn.live()) {
+						setResult(OBJECT_REDO);
+						return;
+					}
+				}
+			}
+			setResult(Boolean.TRUE);
+		}
+
+		public void handleResponse(Invocation inv) {
+		}
+	}
+
 	abstract class TargetAwareOp extends ResponseQueueCall {
 
 		Address target = null;
 
 		public TargetAwareOp() {
-		}
-
-		@Override
-		public void doOp() {
-			responses.clear();
-			enqueueAndReturn(TargetAwareOp.this);
-		}
-
-		@Override
-		public Object getResult() {
-			Object result = null;
-			try {
-				result = responses.take();
-				if (result == OBJECT_REDO) {
-					Thread.sleep(2000);
-					// if (DEBUG) {
-					// log(getId() + " Redoing.. " + this);
-					// }
-					request.redoCount++;
-					doOp();
-					return getResult();
-				}
-			} catch (final Exception e) {
-				e.printStackTrace(System.out);
-			}
-			return result;
 		}
 
 		public void handleResponse(final Invocation inv) {

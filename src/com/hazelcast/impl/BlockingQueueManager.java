@@ -1195,11 +1195,8 @@ class BlockingQueueManager extends BaseManager {
 
 	public class Q {
 		String name;
-
 		int size = 0;
-
 		List<Block> lsBlocks = new ArrayList<Block>(10);
-
 		Block blCurrentPut = null;
 		Block blCurrentTake = null;
 		int latestAddedBlock = -1;
@@ -1293,7 +1290,6 @@ class BlockingQueueManager extends BaseManager {
 				request.value = null;
 				returnScheduledAsSuccess(request);
 			}
-
 		}
 
 		public class ScheduledOfferAction extends ScheduledAction {
@@ -1556,8 +1552,7 @@ class BlockingQueueManager extends BaseManager {
 				return false;
 			}
 			if (add) {
-				boolean added = block.add(addIndex, data);
-				// System.out.println(addIndex + " backup added " + added);
+				boolean added = block.add(addIndex, data); 
 				return true;
 			} else {
 				if (block.size() > 0) {

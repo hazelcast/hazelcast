@@ -599,7 +599,7 @@ class ConcurrentMapManager extends BaseManager {
 							inv.conn.getEndPoint())) {
 						// so I am the backup so
 						CMap cmap = getMap(request.name);
-						// inv endpoint is the actuall owner of the
+						// inv endpoint is the actual owner of the
 						// record. so set it before backup
 						request.caller = inv.conn.getEndPoint();
 						cmap.backupAdd(request);
@@ -690,12 +690,36 @@ class ConcurrentMapManager extends BaseManager {
 
 	public class MSize extends AllOp {
 		int total = 0;
+		volatile boolean shouldRedo = false;
 
 		public int getSize(String name) {
+			reset();
+			shouldRedo = false;
 			total = 0;
 			setLocal(OP_CMAP_SIZE, name, null, null, 0, -1, -1);
 			doOp();
+			if (shouldRedo) {				 
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				return getSize (name);
+			}
 			return total;
+		}
+		
+		@Override
+		public void process() {
+			Collection<Block> blocks = mapBlocks.values();
+			for (Block block : blocks) {
+				if (block.isMigrating()) {
+					shouldRedo = true;
+					complete(true);
+					return;
+				}
+			}
+			super.process();
 		}
 
 		@Override
@@ -937,6 +961,10 @@ class ConcurrentMapManager extends BaseManager {
 
 		public void run() {
 			logger.log(Level.FINEST, "Migration started!");
+			
+			CheckAllConnectionsOp checkAllConnectionsOp = new CheckAllConnectionsOp();
+			checkAllConnectionsOp.check();
+			
 			for (final Long recordId : recordsToMigrate) {
 				MMigrate mmigrate = new MMigrate();
 				boolean migrated = mmigrate.migrate(recordId);
@@ -1090,13 +1118,14 @@ class ConcurrentMapManager extends BaseManager {
 	}
 
 	private void doMigrationComplete(Address from) {
+		System.out.println("Migration Compelete from " + from);
 		Collection<Block> blocks = mapBlocks.values();
 		for (Block block : blocks) {
 			if (from.equals(block.owner)) {
 				if (block.isMigrating()) {
 					block.owner = block.migrationAddress;
 					block.migrationAddress = null;
-				}
+				} 
 			}
 		}
 		if (isMaster() && !from.equals(thisAddress)) {
@@ -1158,17 +1187,13 @@ class ConcurrentMapManager extends BaseManager {
 		return sent;
 	}
 
-	class MBackupOp extends TargetAwareOp {
+	class MBackupOp extends ResponseQueueCall {
 		volatile Record record;
 
 		public boolean backup(Record record) {
 			this.record = record;
 			doOp();
 			return getResultAsBoolean();
-		}
-
-		@Override
-		void doLocalOp() {
 		}
 
 		public void process() {
@@ -1189,8 +1214,7 @@ class ConcurrentMapManager extends BaseManager {
 			}
 		}
 
-		@Override
-		void setTarget() {
+		public void handleResponse(Invocation inv) {
 		}
 	}
 
@@ -1606,7 +1630,8 @@ class ConcurrentMapManager extends BaseManager {
 			Collection<Record> records = mapRecords.values();
 			for (Record record : records) {
 				if (record.value != null) {
-					if (record.owner.equals(thisAddress)) {
+					Block block = mapBlocks.get(record.blockId);
+					if (thisAddress.equals(block.owner)) {
 						size++;
 						size += record.getCopyCount();
 					}
