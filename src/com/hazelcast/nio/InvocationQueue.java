@@ -294,7 +294,7 @@ public class InvocationQueue {
 				key.size = bbSizes.getInt();
 				data.size = bbSizes.getInt();
 			}
-			// System.out.println(sizeRead + " size " + bbSizes);
+			// logger.log(Level.INFO,sizeRead + " size " + bbSizes);
 			if (sizeRead) {
 				while (bb.hasRemaining() && bbHeader.hasRemaining()) {
 					BufferUtil.copy(bb, bbHeader);
@@ -613,11 +613,11 @@ public class InvocationQueue {
 					ObjectInputStream in = new ObjectInputStream(bbis);
 					result = in.readUnshared();
 				} else if (type == 45) {
-					// System.out.println("reading " + inv.data);
+					// logger.log(Level.INFO,"reading " + inv.data);
 					String className = bbis.readUTF();
 					DataSerializable ds = (DataSerializable) Class.forName(className).newInstance();
 					ds.readData(bbis);
-					// System.out.println("Object " + ds);
+					// logger.log(Level.INFO,"Object " + ds);
 					if (bbis.readInt() != STREAM_END)
 						throw new RuntimeException("Unproper stream-end!");
 					result = ds;

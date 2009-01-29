@@ -39,6 +39,7 @@ import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_REMOV
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_REPLACE_IF_NOT_NULL;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_SIZE;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_UNLOCK;
+import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
 
 import java.io.DataInput;
@@ -53,12 +54,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
 import com.hazelcast.impl.FactoryImpl.IProxy;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.InvocationQueue.Data;
 import com.hazelcast.nio.InvocationQueue.Invocation;
@@ -406,18 +410,18 @@ class ConcurrentMapManager extends BaseManager {
 			target = thisAddress;
 			Record record = getRecordById(request.recordId);
 			if (record == null) {
+				logger.log(Level.FINEST, "record is null " + request.recordId);
 				return;
 			} else {
 				Block block = mapBlocks.get(record.blockId);
 				if (block.migrationAddress == null) {
+					logger.log(Level.FINEST, "not migrating " + request.recordId);
 					return;
 				} else {
 					target = block.migrationAddress;
 				}
 				setLocal(OP_CMAP_MIGRATE_RECORD, record.name, record.key, record.value, 0, -1,
 						record.id);
-				CMap cmap = getMap(record.name);
-				cmap.removeRecord(record.key);
 			}
 		}
 
@@ -590,14 +594,16 @@ class ConcurrentMapManager extends BaseManager {
 		@Override
 		public void handleNoneRedoResponse(Invocation inv) {
 			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-				if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(
-						inv.conn.getEndPoint())) {
-					// so I am the backup so
-					CMap cmap = getMap(request.name);
-					// inv endpoint is the actuall owner of the
-					// record. so set it before backup
-					request.caller = inv.conn.getEndPoint();
-					cmap.backupAdd(request);
+				if (!zeroBackup) {
+					if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(
+							inv.conn.getEndPoint())) {
+						// so I am the backup so
+						CMap cmap = getMap(request.name);
+						// inv endpoint is the actuall owner of the
+						// record. so set it before backup
+						request.caller = inv.conn.getEndPoint();
+						cmap.backupAdd(request);
+					}
 				}
 			}
 			super.handleNoneRedoResponse(inv);
@@ -867,6 +873,8 @@ class ConcurrentMapManager extends BaseManager {
 	}
 
 	void printBlocks() {
+		if (true)
+			return;
 		if (DEBUG)
 			log("=========================================");
 		for (int i = 0; i < BLOCK_COUNT; i++) {
@@ -895,7 +903,7 @@ class ConcurrentMapManager extends BaseManager {
 			block = blockInfo;
 			mapBlocks.put(block.blockId, block);
 		} else {
-			if (block.owner.equals(thisAddress)) {
+			if (thisAddress.equals(block.owner)) {
 				// I am already owner!
 				if (block.isMigrating()) {
 					if (!block.migrationAddress.equals(blockInfo.migrationAddress)) {
@@ -905,7 +913,6 @@ class ConcurrentMapManager extends BaseManager {
 					if (blockInfo.migrationAddress != null) {
 						// I am being told to migrate
 						block.migrationAddress = blockInfo.migrationAddress;
-						// executeLocally(new Migrator(block));
 					}
 				}
 			} else {
@@ -929,24 +936,48 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		public void run() {
+			logger.log(Level.FINEST, "Migration started!");
 			for (final Long recordId : recordsToMigrate) {
 				MMigrate mmigrate = new MMigrate();
-				mmigrate.migrate(recordId);
+				boolean migrated = mmigrate.migrate(recordId);
+				if (!migrated) {
+					logger.log(Level.FINEST, "couldn't migrate " + recordId);
+				}
 			}
-			for (final Long recordId : recordsToBackup) {
-				Processable backupProcess = new Processable() {
-					public void process() {
+
+			Processable removeMigratedRecordsProcess = new Processable() {
+				public void process() {
+					for (final Long recordId : recordsToMigrate) {
 						Record record = getRecordById(recordId);
 						if (record != null) {
-							sendBackupAdd(record, true);
+							Block block = getBlock(record.key);
+							if (!backupMemberFor(block)) {
+								CMap cmap = getMap(record.name);
+								cmap.removeRecord(record.key);
+							}
 						}
 					}
-				};
-				enqueueAndReturn(backupProcess);
-				try {
-					Thread.sleep(1);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+				}
+			};
+			enqueueAndReturn(removeMigratedRecordsProcess);
+
+			if (recordsToBackup != null) {
+				int count = 0;
+				MBackupOp mbackupOp = new MBackupOp();
+				for (final Long recordId : recordsToBackup) {
+					Record record = getRecordById(recordId);
+					if (record != null) {
+						mbackupOp.backup(record);
+						if (count++ > 10) {
+							count = 0;
+							try {
+								Thread.sleep(1);
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+						}
+					}
+
 				}
 			}
 			Processable processCompletion = new Processable() {
@@ -955,7 +986,9 @@ class ConcurrentMapManager extends BaseManager {
 					sendMigrationComplete();
 					if (DEBUG) {
 						printBlocks();
+						logger.log(Level.FINEST, "Migration ended!");
 					}
+
 				}
 			};
 			enqueueAndReturn(processCompletion);
@@ -974,54 +1007,66 @@ class ConcurrentMapManager extends BaseManager {
 		int migrationOwner = 0;
 		int ownerBackup = 0;
 		int migrationBackup = 0;
-		Collection<Record> colRecords = mapRecordsById.values();
-		for (Record rec : colRecords) {
-			Block block = mapBlocks.get(rec.getBlockId());
-			if (block.owner.equals(thisAddress)) {
-				if (block.isMigrating()) {
-					// migrate
-					recordsToMigrate.add(rec.getId());
-					sendOwn++;
-				} else {
-					rec.setOwner(thisAddress);
-					// backup
-					recordsToBackup.add(rec.getId());
-					sendBackup++;
+		try {
+			Collection<Record> colRecords = mapRecordsById.values();
+			for (Record rec : colRecords) {
+				Block block = mapBlocks.get(rec.getBlockId());
+				if (rec.getId() == 972) {
+					System.out.println("972 block " + block);
+					System.out.println("972 record " + rec);
 				}
-			} else if (block.isMigrating() && block.migrationAddress.equals(thisAddress)) {
-				rec.owner = thisAddress;
-				migrationOwner++;
-			} else {
-				// am I the backup!
-				if (block.isMigrating()) {
-					MemberImpl nextAfterMigration = getNextMemberAfter(block.migrationAddress,
-							true, 1);
-					if (nextAfterMigration != null
-							&& nextAfterMigration.getAddress().equals(thisAddress)) {
-						rec.owner = block.migrationAddress;
-						migrationBackup++;
+				if (block.owner.equals(thisAddress)) {
+					if (block.isMigrating()) {
+						// migrate
+						recordsToMigrate.add(rec.getId());
+						sendOwn++;
 					} else {
-						recordsToRemove.add(rec.getId());
+						rec.setOwner(thisAddress);
+						// backup
+						recordsToBackup.add(rec.getId());
+						sendBackup++;
 					}
+				} else if (block.isMigrating() && block.migrationAddress.equals(thisAddress)) {
+					rec.owner = thisAddress;
+					migrationOwner++;
 				} else {
-					// not migrating..
-					MemberImpl nextAfterOwner = getNextMemberAfter(block.owner, true, 1);
-					if (nextAfterOwner != null && nextAfterOwner.getAddress().equals(thisAddress)) {
-						rec.owner = block.owner;
-						ownerBackup++;
+					// am I the backup!
+					if (block.isMigrating()) {
+						MemberImpl nextAfterMigration = getNextMemberAfter(block.migrationAddress,
+								true, 1);
+						if (nextAfterMigration != null
+								&& nextAfterMigration.getAddress().equals(thisAddress)) {
+							rec.owner = block.migrationAddress;
+							migrationBackup++;
+						} else {
+							recordsToRemove.add(rec.getId());
+						}
 					} else {
-						recordsToRemove.add(rec.getId());
+						// not migrating..
+						MemberImpl nextAfterOwner = getNextMemberAfter(block.owner, true, 1);
+						if (nextAfterOwner != null
+								&& nextAfterOwner.getAddress().equals(thisAddress)) {
+							rec.owner = block.owner;
+							ownerBackup++;
+						} else {
+							recordsToRemove.add(rec.getId());
+						}
 					}
 				}
 			}
-		}
-		for (Long recordId : recordsToRemove) {
-			Record rec = getRecordById(recordId);
-			if (rec != null) {
-				CMap cmap = getMap(rec.name);
-				cmap.removeRecord(rec.key);
-				removed++;
+			for (Long recordId : recordsToRemove) {
+				Record rec = getRecordById(recordId);
+				if (rec != null) {
+					if (rec.getId() == 972) {
+						System.out.println("972 removing " + rec);
+					}
+					CMap cmap = getMap(rec.name);
+					cmap.removeRecord(rec.key);
+					removed++;
+				}
 			}
+		} catch (Throwable e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
 		}
 		if (DEBUG) {
 			log("SendOwn:        " + sendOwn);
@@ -1032,6 +1077,16 @@ class ConcurrentMapManager extends BaseManager {
 			log("Removed:        " + removed);
 		}
 		executeLocally(new Migrator(recordsToBackup, recordsToMigrate));
+	}
+
+	private boolean backupMemberFor(Block block) {
+		Address owner = block.migrationAddress;
+		if (owner == null)
+			owner = block.owner;
+		if (owner == null)
+			return false;
+		MemberImpl next = getNextMemberAfter(owner, true, 1);
+		return (next != null && thisAddress.equals(next.getAddress()));
 	}
 
 	private void doMigrationComplete(Address from) {
@@ -1075,40 +1130,85 @@ class ConcurrentMapManager extends BaseManager {
 		}
 	}
 
-	private void sendLockBackup(Record record) {
+	private boolean sendLockBackup(Record record) {
+		if (zeroBackup)
+			return true;
 		if (lsMembers.size() < 3)
-			return;
+			return true;
 		Invocation inv = toInvocation(record, false);
 		inv.operation = OP_CMAP_BACKUP_LOCK;
 		boolean sent = send(inv, getNextMemberAfter(thisAddress, true, 1).getAddress());
 		if (!sent) {
 			inv.returnToContainer();
 		}
+		return sent;
 	}
 
-	private void sendBackupRemove(Record record) {
+	private boolean sendBackupRemove(Record record) {
+		if (zeroBackup)
+			return true;
 		if (lsMembers.size() < 3)
-			return;
+			return true;
 		Invocation inv = toInvocation(record, false);
 		inv.operation = OP_CMAP_BACKUP_REMOVE;
 		boolean sent = send(inv, getNextMemberAfter(thisAddress, true, 1).getAddress());
 		if (!sent) {
 			inv.returnToContainer();
 		}
+		return sent;
 	}
 
-	private void sendBackupAdd(Record record, boolean force) {
+	class MBackupOp extends TargetAwareOp {
+		volatile Record record;
+
+		public boolean backup(Record record) {
+			this.record = record;
+			doOp();
+			return getResultAsBoolean();
+		}
+
+		@Override
+		void doLocalOp() {
+		}
+
+		public void process() {
+			MemberImpl nextMember = getNextMemberAfter(thisAddress, true, 1);
+			if (nextMember == null) {
+				setResult(Boolean.TRUE);
+			} else {
+				Connection conn = ConnectionManager.get().getConnection(nextMember.getAddress());
+				if (conn == null || !conn.live()) {
+					setResult(OBJECT_REDO);
+				} else {
+					if (sendBackupAdd(record, true)) {
+						setResult(Boolean.TRUE);
+					} else {
+						setResult(OBJECT_REDO);
+					}
+				}
+			}
+		}
+
+		@Override
+		void setTarget() {
+		}
+	}
+
+	private boolean sendBackupAdd(Record record, boolean force) {
+		if (zeroBackup)
+			return true;
 		int min = 3;
 		if (force)
 			min = 2;
 		if (lsMembers.size() < min)
-			return;
+			return true;
 		Invocation inv = toInvocation(record, true);
 		inv.operation = OP_CMAP_BACKUP_ADD;
 		boolean sent = send(inv, getNextMemberAfter(thisAddress, true, 1).getAddress());
 		if (!sent) {
 			inv.returnToContainer();
 		}
+		return sent;
 	}
 
 	private Invocation toInvocation(Record record, boolean includeValue) {
@@ -1898,6 +1998,10 @@ class ConcurrentMapManager extends BaseManager {
 			if (copyCount == null)
 				return 0;
 			return copyCount.get();
+		}
+
+		public String toString() {
+			return "Record [" + id + "] key=" + key;
 		}
 	}
 

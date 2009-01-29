@@ -22,8 +22,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UTFDataFormatException;
 import java.nio.ByteBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class BuffersOutputStream extends OutputStream implements DataOutput {
+
+	protected static Logger logger = Logger.getLogger(BuffersOutputStream.class.getName());
 
 	ByteBuffer bb = null;
 
@@ -33,54 +37,9 @@ public class BuffersOutputStream extends OutputStream implements DataOutput {
 
 	private static final boolean debug = false;
 
+	private final byte writeBuffer[] = new byte[8];
+
 	public BuffersOutputStream() {
-	}
-
-	public void setBufferProvider(BufferProvider bufferProvider) {
-		this.bufferProvider = bufferProvider;
-	}
-
-	@Override
-	public void write(int b) {
-		if (bb == null) {
-			bb = bufferProvider.takeEmptyBuffer();
-		}
-		if (!bb.hasRemaining()) {
-			bufferProvider.addBuffer(bb);
-			bb = bufferProvider.takeEmptyBuffer();
-		}
-		if (debug)
-			System.out.println("writing byte " + (byte) b);
-		bb.put((byte) b);
-	}
-
-	@Override
-	public void write(byte b[], int off, int len) {
-		if ((off < 0) || (len < 0) || ((off + len) < 0)) {
-			throw new IndexOutOfBoundsException();
-		} else if (len == 0) {
-			return;
-		}
-		if (bb == null) {
-			bb = bufferProvider.takeEmptyBuffer();
-		}
-		if (!bb.hasRemaining()) {
-			bufferProvider.addBuffer(bb);
-			bb = bufferProvider.takeEmptyBuffer();
-		}
-		if (bb.remaining() < len) {
-			int remaining = bb.remaining();
-			bb.put(b, off, remaining);
-			if (debug)
-				System.out.println("writing byte[] " + remaining);
-			bufferProvider.addBuffer(bb);
-			bb = bufferProvider.takeEmptyBuffer();
-			write(b, off + remaining, len - remaining);
-		} else {
-			bb.put(b, off, len);
-			if (debug)
-				System.out.println("writing byte[] " + len);
-		}
 	}
 
 	@Override
@@ -99,34 +58,98 @@ public class BuffersOutputStream extends OutputStream implements DataOutput {
 		first = false;
 	}
 
-	public final void writeBoolean(boolean v) throws IOException {
+	public void setBufferProvider(final BufferProvider bufferProvider) {
+		this.bufferProvider = bufferProvider;
+	}
+
+	@Override
+	public void write(final byte b[], final int off, final int len) {
+		if ((off < 0) || (len < 0) || ((off + len) < 0)) {
+			throw new IndexOutOfBoundsException();
+		} else if (len == 0) {
+			return;
+		}
+		if (bb == null) {
+			bb = bufferProvider.takeEmptyBuffer();
+		}
+		if (!bb.hasRemaining()) {
+			bufferProvider.addBuffer(bb);
+			bb = bufferProvider.takeEmptyBuffer();
+		}
+		if (bb.remaining() < len) {
+			final int remaining = bb.remaining();
+			bb.put(b, off, remaining);
+			if (debug)
+				logger.log(Level.INFO, "writing byte[] " + remaining);
+			bufferProvider.addBuffer(bb);
+			bb = bufferProvider.takeEmptyBuffer();
+			write(b, off + remaining, len - remaining);
+		} else {
+			bb.put(b, off, len);
+			if (debug)
+				logger.log(Level.INFO, "writing byte[] " + len);
+		}
+	}
+
+	@Override
+	public void write(final int b) {
+		if (bb == null) {
+			bb = bufferProvider.takeEmptyBuffer();
+		}
+		if (!bb.hasRemaining()) {
+			bufferProvider.addBuffer(bb);
+			bb = bufferProvider.takeEmptyBuffer();
+		}
+		if (debug)
+			logger.log(Level.INFO, "writing byte " + (byte) b);
+		bb.put((byte) b);
+	}
+
+	public final void writeBoolean(final boolean v) throws IOException {
 		write(v ? 1 : 0);
 	}
 
-	public final void writeByte(int v) throws IOException {
+	public final void writeByte(final int v) throws IOException {
 		write(v);
 	}
 
-	public final void writeShort(int v) throws IOException {
+	public final void writeBytes(final String s) throws IOException {
+		final int len = s.length();
+		for (int i = 0; i < len; i++) {
+			write((byte) s.charAt(i));
+		}
+	}
+
+	public final void writeChar(final int v) throws IOException {
 		write((v >>> 8) & 0xFF);
 		write((v >>> 0) & 0xFF);
 	}
 
-	public final void writeChar(int v) throws IOException {
-		write((v >>> 8) & 0xFF);
-		write((v >>> 0) & 0xFF);
+	public final void writeChars(final String s) throws IOException {
+		final int len = s.length();
+		for (int i = 0; i < len; i++) {
+			final int v = s.charAt(i);
+			write((v >>> 8) & 0xFF);
+			write((v >>> 0) & 0xFF);
+		}
 	}
 
-	public final void writeInt(int v) throws IOException {
+	public final void writeDouble(final double v) throws IOException {
+		writeLong(Double.doubleToLongBits(v));
+	}
+
+	public final void writeFloat(final float v) throws IOException {
+		writeInt(Float.floatToIntBits(v));
+	}
+
+	public final void writeInt(final int v) throws IOException {
 		write((v >>> 24) & 0xFF);
 		write((v >>> 16) & 0xFF);
 		write((v >>> 8) & 0xFF);
 		write((v >>> 0) & 0xFF);
 	}
 
-	private byte writeBuffer[] = new byte[8];
-
-	public final void writeLong(long v) throws IOException {
+	public final void writeLong(final long v) throws IOException {
 		writeBuffer[0] = (byte) (v >>> 56);
 		writeBuffer[1] = (byte) (v >>> 48);
 		writeBuffer[2] = (byte) (v >>> 40);
@@ -138,32 +161,13 @@ public class BuffersOutputStream extends OutputStream implements DataOutput {
 		write(writeBuffer, 0, 8);
 	}
 
-	public final void writeFloat(float v) throws IOException {
-		writeInt(Float.floatToIntBits(v));
+	public final void writeShort(final int v) throws IOException {
+		write((v >>> 8) & 0xFF);
+		write((v >>> 0) & 0xFF);
 	}
 
-	public final void writeDouble(double v) throws IOException {
-		writeLong(Double.doubleToLongBits(v));
-	}
-
-	public final void writeBytes(String s) throws IOException {
-		int len = s.length();
-		for (int i = 0; i < len; i++) {
-			write((byte) s.charAt(i));
-		}
-	}
-
-	public final void writeChars(String s) throws IOException {
-		int len = s.length();
-		for (int i = 0; i < len; i++) {
-			int v = s.charAt(i);
-			write((v >>> 8) & 0xFF);
-			write((v >>> 0) & 0xFF);
-		}
-	}
-
-	public final void writeUTF(String str) throws IOException {
-		int strlen = str.length();
+	public final void writeUTF(final String str) throws IOException {
+		final int strlen = str.length();
 		int utflen = 0;
 		int c, count = 0;
 
@@ -182,7 +186,7 @@ public class BuffersOutputStream extends OutputStream implements DataOutput {
 		if (utflen > 65535)
 			throw new UTFDataFormatException("encoded string too long: " + utflen + " bytes");
 
-		byte[] bytearr = new byte[utflen + 2];
+		final byte[] bytearr = new byte[utflen + 2];
 
 		bytearr[count++] = (byte) ((utflen >>> 8) & 0xFF);
 		bytearr[count++] = (byte) ((utflen >>> 0) & 0xFF);

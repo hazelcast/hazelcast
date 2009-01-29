@@ -23,16 +23,49 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.hazelcast.impl.Config;
+import com.hazelcast.impl.Node;
 
 public class InSelector extends SelectorBase {
 
-	private static final InSelector instance = new InSelector();
+	private class Acceptor implements SelectionHandler {
 
-	public static InSelector get() {
-		return instance;
+		public void handle() {
+			try {
+				final SocketChannel channel = serverSocketChannel.accept();
+				if (DEBUG)
+					logger.log(Level.INFO, channel.socket().getLocalPort()
+							+ " this socket is connected to "
+							+ channel.socket().getRemoteSocketAddress());
+				if (channel != null) {
+					final Connection connection = initChannel(channel, true);
+					final InetSocketAddress remoteSocket = (InetSocketAddress) channel.socket()
+							.getRemoteSocketAddress();
+					final int remoteRealPort = Config.get().port
+							+ ((remoteSocket.getPort() - 10000) % 20);
+					final Address endPoint = new Address(remoteSocket.getAddress(), remoteRealPort);
+					ConnectionManager.get().bind(endPoint, connection, true);
+					channel.register(selector, SelectionKey.OP_READ, connection.getReadHandler());
+				}
+				serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, Acceptor.this);
+				selector.wakeup();
+			} catch (final Exception e) {
+				e.printStackTrace();
+				try {
+					serverSocketChannel.close();
+				} catch (final Exception e1) {
+				}
+				Node.get().shutdown();
+			}
+		}
 	}
+
+	protected static Logger logger = Logger.getLogger(InSelector.class.getName());
+
+	private static final InSelector instance = new InSelector();
 
 	private ServerSocketChannel serverSocketChannel;
 
@@ -44,59 +77,30 @@ public class InSelector extends SelectorBase {
 
 	}
 
-	public void init(ServerSocketChannel serverSocketChannel) {
+	public static InSelector get() {
+		return instance;
+	}
+
+	public void init(final ServerSocketChannel serverSocketChannel) {
 		this.serverSocketChannel = serverSocketChannel;
 		try {
 			key = serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, new Acceptor());
-		} catch (ClosedChannelException e) {
+		} catch (final ClosedChannelException e) {
 			e.printStackTrace();
 		}
 		if (DEBUG) {
-			System.out
-					.println("Started Selector at " + serverSocketChannel.socket().getLocalPort());
+			logger.log(Level.INFO, "Started Selector at "
+					+ serverSocketChannel.socket().getLocalPort());
 		}
 		selector.wakeup();
 	}
 
-	private class Acceptor implements SelectionHandler {
-
-		public void handle() {
-			try {
-				SocketChannel channel = serverSocketChannel.accept();
-				if (DEBUG)
-					System.out.println(channel.socket().getLocalPort()
-							+ " this socket is connected to "
-							+ channel.socket().getRemoteSocketAddress());
-				if (channel != null) {
-					Connection connection = initChannel(channel, true);
-					InetSocketAddress remoteSocket = (InetSocketAddress) channel.socket()
-							.getRemoteSocketAddress();
-					int remoteRealPort = Config.get().port
-							+ ((remoteSocket.getPort() - 10000) % 20);
-					Address endPoint = new Address(remoteSocket.getAddress(), remoteRealPort);
-					ConnectionManager.get().bind(endPoint, connection, true);
-					channel.register(selector, SelectionKey.OP_READ, connection.getReadHandler());
-				}
-				serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, Acceptor.this);
-				selector.wakeup();
-			} catch (Exception e) {
-				e.printStackTrace();
-				try {
-					serverSocketChannel.close();
-				} catch (Exception e1) {
-				}
-				ConnectionManager.get().shutdown();
-			}
-		}
-	}
-
 	@Override
-	public void shutdown() {
-		super.shutdown();
+	public void shutdown() { 
 		try {
-			serverSocketChannel.close();
 			super.shutdown();
-		} catch (IOException e) {
+			serverSocketChannel.close();			
+		} catch (IOException ignored) {
 		}
 	}
 

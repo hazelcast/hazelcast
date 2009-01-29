@@ -17,6 +17,9 @@
 
 package com.hazelcast.impl;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.BlockingQueueManager.Offer;
 import com.hazelcast.impl.BlockingQueueManager.Poll;
@@ -34,102 +37,6 @@ import com.hazelcast.nio.InvocationQueue.Serializer;
 import com.hazelcast.nio.InvocationQueue.Invocation.DataBufferProvider;
 
 public class ThreadContext {
-	private final static ThreadLocal<ThreadContext> threadLocal = new ThreadLocal<ThreadContext>();
-
-	private ThreadContext() {
-
-	}
-
-	public static ThreadContext get() {
-		ThreadContext threadContext = (ThreadContext) threadLocal.get();
-		if (threadContext == null) {
-			threadContext = new ThreadContext();
-			threadLocal.set(threadContext);
-		}
-		return threadContext;
-	}
-
-	long txnId = -1;
-
-	TransactionImpl txn = null;
-
-	ObjectReaderWriter objectReaderWriter = new ObjectReaderWriter();
-
-	public long getTxnId() {
-		return txnId;
-	}
-
-	public Data hardCopy(Data data) {
-		if (data == null || data.size() == 0)
-			return null;
-		return objectReaderWriter.hardCopy(data);
-	}
-
-	public Data toData(Object obj) {
-		try {
-			return objectReaderWriter.writeObject(obj);
-		} catch (Exception e) {
-			System.out.println(e.getMessage());
-			e.printStackTrace(System.out);
-		}
-		return null;
-	}
-
-	public Object toObject(Data data) {
-		if (data == null || data.size() == 0)
-			return null;
-		return objectReaderWriter.readObject(data);
-	}
-
-	public ObjectReaderWriter getObjectReaderWriter() {
-		return objectReaderWriter;
-	}
-
-	public void reset() {
-		finalizeTxn();
-	}
-
-	public Transaction getTransaction() {
-		if (txn == null) {
-			txn = TransactionFactory.get().newTransaction();
-			txnId = txn.getId();
-		}
-		return txn;
-	}
-
-	public void finalizeTxn() {
-		txn = null;
-		txnId = -1;
-	}
-
-	public Offer getOffer() {
-		return BlockingQueueManager.get().new Offer();
-	}
-
-	public Poll getPoll() {
-		return BlockingQueueManager.get().new Poll();
-	}
-
-	public MPut getMPut() {
-		return ConcurrentMapManager.get().new MPut();
-	}
-
-	public MGet getMGet() {
-		return ConcurrentMapManager.get().new MGet();
-	}
-
-	public MRemove getMRemove() {
-		return ConcurrentMapManager.get().new MRemove();
-	}
-
-	public MLock getMLock() {
-		return ConcurrentMapManager.get().new MLock();
-	}
-
-	public MAdd getMAdd() {
-		return ConcurrentMapManager.get().new MAdd();
-	}
-
 	class ObjectReaderWriter {
 		private final Serializer serializer = new Serializer();
 
@@ -143,6 +50,10 @@ public class ThreadContext {
 			serializer.bbos.setBufferProvider(bufferProvider);
 		}
 
+		public Data getCurrentData() {
+			return invocation.doTake(invocation.data);
+		}
+
 		public BuffersInputStream getInputStream() {
 			invocation.data.postRead();
 			serializer.bbis.setBufferProvider(bufferProvider);
@@ -153,11 +64,21 @@ public class ThreadContext {
 			return serializer.bbos;
 		}
 
-		public Data getCurrentData() {
-			return invocation.doTake(invocation.data);
+		public Data hardCopy(final Data src) {
+			return invocation.doHardCopy(src);
 		}
 
-		public Data writeObject(Object obj) throws Exception {
+		public void purge(final Data data) {
+			invocation.setNoData(data);
+		}
+
+		public Object readObject(final Data data) {
+			invocation.setNoData();
+			invocation.doHardCopy(data, invocation.data);
+			return serializer.readObject(bufferProvider);
+		}
+
+		public Data writeObject(final Object obj) throws Exception {
 			if (obj instanceof Data)
 				return (Data) obj;
 			invocation.setNoData();
@@ -166,19 +87,103 @@ public class ThreadContext {
 			return invocation.doTake(invocation.data);
 		}
 
-		public Object readObject(Data data) {
-			invocation.setNoData();
-			invocation.doHardCopy(data, invocation.data);
-			return serializer.readObject(bufferProvider);
-		}
+	}
 
-		public Data hardCopy(Data src) {
-			return invocation.doHardCopy(src);
-		}
+	protected static Logger logger = Logger.getLogger(ThreadContext.class.getName());
 
-		public void purge(Data data) {
-			invocation.setNoData(data);
-		}
+	private final static ThreadLocal<ThreadContext> threadLocal = new ThreadLocal<ThreadContext>();
 
+	long txnId = -1;
+
+	TransactionImpl txn = null;
+
+	ObjectReaderWriter objectReaderWriter = new ObjectReaderWriter();
+
+	private ThreadContext() {
+
+	}
+
+	public static ThreadContext get() {
+		ThreadContext threadContext = threadLocal.get();
+		if (threadContext == null) {
+			threadContext = new ThreadContext();
+			threadLocal.set(threadContext);
+		}
+		return threadContext;
+	}
+
+	public void finalizeTxn() {
+		txn = null;
+		txnId = -1;
+	}
+
+	public MAdd getMAdd() {
+		return ConcurrentMapManager.get().new MAdd();
+	}
+
+	public MGet getMGet() {
+		return ConcurrentMapManager.get().new MGet();
+	}
+
+	public MLock getMLock() {
+		return ConcurrentMapManager.get().new MLock();
+	}
+
+	public MPut getMPut() {
+		return ConcurrentMapManager.get().new MPut();
+	}
+
+	public MRemove getMRemove() {
+		return ConcurrentMapManager.get().new MRemove();
+	}
+
+	public ObjectReaderWriter getObjectReaderWriter() {
+		return objectReaderWriter;
+	}
+
+	public Offer getOffer() {
+		return BlockingQueueManager.get().new Offer();
+	}
+
+	public Poll getPoll() {
+		return BlockingQueueManager.get().new Poll();
+	}
+
+	public Transaction getTransaction() {
+		if (txn == null) {
+			txn = TransactionFactory.get().newTransaction();
+			txnId = txn.getId();
+		}
+		return txn;
+	}
+
+	public long getTxnId() {
+		return txnId;
+	}
+
+	public Data hardCopy(final Data data) {
+		if (data == null || data.size() == 0)
+			return null;
+		return objectReaderWriter.hardCopy(data);
+	}
+
+	public void reset() {
+		finalizeTxn();
+	}
+
+	public Data toData(final Object obj) {
+		try {
+			return objectReaderWriter.writeObject(obj);
+		} catch (final Exception e) {
+			logger.log(Level.INFO, e.getMessage());
+			e.printStackTrace(System.out);
+		}
+		return null;
+	}
+
+	public Object toObject(final Data data) {
+		if (data == null || data.size() == 0)
+			return null;
+		return objectReaderWriter.readObject(data);
 	}
 }

@@ -37,55 +37,22 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Document;
 
 public class Util {
-	public static void logWarning(String msg) {
-		log(msg, "WARNING");
-	}
 
-	public static void logFatal(String msg) {
-		log(msg, "FATAL =");
-	}
-
-	public static void log(String msg, String type) {
-		System.out.println("=============== Hazelcast WARNING ==================");
-		System.out.println(msg);
-		System.out.println("====================================================");
-	}
-
-	public static String inputStreamToString(InputStream in) throws IOException {
-		BufferedReader br = new BufferedReader(new InputStreamReader(in));
-		StringBuffer sb = new StringBuffer();
-		String line;
-		while ((line = br.readLine()) != null) {
-			sb.append(line).append("\n");
-		}
-		return sb.toString();
-	}
-
-	public static void streamXML(Document doc, OutputStream out) {
-		try {// Use a Transformer for output
-			TransformerFactory tFactory = TransformerFactory.newInstance();
-			Transformer transformer = tFactory.newTransformer();
-
-			if (doc.getDoctype() != null) {
-				String systemId = doc.getDoctype().getSystemId();
-				String publicId = doc.getDoctype().getPublicId();
-				transformer.setOutputProperty(OutputKeys.DOCTYPE_PUBLIC, publicId);
-				transformer.setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, systemId);
-			}
-
-			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-
-			DOMSource source = new DOMSource(doc);
-			StreamResult result = new StreamResult(out);
-			transformer.transform(source, result);
-
-		} catch (Exception e) {
+	public static final void copyFile(final File src, final File dest) {
+		try {
+			final FileInputStream in = new FileInputStream(src);
+			final FileOutputStream out = new FileOutputStream(dest);
+			copyStream(in, out);
+			in.close();
+			out.close();
+		} catch (final Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	public static final void copyStream(InputStream in, OutputStream out) throws IOException {
-		byte[] buffer = new byte[1024];
+	public static final void copyStream(final InputStream in, final OutputStream out)
+			throws IOException {
+		final byte[] buffer = new byte[1024];
 		int len;
 		int total = 0;
 		while ((len = in.read(buffer)) >= 0) {
@@ -94,24 +61,45 @@ public class Util {
 		}
 	}
 
-	public static final void copyFile(File src, File dest) {
-		try {
-			FileInputStream in = new FileInputStream(src);
-			FileOutputStream out = new FileOutputStream(dest);
-			copyStream(in, out);
-			in.close();
-			out.close();
-		} catch (Exception e) {
+	public static String inputStreamToString(final InputStream in) throws IOException {
+		final BufferedReader br = new BufferedReader(new InputStreamReader(in));
+		final StringBuffer sb = new StringBuffer();
+		String line;
+		while ((line = br.readLine()) != null) {
+			sb.append(line).append("\n");
+		}
+		return sb.toString();
+	}
+
+	public static void streamXML(final Document doc, final OutputStream out) {
+		try {// Use a Transformer for output
+			final TransformerFactory tFactory = TransformerFactory.newInstance();
+			final Transformer transformer = tFactory.newTransformer();
+
+			if (doc.getDoctype() != null) {
+				final String systemId = doc.getDoctype().getSystemId();
+				final String publicId = doc.getDoctype().getPublicId();
+				transformer.setOutputProperty(OutputKeys.DOCTYPE_PUBLIC, publicId);
+				transformer.setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, systemId);
+			}
+
+			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+
+			final DOMSource source = new DOMSource(doc);
+			final StreamResult result = new StreamResult(out);
+			transformer.transform(source, result);
+
+		} catch (final Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	public static final void writeText(String str, OutputStream out) {
+	public static final void writeText(final String str, final OutputStream out) {
 		try {
-			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));
+			final BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));
 			bw.write(str);
 			bw.flush();
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			e.printStackTrace();
 		}
 	}

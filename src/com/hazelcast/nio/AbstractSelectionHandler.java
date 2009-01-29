@@ -20,11 +20,16 @@ package com.hazelcast.nio;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.hazelcast.impl.Build;
 import com.hazelcast.impl.ClusterManager;
 
 abstract class AbstractSelectionHandler implements SelectionHandler {
+
+	protected static Logger logger = Logger.getLogger(AbstractSelectionHandler.class.getName());
+
 	public static final boolean DEBUG = Build.DEBUG;
 
 	protected SocketChannel socketChannel;
@@ -37,7 +42,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 
 	protected SelectionKey sk = null;
 
-	public AbstractSelectionHandler(Connection connection) {
+	public AbstractSelectionHandler(final Connection connection) {
 		super();
 		this.connection = connection;
 		this.socketChannel = connection.getSocketChannel();
@@ -45,23 +50,14 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 		this.outSelector = OutSelector.get();
 	}
 
-	final void registerOp(Selector selector, int operation) {
-		try {
-			if (!connection.live())
-				return;
-			if (sk == null) {
-				sk = socketChannel.register(selector, operation, this);
-			} else {
-				sk.interestOps(operation);
-			}
-		} catch (Exception e) {
-			handleSocketException(e);
-		}
+	protected void shutdown() {
+
 	}
 
-	final void handleSocketException(Exception e) {
+	final void handleSocketException(final Exception e) {
 		if (DEBUG) {
-			System.out.println(Thread.currentThread().getName() + " Closing Socket. cause:  " + e);
+			logger.log(Level.INFO, Thread.currentThread().getName() + " Closing Socket. cause:  "
+					+ e);
 		}
 		if (DEBUG) {
 			e.printStackTrace(System.out);
@@ -78,8 +74,18 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 		connection.close();
 	}
 
-	protected void shutdown() {
-
+	final void registerOp(final Selector selector, final int operation) {
+		try {
+			if (!connection.live())
+				return;
+			if (sk == null) {
+				sk = socketChannel.register(selector, operation, this);
+			} else {
+				sk.interestOps(operation);
+			}
+		} catch (final Exception e) {
+			handleSocketException(e);
+		}
 	}
 
 }

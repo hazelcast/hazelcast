@@ -20,31 +20,26 @@ package com.hazelcast.impl;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_RESPONSE;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import com.hazelcast.core.Member;
 import com.hazelcast.impl.BaseManager.Processable;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.InvocationQueue.Invocation;
 
 public class ClusterService implements Runnable, Constants {
-	private static final ClusterService instance = new ClusterService();
+	protected static Logger logger = Logger.getLogger(ClusterService.class.getName());
 
-	public static ClusterService get() {
-		return instance;
-	}
+	private static final ClusterService instance = new ClusterService();
 
 	private static final long PERIODIC_CHECK_INTERVAL = TimeUnit.SECONDS.toNanos(1);
 
 	private static final long UTILIZATION_CHECK_INTERVAL = TimeUnit.SECONDS.toNanos(10);
 
-	protected final boolean DEBUG = Build.get().DEBUG; 
+	protected final boolean DEBUG = Build.get().DEBUG;
 
 	protected final BlockingQueue queue;
 
@@ -59,19 +54,36 @@ public class ClusterService implements Runnable, Constants {
 	protected long lastPeriodicCheck = 0;
 
 	private ClusterService() {
-		this.queue = new LinkedBlockingQueue(); 
+		this.queue = new LinkedBlockingQueue();
 		this.start = System.nanoTime();
 	}
 
-	public void process(Object obj) {
-		long processStart = System.nanoTime();
+	public static ClusterService get() {
+		return instance;
+	}
+
+	public void enqueueAndReturn(final Object message) {
+		try {
+			// if (DEBUG) {
+			// if (queue.size() > 600) {
+			// logger.log(Level.INFO,"queue size " + queue.size());
+			// }
+			// }
+			queue.put(message);
+		} catch (final InterruptedException e) {
+			Node.get().handleInterruptedException(Thread.currentThread(), e);
+		}
+	}
+
+	public void process(final Object obj) {
+		final long processStart = System.nanoTime();
 		if (obj instanceof Invocation) {
-			Invocation inv = (Invocation) obj;
-			MemberImpl memberFrom = ClusterManager.get().getMember(inv.conn.getEndPoint());
+			final Invocation inv = (Invocation) obj;
+			final MemberImpl memberFrom = ClusterManager.get().getMember(inv.conn.getEndPoint());
 			if (memberFrom != null) {
 				memberFrom.didRead();
 			}
-			int operation = inv.operation;
+			final int operation = inv.operation;
 			if (operation == OP_RESPONSE) {
 				// special treatment to responses
 				ClusterManager.get().handleResponse(inv);
@@ -96,43 +108,17 @@ public class ClusterService implements Runnable, Constants {
 			}
 		} else
 			throw new RuntimeException("Unkown obj " + obj);
-		long processEnd = System.nanoTime();
-		long elipsedTime = processEnd - processStart;
+		final long processEnd = System.nanoTime();
+		final long elipsedTime = processEnd - processStart;
 		totalProcessTime += elipsedTime;
-		long duration = (processEnd - start);
+		final long duration = (processEnd - start);
 		if (duration > UTILIZATION_CHECK_INTERVAL) {
 			if (DEBUG) {
-				System.out.println("ServiceProcessUtilization: "
+				logger.log(Level.FINEST, "ServiceProcessUtilization: "
 						+ ((totalProcessTime * 100) / duration) + " %");
 			}
 			start = processEnd;
 			totalProcessTime = 0;
-		}
-	}
-
-	public void run3() {
-		Object obj = null;
-		while (running) {
-			try {
-				obj = queue.take();
-				process(obj);
-			} catch (InterruptedException e) {
-				Node.get().handleInterruptedException(Thread.currentThread(), e);
-			} catch (Exception e) {
-				if (DEBUG) {
-					System.out.println(e + ",  message: " + e.getMessage() + "  obj=" + obj);
-				}
-				e.printStackTrace();
-			}
-		}
-	}
-
-	private final void checkPeriodics() {
-		long now = System.nanoTime();
-		if ((now - lastPeriodicCheck) > PERIODIC_CHECK_INTERVAL) {
-			ClusterManager.get().heartBeater();
-			ClusterManager.get().checkScheduledActions();
-			lastPeriodicCheck = now;
 		}
 	}
 
@@ -142,7 +128,7 @@ public class ClusterService implements Runnable, Constants {
 			try {
 				lsBuffer.clear();
 				queue.drainTo(lsBuffer);
-				int size = lsBuffer.size();
+				final int size = lsBuffer.size();
 				if (size > 0) {
 					for (int i = 0; i < size; i++) {
 						obj = lsBuffer.get(i);
@@ -157,13 +143,29 @@ public class ClusterService implements Runnable, Constants {
 						process(obj);
 					}
 				}
-			} catch (InterruptedException e) {
+			} catch (final InterruptedException e) {
 				Node.get().handleInterruptedException(Thread.currentThread(), e);
-			} catch (Throwable e) {
+			} catch (final Throwable e) {
 				if (DEBUG) {
-					System.out.println(e + ",  message: " + e + ", obj=" + obj);
+					logger.log(Level.FINEST, e + ",  message: " + e + ", obj=" + obj);
+				} 
+			}
+		}
+	}
+
+	public void run3() {
+		Object obj = null;
+		while (running) {
+			try {
+				obj = queue.take();
+				process(obj);
+			} catch (final InterruptedException e) {
+				Node.get().handleInterruptedException(Thread.currentThread(), e);
+			} catch (final Exception e) {
+				if (DEBUG) {
+					logger.log(Level.FINEST, e + ",  message: " + e.getMessage() + "  obj=" + obj);
 				}
-				e.printStackTrace(System.out);
+				e.printStackTrace();
 			}
 		}
 	}
@@ -171,25 +173,20 @@ public class ClusterService implements Runnable, Constants {
 	public void stop() {
 		this.running = false;
 	}
- 
-	public void enqueueAndReturn(Object message) {
-		try {
-			// if (DEBUG) {
-			// if (queue.size() > 600) {
-			// System.out.println("queue size " + queue.size());
-			// }
-			// }
-			queue.put(message);
-		} catch (InterruptedException e) {
-			Node.get().handleInterruptedException(Thread.currentThread(), e);
-		}
-	}
 
-	
 	@Override
 	public String toString() {
 		return "ClusterService queueSize=" + queue.size() + " master= " + Node.get().master()
 				+ " master= " + Node.get().getMasterAddress();
+	}
+
+	private final void checkPeriodics() {
+		final long now = System.nanoTime();
+		if ((now - lastPeriodicCheck) > PERIODIC_CHECK_INTERVAL) {
+			ClusterManager.get().heartBeater();
+			ClusterManager.get().checkScheduledActions();
+			lastPeriodicCheck = now;
+		}
 	}
 
 }

@@ -21,6 +21,8 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -28,20 +30,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
 public class ServletBase extends HttpServlet {
-	private static final boolean DEBUG = true;
-
-	@Override
-	public void init(ServletConfig servletConfig) throws ServletException {
-		WebFilter.ensureServletContext(servletConfig.getServletContext());
-		super.init(servletConfig);
-	}
-
-	protected void debug(Object obj) {
-		if (DEBUG) {
-			System.out.println(obj);
-		}
-	}
-
 	class Config implements ServletConfig {
 
 		ServletConfig original = null;
@@ -50,19 +38,19 @@ public class ServletBase extends HttpServlet {
 
 		final Set<String> paramNames = new HashSet<String>();
 
-		public Config(ServletConfig original) {
+		public Config(final ServletConfig original) {
 			super();
 			this.original = original;
-			Enumeration<String> names = original.getInitParameterNames();
+			final Enumeration<String> names = original.getInitParameterNames();
 			while (names.hasMoreElements()) {
-				String name = names.nextElement();
+				final String name = names.nextElement();
 				if (!name.startsWith("*hazelcast")) {
 					paramNames.add(name);
 				}
 			}
 		}
 
-		public String getInitParameter(String arg0) {
+		public String getInitParameter(final String arg0) {
 			return original.getInitParameter(arg0);
 		}
 
@@ -81,8 +69,12 @@ public class ServletBase extends HttpServlet {
 		}
 
 		public ServletContext getServletContext() {
-			ServletContext context = getCurrentContext();
+			final ServletContext context = getCurrentContext();
 			return context;
+		}
+
+		public String getServletName() {
+			return original.getServletName();
 		}
 
 		private ServletContext getCurrentContext() {
@@ -96,10 +88,22 @@ public class ServletBase extends HttpServlet {
 			return app;
 		}
 
-		public String getServletName() {
-			return original.getServletName();
-		}
+	}
 
+	protected static Logger logger = Logger.getLogger(ServletBase.class.getName());
+
+	private static final boolean DEBUG = true;
+
+	@Override
+	public void init(final ServletConfig servletConfig) throws ServletException {
+		WebFilter.ensureServletContext(servletConfig.getServletContext());
+		super.init(servletConfig);
+	}
+
+	protected void debug(final Object obj) {
+		if (DEBUG) {
+			logger.log(Level.INFO, obj.toString());
+		}
 	}
 
 }

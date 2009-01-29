@@ -22,14 +22,19 @@ import java.nio.channels.SelectionKey;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.hazelcast.impl.Node;
 import com.hazelcast.nio.InvocationQueue.Invocation;
 
 public class WriteHandler extends AbstractSelectionHandler implements Runnable {
+
+	protected static Logger logger = Logger.getLogger(WriteHandler.class.getName());
+
 	public static final boolean DEBUG = false;
 
-	private BlockingQueue writeHandlerQueue = new LinkedBlockingQueue();
+	private final BlockingQueue writeHandlerQueue = new LinkedBlockingQueue();
 
 	static ByteBuffer bbOut = ByteBuffer.allocateDirect(1024 * 1024);
 
@@ -37,56 +42,17 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
 	AtomicBoolean alreadyRegistered = new AtomicBoolean(false);
 
-	WriteHandler(Connection connection) {
+	WriteHandler(final Connection connection) {
 		super(connection);
 	}
 
-	@Override
-	public void shutdown() {
-		dead = false;
-		Invocation inv = (Invocation) writeHandlerQueue.poll();
-		while (inv != null) {
-			inv.returnToContainer();
-			inv = (Invocation) writeHandlerQueue.poll();
-		}
-		writeHandlerQueue.clear();
-	}
-
-	public final void enqueueInvocation(Invocation inv) {
+	public final void enqueueInvocation(final Invocation inv) {
 		try {
 			writeHandlerQueue.put(inv);
-		} catch (InterruptedException e) {
+		} catch (final InterruptedException e) {
 			Node.get().handleInterruptedException(Thread.currentThread(), e);
 		}
 		signalWriteRequest();
-	}
-
-	final void signalWriteRequest() {
-		if (!alreadyRegistered.get()) {
-			int size = outSelector.addTask(this);
-			if (size < 5) {
-				outSelector.selector.wakeup();
-			}
-		}
-	}
-
-	public final void run() {
-		registerWrite();
-	}
-
-	private final void registerWrite() {
-		registerOp(outSelector.selector, SelectionKey.OP_WRITE);
-		alreadyRegistered.set(true);
-	}
-
-	private final void doPostWrite(Invocation inv) {
-		if (inv.container != null) {
-			try {
-				inv.container.returnInvocation(inv);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
 	}
 
 	public final void handle() {
@@ -95,7 +61,7 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 		try {
 			bbOut.clear();
 			copyLoop: while (bbOut.position() < (32 * 1024)) {
-				Invocation inv = (Invocation) writeHandlerQueue.poll();
+				final Invocation inv = (Invocation) writeHandlerQueue.poll();
 				if (inv == null)
 					break copyLoop;
 				inv.write(bbOut);
@@ -109,21 +75,21 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 			connection.didWrite();
 			while (remaining > 0) {
 				try {
-					int written = socketChannel.write(bbOut);
+					final int written = socketChannel.write(bbOut);
 					remaining -= written;
 					loopCount++;
 					if (DEBUG) {
 						if (loopCount > 1) {
-							System.out.println("loopcount " + loopCount);
+							logger.log(Level.INFO, "loopcount " + loopCount);
 						}
 					}
-				} catch (Exception e) {
+				} catch (final Exception e) {
 					handleSocketException(e);
 					return;
 				}
 			}
-		} catch (Throwable t) {
-			System.out.println("Fatal Error: WriteHandler " + t);
+		} catch (final Throwable t) {
+			logger.log(Level.INFO, "Fatal Error: WriteHandler " + t);
 		} finally {
 			if (hasMore()) {
 				registerWrite();
@@ -136,8 +102,47 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 		}
 	}
 
+	public final void run() {
+		registerWrite();
+	}
+
+	@Override
+	public void shutdown() {
+		dead = false;
+		Invocation inv = (Invocation) writeHandlerQueue.poll();
+		while (inv != null) {
+			inv.returnToContainer();
+			inv = (Invocation) writeHandlerQueue.poll();
+		}
+		writeHandlerQueue.clear();
+	}
+
+	final void signalWriteRequest() {
+		if (!alreadyRegistered.get()) {
+			final int size = outSelector.addTask(this);
+			if (size < 5) {
+				outSelector.selector.wakeup();
+			}
+		}
+	}
+
+	private final void doPostWrite(final Invocation inv) {
+		if (inv.container != null) {
+			try {
+				inv.container.returnInvocation(inv);
+			} catch (final Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	private final boolean hasMore() {
 		return (writeHandlerQueue.size() > 0);
+	}
+
+	private final void registerWrite() {
+		registerOp(outSelector.selector, SelectionKey.OP_WRITE);
+		alreadyRegistered.set(true);
 	}
 
 }

@@ -19,6 +19,8 @@ package com.hazelcast.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.BlockingQueueManager.CommitPoll;
@@ -28,112 +30,21 @@ import com.hazelcast.impl.FactoryImpl.CollectionProxy;
 
 class TransactionImpl implements Transaction, Constants {
 
-	private final long id;
-
-	List<TxnRecord> lsTxnRecords = new ArrayList<TxnRecord>(1);
-
-	private int status = TXN_STATUS_NO_TXN;
-
-	public TransactionImpl(long txnId) {
-		this.id = txnId;
-	}
-
-	public int size(String name) {
-		int size = 0;
-		for (TxnRecord txnRecord : lsTxnRecords) {
-			if (txnRecord.name.equals(name)) {
-				if (txnRecord.removed) {
-					if (!txnRecord.newRecord) {
-						if (txnRecord.map)
-							size--;
-					}
-				} else {
-					size++;
-				}
-			}
-		}
-		return size;
-	}
-
-	public TxnRecord findTxnRecord(String name, Object key) {
-		for (TxnRecord txnRecord : lsTxnRecords) {
-			if (txnRecord.name.equals(name)) {
-				if (txnRecord.key != null) {
-					if (txnRecord.key.equals(key))
-						return txnRecord;
-				}
-			}
-		}
-		return null;
-	}
-
-	public Object attachPutOp(String name, Object key, Object value, boolean newRecord) {
-		TxnRecord rec = findTxnRecord(name, key);
-		if (rec == null) {
-			rec = new TxnRecord(name, key, value, newRecord);
-			lsTxnRecords.add(rec);
-			return null;
-		} else {
-			Object old = rec.value;
-			rec.value = value;
-			rec.removed = false;
-			return old;
-		}
-	}
-
-	public Object attachRemoveOp(String name, Object key, Object value, boolean newRecord) {
-		TxnRecord rec = findTxnRecord(name, key);
-		Object oldValue = null;
-		if (rec == null) {
-			rec = new TxnRecord(name, key, value, newRecord);
-			rec.removed = true;
-			lsTxnRecords.add(rec);
-			return null;
-		} else {
-			oldValue = rec.value;
-			rec.value = value;
-		}
-		rec.removed = true;
-		return oldValue;
-	}
-
-	public boolean has(String name, Object key) {
-		TxnRecord rec = findTxnRecord(name, key);
-		if (rec == null)
-			return false;
-		return true;
-	}
-
-	public Object get(String name, Object key) {
-		TxnRecord rec = findTxnRecord(name, key);
-		if (rec == null)
-			return null;
-		if (rec.removed)
-			return null;
-		return rec.value;
-	}
-
-	public boolean containsValue(String name, Object value) {
-		for (TxnRecord txnRecord : lsTxnRecords) {
-			if (txnRecord.name.equals(name)) {
-				if (!txnRecord.removed) {
-					if (value.equals(txnRecord.value))
-						return true;
-				}
-			}
-		}
-		return false;
-	}
-
 	public class TxnRecord {
 		public String name;
+
 		public Object key;
+
 		public Object value;
+
 		public boolean removed = false;
+
 		public boolean newRecord = false;
+
 		public boolean map = true;
 
-		public TxnRecord(String name, Object key, Object value, boolean newRecord) {
+		public TxnRecord(final String name, final Object key, final Object value,
+				final boolean newRecord) {
 			this.name = name;
 			this.key = key;
 			this.value = value;
@@ -149,13 +60,6 @@ class TransactionImpl implements Transaction, Constants {
 				commitQueue();
 		}
 
-		public void rollback() {
-			if (map)
-				rollbackMap();
-			else
-				rollbackQueue();
-		}
-
 		public void commitMap() {
 			if (removed) {
 				if (!newRecord) {
@@ -164,17 +68,6 @@ class TransactionImpl implements Transaction, Constants {
 			} else {
 				ThreadContext.get().getMPut().put(name, key, value, -1, -1);
 			}
-		}
-
-		public void rollbackMap() {
-			CProxy mapProxy = null;
-			Object proxy = FactoryImpl.getProxy(name);
-			if (proxy instanceof CProxy) {
-				mapProxy = (CProxy) proxy;
-			} else if (proxy instanceof CollectionProxy) {
-				mapProxy = ((CollectionProxy) proxy).getCProxy();
-			}
-			mapProxy.unlock(key);
 		}
 
 		public void commitQueue() {
@@ -186,6 +79,24 @@ class TransactionImpl implements Transaction, Constants {
 			}
 		}
 
+		public void rollback() {
+			if (map)
+				rollbackMap();
+			else
+				rollbackQueue();
+		}
+
+		public void rollbackMap() {
+			CProxy mapProxy = null;
+			final Object proxy = FactoryImpl.getProxy(name);
+			if (proxy instanceof CProxy) {
+				mapProxy = (CProxy) proxy;
+			} else if (proxy instanceof CollectionProxy) {
+				mapProxy = ((CollectionProxy) proxy).getCProxy();
+			}
+			mapProxy.unlock(key);
+		}
+
 		public void rollbackQueue() {
 			if (removed) {
 				offerAgain();
@@ -194,15 +105,63 @@ class TransactionImpl implements Transaction, Constants {
 			}
 		}
 
-		private void offerAgain() {
-			Offer offer = ThreadContext.get().getOffer();
-			offer.offer(name, value, 0, -1);
-		}
-
 		private void commitPoll() {
-			CommitPoll commitPoll = BlockingQueueManager.get().new CommitPoll();
+			final CommitPoll commitPoll = BlockingQueueManager.get().new CommitPoll();
 			commitPoll.commitPoll(name);
 		}
+
+		private void offerAgain() {
+			final Offer offer = ThreadContext.get().getOffer();
+			offer.offer(name, value, 0, -1);
+		}
+	}
+
+	protected static Logger logger = Logger.getLogger(TransactionImpl.class.getName());
+
+	private final long id;
+
+	List<TxnRecord> lsTxnRecords = new ArrayList<TxnRecord>(1);
+
+	private int status = TXN_STATUS_NO_TXN;
+
+	public TransactionImpl(final long txnId) {
+		this.id = txnId;
+	}
+
+	public static void main(final String[] args) {
+		logger.log(Level.INFO, new Long(Long.MAX_VALUE / 1000000000).toString());
+	}
+
+	public Object attachPutOp(final String name, final Object key, final Object value,
+			final boolean newRecord) {
+		TxnRecord rec = findTxnRecord(name, key);
+		if (rec == null) {
+			rec = new TxnRecord(name, key, value, newRecord);
+			lsTxnRecords.add(rec);
+			return null;
+		} else {
+			final Object old = rec.value;
+			rec.value = value;
+			rec.removed = false;
+			return old;
+		}
+	}
+
+	public Object attachRemoveOp(final String name, final Object key, final Object value,
+			final boolean newRecord) {
+		TxnRecord rec = findTxnRecord(name, key);
+		Object oldValue = null;
+		if (rec == null) {
+			rec = new TxnRecord(name, key, value, newRecord);
+			rec.removed = true;
+			lsTxnRecords.add(rec);
+			return null;
+		} else {
+			oldValue = rec.value;
+			rec.value = value;
+		}
+		rec.removed = true;
+		return oldValue;
 	}
 
 	public void begin() throws IllegalStateException {
@@ -216,15 +175,63 @@ class TransactionImpl implements Transaction, Constants {
 			throw new IllegalStateException("Transaction is not active");
 		status = TXN_STATUS_COMMITTING;
 		try {
-			for (TxnRecord txnRecord : lsTxnRecords) {
+			for (final TxnRecord txnRecord : lsTxnRecords) {
 				txnRecord.commit();
 			}
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			e.printStackTrace();
 		} finally {
 			finalizeTxn();
 			status = TXN_STATUS_COMMITTED;
 		}
+	}
+
+	public boolean containsValue(final String name, final Object value) {
+		for (final TxnRecord txnRecord : lsTxnRecords) {
+			if (txnRecord.name.equals(name)) {
+				if (!txnRecord.removed) {
+					if (value.equals(txnRecord.value))
+						return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public TxnRecord findTxnRecord(final String name, final Object key) {
+		for (final TxnRecord txnRecord : lsTxnRecords) {
+			if (txnRecord.name.equals(name)) {
+				if (txnRecord.key != null) {
+					if (txnRecord.key.equals(key))
+						return txnRecord;
+				}
+			}
+		}
+		return null;
+	}
+
+	public Object get(final String name, final Object key) {
+		final TxnRecord rec = findTxnRecord(name, key);
+		if (rec == null)
+			return null;
+		if (rec.removed)
+			return null;
+		return rec.value;
+	}
+
+	public long getId() {
+		return id;
+	}
+
+	public int getStatus() {
+		return status;
+	}
+
+	public boolean has(final String name, final Object key) {
+		final TxnRecord rec = findTxnRecord(name, key);
+		if (rec == null)
+			return false;
+		return true;
 	}
 
 	public void rollback() throws IllegalStateException {
@@ -234,10 +241,10 @@ class TransactionImpl implements Transaction, Constants {
 					+ status);
 		status = TXN_STATUS_ROLLING_BACK;
 		try {
-			for (TxnRecord txnRecord : lsTxnRecords) {
+			for (final TxnRecord txnRecord : lsTxnRecords) {
 				txnRecord.rollback();
 			}
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			e.printStackTrace();
 		} finally {
 			finalizeTxn();
@@ -245,26 +252,31 @@ class TransactionImpl implements Transaction, Constants {
 		}
 	}
 
-	private void finalizeTxn() {
-		lsTxnRecords.clear();
-		status = TXN_STATUS_NO_TXN;
-		ThreadContext.get().finalizeTxn();
-	}
-
-	public int getStatus() {
-		return status;
-	}
-
-	public static void main(String[] args) {
-		System.out.println(Long.MAX_VALUE / 1000000000);
-	}
-
-	public long getId() {
-		return id;
+	public int size(final String name) {
+		int size = 0;
+		for (final TxnRecord txnRecord : lsTxnRecords) {
+			if (txnRecord.name.equals(name)) {
+				if (txnRecord.removed) {
+					if (!txnRecord.newRecord) {
+						if (txnRecord.map)
+							size--;
+					}
+				} else {
+					size++;
+				}
+			}
+		}
+		return size;
 	}
 
 	@Override
 	public String toString() {
 		return "TransactionImpl [" + id + "]";
+	}
+
+	private void finalizeTxn() {
+		lsTxnRecords.clear();
+		status = TXN_STATUS_NO_TXN;
+		ThreadContext.get().finalizeTxn();
 	}
 }

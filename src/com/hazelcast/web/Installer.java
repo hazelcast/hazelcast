@@ -35,6 +35,8 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -53,82 +55,75 @@ import com.hazelcast.impl.Util;
 
 public class Installer {
 
+	protected static Logger logger = Logger.getLogger(Installer.class.getName());
+
 	private static final boolean DEBUG = Build.get().DEBUG;
+
 	private String clusteredFilePrefix = "clustered-";
+
 	private boolean addHazellib = true;
+
 	private boolean replaceOld = false;
+
 	private boolean appsSharingSessions = false;
 
-	public static void main(String[] args) {
-		Installer installer = new Installer();
+	public static void main(final String[] args) {
+		final Installer installer = new Installer();
 		installer.install(args);
 	}
 
-	private void install(String[] args) {
-		if (args == null || args.length == 0) {
-			print("No application is specified!");
-			printHelp();
+	public Document createDocument(final InputStream in) {
+		Document doc = null;
+		try {
+			final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			final DocumentBuilder builder = factory.newDocumentBuilder();
+			doc = builder.parse(in);
+		} catch (final Exception e) {
+			e.printStackTrace();
 		}
-
-		Set<String> setApps = new HashSet<String>();
-		for (String arg : args) {
-			if (arg.startsWith("-")) {
-				if (arg.equals("-apps-sharing-sessions")) {
-					appsSharingSessions = true;
-					addHazellib = false;
-				}
-			} else {
-				setApps.add(arg);
-			}
-		}
-
-		for (String appFilename : setApps) {
-			processApp(appFilename);
-		}
-
-		System.out.println("Done!");
+		return doc;
 	}
 
-	private final void processApp(String appFilename) {
-		File file = new File(appFilename);
-		String clusteredFileName = clusteredFilePrefix + file.getName();
-		File fileOriginal = new File(file.getParentFile(), clusteredFileName);
-
-		modify(file, fileOriginal);
-
-		if (isReplaceOld()) {
-			boolean success = file.renameTo(fileOriginal);
-			if (success) {
-				System.out.println("old Application File was replaced!");
-			}
-		}
-		System.out.println("Done. New clustered application at " + fileOriginal.getAbsolutePath());
+	public String getClusteredFilePrefix() {
+		return clusteredFilePrefix;
 	}
 
-	public final void modify(File src, File dest) {
+	public boolean isAddHazellib() {
+		return addHazellib;
+	}
+
+	public boolean isAppsSharingSessions() {
+		return appsSharingSessions;
+	}
+
+	public boolean isReplaceOld() {
+		return replaceOld;
+	}
+
+	public final void modify(final File src, final File dest) {
 
 		try {
-			ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(
+			final ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(
 					new FileOutputStream(dest)));
-			ZipFile zipFile = new ZipFile(src);
+			final ZipFile zipFile = new ZipFile(src);
 
-			Enumeration entries = zipFile.entries();
+			final Enumeration entries = zipFile.entries();
 			String jarLocation = null;
 			if (src.getName().endsWith("war"))
 				jarLocation = "WEB-INF/lib/";
 			while (entries.hasMoreElements()) {
-				ZipEntry entry = (ZipEntry) entries.nextElement();
+				final ZipEntry entry = (ZipEntry) entries.nextElement();
 				log("entry name " + entry.getName());
 				out.putNextEntry(new ZipEntry(entry.getName()));
 
 				if (entry.isDirectory()) {
 					continue;
 				}
-				String name = entry.getName();
+				final String name = entry.getName();
 
 				if (jarLocation == null) {
 					if (name.endsWith(".jar")) {
-						int slashIndex = name.lastIndexOf('/');
+						final int slashIndex = name.lastIndexOf('/');
 						if (slashIndex == -1) {
 							jarLocation = "";
 						} else {
@@ -137,7 +132,7 @@ public class Installer {
 					}
 				}
 
-				InputStream in = zipFile.getInputStream(entry);
+				final InputStream in = zipFile.getInputStream(entry);
 				if (name.endsWith(".war")) {
 					modifyWar(in, out);
 				} else if (name.equals("WEB-INF/web.xml")) {
@@ -154,9 +149,9 @@ public class Installer {
 
 			if (isAddHazellib()) {
 				log("Jar Location " + jarLocation);
-				ZipEntry hazelcastZip = new ZipEntry(jarLocation + "hazelcast.jar");
+				final ZipEntry hazelcastZip = new ZipEntry(jarLocation + "hazelcast.jar");
 				out.putNextEntry(hazelcastZip);
-				InputStream in = new FileInputStream("hazelcast.jar");
+				final InputStream in = new FileInputStream("hazelcast.jar");
 				Util.copyStream(in, out);
 				in.close();
 
@@ -164,115 +159,31 @@ public class Installer {
 			out.flush();
 			out.close();
 
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	private void modifyWar(InputStream in, OutputStream os) {
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-
-		ZipOutputStream out = new ZipOutputStream(bos);
-		ZipInputStream zin = new ZipInputStream(in);
-		try {
-			while (true) {
-				ZipEntry entry = zin.getNextEntry();
-				if (entry == null)
-					break;
-				out.putNextEntry(new ZipEntry(entry.getName()));
-				log("war file " + entry.getName());
-				if (entry.isDirectory()) {
-					continue;
-				}
-				if (entry.getName().equals("WEB-INF/web.xml")) {
-					ByteArrayOutputStream bosWebXml = new ByteArrayOutputStream();
-					Util.copyStream(zin, bosWebXml);
-					bosWebXml.flush();
-
-					byte[] webxmlBytes = bosWebXml.toByteArray();
-					bosWebXml.close();
-					ByteArrayInputStream binWebXml = new ByteArrayInputStream(webxmlBytes);
-					readModifyWrite(binWebXml, out);
-					binWebXml.close();
-				} else if (entry.getName().endsWith(".jsp")) {
-					modifyJSP(zin, out);
-				} else {
-					Util.copyStream(zin, out);
-				}
-				out.flush();
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			if (DEBUG)
-				System.exit(0);
-		} finally {
-			try {
-				out.flush();
-				out.close();
-				bos.writeTo(os);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}
-
-	private void modifyJSP(InputStream in, OutputStream out) {
-		log("Modifying JSP");
-		try {
-			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));
-			BufferedReader br = new BufferedReader(new InputStreamReader(in));
-			String strLine;
-			bw.write("<%@ page extends=\"com.hazelcast.web.JspWrapper\" %>\n");
-			while ((strLine = br.readLine()) != null) {
-				bw.write(strLine);
-				bw.write('\n');
-			}
-			bw.flush();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	public void readModifyWrite(InputStream in, OutputStream out) {
-		Document finalDoc = modifyWebXml(createDocument(in));
-		Util.streamXML(finalDoc, out);
-		if (DEBUG)
-			Util.streamXML(finalDoc, System.out);
-	}
-
-	public Document createDocument(InputStream in) {
-		Document doc = null;
-		try {
-			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder builder = factory.newDocumentBuilder();
-			doc = builder.parse(in);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return doc;
-	}
-
-	public Document modifyWebXml(Document doc) {
-		Element docElement = doc.getDocumentElement();
-		NodeList nodelist = docElement.getChildNodes();
-		List<String> lsListeners = new ArrayList<String>();
+	public Document modifyWebXml(final Document doc) {
+		final Element docElement = doc.getDocumentElement();
+		final NodeList nodelist = docElement.getChildNodes();
+		final List<String> lsListeners = new ArrayList<String>();
 		Node firstFilter = null;
 		Node displayElement = null;
 		Node afterDisplayElement = null;
-		int sessionTimeoutDefault = -23490375;
+		final int sessionTimeoutDefault = -23490375;
 		int sessionTimeout = sessionTimeoutDefault;
 		for (int i = 0; i < nodelist.getLength(); i++) {
-			Node node = nodelist.item(i);
-			String name = node.getNodeName();
+			final Node node = nodelist.item(i);
+			final String name = node.getNodeName();
 			if ("display-name".equals(name)) {
 				displayElement = node;
 			} else {
 				if ("listener".equals(name)) {
 					String className = null;
-					NodeList nl = node.getChildNodes();
+					final NodeList nl = node.getChildNodes();
 					for (int a = 0; a < nl.getLength(); a++) {
-						Node n = nl.item(a);
+						final Node n = nl.item(a);
 						if (n.getNodeName().equals("listener-class")) {
 							className = n.getTextContent();
 						}
@@ -284,13 +195,13 @@ public class Installer {
 						firstFilter = node;
 					}
 				} else if ("servlet".equals(name)) {
-					NodeList nl = node.getChildNodes();
+					final NodeList nl = node.getChildNodes();
 					for (int a = 0; a < nl.getLength(); a++) {
-						Node n = nl.item(a);
+						final Node n = nl.item(a);
 						if (n.getNodeName().equals("servlet-class")) {
-							String className = n.getTextContent();
-							String wrapperClass = "com.hazelcast.web.ServletWrapper";
-							String hazelParam = "*hazelcast-base-servlet-class";
+							final String className = n.getTextContent();
+							final String wrapperClass = "com.hazelcast.web.ServletWrapper";
+							final String hazelParam = "*hazelcast-base-servlet-class";
 							n.setTextContent(wrapperClass);
 							Node initParam = null;
 							initParam = append(doc, node, "init-param", null);
@@ -300,13 +211,13 @@ public class Installer {
 						}
 					}
 				} else if ("session-config".equals(name)) {
-					NodeList nl = node.getChildNodes();
+					final NodeList nl = node.getChildNodes();
 					for (int a = 0; a < nl.getLength(); a++) {
-						Node n = nl.item(a);
+						final Node n = nl.item(a);
 						if (n.getNodeName().equals("session-timeout")) {
 							try {
 								sessionTimeout = Integer.parseInt(n.getTextContent().trim());
-							} catch (Exception e) {
+							} catch (final Exception e) {
 								e.printStackTrace();
 							}
 
@@ -318,7 +229,7 @@ public class Installer {
 				}
 			}
 		}
-		Element filter = doc.createElement("filter");
+		final Element filter = doc.createElement("filter");
 		append(doc, filter, "filter-name", "hazel-filter");
 		append(doc, filter, "filter-class", "com.hazelcast.web.WebFilter");
 
@@ -336,7 +247,7 @@ public class Installer {
 			append(doc, initParam, "param-value", "" + sessionTimeout);
 		}
 		int counter = 0;
-		for (String listener : lsListeners) {
+		for (final String listener : lsListeners) {
 			initParam = append(doc, filter, "init-param", null);
 			append(doc, initParam, "param-name", "listener" + counter++);
 			append(doc, initParam, "param-value", listener);
@@ -352,11 +263,11 @@ public class Installer {
 		}
 
 		docElement.insertBefore(filter, first);
-		Element filterMapping = doc.createElement("filter-mapping");
+		final Element filterMapping = doc.createElement("filter-mapping");
 		append(doc, filterMapping, "filter-name", "hazel-filter");
 		append(doc, filterMapping, "url-pattern", "/*");
 
-		Element contextListener = doc.createElement("listener");
+		final Element contextListener = doc.createElement("listener");
 		append(doc, contextListener, "listener-class",
 				"com.hazelcast.web.WebFilter$ContextListener");
 
@@ -367,43 +278,66 @@ public class Installer {
 		return doc;
 	}
 
-	private String getTextContent(Node node) {
-		Node child = node.getFirstChild();
-		if (child != null) {
-			Node next = child.getNextSibling();
-			if (next == null) {
-				return hasTextContent(child) ? getTextContent(child) : "";
+	public void readModifyWrite(final InputStream in, final OutputStream out) {
+		final Document finalDoc = modifyWebXml(createDocument(in));
+		Util.streamXML(finalDoc, out);
+		if (DEBUG)
+			Util.streamXML(finalDoc, System.out);
+	}
+
+	public void setAddHazellib(final boolean addHazellib) {
+		this.addHazellib = addHazellib;
+	}
+
+	public void setAppsSharingSessions(final boolean appsSharingSessions) {
+		this.appsSharingSessions = appsSharingSessions;
+	}
+
+	public void setClusteredFilePrefix(final String clusteredFilePrefix) {
+		this.clusteredFilePrefix = clusteredFilePrefix;
+	}
+
+	public void setReplaceOld(final boolean replaceOld) {
+		this.replaceOld = replaceOld;
+	}
+
+	public final void unzip(final File file) {
+		final String warFilename = file.getName();
+		final String destDirName = warFilename.substring(0, warFilename.lastIndexOf('.'));
+		Enumeration entries;
+		ZipFile zipFile;
+		final File destDir = new File(destDirName);
+		destDir.mkdirs();
+		try {
+			zipFile = new ZipFile(file);
+			entries = zipFile.entries();
+			while (entries.hasMoreElements()) {
+				final ZipEntry entry = (ZipEntry) entries.nextElement();
+				if (entry.isDirectory()) {
+					(new File(destDir, entry.getName())).mkdir();
+					continue;
+				}
+				final File entryFile = new File(destDir, entry.getName());
+				final InputStream in = zipFile.getInputStream(entry);
+				final OutputStream out = new BufferedOutputStream(new FileOutputStream(entryFile));
+				Util.copyStream(in, out);
+				in.close();
+				out.close();
 			}
-			StringBuffer buf = new StringBuffer();
-			getTextContent(node, buf);
-			return buf.toString();
+
+			zipFile.close();
+		} catch (final IOException ioe) {
+			ioe.printStackTrace();
+			return;
 		}
-		return "";
 	}
 
-	private void getTextContent(Node node, StringBuffer buf) {
-		Node child = node.getFirstChild();
-		while (child != null) {
-			if (hasTextContent(child)) {
-				getTextContent(child, buf);
-			}
-			child = child.getNextSibling();
-		}
-
-	}
-
-	private boolean hasTextContent(Node child) {
-		return child.getNodeType() != Node.COMMENT_NODE
-				&& child.getNodeType() != Node.PROCESSING_INSTRUCTION_NODE
-				&& (child.getNodeType() != Node.TEXT_NODE);
-	}
-
-	private Node after(Node parent, String nodeName) {
-		NodeList nodelist = parent.getChildNodes();
+	private Node after(final Node parent, final String nodeName) {
+		final NodeList nodelist = parent.getChildNodes();
 		int index = -1;
 		for (int i = 0; i < nodelist.getLength(); i++) {
-			Node node = nodelist.item(i);
-			String name = node.getNodeName();
+			final Node node = nodelist.item(i);
+			final String name = node.getNodeName();
 			if (nodeName.equals(name)) {
 				index = i;
 			}
@@ -416,87 +350,163 @@ public class Installer {
 		return null;
 	}
 
-	private Node append(Document doc, Node parent, String element, String value) {
-		Element child = doc.createElement(element);
+	private Node append(final Document doc, final Node parent, final String element,
+			final String value) {
+		final Element child = doc.createElement(element);
 		if (value != null)
 			child.setTextContent(value);
 		parent.appendChild(child);
 		return child;
 	}
 
-	public final void unzip(File file) {
-		String warFilename = file.getName();
-		String destDirName = warFilename.substring(0, warFilename.lastIndexOf('.'));
-		Enumeration entries;
-		ZipFile zipFile;
-		File destDir = new File(destDirName);
-		destDir.mkdirs();
-		try {
-			zipFile = new ZipFile(file);
-			entries = zipFile.entries();
-			while (entries.hasMoreElements()) {
-				ZipEntry entry = (ZipEntry) entries.nextElement();
-				if (entry.isDirectory()) {
-					(new File(destDir, entry.getName())).mkdir();
-					continue;
-				}
-				File entryFile = new File(destDir, entry.getName());
-				InputStream in = zipFile.getInputStream(entry);
-				OutputStream out = new BufferedOutputStream(new FileOutputStream(entryFile));
-				Util.copyStream(in, out);
-				in.close();
-				out.close();
+	private String getTextContent(final Node node) {
+		final Node child = node.getFirstChild();
+		if (child != null) {
+			final Node next = child.getNextSibling();
+			if (next == null) {
+				return hasTextContent(child) ? getTextContent(child) : "";
 			}
+			final StringBuffer buf = new StringBuffer();
+			getTextContent(node, buf);
+			return buf.toString();
+		}
+		return "";
+	}
 
-			zipFile.close();
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-			return;
+	private void getTextContent(final Node node, final StringBuffer buf) {
+		Node child = node.getFirstChild();
+		while (child != null) {
+			if (hasTextContent(child)) {
+				getTextContent(child, buf);
+			}
+			child = child.getNextSibling();
+		}
+
+	}
+
+	private boolean hasTextContent(final Node child) {
+		return child.getNodeType() != Node.COMMENT_NODE
+				&& child.getNodeType() != Node.PROCESSING_INSTRUCTION_NODE
+				&& (child.getNodeType() != Node.TEXT_NODE);
+	}
+
+	private void install(final String[] args) {
+		if (args == null || args.length == 0) {
+			print("No application is specified!");
+			printHelp();
+		}
+
+		final Set<String> setApps = new HashSet<String>();
+		for (final String arg : args) {
+			if (arg.startsWith("-")) {
+				if (arg.equals("-apps-sharing-sessions")) {
+					appsSharingSessions = true;
+					addHazellib = false;
+				}
+			} else {
+				setApps.add(arg);
+			}
+		}
+
+		for (final String appFilename : setApps) {
+			processApp(appFilename);
+		}
+
+		logger.log(Level.INFO, "Done!");
+	}
+
+	private void log(final Object obj) {
+		if (DEBUG)
+			logger.log(Level.INFO, obj.toString());
+	}
+
+	private void modifyJSP(final InputStream in, final OutputStream out) {
+		log("Modifying JSP");
+		try {
+			final BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));
+			final BufferedReader br = new BufferedReader(new InputStreamReader(in));
+			String strLine;
+			bw.write("<%@ page extends=\"com.hazelcast.web.JspWrapper\" %>\n");
+			while ((strLine = br.readLine()) != null) {
+				bw.write(strLine);
+				bw.write('\n');
+			}
+			bw.flush();
+		} catch (final Exception e) {
+			e.printStackTrace();
 		}
 	}
 
-	private void log(Object obj) {
-		if (DEBUG)
-			System.out.println(obj);
+	private void modifyWar(final InputStream in, final OutputStream os) {
+		final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+		final ZipOutputStream out = new ZipOutputStream(bos);
+		final ZipInputStream zin = new ZipInputStream(in);
+		try {
+			while (true) {
+				final ZipEntry entry = zin.getNextEntry();
+				if (entry == null)
+					break;
+				out.putNextEntry(new ZipEntry(entry.getName()));
+				log("war file " + entry.getName());
+				if (entry.isDirectory()) {
+					continue;
+				}
+				if (entry.getName().equals("WEB-INF/web.xml")) {
+					final ByteArrayOutputStream bosWebXml = new ByteArrayOutputStream();
+					Util.copyStream(zin, bosWebXml);
+					bosWebXml.flush();
+
+					final byte[] webxmlBytes = bosWebXml.toByteArray();
+					bosWebXml.close();
+					final ByteArrayInputStream binWebXml = new ByteArrayInputStream(webxmlBytes);
+					readModifyWrite(binWebXml, out);
+					binWebXml.close();
+				} else if (entry.getName().endsWith(".jsp")) {
+					modifyJSP(zin, out);
+				} else {
+					Util.copyStream(zin, out);
+				}
+				out.flush();
+			}
+
+		} catch (final Exception e) {
+			e.printStackTrace();
+			if (DEBUG)
+				System.exit(0);
+		} finally {
+			try {
+				out.flush();
+				out.close();
+				bos.writeTo(os);
+			} catch (final IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
-	private void print(Object obj) {
-		System.out.println(obj);
+	private void print(final Object obj) {
+		logger.log(Level.INFO, obj.toString());
 	}
 
 	private void printHelp() {
 		print("clusterWebapp.bat <war-file-path or ear-file-path>");
 	}
 
-	public String getClusteredFilePrefix() {
-		return clusteredFilePrefix;
-	}
+	private final void processApp(final String appFilename) {
+		final File file = new File(appFilename);
+		final String clusteredFileName = clusteredFilePrefix + file.getName();
+		final File fileOriginal = new File(file.getParentFile(), clusteredFileName);
 
-	public void setClusteredFilePrefix(String clusteredFilePrefix) {
-		this.clusteredFilePrefix = clusteredFilePrefix;
-	}
+		modify(file, fileOriginal);
 
-	public boolean isAddHazellib() {
-		return addHazellib;
-	}
-
-	public void setAddHazellib(boolean addHazellib) {
-		this.addHazellib = addHazellib;
-	}
-
-	public boolean isReplaceOld() {
-		return replaceOld;
-	}
-
-	public void setReplaceOld(boolean replaceOld) {
-		this.replaceOld = replaceOld;
-	}
-
-	public boolean isAppsSharingSessions() {
-		return appsSharingSessions;
-	}
-
-	public void setAppsSharingSessions(boolean appsSharingSessions) {
-		this.appsSharingSessions = appsSharingSessions;
+		if (isReplaceOld()) {
+			final boolean success = file.renameTo(fileOriginal);
+			if (success) {
+				logger.log(Level.INFO, "old Application File was replaced!");
+			}
+		}
+		logger.log(Level.INFO, "Done. New clustered application at "
+				+ fileOriginal.getAbsolutePath());
 	}
 }

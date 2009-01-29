@@ -309,36 +309,36 @@ public class FactoryImpl implements Constants {
 			super();
 			this.name = name;
 			if (Config.get().getTopicConfig(getName()).globalOrderingEnabled) {
-				qProxy = new QProxy("q:" + name); 
+				qProxy = new QProxy("q:" + name);
 			}
 		}
 
-		public void publish(Object msg) { 
+		public void publish(Object msg) {
 			if (qProxy == null) {
 				TopicManager.get().doPublish(name, msg);
-			}else {
-				qProxy.publish (msg);
+			} else {
+				qProxy.publish(msg);
 			}
 		}
 
-		public void addMessageListener(MessageListener listener) { 
+		public void addMessageListener(MessageListener listener) {
 			if (qProxy == null) {
 				ListenerManager.get().addListener(name, listener, null, true,
 						ListenerManager.LISTENER_TYPE_MESSAGE);
 			} else {
-				AddTopicListener atl = BlockingQueueManager.get(). new AddTopicListener();
+				AddTopicListener atl = BlockingQueueManager.get().new AddTopicListener();
 				atl.add(qProxy.name, null, 0, -1);
 				ListenerManager.get().addListener(qProxy.name, listener, null, true,
-						ListenerManager.LISTENER_TYPE_MESSAGE, false);				
-			} 
+						ListenerManager.LISTENER_TYPE_MESSAGE, false);
+			}
 		}
 
-		public void removeMessageListener(MessageListener listener) { 
+		public void removeMessageListener(MessageListener listener) {
 			if (qProxy == null) {
 				ListenerManager.get().removeListener(name, listener, null);
 			} else {
 				ListenerManager.get().removeListener(qProxy.name, listener, null);
-			}  
+			}
 		}
 
 		@Override
@@ -348,8 +348,8 @@ public class FactoryImpl implements Constants {
 
 		public String getName() {
 			return name.substring(2);
-		} 
-		 
+		}
+
 	}
 
 	static class ListProxy extends CollectionProxy implements IList {
@@ -479,8 +479,8 @@ public class FactoryImpl implements Constants {
 		public QProxy(String qname) {
 			this.name = qname;
 		}
-		
-		public boolean publish (Object obj) {
+
+		public boolean publish(Object obj) {
 			Offer offer = ThreadContext.get().getOffer();
 			return offer.publish(name, obj, 0, ThreadContext.get().getTxnId());
 		}

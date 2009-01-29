@@ -19,11 +19,15 @@ package com.hazelcast.nio;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.hazelcast.impl.ClusterService;
 import com.hazelcast.nio.InvocationQueue.Invocation;
 
 class ReadHandler extends AbstractSelectionHandler implements Runnable {
+
+	protected static Logger logger = Logger.getLogger(ReadHandler.class.getName());
 
 	ByteBuffer inBuffer = null;
 
@@ -35,7 +39,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
 	long messageRead = 0;
 
-	public ReadHandler(Connection connection) {
+	public ReadHandler(final Connection connection) {
 		super(connection);
 		inBuffer = ByteBuffer.allocate(32 * 1024);
 	}
@@ -45,7 +49,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 			return;
 		try {
 			try {
-				int readBytes = socketChannel.read(inBuffer);
+				final int readBytes = socketChannel.read(inBuffer);
 				if (readBytes == -1) {
 					// End of stream. Closing channel...
 					connection.close();
@@ -56,14 +60,14 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 				}
 				connection.didRead();
 				length += readBytes;
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				handleSocketException(e);
 				return;
 			}
 			inBuffer.flip();
 
 			while (true) {
-				int remaining = inBuffer.remaining();
+				final int remaining = inBuffer.remaining();
 				if (remaining <= 0) {
 					inBuffer.clear();
 					return;
@@ -80,7 +84,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 						return;
 					}
 				}
-				boolean full = inv.read(inBuffer);
+				final boolean full = inv.read(inBuffer);
 				if (full) {
 					messageRead++;
 					inv.flipBuffers();
@@ -97,8 +101,8 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 					}
 				}
 			}
-		} catch (Throwable t) {
-			System.out.println("Fatal Error at ReadHandler : " + t);
+		} catch (final Throwable t) {
+			logger.log(Level.INFO, "Fatal Error at ReadHandler : " + t);
 		} finally {
 			registerOp(inSelector.selector, SelectionKey.OP_READ);
 		}
@@ -109,7 +113,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 	}
 
 	private final Invocation obtainReadable() {
-		Invocation inv = InvocationQueue.get().obtainInvocation();
+		final Invocation inv = InvocationQueue.get().obtainInvocation();
 		inv.reset();
 		inv.data.prepareForRead();
 		inv.local = false;

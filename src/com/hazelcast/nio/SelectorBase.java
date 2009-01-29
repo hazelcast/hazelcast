@@ -26,6 +26,8 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.hazelcast.impl.Build;
 import com.hazelcast.impl.ClusterManager;
@@ -33,13 +35,15 @@ import com.hazelcast.impl.Node;
 
 public class SelectorBase implements Runnable {
 
+	protected static Logger logger = Logger.getLogger(SelectorBase.class.getName());
+
 	protected static final boolean DEBUG = Build.get().DEBUG;
 
 	protected Selector selector = null;
 
 	protected BlockingQueue<Runnable> selectorQueue = new ArrayBlockingQueue<Runnable>(10000);
 
-	protected boolean live = true;
+	protected volatile boolean live = true;
 
 	protected int waitTime = 16;
 
@@ -48,39 +52,28 @@ public class SelectorBase implements Runnable {
 	public SelectorBase() {
 		try {
 			selector = Selector.open();
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			handleSelectorException(e);
 		}
 	}
 
-	protected Connection initChannel(SocketChannel socketChannel, boolean acceptor)
-			throws Exception {
-		socketChannel.socket().setReceiveBufferSize(32 * 1024);
-		socketChannel.socket().setSendBufferSize(64 * 1024);
-		socketChannel.socket().setKeepAlive(true);
-		// socketChannel.socket().setTcpNoDelay(true);
-		socketChannel.configureBlocking(false);
-		Connection connection = ConnectionManager.get().createConnection(socketChannel, acceptor);
-		return connection;
+	public int addTask(final Runnable runnable) {
+		try {
+			selectorQueue.put(runnable);
+			return size.incrementAndGet();
+		} catch (final InterruptedException e) {
+			Node.get().handleInterruptedException(Thread.currentThread(), e);
+			return 0;
+		}
 	}
 
 	public void processSelectionQueue() {
 		while (live) {
-			Runnable runnable = selectorQueue.poll();
+			final Runnable runnable = selectorQueue.poll();
 			if (runnable == null)
 				return;
 			runnable.run();
 			size.decrementAndGet();
-		}
-	}
-
-	public int addTask(Runnable runnable) {
-		try {
-			selectorQueue.put(runnable);
-			return size.incrementAndGet();
-		} catch (InterruptedException e) {
-			Node.get().handleInterruptedException(Thread.currentThread(), e);
-			return 0;
 		}
 	}
 
@@ -96,7 +89,7 @@ public class SelectorBase implements Runnable {
 					Node.get().handleInterruptedException(Thread.currentThread(),
 							new RuntimeException());
 				}
-			} catch (IOException ioe) {
+			} catch (final IOException ioe) {
 				// normally select should never throw an exception
 				// operation. If happens, continue selecting...
 				ioe.printStackTrace();
@@ -105,29 +98,19 @@ public class SelectorBase implements Runnable {
 			if (selectedKeys == 0) {
 				continue select;
 			}
-			Set<SelectionKey> setSelectedKeys = selector.selectedKeys();
-			Iterator<SelectionKey> it = setSelectedKeys.iterator();
+			final Set<SelectionKey> setSelectedKeys = selector.selectedKeys();
+			final Iterator<SelectionKey> it = setSelectedKeys.iterator();
 			while (it.hasNext()) {
-				SelectionKey sk = (SelectionKey) it.next();
+				final SelectionKey sk = it.next();
 				it.remove();
 				try {
 					sk.interestOps(sk.interestOps() & ~sk.readyOps());
-					SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
+					final SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
 					selectionHandler.handle();
-				} catch (Exception e) {
+				} catch (final Exception e) {
 					handleSelectorException(e);
 				}
 			}
-		}
-	}
-
-	protected void handleSelectorException(Exception e) {
-		String msg = "Selector exception at  " + Thread.currentThread().getName();
-		msg += ", cause= " + e.toString();
-		if (Build.DEBUG) {
-			System.out.println(msg);
-			ClusterManager.get().publishLog(msg);
-			e.printStackTrace(System.out);
 		}
 	}
 
@@ -136,8 +119,30 @@ public class SelectorBase implements Runnable {
 		selectorQueue.clear();
 		try {
 			selector.close();
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	protected void handleSelectorException(final Exception e) {
+		String msg = "Selector exception at  " + Thread.currentThread().getName();
+		msg += ", cause= " + e.toString();
+		if (Build.DEBUG) {
+			logger.log(Level.INFO, msg);
+			ClusterManager.get().publishLog(msg);
+			e.printStackTrace(System.out);
+		}
+	}
+
+	protected Connection initChannel(final SocketChannel socketChannel, final boolean acceptor)
+			throws Exception {
+		socketChannel.socket().setReceiveBufferSize(32 * 1024);
+		socketChannel.socket().setSendBufferSize(64 * 1024);
+		socketChannel.socket().setKeepAlive(true);
+		// socketChannel.socket().setTcpNoDelay(true);
+		socketChannel.configureBlocking(false);
+		final Connection connection = ConnectionManager.get().createConnection(socketChannel,
+				acceptor);
+		return connection;
 	}
 }

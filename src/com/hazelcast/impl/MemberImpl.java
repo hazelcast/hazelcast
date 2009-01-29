@@ -16,7 +16,7 @@
  */
 
 package com.hazelcast.impl;
- 
+
 import static com.hazelcast.impl.Constants.NodeTypes.NODE_SUPER_CLIENT;
 
 import java.net.InetAddress;
@@ -52,7 +52,7 @@ public class MemberImpl implements Member {
 	public int getPort() {
 		return address.getPort();
 	}
-	
+
 	public int getNodeType() {
 		return nodeType;
 	}
@@ -85,7 +85,7 @@ public class MemberImpl implements Member {
 	public long getLastWrite() {
 		return lastWrite;
 	}
-	
+
 	public boolean superClient() {
 		return (nodeType == NODE_SUPER_CLIENT);
 	}
@@ -131,5 +131,4 @@ public class MemberImpl implements Member {
 		return true;
 	}
 
-	
 }

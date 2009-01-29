@@ -37,15 +37,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import sun.rmi.runtime.GetThreadPoolAction;
-import sun.security.action.GetLongAction;
+import sun.security.action.GetBooleanAction;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IMap;
@@ -60,6 +60,10 @@ import com.hazelcast.nio.InvocationQueue.Data;
 import com.hazelcast.nio.InvocationQueue.Invocation;
 
 abstract class BaseManager implements Constants {
+
+	protected final static boolean zeroBackup = false;
+	
+	protected static Logger logger = Logger.getLogger(BaseManager.class.getName());
 
 	protected final static LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
 
@@ -84,6 +88,10 @@ abstract class BaseManager implements Constants {
 	protected final Address thisAddress;
 
 	protected final MemberImpl thisMember;
+	
+	
+
+	long idGen = 0;
 
 	protected BaseManager() {
 		thisAddress = Node.get().address;
@@ -91,235 +99,6 @@ abstract class BaseManager implements Constants {
 		for (int i = 0; i < 100; i++) {
 			eventQueues[i] = new EventQueue();
 		}
-	}
-
-	protected long incrementAndGetEventId() {
-		eventId++;
-		return eventId;
-	}
-
-	protected final void executeLocally(Runnable runnable) {
-		ExecutorManager.get().executeLocaly(runnable);
-	}
-
-	protected final boolean send(String name, int operation, DataSerializable ds, Address address) {
-		try {
-			Invocation inv = InvocationQueue.get().obtainInvocation();
-			inv.set(name, operation, null, ds);
-			boolean sent = send(inv, address);
-			if (!sent)
-				inv.returnToContainer();
-			return sent;
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return true;
-	}
-
-	protected final boolean isMaster() {
-		return Node.get().master();
-	}
-
-	protected final boolean isSuperClient() {
-		return Node.get().isSuperClient();
-	}
-
-	protected Address getMasterAddress() {
-		return Node.get().getMasterAddress();
-	}
-
-	protected final MemberImpl getPreviousMemberBefore(Address address, boolean skipSuperClient,
-			int distance) {
-		return getPreviousMemberBefore(lsMembers, address, skipSuperClient, distance);
-	}
-
-	protected final MemberImpl getPreviousMemberBefore(List<MemberImpl> lsMembers, Address address,
-			boolean skipSuperClient, int distance) {
-		int size = lsMembers.size();
-		if (size <= 1)
-			return null;
-		int indexOfMember = -1;
-		for (int i = 0; i < size; i++) {
-			MemberImpl member = lsMembers.get(i);
-			if (member.getAddress().equals(address)) {
-				indexOfMember = i;
-			}
-		}
-		if (indexOfMember == -1)
-			return null;
-		indexOfMember += (size - 1);
-		int foundDistance = 0;
-		for (int i = 0; i < size; i++) {
-			MemberImpl member = lsMembers.get((indexOfMember - i) % size);
-			if (!(skipSuperClient && member.superClient())) {
-				foundDistance++;
-			}
-			if (foundDistance == distance)
-				return member;
-		}
-		return null;
-	}
-
-	protected final MemberImpl getNextMemberAfter(Address address, boolean skipSuperClient,
-			int distance) {
-		return getNextMemberAfter(lsMembers, address, skipSuperClient, distance);
-	}
-
-	protected final MemberImpl getNextMemberAfter(List<MemberImpl> lsMembers, Address address,
-			boolean skipSuperClient, int distance) {
-		int size = lsMembers.size();
-		if (size <= 1)
-			return null;
-		int indexOfMember = -1;
-		for (int i = 0; i < size; i++) {
-			MemberImpl member = lsMembers.get(i);
-			if (member.getAddress().equals(address)) {
-				indexOfMember = i;
-			}
-		}
-		if (indexOfMember == -1)
-			return null;
-		indexOfMember++;
-		int foundDistance = 0;
-		for (int i = 0; i < size; i++) {
-			MemberImpl member = lsMembers.get((indexOfMember + i) % size);
-			if (!(skipSuperClient && member.superClient())) {
-				foundDistance++;
-			}
-			if (foundDistance == distance)
-				return member;
-		}
-		return null;
-	}
-
-	protected final MemberImpl getNextMemberBeforeSync(Address address, boolean skipSuperClient,
-			int distance) {
-		return getNextMemberAfter(ClusterManager.get().getMembersBeforeSync(), address,
-				skipSuperClient, distance);
-	}
-
-	protected void log(Object obj) {
-		if (DEBUG)
-			System.out.println(obj);
-	}
-
-	protected boolean sendSerializable(String name, int operation, DataSerializable ds,
-			Address address) {
-		return sendData(name, operation, ThreadContext.get().toData(ds), address);
-	}
-
-	public void sendProcessableTo(RemotelyProcessable rp, Address address) {
-		Data value = ThreadContext.get().toData(rp);
-		Invocation inv = obtainServiceInvocation();
-		try {
-			inv.set("remotelyProcess", OP_REMOTELY_PROCESS, null, value);
-			boolean sent = send(inv, address);
-			if (!sent) {
-				inv.returnToContainer();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	protected boolean sendData(String name, int operation, Data data, Address address) {
-		Invocation inv = obtainServiceInvocation();
-		inv.name = name;
-		inv.operation = operation;
-		inv.setData(data);
-		return send(inv, address);
-	}
-
-	final boolean send(Invocation inv, Address address) {
-		Connection conn = ConnectionManager.get().getConnection(address);
-		if (conn == null)
-			return false;
-		if (!conn.live())
-			return false;
-		writeInvocation(conn, inv);
-		return true;
-	}
-
-	final boolean send(Invocation inv, Connection conn) {
-		if (conn != null) {
-			writeInvocation(conn, inv);
-		} else {
-			return false;
-		}
-		return true;
-	}
-
-	final private void writeInvocation(Connection conn, Invocation inv) {
-		if (!conn.live()) {
-			inv.returnToContainer();
-			return;
-		}
-		MemberImpl memberImpl = getMember(conn.getEndPoint());
-		if (memberImpl != null) {
-			memberImpl.didWrite();
-		}
-		inv.write();
-		conn.getWriteHandler().enqueueInvocation(inv);
-	}
-
-	protected void sendRedoResponse(Invocation inv) {
-		inv.responseType = RESPONSE_REDO;
-		sendResponse(inv);
-	}
-
-	protected boolean sendResponse(Invocation inv, Address address) {
-		Connection conn = ConnectionManager.get().getConnection(address);
-		inv.conn = conn;
-		return sendResponse(inv);
-	}
-
-	protected boolean sendResponse(Invocation inv) {
-		inv.local = false;
-		inv.operation = OP_RESPONSE;
-		if (inv.responseType == RESPONSE_NONE) {
-			inv.responseType = RESPONSE_SUCCESS;
-		}
-		boolean sent = send(inv, inv.conn);
-		if (!sent) {
-			inv.returnToContainer();
-		}
-		return sent;
-	}
-
-	protected boolean sendResponseFailure(Invocation inv, Address address) {
-		Connection conn = ConnectionManager.get().getConnection(address);
-		inv.conn = conn;
-		return sendResponseFailure(inv);
-	}
-
-	protected boolean sendResponseFailure(Invocation inv) {
-		inv.local = false;
-		inv.operation = OP_RESPONSE;
-		inv.responseType = RESPONSE_FAILURE;
-		boolean sent = send(inv, inv.conn);
-		if (!sent) {
-			inv.returnToContainer();
-		}
-		return sent;
-	}
-
-	public Invocation obtainServiceInvocation(String name, Object key, Object value, int operation,
-			long timeout) {
-		try {
-			Invocation inv = obtainServiceInvocation();
-			inv.set(name, operation, key, value);
-			inv.timeout = timeout;
-			return inv;
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-
-	protected Invocation obtainServiceInvocation() {
-		InvocationQueue sq = InvocationQueue.get();
-		return sq.obtainInvocation();
 	}
 
 	public abstract class ScheduledAction {
@@ -333,36 +112,28 @@ abstract class BaseManager implements Constants {
 
 		protected final long id;
 
-		public ScheduledAction(Request request) {
+		public ScheduledAction(final Request request) {
 			this.request = request;
 			setTimeout(request.timeout);
 			id = scheduledActionIdIndex++;
 		}
 
-		public void setTimeout(long timeout) {
-			this.timeout = timeout;
-			if (timeout > -1) {
-				timeToExpire = System.currentTimeMillis() + timeout;
-			} else
-				timeout = -1;
-		}
-
-		public boolean isValid() {
-			return valid;
-		}
-
-		public void setValid(boolean valid) {
-			this.valid = valid;
-		}
-
-		public long getExpireTime() {
-			return timeToExpire;
-		}
-
 		public abstract boolean consume();
 
-		public void onExpire() {
-
+		@Override
+		public boolean equals(final Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			final ScheduledAction other = (ScheduledAction) obj;
+			if (!getOuterType().equals(other.getOuterType()))
+				return false;
+			if (id != other.id)
+				return false;
+			return true;
 		}
 
 		public boolean expired() {
@@ -374,8 +145,8 @@ abstract class BaseManager implements Constants {
 				return System.currentTimeMillis() >= getExpireTime();
 		}
 
-		public boolean neverExpires() {
-			return (timeout == -1);
+		public long getExpireTime() {
+			return timeToExpire;
 		}
 
 		@Override
@@ -387,20 +158,28 @@ abstract class BaseManager implements Constants {
 			return result;
 		}
 
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
-				return true;
-			if (obj == null)
-				return false;
-			if (getClass() != obj.getClass())
-				return false;
-			ScheduledAction other = (ScheduledAction) obj;
-			if (!getOuterType().equals(other.getOuterType()))
-				return false;
-			if (id != other.id)
-				return false;
-			return true;
+		public boolean isValid() {
+			return valid;
+		}
+
+		public boolean neverExpires() {
+			return (timeout == -1);
+		}
+
+		public void onExpire() {
+
+		}
+
+		public void setTimeout(long timeout) {
+			this.timeout = timeout;
+			if (timeout > -1) {
+				timeToExpire = System.currentTimeMillis() + timeout;
+			} else
+				timeout = -1;
+		}
+
+		public void setValid(final boolean valid) {
+			this.valid = valid;
 		}
 
 		@Override
@@ -414,69 +193,276 @@ abstract class BaseManager implements Constants {
 		}
 	}
 
-	public Address getKeyOwner(Data key) {
-		return ConcurrentMapManager.get().getKeyOwner(null, key);
-	}
+	public static class SimpleDataEntry implements Map.Entry {
+		String name;
 
-	MemberImpl getMember(Address address) {
-		return ClusterManager.get().getMember(address);
-	}
+		int blockId;
 
-	void fireMapEvent(Map<Address, Boolean> mapListeners, String name, int eventType,
-			Object record, Data oldValue) {
-		fireMapEvent(mapListeners, name, eventType, record, oldValue, -1);
-	}
+		Data keyData;
 
-	void fireMapEvent(Map<Address, Boolean> mapListeners, String name, int eventType,
-			Object record, Data oldValue, long recordId) {
-		try {
-			// System.out.println(eventType + " FireMapEvent " + record);
-			Map<Address, Boolean> mapTargetListeners = null;
-			Data dataRecordKey = null;
-			Data dataRecordValue = null;
-			if (record instanceof Record) {
-				Record rec = (Record) record;
-				dataRecordKey = rec.getKey();
-				dataRecordValue = rec.getValue();
-				if (rec.hasListener()) {
-					mapTargetListeners = new HashMap<Address, Boolean>(rec.getMapListeners());
-				}
-			} else {
-				dataRecordValue = (Data) record;
+		Data valueData;
+
+		Object key = null;
+
+		Object value = null;
+
+		int copyCount = 0;
+
+		public SimpleDataEntry(final String name, final int blockId, final Data key,
+				final Data value, final int copyCount) {
+			super();
+			this.blockId = blockId;
+			this.keyData = key;
+			this.name = name;
+			this.valueData = value;
+			this.copyCount = copyCount;
+		}
+
+		public int getBlockId() {
+			return blockId;
+		}
+
+		public Object getKey() {
+			if (key == null) {
+				key = ThreadContext.get().toObject(keyData);
 			}
-			if (mapListeners != null && mapListeners.size() > 0) {
-				if (mapTargetListeners == null) {
-					mapTargetListeners = new HashMap<Address, Boolean>(mapListeners);
-				} else {
-					Set<Map.Entry<Address, Boolean>> entries = mapListeners.entrySet();
-					for (Map.Entry<Address, Boolean> entry : entries) {
-						if (mapTargetListeners.containsKey(entry.getKey())) {
-							if (entry.getValue().booleanValue()) {
-								mapTargetListeners.put(entry.getKey(), entry.getValue());
-							}
-						} else
-							mapTargetListeners.put(entry.getKey(), entry.getValue());
+			return key;
+		}
+
+		public Data getKeyData() {
+			return keyData;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public Object getValue() {
+			if (value == null) {
+				if (valueData != null) {
+					value = ThreadContext.get().toObject(valueData);
+				}
+			}
+			return value;
+		}
+
+		public Data getValueData() {
+			return valueData;
+		}
+
+		public Object setValue(final Object value) {
+			final IMap map = (IMap) FactoryImpl.getProxy(name);
+			map.put(keyData, value);
+			final Object oldValue = value;
+			this.value = value;
+			return oldValue;
+		}
+
+		@Override
+		public String toString() {
+			return "MapEntry key=" + getKey() + ", value=" + getValue();
+		}
+	}
+
+	abstract class AbstractCall implements Call {
+		private long id = -1;
+
+		public AbstractCall() {
+		}
+
+		public long getId() {
+			return id;
+		}
+
+		public void onDisconnect(final Address dead) {
+		}
+
+		public void redo() {
+			removeCall(getId());
+			id = -1;
+			enqueueAndReturn(this);
+		}
+
+		public void setId(final long id) {
+			this.id = id;
+		}
+	}
+
+	abstract class AllOp extends RequestBasedCall {
+		int numberOfExpectedResponses = 0;
+
+		int numberOfResponses = 0;
+
+		protected boolean done = false;
+
+		protected Set<Address> setAddresses = new HashSet<Address>();
+
+		public AllOp() {
+		}
+
+		@Override
+		public Object getResult() {
+			return null;
+		}
+
+		public void handleResponse(final Invocation inv) {
+			consumeResponse(inv);
+		}
+
+		@Override
+		public void onDisconnect(final Address dead) {
+			log(dead + " onDisconnect " + AllOp.this);
+			reset();
+			redo();
+		}
+
+		public void process() {
+			doLocalOp();
+			if (setAddresses.size() == 0) {
+				for (final MemberImpl member : lsMembers) {
+					setAddresses.add(member.getAddress());
+				}
+			}
+			numberOfResponses = 1;
+			numberOfExpectedResponses = setAddresses.size();
+			if (setAddresses.size() > 1) {
+				addCall(AllOp.this);
+				for (final Address address : setAddresses) {
+					if (!address.equals(thisAddress)) {
+						final Invocation inv = request.toInvocation();
+						inv.eventId = getId();
+						final boolean sent = send(inv, address);
+						if (!sent) {
+							inv.returnToContainer();
+							log(address + " not reachable: operation redoing:  " + AllOp.this);
+							redo();
+						}
+
 					}
 				}
+			} else {
+				complete(false);
 			}
-			if (mapTargetListeners == null || mapTargetListeners.size() == 0)
-				return;
-			Data key = (dataRecordKey != null) ? ThreadContext.get().hardCopy(dataRecordKey) : null;
-			Data value = null;
-			if (dataRecordValue != null) {
-				value = ThreadContext.get().hardCopy(dataRecordValue);
+		}
+
+		public void reset() {
+			done = false;
+			numberOfResponses = 0;
+			numberOfExpectedResponses = 0;
+			setAddresses.clear();
+		}
+
+		void complete(final boolean call) {
+			if (!done) {
+				done = true;
+				if (call) {
+					removeCall(getId());
+				}
+				synchronized (this) {
+					notify();
+				}
 			}
-			sendEvents(eventType, name, key, value, mapTargetListeners, recordId);
-		} catch (Exception e) {
-			e.printStackTrace();
+		}
+
+		void consumeResponse(final Invocation inv) {
+			numberOfResponses++;
+			if (numberOfResponses >= numberOfExpectedResponses) {
+				complete(true);
+			}
+			inv.returnToContainer();
+		}
+
+		abstract void doLocalOp();
+
+		@Override
+		void doOp() {
+			reset();
+			try {
+				synchronized (this) {
+					enqueueAndReturn(this);
+					wait();
+				}
+			} catch (final Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	abstract class BooleanOp extends TargetAwareOp {
+		@Override
+		void handleNoneRedoResponse(final Invocation inv) {
+			handleBooleanNoneRedoResponse(inv);
+		}
+	}
+
+	interface Call extends Processable {
+
+		long getId();
+
+		void handleResponse(Invocation inv);
+
+		void onDisconnect(Address dead);
+
+		void setId(long id);
+	}
+
+	static class EventQueue extends ConcurrentLinkedQueue<Runnable> implements Runnable {
+		public void run() {
+			final Runnable eventTask = poll();
+			if (eventTask != null)
+				eventTask.run();
+		}
+	}
+
+	static class EventTask extends EntryEvent implements Runnable {
+		protected final Data dataKey;
+
+		protected final Data dataValue;
+
+		protected final String name;
+
+		protected final long recordId;
+
+		public EventTask(final int eventType, final String name, final Data dataKey,
+				final Data dataValue, final long recordId) {
+			super(name);
+			this.eventType = eventType;
+			this.name = name;
+			this.dataValue = dataValue;
+			this.dataKey = dataKey;
+			this.recordId = recordId;
+		}
+
+		public void run() {
+			try {
+				if (!collection) {
+					key = ThreadContext.get().toObject(dataKey);
+				}
+				if (dataValue != null) {
+					value = ThreadContext.get().toObject(dataValue);
+				}
+				ListenerManager.get().callListeners(this);
+			} catch (final Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	abstract class LongOp extends TargetAwareOp {
+		@Override
+		void handleNoneRedoResponse(final Invocation inv) {
+			handleLongNoneRedoResponse(inv);
 		}
 	}
 
 	static class OrderedEventQueue extends ConcurrentLinkedQueue<EventTask> implements Runnable {
+		protected static Logger logger = Logger.getLogger(OrderedEventQueue.class.getName());
+
 		volatile long expectedRecordId = -1;
+
 		Map<Long, EventTask> mapDelayedEventTasks = new HashMap<Long, EventTask>(10);
 
-		public OrderedEventQueue(long expectedRecordId) {
+		public OrderedEventQueue(final long expectedRecordId) {
 			super();
 			this.expectedRecordId = expectedRecordId;
 		}
@@ -485,11 +471,11 @@ abstract class BaseManager implements Constants {
 			EventTask eventTask = poll();
 			if (eventTask == null)
 				return;
-			System.out.println(expectedRecordId + "  running event " + eventTask.recordId);
+			logger.log(Level.FINE, expectedRecordId + "  running event " + eventTask.recordId);
 			if (expectedRecordId == eventTask.recordId) {
 				try {
 					eventTask.run();
-				} catch (Throwable e) {
+				} catch (final Throwable e) {
 					e.printStackTrace();
 				}
 				expectedRecordId++;
@@ -508,261 +494,8 @@ abstract class BaseManager implements Constants {
 		}
 	}
 
-	static class EventQueue extends ConcurrentLinkedQueue<Runnable> implements Runnable {
-		public void run() {
-			Runnable eventTask = poll();
-			if (eventTask != null)
-				eventTask.run();
-		}
-	}
-
-	static class EventTask extends EntryEvent implements Runnable {
-		protected final Data dataKey;
-		protected final Data dataValue;
-		protected final String name;
-		protected final long recordId;
-
-		public EventTask(int eventType, String name, Data dataKey, Data dataValue, long recordId) {
-			super(name);
-			this.eventType = eventType;
-			this.name = name;
-			this.dataValue = dataValue;
-			this.dataKey = dataKey;
-			this.recordId = recordId;
-		}
-
-		public void run() {
-			try {
-				if (!collection) {
-					key = ThreadContext.get().toObject(dataKey);
-				}
-				if (dataValue != null) {
-					value = ThreadContext.get().toObject(dataValue);
-				}
-				ListenerManager.get().callListeners(this);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
-
-	void handleListenerRegisterations(boolean add, String name, Data key, Address address,
-			boolean includeValue) {
-		if (name.startsWith("q:")) {
-			BlockingQueueManager.get().handleListenerRegisterations(add, name, key, address,
-					includeValue);
-		} else if (name.startsWith("t:")) {
-			TopicManager.get().handleListenerRegisterations(add, name, key, address, includeValue);
-		} else {
-			ConcurrentMapManager.get().handleListenerRegisterations(add, name, key, address,
-					includeValue);
-		}
-	}
-
-	void enqueueEvent(int eventType, String name, Data eventKey, Data eventValue, Address from,
-			long recordId) {
-		EventTask eventTask = new EventTask(eventType, name, eventKey, eventValue, recordId);
-		if (name.startsWith("q:t:")) {
-			OrderedEventQueue orderedEventQueue = mapOrderedEventQueues.get(name);
-			if (orderedEventQueue == null) {
-				orderedEventQueue = new OrderedEventQueue(recordId);
-				mapOrderedEventQueues.put(name, orderedEventQueue);
-			}
-			System.out.println(eventTask.recordId + "offering eventTask " + recordId);
-			orderedEventQueue.offer(eventTask);
-			executeLocally(orderedEventQueue);
-		} else {
-			int eventQueueIndex = -1;
-			if (eventKey != null) {
-				eventQueueIndex = Math.abs(eventKey.hashCode()) % 100;
-			} else {
-				eventQueueIndex = Math.abs(from.hashCode()) % 100;
-			}
-			EventQueue eventQueue = eventQueues[eventQueueIndex];
-			boolean offered = eventQueue.offer(eventTask);
-			if (!offered)
-				throw new RuntimeException("event cannot be offered!");
-			executeLocally(eventQueue);
-		}
-	}
-
-	public void sendEvents(int eventType, String name, Data key, Data value,
-			Map<Address, Boolean> mapListeners, long recordId) {
-		if (mapListeners != null) {
-			InvocationQueue sq = InvocationQueue.get();
-			Set<Map.Entry<Address, Boolean>> entries = mapListeners.entrySet();
-
-			for (Map.Entry<Address, Boolean> entry : entries) {
-				Address address = entry.getKey();
-				boolean includeValue = entry.getValue();
-				if (address.isThisAddress()) {
-					try {
-						Data eventKey = (key != null) ? ThreadContext.get().hardCopy(key) : null;
-						Data eventValue = null;
-						if (includeValue)
-							eventValue = ThreadContext.get().hardCopy(value);
-						enqueueEvent(eventType, name, eventKey, eventValue, address, recordId);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				} else {
-					Invocation inv = sq.obtainInvocation();
-					inv.reset();
-					try {
-						Data eventKey = key;
-						Data eventValue = null;
-						if (includeValue)
-							eventValue = value;
-						inv.set(name, OP_EVENT, eventKey, eventValue);
-						inv.longValue = eventType;
-						inv.recordId = recordId;
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-					boolean sent = send(inv, address);
-					if (!sent)
-						inv.returnToContainer();
-				}
-			}
-		}
-	}
-
-	public static class SimpleDataEntry implements Map.Entry {
-		String name;
-		int blockId;
-		Data keyData;
-		Data valueData;
-		Object key = null;
-		Object value = null;
-		int copyCount = 0;
-
-		public SimpleDataEntry(String name, int blockId, Data key, Data value, int copyCount) {
-			super();
-			this.blockId = blockId;
-			this.keyData = key;
-			this.name = name;
-			this.valueData = value;
-			this.copyCount = copyCount;
-		}
-
-		public String getName() {
-			return name;
-		}
-
-		public int getBlockId() {
-			return blockId;
-		}
-
-		public Data getKeyData() {
-			return keyData;
-		}
-
-		public Data getValueData() {
-			return valueData;
-		}
-
-		public Object getKey() {
-			if (key == null) {
-				key = ThreadContext.get().toObject(keyData);
-			}
-			return key;
-		}
-
-		public Object getValue() {
-			if (value == null) {
-				if (valueData != null) {
-					value = ThreadContext.get().toObject(valueData);
-				}
-			}
-			return value;
-		}
-
-		public Object setValue(Object value) {
-			IMap map = (IMap) FactoryImpl.getProxy(name);
-			map.put(keyData, value);
-			Object oldValue = value;
-			this.value = value;
-			return oldValue;
-		}
-
-		@Override
-		public String toString() {
-			return "MapEntry key=" + getKey() + ", value=" + getValue();
-		}
-	}
-
-	public void enqueueAndReturn(Object obj) {
-		ClusterService.get().enqueueAndReturn(obj);
-	}
-
-	public MemberImpl getLocalMember() {
-		return ClusterManager.get().getLocalMember();
-	}
-
-	long idGen = 0;
-
-	public long addCall(Call call) {
-		long id = idGen++;
-		call.setId(id);
-		mapCalls.put(id, call);
-		return id;
-	}
-
-	public Call removeCall(Long id) {
-		return mapCalls.remove(id);
-	}
-
-	final void handleResponse(Invocation invResponse) {
-		Call call = mapCalls.get(invResponse.eventId);
-		if (call != null)
-			call.handleResponse(invResponse);
-		else {
-			if (DEBUG) {
-				log(invResponse.operation + " No call for eventId " + invResponse.eventId);
-			}
-			invResponse.returnToContainer();
-		}
-	}
-
-	protected void throwCME(Object key) {
-		throw new ConcurrentModificationException("Another thread holds a lock for the key : "
-				+ key);
-	}
-
-	public void returnScheduledAsBoolean(Request request) {
-		if (request.local) {
-			TargetAwareOp mop = (TargetAwareOp) request.attachment;
-			mop.setResult(request.response);
-		} else {
-			Invocation inv = request.toInvocation();
-			if (request.response == Boolean.TRUE) {
-				boolean sent = sendResponse(inv, request.caller);
-				if (DEBUG) {
-					log(request.local + " returning scheduled response " + sent);
-				}
-			} else {
-				sendResponseFailure(inv, request.caller);
-			}
-		}
-	}
-
-	public void returnScheduledAsSuccess(Request request) {
-		if (request.local) {
-			TargetAwareOp mop = (TargetAwareOp) request.attachment;
-			mop.setResult(request.response);
-		} else {
-			Invocation inv = request.toInvocation();
-			Object result = request.response;
-			if (result != null) {
-				if (result instanceof Data) {
-					Data oldValue = (Data) result;
-					if (oldValue != null && oldValue.size() > 0) {
-						inv.doSet(oldValue, inv.data);
-					}
-				}
-			}
-			sendResponse(inv, request.caller);
-		}
+	interface Processable {
+		void process();
 	}
 
 	abstract class QueueBasedCall extends AbstractCall {
@@ -772,11 +505,20 @@ abstract class BaseManager implements Constants {
 			this(true);
 		}
 
-		public QueueBasedCall(boolean limited) {
+		public QueueBasedCall(final boolean limited) {
 			if (limited) {
 				responses = new ArrayBlockingQueue(1);
 			} else {
 				responses = new LinkedBlockingQueue();
+			}
+		}
+
+		public void handleBooleanNoneRedoResponse(final Invocation inv) {
+			removeCall(getId());
+			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+				responses.add(Boolean.TRUE);
+			} else {
+				responses.add(Boolean.FALSE);
 			}
 		}
 
@@ -787,27 +529,10 @@ abstract class BaseManager implements Constants {
 			responses.add(OBJECT_REDO);
 		}
 
-		void setResult(Object obj) {
-			if (obj == null) {
-				responses.add(OBJECT_NULL);
-			} else {
-				responses.add(obj);
-			}
-		}
-
-		public void handleBooleanNoneRedoResponse(Invocation inv) {
+		void handleObjectNoneRedoResponse(final Invocation inv) {
 			removeCall(getId());
 			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-				responses.add(Boolean.TRUE);
-			} else {
-				responses.add(Boolean.FALSE);
-			}
-		}
-
-		void handleObjectNoneRedoResponse(Invocation inv) {
-			removeCall(getId());
-			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-				Data oldValue = inv.doTake(inv.data);
+				final Data oldValue = inv.doTake(inv.data);
 				if (oldValue == null || oldValue.size() == 0) {
 					responses.add(OBJECT_NULL);
 				} else {
@@ -817,489 +542,59 @@ abstract class BaseManager implements Constants {
 				throw new RuntimeException("responseType " + inv.responseType);
 			}
 		}
-	}
 
-	abstract class ResponseQueueCall extends RequestBasedCall {
-		final protected BlockingQueue responses;
-
-		public ResponseQueueCall() {
-			this(true);
-		}
-
-		public ResponseQueueCall(boolean limited) {
-			if (limited) {
-				responses = new ArrayBlockingQueue(1);
-			} else {
-				responses = new LinkedBlockingQueue();
-			}
-		}
-
-		@Override
-		public void redo() {
-			removeCall(getId());
-			responses.clear();
-			responses.add(OBJECT_REDO);
-		}
-
-		void setResult(Object obj) {
+		void setResult(final Object obj) {
 			if (obj == null) {
 				responses.add(OBJECT_NULL);
 			} else {
 				responses.add(obj);
 			}
 		}
-
-		public void handleBooleanNoneRedoResponse(Invocation inv) {
-			removeCall(getId());
-			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-				responses.add(Boolean.TRUE);
-			} else {
-				responses.add(Boolean.FALSE);
-			}
-		}
-
-		void handleLongNoneRedoResponse(Invocation inv) {
-			removeCall(getId());
-			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-				responses.add(Long.valueOf(inv.longValue));
-			} else {
-				throw new RuntimeException("handleLongNoneRedoResponse.responseType "
-						+ inv.responseType);
-			}
-		}
-
-		void handleObjectNoneRedoResponse(Invocation inv) {
-			removeCall(getId());
-			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-				Data oldValue = inv.doTake(inv.data);
-				if (oldValue == null || oldValue.size() == 0) {
-					responses.add(OBJECT_NULL);
-				} else {
-					responses.add(oldValue);
-				}
-			} else {
-				throw new RuntimeException("handleObjectNoneRedoResponse.responseType "
-						+ inv.responseType);
-			}
-		}
-	}
-
-	abstract class BooleanOp extends TargetAwareOp {
-		@Override
-		void handleNoneRedoResponse(Invocation inv) {
-			handleBooleanNoneRedoResponse(inv);
-		}
-	}
-
-	abstract class LongOp extends TargetAwareOp {
-		@Override
-		void handleNoneRedoResponse(Invocation inv) {
-			handleLongNoneRedoResponse(inv);
-		}
-	}
-
-	abstract class TargetAwareOp extends ResponseQueueCall {
-
-		Address target = null;
-
-		public TargetAwareOp() {
-		}
-
-		void handleNoneRedoResponse(Invocation inv) {
-			handleObjectNoneRedoResponse(inv);
-		}
-
-		public void handleResponse(Invocation inv) {
-			if (inv.responseType == RESPONSE_REDO) {
-				redo();
-			} else {
-				handleNoneRedoResponse(inv);
-			}
-			inv.returnToContainer();
-		}
-
-		@Override
-		public void onDisconnect(Address dead) {
-			if (dead.equals(target)) {
-				redo();
-			}
-		}
-
-		@Override
-		public void doOp() {
-			responses.clear();
-			enqueueAndReturn(TargetAwareOp.this);
-		}
-
-		public Object getResult() {
-			Object result = null;
-			try {
-				result = responses.take();
-				if (result == OBJECT_REDO) {
-					Thread.sleep(2000);
-					// if (DEBUG) {
-					// log(getId() + " Redoing.. " + this);
-					// }
-					request.redoCount++;
-					doOp();
-					return getResult();
-				}
-			} catch (Exception e) {
-				e.printStackTrace(System.out);
-			}
-			return result;
-		}
-
-		abstract void setTarget();
-
-		public void process() {
-			setTarget();
-			if (target == null) {
-				if (isSuperClient()) {
-					setResult(OBJECT_REDO);
-					return;
-				} else {
-					throw new RuntimeException("Target cannot be null!");
-				}
-			}
-			if (target.equals(thisAddress)) {
-				doLocalOp();
-			} else {
-				invoke();
-			}
-		}
-
-		protected void invoke() {
-			addCall(TargetAwareOp.this);
-			Invocation inv = request.toInvocation();
-			inv.eventId = getId();
-			boolean sent = send(inv, target);
-			if (!sent) {
-				if (DEBUG) {
-					log("invocation cannot be sent to " + target);
-				}
-				inv.returnToContainer();
-				redo();
-			}
-		}
-
-		abstract void doLocalOp();
-	}
-
-	abstract class AllOp extends RequestBasedCall {
-		int numberOfExpectedResponses = 0;
-		int numberOfResponses = 0;
-		protected boolean done = false;
-		protected Set<Address> setAddresses = new HashSet<Address>();
-
-		public AllOp() {
-		}
-
-		@Override
-		void doOp() {
-			reset();
-			try {
-				synchronized (this) {
-					enqueueAndReturn(this);
-					wait();
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-
-		public Object getResult() {
-			return null;
-		}
-
-		public void process() {
-			doLocalOp();
-			if (setAddresses.size() == 0) {
-				for (MemberImpl member : lsMembers) {
-					setAddresses.add(member.getAddress());
-				}
-			}
-			numberOfResponses = 1;
-			numberOfExpectedResponses = setAddresses.size();
-			if (setAddresses.size() > 1) {
-				addCall(AllOp.this);
-				for (Address address : setAddresses) {
-					if (!address.equals(thisAddress)) {
-						Invocation inv = request.toInvocation();
-						inv.eventId = getId();
-						boolean sent = send(inv, address);
-						if (!sent) {
-							inv.returnToContainer();
-							log(address + " not reachable: operation redoing:  " + AllOp.this);
-							redo();
-						}
-
-					}
-				}
-			} else {
-				complete(false);
-			}
-		}
-
-		@Override
-		public void onDisconnect(Address dead) {
-			log(dead + " onDisconnect " + AllOp.this);
-			reset();
-			redo();
-		}
-
-		public void reset() {
-			done = false;
-			numberOfResponses = 0;
-			numberOfExpectedResponses = 0;
-			setAddresses.clear();
-		}
-
-		abstract void doLocalOp();
-
-		void consumeResponse(Invocation inv) {
-			numberOfResponses++;
-			if (numberOfResponses >= numberOfExpectedResponses) {
-				complete(true);
-			}
-			inv.returnToContainer();
-		}
-
-		public void handleResponse(Invocation inv) {
-			consumeResponse(inv);
-		}
-
-		void complete(boolean call) {
-			if (!done) {
-				done = true;
-				if (call) {
-					removeCall(getId());
-				}
-				synchronized (this) {
-					notify();
-				}
-			}
-		}
-	}
-
-	abstract class RequestBasedCall extends AbstractCall {
-		final protected Request request = new Request();
-
-		public void setLocal(int operation, String name, Object key, Object value, long timeout,
-				long txnId, long recordId) {
-			Data keyData = null;
-			Data valueData = null;
-			if (key != null) {
-				keyData = ThreadContext.get().toData(key);
-			}
-			if (value != null) {
-				valueData = ThreadContext.get().toData(value);
-			}
-			request.setLocal(operation, name, keyData, valueData, -1, timeout, recordId);
-			request.attachment = this;
-		}
-
-		public Object objectCall() {
-			doOp();
-			return getResultAsObject();
-		}
-
-		public Object objectCall(int operation, String name, Object key, Object value,
-				long timeout, long txnId, long recordId) {
-			setLocal(operation, name, key, value, timeout, txnId, recordId);
-			return objectCall();
-		}
-
-		public boolean booleanCall(int operation, String name, Object key, Object value,
-				long timeout, long txnId, long recordId) {
-			doOp(operation, name, key, value, timeout, txnId, recordId);
-			return getResultAsBoolean();
-		}
-
-		abstract void doOp();
-
-		abstract Object getResult();
-
-		public void doOp(int operation, String name, Object key, Object value, long timeout,
-				long txnId, long recordId) {
-			setLocal(operation, name, key, value, timeout, txnId, recordId);
-			doOp();
-		}
-
-		public Object getResultAsObject() {
-			try {
-				Object result = getResult();
-				if (result == OBJECT_NULL || result == null) {
-					return null;
-				}
-				if (result instanceof Data) {
-					Data data = (Data) result;
-					if (data.size() == 0)
-						return null;
-					return ThreadContext.get().toObject(data);
-				}
-				return result;
-			} catch (Throwable e) {
-				if (DEBUG) {
-					ClusterManager.get().publishLog(e.toString());
-				}
-				e.printStackTrace(System.out);
-			} finally {
-				request.reset();
-			}
-			return null;
-		}
-
-		public boolean getResultAsBoolean() {
-			try {
-				Object result = getResult();
-				if (result == OBJECT_NULL || result == null) {
-					return false;
-				}
-				if (result == Boolean.TRUE)
-					return true;
-				else
-					return false;
-			} catch (Exception e) {
-				e.printStackTrace();
-			} finally {
-				this.request.reset();
-			}
-			return false;
-		}
-
-	}
-
-	interface Call extends Processable {
-
-		void handleResponse(Invocation inv);
-
-		void setId(long id);
-
-		long getId();
-
-		void onDisconnect(Address dead);
-	}
-
-	abstract class AbstractCall implements Call {
-		private long id = -1;
-
-		public AbstractCall() {
-		}
-
-		public void setId(long id) {
-			this.id = id;
-		}
-
-		public long getId() {
-			return id;
-		}
-
-		public void redo() {
-			removeCall(getId());
-			id = -1;
-			enqueueAndReturn(this);
-		}
-
-		public void onDisconnect(Address dead) {
-		}
 	}
 
 	class Request {
 		volatile int redoCount = 0;
+
 		volatile int resetCount = 0;
+
 		boolean local = true;
+
 		int operation = -1;
+
 		String name = null;
+
 		Data key = null;
+
 		Data value = null;
+
 		int blockId = -1;
+
 		long timeout = -1;
+
 		long txnId = -1;
+
 		Address caller = null;
+
 		int lockThreadId = -1;
+
 		Address lockAddress = null;
+
 		int lockCount = 0;
+
 		long eventId = -1;
+
 		long longValue = -1;
+
 		long recordId = -1;
 
 		Object attachment = null;
-		Object response = null;
-		boolean scheduled = false;
 
-		public Request softCopy() {
-			Request copy = new Request();
-			copy.set(local, operation, name, key, value, blockId, timeout, txnId, eventId,
-					lockThreadId, lockAddress, lockCount, caller, longValue, recordId);
-			copy.attachment = attachment;
-			copy.response = response;
-			copy.scheduled = scheduled;
-			return copy;
-		}
+		Object response = null;
+
+		boolean scheduled = false;
 
 		public boolean hasEnoughTimeToSchedule() {
 			return timeout == -1 || timeout > 100;
-		}
-
-		public void setLocal(int operation, String name, Data key, Data value, int blockId,
-				long timeout, long recordId) {
-			reset();
-			set(true, operation, name, key, value, blockId, timeout, -1, -1, -1, thisAddress, 0,
-					thisAddress, -1, recordId);
-			this.txnId = ThreadContext.get().getTxnId();
-			this.lockThreadId = Thread.currentThread().hashCode();
-			this.caller = thisAddress;
-		}
-
-		public void setInvocation(Invocation inv) {
-			reset();
-			set(false, inv.operation, inv.name, inv.doTake(inv.key), inv.doTake(inv.data),
-					inv.blockId, inv.timeout, inv.txnId, inv.eventId, inv.threadId,
-					inv.lockAddress, inv.lockCount, inv.conn.getEndPoint(), inv.longValue,
-					inv.recordId);
-
-		}
-
-		public void set(boolean local, int operation, String name, Data key, Data value,
-				int blockId, long timeout, long txnId, long eventId, int lockThreadId,
-				Address lockAddress, int lockCount, Address caller, long longValue, long recordId) {
-			this.local = local;
-			this.operation = operation;
-			this.name = name;
-			this.key = key;
-			this.value = value;
-			this.blockId = blockId;
-			this.timeout = timeout;
-			this.txnId = txnId;
-			this.eventId = eventId;
-			this.lockThreadId = lockThreadId;
-			this.lockAddress = lockAddress;
-			this.lockCount = lockCount;
-			this.caller = caller;
-			this.longValue = longValue;
-			this.recordId = recordId;
-		}
-
-		public Invocation toInvocation() {
-			Invocation inv = obtainServiceInvocation();
-			inv.local = false;
-			inv.operation = operation;
-			inv.name = name;
-			if (key != null)
-				inv.doHardCopy(key, inv.key);
-			if (value != null)
-				inv.doHardCopy(value, inv.data);
-			inv.blockId = blockId;
-			inv.timeout = timeout;
-			inv.txnId = txnId;
-			inv.eventId = eventId;
-			inv.threadId = lockThreadId;
-			inv.lockAddress = lockAddress;
-			inv.lockCount = lockCount;
-			inv.longValue = longValue;
-			inv.recordId = recordId;
-			return inv;
 		}
 
 		public void reset() {
@@ -1323,22 +618,776 @@ abstract class BaseManager implements Constants {
 			this.attachment = null;
 			this.recordId = -1;
 		}
+
+		public void set(final boolean local, final int operation, final String name,
+				final Data key, final Data value, final int blockId, final long timeout,
+				final long txnId, final long eventId, final int lockThreadId,
+				final Address lockAddress, final int lockCount, final Address caller,
+				final long longValue, final long recordId) {
+			this.local = local;
+			this.operation = operation;
+			this.name = name;
+			this.key = key;
+			this.value = value;
+			this.blockId = blockId;
+			this.timeout = timeout;
+			this.txnId = txnId;
+			this.eventId = eventId;
+			this.lockThreadId = lockThreadId;
+			this.lockAddress = lockAddress;
+			this.lockCount = lockCount;
+			this.caller = caller;
+			this.longValue = longValue;
+			this.recordId = recordId;
+		}
+
+		public void setInvocation(final Invocation inv) {
+			reset();
+			set(false, inv.operation, inv.name, inv.doTake(inv.key), inv.doTake(inv.data),
+					inv.blockId, inv.timeout, inv.txnId, inv.eventId, inv.threadId,
+					inv.lockAddress, inv.lockCount, inv.conn.getEndPoint(), inv.longValue,
+					inv.recordId);
+
+		}
+
+		public void setLocal(final int operation, final String name, final Data key,
+				final Data value, final int blockId, final long timeout, final long recordId) {
+			reset();
+			set(true, operation, name, key, value, blockId, timeout, -1, -1, -1, thisAddress, 0,
+					thisAddress, -1, recordId);
+			this.txnId = ThreadContext.get().getTxnId();
+			this.lockThreadId = Thread.currentThread().hashCode();
+			this.caller = thisAddress;
+		}
+
+		public Request softCopy() {
+			final Request copy = new Request();
+			copy.set(local, operation, name, key, value, blockId, timeout, txnId, eventId,
+					lockThreadId, lockAddress, lockCount, caller, longValue, recordId);
+			copy.attachment = attachment;
+			copy.response = response;
+			copy.scheduled = scheduled;
+			return copy;
+		}
+
+		public Invocation toInvocation() {
+			final Invocation inv = obtainServiceInvocation();
+			inv.local = false;
+			inv.operation = operation;
+			inv.name = name;
+			if (key != null)
+				inv.doHardCopy(key, inv.key);
+			if (value != null)
+				inv.doHardCopy(value, inv.data);
+			inv.blockId = blockId;
+			inv.timeout = timeout;
+			inv.txnId = txnId;
+			inv.eventId = eventId;
+			inv.threadId = lockThreadId;
+			inv.lockAddress = lockAddress;
+			inv.lockCount = lockCount;
+			inv.longValue = longValue;
+			inv.recordId = recordId;
+			return inv;
+		}
 	}
 
-	interface Processable {
-		void process();
+	abstract class RequestBasedCall extends AbstractCall {
+		final protected Request request = new Request();
+
+		public boolean booleanCall(final int operation, final String name, final Object key,
+				final Object value, final long timeout, final long txnId, final long recordId) {
+			doOp(operation, name, key, value, timeout, txnId, recordId);
+			return getResultAsBoolean();
+		}
+
+		public void doOp(final int operation, final String name, final Object key,
+				final Object value, final long timeout, final long txnId, final long recordId) {
+			setLocal(operation, name, key, value, timeout, txnId, recordId);
+			doOp();
+		}
+
+		public boolean getResultAsBoolean() {
+			try {
+				final Object result = getResult();
+				if (result == OBJECT_NULL || result == null) {
+					return false;
+				}
+				if (result == Boolean.TRUE)
+					return true;
+				else
+					return false;
+			} catch (final Exception e) {
+				e.printStackTrace();
+			} finally {
+				this.request.reset();
+			}
+			return false;
+		}
+
+		public Object getResultAsObject() {
+			try {
+				final Object result = getResult();
+				if (result == OBJECT_NULL || result == null) {
+					return null;
+				}
+				if (result instanceof Data) {
+					final Data data = (Data) result;
+					if (data.size() == 0)
+						return null;
+					return ThreadContext.get().toObject(data);
+				}
+				return result;
+			} catch (final Throwable e) {
+				if (DEBUG) {
+					ClusterManager.get().publishLog(e.toString());
+				}
+				e.printStackTrace(System.out);
+			} finally {
+				request.reset();
+			}
+			return null;
+		}
+
+		public Object objectCall() {
+			doOp();
+			return getResultAsObject();
+		}
+
+		public Object objectCall(final int operation, final String name, final Object key,
+				final Object value, final long timeout, final long txnId, final long recordId) {
+			setLocal(operation, name, key, value, timeout, txnId, recordId);
+			return objectCall();
+		}
+
+		public void setLocal(final int operation, final String name, final Object key,
+				final Object value, final long timeout, final long txnId, final long recordId) {
+			Data keyData = null;
+			Data valueData = null;
+			if (key != null) {
+				keyData = ThreadContext.get().toData(key);
+			}
+			if (value != null) {
+				valueData = ThreadContext.get().toData(value);
+			}
+			request.setLocal(operation, name, keyData, valueData, -1, timeout, recordId);
+			request.attachment = this;
+		}
+
+		abstract void doOp();
+
+		abstract Object getResult();
+
 	}
 
-	public static byte getMapType(String name) {
+	abstract class ResponseQueueCall extends RequestBasedCall {
+		final protected BlockingQueue responses;
+
+		public ResponseQueueCall() {
+			this(true);
+		}
+
+		public ResponseQueueCall(final boolean limited) {
+			if (limited) {
+				responses = new ArrayBlockingQueue(1);
+			} else {
+				responses = new LinkedBlockingQueue();
+			}
+		}
+
+		public void handleBooleanNoneRedoResponse(final Invocation inv) {
+			removeCall(getId());
+			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+				responses.add(Boolean.TRUE);
+			} else {
+				responses.add(Boolean.FALSE);
+			}
+		}
+
+		@Override
+		public void redo() {
+			removeCall(getId());
+			responses.clear();
+			setResult(OBJECT_REDO);
+		}
+
+		void handleLongNoneRedoResponse(final Invocation inv) {
+			removeCall(getId());
+			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+				responses.add(Long.valueOf(inv.longValue));
+			} else {
+				throw new RuntimeException("handleLongNoneRedoResponse.responseType "
+						+ inv.responseType);
+			}
+		}
+
+		void handleObjectNoneRedoResponse(final Invocation inv) {
+			removeCall(getId());
+			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+				final Data oldValue = inv.doTake(inv.data);
+				if (oldValue == null || oldValue.size() == 0) {
+					responses.add(OBJECT_NULL);
+				} else {
+					responses.add(oldValue);
+				}
+			} else {
+				throw new RuntimeException("handleObjectNoneRedoResponse.responseType "
+						+ inv.responseType);
+			}
+		}
+
+		void setResult(final Object obj) {
+			if (obj == null) {
+				responses.add(OBJECT_NULL);
+			} else {
+				responses.add(obj);
+			}
+		}
+	}
+
+	abstract class TargetAwareOp extends ResponseQueueCall {
+
+		Address target = null;
+
+		public TargetAwareOp() {
+		}
+
+		@Override
+		public void doOp() {
+			responses.clear();
+			enqueueAndReturn(TargetAwareOp.this);
+		}
+
+		@Override
+		public Object getResult() {
+			Object result = null;
+			try {
+				result = responses.take();
+				if (result == OBJECT_REDO) {
+					Thread.sleep(2000);
+					// if (DEBUG) {
+					// log(getId() + " Redoing.. " + this);
+					// }
+					request.redoCount++;
+					doOp();
+					return getResult();
+				}
+			} catch (final Exception e) {
+				e.printStackTrace(System.out);
+			}
+			return result;
+		}
+
+		public void handleResponse(final Invocation inv) {
+			if (inv.responseType == RESPONSE_REDO) {
+				redo();
+			} else {
+				handleNoneRedoResponse(inv);
+			}
+			inv.returnToContainer();
+		}
+
+		@Override
+		public void onDisconnect(final Address dead) {
+			if (dead.equals(target)) {
+				redo();
+			}
+		}
+
+		public void process() {
+			setTarget();
+			if (target == null) {
+				setResult(OBJECT_REDO);
+				return;
+			}
+			if (target.equals(thisAddress)) {
+				doLocalOp();
+			} else {
+				invoke();
+			}
+		}
+
+		protected void postProcess() {
+
+		}
+
+		protected void invoke() {
+			addCall(TargetAwareOp.this);
+			final Invocation inv = request.toInvocation();
+			inv.eventId = getId();
+			final boolean sent = send(inv, target);
+			if (!sent) {
+				if (DEBUG) {
+					log("invocation cannot be sent to " + target);
+				}
+				inv.returnToContainer();
+				redo();
+			}
+		}
+
+		abstract void doLocalOp();
+
+		void handleNoneRedoResponse(final Invocation inv) {
+			handleObjectNoneRedoResponse(inv);
+		}
+
+		abstract void setTarget();
+	}
+
+	public static byte getMapType(final String name) {
 		byte mapType = MAP_TYPE_MAP;
 		if (name.length() > 3) {
-			String typeStr = name.substring(2, 4);
+			final String typeStr = name.substring(2, 4);
 			if ("s:".equals(typeStr))
 				mapType = MAP_TYPE_SET;
 			else if ("l:".equals(typeStr))
 				mapType = MAP_TYPE_LIST;
 		}
 		return mapType;
+	}
+
+	public long addCall(final Call call) {
+		final long id = idGen++;
+		call.setId(id);
+		mapCalls.put(id, call);
+		return id;
+	}
+
+	public void enqueueAndReturn(final Object obj) {
+		ClusterService.get().enqueueAndReturn(obj);
+	}
+
+	public Address getKeyOwner(final Data key) {
+		return ConcurrentMapManager.get().getKeyOwner(null, key);
+	}
+
+	public MemberImpl getLocalMember() {
+		return ClusterManager.get().getLocalMember();
+	}
+
+	public Invocation obtainServiceInvocation(final String name, final Object key,
+			final Object value, final int operation, final long timeout) {
+		try {
+			final Invocation inv = obtainServiceInvocation();
+			inv.set(name, operation, key, value);
+			inv.timeout = timeout;
+			return inv;
+
+		} catch (final Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public Call removeCall(final Long id) {
+		return mapCalls.remove(id);
+	}
+
+	public void returnScheduledAsBoolean(final Request request) {
+		if (request.local) {
+			final TargetAwareOp mop = (TargetAwareOp) request.attachment;
+			mop.setResult(request.response);
+		} else {
+			final Invocation inv = request.toInvocation();
+			if (request.response == Boolean.TRUE) {
+				final boolean sent = sendResponse(inv, request.caller);
+				if (DEBUG) {
+					log(request.local + " returning scheduled response " + sent);
+				}
+			} else {
+				sendResponseFailure(inv, request.caller);
+			}
+		}
+	}
+
+	public void returnScheduledAsSuccess(final Request request) {
+		if (request.local) {
+			final TargetAwareOp mop = (TargetAwareOp) request.attachment;
+			mop.setResult(request.response);
+		} else {
+			final Invocation inv = request.toInvocation();
+			final Object result = request.response;
+			if (result != null) {
+				if (result instanceof Data) {
+					final Data oldValue = (Data) result;
+					if (oldValue != null && oldValue.size() > 0) {
+						inv.doSet(oldValue, inv.data);
+					}
+				}
+			}
+			sendResponse(inv, request.caller);
+		}
+	}
+
+	public void sendEvents(final int eventType, final String name, final Data key,
+			final Data value, final Map<Address, Boolean> mapListeners, final long recordId) {
+		if (mapListeners != null) {
+			final InvocationQueue sq = InvocationQueue.get();
+			final Set<Map.Entry<Address, Boolean>> entries = mapListeners.entrySet();
+
+			for (final Map.Entry<Address, Boolean> entry : entries) {
+				final Address address = entry.getKey();
+				final boolean includeValue = entry.getValue();
+				if (address.isThisAddress()) {
+					try {
+						final Data eventKey = (key != null) ? ThreadContext.get().hardCopy(key)
+								: null;
+						Data eventValue = null;
+						if (includeValue)
+							eventValue = ThreadContext.get().hardCopy(value);
+						enqueueEvent(eventType, name, eventKey, eventValue, address, recordId);
+					} catch (final Exception e) {
+						e.printStackTrace();
+					}
+				} else {
+					final Invocation inv = sq.obtainInvocation();
+					inv.reset();
+					try {
+						final Data eventKey = key;
+						Data eventValue = null;
+						if (includeValue)
+							eventValue = value;
+						inv.set(name, OP_EVENT, eventKey, eventValue);
+						inv.longValue = eventType;
+						inv.recordId = recordId;
+					} catch (final Exception e) {
+						e.printStackTrace();
+					}
+					final boolean sent = send(inv, address);
+					if (!sent)
+						inv.returnToContainer();
+				}
+			}
+		}
+	}
+
+	public void sendProcessableTo(final RemotelyProcessable rp, final Address address) {
+		final Data value = ThreadContext.get().toData(rp);
+		final Invocation inv = obtainServiceInvocation();
+		try {
+			inv.set("remotelyProcess", OP_REMOTELY_PROCESS, null, value);
+			final boolean sent = send(inv, address);
+			if (!sent) {
+				inv.returnToContainer();
+			}
+		} catch (final Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	protected final void executeLocally(final Runnable runnable) {
+		ExecutorManager.get().executeLocaly(runnable);
+	}
+
+	protected Address getMasterAddress() {
+		return Node.get().getMasterAddress();
+	}
+
+	protected final MemberImpl getNextMemberAfter(final Address address,
+			final boolean skipSuperClient, final int distance) {
+		return getNextMemberAfter(lsMembers, address, skipSuperClient, distance);
+	}
+
+	protected final MemberImpl getNextMemberAfter(final List<MemberImpl> lsMembers,
+			final Address address, final boolean skipSuperClient, final int distance) {
+		final int size = lsMembers.size();
+		if (size <= 1)
+			return null;
+		int indexOfMember = -1;
+		for (int i = 0; i < size; i++) {
+			final MemberImpl member = lsMembers.get(i);
+			if (member.getAddress().equals(address)) {
+				indexOfMember = i;
+			}
+		}
+		if (indexOfMember == -1)
+			return null;
+		indexOfMember++;
+		int foundDistance = 0;
+		for (int i = 0; i < size; i++) {
+			final MemberImpl member = lsMembers.get((indexOfMember + i) % size);
+			if (!(skipSuperClient && member.superClient())) {
+				foundDistance++;
+			}
+			if (foundDistance == distance)
+				return member;
+		}
+		return null;
+	}
+
+	protected final MemberImpl getNextMemberBeforeSync(final Address address,
+			final boolean skipSuperClient, final int distance) {
+		return getNextMemberAfter(ClusterManager.get().getMembersBeforeSync(), address,
+				skipSuperClient, distance);
+	}
+
+	protected final MemberImpl getPreviousMemberBefore(final Address address,
+			final boolean skipSuperClient, final int distance) {
+		return getPreviousMemberBefore(lsMembers, address, skipSuperClient, distance);
+	}
+
+	protected final MemberImpl getPreviousMemberBefore(final List<MemberImpl> lsMembers,
+			final Address address, final boolean skipSuperClient, final int distance) {
+		final int size = lsMembers.size();
+		if (size <= 1)
+			return null;
+		int indexOfMember = -1;
+		for (int i = 0; i < size; i++) {
+			final MemberImpl member = lsMembers.get(i);
+			if (member.getAddress().equals(address)) {
+				indexOfMember = i;
+			}
+		}
+		if (indexOfMember == -1)
+			return null;
+		indexOfMember += (size - 1);
+		int foundDistance = 0;
+		for (int i = 0; i < size; i++) {
+			final MemberImpl member = lsMembers.get((indexOfMember - i) % size);
+			if (!(skipSuperClient && member.superClient())) {
+				foundDistance++;
+			}
+			if (foundDistance == distance)
+				return member;
+		}
+		return null;
+	}
+
+	protected long incrementAndGetEventId() {
+		eventId++;
+		return eventId;
+	}
+
+	protected final boolean isMaster() {
+		return Node.get().master();
+	}
+
+	protected final boolean isSuperClient() {
+		return Node.get().isSuperClient();
+	}
+
+	protected void log(final Object obj) {
+		if (DEBUG)
+			logger.log(Level.FINEST, obj.toString());
+	}
+
+	protected Invocation obtainServiceInvocation() {
+		final InvocationQueue sq = InvocationQueue.get();
+		return sq.obtainInvocation();
+	}
+
+	protected final boolean send(final String name, final int operation, final DataSerializable ds,
+			final Address address) {
+		try {
+			final Invocation inv = InvocationQueue.get().obtainInvocation();
+			inv.set(name, operation, null, ds);
+			final boolean sent = send(inv, address);
+			if (!sent)
+				inv.returnToContainer();
+			return sent;
+		} catch (final Exception e) {
+			e.printStackTrace();
+		}
+		return true;
+	}
+
+	protected boolean sendData(final String name, final int operation, final Data data,
+			final Address address) {
+		final Invocation inv = obtainServiceInvocation();
+		inv.name = name;
+		inv.operation = operation;
+		inv.setData(data);
+		return send(inv, address);
+	}
+
+	protected void sendRedoResponse(final Invocation inv) {
+		inv.responseType = RESPONSE_REDO;
+		sendResponse(inv);
+	}
+
+	protected boolean sendResponse(final Invocation inv) {
+		inv.local = false;
+		inv.operation = OP_RESPONSE;
+		if (inv.responseType == RESPONSE_NONE) {
+			inv.responseType = RESPONSE_SUCCESS;
+		}
+		final boolean sent = send(inv, inv.conn);
+		if (!sent) {
+			inv.returnToContainer();
+		}
+		return sent;
+	}
+
+	protected boolean sendResponse(final Invocation inv, final Address address) {
+		final Connection conn = ConnectionManager.get().getConnection(address);
+		inv.conn = conn;
+		return sendResponse(inv);
+	}
+
+	protected boolean sendResponseFailure(final Invocation inv) {
+		inv.local = false;
+		inv.operation = OP_RESPONSE;
+		inv.responseType = RESPONSE_FAILURE;
+		final boolean sent = send(inv, inv.conn);
+		if (!sent) {
+			inv.returnToContainer();
+		}
+		return sent;
+	}
+
+	protected boolean sendResponseFailure(final Invocation inv, final Address address) {
+		final Connection conn = ConnectionManager.get().getConnection(address);
+		inv.conn = conn;
+		return sendResponseFailure(inv);
+	}
+
+	protected boolean sendSerializable(final String name, final int operation,
+			final DataSerializable ds, final Address address) {
+		return sendData(name, operation, ThreadContext.get().toData(ds), address);
+	}
+
+	protected void throwCME(final Object key) {
+		throw new ConcurrentModificationException("Another thread holds a lock for the key : "
+				+ key);
+	}
+
+	void enqueueEvent(final int eventType, final String name, final Data eventKey,
+			final Data eventValue, final Address from, final long recordId) {
+		final EventTask eventTask = new EventTask(eventType, name, eventKey, eventValue, recordId);
+		if (name.startsWith("q:t:")) {
+			OrderedEventQueue orderedEventQueue = mapOrderedEventQueues.get(name);
+			if (orderedEventQueue == null) {
+				orderedEventQueue = new OrderedEventQueue(recordId);
+				mapOrderedEventQueues.put(name, orderedEventQueue);
+			}
+			logger.log(Level.FINE, eventTask.recordId + "offering eventTask " + recordId);
+			orderedEventQueue.offer(eventTask);
+			executeLocally(orderedEventQueue);
+		} else {
+			int eventQueueIndex = -1;
+			if (eventKey != null) {
+				eventQueueIndex = Math.abs(eventKey.hashCode()) % 100;
+			} else {
+				eventQueueIndex = Math.abs(from.hashCode()) % 100;
+			}
+			final EventQueue eventQueue = eventQueues[eventQueueIndex];
+			final boolean offered = eventQueue.offer(eventTask);
+			if (!offered)
+				throw new RuntimeException("event cannot be offered!");
+			executeLocally(eventQueue);
+		}
+	}
+
+	void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
+			final int eventType, final Object record, final Data oldValue) {
+		fireMapEvent(mapListeners, name, eventType, record, oldValue, -1);
+	}
+
+	void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
+			final int eventType, final Object record, final Data oldValue, final long recordId) {
+		try {
+			// logger.log(Level.FINE,eventType + " FireMapEvent " + record);
+			Map<Address, Boolean> mapTargetListeners = null;
+			Data dataRecordKey = null;
+			Data dataRecordValue = null;
+			if (record instanceof Record) {
+				final Record rec = (Record) record;
+				dataRecordKey = rec.getKey();
+				dataRecordValue = rec.getValue();
+				if (rec.hasListener()) {
+					mapTargetListeners = new HashMap<Address, Boolean>(rec.getMapListeners());
+				}
+			} else {
+				dataRecordValue = (Data) record;
+			}
+			if (mapListeners != null && mapListeners.size() > 0) {
+				if (mapTargetListeners == null) {
+					mapTargetListeners = new HashMap<Address, Boolean>(mapListeners);
+				} else {
+					final Set<Map.Entry<Address, Boolean>> entries = mapListeners.entrySet();
+					for (final Map.Entry<Address, Boolean> entry : entries) {
+						if (mapTargetListeners.containsKey(entry.getKey())) {
+							if (entry.getValue().booleanValue()) {
+								mapTargetListeners.put(entry.getKey(), entry.getValue());
+							}
+						} else
+							mapTargetListeners.put(entry.getKey(), entry.getValue());
+					}
+				}
+			}
+			if (mapTargetListeners == null || mapTargetListeners.size() == 0)
+				return;
+			final Data key = (dataRecordKey != null) ? ThreadContext.get().hardCopy(dataRecordKey)
+					: null;
+			Data value = null;
+			if (dataRecordValue != null) {
+				value = ThreadContext.get().hardCopy(dataRecordValue);
+			}
+			sendEvents(eventType, name, key, value, mapTargetListeners, recordId);
+		} catch (final Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	MemberImpl getMember(final Address address) {
+		return ClusterManager.get().getMember(address);
+	}
+
+	void handleListenerRegisterations(final boolean add, final String name, final Data key,
+			final Address address, final boolean includeValue) {
+		if (name.startsWith("q:")) {
+			BlockingQueueManager.get().handleListenerRegisterations(add, name, key, address,
+					includeValue);
+		} else if (name.startsWith("t:")) {
+			TopicManager.get().handleListenerRegisterations(add, name, key, address, includeValue);
+		} else {
+			ConcurrentMapManager.get().handleListenerRegisterations(add, name, key, address,
+					includeValue);
+		}
+	}
+
+	final void handleResponse(final Invocation invResponse) {
+		final Call call = mapCalls.get(invResponse.eventId);
+		if (call != null)
+			call.handleResponse(invResponse);
+		else {
+			if (DEBUG) {
+				log(invResponse.operation + " No call for eventId " + invResponse.eventId);
+			}
+			invResponse.returnToContainer();
+		}
+	}
+
+	final boolean send(final Invocation inv, final Address address) {
+		final Connection conn = ConnectionManager.get().getConnection(address);
+		if (conn == null)
+			return false;
+		if (!conn.live())
+			return false;
+		writeInvocation(conn, inv);
+		return true;
+	}
+
+	final boolean send(final Invocation inv, final Connection conn) {
+		if (conn != null) {
+			writeInvocation(conn, inv);
+		} else {
+			return false;
+		}
+		return true;
+	}
+
+	final private void writeInvocation(final Connection conn, final Invocation inv) {
+		if (!conn.live()) {
+			inv.returnToContainer();
+			return;
+		}
+		final MemberImpl memberImpl = getMember(conn.getEndPoint());
+		if (memberImpl != null) {
+			memberImpl.didWrite();
+		}
+		inv.write();
+		conn.getWriteHandler().enqueueInvocation(inv);
 	}
 
 }

@@ -106,7 +106,7 @@ class MulticastService implements Runnable {
 					try {
 						JoinInfo joinInfo = new JoinInfo();
 						joinInfo.readFromPacket(datagramPacketReceive);
-						// System.out.println("JoinInfo from " +
+						// logger.log(Level.INFO,"JoinInfo from " +
 						// joinInfo.address);
 						return joinInfo;
 					} catch (Exception e) {

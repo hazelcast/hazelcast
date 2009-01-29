@@ -205,6 +205,6 @@ public class Address implements DataSerializable {
 
 	public boolean isDead() {
 		return dead;
-	}  
+	}
 
 }

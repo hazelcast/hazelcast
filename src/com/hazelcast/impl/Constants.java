@@ -18,17 +18,16 @@
 package com.hazelcast.impl;
 
 public interface Constants {
-	
+
 	interface NodeTypes {
 		public static final int NODE_MEMBER = 1;
 
 		public static final int NODE_SUPER_CLIENT = 2;
 
 		public static final int NODE_JAVA_CLIENT = 3;
-		
+
 		public static final int NODE_CSHARP_CLIENT = 4;
-		
-		
+
 	}
 
 	interface Objects {
@@ -129,11 +128,11 @@ public interface Constants {
 		public static final int OP_B_TXN_BACKUP_POLL = 413;
 
 		public static final int OP_B_TXN_COMMIT = 414;
-		
+
 		public static final int OP_B_PUBLISH = 415;
-		
+
 		public static final int OP_B_ADD_TOPIC_LISTENER = 416;
-				
+
 	}
 
 	interface ConcurrentMapOperations {

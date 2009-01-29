@@ -25,8 +25,12 @@ import java.io.ObjectStreamConstants;
 import java.io.PushbackInputStream;
 import java.io.UTFDataFormatException;
 import java.nio.ByteBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class BuffersInputStream extends InputStream implements DataInput {
+
+	protected static Logger logger = Logger.getLogger(BuffersInputStream.class.getName());
 
 	protected BufferProvider bufferProvider;
 
@@ -42,114 +46,16 @@ public class BuffersInputStream extends InputStream implements DataInput {
 
 	private static final boolean debug = false;
 
+	private final byte readBuffer[] = new byte[8];
+
+	private char lineBuffer[];
+
 	public BuffersInputStream() {
-		ByteBuffer bbInputStreamHeaders = ByteBuffer.allocate(4);
+		final ByteBuffer bbInputStreamHeaders = ByteBuffer.allocate(4);
 		bbInputStreamHeaders.putShort(ObjectStreamConstants.STREAM_MAGIC);
 		bbInputStreamHeaders.putShort(ObjectStreamConstants.STREAM_VERSION);
 		bbInputStreamHeaders.rewind();
 		// bb = bbInputStreamHeaders;
-	}
-
-	public void setBufferProvider(BufferProvider bufferProvider) {
-		this.bufferProvider = bufferProvider;
-	}
-
-	@Override
-	public int read() {
-		if (!check())
-			return -1;
-		int x = bb[pos] & 0xff;
-		if (debug)
-			System.out.println("reading byte " + x);
-		move(1);
-		return x;
-	}
-
-	private void move(int x) {
-		pos += x;
-		remaining -= x;
-		if (remaining < 0)
-			throw new RuntimeException();
-		if (pos > 1024)
-			throw new RuntimeException();
-	}
-
-	private boolean check() {
-		if (bb == null || remaining <= 0) {
-			return next();
-		}
-		return true;
-	}
-
-	private boolean next() {
-		if (remaining != 0)
-			throw new RuntimeException("Remaining should be zero " + remaining);
-		buffer = bufferProvider.getBuffer(index++);
-		if (buffer == null)
-			return false;
-		bb = buffer.array();
-		remaining = buffer.remaining();
-		if (buffer.position() != 0)
-			throw new RuntimeException("" + buffer);
-		pos = 0;
-		return true;
-	}
-
-	public final void readFully(byte b[], int off, int len) throws IOException {
-		if (len < 0)
-			throw new IndexOutOfBoundsException();
-		if (b.length - off < len)
-			throw new RuntimeException();
-		if (!check())
-			throw new RuntimeException();
-		int mark = remaining;
-		if (len > remaining) {
-			System.arraycopy(bb, pos, b, off, mark);
-			if (debug)
-				System.out.println("reading byte[] " + mark);
-			move(mark);
-			if (!next())
-				throw new RuntimeException();
-			readFully(b, off + mark, len - mark);
-		} else {
-			System.arraycopy(bb, pos, b, off, len);
-			if (debug)
-				System.out.println("reading byte[] " + len);
-			move(len);
-		}
-	}
-
-	public final void readFully(byte b[]) throws IOException {
-		readFully(b, 0, b.length);
-	}
-
-	@Override
-	public int read(byte[] b) throws IOException {
-		return read(b, 0, b.length);
-	}
-
-	@Override
-	public int read(byte dest[], int off, int len) throws IOException {
-		if (!check())
-			return -1;
-		readFully(dest, off, len);
-		return len;
-	}
-
-	/**
-	 * Skips <code>n</code> bytes of input from this input stream. Fewer bytes
-	 * might be skipped if the end of the input stream is reached. The actual
-	 * number <code>k</code> of bytes to be skipped is equal to the smaller of
-	 * <code>n</code> and <code>count-pos</code>. The value <code>k</code> is
-	 * added into <code>pos</code> and <code>k</code> is returned.
-	 * 
-	 * @param n
-	 *            the number of bytes to be skipped.
-	 * @return the actual number of bytes skipped.
-	 */
-	@Override
-	public long skip(long n) {
-		return n;
 	}
 
 	/**
@@ -165,18 +71,28 @@ public class BuffersInputStream extends InputStream implements DataInput {
 		return remaining;
 	}
 
-	/**
-	 * Resets the buffer to the marked position. The marked position is the
-	 * beginning unless another position was marked. The value of
-	 * </code>pos</code> is set to 0.
-	 */
 	@Override
-	public void reset() {
-		index = 0;
-		bb = null;
-		buffer = null;
-		remaining = 0;
-		pos = 0;
+	public int read() {
+		if (!check())
+			return -1;
+		final int x = bb[pos] & 0xff;
+		if (debug)
+			logger.log(Level.INFO, "reading byte " + x);
+		move(1);
+		return x;
+	}
+
+	@Override
+	public int read(final byte dest[], final int off, final int len) throws IOException {
+		if (!check())
+			return -1;
+		readFully(dest, off, len);
+		return len;
+	}
+
+	@Override
+	public int read(final byte[] b) throws IOException {
+		return read(b, 0, b.length);
 	}
 
 	/**
@@ -193,7 +109,7 @@ public class BuffersInputStream extends InputStream implements DataInput {
 	 * @see java.io.FilterInputStream#in
 	 */
 	public final boolean readBoolean() throws IOException {
-		int ch = read();
+		final int ch = read();
 		if (ch < 0)
 			throw new EOFException();
 		return (ch != 0);
@@ -214,77 +130,10 @@ public class BuffersInputStream extends InputStream implements DataInput {
 	 * @see java.io.FilterInputStream#in
 	 */
 	public final byte readByte() throws IOException {
-		int ch = read();
+		final int ch = read();
 		if (ch < 0)
 			throw new EOFException();
 		return (byte) (ch);
-	}
-
-	/**
-	 * See the general contract of the <code>readUnsignedByte</code> method of
-	 * <code>DataInput</code>.
-	 * <p>
-	 * Bytes for this operation are read from the contained input stream.
-	 * 
-	 * @return the next byte of this input stream, interpreted as an unsigned
-	 *         8-bit number.
-	 * @exception EOFException
-	 *                if this input stream has reached the end.
-	 * @exception IOException
-	 *                if an I/O error occurs.
-	 * @see java.io.FilterInputStream#in
-	 */
-	public final int readUnsignedByte() throws IOException {
-		int ch = read();
-		if (ch < 0)
-			throw new EOFException();
-		return ch;
-	}
-
-	/**
-	 * See the general contract of the <code>readShort</code> method of
-	 * <code>DataInput</code>.
-	 * <p>
-	 * Bytes for this operation are read from the contained input stream.
-	 * 
-	 * @return the next two bytes of this input stream, interpreted as a signed
-	 *         16-bit number.
-	 * @exception EOFException
-	 *                if this input stream reaches the end before reading two
-	 *                bytes.
-	 * @exception IOException
-	 *                if an I/O error occurs.
-	 * @see java.io.FilterInputStream#in
-	 */
-	public final short readShort() throws IOException {
-		int ch1 = read();
-		int ch2 = read();
-		if ((ch1 | ch2) < 0)
-			throw new EOFException();
-		return (short) ((ch1 << 8) + (ch2 << 0));
-	}
-
-	/**
-	 * See the general contract of the <code>readUnsignedShort</code> method of
-	 * <code>DataInput</code>.
-	 * <p>
-	 * Bytes for this operation are read from the contained input stream.
-	 * 
-	 * @return the next two bytes of this input stream, interpreted as an
-	 *         unsigned 16-bit integer.
-	 * @exception EOFException
-	 *                if this input stream reaches the end before reading two
-	 *                bytes.
-	 * @exception IOException
-	 *                if an I/O error occurs.
-	 * @see java.io.FilterInputStream#in
-	 */
-	public final int readUnsignedShort() throws IOException {
-		int ch1 = read();
-		int ch2 = read();
-		if ((ch1 | ch2) < 0)
-			throw new EOFException();
-		return (ch1 << 8) + (ch2 << 0);
 	}
 
 	/**
@@ -302,81 +151,11 @@ public class BuffersInputStream extends InputStream implements DataInput {
 	 * @see java.io.FilterInputStream#in
 	 */
 	public final char readChar() throws IOException {
-		int ch1 = read();
-		int ch2 = read();
+		final int ch1 = read();
+		final int ch2 = read();
 		if ((ch1 | ch2) < 0)
 			throw new EOFException();
 		return (char) ((ch1 << 8) + (ch2 << 0));
-	}
-
-	/**
-	 * See the general contract of the <code>readInt</code> method of
-	 * <code>DataInput</code>.
-	 * <p>
-	 * Bytes for this operation are read from the contained input stream.
-	 * 
-	 * @return the next four bytes of this input stream, interpreted as an
-	 *         <code>int</code>.
-	 * @exception EOFException
-	 *                if this input stream reaches the end before reading four
-	 *                bytes.
-	 * @exception IOException
-	 *                if an I/O error occurs.
-	 * @see java.io.FilterInputStream#in
-	 */
-	public final int readInt() throws IOException {
-		int ch1 = read();
-		int ch2 = read();
-		int ch3 = read();
-		int ch4 = read();
-		if ((ch1 | ch2 | ch3 | ch4) < 0)
-			throw new EOFException();
-		return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
-	}
-
-	private byte readBuffer[] = new byte[8];
-
-	/**
-	 * See the general contract of the <code>readLong</code> method of
-	 * <code>DataInput</code>.
-	 * <p>
-	 * Bytes for this operation are read from the contained input stream.
-	 * 
-	 * @return the next eight bytes of this input stream, interpreted as a
-	 *         <code>long</code>.
-	 * @exception EOFException
-	 *                if this input stream reaches the end before reading eight
-	 *                bytes.
-	 * @exception IOException
-	 *                if an I/O error occurs.
-	 * @see java.io.FilterInputStream#in
-	 */
-	public final long readLong() throws IOException {
-		readFully(readBuffer, 0, 8);
-		return (((long) readBuffer[0] << 56) + ((long) (readBuffer[1] & 255) << 48)
-				+ ((long) (readBuffer[2] & 255) << 40) + ((long) (readBuffer[3] & 255) << 32)
-				+ ((long) (readBuffer[4] & 255) << 24) + ((readBuffer[5] & 255) << 16)
-				+ ((readBuffer[6] & 255) << 8) + ((readBuffer[7] & 255) << 0));
-	}
-
-	/**
-	 * See the general contract of the <code>readFloat</code> method of
-	 * <code>DataInput</code>.
-	 * <p>
-	 * Bytes for this operation are read from the contained input stream.
-	 * 
-	 * @return the next four bytes of this input stream, interpreted as a
-	 *         <code>float</code>.
-	 * @exception EOFException
-	 *                if this input stream reaches the end before reading four
-	 *                bytes.
-	 * @exception IOException
-	 *                if an I/O error occurs.
-	 * @see java.io.DataInputStream#readInt()
-	 * @see java.lang.Float#intBitsToFloat(int)
-	 */
-	public final float readFloat() throws IOException {
-		return Float.intBitsToFloat(readInt());
 	}
 
 	/**
@@ -399,7 +178,78 @@ public class BuffersInputStream extends InputStream implements DataInput {
 		return Double.longBitsToDouble(readLong());
 	}
 
-	private char lineBuffer[];
+	/**
+	 * See the general contract of the <code>readFloat</code> method of
+	 * <code>DataInput</code>.
+	 * <p>
+	 * Bytes for this operation are read from the contained input stream.
+	 * 
+	 * @return the next four bytes of this input stream, interpreted as a
+	 *         <code>float</code>.
+	 * @exception EOFException
+	 *                if this input stream reaches the end before reading four
+	 *                bytes.
+	 * @exception IOException
+	 *                if an I/O error occurs.
+	 * @see java.io.DataInputStream#readInt()
+	 * @see java.lang.Float#intBitsToFloat(int)
+	 */
+	public final float readFloat() throws IOException {
+		return Float.intBitsToFloat(readInt());
+	}
+
+	public final void readFully(final byte b[]) throws IOException {
+		readFully(b, 0, b.length);
+	}
+
+	public final void readFully(final byte b[], final int off, final int len) throws IOException {
+		if (len < 0)
+			throw new IndexOutOfBoundsException();
+		if (b.length - off < len)
+			throw new RuntimeException();
+		if (!check())
+			throw new RuntimeException();
+		final int mark = remaining;
+		if (len > remaining) {
+			System.arraycopy(bb, pos, b, off, mark);
+			if (debug)
+				logger.log(Level.INFO, "reading byte[] " + mark);
+			move(mark);
+			if (!next())
+				throw new RuntimeException();
+			readFully(b, off + mark, len - mark);
+		} else {
+			System.arraycopy(bb, pos, b, off, len);
+			if (debug)
+				logger.log(Level.INFO, "reading byte[] " + len);
+			move(len);
+		}
+	}
+
+	/**
+	 * See the general contract of the <code>readInt</code> method of
+	 * <code>DataInput</code>.
+	 * <p>
+	 * Bytes for this operation are read from the contained input stream.
+	 * 
+	 * @return the next four bytes of this input stream, interpreted as an
+	 *         <code>int</code>.
+	 * @exception EOFException
+	 *                if this input stream reaches the end before reading four
+	 *                bytes.
+	 * @exception IOException
+	 *                if an I/O error occurs.
+	 * @see java.io.FilterInputStream#in
+	 */
+	public final int readInt() throws IOException {
+		final int ch1 = read();
+		final int ch2 = read();
+		final int ch3 = read();
+		final int ch4 = read();
+		if ((ch1 | ch2 | ch3 | ch4) < 0)
+			throw new EOFException();
+		return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
+	}
 
 	/**
 	 * See the general contract of the <code>readLine</code> method of
@@ -452,7 +302,7 @@ public class BuffersInputStream extends InputStream implements DataInput {
 				break loop;
 
 			case '\r':
-				int c2 = read();
+				final int c2 = read();
 				if ((c2 != '\n') && (c2 != -1)) {
 					new PushbackInputStream(this).unread(c2);
 				}
@@ -476,6 +326,96 @@ public class BuffersInputStream extends InputStream implements DataInput {
 	}
 
 	/**
+	 * See the general contract of the <code>readLong</code> method of
+	 * <code>DataInput</code>.
+	 * <p>
+	 * Bytes for this operation are read from the contained input stream.
+	 * 
+	 * @return the next eight bytes of this input stream, interpreted as a
+	 *         <code>long</code>.
+	 * @exception EOFException
+	 *                if this input stream reaches the end before reading eight
+	 *                bytes.
+	 * @exception IOException
+	 *                if an I/O error occurs.
+	 * @see java.io.FilterInputStream#in
+	 */
+	public final long readLong() throws IOException {
+		readFully(readBuffer, 0, 8);
+		return (((long) readBuffer[0] << 56) + ((long) (readBuffer[1] & 255) << 48)
+				+ ((long) (readBuffer[2] & 255) << 40) + ((long) (readBuffer[3] & 255) << 32)
+				+ ((long) (readBuffer[4] & 255) << 24) + ((readBuffer[5] & 255) << 16)
+				+ ((readBuffer[6] & 255) << 8) + ((readBuffer[7] & 255) << 0));
+	}
+
+	/**
+	 * See the general contract of the <code>readShort</code> method of
+	 * <code>DataInput</code>.
+	 * <p>
+	 * Bytes for this operation are read from the contained input stream.
+	 * 
+	 * @return the next two bytes of this input stream, interpreted as a signed
+	 *         16-bit number.
+	 * @exception EOFException
+	 *                if this input stream reaches the end before reading two
+	 *                bytes.
+	 * @exception IOException
+	 *                if an I/O error occurs.
+	 * @see java.io.FilterInputStream#in
+	 */
+	public final short readShort() throws IOException {
+		final int ch1 = read();
+		final int ch2 = read();
+		if ((ch1 | ch2) < 0)
+			throw new EOFException();
+		return (short) ((ch1 << 8) + (ch2 << 0));
+	}
+
+	/**
+	 * See the general contract of the <code>readUnsignedByte</code> method of
+	 * <code>DataInput</code>.
+	 * <p>
+	 * Bytes for this operation are read from the contained input stream.
+	 * 
+	 * @return the next byte of this input stream, interpreted as an unsigned
+	 *         8-bit number.
+	 * @exception EOFException
+	 *                if this input stream has reached the end.
+	 * @exception IOException
+	 *                if an I/O error occurs.
+	 * @see java.io.FilterInputStream#in
+	 */
+	public final int readUnsignedByte() throws IOException {
+		final int ch = read();
+		if (ch < 0)
+			throw new EOFException();
+		return ch;
+	}
+
+	/**
+	 * See the general contract of the <code>readUnsignedShort</code> method of
+	 * <code>DataInput</code>.
+	 * <p>
+	 * Bytes for this operation are read from the contained input stream.
+	 * 
+	 * @return the next two bytes of this input stream, interpreted as an
+	 *         unsigned 16-bit integer.
+	 * @exception EOFException
+	 *                if this input stream reaches the end before reading two
+	 *                bytes.
+	 * @exception IOException
+	 *                if an I/O error occurs.
+	 * @see java.io.FilterInputStream#in
+	 */
+	public final int readUnsignedShort() throws IOException {
+		final int ch1 = read();
+		final int ch2 = read();
+		if ((ch1 | ch2) < 0)
+			throw new EOFException();
+		return (ch1 << 8) + (ch2 << 0);
+	}
+
+	/**
 	 * See the general contract of the <code>readUTF</code> method of
 	 * <code>DataInput</code>.
 	 * <p>
@@ -493,7 +433,7 @@ public class BuffersInputStream extends InputStream implements DataInput {
 	 * @see java.io.DataInputStream#readUTF(java.io.DataInput)
 	 */
 	public final String readUTF() throws IOException {
-		int utflen = readUnsignedShort();
+		final int utflen = readUnsignedShort();
 		byte[] bytearr = null;
 		char[] chararr = null;
 
@@ -560,7 +500,41 @@ public class BuffersInputStream extends InputStream implements DataInput {
 		return new String(chararr, 0, chararr_count);
 	}
 
-	public final int skipBytes(int n) throws IOException {
+	/**
+	 * Resets the buffer to the marked position. The marked position is the
+	 * beginning unless another position was marked. The value of
+	 * </code>pos</code> is set to 0.
+	 */
+	@Override
+	public void reset() {
+		index = 0;
+		bb = null;
+		buffer = null;
+		remaining = 0;
+		pos = 0;
+	}
+
+	public void setBufferProvider(final BufferProvider bufferProvider) {
+		this.bufferProvider = bufferProvider;
+	}
+
+	/**
+	 * Skips <code>n</code> bytes of input from this input stream. Fewer bytes
+	 * might be skipped if the end of the input stream is reached. The actual
+	 * number <code>k</code> of bytes to be skipped is equal to the smaller of
+	 * <code>n</code> and <code>count-pos</code>. The value <code>k</code> is
+	 * added into <code>pos</code> and <code>k</code> is returned.
+	 * 
+	 * @param n
+	 *            the number of bytes to be skipped.
+	 * @return the actual number of bytes skipped.
+	 */
+	@Override
+	public long skip(final long n) {
+		return n;
+	}
+
+	public final int skipBytes(final int n) throws IOException {
 		int total = 0;
 		int cur = 0;
 
@@ -569,6 +543,36 @@ public class BuffersInputStream extends InputStream implements DataInput {
 		}
 
 		return total;
+	}
+
+	private boolean check() {
+		if (bb == null || remaining <= 0) {
+			return next();
+		}
+		return true;
+	}
+
+	private void move(final int x) {
+		pos += x;
+		remaining -= x;
+		if (remaining < 0)
+			throw new RuntimeException();
+		if (pos > 1024)
+			throw new RuntimeException();
+	}
+
+	private boolean next() {
+		if (remaining != 0)
+			throw new RuntimeException("Remaining should be zero " + remaining);
+		buffer = bufferProvider.getBuffer(index++);
+		if (buffer == null)
+			return false;
+		bb = buffer.array();
+		remaining = buffer.remaining();
+		if (buffer.position() != 0)
+			throw new RuntimeException("" + buffer);
+		pos = 0;
+		return true;
 	}
 
 }

@@ -18,14 +18,14 @@
 package com.hazelcast.impl;
 
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_ADD_BLOCK;
+import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_ADD_TOPIC_LISTENER;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_BACKUP_ADD;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_BACKUP_REMOVE;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_FULL_BLOCK;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_OFFER;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_PEEK;
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_PUBLISH;
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_ADD_TOPIC_LISTENER;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_POLL;
+import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_PUBLISH;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_READ;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_REMOVE;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_REMOVE_BLOCK;
@@ -48,10 +48,8 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
-import com.hazelcast.impl.ClusterManager.RemotelyProcessable;
 import com.hazelcast.impl.Config.QConfig;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.InvocationQueue;
 import com.hazelcast.nio.InvocationQueue.Data;
@@ -63,6 +61,7 @@ class BlockingQueueManager extends BaseManager {
 	private final Map<String, Q> mapQueues = new HashMap<String, Q>(10);
 	private final Map<Long, List<Data>> mapTxnPolledElements = new HashMap<Long, List<Data>>(10);
 	private static final int BLOCK_SIZE = 1000;
+	private int nextIndex = 0;
 
 	private BlockingQueueManager() {
 	}
@@ -144,7 +143,6 @@ class BlockingQueueManager extends BaseManager {
 		}
 
 		public void process() {
-			// System.out.println(block.blockId + "  BlockSyncer " + index);
 			Data data = next();
 			if (data != null) {
 				q.sendBackup(true, thisAddress, data, block.blockId, index);
@@ -559,8 +557,6 @@ class BlockingQueueManager extends BaseManager {
 		q.remove(inv);
 	}
 
-	int nextIndex = 0;
-
 	final Address nextTarget() {
 		int size = lsMembers.size();
 		int index = nextIndex++ % size;
@@ -703,7 +699,7 @@ class BlockingQueueManager extends BaseManager {
 		Object next = null;
 		boolean hasNextCalled = false;
 
-		public void set(String name) { 
+		public void set(String name) {
 			synchronized (QIterator.this) {
 				this.name = name;
 				enqueueAndReturn(QIterator.this);
@@ -954,16 +950,19 @@ class BlockingQueueManager extends BaseManager {
 
 		@Override
 		void handleNoneRedoResponse(Invocation inv) {
-			if (request.operation == OP_B_OFFER && inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-				if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(
-						inv.conn.getEndPoint())) {
-					int itemIndex = (int) inv.longValue;
-					if (itemIndex != -1) {
-						Q q = getQ(request.name);
-						if (request.value == null || request.value.size() == 0) {
-							throw new RuntimeException("Invalid data " + request.value);
+			if (request.operation == OP_B_OFFER
+					&& inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+				if (!zeroBackup) {
+					if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(
+							inv.conn.getEndPoint())) {
+						int itemIndex = (int) inv.longValue;
+						if (itemIndex != -1) {
+							Q q = getQ(request.name);
+							if (request.value == null || request.value.size() == 0) {
+								throw new RuntimeException("Invalid data " + request.value);
+							}
+							q.doBackup(true, request.value, request.blockId, (int) inv.longValue);
 						}
-						q.doBackup(true, request.value, request.blockId, (int) inv.longValue);
 					}
 				}
 			}
@@ -1048,7 +1047,7 @@ class BlockingQueueManager extends BaseManager {
 		if (q.blCurrentPut == null) {
 			q.setCurrentPut();
 		}
-		req.recordId = q.getRecordId(q.blCurrentPut.blockId, q.blCurrentPut.addIndex); 
+		req.recordId = q.getRecordId(q.blCurrentPut.blockId, q.blCurrentPut.addIndex);
 	}
 
 	public static class TopicListenerRegistration extends AbstractRemotelyProcessable {
@@ -1461,7 +1460,6 @@ class BlockingQueueManager extends BaseManager {
 		int publish(Request req) {
 			int addIndex = blCurrentPut.add(req.value);
 			long recordId = getRecordId(blCurrentPut.blockId, addIndex);
-			System.out.println("publish fireEntry with recordId " + recordId);
 			doFireEntryEvent(true, req.value, recordId);
 
 			if (blCurrentPut.isFull()) {
@@ -1550,6 +1548,7 @@ class BlockingQueueManager extends BaseManager {
 		}
 
 		boolean doBackup(boolean add, Data data, int blockId, int addIndex) {
+			if (zeroBackup) return true;
 			Block block = getBlock(blockId);
 			if (block == null)
 				return false;
@@ -1570,21 +1569,25 @@ class BlockingQueueManager extends BaseManager {
 			return true;
 		}
 
-		void sendTxnBackup(Address address, Data value, long txnId) {
+		boolean sendTxnBackup(Address address, Data value, long txnId) {
+			if (zeroBackup) return true;
 			Invocation inv = obtainServiceInvocation(name, null, value, OP_B_TXN_BACKUP_POLL, 0);
 			inv.txnId = txnId;
 			boolean sent = send(inv, address);
 			if (!sent) {
 				inv.returnToContainer();
 			}
+			return sent;
 		}
 
-		void sendBackup(boolean add, Address invoker, Data data, int blockId, int addIndex) {
+		boolean sendBackup(boolean add, Address invoker, Data data, int blockId, int addIndex) {
+			if (zeroBackup)
+				return true;
 			if (addIndex == -1)
 				throw new RuntimeException("addIndex cannot be -1");
 			if (lsMembers.size() > 1) {
 				if (getNextMemberAfter(thisAddress, true, 1).getAddress().equals(invoker)) {
-					return;
+					return true;
 				}
 				int operation = OP_B_BACKUP_REMOVE;
 				if (add) {
@@ -1600,6 +1603,9 @@ class BlockingQueueManager extends BaseManager {
 				if (!sent) {
 					inv.returnToContainer();
 				}
+				return sent;
+			} else {
+				return true;
 			}
 		}
 
@@ -1704,8 +1710,8 @@ class BlockingQueueManager extends BaseManager {
 			if (values != null) {
 				if (values[addIndex] != null)
 					return -1;
-				values[addIndex] = data;				
-			}	
+				values[addIndex] = data;
+			}
 			size++;
 			int addedCurrentIndex = addIndex;
 			addIndex++;
