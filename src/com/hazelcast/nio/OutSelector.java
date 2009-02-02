@@ -31,6 +31,28 @@ import com.hazelcast.impl.Config;
 import com.hazelcast.impl.Node;
 
 public class OutSelector extends SelectorBase {
+	
+	protected static Logger logger = Logger.getLogger(OutSelector.class.getName());
+
+	private static final OutSelector instance = new OutSelector();
+
+	private final Set<Integer> boundPorts = new HashSet<Integer>();
+
+	private OutSelector() {
+		super();
+		super.waitTime = 1;
+	}
+
+	public static OutSelector get() {
+		return instance;
+	}
+
+	public void connect(final Address address) {
+		if (DEBUG)
+			logger.log(Level.INFO, "connect to " + address);
+		final Connector connector = new Connector(address);
+		this.addTask(connector);
+	}
 
 	private class Connector implements Runnable, SelectionHandler {
 		Address address;
@@ -107,12 +129,19 @@ public class OutSelector extends SelectorBase {
 							bindOk = true;
 							socketChannel.configureBlocking(false);
 							if (DEBUG)
-								logger.log(Level.INFO, "connecting to " + address);
-							socketChannel.connect(new InetSocketAddress(address.getInetAddress(),
+								logger.log(Level.FINEST, "connecting to " + address + ", localPort: " + localPort);
+							boolean connected = socketChannel.connect(new InetSocketAddress(address.getInetAddress(),
 									address.getPort()));
+							if (DEBUG)
+								logger.log(Level.FINEST, "connection check. connected: " + connected + ", " + address + ", localPort: " + localPort);
+							if (connected) {
+								handle();
+								return;
+							}
 						}
-
-					} catch (final Exception e) {
+					} catch (final Throwable e) {
+						if (DEBUG)
+							logger.log(Level.FINEST, "ConnectionFailed. localPort: " + localPort, e);
 						// ignore
 					}
 				}
@@ -124,7 +153,7 @@ public class OutSelector extends SelectorBase {
 				}
 				if (numberOfConnectionError++ < 5) {
 					if (DEBUG) {
-						logger.log(Level.INFO,
+						logger.log(Level.FINEST,
 								"Couldn't register connect! will trying again. cause: "
 										+ e.getMessage());
 					}
@@ -135,29 +164,5 @@ public class OutSelector extends SelectorBase {
 			}
 		}
 
-	}
-
-	protected static Logger logger = Logger.getLogger(OutSelector.class.getName());
-
-	private static final OutSelector instance = new OutSelector();
-
-	private final Set<Integer> boundPorts = new HashSet<Integer>();
-
-	private OutSelector() {
-		super();
-		super.waitTime = 1;
-	}
-
-	public static OutSelector get() {
-		return instance;
-	}
-
-	public void connect(final Address address) {
-		if (DEBUG)
-			logger.log(Level.INFO, "connect to " + address);
-		final Connector connector = new Connector(address);
-		this.addTask(connector);
-
-	}
-
+	} 
 }
