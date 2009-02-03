@@ -222,10 +222,10 @@ public class WebFilter implements Filter {
 			}
 			if (requestedSessionId == null) {
 				if (DEBUG) {
-					logger.log(Level.INFO, "contextPath : " + getContextPath());
-					logger.log(Level.INFO, "queryString : " + getQueryString());
-					logger.log(Level.INFO, "requestURI : " + getRequestURI());
-					logger.log(Level.INFO, "requestURL : " + getRequestURL());
+					logger.log(Level.FINEST, "contextPath : " + getContextPath());
+					logger.log(Level.FINEST, "queryString : " + getQueryString());
+					logger.log(Level.FINEST, "requestURI : " + getRequestURI());
+					logger.log(Level.FINEST, "requestURL : " + getRequestURL());
 				}
 				requestedSessionId = res.extractSessionId(getRequestURL().toString());
 				if (DEBUG) {
@@ -345,7 +345,18 @@ public class WebFilter implements Filter {
 		}
 
 		@Override
+		public Object getAttribute(String name) {
+			if (DEBUG) {
+				logger.log(Level.FINEST, "getAttribute " + name);
+			}
+			return atts.get(name);
+		}
+
+		@Override
 		public void removeAttribute(final String name) {
+			if (DEBUG) {
+				logger.log(Level.FINEST, "removeAttribute " + name);
+			}
 			if (HAZELCAST_REQUEST.equals(name))
 				return;
 			final Object oldValue = atts.remove(name);
@@ -367,6 +378,9 @@ public class WebFilter implements Filter {
 
 		@Override
 		public void setAttribute(final String name, final Object value) {
+			if (DEBUG) {
+				logger.log(Level.FINEST, "setAttribute " + name + " value is " + value);
+			}
 			if (HAZELCAST_REQUEST.equals(name))
 				return;
 			if (value == null) {
@@ -527,7 +541,7 @@ public class WebFilter implements Filter {
 			this.servletContext = servletContext;
 			clusterMapName = "_web_"
 					+ ((appsSharingSessions) ? "shared" : servletContext.getServletContextName());
-			logger.log(Level.INFO, "CLUSTER MAP NAME " + clusterMapName);
+			logger.log(Level.FINEST, "CLUSTER MAP NAME " + clusterMapName);
 			this.servletContext.setAttribute(Context.ATTRIBUTE_NAME, this);
 			init(1);
 			snapshot.set(new Snapshot(this, snapshotLifeTime));
@@ -1264,7 +1278,7 @@ public class WebFilter implements Filter {
 
 	static void log(final Object obj) {
 		if (DEBUG) {
-			logger.log(Level.INFO, obj.toString());
+			logger.log(Level.FINEST, obj.toString());
 		}
 	}
 
