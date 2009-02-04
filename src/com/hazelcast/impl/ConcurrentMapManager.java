@@ -422,6 +422,10 @@ class ConcurrentMapManager extends BaseManager {
 				}
 				setLocal(OP_CMAP_MIGRATE_RECORD, record.name, record.key, record.value, 0, -1,
 						record.id);
+				request.blockId = record.blockId;
+				request.lockAddress = record.lockAddress;
+				request.lockCount = record.lockCount;
+				request.lockThreadId = record.lockThreadId;
 			}
 		}
 
@@ -1718,20 +1722,22 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		public Record read(Request req) {
-			return nextOwnedRecord(req.recordId, req.blockId);
+			return nextOwnedRecord(req.name, req.recordId, req.blockId);
 
 		}
 
-		Record nextOwnedRecord(long recordId, int blockId) {
+		Record nextOwnedRecord(String name, long recordId, int blockId) {
 			Record rec = null;
 			while (rec == null && recordId <= maxId) {
-				rec = getRecordById(recordId);
+				rec = getRecordById(recordId); 
 				if (rec != null) {
-					if (rec.blockId == blockId) {
-						if (rec.owner.equals(thisAddress)) {
-							return rec;
+					if (name != null && name.equals(rec.name)) {
+						if (rec.blockId == blockId) {
+							if (rec.owner.equals(thisAddress)) {
+								return rec;
+							}
 						}
-					}
+					} 
 				}
 				rec = null;
 				recordId++;
