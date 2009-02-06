@@ -45,8 +45,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import sun.security.action.GetBooleanAction;
-
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IMap;
 import com.hazelcast.impl.ClusterManager.RemotelyProcessable;
@@ -85,11 +83,13 @@ abstract class BaseManager implements Constants {
 
 	private static long eventId = 1;
 
+	private static long idGen = 0;
+	
 	protected final Address thisAddress;
 
 	protected final MemberImpl thisMember;
 
-	long idGen = 0;
+	
 
 	protected BaseManager() {
 		thisAddress = Node.get().address;
@@ -793,15 +793,6 @@ abstract class BaseManager implements Constants {
 			}
 		}
 
-		public void handleBooleanNoneRedoResponse(final Invocation inv) {
-			removeCall(getId());
-			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-				responses.add(Boolean.TRUE);
-			} else {
-				responses.add(Boolean.FALSE);
-			}
-		}
-
 		@Override
 		public void doOp() {
 			responses.clear();
@@ -833,6 +824,15 @@ abstract class BaseManager implements Constants {
 			removeCall(getId());
 			responses.clear();
 			setResult(OBJECT_REDO);
+		}
+		
+		public void handleBooleanNoneRedoResponse(final Invocation inv) { 
+			removeCall(getId());
+			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+				responses.add(Boolean.TRUE);
+			} else {
+				responses.add(Boolean.FALSE);
+			}
 		}
 
 		void handleLongNoneRedoResponse(final Invocation inv) {
@@ -970,7 +970,7 @@ abstract class BaseManager implements Constants {
 
 	public long addCall(final Call call) {
 		final long id = idGen++;
-		call.setId(id);
+		call.setId(id); 
 		mapCalls.put(id, call);
 		return id;
 	}
@@ -1251,7 +1251,7 @@ abstract class BaseManager implements Constants {
 		inv.operation = OP_RESPONSE;
 		inv.responseType = RESPONSE_FAILURE;
 		final boolean sent = send(inv, inv.conn);
-		if (!sent) {
+		if (!sent) { 
 			inv.returnToContainer();
 		}
 		return sent;
@@ -1370,9 +1370,9 @@ abstract class BaseManager implements Constants {
 
 	final void handleResponse(final Invocation invResponse) {
 		final Call call = mapCalls.get(invResponse.eventId);
-		if (call != null)
+		if (call != null) {
 			call.handleResponse(invResponse);
-		else {
+		} else {
 			if (DEBUG) {
 				log(invResponse.operation + " No call for eventId " + invResponse.eventId);
 			}
@@ -1392,17 +1392,16 @@ abstract class BaseManager implements Constants {
 
 	final boolean send(final Invocation inv, final Connection conn) {
 		if (conn != null) {
-			writeInvocation(conn, inv);
+			return writeInvocation(conn, inv);
 		} else {
 			return false;
-		}
-		return true;
+		} 
 	}
 
-	final private void writeInvocation(final Connection conn, final Invocation inv) {
+	final private boolean writeInvocation(final Connection conn, final Invocation inv) {
 		if (!conn.live()) {
 			inv.returnToContainer();
-			return;
+			return false;
 		}
 		final MemberImpl memberImpl = getMember(conn.getEndPoint());
 		if (memberImpl != null) {
@@ -1410,6 +1409,7 @@ abstract class BaseManager implements Constants {
 		}
 		inv.write();
 		conn.getWriteHandler().enqueueInvocation(inv);
+		return true;
 	}
 
 }
