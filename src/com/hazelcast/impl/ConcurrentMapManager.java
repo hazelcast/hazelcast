@@ -40,6 +40,7 @@ import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_REPLA
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_SIZE;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_UNLOCK;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
+import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
 
 import java.io.DataInput;
@@ -702,27 +703,24 @@ class ConcurrentMapManager extends BaseManager {
 			total = 0;
 			setLocal(OP_CMAP_SIZE, name, null, null, 0, -1, -1);
 			doOp();
-			if (shouldRedo) {				 
+			if (shouldRedo) {
 				try {
 					Thread.sleep(2000);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-				return getSize (name);
+				return getSize(name);
 			}
 			return total;
 		}
-		
+
 		@Override
 		public void process() {
-			Collection<Block> blocks = mapBlocks.values();
-			for (Block block : blocks) {
-				if (block.isMigrating()) {
-					shouldRedo = true;
-					complete(true);
-					return;
-				}
-			}
+			if (migrating()) {
+				shouldRedo = true;
+				complete(true);
+				return;
+			} 
 			super.process();
 		}
 
@@ -734,14 +732,24 @@ class ConcurrentMapManager extends BaseManager {
 
 		@Override
 		public void handleResponse(Invocation inv) {
+			if (inv.responseType == RESPONSE_REDO) {
+				shouldRedo = true;
+				complete(true);
+				inv.returnToContainer();
+				return;
+			}
 			total += (int) inv.longValue;
 			consumeResponse(inv);
 		}
 	}
 
 	void handleSize(Invocation inv) {
-		CMap cmap = getMap(inv.name);
-		inv.longValue = cmap.size();
+		if (migrating()) {
+			inv.responseType = RESPONSE_REDO;
+		} else {
+			CMap cmap = getMap(inv.name);
+			inv.longValue = cmap.size();
+		}
 		// if (DEBUG) {
 		// printBlocks();
 		// }
@@ -795,6 +803,16 @@ class ConcurrentMapManager extends BaseManager {
 				return record.getOwner();
 		}
 		return block.owner;
+	}
+
+	private boolean migrating() {
+		Collection<Block> blocks = mapBlocks.values();
+		for (Block block : blocks) {
+			if (block.isMigrating()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private int getBlockId(Data key) {
@@ -965,10 +983,10 @@ class ConcurrentMapManager extends BaseManager {
 
 		public void run() {
 			logger.log(Level.FINEST, "Migration started!");
-			
+
 			CheckAllConnectionsOp checkAllConnectionsOp = new CheckAllConnectionsOp();
 			checkAllConnectionsOp.check();
-			
+
 			for (final Long recordId : recordsToMigrate) {
 				MMigrate mmigrate = new MMigrate();
 				boolean migrated = mmigrate.migrate(recordId);
@@ -1115,14 +1133,14 @@ class ConcurrentMapManager extends BaseManager {
 	}
 
 	private void doMigrationComplete(Address from) {
-		logger.log (Level.FINEST, "Migration Compelete from " + from);
+		logger.log(Level.FINEST, "Migration Compelete from " + from);
 		Collection<Block> blocks = mapBlocks.values();
 		for (Block block : blocks) {
 			if (from.equals(block.owner)) {
 				if (block.isMigrating()) {
 					block.owner = block.migrationAddress;
 					block.migrationAddress = null;
-				} 
+				}
 			}
 		}
 		if (isMaster() && !from.equals(thisAddress)) {
@@ -1327,9 +1345,9 @@ class ConcurrentMapManager extends BaseManager {
 			remoteReq.setInvocation(inv);
 			doLock(remoteReq);
 			if (!remoteReq.scheduled) {
-				if (remoteReq.response == Boolean.TRUE) {					
+				if (remoteReq.response == Boolean.TRUE) {
 					sendResponse(inv);
-				} else { 
+				} else {
 					sendResponseFailure(inv);
 				}
 			} else {
@@ -1729,7 +1747,7 @@ class ConcurrentMapManager extends BaseManager {
 		Record nextOwnedRecord(String name, long recordId, int blockId) {
 			Record rec = null;
 			while (rec == null && recordId <= maxId) {
-				rec = getRecordById(recordId); 
+				rec = getRecordById(recordId);
 				if (rec != null) {
 					if (name != null && name.equals(rec.name)) {
 						if (rec.blockId == blockId) {
@@ -1737,7 +1755,7 @@ class ConcurrentMapManager extends BaseManager {
 								return rec;
 							}
 						}
-					} 
+					}
 				}
 				rec = null;
 				recordId++;
@@ -1933,7 +1951,7 @@ class ConcurrentMapManager extends BaseManager {
 			}
 		}
 
-		public boolean testLock(int threadId, Address address) { 
+		public boolean testLock(int threadId, Address address) {
 			if (lockCount == 0) {
 				return true;
 			}
@@ -1943,7 +1961,7 @@ class ConcurrentMapManager extends BaseManager {
 			return false;
 		}
 
-		public boolean lock(int threadId, Address address) { 
+		public boolean lock(int threadId, Address address) {
 			if (lockCount == 0) {
 				lockThreadId = threadId;
 				lockAddress = address;
