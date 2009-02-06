@@ -77,7 +77,7 @@ public interface Constants {
 
 		public static final int OP_REMOTELY_PROCESS = 19;
 
-		public static final int OP_REMOTELY_PROCESS_AND_RESPONSE = 20;
+		public static final int OP_REMOTELY_PROCESS_AND_RESPOND = 20;
 
 		public static final int OP_REMOTELY_BOOLEAN_CALLABLE = 21;
 

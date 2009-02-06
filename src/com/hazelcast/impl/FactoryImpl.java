@@ -74,7 +74,7 @@ public class FactoryImpl implements Constants {
 
 	private static ConcurrentMap proxies = new ConcurrentHashMap(1000);
 
-	private static CProxy lockCProxy = new CProxy("m:locxtz3");
+	private static MProxy lockCProxy = new MProxy("m:locxtz3");
 
 	private static ConcurrentMap mapLockProxies = new ConcurrentHashMap(100);
 
@@ -220,14 +220,14 @@ public class FactoryImpl implements Constants {
 			} else if (name.startsWith("c:")) {
 				proxy = proxies.get(name);
 				if (proxy == null) {
-					proxy = new CProxy(name);
+					proxy = new MProxy(name);
 					proxies.put(name, proxy);
 				}
 			} else if (name.startsWith("m:")) {
 				proxy = proxies.get(name);
 				if (proxy == null) {
 					byte mapType = BaseManager.getMapType(name);
-					CProxy mapProxy = new CProxy(name);
+					MProxy mapProxy = new MProxy(name);
 					if (mapType == MAP_TYPE_SET) {
 						proxy = new SetProxy(mapProxy);
 					} else if (mapType == MAP_TYPE_LIST) {
@@ -244,11 +244,11 @@ public class FactoryImpl implements Constants {
 
 	static class LockProxy implements java.util.concurrent.locks.Lock {
 
-		CProxy mapProxy = null;
+		MProxy mapProxy = null;
 
 		Object key = null;
 
-		public LockProxy(CProxy mapProxy, Object key) {
+		public LockProxy(MProxy mapProxy, Object key) {
 			super();
 			this.mapProxy = mapProxy;
 			this.key = key;
@@ -308,9 +308,9 @@ public class FactoryImpl implements Constants {
 		public TopicProxy(String name) {
 			super();
 			this.name = name;
-			if (Config.get().getTopicConfig(getName()).globalOrderingEnabled) {
-				qProxy = new QProxy("q:" + name);
-			}
+//			if (Config.get().getTopicConfig(getName()).globalOrderingEnabled) {
+//				qProxy = new QProxy("q:" + name);
+//			}
 		}
 
 		public void publish(Object msg) {
@@ -353,7 +353,7 @@ public class FactoryImpl implements Constants {
 	}
 
 	static class ListProxy extends CollectionProxy implements IList {
-		public ListProxy(CProxy mapProxy) {
+		public ListProxy(MProxy mapProxy) {
 			super(mapProxy);
 		}
 
@@ -404,7 +404,7 @@ public class FactoryImpl implements Constants {
 	}
 
 	static class SetProxy extends CollectionProxy implements ISet {
-		public SetProxy(CProxy mapProxy) {
+		public SetProxy(MProxy mapProxy) {
 			super(mapProxy);
 		}
 
@@ -417,9 +417,9 @@ public class FactoryImpl implements Constants {
 	static class CollectionProxy extends AbstractCollection implements ICollection, IProxy {
 		String name = null;
 
-		CProxy mapProxy;
+		MProxy mapProxy;
 
-		public CollectionProxy(CProxy mapProxy) {
+		public CollectionProxy(MProxy mapProxy) {
 			super();
 			this.mapProxy = mapProxy;
 			this.name = mapProxy.name;
@@ -467,7 +467,7 @@ public class FactoryImpl implements Constants {
 			return name.substring(4);
 		}
 
-		public CProxy getCProxy() {
+		public MProxy getCProxy() {
 			return mapProxy;
 		}
 	}
@@ -572,13 +572,13 @@ public class FactoryImpl implements Constants {
 		boolean removeKey(Object key);
 	}
 
-	static class CProxy implements IMap, IProxy, Constants {
+	static class MProxy implements IMap, IProxy, Constants {
 
 		String name = null;
 
 		byte mapType = MAP_TYPE_MAP;
 
-		public CProxy(String name) {
+		public MProxy(String name) {
 			super();
 			this.name = name;
 			this.mapType = BaseManager.getMapType(name);
@@ -802,7 +802,7 @@ public class FactoryImpl implements Constants {
 
 			@Override
 			public int size() {
-				return CProxy.this.size();
+				return MProxy.this.size();
 			}
 		}
 

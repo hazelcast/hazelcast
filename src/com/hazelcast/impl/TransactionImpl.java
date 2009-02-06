@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.BlockingQueueManager.CommitPoll;
 import com.hazelcast.impl.BlockingQueueManager.Offer;
-import com.hazelcast.impl.FactoryImpl.CProxy;
+import com.hazelcast.impl.FactoryImpl.MProxy;
 import com.hazelcast.impl.FactoryImpl.CollectionProxy;
 
 class TransactionImpl implements Transaction, Constants {
@@ -87,10 +87,10 @@ class TransactionImpl implements Transaction, Constants {
 		}
 
 		public void rollbackMap() {
-			CProxy mapProxy = null;
+			MProxy mapProxy = null;
 			final Object proxy = FactoryImpl.getProxy(name);
-			if (proxy instanceof CProxy) {
-				mapProxy = (CProxy) proxy;
+			if (proxy instanceof MProxy) {
+				mapProxy = (MProxy) proxy;
 			} else if (proxy instanceof CollectionProxy) {
 				mapProxy = ((CollectionProxy) proxy).getCProxy();
 			}

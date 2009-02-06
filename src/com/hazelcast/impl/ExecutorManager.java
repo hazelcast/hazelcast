@@ -289,7 +289,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 		}
 
 		public void invoke() {
-			ClusterService.get().enqueueAndReturn(DistributedExecutorAction.this);
+			enqueueAndReturn(DistributedExecutorAction.this);
 		}
 
 		public void process() {

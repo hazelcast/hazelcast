@@ -83,8 +83,22 @@ class ListenerManager extends BaseManager {
 	}
 
 	public void syncForAdd() {
+//		for (ListenerItem listenerItem : lsListeners) {
+//			registerListener(listenerItem.name, listenerItem.key, true, listenerItem.includeValue);
+//		}
+	}
+	
+	public void syncForAdd(Address newAddress) {
 		for (ListenerItem listenerItem : lsListeners) {
-			registerListener(listenerItem.name, listenerItem.key, true, listenerItem.includeValue);
+			Data dataKey = null;
+			if (listenerItem.key != null) {
+				try {
+					dataKey = ThreadContext.get().toData(listenerItem.key);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			sendAddRemoveListener(newAddress, true, listenerItem.name, dataKey, listenerItem.includeValue);
 		}
 	}
 
@@ -173,7 +187,7 @@ class ListenerManager extends BaseManager {
 		addListener(name, listener, key, includeValue, listenerType, true);
 	}
 
-	public void addListener(String name, Object listener, Object key, boolean includeValue,
+	public synchronized void addListener(String name, Object listener, Object key, boolean includeValue,
 			int listenerType, boolean shouldRemotelyRegister) {
 		/**
 		 * check if already registered send this address to the key owner as a
@@ -214,7 +228,7 @@ class ListenerManager extends BaseManager {
 		lsListeners.add(listenerItem);
 	}
 
-	public void removeListener(String name, Object listener, Object key) {
+	public synchronized void removeListener(String name, Object listener, Object key) {
 		/**
 		 * send this address to the key owner as a listener add this listener to
 		 * the local listeners map

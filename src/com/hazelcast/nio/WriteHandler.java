@@ -40,7 +40,13 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
 	boolean dead = false;
 
-	AtomicBoolean alreadyRegistered = new AtomicBoolean(false);
+	AtomicBoolean informSelector = new AtomicBoolean(true);
+
+	AtomicBoolean wakeupSelector = new AtomicBoolean(true);
+
+	boolean ready = false;
+	
+	
 
 	WriteHandler(final Connection connection) {
 		super(connection);
@@ -52,10 +58,24 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 		} catch (final InterruptedException e) {
 			Node.get().handleInterruptedException(Thread.currentThread(), e);
 		}
-		signalWriteRequest();
+		if (informSelector.get()) {
+			informSelector.set(false);
+			final int size = outSelector.addTask(this);
+//			if (size < 2 || size > 5) {
+//				if (wakeupSelector.get()) {
+//					outSelector.selector.wakeup();
+//					wakeupSelector.set(false);
+//				}
+//			}
+		}
 	}
 
 	public final void handle() {
+		informSelector.set(true);
+		if (writeHandlerQueue.size() == 0) {
+			ready = true;
+			return;
+		}
 		if (!connection.live())
 			return;
 		try {
@@ -91,19 +111,24 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 		} catch (final Throwable t) {
 			logger.log(Level.INFO, "Fatal Error: WriteHandler " + t);
 		} finally {
-			if (hasMore()) {
-				registerWrite();
-			} else {
-				alreadyRegistered.set(false);
-				if (hasMore()) { // double check!
-					registerWrite();
-				}
-			}
+			ready = false;
+			registerWrite();
 		}
 	}
 
 	public final void run() {
-		registerWrite();
+		wakeupSelector.set(true);
+		informSelector.set(true);
+		if (ready) {
+			handle();
+		} else {
+			registerWrite();
+		}
+		ready = false;
+	}
+
+	private final void registerWrite() {
+		registerOp(outSelector.selector, SelectionKey.OP_WRITE);
 	}
 
 	@Override
@@ -117,15 +142,6 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 		writeHandlerQueue.clear();
 	}
 
-	final void signalWriteRequest() {
-		if (!alreadyRegistered.get()) {
-			final int size = outSelector.addTask(this);
-			if (size < 5) {
-				outSelector.selector.wakeup();
-			}
-		}
-	}
-
 	private final void doPostWrite(final Invocation inv) {
 		if (inv.container != null) {
 			try {
@@ -135,14 +151,4 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 			}
 		}
 	}
-
-	private final boolean hasMore() {
-		return (writeHandlerQueue.size() > 0);
-	}
-
-	private final void registerWrite() {
-		registerOp(outSelector.selector, SelectionKey.OP_WRITE);
-		alreadyRegistered.set(true);
-	}
-
 }

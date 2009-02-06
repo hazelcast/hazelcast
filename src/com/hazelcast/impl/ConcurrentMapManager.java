@@ -1327,9 +1327,9 @@ class ConcurrentMapManager extends BaseManager {
 			remoteReq.setInvocation(inv);
 			doLock(remoteReq);
 			if (!remoteReq.scheduled) {
-				if (remoteReq.response == Boolean.TRUE) {
+				if (remoteReq.response == Boolean.TRUE) {					
 					sendResponse(inv);
-				} else {
+				} else { 
 					sendResponseFailure(inv);
 				}
 			} else {
@@ -1933,7 +1933,7 @@ class ConcurrentMapManager extends BaseManager {
 			}
 		}
 
-		public boolean testLock(int threadId, Address address) {
+		public boolean testLock(int threadId, Address address) { 
 			if (lockCount == 0) {
 				return true;
 			}
@@ -1943,7 +1943,7 @@ class ConcurrentMapManager extends BaseManager {
 			return false;
 		}
 
-		public boolean lock(int threadId, Address address) {
+		public boolean lock(int threadId, Address address) { 
 			if (lockCount == 0) {
 				lockThreadId = threadId;
 				lockAddress = address;

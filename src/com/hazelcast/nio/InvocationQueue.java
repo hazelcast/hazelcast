@@ -105,7 +105,7 @@ public class InvocationQueue {
 		data.prepareForRead();
 	}
 
-	public final class Invocation implements Runnable, Constants, Constants.ResponseTypes {
+	public final class Invocation implements Constants, Constants.ResponseTypes {
 
 		private Serializer serializer = null;
 
@@ -154,6 +154,8 @@ public class InvocationQueue {
 		public long recordId = -1;
 
 		public long eventId = -1;
+		
+		public Connection conn; 
 
 		public Invocation(InvocationQueue container) {
 			this.container = container;
@@ -208,8 +210,8 @@ public class InvocationQueue {
 			bbHeader.putLong(longValue);
 			bbHeader.putLong(recordId);
 			bbHeader.putLong(eventId);
-			putString(bbHeader, name);
 			bbHeader.put(responseType);
+			putString(bbHeader, name);
 			boolean fromNull = (lockAddress == null);
 			writeBoolean(bbHeader, fromNull);
 			if (!fromNull) {
@@ -220,7 +222,7 @@ public class InvocationQueue {
 			bbSizes.putInt(bbHeader.limit());
 			bbSizes.putInt(key.size);
 			bbSizes.putInt(data.size);
-			bbSizes.flip();
+			bbSizes.flip(); 
 		}
 
 		public void read() {
@@ -233,8 +235,8 @@ public class InvocationQueue {
 			longValue = bbHeader.getLong();
 			recordId = bbHeader.getLong();
 			eventId = bbHeader.getLong();
-			name = getString(bbHeader);
 			responseType = bbHeader.get();
+			name = getString(bbHeader); 
 			boolean fromNull = readBoolean(bbHeader);
 			if (!fromNull) {
 				lockAddress = new Address();
@@ -262,13 +264,10 @@ public class InvocationQueue {
 			key.setNoData();
 			data.setNoData();
 			attachment = null;
+			conn = null;
 		}
 
-		public Connection conn;
-
-		public void run() {
-			throw new RuntimeException("should run invocation");
-		}
+		
 
 		@Override
 		public String toString() {

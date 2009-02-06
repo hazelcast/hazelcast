@@ -21,7 +21,7 @@ import static com.hazelcast.impl.Constants.ClusterOperations.OP_HEARTBEAT;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_BOOLEAN_CALLABLE;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_OBJECT_CALLABLE;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_PROCESS;
-import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_PROCESS_AND_RESPONSE;
+import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_PROCESS_AND_RESPOND;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_RESPONSE;
 import static com.hazelcast.impl.Constants.NodeTypes.NODE_MEMBER;
 
@@ -82,7 +82,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 				// last heartbeat is recorded at ClusterService
 				// so no op.
 				inv.returnToContainer();
-			} else if (inv.operation == OP_REMOTELY_PROCESS_AND_RESPONSE) {
+			} else if (inv.operation == OP_REMOTELY_PROCESS_AND_RESPOND) {
 				Data data = inv.doTake(inv.data);
 				RemotelyProcessable rp = (RemotelyProcessable) ThreadContext.get().toObject(data);
 				rp.setConnection(inv.conn);
@@ -189,7 +189,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 				boolean removed = false;
 				if (masterMember != null) {
 					if ((now - masterMember.getLastRead()) >= 10000) {
-						doRemoveAddress(getMasterAddress()); 
+						doRemoveAddress(getMasterAddress());
 						removed = true;
 					}
 				}
@@ -437,7 +437,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			this.processable = processable;
 			this.addresses = addresses;
 			Data value = ThreadContext.get().toData(processable);
-			setLocal(OP_REMOTELY_PROCESS_AND_RESPONSE, "clustermanager", null, value, 0, -1, -1);
+			setLocal(OP_REMOTELY_PROCESS_AND_RESPOND, "clustermanager", null, value, 0, -1, -1);
 			doOp();
 		}
 
@@ -523,7 +523,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		public boolean executeProcess(Address address, AbstractRemotelyProcessable arp) {
 			this.arp = arp;
 			super.target = address;
-			return booleanCall(OP_REMOTELY_PROCESS_AND_RESPONSE, "exe", null, arp, 0, -1, -1);
+			return booleanCall(OP_REMOTELY_PROCESS_AND_RESPOND, "exe", null, arp, 0, -1, -1);
 		}
 
 		public void doLocalOp() {
@@ -535,9 +535,22 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		void setTarget() {
 		}
 	}
+	
+	void finalizeJoin() { 
+		List<AsyncRemotelyBooleanCallable> calls = new ArrayList<AsyncRemotelyBooleanCallable>();
+		for (final MemberImpl member : lsMembers) {
+			if (!member.localMember()) {
+				AsyncRemotelyBooleanCallable rrp = new AsyncRemotelyBooleanCallable();
+				rrp.executeProcess(member.getAddress(), new FinalizeJoin());
+				calls.add(rrp);
+			}
+		}
+		for (AsyncRemotelyBooleanCallable call : calls) {
+			call.getResultAsBoolean(); 
+		}
+	}
 
 	void startJoin() {
-
 		joinInProgress = true;
 		final MembersUpdateCall membersUpdate = new MembersUpdateCall(lsMembers);
 		if (setJoins != null && setJoins.size() > 0) {
@@ -780,12 +793,21 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			return true;
 		}
 	}
+	
+	public static class FinalizeJoin extends AbstractRemotelyCallable<Boolean> {
+		public Boolean call() throws Exception { 
+			ListenerManager.get().syncForAdd(getConnection().getEndPoint());
+			return Boolean.TRUE;
+		}
+	}
 
 	public static class ConnectionCheckCall extends AbstractRemotelyCallable<Boolean> {
 		public Boolean call() throws Exception {
-			for (MemberImpl member : ClusterManager.get().lsMembers) {
-				if (ConnectionManager.get().getConnection(member.getAddress()) == null) {
-					return Boolean.FALSE;
+			for (MemberImpl member : lsMembers) {
+				if (!member.localMember()) {
+					if (ConnectionManager.get().getConnection(member.getAddress()) == null) {
+						return Boolean.FALSE;
+					}
 				}
 			}
 			return Boolean.TRUE;

@@ -260,7 +260,7 @@ public class Node {
 
 	public void shutdown() {
 		try {
-			ClusterService.get().stop();		
+			ClusterService.get().stop();
 			MulticastService.get().stop();
 			ConnectionManager.get().shutdown();
 			ExecutorManager.get().shutdown();
@@ -271,7 +271,7 @@ public class Node {
 			joined = false;
 		} catch (Throwable e) {
 			logger.log(Level.FINEST, "shutdown exception", e);
-		} 
+		}
 	}
 
 	public void start() {
@@ -280,12 +280,12 @@ public class Node {
 		final boolean inited = init();
 		if (!inited)
 			return;
-		final Thread inThread = new Thread(InSelector.get(), "InThread"); 
+		final Thread inThread = new Thread(InSelector.get(), "InThread");
 		inThread.start();
 		inThread.setPriority(8);
 		lsThreads.add(inThread);
 
-		final Thread outThread = new Thread(OutSelector.get(), "OutThread"); 
+		final Thread outThread = new Thread(OutSelector.get(), "OutThread");
 		outThread.start();
 		outThread.setPriority(8);
 		lsThreads.add(outThread);
@@ -465,8 +465,8 @@ public class Node {
 			if (address == null)
 				return false;
 			Logger systemLogger = Logger.getLogger("com.hazelcast.system");
-			systemLogger.log(Level.INFO, "Hazelcast " + Build.get().version + " (" + Build.get().build
-					+ ") starting at " + address);
+			systemLogger.log(Level.INFO, "Hazelcast " + Build.get().version + " ("
+					+ Build.get().build + ") starting at " + address);
 			systemLogger.log(Level.INFO, "Copyright (C) 2008 Hazelcast.com");
 
 			if (config.join.multicastConfig.enabled) {
@@ -498,8 +498,21 @@ public class Node {
 		final Config config = Config.get();
 		if (!config.join.multicastConfig.enabled) {
 			joinWithTCP();
-			return;
+		} else {
+			joinWithMulticast();
 		}
+		if (DEBUG)
+			logger.log(Level.FINEST, "Join DONE");
+		ClusterManager.get().finalizeJoin();
+		if (ClusterManager.get().lsMembers.size() == 1) {
+			final StringBuilder sb = new StringBuilder();
+			sb.append("\n");
+			sb.append(ClusterManager.get());
+			logger.log(Level.INFO, sb.toString());
+		}
+	}
+	
+	private void joinWithMulticast() {
 		masterAddress = findMaster();
 		if (DEBUG)
 			logger.log(Level.FINEST, address + " master: " + masterAddress);
@@ -519,7 +532,7 @@ public class Node {
 						joinLock.wait(2000);
 					}
 					if (masterAddress == null) {
-						join();
+						joinWithMulticast();
 					} else if (masterAddress.equals(address)) {
 						setAsMaster();
 					}
@@ -527,15 +540,6 @@ public class Node {
 					e.printStackTrace();
 				}
 			}
-		}
-
-		if (DEBUG)
-			logger.log(Level.FINEST, "Join DONE");
-		if (ClusterManager.get().lsMembers.size() == 1) {
-			final StringBuilder sb = new StringBuilder();
-			sb.append("\n"); 
-			sb.append(ClusterManager.get());
-			logger.log(Level.INFO, sb.toString());
 		}
 	}
 
@@ -622,13 +626,6 @@ public class Node {
 		} catch (final Exception e) {
 			e.printStackTrace();
 		}
-		if (DEBUG)
-			logger.log(Level.FINEST, "DONE TCP");
-		final StringBuilder sb = new StringBuilder();
-		sb.append("\n");
-		if (ClusterManager.get().lsMembers.size() == 1)
-			sb.append(ClusterManager.get());
-		logger.log(Level.FINEST, sb.toString());
 	}
 
 	private void joinViaRequiredMember() {
