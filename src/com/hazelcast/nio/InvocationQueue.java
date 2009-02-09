@@ -571,24 +571,11 @@ public class InvocationQueue {
 			} else if (obj instanceof String) {
 				bbos.write((byte) 46);
 				String str = (String) obj;
-				bbos.writeUTF(str);
-				// int len = str.length();
-				// int block = 10000;
-				// int blockCount = ((len / block)) + 1;
-				// bbos.writeShort(blockCount);
-				// if (blockCount == 1) {
-				// bbos.writeUTF(str);
-				// } else {
-				// for (int i = 0; i < blockCount; i++) {
-				// int start = i * block;
-				// int end = Math.min((i + 1) * block, len);
-				// bbos.writeUTF(str.substring(start, end));
-				// }
-				// }
+				bbos.writeUTF(str); 
 			} else {
 				bbos.write((byte) 66);
 				ObjectOutputStream os = new ObjectOutputStream(bbos);
-				os.writeObject(obj);
+				os.writeUnshared(obj);
 			}
 			bbos.flush();
 		}
@@ -608,30 +595,21 @@ public class InvocationQueue {
 					result = Long.valueOf(bbis.readLong());
 				} else if (type == 42) {
 					result = Integer.valueOf(bbis.readInt());
-				} else if (type == 66) {
-					ObjectInputStream in = new ObjectInputStream(bbis);
-					result = in.readUnshared();
-				} else if (type == 45) {
-					// logger.log(Level.INFO,"reading " + inv.data);
+				} else if (type == 45) { 
 					String className = bbis.readUTF();
 					DataSerializable ds = (DataSerializable) Class.forName(className).newInstance();
-					ds.readData(bbis);
-					// logger.log(Level.INFO,"Object " + ds);
+					ds.readData(bbis); 
 					if (bbis.readInt() != STREAM_END)
 						throw new RuntimeException("Unproper stream-end!");
 					result = ds;
 				} else if (type == 46) {
-					result = bbis.readUTF();
-					// int utfCount = bbis.readShort();
-					// StringBuilder sb = new StringBuilder();
-					// for (int i = 0; i < utfCount; i++) {
-					// sb.append(bbis.readUTF());
-					// }
-					// result = sb.toString();
+					result = bbis.readUTF(); 
+				} else if (type == 66) {
+					ObjectInputStream in = new ObjectInputStream(bbis);
+					result = in.readUnshared();
 				} else {
 					throw new RuntimeException("Unknown readObject type " + type);
 				}
-
 				return result;
 			} catch (Exception e) {
 				e.printStackTrace();
