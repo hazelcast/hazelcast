@@ -417,7 +417,11 @@ class ConcurrentMapManager extends BaseManager {
 		public void remove() {
 			if (next != null) {
 				IProxy iproxy = (IProxy) FactoryImpl.getProxy(name);
-				iproxy.removeKey(next.getKeyData());
+				Object entryKey = next.getKeyData();
+				if (entryKey == null) {
+					entryKey = next.getKey();
+				}
+				iproxy.removeKey(entryKey);
 			}
 		}
 	}
