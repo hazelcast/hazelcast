@@ -99,6 +99,8 @@ class ConcurrentMapManager extends BaseManager {
 			handleBackupRemove(inv);
 		} else if (inv.operation == OP_CMAP_LOCK) {
 			handleLock(inv);
+		} else if (inv.operation == OP_CMAP_LOCK_RETURN_OLD) {
+			handleLock(inv);
 		} else if (inv.operation == OP_CMAP_UNLOCK) {
 			handleLock(inv);
 		} else if (inv.operation == OP_CMAP_BACKUP_LOCK) {
@@ -307,7 +309,7 @@ class ConcurrentMapManager extends BaseManager {
 	}
 
 	class MContainsKey extends MBooleanOp {
-		public boolean containsKey(String name, Object key, long txnId) {
+		public boolean containsKey(String name, Object key, long txnId) {			
 			return booleanCall(OP_CMAP_CONTAINS_KEY, name, key, null, 0, txnId, -1);
 		}
 
@@ -491,6 +493,13 @@ class ConcurrentMapManager extends BaseManager {
 
 	class MGet extends MTargetAwareOp {
 		public Object get(String name, Object key, long timeout, long txnId) {
+			final ThreadContext tc = ThreadContext.get();
+			TransactionImpl txn = tc.txn;
+			if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+				if (txn.has(name, key)) {
+					return txn.get(name, key);
+				}
+			}
 			return objectCall(OP_CMAP_GET, name, key, null, timeout, txnId, -1);
 		}
 
@@ -508,11 +517,43 @@ class ConcurrentMapManager extends BaseManager {
 	class MRemove extends MTargetAwareOp {
 
 		public Object remove(String name, Object key, long timeout, long txnId) {
-			return objectCall(OP_CMAP_REMOVE, name, key, null, timeout, txnId, -1);
+			return txnalRemove(OP_CMAP_REMOVE, name, key, null, timeout, txnId);
 		}
 
 		public Object removeIfSame(String name, Object key, Object value, long timeout, long txnId) {
-			return objectCall(OP_CMAP_REMOVE_IF_SAME, name, key, value, timeout, txnId, -1);
+			return txnalRemove(OP_CMAP_REMOVE_IF_SAME, name, key, value, timeout, txnId);
+		}
+		
+		private Object txnalRemove(int operation, String name, Object key, Object value, long timeout,
+				long txnId) {
+			ThreadContext threadContext = ThreadContext.get();
+			TransactionImpl txn = threadContext.txn;
+			if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+				try {
+					boolean locked = false;
+					if (!txn.has(name, key)) {
+						MLock mlock = threadContext.getMLock();
+						locked = mlock
+								.lockAndReturnOld(name, key, DEFAULT_TXN_TIMEOUT, txn.getId());
+						if (!locked)
+							throwCME(key);
+						Object oldObject = null;
+						Data oldValue = mlock.oldValue;
+						if (oldValue != null) {
+							oldObject = threadContext.toObject(oldValue);
+						}
+						txn.attachRemoveOp(name, key, value, (oldObject == null));
+						return oldObject;
+					} else {
+						return txn.attachRemoveOp(name, key, value, false);
+					}
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+				return null;
+			} else {
+				return objectCall(operation, name, key, value, timeout, txnId, -1);
+			}
 		}
 
 		@Override
@@ -660,7 +701,7 @@ class ConcurrentMapManager extends BaseManager {
 	public class MContainsValue extends AllOp {
 		boolean contains = false;
 
-		public boolean containsValue(String name, Object value, long txnId) {
+		public boolean containsValue(String name, Object value, long txnId) { 
 			contains = false;
 			reset();
 			setLocal(OP_CMAP_CONTAINS_VALUE, name, null, value, 0, txnId, -1);
@@ -720,7 +761,7 @@ class ConcurrentMapManager extends BaseManager {
 				shouldRedo = true;
 				complete(true);
 				return;
-			} 
+			}
 			super.process();
 		}
 
@@ -1391,8 +1432,9 @@ class ConcurrentMapManager extends BaseManager {
 		}
 	}
 
-	final void doLock(Request request) {
-		boolean lock = (request.operation == OP_CMAP_LOCK) ? true : false;
+	final void doLock(Request request) { 
+		boolean lock = (request.operation == OP_CMAP_LOCK || request.operation == OP_CMAP_LOCK_RETURN_OLD) ? true
+				: false;
 		if (!lock) {
 			// unlock
 			boolean unlocked = true;
@@ -1665,9 +1707,10 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		public boolean containsValue(Request req) {
-			Data value = req.value;
+			Data value = req.value; 
 			Collection<Record> records = mapRecords.values();
 			for (Record record : records) {
+				if (record.getValue() == null) return false;
 				if (value.equals(record.getValue()))
 					return true;
 			}

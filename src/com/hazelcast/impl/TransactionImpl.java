@@ -155,7 +155,6 @@ class TransactionImpl implements Transaction, Constants {
 			rec = new TxnRecord(name, key, value, newRecord);
 			rec.removed = true;
 			lsTxnRecords.add(rec);
-			return null;
 		} else {
 			oldValue = rec.value;
 			rec.value = value;
@@ -255,11 +254,12 @@ class TransactionImpl implements Transaction, Constants {
 	public int size(final String name) {
 		int size = 0;
 		for (final TxnRecord txnRecord : lsTxnRecords) {
-			if (txnRecord.name.equals(name)) {
+			if (txnRecord.name.equals(name)) { 
 				if (txnRecord.removed) {
 					if (!txnRecord.newRecord) {
-						if (txnRecord.map)
+						if (txnRecord.map) {
 							size--;
+						}
 					}
 				} else {
 					size++;

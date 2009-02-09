@@ -626,7 +626,12 @@ public class FactoryImpl implements Constants {
 
 		public int size() {
 			MSize msize = ConcurrentMapManager.get().new MSize();
-			return msize.getSize(name);
+			int size = msize.getSize(name);
+			TransactionImpl txn = ThreadContext.get().txn;
+			if (txn != null) {
+				size += txn.size(name); 
+			}
+			return (size < 0) ? 0 : size;
 		}
 
 		public Object putIfAbsent(Object key, Object value) {
@@ -722,12 +727,27 @@ public class FactoryImpl implements Constants {
 
 		public boolean containsKey(Object key) {
 			check(key);
+			TransactionImpl txn = ThreadContext.get().txn;
+			if (txn != null) {
+				if (txn.has(name, key)) {
+					Object value = txn.get(name, key);
+					if (value == null)
+						return false; // removed inside the txn
+					else
+						return true;
+				}
+			}
 			MContainsKey mContainsKey = ConcurrentMapManager.get().new MContainsKey();
 			return mContainsKey.containsKey(name, key, -1);
 		}
 
 		public boolean containsValue(Object value) {
 			check(value);
+			TransactionImpl txn = ThreadContext.get().txn;
+			if (txn != null) {
+				if (txn.containsValue(name, value))
+					return true;
+			}
 			MContainsValue mContainsValue = ConcurrentMapManager.get().new MContainsValue();
 			return mContainsValue.containsValue(name, value, -1);
 		}
