@@ -59,6 +59,7 @@ import java.util.logging.Level;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Transaction;
+import com.hazelcast.impl.BaseManager.SimpleDataEntry;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
 import com.hazelcast.impl.FactoryImpl.IProxy;
 import com.hazelcast.nio.Address;
@@ -309,7 +310,7 @@ class ConcurrentMapManager extends BaseManager {
 	}
 
 	class MContainsKey extends MBooleanOp {
-		public boolean containsKey(String name, Object key, long txnId) {			
+		public boolean containsKey(String name, Object key, long txnId) {
 			return booleanCall(OP_CMAP_CONTAINS_KEY, name, key, null, 0, txnId, -1);
 		}
 
@@ -335,18 +336,31 @@ class ConcurrentMapManager extends BaseManager {
 
 		int type = TYPE_ENTRIES;
 
+		List<SimpleDataEntry> lsEntries = null;
+
 		public void set(String name, int type) {
 			this.name = name;
 			this.type = type;
+			TransactionImpl txn = ThreadContext.get().txn;
+			if (txn != null) {
+				lsEntries = txn.entries(name);
+			}
 		}
 
-		public boolean hasNext() {
+		public boolean hasNext() {			
 			if (next != null) {
 				if (next.copyCount-- <= 0) {
 					next = null;
 				}
 			}
-
+			if (lsEntries != null) {
+				if (lsEntries.size() > 0) {
+					next = lsEntries.remove(0);		 
+				} else {
+					next = null;
+					lsEntries = null;
+				}
+			}
 			while (next == null) {
 				boolean canRead = setNextBlock();
 				if (!canRead)
@@ -357,6 +371,13 @@ class ConcurrentMapManager extends BaseManager {
 				} else {
 					currentIndex = read.lastReadRecordId;
 					currentIndex++;
+					TransactionImpl txn = ThreadContext.get().txn;
+					if (txn != null) {
+						Object key = next.getKey();
+						if (txn.has(name, key)) {
+							next = null;
+						}
+					}
 				}
 			}
 			hasNextCalled = true;
@@ -523,9 +544,9 @@ class ConcurrentMapManager extends BaseManager {
 		public Object removeIfSame(String name, Object key, Object value, long timeout, long txnId) {
 			return txnalRemove(OP_CMAP_REMOVE_IF_SAME, name, key, value, timeout, txnId);
 		}
-		
-		private Object txnalRemove(int operation, String name, Object key, Object value, long timeout,
-				long txnId) {
+
+		private Object txnalRemove(int operation, String name, Object key, Object value,
+				long timeout, long txnId) {
 			ThreadContext threadContext = ThreadContext.get();
 			TransactionImpl txn = threadContext.txn;
 			if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
@@ -701,7 +722,7 @@ class ConcurrentMapManager extends BaseManager {
 	public class MContainsValue extends AllOp {
 		boolean contains = false;
 
-		public boolean containsValue(String name, Object value, long txnId) { 
+		public boolean containsValue(String name, Object value, long txnId) {
 			contains = false;
 			reset();
 			setLocal(OP_CMAP_CONTAINS_VALUE, name, null, value, 0, txnId, -1);
@@ -1432,7 +1453,7 @@ class ConcurrentMapManager extends BaseManager {
 		}
 	}
 
-	final void doLock(Request request) { 
+	final void doLock(Request request) {
 		boolean lock = (request.operation == OP_CMAP_LOCK || request.operation == OP_CMAP_LOCK_RETURN_OLD) ? true
 				: false;
 		if (!lock) {
@@ -1707,10 +1728,11 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		public boolean containsValue(Request req) {
-			Data value = req.value; 
+			Data value = req.value;
 			Collection<Record> records = mapRecords.values();
 			for (Record record : records) {
-				if (record.getValue() == null) return false;
+				if (record.getValue() == null)
+					return false;
 				if (value.equals(record.getValue()))
 					return true;
 			}

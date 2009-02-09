@@ -23,6 +23,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.hazelcast.core.Transaction;
+import com.hazelcast.impl.BaseManager.SimpleDataEntry;
 import com.hazelcast.impl.BlockingQueueManager.CommitPoll;
 import com.hazelcast.impl.BlockingQueueManager.Offer;
 import com.hazelcast.impl.FactoryImpl.MProxy;
@@ -267,6 +268,23 @@ class TransactionImpl implements Transaction, Constants {
 			}
 		}
 		return size;
+	}
+	
+	public List<SimpleDataEntry> entries(final String name) {
+		List<SimpleDataEntry> lsEntries = null;
+		for (final TxnRecord txnRecord : lsTxnRecords) {
+			if (txnRecord.name.equals(name)) { 
+				if (!txnRecord.removed) {
+					if (txnRecord.value != null) {
+						if (lsEntries == null) {
+							lsEntries = new ArrayList<SimpleDataEntry>(2);
+						}
+						lsEntries.add(new SimpleDataEntry(name, txnRecord.key, txnRecord.value));
+					}
+				}
+			}
+		}
+		return lsEntries;
 	}
 
 	@Override
