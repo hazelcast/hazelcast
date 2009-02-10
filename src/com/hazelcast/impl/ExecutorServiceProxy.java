@@ -116,21 +116,5 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
 		}
 		Processable action = ExecutorManager.get().createNewExecutionAction(dtask, DEFAULT_TIMEOUT);
 		ClusterService.get().enqueueAndReturn(action);
-	}
-
-	public void sendStreamItem(final Address address, final Object value, final long streamId) {
-		try {
-			final Invocation inv = ClusterManager.get().obtainServiceInvocation("exe", null, value,
-					OP_STREAM, DEFAULT_TIMEOUT);
-			inv.longValue = streamId;
-			ClusterService.get().enqueueAndReturn(new Runnable() {
-				public void run() {
-					ClusterManager.get().send(inv, address);
-				}
-			});
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
+	} 
 }

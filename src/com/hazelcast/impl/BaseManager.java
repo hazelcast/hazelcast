@@ -1418,4 +1418,7 @@ abstract class BaseManager implements Constants {
 		return true;
 	}
 
+	interface InvocationProcessor {
+		void process(Invocation inv);
+	}
 }

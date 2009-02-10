@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.hazelcast.impl.BaseManager.InvocationProcessor;
 import com.hazelcast.impl.BaseManager.Processable;
 import com.hazelcast.nio.InvocationQueue.Invocation;
 
@@ -52,6 +53,8 @@ public class ClusterService implements Runnable, Constants {
 	protected long totalProcessTime = 0;
 
 	protected long lastPeriodicCheck = 0;
+	
+	private final InvocationProcessor[] invProcessors = new InvocationProcessor[1000];
 
 	private ClusterService() {
 		this.queue = new LinkedBlockingQueue();
@@ -61,14 +64,16 @@ public class ClusterService implements Runnable, Constants {
 	public static ClusterService get() {
 		return instance;
 	}
+	
+	void registerInvocationProcessor (int operation, InvocationProcessor invocationProcessor) {
+		if (invProcessors[operation] != null) {
+			logger.log(Level.SEVERE, operation + " is registered already with " + invProcessors[operation]); 
+		}
+		invProcessors[operation] = invocationProcessor;
+	}
 
 	public void enqueueAndReturn(final Object message) {
-		try {
-			// if (DEBUG) {
-			// if (queue.size() > 600) {
-			// logger.log(Level.INFO,"queue size " + queue.size());
-			// }
-			// }
+		try { 
 			queue.put(message);
 		} catch (final InterruptedException e) {
 			Node.get().handleInterruptedException(Thread.currentThread(), e);
@@ -83,31 +88,16 @@ public class ClusterService implements Runnable, Constants {
 			if (memberFrom != null) {
 				memberFrom.didRead();
 			}
-			final int operation = inv.operation;
-			if (operation == OP_RESPONSE) {
-				// special treatment to responses
-				ClusterManager.get().handleResponse(inv);
-			} else if (operation > 500) {
-				ConcurrentMapManager.get().handle(inv);
-			} else if (operation > 400) {
-				BlockingQueueManager.get().handle(inv);
-			} else if (operation > 300) {
-				ExecutorManager.get().handle(inv);
-			} else if (operation > 200) {
-				ListenerManager.get().handle(inv);
-			} else if (operation > 0) {
-				ClusterManager.get().handle(inv);
-			} else
-				throw new RuntimeException("Unknown operation " + operation);
+			InvocationProcessor invocationProcessor = invProcessors[inv.operation];
+			if (invocationProcessor == null) {
+				logger.log(Level.SEVERE, "No Invocation processor found for operation : " + inv.operation);
+			}
+			invocationProcessor.process(inv);
 		} else if (obj instanceof Processable) {
 			((Processable) obj).process();
-		} else if (obj instanceof Runnable) {
-			synchronized (obj) {
-				((Runnable) obj).run();
-				obj.notify();
-			}
-		} else
-			throw new RuntimeException("Unkown obj " + obj);
+		} else {
+			logger.log(Level.SEVERE, "Cannot process. Unknown object: " + obj); 
+		}
 		final long processEnd = System.nanoTime();
 		final long elipsedTime = processEnd - processStart;
 		totalProcessTime += elipsedTime;

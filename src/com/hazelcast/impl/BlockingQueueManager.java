@@ -32,6 +32,7 @@ import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_REMOVE_B
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_SIZE;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_TXN_BACKUP_POLL;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_TXN_COMMIT;
+import static com.hazelcast.impl.Constants.ClusterOperations.OP_HEARTBEAT;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 
 import java.io.DataInput;
@@ -45,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.impl.BaseManager.InvocationProcessor;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
@@ -64,45 +66,86 @@ class BlockingQueueManager extends BaseManager {
 	private int nextIndex = 0;
 
 	private BlockingQueueManager() {
+		ClusterService.get().registerInvocationProcessor(OP_B_POLL, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handlePoll(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_B_OFFER, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handleOffer(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_B_BACKUP_ADD, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handleBackup(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_B_BACKUP_REMOVE, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handleBackup(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_B_PUBLISH, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handlePublish(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_B_ADD_TOPIC_LISTENER, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handleAddTopicListener(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_B_SIZE, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handleSize(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_B_PEEK, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handlePoll(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_B_READ, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handleRead(inv);	
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_B_REMOVE, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handleRemove(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_B_TXN_BACKUP_POLL, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handleTxnBackupPoll(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_B_TXN_COMMIT, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handleTxnCommit(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_B_ADD_BLOCK, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handleAddBlock(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_B_REMOVE_BLOCK, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handleRemoveBlock(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_B_FULL_BLOCK, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handleFullBlock(inv);
+			}
+		});
+		
 	}
 
 	public static BlockingQueueManager get() {
 		return instance;
-	}
-
-	public void handle(Invocation inv) {
-		if (inv.operation == OP_B_POLL) {
-			handlePoll(inv);
-		} else if (inv.operation == OP_B_OFFER) {
-			handleOffer(inv);
-		} else if (inv.operation == OP_B_BACKUP_ADD) {
-			handleBackup(inv);
-		} else if (inv.operation == OP_B_BACKUP_REMOVE) {
-			handleBackup(inv);
-		} else if (inv.operation == OP_B_PUBLISH) {
-			handlePublish(inv);
-		} else if (inv.operation == OP_B_ADD_TOPIC_LISTENER) {
-			handleAddTopicListener(inv);
-		} else if (inv.operation == OP_B_PEEK) {
-			handlePoll(inv);
-		} else if (inv.operation == OP_B_READ) {
-			handleRead(inv);
-		} else if (inv.operation == OP_B_REMOVE) {
-			handleRemove(inv);
-		} else if (inv.operation == OP_B_TXN_BACKUP_POLL) {
-			handleTxnBackupPoll(inv);
-		} else if (inv.operation == OP_B_TXN_COMMIT) {
-			handleTxnCommit(inv);
-		} else if (inv.operation == OP_B_ADD_BLOCK) {
-			handleAddBlock(inv);
-		} else if (inv.operation == OP_B_REMOVE_BLOCK) {
-			handleRemoveBlock(inv);
-		} else if (inv.operation == OP_B_FULL_BLOCK) {
-			handleFullBlock(inv);
-		} else if (inv.operation == OP_B_SIZE) {
-			handleSize(inv);
-		} else
-			throw new RuntimeException("Unknown invocation type " + inv.operation);
 	}
 
 	class BlockBackupSyncRunner implements Runnable {

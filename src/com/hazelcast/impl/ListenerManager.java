@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import static com.hazelcast.impl.Constants.ClusterOperations.OP_HEARTBEAT;
 import static com.hazelcast.impl.Constants.EventOperations.OP_EVENT;
 import static com.hazelcast.impl.Constants.EventOperations.OP_LISTENER_ADD;
 import static com.hazelcast.impl.Constants.EventOperations.OP_LISTENER_REMOVE;
@@ -29,6 +30,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.MessageListener;
+import com.hazelcast.impl.BaseManager.InvocationProcessor;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.InvocationQueue.Data;
 import com.hazelcast.nio.InvocationQueue.Invocation;
@@ -45,17 +47,21 @@ class ListenerManager extends BaseManager {
 	}
 
 	private ListenerManager() {
-	}
-
-	public void handle(Invocation inv) {
-		if (inv.operation == OP_EVENT) {
-			handleEvent(inv);
-		} else if (inv.operation == OP_LISTENER_ADD) {
-			handleAddRemoveListener(true, inv);
-		} else if (inv.operation == OP_LISTENER_REMOVE) {
-			handleAddRemoveListener(false, inv);
-		} else
-			throw new RuntimeException("Unknown operation " + inv.operation);
+		ClusterService.get().registerInvocationProcessor(OP_EVENT, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handleEvent(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_LISTENER_ADD, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handleAddRemoveListener(true, inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_LISTENER_REMOVE, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handleAddRemoveListener(false, inv);
+			}
+		});		
 	}
 
 	private final void handleEvent(Invocation inv) {

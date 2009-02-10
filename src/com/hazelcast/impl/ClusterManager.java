@@ -62,39 +62,36 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 
 	private ClusterManager() {
 		ConnectionManager.get().addConnectionListener(this);
-	}
-
-	private final Set<MemberInfo> setJoins = new LinkedHashSet<MemberInfo>(100);
-
-	private boolean joinInProgress = false;
-
-	private long timeToStartJoin = 0;
-
-	private final List<MemberImpl> lsMembersBefore = new ArrayList<MemberImpl>();
-
-	private final long waitTimeBeforeJoin = 5000;
-
-	public void handle(Invocation inv) {
-		try {
-			if (inv.operation == OP_RESPONSE) {
-				handleResponse(inv);
-			} else if (inv.operation == OP_HEARTBEAT) {
-				// last heartbeat is recorded at ClusterService
-				// so no op.
-				inv.returnToContainer();
-			} else if (inv.operation == OP_REMOTELY_PROCESS_AND_RESPOND) {
+		ClusterService.get().registerInvocationProcessor(OP_RESPONSE, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleResponse(inv);	
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_HEARTBEAT, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_REMOTELY_PROCESS_AND_RESPOND, new InvocationProcessor() {
+			public void process(Invocation inv) { 
 				Data data = inv.doTake(inv.data);
 				RemotelyProcessable rp = (RemotelyProcessable) ThreadContext.get().toObject(data);
 				rp.setConnection(inv.conn);
 				rp.process();
 				sendResponse(inv);
-			} else if (inv.operation == OP_REMOTELY_PROCESS) {
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_REMOTELY_PROCESS, new InvocationProcessor() {
+			public void process(Invocation inv) { 
 				Data data = inv.doTake(inv.data);
 				RemotelyProcessable rp = (RemotelyProcessable) ThreadContext.get().toObject(data);
 				rp.setConnection(inv.conn);
 				rp.process();
 				inv.returnToContainer();
-			} else if (inv.operation == OP_REMOTELY_BOOLEAN_CALLABLE) {
+			}
+		});
+		
+		ClusterService.get().registerInvocationProcessor(OP_REMOTELY_BOOLEAN_CALLABLE, new InvocationProcessor() {
+			public void process(Invocation inv) { 
 				Boolean result = null;
 				try {
 					Data data = inv.doTake(inv.data);
@@ -111,7 +108,11 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 				} else {
 					sendResponseFailure(inv);
 				}
-			} else if (inv.operation == OP_REMOTELY_OBJECT_CALLABLE) {
+			}
+		});
+		
+		ClusterService.get().registerInvocationProcessor(OP_REMOTELY_OBJECT_CALLABLE, new InvocationProcessor() {
+			public void process(Invocation inv) { 
 				Object result = null;
 				try {
 					Data data = inv.doTake(inv.data);
@@ -134,13 +135,19 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 				}
 
 				sendResponse(inv);
-			} else
-				throw new RuntimeException("Unhandled message " + inv.name);
-		} catch (Exception e) {
-			log(e);
-			e.printStackTrace();
-		}
+			}
+		});
 	}
+
+	private final Set<MemberInfo> setJoins = new LinkedHashSet<MemberInfo>(100);
+
+	private boolean joinInProgress = false;
+
+	private long timeToStartJoin = 0;
+
+	private final List<MemberImpl> lsMembersBefore = new ArrayList<MemberImpl>();
+
+	private final long waitTimeBeforeJoin = 5000;
 
 	public final void heartBeater() {
 		if (!Node.get().joined())

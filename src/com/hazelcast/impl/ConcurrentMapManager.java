@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import static com.hazelcast.impl.Constants.ClusterOperations.OP_HEARTBEAT;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_ADD_TO_LIST;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_ADD_TO_SET;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_BACKUP_ADD;
@@ -59,6 +60,7 @@ import java.util.logging.Level;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Transaction;
+import com.hazelcast.impl.BaseManager.InvocationProcessor;
 import com.hazelcast.impl.BaseManager.SimpleDataEntry;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
 import com.hazelcast.impl.FactoryImpl.IProxy;
@@ -73,6 +75,117 @@ class ConcurrentMapManager extends BaseManager {
 	private static ConcurrentMapManager instance = new ConcurrentMapManager();
 
 	private ConcurrentMapManager() {
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_GET, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleGet(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_PUT, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handlePut(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_BACKUP_ADD, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleBackupAdd(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_BACKUP_REMOVE, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleBackupRemove(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_REMOVE, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleRemove(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_REMOVE_IF_SAME, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleRemove(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_LOCK, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleLock(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_LOCK_RETURN_OLD, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleLock(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_UNLOCK, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleLock(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_BACKUP_LOCK, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleBackupLock(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_READ, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleRead(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_SIZE, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleSize(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_ADD_TO_LIST, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleAdd(inv);
+			}
+		});
+
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_ADD_TO_SET, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleAdd(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_CONTAINS_KEY, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleContains(true, inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_CONTAINS_VALUE, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleContains(false, inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_BLOCK_INFO, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleBlockInfo(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_BLOCKS, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleBlocks(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_PUT_IF_ABSENT, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handlePut(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_REPLACE_IF_NOT_NULL, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handlePut(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_MIGRATION_COMPLETE, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				doMigrationComplete(inv.conn.getEndPoint());
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_CMAP_MIGRATE_RECORD, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleMigrateRecord(inv);
+			}
+		});
 	}
 
 	public static ConcurrentMapManager get() {
@@ -86,52 +199,6 @@ class ConcurrentMapManager extends BaseManager {
 	private Map<String, CMap> maps = new HashMap<String, CMap>(10);
 	private long maxId = 0;
 	private Map<Long, Record> mapRecordsById = new HashMap<Long, Record>();
-
-	public void handle(Invocation inv) {
-		if (inv.operation == OP_CMAP_GET) {
-			handleGet(inv);
-		} else if (inv.operation == OP_CMAP_PUT) {
-			handlePut(inv);
-		} else if (inv.operation == OP_CMAP_BACKUP_ADD) {
-			handleBackupAdd(inv);
-		} else if (inv.operation == OP_CMAP_REMOVE) {
-			handleRemove(inv);
-		} else if (inv.operation == OP_CMAP_BACKUP_REMOVE) {
-			handleBackupRemove(inv);
-		} else if (inv.operation == OP_CMAP_LOCK) {
-			handleLock(inv);
-		} else if (inv.operation == OP_CMAP_LOCK_RETURN_OLD) {
-			handleLock(inv);
-		} else if (inv.operation == OP_CMAP_UNLOCK) {
-			handleLock(inv);
-		} else if (inv.operation == OP_CMAP_BACKUP_LOCK) {
-			handleBackupLock(inv);
-		} else if (inv.operation == OP_CMAP_READ) {
-			handleRead(inv);
-		} else if (inv.operation == OP_CMAP_SIZE) {
-			handleSize(inv);
-		} else if (inv.operation == OP_CMAP_ADD_TO_LIST || inv.operation == OP_CMAP_ADD_TO_SET) {
-			handleAdd(inv);
-		} else if (inv.operation == OP_CMAP_CONTAINS_KEY) {
-			handleContains(true, inv);
-		} else if (inv.operation == OP_CMAP_CONTAINS_VALUE) {
-			handleContains(false, inv);
-		} else if (inv.operation == OP_CMAP_BLOCK_INFO) {
-			handleBlockInfo(inv);
-		} else if (inv.operation == OP_CMAP_BLOCKS) {
-			handleBlocks(inv);
-		} else if (inv.operation == OP_CMAP_PUT_IF_ABSENT) {
-			handlePut(inv);
-		} else if (inv.operation == OP_CMAP_REPLACE_IF_NOT_NULL) {
-			handlePut(inv);
-		} else if (inv.operation == OP_CMAP_MIGRATION_COMPLETE) {
-			doMigrationComplete(inv.conn.getEndPoint());
-		} else if (inv.operation == OP_CMAP_MIGRATE_RECORD) {
-			handleMigrateRecord(inv);
-		} else {
-			throw new RuntimeException("Unknown operation " + inv.operation);
-		}
-	}
 
 	public void syncForDead(Address deadAddress) {
 		Collection<Block> blocks = mapBlocks.values();
@@ -228,7 +295,7 @@ class ConcurrentMapManager extends BaseManager {
 						Blocks allBlocks = new Blocks();
 						blocks = mapBlocks.values();
 						for (Block block : blocks) {
-							allBlocks.addBlock(block); 
+							allBlocks.addBlock(block);
 						}
 						dataAllBlocks = ThreadContext.get().toData(allBlocks);
 					}
@@ -347,7 +414,7 @@ class ConcurrentMapManager extends BaseManager {
 			}
 		}
 
-		public boolean hasNext() {			
+		public boolean hasNext() {
 			if (next != null) {
 				if (next.copyCount-- <= 0) {
 					next = null;
@@ -355,7 +422,7 @@ class ConcurrentMapManager extends BaseManager {
 			}
 			if (lsEntries != null) {
 				if (lsEntries.size() > 0) {
-					next = lsEntries.remove(0);		 
+					next = lsEntries.remove(0);
 				} else {
 					next = null;
 					lsEntries = null;
@@ -837,7 +904,8 @@ class ConcurrentMapManager extends BaseManager {
 			} else
 				return null;
 		}
-		if (block.isMigrating()) return null;
+		if (block.isMigrating())
+			return null;
 		if (block.owner == null)
 			return null;
 		if (block.owner.equals(thisAddress)) {
@@ -980,7 +1048,7 @@ class ConcurrentMapManager extends BaseManager {
 
 	void handleBlocks(Blocks blocks) {
 		List<Block> lsBlocks = blocks.lsBlocks;
-		for (Block block : lsBlocks) { 
+		for (Block block : lsBlocks) {
 			doBlockInfo(block);
 		}
 	}
@@ -1011,7 +1079,7 @@ class ConcurrentMapManager extends BaseManager {
 	}
 
 	void doBlockInfo(Block blockInfo) {
-		Block block = mapBlocks.get(blockInfo.blockId); 
+		Block block = mapBlocks.get(blockInfo.blockId);
 		if (block == null) {
 			block = blockInfo;
 			mapBlocks.put(block.blockId, block);
@@ -1199,7 +1267,7 @@ class ConcurrentMapManager extends BaseManager {
 		return (next != null && thisAddress.equals(next.getAddress()));
 	}
 
-	private void doMigrationComplete(Address from) {  
+	private void doMigrationComplete(Address from) {
 		logger.log(Level.FINEST, "Migration Compelete from " + from);
 		Collection<Block> blocks = mapBlocks.values();
 		for (Block block : blocks) {
@@ -1653,7 +1721,7 @@ class ConcurrentMapManager extends BaseManager {
 
 		public void own(Request req) {
 			Record record = toRecord(req);
-			record.owner = thisAddress; 
+			record.owner = thisAddress;
 			sendBackupAdd(record, true);
 		}
 
@@ -1733,7 +1801,7 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		public Data get(Request req) {
-			Record record = getRecord(req.key); 
+			Record record = getRecord(req.key);
 			if (record == null)
 				return null;
 			return record.getValue();
@@ -2169,29 +2237,29 @@ class ConcurrentMapManager extends BaseManager {
 					+ migrationAddress;
 		}
 	}
-	
+
 	public static class MigrationComplete extends AbstractRemotelyProcessable {
-			Address completedAddress;
+		Address completedAddress;
 
-			public MigrationComplete(Address completedAddress) { 
-				this.completedAddress = completedAddress;
-			}
-			
-			public MigrationComplete() {
-			}
-			
-			public void readData(DataInput in) throws IOException { 
-				completedAddress = new Address();
-				completedAddress.readData(in);
-			}
+		public MigrationComplete(Address completedAddress) {
+			this.completedAddress = completedAddress;
+		}
 
-			public void writeData(DataOutput out) throws IOException {
-				completedAddress.writeData(out);
-			}
-		
-			public void process() {
-				ConcurrentMapManager.get().doMigrationComplete(completedAddress);
-			}
+		public MigrationComplete() {
+		}
+
+		public void readData(DataInput in) throws IOException {
+			completedAddress = new Address();
+			completedAddress.readData(in);
+		}
+
+		public void writeData(DataOutput out) throws IOException {
+			completedAddress.writeData(out);
+		}
+
+		public void process() {
+			ConcurrentMapManager.get().doMigrationComplete(completedAddress);
+		}
 	}
 
 	public static class Blocks extends AbstractRemotelyProcessable {

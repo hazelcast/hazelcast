@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import static com.hazelcast.impl.Constants.ClusterOperations.OP_HEARTBEAT;
 import static com.hazelcast.impl.Constants.ExecutorOperations.OP_EXE_REMOTE_EXECUTION;
 import static com.hazelcast.impl.Constants.ExecutorOperations.OP_STREAM;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_CANCELLED;
@@ -50,6 +51,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MultiTask;
+import com.hazelcast.impl.BaseManager.InvocationProcessor;
 import com.hazelcast.impl.ClusterImpl.ClusterMember;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
@@ -85,6 +87,16 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 		for (int i = 0; i < 100; i++) {
 			executionIds.add(new Long(i));
 		}
+		ClusterService.get().registerInvocationProcessor(OP_EXE_REMOTE_EXECUTION, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handleRemoteExecution(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_STREAM, new InvocationProcessor() {
+			public void process(Invocation inv) { 
+				handleStream(inv);
+			}
+		});
 	}
 
 	public static ExecutorManager get() {
@@ -561,10 +573,8 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 				running = false;
 				done = true; // should not be able to interrupt after this.
 				if (!local) {
-					try {
-						final ExecutorServiceProxy executorServiceProxy = (ExecutorServiceProxy) FactoryImpl
-								.getExecutorService();
-						executorServiceProxy.sendStreamItem(remoteExecutionId.address,
+					try {						
+						ExecutorManager.get().sendStreamItem(remoteExecutionId.address,
 								executionResult, remoteExecutionId.executionId);
 					} catch (final Exception e) {
 						e.printStackTrace();
@@ -577,6 +587,20 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 		}
 	}
 
+	public void sendStreamItem(final Address address, final Object value, final long streamId) {
+		try {
+			final Invocation inv = ClusterManager.get().obtainServiceInvocation("exe", null, value,
+					OP_STREAM, DEFAULT_TIMEOUT);
+			inv.longValue = streamId;
+			ClusterService.get().enqueueAndReturn(new Processable() {
+				public void process() {
+					send(inv, address);
+				}
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 	
 
 	public Processable createNewExecutionAction(final DistributedTask task, final long timeout) {
@@ -602,23 +626,18 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 	public void executeLocaly(final Runnable runnable) {
 		executor.execute(runnable);
 	}
-
-	public void handle(final Invocation inv) {
-		if (inv.operation == OP_EXE_REMOTE_EXECUTION) {
-			handleRemoteExecution(inv);
-		} else if (inv.operation == OP_STREAM) {
-			final StreamResponseHandler streamResponseHandler = mapStreams.get(inv.longValue);
-			if (streamResponseHandler != null) {
-				final Data value = inv.doTake(inv.data);
-				executor.execute(new Runnable() {
-					public void run() {
-						streamResponseHandler.handleStreamResponse(value);
-					}
-				});
-			}
-			inv.returnToContainer();
-		} else
-			throw new RuntimeException("Unknown operation " + inv.operation);
+	
+	public void handleStream (final Invocation inv) {
+		final StreamResponseHandler streamResponseHandler = mapStreams.get(inv.longValue);
+		if (streamResponseHandler != null) {
+			final Data value = inv.doTake(inv.data);
+			executor.execute(new Runnable() {
+				public void run() {
+					streamResponseHandler.handleStreamResponse(value);
+				}
+			});
+		}
+		inv.returnToContainer();
 	}
 
 	public void handleRemoteExecution(final Invocation inv) {

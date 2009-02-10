@@ -448,8 +448,7 @@ public class Node {
 	}
 
 	private boolean init() {
-		try {
-
+		try { 
 			final String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
 			final String preferIPv6Address = System.getProperty("java.net.preferIPv6Addresses");
 			if (preferIPv6Address == null && preferIPv4Stack == null) {
@@ -460,6 +459,15 @@ public class Node {
 			address = AddressPicker.pickAddress(serverSocketChannel);
 			address.setThisAddress(true);
 			localMember = new MemberImpl(address, true, localNodeType);
+			//initialize managers..
+			ClusterService.get();
+			ClusterManager.get();
+			ConcurrentMapManager.get();
+			BlockingQueueManager.get();
+			ExecutorManager.get();
+			ListenerManager.get();
+			TopicManager.get();
+						
 			ClusterManager.get().addMember(localMember);
 			InSelector.get().init(serverSocketChannel);
 			if (address == null)
