@@ -80,7 +80,6 @@ public class AddressPicker {
 						final InetAddress inetAddress = e.nextElement();
 						addLine(1, sb, "-----IP-----");
 						final boolean ipv4 = (inetAddress instanceof Inet4Address);
-						final byte[] ip = inetAddress.getAddress();
 						final String address = inetAddress.getHostAddress();
 						addLine(1, sb, "InetAddress : " + inetAddress);
 						addLine(1, sb, "IP : " + address);
@@ -180,12 +179,11 @@ public class AddressPicker {
 				interfaces: while (enums.hasMoreElements()) {
 					final NetworkInterface ni = enums.nextElement();
 					final Enumeration<InetAddress> e = ni.getInetAddresses();
-					final boolean isUp = invoke(true, 1.6, ni, "isUp");
-					final boolean supportsMulticast = invoke(true, 1.6, ni, "supportsMulticast");
+//					final boolean isUp = invoke(true, 1.6, ni, "isUp");
+//					final boolean supportsMulticast = invoke(true, 1.6, ni, "supportsMulticast");
 					while (e.hasMoreElements()) {
 						final InetAddress inetAddress = e.nextElement();
 						if (inetAddress instanceof Inet4Address) {
-							final byte[] ip = inetAddress.getAddress();
 							final String address = inetAddress.getHostAddress();
 							if (!inetAddress.isLoopbackAddress()) {
 								currentAddress = address;

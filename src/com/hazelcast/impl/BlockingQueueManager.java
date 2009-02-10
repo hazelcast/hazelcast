@@ -56,7 +56,7 @@ import com.hazelcast.nio.InvocationQueue.Data;
 import com.hazelcast.nio.InvocationQueue.Invocation;
 
 class BlockingQueueManager extends BaseManager {
-	private Request remoteReq = new Request();
+	private final Request remoteReq = new Request();
 	private final static BlockingQueueManager instance = new BlockingQueueManager();
 	private final Map<String, Q> mapQueues = new HashMap<String, Q>(10);
 	private final Map<Long, List<Data>> mapTxnPolledElements = new HashMap<Long, List<Data>>(10);
@@ -393,8 +393,7 @@ class BlockingQueueManager extends BaseManager {
 		}
 	}
 
-	public void doRemoveBlock(Q q, Address originalRemover, int blockId) {
-		List<Block> lsBlocks = q.lsBlocks;
+	public void doRemoveBlock(Q q, Address originalRemover, int blockId) { 
 		Block blockRemoved = q.removeBlock(blockId);
 		if (blockRemoved != null) {
 			if (isMaster()) {
@@ -1064,20 +1063,22 @@ class BlockingQueueManager extends BaseManager {
 			this.add = add;
 			this.listenerAddress = listenerAddress;
 		}
-
+		
+		@Override
 		public void readData(DataInput in) throws IOException {
 			add = in.readBoolean();
 			listenerAddress = new Address();
 			listenerAddress.readData(in);
 			name = in.readUTF();
 		}
-
+		
+		@Override
 		public void writeData(DataOutput out) throws IOException {
 			out.writeBoolean(add);
 			listenerAddress.writeData(out);
 			out.writeUTF(name);
 		}
-
+ 
 		public void process() {
 			ListenerManager.get().handleListenerRegisterations(true, name, null, listenerAddress,
 					true);
@@ -1283,7 +1284,8 @@ class BlockingQueueManager extends BaseManager {
 				returnScheduledAsSuccess(request);
 				return true;
 			}
-
+			
+			@Override
 			public void onExpire() {
 				request.response = null;
 				request.key = null;
@@ -1308,6 +1310,7 @@ class BlockingQueueManager extends BaseManager {
 				return true;
 			}
 
+			@Override
 			public void onExpire() {
 				request.response = Boolean.FALSE;
 				returnScheduledAsBoolean(request);
