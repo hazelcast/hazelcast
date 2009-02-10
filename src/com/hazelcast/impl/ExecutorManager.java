@@ -68,8 +68,6 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 	private final Map<Long, DistributedExecutorAction> mapExecutions = new ConcurrentHashMap<Long, DistributedExecutorAction>(
 			100);
 
-	private final ExecutorService eventFireExecutor = Executors.newSingleThreadExecutor();
-
 	private final BlockingQueue<Long> executionIds = new ArrayBlockingQueue<Long>(100);
 
 	private ExecutorManager() {
@@ -95,8 +93,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 	
 	public void shutdown() {
 		executor.purge();
-		executor.shutdownNow();
-		eventFireExecutor.shutdownNow();
+		executor.shutdownNow(); 
 	}
 	
 	public static class CancelationTask implements Callable<Boolean>, DataSerializable {

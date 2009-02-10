@@ -215,6 +215,12 @@ abstract class BaseManager implements Constants {
 			this.valueData = value;
 			this.copyCount = copyCount;
 		}
+		
+		public SimpleDataEntry (final String name, final Object key, final Object value) {
+			this.key = key;
+			this.value = value;
+			this.name = name;
+		}
 
 		public int getBlockId() {
 			return blockId;

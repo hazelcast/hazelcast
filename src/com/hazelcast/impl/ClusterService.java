@@ -145,9 +145,10 @@ public class ClusterService implements Runnable, Constants {
 				}
 			} catch (final InterruptedException e) {
 				Node.get().handleInterruptedException(Thread.currentThread(), e);
-			} catch (final Throwable e) {
+			} catch (final Throwable e) { 
 				if (DEBUG) {
 					logger.log(Level.FINEST, e + ",  message: " + e + ", obj=" + obj);
+					logger.log(Level.FINEST, e.getMessage(), e);
 				} 
 			}
 		}
