@@ -940,7 +940,7 @@ public class WebFilter implements Filter {
 
 		public String[] getValueNames() {
 			checkState();
-			return (String[]) atts.keySet().toArray();
+			return atts.keySet().toArray(new String[atts.size()]);
 		}
 
 		public byte[] hash(final Data data) {
