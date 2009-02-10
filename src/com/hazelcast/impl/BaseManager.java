@@ -906,7 +906,7 @@ abstract class BaseManager implements Constants {
 		public TargetAwareOp() {
 		}
 
-		public void handleResponse(final Invocation inv) {
+		public void handleResponse(final Invocation inv) { 
 			if (inv.responseType == RESPONSE_REDO) {
 				redo();
 			} else {

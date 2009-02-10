@@ -228,7 +228,7 @@ class ConcurrentMapManager extends BaseManager {
 						Blocks allBlocks = new Blocks();
 						blocks = mapBlocks.values();
 						for (Block block : blocks) {
-							allBlocks.addBlock(block);
+							allBlocks.addBlock(block); 
 						}
 						dataAllBlocks = ThreadContext.get().toData(allBlocks);
 					}
@@ -837,6 +837,7 @@ class ConcurrentMapManager extends BaseManager {
 			} else
 				return null;
 		}
+		if (block.isMigrating()) return null;
 		if (block.owner == null)
 			return null;
 		if (block.owner.equals(thisAddress)) {
@@ -979,7 +980,7 @@ class ConcurrentMapManager extends BaseManager {
 
 	void handleBlocks(Blocks blocks) {
 		List<Block> lsBlocks = blocks.lsBlocks;
-		for (Block block : lsBlocks) {
+		for (Block block : lsBlocks) { 
 			doBlockInfo(block);
 		}
 	}
@@ -1010,7 +1011,7 @@ class ConcurrentMapManager extends BaseManager {
 	}
 
 	void doBlockInfo(Block blockInfo) {
-		Block block = mapBlocks.get(blockInfo.blockId);
+		Block block = mapBlocks.get(blockInfo.blockId); 
 		if (block == null) {
 			block = blockInfo;
 			mapBlocks.put(block.blockId, block);
@@ -1198,7 +1199,7 @@ class ConcurrentMapManager extends BaseManager {
 		return (next != null && thisAddress.equals(next.getAddress()));
 	}
 
-	private void doMigrationComplete(Address from) {
+	private void doMigrationComplete(Address from) {  
 		logger.log(Level.FINEST, "Migration Compelete from " + from);
 		Collection<Block> blocks = mapBlocks.values();
 		for (Block block : blocks) {
@@ -1213,14 +1214,8 @@ class ConcurrentMapManager extends BaseManager {
 			// I am the master and I got migration complete from a member
 			// I will inform others, in case they did not get it yet.
 			for (MemberImpl member : lsMembers) {
-				if (!member.localMember() || !from.equals(member.getAddress())) {
-					Invocation inv = obtainServiceInvocation();
-					inv.name = "cmap";
-					inv.operation = OP_CMAP_MIGRATION_COMPLETE;
-					boolean sent = send(inv, member.getAddress());
-					if (!sent) {
-						inv.returnToContainer();
-					}
+				if (!member.localMember() && !from.equals(member.getAddress())) {
+					sendProcessableTo(new MigrationComplete(from), member.getAddress());
 				}
 			}
 		}
@@ -1229,13 +1224,7 @@ class ConcurrentMapManager extends BaseManager {
 	private void sendMigrationComplete() {
 		for (MemberImpl member : lsMembers) {
 			if (!member.localMember()) {
-				Invocation inv = obtainServiceInvocation();
-				inv.name = "cmap";
-				inv.operation = OP_CMAP_MIGRATION_COMPLETE;
-				boolean sent = send(inv, member.getAddress());
-				if (!sent) {
-					inv.returnToContainer();
-				}
+				sendProcessableTo(new MigrationComplete(thisAddress), member.getAddress());
 			}
 		}
 	}
@@ -1664,7 +1653,7 @@ class ConcurrentMapManager extends BaseManager {
 
 		public void own(Request req) {
 			Record record = toRecord(req);
-			record.owner = thisAddress;
+			record.owner = thisAddress; 
 			sendBackupAdd(record, true);
 		}
 
@@ -1744,7 +1733,7 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		public Data get(Request req) {
-			Record record = getRecord(req.key);
+			Record record = getRecord(req.key); 
 			if (record == null)
 				return null;
 			return record.getValue();
@@ -2179,6 +2168,30 @@ class ConcurrentMapManager extends BaseManager {
 			return "Block [" + blockId + "] owner=" + owner + " migrationAddress="
 					+ migrationAddress;
 		}
+	}
+	
+	public static class MigrationComplete extends AbstractRemotelyProcessable {
+			Address completedAddress;
+
+			public MigrationComplete(Address completedAddress) { 
+				this.completedAddress = completedAddress;
+			}
+			
+			public MigrationComplete() {
+			}
+			
+			public void readData(DataInput in) throws IOException { 
+				completedAddress = new Address();
+				completedAddress.readData(in);
+			}
+
+			public void writeData(DataOutput out) throws IOException {
+				completedAddress.writeData(out);
+			}
+		
+			public void process() {
+				ConcurrentMapManager.get().doMigrationComplete(completedAddress);
+			}
 	}
 
 	public static class Blocks extends AbstractRemotelyProcessable {
