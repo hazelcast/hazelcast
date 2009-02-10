@@ -25,12 +25,8 @@ public class Build {
 
 	public String version = "do-not-change";
 
-	static {
-		if ("true".equals(System.getProperty("hazelcast.debug"))) {
-			DEBUG = true;
-		} else {
-			DEBUG = false;
-		}
+	static {		
+		DEBUG = Boolean.getBoolean("hazelcast.debug");
 	}
 
 	private Build() {
