@@ -64,15 +64,15 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		ConnectionManager.get().addConnectionListener(this);
 	}
 
-	private Set<MemberInfo> setJoins = new LinkedHashSet<MemberInfo>(100);
+	private final Set<MemberInfo> setJoins = new LinkedHashSet<MemberInfo>(100);
 
 	private boolean joinInProgress = false;
 
 	private long timeToStartJoin = 0;
 
-	private List<MemberImpl> lsMembersBefore = new ArrayList<MemberImpl>();
+	private final List<MemberImpl> lsMembersBefore = new ArrayList<MemberImpl>();
 
-	private long waitTimeBeforeJoin = 1000;
+	private final long waitTimeBeforeJoin = 5000;
 
 	public void handle(Invocation inv) {
 		try {
@@ -288,10 +288,8 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			}
 		}
 
-		if (isMaster()) {
-			if (setJoins.contains(deadAddress)) {
-				setJoins.remove(deadAddress);
-			}
+		if (isMaster()) { 
+			setJoins.remove(new MemberInfo(deadAddress, 0)); 
 		}
 
 		lsMembersBefore.clear();
@@ -339,8 +337,8 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		}
 		if (isMaster()) {
 			Address newAddress = joinRequest.address;
-			MemberInfo newMemberInfo = new MemberInfo(newAddress, joinRequest.nodeType);
 			if (!joinInProgress) {
+				MemberInfo newMemberInfo = new MemberInfo(newAddress, joinRequest.nodeType);
 				if (setJoins.add(newMemberInfo)) {
 					sendProcessableTo(new Master(Node.get().getMasterAddress()), conn);
 					// sendAddRemoveToAllConns(newAddress);
@@ -449,11 +447,13 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			super.process();
 		}
 
+		@Override
 		void consumeResponse(Invocation inv) {
 			complete(true);
 			inv.returnToContainer();
 		}
 
+		@Override
 		public void onDisconnect(Address deadAddress) {
 		}
 
@@ -478,6 +478,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			doOp(OP_REMOTELY_OBJECT_CALLABLE, "call", null, arp, 0, -1, -1);
 		}
 
+		@Override
 		public void doLocalOp() {
 			Object result;
 			try {
@@ -502,6 +503,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			doOp(OP_REMOTELY_BOOLEAN_CALLABLE, "call", null, arp, 0, -1, -1);
 		}
 
+		@Override
 		public void doLocalOp() {
 			Boolean result;
 			try {
@@ -526,6 +528,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			return booleanCall(OP_REMOTELY_PROCESS_AND_RESPOND, "exe", null, arp, 0, -1, -1);
 		}
 
+		@Override
 		public void doLocalOp() {
 			arp.process();
 			setResult(Boolean.TRUE);
@@ -535,8 +538,8 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		void setTarget() {
 		}
 	}
-	
-	void finalizeJoin() { 
+
+	void finalizeJoin() {
 		List<AsyncRemotelyBooleanCallable> calls = new ArrayList<AsyncRemotelyBooleanCallable>();
 		for (final MemberImpl member : lsMembers) {
 			if (!member.localMember()) {
@@ -546,7 +549,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			}
 		}
 		for (AsyncRemotelyBooleanCallable call : calls) {
-			call.getResultAsBoolean(); 
+			call.getResultAsBoolean();
 		}
 	}
 
@@ -673,6 +676,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			}
 		}
 
+		@Override
 		public void readData(DataInput in) throws IOException {
 			int size = in.readInt();
 			for (int i = 0; i < size; i++) {
@@ -688,6 +692,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			}
 		}
 
+		@Override
 		public void writeData(DataOutput out) throws IOException {
 			out.writeInt(lsProcessables.size());
 			for (RemotelyProcessable remotelyProcessable : lsProcessables) {
@@ -793,9 +798,9 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			return true;
 		}
 	}
-	
+
 	public static class FinalizeJoin extends AbstractRemotelyCallable<Boolean> {
-		public Boolean call() throws Exception { 
+		public Boolean call() throws Exception {
 			ListenerManager.get().syncForAdd(getConnection().getEndPoint());
 			return Boolean.TRUE;
 		}
@@ -841,6 +846,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			}
 		}
 
+		@Override
 		public void readData(DataInput in) throws IOException {
 			int size = in.readInt();
 			lsMemberInfos = new ArrayList<MemberInfo>(size);
@@ -851,6 +857,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			}
 		}
 
+		@Override
 		public void writeData(DataOutput out) throws IOException {
 			int size = lsMemberInfos.size();
 			out.writeInt(size);
@@ -898,6 +905,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			this.nodeType = type;
 		}
 
+		@Override
 		public void readData(DataInput in) throws IOException {
 			address = new Address();
 			address.readData(in);
@@ -906,6 +914,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			groupPassword = in.readUTF();
 		}
 
+		@Override
 		public void writeData(DataOutput out) throws IOException {
 			address.writeData(out);
 			out.writeInt(nodeType);
@@ -938,12 +947,14 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			this.add = add;
 		}
 
+		@Override
 		public void readData(DataInput in) throws IOException {
 			address = new Address();
 			address.readData(in);
 			add = in.readBoolean();
 		}
 
+		@Override
 		public void writeData(DataOutput out) throws IOException {
 			address.writeData(out);
 			out.writeBoolean(add);
@@ -971,11 +982,13 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			this.address = originAddress;
 		}
 
+		@Override
 		public void readData(DataInput in) throws IOException {
 			address = new Address();
 			address.readData(in);
 		}
 
+		@Override
 		public void writeData(DataOutput out) throws IOException {
 			address.writeData(out);
 		}
@@ -1005,10 +1018,12 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			FactoryImpl.createProxy(name);
 		}
 
+		@Override
 		public void readData(DataInput in) throws IOException {
 			name = in.readUTF();
 		}
 
+		@Override
 		public void writeData(DataOutput out) throws IOException {
 			out.writeUTF(name);
 		}
