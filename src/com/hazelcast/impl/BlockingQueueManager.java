@@ -31,8 +31,7 @@ import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_REMOVE;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_REMOVE_BLOCK;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_SIZE;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_TXN_BACKUP_POLL;
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_TXN_COMMIT;
-import static com.hazelcast.impl.Constants.ClusterOperations.OP_HEARTBEAT;
+import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_TXN_COMMIT; 
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 
 import java.io.DataInput;
@@ -45,8 +44,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.impl.BaseManager.InvocationProcessor;
+import com.hazelcast.core.EntryEvent; 
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
@@ -861,8 +859,7 @@ class BlockingQueueManager extends BaseManager {
 			Address target = q.getBlockOwner(blockId);
 			if (target == null) {
 				responses.add(OBJECT_NULL);
-			}
-			if (target.equals(thisAddress)) {
+			} else if (target.equals(thisAddress)) {
 				q.remove(this);
 			} else {
 				Invocation inv = obtainServiceInvocation();
@@ -938,8 +935,7 @@ class BlockingQueueManager extends BaseManager {
 			Address target = q.getBlockOwner(blockId);
 			if (target == null) {
 				responses.add(OBJECT_NULL);
-			}
-			if (target.equals(thisAddress)) {
+			} else if (target.equals(thisAddress)) {
 				q.read(this);
 			} else {
 				Invocation inv = obtainServiceInvocation();
