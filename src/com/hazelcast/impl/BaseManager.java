@@ -422,17 +422,14 @@ abstract class BaseManager implements Constants {
 	static class EventTask extends EntryEvent implements Runnable {
 		protected final Data dataKey;
 
-		protected final Data dataValue;
-
-		protected final String name;
+		protected final Data dataValue; 
 
 		protected final long recordId;
 
 		public EventTask(final int eventType, final String name, final Data dataKey,
 				final Data dataValue, final long recordId) {
 			super(name);
-			this.eventType = eventType;
-			this.name = name;
+			this.eventType = eventType; 
 			this.dataValue = dataValue;
 			this.dataKey = dataKey;
 			this.recordId = recordId;

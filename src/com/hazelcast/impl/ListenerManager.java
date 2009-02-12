@@ -266,7 +266,7 @@ class ListenerManager extends BaseManager {
 	}
 
 	void callListeners(EventTask event) {
-		String name = event.name;
+		String name = event.getName();
 		for (ListenerItem listenerItem : lsListeners) {
 			if (listenerItem.name.equals(name)) {
 				if (listenerItem.key == null) {
