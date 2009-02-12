@@ -79,6 +79,10 @@ public class EntryEvent extends EventObject {
 	public int getEventType() {
 		return eventType;
 	}
+	
+	public String getName() {
+		return name;
+	}
 
 	@Override
 	public String toString() {
