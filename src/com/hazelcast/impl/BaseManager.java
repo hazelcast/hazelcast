@@ -673,7 +673,7 @@ abstract class BaseManager implements Constants {
 		}
 
 		public Invocation toInvocation() {
-			final Invocation inv = obtainServiceInvocation();
+			final Invocation inv = obtainServiceInvocation();			
 			inv.local = false;
 			inv.operation = operation;
 			inv.name = name;
@@ -1384,7 +1384,7 @@ abstract class BaseManager implements Constants {
 		}
 	}
 
-	final boolean send(final Invocation inv, final Address address) {
+	final boolean send(final Invocation inv, final Address address) { 
 		final Connection conn = ConnectionManager.get().getConnection(address);
 		if (conn == null)
 			return false;
@@ -1411,6 +1411,7 @@ abstract class BaseManager implements Constants {
 		if (memberImpl != null) {
 			memberImpl.didWrite();
 		}
+		inv.currentCallCount = mapCalls.size();
 		inv.write();
 		conn.getWriteHandler().enqueueInvocation(inv);
 		return true;

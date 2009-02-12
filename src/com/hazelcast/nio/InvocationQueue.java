@@ -138,6 +138,8 @@ public class InvocationQueue {
 		public long timeout = -1;
 
 		public boolean local = true;
+		
+		public int currentCallCount = 0;
 
 		public int blockId = -1;
 
@@ -254,6 +256,7 @@ public class InvocationQueue {
 			txnId = -1;
 			responseType = RESPONSE_NONE;
 			local = true;
+			currentCallCount = 0;
 			scheduled = false;
 			blockId = -1;
 			longValue = Long.MIN_VALUE;

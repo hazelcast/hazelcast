@@ -22,6 +22,7 @@ import java.nio.channels.SelectionKey;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,17 +37,13 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
 	private final BlockingQueue writeHandlerQueue = new LinkedBlockingQueue();
 
-	static ByteBuffer bbOut = ByteBuffer.allocateDirect(1024 * 1024);
+	private final static ByteBuffer bbOut = ByteBuffer.allocateDirect(1024 * 1024); 
 
-	boolean dead = false;
-
-	AtomicBoolean informSelector = new AtomicBoolean(true);
-
-	AtomicBoolean wakeupSelector = new AtomicBoolean(true);
+	private final AtomicBoolean informSelector = new AtomicBoolean(true);
 
 	boolean ready = false;
-	
-	
+
+	boolean dead = false; 
 
 	WriteHandler(final Connection connection) {
 		super(connection);
@@ -54,24 +51,20 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
 	public final void enqueueInvocation(final Invocation inv) {
 		try {
-			writeHandlerQueue.put(inv);
+			writeHandlerQueue.put(inv); 
 		} catch (final InterruptedException e) {
 			Node.get().handleInterruptedException(Thread.currentThread(), e);
 		}
 		if (informSelector.get()) {
 			informSelector.set(false);
-			final int size = outSelector.addTask(this);
-//			if (size < 2 || size > 5) {
-//				if (wakeupSelector.get()) {
-//					outSelector.selector.wakeup();
-//					wakeupSelector.set(false);
-//				}
-//			}
+			outSelector.addTask(this);
+			if (inv.currentCallCount < 2) { 
+				outSelector.selector.wakeup();
+			}
 		}
 	}
 
-	public final void handle() {
-		informSelector.set(true);
+	public final void handle() { 
 		if (writeHandlerQueue.size() == 0) {
 			ready = true;
 			return;
@@ -83,7 +76,7 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 			copyLoop: while (bbOut.position() < (32 * 1024)) {
 				final Invocation inv = (Invocation) writeHandlerQueue.poll();
 				if (inv == null)
-					break copyLoop;
+					break copyLoop; 
 				inv.write(bbOut);
 				doPostWrite(inv);
 			}
@@ -117,7 +110,6 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 	}
 
 	public final void run() {
-		wakeupSelector.set(true);
 		informSelector.set(true);
 		if (ready) {
 			handle();
