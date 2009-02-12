@@ -207,11 +207,9 @@ public class WebFilter implements Filter {
 			creationTime = System.nanoTime();
 
 			final Cookie[] cookies = req.getCookies();
-
 			if (cookies != null) {
-				for (int i = 0; i < cookies.length; i++) {
-					final Cookie cookie = cookies[i];
-					if (cookie.getName().equals("JSESSIONID")) {
+				for (final Cookie cookie : cookies) {
+					if (cookie.getName().equalsIgnoreCase("JSESSIONID")) {
 						requestedSessionId = cookie.getValue();
 						requestedSessionIdFromCookie = true;
 						if (DEBUG) {
@@ -1091,7 +1089,7 @@ public class WebFilter implements Filter {
 				log("setting max interval seconds to " + maxInactiveSeconds);
 			if (maxInactiveSeconds < 0)
 				maxInactiveSeconds = -1;
-			maxInactiveInterval.set(maxInactiveSeconds * 1000);
+			maxInactiveInterval.set(maxInactiveSeconds * 1000L);
 		}
 
 		public void setNew(final boolean isNew) {
@@ -1366,13 +1364,11 @@ public class WebFilter implements Filter {
 			if (DEBUG) {
 				final Cookie[] cookies = httpReq.getCookies();
 				if (cookies != null) {
-					for (int i = 0; i < cookies.length; i++) {
-						final Cookie cookie = cookies[i];
+					for (final Cookie cookie : cookies) {
 						final String name = cookie.getName();
 						final String value = cookie.getValue();
 						final String path = cookie.getPath();
-
-						if (name.equals("JSESSIONID")) {
+						if (name.equalsIgnoreCase("JSESSIONID")) {
 							log(path + " Request has JSESSIONID cookie " + value);
 						}
 					}
