@@ -169,11 +169,12 @@ abstract class BaseManager implements Constants {
 		}
 
 		public void setTimeout(long timeout) {
-			this.timeout = timeout;
 			if (timeout > -1) {
+				this.timeout = timeout;				
 				timeToExpire = System.currentTimeMillis() + timeout;
-			} else
-				timeout = -1;
+			} else {
+				this.timeout = -1;
+			}
 		}
 
 		public void setValid(final boolean valid) {
