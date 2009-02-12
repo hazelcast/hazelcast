@@ -38,7 +38,7 @@ public class AddressPicker {
 
 	static double jvmVersion = 1.5;
 	static {
-		jvmVersion = Double.parseDouble(System.getProperty("java.vm.version").substring(0, 3));
+		jvmVersion = Double.parseDouble(System.getProperty("java.version").substring(0, 3));
 	}
 
 	public static void addLine(final int tabCount, final StringBuilder sb, final String str) {
