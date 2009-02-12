@@ -54,7 +54,7 @@ public class ClusterService implements Runnable, Constants {
 
 	protected long lastPeriodicCheck = 0;
 	
-	private final InvocationProcessor[] invProcessors = new InvocationProcessor[1000];
+	private final InvocationProcessor[] invocationProcessors = new InvocationProcessor[300];
 
 	private ClusterService() {
 		this.queue = new LinkedBlockingQueue();
@@ -66,10 +66,10 @@ public class ClusterService implements Runnable, Constants {
 	}
 	
 	void registerInvocationProcessor (int operation, InvocationProcessor invocationProcessor) {
-		if (invProcessors[operation] != null) {
-			logger.log(Level.SEVERE, operation + " is registered already with " + invProcessors[operation]); 
+		if (invocationProcessors[operation] != null) {
+			logger.log(Level.SEVERE, operation + " is registered already with " + invocationProcessors[operation]); 
 		}
-		invProcessors[operation] = invocationProcessor;
+		invocationProcessors[operation] = invocationProcessor;
 	}
 
 	public void enqueueAndReturn(final Object message) {
@@ -88,7 +88,7 @@ public class ClusterService implements Runnable, Constants {
 			if (memberFrom != null) {
 				memberFrom.didRead();
 			}
-			InvocationProcessor invocationProcessor = invProcessors[inv.operation];
+			InvocationProcessor invocationProcessor = invocationProcessors[inv.operation];
 			if (invocationProcessor == null) {
 				logger.log(Level.SEVERE, "No Invocation processor found for operation : " + inv.operation);
 			}

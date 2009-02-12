@@ -71,125 +71,125 @@ public interface Constants {
 
 	interface ClusterOperations {
 
-		public static final int OP_RESPONSE = 15;
+		public static final int OP_RESPONSE = 1;
 
-		public static final int OP_HEARTBEAT = 18;
+		public static final int OP_HEARTBEAT = 2;
 
-		public static final int OP_REMOTELY_PROCESS = 19;
+		public static final int OP_REMOTELY_PROCESS = 3;
 
-		public static final int OP_REMOTELY_PROCESS_AND_RESPOND = 20;
+		public static final int OP_REMOTELY_PROCESS_AND_RESPOND = 4;
 
-		public static final int OP_REMOTELY_BOOLEAN_CALLABLE = 21;
+		public static final int OP_REMOTELY_BOOLEAN_CALLABLE = 5;
 
-		public static final int OP_REMOTELY_OBJECT_CALLABLE = 22;
+		public static final int OP_REMOTELY_OBJECT_CALLABLE = 6;
 
 	}
 
 	interface EventOperations {
-		public static final int OP_LISTENER_ADD = 201;
+		public static final int OP_LISTENER_ADD = 51;
 
-		public static final int OP_LISTENER_REMOVE = 202;
+		public static final int OP_LISTENER_REMOVE = 52;
 
-		public static final int OP_EVENT = 203;
+		public static final int OP_EVENT = 53;
 	}
 
 	interface ExecutorOperations {
-		public static final int OP_EXE_REMOTE_EXECUTION = 350;
+		public static final int OP_EXE_REMOTE_EXECUTION = 81;
 
-		public static final int OP_STREAM = 351;
+		public static final int OP_STREAM = 82;
 	}
 
 	interface BlockingQueueOperations {
 
-		public static final int OP_B_POLL = 401;
+		public static final int OP_B_POLL = 101;
 
-		public static final int OP_B_OFFER = 402;
+		public static final int OP_B_OFFER = 102;
 
-		public static final int OP_B_ADD_BLOCK = 403;
+		public static final int OP_B_ADD_BLOCK = 103;
 
-		public static final int OP_B_REMOVE_BLOCK = 404;
+		public static final int OP_B_REMOVE_BLOCK = 104;
 
-		public static final int OP_B_FULL_BLOCK = 405;
+		public static final int OP_B_FULL_BLOCK = 105;
 
-		public static final int OP_B_GO_NEXT = 406;
+		public static final int OP_B_GO_NEXT = 106;
 
-		public static final int OP_B_BACKUP_ADD = 407;
+		public static final int OP_B_BACKUP_ADD = 107;
 
-		public static final int OP_B_BACKUP_REMOVE = 408;
+		public static final int OP_B_BACKUP_REMOVE = 108;
 
-		public static final int OP_B_SIZE = 409;
+		public static final int OP_B_SIZE = 109;
 
-		public static final int OP_B_PEEK = 410;
+		public static final int OP_B_PEEK = 110;
 
-		public static final int OP_B_READ = 411;
+		public static final int OP_B_READ = 111;
 
-		public static final int OP_B_REMOVE = 412;
+		public static final int OP_B_REMOVE = 112;
 
-		public static final int OP_B_TXN_BACKUP_POLL = 413;
+		public static final int OP_B_TXN_BACKUP_POLL = 113;
 
-		public static final int OP_B_TXN_COMMIT = 414;
+		public static final int OP_B_TXN_COMMIT = 114;
 
-		public static final int OP_B_PUBLISH = 415;
+		public static final int OP_B_PUBLISH = 115;
 
-		public static final int OP_B_ADD_TOPIC_LISTENER = 416;
+		public static final int OP_B_ADD_TOPIC_LISTENER = 116;
 
 	}
 
 	interface ConcurrentMapOperations {
 
-		public static final int OP_CMAP_PUT = 501;
+		public static final int OP_CMAP_PUT = 201;
 
-		public static final int OP_CMAP_GET = 502;
+		public static final int OP_CMAP_GET = 202;
 
-		public static final int OP_CMAP_REMOVE = 503;
+		public static final int OP_CMAP_REMOVE = 203;
 
-		public static final int OP_CMAP_BACKUP_ADD = 504;
+		public static final int OP_CMAP_BACKUP_ADD = 204;
 
-		public static final int OP_CMAP_BACKUP_REMOVE = 505;
+		public static final int OP_CMAP_BACKUP_REMOVE = 205;
 
-		public static final int OP_CMAP_BLOCK_INFO = 506;
+		public static final int OP_CMAP_BLOCK_INFO = 206;
 
-		public static final int OP_CMAP_REMOVE_OWNER = 507;
+		public static final int OP_CMAP_REMOVE_OWNER = 207;
 
-		public static final int OP_CMAP_SIZE = 508;
+		public static final int OP_CMAP_SIZE = 208;
 
-		public static final int OP_CMAP_CONTAINS_KEY = 509;
+		public static final int OP_CMAP_CONTAINS_KEY = 209;
 
-		public static final int OP_CMAP_CONTAINS_VALUE = 510;
+		public static final int OP_CMAP_CONTAINS_VALUE = 210;
 
-		public static final int OP_CMAP_CLEAR = 511;
+		public static final int OP_CMAP_CLEAR = 211;
 
-		public static final int OP_CMAP_LOCK = 512;
+		public static final int OP_CMAP_LOCK = 212;
 
-		public static final int OP_CMAP_UNLOCK = 513;
+		public static final int OP_CMAP_UNLOCK = 213;
 
-		public static final int OP_CMAP_BLOCKS = 514;
+		public static final int OP_CMAP_BLOCKS = 214;
 
-		// public static final int OP_CMAP_OWN_KEY = 515;
+		// public static final int OP_CMAP_OWN_KEY = 215;
 
-		public static final int OP_CMAP_MIGRATION_COMPLETE = 516;
+		public static final int OP_CMAP_MIGRATION_COMPLETE = 216;
 
-		public static final int OP_CMAP_BACKUP_LOCK = 517;
+		public static final int OP_CMAP_BACKUP_LOCK = 217;
 
-		public static final int OP_CMAP_BACKUP_REMOVE_BLOCK = 518;
+		public static final int OP_CMAP_BACKUP_REMOVE_BLOCK = 218;
 
-		public static final int OP_CMAP_PUT_IF_ABSENT = 519;
+		public static final int OP_CMAP_PUT_IF_ABSENT = 219;
 
-		public static final int OP_CMAP_REMOVE_IF_SAME = 520;
+		public static final int OP_CMAP_REMOVE_IF_SAME = 220;
 
-		public static final int OP_CMAP_REPLACE_IF_NOT_NULL = 521;
+		public static final int OP_CMAP_REPLACE_IF_NOT_NULL = 221;
 
-		public static final int OP_CMAP_REPLACE_IF_SAME = 522;
+		public static final int OP_CMAP_REPLACE_IF_SAME = 222;
 
-		public static final int OP_CMAP_LOCK_RETURN_OLD = 523;
+		public static final int OP_CMAP_LOCK_RETURN_OLD = 223;
 
-		public static final int OP_CMAP_READ = 524;
+		public static final int OP_CMAP_READ = 224;
 
-		public static final int OP_CMAP_ADD_TO_LIST = 525;
+		public static final int OP_CMAP_ADD_TO_LIST = 225;
 
-		public static final int OP_CMAP_ADD_TO_SET = 526;
+		public static final int OP_CMAP_ADD_TO_SET = 226;
 
-		public static final int OP_CMAP_MIGRATE_RECORD = 527;
+		public static final int OP_CMAP_MIGRATE_RECORD = 227;
 
 	}
 

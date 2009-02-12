@@ -42,7 +42,6 @@ public class InSelector extends SelectorBase {
 	public InSelector() {
 		super();
 		this.waitTime = 64;
-
 	}
 
 	public static InSelector get() {
@@ -73,7 +72,6 @@ public class InSelector extends SelectorBase {
 	}
 
 	private class Acceptor implements SelectionHandler {
-
 		public void handle() {
 			try {
 				final SocketChannel channel = serverSocketChannel.accept();
@@ -103,6 +101,4 @@ public class InSelector extends SelectorBase {
 			}
 		}
 	}
-
-	
 }
