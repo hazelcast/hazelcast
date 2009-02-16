@@ -77,7 +77,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
 import com.hazelcast.impl.Build;
 import com.hazelcast.impl.ThreadContext;
-import com.hazelcast.nio.InvocationQueue.Data;
+import com.hazelcast.nio.Data;
 
 public class WebFilter implements Filter {
 	public static class ContextListener implements ServletContextListener,

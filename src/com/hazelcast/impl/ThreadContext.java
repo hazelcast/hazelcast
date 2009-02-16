@@ -17,6 +17,19 @@
 
 package com.hazelcast.impl;
 
+import java.nio.ByteBuffer;
+import java.util.AbstractCollection;
+import java.util.AbstractQueue;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,79 +41,63 @@ import com.hazelcast.impl.ConcurrentMapManager.MGet;
 import com.hazelcast.impl.ConcurrentMapManager.MLock;
 import com.hazelcast.impl.ConcurrentMapManager.MPut;
 import com.hazelcast.impl.ConcurrentMapManager.MRemove;
-import com.hazelcast.nio.BuffersInputStream;
-import com.hazelcast.nio.BuffersOutputStream;
+import com.hazelcast.nio.BufferUtil;
+import com.hazelcast.nio.Data;
 import com.hazelcast.nio.InvocationQueue;
-import com.hazelcast.nio.InvocationQueue.Data;
+import com.hazelcast.nio.Serializer;
 import com.hazelcast.nio.InvocationQueue.Invocation;
-import com.hazelcast.nio.InvocationQueue.Serializer;
-import com.hazelcast.nio.InvocationQueue.Invocation.DataBufferProvider;
 
 public class ThreadContext {
-	class ObjectReaderWriter {
-		private final Serializer serializer = new Serializer();
 
-		private final Invocation invocation;
+	private final static BlockingQueue<ByteBuffer> bufferq = new ArrayBlockingQueue<ByteBuffer>(6000);
 
-		private final DataBufferProvider bufferProvider;
-
-		public ObjectReaderWriter() {
-			invocation = InvocationQueue.get().createNewInvocation();
-			bufferProvider = invocation.dataBufferProvider;
-			serializer.bbos.setBufferProvider(bufferProvider);
-		}
-
-		public Data getCurrentData() {
-			return invocation.doTake(invocation.data);
-		}
-
-		public BuffersInputStream getInputStream() {
-			invocation.data.postRead();
-			serializer.bbis.setBufferProvider(bufferProvider);
-			return serializer.bbis;
-		}
-
-		public BuffersOutputStream getOutputStream() {
-			return serializer.bbos;
-		}
-
-		public Data hardCopy(final Data src) {
-			return invocation.doHardCopy(src);
-		}
-
-		public void purge(final Data data) {
-			invocation.setNoData(data);
-		}
-
-		public Object readObject(final Data data) {
-			invocation.setNoData();
-			invocation.doHardCopy(data, invocation.data);
-			return serializer.readObject(bufferProvider);
-		}
-
-		public Data writeObject(final Object obj) throws Exception {
-			if (obj instanceof Data)
-				return (Data) obj;
-			invocation.setNoData();
-			serializer.writeObject(bufferProvider, obj);
-			invocation.data.postRead();
-			return invocation.doTake(invocation.data);
-		}
-
-	}
-
-	protected static Logger logger = Logger.getLogger(ThreadContext.class.getName());
+	private final static Logger logger = Logger.getLogger(ThreadContext.class.getName());
 
 	private final static ThreadLocal<ThreadContext> threadLocal = new ThreadLocal<ThreadContext>();
+	
+	private final Serializer serializer = new Serializer();
 
 	long txnId = -1;
 
-	TransactionImpl txn = null;
+	TransactionImpl txn = null; 
 
-	ObjectReaderWriter objectReaderWriter = new ObjectReaderWriter();
+	final ObjectPool<ByteBuffer> bufferCache;
+
+	final ObjectPool<Invocation> invocationCache;
 
 	private ThreadContext() {
+		int bufferCacheSize = 12;
+		int invocationCacheSize = 0;
+		String threadName = Thread.currentThread().getName();
+		if (threadName.startsWith("hz.")) {
+			if ("hz.InThread".equals(threadName)) {
+				bufferCacheSize = 100;
+				invocationCacheSize = 100;
+			} else if ("hz.OutThread".equals(threadName)) {
+				bufferCacheSize = 0;
+				invocationCacheSize = 0;
+			} else if ("hz.ServiceThread".equals(threadName)) {
+				bufferCacheSize = 100;
+				invocationCacheSize = 100;
+			}
+		}
+		logger.log(Level.FINEST, threadName + " is starting with cacheSize " + bufferCacheSize);
 
+		ObjectFactory<ByteBuffer> byteBufferCacheFactory = new ObjectFactory<ByteBuffer>() {
+			public ByteBuffer createNew() {
+				return ByteBuffer.allocate(1024);
+			}
+		};
+		bufferCache = new ObjectPool<ByteBuffer>("BufferCache", byteBufferCacheFactory,
+				bufferCacheSize, bufferq);
+
+		ObjectFactory<Invocation> invCacheFactory = new ObjectFactory<Invocation>() {
+			public Invocation createNew() {
+				return InvocationQueue.get().createNewInvocation();
+			} 
+		};
+		invocationCache = new ObjectPool<Invocation>("InvocationCache", invCacheFactory,
+				invocationCacheSize, InvocationQueue.get().qinvocations);
 	}
 
 	public static ThreadContext get() {
@@ -110,6 +107,14 @@ public class ThreadContext {
 			threadLocal.set(threadContext);
 		}
 		return threadContext;
+	}
+
+	public ObjectPool<Invocation> getInvocationPool() {
+		return invocationCache;
+	}
+
+	public ObjectPool<ByteBuffer> getBufferPool() {
+		return bufferCache;
 	}
 
 	public void finalizeTxn() {
@@ -135,12 +140,8 @@ public class ThreadContext {
 
 	public MRemove getMRemove() {
 		return ConcurrentMapManager.get().new MRemove();
-	}
-
-	public ObjectReaderWriter getObjectReaderWriter() {
-		return objectReaderWriter;
-	}
-
+	} 
+	 
 	public Offer getOffer() {
 		return BlockingQueueManager.get().new Offer();
 	}
@@ -164,7 +165,7 @@ public class ThreadContext {
 	public Data hardCopy(final Data data) {
 		if (data == null || data.size() == 0)
 			return null;
-		return objectReaderWriter.hardCopy(data);
+		return BufferUtil.doHardCopy(data);
 	}
 
 	public void reset() {
@@ -173,10 +174,9 @@ public class ThreadContext {
 
 	public Data toData(final Object obj) {
 		try {
-			return objectReaderWriter.writeObject(obj);
+			return serializer.writeObject(obj);
 		} catch (final Exception e) {
-			logger.log(Level.INFO, e.getMessage());
-			e.printStackTrace(System.out);
+			logger.log(Level.SEVERE, e.getMessage(), e);
 		}
 		return null;
 	}
@@ -184,6 +184,129 @@ public class ThreadContext {
 	public Object toObject(final Data data) {
 		if (data == null || data.size() == 0)
 			return null;
-		return objectReaderWriter.readObject(data);
+		return serializer.readObject(data); 
+	}
+
+	private interface ObjectFactory<E> {
+		E createNew();
+	}
+
+	public class ObjectPool<E> {
+		private final String name;
+		private final int maxSize;
+		private final Queue<E> localPool;
+		private final ObjectFactory<E> objectFactory;
+		private final BlockingQueue<E> objectQueue; 
+		long zero = 0;
+
+		public ObjectPool(String name, ObjectFactory<E> objectFactory, int maxSize,
+				BlockingQueue<E> objectQueue) {
+			super();
+			this.name = name;
+			this.objectFactory = objectFactory;
+			this.maxSize = maxSize;
+			this.objectQueue = objectQueue;
+			if (maxSize > 0) {
+				this.localPool = new SimpleQueue<E>(maxSize);
+			} else {
+				this.localPool = null;
+			}
+		}
+
+		public void release(E obj) {
+			if (localPool == null) {
+				objectQueue.offer(obj);
+			} else if (!localPool.add(obj)) {
+				objectQueue.offer(obj);
+			}
+		}
+
+		public E obtain() {
+			E value = null;
+			if (localPool == null) {
+				value = objectQueue.poll();
+				if (value == null) {
+					value = objectFactory.createNew();
+				}
+				return value;
+			} else {
+				value = localPool.poll();
+				if (value == null) {
+					int totalDrained = objectQueue.drainTo(localPool, maxSize);
+					if (totalDrained == 0) {
+						if (++zero % 10000 == 0) {
+							System.out.println(name + " : " + Thread.currentThread().getName()
+									+ " DRAINED " + totalDrained + "  size:" + objectQueue.size()
+									+ ", zeroCount:" + zero);
+						}		
+						for (int i = 0; i < 4; i++) {
+							localPool.add(objectFactory.createNew());
+						}
+					} 
+					value = localPool.poll();
+					if (value == null) {
+						value = objectFactory.createNew();
+					}
+				}
+				return value;
+			}
+		}
+	}
+
+	class SimpleQueue<E> extends AbstractQueue<E> {
+		final int maxSize;
+		final E[] objects;
+		int add = 0;
+		int remove = 0;
+		int size = 0;
+
+		public SimpleQueue(int maxSize) {
+			this.maxSize = maxSize;
+			objects = (E[]) new Object[maxSize];
+		}
+
+		@Override
+		public boolean add(E obj) {
+			if (size == maxSize)
+				return false;
+			objects[add] = obj;
+			add++;
+			size++;
+			if (add == maxSize) {
+				add = 0;
+			}
+			return true;
+		}
+
+		@Override
+		public int size() {
+			return size;
+		}
+
+		public boolean offer(E o) {
+			return add(o);
+		}
+
+		public E peek() {
+			return null;
+		}
+
+		public E poll() {
+			if (size == 0)
+				return null;
+			E value = objects[remove];
+			objects[remove] = null;
+			remove++;
+			size--; 
+			if (remove == maxSize) {
+				remove = 0;
+			}
+			return value;
+		}
+
+		@Override
+		public Iterator<E> iterator() {
+			return null;
+		}
 	}
 }

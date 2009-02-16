@@ -67,8 +67,8 @@ import com.hazelcast.impl.ConcurrentMapManager.MLock;
 import com.hazelcast.impl.ConcurrentMapManager.MPut;
 import com.hazelcast.impl.ConcurrentMapManager.MRemove;
 import com.hazelcast.impl.ConcurrentMapManager.MSize;
+import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.InvocationQueue.Data;
 
 public class FactoryImpl implements Constants {
 

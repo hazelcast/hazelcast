@@ -280,17 +280,17 @@ public class Node {
 		final boolean inited = init();
 		if (!inited)
 			return;
-		final Thread inThread = new Thread(InSelector.get(), "InThread");
+		final Thread inThread = new Thread(InSelector.get(), "hz.InThread");
 		inThread.start();
 		inThread.setPriority(8);
 		lsThreads.add(inThread);
 
-		final Thread outThread = new Thread(OutSelector.get(), "OutThread");
+		final Thread outThread = new Thread(OutSelector.get(), "hz.OutThread");
 		outThread.start();
 		outThread.setPriority(8);
 		lsThreads.add(outThread);
 
-		final Thread clusterServiceThread = new Thread(ClusterService.get(), "ServiceThread");
+		final Thread clusterServiceThread = new Thread(ClusterService.get(), "hz.ServiceThread");
 		clusterServiceThread.start();
 		clusterServiceThread.setPriority(7);
 		lsThreads.add(clusterServiceThread);
@@ -308,11 +308,10 @@ public class Node {
 				shutdown();
 			}
 		});
-
 	}
 
 	public void startMulticastService() {
-		final Thread multicastServiceThread = new Thread(MulticastService.get(), "MulticastThread");
+		final Thread multicastServiceThread = new Thread(MulticastService.get(), "hz.MulticastThread");
 		multicastServiceThread.start();
 		multicastServiceThread.setPriority(6);
 	}

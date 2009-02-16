@@ -43,11 +43,12 @@ import java.util.logging.Level;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.BufferUtil;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.InvocationQueue.Data;
 import com.hazelcast.nio.InvocationQueue.Invocation;
 
 public class ClusterManager extends BaseManager implements ConnectionListener {
@@ -73,7 +74,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		});
 		ClusterService.get().registerInvocationProcessor(OP_REMOTELY_PROCESS_AND_RESPOND, new InvocationProcessor() {
 			public void process(Invocation inv) { 
-				Data data = inv.doTake(inv.data);
+				Data data = BufferUtil.doTake(inv.value);
 				RemotelyProcessable rp = (RemotelyProcessable) ThreadContext.get().toObject(data);
 				rp.setConnection(inv.conn);
 				rp.process();
@@ -82,7 +83,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		});
 		ClusterService.get().registerInvocationProcessor(OP_REMOTELY_PROCESS, new InvocationProcessor() {
 			public void process(Invocation inv) { 
-				Data data = inv.doTake(inv.data);
+				Data data = BufferUtil.doTake(inv.value);
 				RemotelyProcessable rp = (RemotelyProcessable) ThreadContext.get().toObject(data);
 				rp.setConnection(inv.conn);
 				rp.process();
@@ -94,7 +95,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			public void process(Invocation inv) { 
 				Boolean result = null;
 				try {
-					Data data = inv.doTake(inv.data);
+					Data data = BufferUtil.doTake(inv.value);
 					AbstractRemotelyCallable<Boolean> callable = (AbstractRemotelyCallable<Boolean>) ThreadContext
 							.get().toObject(data);
 					callable.setConnection(inv.conn);
@@ -115,7 +116,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			public void process(Invocation inv) { 
 				Object result = null;
 				try {
-					Data data = inv.doTake(inv.data);
+					Data data = BufferUtil.doTake(inv.value);
 					AbstractRemotelyCallable callable = (AbstractRemotelyCallable) ThreadContext
 							.get().toObject(data);
 					callable.setConnection(inv.conn);
@@ -131,7 +132,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 					} else {
 						value = ThreadContext.get().toData(result);
 					}
-					inv.doSet(value, inv.data);
+					BufferUtil.doSet(value, inv.value);
 				}
 
 				sendResponse(inv);

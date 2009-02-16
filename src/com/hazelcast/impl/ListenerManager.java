@@ -17,7 +17,6 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.impl.Constants.ClusterOperations.OP_HEARTBEAT;
 import static com.hazelcast.impl.Constants.EventOperations.OP_EVENT;
 import static com.hazelcast.impl.Constants.EventOperations.OP_LISTENER_ADD;
 import static com.hazelcast.impl.Constants.EventOperations.OP_LISTENER_REMOVE;
@@ -30,9 +29,9 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.MessageListener;
-import com.hazelcast.impl.BaseManager.InvocationProcessor;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.InvocationQueue.Data;
+import com.hazelcast.nio.BufferUtil;
+import com.hazelcast.nio.Data;
 import com.hazelcast.nio.InvocationQueue.Invocation;
 
 class ListenerManager extends BaseManager {
@@ -66,8 +65,8 @@ class ListenerManager extends BaseManager {
 
 	private final void handleEvent(Invocation inv) {
 		int eventType = (int) inv.longValue;
-		Data key = inv.doTake(inv.key);
-		Data value = inv.doTake(inv.data);
+		Data key = BufferUtil.doTake(inv.key);
+		Data value = BufferUtil.doTake(inv.value);
 		String name = inv.name;
 		Address from = inv.conn.getEndPoint();
 		long recordId = inv.recordId;
@@ -76,7 +75,7 @@ class ListenerManager extends BaseManager {
 	}
 
 	private final void handleAddRemoveListener(boolean add, Invocation inv) {
-		Data key = (inv.key != null) ? inv.doTake(inv.key) : null;
+		Data key = (inv.key != null) ? BufferUtil.doTake(inv.key) : null;
 		boolean returnValue = (inv.longValue == 1) ? true : false;
 		String name = inv.name;
 		Address address = inv.conn.getEndPoint();

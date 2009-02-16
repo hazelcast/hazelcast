@@ -26,8 +26,8 @@ import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.BaseManager.SimpleDataEntry;
 import com.hazelcast.impl.BlockingQueueManager.CommitPoll;
 import com.hazelcast.impl.BlockingQueueManager.Offer;
-import com.hazelcast.impl.FactoryImpl.MProxy;
 import com.hazelcast.impl.FactoryImpl.CollectionProxy;
+import com.hazelcast.impl.FactoryImpl.MProxy;
 
 class TransactionImpl implements Transaction, Constants {
 

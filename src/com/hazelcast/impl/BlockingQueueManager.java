@@ -31,8 +31,9 @@ import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_REMOVE;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_REMOVE_BLOCK;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_SIZE;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_TXN_BACKUP_POLL;
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_TXN_COMMIT; 
+import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_TXN_COMMIT;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
+import static com.hazelcast.nio.BufferUtil.*;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -44,15 +45,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.hazelcast.core.EntryEvent; 
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
 import com.hazelcast.impl.Config.QConfig;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.BufferUtil;
+import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.InvocationQueue;
-import com.hazelcast.nio.InvocationQueue.Data;
 import com.hazelcast.nio.InvocationQueue.Invocation;
 
 class BlockingQueueManager extends BaseManager {
@@ -356,7 +358,7 @@ class BlockingQueueManager extends BaseManager {
 	}
 
 	final void handleTxnBackupPoll(Invocation inv) {
-		doTxnBackupPoll(inv.txnId, inv.doTake(inv.data));
+		doTxnBackupPoll(inv.txnId, doTake(inv.value));
 	}
 
 	final void handleTxnCommit(Invocation inv) {
@@ -381,7 +383,7 @@ class BlockingQueueManager extends BaseManager {
 			if (inv.operation == OP_B_BACKUP_ADD) {
 				// System.out.println(inv.conn.getEndPoint() + " handleBackup "
 				// + blockId);
-				Data data = inv.doTake(inv.data);
+				Data data = doTake(inv.value);
 				q.doBackup(true, data, blockId, (int) inv.longValue);
 			} else if (inv.operation == OP_B_BACKUP_REMOVE) {
 				q.doBackup(false, null, blockId, 0);
@@ -395,7 +397,7 @@ class BlockingQueueManager extends BaseManager {
 
 	final void handleAddBlock(Invocation inv) {
 		try {
-			BlockUpdate addRemove = (BlockUpdate) ThreadContext.get().toObject(inv.data);
+			BlockUpdate addRemove = (BlockUpdate) ThreadContext.get().toObject(inv.value);
 			String name = inv.name;
 			int blockId = addRemove.addBlockId;
 			Address addressOwner = addRemove.addAddress;
@@ -423,7 +425,7 @@ class BlockingQueueManager extends BaseManager {
 
 	final void handleRemoveBlock(Invocation inv) {
 		try {
-			BlockUpdate addRemove = (BlockUpdate) ThreadContext.get().toObject(inv.data);
+			BlockUpdate addRemove = (BlockUpdate) ThreadContext.get().toObject(inv.value);
 			String name = inv.name;
 			Q q = getQ(name);
 			doRemoveBlock(q, inv.conn.getEndPoint(), addRemove.removeBlockId);
@@ -577,7 +579,7 @@ class BlockingQueueManager extends BaseManager {
 			if (!remoteReq.scheduled) {
 				Data oldValue = (Data) remoteReq.response;
 				if (oldValue != null && oldValue.size() > 0) {
-					inv.doSet(oldValue, inv.data);
+					doSet(oldValue, inv.value);
 				}
 				sendResponse(inv);
 			} else {
@@ -917,7 +919,7 @@ class BlockingQueueManager extends BaseManager {
 		}
 
 		public void handleResponse(Invocation inv) {
-			Data value = inv.doTake(inv.data);
+			Data value = doTake(inv.value);
 			int indexRead = (int) inv.longValue;
 			setResponse(value, indexRead);
 			inv.returnToContainer();
@@ -1143,7 +1145,7 @@ class BlockingQueueManager extends BaseManager {
 		if (q.size >= q.maxSizePerJVM) {
 			if (req.hasEnoughTimeToSchedule()) {
 				req.scheduled = true;
-				final Request reqScheduled = (req.local) ? req : req.softCopy();
+				final Request reqScheduled = (req.local) ? req : req.hardCopy();
 				if (reqScheduled.local) {
 					if (reqScheduled.attachment == null) {
 						throw new RuntimeException("Scheduled local but attachement is null");
@@ -1156,6 +1158,7 @@ class BlockingQueueManager extends BaseManager {
 			return;
 		}
 		int index = q.offer(req);
+		req.value = null;		
 		req.longValue = index;
 		req.response = Boolean.TRUE;
 	}
@@ -1168,7 +1171,7 @@ class BlockingQueueManager extends BaseManager {
 		if (q.blCurrentTake.size() == 0) {
 			if (req.hasEnoughTimeToSchedule()) {
 				req.scheduled = true;
-				final Request reqScheduled = (req.local) ? req : req.softCopy();
+				final Request reqScheduled = (req.local) ? req : req.hardCopy();
 				if (reqScheduled.local) {
 					if (reqScheduled.attachment == null) {
 						throw new RuntimeException("Scheduled local but attachement is null");
@@ -1472,7 +1475,7 @@ class BlockingQueueManager extends BaseManager {
 				blockLoop: for (int i = index; i < BLOCK_SIZE; i++) {
 					Data data = block.get(i);
 					if (data != null) {
-						inv.doHardCopy(data, inv.data);
+						doHardCopy(data, inv.value);
 						inv.longValue = i;
 						break blockLoop;
 					}

@@ -17,7 +17,6 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.impl.Constants.ExecutorOperations.OP_STREAM;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TIMEOUT;
 
 import java.util.Collection;
@@ -31,8 +30,6 @@ import java.util.concurrent.TimeoutException;
 
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.impl.BaseManager.Processable;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.InvocationQueue.Invocation;
 
 public class ExecutorServiceProxy implements ExecutorService, Constants {
 

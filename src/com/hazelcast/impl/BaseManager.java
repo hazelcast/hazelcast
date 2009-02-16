@@ -29,6 +29,7 @@ import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_FAILURE;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_NONE;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_REDO;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_SUCCESS;
+import static com.hazelcast.nio.BufferUtil.*;
 
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
@@ -50,11 +51,12 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.impl.ClusterManager.RemotelyProcessable;
 import com.hazelcast.impl.ConcurrentMapManager.Record;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.BufferUtil;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.InvocationQueue;
-import com.hazelcast.nio.InvocationQueue.Data;
 import com.hazelcast.nio.InvocationQueue.Invocation;
 
 abstract class BaseManager implements Constants {
@@ -534,7 +536,7 @@ abstract class BaseManager implements Constants {
 		void handleObjectNoneRedoResponse(final Invocation inv) {
 			removeCall(getId());
 			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-				final Data oldValue = inv.doTake(inv.data);
+				final Data oldValue = doTake(inv.value);
 				if (oldValue == null || oldValue.size() == 0) {
 					responses.add(OBJECT_NULL);
 				} else {
@@ -542,14 +544,6 @@ abstract class BaseManager implements Constants {
 				}
 			} else {
 				throw new RuntimeException("responseType " + inv.responseType);
-			}
-		}
-
-		void setResult(final Object obj) {
-			if (obj == null) {
-				responses.add(OBJECT_NULL);
-			} else {
-				responses.add(obj);
 			}
 		}
 	}
@@ -600,6 +594,12 @@ abstract class BaseManager implements Constants {
 		}
 
 		public void reset() {
+			if (this.key != null) {
+				this.key.setNoData();
+			}
+			if (this.value != null) {
+				this.value.setNoData();
+			}	
 			this.resetCount++;
 			this.local = true;
 			this.operation = -1;
@@ -625,7 +625,7 @@ abstract class BaseManager implements Constants {
 				final Data key, final Data value, final int blockId, final long timeout,
 				final long txnId, final long eventId, final int lockThreadId,
 				final Address lockAddress, final int lockCount, final Address caller,
-				final long longValue, final long recordId) {
+				final long longValue, final long recordId) {					
 			this.local = local;
 			this.operation = operation;
 			this.name = name;
@@ -645,7 +645,7 @@ abstract class BaseManager implements Constants {
 
 		public void setInvocation(final Invocation inv) {
 			reset();
-			set(false, inv.operation, inv.name, inv.doTake(inv.key), inv.doTake(inv.data),
+			set(false, inv.operation, inv.name, doTake(inv.key), doTake(inv.value),
 					inv.blockId, inv.timeout, inv.txnId, inv.eventId, inv.threadId,
 					inv.lockAddress, inv.lockCount, inv.conn.getEndPoint(), inv.longValue,
 					inv.recordId);
@@ -662,9 +662,12 @@ abstract class BaseManager implements Constants {
 			this.caller = thisAddress;
 		}
 
-		public Request softCopy() {
+		public Request hardCopy() {
 			final Request copy = new Request();
-			copy.set(local, operation, name, key, value, blockId, timeout, txnId, eventId,
+			Data newKey = doHardCopy(key);
+			Data newValue = doHardCopy(value);
+			
+			copy.set(local, operation, name, newKey, newValue, blockId, timeout, txnId, eventId,
 					lockThreadId, lockAddress, lockCount, caller, longValue, recordId);
 			copy.attachment = attachment;
 			copy.response = response;
@@ -678,9 +681,9 @@ abstract class BaseManager implements Constants {
 			inv.operation = operation;
 			inv.name = name;
 			if (key != null)
-				inv.doHardCopy(key, inv.key);
+				doHardCopy(key, inv.key);
 			if (value != null)
-				inv.doHardCopy(value, inv.data);
+				doHardCopy(value, inv.value);
 			inv.blockId = blockId;
 			inv.timeout = timeout;
 			inv.txnId = txnId;
@@ -729,14 +732,15 @@ abstract class BaseManager implements Constants {
 
 		public Object getResultAsObject() {
 			try {
-				final Object result = getResult();
+				final Object result = getResult(); 
+				
 				if (result == OBJECT_NULL || result == null) {
 					return null;
 				}
 				if (result instanceof Data) {
 					final Data data = (Data) result;
 					if (data.size() == 0)
-						return null;
+						return null;   
 					return ThreadContext.get().toObject(data);
 				}
 				return result;
@@ -833,16 +837,16 @@ abstract class BaseManager implements Constants {
 		public void handleBooleanNoneRedoResponse(final Invocation inv) { 
 			removeCall(getId());
 			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-				responses.add(Boolean.TRUE);
+				setResult(Boolean.TRUE);
 			} else {
-				responses.add(Boolean.FALSE);
+				setResult(Boolean.FALSE);
 			}
 		}
 
 		void handleLongNoneRedoResponse(final Invocation inv) {
 			removeCall(getId());
 			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-				responses.add(Long.valueOf(inv.longValue));
+				setResult(Long.valueOf(inv.longValue));
 			} else {
 				throw new RuntimeException("handleLongNoneRedoResponse.responseType "
 						+ inv.responseType);
@@ -852,11 +856,11 @@ abstract class BaseManager implements Constants {
 		void handleObjectNoneRedoResponse(final Invocation inv) {
 			removeCall(getId());
 			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-				final Data oldValue = inv.doTake(inv.data);
+				final Data oldValue = doTake(inv.value);
 				if (oldValue == null || oldValue.size() == 0) {
-					responses.add(OBJECT_NULL);
+					setResult(OBJECT_NULL);
 				} else {
-					responses.add(oldValue);
+					setResult(oldValue);
 				}
 			} else {
 				throw new RuntimeException("handleObjectNoneRedoResponse.responseType "
@@ -865,6 +869,16 @@ abstract class BaseManager implements Constants {
 		}
 
 		void setResult(final Object obj) {
+			if (obj != OBJECT_REDO) {
+//				if (request.key != null) {
+//					request.key.setNoData();
+//					request.key = null;
+//				}
+//				if (request.value != null) {
+//					request.value.setNoData();
+//					request.value = null;
+//				}
+			}
 			if (obj == null) {
 				responses.add(OBJECT_NULL);
 			} else {
@@ -905,7 +919,7 @@ abstract class BaseManager implements Constants {
 		}
 
 		public void handleResponse(final Invocation inv) { 
-			if (inv.responseType == RESPONSE_REDO) {
+			if (inv.responseType == RESPONSE_REDO) { 
 				redo();
 			} else {
 				handleNoneRedoResponse(inv);
@@ -1037,7 +1051,7 @@ abstract class BaseManager implements Constants {
 				if (result instanceof Data) {
 					final Data oldValue = (Data) result;
 					if (oldValue != null && oldValue.size() > 0) {
-						inv.doSet(oldValue, inv.data);
+						doSet(oldValue, inv.value);
 					}
 				}
 			}
@@ -1341,8 +1355,9 @@ abstract class BaseManager implements Constants {
 					}
 				}
 			}
-			if (mapTargetListeners == null || mapTargetListeners.size() == 0)
+			if (mapTargetListeners == null || mapTargetListeners.size() == 0) { 
 				return;
+			}
 			final Data key = (dataRecordKey != null) ? ThreadContext.get().hardCopy(dataRecordKey)
 					: null;
 			Data value = null;

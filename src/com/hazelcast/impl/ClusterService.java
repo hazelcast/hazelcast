@@ -17,8 +17,6 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.impl.Constants.ClusterOperations.OP_RESPONSE;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;

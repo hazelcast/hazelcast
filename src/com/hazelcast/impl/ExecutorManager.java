@@ -16,8 +16,7 @@
  */
 
 package com.hazelcast.impl;
-
-import static com.hazelcast.impl.Constants.ClusterOperations.OP_HEARTBEAT;
+ 
 import static com.hazelcast.impl.Constants.ExecutorOperations.OP_EXE_REMOTE_EXECUTION;
 import static com.hazelcast.impl.Constants.ExecutorOperations.OP_STREAM;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_CANCELLED;
@@ -36,9 +35,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,11 +49,11 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MultiTask;
-import com.hazelcast.impl.BaseManager.InvocationProcessor;
 import com.hazelcast.impl.ClusterImpl.ClusterMember;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.BufferUtil;
+import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.InvocationQueue.Data;
 import com.hazelcast.nio.InvocationQueue.Invocation;
 
 class ExecutorManager extends BaseManager implements MembershipListener {
@@ -82,7 +80,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 		}
 		
 		executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveSeconds,
-				TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+				TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new ExecutorThreadFactory());
 		Node.get().getClusterImpl().addMembershipListener(this);
 		for (int i = 0; i < 100; i++) {
 			executionIds.add(new Long(i));
@@ -102,6 +100,33 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 	public static ExecutorManager get() {
 		return instance;
 	}
+	
+	static class ExecutorThreadFactory implements ThreadFactory {
+        static final AtomicInteger poolNumber = new AtomicInteger(1);
+        final ThreadGroup group;
+        final AtomicInteger threadNumber = new AtomicInteger(1);
+        final String namePrefix;
+
+        ExecutorThreadFactory() {
+            SecurityManager s = System.getSecurityManager();
+            group = (s != null)? s.getThreadGroup() :
+                                 Thread.currentThread().getThreadGroup();
+            namePrefix = "hz.pool-" + 
+                          poolNumber.getAndIncrement() + 
+                         "-thread-";
+        }
+
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(group, r, 
+                                  namePrefix + threadNumber.getAndIncrement(),
+                                  0);
+            if (t.isDaemon())
+                t.setDaemon(false);
+            if (t.getPriority() != Thread.NORM_PRIORITY)
+                t.setPriority(Thread.NORM_PRIORITY);
+            return t;
+        }
+    }
 	
 	public void shutdown() {
 		executor.purge();
@@ -254,7 +279,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 				if (result instanceof Data) {
 					// returning the remote result
 					// on the client thread
-					return ThreadContext.get().getObjectReaderWriter().readObject((Data) result);
+					return ThreadContext.get().toObject((Data) result);
 				} else {
 					// local execution result
 					return result;
@@ -630,7 +655,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 	public void handleStream (final Invocation inv) {
 		final StreamResponseHandler streamResponseHandler = mapStreams.get(inv.longValue);
 		if (streamResponseHandler != null) {
-			final Data value = inv.doTake(inv.data);
+			final Data value = BufferUtil.doTake(inv.value);
 			executor.execute(new Runnable() {
 				public void run() {
 					streamResponseHandler.handleStreamResponse(value);
@@ -643,7 +668,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 	public void handleRemoteExecution(final Invocation inv) {
 		if (DEBUG)
 			log("Remote handling invocation " + inv);
-		final Data callableData = inv.doTake(inv.data);
+		final Data callableData = BufferUtil.doTake(inv.value);
 		final RemoteExecutionId remoteExecutionId = new RemoteExecutionId(inv.conn.getEndPoint(),
 				inv.longValue);
 		final SimpleExecution se = new SimpleExecution(remoteExecutionId, executor, null,

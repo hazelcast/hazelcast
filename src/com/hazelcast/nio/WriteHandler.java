@@ -29,15 +29,15 @@ import java.util.logging.Logger;
 import com.hazelcast.impl.Node;
 import com.hazelcast.nio.InvocationQueue.Invocation;
 
-public class WriteHandler extends AbstractSelectionHandler implements Runnable {
+public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
-	protected static Logger logger = Logger.getLogger(WriteHandler.class.getName());
+	private static Logger logger = Logger.getLogger(WriteHandler.class.getName());
 
-	public static final boolean DEBUG = false;
+	private static final boolean DEBUG = false;
 
-	private final BlockingQueue writeHandlerQueue = new LinkedBlockingQueue();
+	private static final ByteBuffer bbOut = ByteBuffer.allocateDirect(1024 * 1024); 
 
-	private final static ByteBuffer bbOut = ByteBuffer.allocateDirect(1024 * 1024); 
+	private final BlockingQueue writeQueue = new LinkedBlockingQueue();
 
 	private final AtomicBoolean informSelector = new AtomicBoolean(true);
 
@@ -49,9 +49,9 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 		super(connection);
 	}
 
-	public final void enqueueInvocation(final Invocation inv) {
+	public void enqueueInvocation(final Invocation inv) {
 		try {
-			writeHandlerQueue.put(inv); 
+			writeQueue.put(inv); 
 		} catch (final InterruptedException e) {
 			Node.get().handleInterruptedException(Thread.currentThread(), e);
 		}
@@ -64,8 +64,8 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 		}
 	}
 
-	public final void handle() { 
-		if (writeHandlerQueue.size() == 0) {
+	public void handle() { 
+		if (writeQueue.size() == 0) {
 			ready = true;
 			return;
 		}
@@ -74,11 +74,11 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 		try {
 			bbOut.clear();
 			copyLoop: while (bbOut.position() < (32 * 1024)) {
-				final Invocation inv = (Invocation) writeHandlerQueue.poll();
+				final Invocation inv = (Invocation) writeQueue.poll();
 				if (inv == null)
 					break copyLoop; 
 				inv.write(bbOut);
-				doPostWrite(inv);
+				inv.returnToContainer();
 			}
 			if (bbOut.position() == 0)
 				return;
@@ -109,7 +109,7 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 		}
 	}
 
-	public final void run() {
+	public void run() {
 		informSelector.set(true);
 		if (ready) {
 			handle();
@@ -119,28 +119,19 @@ public class WriteHandler extends AbstractSelectionHandler implements Runnable {
 		ready = false;
 	}
 
-	private final void registerWrite() {
+	private void registerWrite() {
 		registerOp(outSelector.selector, SelectionKey.OP_WRITE);
 	}
 
 	@Override
 	public void shutdown() {
 		dead = false;
-		Invocation inv = (Invocation) writeHandlerQueue.poll();
+		Invocation inv = (Invocation) writeQueue.poll();
 		while (inv != null) {
 			inv.returnToContainer();
-			inv = (Invocation) writeHandlerQueue.poll();
+			inv = (Invocation) writeQueue.poll();
 		}
-		writeHandlerQueue.clear();
-	}
-
-	private final void doPostWrite(final Invocation inv) {
-		if (inv.container != null) {
-			try {
-				inv.container.returnInvocation(inv);
-			} catch (final Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
+		writeQueue.clear();
+	} 
+ 
 }

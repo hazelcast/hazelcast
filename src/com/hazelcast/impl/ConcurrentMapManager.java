@@ -17,7 +17,6 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.impl.Constants.ClusterOperations.OP_HEARTBEAT;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_ADD_TO_LIST;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_ADD_TO_SET;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_BACKUP_ADD;
@@ -43,6 +42,7 @@ import static com.hazelcast.impl.Constants.ConcurrentMapOperations.OP_CMAP_UNLOC
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
+import static com.hazelcast.nio.BufferUtil.*;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -60,15 +60,14 @@ import java.util.logging.Level;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Transaction;
-import com.hazelcast.impl.BaseManager.InvocationProcessor;
-import com.hazelcast.impl.BaseManager.SimpleDataEntry;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
 import com.hazelcast.impl.FactoryImpl.IProxy;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.BufferUtil;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.InvocationQueue.Data;
 import com.hazelcast.nio.InvocationQueue.Invocation;
 
 class ConcurrentMapManager extends BaseManager {
@@ -370,7 +369,7 @@ class ConcurrentMapManager extends BaseManager {
 		@Override
 		void handleNoneRedoResponse(Invocation inv) {
 			if (request.operation == OP_CMAP_LOCK_RETURN_OLD) {
-				oldValue = inv.doTake(inv.data);
+				oldValue = doTake(inv.value);
 			}
 			super.handleNoneRedoResponse(inv);
 		}
@@ -564,13 +563,13 @@ class ConcurrentMapManager extends BaseManager {
 		void handleNoneRedoResponse(Invocation inv) {
 			removeCall(getId());
 			lastReadRecordId = inv.recordId;
-			Data key = inv.doTake(inv.key);
+			Data key = doTake(inv.key);
 			if (key == null) {
 				setResult(null);
 			} else {
 				Data value = null;
 				if (containsValue) {
-					value = inv.doTake(inv.data);
+					value = doTake(inv.value);
 				}
 				setResult(new SimpleDataEntry(request.name, request.blockId, key, value,
 						(int) inv.longValue));
@@ -598,10 +597,7 @@ class ConcurrentMapManager extends BaseManager {
 		@Override
 		public void doLocalOp() {
 			doGet(request);
-			Data value = (Data) request.response;
-			if (value != null) {
-				value = ThreadContext.get().hardCopy(value);
-			}
+			Data value = (Data) request.response; 
 			setResult(value);
 		}
 	}
@@ -686,7 +682,17 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		public Object put(String name, Object key, Object value, long timeout, long txnId) {
-			return txnalPut(OP_CMAP_PUT, name, key, value, timeout, txnId);
+			Object result = txnalPut(OP_CMAP_PUT, name, key, value, timeout, txnId);
+//			if (request.key != null) {
+//				request.key.setNoData();
+//				request.key = null;
+//			}
+//			if (request.value != null) {
+//				request.value.setNoData();
+//				request.value = null;
+//			}
+			
+			return result;
 		}
 
 		private Object txnalPut(int operation, String name, Object key, Object value, long timeout,
@@ -1037,7 +1043,7 @@ class ConcurrentMapManager extends BaseManager {
 	}
 
 	void handleBlocks(Invocation inv) {
-		Blocks blocks = (Blocks) ThreadContext.get().toObject(inv.data);
+		Blocks blocks = (Blocks) ThreadContext.get().toObject(inv.value);
 		handleBlocks(blocks);
 		inv.returnToContainer();
 		doResetRecords();
@@ -1073,7 +1079,7 @@ class ConcurrentMapManager extends BaseManager {
 	}
 
 	void handleBlockInfo(Invocation inv) {
-		Block blockInfo = (Block) ThreadContext.get().toObject(inv.data);
+		Block blockInfo = (Block) ThreadContext.get().toObject(inv.value);
 		doBlockInfo(blockInfo);
 		inv.returnToContainer();
 	}
@@ -1363,7 +1369,7 @@ class ConcurrentMapManager extends BaseManager {
 		if (force)
 			min = 2;
 		if (lsMembers.size() < min)
-			return true;
+			return true; 
 		Invocation inv = toInvocation(record, true);
 		inv.operation = OP_CMAP_BACKUP_ADD;
 		boolean sent = send(inv, getNextMemberAfter(thisAddress, true, 1).getAddress());
@@ -1380,10 +1386,10 @@ class ConcurrentMapManager extends BaseManager {
 		inv.threadId = record.lockThreadId;
 		inv.lockAddress = record.lockAddress;
 		inv.lockCount = record.lockCount;
-		inv.doHardCopy(record.getKey(), inv.key);
+		doHardCopy(record.getKey(), inv.key);
 		if (includeValue) {
 			if (record.getValue() != null) {
-				inv.doHardCopy(record.getValue(), inv.data);
+				doHardCopy(record.getValue(), inv.value);
 			}
 		}
 		return inv;
@@ -1417,8 +1423,8 @@ class ConcurrentMapManager extends BaseManager {
 		if (record != null) {
 			inv.recordId = record.id;
 			inv.longValue = record.getCopyCount();
-			inv.doHardCopy(record.getKey(), inv.key);
-			inv.doHardCopy(record.getValue(), inv.data);
+			doHardCopy(record.getKey(), inv.key);
+			doHardCopy(record.getValue(), inv.value);
 		}
 		sendResponse(inv);
 		remoteReq.reset();
@@ -1443,7 +1449,7 @@ class ConcurrentMapManager extends BaseManager {
 			doGet(remoteReq);
 			Data value = (Data) remoteReq.response;
 			if (value != null && value.size() > 0) {
-				inv.doHardCopy(value, inv.data);
+				doSet(value, inv.value);
 			}
 			sendResponse(inv);
 			remoteReq.reset();
@@ -1487,7 +1493,7 @@ class ConcurrentMapManager extends BaseManager {
 			if (!remoteReq.scheduled) {
 				Data oldValue = (Data) remoteReq.response;
 				if (oldValue != null && oldValue.size() > 0) {
-					inv.doSet(oldValue, inv.data);
+					doSet(oldValue, inv.value);
 				}
 				sendResponse(inv);
 			} else {
@@ -1504,7 +1510,7 @@ class ConcurrentMapManager extends BaseManager {
 			if (!remoteReq.scheduled) {
 				Data oldValue = (Data) remoteReq.response;
 				if (oldValue != null && oldValue.size() > 0) {
-					inv.doSet(oldValue, inv.data);
+					doSet(oldValue, inv.value);
 				}
 				sendResponse(inv);
 			} else {
@@ -1540,7 +1546,7 @@ class ConcurrentMapManager extends BaseManager {
 			if (request.hasEnoughTimeToSchedule()) {
 				// schedule
 				final Record record = ensureRecord(request);
-				final Request reqScheduled = (request.local) ? request : request.softCopy();
+				final Request reqScheduled = (request.local) ? request : request.hardCopy();
 				if (request.operation == OP_CMAP_LOCK_RETURN_OLD) {
 					reqScheduled.value = ThreadContext.get().hardCopy(record.getValue());
 				}
@@ -1586,7 +1592,7 @@ class ConcurrentMapManager extends BaseManager {
 				// schedule
 				Record record = ensureRecord(request);
 				request.scheduled = true;
-				final Request reqScheduled = (request.local) ? request : request.softCopy();
+				final Request reqScheduled = (request.local) ? request : request.hardCopy();
 				record.addScheduledAction(new ScheduledAction(request) {
 					@Override
 					public boolean consume() {
@@ -1604,7 +1610,7 @@ class ConcurrentMapManager extends BaseManager {
 			}
 		} else {
 			CMap cmap = getMap(request.name);
-			Data oldValue = cmap.put(request);
+			Data oldValue = cmap.put(request); 
 			request.response = oldValue;
 		}
 	}
@@ -1654,7 +1660,7 @@ class ConcurrentMapManager extends BaseManager {
 				// schedule
 				Record record = ensureRecord(request);
 				request.scheduled = true;
-				final Request reqScheduled = (request.local) ? request : request.softCopy();
+				final Request reqScheduled = (request.local) ? request : request.hardCopy();
 				record.addScheduledAction(new ScheduledAction(request) {
 					@Override
 					public boolean consume() {
@@ -1679,21 +1685,23 @@ class ConcurrentMapManager extends BaseManager {
 		CMap cmap = maps.get(req.name);
 		if (cmap == null)
 			return null;
-		Record record = cmap.getRecord(req.key);
+		Record record = cmap.getRecord(req.key); 
 		return record;
 	}
 
 	Record ensureRecord(Request req) {
 		CMap cmap = getMap(req.name);
 		Record record = cmap.getRecord(req.key);
-		if (record == null) {
+		if (record == null) {			
 			record = cmap.createNewRecord(req.key, req.value);
-		}
+			req.key = null;
+			req.value = null;
+		}  
 		return record;
 	}
 
 	final boolean testLock(Request req) {
-		Record record = recordExist(req);
+		Record record = recordExist(req); 
 		if (record == null)
 			return true;
 		return record.testLock(req.lockThreadId, req.lockAddress);
@@ -1728,21 +1736,6 @@ class ConcurrentMapManager extends BaseManager {
 		public void backupAdd(Request req) {
 			Record record = toRecord(req);
 			record.owner = req.caller;
-		}
-
-		public Record toRecord(Request req) {
-			Record record = getRecord(req.key);
-			if (record == null) {
-				record = createNewRecord(req.key, req.value);
-			} else {
-				if (req.value != null) {
-					record.setValue(req.value);
-				}
-			}
-			record.lockAddress = req.lockAddress;
-			record.lockThreadId = req.lockThreadId;
-			record.lockCount = req.lockCount;
-			return record;
 		}
 
 		public void backupRemove(Request req) {
@@ -1802,9 +1795,15 @@ class ConcurrentMapManager extends BaseManager {
 
 		public Data get(Request req) {
 			Record record = getRecord(req.key);
+			req.key.setNoData();
+			req.key = null;
 			if (record == null)
 				return null;
-			return record.getValue();
+			Data data = record.getValue();
+			if (data !=null) {
+				return doHardCopy(data);
+			}
+			return null;
 		}
 
 		public boolean add(Request req) {
@@ -1823,14 +1822,17 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		public Data put(Request req) {
-			Record record = getRecord(req.key);
+			Record record = getRecord(req.key); 
 			Data oldValue = null;
-			if (record == null) {
-				record = createNewRecord(req.key, req.value);
+			if (record == null) { 
+				record = createNewRecord(req.key, req.value); 				
 			} else {
 				oldValue = record.getValue();
-				record.setValue(req.value);
+				record.setValue(req.value); 
+				req.key.setNoData(); 
 			}
+			req.key = null;
+			req.value = null;
 			if (oldValue == null) {
 				fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, record, null);
 			} else {
@@ -1839,21 +1841,50 @@ class ConcurrentMapManager extends BaseManager {
 			sendBackupAdd(record, false);
 			return oldValue;
 		}
+		
+		public Record toRecord(Request req) {
+			Record record = getRecord(req.key);
+			if (record == null) {				
+				record = createNewRecord(req.key, req.value);
+			} else {
+				if (req.value != null) {
+					if (record.value != null) {
+						record.value.setNoData();
+					}
+					record.setValue(req.value); 
+				}
+				req.key.setNoData();
+			}
+			req.key = null;
+			req.value = null;
+			record.lockAddress = req.lockAddress;
+			record.lockThreadId = req.lockThreadId;
+			record.lockCount = req.lockCount;
+			return record;
+		}
 
 		public Data remove(Request req) {
 			Record record = mapRecords.get(req.key);
+			req.key.setNoData();
+			req.key = null;
 			if (record == null) {
 				return null;
 			}
+			boolean removed = false;
 			if (record.getCopyCount() > 0) {
 				record.decrementCopyAndGet();
 			} else {
-				record = removeRecord(req.key);
+				record = removeRecord(record.key);
+				removed = true;
 			}
 			if (record.getValue() != null) {
 				fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record, null);
 			}
 			sendBackupRemove(record);
+			if (removed) {
+				record.key.setNoData();
+				record.key = null;
+			}
 			return record.getValue();
 		}
 
@@ -1867,7 +1898,6 @@ class ConcurrentMapManager extends BaseManager {
 
 		public Record read(Request req) {
 			return nextOwnedRecord(req.name, req.recordId, req.blockId);
-
 		}
 
 		Record nextOwnedRecord(String name, long recordId, int blockId) {
@@ -1896,7 +1926,7 @@ class ConcurrentMapManager extends BaseManager {
 			rec.owner = getOrCreateBlock(key).owner;
 			mapRecords.put(key, rec);
 			mapRecordsById.put(rec.id, rec);
-			// if (DEBUG) log("createNewRecord size " + mapRecords.size());
+//			System.out.println("Created record " + id);
 			return rec;
 		}
 

@@ -115,7 +115,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 	private final Invocation obtainReadable() {
 		final Invocation inv = InvocationQueue.get().obtainInvocation();
 		inv.reset();
-		inv.data.prepareForRead();
+		inv.value.prepareForRead();
 		inv.local = false;
 		return inv;
 	}
