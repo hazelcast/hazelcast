@@ -30,13 +30,11 @@
 
 		<property name="dist.dir" value="dummy/hazelcast-${version}" />
 
-		<replace file="${src.dir}/com/hazelcast/impl/Build.java" token="DEBUG = true" value="DEBUG = false" />
 		<replace file="${src.dir}/com/hazelcast/impl/Build.java" token="// @build" value="build = String.valueOf(${TODAY});" />
 		<replace file="${src.dir}/com/hazelcast/impl/Build.java" token="// @version" value="version = &quot;${version}&quot;;" />
 
 		<antcall target="compile" />
 
-		<replace file="${src.dir}/com/hazelcast/impl/Build.java" token="DEBUG = false" value="DEBUG = true" />
 		<replace file="${src.dir}/com/hazelcast/impl/Build.java" token="build = String.valueOf(${TODAY});" value="// @build" />
 		<replace file="${src.dir}/com/hazelcast/impl/Build.java" token="version = &quot;${version}&quot;;" value="// @version" />
 
@@ -55,10 +53,13 @@
 		<antcall target="rar" />
 		
 		<copy file="dist/TestApp.java" todir="${dist.dir}/testapp" />
+		<copy file="${hazelcast.jar.name}" todir="../aws-project/lib" />
 		<move file="${hazelcast.jar.name}" todir="${dist.dir}" />
 		<move file="${rar.name}.rar" todir="${dist.dir}" />
 		<copy file="dist/run.bat" todir="${dist.dir}" />
 		<copy file="dist/run.sh" todir="${dist.dir}" />
+		<copy file="dist/test.bat" todir="${dist.dir}" />
+		<copy file="dist/test.sh" todir="${dist.dir}" />
 		<copy file="dist/clusterWebapp.bat" todir="${dist.dir}" />
 		<copy file="dist/clusterWebapp.sh" todir="${dist.dir}" />
 
@@ -91,13 +92,12 @@
 		<delete file="${hazelcast.jar.name}" failonerror="false" />
 		<copy file="dist/hazelcast.xml" todir="${classes.dir}" />
 		<jar jarfile="${hazelcast.jar.name}">
-			<fileset dir="${classes.dir}">
-				<exclude name="**/tests/**" />
-				<exclude name="**/test/**" /> 
+			<fileset dir="${classes.dir}"> 
 				<exclude name="**/jca/**" /> 
 			</fileset>
 			<manifest>
-				<attribute name="Built-By" value="Hazelcast.com" /> 
+				<attribute name="Built-By" value="Hazelcast.com" />
+				<attribute name="Main-Class" value="com.hazelcast.tests.SimpleMapTest" />
 			</manifest>
 		</jar>	 
 	</target>
