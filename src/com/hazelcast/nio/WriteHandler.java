@@ -22,16 +22,12 @@ import java.nio.channels.SelectionKey;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import com.hazelcast.impl.Node;
 import com.hazelcast.nio.InvocationQueue.Invocation;
 
 public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
-
-	private static Logger logger = Logger.getLogger(WriteHandler.class.getName());
 
 	private static final boolean DEBUG = false;
 
@@ -41,9 +37,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
 	private final AtomicBoolean informSelector = new AtomicBoolean(true);
 
-	boolean ready = false;
-
-	boolean dead = false; 
+	boolean ready = false; 
 
 	WriteHandler(final Connection connection) {
 		super(connection);
@@ -84,8 +78,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 				return;
 			bbOut.flip();
 			int remaining = bbOut.remaining();
-			int loopCount = 0;
-			connection.didWrite();
+			int loopCount = 0; 
 			while (remaining > 0) {
 				try {
 					final int written = socketChannel.write(bbOut);
@@ -93,7 +86,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 					loopCount++;
 					if (DEBUG) {
 						if (loopCount > 1) {
-							logger.log(Level.INFO, "loopcount " + loopCount);
+							logger.log(Level.FINEST, "loopcount " + loopCount);
 						}
 					}
 				} catch (final Exception e) {
@@ -102,7 +95,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 				}
 			}
 		} catch (final Throwable t) {
-			logger.log(Level.INFO, "Fatal Error: WriteHandler " + t);
+			logger.log(Level.SEVERE, "Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
 		} finally {
 			ready = false;
 			registerWrite();
@@ -124,8 +117,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 	}
 
 	@Override
-	public void shutdown() {
-		dead = false;
+	public void shutdown() { 
 		Invocation inv = (Invocation) writeQueue.poll();
 		while (inv != null) {
 			inv.returnToContainer();
@@ -133,5 +125,4 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 		}
 		writeQueue.clear();
 	} 
- 
 }

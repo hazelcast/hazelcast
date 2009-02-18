@@ -1231,15 +1231,6 @@ abstract class BaseManager implements Constants {
 		return true;
 	}
 
-	protected boolean sendData(final String name, final int operation, final Data data,
-			final Address address) {
-		final Invocation inv = obtainServiceInvocation();
-		inv.name = name;
-		inv.operation = operation;
-		inv.setData(data);
-		return send(inv, address);
-	}
-
 	protected void sendRedoResponse(final Invocation inv) {
 		inv.responseType = RESPONSE_REDO;
 		sendResponse(inv);
@@ -1279,11 +1270,6 @@ abstract class BaseManager implements Constants {
 		final Connection conn = ConnectionManager.get().getConnection(address);
 		inv.conn = conn;
 		return sendResponseFailure(inv);
-	}
-
-	protected boolean sendSerializable(final String name, final int operation,
-			final DataSerializable ds, final Address address) {
-		return sendData(name, operation, ThreadContext.get().toData(ds), address);
 	}
 
 	protected void throwCME(final Object key) {
@@ -1401,12 +1387,11 @@ abstract class BaseManager implements Constants {
 
 	final boolean send(final Invocation inv, final Address address) { 
 		final Connection conn = ConnectionManager.get().getConnection(address);
-		if (conn == null)
+		if (conn != null) {
+			return writeInvocation(conn, inv);
+		} else {
 			return false;
-		if (!conn.live())
-			return false;
-		writeInvocation(conn, inv);
-		return true;
+		}
 	}
 
 	final boolean send(final Invocation inv, final Connection conn) {
@@ -1418,8 +1403,7 @@ abstract class BaseManager implements Constants {
 	}
 
 	final private boolean writeInvocation(final Connection conn, final Invocation inv) {
-		if (!conn.live()) {
-			inv.returnToContainer();
+		if (!conn.live()) { 
 			return false;
 		}
 		final MemberImpl memberImpl = getMember(conn.getEndPoint());

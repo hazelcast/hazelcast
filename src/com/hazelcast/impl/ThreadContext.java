@@ -18,18 +18,11 @@
 package com.hazelcast.impl;
 
 import java.nio.ByteBuffer;
-import java.util.AbstractCollection;
 import java.util.AbstractQueue;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -162,9 +155,7 @@ public class ThreadContext {
 		return txnId;
 	}
 
-	public Data hardCopy(final Data data) {
-		if (data == null || data.size() == 0)
-			return null;
+	public Data hardCopy(final Data data) { 
 		return BufferUtil.doHardCopy(data);
 	}
 
@@ -181,9 +172,7 @@ public class ThreadContext {
 		return null;
 	}
 
-	public Object toObject(final Data data) {
-		if (data == null || data.size() == 0)
-			return null;
+	public Object toObject(final Data data) { 
 		return serializer.readObject(data); 
 	}
 
@@ -197,7 +186,7 @@ public class ThreadContext {
 		private final Queue<E> localPool;
 		private final ObjectFactory<E> objectFactory;
 		private final BlockingQueue<E> objectQueue; 
-		long zero = 0;
+		private long zero = 0;
 
 		public ObjectPool(String name, ObjectFactory<E> objectFactory, int maxSize,
 				BlockingQueue<E> objectQueue) {
@@ -234,11 +223,11 @@ public class ThreadContext {
 				if (value == null) {
 					int totalDrained = objectQueue.drainTo(localPool, maxSize);
 					if (totalDrained == 0) {
-						if (++zero % 10000 == 0) {
-							System.out.println(name + " : " + Thread.currentThread().getName()
-									+ " DRAINED " + totalDrained + "  size:" + objectQueue.size()
-									+ ", zeroCount:" + zero);
-						}		
+//						if (++zero % 10000 == 0) {
+//							System.out.println(name + " : " + Thread.currentThread().getName()
+//									+ " DRAINED " + totalDrained + "  size:" + objectQueue.size()
+//									+ ", zeroCount:" + zero);
+//						}		
 						for (int i = 0; i < 4; i++) {
 							localPool.add(objectFactory.createNew());
 						}

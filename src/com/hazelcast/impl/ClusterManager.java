@@ -360,11 +360,6 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		}
 	}
 
-	private void clearJoinState() {
-		setJoins.clear();
-		joinInProgress = false;
-	}
-
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer("\n\nMembers [");

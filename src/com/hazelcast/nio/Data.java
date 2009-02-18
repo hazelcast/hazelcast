@@ -47,7 +47,7 @@ public final class Data implements DataSerializable {
 		}
 	}
 
-	public void copyToBuffer(ByteBuffer to) {
+	public int copyToBuffer(ByteBuffer to) {
 		int written = 0;
 		int len = lsData.size();
 		for (int i = 0; i < len; i++) {
@@ -61,6 +61,7 @@ public final class Data implements DataSerializable {
 		if (written != size)
 			throw new RuntimeException("copyToBuffer didn't write all data. Written: " + written
 					+ " size: " + size);
+		return written;
 	}
 
 	public boolean shouldRead() {

@@ -31,10 +31,7 @@ public class Connection {
 
 	private volatile boolean live = true;
 
-	Address endPoint = null;
-
-	private long lastRead = 0;
-	private long lastWrite = 0;
+	Address endPoint = null; 
 
 	int localPort = -1;
 
@@ -42,8 +39,7 @@ public class Connection {
 		super();
 		this.socketChannel = socketChannel;
 		this.writeHandler = new WriteHandler(this);
-		this.readHandler = new ReadHandler(this);
-		lastRead = System.currentTimeMillis() + 5000;
+		this.readHandler = new ReadHandler(this); 
 	}
 
 	public SocketChannel getSocketChannel() {
@@ -118,21 +114,5 @@ public class Connection {
 	@Override
 	public String toString() {
 		return "Connection [" + this.endPoint + "] live=" + live;
-	}
-
-	public void didRead() {
-		lastRead = System.currentTimeMillis();
-	}
-
-	public void didWrite() {
-		lastWrite = System.currentTimeMillis();
-	}
-
-	public long getLastRead() {
-		return lastRead;
-	}
-
-	public long getLastWrite() {
-		return lastWrite;
 	}
 }

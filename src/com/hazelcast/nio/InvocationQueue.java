@@ -17,17 +17,19 @@
 
 package com.hazelcast.nio;
 
-import java.nio.ByteBuffer;
-import java.util.List;
+import java.nio.ByteBuffer; 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import com.hazelcast.impl.Constants;
-import com.hazelcast.impl.Node;
+import com.hazelcast.impl.Constants; 
 import com.hazelcast.impl.ThreadContext;
 
 public class InvocationQueue {
+
+	private Logger logger = Logger.getLogger(InvocationQueue.class.getName());
 
 	private static final int INV_COUNT = 2000;
 
@@ -53,19 +55,24 @@ public class InvocationQueue {
 
 	public Invocation obtainInvocation() {
 		Invocation inv = ThreadContext.get().getInvocationPool().obtain();
-		inv.reset();
+		inv.reset(); 
+		inv.released = false;
 		return inv;
 	}
 
 	public void returnInvocation(Invocation inv) {
 		inv.reset();
+		if (inv.released) {
+			logger.log(Level.SEVERE, "Already released invocation!");
+		}
+		inv.released = true;
 		ThreadContext.get().getInvocationPool().release(inv);
 	}
 
 	public Invocation createNewInvocation() {
 		long count = newInvCount.incrementAndGet();
 		if (count % 1000 == 0) {
-			System.out.println("newInvCount " + count);
+			logger.log(Level.FINEST, "newInvCount " + count);
 		}
 		return new Invocation();
 	}
@@ -114,27 +121,34 @@ public class InvocationQueue {
 
 		public Connection conn;
 
+		public int totalSize = 0;
+		
+		public volatile boolean released = false;
+
 		public Invocation() {
 		}
 
-		public void setData(Data newData) {
-			value = newData;
-		}
-
 		public void write(ByteBuffer socketBB) {
+			int totalWritten = 0;
 			socketBB.put(bbSizes.array(), 0, bbSizes.limit());
 			socketBB.put(bbHeader.array(), 0, bbHeader.limit());
-			if (key.size() > 0)
-				key.copyToBuffer(socketBB);
-			if (value.size() > 0)
-				value.copyToBuffer(socketBB);
+			totalWritten += bbSizes.limit();
+			totalWritten += bbHeader.limit();
+			if (key.size() > 0) {
+				totalWritten += key.copyToBuffer(socketBB);
+			}
+			if (value.size() > 0) {
+				totalWritten += value.copyToBuffer(socketBB);
+			}
+			if (totalSize != totalWritten) {
+				throw new RuntimeException(totalSize + " is totalSize but written: " + totalWritten);
+			}
 		}
 
 		protected void putString(ByteBuffer bb, String str) {
 			byte[] bytes = str.getBytes();
 			bb.putInt(bytes.length);
 			bb.put(bytes);
-
 		}
 
 		protected String getString(ByteBuffer bb) {
@@ -167,17 +181,23 @@ public class InvocationQueue {
 			bbHeader.putLong(eventId);
 			bbHeader.put(responseType);
 			putString(bbHeader, name);
-			boolean fromNull = (lockAddress == null);
-			writeBoolean(bbHeader, fromNull);
-			if (!fromNull) {
+			boolean lockAddressNull = (lockAddress == null);
+			writeBoolean(bbHeader, lockAddressNull);
+			if (!lockAddressNull) {
 				lockAddress.writeObject(bbHeader);
 			}
-			bbHeader.flip();
 
+			bbHeader.flip();
 			bbSizes.putInt(bbHeader.limit());
 			bbSizes.putInt(key.size);
 			bbSizes.putInt(value.size);
 			bbSizes.flip();
+			totalSize = 0;
+			totalSize += bbSizes.limit();
+			totalSize += bbHeader.limit();
+			totalSize += key.size;
+			totalSize += value.size;
+
 		}
 
 		public void read() {
@@ -192,8 +212,8 @@ public class InvocationQueue {
 			eventId = bbHeader.getLong();
 			responseType = bbHeader.get();
 			name = getString(bbHeader);
-			boolean fromNull = readBoolean(bbHeader);
-			if (!fromNull) {
+			boolean lockAddressNull = readBoolean(bbHeader);
+			if (!lockAddressNull) {
 				lockAddress = new Address();
 				lockAddress.readObject(bbHeader);
 			}
@@ -221,6 +241,7 @@ public class InvocationQueue {
 			value.setNoData();
 			attachment = null;
 			conn = null;
+			totalSize = 0;
 		}
 
 		@Override
@@ -246,8 +267,10 @@ public class InvocationQueue {
 				bbHeader.limit(bbSizes.getInt());
 				key.size = bbSizes.getInt();
 				value.size = bbSizes.getInt();
+				if (bbHeader.limit() == 0) {
+					throw new RuntimeException("read.bbHeader size cannot be 0");
+				}
 			}
-			// logger.log(Level.INFO,sizeRead + " size " + bbSizes);
 			if (sizeRead) {
 				while (bb.hasRemaining() && bbHeader.hasRemaining()) {
 					BufferUtil.copy(bb, bbHeader);
@@ -283,7 +306,8 @@ public class InvocationQueue {
 			return ThreadContext.get().toObject(key);
 		}
 
-		public void set(String name, int operation, Object objKey, Object objValue) throws Exception {
+		public void set(String name, int operation, Object objKey, Object objValue)
+				throws Exception {
 			this.threadId = Thread.currentThread().hashCode();
 			this.name = name;
 			this.operation = operation;

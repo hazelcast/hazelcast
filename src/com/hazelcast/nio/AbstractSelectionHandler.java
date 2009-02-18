@@ -56,12 +56,10 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 
 	final void handleSocketException(final Exception e) {
 		if (DEBUG) {
-			logger.log(Level.INFO, Thread.currentThread().getName() + " Closing Socket. cause:  "
-					+ e);
+			logger.log(Level.FINEST,
+					Thread.currentThread().getName() + " Closing Socket. cause:  ", e);
 		}
-		if (DEBUG) {
-			e.printStackTrace(System.out);
-		}
+
 		if (sk != null)
 			sk.cancel();
 		if (connection.live()) {

@@ -39,8 +39,7 @@ public class SimpleMapTest {
 				public void run() {
 					Map<String, byte[]> map = Hazelcast.getMap("default");
 					while (true) {
-						int key = (int) (Math.random() * (Hazelcast.getCluster().getMembers()
-								.size() * ENTRY_COUNT));
+						int key = (int) (Math.random()  * ENTRY_COUNT);
 						int operation = ((int) (Math.random() * 100)) % 10;
 						if (operation < 4) {
 							map.put(String.valueOf(key), new byte[VALUE_SIZE]);
