@@ -46,6 +46,10 @@ public final class Hazelcast {
 		return com.hazelcast.impl.FactoryImpl.getMap(name);
 	}
 
+	public static <K, V> MultiMap<K, V> getMultiMap(String name) {
+		return com.hazelcast.impl.FactoryImpl.getMultiMap(name);
+	}
+
 	public static Lock getLock(Object obj) {
 		return com.hazelcast.impl.FactoryImpl.getLock(obj);
 	}

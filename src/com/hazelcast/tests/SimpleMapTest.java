@@ -31,7 +31,7 @@ public class SimpleMapTest {
 	public static final int STATS_SECONDS = 10;
 
 	public static void main(String[] args) {
-		int threadCount = 30;
+		int threadCount = 40;
 		final Stats stats = new Stats();
 		ExecutorService es = Executors.newFixedThreadPool(threadCount);
 		for (int i = 0; i < threadCount; i++) {

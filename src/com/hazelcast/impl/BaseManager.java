@@ -22,6 +22,7 @@ import static com.hazelcast.impl.Constants.ClusterOperations.OP_RESPONSE;
 import static com.hazelcast.impl.Constants.EventOperations.OP_EVENT;
 import static com.hazelcast.impl.Constants.MapTypes.MAP_TYPE_LIST;
 import static com.hazelcast.impl.Constants.MapTypes.MAP_TYPE_MAP;
+import static com.hazelcast.impl.Constants.MapTypes.MAP_TYPE_MULTI_MAP;
 import static com.hazelcast.impl.Constants.MapTypes.MAP_TYPE_SET;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
@@ -868,17 +869,7 @@ abstract class BaseManager implements Constants {
 			}
 		}
 
-		void setResult(final Object obj) {
-			if (obj != OBJECT_REDO) {
-//				if (request.key != null) {
-//					request.key.setNoData();
-//					request.key = null;
-//				}
-//				if (request.value != null) {
-//					request.value.setNoData();
-//					request.value = null;
-//				}
-			}
+		void setResult(final Object obj) { 
 			if (obj == null) {
 				responses.add(OBJECT_NULL);
 			} else {
@@ -982,6 +973,8 @@ abstract class BaseManager implements Constants {
 				mapType = MAP_TYPE_SET;
 			else if ("l:".equals(typeStr))
 				mapType = MAP_TYPE_LIST;
+			else if ("u:".equals(typeStr))
+				mapType = MAP_TYPE_MULTI_MAP;
 		}
 		return mapType;
 	}

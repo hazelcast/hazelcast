@@ -67,6 +67,9 @@ public interface Constants {
 		public final static byte MAP_TYPE_SET = 2;
 
 		public final static byte MAP_TYPE_LIST = 3;
+		
+		public final static byte MAP_TYPE_MULTI_MAP= 4;
+	
 	}
 
 	interface ClusterOperations {
@@ -136,16 +139,14 @@ public interface Constants {
 	}
 
 	interface ConcurrentMapOperations {
-
+ 
 		public static final int OP_CMAP_PUT = 201;
 
 		public static final int OP_CMAP_GET = 202;
 
 		public static final int OP_CMAP_REMOVE = 203;
 
-		public static final int OP_CMAP_BACKUP_ADD = 204;
-
-		public static final int OP_CMAP_BACKUP_REMOVE = 205;
+		public static final int OP_CMAP_BACKUP_ADD = 204; 
 
 		public static final int OP_CMAP_BLOCK_INFO = 206;
 
@@ -153,9 +154,7 @@ public interface Constants {
 
 		public static final int OP_CMAP_SIZE = 208;
 
-		public static final int OP_CMAP_CONTAINS_KEY = 209;
-
-		public static final int OP_CMAP_CONTAINS_VALUE = 210;
+		public static final int OP_CMAP_CONTAINS = 209; 
 
 		public static final int OP_CMAP_CLEAR = 211;
 
@@ -163,13 +162,9 @@ public interface Constants {
 
 		public static final int OP_CMAP_UNLOCK = 213;
 
-		public static final int OP_CMAP_BLOCKS = 214;
+		public static final int OP_CMAP_BLOCKS = 214; 
 
-		// public static final int OP_CMAP_OWN_KEY = 215;
-
-		public static final int OP_CMAP_MIGRATION_COMPLETE = 216;
-
-		public static final int OP_CMAP_BACKUP_LOCK = 217;
+		public static final int OP_CMAP_MIGRATION_COMPLETE = 216; 
 
 		public static final int OP_CMAP_BACKUP_REMOVE_BLOCK = 218;
 
@@ -190,7 +185,22 @@ public interface Constants {
 		public static final int OP_CMAP_ADD_TO_SET = 226;
 
 		public static final int OP_CMAP_MIGRATE_RECORD = 227;
+		
+		public static final int OP_CMAP_PUT_MULTI = 228; 
 
+		public static final int OP_CMAP_REMOVE_MULTI = 229; 
+		
+		public static final int OP_CMAP_VALUE_COUNT = 230; 
+		
+		public static final int OP_CMAP_BACKUP_PUT_SYNC= 231;    
+
+		public static final int OP_CMAP_BACKUP_ADD_SYNC= 232;    
+
+		public static final int OP_CMAP_BACKUP_REMOVE_SYNC= 233;    
+
+		public static final int OP_CMAP_BACKUP_LOCK_SYNC= 234;    
+
+		
 	}
 
 	public interface ResponseTypes {

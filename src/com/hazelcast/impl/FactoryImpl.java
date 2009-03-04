@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 
 import static com.hazelcast.impl.Constants.MapTypes.MAP_TYPE_LIST;
 import static com.hazelcast.impl.Constants.MapTypes.MAP_TYPE_MAP;
+import static com.hazelcast.impl.Constants.MapTypes.MAP_TYPE_MULTI_MAP;
 import static com.hazelcast.impl.Constants.MapTypes.MAP_TYPE_SET;
 
 import java.io.Serializable;
@@ -50,6 +51,7 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.MessageListener;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.BaseManager.Processable;
 import com.hazelcast.impl.BlockingQueueManager.AddTopicListener;
@@ -160,6 +162,11 @@ public class FactoryImpl implements Constants {
 		name = "m:l:" + name;
 		return (IList) getProxy(name);
 	}
+	
+	public static <K, V> MultiMap<K, V> getMultiMap(String name) {
+		name = "m:u:" + name;
+		return (MultiMap<K, V>) getProxy(name);
+	}
 
 	public static Transaction getTransaction() {
 		if (!inited.get())
@@ -207,7 +214,7 @@ public class FactoryImpl implements Constants {
 		if (proxy == null) {
 			if (name.startsWith("q:")) {
 				proxy = proxies.get(name);
-				if (proxy == null) {
+				if (proxy == null) { 
 					proxy = new QProxy(name);
 					proxies.put(name, proxy);
 				}
@@ -232,6 +239,8 @@ public class FactoryImpl implements Constants {
 						proxy = new SetProxy(mapProxy);
 					} else if (mapType == MAP_TYPE_LIST) {
 						proxy = new ListProxy(mapProxy);
+					} else if (mapType == MAP_TYPE_MULTI_MAP) {
+						proxy = new MultiMapProxy(mapProxy);
 					} else {
 						proxy = mapProxy;
 					}
@@ -563,13 +572,92 @@ public class FactoryImpl implements Constants {
 		public int drainTo(Collection c, int maxElements) {
 			return 0;
 		}
+	}
+	
+	static class MultiMapProxy implements MultiMap, Constants {
+		String name = null;
 
+		MProxy mapProxy;
+
+		public MultiMapProxy(MProxy mapProxy) {
+			super();
+			this.mapProxy = mapProxy;
+			this.name = mapProxy.name;
+		}
+		
+		public String getName() {
+			return name.substring(4);
+		}
+
+		public void clear() {
+			mapProxy.clear();
+		}
+
+		public boolean containsEntry(Object key, Object value) {
+			return mapProxy.containsEntry(key, value);
+		}
+
+		public boolean containsKey(Object key) {
+			return mapProxy.containsKey(key);
+		}
+
+		public boolean containsValue(Object value) {
+			return mapProxy.containsValue(value);
+		}
+
+		public Collection get(Object key) {
+			return (Collection) mapProxy.get(key);
+		}
+
+		public Set keySet() {
+			return mapProxy.keySet();
+		}
+
+		public boolean put(Object key, Object value) {
+			return mapProxy.putMulti(key, value);
+		}
+
+		public boolean remove(Object key, Object value) {
+			return false;
+		}
+
+		public boolean remove(Object key) {
+			return false;
+		}
+
+		public Collection removeAll(Object key) {
+			return null;
+		}
+
+		public int size() {
+			return mapProxy.size();
+		}
+
+		public int valueCount(Object key) {
+			return 0;
+		}
+
+		public Collection values() {
+			return null;
+		}
 	}
 
 	interface IProxy {
 		boolean add(Object item);
 
 		boolean removeKey(Object key);
+	}
+	
+	private static void check(Object obj) {
+		if (obj == null)
+			throw new RuntimeException();
+		if (obj instanceof DataSerializable)
+			return;
+		if (obj instanceof Serializable)
+			return;
+		else
+			throw new IllegalArgumentException(obj.getClass().getName()
+					+ " is not Serializable.");
 	}
 
 	static class MProxy implements IMap, IProxy, Constants {
@@ -592,6 +680,13 @@ public class FactoryImpl implements Constants {
 		public String getName() {
 			return name.substring(2);
 		}
+		
+		public boolean putMulti(Object key, Object value) {
+			check(key);
+			check(value);
+			MPut mput = ThreadContext.get().getMPut();
+			return mput.putMulti(name, key, value, -1, -1);
+		}
 
 		public Object put(Object key, Object value) {
 			check(key);
@@ -604,19 +699,7 @@ public class FactoryImpl implements Constants {
 			check(key);
 			MGet mget = ThreadContext.get().getMGet();
 			return mget.get(name, key, -1, -1);
-		}
-
-		private void check(Object obj) {
-			if (obj == null)
-				throw new RuntimeException();
-			if (obj instanceof DataSerializable)
-				return;
-			if (obj instanceof Serializable)
-				return;
-			else
-				throw new IllegalArgumentException(obj.getClass().getName()
-						+ " is not Serializable.");
-		}
+		} 
 
 		public Object remove(Object key) {
 			check(key);
@@ -723,6 +806,23 @@ public class FactoryImpl implements Constants {
 				throw new IllegalArgumentException("Listener cannot be null");
 			check(key);
 			removeGenericListener(listener, key);
+		}
+		
+		public boolean containsEntry(Object key, Object value) {
+			check(key);
+			check(value);
+			TransactionImpl txn = ThreadContext.get().txn;
+			if (txn != null) {
+				if (txn.has(name, key)) {
+					Object v = txn.get(name, key);
+					if (v == null)
+						return false; // removed inside the txn
+					else
+						return true;
+				}
+			}
+			MContainsKey mContainsKey = ConcurrentMapManager.get().new MContainsKey();
+			return mContainsKey.containsEntry(name, key, value, -1);
 		}
 
 		public boolean containsKey(Object key) {
