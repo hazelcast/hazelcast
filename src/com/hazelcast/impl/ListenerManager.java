@@ -246,20 +246,12 @@ class ListenerManager extends BaseManager {
 				if (key == null) {
 					if (listenerItem.key == null) {
 						registerListener(name, null, false, false);
-						it.remove();
+						lsListeners.remove(listenerItem);
 					}
 				} else if (key.equals(listenerItem.key)) {
 					registerListener(name, key, false, false);
-					it.remove();
+					lsListeners.remove(listenerItem);
 				}
-			}
-		}
-	}
-
-	public synchronized void removeMapListener(Object listener) {
-		for (ListenerItem listenerItem : lsListeners) {
-			if (listenerItem.listener == listener) {
-				lsListeners.remove(listenerItem);
 			}
 		}
 	}
