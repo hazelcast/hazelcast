@@ -102,14 +102,14 @@ public class ClusterService implements Runnable, Constants {
 		final long elipsedTime = processEnd - processStart;
 		totalProcessTime += elipsedTime;
 		final long duration = (processEnd - start);
-		if (duration > UTILIZATION_CHECK_INTERVAL) {
-			if (DEBUG) {
-				logger.log(Level.FINEST, "ServiceProcessUtilization: "
-						+ ((totalProcessTime * 100) / duration) + " %");
-			}
-			start = processEnd;
-			totalProcessTime = 0;
-		}
+//		if (duration > UTILIZATION_CHECK_INTERVAL) {
+//			if (DEBUG) {
+//				logger.log(Level.FINEST, "ServiceProcessUtilization: "
+//						+ ((totalProcessTime * 100) / duration) + " %");
+//			}
+//			start = processEnd;
+//			totalProcessTime = 0;
+//		}
 	}
 
 	public void run() {

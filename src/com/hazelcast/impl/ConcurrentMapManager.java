@@ -384,16 +384,14 @@ class ConcurrentMapManager extends BaseManager {
 		@Override
 		public void doLocalOp() {
 			doLock(request);
+			oldValue = request.value;			
 			if (!request.scheduled) {
-				responses.add(request.response);
-			}
-			oldValue = request.value;
-			backupInfo.lockCount = request.lockCount;
+				setResult(request.response);
+			} 
 		}
 
 		@Override
 		void handleNoneRedoResponse(Invocation inv) {
-			backupInfo.lockCount = inv.lockCount;
 			if (request.operation == OP_CMAP_LOCK_RETURN_OLD) {
 				oldValue = doTake(inv.value);
 			}
@@ -746,25 +744,35 @@ class ConcurrentMapManager extends BaseManager {
 		protected Address owner = null;
 		protected int distance = 0;
 
-		public void sendBackupAdd(long recordId, int distance) {
-			sendBackup(OP_CMAP_BACKUP_PUT_SYNC, null, null, null, thisAddress, 0, recordId,
+		public void sendBackupPut(long recordId, int distance) {
+			sendBackup(OP_CMAP_BACKUP_PUT_SYNC, null, null, null, thisAddress, 0, recordId, -1,
 					distance);
 		}
 
-		public void sendBackup(int operation, String name, Data key, Data value, Address owner,
-				int lockCount, long recordId, int distance) {
+		public void sendBackup(int operation, boolean hardCopy, BackupInfo bi, int distance) {
+			System.out.println("sendBackup key " + bi.key);
+			Data key = (hardCopy) ? doHardCopy(bi.key) : bi.key;
+			Data value = (hardCopy) ? doHardCopy(bi.value) : bi.value;
+
+			sendBackup(operation, bi.name, key, value, bi.owner, bi.lockCount, -1, bi.version,
+					distance);
+		}
+
+		private void sendBackup(int operation, String name, Data key, Data value, Address owner,
+				int lockCount, long recordId, long version, int distance) {
 			this.owner = owner;
 			this.distance = distance;
 			request.setLocal(operation, name, key, value, -1, 0, recordId);
 			request.lockCount = lockCount;
 			request.caller = owner;
+			request.version = version;
 			doOp();
 		}
 
 		@Override
 		public void process() {
 			if (request.name == null) {
-				Record record = getRecordById(request.recordId);
+				Record record = getRecordById(request.recordId);				
 				if (record == null) {
 					setResult(Boolean.TRUE);
 					return;
@@ -788,7 +796,7 @@ class ConcurrentMapManager extends BaseManager {
 		void doLocalOp() {
 			doBackupSync(request);
 			if (!request.scheduled) {
-				responses.add(request.response);
+				setResult(request.response);
 			}
 		}
 	}
@@ -800,6 +808,7 @@ class ConcurrentMapManager extends BaseManager {
 		Address owner;
 		int lockCount;
 		int backupCount;
+		long version = -1;
 
 		public void set(String name, int backupCount, Address owner, Data key, Data value) {
 			this.name = name;
@@ -816,6 +825,7 @@ class ConcurrentMapManager extends BaseManager {
 			owner = null;
 			backupCount = 0;
 			lockCount = 0;
+			version = -1;
 		}
 	}
 
@@ -865,7 +875,7 @@ class ConcurrentMapManager extends BaseManager {
 				backup(OP_CMAP_BACKUP_PUT_SYNC);
 				return oldValue;
 			}
-		}
+		} 
 
 		@Override
 		public void doLocalOp() {
@@ -910,39 +920,8 @@ class ConcurrentMapManager extends BaseManager {
 		protected BackupInfo backupInfo = new BackupInfo();
 		protected MBackupSync[] backupOps = new MBackupSync[3];
 
-		protected void invokeBackup(int operation, MBackupSync backupOp, BackupInfo bi,
-				int distance, boolean hardCopy) {
-			if (hardCopy) {
-				backupOp.sendBackup(operation, bi.name, doHardCopy(bi.key), doHardCopy(bi.value),
-						bi.owner, bi.lockCount, -1, distance);
-			} else {
-				backupOp.sendBackup(operation, bi.name, bi.key, bi.value, bi.owner, bi.lockCount,
-						-1, distance);
-			}
-		}
-
-		@Override
-		void setTarget() {
-			super.setTarget();
-			backupInfo.owner = target;
-		}
-
-		@Override
-		public void process() {
-			super.process();
-			if (lsMembers.size() > 1) {
-				CMap map = getMap(request.name);
-				backupInfo.reset();
-				int backupCount = map.getNumberOfBackups();
-				backupCount = Math.min(backupCount, lsMembers.size());
-				if (backupCount > 0) {
-					backupInfo.set(request.name, backupCount, target, doHardCopy(request.key),
-							doHardCopy(request.value));
-				}
-			}
-		}
-
 		protected void backup(int operation) {
+			System.out.println(backupInfo.backupCount  + " sending backup " + backupInfo.key);
 			final BackupInfo bi = backupInfo;
 			int backupCount = bi.backupCount;
 			if (backupCount > 0) {
@@ -953,13 +932,45 @@ class ConcurrentMapManager extends BaseManager {
 						backupOp = new MBackupSync();
 						backupOps[i] = backupOp;
 					}
-					invokeBackup(operation, backupOp, bi, distance, (distance == backupCount));
+					backupOp.sendBackup(operation, (distance == backupCount), bi, distance);
 				}
 				for (int i = 0; i < backupCount; i++) {
 					MBackupSync backupOp = backupOps[i];
 					backupOp.getResultAsBoolean();
 				}
 			}
+		}
+
+
+		@Override
+		public void process() {
+			if (lsMembers.size() > 1) {
+				CMap map = getMap(request.name);
+				backupInfo.reset();
+				int backupCount = map.getNumberOfBackups();
+				backupCount = Math.min(backupCount, lsMembers.size());
+				if (backupCount > 0) {
+					backupInfo.set(request.name, backupCount, target, doHardCopy(request.key),
+							doHardCopy(request.value));
+					backupInfo.version = request.version;
+				}
+			}
+			super.process();
+			backupInfo.owner = target;
+		}
+		
+		@Override
+		void setResult(Object obj) {
+			backupInfo.version = request.version; 
+			backupInfo.lockCount = request.lockCount; 
+			super.setResult(obj);
+		}
+		 
+		@Override
+		void handleNoneRedoResponse(Invocation inv) {
+			backupInfo.version = inv.version; 
+			backupInfo.lockCount = inv.lockCount;
+			super.handleNoneRedoResponse(inv);
 		}
 	}
 
@@ -1327,7 +1338,7 @@ class ConcurrentMapManager extends BaseManager {
 		int sendOwn = 0;
 		int removed = 0;
 		int sendBackup = 0;
-		int migrationOwner = 0; 
+		int migrationOwner = 0;
 		try {
 			Collection<Record> colRecords = mapRecordsById.values();
 			for (Record rec : colRecords) {
@@ -1366,7 +1377,7 @@ class ConcurrentMapManager extends BaseManager {
 		if (DEBUG) {
 			log("SendOwn:        " + sendOwn);
 			log("SendBackup:     " + sendBackup);
-			log("MigrationOwner: " + migrationOwner); 
+			log("MigrationOwner: " + migrationOwner);
 			log("Removed:        " + removed);
 		}
 		executeLocally(new Migrator(recordsToMigrate, recordsToBackup));
@@ -1426,7 +1437,7 @@ class ConcurrentMapManager extends BaseManager {
 				for (RecordBackupInfo bi : backups) {
 					for (int i = 0; i < bi.backupCount; i++) {
 						MBackupSync mbackup = new MBackupSync();
-						mbackup.sendBackupAdd(bi.recordId, i + 1);
+						mbackup.sendBackupPut(bi.recordId, i + 1);
 					}
 				}
 			}
@@ -1493,6 +1504,7 @@ class ConcurrentMapManager extends BaseManager {
 	private void copyRecordToRequest(Record record, Request request, boolean includeKeyValue) {
 		request.name = record.name;
 		request.recordId = record.id;
+		request.version  = record.version;
 		request.blockId = record.blockId;
 		request.lockThreadId = record.lockThreadId;
 		request.lockAddress = record.lockAddress;
@@ -1509,6 +1521,7 @@ class ConcurrentMapManager extends BaseManager {
 		Invocation inv = obtainServiceInvocation();
 		inv.name = record.getName();
 		inv.blockId = record.getBlockId();
+		inv.version = record.version;
 		inv.threadId = record.lockThreadId;
 		inv.lockAddress = record.lockAddress;
 		inv.lockCount = record.lockCount;
@@ -1634,6 +1647,7 @@ class ConcurrentMapManager extends BaseManager {
 			remoteReq.setInvocation(inv);
 			doPut(remoteReq);
 			if (!remoteReq.scheduled) {
+				inv.version = remoteReq.version;
 				Data oldValue = (Data) remoteReq.response;
 				if (oldValue != null && oldValue.size() > 0) {
 					doSet(oldValue, inv.value);
@@ -1949,16 +1963,23 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		public boolean backupSync(Request req) {
+			Record record = getRecord(req.key); 			
+			if (record != null) {
+				if (req.version <= record.version) {
+					return false;
+				}				
+			}
 			if (req.operation == OP_CMAP_BACKUP_PUT_SYNC) {
-				Record record = toRecord(req);
+				record = toRecord(req);
 				record.owner = req.caller;
 			} else if (req.operation == OP_CMAP_BACKUP_REMOVE_SYNC) {
 				removeRecord(req.key);
 			} else if (req.operation == OP_CMAP_BACKUP_LOCK_SYNC) {
-				Record record = toRecord(req);
+				record = toRecord(req);
 				// System.out.println(record.lockThreadId + " record " +
 				// record.lockAddress + ", count= " + record.lockCount);
 			}
+			record.version = req.version;
 			return true;
 		}
 
@@ -2079,6 +2100,7 @@ class ConcurrentMapManager extends BaseManager {
 			System.out.println(record.value + " PutMulti " + record.lsValues);
 			req.key = null;
 			req.value = null;
+			req.version = record.version;
 			return added;
 		}
 
@@ -2092,6 +2114,7 @@ class ConcurrentMapManager extends BaseManager {
 				record.setValue(req.value);
 				req.key.setNoData();
 			}
+			req.version = record.version;
 			req.key = null;
 			req.value = null;
 			if (oldValue == null) {
@@ -2144,6 +2167,8 @@ class ConcurrentMapManager extends BaseManager {
 				record.key.setNoData();
 				record.key = null;
 			}
+			record.version++;
+			req.version = record.version;
 			return record.getValue();
 		}
 
@@ -2247,6 +2272,7 @@ class ConcurrentMapManager extends BaseManager {
 			this.key = key;
 			this.value = value;
 			this.createTime = System.currentTimeMillis();
+			this.version = 0;
 		}
 
 		public long getId() {
@@ -2318,6 +2344,7 @@ class ConcurrentMapManager extends BaseManager {
 				lsValues = new ArrayList<Data>(2);
 			}
 			lsValues.add(value);
+			version++;
 		}
 
 		public void onDisconnect(Address deadAddress) {

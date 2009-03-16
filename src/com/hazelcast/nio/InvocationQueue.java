@@ -116,6 +116,8 @@ public class InvocationQueue {
 		public long longValue = Long.MIN_VALUE;
 
 		public long recordId = -1;
+		
+		public long version = -1;
 
 		public long eventId = -1;
 
@@ -178,6 +180,7 @@ public class InvocationQueue {
 			bbHeader.putLong(txnId);
 			bbHeader.putLong(longValue);
 			bbHeader.putLong(recordId);
+			bbHeader.putLong(version);
 			bbHeader.putLong(eventId);
 			bbHeader.put(responseType);
 			putString(bbHeader, name);
@@ -209,6 +212,7 @@ public class InvocationQueue {
 			txnId = bbHeader.getLong();
 			longValue = bbHeader.getLong();
 			recordId = bbHeader.getLong();
+			version = bbHeader.getLong();
 			eventId = bbHeader.getLong();
 			responseType = bbHeader.get();
 			name = getString(bbHeader);
@@ -234,6 +238,7 @@ public class InvocationQueue {
 			blockId = -1;
 			longValue = Long.MIN_VALUE;
 			recordId = -1;
+			version = -1;
 			eventId = -1;
 			bbSizes.clear();
 			bbHeader.clear();

@@ -583,6 +583,8 @@ abstract class BaseManager implements Constants {
 		long longValue = -1;
 
 		long recordId = -1;
+		
+		long version = -1;
 
 		Object attachment = null;
 
@@ -620,13 +622,14 @@ abstract class BaseManager implements Constants {
 			this.scheduled = false;
 			this.attachment = null;
 			this.recordId = -1;
+			this.version = -1;
 		}
 
 		public void set(final boolean local, final int operation, final String name,
 				final Data key, final Data value, final int blockId, final long timeout,
 				final long txnId, final long eventId, final int lockThreadId,
 				final Address lockAddress, final int lockCount, final Address caller,
-				final long longValue, final long recordId) {					
+				final long longValue, final long recordId, final long version) {					
 			this.local = local;
 			this.operation = operation;
 			this.name = name;
@@ -642,6 +645,7 @@ abstract class BaseManager implements Constants {
 			this.caller = caller;
 			this.longValue = longValue;
 			this.recordId = recordId;
+			this.version = version;
 		}
 
 		public void setInvocation(final Invocation inv) {
@@ -649,7 +653,7 @@ abstract class BaseManager implements Constants {
 			set(false, inv.operation, inv.name, doTake(inv.key), doTake(inv.value),
 					inv.blockId, inv.timeout, inv.txnId, inv.eventId, inv.threadId,
 					inv.lockAddress, inv.lockCount, inv.conn.getEndPoint(), inv.longValue,
-					inv.recordId);
+					inv.recordId, inv.version);
 
 		}
 
@@ -657,7 +661,7 @@ abstract class BaseManager implements Constants {
 				final Data value, final int blockId, final long timeout, final long recordId) {
 			reset();
 			set(true, operation, name, key, value, blockId, timeout, -1, -1, -1, thisAddress, 0,
-					thisAddress, -1, recordId);
+					thisAddress, -1, recordId, -1);
 			this.txnId = ThreadContext.get().getTxnId();
 			this.lockThreadId = Thread.currentThread().hashCode();
 			this.caller = thisAddress;
@@ -669,7 +673,7 @@ abstract class BaseManager implements Constants {
 			Data newValue = doHardCopy(value);
 			
 			copy.set(local, operation, name, newKey, newValue, blockId, timeout, txnId, eventId,
-					lockThreadId, lockAddress, lockCount, caller, longValue, recordId);
+					lockThreadId, lockAddress, lockCount, caller, longValue, recordId, version);
 			copy.attachment = attachment;
 			copy.response = response;
 			copy.scheduled = scheduled;
@@ -694,6 +698,7 @@ abstract class BaseManager implements Constants {
 			inv.lockCount = lockCount;
 			inv.longValue = longValue;
 			inv.recordId = recordId;
+			inv.version = version;
 			return inv;
 		}
 	}
@@ -725,11 +730,12 @@ abstract class BaseManager implements Constants {
 					return false;
 			} catch (final Exception e) {
 				logger.log(Level.SEVERE, "getResultAsBoolean", e);
-			} finally {
+			} finally { 
 				request.reset();
 			}
 			return false;
 		}
+		 
 
 		public Object getResultAsObject() {
 			try {
@@ -747,7 +753,7 @@ abstract class BaseManager implements Constants {
 				return result;
 			} catch (final Throwable e) {
 				logger.log(Level.SEVERE, "getResultAsObject", e);
-			} finally {
+			} finally { 
 				request.reset();
 			}
 			return null;
