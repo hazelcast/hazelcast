@@ -50,10 +50,27 @@ public class SelectorBase implements Runnable {
 	AtomicInteger size = new AtomicInteger();
 
 	public SelectorBase() {
+		
+	}
+	
+	public void start() {
+		selectorQueue.clear();
+		size.set(0);
 		try {
 			selector = Selector.open();
 		} catch (final IOException e) {
 			handleSelectorException(e);
+		}
+		live = true; 
+	}
+	
+	public void shutdown() {
+		live = false;
+		selectorQueue.clear();
+		try {
+			selector.close();
+		} catch (final Exception e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -114,15 +131,7 @@ public class SelectorBase implements Runnable {
 		}
 	}
 
-	public void shutdown() {
-		live = false;
-		selectorQueue.clear();
-		try {
-			selector.close();
-		} catch (final Exception e) {
-			e.printStackTrace();
-		}
-	}
+	
 
 	protected void handleSelectorException(final Exception e) {
 		String msg = "Selector exception at  " + Thread.currentThread().getName();

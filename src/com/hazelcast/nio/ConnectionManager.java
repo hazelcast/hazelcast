@@ -148,6 +148,10 @@ public class ConnectionManager {
 		if (connection.live())
 			connection.close();
 	}
+	
+	public void start () {
+		live = true;
+	}
 
 	public synchronized void shutdown() {
 		live = false;
@@ -157,6 +161,8 @@ public class ConnectionManager {
 			} catch (final Exception e) {
 			}
 		}
+		setConnectionInProgress.clear();
+		mapConnections.clear();
 	}
 
 	@Override

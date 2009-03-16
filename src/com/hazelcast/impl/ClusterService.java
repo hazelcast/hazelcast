@@ -51,27 +51,27 @@ public class ClusterService implements Runnable, Constants {
 	protected long totalProcessTime = 0;
 
 	protected long lastPeriodicCheck = 0;
-	
+
 	private final InvocationProcessor[] invocationProcessors = new InvocationProcessor[300];
 
 	private ClusterService() {
-		this.queue = new LinkedBlockingQueue();
-		this.start = System.nanoTime();
+		this.queue = new LinkedBlockingQueue();		
 	}
 
 	public static ClusterService get() {
 		return instance;
 	}
-	
-	void registerInvocationProcessor (int operation, InvocationProcessor invocationProcessor) {
+
+	void registerInvocationProcessor(int operation, InvocationProcessor invocationProcessor) {
 		if (invocationProcessors[operation] != null) {
-			logger.log(Level.SEVERE, operation + " is registered already with " + invocationProcessors[operation]); 
+			logger.log(Level.SEVERE, operation + " is registered already with "
+					+ invocationProcessors[operation]);
 		}
 		invocationProcessors[operation] = invocationProcessor;
 	}
 
 	public void enqueueAndReturn(final Object message) {
-		try { 
+		try {
 			queue.put(message);
 		} catch (final InterruptedException e) {
 			Node.get().handleInterruptedException(Thread.currentThread(), e);
@@ -79,6 +79,7 @@ public class ClusterService implements Runnable, Constants {
 	}
 
 	public void process(final Object obj) {
+		if (!running) return;
 		final long processStart = System.nanoTime();
 		if (obj instanceof Invocation) {
 			final Invocation inv = (Invocation) obj;
@@ -88,13 +89,14 @@ public class ClusterService implements Runnable, Constants {
 			}
 			InvocationProcessor invocationProcessor = invocationProcessors[inv.operation];
 			if (invocationProcessor == null) {
-				logger.log(Level.SEVERE, "No Invocation processor found for operation : " + inv.operation);
+				logger.log(Level.SEVERE, "No Invocation processor found for operation : "
+						+ inv.operation);
 			}
 			invocationProcessor.process(inv);
 		} else if (obj instanceof Processable) {
 			((Processable) obj).process();
 		} else {
-			logger.log(Level.SEVERE, "Cannot process. Unknown object: " + obj); 
+			logger.log(Level.SEVERE, "Cannot process. Unknown object: " + obj);
 		}
 		final long processEnd = System.nanoTime();
 		final long elipsedTime = processEnd - processStart;
@@ -133,13 +135,15 @@ public class ClusterService implements Runnable, Constants {
 				}
 			} catch (final InterruptedException e) {
 				Node.get().handleInterruptedException(Thread.currentThread(), e);
-			} catch (final Throwable e) { 
+			} catch (final Throwable e) {
 				if (DEBUG) {
 					logger.log(Level.FINEST, e + ",  message: " + e + ", obj=" + obj);
 					logger.log(Level.FINEST, e.getMessage(), e);
-				} 
+				}
 			}
 		}
+		lsBuffer.clear();
+		queue.clear();
 	}
 
 	public void run3() {
@@ -159,8 +163,15 @@ public class ClusterService implements Runnable, Constants {
 		}
 	}
 
-	public void stop() {
-		this.running = false;
+	public void start() {
+		totalProcessTime = 0;
+		lastPeriodicCheck = 0;
+		start = System.nanoTime();
+		running = true;
+	}
+
+	public void stop() { 		
+		running = false;		
 	}
 
 	@Override

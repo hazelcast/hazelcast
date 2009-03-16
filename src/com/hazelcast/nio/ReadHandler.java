@@ -37,7 +37,9 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 		inBuffer = ByteBuffer.allocate(32 * 1024);
 	}
 
+	int readCount = 1;
 	public final void handle() {
+		
 		if (!connection.live())
 			return;
 		try {
@@ -80,6 +82,10 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 				}
 				final boolean full = inv.read(inBuffer);
 				if (full) {
+					if (readCount++ % 10000 == 0) {
+						System.out.println("readHandler count " + readCount);
+						readCount = 1;
+					}
 					messageRead++;
 					inv.flipBuffers();
 					inv.read();

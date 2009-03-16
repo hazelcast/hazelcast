@@ -16,7 +16,7 @@
  */
 
 package com.hazelcast.impl;
- 
+
 import static com.hazelcast.impl.Constants.ExecutorOperations.OP_EXE_REMOTE_EXECUTION;
 import static com.hazelcast.impl.Constants.ExecutorOperations.OP_STREAM;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_CANCELLED;
@@ -60,7 +60,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 
 	static ExecutorManager instance = new ExecutorManager();
 
-	private final ThreadPoolExecutor executor;
+	private ThreadPoolExecutor executor;
 
 	private final Map<RemoteExecutionId, SimpleExecution> mapRemoteExecutions = new ConcurrentHashMap<RemoteExecutionId, SimpleExecution>(
 			1000);
@@ -70,28 +70,17 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 
 	private final BlockingQueue<Long> executionIds = new ArrayBlockingQueue<Long>(100);
 
+	private boolean started = false;
+	
 	private ExecutorManager() {
-		final int corePoolSize = Config.get().executorConfig.corePoolSize;
-		final int maxPoolSize = Config.get().executorConfig.maxPoolsize;
-		final long keepAliveSeconds = Config.get().executorConfig.keepAliveSeconds;
-		if (DEBUG) {
-			log("Executor core:" + corePoolSize + ", max:" + maxPoolSize + ", keepAlive:"
-					+ keepAliveSeconds);
-		}
-		
-		executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveSeconds,
-				TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new ExecutorThreadFactory());
-		Node.get().getClusterImpl().addMembershipListener(this);
-		for (int i = 0; i < 100; i++) {
-			executionIds.add(new Long(i));
-		}
-		ClusterService.get().registerInvocationProcessor(OP_EXE_REMOTE_EXECUTION, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				handleRemoteExecution(inv);
-			}
-		});
+		ClusterService.get().registerInvocationProcessor(OP_EXE_REMOTE_EXECUTION,
+				new InvocationProcessor() {
+					public void process(Invocation inv) {
+						handleRemoteExecution(inv);
+					}
+				});
 		ClusterService.get().registerInvocationProcessor(OP_STREAM, new InvocationProcessor() {
-			public void process(Invocation inv) { 
+			public void process(Invocation inv) {
 				handleStream(inv);
 			}
 		});
@@ -100,39 +89,55 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 	public static ExecutorManager get() {
 		return instance;
 	}
-	
+
 	static class ExecutorThreadFactory implements ThreadFactory {
-        static final AtomicInteger poolNumber = new AtomicInteger(1);
-        final ThreadGroup group;
-        final AtomicInteger threadNumber = new AtomicInteger(1);
-        final String namePrefix;
+		static final AtomicInteger poolNumber = new AtomicInteger(1);
+		final ThreadGroup group;
+		final AtomicInteger threadNumber = new AtomicInteger(1);
+		final String namePrefix;
 
-        ExecutorThreadFactory() {
-            SecurityManager s = System.getSecurityManager();
-            group = (s != null)? s.getThreadGroup() :
-                                 Thread.currentThread().getThreadGroup();
-            namePrefix = "hz.pool-" + 
-                          poolNumber.getAndIncrement() + 
-                         "-thread-";
-        }
+		ExecutorThreadFactory() {
+			SecurityManager s = System.getSecurityManager();
+			group = (s != null) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
+			namePrefix = "hz.pool-" + poolNumber.getAndIncrement() + "-thread-";
+		}
 
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(group, r, 
-                                  namePrefix + threadNumber.getAndIncrement(),
-                                  0);
-            if (t.isDaemon())
-                t.setDaemon(false);
-            if (t.getPriority() != Thread.NORM_PRIORITY)
-                t.setPriority(Thread.NORM_PRIORITY);
-            return t;
-        }
-    }
-	
-	public void shutdown() {
-		executor.purge();
-		executor.shutdownNow(); 
+		public Thread newThread(Runnable r) {
+			Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
+			if (t.isDaemon())
+				t.setDaemon(false);
+			if (t.getPriority() != Thread.NORM_PRIORITY)
+				t.setPriority(Thread.NORM_PRIORITY);
+			return t;
+		}
 	}
 	
+	public void start() {
+		if (started) return;
+		final int corePoolSize = Config.get().executorConfig.corePoolSize;
+		final int maxPoolSize = Config.get().executorConfig.maxPoolsize;
+		final long keepAliveSeconds = Config.get().executorConfig.keepAliveSeconds;
+		if (DEBUG) {
+			log("Executor core:" + corePoolSize + ", max:" + maxPoolSize + ", keepAlive:"
+					+ keepAliveSeconds);
+		}
+
+		executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveSeconds,
+				TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new ExecutorThreadFactory());
+		Node.get().getClusterImpl().addMembershipListener(this);
+		for (int i = 0; i < 100; i++) {
+			executionIds.add(new Long(i));
+		}		
+		started = true;
+	}
+
+	public void stop() {
+		if (!started) return;
+		executionIds.clear(); 
+		executor.shutdownNow();
+		started = false;
+	}
+
 	public static class CancelationTask implements Callable<Boolean>, DataSerializable {
 		long executionId = -1;
 
@@ -598,7 +603,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 				running = false;
 				done = true; // should not be able to interrupt after this.
 				if (!local) {
-					try {						
+					try {
 						ExecutorManager.get().sendStreamItem(remoteExecutionId.address,
 								executionResult, remoteExecutionId.executionId);
 					} catch (final Exception e) {
@@ -626,7 +631,6 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 			e.printStackTrace();
 		}
 	}
-	
 
 	public Processable createNewExecutionAction(final DistributedTask task, final long timeout) {
 		if (task == null)
@@ -651,8 +655,8 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 	public void executeLocaly(final Runnable runnable) {
 		executor.execute(runnable);
 	}
-	
-	public void handleStream (final Invocation inv) {
+
+	public void handleStream(final Invocation inv) {
 		final StreamResponseHandler streamResponseHandler = mapStreams.get(inv.longValue);
 		if (streamResponseHandler != null) {
 			final Data value = BufferUtil.doTake(inv.value);

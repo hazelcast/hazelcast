@@ -61,85 +61,6 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		return instance;
 	}
 
-	private ClusterManager() {
-		ConnectionManager.get().addConnectionListener(this);
-		ClusterService.get().registerInvocationProcessor(OP_RESPONSE, new InvocationProcessor() {
-			public void process(Invocation inv) {
-				handleResponse(inv);	
-			}
-		});
-		ClusterService.get().registerInvocationProcessor(OP_HEARTBEAT, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-			}
-		});
-		ClusterService.get().registerInvocationProcessor(OP_REMOTELY_PROCESS_AND_RESPOND, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				Data data = BufferUtil.doTake(inv.value);
-				RemotelyProcessable rp = (RemotelyProcessable) ThreadContext.get().toObject(data);
-				rp.setConnection(inv.conn);
-				rp.process();
-				sendResponse(inv);
-			}
-		});
-		ClusterService.get().registerInvocationProcessor(OP_REMOTELY_PROCESS, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				Data data = BufferUtil.doTake(inv.value);
-				RemotelyProcessable rp = (RemotelyProcessable) ThreadContext.get().toObject(data);
-				rp.setConnection(inv.conn);
-				rp.process();
-				inv.returnToContainer();
-			}
-		});
-		
-		ClusterService.get().registerInvocationProcessor(OP_REMOTELY_BOOLEAN_CALLABLE, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				Boolean result = null;
-				try {
-					Data data = BufferUtil.doTake(inv.value);
-					AbstractRemotelyCallable<Boolean> callable = (AbstractRemotelyCallable<Boolean>) ThreadContext
-							.get().toObject(data);
-					callable.setConnection(inv.conn);
-					result = callable.call();
-				} catch (Exception e) {
-					e.printStackTrace(System.out);
-					result = Boolean.FALSE;
-				}
-				if (result == Boolean.TRUE) {
-					sendResponse(inv);
-				} else {
-					sendResponseFailure(inv);
-				}
-			}
-		});
-		
-		ClusterService.get().registerInvocationProcessor(OP_REMOTELY_OBJECT_CALLABLE, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				Object result = null;
-				try {
-					Data data = BufferUtil.doTake(inv.value);
-					AbstractRemotelyCallable callable = (AbstractRemotelyCallable) ThreadContext
-							.get().toObject(data);
-					callable.setConnection(inv.conn);
-					result = callable.call();
-				} catch (Exception e) {
-					e.printStackTrace(System.out);
-					result = null;
-				}
-				if (result != null) {
-					Data value = null;
-					if (result instanceof Data) {
-						value = (Data) result;
-					} else {
-						value = ThreadContext.get().toData(result);
-					}
-					BufferUtil.doSet(value, inv.value);
-				}
-
-				sendResponse(inv);
-			}
-		});
-	}
-
 	private final Set<MemberInfo> setJoins = new LinkedHashSet<MemberInfo>(100);
 
 	private boolean joinInProgress = false;
@@ -149,6 +70,91 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 	private final List<MemberImpl> lsMembersBefore = new ArrayList<MemberImpl>();
 
 	private final long waitTimeBeforeJoin = 5000;
+
+	private ClusterManager() {
+		ConnectionManager.get().addConnectionListener(this);
+		ClusterService.get().registerInvocationProcessor(OP_RESPONSE, new InvocationProcessor() {
+			public void process(Invocation inv) {
+				handleResponse(inv);
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_HEARTBEAT, new InvocationProcessor() {
+			public void process(Invocation inv) {
+			}
+		});
+		ClusterService.get().registerInvocationProcessor(OP_REMOTELY_PROCESS_AND_RESPOND,
+				new InvocationProcessor() {
+					public void process(Invocation inv) {
+						Data data = BufferUtil.doTake(inv.value);
+						RemotelyProcessable rp = (RemotelyProcessable) ThreadContext.get()
+								.toObject(data);
+						rp.setConnection(inv.conn);
+						rp.process();
+						sendResponse(inv);
+					}
+				});
+		ClusterService.get().registerInvocationProcessor(OP_REMOTELY_PROCESS,
+				new InvocationProcessor() {
+					public void process(Invocation inv) {
+						Data data = BufferUtil.doTake(inv.value);
+						RemotelyProcessable rp = (RemotelyProcessable) ThreadContext.get()
+								.toObject(data);
+						rp.setConnection(inv.conn);
+						rp.process();
+						inv.returnToContainer();
+					}
+				});
+
+		ClusterService.get().registerInvocationProcessor(OP_REMOTELY_BOOLEAN_CALLABLE,
+				new InvocationProcessor() {
+					public void process(Invocation inv) {
+						Boolean result = null;
+						try {
+							Data data = BufferUtil.doTake(inv.value);
+							AbstractRemotelyCallable<Boolean> callable = (AbstractRemotelyCallable<Boolean>) ThreadContext
+									.get().toObject(data);
+							callable.setConnection(inv.conn);
+							result = callable.call();
+						} catch (Exception e) {
+							e.printStackTrace(System.out);
+							result = Boolean.FALSE;
+						}
+						if (result == Boolean.TRUE) {
+							sendResponse(inv);
+						} else {
+							sendResponseFailure(inv);
+						}
+					}
+				});
+
+		ClusterService.get().registerInvocationProcessor(OP_REMOTELY_OBJECT_CALLABLE,
+				new InvocationProcessor() {
+					public void process(Invocation inv) {
+						Object result = null;
+						try {
+							Data data = BufferUtil.doTake(inv.value);
+							AbstractRemotelyCallable callable = (AbstractRemotelyCallable) ThreadContext
+									.get().toObject(data);
+							callable.setConnection(inv.conn);
+							result = callable.call();
+						} catch (Exception e) {
+							e.printStackTrace(System.out);
+							result = null;
+						}
+						if (result != null) {
+							Data value = null;
+							if (result instanceof Data) {
+								value = (Data) result;
+							} else {
+								value = ThreadContext.get().toData(result);
+							}
+							BufferUtil.doSet(value, inv.value);
+						}
+
+						sendResponse(inv);
+					}
+				});
+	}
 
 	public final void heartBeater() {
 		if (!Node.get().joined())
@@ -161,15 +167,13 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 				if (!thisAddress.equals(address)) {
 					try {
 						Connection conn = ConnectionManager.get().getConnection(address);
-						if (Node.get().joined()) {
-							if (conn != null && conn.live()) {
-								if ((now - memberImpl.getLastRead()) >= 10000) {
-									conn = null;
-									if (lsDeadAddresses == null) {
-										lsDeadAddresses = new ArrayList<Address>();
-									}
-									lsDeadAddresses.add(address);
+						if (conn != null && conn.live()) {
+							if ((now - memberImpl.getLastRead()) >= 10000) {
+								conn = null;
+								if (lsDeadAddresses == null) {
+									lsDeadAddresses = new ArrayList<Address>();
 								}
+								lsDeadAddresses.add(address);
 							}
 						}
 						if (conn != null && conn.live()) {
@@ -186,6 +190,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			}
 			if (lsDeadAddresses != null) {
 				for (Address address : lsDeadAddresses) {
+					System.out.println("NO HEARTBEAT should remove " + address);
 					doRemoveAddress(address);
 					sendRemoveMemberToOthers(address);
 				}
@@ -296,8 +301,8 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			}
 		}
 
-		if (isMaster()) { 
-			setJoins.remove(new MemberInfo(deadAddress, 0)); 
+		if (isMaster()) {
+			setJoins.remove(new MemberInfo(deadAddress, 0));
 		}
 
 		lsMembersBefore.clear();
@@ -332,6 +337,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 	}
 
 	private void handleJoinRequest(JoinRequest joinRequest) {
+		System.out.println(joinInProgress + " Handling " + joinRequest);
 		if (getMember(joinRequest.address) != null)
 			return;
 		if (DEBUG) {
@@ -1148,6 +1154,12 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			member = createMember(address, nodeType);
 		addMember(member);
 		return member;
+	}
+
+	public void stop() {
+		setJoins.clear();
+		timeToStartJoin = 0;
+		lsMembers.clear();
 	}
 
 }

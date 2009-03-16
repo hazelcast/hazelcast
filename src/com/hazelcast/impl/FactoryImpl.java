@@ -162,7 +162,7 @@ public class FactoryImpl implements Constants {
 		name = "m:l:" + name;
 		return (IList) getProxy(name);
 	}
-	
+
 	public static <K, V> MultiMap<K, V> getMultiMap(String name) {
 		name = "m:u:" + name;
 		return (MultiMap<K, V>) getProxy(name);
@@ -214,7 +214,7 @@ public class FactoryImpl implements Constants {
 		if (proxy == null) {
 			if (name.startsWith("q:")) {
 				proxy = proxies.get(name);
-				if (proxy == null) { 
+				if (proxy == null) {
 					proxy = new QProxy(name);
 					proxies.put(name, proxy);
 				}
@@ -317,9 +317,10 @@ public class FactoryImpl implements Constants {
 		public TopicProxy(String name) {
 			super();
 			this.name = name;
-//			if (Config.get().getTopicConfig(getName()).globalOrderingEnabled) {
-//				qProxy = new QProxy("q:" + name);
-//			}
+			// if (Config.get().getTopicConfig(getName()).globalOrderingEnabled)
+			// {
+			// qProxy = new QProxy("q:" + name);
+			// }
 		}
 
 		public void publish(Object msg) {
@@ -479,6 +480,10 @@ public class FactoryImpl implements Constants {
 		public MProxy getCProxy() {
 			return mapProxy;
 		}
+
+		public void destroy() {
+
+		}
 	}
 
 	public static class QProxy extends AbstractQueue implements Constants, IQueue, BlockingQueue {
@@ -572,8 +577,12 @@ public class FactoryImpl implements Constants {
 		public int drainTo(Collection c, int maxElements) {
 			return 0;
 		}
+
+		public void destroy() {
+
+		}
 	}
-	
+
 	static class MultiMapProxy implements MultiMap, Constants {
 		String name = null;
 
@@ -584,7 +593,7 @@ public class FactoryImpl implements Constants {
 			this.mapProxy = mapProxy;
 			this.name = mapProxy.name;
 		}
-		
+
 		public String getName() {
 			return name.substring(4);
 		}
@@ -647,7 +656,7 @@ public class FactoryImpl implements Constants {
 
 		boolean removeKey(Object key);
 	}
-	
+
 	private static void check(Object obj) {
 		if (obj == null)
 			throw new RuntimeException();
@@ -656,8 +665,7 @@ public class FactoryImpl implements Constants {
 		if (obj instanceof Serializable)
 			return;
 		else
-			throw new IllegalArgumentException(obj.getClass().getName()
-					+ " is not Serializable.");
+			throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
 	}
 
 	static class MProxy implements IMap, IProxy, Constants {
@@ -680,7 +688,7 @@ public class FactoryImpl implements Constants {
 		public String getName() {
 			return name.substring(2);
 		}
-		
+
 		public boolean putMulti(Object key, Object value) {
 			check(key);
 			check(value);
@@ -699,7 +707,7 @@ public class FactoryImpl implements Constants {
 			check(key);
 			MGet mget = ThreadContext.get().getMGet();
 			return mget.get(name, key, -1, -1);
-		} 
+		}
 
 		public Object remove(Object key) {
 			check(key);
@@ -712,7 +720,7 @@ public class FactoryImpl implements Constants {
 			int size = msize.getSize(name);
 			TransactionImpl txn = ThreadContext.get().txn;
 			if (txn != null) {
-				size += txn.size(name); 
+				size += txn.size(name);
 			}
 			return (size < 0) ? 0 : size;
 		}
@@ -807,7 +815,7 @@ public class FactoryImpl implements Constants {
 			check(key);
 			removeGenericListener(listener, key);
 		}
-		
+
 		public boolean containsEntry(Object key, Object value) {
 			check(key);
 			check(value);
@@ -925,6 +933,10 @@ public class FactoryImpl implements Constants {
 				return MProxy.this.size();
 			}
 		}
-		
-	} 
+
+		public void destroy() {
+
+		}
+
+	}
 }

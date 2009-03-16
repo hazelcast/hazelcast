@@ -46,6 +46,8 @@ import com.hazelcast.nio.OutSelector;
 public class Node {
 	protected static Logger logger = Logger.getLogger(Node.class.getName());
 
+	static final boolean DEBUG = Build.get().DEBUG;
+
 	volatile Address address = null;
 
 	volatile MemberImpl localMember = null;
@@ -54,11 +56,9 @@ public class Node {
 
 	private static Node instance = new Node();
 
-	public Object joinLock = new Object();
-
-	private volatile boolean joined = false;
-
-	static final boolean DEBUG = Build.get().DEBUG;
+	private volatile boolean joined = false; 
+	
+	private Object joinLock = new Object();
 
 	private ClusterImpl clusterImpl = null;
 
@@ -263,12 +263,14 @@ public class Node {
 			ClusterService.get().stop();
 			MulticastService.get().stop();
 			ConnectionManager.get().shutdown();
-			ExecutorManager.get().shutdown();
+			ExecutorManager.get().stop();
 			InSelector.get().shutdown();
 			OutSelector.get().shutdown();
 			address = null;
 			masterAddress = null;
-			joined = false;
+			joined = false; 
+			FactoryImpl.inited.set(false);
+			ClusterManager.get().stop();
 		} catch (Throwable e) {
 			logger.log(Level.FINEST, "shutdown exception", e);
 		}
@@ -459,16 +461,18 @@ public class Node {
 			address.setThisAddress(true);
 			localMember = new MemberImpl(address, true, localNodeType);
 			//initialize managers..
-			ClusterService.get();
+			ClusterService.get().start();
 			ClusterManager.get();
 			ConcurrentMapManager.get();
 			BlockingQueueManager.get();
-			ExecutorManager.get();
+			ExecutorManager.get().start();
 			ListenerManager.get();
 			TopicManager.get();
 						
-			ClusterManager.get().addMember(localMember);
-			InSelector.get().init(serverSocketChannel);
+			ClusterManager.get().addMember(localMember); 
+			InSelector.get().start();
+			OutSelector.get().start(); 
+			InSelector.get().setServerSocketChannel(serverSocketChannel); 
 			if (address == null)
 				return false;
 			Logger systemLogger = Logger.getLogger("com.hazelcast.system");

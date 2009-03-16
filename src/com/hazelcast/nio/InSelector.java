@@ -48,7 +48,7 @@ public class InSelector extends SelectorBase {
 		return instance;
 	}
 
-	public void init(final ServerSocketChannel serverSocketChannel) {
+	public void setServerSocketChannel(final ServerSocketChannel serverSocketChannel) { 
 		this.serverSocketChannel = serverSocketChannel;
 		try {
 			key = serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, new Acceptor());

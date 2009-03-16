@@ -46,7 +46,7 @@ public class OutSelector extends SelectorBase {
 	public static OutSelector get() {
 		return instance;
 	}
-
+	
 	public void connect(final Address address) {
 		if (DEBUG)
 			logger.log(Level.INFO, "connect to " + address);
@@ -164,5 +164,7 @@ public class OutSelector extends SelectorBase {
 			}
 		}
 
-	} 
+	}
+
+	
 }
