@@ -23,4 +23,6 @@ public interface ICollection<E> {
 	void addItemListener(ItemListener<E> listener, boolean includeValue);
 
 	void removeItemListener(ItemListener<E> listener);
+	
+	void destroy();
 }
