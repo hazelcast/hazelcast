@@ -724,9 +724,9 @@ abstract class BaseManager implements Constants {
 				else
 					return false;
 			} catch (final Exception e) {
-				e.printStackTrace();
+				logger.log(Level.SEVERE, "getResultAsBoolean", e);
 			} finally {
-				this.request.reset();
+				request.reset();
 			}
 			return false;
 		}
@@ -746,10 +746,7 @@ abstract class BaseManager implements Constants {
 				}
 				return result;
 			} catch (final Throwable e) {
-				if (DEBUG) {
-					ClusterManager.get().publishLog(e.toString());
-				}
-				e.printStackTrace(System.out);
+				logger.log(Level.SEVERE, "getResultAsObject", e);
 			} finally {
 				request.reset();
 			}
