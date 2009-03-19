@@ -1072,6 +1072,23 @@ class BlockingQueueManager extends BaseManager {
 				setResult(request.response);
 			}
 		}
+		
+		@Override
+		void handleNoneRedoResponse(Invocation inv) {
+			if (request.operation == OP_B_POLL
+					&& inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+				if (!zeroBackup) {
+					if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(
+							inv.conn.getEndPoint())) { 
+						if (inv.value != null ) {
+							Q q = getQ (inv.name);
+							q.doBackup(false, null, request.blockId, 0);
+						}
+					}
+				}
+			}
+			super.handleNoneRedoResponse(inv);
+		}
 	}
 
 	void doAddTopicListener(Request req) {
@@ -1514,6 +1531,7 @@ class BlockingQueueManager extends BaseManager {
 		int offer(Request req) {
 			int addIndex = blCurrentPut.add(req.value);
 			long recordId = getRecordId(blCurrentPut.blockId, addIndex);
+			req.recordId = recordId;
 			doFireEntryEvent(true, req.value, recordId);
 			size++;
 			while (lsScheduledPollActions.size() > 0) {
@@ -1567,6 +1585,7 @@ class BlockingQueueManager extends BaseManager {
 			}
 			size--;
 			long recordId = getRecordId(blCurrentTake.blockId, blCurrentTake.removeIndex);
+			request.recordId = recordId;
 			doFireEntryEvent(false, value, recordId);
 			runScheduledOffer: while (lsScheduledOfferActions.size() > 0) {
 				ScheduledOfferAction offerAction = lsScheduledOfferActions.remove(0);
@@ -1588,7 +1607,7 @@ class BlockingQueueManager extends BaseManager {
 			return value;
 		}
 
-		boolean doBackup(boolean add, Data data, int blockId, int addIndex) {
+		boolean doBackup(boolean add, Data data, int blockId, int addIndex) { 
 			if (zeroBackup) return true;
 			Block block = getBlock(blockId);
 			if (block == null)
