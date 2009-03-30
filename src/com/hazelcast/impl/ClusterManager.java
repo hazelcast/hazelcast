@@ -190,7 +190,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 			}
 			if (lsDeadAddresses != null) {
 				for (Address address : lsDeadAddresses) {
-					System.out.println("NO HEARTBEAT should remove " + address);
+					logger.log(Level.FINEST, "NO HEARTBEAT should remove " + address);
 					doRemoveAddress(address);
 					sendRemoveMemberToOthers(address);
 				}
@@ -337,7 +337,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 	}
 
 	private void handleJoinRequest(JoinRequest joinRequest) {
-		System.out.println(joinInProgress + " Handling " + joinRequest);
+		logger.log(Level.FINEST, joinInProgress + " Handling " + joinRequest);
 		if (getMember(joinRequest.address) != null)
 			return;
 		if (DEBUG) {

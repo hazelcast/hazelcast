@@ -83,7 +83,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 				final boolean full = inv.read(inBuffer);
 				if (full) {
 					if (readCount++ % 10000 == 0) {
-						System.out.println("readHandler count " + readCount);
+						logger.log(Level.FINEST, "readHandler count " + readCount);
 						readCount = 1;
 					}
 					messageRead++;

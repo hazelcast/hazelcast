@@ -442,7 +442,7 @@ abstract class BaseManager implements Constants {
 			EventTask eventTask = poll();
 			if (eventTask == null)
 				return;
-			logger.log(Level.FINE, expectedRecordId + "  running event " + eventTask.recordId);
+			logger.log(Level.FINEST, expectedRecordId + "  running event " + eventTask.recordId);
 			if (expectedRecordId == eventTask.recordId) {
 				try {
 					eventTask.run();
@@ -458,7 +458,6 @@ abstract class BaseManager implements Constants {
 					}
 				}
 			} else if (eventTask.recordId > expectedRecordId) {
-				System.out.println(expectedRecordId + " delaying " + eventTask.recordId);
 				mapDelayedEventTasks.put(eventTask.recordId, eventTask);
 				// ignore recordIds less than expected
 			}

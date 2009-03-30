@@ -61,7 +61,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 	int writeCount = 1;
 	public void handle() { 
 		if (writeCount++ % 10000 == 0) {
-			System.out.println("writeHandler count " + writeCount);
+			logger.log(Level.FINEST, "writeHandler count " + writeCount);
 			writeCount = 1; 
 		}
 		if (writeQueue.size() == 0) {

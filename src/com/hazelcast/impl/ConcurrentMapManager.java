@@ -289,7 +289,6 @@ class ConcurrentMapManager extends BaseManager {
 			int addressIndex = 0;
 			for (int i = 0; i < BLOCK_COUNT; i++) {
 				Block block = mapBlocks.get(i);
-				System.out.println("NOW " + block);
 				if (block.owner == null) {
 					int index = addressIndex++ % addressBlocks.size();
 					block.owner = (Address) addressBlocks.keySet().toArray()[index];
@@ -736,6 +735,11 @@ class ConcurrentMapManager extends BaseManager {
 			doAdd(request);
 			setResult(request.response);
 		}
+
+        @Override
+        void handleNoneRedoResponse(final Invocation inv) {
+			handleBooleanNoneRedoResponse(inv);
+		}
 	}
 
 	class MBackupSync extends MBooleanOp {
@@ -918,7 +922,7 @@ class ConcurrentMapManager extends BaseManager {
 		protected MBackupSync[] backupOps = new MBackupSync[3];
 
 		protected void backup(int operation) {
-			System.out.println(backupInfo.backupCount  + " sending backup " + backupInfo.key);
+//			System.out.println(backupInfo.backupCount  + " sending backup " + backupInfo.key);
 			final BackupInfo bi = backupInfo;
 			int backupCount = bi.backupCount;
 			if (backupCount > 0) {
@@ -2095,7 +2099,7 @@ class ConcurrentMapManager extends BaseManager {
 				record.addValue(req.value);
 				fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, record, null);
 			}
-			System.out.println(record.value + " PutMulti " + record.lsValues);
+			logger.log(Level.FINEST, record.value + " PutMulti " + record.lsValues);
 			req.key = null;
 			req.value = null;
 			req.version = record.version;

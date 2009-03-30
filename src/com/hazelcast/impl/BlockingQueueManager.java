@@ -366,7 +366,6 @@ class BlockingQueueManager extends BaseManager {
 	}
 
 	final void doTxnBackupPoll(long txnId, Data value) {
-		// System.out.println("doTxnBackupPoll " + txnId);
 		List<Data> lsTxnPolledElements = mapTxnPolledElements.get(txnId);
 		if (lsTxnPolledElements == null) {
 			lsTxnPolledElements = new ArrayList<Data>(1);
@@ -381,8 +380,6 @@ class BlockingQueueManager extends BaseManager {
 			int blockId = inv.blockId;
 			Q q = getQ(name);
 			if (inv.operation == OP_B_BACKUP_ADD) {
-				// System.out.println(inv.conn.getEndPoint() + " handleBackup "
-				// + blockId);
 				Data data = doTake(inv.value);
 				q.doBackup(true, data, blockId, (int) inv.longValue);
 			} else if (inv.operation == OP_B_BACKUP_REMOVE) {
@@ -773,7 +770,7 @@ class BlockingQueueManager extends BaseManager {
 				if (!canRead)
 					return false;
 				next = read.read(name, currentBlockId, currentIndex);
-				// System.out.println(currentIndex + " NExt " + next);
+				// System.out.println(currentIndex + " Next " + next);
 				if (next == null) {
 					currentIndex = -1;
 				} else {
@@ -1744,9 +1741,6 @@ class BlockingQueueManager extends BaseManager {
 		}
 
 		public Data get(int index) {
-			if (values == null) {
-				System.out.println("Name " + name);
-			}
 			return values[index];
 		}
 
