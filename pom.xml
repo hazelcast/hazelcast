@@ -1,13 +1,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.hazelcast.core</groupId>
+	<groupId>com.hazelcast</groupId>
 	<artifactId>hazelcast</artifactId>
 	<packaging>jar</packaging>
-	<version>1.5</version>
+	<version>1.5.1</version>
 	<name>hazelcast</name>
-	<url>http://maven.apache.org</url>
-	<description> Hazelcast is a in-memory data grid solution for Java. 
+	<inceptionYear>2008</inceptionYear>
+	<url>http://www.hazelcast.com</url>
+	<description>Hazelcast is an in-memory data grid solution for Java. 
 	</description>
 	<organization>
 		<name>Hazelcast</name>
@@ -17,6 +18,7 @@
 		<license>
 			<name>Apache License, Version 2.0</name>
 			<url>http://apache.org/licenses/LICENSE-2.0</url>
+			<distribution>repo</distribution>
 		</license>
 	</licenses>
 	<scm>
@@ -28,17 +30,20 @@
 			<groupId>javax.servlet.jsp</groupId>
 			<artifactId>jsp-api</artifactId>
 			<version>2.0</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>servlet-api</artifactId>
 			<version>2.5</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>javax.resource</groupId>
-			<artifactId>connector-api</artifactId>
-			<version>1.5</version>
-		</dependency>
+		       <groupId>geronimo-spec</groupId>
+		       <artifactId>geronimo-spec-j2ee-connector</artifactId>
+		       <version>1.5-rc4</version>
+		       <scope>provided</scope>
+               </dependency>
 	</dependencies>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
@@ -61,6 +66,26 @@
 					</archive>
 				</configuration>
 			</plugin>
+			<plugin>
+			    <groupId>org.apache.maven.plugins</groupId>
+			    <artifactId>maven-source-plugin</artifactId>
+			    <executions>
+			        <execution>
+			            <id>attach-sources</id>
+			            <goals>
+			                <goal>jar</goal>
+			            </goals>
+			         </execution>
+			     </executions>
+			</plugin>
+
 		</plugins>
 	</build>
+	<distributionManagement>
+	    <repository>
+	      <id>ssh-repository</id>
+	      <url>scp://oztalip,hazelcast@web.sourceforge.net:/home/groups/h/ha/hazelcast/htdocs/m2repo</url>
+	    </repository>
+	  </distributionManagement>
+
 </project>
