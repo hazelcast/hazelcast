@@ -44,6 +44,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -64,6 +65,8 @@ abstract class BaseManager implements Constants {
 
 	protected final static boolean zeroBackup = false;
 
+    private final static int EVENT_QUEUE_COUNT = 100;
+
 	protected static Logger logger = Logger.getLogger(BaseManager.class.getName());
 
 	protected final static LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
@@ -78,7 +81,7 @@ abstract class BaseManager implements Constants {
 	protected final static Map<String, OrderedEventQueue> mapOrderedEventQueues = new HashMap<String, OrderedEventQueue>(
 			10);
 
-	protected final static EventQueue[] eventQueues = new EventQueue[100];
+	protected final static EventQueue[] eventQueues = new EventQueue[EVENT_QUEUE_COUNT];
 
 	protected final static Map<Long, StreamResponseHandler> mapStreams = new ConcurrentHashMap<Long, StreamResponseHandler>();
 
@@ -97,7 +100,7 @@ abstract class BaseManager implements Constants {
 	protected BaseManager() {
 		thisAddress = Node.get().address;
 		thisMember = Node.get().localMember;
-		for (int i = 0; i < 100; i++) {
+		for (int i = 0; i < EVENT_QUEUE_COUNT; i++) {
 			eventQueues[i] = new EventQueue();
 		}
 	}
@@ -414,45 +417,6 @@ abstract class BaseManager implements Constants {
 		void onDisconnect(Address dead);
 
 		void setId(long id);
-	}
-
-	static class EventQueue extends ConcurrentLinkedQueue<Runnable> implements Runnable {
-		public void run() {
-			final Runnable eventTask = poll();
-			if (eventTask != null)
-				eventTask.run();
-		}
-	}
-
-	static class EventTask extends EntryEvent implements Runnable {
-		protected final Data dataKey;
-
-		protected final Data dataValue; 
-
-		protected final long recordId;
-
-		public EventTask(final int eventType, final String name, final Data dataKey,
-				final Data dataValue, final long recordId) {
-			super(name);
-			this.eventType = eventType; 
-			this.dataValue = dataValue;
-			this.dataKey = dataKey;
-			this.recordId = recordId;
-		}
-
-		public void run() {
-			try {
-				if (!collection) {
-					key = ThreadContext.get().toObject(dataKey);
-				}
-				if (dataValue != null) {
-					value = ThreadContext.get().toObject(dataValue);
-				}
-				ListenerManager.get().callListeners(this);
-			} catch (final Exception e) {
-				e.printStackTrace();
-			}
-		}
 	}
 
 	abstract class LongOp extends TargetAwareOp {
@@ -1265,8 +1229,7 @@ abstract class BaseManager implements Constants {
 	}
 
 	protected boolean sendResponseFailure(final Invocation inv, final Address address) {
-		final Connection conn = ConnectionManager.get().getConnection(address);
-		inv.conn = conn;
+		inv.conn = ConnectionManager.get().getConnection(address);
 		return sendResponseFailure(inv);
 	}
 
@@ -1290,15 +1253,64 @@ abstract class BaseManager implements Constants {
 		} else {
 			int eventQueueIndex = -1;
 			if (eventKey != null) {
-				eventQueueIndex = Math.abs(eventKey.hashCode()) % 100;
+				eventQueueIndex = Math.abs(eventKey.hashCode()) % EVENT_QUEUE_COUNT;
 			} else {
-				eventQueueIndex = Math.abs(from.hashCode()) % 100;
+				eventQueueIndex = Math.abs(from.hashCode()) % EVENT_QUEUE_COUNT;
 			}
 			final EventQueue eventQueue = eventQueues[eventQueueIndex];
-			final boolean offered = eventQueue.offer(eventTask);
-			if (!offered)
-				throw new RuntimeException("event cannot be offered!");
-			executeLocally(eventQueue);
+			final int size = eventQueue.offerRunnable (eventTask);
+			if (size == 1) executeLocally(eventQueue);
+		}
+	}
+
+    static class EventQueue extends ConcurrentLinkedQueue<Runnable> implements Runnable {
+        private AtomicInteger size = new AtomicInteger();
+
+        public int offerRunnable (Runnable runnable) {
+            offer (runnable);
+            return size.incrementAndGet();
+    	}
+		public void run() {
+            while (true) {
+                final Runnable eventTask = poll();
+                if (eventTask != null)   {
+                    eventTask.run();
+                    size.decrementAndGet();
+                } else {
+                    return;
+                }
+            }
+		}
+	}
+
+	static class EventTask extends EntryEvent implements Runnable {
+		protected final Data dataKey;
+
+		protected final Data dataValue;
+
+		protected final long recordId;
+
+		public EventTask(final int eventType, final String name, final Data dataKey,
+				final Data dataValue, final long recordId) {
+			super(name);
+			this.eventType = eventType;
+			this.dataValue = dataValue;
+			this.dataKey = dataKey;
+			this.recordId = recordId;
+		}
+
+		public void run() {
+			try {
+				if (!collection) {
+					key = ThreadContext.get().toObject(dataKey);
+				}
+				if (dataValue != null) {
+					value = ThreadContext.get().toObject(dataValue);
+				}
+				ListenerManager.get().callListeners(this);
+			} catch (final Exception e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
