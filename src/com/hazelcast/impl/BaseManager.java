@@ -217,7 +217,7 @@ abstract class BaseManager implements Constants {
 			this.keyData = key;
 			this.name = name;
 			this.valueData = value;
-			this.copyCount = copyCount;
+			this.copyCount = copyCount - 1;
 		}
 		
 		public SimpleDataEntry (final String name, final Object key, final Object value) {
@@ -249,7 +249,9 @@ abstract class BaseManager implements Constants {
 			if (value == null) {
 				if (valueData != null) {
 					value = ThreadContext.get().toObject(valueData);
-				}
+				} else {
+                    return getKey();
+                }
 			}
 			return value;
 		}
@@ -1045,9 +1047,9 @@ abstract class BaseManager implements Constants {
 			final Object result = request.response;
 			if (result != null) {
 				if (result instanceof Data) {
-					final Data oldValue = (Data) result;
-					if (oldValue != null && oldValue.size() > 0) {
-						doSet(oldValue, inv.value);
+					final Data data = (Data) result;
+					if (data.size() > 0) {
+						doSet(data, inv.value);
 					}
 				}
 			}

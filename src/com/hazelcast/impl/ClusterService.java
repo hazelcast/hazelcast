@@ -30,78 +30,78 @@ import com.hazelcast.impl.BaseManager.Processable;
 import com.hazelcast.nio.InvocationQueue.Invocation;
 
 public class ClusterService implements Runnable, Constants {
-	protected static Logger logger = Logger.getLogger(ClusterService.class.getName());
+    protected static Logger logger = Logger.getLogger(ClusterService.class.getName());
 
-	private static final ClusterService instance = new ClusterService();
+    private static final ClusterService instance = new ClusterService();
 
-	private static final long PERIODIC_CHECK_INTERVAL = TimeUnit.SECONDS.toNanos(1);
+    private static final long PERIODIC_CHECK_INTERVAL = TimeUnit.SECONDS.toNanos(1);
 
-	private static final long UTILIZATION_CHECK_INTERVAL = TimeUnit.SECONDS.toNanos(10);
+    private static final long UTILIZATION_CHECK_INTERVAL = TimeUnit.SECONDS.toNanos(10);
 
-	protected final boolean DEBUG = Build.get().DEBUG;
+    protected final boolean DEBUG = Build.get().DEBUG;
 
-	protected final BlockingQueue queue;
+    protected final BlockingQueue queue;
 
-	protected volatile boolean running = true;
+    protected volatile boolean running = true;
 
-	protected final List lsBuffer = new ArrayList(2000);
+    protected final List lsBuffer = new ArrayList(2000);
 
-	protected long start = 0;
+    protected long start = 0;
 
-	protected long totalProcessTime = 0;
+    protected long totalProcessTime = 0;
 
-	protected long lastPeriodicCheck = 0;
+    protected long lastPeriodicCheck = 0;
 
-	private final InvocationProcessor[] invocationProcessors = new InvocationProcessor[300];
+    private final InvocationProcessor[] invocationProcessors = new InvocationProcessor[300];
 
-	private ClusterService() {
-		this.queue = new LinkedBlockingQueue();		
-	}
+    private ClusterService() {
+        this.queue = new LinkedBlockingQueue();
+    }
 
-	public static ClusterService get() {
-		return instance;
-	}
+    public static ClusterService get() {
+        return instance;
+    }
 
-	void registerInvocationProcessor(int operation, InvocationProcessor invocationProcessor) {
-		if (invocationProcessors[operation] != null) {
-			logger.log(Level.SEVERE, operation + " is registered already with "
-					+ invocationProcessors[operation]);
-		}
-		invocationProcessors[operation] = invocationProcessor;
-	}
+    void registerInvocationProcessor(int operation, InvocationProcessor invocationProcessor) {
+        if (invocationProcessors[operation] != null) {
+            logger.log(Level.SEVERE, operation + " is registered already with "
+                    + invocationProcessors[operation]);
+        }
+        invocationProcessors[operation] = invocationProcessor;
+    }
 
-	public void enqueueAndReturn(final Object message) {
-		try {
-			queue.put(message);
-		} catch (final InterruptedException e) {
-			Node.get().handleInterruptedException(Thread.currentThread(), e);
-		}
-	}
+    public void enqueueAndReturn(final Object message) {
+        try {
+            queue.put(message);
+        } catch (final InterruptedException e) {
+            Node.get().handleInterruptedException(Thread.currentThread(), e);
+        }
+    }
 
-	public void process(final Object obj) {
-		if (!running) return;
-		final long processStart = System.nanoTime();
-		if (obj instanceof Invocation) {
-			final Invocation inv = (Invocation) obj;
-			final MemberImpl memberFrom = ClusterManager.get().getMember(inv.conn.getEndPoint());
-			if (memberFrom != null) {
-				memberFrom.didRead();
-			}
-			InvocationProcessor invocationProcessor = invocationProcessors[inv.operation];
-			if (invocationProcessor == null) {
-				logger.log(Level.SEVERE, "No Invocation processor found for operation : "
-						+ inv.operation);
-			}
-			invocationProcessor.process(inv);
-		} else if (obj instanceof Processable) {
-			((Processable) obj).process();
-		} else {
-			logger.log(Level.SEVERE, "Cannot process. Unknown object: " + obj);
-		}
-		final long processEnd = System.nanoTime();
-		final long elipsedTime = processEnd - processStart;
-		totalProcessTime += elipsedTime;
-		final long duration = (processEnd - start);
+    public void process(final Object obj) {
+        if (!running) return;
+        final long processStart = System.nanoTime();
+        if (obj instanceof Invocation) {
+            final Invocation inv = (Invocation) obj;
+            final MemberImpl memberFrom = ClusterManager.get().getMember(inv.conn.getEndPoint());
+            if (memberFrom != null) {
+                memberFrom.didRead();
+            }
+            InvocationProcessor invocationProcessor = invocationProcessors[inv.operation];
+            if (invocationProcessor == null) {
+                logger.log(Level.SEVERE, "No Invocation processor found for operation : "
+                        + inv.operation);
+            }
+            invocationProcessor.process(inv);
+        } else if (obj instanceof Processable) {
+            ((Processable) obj).process();
+        } else {
+            logger.log(Level.SEVERE, "Cannot process. Unknown object: " + obj);
+        }
+        final long processEnd = System.nanoTime();
+        final long elipsedTime = processEnd - processStart;
+        totalProcessTime += elipsedTime;
+        final long duration = (processEnd - start);
 //		if (duration > UTILIZATION_CHECK_INTERVAL) {
 //			if (DEBUG) {
 //				logger.log(Level.FINEST, "ServiceProcessUtilization: "
@@ -110,83 +110,78 @@ public class ClusterService implements Runnable, Constants {
 //			start = processEnd;
 //			totalProcessTime = 0;
 //		}
-	}
+    }
 
-	public void run() {
-		while (running) {
-			Object obj = null;
-			try {
-				lsBuffer.clear();
-				queue.drainTo(lsBuffer);
-				final int size = lsBuffer.size();
-				if (size > 0) {
-					for (int i = 0; i < size; i++) {
-						obj = lsBuffer.get(i);
-						checkPeriodics();
-						process(obj);
-					}
-					lsBuffer.clear();
-				} else {
-					obj = queue.poll(100, TimeUnit.MILLISECONDS);
-					checkPeriodics();
-					if (obj != null) {
-						process(obj);
-					}
-				}
-			} catch (final InterruptedException e) {
-				Node.get().handleInterruptedException(Thread.currentThread(), e);
-			} catch (final Throwable e) {
-				if (DEBUG) {
-					logger.log(Level.FINEST, e + ",  message: " + e + ", obj=" + obj);
-					logger.log(Level.FINEST, e.getMessage(), e);
-				}
-			}
-		}
-		lsBuffer.clear();
-		queue.clear();
-	}
+    public void run() {
+        while (running) {
+            Object obj = null;
+            try {
+                lsBuffer.clear();
+                queue.drainTo(lsBuffer);
+                final int size = lsBuffer.size();
+                if (size > 0) {
+                    for (int i = 0; i < size; i++) {
+                        obj = lsBuffer.get(i);
+                        checkPeriodics();
+                        process(obj);
+                    }
+                    lsBuffer.clear();
+                } else {
+                    obj = queue.poll(100, TimeUnit.MILLISECONDS);
+                    checkPeriodics();
+                    if (obj != null) {
+                        process(obj);
+                    }
+                }
+            } catch (final InterruptedException e) {
+                Node.get().handleInterruptedException(Thread.currentThread(), e);
+            } catch (final Throwable e) {
+                logger.log(Level.FINEST, e + ",  message: " + e + ", obj=" + obj, e);
 
-	public void run3() {
-		Object obj = null;
-		while (running) {
-			try {
-				obj = queue.take();
-				process(obj);
-			} catch (final InterruptedException e) {
-				Node.get().handleInterruptedException(Thread.currentThread(), e);
-			} catch (final Exception e) {
-				if (DEBUG) {
-					logger.log(Level.FINEST, e + ",  message: " + e.getMessage() + "  obj=" + obj);
-				}
-				e.printStackTrace();
-			}
-		}
-	}
+            }
+        }
+        lsBuffer.clear();
+        queue.clear();
+    }
 
-	public void start() {
-		totalProcessTime = 0;
-		lastPeriodicCheck = 0;
-		start = System.nanoTime();
-		running = true;
-	}
+    public void run3() {
+        Object obj = null;
+        while (running) {
+            try {
+                obj = queue.take();
+                process(obj);
+            } catch (final InterruptedException e) {
+                Node.get().handleInterruptedException(Thread.currentThread(), e);
+            } catch (final Exception e) {
+                logger.log(Level.FINEST, e + ",  message: " + e.getMessage() + "  obj=" + obj, e);
+            }
+        }
+    }
 
-	public void stop() { 		
-		running = false;		
-	}
+    public void start() {
+        totalProcessTime = 0;
+        lastPeriodicCheck = 0;
+        start = System.nanoTime();
+        running = true;
+    }
 
-	@Override
-	public String toString() {
-		return "ClusterService queueSize=" + queue.size() + " master= " + Node.get().master()
-				+ " master= " + Node.get().getMasterAddress();
-	}
+    public void stop() {
+        running = false;
+    }
 
-	private final void checkPeriodics() {
-		final long now = System.nanoTime();
-		if ((now - lastPeriodicCheck) > PERIODIC_CHECK_INTERVAL) {
-			ClusterManager.get().heartBeater();
-			ClusterManager.get().checkScheduledActions();
-			lastPeriodicCheck = now;
-		}
-	}
+    @Override
+    public String toString() {
+        return "ClusterService queueSize=" + queue.size() + " master= " + Node.get().master()
+                + " master= " + Node.get().getMasterAddress();
+    }
+
+    private final void checkPeriodics() {
+        final long now = System.nanoTime();
+        if ((now - lastPeriodicCheck) > PERIODIC_CHECK_INTERVAL) {
+            ClusterManager.get().heartBeater();
+            ClusterManager.get().checkScheduledActions();
+            lastPeriodicCheck = now;
+        }
+    }
 
 }

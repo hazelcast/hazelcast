@@ -205,15 +205,13 @@ class ConcurrentMapManager extends BaseManager {
 		for (Block block : blocks) {
 			if (deadAddress.equals(block.owner)) {
 				MemberImpl member = getNextMemberBeforeSync(block.owner, true, 1);
-				Address addressNewOwner = (member == null) ? thisAddress : member.getAddress();
-				block.owner = addressNewOwner;
+				block.owner = (member == null) ? thisAddress : member.getAddress();
 			}
 			if (block.migrationAddress != null) {
 				if (deadAddress.equals(block.migrationAddress)) {
 					MemberImpl member = getNextMemberBeforeSync(block.migrationAddress, true, 1);
-					Address addressNewMigrationAddress = (member == null) ? thisAddress : member
+					block.migrationAddress = (member == null) ? thisAddress : member
 							.getAddress();
-					block.migrationAddress = addressNewMigrationAddress;
 				}
 			}
 		}
@@ -256,7 +254,7 @@ class ConcurrentMapManager extends BaseManager {
 				} else {
 					if (!block.isMigrating()) {
 						Integer countInt = addressBlocks.get(block.owner);
-						int count = (countInt == null) ? 0 : countInt.intValue();
+						int count = (countInt == null) ? 0 : countInt;
 						if (count >= aveBlockOwnCount) {
 							lsBlocksToRedistribute.add(block);
 						} else {
@@ -616,7 +614,7 @@ class ConcurrentMapManager extends BaseManager {
 
 		@Override
 		void setTarget() {
-			setTargetBasedOnBlockId();
+			setTargetBasedOnBlockId(); 
 		}
 	}
 
@@ -750,7 +748,7 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		public void sendBackup(int operation, boolean hardCopy, BackupInfo bi, int distance) {
-			System.out.println("sendBackup key " + bi.key);
+//			System.out.println("sendBackup key " + bi.key);
 			Data key = (hardCopy) ? doHardCopy(bi.key) : bi.key;
 			Data value = (hardCopy) ? doHardCopy(bi.value) : bi.value;
 
@@ -890,10 +888,9 @@ class ConcurrentMapManager extends BaseManager {
 			TransactionImpl txn = threadContext.txn;
 			if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
 				try {
-					boolean locked = false;
 					if (!txn.has(name, key)) {
 						MLock mlock = threadContext.getMLock();
-						locked = mlock.lock(name, key, DEFAULT_TXN_TIMEOUT, txn.getId());
+						boolean locked = mlock.lock(name, key, DEFAULT_TXN_TIMEOUT, txn.getId());
 						if (!locked)
 							throwCME(key);
 						Object oldObject = null;
@@ -1556,18 +1553,20 @@ class ConcurrentMapManager extends BaseManager {
 	}
 
 	void handleRead(Invocation inv) {
-		remoteReq.setInvocation(inv);
-		doRead(remoteReq);
-		Record record = (Record) remoteReq.response;
-		if (record != null) {
-			inv.recordId = record.id;
-			inv.longValue = record.getCopyCount();
-			doHardCopy(record.getKey(), inv.key);
-			doHardCopy(record.getValue(), inv.value);
-		}
-		sendResponse(inv);
-		remoteReq.reset();
-	}
+            remoteReq.setInvocation(inv);
+            doRead(remoteReq);
+            Record record = (Record) remoteReq.response;
+            if (record != null) {
+                inv.recordId = record.id;
+                inv.longValue = record.getCopyCount();
+                doHardCopy(record.getKey(), inv.key);
+                if (record.getValue() != null) {
+                    doHardCopy(record.getValue(), inv.value);
+                }
+            }
+            sendResponse(inv);
+            remoteReq.reset();
+    }
 
 	void handleAdd(Invocation inv) {
 		if (rightRemoteTarget(inv)) {
@@ -2016,7 +2015,7 @@ class ConcurrentMapManager extends BaseManager {
 					size += record.valueCount();
 				}
 			}
-			System.out.println(size + " is size.. backup.size " + backupSize());
+//			System.out.println(size + " is size.. backup.size " + backupSize());
 			return size;
 		}
 
@@ -2063,18 +2062,17 @@ class ConcurrentMapManager extends BaseManager {
 			return null;
 		}
 
-		public boolean add(Request req) {
+		public boolean add(Request req) { 
 			Record record = getRecord(req.key);
 			if (record == null) {
-				req.value = ThreadContext.get().hardCopy(req.key);
-				record = createNewRecord(req.key, req.value);
+				record = createNewRecord(req.key, null);
+                req.key = null;
 			} else {
-				if (req.operation == OP_CMAP_ADD_TO_LIST) {
-					record.incrementCopyAndGet();
-				} else {
+				if (req.operation == OP_CMAP_ADD_TO_SET) { 
 					return false;
 				}
 			}
+            record.incrementCopyAndGet();
 			return true;
 		}
 
@@ -2321,7 +2319,11 @@ class ConcurrentMapManager extends BaseManager {
 				}
 			} else if (lsValues != null) {
 				count = lsValues.size();
-			}
+			} else {
+                if (copyCount != null) {
+					count += copyCount.get();
+				}
+            }
 			return count;
 		}
 
@@ -2490,7 +2492,7 @@ class ConcurrentMapManager extends BaseManager {
 
 		public int incrementCopyAndGet() {
 			if (copyCount == null)
-				copyCount = new AtomicInteger(1);
+				copyCount = new AtomicInteger(0);
 			return copyCount.incrementAndGet();
 		}
 
