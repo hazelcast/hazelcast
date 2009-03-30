@@ -34,40 +34,41 @@ import com.hazelcast.impl.BaseManager.Processable;
 public class ExecutorServiceProxy implements ExecutorService, Constants {
 
 	public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-		return false;
+		throw new UnsupportedOperationException();
 	}
 
 	public List invokeAll(Collection tasks) throws InterruptedException {
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	public List invokeAll(Collection tasks, long timeout, TimeUnit unit)
 			throws InterruptedException {
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	public Object invokeAny(Collection tasks) throws InterruptedException, ExecutionException {
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	public Object invokeAny(Collection tasks, long timeout, TimeUnit unit)
 			throws InterruptedException, ExecutionException, TimeoutException {
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	public boolean isShutdown() {
-		return false;
+		throw new UnsupportedOperationException();
 	}
 
 	public boolean isTerminated() {
-		return false;
+		throw new UnsupportedOperationException();
 	}
 
 	public void shutdown() {
+        throw new UnsupportedOperationException();
 	}
 
 	public List<Runnable> shutdownNow() {
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	public <T> Future<T> submit(Callable<T> task) {
