@@ -21,17 +21,17 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 public class CoreDump {
-	StringWriter sw = new StringWriter();
+    StringWriter sw = new StringWriter();
 
-	PrintWriter printWriter = new PrintWriter(sw);
+    PrintWriter printWriter = new PrintWriter(sw);
 
-	public PrintWriter getPrintWriter() {
-		return printWriter;
-	}
+    public PrintWriter getPrintWriter() {
+        return printWriter;
+    }
 
-	@Override
-	public String toString() {
-		return sw.toString();
-	}
+    @Override
+    public String toString() {
+        return sw.toString();
+    }
 
 }

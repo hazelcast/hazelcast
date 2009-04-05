@@ -23,96 +23,96 @@ import com.hazelcast.impl.ClusterService;
 import com.hazelcast.impl.ClusterManager.AddRemoveConnection;
 
 public class Connection {
-	SocketChannel socketChannel;
+    SocketChannel socketChannel;
 
-	ReadHandler readHandler;
+    ReadHandler readHandler;
 
-	WriteHandler writeHandler;
+    WriteHandler writeHandler;
 
-	private volatile boolean live = true;
+    private volatile boolean live = true;
 
-	Address endPoint = null; 
+    Address endPoint = null;
 
-	int localPort = -1;
+    int localPort = -1;
 
-	public Connection(SocketChannel socketChannel) {
-		super();
-		this.socketChannel = socketChannel;
-		this.writeHandler = new WriteHandler(this);
-		this.readHandler = new ReadHandler(this); 
-	}
+    public Connection(SocketChannel socketChannel) {
+        super();
+        this.socketChannel = socketChannel;
+        this.writeHandler = new WriteHandler(this);
+        this.readHandler = new ReadHandler(this);
+    }
 
-	public SocketChannel getSocketChannel() {
-		return socketChannel;
-	}
+    public SocketChannel getSocketChannel() {
+        return socketChannel;
+    }
 
-	public ReadHandler getReadHandler() {
-		return readHandler;
-	}
+    public ReadHandler getReadHandler() {
+        return readHandler;
+    }
 
-	public WriteHandler getWriteHandler() {
-		return writeHandler;
-	}
+    public WriteHandler getWriteHandler() {
+        return writeHandler;
+    }
 
-	public void setLive(boolean live) {
-		this.live = live;
-	}
+    public void setLive(boolean live) {
+        this.live = live;
+    }
 
-	public boolean live() {
-		return live;
-	}
+    public boolean live() {
+        return live;
+    }
 
-	public Address getEndPoint() {
-		return endPoint;
-	}
+    public Address getEndPoint() {
+        return endPoint;
+    }
 
-	public void setEndPoint(Address endPoint) {
-		this.endPoint = endPoint;
-	}
+    public void setEndPoint(Address endPoint) {
+        this.endPoint = endPoint;
+    }
 
-	@Override
-	public int hashCode() {
-		final int PRIME = 31;
-		int result = 1;
-		result = PRIME * result + ((endPoint == null) ? 0 : endPoint.hashCode());
-		return result;
-	}
+    @Override
+    public int hashCode() {
+        final int PRIME = 31;
+        int result = 1;
+        result = PRIME * result + ((endPoint == null) ? 0 : endPoint.hashCode());
+        return result;
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		final Connection other = (Connection) obj;
-		if (endPoint == null) {
-			if (other.endPoint != null)
-				return false;
-		} else if (!endPoint.equals(other.endPoint))
-			return false;
-		return true;
-	}
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        final Connection other = (Connection) obj;
+        if (endPoint == null) {
+            if (other.endPoint != null)
+                return false;
+        } else if (!endPoint.equals(other.endPoint))
+            return false;
+        return true;
+    }
 
-	public void close() {
-		if (!live)
-			return;
-		live = false;
-		try {
-			if (socketChannel != null && socketChannel.isOpen())
-				socketChannel.close();
-			readHandler.shutdown();
-			writeHandler.shutdown();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		ConnectionManager.get().remove(this);
-		ClusterService.get().enqueueAndReturn(new AddRemoveConnection(endPoint, false));
-	}
+    public void close() {
+        if (!live)
+            return;
+        live = false;
+        try {
+            if (socketChannel != null && socketChannel.isOpen())
+                socketChannel.close();
+            readHandler.shutdown();
+            writeHandler.shutdown();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        ConnectionManager.get().remove(this);
+        ClusterService.get().enqueueAndReturn(new AddRemoveConnection(endPoint, false));
+    }
 
-	@Override
-	public String toString() {
-		return "Connection [" + this.endPoint + "] live=" + live;
-	}
+    @Override
+    public String toString() {
+        return "Connection [" + this.endPoint + "] live=" + live;
+    }
 }

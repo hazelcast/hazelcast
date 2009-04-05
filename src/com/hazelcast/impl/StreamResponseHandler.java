@@ -18,5 +18,5 @@
 package com.hazelcast.impl;
 
 public interface StreamResponseHandler {
-	void handleStreamResponse(Object response);
+    void handleStreamResponse(Object response);
 }

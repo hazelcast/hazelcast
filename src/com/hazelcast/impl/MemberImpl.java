@@ -27,108 +27,108 @@ import com.hazelcast.nio.Address;
 
 public class MemberImpl implements Member {
 
-	private final boolean localMember;
+    private final boolean localMember;
 
-	private final Address address;
+    private final Address address;
 
-	private final int nodeType;
+    private final int nodeType;
 
-	private long lastRead = 0;
+    private long lastRead = 0;
 
-	private long lastWrite = 0;
+    private long lastWrite = 0;
 
-	public MemberImpl(Address address, boolean localMember, int nodeType) {
-		super();
-		this.nodeType = nodeType;
-		this.localMember = localMember;
-		this.address = address;
-		this.lastRead = System.currentTimeMillis();
-	}
+    public MemberImpl(Address address, boolean localMember, int nodeType) {
+        super();
+        this.nodeType = nodeType;
+        this.localMember = localMember;
+        this.address = address;
+        this.lastRead = System.currentTimeMillis();
+    }
 
-	public Address getAddress() {
-		return address;
-	}
+    public Address getAddress() {
+        return address;
+    }
 
-	public int getPort() {
-		return address.getPort();
-	}
+    public int getPort() {
+        return address.getPort();
+    }
 
-	public int getNodeType() {
-		return nodeType;
-	}
+    public int getNodeType() {
+        return nodeType;
+    }
 
-	public InetAddress getInetAddress() {
-		try {
-			return address.getInetAddress();
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
+    public InetAddress getInetAddress() {
+        try {
+            return address.getInetAddress();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
-	public boolean localMember() {
-		return localMember;
-	}
+    public boolean localMember() {
+        return localMember;
+    }
 
-	public void didWrite() {
-		lastWrite = System.currentTimeMillis();
-	}
+    public void didWrite() {
+        lastWrite = System.currentTimeMillis();
+    }
 
-	public void didRead() {
-		lastRead = System.currentTimeMillis();
-	}
+    public void didRead() {
+        lastRead = System.currentTimeMillis();
+    }
 
-	public long getLastRead() {
-		return lastRead;
-	}
+    public long getLastRead() {
+        return lastRead;
+    }
 
-	public long getLastWrite() {
-		return lastWrite;
-	}
+    public long getLastWrite() {
+        return lastWrite;
+    }
 
-	public boolean superClient() {
-		return (nodeType == NODE_SUPER_CLIENT);
-	}
+    public boolean superClient() {
+        return (nodeType == NODE_SUPER_CLIENT);
+    }
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder("Member [");
-		sb.append(address.getHost());
-		sb.append(":");
-		sb.append(address.getPort());
-		sb.append("] ");
-		if (localMember) {
-			sb.append("this ");
-		}
-		if (Node.DEBUG && address.equals(Node.get().getMasterAddress())) {
-			sb.append("* ");
-		}
-		return sb.toString();
-	}
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Member [");
+        sb.append(address.getHost());
+        sb.append(":");
+        sb.append(address.getPort());
+        sb.append("] ");
+        if (localMember) {
+            sb.append("this ");
+        }
+        if (Node.DEBUG && address.equals(Node.get().getMasterAddress())) {
+            sb.append("* ");
+        }
+        return sb.toString();
+    }
 
-	@Override
-	public int hashCode() {
-		final int PRIME = 31;
-		int result = 1;
-		result = PRIME * result + ((address == null) ? 0 : address.hashCode());
-		return result;
-	}
+    @Override
+    public int hashCode() {
+        final int PRIME = 31;
+        int result = 1;
+        result = PRIME * result + ((address == null) ? 0 : address.hashCode());
+        return result;
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		final MemberImpl other = (MemberImpl) obj;
-		if (address == null) {
-			if (other.address != null)
-				return false;
-		} else if (!address.equals(other.address))
-			return false;
-		return true;
-	}
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        final MemberImpl other = (MemberImpl) obj;
+        if (address == null) {
+            if (other.address != null)
+                return false;
+        } else if (!address.equals(other.address))
+            return false;
+        return true;
+    }
 
 }

@@ -18,5 +18,5 @@
 package com.hazelcast.core;
 
 public interface IdGenerator {
-	long newId();
+    long newId();
 }

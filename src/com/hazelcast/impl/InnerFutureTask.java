@@ -24,25 +24,25 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Member;
 
 public interface InnerFutureTask<V> {
-	void innerSet(V value);
+    void innerSet(V value);
 
-	void innerSetException(Throwable throwable);
+    void innerSetException(Throwable throwable);
 
-	void innerSetMemberLeft(Member member);
+    void innerSetMemberLeft(Member member);
 
-	void innerDone();
+    void innerDone();
 
-	boolean cancel(boolean mayInterruptIfRunning);
+    boolean cancel(boolean mayInterruptIfRunning);
 
-	Callable<V> getCallable();
+    Callable<V> getCallable();
 
-	Object getKey();
+    Object getKey();
 
-	Member getMember();
+    Member getMember();
 
-	Set<Member> getMembers();
+    Set<Member> getMembers();
 
-	void setExecutionManagerCallback(ExecutionManagerCallback action);
+    void setExecutionManagerCallback(ExecutionManagerCallback action);
 
-	ExecutionCallback<V> getExecutionCallback();
+    ExecutionCallback<V> getExecutionCallback();
 }

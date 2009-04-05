@@ -29,62 +29,62 @@ import javax.servlet.ServletResponse;
 import com.hazelcast.web.WebFilter.RequestWrapper;
 
 public class ServletWrapper extends ServletBase {
-	GenericServlet base = null;
+    GenericServlet base = null;
 
-	public static final String HAZELCAST_BASE_SERVLET_CLASS = "*hazelcast-base-servlet-class";
+    public static final String HAZELCAST_BASE_SERVLET_CLASS = "*hazelcast-base-servlet-class";
 
-	private void initBase(ServletConfig servletConfig) {
-		if (base == null) {
-			String baseClassName = servletConfig.getInitParameter(HAZELCAST_BASE_SERVLET_CLASS);
-			try {
-				base = (GenericServlet) Class.forName(baseClassName).newInstance();
-				debug("Will use base servlet class " + base);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
+    private void initBase(ServletConfig servletConfig) {
+        if (base == null) {
+            String baseClassName = servletConfig.getInitParameter(HAZELCAST_BASE_SERVLET_CLASS);
+            try {
+                base = (GenericServlet) Class.forName(baseClassName).newInstance();
+                debug("Will use base servlet class " + base);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
-	@Override
-	public void init(ServletConfig servletConfig) throws ServletException {
-		super.init(servletConfig);
-		initBase(servletConfig);
-		base.init(getServletConfig());
-	}
+    @Override
+    public void init(ServletConfig servletConfig) throws ServletException {
+        super.init(servletConfig);
+        initBase(servletConfig);
+        base.init(getServletConfig());
+    }
 
-	@Override
-	public void destroy() {
-		base.destroy();
-	}
+    @Override
+    public void destroy() {
+        base.destroy();
+    }
 
-	@Override
-	public String getInitParameter(String name) {
-		return base.getInitParameter(name);
-	}
+    @Override
+    public String getInitParameter(String name) {
+        return base.getInitParameter(name);
+    }
 
-	@Override
-	public Enumeration getInitParameterNames() {
-		return base.getInitParameterNames();
-	}
+    @Override
+    public Enumeration getInitParameterNames() {
+        return base.getInitParameterNames();
+    }
 
-	@Override
-	public void service(ServletRequest req, ServletResponse res) throws IOException,
-			ServletException {
-		if (!(req instanceof RequestWrapper)) {
-			ServletRequest reqHazel = (ServletRequest) req
-					.getAttribute(WebFilter.HAZELCAST_REQUEST);
-			if (reqHazel != null)
-				req = reqHazel;
-		}
-		base.service(req, res);
-	}
+    @Override
+    public void service(ServletRequest req, ServletResponse res) throws IOException,
+            ServletException {
+        if (!(req instanceof RequestWrapper)) {
+            ServletRequest reqHazel = (ServletRequest) req
+                    .getAttribute(WebFilter.HAZELCAST_REQUEST);
+            if (reqHazel != null)
+                req = reqHazel;
+        }
+        base.service(req, res);
+    }
 
-	public String getServiceName() {
-		return base.getServletName();
-	}
+    public String getServiceName() {
+        return base.getServletName();
+    }
 
-	@Override
-	public String getServletInfo() {
-		return base.getServletInfo();
-	}
+    @Override
+    public String getServletInfo() {
+        return base.getServletInfo();
+    }
 }

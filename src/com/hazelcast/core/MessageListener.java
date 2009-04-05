@@ -20,5 +20,5 @@ package com.hazelcast.core;
 import java.util.EventListener;
 
 public interface MessageListener<E> extends EventListener {
-	void onMessage(E msg);
+    void onMessage(E msg);
 }

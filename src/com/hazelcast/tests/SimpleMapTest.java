@@ -26,81 +26,81 @@ import com.hazelcast.core.Hazelcast;
 
 public class SimpleMapTest {
 
-	public static final int ENTRY_COUNT = 10 * 1000;
-	public static final int VALUE_SIZE = 1000;
-	public static final int STATS_SECONDS = 10;
+    public static final int ENTRY_COUNT = 10 * 1000;
+    public static final int VALUE_SIZE = 1000;
+    public static final int STATS_SECONDS = 10;
 
-	public static void main(String[] args) {
-		int threadCount = 40;
-		final Stats stats = new Stats();
-		ExecutorService es = Executors.newFixedThreadPool(threadCount);
-		for (int i = 0; i < threadCount; i++) {
-			es.submit(new Runnable() {
-				public void run() {
-					Map<String, byte[]> map = Hazelcast.getMap("default");
-					while (true) {
-						int key = (int) (Math.random()  * ENTRY_COUNT);
-						int operation = ((int) (Math.random() * 100)) % 10;
-						if (operation < 4) {
-							map.put(String.valueOf(key), new byte[VALUE_SIZE]);
-							stats.mapPuts.incrementAndGet();
-						} else if (operation < 8) {
-							map.get(String.valueOf(key));
-							stats.mapGets.incrementAndGet();
-						} else {
-							map.remove(String.valueOf(key));
-							stats.mapRemoves.incrementAndGet();
-						}
-					}
-				}
-			});
-		}
+    public static void main(String[] args) {
+        int threadCount = 40;
+        final Stats stats = new Stats();
+        ExecutorService es = Executors.newFixedThreadPool(threadCount);
+        for (int i = 0; i < threadCount; i++) {
+            es.submit(new Runnable() {
+                public void run() {
+                    Map<String, byte[]> map = Hazelcast.getMap("default");
+                    while (true) {
+                        int key = (int) (Math.random() * ENTRY_COUNT);
+                        int operation = ((int) (Math.random() * 100)) % 10;
+                        if (operation < 4) {
+                            map.put(String.valueOf(key), new byte[VALUE_SIZE]);
+                            stats.mapPuts.incrementAndGet();
+                        } else if (operation < 8) {
+                            map.get(String.valueOf(key));
+                            stats.mapGets.incrementAndGet();
+                        } else {
+                            map.remove(String.valueOf(key));
+                            stats.mapRemoves.incrementAndGet();
+                        }
+                    }
+                }
+            });
+        }
 
-		Executors.newSingleThreadExecutor().submit(new Runnable() {
-			public void run() {
-				while (true) {
-					try {
-						Thread.sleep(STATS_SECONDS * 1000);
-						System.out.println("cluster size:"
-								+ Hazelcast.getCluster().getMembers().size());
-						Stats currentStats = stats.getAndReset();
-						System.out.println(currentStats);
-						System.out.println("Operations per Second : " + currentStats.total()
-								/ STATS_SECONDS);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-			}
-		});
-	}
+        Executors.newSingleThreadExecutor().submit(new Runnable() {
+            public void run() {
+                while (true) {
+                    try {
+                        Thread.sleep(STATS_SECONDS * 1000);
+                        System.out.println("cluster size:"
+                                + Hazelcast.getCluster().getMembers().size());
+                        Stats currentStats = stats.getAndReset();
+                        System.out.println(currentStats);
+                        System.out.println("Operations per Second : " + currentStats.total()
+                                / STATS_SECONDS);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+    }
 
-	public static class Stats {
-		public AtomicLong mapPuts = new AtomicLong();
-		public AtomicLong mapGets = new AtomicLong();
-		public AtomicLong mapRemoves = new AtomicLong();
+    public static class Stats {
+        public AtomicLong mapPuts = new AtomicLong();
+        public AtomicLong mapGets = new AtomicLong();
+        public AtomicLong mapRemoves = new AtomicLong();
 
-		public Stats getAndReset() {
-			long mapPutsNow = mapPuts.getAndSet(0);
-			long mapGetsNow = mapGets.getAndSet(0);
-			long mapRemovesNow = mapRemoves.getAndSet(0);
+        public Stats getAndReset() {
+            long mapPutsNow = mapPuts.getAndSet(0);
+            long mapGetsNow = mapGets.getAndSet(0);
+            long mapRemovesNow = mapRemoves.getAndSet(0);
 
-			Stats newOne = new Stats();
+            Stats newOne = new Stats();
 
-			newOne.mapPuts.set(mapPutsNow);
-			newOne.mapGets.set(mapGetsNow);
-			newOne.mapRemoves.set(mapRemovesNow);
+            newOne.mapPuts.set(mapPutsNow);
+            newOne.mapGets.set(mapGetsNow);
+            newOne.mapRemoves.set(mapRemovesNow);
 
-			return newOne;
-		}
+            return newOne;
+        }
 
-		public long total() {
-			return mapPuts.get() + mapGets.get() + mapRemoves.get();
-		}
+        public long total() {
+            return mapPuts.get() + mapGets.get() + mapRemoves.get();
+        }
 
-		public String toString() {
-			return "total= " + total() + ", puts:" + mapPuts.get() + ", gets:" + mapGets.get()
-					+ ", remove:" + mapRemoves.get();
-		}
-	}
+        public String toString() {
+            return "total= " + total() + ", puts:" + mapPuts.get() + ", gets:" + mapGets.get()
+                    + ", remove:" + mapRemoves.get();
+        }
+    }
 }

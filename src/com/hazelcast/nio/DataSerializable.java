@@ -23,7 +23,7 @@ import java.io.IOException;
 
 public interface DataSerializable {
 
-	void writeData(DataOutput out) throws IOException;
+    void writeData(DataOutput out) throws IOException;
 
-	void readData(DataInput in) throws IOException;
+    void readData(DataInput in) throws IOException;
 }

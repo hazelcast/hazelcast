@@ -23,12 +23,12 @@ import java.util.logging.Logger;
 import com.hazelcast.impl.Build;
 
 public class JcaBase {
-	protected static Logger logger = Logger.getLogger(JcaBase.class.getName());
+    protected static Logger logger = Logger.getLogger(JcaBase.class.getName());
 
-	private static final boolean DEBUG = Build.DEBUG;
+    private static final boolean DEBUG = Build.DEBUG;
 
-	public void log(final Object caller, final Object msg) {
-		if (DEBUG)
-			logger.log(Level.FINEST, caller + " : " + msg);
-	}
+    public void log(final Object caller, final Object msg) {
+        if (DEBUG)
+            logger.log(Level.FINEST, caller + " : " + msg);
+    }
 }

@@ -18,7 +18,7 @@
 package com.hazelcast.impl;
 
 public interface DistributedRunnableAdapter<V> {
-	V getResult();
+    V getResult();
 
-	Runnable getRunnable();
+    Runnable getRunnable();
 }

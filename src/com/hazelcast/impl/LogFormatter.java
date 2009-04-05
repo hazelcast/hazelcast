@@ -25,30 +25,30 @@ import java.util.logging.LogRecord;
 
 public class LogFormatter extends Formatter {
 
-	private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
-	@Override
-	public String format(LogRecord record) {
-		if (record.getLoggerName().equals("com.hazelcast.system")) {
-			return record.getMessage() + LINE_SEPARATOR;
-		}
-		StringBuilder sb = new StringBuilder();
-		sb.append(new Date(record.getMillis())).append(" ").append(
-				record.getLevel().getLocalizedName()).append(": ").append(
-				"[" + record.getSourceClassName() + "] ").append(record.getMessage()).append(
-				LINE_SEPARATOR);
+    @Override
+    public String format(LogRecord record) {
+        if (record.getLoggerName().equals("com.hazelcast.system")) {
+            return record.getMessage() + LINE_SEPARATOR;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(new Date(record.getMillis())).append(" ").append(
+                record.getLevel().getLocalizedName()).append(": ").append(
+                "[" + record.getSourceClassName() + "] ").append(record.getMessage()).append(
+                LINE_SEPARATOR);
 
-		if (record.getThrown() != null) {
-			try {
-				StringWriter sw = new StringWriter();
-				PrintWriter pw = new PrintWriter(sw);
-				record.getThrown().printStackTrace(pw);
-				pw.close();
-				sb.append(sw.toString());
-			} catch (Exception ignored) {
-			}
-		}
+        if (record.getThrown() != null) {
+            try {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                record.getThrown().printStackTrace(pw);
+                pw.close();
+                sb.append(sw.toString());
+            } catch (Exception ignored) {
+            }
+        }
 
-		return sb.toString();
-	}
+        return sb.toString();
+    }
 }

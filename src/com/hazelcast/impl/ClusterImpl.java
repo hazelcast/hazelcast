@@ -38,210 +38,210 @@ import com.hazelcast.nio.DataSerializable;
 
 public class ClusterImpl implements Cluster {
 
-	AtomicReference<Set> refListeners = new AtomicReference<Set>();
+    AtomicReference<Set> refListeners = new AtomicReference<Set>();
 
-	AtomicReference<Set> refMembers = new AtomicReference<Set>();
+    AtomicReference<Set> refMembers = new AtomicReference<Set>();
 
-	AtomicReference<ClusterMember> refLocalMember = new AtomicReference<ClusterMember>();
+    AtomicReference<ClusterMember> refLocalMember = new AtomicReference<ClusterMember>();
 
-	Map<ClusterMember, ClusterMember> mapClusterMembers = new ConcurrentHashMap<ClusterMember, ClusterMember>();
+    Map<ClusterMember, ClusterMember> mapClusterMembers = new ConcurrentHashMap<ClusterMember, ClusterMember>();
 
-	long clusterTimeDiff = 0;
+    long clusterTimeDiff = 0;
 
-	ClusterImpl() {
+    ClusterImpl() {
 
-	}
+    }
 
-	public void setMembers(List<MemberImpl> lsMembers) {
-		final Set<MembershipListener> setListeners = refListeners.get();
-		Set<ClusterMember> setNew = new LinkedHashSet<ClusterMember>(lsMembers.size());
-		for (MemberImpl member : lsMembers) {
-			final ClusterMember dummy = new ClusterMember(member.getAddress(), member.localMember());
-			ClusterMember clusterMember = mapClusterMembers.get(dummy);
-			if (clusterMember == null) {
-				clusterMember = dummy;
-				if (setListeners != null && setListeners.size() > 0) {
-					new Thread(new Runnable() {
-						public void run() {
-							MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
-									dummy, MembershipEvent.MEMBER_ADDED);
-							for (MembershipListener listener : setListeners) {
-								listener.memberAdded(membershipEvent);
-							}
-						}
-					}).start();
-				}
-			}
-			if (clusterMember.localMember()) {
-				refLocalMember.set(clusterMember);
-			}
-			setNew.add(clusterMember);
-		}
-		if (setListeners != null && setListeners.size() > 0) {
-			Set<ClusterMember> it = mapClusterMembers.keySet();
-			for (final ClusterMember cm : it) {
-				if (!setNew.contains(cm)) {
-					new Thread(new Runnable() {
-						public void run() {
-							MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
-									cm, MembershipEvent.MEMBER_REMOVED);
-							for (MembershipListener listener : setListeners) {
-								listener.memberRemoved(membershipEvent);
-							}
-						}
-					}).start();
-				}
-			}
-		}
+    public void setMembers(List<MemberImpl> lsMembers) {
+        final Set<MembershipListener> setListeners = refListeners.get();
+        Set<ClusterMember> setNew = new LinkedHashSet<ClusterMember>(lsMembers.size());
+        for (MemberImpl member : lsMembers) {
+            final ClusterMember dummy = new ClusterMember(member.getAddress(), member.localMember());
+            ClusterMember clusterMember = mapClusterMembers.get(dummy);
+            if (clusterMember == null) {
+                clusterMember = dummy;
+                if (setListeners != null && setListeners.size() > 0) {
+                    new Thread(new Runnable() {
+                        public void run() {
+                            MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
+                                    dummy, MembershipEvent.MEMBER_ADDED);
+                            for (MembershipListener listener : setListeners) {
+                                listener.memberAdded(membershipEvent);
+                            }
+                        }
+                    }).start();
+                }
+            }
+            if (clusterMember.localMember()) {
+                refLocalMember.set(clusterMember);
+            }
+            setNew.add(clusterMember);
+        }
+        if (setListeners != null && setListeners.size() > 0) {
+            Set<ClusterMember> it = mapClusterMembers.keySet();
+            for (final ClusterMember cm : it) {
+                if (!setNew.contains(cm)) {
+                    new Thread(new Runnable() {
+                        public void run() {
+                            MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
+                                    cm, MembershipEvent.MEMBER_REMOVED);
+                            for (MembershipListener listener : setListeners) {
+                                listener.memberRemoved(membershipEvent);
+                            }
+                        }
+                    }).start();
+                }
+            }
+        }
 
-		mapClusterMembers.clear();
-		for (ClusterMember cm : setNew) {
-			mapClusterMembers.put(cm, cm);
-		}
-		refMembers.set(setNew);
-	}
+        mapClusterMembers.clear();
+        for (ClusterMember cm : setNew) {
+            mapClusterMembers.put(cm, cm);
+        }
+        refMembers.set(setNew);
+    }
 
-	public void addMembershipListener(MembershipListener listener) {
-		Set<MembershipListener> setOldListeners = refListeners.get();
-		int size = (setOldListeners == null) ? 1 : setOldListeners.size() + 1;
-		Set<MembershipListener> setNewListeners = new LinkedHashSet<MembershipListener>(size);
-		if (setOldListeners != null) {
-			for (MembershipListener existingListener : setOldListeners) {
-				setNewListeners.add(existingListener);
-			}
-		}
-		setNewListeners.add(listener);
-		refListeners.set(setNewListeners);
-	}
+    public void addMembershipListener(MembershipListener listener) {
+        Set<MembershipListener> setOldListeners = refListeners.get();
+        int size = (setOldListeners == null) ? 1 : setOldListeners.size() + 1;
+        Set<MembershipListener> setNewListeners = new LinkedHashSet<MembershipListener>(size);
+        if (setOldListeners != null) {
+            for (MembershipListener existingListener : setOldListeners) {
+                setNewListeners.add(existingListener);
+            }
+        }
+        setNewListeners.add(listener);
+        refListeners.set(setNewListeners);
+    }
 
-	public void removeMembershipListener(MembershipListener listener) {
-		Set<MembershipListener> setOldListeners = refListeners.get();
-		if (setOldListeners == null || setOldListeners.size() == 0)
-			return;
-		int size = setOldListeners.size() - 1;
-		Set<MembershipListener> setNewListeners = new LinkedHashSet<MembershipListener>(size);
-		for (MembershipListener existingListener : setOldListeners) {
-			if (existingListener.equals(listener))
-				setNewListeners.add(existingListener);
-		}
-		refListeners.set(setNewListeners);
-	}
+    public void removeMembershipListener(MembershipListener listener) {
+        Set<MembershipListener> setOldListeners = refListeners.get();
+        if (setOldListeners == null || setOldListeners.size() == 0)
+            return;
+        int size = setOldListeners.size() - 1;
+        Set<MembershipListener> setNewListeners = new LinkedHashSet<MembershipListener>(size);
+        for (MembershipListener existingListener : setOldListeners) {
+            if (existingListener.equals(listener))
+                setNewListeners.add(existingListener);
+        }
+        refListeners.set(setNewListeners);
+    }
 
-	public Member getLocalMember() {
-		return refLocalMember.get();
-	}
+    public Member getLocalMember() {
+        return refLocalMember.get();
+    }
 
-	public Set<Member> getMembers() {
-		return refMembers.get();
-	}
+    public Set<Member> getMembers() {
+        return refMembers.get();
+    }
 
-	@Override
-	public String toString() {
-		Set<Member> members = getMembers();
-		StringBuffer sb = new StringBuffer("Cluster [");
-		if (members != null) {
-			sb.append(members.size());
-			sb.append("] {");
-			for (Member member : members) {
-				sb.append("\n\t" + member);
-				if (member.localMember()) {
-					sb.append(" local");
-				}
-			}
-		}
-		sb.append("\n}\n");
-		return sb.toString();
-	}
+    @Override
+    public String toString() {
+        Set<Member> members = getMembers();
+        StringBuffer sb = new StringBuffer("Cluster [");
+        if (members != null) {
+            sb.append(members.size());
+            sb.append("] {");
+            for (Member member : members) {
+                sb.append("\n\t" + member);
+                if (member.localMember()) {
+                    sb.append(" local");
+                }
+            }
+        }
+        sb.append("\n}\n");
+        return sb.toString();
+    }
 
-	public static class ClusterMember implements Member, DataSerializable {
+    public static class ClusterMember implements Member, DataSerializable {
 
-		Address address = null;
+        Address address = null;
 
-		boolean localMember = false;
+        boolean localMember = false;
 
-		public ClusterMember() {
-			super();
-		}
+        public ClusterMember() {
+            super();
+        }
 
-		public ClusterMember(Address address, boolean localMember) {
-			super();
-			this.address = address;
-			this.localMember = localMember;
-		}
+        public ClusterMember(Address address, boolean localMember) {
+            super();
+            this.address = address;
+            this.localMember = localMember;
+        }
 
-		public InetAddress getInetAddress() {
-			try {
-				return address.getInetAddress();
-			} catch (UnknownHostException e) {
-				return null;
-			}
-		}
+        public InetAddress getInetAddress() {
+            try {
+                return address.getInetAddress();
+            } catch (UnknownHostException e) {
+                return null;
+            }
+        }
 
-		public Address getAddress() {
-			return address;
-		}
+        public Address getAddress() {
+            return address;
+        }
 
-		public int getPort() {
-			return address.getPort();
-		}
+        public int getPort() {
+            return address.getPort();
+        }
 
-		public boolean localMember() {
-			return localMember;
-		}
+        public boolean localMember() {
+            return localMember;
+        }
 
-		public void readData(DataInput in) throws IOException {
-			address = new Address();
-			address.readData(in);
-			localMember = Node.get().getThisAddress().equals(address);
-		}
+        public void readData(DataInput in) throws IOException {
+            address = new Address();
+            address.readData(in);
+            localMember = Node.get().getThisAddress().equals(address);
+        }
 
-		public void writeData(DataOutput out) throws IOException {
-			address.writeData(out);
-		}
+        public void writeData(DataOutput out) throws IOException {
+            address.writeData(out);
+        }
 
-		@Override
-		public String toString() {
-			StringBuilder sb = new StringBuilder("Member [");
-			sb.append(address.getHost());
-			sb.append(":");
-			sb.append(address.getPort());
-			sb.append("] " + localMember);
-			return sb.toString();
-		}
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder("Member [");
+            sb.append(address.getHost());
+            sb.append(":");
+            sb.append(address.getPort());
+            sb.append("] " + localMember);
+            return sb.toString();
+        }
 
-		@Override
-		public int hashCode() {
-			final int PRIME = 31;
-			int result = 1;
-			result = PRIME * result + ((address == null) ? 0 : address.hashCode());
-			return result;
-		}
+        @Override
+        public int hashCode() {
+            final int PRIME = 31;
+            int result = 1;
+            result = PRIME * result + ((address == null) ? 0 : address.hashCode());
+            return result;
+        }
 
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
-				return true;
-			if (obj == null)
-				return false;
-			if (getClass() != obj.getClass())
-				return false;
-			final ClusterMember other = (ClusterMember) obj;
-			if (address == null) {
-				if (other.address != null)
-					return false;
-			} else if (!address.equals(other.address))
-				return false;
-			return true;
-		}
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            final ClusterMember other = (ClusterMember) obj;
+            if (address == null) {
+                if (other.address != null)
+                    return false;
+            } else if (!address.equals(other.address))
+                return false;
+            return true;
+        }
 
-	}
+    }
 
-	public void setClusterTimeDiff(long clusterTimeDiff) {
-		this.clusterTimeDiff = clusterTimeDiff;
-	}
+    public void setClusterTimeDiff(long clusterTimeDiff) {
+        this.clusterTimeDiff = clusterTimeDiff;
+    }
 
-	public long getClusterTime() {
-		return System.currentTimeMillis() + clusterTimeDiff;
-	}
+    public long getClusterTime() {
+        return System.currentTimeMillis() + clusterTimeDiff;
+    }
 
 }

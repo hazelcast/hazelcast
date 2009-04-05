@@ -19,6 +19,6 @@ package com.hazelcast.web;
 
 public interface SnapshotListener {
 
-	void handleSnapshot(SnapshotEvent membersipEvent);
+    void handleSnapshot(SnapshotEvent membersipEvent);
 
 }

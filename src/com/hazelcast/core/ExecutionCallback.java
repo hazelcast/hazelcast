@@ -20,5 +20,5 @@ package com.hazelcast.core;
 import java.util.concurrent.Future;
 
 public interface ExecutionCallback<V> {
-	void done(Future<V> future);
+    void done(Future<V> future);
 }

@@ -26,27 +26,27 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class MultiTask<V> extends DistributedTask {
-	protected Collection<V> results = new CopyOnWriteArrayList<V>();
+    protected Collection<V> results = new CopyOnWriteArrayList<V>();
 
-	public MultiTask(Callable<V> callable, Set<Member> members) {
-		super(callable, members);
-	}
+    public MultiTask(Callable<V> callable, Set<Member> members) {
+        super(callable, members);
+    }
 
-	@Override
-	public void set(Object result) {
-		results.add((V) result);
-	}
+    @Override
+    public void set(Object result) {
+        results.add((V) result);
+    }
 
-	@Override
-	public Collection<V> get() throws ExecutionException, InterruptedException {
-		super.get();
-		return results;
-	}
+    @Override
+    public Collection<V> get() throws ExecutionException, InterruptedException {
+        super.get();
+        return results;
+    }
 
-	@Override
-	public Collection<V> get(long timeout, TimeUnit unit) throws InterruptedException,
-			ExecutionException, TimeoutException {
-		super.get(timeout, unit);
-		return results;
-	}
+    @Override
+    public Collection<V> get(long timeout, TimeUnit unit) throws InterruptedException,
+            ExecutionException, TimeoutException {
+        super.get(timeout, unit);
+        return results;
+    }
 }

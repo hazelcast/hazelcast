@@ -20,23 +20,23 @@ package com.hazelcast.impl;
 import java.util.concurrent.atomic.AtomicLong;
 
 class TransactionFactory {
-	static TransactionFactory tm = new TransactionFactory();
+    static TransactionFactory tm = new TransactionFactory();
 
-	AtomicLong ids = new AtomicLong(0);
+    AtomicLong ids = new AtomicLong(0);
 
-	private TransactionFactory() {
+    private TransactionFactory() {
 
-	}
+    }
 
-	static TransactionFactory get() {
-		return tm;
-	}
+    static TransactionFactory get() {
+        return tm;
+    }
 
-	public TransactionImpl newTransaction() {
-		return new TransactionImpl(newTransactionId());
-	}
+    public TransactionImpl newTransaction() {
+        return new TransactionImpl(newTransactionId());
+    }
 
-	public long newTransactionId() {
-		return ids.incrementAndGet();
-	}
+    public long newTransactionId() {
+        return ids.incrementAndGet();
+    }
 }

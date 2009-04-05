@@ -27,20 +27,20 @@ import javax.transaction.xa.XAResource;
 
 public class ResourceAdapterImpl implements ResourceAdapter {
 
-	public void endpointActivation(MessageEndpointFactory arg0, ActivationSpec arg1)
-			throws ResourceException {
-	}
+    public void endpointActivation(MessageEndpointFactory arg0, ActivationSpec arg1)
+            throws ResourceException {
+    }
 
-	public void endpointDeactivation(MessageEndpointFactory arg0, ActivationSpec arg1) {
-	}
+    public void endpointDeactivation(MessageEndpointFactory arg0, ActivationSpec arg1) {
+    }
 
-	public XAResource[] getXAResources(ActivationSpec[] arg0) throws ResourceException {
-		return null;
-	}
+    public XAResource[] getXAResources(ActivationSpec[] arg0) throws ResourceException {
+        return null;
+    }
 
-	public void start(BootstrapContext arg0) throws ResourceAdapterInternalException {
-	}
+    public void start(BootstrapContext arg0) throws ResourceAdapterInternalException {
+    }
 
-	public void stop() {
-	}
+    public void stop() {
+    }
 }

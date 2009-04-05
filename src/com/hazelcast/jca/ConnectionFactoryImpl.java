@@ -30,47 +30,47 @@ import javax.resource.cci.ResourceAdapterMetaData;
 import javax.resource.spi.ConnectionManager;
 
 public class ConnectionFactoryImpl extends JcaBase implements ConnectionFactory {
-	final ManagedConnectionFactoryImpl mcf;
-	final ConnectionManager cm;
-	private Reference ref;
-	private final static AtomicInteger idGen = new AtomicInteger();
-	private transient final int id;
+    final ManagedConnectionFactoryImpl mcf;
+    final ConnectionManager cm;
+    private Reference ref;
+    private final static AtomicInteger idGen = new AtomicInteger();
+    private transient final int id;
 
-	public ConnectionFactoryImpl(ManagedConnectionFactoryImpl mcf, ConnectionManager cm) {
-		super();
-		this.mcf = mcf;
-		this.cm = cm;
-		id = idGen.incrementAndGet();
-	}
+    public ConnectionFactoryImpl(ManagedConnectionFactoryImpl mcf, ConnectionManager cm) {
+        super();
+        this.mcf = mcf;
+        this.cm = cm;
+        id = idGen.incrementAndGet();
+    }
 
-	public Connection getConnection() throws ResourceException {
-		log(this, "getConnection");
-		return (ConnectionImpl) cm.allocateConnection(mcf, null);
-	}
+    public Connection getConnection() throws ResourceException {
+        log(this, "getConnection");
+        return (ConnectionImpl) cm.allocateConnection(mcf, null);
+    }
 
-	public Connection getConnection(ConnectionSpec connSpec) throws ResourceException {
-		log(this, "getConnection spec: " + connSpec);
-		return (ConnectionImpl) cm.allocateConnection(mcf, null);
-	}
+    public Connection getConnection(ConnectionSpec connSpec) throws ResourceException {
+        log(this, "getConnection spec: " + connSpec);
+        return (ConnectionImpl) cm.allocateConnection(mcf, null);
+    }
 
-	public ResourceAdapterMetaData getMetaData() throws ResourceException {
-		return null;
-	}
+    public ResourceAdapterMetaData getMetaData() throws ResourceException {
+        return null;
+    }
 
-	public RecordFactory getRecordFactory() throws ResourceException {
-		return null;
-	}
+    public RecordFactory getRecordFactory() throws ResourceException {
+        return null;
+    }
 
-	public void setReference(Reference ref) {
-		this.ref = ref;
-	}
+    public void setReference(Reference ref) {
+        this.ref = ref;
+    }
 
-	public Reference getReference() throws NamingException {
-		return ref;
-	}
+    public Reference getReference() throws NamingException {
+        return ref;
+    }
 
-	@Override
-	public String toString() {
-		return "hazelcast.ConnectionFactoryImpl [" + id + "]";
-	}
+    @Override
+    public String toString() {
+        return "hazelcast.ConnectionFactoryImpl [" + id + "]";
+    }
 }

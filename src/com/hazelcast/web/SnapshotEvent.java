@@ -23,70 +23,70 @@ import javax.servlet.ServletContext;
 
 public class SnapshotEvent extends EventObject {
 
-	private static final long serialVersionUID = -201086537182587371L;
+    private static final long serialVersionUID = -201086537182587371L;
 
-	private int createdSessions;
+    private int createdSessions;
 
-	private int destroyedSessions;
+    private int destroyedSessions;
 
-	private long minResponseTime;
+    private long minResponseTime;
 
-	private long maxResponseTime;
+    private long maxResponseTime;
 
-	private long aveResponseTime;
+    private long aveResponseTime;
 
-	private long numberOfRequests;
+    private long numberOfRequests;
 
-	public SnapshotEvent(ServletContext servletContext, int createdSessions, int destroyedSessions,
-			long minResponseTime, long maxResponseTime, long aveResponseTime, long numberOfRequests) {
-		super(servletContext);
-		this.createdSessions = createdSessions;
-		this.destroyedSessions = destroyedSessions;
-		this.minResponseTime = minResponseTime;
-		this.maxResponseTime = maxResponseTime;
-		this.aveResponseTime = aveResponseTime;
-		this.numberOfRequests = numberOfRequests;
-	}
+    public SnapshotEvent(ServletContext servletContext, int createdSessions, int destroyedSessions,
+                         long minResponseTime, long maxResponseTime, long aveResponseTime, long numberOfRequests) {
+        super(servletContext);
+        this.createdSessions = createdSessions;
+        this.destroyedSessions = destroyedSessions;
+        this.minResponseTime = minResponseTime;
+        this.maxResponseTime = maxResponseTime;
+        this.aveResponseTime = aveResponseTime;
+        this.numberOfRequests = numberOfRequests;
+    }
 
-	public SnapshotEvent(ServletContext servletContext, int intervalSec) {
-		super(servletContext);
-	}
+    public SnapshotEvent(ServletContext servletContext, int intervalSec) {
+        super(servletContext);
+    }
 
-	public ServletContext getServletContext() {
-		return (ServletContext) getSource();
-	}
+    public ServletContext getServletContext() {
+        return (ServletContext) getSource();
+    }
 
-	public long getAveResponseTime() {
-		return aveResponseTime;
-	}
+    public long getAveResponseTime() {
+        return aveResponseTime;
+    }
 
-	public int getCreatedSessions() {
-		return createdSessions;
-	}
+    public int getCreatedSessions() {
+        return createdSessions;
+    }
 
-	public int getDestroyedSessions() {
-		return destroyedSessions;
-	}
+    public int getDestroyedSessions() {
+        return destroyedSessions;
+    }
 
-	public long getMaxResponseTime() {
-		return maxResponseTime;
-	}
+    public long getMaxResponseTime() {
+        return maxResponseTime;
+    }
 
-	public long getMinResponseTime() {
-		return minResponseTime;
-	}
+    public long getMinResponseTime() {
+        return minResponseTime;
+    }
 
-	public long getNumberOfRequests() {
-		return numberOfRequests;
-	}
+    public long getNumberOfRequests() {
+        return numberOfRequests;
+    }
 
-	@Override
-	public String toString() {
-		return "SnapshotEvent {" + getServletContext().getServletContextName()
-				+ "} createdSessions:" + createdSessions + ", destroyedSessions:"
-				+ destroyedSessions + ", minResponseTime:" + minResponseTime + ", maxResponseTime:"
-				+ maxResponseTime + ", aveResponseTime:" + aveResponseTime + ", numberOfRequest:"
-				+ numberOfRequests;
-	}
+    @Override
+    public String toString() {
+        return "SnapshotEvent {" + getServletContext().getServletContextName()
+                + "} createdSessions:" + createdSessions + ", destroyedSessions:"
+                + destroyedSessions + ", minResponseTime:" + minResponseTime + ", maxResponseTime:"
+                + maxResponseTime + ", aveResponseTime:" + aveResponseTime + ", numberOfRequest:"
+                + numberOfRequests;
+    }
 
 }

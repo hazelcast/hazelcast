@@ -30,52 +30,52 @@ import javax.resource.spi.ManagedConnectionFactory;
 import javax.security.auth.Subject;
 
 public class ManagedConnectionFactoryImpl extends JcaBase implements ManagedConnectionFactory {
-	private PrintWriter printWriter = null;
-	private final static AtomicInteger idGen = new AtomicInteger();
-	private transient final int id;
+    private PrintWriter printWriter = null;
+    private final static AtomicInteger idGen = new AtomicInteger();
+    private transient final int id;
 
-	public ManagedConnectionFactoryImpl() {
-		id = idGen.incrementAndGet();
-	}
+    public ManagedConnectionFactoryImpl() {
+        id = idGen.incrementAndGet();
+    }
 
-	public Object createConnectionFactory() throws ResourceException {
-		return createConnectionFactory(null);
-	}
+    public Object createConnectionFactory() throws ResourceException {
+        return createConnectionFactory(null);
+    }
 
-	public Object createConnectionFactory(ConnectionManager cm) throws ResourceException {
-		log(this, "createConnectionFactory cm: " + cm);
-		return new ConnectionFactoryImpl(this, cm);
-	}
+    public Object createConnectionFactory(ConnectionManager cm) throws ResourceException {
+        log(this, "createConnectionFactory cm: " + cm);
+        return new ConnectionFactoryImpl(this, cm);
+    }
 
-	public ManagedConnection createManagedConnection(Subject arg0, ConnectionRequestInfo arg1)
-			throws ResourceException {
-		log(this, "createManagedConnection");
-		return new ManagedConnectionImpl();
-	}
+    public ManagedConnection createManagedConnection(Subject arg0, ConnectionRequestInfo arg1)
+            throws ResourceException {
+        log(this, "createManagedConnection");
+        return new ManagedConnectionImpl();
+    }
 
-	public void setLogWriter(PrintWriter printWriter) throws ResourceException {
-		this.printWriter = printWriter;
-	}
+    public void setLogWriter(PrintWriter printWriter) throws ResourceException {
+        this.printWriter = printWriter;
+    }
 
-	public PrintWriter getLogWriter() throws ResourceException {
-		return printWriter;
-	}
+    public PrintWriter getLogWriter() throws ResourceException {
+        return printWriter;
+    }
 
-	public ManagedConnection matchManagedConnections(Set set, Subject subject,
-			ConnectionRequestInfo connectionRequestInfo) throws ResourceException {
-		log(this, "matchManagedConnections");
-		if (set == null || set.size() == 0)
-			return null;
-		Iterator it = set.iterator();
-		if (it.hasNext()) {
-			return (ManagedConnection) it.next();
-		} else {
-			return null;
-		}
-	}
+    public ManagedConnection matchManagedConnections(Set set, Subject subject,
+                                                     ConnectionRequestInfo connectionRequestInfo) throws ResourceException {
+        log(this, "matchManagedConnections");
+        if (set == null || set.size() == 0)
+            return null;
+        Iterator it = set.iterator();
+        if (it.hasNext()) {
+            return (ManagedConnection) it.next();
+        } else {
+            return null;
+        }
+    }
 
-	@Override
-	public String toString() {
-		return "hazelcast.ManagedConnectionFactoryImpl [" + id + "]";
-	}
+    @Override
+    public String toString() {
+        return "hazelcast.ManagedConnectionFactoryImpl [" + id + "]";
+    }
 }

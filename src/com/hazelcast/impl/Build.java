@@ -19,18 +19,18 @@ package com.hazelcast.impl;
 
 public class Build {
 
-	public static final boolean DEBUG;
+    public static final boolean DEBUG;
 
-	public static String build = "do-not-change";
+    public static String build = "do-not-change";
 
-	public static String version = "do-not-change";
+    public static String version = "do-not-change";
 
-	static {		
-		DEBUG = Boolean.getBoolean("hazelcast.debug");
-		// IMPORTANT: DO NOT REMOVE THE FOLLOWING LINES
-		// THEY ARE USED AT BUILD TIME
-		// @build
-		// @version
-		// =============================================
-	}
+    static {
+        DEBUG = Boolean.getBoolean("hazelcast.debug");
+        // IMPORTANT: DO NOT REMOVE THE FOLLOWING LINES
+        // THEY ARE USED AT BUILD TIME
+        // @build
+        // @version
+        // =============================================
+    }
 }

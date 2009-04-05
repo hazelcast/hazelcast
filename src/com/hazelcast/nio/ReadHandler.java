@@ -26,98 +26,99 @@ import com.hazelcast.nio.PacketQueue.Packet;
 
 class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
-	ByteBuffer inBuffer = null;
+    ByteBuffer inBuffer = null;
 
-	Packet packet = null;
+    Packet packet = null;
 
-	long messageRead = 0;
+    long messageRead = 0;
 
-	public ReadHandler(final Connection connection) {
-		super(connection);
-		inBuffer = ByteBuffer.allocate(32 * 1024);
-	}
+    public ReadHandler(final Connection connection) {
+        super(connection);
+        inBuffer = ByteBuffer.allocate(32 * 1024);
+    }
 
-	int readCount = 1;
-	public final void handle() {
-		
-		if (!connection.live())
-			return;
-		try {
-			final int readBytes = socketChannel.read(inBuffer);
-			if (readBytes == -1) {
-				// End of stream. Closing channel...
-				connection.close();
-				return;
-			}
-			if (readBytes <= 0) {
-				return;
-			}
-		} catch (final Exception e) {
-			if (packet != null) {
-				packet.returnToContainer();
-				packet = null;
-			}
-			handleSocketException(e);
-			return;
-		}
-		try {
-			inBuffer.flip();
-			while (true) {
-				final int remaining = inBuffer.remaining();
-				if (remaining <= 0) {
-					inBuffer.clear();
-					return;
-				}
-				if (packet == null) {
-					if (remaining >= 12) {
-						packet = obtainReadable();
-						if (packet == null) {
-							throw new RuntimeException(messageRead + " Unknown message type  from "
-									+ connection.getEndPoint());
-						}
-					} else {
-						inBuffer.compact();
-						return;
-					}
-				}
-				final boolean full = packet.read(inBuffer);
-				if (full) {
-					if (readCount++ % 10000 == 0) {
-						logger.log(Level.FINEST, "readHandler count " + readCount);
-						readCount = 1;
-					}
-					messageRead++;
-					packet.flipBuffers();
-					packet.read();
-					packet.setFromConnection(connection);
-					ClusterService.get().enqueueAndReturn(packet);
-					packet = null;
-				} else {
-					if (inBuffer.hasRemaining()) {
-						if (DEBUG) {
-							throw new RuntimeException("inbuffer has remaining "
-									+ inBuffer.remaining());
-						}
-					}
-				}
-			}
-		} catch (final Throwable t) {
-			logger.log(Level.SEVERE, "Fatal Error at ReadHandler for endPoint: "
-					+ connection.getEndPoint(), t);
-		} finally {
-			registerOp(inSelector.selector, SelectionKey.OP_READ);
-		}
-	}
+    int readCount = 1;
 
-	public final void run() {
-		registerOp(inSelector.selector, SelectionKey.OP_READ);
-	}
+    public final void handle() {
 
-	private final Packet obtainReadable() {
-		final Packet packet = PacketQueue.get().obtainPacket();
-		packet.reset();
-		packet.local = false;
-		return packet;
-	}
+        if (!connection.live())
+            return;
+        try {
+            final int readBytes = socketChannel.read(inBuffer);
+            if (readBytes == -1) {
+                // End of stream. Closing channel...
+                connection.close();
+                return;
+            }
+            if (readBytes <= 0) {
+                return;
+            }
+        } catch (final Exception e) {
+            if (packet != null) {
+                packet.returnToContainer();
+                packet = null;
+            }
+            handleSocketException(e);
+            return;
+        }
+        try {
+            inBuffer.flip();
+            while (true) {
+                final int remaining = inBuffer.remaining();
+                if (remaining <= 0) {
+                    inBuffer.clear();
+                    return;
+                }
+                if (packet == null) {
+                    if (remaining >= 12) {
+                        packet = obtainReadable();
+                        if (packet == null) {
+                            throw new RuntimeException(messageRead + " Unknown message type  from "
+                                    + connection.getEndPoint());
+                        }
+                    } else {
+                        inBuffer.compact();
+                        return;
+                    }
+                }
+                final boolean full = packet.read(inBuffer);
+                if (full) {
+                    if (readCount++ % 10000 == 0) {
+                        logger.log(Level.FINEST, "readHandler count " + readCount);
+                        readCount = 1;
+                    }
+                    messageRead++;
+                    packet.flipBuffers();
+                    packet.read();
+                    packet.setFromConnection(connection);
+                    ClusterService.get().enqueueAndReturn(packet);
+                    packet = null;
+                } else {
+                    if (inBuffer.hasRemaining()) {
+                        if (DEBUG) {
+                            throw new RuntimeException("inbuffer has remaining "
+                                    + inBuffer.remaining());
+                        }
+                    }
+                }
+            }
+        } catch (final Throwable t) {
+            logger.log(Level.SEVERE, "Fatal Error at ReadHandler for endPoint: "
+                    + connection.getEndPoint(), t);
+        } finally {
+            registerOp(inSelector.selector, SelectionKey.OP_READ);
+        }
+    }
+
+    public final void run() {
+        registerOp(inSelector.selector, SelectionKey.OP_READ);
+    }
+
+    private final Packet obtainReadable() {
+        final Packet packet = PacketQueue.get().obtainPacket();
+        packet.reset();
+        packet.local = false;
+        return packet;
+    }
 
 }

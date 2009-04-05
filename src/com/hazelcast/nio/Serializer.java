@@ -20,250 +20,251 @@ package com.hazelcast.nio;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
+
 import static com.hazelcast.nio.BufferUtil.*;
 
 import com.hazelcast.impl.ThreadContext;
 
 public final class Serializer {
 
-	private static final byte SERIALIZER_TYPE_DATA = 0;
+    private static final byte SERIALIZER_TYPE_DATA = 0;
 
-	private static final byte SERIALIZER_TYPE_OBJECT = 1;
+    private static final byte SERIALIZER_TYPE_OBJECT = 1;
 
-	private static final byte SERIALIZER_TYPE_BYTE_ARRAY = 2;
+    private static final byte SERIALIZER_TYPE_BYTE_ARRAY = 2;
 
-	private static final byte SERIALIZER_TYPE_INTEGER = 3;
+    private static final byte SERIALIZER_TYPE_INTEGER = 3;
 
-	private static final byte SERIALIZER_TYPE_LONG = 4;
+    private static final byte SERIALIZER_TYPE_LONG = 4;
 
-	private static final byte SERIALIZER_TYPE_CLASS = 5;
+    private static final byte SERIALIZER_TYPE_CLASS = 5;
 
-	private static final byte SERIALIZER_TYPE_STRING = 6;
+    private static final byte SERIALIZER_TYPE_STRING = 6;
 
-	private static TypeSerializer[] typeSerizalizers = new TypeSerializer[7];
+    private static TypeSerializer[] typeSerizalizers = new TypeSerializer[7];
 
-	static {
-		registerTypeSerializer(new ObjectSerializer());
-		registerTypeSerializer(new LongSerializer());
-		registerTypeSerializer(new IntegerSerializer());
-		registerTypeSerializer(new StringSerializer());
-		registerTypeSerializer(new ClassSerializer());
-		registerTypeSerializer(new ByteArraySerializer());
-		registerTypeSerializer(new DataSerializer());
-	}
+    static {
+        registerTypeSerializer(new ObjectSerializer());
+        registerTypeSerializer(new LongSerializer());
+        registerTypeSerializer(new IntegerSerializer());
+        registerTypeSerializer(new StringSerializer());
+        registerTypeSerializer(new ClassSerializer());
+        registerTypeSerializer(new ByteArraySerializer());
+        registerTypeSerializer(new DataSerializer());
+    }
 
-	final BuffersOutputStream bbos;
+    final BuffersOutputStream bbos;
 
-	final BuffersInputStream bbis;
+    final BuffersInputStream bbis;
 
-	final DataBufferProvider bufferProvider;
+    final DataBufferProvider bufferProvider;
 
-	public Serializer() {
-		bbos = new BuffersOutputStream();
-		bbis = new BuffersInputStream();
-		bufferProvider = new DataBufferProvider();
-		bbos.setBufferProvider(bufferProvider);
-		bbis.setBufferProvider(bufferProvider);
-	}
+    public Serializer() {
+        bbos = new BuffersOutputStream();
+        bbis = new BuffersInputStream();
+        bufferProvider = new DataBufferProvider();
+        bbos.setBufferProvider(bufferProvider);
+        bbis.setBufferProvider(bufferProvider);
+    }
 
-	public Data writeObject(Object obj) throws Exception {
-		if (obj instanceof Data) {
-			return doHardCopy((Data) obj);
-		}
-		Data data = createNewData();
-		bufferProvider.setData(data);
-		bbos.reset();
-		byte typeId = SERIALIZER_TYPE_OBJECT;
-		if (obj instanceof DataSerializable) {
-			typeId = SERIALIZER_TYPE_DATA;
-		} else if (obj instanceof byte[]) {
-			typeId = SERIALIZER_TYPE_BYTE_ARRAY;
-		} else if (obj instanceof Long) {
-			typeId = SERIALIZER_TYPE_LONG;
-		} else if (obj instanceof Integer) {
-			typeId = SERIALIZER_TYPE_INTEGER;
-		} else if (obj instanceof String) {
-			typeId = SERIALIZER_TYPE_STRING;
-		} else if (obj instanceof Class) {
-			typeId = SERIALIZER_TYPE_CLASS;
-		}
-		bbos.writeByte(typeId);
-		typeSerizalizers[typeId].write(bbos, obj);
-		bbos.flush();
-		data.postRead();
-		return data;
-	}
+    public Data writeObject(Object obj) throws Exception {
+        if (obj instanceof Data) {
+            return doHardCopy((Data) obj);
+        }
+        Data data = createNewData();
+        bufferProvider.setData(data);
+        bbos.reset();
+        byte typeId = SERIALIZER_TYPE_OBJECT;
+        if (obj instanceof DataSerializable) {
+            typeId = SERIALIZER_TYPE_DATA;
+        } else if (obj instanceof byte[]) {
+            typeId = SERIALIZER_TYPE_BYTE_ARRAY;
+        } else if (obj instanceof Long) {
+            typeId = SERIALIZER_TYPE_LONG;
+        } else if (obj instanceof Integer) {
+            typeId = SERIALIZER_TYPE_INTEGER;
+        } else if (obj instanceof String) {
+            typeId = SERIALIZER_TYPE_STRING;
+        } else if (obj instanceof Class) {
+            typeId = SERIALIZER_TYPE_CLASS;
+        }
+        bbos.writeByte(typeId);
+        typeSerizalizers[typeId].write(bbos, obj);
+        bbos.flush();
+        data.postRead();
+        return data;
+    }
 
-	public Object readObject(Data data) {
-		if (data == null || data.size() == 0)
-			return null;
-		Object result = null;
-		try {
-			bbis.reset();
-			bufferProvider.setData(data);
-			byte typeId = bbis.readByte();
-			result = typeSerizalizers[typeId].read(bbis, data);
-			data.setNoData();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return result;
-	}
+    public Object readObject(Data data) {
+        if (data == null || data.size() == 0)
+            return null;
+        Object result = null;
+        try {
+            bbis.reset();
+            bufferProvider.setData(data);
+            byte typeId = bbis.readByte();
+            result = typeSerizalizers[typeId].read(bbis, data);
+            data.setNoData();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
 
-	private static void registerTypeSerializer(TypeSerializer ts) {
-		typeSerizalizers[ts.getTypeId()] = ts;
-	}
+    private static void registerTypeSerializer(TypeSerializer ts) {
+        typeSerizalizers[ts.getTypeId()] = ts;
+    }
 
-	static class LongSerializer implements TypeSerializer<Long> {
-		public byte getTypeId() {
-			return SERIALIZER_TYPE_LONG;
-		}
+    static class LongSerializer implements TypeSerializer<Long> {
+        public byte getTypeId() {
+            return SERIALIZER_TYPE_LONG;
+        }
 
-		public Long read(BuffersInputStream bbis, Data data) throws Exception {
-			return Long.valueOf(bbis.readLong());
-		}
+        public Long read(BuffersInputStream bbis, Data data) throws Exception {
+            return Long.valueOf(bbis.readLong());
+        }
 
-		public void write(BuffersOutputStream bbos, Long obj) throws Exception {
-			bbos.writeLong(obj.longValue());
-		}
-	}
+        public void write(BuffersOutputStream bbos, Long obj) throws Exception {
+            bbos.writeLong(obj.longValue());
+        }
+    }
 
-	static class IntegerSerializer implements TypeSerializer<Integer> {
-		public byte getTypeId() {
-			return SERIALIZER_TYPE_INTEGER;
-		}
+    static class IntegerSerializer implements TypeSerializer<Integer> {
+        public byte getTypeId() {
+            return SERIALIZER_TYPE_INTEGER;
+        }
 
-		public Integer read(BuffersInputStream bbis, Data data) throws Exception {
-			return Integer.valueOf(bbis.readInt());
-		}
+        public Integer read(BuffersInputStream bbis, Data data) throws Exception {
+            return Integer.valueOf(bbis.readInt());
+        }
 
-		public void write(BuffersOutputStream bbos, Integer obj) throws Exception {
-			bbos.writeInt(obj.intValue());
-		}
-	}
+        public void write(BuffersOutputStream bbos, Integer obj) throws Exception {
+            bbos.writeInt(obj.intValue());
+        }
+    }
 
-	static class ClassSerializer implements TypeSerializer<Class> {
-		public byte getTypeId() {
-			return SERIALIZER_TYPE_CLASS;
-		}
+    static class ClassSerializer implements TypeSerializer<Class> {
+        public byte getTypeId() {
+            return SERIALIZER_TYPE_CLASS;
+        }
 
-		public Class read(BuffersInputStream bbis, Data data) throws Exception {
-			return Class.forName(bbis.readUTF());
-		}
+        public Class read(BuffersInputStream bbis, Data data) throws Exception {
+            return Class.forName(bbis.readUTF());
+        }
 
-		public void write(BuffersOutputStream bbos, Class obj) throws Exception {
-			bbos.writeUTF(obj.getName());
-		}
-	}
+        public void write(BuffersOutputStream bbos, Class obj) throws Exception {
+            bbos.writeUTF(obj.getName());
+        }
+    }
 
-	static class StringSerializer implements TypeSerializer<String> {
-		public byte getTypeId() {
-			return SERIALIZER_TYPE_STRING;
-		}
+    static class StringSerializer implements TypeSerializer<String> {
+        public byte getTypeId() {
+            return SERIALIZER_TYPE_STRING;
+        }
 
-		public String read(BuffersInputStream bbis, Data data) throws Exception {
-			return bbis.readUTF();
-		}
+        public String read(BuffersInputStream bbis, Data data) throws Exception {
+            return bbis.readUTF();
+        }
 
-		public void write(BuffersOutputStream bbos, String obj) throws Exception {
-			bbos.writeUTF(obj);
-		}
-	}
+        public void write(BuffersOutputStream bbos, String obj) throws Exception {
+            bbos.writeUTF(obj);
+        }
+    }
 
-	static class ByteArraySerializer implements TypeSerializer<byte[]> {
-		public byte getTypeId() {
-			return SERIALIZER_TYPE_BYTE_ARRAY;
-		}
+    static class ByteArraySerializer implements TypeSerializer<byte[]> {
+        public byte getTypeId() {
+            return SERIALIZER_TYPE_BYTE_ARRAY;
+        }
 
-		public byte[] read(BuffersInputStream bbis, Data data) throws Exception { 
-			int size = bbis.readInt();
-			byte[] bytes = new byte[size];
-			bbis.read(bytes);
-			return bytes;
-		}
+        public byte[] read(BuffersInputStream bbis, Data data) throws Exception {
+            int size = bbis.readInt();
+            byte[] bytes = new byte[size];
+            bbis.read(bytes);
+            return bytes;
+        }
 
-		public void write(BuffersOutputStream bbos, byte[] obj) throws Exception {
-			bbos.writeInt(obj.length);
-			bbos.write(obj);
-		}
-	}
+        public void write(BuffersOutputStream bbos, byte[] obj) throws Exception {
+            bbos.writeInt(obj.length);
+            bbos.write(obj);
+        }
+    }
 
-	static class DataSerializer implements TypeSerializer<DataSerializable> {
-		public byte getTypeId() {
-			return SERIALIZER_TYPE_DATA;
-		}
+    static class DataSerializer implements TypeSerializer<DataSerializable> {
+        public byte getTypeId() {
+            return SERIALIZER_TYPE_DATA;
+        }
 
-		public DataSerializable read(BuffersInputStream bbis, Data data) throws Exception {
-			String className = bbis.readUTF();
-			DataSerializable ds = (DataSerializable) Class.forName(className).newInstance();
-			ds.readData(bbis);
-			return ds;
-		}
+        public DataSerializable read(BuffersInputStream bbis, Data data) throws Exception {
+            String className = bbis.readUTF();
+            DataSerializable ds = (DataSerializable) Class.forName(className).newInstance();
+            ds.readData(bbis);
+            return ds;
+        }
 
-		public void write(BuffersOutputStream bbos, DataSerializable obj) throws Exception {
-			bbos.writeUTF(obj.getClass().getName());
-			obj.writeData(bbos);
-		}
-	}
+        public void write(BuffersOutputStream bbos, DataSerializable obj) throws Exception {
+            bbos.writeUTF(obj.getClass().getName());
+            obj.writeData(bbos);
+        }
+    }
 
-	static class ObjectSerializer implements TypeSerializer<Object> {
-		public byte getTypeId() {
-			return SERIALIZER_TYPE_OBJECT;
-		}
+    static class ObjectSerializer implements TypeSerializer<Object> {
+        public byte getTypeId() {
+            return SERIALIZER_TYPE_OBJECT;
+        }
 
-		public Object read(BuffersInputStream bbis, Data data) throws Exception {
-			ObjectInputStream in = new ObjectInputStream(bbis);
-			return in.readUnshared();
-		}
+        public Object read(BuffersInputStream bbis, Data data) throws Exception {
+            ObjectInputStream in = new ObjectInputStream(bbis);
+            return in.readUnshared();
+        }
 
-		public void write(BuffersOutputStream bbos, Object obj) throws Exception {
-			ObjectOutputStream os = new ObjectOutputStream(bbos);
-			os.writeUnshared(obj);
-		}
-	}
+        public void write(BuffersOutputStream bbos, Object obj) throws Exception {
+            ObjectOutputStream os = new ObjectOutputStream(bbos);
+            os.writeUnshared(obj);
+        }
+    }
 
-	interface TypeSerializer<T> {
-		byte getTypeId();
+    interface TypeSerializer<T> {
+        byte getTypeId();
 
-		void write(BuffersOutputStream bbos, T obj) throws Exception;
+        void write(BuffersOutputStream bbos, T obj) throws Exception;
 
-		T read(BuffersInputStream bbis, Data data) throws Exception;
-	}
+        T read(BuffersInputStream bbis, Data data) throws Exception;
+    }
 
-	public class DataBufferProvider implements BufferProvider {
-		Data theData = null;
+    public class DataBufferProvider implements BufferProvider {
+        Data theData = null;
 
-		public DataBufferProvider() {
-			super();
-		}
+        public DataBufferProvider() {
+            super();
+        }
 
-		public void setData(Data theData) {
-			this.theData = theData;
-		}
+        public void setData(Data theData) {
+            this.theData = theData;
+        }
 
-		public Data getData() {
-			return theData;
-		}
+        public Data getData() {
+            return theData;
+        }
 
-		public void addBuffer(ByteBuffer bb) {
-			theData.add(bb);
-		}
+        public void addBuffer(ByteBuffer bb) {
+            theData.add(bb);
+        }
 
-		public ByteBuffer getBuffer(int index) {
-			if (index >= theData.lsData.size())
-				return null;
-			return theData.lsData.get(index);
-		}
+        public ByteBuffer getBuffer(int index) {
+            if (index >= theData.lsData.size())
+                return null;
+            return theData.lsData.get(index);
+        }
 
-		public int size() {
-			return theData.size;
-		}
+        public int size() {
+            return theData.size;
+        }
 
-		public ByteBuffer takeEmptyBuffer() {
-			ByteBuffer empty = ThreadContext.get().getBufferPool().obtain();
-			if (empty.position() != 0 || empty.limit() != 1024)
-				throw new RuntimeException("" + empty);
-			return empty;
-		}
-	}
+        public ByteBuffer takeEmptyBuffer() {
+            ByteBuffer empty = ThreadContext.get().getBufferPool().obtain();
+            if (empty.position() != 0 || empty.limit() != 1024)
+                throw new RuntimeException("" + empty);
+            return empty;
+        }
+    }
 }

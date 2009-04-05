@@ -18,11 +18,11 @@
 package com.hazelcast.core;
 
 public interface ICollection<E> {
-	String getName();
+    String getName();
 
-	void addItemListener(ItemListener<E> listener, boolean includeValue);
+    void addItemListener(ItemListener<E> listener, boolean includeValue);
 
-	void removeItemListener(ItemListener<E> listener);
-	
-	void destroy();
+    void removeItemListener(ItemListener<E> listener);
+
+    void destroy();
 }

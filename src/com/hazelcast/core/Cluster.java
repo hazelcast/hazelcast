@@ -21,11 +21,11 @@ import java.util.Set;
 
 public interface Cluster {
 
-	void addMembershipListener(MembershipListener listener);
+    void addMembershipListener(MembershipListener listener);
 
-	Set<Member> getMembers();
+    Set<Member> getMembers();
 
-	Member getLocalMember();
+    Member getLocalMember();
 
-	long getClusterTime();
+    long getClusterTime();
 }

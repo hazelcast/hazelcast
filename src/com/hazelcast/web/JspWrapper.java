@@ -29,48 +29,48 @@ import com.hazelcast.web.WebFilter.RequestWrapper;
 
 public abstract class JspWrapper extends ServletBase implements HttpJspPage {
 
-	protected JspWrapper() {
-	}
+    protected JspWrapper() {
+    }
 
-	@Override
-	public final void init(ServletConfig config) throws ServletException {
-		super.init(config);
-		jspInit();
-		_jspInit();
-	}
+    @Override
+    public final void init(ServletConfig config) throws ServletException {
+        super.init(config);
+        jspInit();
+        _jspInit();
+    }
 
-	@Override
-	public final void destroy() {
-		super.destroy();
-		jspDestroy();
-		_jspDestroy();
-	}
+    @Override
+    public final void destroy() {
+        super.destroy();
+        jspDestroy();
+        _jspDestroy();
+    }
 
-	@Override
-	public final void service(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		if (!(request instanceof RequestWrapper)) {
-			HttpServletRequest reqHazel = (HttpServletRequest) request
-					.getAttribute(WebFilter.HAZELCAST_REQUEST);
-			if (reqHazel != null)
-				request = reqHazel;
-		}
-		_jspService(request, response);
-	}
+    @Override
+    public final void service(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        if (!(request instanceof RequestWrapper)) {
+            HttpServletRequest reqHazel = (HttpServletRequest) request
+                    .getAttribute(WebFilter.HAZELCAST_REQUEST);
+            if (reqHazel != null)
+                request = reqHazel;
+        }
+        _jspService(request, response);
+    }
 
-	public void jspInit() {
-	}
+    public void jspInit() {
+    }
 
-	public void _jspInit() {
-	}
+    public void _jspInit() {
+    }
 
-	public void jspDestroy() {
-	}
+    public void jspDestroy() {
+    }
 
-	protected void _jspDestroy() {
-	}
+    protected void _jspDestroy() {
+    }
 
-	public abstract void _jspService(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException;
+    public abstract void _jspService(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException;
 
 }

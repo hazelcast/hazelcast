@@ -32,152 +32,152 @@ import com.hazelcast.nio.Address;
 
 class MulticastService implements Runnable {
 
-	private MulticastSocket multicastSocket;
-	private DatagramPacket datagramPacketSend;
-	private DatagramPacket datagramPacketReceive;
-	private int bufferSize = 1 * 1024;
-	private volatile boolean running = true;
+    private MulticastSocket multicastSocket;
+    private DatagramPacket datagramPacketSend;
+    private DatagramPacket datagramPacketReceive;
+    private int bufferSize = 1 * 1024;
+    private volatile boolean running = true;
 
-	private static final MulticastService instance = new MulticastService();
+    private static final MulticastService instance = new MulticastService();
 
-	private MulticastService() {
-	}
+    private MulticastService() {
+    }
 
-	public static MulticastService get() {
-		return instance;
-	}
+    public static MulticastService get() {
+        return instance;
+    }
 
-	public void init(MulticastSocket multicastSocket) throws Exception {
-		Config config = Config.get();
-		this.multicastSocket = multicastSocket;
-		this.datagramPacketReceive = new DatagramPacket(new byte[bufferSize], bufferSize);
-		this.datagramPacketSend = new DatagramPacket(new byte[bufferSize], bufferSize, InetAddress
-				.getByName(config.join.multicastConfig.multicastGroup),
-				config.join.multicastConfig.multicastPort);
+    public void init(MulticastSocket multicastSocket) throws Exception {
+        Config config = Config.get();
+        this.multicastSocket = multicastSocket;
+        this.datagramPacketReceive = new DatagramPacket(new byte[bufferSize], bufferSize);
+        this.datagramPacketSend = new DatagramPacket(new byte[bufferSize], bufferSize, InetAddress
+                .getByName(config.join.multicastConfig.multicastGroup),
+                config.join.multicastConfig.multicastPort);
 
-	}
+    }
 
-	public void stop() {
-		this.running = false;
-	}
+    public void stop() {
+        this.running = false;
+    }
 
-	public void run() {
-		while (running) {
-			try {
-				final JoinInfo joinInfo = receive();
-				if (joinInfo != null) {
-					if (!Node.get().address.equals(joinInfo.address)) {
-						if (Config.get().groupName.equals(joinInfo.groupName)) {
-							if (Config.get().groupPassword.equals(joinInfo.groupPassword)) {
-								if (Node.get().master()) {
-									if (joinInfo.request) {
-										send(joinInfo.copy(false, Node.get().address));
-									} else {
-										if (Node.get().address.hashCode() < joinInfo.address
-												.hashCode()) {
-											send(joinInfo.copy(true, Node.get().address));
-										} else {
-											Node.get().reJoin();
-										}
-									}
-								}
-								// ClusterManager.get().enqueueAndReturn(new
-								// Processable() {
-								// public void process() {
-								//ClusterManager.get().connectTo(joinInfo.address
-								// );
-								// }
-								// });
-							}
-						}
-					}
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
+    public void run() {
+        while (running) {
+            try {
+                final JoinInfo joinInfo = receive();
+                if (joinInfo != null) {
+                    if (!Node.get().address.equals(joinInfo.address)) {
+                        if (Config.get().groupName.equals(joinInfo.groupName)) {
+                            if (Config.get().groupPassword.equals(joinInfo.groupPassword)) {
+                                if (Node.get().master()) {
+                                    if (joinInfo.request) {
+                                        send(joinInfo.copy(false, Node.get().address));
+                                    } else {
+                                        if (Node.get().address.hashCode() < joinInfo.address
+                                                .hashCode()) {
+                                            send(joinInfo.copy(true, Node.get().address));
+                                        } else {
+                                            Node.get().reJoin();
+                                        }
+                                    }
+                                }
+                                // ClusterManager.get().enqueueAndReturn(new
+                                // Processable() {
+                                // public void process() {
+                                //ClusterManager.get().connectTo(joinInfo.address
+                                // );
+                                // }
+                                // });
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
-	public JoinInfo receive() {
-		synchronized (datagramPacketReceive) {
-			try {
-				try {
-					multicastSocket.receive(datagramPacketReceive);
-					try {
-						JoinInfo joinInfo = new JoinInfo();
-						joinInfo.readFromPacket(datagramPacketReceive);
-						// logger.log(Level.INFO,"JoinInfo from " +
-						// joinInfo.address);
-						return joinInfo;
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				} catch (SocketTimeoutException e) {
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			return null;
-		}
-	}
+    public JoinInfo receive() {
+        synchronized (datagramPacketReceive) {
+            try {
+                try {
+                    multicastSocket.receive(datagramPacketReceive);
+                    try {
+                        JoinInfo joinInfo = new JoinInfo();
+                        joinInfo.readFromPacket(datagramPacketReceive);
+                        // logger.log(Level.INFO,"JoinInfo from " +
+                        // joinInfo.address);
+                        return joinInfo;
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                } catch (SocketTimeoutException e) {
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+    }
 
-	public void send(JoinInfo joinInfo) {
-		synchronized (datagramPacketSend) {
-			joinInfo.writeToPacket(datagramPacketSend);
-			try {
-				multicastSocket.send(datagramPacketSend);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
+    public void send(JoinInfo joinInfo) {
+        synchronized (datagramPacketSend) {
+            joinInfo.writeToPacket(datagramPacketSend);
+            try {
+                multicastSocket.send(datagramPacketSend);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
-	}
+    }
 
-	public static class JoinInfo extends JoinRequest {
-		boolean request = true;
+    public static class JoinInfo extends JoinRequest {
+        boolean request = true;
 
-		public JoinInfo() {
-		}
+        public JoinInfo() {
+        }
 
-		public JoinInfo(boolean request, Address address, String groupName, String groupPassword,
-				int type) {
-			super(address, groupName, groupPassword, type);
-			this.request = request;
-		}
+        public JoinInfo(boolean request, Address address, String groupName, String groupPassword,
+                        int type) {
+            super(address, groupName, groupPassword, type);
+            this.request = request;
+        }
 
-		public JoinInfo copy(boolean newRequest, Address newAddress) {
-			return new JoinInfo(newRequest, newAddress, groupName, groupPassword, nodeType);
-		}
+        public JoinInfo copy(boolean newRequest, Address newAddress) {
+            return new JoinInfo(newRequest, newAddress, groupName, groupPassword, nodeType);
+        }
 
-		void writeToPacket(DatagramPacket packet) {
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			DataOutputStream dos = new DataOutputStream(bos);
-			try {
-				dos.writeBoolean(request);
-				address.writeData(dos);
-				dos.writeUTF(groupName);
-				dos.writeUTF(groupPassword);
-				packet.setData(bos.toByteArray());
-				packet.setLength(bos.size());
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
+        void writeToPacket(DatagramPacket packet) {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            DataOutputStream dos = new DataOutputStream(bos);
+            try {
+                dos.writeBoolean(request);
+                address.writeData(dos);
+                dos.writeUTF(groupName);
+                dos.writeUTF(groupPassword);
+                packet.setData(bos.toByteArray());
+                packet.setLength(bos.size());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
-		void readFromPacket(DatagramPacket packet) {
-			ByteArrayInputStream bis = new ByteArrayInputStream(packet.getData(), 0, packet
-					.getLength());
-			DataInputStream dis = new DataInputStream(bis);
-			try {
-				request = dis.readBoolean();
-				address = new Address();
-				address.readData(dis);
-				groupName = dis.readUTF();
-				groupPassword = dis.readUTF();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}
+        void readFromPacket(DatagramPacket packet) {
+            ByteArrayInputStream bis = new ByteArrayInputStream(packet.getData(), 0, packet
+                    .getLength());
+            DataInputStream dis = new DataInputStream(bis);
+            try {
+                request = dis.readBoolean();
+                address = new Address();
+                address.readData(dis);
+                groupName = dis.readUTF();
+                groupPassword = dis.readUTF();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
 }

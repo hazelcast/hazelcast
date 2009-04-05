@@ -28,62 +28,62 @@ import com.hazelcast.impl.ClusterManager;
 
 abstract class AbstractSelectionHandler implements SelectionHandler {
 
-	protected static Logger logger = Logger.getLogger(AbstractSelectionHandler.class.getName());
+    protected static Logger logger = Logger.getLogger(AbstractSelectionHandler.class.getName());
 
-	public static final boolean DEBUG = Build.DEBUG;
+    public static final boolean DEBUG = Build.DEBUG;
 
-	protected SocketChannel socketChannel;
+    protected SocketChannel socketChannel;
 
-	protected InSelector inSelector;
+    protected InSelector inSelector;
 
-	protected OutSelector outSelector;
+    protected OutSelector outSelector;
 
-	protected Connection connection;
+    protected Connection connection;
 
-	protected SelectionKey sk = null;
+    protected SelectionKey sk = null;
 
-	public AbstractSelectionHandler(final Connection connection) {
-		super();
-		this.connection = connection;
-		this.socketChannel = connection.getSocketChannel();
-		this.inSelector = InSelector.get();
-		this.outSelector = OutSelector.get();
-	}
+    public AbstractSelectionHandler(final Connection connection) {
+        super();
+        this.connection = connection;
+        this.socketChannel = connection.getSocketChannel();
+        this.inSelector = InSelector.get();
+        this.outSelector = OutSelector.get();
+    }
 
-	protected void shutdown() {
+    protected void shutdown() {
 
-	}
+    }
 
-	final void handleSocketException(final Exception e) {
-		if (DEBUG) {
-			logger.log(Level.FINEST,
-					Thread.currentThread().getName() + " Closing Socket. cause:  ", e);
-		}
+    final void handleSocketException(final Exception e) {
+        if (DEBUG) {
+            logger.log(Level.FINEST,
+                    Thread.currentThread().getName() + " Closing Socket. cause:  ", e);
+        }
 
-		if (sk != null)
-			sk.cancel();
-		if (connection.live()) {
-			if (DEBUG) {
-				ClusterManager.get().publishLog(
-						"Connection.close endPoint:" + connection.getEndPoint() + ", cause"
-								+ e.toString());
-			}
-		}
-		connection.close();
-	}
+        if (sk != null)
+            sk.cancel();
+        if (connection.live()) {
+            if (DEBUG) {
+                ClusterManager.get().publishLog(
+                        "Connection.close endPoint:" + connection.getEndPoint() + ", cause"
+                                + e.toString());
+            }
+        }
+        connection.close();
+    }
 
-	final void registerOp(final Selector selector, final int operation) {
-		try {
-			if (!connection.live())
-				return;
-			if (sk == null) {
-				sk = socketChannel.register(selector, operation, this);
-			} else {
-				sk.interestOps(operation);
-			}
-		} catch (final Exception e) {
-			handleSocketException(e);
-		}
-	}
+    final void registerOp(final Selector selector, final int operation) {
+        try {
+            if (!connection.live())
+                return;
+            if (sk == null) {
+                sk = socketChannel.register(selector, operation, this);
+            } else {
+                sk.interestOps(operation);
+            }
+        } catch (final Exception e) {
+            handleSocketException(e);
+        }
+    }
 
 }

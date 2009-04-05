@@ -23,77 +23,77 @@ import com.hazelcast.impl.FactoryImpl;
 
 public class EntryEvent extends EventObject {
 
-	public static final int TYPE_ADDED = 1;
+    public static final int TYPE_ADDED = 1;
 
-	public static final int TYPE_REMOVED = 2;
+    public static final int TYPE_REMOVED = 2;
 
-	public static final int TYPE_UPDATED = 3;
+    public static final int TYPE_UPDATED = 3;
 
-	protected int eventType;
+    protected int eventType;
 
-	protected Object key;
+    protected Object key;
 
-	protected Object value;
+    protected Object value;
 
-	protected final String name;
+    protected final String name;
 
-	private final static String ADDED = "added";
-	private final static String REMOVED = "removed";
-	private final static String UPDATED = "updated";
+    private final static String ADDED = "added";
+    private final static String REMOVED = "removed";
+    private final static String UPDATED = "updated";
 
-	protected boolean collection;
+    protected boolean collection;
 
-	public EntryEvent(Object source) {
-		super(source);
-		this.name = (String) source;
-		if (name.charAt(0) == 't' || name.charAt(0) == 'q' || name.charAt(3) == ':') {
-			collection = true;
-		} else
-			collection = false;
+    public EntryEvent(Object source) {
+        super(source);
+        this.name = (String) source;
+        if (name.charAt(0) == 't' || name.charAt(0) == 'q' || name.charAt(3) == ':') {
+            collection = true;
+        } else
+            collection = false;
 
-	}
+    }
 
-	public EntryEvent(Object source, int eventType, Object key, Object value) {
-		this(source);
-		this.eventType = eventType;
-		this.key = key;
-		this.value = value;
-	}
+    public EntryEvent(Object source, int eventType, Object key, Object value) {
+        this(source);
+        this.eventType = eventType;
+        this.key = key;
+        this.value = value;
+    }
 
-	@Override
-	public Object getSource() {
-		if (name.startsWith("q:t:")) {
-			return FactoryImpl.getProxy(name.substring(2));
-		}
-		return FactoryImpl.getProxy(name);
-	}
+    @Override
+    public Object getSource() {
+        if (name.startsWith("q:t:")) {
+            return FactoryImpl.getProxy(name.substring(2));
+        }
+        return FactoryImpl.getProxy(name);
+    }
 
-	public Object getKey() {
-		return key;
-	}
+    public Object getKey() {
+        return key;
+    }
 
-	public Object getValue() {
-		return value;
-	}
+    public Object getValue() {
+        return value;
+    }
 
-	public int getEventType() {
-		return eventType;
-	}
-	
-	public String getName() {
-		return name;
-	}
+    public int getEventType() {
+        return eventType;
+    }
 
-	@Override
-	public String toString() {
-		String event = ADDED;
-		if (eventType == TYPE_REMOVED) {
-			event = REMOVED;
-		} else if (eventType == TYPE_UPDATED) {
-			event = UPDATED;
-		}
-		return "EntryEvent {" + getSource() + "} key=" + key + ", value=" + value + ", event="
-				+ event;
+    public String getName() {
+        return name;
+    }
 
-	}
+    @Override
+    public String toString() {
+        String event = ADDED;
+        if (eventType == TYPE_REMOVED) {
+            event = REMOVED;
+        } else if (eventType == TYPE_UPDATED) {
+            event = UPDATED;
+        }
+        return "EntryEvent {" + getSource() + "} key=" + key + ", value=" + value + ", event="
+                + event;
+
+    }
 }

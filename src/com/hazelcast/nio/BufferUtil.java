@@ -23,92 +23,92 @@ import com.hazelcast.impl.ThreadContext;
 
 public final class BufferUtil {
 
-	public static final int copy(ByteBuffer src, ByteBuffer dest) {
-		int n = Math.min(src.remaining(), dest.remaining());
-		int srcPosition = src.position();
-		int destPosition = dest.position();
+    public static final int copy(ByteBuffer src, ByteBuffer dest) {
+        int n = Math.min(src.remaining(), dest.remaining());
+        int srcPosition = src.position();
+        int destPosition = dest.position();
 
-		int ixSrc = srcPosition + src.arrayOffset();
-		int ixDest = destPosition + dest.arrayOffset();
+        int ixSrc = srcPosition + src.arrayOffset();
+        int ixDest = destPosition + dest.arrayOffset();
 
-		System.arraycopy(src.array(), ixSrc, dest.array(), ixDest, n);
-		src.position(srcPosition + n);
-		dest.position(destPosition + n);
-		return n;
-	}
+        System.arraycopy(src.array(), ixSrc, dest.array(), ixDest, n);
+        src.position(srcPosition + n);
+        dest.position(destPosition + n);
+        return n;
+    }
 
-	public static final void putBoolean(ByteBuffer bb, boolean value) {
-		bb.put((byte) (value ? 1 : 0));
-	}
+    public static final void putBoolean(ByteBuffer bb, boolean value) {
+        bb.put((byte) (value ? 1 : 0));
+    }
 
-	public static final boolean getBoolean(ByteBuffer bb) {
-		return bb.get() == 1 ? true : false;
-	}
+    public static final boolean getBoolean(ByteBuffer bb) {
+        return bb.get() == 1 ? true : false;
+    }
 
-	public static Data doHardCopy(Data from) {
-		if (from == null || from.size == 0)
-			return null;
-		Data newData = BufferUtil.createNewData();
-		BufferUtil.doHardCopy(from, newData);
-		return newData;
-	}
+    public static Data doHardCopy(Data from) {
+        if (from == null || from.size == 0)
+            return null;
+        Data newData = BufferUtil.createNewData();
+        BufferUtil.doHardCopy(from, newData);
+        return newData;
+    }
 
-	public static void doHardCopy(Data from, Data to) {
-		to.setNoData();
-		copyHard(from, to);
-	}
+    public static void doHardCopy(Data from, Data to) {
+        to.setNoData();
+        copyHard(from, to);
+    }
 
-	public static void doSoftCopy(Data from, Data to) {
-		to.setNoData();
-		moveContent(from, to);
-		from.setNoData();
-	}
+    public static void doSoftCopy(Data from, Data to) {
+        to.setNoData();
+        moveContent(from, to);
+        from.setNoData();
+    }
 
-	public static void doSet(Data from, Data to) {
-		to.setNoData();
-		moveContent(from, to);
-		from.setNoData();
-	}
+    public static void doSet(Data from, Data to) {
+        to.setNoData();
+        moveContent(from, to);
+        from.setNoData();
+    }
 
-	public static Data doTake(Data target) {
-		if (target == null || target.size == 0)
-			return null;
-		Data newData = createNewData();
-		moveContent(target, newData);
-		target.setNoData();
-		return newData;
-	}
+    public static Data doTake(Data target) {
+        if (target == null || target.size == 0)
+            return null;
+        Data newData = createNewData();
+        moveContent(target, newData);
+        target.setNoData();
+        return newData;
+    }
 
-	public static void moveContent(Data from, Data to) {
-		int len = from.lsData.size();
-		for (int i = 0; i < len; i++) {
-			ByteBuffer bb = from.lsData.get(i);
-			to.lsData.add(bb);
-			to.size += bb.limit();
-		}
-		from.lsData.clear();
-	}
+    public static void moveContent(Data from, Data to) {
+        int len = from.lsData.size();
+        for (int i = 0; i < len; i++) {
+            ByteBuffer bb = from.lsData.get(i);
+            to.lsData.add(bb);
+            to.size += bb.limit();
+        }
+        from.lsData.clear();
+    }
 
-	public static void copyHard(Data from, Data to) { 
-		to.setNoData();
-		int len = from.lsData.size();
-		for (int i = 0; i < len; i++) {
-			ByteBuffer bb = from.lsData.get(i); 
-			ByteBuffer bbTo = obtainEmptyBuffer();
-			bbTo.put(bb.array(), 0, bb.limit()); 
-			to.add(bbTo);
-			bbTo.flip(); 
-		}
-		if (from.size != to.size)
-			throw new RuntimeException("size doesn't match: src " + from.size + " dest: " + to.size);
-	}
+    public static void copyHard(Data from, Data to) {
+        to.setNoData();
+        int len = from.lsData.size();
+        for (int i = 0; i < len; i++) {
+            ByteBuffer bb = from.lsData.get(i);
+            ByteBuffer bbTo = obtainEmptyBuffer();
+            bbTo.put(bb.array(), 0, bb.limit());
+            to.add(bbTo);
+            bbTo.flip();
+        }
+        if (from.size != to.size)
+            throw new RuntimeException("size doesn't match: src " + from.size + " dest: " + to.size);
+    }
 
-	public static ByteBuffer obtainEmptyBuffer() {
-		return ThreadContext.get().getBufferPool().obtain();
-	}
+    public static ByteBuffer obtainEmptyBuffer() {
+        return ThreadContext.get().getBufferPool().obtain();
+    }
 
-	public static Data createNewData() {
-		return new Data();
-	}
+    public static Data createNewData() {
+        return new Data();
+    }
 
 }

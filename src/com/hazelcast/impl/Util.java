@@ -38,69 +38,69 @@ import org.w3c.dom.Document;
 
 public class Util {
 
-	public static final void copyFile(final File src, final File dest) {
-		try {
-			final FileInputStream in = new FileInputStream(src);
-			final FileOutputStream out = new FileOutputStream(dest);
-			copyStream(in, out);
-			in.close();
-			out.close();
-		} catch (final Exception e) {
-			e.printStackTrace();
-		}
-	}
+    public static final void copyFile(final File src, final File dest) {
+        try {
+            final FileInputStream in = new FileInputStream(src);
+            final FileOutputStream out = new FileOutputStream(dest);
+            copyStream(in, out);
+            in.close();
+            out.close();
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-	public static final void copyStream(final InputStream in, final OutputStream out)
-			throws IOException {
-		final byte[] buffer = new byte[1024];
-		int len;
-		int total = 0;
-		while ((len = in.read(buffer)) >= 0) {
-			out.write(buffer, 0, len);
-			total += len;
-		}
-	}
+    public static final void copyStream(final InputStream in, final OutputStream out)
+            throws IOException {
+        final byte[] buffer = new byte[1024];
+        int len;
+        int total = 0;
+        while ((len = in.read(buffer)) >= 0) {
+            out.write(buffer, 0, len);
+            total += len;
+        }
+    }
 
-	public static String inputStreamToString(final InputStream in) throws IOException {
-		final BufferedReader br = new BufferedReader(new InputStreamReader(in));
-		final StringBuffer sb = new StringBuffer();
-		String line;
-		while ((line = br.readLine()) != null) {
-			sb.append(line).append("\n");
-		}
-		return sb.toString();
-	}
+    public static String inputStreamToString(final InputStream in) throws IOException {
+        final BufferedReader br = new BufferedReader(new InputStreamReader(in));
+        final StringBuffer sb = new StringBuffer();
+        String line;
+        while ((line = br.readLine()) != null) {
+            sb.append(line).append("\n");
+        }
+        return sb.toString();
+    }
 
-	public static void streamXML(final Document doc, final OutputStream out) {
-		try {// Use a Transformer for output
-			final TransformerFactory tFactory = TransformerFactory.newInstance();
-			final Transformer transformer = tFactory.newTransformer();
+    public static void streamXML(final Document doc, final OutputStream out) {
+        try {// Use a Transformer for output
+            final TransformerFactory tFactory = TransformerFactory.newInstance();
+            final Transformer transformer = tFactory.newTransformer();
 
-			if (doc.getDoctype() != null) {
-				final String systemId = doc.getDoctype().getSystemId();
-				final String publicId = doc.getDoctype().getPublicId();
-				transformer.setOutputProperty(OutputKeys.DOCTYPE_PUBLIC, publicId);
-				transformer.setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, systemId);
-			}
+            if (doc.getDoctype() != null) {
+                final String systemId = doc.getDoctype().getSystemId();
+                final String publicId = doc.getDoctype().getPublicId();
+                transformer.setOutputProperty(OutputKeys.DOCTYPE_PUBLIC, publicId);
+                transformer.setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, systemId);
+            }
 
-			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 
-			final DOMSource source = new DOMSource(doc);
-			final StreamResult result = new StreamResult(out);
-			transformer.transform(source, result);
+            final DOMSource source = new DOMSource(doc);
+            final StreamResult result = new StreamResult(out);
+            transformer.transform(source, result);
 
-		} catch (final Exception e) {
-			e.printStackTrace();
-		}
-	}
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-	public static final void writeText(final String str, final OutputStream out) {
-		try {
-			final BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));
-			bw.write(str);
-			bw.flush();
-		} catch (final Exception e) {
-			e.printStackTrace();
-		}
-	}
+    public static final void writeText(final String str, final OutputStream out) {
+        try {
+            final BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));
+            bw.write(str);
+            bw.flush();
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

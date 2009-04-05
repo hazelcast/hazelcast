@@ -24,73 +24,73 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.hazelcast.core.Hazelcast;
 
-public class SimpleQueueTest { 
-	public static final int VALUE_SIZE = 1000;
-	public static final int STATS_SECONDS = 10;
+public class SimpleQueueTest {
+    public static final int VALUE_SIZE = 1000;
+    public static final int STATS_SECONDS = 10;
 
-	public static void main(String[] args) {
-		int threadCount = 20;
-		final Stats stats = new Stats();
-		ExecutorService es = Executors.newFixedThreadPool(threadCount);
-		for (int i = 0; i < threadCount; i++) {
-			es.submit(new Runnable() {
-				public void run() {
-					Queue<byte[]> queue = Hazelcast.getQueue("default");
-					while (true) {
-						for (int j = 0; j < 1000; j++) {
-							queue.offer(new byte[VALUE_SIZE]);
-							stats.offers.incrementAndGet();
-						}
-						for (int j = 0; j < 1000; j++) {
-							queue.poll();
-							stats.polls.incrementAndGet();
-						} 
-					}
-				}
-			});
-		}
+    public static void main(String[] args) {
+        int threadCount = 20;
+        final Stats stats = new Stats();
+        ExecutorService es = Executors.newFixedThreadPool(threadCount);
+        for (int i = 0; i < threadCount; i++) {
+            es.submit(new Runnable() {
+                public void run() {
+                    Queue<byte[]> queue = Hazelcast.getQueue("default");
+                    while (true) {
+                        for (int j = 0; j < 1000; j++) {
+                            queue.offer(new byte[VALUE_SIZE]);
+                            stats.offers.incrementAndGet();
+                        }
+                        for (int j = 0; j < 1000; j++) {
+                            queue.poll();
+                            stats.polls.incrementAndGet();
+                        }
+                    }
+                }
+            });
+        }
 
-		Executors.newSingleThreadExecutor().submit(new Runnable() {
-			public void run() {
-				while (true) {
-					try {
-						Thread.sleep(STATS_SECONDS * 1000);
-						System.out.println("cluster size:"
-								+ Hazelcast.getCluster().getMembers().size());
-						Stats currentStats = stats.getAndReset();
-						System.out.println(currentStats);
-						System.out.println("Operations per Second : " + currentStats.total()
-								/ STATS_SECONDS);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-			}
-		});
-	}
+        Executors.newSingleThreadExecutor().submit(new Runnable() {
+            public void run() {
+                while (true) {
+                    try {
+                        Thread.sleep(STATS_SECONDS * 1000);
+                        System.out.println("cluster size:"
+                                + Hazelcast.getCluster().getMembers().size());
+                        Stats currentStats = stats.getAndReset();
+                        System.out.println(currentStats);
+                        System.out.println("Operations per Second : " + currentStats.total()
+                                / STATS_SECONDS);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+    }
 
-	public static class Stats {
-		public AtomicLong offers = new AtomicLong();
-		public AtomicLong polls = new AtomicLong(); 
+    public static class Stats {
+        public AtomicLong offers = new AtomicLong();
+        public AtomicLong polls = new AtomicLong();
 
-		public Stats getAndReset() {
-			long offersNow = offers.getAndSet(0);
-			long pollsNow = polls.getAndSet(0); 
-			
-			Stats newOne = new Stats();
-			
-			newOne.offers.set(offersNow);
-			newOne.polls.set (pollsNow); 
-			
-			return newOne;
-		}
+        public Stats getAndReset() {
+            long offersNow = offers.getAndSet(0);
+            long pollsNow = polls.getAndSet(0);
 
-		public long total() {
-			return offers.get() + polls.get();
-		}
+            Stats newOne = new Stats();
 
-		public String toString() {
-			return "total= " + total() + ", offers:" + offers.get() + ", polls:" + polls.get();
-		}
-	}
+            newOne.offers.set(offersNow);
+            newOne.polls.set(pollsNow);
+
+            return newOne;
+        }
+
+        public long total() {
+            return offers.get() + polls.get();
+        }
+
+        public String toString() {
+            return "total= " + total() + ", offers:" + offers.get() + ", polls:" + polls.get();
+        }
+    }
 }

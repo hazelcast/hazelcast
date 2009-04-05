@@ -27,40 +27,40 @@ import javax.resource.cci.ResultSetInfo;
 import javax.resource.spi.ConnectionEvent;
 
 public class ConnectionImpl extends JcaBase implements Connection {
-	final ManagedConnectionImpl mc;
-	private static AtomicInteger idGen = new AtomicInteger();
-	private final int id;
+    final ManagedConnectionImpl mc;
+    private static AtomicInteger idGen = new AtomicInteger();
+    private final int id;
 
-	public ConnectionImpl(ManagedConnectionImpl mc) {
-		super();
-		this.mc = mc;
-		id = idGen.incrementAndGet();
-	}
+    public ConnectionImpl(ManagedConnectionImpl mc) {
+        super();
+        this.mc = mc;
+        id = idGen.incrementAndGet();
+    }
 
-	public void close() throws ResourceException {
-		log(this, "close");
-		mc.fireConnectionEvent(ConnectionEvent.CONNECTION_CLOSED);
-	}
+    public void close() throws ResourceException {
+        log(this, "close");
+        mc.fireConnectionEvent(ConnectionEvent.CONNECTION_CLOSED);
+    }
 
-	public Interaction createInteraction() throws ResourceException {
-		return null;
-	}
+    public Interaction createInteraction() throws ResourceException {
+        return null;
+    }
 
-	public javax.resource.cci.LocalTransaction getLocalTransaction() throws ResourceException {
-		log(this, "getLocalTransaction");
-		return mc;
-	}
+    public javax.resource.cci.LocalTransaction getLocalTransaction() throws ResourceException {
+        log(this, "getLocalTransaction");
+        return mc;
+    }
 
-	public ConnectionMetaData getMetaData() throws ResourceException {
-		return null;
-	}
+    public ConnectionMetaData getMetaData() throws ResourceException {
+        return null;
+    }
 
-	public ResultSetInfo getResultSetInfo() throws ResourceException {
-		return null;
-	}
+    public ResultSetInfo getResultSetInfo() throws ResourceException {
+        return null;
+    }
 
-	@Override
-	public String toString() {
-		return "hazelcast.ConnectionImpl [" + id + "]";
-	}
+    @Override
+    public String toString() {
+        return "hazelcast.ConnectionImpl [" + id + "]";
+    }
 }

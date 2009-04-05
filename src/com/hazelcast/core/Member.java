@@ -21,10 +21,10 @@ import java.net.InetAddress;
 
 public interface Member {
 
-	boolean localMember();
+    boolean localMember();
 
-	int getPort();
+    int getPort();
 
-	InetAddress getInetAddress();
+    InetAddress getInetAddress();
 
 }

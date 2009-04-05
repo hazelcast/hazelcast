@@ -22,51 +22,51 @@ import java.util.concurrent.locks.Lock;
 
 public final class Hazelcast {
 
-	private Hazelcast() {
+    private Hazelcast() {
 
-	}
+    }
 
-	public static <E> IQueue<E> getQueue(String name) {
-		return com.hazelcast.impl.FactoryImpl.getQueue(name);
-	}
+    public static <E> IQueue<E> getQueue(String name) {
+        return com.hazelcast.impl.FactoryImpl.getQueue(name);
+    }
 
-	public static <E> ITopic<E> getTopic(String name) {
-		return com.hazelcast.impl.FactoryImpl.getTopic(name);
-	}
+    public static <E> ITopic<E> getTopic(String name) {
+        return com.hazelcast.impl.FactoryImpl.getTopic(name);
+    }
 
-	public static <E> ISet<E> getSet(String name) {
-		return com.hazelcast.impl.FactoryImpl.getSet(name);
-	}
+    public static <E> ISet<E> getSet(String name) {
+        return com.hazelcast.impl.FactoryImpl.getSet(name);
+    }
 
-	public static <E> IList<E> getList(String name) {
-		return com.hazelcast.impl.FactoryImpl.getList(name);
-	}
+    public static <E> IList<E> getList(String name) {
+        return com.hazelcast.impl.FactoryImpl.getList(name);
+    }
 
-	public static <K, V> IMap<K, V> getMap(String name) {
-		return com.hazelcast.impl.FactoryImpl.getMap(name);
-	}
+    public static <K, V> IMap<K, V> getMap(String name) {
+        return com.hazelcast.impl.FactoryImpl.getMap(name);
+    }
 
-	public static <K, V> MultiMap<K, V> getMultiMap(String name) {
-		return com.hazelcast.impl.FactoryImpl.getMultiMap(name);
-	}
+    public static <K, V> MultiMap<K, V> getMultiMap(String name) {
+        return com.hazelcast.impl.FactoryImpl.getMultiMap(name);
+    }
 
-	public static Lock getLock(Object obj) {
-		return com.hazelcast.impl.FactoryImpl.getLock(obj);
-	}
+    public static Lock getLock(Object obj) {
+        return com.hazelcast.impl.FactoryImpl.getLock(obj);
+    }
 
-	public static Cluster getCluster() {
-		return com.hazelcast.impl.FactoryImpl.getCluster();
-	}
+    public static Cluster getCluster() {
+        return com.hazelcast.impl.FactoryImpl.getCluster();
+    }
 
-	public static ExecutorService getExecutorService() {
-		return com.hazelcast.impl.FactoryImpl.getExecutorService();
-	}
+    public static ExecutorService getExecutorService() {
+        return com.hazelcast.impl.FactoryImpl.getExecutorService();
+    }
 
-	public static Transaction getTransaction() {
-		return com.hazelcast.impl.FactoryImpl.getTransaction();
-	}
+    public static Transaction getTransaction() {
+        return com.hazelcast.impl.FactoryImpl.getTransaction();
+    }
 
-	public static IdGenerator getIdGenerator(String name) {
-		return com.hazelcast.impl.FactoryImpl.getIdGenerator(name);
-	}
+    public static IdGenerator getIdGenerator(String name) {
+        return com.hazelcast.impl.FactoryImpl.getIdGenerator(name);
+    }
 }

@@ -21,38 +21,38 @@ import java.util.EventObject;
 
 public class MembershipEvent extends EventObject {
 
-	private static final long serialVersionUID = -2010865371829087371L;
+    private static final long serialVersionUID = -2010865371829087371L;
 
-	public static final int MEMBER_ADDED = 1;
+    public static final int MEMBER_ADDED = 1;
 
-	public static final int MEMBER_REMOVED = 3;
+    public static final int MEMBER_REMOVED = 3;
 
-	private Member member;
+    private Member member;
 
-	private int eventType;
+    private int eventType;
 
-	public MembershipEvent(Cluster cluster, Member member, int eventType) {
-		super(cluster);
-		this.member = member;
-		this.eventType = eventType;
-	}
+    public MembershipEvent(Cluster cluster, Member member, int eventType) {
+        super(cluster);
+        this.member = member;
+        this.eventType = eventType;
+    }
 
-	public Cluster getCluster() {
-		return (Cluster) getSource();
-	}
+    public Cluster getCluster() {
+        return (Cluster) getSource();
+    }
 
-	public int getEventType() {
-		return eventType;
-	}
+    public int getEventType() {
+        return eventType;
+    }
 
-	public Member getMember() {
-		return member;
-	}
+    public Member getMember() {
+        return member;
+    }
 
-	@Override
-	public String toString() {
-		return "MembershipEvent {" + member + "} "
-				+ ((eventType == MEMBER_ADDED) ? "added" : "removed");
-	}
+    @Override
+    public String toString() {
+        return "MembershipEvent {" + member + "} "
+                + ((eventType == MEMBER_ADDED) ? "added" : "removed");
+    }
 
 }

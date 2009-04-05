@@ -22,24 +22,24 @@ import java.util.concurrent.TimeUnit;
 
 public interface IMap<K, V> extends ConcurrentMap<K, V> {
 
-	String getName();
+    String getName();
 
-	void lock(Object key);
+    void lock(Object key);
 
-	boolean tryLock(Object key);
+    boolean tryLock(Object key);
 
-	boolean tryLock(Object key, long time, TimeUnit timeunit);
+    boolean tryLock(Object key, long time, TimeUnit timeunit);
 
-	void unlock(Object key);
+    void unlock(Object key);
 
-	void addEntryListener(EntryListener listener, boolean includeValue);
+    void addEntryListener(EntryListener listener, boolean includeValue);
 
-	void removeEntryListener(EntryListener listener);
+    void removeEntryListener(EntryListener listener);
 
-	void addEntryListener(EntryListener listener, Object key, boolean includeValue);
+    void addEntryListener(EntryListener listener, Object key, boolean includeValue);
 
-	void removeEntryListener(EntryListener listener, Object key);
-	
-	void destroy();
+    void removeEntryListener(EntryListener listener, Object key);
+
+    void destroy();
 
 }

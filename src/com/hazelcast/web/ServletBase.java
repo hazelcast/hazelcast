@@ -30,80 +30,80 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
 public class ServletBase extends HttpServlet {
-	class Config implements ServletConfig {
+    class Config implements ServletConfig {
 
-		ServletConfig original = null;
+        ServletConfig original = null;
 
-		ServletContext app = null;
+        ServletContext app = null;
 
-		final Set<String> paramNames = new HashSet<String>();
+        final Set<String> paramNames = new HashSet<String>();
 
-		public Config(final ServletConfig original) {
-			super();
-			this.original = original;
-			final Enumeration<String> names = original.getInitParameterNames();
-			while (names.hasMoreElements()) {
-				final String name = names.nextElement();
-				if (!name.startsWith("*hazelcast")) {
-					paramNames.add(name);
-				}
-			}
-		}
+        public Config(final ServletConfig original) {
+            super();
+            this.original = original;
+            final Enumeration<String> names = original.getInitParameterNames();
+            while (names.hasMoreElements()) {
+                final String name = names.nextElement();
+                if (!name.startsWith("*hazelcast")) {
+                    paramNames.add(name);
+                }
+            }
+        }
 
-		public String getInitParameter(final String arg0) {
-			return original.getInitParameter(arg0);
-		}
+        public String getInitParameter(final String arg0) {
+            return original.getInitParameter(arg0);
+        }
 
-		public Enumeration getInitParameterNames() {
-			final Iterator<String> it = paramNames.iterator();
-			return new Enumeration<String>() {
+        public Enumeration getInitParameterNames() {
+            final Iterator<String> it = paramNames.iterator();
+            return new Enumeration<String>() {
 
-				public boolean hasMoreElements() {
-					return it.hasNext();
-				}
+                public boolean hasMoreElements() {
+                    return it.hasNext();
+                }
 
-				public String nextElement() {
-					return it.next();
-				}
-			};
-		}
+                public String nextElement() {
+                    return it.next();
+                }
+            };
+        }
 
-		public ServletContext getServletContext() {
-			final ServletContext context = getCurrentContext();
-			return context;
-		}
+        public ServletContext getServletContext() {
+            final ServletContext context = getCurrentContext();
+            return context;
+        }
 
-		public String getServletName() {
-			return original.getServletName();
-		}
+        public String getServletName() {
+            return original.getServletName();
+        }
 
-		private ServletContext getCurrentContext() {
-			if (app == null) {
-				app = WebFilter.getServletContext(original.getServletContext());
-				if (app != null) {
-					return app;
-				}
-				return original.getServletContext();
-			}
-			return app;
-		}
+        private ServletContext getCurrentContext() {
+            if (app == null) {
+                app = WebFilter.getServletContext(original.getServletContext());
+                if (app != null) {
+                    return app;
+                }
+                return original.getServletContext();
+            }
+            return app;
+        }
 
-	}
+    }
 
-	protected static Logger logger = Logger.getLogger(ServletBase.class.getName());
+    protected static Logger logger = Logger.getLogger(ServletBase.class.getName());
 
-	private static final boolean DEBUG = true;
+    private static final boolean DEBUG = true;
 
-	@Override
-	public void init(final ServletConfig servletConfig) throws ServletException {
-		WebFilter.ensureServletContext(servletConfig.getServletContext());
-		super.init(servletConfig);
-	}
+    @Override
+    public void init(final ServletConfig servletConfig) throws ServletException {
+        WebFilter.ensureServletContext(servletConfig.getServletContext());
+        super.init(servletConfig);
+    }
 
-	protected void debug(final Object obj) {
-		if (DEBUG) {
-			logger.log(Level.INFO, obj.toString());
-		}
-	}
+    protected void debug(final Object obj) {
+        if (DEBUG) {
+            logger.log(Level.INFO, obj.toString());
+        }
+    }
 
 }

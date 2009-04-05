@@ -26,93 +26,93 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
 class TopicManager extends BaseManager {
-	private static final TopicManager instance = new TopicManager();
+    private static final TopicManager instance = new TopicManager();
 
-	public static TopicManager get() {
-		return instance;
-	}
+    public static TopicManager get() {
+        return instance;
+    }
 
-	private TopicManager() {
-	}
+    private TopicManager() {
+    }
 
-	Map<String, TopicInstance> mapTopics = new HashMap<String, TopicInstance>();
+    Map<String, TopicInstance> mapTopics = new HashMap<String, TopicInstance>();
 
-	public TopicInstance getTopicInstance(String name) {
-		TopicInstance ti = mapTopics.get(name);
-		if (ti == null) {
-			ti = new TopicInstance(name);
-			mapTopics.put(name, ti);
-		}
-		return ti;
-	}
+    public TopicInstance getTopicInstance(String name) {
+        TopicInstance ti = mapTopics.get(name);
+        if (ti == null) {
+            ti = new TopicInstance(name);
+            mapTopics.put(name, ti);
+        }
+        return ti;
+    }
 
-	public void syncForDead(Address deadAddress) {
-		Collection<TopicInstance> instances = mapTopics.values();
-		for (TopicInstance instance : instances) {
-			instance.removeListener(null, deadAddress);
-		}
-	}
+    public void syncForDead(Address deadAddress) {
+        Collection<TopicInstance> instances = mapTopics.values();
+        for (TopicInstance instance : instances) {
+            instance.removeListener(null, deadAddress);
+        }
+    }
 
-	public void syncForAdd() {
-	}
+    public void syncForAdd() {
+    }
 
-	@Override
-	void handleListenerRegisterations(boolean add, String name, Data key, Address address,
-			boolean includeValue) {
-		TopicInstance instance = getTopicInstance(name);
-		if (add) {
-			instance.addListener(key, address, includeValue);
-		} else {
-			instance.removeListener(key, address);
-		}
-	}
+    @Override
+    void handleListenerRegisterations(boolean add, String name, Data key, Address address,
+                                      boolean includeValue) {
+        TopicInstance instance = getTopicInstance(name);
+        if (add) {
+            instance.addListener(key, address, includeValue);
+        } else {
+            instance.removeListener(key, address);
+        }
+    }
 
-	void doPublish(String name, Object msg) {
-		Data dataMsg = null;
-		try {
-			dataMsg = ThreadContext.get().toData(msg);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		enqueueAndReturn(new TopicPublishProcess(name, dataMsg));
-	}
+    void doPublish(String name, Object msg) {
+        Data dataMsg = null;
+        try {
+            dataMsg = ThreadContext.get().toData(msg);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        enqueueAndReturn(new TopicPublishProcess(name, dataMsg));
+    }
 
-	class TopicPublishProcess implements Processable {
-		final Data dataMsg;
-		final String name;
+    class TopicPublishProcess implements Processable {
+        final Data dataMsg;
+        final String name;
 
-		public TopicPublishProcess(String name, Data dataMsg) {
-			super();
-			this.dataMsg = dataMsg;
-			this.name = name;
-		}
+        public TopicPublishProcess(String name, Data dataMsg) {
+            super();
+            this.dataMsg = dataMsg;
+            this.name = name;
+        }
 
-		public void process() {
-			getTopicInstance(name).publish(dataMsg);
-		}
-	}
+        public void process() {
+            getTopicInstance(name).publish(dataMsg);
+        }
+    }
 
-	class TopicInstance {
-		String name;
+    class TopicInstance {
+        String name;
 
-		Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
+        Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
 
-		public TopicInstance(String name) {
-			super();
-			this.name = name;
-		}
+        public TopicInstance(String name) {
+            super();
+            this.name = name;
+        }
 
-		public void addListener(Data key, Address address, boolean includeValue) {
-			mapListeners.put(address, includeValue);
-		}
+        public void addListener(Data key, Address address, boolean includeValue) {
+            mapListeners.put(address, includeValue);
+        }
 
-		public void removeListener(Data key, Address address) {
-			mapListeners.remove(address);
-		}
+        public void removeListener(Data key, Address address) {
+            mapListeners.remove(address);
+        }
 
-		public void publish(Data msg) {
-			fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, msg, null);
-		}
+        public void publish(Data msg) {
+            fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, msg, null);
+        }
 
-	}
+    }
 }

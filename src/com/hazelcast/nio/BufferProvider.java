@@ -21,12 +21,12 @@ import java.nio.ByteBuffer;
 
 public interface BufferProvider {
 
-	ByteBuffer takeEmptyBuffer();
+    ByteBuffer takeEmptyBuffer();
 
-	void addBuffer(ByteBuffer bb);
+    void addBuffer(ByteBuffer bb);
 
-	ByteBuffer getBuffer(int index);
+    ByteBuffer getBuffer(int index);
 
-	int size();
+    int size();
 
 }

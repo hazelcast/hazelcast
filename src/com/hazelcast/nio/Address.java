@@ -28,183 +28,183 @@ import java.util.StringTokenizer;
 
 public class Address implements DataSerializable {
 
-	private String host = null;
+    private String host = null;
 
-	private byte[] ip;
+    private byte[] ip;
 
-	private int port = -1;
+    private int port = -1;
 
-	private transient InetAddress inetAddress;
+    private transient InetAddress inetAddress;
 
-	private int hash = -1;
+    private int hash = -1;
 
-	private boolean dead = false;
+    private boolean dead = false;
 
-	private boolean thisAddress = false;
+    private boolean thisAddress = false;
 
-	public Address() {
-		this.ip = new byte[4];
-	}
+    public Address() {
+        this.ip = new byte[4];
+    }
 
-	public Address(InetAddress inetAddress, int port) {
-		this.ip = inetAddress.getAddress();
-		this.port = port;
-		this.inetAddress = inetAddress;
-	}
+    public Address(InetAddress inetAddress, int port) {
+        this.ip = inetAddress.getAddress();
+        this.port = port;
+        this.inetAddress = inetAddress;
+    }
 
-	public Address(Address address) {
-		ip = new byte[4];
-		System.arraycopy(address.getIP(), 0, ip, 0, 4);
-		port = address.getPort();
-	}
+    public Address(Address address) {
+        ip = new byte[4];
+        System.arraycopy(address.getIP(), 0, ip, 0, 4);
+        port = address.getPort();
+    }
 
-	public Address(String address, int port) throws UnknownHostException {
-		this(address, port, false);
-	}
+    public Address(String address, int port) throws UnknownHostException {
+        this(address, port, false);
+    }
 
-	public Address(String address, int port, boolean ipAddress) throws UnknownHostException {
-		this.port = port;
-		if (!ipAddress) {
-			this.ip = InetAddress.getByName(address).getAddress();
-		} else {
-			ip = new byte[4];
-			StringTokenizer stringTokenizer = new StringTokenizer(address, ".");
-			int index = 0;
-			while (stringTokenizer.hasMoreTokens()) {
-				String token = stringTokenizer.nextToken();
-				int addressByte = Integer.parseInt(token);
-				ip[index++] = (byte) addressByte;
-			}
-		}
-	}
+    public Address(String address, int port, boolean ipAddress) throws UnknownHostException {
+        this.port = port;
+        if (!ipAddress) {
+            this.ip = InetAddress.getByName(address).getAddress();
+        } else {
+            ip = new byte[4];
+            StringTokenizer stringTokenizer = new StringTokenizer(address, ".");
+            int index = 0;
+            while (stringTokenizer.hasMoreTokens()) {
+                String token = stringTokenizer.nextToken();
+                int addressByte = Integer.parseInt(token);
+                ip[index++] = (byte) addressByte;
+            }
+        }
+    }
 
-	public boolean isThisAddress() {
-		return thisAddress;
-	}
+    public boolean isThisAddress() {
+        return thisAddress;
+    }
 
-	public void setThisAddress(boolean thisAddress) {
-		this.thisAddress = thisAddress;
-	}
+    public void setThisAddress(boolean thisAddress) {
+        this.thisAddress = thisAddress;
+    }
 
-	public Address(byte[] ip, int port) {
-		this.ip = ip;
-		this.port = port;
-	}
+    public Address(byte[] ip, int port) {
+        this.ip = ip;
+        this.port = port;
+    }
 
-	public static String toString(byte[] ip) {
-		return (ip[0] & 0xff) + "." + (ip[1] & 0xff) + "." + (ip[2] & 0xff) + "." + (ip[3] & 0xff);
-	}
+    public static String toString(byte[] ip) {
+        return (ip[0] & 0xff) + "." + (ip[1] & 0xff) + "." + (ip[2] & 0xff) + "." + (ip[3] & 0xff);
+    }
 
-	private void setHost() {
-		this.host = toString(ip);
-	}
+    private void setHost() {
+        this.host = toString(ip);
+    }
 
-	public void writeData(DataOutput out) throws IOException {
-		out.write(ip);
-		out.writeInt(port);
-	}
+    public void writeData(DataOutput out) throws IOException {
+        out.write(ip);
+        out.writeInt(port);
+    }
 
-	public void readData(DataInput in) throws IOException {
-		in.readFully(ip);
-		port = in.readInt();
-		// setHost();
-	}
+    public void readData(DataInput in) throws IOException {
+        in.readFully(ip);
+        port = in.readInt();
+        // setHost();
+    }
 
-	public void readObject(ByteBuffer buffer) {
-		buffer.get(ip);
-		port = buffer.getInt();
+    public void readObject(ByteBuffer buffer) {
+        buffer.get(ip);
+        port = buffer.getInt();
 
-	}
+    }
 
-	public void writeObject(ByteBuffer buffer) {
-		buffer.put(ip);
-		buffer.putInt(port);
-	}
+    public void writeObject(ByteBuffer buffer) {
+        buffer.put(ip);
+        buffer.putInt(port);
+    }
 
-	public String getHost() {
-		if (host == null)
-			setHost();
-		return host;
-	}
+    public String getHost() {
+        if (host == null)
+            setHost();
+        return host;
+    }
 
-	@Override
-	public String toString() {
-		if (host == null)
-			setHost();
-		return "Address[" + host + ":" + port + "]";
-	}
+    @Override
+    public String toString() {
+        if (host == null)
+            setHost();
+        return "Address[" + host + ":" + port + "]";
+    }
 
-	public int getPort() {
-		return port;
-	}
+    public int getPort() {
+        return port;
+    }
 
-	public String addressToString() {
-		if (host == null)
-			setHost();
-		return host;
-	}
+    public String addressToString() {
+        if (host == null)
+            setHost();
+        return host;
+    }
 
-	public InetAddress getInetAddress() throws UnknownHostException {
-		if (host == null)
-			setHost();
-		if (inetAddress == null) {
-			inetAddress = InetAddress.getByName(host);
-		}
-		return inetAddress;
-	}
+    public InetAddress getInetAddress() throws UnknownHostException {
+        if (host == null)
+            setHost();
+        if (inetAddress == null) {
+            inetAddress = InetAddress.getByName(host);
+        }
+        return inetAddress;
+    }
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o)
-			return true;
-		if (o == null)
-			return false;
-		if (!(o instanceof Address))
-			return false;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null)
+            return false;
+        if (!(o instanceof Address))
+            return false;
 
-		final Address address = (Address) o;
+        final Address address = (Address) o;
 
-		if (port != address.port)
-			return false;
-		if (!Arrays.equals(ip, address.ip))
-			return false;
+        if (port != address.port)
+            return false;
+        if (!Arrays.equals(ip, address.ip))
+            return false;
 
-		return true;
-	}
+        return true;
+    }
 
-	@Override
-	public int hashCode() {
-		if (hash == -1)
-			setHashCode();
-		return hash;
-	}
+    @Override
+    public int hashCode() {
+        if (hash == -1)
+            setHashCode();
+        return hash;
+    }
 
-	private void setHashCode() {
-		this.hash = hash(ip) * 29 + port;
-	}
+    private void setHashCode() {
+        this.hash = hash(ip) * 29 + port;
+    }
 
-	private int hash(byte[] id) {
-		int hash = 0;
-		for (int i = 0; i < id.length; i++) {
-			hash = (hash * 29) + id[i];
-		}
-		return hash;
-	}
+    private int hash(byte[] id) {
+        int hash = 0;
+        for (int i = 0; i < id.length; i++) {
+            hash = (hash * 29) + id[i];
+        }
+        return hash;
+    }
 
-	public void setPort(int port) {
-		this.port = port;
-	}
+    public void setPort(int port) {
+        this.port = port;
+    }
 
-	public byte[] getIP() {
-		return ip;
-	}
+    public byte[] getIP() {
+        return ip;
+    }
 
-	public void setDead() {
-		this.dead = true;
-	}
+    public void setDead() {
+        this.dead = true;
+    }
 
-	public boolean isDead() {
-		return dead;
-	}
+    public boolean isDead() {
+        return dead;
+    }
 
 }

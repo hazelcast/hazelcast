@@ -21,8 +21,8 @@ import java.util.EventListener;
 
 public interface MembershipListener extends EventListener {
 
-	void memberAdded(MembershipEvent membersipEvent);
+    void memberAdded(MembershipEvent membersipEvent);
 
-	void memberRemoved(MembershipEvent membersipEvent);
+    void memberRemoved(MembershipEvent membersipEvent);
 
 }

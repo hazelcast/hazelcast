@@ -29,87 +29,87 @@ import com.hazelcast.core.IdGenerator;
 
 public class IdGeneratorImpl implements IdGenerator {
 
-	private static final long BILLION = 1 * 1000 * 1000;
+    private static final long BILLION = 1 * 1000 * 1000;
 
-	private final String name;
+    private final String name;
 
-	public IdGeneratorImpl(String name) {
-		this.name = name;
-	}
+    public IdGeneratorImpl(String name) {
+        this.name = name;
+    }
 
-	AtomicLong billion = new AtomicLong(-1);
+    AtomicLong billion = new AtomicLong(-1);
 
-	AtomicLong currentId = new AtomicLong(2 * BILLION);
+    AtomicLong currentId = new AtomicLong(2 * BILLION);
 
-	AtomicBoolean fetching = new AtomicBoolean(false);
+    AtomicBoolean fetching = new AtomicBoolean(false);
 
-	public long newId() {
-		long billionNow = billion.get();
-		long idAddition = currentId.incrementAndGet();
-		if (idAddition >= BILLION) {
-			synchronized (this) {
-				try {
-					billionNow = billion.get();
-					idAddition = currentId.incrementAndGet();
-					if (idAddition >= BILLION) {
-						Long idBillion = getNewBillion();
-						long newBillion = idBillion.longValue() * BILLION;
-						billion.set(newBillion);
-						currentId.set(0);
-					}
-					billionNow = billion.get();
-					idAddition = currentId.incrementAndGet();
-				} catch (Throwable t) {
-					t.printStackTrace();
-				}
-			}
+    public long newId() {
+        long billionNow = billion.get();
+        long idAddition = currentId.incrementAndGet();
+        if (idAddition >= BILLION) {
+            synchronized (this) {
+                try {
+                    billionNow = billion.get();
+                    idAddition = currentId.incrementAndGet();
+                    if (idAddition >= BILLION) {
+                        Long idBillion = getNewBillion();
+                        long newBillion = idBillion.longValue() * BILLION;
+                        billion.set(newBillion);
+                        currentId.set(0);
+                    }
+                    billionNow = billion.get();
+                    idAddition = currentId.incrementAndGet();
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
+            }
 
-		}
-		long result = billionNow + idAddition;
-		return result;
-	}
+        }
+        long result = billionNow + idAddition;
+        return result;
+    }
 
-	private Long getNewBillion() {
-		try {
-			DistributedTask<Long> task = new DistributedTask<Long>(new IncrementTask(name));
-			FactoryImpl.executorServiceImpl.execute(task);
-			return task.get();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
+    private Long getNewBillion() {
+        try {
+            DistributedTask<Long> task = new DistributedTask<Long>(new IncrementTask(name));
+            FactoryImpl.executorServiceImpl.execute(task);
+            return task.get();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
-	public static class IncrementTask implements Callable<Long>, Serializable {
-		private static final String ID_GENERATOR_MAP_NAME = "__hz_IdGenerator";
-		String name = null;
+    public static class IncrementTask implements Callable<Long>, Serializable {
+        private static final String ID_GENERATOR_MAP_NAME = "__hz_IdGenerator";
+        String name = null;
 
-		public IncrementTask() {
-			super();
-		}
+        public IncrementTask() {
+            super();
+        }
 
-		public IncrementTask(String uuidName) {
-			super();
-			this.name = uuidName;
-		}
+        public IncrementTask(String uuidName) {
+            super();
+            this.name = uuidName;
+        }
 
-		public Long call() {
-			IMap<String, Long> map = Hazelcast.getMap(ID_GENERATOR_MAP_NAME);
-			map.lock(name);
-			try {
-				Long max = (Long) map.get(name);
-				if (max == null) {
-					max = Long.valueOf(0l);
-					map.put(name, Long.valueOf(0));
-					return max;
-				} else {
-					Long newMax = Long.valueOf(max.longValue() + 1);
-					map.put(name, newMax);
-					return newMax;
-				}
-			} finally {
-				map.unlock(name);
-			}
-		}
-	}
+        public Long call() {
+            IMap<String, Long> map = Hazelcast.getMap(ID_GENERATOR_MAP_NAME);
+            map.lock(name);
+            try {
+                Long max = (Long) map.get(name);
+                if (max == null) {
+                    max = Long.valueOf(0l);
+                    map.put(name, Long.valueOf(0));
+                    return max;
+                } else {
+                    Long newMax = Long.valueOf(max.longValue() + 1);
+                    map.put(name, newMax);
+                    return newMax;
+                }
+            } finally {
+                map.unlock(name);
+            }
+        }
+    }
 }
