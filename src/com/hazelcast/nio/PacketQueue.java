@@ -27,57 +27,57 @@ import java.util.logging.Logger;
 import com.hazelcast.impl.Constants; 
 import com.hazelcast.impl.ThreadContext;
 
-public class InvocationQueue {
+public class PacketQueue {
 
-	private Logger logger = Logger.getLogger(InvocationQueue.class.getName());
+	private Logger logger = Logger.getLogger(PacketQueue.class.getName());
 
-	private static final int INV_COUNT = 2000;
+	private static final int PACKET_COUNT = 2000;
 
-	public BlockingQueue<Invocation> qinvocations = new ArrayBlockingQueue<Invocation>(INV_COUNT);
+	public BlockingQueue<Packet> qPackets = new ArrayBlockingQueue<Packet>(PACKET_COUNT);
 
-	private static final InvocationQueue instance = new InvocationQueue();
+	private static final PacketQueue instance = new PacketQueue();
 
-	private static final AtomicLong newInvCount = new AtomicLong();
+	private static final AtomicLong newPacketCount = new AtomicLong();
 
-	private InvocationQueue() {
+    private PacketQueue() {
 		try {
-			for (int i = 0; i < INV_COUNT; i++) {
-				qinvocations.add(new Invocation());
+			for (int i = 0; i < PACKET_COUNT; i++) {
+				qPackets.add(new Packet());
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	public static InvocationQueue get() {
+    public static PacketQueue get() {
 		return instance;
 	}
 
-	public Invocation obtainInvocation() {
-		Invocation inv = ThreadContext.get().getInvocationPool().obtain();
-		inv.reset(); 
-		inv.released = false;
-		return inv;
+	public Packet obtainPacket() {
+		Packet packet = ThreadContext.get().getPacketPool().obtain();
+		packet.reset();
+		packet.released = false;
+		return packet;
 	}
 
-	public void returnInvocation(Invocation inv) {
-		inv.reset();
-		if (inv.released) {
-			logger.log(Level.SEVERE, "Already released invocation!");
+	public void returnPacket(Packet packet) {
+		packet.reset();
+		if (packet.released) {
+			logger.log(Level.SEVERE, "Already released packet!");
 		}
-		inv.released = true;
-		ThreadContext.get().getInvocationPool().release(inv);
+		packet.released = true;
+		ThreadContext.get().getPacketPool().release(packet);
 	}
 
-	public Invocation createNewInvocation() {
-		long count = newInvCount.incrementAndGet();
+	public Packet createNewPacket() {
+		long count = newPacketCount.incrementAndGet();
 		if (count % 1000 == 0) {
-			logger.log(Level.FINEST, "newInvCount " + count);
+			logger.log(Level.FINEST, "newPacketCount " + count);
 		}
-		return new Invocation();
+		return new Packet();
 	}
 
-	public final class Invocation implements Constants, Constants.ResponseTypes {
+    public final class Packet implements Constants, Constants.ResponseTypes {
 
 		public String name;
 
@@ -119,7 +119,7 @@ public class InvocationQueue {
 		
 		public long version = -1;
 
-		public long eventId = -1;
+		public long callId = -1;
 
 		public Connection conn;
 
@@ -127,10 +127,10 @@ public class InvocationQueue {
 		
 		public volatile boolean released = false;
 
-		public Invocation() {
+        public Packet() {
 		}
 
-		public void write(ByteBuffer socketBB) {
+        public void write(ByteBuffer socketBB) {
 			int totalWritten = 0;
 			socketBB.put(bbSizes.array(), 0, bbSizes.limit());
 			socketBB.put(bbHeader.array(), 0, bbHeader.limit());
@@ -181,7 +181,7 @@ public class InvocationQueue {
 			bbHeader.putLong(longValue);
 			bbHeader.putLong(recordId);
 			bbHeader.putLong(version);
-			bbHeader.putLong(eventId);
+			bbHeader.putLong(callId);
 			bbHeader.put(responseType);
 			putString(bbHeader, name);
 			boolean lockAddressNull = (lockAddress == null);
@@ -213,7 +213,7 @@ public class InvocationQueue {
 			longValue = bbHeader.getLong();
 			recordId = bbHeader.getLong();
 			version = bbHeader.getLong();
-			eventId = bbHeader.getLong();
+			callId = bbHeader.getLong();
 			responseType = bbHeader.get();
 			name = getString(bbHeader);
 			boolean lockAddressNull = readBoolean(bbHeader);
@@ -239,7 +239,7 @@ public class InvocationQueue {
 			longValue = Long.MIN_VALUE;
 			recordId = -1;
 			version = -1;
-			eventId = -1;
+			callId = -1;
 			bbSizes.clear();
 			bbHeader.clear();
 			key.setNoData();
@@ -251,7 +251,7 @@ public class InvocationQueue {
 
 		@Override
 		public String toString() {
-			return "Invocation " + operation + " name=" + name + "  local=" + local + "  blockId="
+			return "Packet " + operation + " name=" + name + "  local=" + local + "  blockId="
 					+ blockId + " data=" + value;
 		}
 
@@ -300,7 +300,7 @@ public class InvocationQueue {
 		}
 
 		public void returnToContainer() {
-			returnInvocation(this);
+			returnPacket(this);
 		}
 
 		public Object getValueObject() {

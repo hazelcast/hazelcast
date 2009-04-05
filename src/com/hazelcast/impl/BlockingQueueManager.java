@@ -51,11 +51,10 @@ import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
 import com.hazelcast.impl.Config.QConfig;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.BufferUtil;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.InvocationQueue;
-import com.hazelcast.nio.InvocationQueue.Invocation;
+import com.hazelcast.nio.PacketQueue;
+import com.hazelcast.nio.PacketQueue.Packet;
 
 class BlockingQueueManager extends BaseManager {
 	private final Request remoteReq = new Request();
@@ -66,79 +65,79 @@ class BlockingQueueManager extends BaseManager {
 	private int nextIndex = 0;
 
 	private BlockingQueueManager() {
-		ClusterService.get().registerInvocationProcessor(OP_B_POLL, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				handlePoll(inv);
+		ClusterService.get().registerPacketProcessor(OP_B_POLL, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handlePoll(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_B_OFFER, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				handleOffer(inv);
+		ClusterService.get().registerPacketProcessor(OP_B_OFFER, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handleOffer(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_B_BACKUP_ADD, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				handleBackup(inv);
+		ClusterService.get().registerPacketProcessor(OP_B_BACKUP_ADD, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handleBackup(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_B_BACKUP_REMOVE, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				handleBackup(inv);
+		ClusterService.get().registerPacketProcessor(OP_B_BACKUP_REMOVE, new PacketProcessor() {
+			public void process(Packet packet) {
+				handleBackup(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_B_PUBLISH, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				handlePublish(inv);
+		ClusterService.get().registerPacketProcessor(OP_B_PUBLISH, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handlePublish(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_B_ADD_TOPIC_LISTENER, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				handleAddTopicListener(inv);
+		ClusterService.get().registerPacketProcessor(OP_B_ADD_TOPIC_LISTENER, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handleAddTopicListener(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_B_SIZE, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				handleSize(inv);
+		ClusterService.get().registerPacketProcessor(OP_B_SIZE, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handleSize(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_B_PEEK, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				handlePoll(inv);
+		ClusterService.get().registerPacketProcessor(OP_B_PEEK, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handlePoll(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_B_READ, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				handleRead(inv);	
+		ClusterService.get().registerPacketProcessor(OP_B_READ, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handleRead(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_B_REMOVE, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				handleRemove(inv);
+		ClusterService.get().registerPacketProcessor(OP_B_REMOVE, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handleRemove(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_B_TXN_BACKUP_POLL, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				handleTxnBackupPoll(inv);
+		ClusterService.get().registerPacketProcessor(OP_B_TXN_BACKUP_POLL, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handleTxnBackupPoll(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_B_TXN_COMMIT, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				handleTxnCommit(inv);
+		ClusterService.get().registerPacketProcessor(OP_B_TXN_COMMIT, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handleTxnCommit(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_B_ADD_BLOCK, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				handleAddBlock(inv);
+		ClusterService.get().registerPacketProcessor(OP_B_ADD_BLOCK, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handleAddBlock(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_B_REMOVE_BLOCK, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				handleRemoveBlock(inv);
+		ClusterService.get().registerPacketProcessor(OP_B_REMOVE_BLOCK, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handleRemoveBlock(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_B_FULL_BLOCK, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				handleFullBlock(inv);
+		ClusterService.get().registerPacketProcessor(OP_B_FULL_BLOCK, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handleFullBlock(packet);
 			}
 		});
 		
@@ -261,7 +260,7 @@ class BlockingQueueManager extends BaseManager {
 					}
 				}
 			}
-			// invalidate the dead member's scheduled actions
+			// packetalidate the dead member's scheduled actions
 			List<ScheduledPollAction> scheduledPollActions = q.lsScheduledPollActions;
 			for (ScheduledPollAction scheduledAction : scheduledPollActions) {
 				if (addressDead.equals(scheduledAction.request.caller)) {
@@ -337,13 +336,13 @@ class BlockingQueueManager extends BaseManager {
 		}
 	}
 
-	final void handleSize(Invocation inv) {
-		Q q = getQ(inv.name);
+	final void handleSize(PacketQueue.Packet packet) {
+		Q q = getQ(packet.name);
 		if (DEBUG) {
 			q.printStack();
 		}
-		inv.longValue = q.size;
-		sendResponse(inv);
+		packet.longValue = q.size;
+		sendResponse(packet);
 	}
 
 	@Override
@@ -357,12 +356,12 @@ class BlockingQueueManager extends BaseManager {
 		}
 	}
 
-	final void handleTxnBackupPoll(Invocation inv) {
-		doTxnBackupPoll(inv.txnId, doTake(inv.value));
+	final void handleTxnBackupPoll(PacketQueue.Packet packet) {
+		doTxnBackupPoll(packet.txnId, doTake(packet.value));
 	}
 
-	final void handleTxnCommit(Invocation inv) {
-		List<Data> lsTxnPolledElements = mapTxnPolledElements.remove(inv.txnId);
+	final void handleTxnCommit(PacketQueue.Packet packet) {
+		List<Data> lsTxnPolledElements = mapTxnPolledElements.remove(packet.txnId);
 	}
 
 	final void doTxnBackupPoll(long txnId, Data value) {
@@ -374,28 +373,28 @@ class BlockingQueueManager extends BaseManager {
 		lsTxnPolledElements.add(value);
 	}
 
-	final void handleBackup(Invocation inv) {
+	final void handleBackup(PacketQueue.Packet packet) {
 		try {
-			String name = inv.name;
-			int blockId = inv.blockId;
+			String name = packet.name;
+			int blockId = packet.blockId;
 			Q q = getQ(name);
-			if (inv.operation == OP_B_BACKUP_ADD) {
-				Data data = doTake(inv.value);
-				q.doBackup(true, data, blockId, (int) inv.longValue);
-			} else if (inv.operation == OP_B_BACKUP_REMOVE) {
+			if (packet.operation == OP_B_BACKUP_ADD) {
+				Data data = doTake(packet.value);
+				q.doBackup(true, data, blockId, (int) packet.longValue);
+			} else if (packet.operation == OP_B_BACKUP_REMOVE) {
 				q.doBackup(false, null, blockId, 0);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			inv.returnToContainer();
+			packet.returnToContainer();
 		}
 	}
 
-	final void handleAddBlock(Invocation inv) {
+	final void handleAddBlock(PacketQueue.Packet packet) {
 		try {
-			BlockUpdate addRemove = (BlockUpdate) ThreadContext.get().toObject(inv.value);
-			String name = inv.name;
+			BlockUpdate addRemove = (BlockUpdate) ThreadContext.get().toObject(packet.value);
+			String name = packet.name;
 			int blockId = addRemove.addBlockId;
 			Address addressOwner = addRemove.addAddress;
 			Q q = getQ(name);
@@ -416,20 +415,20 @@ class BlockingQueueManager extends BaseManager {
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			inv.returnToContainer();
+			packet.returnToContainer();
 		}
 	}
 
-	final void handleRemoveBlock(Invocation inv) {
+	final void handleRemoveBlock(PacketQueue.Packet packet) {
 		try {
-			BlockUpdate addRemove = (BlockUpdate) ThreadContext.get().toObject(inv.value);
-			String name = inv.name;
+			BlockUpdate addRemove = (BlockUpdate) ThreadContext.get().toObject(packet.value);
+			String name = packet.name;
 			Q q = getQ(name);
-			doRemoveBlock(q, inv.conn.getEndPoint(), addRemove.removeBlockId);
+			doRemoveBlock(q, packet.conn.getEndPoint(), addRemove.removeBlockId);
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			inv.returnToContainer();
+			packet.returnToContainer();
 		}
 	}
 
@@ -442,13 +441,13 @@ class BlockingQueueManager extends BaseManager {
 		}
 	}
 
-	final void handleFullBlock(Invocation inv) {
+	final void handleFullBlock(PacketQueue.Packet packet) {
 		if (isMaster()) {
-			String name = inv.name;
+			String name = packet.name;
 			Q q = getQ(name);
-			doFullBlock(q, inv.blockId, inv.conn.getEndPoint());
+			doFullBlock(q, packet.blockId, packet.conn.getEndPoint());
 		}
-		inv.returnToContainer();
+		packet.returnToContainer();
 	}
 
 	final void doFullBlock(Q q, int fullBlockId, Address originalFuller) {
@@ -462,138 +461,138 @@ class BlockingQueueManager extends BaseManager {
 		sendAddBlockMessageToOthers(newBlock, fullBlockId, originalFuller, true);
 	}
 
-	final void handleOffer(Invocation inv) {
-		if (rightRemoteOfferTarget(inv)) {
-			remoteReq.setInvocation(inv);
+	final void handleOffer(PacketQueue.Packet packet) {
+		if (rightRemoteOfferTarget(packet)) {
+			remoteReq.setPacket(packet);
 			doOffer(remoteReq);
-			inv.longValue = remoteReq.longValue;
+			packet.longValue = remoteReq.longValue;
 			if (!remoteReq.scheduled) {
 				if (remoteReq.response == Boolean.TRUE) {
-					sendResponse(inv);
+					sendResponse(packet);
 				} else {
-					sendResponseFailure(inv);
+					sendResponseFailure(packet);
 				}
 			} else {
-				inv.returnToContainer();
+				packet.returnToContainer();
 			}
 			remoteReq.reset();
 		}
 	}
 
-	final void handlePublish(Invocation inv) {
-		if (rightRemoteOfferTarget(inv)) {
-			remoteReq.setInvocation(inv);
+	final void handlePublish(Packet packet) {
+		if (rightRemoteOfferTarget(packet)) {
+			remoteReq.setPacket(packet);
 			doPublish(remoteReq);
-			inv.longValue = remoteReq.longValue;
+			packet.longValue = remoteReq.longValue;
 			if (!remoteReq.scheduled) {
 				if (remoteReq.response == Boolean.TRUE) {
-					sendResponse(inv);
+					sendResponse(packet);
 				} else {
-					sendResponseFailure(inv);
+					sendResponseFailure(packet);
 				}
 			} else {
-				inv.returnToContainer();
+				packet.returnToContainer();
 			}
 			remoteReq.reset();
 		}
 	}
 
-	final void handleAddTopicListener(Invocation inv) {
-		if (rightRemoteOfferTarget(inv)) {
-			remoteReq.setInvocation(inv);
+	final void handleAddTopicListener(PacketQueue.Packet packet) {
+		if (rightRemoteOfferTarget(packet)) {
+			remoteReq.setPacket(packet);
 			doAddTopicListener(remoteReq);
-			inv.longValue = remoteReq.longValue;
-			sendResponse(inv);
+			packet.longValue = remoteReq.longValue;
+			sendResponse(packet);
 			remoteReq.reset();
 		}
 	}
 
-	final boolean rightRemoteOfferTarget(Invocation inv) {
-		Q q = getQ(inv.name);
+	final boolean rightRemoteOfferTarget(PacketQueue.Packet packet) {
+		Q q = getQ(packet.name);
 		if (q.blCurrentPut == null) {
 			q.setCurrentPut();
 		}
-		boolean invalid = false;
-		if (inv.blockId != q.blCurrentPut.blockId) {
-			if (inv.blockId > q.blCurrentPut.blockId) {
+		boolean packetalid = false;
+		if (packet.blockId != q.blCurrentPut.blockId) {
+			if (packet.blockId > q.blCurrentPut.blockId) {
 				int size = q.lsBlocks.size();
 				for (int i = 0; i < size; i++) {
 					Block block = q.lsBlocks.get(i);
-					if (block.blockId == inv.blockId) {
+					if (block.blockId == packet.blockId) {
 						if (thisAddress.equals(block.address)) {
 							q.blCurrentPut = block;
 						}
 					}
 				}
 			} else {
-				invalid = true;
+				packetalid = true;
 			}
 		}
 		if (q.blCurrentPut.isFull() || !thisAddress.equals(q.blCurrentPut.address)) {
-			invalid = true;
+			packetalid = true;
 		}
-		if (invalid) {
-			sendRedoResponse(inv);
+		if (packetalid) {
+			sendRedoResponse(packet);
 		}
-		return (!invalid);
+		return (!packetalid);
 	}
 
-	boolean rightRemotePollTarget(Invocation inv) {
-		Q q = getQ(inv.name);
+	boolean rightRemotePollTarget(Packet packet) {
+		Q q = getQ(packet.name);
 		if (q.blCurrentTake == null) {
 			q.setCurrentTake();
 		}
-		boolean invalid = false;
-		if (inv.blockId != q.blCurrentTake.blockId) {
-			if (inv.blockId > q.blCurrentTake.blockId) {
+		boolean packetalid = false;
+		if (packet.blockId != q.blCurrentTake.blockId) {
+			if (packet.blockId > q.blCurrentTake.blockId) {
 				int size = q.lsBlocks.size();
 				for (int i = 0; i < size; i++) {
 					Block block = q.lsBlocks.get(i);
-					if (block.blockId == inv.blockId) {
+					if (block.blockId == packet.blockId) {
 						if (thisAddress.equals(block.address)) {
 							q.blCurrentTake = block;
 						}
 					}
 				}
 			} else {
-				invalid = true;
+				packetalid = true;
 			}
 		}
 		if ((q.blCurrentTake.size() == 0 && q.blCurrentTake.isFull())
 				|| !thisAddress.equals(q.blCurrentTake.address)) {
-			invalid = true;
+			packetalid = true;
 		}
-		if (invalid) {
-			sendRedoResponse(inv);
+		if (packetalid) {
+			sendRedoResponse(packet);
 		}
-		return (!invalid);
+		return (!packetalid);
 	}
 
-	final void handlePoll(Invocation inv) {
-		if (rightRemotePollTarget(inv)) {
-			remoteReq.setInvocation(inv);
+	final void handlePoll(PacketQueue.Packet packet) {
+		if (rightRemotePollTarget(packet)) {
+			remoteReq.setPacket(packet);
 			doPoll(remoteReq);
 			if (!remoteReq.scheduled) {
 				Data oldValue = (Data) remoteReq.response;
 				if (oldValue != null && oldValue.size() > 0) {
-					doSet(oldValue, inv.value);
+					doSet(oldValue, packet.value);
 				}
-				sendResponse(inv);
+				sendResponse(packet);
 			} else {
-				inv.returnToContainer();
+				packet.returnToContainer();
 			}
 			remoteReq.reset();
 		}
 	}
 
-	final void handleRead(Invocation inv) {
-		Q q = getQ(inv.name);
-		q.read(inv);
+	final void handleRead(PacketQueue.Packet packet) {
+		Q q = getQ(packet.name);
+		q.read(packet);
 	}
 
-	final void handleRemove(Invocation inv) {
-		Q q = getQ(inv.name);
-		q.remove(inv);
+	final void handleRemove(PacketQueue.Packet packet) {
+		Q q = getQ(packet.name);
+		q.remove(packet);
 	}
 
 	final Address nextTarget() {
@@ -630,20 +629,20 @@ class BlockingQueueManager extends BaseManager {
 			enqueueAndReturn(this);
 		}
 
-		public void handleResponse(Invocation inv) {
+		public void handleResponse(PacketQueue.Packet packet) {
 		}
 
 		public void process() {
 			MemberImpl nextMember = getNextMemberAfter(thisAddress, true, 1);
 			if (nextMember != null) {
 				Address next = nextMember.getAddress();
-				Invocation inv = obtainServiceInvocation();
-				inv.name = name;
-				inv.operation = getOperation();
-				inv.txnId = txnId;
-				boolean sent = send(inv, next);
+				PacketQueue.Packet packet = obtainPacket();
+				packet.name = name;
+				packet.operation = getOperation();
+				packet.txnId = txnId;
+				boolean sent = send(packet, next);
 				if (!sent) {
-					inv.returnToContainer();
+					packet.returnToContainer();
 				}
 			}
 		}
@@ -679,9 +678,9 @@ class BlockingQueueManager extends BaseManager {
 			numberOfExpectedResponses = 0;
 		}
 
-		public void handleResponse(Invocation inv) {
-			total += (int) inv.longValue;
-			inv.returnToContainer();
+		public void handleResponse(PacketQueue.Packet packet) {
+			total += (int) packet.longValue;
+			packet.returnToContainer();
 			numberOfResponses++;
 			if (numberOfResponses >= numberOfExpectedResponses) {
 				removeCall(getId());
@@ -704,14 +703,14 @@ class BlockingQueueManager extends BaseManager {
 				numberOfExpectedResponses = lsMembers.size();
 				for (MemberImpl member : lsMembers) {
 					if (!member.localMember()) {
-						Invocation inv = obtainServiceInvocation();
-						inv.name = name;
-						inv.operation = getOperation();
-						inv.eventId = getId();
-						inv.timeout = 0;
-						boolean sent = send(inv, member.getAddress());
+						PacketQueue.Packet packet = obtainPacket();
+						packet.name = name;
+						packet.operation = getOperation();
+						packet.callId = getId();
+						packet.timeout = 0;
+						boolean sent = send(packet, member.getAddress());
 						if (!sent) {
-							inv.returnToContainer();
+							packet.returnToContainer();
 							redo();
 						}
 					}
@@ -841,9 +840,9 @@ class BlockingQueueManager extends BaseManager {
 			responses.add(OBJECT_NULL);
 		}
 
-		public void handleResponse(Invocation inv) {
+		public void handleResponse(PacketQueue.Packet packet) {
 			setResponse();
-			inv.returnToContainer();
+			packet.returnToContainer();
 		}
 
 		@Override
@@ -861,19 +860,19 @@ class BlockingQueueManager extends BaseManager {
 			} else if (target.equals(thisAddress)) {
 				q.remove(this);
 			} else {
-				Invocation inv = obtainServiceInvocation();
-				inv.name = name;
-				inv.operation = getOperation();
-				inv.eventId = getId();
-				inv.blockId = blockId;
-				inv.timeout = 0;
-				inv.longValue = index;
+				Packet packet = obtainPacket();
+				packet.name = name;
+				packet.operation = getOperation();
+				packet.callId = getId();
+				packet.blockId = blockId;
+				packet.timeout = 0;
+				packet.longValue = index;
 				boolean sent = false;
 				if (target != null) {
-					sent = send(inv, target);
+					sent = send(packet, target);
 				}
 				if (target == null || !sent) {
-					inv.returnToContainer();
+					packet.returnToContainer();
 					responses.add(OBJECT_NULL);
 				}
 			}
@@ -915,11 +914,11 @@ class BlockingQueueManager extends BaseManager {
 			responses.add((value == null) ? OBJECT_NULL : value);
 		}
 
-		public void handleResponse(Invocation inv) {
-			Data value = doTake(inv.value);
-			int indexRead = (int) inv.longValue;
+		public void handleResponse(PacketQueue.Packet packet) {
+			Data value = doTake(packet.value);
+			int indexRead = (int) packet.longValue;
 			setResponse(value, indexRead);
-			inv.returnToContainer();
+			packet.returnToContainer();
 		}
 
 		@Override
@@ -937,16 +936,16 @@ class BlockingQueueManager extends BaseManager {
 			} else if (target.equals(thisAddress)) {
 				q.read(this);
 			} else {
-				Invocation inv = obtainServiceInvocation();
-				inv.name = name;
-				inv.operation = getOperation();
-				inv.eventId = getId();
-				inv.blockId = blockId;
-				inv.timeout = 0;
-				inv.longValue = index;
-				boolean sent = send(inv, target);
+				PacketQueue.Packet packet = obtainPacket();
+				packet.name = name;
+				packet.operation = getOperation();
+				packet.callId = getId();
+				packet.blockId = blockId;
+				packet.timeout = 0;
+				packet.longValue = index;
+				boolean sent = send(packet, target);
 				if (!sent) {
-					inv.returnToContainer();
+					packet.returnToContainer();
 					onDisconnect(target);
 				}
 			}
@@ -986,24 +985,24 @@ class BlockingQueueManager extends BaseManager {
 		}
 
 		@Override
-		void handleNoneRedoResponse(Invocation inv) {
+		void handleNoneRedoResponse(PacketQueue.Packet packet) {
 			if (request.operation == OP_B_OFFER
-					&& inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+					&& packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
 				if (!zeroBackup) {
 					if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(
-							inv.conn.getEndPoint())) {
-						int itemIndex = (int) inv.longValue;
+							packet.conn.getEndPoint())) {
+						int itemIndex = (int) packet.longValue;
 						if (itemIndex != -1) {
 							Q q = getQ(request.name);
 							if (request.value == null || request.value.size() == 0) {
 								throw new RuntimeException("Invalid data " + request.value);
 							}
-							q.doBackup(true, request.value, request.blockId, (int) inv.longValue);
+							q.doBackup(true, request.value, request.blockId, (int) packet.longValue);
 						}
 					}
 				}
 			}
-			super.handleNoneRedoResponse(inv);
+			super.handleNoneRedoResponse(packet);
 		}
 
 		@Override
@@ -1071,20 +1070,20 @@ class BlockingQueueManager extends BaseManager {
 		}
 		
 		@Override
-		void handleNoneRedoResponse(Invocation inv) {
+		void handleNoneRedoResponse(PacketQueue.Packet packet) {
 			if (request.operation == OP_B_POLL
-					&& inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+					&& packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
 				if (!zeroBackup) {
 					if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(
-							inv.conn.getEndPoint())) { 
-						if (inv.value != null ) {
-							Q q = getQ (inv.name);
+							packet.conn.getEndPoint())) {
+						if (packet.value != null ) {
+							Q q = getQ (packet.name);
 							q.doBackup(false, null, request.blockId, 0);
 						}
 					}
 				}
 			}
-			super.handleNoneRedoResponse(inv);
+			super.handleNoneRedoResponse(packet);
 		}
 	}
 
@@ -1238,13 +1237,13 @@ class BlockingQueueManager extends BaseManager {
 
 	public void sendFullMessage(Block block) {
 		try {
-			Invocation inv = InvocationQueue.get().obtainInvocation();
-			inv.set(block.name, OP_B_FULL_BLOCK, null, null);
-			inv.blockId = block.blockId;
+			PacketQueue.Packet packet = PacketQueue.get().obtainPacket();
+			packet.set(block.name, OP_B_FULL_BLOCK, null, null);
+			packet.blockId = block.blockId;
 			Address master = getMasterAddress();
-			boolean sent = send(inv, master);
+			boolean sent = send(packet, master);
 			if (!sent)
-				inv.returnToContainer();
+				packet.returnToContainer();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -1452,15 +1451,15 @@ class BlockingQueueManager extends BaseManager {
 			remove.setResponse();
 		}
 
-		void remove(Invocation inv) {
-			int index = (int) inv.longValue;
-			int blockId = inv.blockId;
+		void remove(PacketQueue.Packet packet) {
+			int index = (int) packet.longValue;
+			int blockId = packet.blockId;
 			Block block = getBlock(blockId);
-			inv.longValue = -1;
+			packet.longValue = -1;
 			if (block != null) {
 				block.remove(index);
 			}
-			sendResponse(inv);
+			sendResponse(packet);
 		}
 
 		void read(Read read) {
@@ -1480,22 +1479,22 @@ class BlockingQueueManager extends BaseManager {
 			read.setResponse(null, -1);
 		}
 
-		void read(Invocation inv) {
-			int index = (int) inv.longValue;
-			int blockId = inv.blockId;
+		void read(PacketQueue.Packet packet) {
+			int index = (int) packet.longValue;
+			int blockId = packet.blockId;
 			Block block = getBlock(blockId);
-			inv.longValue = -1;
+			packet.longValue = -1;
 			if (block != null) {
 				blockLoop: for (int i = index; i < BLOCK_SIZE; i++) {
 					Data data = block.get(i);
 					if (data != null) {
-						doHardCopy(data, inv.value);
-						inv.longValue = i;
+						doHardCopy(data, packet.value);
+						packet.longValue = i;
 						break blockLoop;
 					}
 				}
 			}
-			sendResponse(inv);
+			sendResponse(packet);
 		}
 
 		void doFireEntryEvent(boolean add, Data value, long recordId) {
@@ -1627,22 +1626,22 @@ class BlockingQueueManager extends BaseManager {
 
 		boolean sendTxnBackup(Address address, Data value, long txnId) {
 			if (zeroBackup) return true;
-			Invocation inv = obtainServiceInvocation(name, null, value, OP_B_TXN_BACKUP_POLL, 0);
-			inv.txnId = txnId;
-			boolean sent = send(inv, address);
+			PacketQueue.Packet packet = obtainPacket(name, null, value, OP_B_TXN_BACKUP_POLL, 0);
+			packet.txnId = txnId;
+			boolean sent = send(packet, address);
 			if (!sent) {
-				inv.returnToContainer();
+				packet.returnToContainer();
 			}
 			return sent;
 		}
 
-		boolean sendBackup(boolean add, Address invoker, Data data, int blockId, int addIndex) {
+		boolean sendBackup(boolean add, Address packetoker, Data data, int blockId, int addIndex) {
 			if (zeroBackup)
 				return true;
 			if (addIndex == -1)
 				throw new RuntimeException("addIndex cannot be -1");
 			if (lsMembers.size() > 1) {
-				if (getNextMemberAfter(thisAddress, true, 1).getAddress().equals(invoker)) {
+				if (getNextMemberAfter(thisAddress, true, 1).getAddress().equals(packetoker)) {
 					return true;
 				}
 				int operation = OP_B_BACKUP_REMOVE;
@@ -1652,12 +1651,12 @@ class BlockingQueueManager extends BaseManager {
 						data = ThreadContext.get().hardCopy(data);
 					}
 				}
-				Invocation inv = obtainServiceInvocation(name, null, data, operation, 0);
-				inv.blockId = blockId;
-				inv.longValue = addIndex;
-				boolean sent = send(inv, getNextMemberAfter(thisAddress, true, 1).getAddress());
+				PacketQueue.Packet packet = obtainPacket(name, null, data, operation, 0);
+				packet.blockId = blockId;
+				packet.longValue = addIndex;
+				boolean sent = send(packet, getNextMemberAfter(thisAddress, true, 1).getAddress());
 				if (!sent) {
-					inv.returnToContainer();
+					packet.returnToContainer();
 				}
 				return sent;
 			} else {

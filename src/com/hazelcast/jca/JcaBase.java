@@ -25,7 +25,7 @@ import com.hazelcast.impl.Build;
 public class JcaBase {
 	protected static Logger logger = Logger.getLogger(JcaBase.class.getName());
 
-	private static final boolean DEBUG = Build.get().DEBUG;
+	private static final boolean DEBUG = Build.DEBUG;
 
 	public void log(final Object caller, final Object msg) {
 		if (DEBUG)

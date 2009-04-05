@@ -21,25 +21,16 @@ public class Build {
 
 	public static final boolean DEBUG;
 
-	public String build = "do-not-change";
+	public static String build = "do-not-change";
 
-	public String version = "do-not-change";
+	public static String version = "do-not-change";
 
 	static {		
 		DEBUG = Boolean.getBoolean("hazelcast.debug");
-	}
-
-	private Build() {
 		// IMPORTANT: DO NOT REMOVE THE FOLLOWING LINES
 		// THEY ARE USED AT BUILD TIME
 		// @build
 		// @version
 		// =============================================
-	}
-
-	private static final Build instance = new Build();
-
-	public static Build get() {
-		return instance;
 	}
 }

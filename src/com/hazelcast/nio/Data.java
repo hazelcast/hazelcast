@@ -152,8 +152,7 @@ public final class Data implements DataSerializable {
 	}
 
 	public void readData(DataInput in) throws IOException {
-		int size = in.readInt();
-		int remaining = size;
+		int remaining = in.readInt();
 		while (remaining > 0) {
 			ByteBuffer bb = ThreadContext.get().getBufferPool().obtain();
 			int sizeToRead = (remaining > 1024) ? 1024 : remaining;

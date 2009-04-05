@@ -46,7 +46,7 @@ import com.hazelcast.nio.OutSelector;
 public class Node {
 	protected static Logger logger = Logger.getLogger(Node.class.getName());
 
-	static final boolean DEBUG = Build.get().DEBUG;
+	static final boolean DEBUG = Build.DEBUG;
 
 	volatile Address address = null;
 
@@ -119,8 +119,8 @@ public class Node {
 			if (ex != null) {
 				exceptionToStringBuffer(ex, sb);
 			}
-			sb.append("Hazelcast.version : " + Build.get().version + "\n");
-			sb.append("Hazelcast.build   : " + Build.get().build + "\n");
+			sb.append("Hazelcast.version : " + Build.version + "\n");
+			sb.append("Hazelcast.build   : " + Build.build + "\n");
 			sb.append("Hazelcast.address   : " + address + "\n");
 			sb.append("joined : " + joined + "\n");
 			sb.append(AddressPicker.createCoreDump());
@@ -476,8 +476,8 @@ public class Node {
 			if (address == null)
 				return false;
 			Logger systemLogger = Logger.getLogger("com.hazelcast.system");
-			systemLogger.log(Level.INFO, "Hazelcast " + Build.get().version + " ("
-					+ Build.get().build + ") starting at " + address);
+			systemLogger.log(Level.INFO, "Hazelcast " + Build.version + " ("
+					+ Build.build + ") starting at " + address);
 			systemLogger.log(Level.INFO, "Copyright (C) 2008 Hazelcast.com");
 
 			if (config.join.multicastConfig.enabled) {

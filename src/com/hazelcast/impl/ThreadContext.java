@@ -36,9 +36,9 @@ import com.hazelcast.impl.ConcurrentMapManager.MPut;
 import com.hazelcast.impl.ConcurrentMapManager.MRemove;
 import com.hazelcast.nio.BufferUtil;
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.InvocationQueue;
+import com.hazelcast.nio.PacketQueue;
 import com.hazelcast.nio.Serializer;
-import com.hazelcast.nio.InvocationQueue.Invocation;
+import com.hazelcast.nio.PacketQueue.Packet;
 
 public class ThreadContext {
 
@@ -56,22 +56,22 @@ public class ThreadContext {
 
     final ObjectPool<ByteBuffer> bufferCache;
 
-    final ObjectPool<Invocation> invocationCache;
+    final ObjectPool<PacketQueue.Packet> packetCache;
 
     private ThreadContext() {
         int bufferCacheSize = 12;
-        int invocationCacheSize = 0;
+        int packetCacheSize = 0;
         String threadName = Thread.currentThread().getName();
         if (threadName.startsWith("hz.")) {
             if ("hz.InThread".equals(threadName)) {
                 bufferCacheSize = 100;
-                invocationCacheSize = 100;
+                packetCacheSize = 100;
             } else if ("hz.OutThread".equals(threadName)) {
                 bufferCacheSize = 0;
-                invocationCacheSize = 0;
+                packetCacheSize = 0;
             } else if ("hz.ServiceThread".equals(threadName)) {
                 bufferCacheSize = 100;
-                invocationCacheSize = 100;
+                packetCacheSize = 100;
             }
         }
         logger.log(Level.FINEST, threadName + " is starting with cacheSize " + bufferCacheSize);
@@ -84,13 +84,13 @@ public class ThreadContext {
         bufferCache = new ObjectPool<ByteBuffer>("BufferCache", byteBufferCacheFactory,
                 bufferCacheSize, bufferq);
 
-        ObjectFactory<Invocation> invCacheFactory = new ObjectFactory<Invocation>() {
-            public Invocation createNew() {
-                return InvocationQueue.get().createNewInvocation();
+        ObjectFactory<Packet> packetCacheFactory = new ObjectFactory<Packet>() {
+            public Packet createNew() {
+                return PacketQueue.get().createNewPacket();
             }
         };
-        invocationCache = new ObjectPool<Invocation>("InvocationCache", invCacheFactory,
-                invocationCacheSize, InvocationQueue.get().qinvocations);
+        packetCache = new ObjectPool<Packet>("PacketCache", packetCacheFactory,
+                packetCacheSize, PacketQueue.get().qPackets);
     }
 
     public static ThreadContext get() {
@@ -102,8 +102,8 @@ public class ThreadContext {
         return threadContext;
     }
 
-    public ObjectPool<Invocation> getInvocationPool() {
-        return invocationCache;
+    public ObjectPool<Packet> getPacketPool() {
+        return packetCache;
     }
 
     public ObjectPool<ByteBuffer> getBufferPool() {

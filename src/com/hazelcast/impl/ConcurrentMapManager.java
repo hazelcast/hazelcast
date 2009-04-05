@@ -18,7 +18,6 @@
 package com.hazelcast.impl;
 
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.*;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
 import static com.hazelcast.nio.BufferUtil.createNewData;
@@ -37,153 +36,148 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
 import com.hazelcast.impl.FactoryImpl.IProxy;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.InvocationQueue.Invocation;
+import com.hazelcast.nio.*;
+import com.hazelcast.nio.PacketQueue.Packet;
 
 class ConcurrentMapManager extends BaseManager {
 	private static ConcurrentMapManager instance = new ConcurrentMapManager();
 
 	private ConcurrentMapManager() {
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_GET, new InvocationProcessor() {
-			public void process(Invocation inv) {
-				handleGet(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_GET, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handleGet(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_PUT, new InvocationProcessor() {
-			public void process(Invocation inv) {
-				handlePut(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_PUT, new PacketProcessor() {
+			public void process(Packet packet) {
+				handlePut(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_BACKUP_PUT_SYNC,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
-						handleBackupSync(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_BACKUP_PUT_SYNC,
+				new PacketProcessor() {
+					public void process(Packet packet) {
+						handleBackupSync(packet);
 					}
 				});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_BACKUP_REMOVE_SYNC,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
-						handleBackupSync(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_BACKUP_REMOVE_SYNC,
+				new PacketProcessor() {
+					public void process(Packet packet) {
+						handleBackupSync(packet);
 					}
 				});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_BACKUP_LOCK_SYNC,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
-						handleBackupSync(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_BACKUP_LOCK_SYNC,
+				new PacketProcessor() {
+					public void process(PacketQueue.Packet packet) {
+						handleBackupSync(packet);
 					}
 				});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_PUT_MULTI,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
-						handlePutMulti(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_PUT_MULTI,
+				new PacketProcessor() {
+					public void process(PacketQueue.Packet packet) {
+						handlePutMulti(packet);
 					}
 				});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_BACKUP_ADD,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
-						handleBackupAdd(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_BACKUP_ADD,
+				new PacketProcessor() {
+					public void process(Packet packet) {
+						handleBackupAdd(packet);
 					}
 				});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_REMOVE, new InvocationProcessor() {
-			public void process(Invocation inv) {
-				handleRemove(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_REMOVE, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handleRemove(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_REMOVE_IF_SAME,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
-						handleRemove(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_REMOVE_IF_SAME,
+				new PacketProcessor() {
+					public void process(PacketQueue.Packet packet) {
+						handleRemove(packet);
 					}
 				});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_LOCK, new InvocationProcessor() {
-			public void process(Invocation inv) {
-				handleLock(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_LOCK, new PacketProcessor() {
+			public void process(Packet packet) {
+				handleLock(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_LOCK_RETURN_OLD,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
-						handleLock(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_LOCK_RETURN_OLD,
+				new PacketProcessor() {
+					public void process(Packet packet) {
+						handleLock(packet);
 					}
 				});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_UNLOCK, new InvocationProcessor() {
-			public void process(Invocation inv) {
-				handleLock(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_UNLOCK, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handleLock(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_READ, new InvocationProcessor() {
-			public void process(Invocation inv) {
-				handleRead(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_READ, new PacketProcessor() {
+			public void process(Packet packet) {
+				handleRead(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_SIZE, new InvocationProcessor() {
-			public void process(Invocation inv) {
-				handleSize(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_SIZE, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handleSize(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_ADD_TO_LIST,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
-						handleAdd(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_ADD_TO_LIST,
+				new PacketProcessor() {
+					public void process(PacketQueue.Packet packet) {
+						handleAdd(packet);
 					}
 				});
 
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_ADD_TO_SET,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
-						handleAdd(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_ADD_TO_SET,
+				new PacketProcessor() {
+					public void process(Packet packet) {
+						handleAdd(packet);
 					}
 				});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_CONTAINS,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
-						handleContains(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_CONTAINS,
+				new PacketProcessor() {
+					public void process(Packet packet) {
+						handleContains(packet);
 					}
 				});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_BLOCK_INFO,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
-						handleBlockInfo(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_BLOCK_INFO,
+				new PacketProcessor() {
+					public void process(PacketQueue.Packet packet) {
+						handleBlockInfo(packet);
 					}
 				});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_BLOCKS, new InvocationProcessor() {
-			public void process(Invocation inv) {
-				handleBlocks(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_BLOCKS, new PacketProcessor() {
+			public void process(Packet packet) {
+				handleBlocks(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_PUT_IF_ABSENT,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
-						handlePut(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_PUT_IF_ABSENT,
+				new PacketProcessor() {
+					public void process(Packet packet) {
+						handlePut(packet);
 					}
 				});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_REPLACE_IF_NOT_NULL,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
-						handlePut(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_REPLACE_IF_NOT_NULL,
+				new PacketProcessor() {
+					public void process(Packet packet) {
+						handlePut(packet);
 					}
 				});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_MIGRATION_COMPLETE,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
-						doMigrationComplete(inv.conn.getEndPoint());
+		ClusterService.get().registerPacketProcessor(OP_CMAP_MIGRATION_COMPLETE,
+				new PacketProcessor() {
+					public void process(Packet packet) {
+						doMigrationComplete(packet.conn.getEndPoint());
 					}
 				});
-		ClusterService.get().registerInvocationProcessor(OP_CMAP_MIGRATE_RECORD,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
-						handleMigrateRecord(inv);
+		ClusterService.get().registerPacketProcessor(OP_CMAP_MIGRATE_RECORD,
+				new PacketProcessor() {
+					public void process(PacketQueue.Packet packet) {
+						handleMigrateRecord(packet);
 					}
 				});
 	}
@@ -316,10 +310,10 @@ class ConcurrentMapManager extends BaseManager {
 		}
 	}
 
-	abstract class MBooleanOp extends MTargetAwareOp {
+    abstract class MBooleanOp extends MTargetAwareOp {
 		@Override
-		void handleNoneRedoResponse(Invocation inv) {
-			handleBooleanNoneRedoResponse(inv);
+		void handleNoneRedoResponse(PacketQueue.Packet packet) {
+			handleBooleanNoneRedoResponse(packet);
 		}
 	}
 
@@ -388,11 +382,11 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		@Override
-		void handleNoneRedoResponse(Invocation inv) {
+		void handleNoneRedoResponse(PacketQueue.Packet packet) {
 			if (request.operation == OP_CMAP_LOCK_RETURN_OLD) {
-				oldValue = doTake(inv.value);
+				oldValue = doTake(packet.value);
 			}
-			super.handleBooleanNoneRedoResponse(inv);
+			super.handleBooleanNoneRedoResponse(packet);
 		}
 	}
 
@@ -527,8 +521,8 @@ class ConcurrentMapManager extends BaseManager {
 			return result;
 		}
 
-		void handleNoneRedoResponse(final Invocation inv) {
-			handleBooleanNoneRedoResponse(inv);
+		void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+			handleBooleanNoneRedoResponse(packet);
 		}
 
 		@Override
@@ -595,19 +589,19 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		@Override
-		void handleNoneRedoResponse(Invocation inv) {
+		void handleNoneRedoResponse(Packet packet) {
 			removeCall(getId());
-			lastReadRecordId = inv.recordId;
-			Data key = doTake(inv.key);
+			lastReadRecordId = packet.recordId;
+			Data key = doTake(packet.key);
 			if (key == null) {
 				setResult(null);
 			} else {
 				Data value = null;
 				if (containsValue) {
-					value = doTake(inv.value);
+					value = doTake(packet.value);
 				}
 				setResult(new SimpleDataEntry(request.name, request.blockId, key, value,
-						(int) inv.longValue));
+						(int) packet.longValue));
 			}
 		}
 
@@ -737,8 +731,8 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
         @Override
-        void handleNoneRedoResponse(final Invocation inv) {
-			handleBooleanNoneRedoResponse(inv);
+        void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+			handleBooleanNoneRedoResponse(packet);
 		}
 	}
 
@@ -748,7 +742,7 @@ class ConcurrentMapManager extends BaseManager {
 
 		public void sendBackupPut(long recordId, int distance) {
 			sendBackup(OP_CMAP_BACKUP_PUT_SYNC, null, null, null, thisAddress, 0, recordId, -1,
-					distance);
+					0, distance);
 		}
 
 		public void sendBackup(int operation, boolean hardCopy, BackupInfo bi, int distance) {
@@ -757,24 +751,25 @@ class ConcurrentMapManager extends BaseManager {
 			Data value = (hardCopy) ? doHardCopy(bi.value) : bi.value;
 
 			sendBackup(operation, bi.name, key, value, bi.owner, bi.lockCount, -1, bi.version,
-					distance);
+					bi.copyCount, distance);
 		}
 
 		private void sendBackup(int operation, String name, Data key, Data value, Address owner,
-				int lockCount, long recordId, long version, int distance) {
+				int lockCount, long recordId, long version, int copyCount, int distance) {
 			this.owner = owner;
 			this.distance = distance;
 			request.setLocal(operation, name, key, value, -1, 0, recordId);
 			request.lockCount = lockCount;
 			request.caller = owner;
 			request.version = version;
+            request.longValue = copyCount;
 			doOp();
 		}
 
 		@Override
 		public void process() {
 			if (request.name == null) {
-				Record record = getRecordById(request.recordId);				
+				Record record = getRecordById(request.recordId);
 				if (record == null) {
 					setResult(Boolean.TRUE);
 					return;
@@ -811,6 +806,7 @@ class ConcurrentMapManager extends BaseManager {
 		int lockCount;
 		int backupCount;
 		long version = -1;
+        int copyCount = 0;
 
 		public void set(String name, int backupCount, Address owner, Data key, Data value) {
 			this.name = name;
@@ -828,6 +824,7 @@ class ConcurrentMapManager extends BaseManager {
 			backupCount = 0;
 			lockCount = 0;
 			version = -1;
+            copyCount = 0;
 		}
 	}
 
@@ -963,15 +960,17 @@ class ConcurrentMapManager extends BaseManager {
 		@Override
 		void setResult(Object obj) {
 			backupInfo.version = request.version; 
-			backupInfo.lockCount = request.lockCount; 
+			backupInfo.lockCount = request.lockCount;
+            backupInfo.copyCount = (int) request.longValue;
 			super.setResult(obj);
 		}
 		 
 		@Override
-		void handleNoneRedoResponse(Invocation inv) {
-			backupInfo.version = inv.version; 
-			backupInfo.lockCount = inv.lockCount;
-			super.handleNoneRedoResponse(inv);
+		void handleNoneRedoResponse(Packet packet) {
+			backupInfo.version = packet.version;
+			backupInfo.lockCount = packet.lockCount;
+            backupInfo.copyCount = (int) packet.longValue;
+			super.handleNoneRedoResponse(packet);
 		}
 	}
 
@@ -1044,12 +1043,12 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		@Override
-		public void handleResponse(Invocation inv) {
-			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+		public void handleResponse(Packet packet) {
+			if (packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
 				contains = true;
 				complete(true);
 			}
-			consumeResponse(inv);
+			consumeResponse(packet);
 		}
 	}
 
@@ -1091,29 +1090,29 @@ class ConcurrentMapManager extends BaseManager {
 		}
 
 		@Override
-		public void handleResponse(Invocation inv) {
-			if (inv.responseType == RESPONSE_REDO) {
+		public void handleResponse(PacketQueue.Packet packet) {
+			if (packet.responseType == RESPONSE_REDO) {
 				shouldRedo = true;
 				complete(true);
-				inv.returnToContainer();
+				packet.returnToContainer();
 				return;
 			}
-			total += (int) inv.longValue;
-			consumeResponse(inv);
+			total += (int) packet.longValue;
+			consumeResponse(packet);
 		}
 	}
 
-	void handleSize(Invocation inv) {
+	void handleSize(PacketQueue.Packet packet) {
 		if (migrating()) {
-			inv.responseType = RESPONSE_REDO;
+			packet.responseType = RESPONSE_REDO;
 		} else {
-			CMap cmap = getMap(inv.name);
-			inv.longValue = cmap.size();
+			CMap cmap = getMap(packet.name);
+			packet.longValue = cmap.size();
 		}
 		// if (DEBUG) {
 		// printBlocks();
 		// }
-		sendResponse(inv);
+		sendResponse(packet);
 	}
 
 	public Block getBlock(Data key) {
@@ -1241,29 +1240,29 @@ class ConcurrentMapManager extends BaseManager {
 		}
 	}
 
-	void handleBackupSync(Invocation inv) {
-		remoteReq.setInvocation(inv);
+	void handleBackupSync(Packet packet) {
+		remoteReq.setPacket(packet);
 		doBackupSync(remoteReq);
 		if (remoteReq.response == Boolean.TRUE) {
-			sendResponse(inv);
+			sendResponse(packet);
 		} else {
-			sendResponseFailure(inv);
+			sendResponseFailure(packet);
 		}
 		remoteReq.reset();
 	}
 
-	void handleBackupAdd(Invocation inv) {
-		CMap cmap = getMap(inv.name);
-		remoteReq.setInvocation(inv);
+	void handleBackupAdd(PacketQueue.Packet packet) {
+		CMap cmap = getMap(packet.name);
+		remoteReq.setPacket(packet);
 		cmap.backupAdd(remoteReq);
 		remoteReq.reset();
-		inv.returnToContainer();
+		packet.returnToContainer();
 	}
 
-	void handleBlocks(Invocation inv) {
-		Blocks blocks = (Blocks) ThreadContext.get().toObject(inv.value);
+	void handleBlocks(PacketQueue.Packet packet) {
+		Blocks blocks = (Blocks) ThreadContext.get().toObject(packet.value);
 		handleBlocks(blocks);
-		inv.returnToContainer();
+		packet.returnToContainer();
 		doResetRecords();
 		if (DEBUG) {
 			// printBlocks();
@@ -1296,10 +1295,10 @@ class ConcurrentMapManager extends BaseManager {
 
 	}
 
-	void handleBlockInfo(Invocation inv) {
-		Block blockInfo = (Block) ThreadContext.get().toObject(inv.value);
+	void handleBlockInfo(PacketQueue.Packet packet) {
+		Block blockInfo = (Block) ThreadContext.get().toObject(packet.value);
 		doBlockInfo(blockInfo);
-		inv.returnToContainer();
+		packet.returnToContainer();
 	}
 
 	void doBlockInfo(Block blockInfo) {
@@ -1510,6 +1509,7 @@ class ConcurrentMapManager extends BaseManager {
 		request.lockThreadId = record.lockThreadId;
 		request.lockAddress = record.lockAddress;
 		request.lockCount = record.lockCount;
+        request.longValue = record.valueCount();
 		if (includeKeyValue) {
 			request.key = doHardCopy(record.getKey());
 			if (record.getValue() != null) {
@@ -1518,163 +1518,166 @@ class ConcurrentMapManager extends BaseManager {
 		}
 	}
 
-	private Invocation toInvocation(Record record, boolean includeValue) {
-		Invocation inv = obtainServiceInvocation();
-		inv.name = record.getName();
-		inv.blockId = record.getBlockId();
-		inv.version = record.version;
-		inv.threadId = record.lockThreadId;
-		inv.lockAddress = record.lockAddress;
-		inv.lockCount = record.lockCount;
-		doHardCopy(record.getKey(), inv.key);
+	private Packet toPacket(Record record, boolean includeValue) {
+		Packet packet = obtainPacket();
+		packet.name = record.getName();
+		packet.blockId = record.getBlockId();
+		packet.version = record.version;
+		packet.threadId = record.lockThreadId;
+		packet.lockAddress = record.lockAddress;
+		packet.lockCount = record.lockCount;
+		doHardCopy(record.getKey(), packet.key);
 		if (includeValue) {
 			if (record.getValue() != null) {
-				doHardCopy(record.getValue(), inv.value);
+				doHardCopy(record.getValue(), packet.value);
 			}
 		}
-		return inv;
+		return packet;
 	}
 
-	boolean rightRemoteTarget(Invocation inv) {
-		boolean right = thisAddress.equals(getTarget(inv.name, inv.key));
+	boolean rightRemoteTarget(Packet packet) {
+		boolean right = thisAddress.equals(getTarget(packet.name, packet.key));
 		if (!right) {
 			// not the owner (at least not anymore)
 			if (isMaster()) {
-				Block block = getOrCreateBlock(inv.key);
-				sendBlockInfo(block, inv.conn.getEndPoint());
+				Block block = getOrCreateBlock(packet.key);
+				sendBlockInfo(block, packet.conn.getEndPoint());
 			}
-			inv.setNoData();
-			sendRedoResponse(inv);
+			packet.setNoData();
+			sendRedoResponse(packet);
 		}
 		return right;
 	}
 
-	void handleMigrateRecord(Invocation inv) {
-		remoteReq.setInvocation(inv);
+	void handleMigrateRecord(Packet packet) {
+		remoteReq.setPacket(packet);
 		doMigrate(remoteReq);
-		sendResponse(inv);
+		sendResponse(packet);
 		remoteReq.reset();
 	}
 
-	void handleRead(Invocation inv) {
-            remoteReq.setInvocation(inv);
+	void handleRead(Packet packet) {
+            remoteReq.setPacket(packet);
             doRead(remoteReq);
             Record record = (Record) remoteReq.response;
             if (record != null) {
-                inv.recordId = record.id;
-                inv.longValue = record.getCopyCount();
-                doHardCopy(record.getKey(), inv.key);
+                packet.recordId = record.id;
+                packet.longValue = record.getCopyCount();
+                doHardCopy(record.getKey(), packet.key);
                 if (record.getValue() != null) {
-                    doHardCopy(record.getValue(), inv.value);
+                    doHardCopy(record.getValue(), packet.value);
                 }
             }
-            sendResponse(inv);
+            sendResponse(packet);
             remoteReq.reset();
     }
 
-	void handleAdd(Invocation inv) {
-		if (rightRemoteTarget(inv)) {
-			remoteReq.setInvocation(inv);
+	void handleAdd(Packet packet) {
+		if (rightRemoteTarget(packet)) {
+			remoteReq.setPacket(packet);
 			doAdd(remoteReq);
 			if (remoteReq.response == Boolean.TRUE) {
-				sendResponse(inv);
+				sendResponse(packet);
 			} else {
-				sendResponseFailure(inv);
+				sendResponseFailure(packet);
 			}
 			remoteReq.reset();
 		}
 	}
 
-	final void handleGet(Invocation inv) {
-		if (rightRemoteTarget(inv)) {
-			remoteReq.setInvocation(inv);
+	final void handleGet(Packet packet) {
+		if (rightRemoteTarget(packet)) {
+			remoteReq.setPacket(packet);
 			doGet(remoteReq);
 			Data value = (Data) remoteReq.response;
 			if (value != null && value.size() > 0) {
-				doSet(value, inv.value);
+				doSet(value, packet.value);
 			}
-			sendResponse(inv);
+			sendResponse(packet);
 			remoteReq.reset();
 		}
 	}
 
-	final void handleContains(Invocation inv) {
-		if (inv.key != null && !rightRemoteTarget(inv))
+	final void handleContains(PacketQueue.Packet packet) {
+		if (packet.key != null && !rightRemoteTarget(packet))
 			return;
-		remoteReq.setInvocation(inv);
+		remoteReq.setPacket(packet);
 		doContains(remoteReq);
 		if (remoteReq.response == Boolean.TRUE) {
-			sendResponse(inv);
+			sendResponse(packet);
 		} else {
-			sendResponseFailure(inv);
+			sendResponseFailure(packet);
 		}
 		remoteReq.reset();
 	}
 
-	final void handleLock(Invocation inv) {
-		if (rightRemoteTarget(inv)) {
-			remoteReq.setInvocation(inv);
+	final void handleLock(Packet packet) {
+		if (rightRemoteTarget(packet)) {
+			remoteReq.setPacket(packet);
 			doLock(remoteReq);
 			if (!remoteReq.scheduled) {
 				if (remoteReq.response == Boolean.TRUE) {
-					sendResponse(inv);
+					sendResponse(packet);
 				} else {
-					sendResponseFailure(inv);
+					sendResponseFailure(packet);
 				}
 			} else {
-				inv.returnToContainer();
+				packet.returnToContainer();
 			}
 			remoteReq.reset();
 		}
 	}
 
-	final void handlePutMulti(Invocation inv) {
-		if (rightRemoteTarget(inv)) {
-			remoteReq.setInvocation(inv);
+	final void handlePutMulti(PacketQueue.Packet packet) {
+		if (rightRemoteTarget(packet)) {
+			remoteReq.setPacket(packet);
 			doPutMulti(remoteReq);
 			if (!remoteReq.scheduled) {
 				if (remoteReq.response == Boolean.TRUE) {
-					sendResponse(inv);
+					sendResponse(packet);
 				} else {
-					sendResponseFailure(inv);
+					sendResponseFailure(packet);
 				}
 			} else {
-				inv.returnToContainer();
+				packet.returnToContainer();
 			}
 			remoteReq.reset();
 		}
 	}
 
-	final void handlePut(Invocation inv) {
-		if (rightRemoteTarget(inv)) {
-			remoteReq.setInvocation(inv);
+	final void handlePut(Packet packet) {
+		if (rightRemoteTarget(packet)) {
+			remoteReq.setPacket(packet);
 			doPut(remoteReq);
 			if (!remoteReq.scheduled) {
-				inv.version = remoteReq.version;
+				packet.version = remoteReq.version;
+                packet.longValue = remoteReq.longValue;
 				Data oldValue = (Data) remoteReq.response;
 				if (oldValue != null && oldValue.size() > 0) {
-					doSet(oldValue, inv.value);
+					doSet(oldValue, packet.value);
 				}
-				sendResponse(inv);
+				sendResponse(packet);
 			} else {
-				inv.returnToContainer();
+				packet.returnToContainer();
 			}
 			remoteReq.reset();
 		}
 	}
 
-	final void handleRemove(Invocation inv) {
-		if (rightRemoteTarget(inv)) {
-			remoteReq.setInvocation(inv);
+	final void handleRemove(Packet packet) {
+		if (rightRemoteTarget(packet)) {
+			remoteReq.setPacket(packet);
 			doRemove(remoteReq);
 			if (!remoteReq.scheduled) {
+                packet.version = remoteReq.version;
+                packet.longValue = remoteReq.longValue;
 				Data oldValue = (Data) remoteReq.response;
 				if (oldValue != null && oldValue.size() > 0) {
-					doSet(oldValue, inv.value);
+					doSet(oldValue, packet.value);
 				}
-				sendResponse(inv);
+				sendResponse(packet);
 			} else {
-				inv.returnToContainer();
+				packet.returnToContainer();
 			}
 			remoteReq.reset();
 		}
@@ -1851,8 +1854,8 @@ class ConcurrentMapManager extends BaseManager {
 					@Override
 					public boolean consume() {
 						CMap cmap = getMap(reqScheduled.name);
-						boolean removed = cmap.removeMulti(reqScheduled);
-						reqScheduled.response = Boolean.valueOf(removed);
+						boolean isRemoved = cmap.removeMulti(reqScheduled);
+						reqScheduled.response = isRemoved;
 						reqScheduled.key = null;
 						reqScheduled.value = null;
 						returnScheduledAsBoolean(reqScheduled);
@@ -1864,8 +1867,8 @@ class ConcurrentMapManager extends BaseManager {
 			}
 		} else {
 			CMap cmap = getMap(request.name);
-			boolean removed = cmap.removeMulti(request);
-			request.response = Boolean.valueOf(removed);
+			boolean isRemoved = cmap.removeMulti(request);
+			request.response = isRemoved;
 		}
 	}
 
@@ -1912,8 +1915,7 @@ class ConcurrentMapManager extends BaseManager {
 		CMap cmap = maps.get(req.name);
 		if (cmap == null)
 			return null;
-		Record record = cmap.getRecord(req.key);
-		return record;
+		return cmap.getRecord(req.key);
 	}
 
 	Record ensureRecord(Request req) {
@@ -1982,7 +1984,9 @@ class ConcurrentMapManager extends BaseManager {
 				// System.out.println(record.lockThreadId + " record " +
 				// record.lockAddress + ", count= " + record.lockCount);
 			}
-			record.version = req.version;
+            if (record != null) {
+                record.version = req.version;                    
+            }
 			return true;
 		}
 
@@ -2076,7 +2080,7 @@ class ConcurrentMapManager extends BaseManager {
 					return false;
 				}
 			}
-            record.incrementCopyAndGet();
+            record.incrementCopyCount();
 			return true;
 		}
 
@@ -2117,6 +2121,7 @@ class ConcurrentMapManager extends BaseManager {
 				req.key.setNoData();
 			}
 			req.version = record.version;
+            req.longValue = record.copyCount;
 			req.key = null;
 			req.value = null;
 			if (oldValue == null) {
@@ -2145,6 +2150,7 @@ class ConcurrentMapManager extends BaseManager {
 			record.lockAddress = req.lockAddress;
 			record.lockThreadId = req.lockThreadId;
 			record.lockCount = req.lockCount;
+            record.copyCount = (int) req.longValue;
 			return record;
 		}
 
@@ -2157,7 +2163,7 @@ class ConcurrentMapManager extends BaseManager {
 			}
 			boolean removed = false;
 			if (record.getCopyCount() > 0) {
-				record.decrementCopyAndGet();
+				record.decrementCopyCount();
 			} else {
 				record = removeRecord(record.key);
 				removed = true;
@@ -2170,7 +2176,9 @@ class ConcurrentMapManager extends BaseManager {
 				record.key = null;
 			}
 			record.version++;
+
 			req.version = record.version;
+            req.longValue = record.copyCount; 
 			return record.getValue();
 		}
 
@@ -2263,7 +2271,7 @@ class ConcurrentMapManager extends BaseManager {
 		private int lockCount = 0;
 		private List<ScheduledAction> lsScheduledActions = null;
 		private Map<Address, Boolean> mapListeners = null;
-		private AtomicInteger copyCount = null;
+		private int copyCount = 0;
 		private List<Data> lsValues = null; // multimap values
 
 		public Record(long id, String name, int blockId, Data key, Data value) {
@@ -2318,15 +2326,11 @@ class ConcurrentMapManager extends BaseManager {
 			int count = 0;
 			if (value != null) {
 				count = 1;
-				if (copyCount != null) {
-					count += copyCount.get();
-				}
+                count += copyCount;
 			} else if (lsValues != null) {
 				count = lsValues.size();
 			} else {
-                if (copyCount != null) {
-					count += copyCount.get();
-				}
+                count += copyCount; 
             }
 			return count;
 		}
@@ -2494,28 +2498,22 @@ class ConcurrentMapManager extends BaseManager {
 			mapListeners.remove(address);
 		}
 
-		public int incrementCopyAndGet() {
-			if (copyCount == null)
-				copyCount = new AtomicInteger(0);
-			return copyCount.incrementAndGet();
+		public void incrementCopyCount() {
+			++copyCount;
 		}
 
-		public int decrementCopyAndGet() {
-			if (copyCount == null)
-				return 0;
-			return copyCount.decrementAndGet();
+		public void decrementCopyCount() {
+		    --copyCount;
 		}
 
 		public int getCopyCount() {
-			if (copyCount == null)
-				return 0;
-			return copyCount.get();
+			return copyCount;
 		}
 
 		public String toString() {
 			return "Record [" + id + "] key=" + key;
 		}
-	}
+    }
 
 	public static class Block implements DataSerializable {
 		int blockId;

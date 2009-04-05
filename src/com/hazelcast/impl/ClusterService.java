@@ -25,9 +25,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.hazelcast.impl.BaseManager.InvocationProcessor;
+import com.hazelcast.impl.BaseManager.PacketProcessor;
 import com.hazelcast.impl.BaseManager.Processable;
-import com.hazelcast.nio.InvocationQueue.Invocation;
+import com.hazelcast.nio.PacketQueue.Packet;
+import com.hazelcast.nio.PacketQueue;
 
 public class ClusterService implements Runnable, Constants {
     protected static Logger logger = Logger.getLogger(ClusterService.class.getName());
@@ -38,7 +39,7 @@ public class ClusterService implements Runnable, Constants {
 
     private static final long UTILIZATION_CHECK_INTERVAL = TimeUnit.SECONDS.toNanos(10);
 
-    protected final boolean DEBUG = Build.get().DEBUG;
+    protected final boolean DEBUG = Build.DEBUG;
 
     protected final BlockingQueue queue;
 
@@ -52,7 +53,7 @@ public class ClusterService implements Runnable, Constants {
 
     protected long lastPeriodicCheck = 0;
 
-    private final InvocationProcessor[] invocationProcessors = new InvocationProcessor[300];
+    private final BaseManager.PacketProcessor[] packetProcessors = new BaseManager.PacketProcessor[300];
 
     private ClusterService() {
         this.queue = new LinkedBlockingQueue();
@@ -62,12 +63,12 @@ public class ClusterService implements Runnable, Constants {
         return instance;
     }
 
-    void registerInvocationProcessor(int operation, InvocationProcessor invocationProcessor) {
-        if (invocationProcessors[operation] != null) {
+    void registerPacketProcessor(int operation, BaseManager.PacketProcessor packetProcessor) {
+        if (packetProcessors[operation] != null) {
             logger.log(Level.SEVERE, operation + " is registered already with "
-                    + invocationProcessors[operation]);
+                    + packetProcessors[operation]);
         }
-        invocationProcessors[operation] = invocationProcessor;
+        packetProcessors[operation] = packetProcessor;
     }
 
     public void enqueueAndReturn(final Object message) {
@@ -81,18 +82,18 @@ public class ClusterService implements Runnable, Constants {
     public void process(final Object obj) {
         if (!running) return;
         final long processStart = System.nanoTime();
-        if (obj instanceof Invocation) {
-            final Invocation inv = (Invocation) obj;
-            final MemberImpl memberFrom = ClusterManager.get().getMember(inv.conn.getEndPoint());
+        if (obj instanceof PacketQueue.Packet) {
+            final Packet packet = (Packet) obj;
+            final MemberImpl memberFrom = ClusterManager.get().getMember(packet.conn.getEndPoint());
             if (memberFrom != null) {
                 memberFrom.didRead();
             }
-            InvocationProcessor invocationProcessor = invocationProcessors[inv.operation];
-            if (invocationProcessor == null) {
-                logger.log(Level.SEVERE, "No Invocation processor found for operation : "
-                        + inv.operation);
+            PacketProcessor packetProcessor = packetProcessors[packet.operation];
+            if (packetProcessor == null) {
+                logger.log(Level.SEVERE, "No Packet processor found for operation : "
+                        + packet.operation);
             }
-            invocationProcessor.process(inv);
+            packetProcessor.process(packet);
         } else if (obj instanceof Processable) {
             ((Processable) obj).process();
         } else {

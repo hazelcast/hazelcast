@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 import com.hazelcast.impl.Node;
-import com.hazelcast.nio.InvocationQueue.Invocation;
+import com.hazelcast.nio.PacketQueue.Packet;
 
 public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
@@ -43,16 +43,16 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 		super(connection);
 	}
 
-	public void enqueueInvocation(final Invocation inv) {
+	public void enqueuePacket(final PacketQueue.Packet packet) {
 		try {
-			writeQueue.put(inv); 
+			writeQueue.put(packet);
 		} catch (final InterruptedException e) {
 			Node.get().handleInterruptedException(Thread.currentThread(), e);
 		}
 		if (informSelector.get()) {
 			informSelector.set(false);
 			outSelector.addTask(this);
-			if (inv.currentCallCount < 2) { 
+			if (packet.currentCallCount < 2) {
 				outSelector.selector.wakeup();
 			}
 		}
@@ -73,11 +73,11 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 		try {
 			bbOut.clear();
 			copyLoop: while (bbOut.position() < (32 * 1024)) {
-				final Invocation inv = (Invocation) writeQueue.poll();
-				if (inv == null)
+				final PacketQueue.Packet packet = (PacketQueue.Packet) writeQueue.poll();
+				if (packet == null)
 					break copyLoop; 
-				inv.write(bbOut);
-				inv.returnToContainer();
+				packet.write(bbOut);
+				packet.returnToContainer();
 			}
 			if (bbOut.position() == 0)
 				return;
@@ -123,11 +123,11 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
 	@Override
 	public void shutdown() { 
-		Invocation inv = (Invocation) writeQueue.poll();
-		while (inv != null) {
-			inv.returnToContainer();
-			inv = (Invocation) writeQueue.poll();
+		PacketQueue.Packet packet = (Packet) writeQueue.poll();
+		while (packet != null) {
+			packet.returnToContainer();
+			packet = (PacketQueue.Packet) writeQueue.poll();
 		}
 		writeQueue.clear();
-	} 
+	}
 }

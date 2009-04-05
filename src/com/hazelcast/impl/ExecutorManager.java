@@ -54,7 +54,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferUtil;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.InvocationQueue.Invocation;
+import com.hazelcast.nio.PacketQueue.Packet;
 
 class ExecutorManager extends BaseManager implements MembershipListener {
 
@@ -73,15 +73,15 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 	private boolean started = false;
 	
 	private ExecutorManager() {
-		ClusterService.get().registerInvocationProcessor(OP_EXE_REMOTE_EXECUTION,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
-						handleRemoteExecution(inv);
+		ClusterService.get().registerPacketProcessor(OP_EXE_REMOTE_EXECUTION,
+				new PacketProcessor() {
+					public void process(Packet packet) {
+						handleRemoteExecution(packet);
 					}
 				});
-		ClusterService.get().registerInvocationProcessor(OP_STREAM, new InvocationProcessor() {
-			public void process(Invocation inv) {
-				handleStream(inv);
+		ClusterService.get().registerPacketProcessor(OP_STREAM, new PacketProcessor() {
+			public void process(Packet packet) {
+				handleStream(packet);
 			}
 		});
 	}
@@ -230,7 +230,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 				boolean cancelled = false;
 				try {
 					final Callable<Boolean> callCancel = new CancelationTask(executionId
-							.longValue(), thisAddress, mayInterruptIfRunning);
+							, thisAddress, mayInterruptIfRunning);
 					if (innerFutureTask.getMembers() == null) {
 						DistributedTask<Boolean> task = null;
 						if (innerFutureTask.getKey() != null) {
@@ -243,7 +243,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 							task = new DistributedTask<Boolean>(callCancel, randomTarget);
 						}
 						Hazelcast.getExecutorService().execute(task);
-						cancelled = task.get().booleanValue();
+						cancelled = task.get();
 					} else {
 						// members
 						final MultiTask<Boolean> task = new MultiTask<Boolean>(callCancel,
@@ -251,7 +251,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 						Hazelcast.getExecutorService().execute(task);
 						final Collection<Boolean> results = task.get();
 						for (final Boolean result : results) {
-							if (result.booleanValue())
+							if (result)
 								cancelled = true;
 						}
 					}
@@ -340,13 +340,13 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 					executeLocal();
 				} else {
 					localOnly = false;
-					final Invocation inv = obtainServiceInvocation("m:exe", null, task,
+					final Packet packet = obtainPacket("m:exe", null, task,
 							OP_EXE_REMOTE_EXECUTION, DEFAULT_TIMEOUT);
-					inv.timeout = DEFAULT_TIMEOUT;
-					inv.longValue = executionId.longValue();
-					final boolean sent = send(inv, target);
+					packet.timeout = DEFAULT_TIMEOUT;
+					packet.longValue = executionId;
+					final boolean sent = send(packet, target);
 					if (!sent) {
-						inv.returnToContainer();
+						packet.returnToContainer();
 						handleMemberLeft(getMember(target));
 					}
 				}
@@ -357,13 +357,13 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 						executeLocal();
 					} else {
 						localOnly = false;
-						final Invocation inv = obtainServiceInvocation("m:exe", null, task,
+						final Packet packet = obtainPacket("m:exe", null, task,
 								OP_EXE_REMOTE_EXECUTION, DEFAULT_TIMEOUT);
-						inv.timeout = DEFAULT_TIMEOUT;
-						inv.longValue = executionId.longValue();
-						final boolean sent = send(inv, ((ClusterMember) member).getAddress());
+						packet.timeout = DEFAULT_TIMEOUT;
+						packet.longValue = executionId;
+						final boolean sent = send(packet, ((ClusterMember) member).getAddress());
 						if (!sent) {
-							inv.returnToContainer();
+							packet.returnToContainer();
 							handleMemberLeft(member);
 						}
 					}
@@ -461,7 +461,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 			if (innerFutureTask.getExecutionCallback() != null) {
 				innerFutureTask.getExecutionCallback().done(distributedFutureTask);
 			}
-			mapStreams.remove(executionId.longValue());
+			mapStreams.remove(executionId);
 			final Object action = mapExecutions.remove(executionId);
 			// logger.log(Level.INFO,"finalizing action  " + action);
 			if (action != null) {
@@ -619,12 +619,12 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 
 	public void sendStreamItem(final Address address, final Object value, final long streamId) {
 		try {
-			final Invocation inv = ClusterManager.get().obtainServiceInvocation("exe", null, value,
+			final Packet packet = ClusterManager.get().obtainPacket("exe", null, value,
 					OP_STREAM, DEFAULT_TIMEOUT);
-			inv.longValue = streamId;
+			packet.longValue = streamId;
 			ClusterService.get().enqueueAndReturn(new Processable() {
 				public void process() {
-					send(inv, address);
+					send(packet, address);
 				}
 			});
 		} catch (Exception e) {
@@ -656,30 +656,30 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 		executor.execute(runnable);
 	}
 
-	public void handleStream(final Invocation inv) {
-		final StreamResponseHandler streamResponseHandler = mapStreams.get(inv.longValue);
+	public void handleStream(final Packet packet) {
+		final StreamResponseHandler streamResponseHandler = mapStreams.get(packet.longValue);
 		if (streamResponseHandler != null) {
-			final Data value = BufferUtil.doTake(inv.value);
+			final Data value = BufferUtil.doTake(packet.value);
 			executor.execute(new Runnable() {
 				public void run() {
 					streamResponseHandler.handleStreamResponse(value);
 				}
 			});
 		}
-		inv.returnToContainer();
+		packet.returnToContainer();
 	}
 
-	public void handleRemoteExecution(final Invocation inv) {
+	public void handleRemoteExecution(final Packet packet) {
 		if (DEBUG)
-			log("Remote handling invocation " + inv);
-		final Data callableData = BufferUtil.doTake(inv.value);
-		final RemoteExecutionId remoteExecutionId = new RemoteExecutionId(inv.conn.getEndPoint(),
-				inv.longValue);
+			log("Remote handling packet " + packet);
+		final Data callableData = BufferUtil.doTake(packet.value);
+		final RemoteExecutionId remoteExecutionId = new RemoteExecutionId(packet.conn.getEndPoint(),
+				packet.longValue);
 		final SimpleExecution se = new SimpleExecution(remoteExecutionId, executor, null,
 				callableData, null, false);
 		mapRemoteExecutions.put(remoteExecutionId, se);
 		executor.execute(se);
-		inv.returnToContainer();
+		packet.returnToContainer();
 	}
 
 	public void memberAdded(final MembershipEvent membersipEvent) {

@@ -44,11 +44,6 @@ public interface Constants {
 		public static final Object OBJECT_TIMEOUT = new Object();
 	}
 
-	interface InvocationParameters {
-
-		public static final int MAGIC_NUMBER = 489311320;
-	}
-
 	interface Timeouts {
 
 		public static final long TIMEOUT_ADDITION = 10000;

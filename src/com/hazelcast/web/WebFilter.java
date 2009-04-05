@@ -1212,7 +1212,7 @@ public class WebFilter implements Filter {
 
 	protected static Logger logger = Logger.getLogger(WebFilter.class.getName());
 
-	private static final boolean DEBUG = Build.get().DEBUG;
+	private static final boolean DEBUG = Build.DEBUG;
 
 	private static final String SESSION_URL_PHRASE = ";jsessionid=";
 

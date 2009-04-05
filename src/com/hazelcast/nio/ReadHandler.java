@@ -22,13 +22,13 @@ import java.nio.channels.SelectionKey;
 import java.util.logging.Level;
 
 import com.hazelcast.impl.ClusterService;
-import com.hazelcast.nio.InvocationQueue.Invocation;
+import com.hazelcast.nio.PacketQueue.Packet;
 
 class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
 	ByteBuffer inBuffer = null;
 
-	Invocation inv = null;
+	Packet packet = null;
 
 	long messageRead = 0;
 
@@ -53,9 +53,9 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 				return;
 			}
 		} catch (final Exception e) {
-			if (inv != null) {
-				inv.returnToContainer();
-				inv = null;
+			if (packet != null) {
+				packet.returnToContainer();
+				packet = null;
 			}
 			handleSocketException(e);
 			return;
@@ -68,10 +68,10 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 					inBuffer.clear();
 					return;
 				}
-				if (inv == null) {
+				if (packet == null) {
 					if (remaining >= 12) {
-						inv = obtainReadable();
-						if (inv == null) {
+						packet = obtainReadable();
+						if (packet == null) {
 							throw new RuntimeException(messageRead + " Unknown message type  from "
 									+ connection.getEndPoint());
 						}
@@ -80,18 +80,18 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 						return;
 					}
 				}
-				final boolean full = inv.read(inBuffer);
+				final boolean full = packet.read(inBuffer);
 				if (full) {
 					if (readCount++ % 10000 == 0) {
 						logger.log(Level.FINEST, "readHandler count " + readCount);
 						readCount = 1;
 					}
 					messageRead++;
-					inv.flipBuffers();
-					inv.read();
-					inv.setFromConnection(connection);
-					ClusterService.get().enqueueAndReturn(inv);
-					inv = null;
+					packet.flipBuffers();
+					packet.read();
+					packet.setFromConnection(connection);
+					ClusterService.get().enqueueAndReturn(packet);
+					packet = null;
 				} else {
 					if (inBuffer.hasRemaining()) {
 						if (DEBUG) {
@@ -113,11 +113,11 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 		registerOp(inSelector.selector, SelectionKey.OP_READ);
 	}
 
-	private final Invocation obtainReadable() {
-		final Invocation inv = InvocationQueue.get().obtainInvocation();
-		inv.reset();
-		inv.local = false;
-		return inv;
+	private final Packet obtainReadable() {
+		final Packet packet = PacketQueue.get().obtainPacket();
+		packet.reset();
+		packet.local = false;
+		return packet;
 	}
 
 }

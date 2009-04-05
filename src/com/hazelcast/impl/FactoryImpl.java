@@ -360,7 +360,7 @@ public class FactoryImpl implements Constants {
 			return name.substring(2);
 		}
 
-	}
+	}                
 
 	static class ListProxy extends CollectionProxy implements IList {
 		public ListProxy(MProxy mapProxy) {
@@ -481,7 +481,17 @@ public class FactoryImpl implements Constants {
 			return mapProxy;
 		}
 
-		public void destroy() {
+        @Override
+        public int hashCode() {
+            return super.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return super.equals(o); 
+        }
+
+        public void destroy() {
 
 		}
 	}

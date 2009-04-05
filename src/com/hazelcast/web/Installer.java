@@ -57,7 +57,7 @@ public class Installer {
 
 	protected static Logger logger = Logger.getLogger(Installer.class.getName());
 
-	private static final boolean DEBUG = Build.get().DEBUG;
+	private static final boolean DEBUG = Build.DEBUG;
 
 	private String clusteredFilePrefix = "clustered-";
 
@@ -66,6 +66,8 @@ public class Installer {
 	private boolean replaceOld = false;
 
 	private boolean appsSharingSessions = false;
+
+    private boolean wrapServletAndJSP = true;
 
 	public static void main(final String[] args) {
 		final Installer installer = new Installer();
@@ -426,7 +428,9 @@ public class Installer {
 			final BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));
 			final BufferedReader br = new BufferedReader(new InputStreamReader(in));
 			String strLine;
-			bw.write("<%@ page extends=\"com.hazelcast.web.JspWrapper\" %>\n");
+			if (wrapServletAndJSP) {
+                bw.write("<%@ page extends=\"com.hazelcast.web.JspWrapper\" %>\n");
+            }
 			while ((strLine = br.readLine()) != null) {
 				bw.write(strLine);
 				bw.write('\n');

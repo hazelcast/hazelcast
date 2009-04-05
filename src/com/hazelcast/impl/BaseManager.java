@@ -52,14 +52,9 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IMap;
 import com.hazelcast.impl.ClusterManager.RemotelyProcessable;
 import com.hazelcast.impl.ConcurrentMapManager.Record;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.BufferUtil;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.InvocationQueue;
-import com.hazelcast.nio.InvocationQueue.Invocation;
+import com.hazelcast.nio.PacketQueue;
+import com.hazelcast.nio.*;
+import com.hazelcast.nio.PacketQueue.Packet;
 
 abstract class BaseManager implements Constants {
 
@@ -74,7 +69,7 @@ abstract class BaseManager implements Constants {
 	protected final static Map<Address, MemberImpl> mapMembers = new HashMap<Address, MemberImpl>(
 			100);
 
-	protected final static boolean DEBUG = Build.get().DEBUG;
+	protected final static boolean DEBUG = Build.DEBUG;
 
 	protected final static Map<Long, Call> mapCalls = new HashMap<Long, Call>();
 
@@ -87,7 +82,7 @@ abstract class BaseManager implements Constants {
 
 	private static long scheduledActionIdIndex = 0;
 
-	private static long eventId = 1;
+	private static long callId = 1;
 
 	private static long idGen = 0;
 	
@@ -95,9 +90,8 @@ abstract class BaseManager implements Constants {
 
 	protected final MemberImpl thisMember;
 
-	
 
-	protected BaseManager() {
+    protected BaseManager() {
 		thisAddress = Node.get().address;
 		thisMember = Node.get().localMember;
 		for (int i = 0; i < EVENT_QUEUE_COUNT; i++) {
@@ -105,7 +99,7 @@ abstract class BaseManager implements Constants {
 		}
 	}
 
-	public abstract class ScheduledAction {
+    public abstract class ScheduledAction {
 		protected long timeToExpire;
 
 		protected long timeout;
@@ -318,8 +312,8 @@ abstract class BaseManager implements Constants {
 			return null;
 		}
 
-		public void handleResponse(final Invocation inv) {
-			consumeResponse(inv);
+		public void handleResponse(final PacketQueue.Packet packet) {
+			consumeResponse(packet);
 		}
 
 		@Override
@@ -342,11 +336,11 @@ abstract class BaseManager implements Constants {
 				addCall(AllOp.this);
 				for (final Address address : setAddresses) {
 					if (!address.equals(thisAddress)) {
-						final Invocation inv = request.toInvocation();
-						inv.eventId = getId();
-						final boolean sent = send(inv, address);
+						final PacketQueue.Packet packet = request.toPacket();
+						packet.callId = getId();
+						final boolean sent = send(packet, address);
 						if (!sent) {
-							inv.returnToContainer();
+							packet.returnToContainer();
 							log(address + " not reachable: operation redoing:  " + AllOp.this);
 							redo();
 						}
@@ -377,12 +371,12 @@ abstract class BaseManager implements Constants {
 			}
 		}
 
-		void consumeResponse(final Invocation inv) {
+		void consumeResponse(final PacketQueue.Packet packet) {
 			numberOfResponses++;
 			if (numberOfResponses >= numberOfExpectedResponses) {
 				complete(true);
 			}
-			inv.returnToContainer();
+			packet.returnToContainer();
 		}
 
 		abstract void doLocalOp();
@@ -403,8 +397,8 @@ abstract class BaseManager implements Constants {
 
 	abstract class BooleanOp extends TargetAwareOp {
 		@Override
-		void handleNoneRedoResponse(final Invocation inv) {
-			handleBooleanNoneRedoResponse(inv);
+		void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+			handleBooleanNoneRedoResponse(packet);
 		}
 	}
 
@@ -412,7 +406,7 @@ abstract class BaseManager implements Constants {
 
 		long getId();
 
-		void handleResponse(Invocation inv);
+		void handleResponse(PacketQueue.Packet packet);
 
 		void onDisconnect(Address dead);
 
@@ -421,8 +415,8 @@ abstract class BaseManager implements Constants {
 
 	abstract class LongOp extends TargetAwareOp {
 		@Override
-		void handleNoneRedoResponse(final Invocation inv) {
-			handleLongNoneRedoResponse(inv);
+		void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+			handleLongNoneRedoResponse(packet);
 		}
 	}
 
@@ -483,9 +477,9 @@ abstract class BaseManager implements Constants {
 			}
 		}
 
-		public void handleBooleanNoneRedoResponse(final Invocation inv) {
+		public void handleBooleanNoneRedoResponse(final PacketQueue.Packet packet) {
 			removeCall(getId());
-			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+			if (packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
 				responses.add(Boolean.TRUE);
 			} else {
 				responses.add(Boolean.FALSE);
@@ -499,17 +493,17 @@ abstract class BaseManager implements Constants {
 			responses.add(OBJECT_REDO);
 		}
 
-		void handleObjectNoneRedoResponse(final Invocation inv) {
+		void handleObjectNoneRedoResponse(final PacketQueue.Packet packet) {
 			removeCall(getId());
-			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-				final Data oldValue = doTake(inv.value);
+			if (packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+				final Data oldValue = doTake(packet.value);
 				if (oldValue == null || oldValue.size() == 0) {
 					responses.add(OBJECT_NULL);
 				} else {
 					responses.add(oldValue);
 				}
 			} else {
-				throw new RuntimeException("responseType " + inv.responseType);
+				throw new RuntimeException("responseType " + packet.responseType);
 			}
 		}
 	}
@@ -613,12 +607,12 @@ abstract class BaseManager implements Constants {
 			this.version = version;
 		}
 
-		public void setInvocation(final Invocation inv) {
+		public void setPacket(final PacketQueue.Packet packet) {
 			reset();
-			set(false, inv.operation, inv.name, doTake(inv.key), doTake(inv.value),
-					inv.blockId, inv.timeout, inv.txnId, inv.eventId, inv.threadId,
-					inv.lockAddress, inv.lockCount, inv.conn.getEndPoint(), inv.longValue,
-					inv.recordId, inv.version);
+			set(false, packet.operation, packet.name, doTake(packet.key), doTake(packet.value),
+					packet.blockId, packet.timeout, packet.txnId, packet.callId, packet.threadId,
+					packet.lockAddress, packet.lockCount, packet.conn.getEndPoint(), packet.longValue,
+					packet.recordId, packet.version);
 
 		}
 
@@ -645,28 +639,28 @@ abstract class BaseManager implements Constants {
 			return copy;
 		}
 
-		public Invocation toInvocation() {
-			final Invocation inv = obtainServiceInvocation();			
-			inv.local = false;
-			inv.operation = operation;
-			inv.name = name;
+		public PacketQueue.Packet toPacket() {
+			final PacketQueue.Packet packet = obtainPacket();
+			packet.local = false;
+			packet.operation = operation;
+			packet.name = name;
 			if (key != null)
-				doHardCopy(key, inv.key);
+				doHardCopy(key, packet.key);
 			if (value != null)
-				doHardCopy(value, inv.value);
-			inv.blockId = blockId;
-			inv.timeout = timeout;
-			inv.txnId = txnId;
-			inv.eventId = eventId;
-			inv.threadId = lockThreadId;
-			inv.lockAddress = lockAddress;
-			inv.lockCount = lockCount;
-			inv.longValue = longValue;
-			inv.recordId = recordId;
-			inv.version = version;
-			return inv;
+				doHardCopy(value, packet.value);
+			packet.blockId = blockId;
+			packet.timeout = timeout;
+			packet.txnId = txnId;
+			packet.callId = eventId;
+			packet.threadId = lockThreadId;
+			packet.lockAddress = lockAddress;
+			packet.lockCount = lockCount;
+			packet.longValue = longValue;
+			packet.recordId = recordId;
+			packet.version = version;
+			return packet;
 		}
-	}
+    }
 
 	abstract class RequestBasedCall extends AbstractCall {
 		final protected Request request = new Request();
@@ -803,29 +797,29 @@ abstract class BaseManager implements Constants {
 			setResult(OBJECT_REDO);
 		}
 		
-		public void handleBooleanNoneRedoResponse(final Invocation inv) { 
+		public void handleBooleanNoneRedoResponse(final PacketQueue.Packet packet) {
 			removeCall(getId());
-			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+			if (packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
 				setResult(Boolean.TRUE);
 			} else {
 				setResult(Boolean.FALSE);
 			}
 		}
 
-		void handleLongNoneRedoResponse(final Invocation inv) {
+		void handleLongNoneRedoResponse(final PacketQueue.Packet packet) {
 			removeCall(getId());
-			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-				setResult(Long.valueOf(inv.longValue));
+			if (packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+				setResult(packet.longValue);
 			} else {
 				throw new RuntimeException("handleLongNoneRedoResponse.responseType "
-						+ inv.responseType);
+						+ packet.responseType);
 			}
 		}
 
-		void handleObjectNoneRedoResponse(final Invocation inv) {
+		void handleObjectNoneRedoResponse(final PacketQueue.Packet packet) {
 			removeCall(getId());
-			if (inv.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-				final Data oldValue = doTake(inv.value);
+			if (packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+				final Data oldValue = doTake(packet.value);
 				if (oldValue == null || oldValue.size() == 0) {
 					setResult(OBJECT_NULL);
 				} else {
@@ -833,7 +827,7 @@ abstract class BaseManager implements Constants {
 				}
 			} else {
 				throw new RuntimeException("handleObjectNoneRedoResponse.responseType "
-						+ inv.responseType);
+						+ packet.responseType);
 			}
 		}
 
@@ -866,7 +860,7 @@ abstract class BaseManager implements Constants {
 			setResult(Boolean.TRUE);
 		}
 
-		public void handleResponse(Invocation inv) {
+		public void handleResponse(PacketQueue.Packet packet) {
 		}
 	}
 
@@ -877,13 +871,13 @@ abstract class BaseManager implements Constants {
 		public TargetAwareOp() {
 		}
 
-		public void handleResponse(final Invocation inv) { 
-			if (inv.responseType == RESPONSE_REDO) { 
+		public void handleResponse(final PacketQueue.Packet packet) {
+			if (packet.responseType == RESPONSE_REDO) {
 				redo();
 			} else {
-				handleNoneRedoResponse(inv);
+				handleNoneRedoResponse(packet);
 			}
-			inv.returnToContainer();
+			packet.returnToContainer();
 		}
 
 		@Override
@@ -910,24 +904,24 @@ abstract class BaseManager implements Constants {
 
 		}
 
-		protected void invoke() {
+		protected void invoke () {
 			addCall(TargetAwareOp.this);
-			final Invocation inv = request.toInvocation();
-			inv.eventId = getId();
-			final boolean sent = send(inv, target);
+			final PacketQueue.Packet packet = request.toPacket();
+			packet.callId = getId();
+			final boolean sent = send(packet, target);
 			if (!sent) {
 				if (DEBUG) {
-					log("invocation cannot be sent to " + target);
+					log("packetocation cannot be sent to " + target);
 				}
-				inv.returnToContainer();
+				packet.returnToContainer();
 				redo();
 			}
 		}
 
 		abstract void doLocalOp();
 
-		void handleNoneRedoResponse(final Invocation inv) {
-			handleObjectNoneRedoResponse(inv);
+		void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+			handleObjectNoneRedoResponse(packet);
 		}
 
 		abstract void setTarget();
@@ -966,13 +960,13 @@ abstract class BaseManager implements Constants {
 		return ClusterManager.get().getLocalMember();
 	}
 
-	public Invocation obtainServiceInvocation(final String name, final Object key,
+	public PacketQueue.Packet obtainPacket(final String name, final Object key,
 			final Object value, final int operation, final long timeout) {
 		try {
-			final Invocation inv = obtainServiceInvocation();
-			inv.set(name, operation, key, value);
-			inv.timeout = timeout;
-			return inv;
+			final PacketQueue.Packet packet = obtainPacket();
+			packet.set(name, operation, key, value);
+			packet.timeout = timeout;
+			return packet;
 
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -989,14 +983,14 @@ abstract class BaseManager implements Constants {
 			final TargetAwareOp mop = (TargetAwareOp) request.attachment;
 			mop.setResult(request.response);
 		} else {
-			final Invocation inv = request.toInvocation();
+			final PacketQueue.Packet packet = request.toPacket();
 			if (request.response == Boolean.TRUE) {
-				final boolean sent = sendResponse(inv, request.caller);
+				final boolean sent = sendResponse(packet, request.caller);
 				if (DEBUG) {
 					log(request.local + " returning scheduled response " + sent);
 				}
 			} else {
-				sendResponseFailure(inv, request.caller);
+				sendResponseFailure(packet, request.caller);
 			}
 		}
 	}
@@ -1006,24 +1000,24 @@ abstract class BaseManager implements Constants {
 			final TargetAwareOp mop = (TargetAwareOp) request.attachment;
 			mop.setResult(request.response);
 		} else {
-			final Invocation inv = request.toInvocation();
+			final PacketQueue.Packet packet = request.toPacket();
 			final Object result = request.response;
 			if (result != null) {
 				if (result instanceof Data) {
 					final Data data = (Data) result;
 					if (data.size() > 0) {
-						doSet(data, inv.value);
+						doSet(data, packet.value);
 					}
 				}
 			}
-			sendResponse(inv, request.caller);
+			sendResponse(packet, request.caller);
 		}
 	}
 
 	public void sendEvents(final int eventType, final String name, final Data key,
 			final Data value, final Map<Address, Boolean> mapListeners, final long recordId) {
 		if (mapListeners != null) {
-			final InvocationQueue sq = InvocationQueue.get();
+			final PacketQueue sq = PacketQueue.get();
 			final Set<Map.Entry<Address, Boolean>> entries = mapListeners.entrySet();
 
 			for (final Map.Entry<Address, Boolean> entry : entries) {
@@ -1041,22 +1035,22 @@ abstract class BaseManager implements Constants {
 						e.printStackTrace();
 					}
 				} else {
-					final Invocation inv = sq.obtainInvocation();
-					inv.reset();
+					final PacketQueue.Packet packet = sq.obtainPacket();
+					packet.reset();
 					try {
 						final Data eventKey = key;
 						Data eventValue = null;
 						if (includeValue)
 							eventValue = value;
-						inv.set(name, OP_EVENT, eventKey, eventValue);
-						inv.longValue = eventType;
-						inv.recordId = recordId;
+						packet.set(name, OP_EVENT, eventKey, eventValue);
+						packet.longValue = eventType;
+						packet.recordId = recordId;
 					} catch (final Exception e) {
 						e.printStackTrace();
 					}
-					final boolean sent = send(inv, address);
+					final boolean sent = send(packet, address);
 					if (!sent)
-						inv.returnToContainer();
+						packet.returnToContainer();
 				}
 			}
 		}
@@ -1064,12 +1058,12 @@ abstract class BaseManager implements Constants {
 
 	public void sendProcessableTo(final RemotelyProcessable rp, final Address address) {
 		final Data value = ThreadContext.get().toData(rp);
-		final Invocation inv = obtainServiceInvocation();
+		final PacketQueue.Packet packet = obtainPacket();
 		try {
-			inv.set("remotelyProcess", OP_REMOTELY_PROCESS, null, value);
-			final boolean sent = send(inv, address);
+			packet.set("remotelyProcess", OP_REMOTELY_PROCESS, null, value);
+			final boolean sent = send(packet, address);
 			if (!sent) {
-				inv.returnToContainer();
+				packet.returnToContainer();
 			}
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -1154,11 +1148,6 @@ abstract class BaseManager implements Constants {
 		return null;
 	}
 
-	protected long incrementAndGetEventId() {
-		eventId++;
-		return eventId;
-	}
-
 	protected final boolean isMaster() {
 		return Node.get().master();
 	}
@@ -1172,19 +1161,19 @@ abstract class BaseManager implements Constants {
 			logger.log(Level.FINEST, obj.toString());
 	}
 
-	protected Invocation obtainServiceInvocation() {
-		final InvocationQueue sq = InvocationQueue.get();
-		return sq.obtainInvocation();
+	protected Packet obtainPacket() {
+		final PacketQueue sq = PacketQueue.get();
+		return sq.obtainPacket();
 	}
 
 	protected final boolean send(final String name, final int operation, final DataSerializable ds,
 			final Address address) {
 		try {
-			final Invocation inv = InvocationQueue.get().obtainInvocation();
-			inv.set(name, operation, null, ds);
-			final boolean sent = send(inv, address);
+			final PacketQueue.Packet packet = PacketQueue.get().obtainPacket();
+			packet.set(name, operation, null, ds);
+			final boolean sent = send(packet, address);
 			if (!sent)
-				inv.returnToContainer();
+				packet.returnToContainer();
 			return sent;
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -1192,44 +1181,43 @@ abstract class BaseManager implements Constants {
 		return true;
 	}
 
-	protected void sendRedoResponse(final Invocation inv) {
-		inv.responseType = RESPONSE_REDO;
-		sendResponse(inv);
+	protected void sendRedoResponse(final PacketQueue.Packet packet) {
+		packet.responseType = RESPONSE_REDO;
+		sendResponse(packet);
 	}
 
-	protected boolean sendResponse(final Invocation inv) {
-		inv.local = false;
-		inv.operation = OP_RESPONSE;
-		if (inv.responseType == RESPONSE_NONE) {
-			inv.responseType = RESPONSE_SUCCESS;
+	protected boolean sendResponse(final PacketQueue.Packet packet) {
+		packet.local = false;
+		packet.operation = OP_RESPONSE;
+		if (packet.responseType == RESPONSE_NONE) {
+			packet.responseType = RESPONSE_SUCCESS;
 		}
-		final boolean sent = send(inv, inv.conn);
+		final boolean sent = send(packet, packet.conn);
 		if (!sent) {
-			inv.returnToContainer();
+			packet.returnToContainer();
 		}
 		return sent;
 	}
 
-	protected boolean sendResponse(final Invocation inv, final Address address) {
-		final Connection conn = ConnectionManager.get().getConnection(address);
-		inv.conn = conn;
-		return sendResponse(inv);
+	protected boolean sendResponse(final PacketQueue.Packet packet, final Address address) {
+		packet.conn = ConnectionManager.get().getConnection(address);
+		return sendResponse(packet);
 	}
 
-	protected boolean sendResponseFailure(final Invocation inv) {
-		inv.local = false;
-		inv.operation = OP_RESPONSE;
-		inv.responseType = RESPONSE_FAILURE;
-		final boolean sent = send(inv, inv.conn);
+	protected boolean sendResponseFailure(final PacketQueue.Packet packet) {
+		packet.local = false;
+		packet.operation = OP_RESPONSE;
+		packet.responseType = RESPONSE_FAILURE;
+		final boolean sent = send(packet, packet.conn);
 		if (!sent) { 
-			inv.returnToContainer();
+			packet.returnToContainer();
 		}
 		return sent;
 	}
 
-	protected boolean sendResponseFailure(final Invocation inv, final Address address) {
-		inv.conn = ConnectionManager.get().getConnection(address);
-		return sendResponseFailure(inv);
+	protected boolean sendResponseFailure(final PacketQueue.Packet packet, final Address address) {
+		packet.conn = ConnectionManager.get().getConnection(address);
+		return sendResponseFailure(packet);
 	}
 
 	protected void throwCME(final Object key) {
@@ -1342,7 +1330,7 @@ abstract class BaseManager implements Constants {
 					final Set<Map.Entry<Address, Boolean>> entries = mapListeners.entrySet();
 					for (final Map.Entry<Address, Boolean> entry : entries) {
 						if (mapTargetListeners.containsKey(entry.getKey())) {
-							if (entry.getValue().booleanValue()) {
+							if (entry.getValue()) {
 								mapTargetListeners.put(entry.getKey(), entry.getValue());
 							}
 						} else
@@ -1382,36 +1370,36 @@ abstract class BaseManager implements Constants {
 		}
 	}
 
-	final void handleResponse(final Invocation invResponse) {
-		final Call call = mapCalls.get(invResponse.eventId);
+	final void handleResponse(final PacketQueue.Packet packetResponse) {
+		final Call call = mapCalls.get(packetResponse.callId);
 		if (call != null) {
-			call.handleResponse(invResponse);
+			call.handleResponse(packetResponse);
 		} else {
 			if (DEBUG) {
-				log(invResponse.operation + " No call for eventId " + invResponse.eventId);
+				log(packetResponse.operation + " No call for callId " + packetResponse.callId);
 			}
-			invResponse.returnToContainer();
+			packetResponse.returnToContainer();
 		}
 	}
 
-	final boolean send(final Invocation inv, final Address address) { 
+	final boolean send(final PacketQueue.Packet packet, final Address address) {
 		final Connection conn = ConnectionManager.get().getConnection(address);
 		if (conn != null) {
-			return writeInvocation(conn, inv);
+			return writePacket(conn, packet);
 		} else {
 			return false;
 		}
 	}
 
-	final boolean send(final Invocation inv, final Connection conn) {
+	final boolean send(final PacketQueue.Packet packet, final Connection conn) {
 		if (conn != null) {
-			return writeInvocation(conn, inv);
+			return writePacket(conn, packet);
 		} else {
 			return false;
 		} 
 	}
 
-	final private boolean writeInvocation(final Connection conn, final Invocation inv) {
+	final private boolean writePacket(final Connection conn, final PacketQueue.Packet packet) {
 		if (!conn.live()) { 
 			return false;
 		}
@@ -1419,13 +1407,13 @@ abstract class BaseManager implements Constants {
 		if (memberImpl != null) {
 			memberImpl.didWrite();
 		}
-		inv.currentCallCount = mapCalls.size();
-		inv.write();
-		conn.getWriteHandler().enqueueInvocation(inv);
+		packet.currentCallCount = mapCalls.size();
+		packet.write();
+		conn.getWriteHandler().enqueuePacket(packet);
 		return true;
 	}
 
-	interface InvocationProcessor {
-		void process(Invocation inv);
+	interface PacketProcessor {
+		void process(PacketQueue.Packet packet);
 	}
 }

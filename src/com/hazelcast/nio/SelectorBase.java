@@ -37,7 +37,7 @@ public class SelectorBase implements Runnable {
 
 	protected static Logger logger = Logger.getLogger(SelectorBase.class.getName());
 
-	protected static final boolean DEBUG = Build.get().DEBUG;
+	protected static final boolean DEBUG = Build.DEBUG;
 
 	protected Selector selector = null;
 

@@ -32,7 +32,8 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferUtil;
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.InvocationQueue.Invocation;
+import com.hazelcast.nio.PacketQueue;
+import com.hazelcast.nio.PacketQueue.Packet;
 
 class ListenerManager extends BaseManager {
 	List<ListenerItem> lsListeners = new CopyOnWriteArrayList<ListenerItem>();
@@ -46,40 +47,40 @@ class ListenerManager extends BaseManager {
 	}
 
 	private ListenerManager() {
-		ClusterService.get().registerInvocationProcessor(OP_EVENT, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				handleEvent(inv);
+		ClusterService.get().registerPacketProcessor(OP_EVENT, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handleEvent(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_LISTENER_ADD, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				handleAddRemoveListener(true, inv);
+		ClusterService.get().registerPacketProcessor(OP_LISTENER_ADD, new PacketProcessor() {
+			public void process(Packet packet) {
+				handleAddRemoveListener(true, packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_LISTENER_REMOVE, new InvocationProcessor() {
-			public void process(Invocation inv) { 
-				handleAddRemoveListener(false, inv);
+		ClusterService.get().registerPacketProcessor(OP_LISTENER_REMOVE, new PacketProcessor() {
+			public void process(PacketQueue.Packet packet) {
+				handleAddRemoveListener(false, packet);
 			}
 		});		
 	}
 
-	private final void handleEvent(Invocation inv) {
-		int eventType = (int) inv.longValue;
-		Data key = BufferUtil.doTake(inv.key);
-		Data value = BufferUtil.doTake(inv.value);
-		String name = inv.name;
-		Address from = inv.conn.getEndPoint();
-		long recordId = inv.recordId;
-		inv.returnToContainer();
+	private final void handleEvent(Packet packet) {
+		int eventType = (int) packet.longValue;
+		Data key = BufferUtil.doTake(packet.key);
+		Data value = BufferUtil.doTake(packet.value);
+		String name = packet.name;
+		Address from = packet.conn.getEndPoint();
+		long recordId = packet.recordId;
+		packet.returnToContainer();
 		enqueueEvent(eventType, name, key, value, from, recordId);
 	}
 
-	private final void handleAddRemoveListener(boolean add, Invocation inv) {
-		Data key = (inv.key != null) ? BufferUtil.doTake(inv.key) : null;
-		boolean returnValue = (inv.longValue == 1) ? true : false;
-		String name = inv.name;
-		Address address = inv.conn.getEndPoint();
-		inv.returnToContainer();
+	private final void handleAddRemoveListener(boolean add, Packet packet) {
+		Data key = (packet.key != null) ? BufferUtil.doTake(packet.key) : null;
+		boolean returnValue = (packet.longValue == 1) ? true : false;
+		String name = packet.name;
+		Address address = packet.conn.getEndPoint();
+		packet.returnToContainer();
 		handleListenerRegisterations(add, name, key, address, returnValue);
 	}
 
@@ -129,17 +130,17 @@ class ListenerManager extends BaseManager {
 		String name;
 		Data key;
 		boolean add = true;
-		int invocationProcess = OP_LISTENER_ADD;
+		int packetProcess = OP_LISTENER_ADD;
 		boolean includeValue = true;
 
-		public ListenerRegistrationProcess(String name, Data key, boolean add, boolean includeValue) {
+        public ListenerRegistrationProcess(String name, Data key, boolean add, boolean includeValue) {
 			super();
 			this.key = key;
 			this.name = name;
 			this.add = add;
 			this.includeValue = includeValue;
 			if (!add)
-				invocationProcess = OP_LISTENER_REMOVE;
+				packetProcess = OP_LISTENER_REMOVE;
 		}
 
 		public void process() {
@@ -149,12 +150,12 @@ class ListenerManager extends BaseManager {
 					if (owner.equals(thisAddress)) {
 						handleListenerRegisterations(add, name, key, thisAddress, includeValue);
 					} else {
-						Invocation inv = obtainServiceInvocation();
-						inv.set(name, invocationProcess, key, null);
-						inv.longValue = (includeValue) ? 1 : 0;
-						boolean sent = send(inv, owner);
+						Packet packet = obtainPacket();
+						packet.set(name, packetProcess, key, null);
+						packet.longValue = (includeValue) ? 1 : 0;
+						boolean sent = send(packet, owner);
 						if (!sent) {
-							inv.returnToContainer();
+							packet.returnToContainer();
 						}
 					}
 				} else {
@@ -174,16 +175,16 @@ class ListenerManager extends BaseManager {
 
 	public void sendAddRemoveListener(Address toAddress, boolean add, String name, Data key,
 			boolean includeValue) {
-		Invocation inv = obtainServiceInvocation();
+		Packet packet = obtainPacket();
 		try {
-			inv.set(name, (add) ? OP_LISTENER_ADD : OP_LISTENER_REMOVE, key, null);
+			packet.set(name, (add) ? OP_LISTENER_ADD : OP_LISTENER_REMOVE, key, null);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		inv.longValue = (includeValue) ? 1 : 0;
-		boolean sent = send(inv, toAddress);
+		packet.longValue = (includeValue) ? 1 : 0;
+		boolean sent = send(packet, toAddress);
 		if (!sent) {
-			inv.returnToContainer();
+			packet.returnToContainer();
 		}
 	}
 

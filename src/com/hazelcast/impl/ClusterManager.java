@@ -42,14 +42,8 @@ import java.util.logging.Level;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.Member;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.BufferUtil;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.InvocationQueue.Invocation;
+import com.hazelcast.nio.*;
+import com.hazelcast.nio.PacketQueue.Packet;
 
 public class ClusterManager extends BaseManager implements ConnectionListener {
 
@@ -73,69 +67,69 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 
 	private ClusterManager() {
 		ConnectionManager.get().addConnectionListener(this);
-		ClusterService.get().registerInvocationProcessor(OP_RESPONSE, new InvocationProcessor() {
-			public void process(Invocation inv) {
-				handleResponse(inv);
+		ClusterService.get().registerPacketProcessor(OP_RESPONSE, new PacketProcessor() {
+			public void process(Packet packet) {
+				handleResponse(packet);
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_HEARTBEAT, new InvocationProcessor() {
-			public void process(Invocation inv) {
+		ClusterService.get().registerPacketProcessor(OP_HEARTBEAT, new PacketProcessor() {
+			public void process(Packet packet) {
 			}
 		});
-		ClusterService.get().registerInvocationProcessor(OP_REMOTELY_PROCESS_AND_RESPOND,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
-						Data data = BufferUtil.doTake(inv.value);
+		ClusterService.get().registerPacketProcessor(OP_REMOTELY_PROCESS_AND_RESPOND,
+				new PacketProcessor() {
+					public void process(PacketQueue.Packet packet) {
+						Data data = BufferUtil.doTake(packet.value);
 						RemotelyProcessable rp = (RemotelyProcessable) ThreadContext.get()
 								.toObject(data);
-						rp.setConnection(inv.conn);
+						rp.setConnection(packet.conn);
 						rp.process();
-						sendResponse(inv);
+						sendResponse(packet);
 					}
 				});
-		ClusterService.get().registerInvocationProcessor(OP_REMOTELY_PROCESS,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
-						Data data = BufferUtil.doTake(inv.value);
+		ClusterService.get().registerPacketProcessor(OP_REMOTELY_PROCESS,
+				new PacketProcessor() {
+					public void process(Packet packet) {
+						Data data = BufferUtil.doTake(packet.value);
 						RemotelyProcessable rp = (RemotelyProcessable) ThreadContext.get()
 								.toObject(data);
-						rp.setConnection(inv.conn);
+						rp.setConnection(packet.conn);
 						rp.process();
-						inv.returnToContainer();
+						packet.returnToContainer();
 					}
 				});
 
-		ClusterService.get().registerInvocationProcessor(OP_REMOTELY_BOOLEAN_CALLABLE,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
+		ClusterService.get().registerPacketProcessor(OP_REMOTELY_BOOLEAN_CALLABLE,
+				new PacketProcessor() {
+					public void process(Packet packet) {
 						Boolean result = null;
 						try {
-							Data data = BufferUtil.doTake(inv.value);
+							Data data = BufferUtil.doTake(packet.value);
 							AbstractRemotelyCallable<Boolean> callable = (AbstractRemotelyCallable<Boolean>) ThreadContext
 									.get().toObject(data);
-							callable.setConnection(inv.conn);
+							callable.setConnection(packet.conn);
 							result = callable.call();
 						} catch (Exception e) {
 							e.printStackTrace(System.out);
 							result = Boolean.FALSE;
 						}
 						if (result == Boolean.TRUE) {
-							sendResponse(inv);
+							sendResponse(packet);
 						} else {
-							sendResponseFailure(inv);
+							sendResponseFailure(packet);
 						}
 					}
 				});
 
-		ClusterService.get().registerInvocationProcessor(OP_REMOTELY_OBJECT_CALLABLE,
-				new InvocationProcessor() {
-					public void process(Invocation inv) {
+		ClusterService.get().registerPacketProcessor(OP_REMOTELY_OBJECT_CALLABLE,
+				new PacketProcessor() {
+					public void process(Packet packet) {
 						Object result = null;
 						try {
-							Data data = BufferUtil.doTake(inv.value);
+							Data data = BufferUtil.doTake(packet.value);
 							AbstractRemotelyCallable callable = (AbstractRemotelyCallable) ThreadContext
 									.get().toObject(data);
-							callable.setConnection(inv.conn);
+							callable.setConnection(packet.conn);
 							result = callable.call();
 						} catch (Exception e) {
 							e.printStackTrace(System.out);
@@ -148,10 +142,10 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 							} else {
 								value = ThreadContext.get().toData(result);
 							}
-							BufferUtil.doSet(value, inv.value);
+							BufferUtil.doSet(value, packet.value);
 						}
 
-						sendResponse(inv);
+						sendResponse(packet);
 					}
 				});
 	}
@@ -178,9 +172,9 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 						}
 						if (conn != null && conn.live()) {
 							if ((now - memberImpl.getLastWrite()) > 500) {
-								Invocation inv = obtainServiceInvocation("heartbeat", null, null,
+								Packet packet = obtainPacket("heartbeat", null, null,
 										OP_HEARTBEAT, 0);
-								send(inv, address);
+								send(packet, address);
 							}
 						}
 					} catch (Exception e) {
@@ -207,9 +201,9 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 					}
 				}
 				if (!removed) {
-					Invocation inv = obtainServiceInvocation("heartbeat", null, null, OP_HEARTBEAT,
+					Packet packet = obtainPacket("heartbeat", null, null, OP_HEARTBEAT,
 							0);
-					send(inv, getMasterAddress());
+					send(packet, getMasterAddress());
 				}
 			}
 			for (MemberImpl member : lsMembers) {
@@ -218,9 +212,9 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 					if (shouldConnectTo(address)) {
 						Connection conn = ConnectionManager.get().getOrConnect(address);
 						if (conn != null) {
-							Invocation inv = obtainServiceInvocation("heartbeat", null, null,
+							Packet packet = obtainPacket("heartbeat", null, null,
 									OP_HEARTBEAT, 0);
-							send(inv, conn);
+							send(packet, conn);
 						}
 					}
 				}
@@ -402,12 +396,12 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 
 	public void sendProcessableTo(RemotelyProcessable rp, Connection conn) {
 		Data value = ThreadContext.get().toData(rp);
-		Invocation inv = obtainServiceInvocation();
+		Packet packet = obtainPacket();
 		try {
-			inv.set("remotelyProcess", OP_REMOTELY_PROCESS, null, value);
-			boolean sent = send(inv, conn);
+			packet.set("remotelyProcess", OP_REMOTELY_PROCESS, null, value);
+			boolean sent = send(packet, conn);
 			if (!sent) {
-				inv.returnToContainer();
+				packet.returnToContainer();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -421,12 +415,12 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		Data value = ThreadContext.get().toData(rp);
 		for (MemberImpl member : lsMembers) {
 			if (!member.localMember()) {
-				Invocation inv = obtainServiceInvocation();
+				Packet packet = obtainPacket();
 				try {
-					inv.set("remotelyProcess", OP_REMOTELY_PROCESS, null, value);
-					boolean sent = send(inv, member.getAddress());
+					packet.set("remotelyProcess", OP_REMOTELY_PROCESS, null, value);
+					boolean sent = send(packet, member.getAddress());
 					if (!sent) {
-						inv.returnToContainer();
+						packet.returnToContainer();
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -457,9 +451,9 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 		}
 
 		@Override
-		void consumeResponse(Invocation inv) {
+		void consumeResponse(Packet packet) {
 			complete(true);
-			inv.returnToContainer();
+			packet.returnToContainer();
 		}
 
 		@Override
