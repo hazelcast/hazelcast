@@ -463,7 +463,7 @@ class BlockingQueueManager extends BaseManager {
 
     final void handleOffer(PacketQueue.Packet packet) {
         if (rightRemoteOfferTarget(packet)) {
-            remoteReq.setPacket(packet);
+            remoteReq.setFromPacket(packet);
             doOffer(remoteReq);
             packet.longValue = remoteReq.longValue;
             if (!remoteReq.scheduled) {
@@ -481,7 +481,7 @@ class BlockingQueueManager extends BaseManager {
 
     final void handlePublish(Packet packet) {
         if (rightRemoteOfferTarget(packet)) {
-            remoteReq.setPacket(packet);
+            remoteReq.setFromPacket(packet);
             doPublish(remoteReq);
             packet.longValue = remoteReq.longValue;
             if (!remoteReq.scheduled) {
@@ -499,7 +499,7 @@ class BlockingQueueManager extends BaseManager {
 
     final void handleAddTopicListener(PacketQueue.Packet packet) {
         if (rightRemoteOfferTarget(packet)) {
-            remoteReq.setPacket(packet);
+            remoteReq.setFromPacket(packet);
             doAddTopicListener(remoteReq);
             packet.longValue = remoteReq.longValue;
             sendResponse(packet);
@@ -570,7 +570,7 @@ class BlockingQueueManager extends BaseManager {
 
     final void handlePoll(PacketQueue.Packet packet) {
         if (rightRemotePollTarget(packet)) {
-            remoteReq.setPacket(packet);
+            remoteReq.setFromPacket(packet);
             doPoll(remoteReq);
             if (!remoteReq.scheduled) {
                 Data oldValue = (Data) remoteReq.response;

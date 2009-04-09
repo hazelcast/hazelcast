@@ -88,6 +88,10 @@ public class ClusterService implements Runnable, Constants {
             if (memberFrom != null) {
                 memberFrom.didRead();
             }
+            if (packet.operation < 0 || packet.operation >= packetProcessors.length) {
+                logger.log (Level.SEVERE, "Unknown operation " + packet.operation);
+                return;
+            }
             PacketProcessor packetProcessor = packetProcessors[packet.operation];
             if (packetProcessor == null) {
                 logger.log(Level.SEVERE, "No Packet processor found for operation : "

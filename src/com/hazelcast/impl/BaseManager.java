@@ -30,7 +30,10 @@ import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_FAILURE;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_NONE;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_REDO;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_SUCCESS;
-import static com.hazelcast.nio.BufferUtil.*;
+import static com.hazelcast.nio.BufferUtil.createNewData;
+import static com.hazelcast.nio.BufferUtil.doHardCopy;
+import static com.hazelcast.nio.BufferUtil.doSet;
+import static com.hazelcast.nio.BufferUtil.doTake;
 
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
@@ -607,7 +610,22 @@ abstract class BaseManager implements Constants {
             this.version = version;
         }
 
-        public void setPacket(final PacketQueue.Packet packet) {
+
+        public void setFromRequest(Request req, boolean hardCopy) {
+            reset();
+            set(req.local, req.operation, req.name, null, null, req.blockId, req.timeout,
+                    req.txnId, req.eventId, req.lockThreadId, req.lockAddress, req.lockCount,
+                    req.caller, req.longValue, req.recordId, req.version);
+            if (hardCopy) {
+                key = doHardCopy(req.key);
+                value = doHardCopy(req.value);
+            } else {
+                key = req.key;
+                value = req.value;
+            }
+        }
+
+        public void setFromPacket(final PacketQueue.Packet packet) {
             reset();
             set(false, packet.operation, packet.name, doTake(packet.key), doTake(packet.value),
                     packet.blockId, packet.timeout, packet.txnId, packet.callId, packet.threadId,
@@ -659,7 +677,8 @@ abstract class BaseManager implements Constants {
             packet.recordId = recordId;
             packet.version = version;
             return packet;
-        }
+        } 
+
     }
 
     abstract class RequestBasedCall extends AbstractCall {

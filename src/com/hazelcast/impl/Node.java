@@ -397,23 +397,27 @@ public class Node {
             try {
                 if (ip) {
                     for (int i = 0; i < 3; i++) {
-                        final Address address = new Address(host, config.port + i, true);
-                        lsPossibleAddresses.add(address);
+                        final Address addrs = new Address(host, config.port + i, true);
+                        if (! addrs.equals(getThisAddress())) {
+                            lsPossibleAddresses.add(addrs);
+                        }    
                     }
                 } else {
                     final InetAddress[] allAddresses = InetAddress.getAllByName(host);
                     for (final InetAddress inetAddress : allAddresses) {
                         boolean shouldCheck = true;
-                        Address address = null;
+                        Address addrs = null;
                         if (config.interfaces.enabled) {
-                            address = new Address(inetAddress.getAddress(), config.port);
-                            shouldCheck = AddressPicker.matchAddress(address.getHost());
+                            addrs = new Address(inetAddress.getAddress(), config.port);
+                            shouldCheck = AddressPicker.matchAddress(addrs.getHost());
                         }
                         if (shouldCheck) {
                             for (int i = 0; i < 3; i++) {
                                 final Address addressProper = new Address(inetAddress.getAddress(),
                                         config.port + i);
-                                lsPossibleAddresses.add(addressProper);
+                                if (! addressProper.equals(getThisAddress())) {
+                                    lsPossibleAddresses.add(addressProper);
+                                }
                             }
                         }
                     }

@@ -551,7 +551,7 @@ public class FactoryImpl implements Constants {
         }
 
         public int remainingCapacity() {
-            return 0;
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -580,16 +580,21 @@ public class FactoryImpl implements Constants {
             return name;
         }
 
+        @Override
+        public boolean remove (Object obj) {
+            throw new UnsupportedOperationException();                      
+        }
+
         public int drainTo(Collection c) {
-            return 0;
+            throw new UnsupportedOperationException();
         }
 
         public int drainTo(Collection c, int maxElements) {
-            return 0;
+            throw new UnsupportedOperationException();
         }
 
         public void destroy() {
-
+            throw new UnsupportedOperationException();
         }
     }
 
