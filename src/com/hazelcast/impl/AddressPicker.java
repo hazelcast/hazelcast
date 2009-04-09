@@ -17,12 +17,10 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.nio.Address;
+
 import java.lang.reflect.Method;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
-import java.net.ServerSocket;
+import java.net.*;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Enumeration;
 import java.util.List;
@@ -30,8 +28,6 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.hazelcast.nio.Address;
 
 public class AddressPicker {
     protected static Logger logger = Logger.getLogger(AddressPicker.class.getName());
@@ -169,39 +165,37 @@ public class AddressPicker {
         String currentAddress = null;
         try {
             final Config config = Config.get();
-            final String localAddress = System.getProperty("the.local.address");
-
-            currentAddress = InetAddress.getByName(localAddress).getHostAddress().trim();
-            if (currentAddress == null || currentAddress.length() == 0
-                    || currentAddress.equalsIgnoreCase("localhost")
-                    || currentAddress.equals("127.0.0.1")) {
-                boolean matchFound = false;
+            final String localAddress = System.getProperty("hazelcast.local.address"); 
+            if (localAddress != null) {
+                currentAddress = InetAddress.getByName(localAddress.trim()).getHostAddress();
+            }
+            if (currentAddress == null) {
                 final Enumeration<NetworkInterface> enums = NetworkInterface.getNetworkInterfaces();
                 interfaces:
                 while (enums.hasMoreElements()) {
                     final NetworkInterface ni = enums.nextElement();
                     final Enumeration<InetAddress> e = ni.getInetAddresses();
-//					final boolean isUp = invoke(true, 1.6, ni, "isUp");
+//					final boolean isUp = invoke(true, 1.6, ni, "isUp");     
 //					final boolean supportsMulticast = invoke(true, 1.6, ni, "supportsMulticast");
                     while (e.hasMoreElements()) {
                         final InetAddress inetAddress = e.nextElement();
                         if (inetAddress instanceof Inet4Address) {
                             final String address = inetAddress.getHostAddress();
-                            if (!inetAddress.isLoopbackAddress()) {
-                                currentAddress = address;
-                                if (config.interfaces.enabled) {
-                                    if (matchAddress(address)) {
-                                        matchFound = true;
-                                        break interfaces;
-                                    }
-                                } else {
+                            if (config.interfaces.enabled) {
+                                if (matchAddress(address)) {
+                                    currentAddress = address;
+                                    break interfaces;
+                                }
+                            } else {
+                                if (!inetAddress.isLoopbackAddress()) {
+                                    currentAddress = address;
                                     break interfaces;
                                 }
                             }
                         }
                     }
                 }
-                if (config.interfaces.enabled && !matchFound) {
+                if (config.interfaces.enabled && currentAddress == null) {
                     String msg = "Hazelcast CANNOT start on this node. No matching network interface found. ";
                     msg += "\nInterface matching must be either disabled or updated in the hazelcast.xml config file.";
                     logger.log(Level.SEVERE, msg);
@@ -209,7 +203,9 @@ public class AddressPicker {
                     return null;
                 }
             }
-
+            if (currentAddress == null) {
+                currentAddress = "127.0.0.1";
+            }
             final InetAddress inetAddress = InetAddress.getByName(currentAddress);
             ServerSocket serverSocket = serverSocketChannel.socket();
             serverSocket.setReuseAddress(false);
@@ -232,7 +228,8 @@ public class AddressPicker {
             serverSocketChannel.configureBlocking(false);
             final Address selectedAddress = new Address(currentAddress, port);
             return selectedAddress;
-        } catch (final Exception e) {
+        } catch (
+                final Exception e) {
             Node.get().dumpCore(e);
             e.printStackTrace();
             throw e;
