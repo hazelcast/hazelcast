@@ -86,6 +86,11 @@ class ConcurrentMapManager extends BaseManager {
                 handleRemove(packet);
             }
         });
+        ClusterService.get().registerPacketProcessor(OP_CMAP_REMOVE_ITEM, new PacketProcessor() {
+            public void process(PacketQueue.Packet packet) {
+                handleRemoveItem(packet);
+            }
+        });
         ClusterService.get().registerPacketProcessor(OP_CMAP_REMOVE_IF_SAME,
                 new PacketProcessor() {
                     public void process(PacketQueue.Packet packet) {
@@ -606,6 +611,20 @@ class ConcurrentMapManager extends BaseManager {
             doGet(request);
             Data value = (Data) request.response;
             setResult(value);
+        }
+    }
+
+    class MRemoveItem extends MBackupAwareOp {
+
+        public boolean removeItem(String name, Object key) {
+            boolean result = booleanCall(OP_CMAP_REMOVE_ITEM, name, key, null, 0, -1, -1);
+            backup(OP_CMAP_BACKUP_REMOVE_SYNC);
+            return result;
+        }
+
+        public void doLocalOp() {
+            doRemoveItem(request);
+            setResult(request.response);
         }
     }
 
@@ -1498,6 +1517,23 @@ class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    final void handleRemoveItem(Packet packet) {
+        if (rightRemoteTarget(packet)) {
+            remoteReq.setFromPacket(packet);
+            doRemoveItem(remoteReq);
+            packet.version = remoteReq.version;
+            packet.longValue = remoteReq.longValue;
+            if (remoteReq.response == Boolean.TRUE) {
+                sendResponse(packet);
+            } else {
+                sendResponseFailure(packet);
+            }
+
+            remoteReq.reset();
+        }
+    }
+
+
     final void handleRemove(Packet packet) {
         if (rightRemoteTarget(packet)) {
             remoteReq.setFromPacket(packet);
@@ -1705,6 +1741,11 @@ class ConcurrentMapManager extends BaseManager {
             boolean isRemoved = cmap.removeMulti(request);
             request.response = isRemoved;
         }
+    }
+
+    final void doRemoveItem(Request request) {
+        CMap cmap = getMap(request.name);
+        request.response = cmap.removeItem(request);
     }
 
     final void doRemove(Request request) {
@@ -1988,6 +2029,40 @@ class ConcurrentMapManager extends BaseManager {
             return record;
         }
 
+        public boolean removeItem(Request req) {
+            Record record = mapRecords.get(req.key);
+            req.key.setNoData();
+            req.key = null;
+            if (record == null) {
+                return false;
+            }
+            boolean removed = false;
+            if (record.getCopyCount() > 0) {
+                record.decrementCopyCount();
+            } else if (record.value != null) {
+                removed = true;
+            }
+
+            if (removed) {
+                fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record, null);
+                record.version++;
+                if (record.value != null) {
+                    record.value.setNoData();
+                    record.value = null;
+                }
+            }
+
+            req.version = record.version;
+            req.longValue = record.copyCount;
+
+            if (record.isRemovable()) {
+                removeRecord(record.key);
+                record.key.setNoData();
+                record.key = null;
+            }
+            return true;
+        }
+
         public Data remove(Request req) {
             Record record = mapRecords.get(req.key);
             req.key.setNoData();
@@ -1996,17 +2071,10 @@ class ConcurrentMapManager extends BaseManager {
                 return null;
             }
             Data oldValue = record.getValue();
-            boolean removed = false;
-            if (record.getCopyCount() > 0) {
-                record.decrementCopyCount();
-                removed = true;
-            } else if (record.value != null) {
-                removed = true;
-                record.value = null;
-            }
-            if (removed) {
+            if (record.value != null) {
                 fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record, null);
                 record.version++;
+                record.value = null;
             }
 
             req.version = record.version;
@@ -2037,10 +2105,12 @@ class ConcurrentMapManager extends BaseManager {
             while (rec == null && recordId <= maxId) {
                 rec = getRecordById(recordId);
                 if (rec != null) {
-                    if (name != null && name.equals(rec.name)) {
-                        if (rec.blockId == blockId) {
-                            if (rec.owner.equals(thisAddress)) {
-                                return rec;
+                    if (rec.valueCount() > 0) {
+                        if (name != null && name.equals(rec.name)) {
+                            if (rec.blockId == blockId) {
+                                if (rec.owner.equals(thisAddress)) {
+                                    return rec;
+                                }
                             }
                         }
                     }

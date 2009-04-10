@@ -17,60 +17,20 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.impl.Constants.MapTypes.MAP_TYPE_LIST;
-import static com.hazelcast.impl.Constants.MapTypes.MAP_TYPE_MAP;
-import static com.hazelcast.impl.Constants.MapTypes.MAP_TYPE_MULTI_MAP;
-import static com.hazelcast.impl.Constants.MapTypes.MAP_TYPE_SET;
+import com.hazelcast.core.*;
+import com.hazelcast.impl.BaseManager.Processable;
+import com.hazelcast.impl.BlockingQueueManager.*;
+import com.hazelcast.impl.ClusterManager.CreateProxy;
+import com.hazelcast.impl.ConcurrentMapManager.*;
+import static com.hazelcast.impl.Constants.MapTypes.*;
+import com.hazelcast.nio.DataSerializable;
 
 import java.io.Serializable;
-import java.util.AbstractCollection;
-import java.util.AbstractQueue;
-import java.util.AbstractSet;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
-
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.ICollection;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.IdGenerator;
-import com.hazelcast.core.ItemListener;
-import com.hazelcast.core.MessageListener;
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.core.Transaction;
-import com.hazelcast.impl.BaseManager.Processable;
-import com.hazelcast.impl.BlockingQueueManager.AddTopicListener;
-import com.hazelcast.impl.BlockingQueueManager.Offer;
-import com.hazelcast.impl.BlockingQueueManager.Poll;
-import com.hazelcast.impl.BlockingQueueManager.QIterator;
-import com.hazelcast.impl.BlockingQueueManager.Size;
-import com.hazelcast.impl.ClusterManager.CreateProxy;
-import com.hazelcast.impl.ConcurrentMapManager.MAdd;
-import com.hazelcast.impl.ConcurrentMapManager.MContainsKey;
-import com.hazelcast.impl.ConcurrentMapManager.MContainsValue;
-import com.hazelcast.impl.ConcurrentMapManager.MGet;
-import com.hazelcast.impl.ConcurrentMapManager.MIterator;
-import com.hazelcast.impl.ConcurrentMapManager.MLock;
-import com.hazelcast.impl.ConcurrentMapManager.MPut;
-import com.hazelcast.impl.ConcurrentMapManager.MRemove;
-import com.hazelcast.impl.ConcurrentMapManager.MSize;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
 
 public class FactoryImpl implements Constants {
 
@@ -581,8 +541,8 @@ public class FactoryImpl implements Constants {
         }
 
         @Override
-        public boolean remove (Object obj) {
-            throw new UnsupportedOperationException();                      
+        public boolean remove(Object obj) {
+            throw new UnsupportedOperationException();
         }
 
         public int drainTo(Collection c) {
@@ -900,16 +860,18 @@ public class FactoryImpl implements Constants {
         public boolean removeKey(Object key) {
             if (key == null)
                 throw new NullPointerException();
-            try {
-                Data dataKey = ThreadContext.get().toData(key);
-                return remove(dataKey) != null;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return false;
+            ConcurrentMapManager.MRemoveItem mRemoveItem = ConcurrentMapManager.get().new MRemoveItem();
+            return mRemoveItem.removeItem(name, key);
         }
 
         public void clear() {
+            MIterator it = ConcurrentMapManager.get().new MIterator();
+            it.set(name, EntrySet.TYPE_KEYS);
+            while (it.hasNext()) {
+                it.next();
+                it.remove();
+            }
+
         }
 
         public Set entrySet() {
