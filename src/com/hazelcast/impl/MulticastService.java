@@ -17,18 +17,14 @@
 
 package com.hazelcast.impl;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import com.hazelcast.impl.ClusterManager.JoinRequest;
+import com.hazelcast.nio.Address;
+
+import java.io.*;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketTimeoutException;
-
-import com.hazelcast.impl.ClusterManager.JoinRequest;
-import com.hazelcast.nio.Address;
 
 class MulticastService implements Runnable {
 
@@ -54,6 +50,7 @@ class MulticastService implements Runnable {
         this.datagramPacketSend = new DatagramPacket(new byte[bufferSize], bufferSize, InetAddress
                 .getByName(config.join.multicastConfig.multicastGroup),
                 config.join.multicastConfig.multicastPort);
+        running = true;
 
     }
 
@@ -72,22 +69,14 @@ class MulticastService implements Runnable {
                                 if (Node.get().master()) {
                                     if (joinInfo.request) {
                                         send(joinInfo.copy(false, Node.get().address));
-                                    } else {
-                                        if (Node.get().address.hashCode() < joinInfo.address
-                                                .hashCode()) {
-                                            send(joinInfo.copy(true, Node.get().address));
-                                        } else {
-                                            Node.get().reJoin();
+                                    }
+                                } else {
+                                    if (!Node.get().joined() && !joinInfo.request) {
+                                        if (Node.get().masterAddress == null) {
+                                            Node.get().masterAddress = new Address(joinInfo.address);
                                         }
                                     }
                                 }
-                                // ClusterManager.get().enqueueAndReturn(new
-                                // Processable() {
-                                // public void process() {
-                                //ClusterManager.get().connectTo(joinInfo.address
-                                // );
-                                // }
-                                // });
                             }
                         }
                     }
@@ -106,8 +95,7 @@ class MulticastService implements Runnable {
                     try {
                         JoinInfo joinInfo = new JoinInfo();
                         joinInfo.readFromPacket(datagramPacketReceive);
-                        // logger.log(Level.INFO,"JoinInfo from " +
-                        // joinInfo.address);
+//                        System.out.println("M.Received " + joinInfo);
                         return joinInfo;
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -177,6 +165,14 @@ class MulticastService implements Runnable {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+
+
+        @Override
+        public String toString() {
+            return "JoinInfo{" +
+                    "request=" + request + "  " + super.toString() +
+                    '}';
         }
     }
 

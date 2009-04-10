@@ -112,7 +112,8 @@ class ExecutorManager extends BaseManager implements MembershipListener {
         }
     }
 
-    public void start() {
+    public void init() {
+        super.init();
         if (started) return;
         final int corePoolSize = Config.get().executorConfig.corePoolSize;
         final int maxPoolSize = Config.get().executorConfig.maxPoolsize;

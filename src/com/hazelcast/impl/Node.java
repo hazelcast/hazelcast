@@ -19,14 +19,14 @@ package com.hazelcast.impl;
 
 import static com.hazelcast.impl.Constants.NodeTypes.NODE_MEMBER;
 import static com.hazelcast.impl.Constants.NodeTypes.NODE_SUPER_CLIENT;
+import com.hazelcast.impl.MulticastService.JoinInfo;
+import com.hazelcast.nio.*;
 
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
-import java.net.Socket;
-import java.net.SocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,13 +35,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.hazelcast.impl.MulticastService.JoinInfo;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.InSelector;
-import com.hazelcast.nio.OutSelector;
 
 public class Node {
     protected static Logger logger = Logger.getLogger(Node.class.getName());
@@ -57,8 +50,6 @@ public class Node {
     private static Node instance = new Node();
 
     private volatile boolean joined = false;
-
-    private Object joinLock = new Object();
 
     private ClusterImpl clusterImpl = null;
 
@@ -274,11 +265,12 @@ public class Node {
         clusterServiceThread.setPriority(7);
         lsThreads.add(clusterServiceThread);
 
-        join();
-
         if (Config.get().join.multicastConfig.enabled) {
             startMulticastService();
         }
+        join();
+
+
         firstMainThread = null;
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -297,9 +289,6 @@ public class Node {
 
     public void unlock() {
         joined = true;
-        synchronized (joinLock) {
-            joinLock.notify();
-        }
     }
 
     void setAsMaster() {
@@ -319,6 +308,40 @@ public class Node {
             if (ip == null) {
                 JoinInfo joinInfo = new JoinInfo(true, address, config.groupName,
                         config.groupPassword, getLocalNodeType());
+                System.out.println("sending " + joinInfo);
+                for (int i = 0; i < 5; i++) {
+                    MulticastService.get().send(joinInfo);
+                    Thread.sleep(10);
+                }
+                for (int i = 0; i < 5; i++) {
+                    System.out.println(Node.get().master() + " MasTER " + masterAddress);
+                    if (masterAddress == null) {
+                        Thread.sleep(500);
+                    } else {
+                        return masterAddress;
+                    }
+                }
+
+            } else {
+                if (DEBUG)
+                    logger.log(Level.FINEST, "RETURNING join.ip");
+                return new Address(ip, config.port);
+            }
+
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private Address findMaster2() {
+        final Config config = Config.get();
+        try {
+            final String ip = System.getProperty("join.ip");
+            if (ip == null) {
+                JoinInfo joinInfo = new JoinInfo(true, address, config.groupName,
+                        config.groupPassword, getLocalNodeType());
+                System.out.println("sending " + joinInfo);
                 for (int i = 0; i < 5; i++) {
                     MulticastService.get().send(joinInfo);
                     Thread.sleep(10);
@@ -327,6 +350,7 @@ public class Node {
                 boolean timedOut = false;
                 while (!timedOut) {
                     respJoinInfo = MulticastService.get().receive();
+                    System.out.println("received " + respJoinInfo);
                     if (respJoinInfo == null) {
                         timedOut = true;
                     } else if (!respJoinInfo.request && !respJoinInfo.address.equals(address)) {
@@ -398,9 +422,9 @@ public class Node {
                 if (ip) {
                     for (int i = 0; i < 3; i++) {
                         final Address addrs = new Address(host, config.port + i, true);
-                        if (! addrs.equals(getThisAddress())) {
+                        if (!addrs.equals(getThisAddress())) {
                             lsPossibleAddresses.add(addrs);
-                        }    
+                        }
                     }
                 } else {
                     final InetAddress[] allAddresses = InetAddress.getAllByName(host);
@@ -415,7 +439,7 @@ public class Node {
                             for (int i = 0; i < 3; i++) {
                                 final Address addressProper = new Address(inetAddress.getAddress(),
                                         config.port + i);
-                                if (! addressProper.equals(getThisAddress())) {
+                                if (!addressProper.equals(getThisAddress())) {
                                     lsPossibleAddresses.add(addressProper);
                                 }
                             }
@@ -443,12 +467,12 @@ public class Node {
             localMember = new MemberImpl(address, true, localNodeType);
             //initialize managers..
             ClusterService.get().start();
-            ClusterManager.get();
-            ConcurrentMapManager.get();
-            BlockingQueueManager.get();
-            ExecutorManager.get().start();
-            ListenerManager.get();
-            TopicManager.get();
+            ClusterManager.get().init();
+            ConcurrentMapManager.get().init();
+            BlockingQueueManager.get().init();
+            ExecutorManager.get().init();
+            ListenerManager.get().init();
+            TopicManager.get().init();
 
             ClusterManager.get().addMember(localMember);
             InSelector.get().start();
@@ -519,9 +543,9 @@ public class Node {
                 try {
                     if (DEBUG)
                         logger.log(Level.FINEST, "joining... " + masterAddress);
-                    synchronized (joinLock) {
+                    while (!joined()) {
                         joinExisting(masterAddress);
-                        joinLock.wait(2000);
+                        Thread.sleep(500);
                     }
                     if (masterAddress == null) {
                         joinWithMulticast();

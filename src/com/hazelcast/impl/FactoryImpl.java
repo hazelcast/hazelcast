@@ -61,6 +61,10 @@ public class FactoryImpl implements Constants {
         }
     }
 
+    public static void shutdown() {
+        Node.get().shutdown();
+    }
+
     static IdGeneratorImpl getUUID(String name) {
         IdGeneratorImpl uuid = (IdGeneratorImpl) mapUUIDs.get(name);
         if (uuid != null)

@@ -747,9 +747,6 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         Node.get().getClusterImpl().setMembers(lsMembers);
         Node.get().unlock();
         logger.log(Level.INFO, this.toString());
-        if (DEBUG) {
-            publishLog("Join complete");
-        }
     }
 
     public static class MemberInfo implements DataSerializable {
@@ -927,7 +924,12 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 
         @Override
         public String toString() {
-            return "JoinRequest ";
+            return "JoinRequest{" +
+                    "nodeType=" + nodeType +
+                    ", address=" + address +
+                    ", groupName='" + groupName + '\'' +
+                    ", groupPassword='" + groupPassword + '\'' +
+                    '}';
         }
 
         public void process() {

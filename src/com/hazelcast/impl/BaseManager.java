@@ -89,17 +89,19 @@ abstract class BaseManager implements Constants {
 
     private static long idGen = 0;
 
-    protected final Address thisAddress;
+    protected Address thisAddress;
 
-    protected final MemberImpl thisMember;
+    protected MemberImpl thisMember;
 
-
-    protected BaseManager() {
-        thisAddress = Node.get().address;
-        thisMember = Node.get().localMember;
+    static {
         for (int i = 0; i < EVENT_QUEUE_COUNT; i++) {
             eventQueues[i] = new EventQueue();
         }
+    }
+
+    protected void init () {
+        thisAddress = Node.get().address;
+        thisMember = Node.get().localMember;
     }
 
     public abstract class ScheduledAction {

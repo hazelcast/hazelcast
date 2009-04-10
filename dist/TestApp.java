@@ -84,7 +84,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 		}
 	}
 
-	private void handleCommand(String command) {
+	private void handleCommand(String command)  {
 		if (echo) {
 			if (Thread.currentThread().getName().toLowerCase().indexOf("main") < 0)
 				System.out.println(" [" + Thread.currentThread().getName() + "] " + command);
@@ -176,6 +176,13 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 			return;
 		} else if ("silent".equals(first)) {
 			silent = Boolean.parseBoolean(args[1]);
+		} else if ("re".equals(first)) {
+			Hazelcast.shutdown();
+            handleCommand ("ns default");
+		} else if ("shutdown".equals(first)) {
+			Hazelcast.shutdown();
+		} else if ("start".equals(first)) {
+			handleCommand ("ns default");
 		} else if ("echo".equals(first)) {
 			echo = Boolean.parseBoolean(args[1]);
 		} else if ("ns".equals(first)) {

@@ -69,4 +69,14 @@ public final class Hazelcast {
     public static IdGenerator getIdGenerator(String name) {
         return com.hazelcast.impl.FactoryImpl.getIdGenerator(name);
     }
+
+    /**
+     * Detaches currently running JVM from the cluster.
+     * It doesn't shutdown the entire cluster, it shuts down
+     * this local member only.
+     * 
+     */
+    public static void shutdown() {
+        com.hazelcast.impl.FactoryImpl.shutdown();
+    }
 }
