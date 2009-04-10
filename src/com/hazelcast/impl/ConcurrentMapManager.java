@@ -622,6 +622,11 @@ class ConcurrentMapManager extends BaseManager {
             return result;
         }
 
+        @Override
+        void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+            handleBooleanNoneRedoResponse(packet);
+        }
+
         public void doLocalOp() {
             doRemoveItem(request);
             setResult(request.response);
@@ -789,9 +794,7 @@ class ConcurrentMapManager extends BaseManager {
         @Override
         void doLocalOp() {
             doBackupSync(request);
-            if (!request.scheduled) {
-                setResult(request.response);
-            }
+            setResult(request.response);
         }
     }
 
@@ -921,18 +924,31 @@ class ConcurrentMapManager extends BaseManager {
 
         @Override
         void setResult(Object obj) {
-            reqBackup.version = request.version;
-            reqBackup.lockCount = request.lockCount;
-            reqBackup.longValue = request.longValue;
+            if (reqBackup.local) {
+                reqBackup.version = request.version;
+                reqBackup.lockCount = request.lockCount;
+                reqBackup.longValue = request.longValue;
+            }
             super.setResult(obj);
         }
 
         @Override
-        void handleNoneRedoResponse(Packet packet) {
+        public void handleBooleanNoneRedoResponse (Packet packet) {
+            handleRemoteResponse (packet);
+            super.handleBooleanNoneRedoResponse(packet);
+        }
+
+        @Override
+        public void handleObjectNoneRedoResponse (Packet packet) {
+            handleRemoteResponse (packet);
+            super.handleObjectNoneRedoResponse(packet);
+        }
+
+        public void handleRemoteResponse (Packet packet) {
+            reqBackup.local = false;
             reqBackup.version = packet.version;
             reqBackup.lockCount = packet.lockCount;
             reqBackup.longValue = packet.longValue;
-            super.handleNoneRedoResponse(packet);
         }
     }
 
@@ -1182,7 +1198,7 @@ class ConcurrentMapManager extends BaseManager {
                 }
             }
             if (DEBUG) {
-                log("doBAckupRemove block removing " + lsRecordToRemove.size());
+                log("doBackupRemove block removing " + lsRecordToRemove.size());
             }
             for (Record record : lsRecordToRemove) {
                 cmap.removeRecord(record.getKey());
@@ -1284,6 +1300,11 @@ class ConcurrentMapManager extends BaseManager {
             return;
 
         final Object[] records = mapRecordsById.values().toArray();
+        mapRecordsById.clear();
+        Collection<CMap> cmaps = maps.values();
+        for (CMap cmap : cmaps) {
+            cmap.mapRecords.clear();
+        }
         for (Object recObj : records) {
             final Record rec = (Record) recObj;
             CMap cmap = getMap(rec.name);
@@ -1325,7 +1346,7 @@ class ConcurrentMapManager extends BaseManager {
     }
 
     private void doMigrationComplete(Address from) {
-        logger.log(Level.FINEST, "Migration Compelete from " + from);
+        logger.log(Level.FINEST, "Migration Complete from " + from);
         Collection<Block> blocks = mapBlocks.values();
         for (Block block : blocks) {
             if (from.equals(block.owner)) {
@@ -1517,7 +1538,7 @@ class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    final void handleRemoveItem(Packet packet) {
+    final void  handleRemoveItem(Packet packet) {
         if (rightRemoteTarget(packet)) {
             remoteReq.setFromPacket(packet);
             doRemoveItem(remoteReq);
@@ -1847,6 +1868,7 @@ class ConcurrentMapManager extends BaseManager {
             Record record = getRecord(req.key);
             if (record != null) {
                 if (req.version <= record.version) {
+                    logger.log(Level.FINEST, req.version + " backupSync! oldVersion " + record.version);
                     return false;
                 }
             }
@@ -2039,6 +2061,7 @@ class ConcurrentMapManager extends BaseManager {
             boolean removed = false;
             if (record.getCopyCount() > 0) {
                 record.decrementCopyCount();
+                removed = true;
             } else if (record.value != null) {
                 removed = true;
             }
@@ -2422,7 +2445,7 @@ class ConcurrentMapManager extends BaseManager {
         }
 
         public String toString() {
-            return "Record [" + id + "] key=" + key;
+            return "Record [" + id + "] key=" + key + ", Removable=" + isRemovable();
         }
     }
 
