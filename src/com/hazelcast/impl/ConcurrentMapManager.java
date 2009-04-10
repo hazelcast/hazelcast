@@ -496,11 +496,7 @@ class ConcurrentMapManager extends BaseManager {
         public void remove() {
             if (next != null) {
                 IProxy iproxy = (IProxy) FactoryImpl.getProxy(name);
-                Object entryKey = next.getKeyData();
-                if (entryKey == null) {
-                    entryKey = next.getKey();
-                }
-                iproxy.removeKey(entryKey);
+                iproxy.removeKey(next.getKey());
             }
         }
     }
@@ -782,12 +778,6 @@ class ConcurrentMapManager extends BaseManager {
 
     class MPut extends MBackupAwareOp {
 
-        public void put(Record rec) {
-            copyRecordToRequest(rec, request, true);
-            request.operation = OP_CMAP_MIGRATE_RECORD;
-            doOp();
-            getResultAsBoolean();
-        }
 
         public Object replace(String name, Object key, Object value, long timeout, long txnId) {
             return txnalPut(OP_CMAP_REPLACE_IF_NOT_NULL, name, key, value, timeout, txnId);
@@ -1610,10 +1600,6 @@ class ConcurrentMapManager extends BaseManager {
 
     final void doPut(Request request) {
 
-        if (request.operation == OP_CMAP_MIGRATE_RECORD) {
-            doMigrate(request);
-            return;
-        }
         if (request.operation == OP_CMAP_PUT_MULTI) {
             doPutMulti(request);
             return;
@@ -2009,25 +1995,29 @@ class ConcurrentMapManager extends BaseManager {
             if (record == null) {
                 return null;
             }
+            Data oldValue = record.getValue();
             boolean removed = false;
             if (record.getCopyCount() > 0) {
                 record.decrementCopyCount();
-            } else {
-                record = removeRecord(record.key);
                 removed = true;
-            }
-            if (record.getValue() != null) {
-                fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record, null);
+            } else if (record.value != null) {
+                removed = true;
+                record.value = null;
             }
             if (removed) {
-                record.key.setNoData();
-                record.key = null;
+                fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record, null);
+                record.version++;
             }
-            record.version++;
 
             req.version = record.version;
             req.longValue = record.copyCount;
-            return record.getValue();
+
+            if (record.isRemovable()) {
+                removeRecord(record.key);
+                record.key.setNoData();
+                record.key = null;
+            }
+            return oldValue;
         }
 
         Record removeRecord(Data key) {
@@ -2323,6 +2313,10 @@ class ConcurrentMapManager extends BaseManager {
 
         public long getCreateTime() {
             return createTime;
+        }
+
+        public boolean isRemovable() {
+            return (copyCount == 0 && !hasListener());
         }
 
         public boolean hasListener() {

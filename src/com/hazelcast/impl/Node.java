@@ -459,7 +459,7 @@ public class Node {
             Logger systemLogger = Logger.getLogger("com.hazelcast.system");
             systemLogger.log(Level.INFO, "Hazelcast " + Build.version + " ("
                     + Build.build + ") starting at " + address);
-            systemLogger.log(Level.INFO, "Copyright (C) 2008 Hazelcast.com");
+            systemLogger.log(Level.INFO, "Copyright (C) 2009 Hazelcast.com");
 
             if (config.join.multicastConfig.enabled) {
                 final MulticastSocket multicastSocket = new MulticastSocket(null);
