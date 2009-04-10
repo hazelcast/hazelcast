@@ -17,9 +17,8 @@
 
 package com.hazelcast.web;
 
-import java.util.EventObject;
-
 import javax.servlet.ServletContext;
+import java.util.EventObject;
 
 public class SnapshotEvent extends EventObject {
 

@@ -17,12 +17,12 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.ClusterService;
+import com.hazelcast.nio.PacketQueue.Packet;
+
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.logging.Level;
-
-import com.hazelcast.impl.ClusterService;
-import com.hazelcast.nio.PacketQueue.Packet;
 
 class ReadHandler extends AbstractSelectionHandler implements Runnable {
 

@@ -17,13 +17,13 @@
 
 package com.hazelcast.impl;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 class TopicManager extends BaseManager {
     private static final TopicManager instance = new TopicManager();

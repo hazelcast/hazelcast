@@ -17,6 +17,10 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.Build;
+import com.hazelcast.impl.ClusterManager;
+import com.hazelcast.impl.Node;
+
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -28,10 +32,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.hazelcast.impl.Build;
-import com.hazelcast.impl.ClusterManager;
-import com.hazelcast.impl.Node;
 
 public class SelectorBase implements Runnable {
 

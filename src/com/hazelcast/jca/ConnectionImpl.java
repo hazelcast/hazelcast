@@ -17,14 +17,13 @@
 
 package com.hazelcast.jca;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import javax.resource.ResourceException;
 import javax.resource.cci.Connection;
 import javax.resource.cci.ConnectionMetaData;
 import javax.resource.cci.Interaction;
 import javax.resource.cci.ResultSetInfo;
 import javax.resource.spi.ConnectionEvent;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConnectionImpl extends JcaBase implements Connection {
     final ManagedConnectionImpl mc;

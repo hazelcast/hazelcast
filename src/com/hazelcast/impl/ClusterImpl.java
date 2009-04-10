@@ -17,6 +17,13 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.DataSerializable;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -28,13 +35,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
-
-import com.hazelcast.core.Cluster;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.DataSerializable;
 
 public class ClusterImpl implements Cluster {
 

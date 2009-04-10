@@ -17,17 +17,16 @@
 
 package com.hazelcast.jca;
 
-import java.io.PrintWriter;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import javax.resource.ResourceException;
 import javax.resource.spi.ConnectionManager;
 import javax.resource.spi.ConnectionRequestInfo;
 import javax.resource.spi.ManagedConnection;
 import javax.resource.spi.ManagedConnectionFactory;
 import javax.security.auth.Subject;
+import java.io.PrintWriter;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ManagedConnectionFactoryImpl extends JcaBase implements ManagedConnectionFactory {
     private PrintWriter printWriter = null;

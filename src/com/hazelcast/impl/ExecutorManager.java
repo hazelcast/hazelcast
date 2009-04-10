@@ -17,12 +17,17 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.core.*;
+import com.hazelcast.impl.ClusterImpl.ClusterMember;
 import static com.hazelcast.impl.Constants.ExecutorOperations.OP_EXE_REMOTE_EXECUTION;
 import static com.hazelcast.impl.Constants.ExecutorOperations.OP_STREAM;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_CANCELLED;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_DONE;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
+import static com.hazelcast.impl.Constants.Objects.*;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TIMEOUT;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.BufferUtil;
+import com.hazelcast.nio.Data;
+import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.PacketQueue.Packet;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -30,31 +35,10 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.hazelcast.core.DistributedTask;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
-import com.hazelcast.core.MultiTask;
-import com.hazelcast.impl.ClusterImpl.ClusterMember;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.BufferUtil;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.PacketQueue.Packet;
 
 class ExecutorManager extends BaseManager implements MembershipListener {
 

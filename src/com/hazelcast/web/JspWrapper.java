@@ -17,15 +17,14 @@
 
 package com.hazelcast.web;
 
-import java.io.IOException;
+import com.hazelcast.web.WebFilter.RequestWrapper;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.HttpJspPage;
-
-import com.hazelcast.web.WebFilter.RequestWrapper;
+import java.io.IOException;
 
 public abstract class JspWrapper extends ServletBase implements HttpJspPage {
 

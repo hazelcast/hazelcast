@@ -17,33 +17,19 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.impl.Constants.ClusterOperations.OP_HEARTBEAT;
-import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_BOOLEAN_CALLABLE;
-import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_OBJECT_CALLABLE;
-import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_PROCESS;
-import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_PROCESS_AND_RESPOND;
-import static com.hazelcast.impl.Constants.ClusterOperations.OP_RESPONSE;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.Member;
+import static com.hazelcast.impl.Constants.ClusterOperations.*;
 import static com.hazelcast.impl.Constants.NodeTypes.NODE_MEMBER;
+import com.hazelcast.nio.*;
+import com.hazelcast.nio.PacketQueue.Packet;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
-
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.Member;
-import com.hazelcast.nio.*;
-import com.hazelcast.nio.PacketQueue.Packet;
 
 public class ClusterManager extends BaseManager implements ConnectionListener {
 

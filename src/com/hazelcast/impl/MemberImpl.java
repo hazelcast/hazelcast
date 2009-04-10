@@ -17,13 +17,12 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.core.Member;
 import static com.hazelcast.impl.Constants.NodeTypes.NODE_SUPER_CLIENT;
+import com.hazelcast.nio.Address;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
-import com.hazelcast.core.Member;
-import com.hazelcast.nio.Address;
 
 public class MemberImpl implements Member {
 

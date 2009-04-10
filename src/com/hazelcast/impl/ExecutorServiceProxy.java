@@ -17,19 +17,13 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.core.DistributedTask;
+import com.hazelcast.impl.BaseManager.Processable;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TIMEOUT;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import com.hazelcast.core.DistributedTask;
-import com.hazelcast.impl.BaseManager.Processable;
+import java.util.concurrent.*;
 
 public class ExecutorServiceProxy implements ExecutorService, Constants {
 

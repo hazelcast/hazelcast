@@ -117,10 +117,10 @@ public interface MultiMap<K, V> {
      *
      * @return the number of key-value pairs in the multimap.
      */
-	int size();
+    int size();
 
-	/**
-	 * Clears the multimap. Removes all key-value pairs.
-	 */
-	void clear();
+    /**
+     * Clears the multimap. Removes all key-value pairs.
+     */
+    void clear();
 }

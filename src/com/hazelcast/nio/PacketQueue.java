@@ -17,15 +17,15 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.Constants;
+import com.hazelcast.impl.ThreadContext;
+
 import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.hazelcast.impl.Constants;
-import com.hazelcast.impl.ThreadContext;
 
 public class PacketQueue {
 

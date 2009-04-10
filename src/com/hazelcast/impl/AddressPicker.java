@@ -165,7 +165,7 @@ public class AddressPicker {
         String currentAddress = null;
         try {
             final Config config = Config.get();
-            final String localAddress = System.getProperty("hazelcast.local.address"); 
+            final String localAddress = System.getProperty("hazelcast.local.address");
             if (localAddress != null) {
                 currentAddress = InetAddress.getByName(localAddress.trim()).getHostAddress();
             }

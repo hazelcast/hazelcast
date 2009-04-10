@@ -17,22 +17,16 @@
 
 package com.hazelcast.jca;
 
+import com.hazelcast.impl.ThreadContext;
+
+import javax.resource.ResourceException;
+import javax.resource.spi.*;
+import javax.security.auth.Subject;
+import javax.transaction.xa.XAResource;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.resource.ResourceException;
-import javax.resource.spi.ConnectionEvent;
-import javax.resource.spi.ConnectionEventListener;
-import javax.resource.spi.ConnectionRequestInfo;
-import javax.resource.spi.LocalTransaction;
-import javax.resource.spi.ManagedConnection;
-import javax.resource.spi.ManagedConnectionMetaData;
-import javax.security.auth.Subject;
-import javax.transaction.xa.XAResource;
-
-import com.hazelcast.impl.ThreadContext;
 
 public class ManagedConnectionImpl extends JcaBase implements ManagedConnection,
         javax.resource.cci.LocalTransaction, LocalTransaction {

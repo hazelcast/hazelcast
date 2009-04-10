@@ -17,10 +17,10 @@
 
 package com.hazelcast.jca;
 
+import com.hazelcast.impl.Build;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.hazelcast.impl.Build;
 
 public class JcaBase {
     protected static Logger logger = Logger.getLogger(JcaBase.class.getName());

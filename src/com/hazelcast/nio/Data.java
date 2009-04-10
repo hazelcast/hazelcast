@@ -17,6 +17,8 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.ThreadContext;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -24,8 +26,6 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.hazelcast.impl.ThreadContext;
 
 public final class Data implements DataSerializable {
     final List<ByteBuffer> lsData = new ArrayList<ByteBuffer>(12);

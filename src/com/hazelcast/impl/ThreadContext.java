@@ -17,6 +17,16 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.core.Transaction;
+import com.hazelcast.impl.BlockingQueueManager.Offer;
+import com.hazelcast.impl.BlockingQueueManager.Poll;
+import com.hazelcast.impl.ConcurrentMapManager.*;
+import com.hazelcast.nio.BufferUtil;
+import com.hazelcast.nio.Data;
+import com.hazelcast.nio.PacketQueue;
+import com.hazelcast.nio.PacketQueue.Packet;
+import com.hazelcast.nio.Serializer;
+
 import java.nio.ByteBuffer;
 import java.util.AbstractQueue;
 import java.util.Iterator;
@@ -25,20 +35,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.hazelcast.core.Transaction;
-import com.hazelcast.impl.BlockingQueueManager.Offer;
-import com.hazelcast.impl.BlockingQueueManager.Poll;
-import com.hazelcast.impl.ConcurrentMapManager.MAdd;
-import com.hazelcast.impl.ConcurrentMapManager.MGet;
-import com.hazelcast.impl.ConcurrentMapManager.MLock;
-import com.hazelcast.impl.ConcurrentMapManager.MPut;
-import com.hazelcast.impl.ConcurrentMapManager.MRemove;
-import com.hazelcast.nio.BufferUtil;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.PacketQueue;
-import com.hazelcast.nio.Serializer;
-import com.hazelcast.nio.PacketQueue.Packet;
 
 public class ThreadContext {
 

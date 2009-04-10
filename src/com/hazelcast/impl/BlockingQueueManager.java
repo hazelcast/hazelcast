@@ -17,44 +17,24 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_ADD_BLOCK;
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_ADD_TOPIC_LISTENER;
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_BACKUP_ADD;
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_BACKUP_REMOVE;
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_FULL_BLOCK;
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_OFFER;
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_PEEK;
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_POLL;
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_PUBLISH;
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_READ;
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_REMOVE;
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_REMOVE_BLOCK;
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_SIZE;
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_TXN_BACKUP_POLL;
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.OP_B_TXN_COMMIT;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
-import static com.hazelcast.nio.BufferUtil.*;
-
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
 import com.hazelcast.impl.Config.QConfig;
+import static com.hazelcast.impl.Constants.BlockingQueueOperations.*;
+import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import com.hazelcast.nio.Address;
+import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.PacketQueue;
 import com.hazelcast.nio.PacketQueue.Packet;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.*;
 
 class BlockingQueueManager extends BaseManager {
     private final Request remoteReq = new Request();

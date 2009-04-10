@@ -74,7 +74,6 @@ public final class Hazelcast {
      * Detaches currently running JVM from the cluster.
      * It doesn't shutdown the entire cluster, it shuts down
      * this local member only.
-     * 
      */
     public static void shutdown() {
         com.hazelcast.impl.FactoryImpl.shutdown();

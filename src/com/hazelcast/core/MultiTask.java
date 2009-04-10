@@ -19,11 +19,7 @@ package com.hazelcast.core;
 
 import java.util.Collection;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 public class MultiTask<V> extends DistributedTask {
     protected Collection<V> results = new CopyOnWriteArrayList<V>();

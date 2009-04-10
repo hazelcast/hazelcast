@@ -17,23 +17,20 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.impl.Constants.EventOperations.OP_EVENT;
-import static com.hazelcast.impl.Constants.EventOperations.OP_LISTENER_ADD;
-import static com.hazelcast.impl.Constants.EventOperations.OP_LISTENER_REMOVE;
-
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.MessageListener;
+import static com.hazelcast.impl.Constants.EventOperations.*;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferUtil;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.PacketQueue;
 import com.hazelcast.nio.PacketQueue.Packet;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 class ListenerManager extends BaseManager {
     List<ListenerItem> lsListeners = new CopyOnWriteArrayList<ListenerItem>();
@@ -308,8 +305,8 @@ class ListenerManager extends BaseManager {
             this.name = name;
             this.includeValue = includeValue;
             this.listenerType = listenerType;
-		}
+        }
 
-	}
+    }
 
 }

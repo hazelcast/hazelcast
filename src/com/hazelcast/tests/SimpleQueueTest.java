@@ -17,12 +17,12 @@
 
 package com.hazelcast.tests;
 
+import com.hazelcast.core.Hazelcast;
+
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
-
-import com.hazelcast.core.Hazelcast;
 
 public class SimpleQueueTest {
     public static final int VALUE_SIZE = 1000;

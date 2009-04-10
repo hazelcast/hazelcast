@@ -17,9 +17,9 @@
 
 package com.hazelcast.core;
 
-import java.util.EventObject;
-
 import com.hazelcast.impl.FactoryImpl;
+
+import java.util.EventObject;
 
 public class EntryEvent extends EventObject {
 

@@ -17,10 +17,10 @@
 
 package com.hazelcast.nio;
 
-import java.nio.channels.SocketChannel;
-
-import com.hazelcast.impl.ClusterService;
 import com.hazelcast.impl.ClusterManager.AddRemoveConnection;
+import com.hazelcast.impl.ClusterService;
+
+import java.nio.channels.SocketChannel;
 
 public class Connection {
     SocketChannel socketChannel;

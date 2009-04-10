@@ -17,13 +17,13 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.ThreadContext;
+import static com.hazelcast.nio.BufferUtil.createNewData;
+import static com.hazelcast.nio.BufferUtil.doHardCopy;
+
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
-
-import static com.hazelcast.nio.BufferUtil.*;
-
-import com.hazelcast.impl.ThreadContext;
 
 public final class Serializer {
 

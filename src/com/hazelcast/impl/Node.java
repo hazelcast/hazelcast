@@ -308,65 +308,16 @@ public class Node {
             if (ip == null) {
                 JoinInfo joinInfo = new JoinInfo(true, address, config.groupName,
                         config.groupPassword, getLocalNodeType());
-                System.out.println("sending " + joinInfo);
                 for (int i = 0; i < 5; i++) {
                     MulticastService.get().send(joinInfo);
                     Thread.sleep(10);
                 }
                 for (int i = 0; i < 5; i++) {
-                    System.out.println(Node.get().master() + " MasTER " + masterAddress);
                     if (masterAddress == null) {
                         Thread.sleep(500);
                     } else {
                         return masterAddress;
                     }
-                }
-
-            } else {
-                if (DEBUG)
-                    logger.log(Level.FINEST, "RETURNING join.ip");
-                return new Address(ip, config.port);
-            }
-
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private Address findMaster2() {
-        final Config config = Config.get();
-        try {
-            final String ip = System.getProperty("join.ip");
-            if (ip == null) {
-                JoinInfo joinInfo = new JoinInfo(true, address, config.groupName,
-                        config.groupPassword, getLocalNodeType());
-                System.out.println("sending " + joinInfo);
-                for (int i = 0; i < 5; i++) {
-                    MulticastService.get().send(joinInfo);
-                    Thread.sleep(10);
-                }
-                JoinInfo respJoinInfo = null;
-                boolean timedOut = false;
-                while (!timedOut) {
-                    respJoinInfo = MulticastService.get().receive();
-                    System.out.println("received " + respJoinInfo);
-                    if (respJoinInfo == null) {
-                        timedOut = true;
-                    } else if (!respJoinInfo.request && !respJoinInfo.address.equals(address)) {
-                        timedOut = true;
-                    }
-                }
-                if (respJoinInfo != null) {
-                    masterAddress = respJoinInfo.address;
-                    return masterAddress;
-                } else {
-                    joinInfo = new JoinInfo(false, address, config.groupName, config.groupPassword,
-                            getLocalNodeType());
-                    for (int i = 0; i < 5; i++) {
-                        MulticastService.get().send(joinInfo);
-                    }
-                    return address;
                 }
 
             } else {

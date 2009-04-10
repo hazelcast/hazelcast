@@ -17,14 +17,14 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.Build;
+import com.hazelcast.impl.ClusterManager;
+
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.hazelcast.impl.Build;
-import com.hazelcast.impl.ClusterManager;
 
 abstract class AbstractSelectionHandler implements SelectionHandler {
 

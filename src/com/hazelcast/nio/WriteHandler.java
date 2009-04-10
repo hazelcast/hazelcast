@@ -17,15 +17,15 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.Node;
+import com.hazelcast.nio.PacketQueue.Packet;
+
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
-
-import com.hazelcast.impl.Node;
-import com.hazelcast.nio.PacketQueue.Packet;
 
 public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
 

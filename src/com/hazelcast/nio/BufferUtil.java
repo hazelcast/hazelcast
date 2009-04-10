@@ -17,9 +17,9 @@
 
 package com.hazelcast.nio;
 
-import java.nio.ByteBuffer;
-
 import com.hazelcast.impl.ThreadContext;
+
+import java.nio.ByteBuffer;
 
 public final class BufferUtil {
 

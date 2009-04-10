@@ -17,23 +17,15 @@
 
 package com.hazelcast.core;
 
-import static com.hazelcast.impl.Constants.Objects.OBJECT_CANCELLED;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_DONE;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
+import static com.hazelcast.impl.Constants.Objects.*;
+import com.hazelcast.impl.DistributedRunnableAdapter;
+import com.hazelcast.impl.ExecutionManagerCallback;
+import com.hazelcast.impl.InnerFutureTask;
 
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import com.hazelcast.impl.DistributedRunnableAdapter;
-import com.hazelcast.impl.ExecutionManagerCallback;
-import com.hazelcast.impl.InnerFutureTask;
+import java.util.concurrent.*;
 
 public class DistributedTask<V> extends FutureTask<V> {
     private volatile V result = null;

@@ -17,47 +17,26 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_PROCESS;
-import static com.hazelcast.impl.Constants.ClusterOperations.OP_RESPONSE;
-import static com.hazelcast.impl.Constants.EventOperations.OP_EVENT;
-import static com.hazelcast.impl.Constants.MapTypes.MAP_TYPE_LIST;
-import static com.hazelcast.impl.Constants.MapTypes.MAP_TYPE_MAP;
-import static com.hazelcast.impl.Constants.MapTypes.MAP_TYPE_MULTI_MAP;
-import static com.hazelcast.impl.Constants.MapTypes.MAP_TYPE_SET;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
-import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_FAILURE;
-import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_NONE;
-import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_REDO;
-import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_SUCCESS;
-import static com.hazelcast.nio.BufferUtil.createNewData;
-import static com.hazelcast.nio.BufferUtil.doHardCopy;
-import static com.hazelcast.nio.BufferUtil.doSet;
-import static com.hazelcast.nio.BufferUtil.doTake;
-
-import java.util.ConcurrentModificationException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IMap;
 import com.hazelcast.impl.ClusterManager.RemotelyProcessable;
 import com.hazelcast.impl.ConcurrentMapManager.Record;
-import com.hazelcast.nio.PacketQueue;
+import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_PROCESS;
+import static com.hazelcast.impl.Constants.ClusterOperations.OP_RESPONSE;
+import static com.hazelcast.impl.Constants.EventOperations.OP_EVENT;
+import static com.hazelcast.impl.Constants.MapTypes.*;
+import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
+import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
+import static com.hazelcast.impl.Constants.ResponseTypes.*;
 import com.hazelcast.nio.*;
+import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.PacketQueue.Packet;
+
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 abstract class BaseManager implements Constants {
 
@@ -99,7 +78,7 @@ abstract class BaseManager implements Constants {
         }
     }
 
-    protected void init () {
+    protected void init() {
         thisAddress = Node.get().address;
         thisMember = Node.get().localMember;
     }
@@ -679,7 +658,7 @@ abstract class BaseManager implements Constants {
             packet.recordId = recordId;
             packet.version = version;
             return packet;
-        } 
+        }
 
     }
 

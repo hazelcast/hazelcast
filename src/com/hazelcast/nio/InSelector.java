@@ -17,6 +17,9 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.Config;
+import com.hazelcast.impl.Node;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
@@ -25,9 +28,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.hazelcast.impl.Config;
-import com.hazelcast.impl.Node;
 
 public class InSelector extends SelectorBase {
 

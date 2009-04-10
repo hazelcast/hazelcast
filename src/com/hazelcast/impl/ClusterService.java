@@ -17,6 +17,11 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.impl.BaseManager.PacketProcessor;
+import com.hazelcast.impl.BaseManager.Processable;
+import com.hazelcast.nio.PacketQueue;
+import com.hazelcast.nio.PacketQueue.Packet;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -24,11 +29,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.hazelcast.impl.BaseManager.PacketProcessor;
-import com.hazelcast.impl.BaseManager.Processable;
-import com.hazelcast.nio.PacketQueue.Packet;
-import com.hazelcast.nio.PacketQueue;
 
 public class ClusterService implements Runnable, Constants {
     protected static Logger logger = Logger.getLogger(ClusterService.class.getName());
@@ -89,7 +89,7 @@ public class ClusterService implements Runnable, Constants {
                 memberFrom.didRead();
             }
             if (packet.operation < 0 || packet.operation >= packetProcessors.length) {
-                logger.log (Level.SEVERE, "Unknown operation " + packet.operation);
+                logger.log(Level.SEVERE, "Unknown operation " + packet.operation);
                 return;
             }
             PacketProcessor packetProcessor = packetProcessors[packet.operation];

@@ -17,13 +17,7 @@
 
 package com.hazelcast.nio;
 
-import java.io.DataInput;
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectStreamConstants;
-import java.io.PushbackInputStream;
-import java.io.UTFDataFormatException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -258,14 +252,14 @@ public class BuffersInputStream extends InputStream implements DataInput {
      *             form: <blockquote>
      *             <p/>
      *             <pre>
-     *             DataInputStream d = new DataInputStream(in);
-     *             </pre>
+     *                         DataInputStream d = new DataInputStream(in);
+     *                         </pre>
      *             <p/>
      *             </blockquote> with: <blockquote>
      *             <p/>
      *             <pre>
-     *             BufferedReader d = new BufferedReader(new InputStreamReader(in));
-     *             </pre>
+     *                         BufferedReader d = new BufferedReader(new InputStreamReader(in));
+     *                         </pre>
      *             <p/>
      *             </blockquote>
      */
@@ -528,26 +522,26 @@ public class BuffersInputStream extends InputStream implements DataInput {
     }
 
     private void move(final int x) {
-		pos += x;
-		remaining -= x;
-		if (remaining < 0)
-			throw new RuntimeException();
-		if (pos > 1024)
-			throw new RuntimeException();
-	}
+        pos += x;
+        remaining -= x;
+        if (remaining < 0)
+            throw new RuntimeException();
+        if (pos > 1024)
+            throw new RuntimeException();
+    }
 
-	private boolean next() {
-		if (remaining != 0)
-			throw new RuntimeException("Remaining should be zero " + remaining);
-		buffer = bufferProvider.getBuffer(index++);
-		if (buffer == null)
-			return false;
-		bb = buffer.array();
-		remaining = buffer.remaining();
-		if (buffer.position() != 0)
-			throw new RuntimeException("" + buffer);
-		pos = 0;
-		return true;
-	}
+    private boolean next() {
+        if (remaining != 0)
+            throw new RuntimeException("Remaining should be zero " + remaining);
+        buffer = bufferProvider.getBuffer(index++);
+        if (buffer == null)
+            return false;
+        bb = buffer.array();
+        remaining = buffer.remaining();
+        if (buffer.position() != 0)
+            throw new RuntimeException("" + buffer);
+        pos = 0;
+        return true;
+    }
 
 }

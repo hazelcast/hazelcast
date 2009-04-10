@@ -17,11 +17,11 @@
 
 package com.hazelcast.impl;
 
-import java.util.Set;
-import java.util.concurrent.Callable;
-
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Member;
+
+import java.util.Set;
+import java.util.concurrent.Callable;
 
 public interface InnerFutureTask<V> {
     void innerSet(V value);

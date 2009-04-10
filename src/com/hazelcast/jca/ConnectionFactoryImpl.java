@@ -17,17 +17,12 @@
 
 package com.hazelcast.jca;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import javax.naming.NamingException;
 import javax.naming.Reference;
 import javax.resource.ResourceException;
-import javax.resource.cci.Connection;
-import javax.resource.cci.ConnectionFactory;
-import javax.resource.cci.ConnectionSpec;
-import javax.resource.cci.RecordFactory;
-import javax.resource.cci.ResourceAdapterMetaData;
+import javax.resource.cci.*;
 import javax.resource.spi.ConnectionManager;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConnectionFactoryImpl extends JcaBase implements ConnectionFactory {
     final ManagedConnectionFactoryImpl mcf;

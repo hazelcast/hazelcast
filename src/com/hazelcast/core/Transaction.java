@@ -55,6 +55,6 @@ public interface Transaction {
      *
      * @return the status
      */
-	int getStatus();
+    int getStatus();
 
 }

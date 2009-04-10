@@ -17,16 +17,11 @@
 
 package com.hazelcast.web;
 
+import com.hazelcast.web.WebFilter.RequestWrapper;
+
+import javax.servlet.*;
 import java.io.IOException;
 import java.util.Enumeration;
-
-import javax.servlet.GenericServlet;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-
-import com.hazelcast.web.WebFilter.RequestWrapper;
 
 public class ServletWrapper extends ServletBase {
     GenericServlet base = null;
