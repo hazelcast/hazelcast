@@ -26,4 +26,6 @@ public interface ITopic<E> {
     void addMessageListener(MessageListener<E> listener);
 
     void removeMessageListener(MessageListener<E> listener);
+
+    void destroy();
 }

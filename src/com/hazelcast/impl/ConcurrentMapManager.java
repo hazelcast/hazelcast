@@ -500,8 +500,14 @@ class ConcurrentMapManager extends BaseManager {
 
         public void remove() {
             if (next != null) {
-                IProxy iproxy = (IProxy) FactoryImpl.getProxy(name);
-                iproxy.removeKey(next.getKey());
+                byte mapType = getMapType(name);
+                if (mapType == MapTypes.MAP_TYPE_MAP) {
+                    FactoryImpl.MProxy proxy = (FactoryImpl.MProxy) FactoryImpl.getProxy(name);
+                    proxy.remove(next.getKey());
+                } else {
+                    IProxy iproxy = (IProxy) FactoryImpl.getProxy(name);
+                    iproxy.removeKey(next.getKey());
+                }
             }
         }
     }
@@ -711,6 +717,22 @@ class ConcurrentMapManager extends BaseManager {
             doRemove(request);
             if (!request.scheduled) {
                 setResult(request.response);
+            }
+        }
+    }
+
+    class MDestroy {
+        public void destroy(String name) {
+            sendProcessableToAll(new Destroy(name), true);
+        }
+    }
+
+    public void destroy (String name) {
+        maps.remove(name);
+        Collection<Record> records = mapRecordsById.values();
+        for (Record record : records) {
+            if (name.equals (record.name)) {
+                mapRecordsById.remove(record.id);
             }
         }
     }
@@ -933,18 +955,18 @@ class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
-        public void handleBooleanNoneRedoResponse (Packet packet) {
-            handleRemoteResponse (packet);
+        public void handleBooleanNoneRedoResponse(Packet packet) {
+            handleRemoteResponse(packet);
             super.handleBooleanNoneRedoResponse(packet);
         }
 
         @Override
-        public void handleObjectNoneRedoResponse (Packet packet) {
-            handleRemoteResponse (packet);
+        public void handleObjectNoneRedoResponse(Packet packet) {
+            handleRemoteResponse(packet);
             super.handleObjectNoneRedoResponse(packet);
         }
 
-        public void handleRemoteResponse (Packet packet) {
+        public void handleRemoteResponse(Packet packet) {
             reqBackup.local = false;
             reqBackup.version = packet.version;
             reqBackup.lockCount = packet.lockCount;
@@ -1538,7 +1560,7 @@ class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    final void  handleRemoveItem(Packet packet) {
+    final void handleRemoveItem(Packet packet) {
         if (rightRemoteTarget(packet)) {
             remoteReq.setFromPacket(packet);
             doRemoveItem(remoteReq);

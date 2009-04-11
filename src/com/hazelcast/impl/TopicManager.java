@@ -67,6 +67,13 @@ class TopicManager extends BaseManager {
         }
     }
 
+    void destroy(String name) {
+        TopicInstance instance = mapTopics.remove(name);
+        if (instance != null) {
+            instance.mapListeners.clear();
+        }
+    }
+
     void doPublish(String name, Object msg) {
         Data dataMsg = null;
         try {
@@ -75,6 +82,12 @@ class TopicManager extends BaseManager {
             e.printStackTrace();
         }
         enqueueAndReturn(new TopicPublishProcess(name, dataMsg));
+    }
+
+    class TopicDestroy {
+        public void destroy(String name) {
+            sendProcessableToAll(new Destroy(name), true);
+        }
     }
 
     class TopicPublishProcess implements Processable {

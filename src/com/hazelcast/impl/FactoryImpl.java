@@ -249,6 +249,10 @@ public class FactoryImpl implements Constants {
         public void unlock() {
             mapProxy.unlock(key);
         }
+
+        public void destroy() {
+            mapProxy.remove(key);
+        }
     }
 
     private static class CreateProxyProcess implements Processable, Constants {
@@ -313,6 +317,11 @@ public class FactoryImpl implements Constants {
             } else {
                 ListenerManager.get().removeListener(qProxy.name, listener, null);
             }
+        }
+
+        public void destroy() {
+            TopicManager.TopicDestroy topicDestroy = TopicManager.get().new TopicDestroy();
+            topicDestroy.destroy(name);
         }
 
         @Override
@@ -456,7 +465,7 @@ public class FactoryImpl implements Constants {
         }
 
         public void destroy() {
-
+            mapProxy.destroy();
         }
     }
 
@@ -558,7 +567,9 @@ public class FactoryImpl implements Constants {
         }
 
         public void destroy() {
-            throw new UnsupportedOperationException();
+            clear();
+            QDestroy qDestroy = BlockingQueueManager.get().new QDestroy();
+            qDestroy.destroy (name);
         }
     }
 
@@ -864,7 +875,7 @@ public class FactoryImpl implements Constants {
         public boolean removeKey(Object key) {
             if (key == null)
                 throw new NullPointerException();
-            ConcurrentMapManager.MRemoveItem mRemoveItem = ConcurrentMapManager.get().new MRemoveItem();
+            MRemoveItem mRemoveItem = ConcurrentMapManager.get().new MRemoveItem();
             return mRemoveItem.removeItem(name, key);
         }
 
@@ -916,7 +927,9 @@ public class FactoryImpl implements Constants {
         }
 
         public void destroy() {
-
+            clear();
+            MDestroy mDestroy = ConcurrentMapManager.get().new MDestroy();
+            mDestroy.destroy(name);
         }
 
     }

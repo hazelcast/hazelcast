@@ -394,27 +394,6 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         }
     }
 
-    public void sendProcessableToAll(RemotelyProcessable rp, boolean processLocally) {
-        if (processLocally) {
-            rp.process();
-        }
-        Data value = ThreadContext.get().toData(rp);
-        for (MemberImpl member : lsMembers) {
-            if (!member.localMember()) {
-                Packet packet = obtainPacket();
-                try {
-                    packet.set("remotelyProcess", OP_REMOTELY_PROCESS, null, value);
-                    boolean sent = send(packet, member.getAddress());
-                    if (!sent) {
-                        packet.returnToContainer();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-            }
-        }
-    }
 
     public class ProcessEverywhere extends AllOp {
         private Processable processable = null;

@@ -37,6 +37,9 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.DataInput;
+import java.io.IOException;
+import java.io.DataOutput;
 
 abstract class BaseManager implements Constants {
 
@@ -1070,6 +1073,28 @@ abstract class BaseManager implements Constants {
         }
     }
 
+    public void sendProcessableToAll(RemotelyProcessable rp, boolean processLocally) {
+        if (processLocally) {
+            rp.process();
+        }
+        Data value = ThreadContext.get().toData(rp);
+        for (MemberImpl member : lsMembers) {
+            if (!member.localMember()) {
+                Packet packet = obtainPacket();
+                try {
+                    packet.set("remotelyProcess", OP_REMOTELY_PROCESS, null, value);
+                    boolean sent = send(packet, member.getAddress());
+                    if (!sent) {
+                        packet.returnToContainer();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
+    }
+
     protected final void executeLocally(final Runnable runnable) {
         ExecutorManager.get().executeLocaly(runnable);
     }
@@ -1271,6 +1296,7 @@ abstract class BaseManager implements Constants {
         }
     }
 
+
     static class EventTask extends EntryEvent implements Runnable {
         protected final Data dataKey;
 
@@ -1356,6 +1382,40 @@ abstract class BaseManager implements Constants {
 
     MemberImpl getMember(final Address address) {
         return ClusterManager.get().getMember(address);
+    }
+
+
+    public static class Destroy extends ClusterManager.AbstractRemotelyProcessable {
+        String name = null;
+
+        public Destroy() {
+        }
+
+        public Destroy(String name) {
+            this.name = name;
+        }
+
+        public void process() {
+            if (name.startsWith("q:")) {
+               BlockingQueueManager.get().destroy(name);
+            } else if (name.startsWith("m:")) {
+                ConcurrentMapManager.get().destroy(name);
+            } else if (name.startsWith("t:")) {
+                TopicManager.get().destroy(name);
+            } else {
+                logger.log (Level.SEVERE, "Destroy: Unknown data type=" + name);
+            }
+        }
+
+        @Override
+        public void readData(DataInput in) throws IOException {
+            name = in.readUTF();
+        }
+
+        @Override
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF (name);
+        }
     }
 
     void handleListenerRegisterations(final boolean add, final String name, final Data key,

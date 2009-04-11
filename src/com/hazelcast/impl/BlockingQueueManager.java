@@ -628,6 +628,16 @@ class BlockingQueueManager extends BaseManager {
         }
     }
 
+    class QDestroy {
+        public void destroy(String name) {
+            sendProcessableToAll(new Destroy(name), true);
+        }
+    }
+
+    public void destroy (String name) {
+        mapQueues.remove (name);
+    }
+
     public class Size extends AbstractCall {
         String name = null;
         int total = 0;
