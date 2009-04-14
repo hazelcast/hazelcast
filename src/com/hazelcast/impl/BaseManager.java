@@ -787,8 +787,8 @@ abstract class BaseManager implements Constants {
                     doOp();
                     return getResult();
                 }
-            } catch (final Exception e) {
-                e.printStackTrace(System.out);
+            } catch (final Throwable e) {
+                logger.log (Level.FINEST, "ResponseQueueCall.getResult()", e);
             }
             return result;
         }
@@ -1398,6 +1398,8 @@ abstract class BaseManager implements Constants {
         public void process() {
             if (name.startsWith("q:")) {
                BlockingQueueManager.get().destroy(name);
+            } else if (name.startsWith("c:")) {
+                ConcurrentMapManager.get().destroy(name);
             } else if (name.startsWith("m:")) {
                 ConcurrentMapManager.get().destroy(name);
             } else if (name.startsWith("t:")) {

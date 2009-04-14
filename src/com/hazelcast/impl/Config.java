@@ -80,6 +80,12 @@ public class Config {
         public int maxSizePerJVM = Integer.MAX_VALUE;
     }
 
+    public class MapConfig {
+        public String name;
+
+        public int replicaCount = 1;
+    }
+
     public class TopicConfig {
         public String name;
 
@@ -113,6 +119,8 @@ public class Config {
     public Map<String, TopicConfig> mapTopicConfigs = new HashMap<String, TopicConfig>();
 
     public Map<String, QConfig> mapQConfigs = new HashMap<String, QConfig>();
+
+    public Map<String, MapConfig> mapMapConfigs = new HashMap<String, MapConfig>();
 
     private Config() {
         boolean usingSystemConfig = false;
@@ -198,6 +206,8 @@ public class Config {
                     handleExecutor(node);
                 } else if (node.getNodeName().equals("queue")) {
                     handleQueue(node);
+                } else if (node.getNodeName().equals("map")) {
+                    handleMap(node);
                 } else if (node.getNodeName().equals("topic")) {
                     handleTopic(node);
                 }
@@ -231,6 +241,20 @@ public class Config {
         QConfig defaultConfig = mapQConfigs.get("default");
         if (defaultConfig == null) {
             defaultConfig = new QConfig();
+        }
+        return defaultConfig;
+    }
+
+    public MapConfig getMapConfig(final String name) {
+        final Set<String> qNames = mapMapConfigs.keySet();
+        for (final String pattern : qNames) {
+            if (nameMatches(name, pattern)) {
+                return mapMapConfigs.get(pattern);
+            }
+        }
+        MapConfig defaultConfig = mapMapConfigs.get("default");
+        if (defaultConfig == null) {
+            defaultConfig = new MapConfig();
         }
         return defaultConfig;
     }
@@ -419,6 +443,23 @@ public class Config {
             }
         }
         mapQConfigs.put(name, qConfig);
+    }
+
+    private void handleMap(final org.w3c.dom.Node node) {
+        final Node attName = node.getAttributes().getNamedItem("name");
+        final String name = getTextContent(attName);
+        final MapConfig config = new MapConfig();
+        config.name = name;
+        final NodeList nodelist = node.getChildNodes();
+        for (int i = 0; i < nodelist.getLength(); i++) {
+            final org.w3c.dom.Node n = nodelist.item(i);
+            final String value = getTextContent(n).trim();
+            if (n.getNodeName().equalsIgnoreCase("replica-count")) {
+                config.replicaCount = getIntegerValue("replica-count", value,
+                        1);
+            }
+        }
+        mapMapConfigs.put(name, config);
     }
 
     private void handleTcpIp(final org.w3c.dom.Node node) {

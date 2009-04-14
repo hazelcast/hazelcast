@@ -143,8 +143,6 @@ public interface Constants {
 
         public static final int OP_CMAP_REMOVE_ITEM = 204;
 
-        public static final int OP_CMAP_BACKUP_ADD = 205;
-
         public static final int OP_CMAP_BLOCK_INFO = 206;
 
         public static final int OP_CMAP_REMOVE_OWNER = 207;
