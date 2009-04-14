@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 
 public class SelectorBase implements Runnable {
 
-    protected static Logger logger = Logger.getLogger(SelectorBase.class.getName());
+    protected Logger logger = Logger.getLogger(this.getClass().getName());
 
     protected static final boolean DEBUG = Build.DEBUG;
 
@@ -110,7 +110,7 @@ public class SelectorBase implements Runnable {
             } catch (final IOException ioe) {
                 // normally select should never throw an exception
                 // operation. If happens, continue selecting...
-                ioe.printStackTrace();
+                logger.log(Level.FINEST, "Ignorable", ioe);
                 continue select;
             }
             if (selectedKeys == 0) {

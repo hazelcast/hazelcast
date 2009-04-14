@@ -177,7 +177,7 @@ class ConcurrentMapManager extends BaseManager {
         return instance;
     }
 
-    private static final int BLOCK_COUNT = 100;
+    private static final int BLOCK_COUNT = 271; 
 
     private Request remoteReq = new Request();
     private Map<Integer, Block> mapBlocks = new HashMap<Integer, Block>(BLOCK_COUNT);
@@ -1942,7 +1942,7 @@ class ConcurrentMapManager extends BaseManager {
                     size += record.valueCount();
                 }
             }
-//            System.out.println(size + " is size.. backup.size " + backupSize());
+            System.out.println(size + " is size.. backup.size " + backupSize());
             return size;
         }
 
