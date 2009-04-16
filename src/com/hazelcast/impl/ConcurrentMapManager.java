@@ -1395,7 +1395,7 @@ class ConcurrentMapManager extends BaseManager {
         request.lockThreadId = record.lockThreadId;
         request.lockAddress = record.lockAddress;
         request.lockCount = record.lockCount;
-        request.longValue = record.valueCount();
+        request.longValue = record.copyCount;
         if (includeKeyValue) {
             request.key = doHardCopy(record.getKey());
             if (record.getValue() != null) {
@@ -1942,7 +1942,7 @@ class ConcurrentMapManager extends BaseManager {
                     size += record.valueCount();
                 }
             }
-            System.out.println(size + " is size.. backup.size " + backupSize());
+//            System.out.println(size + " is size.. backup.size " + backupSize());
             return size;
         }
 
@@ -2073,6 +2073,7 @@ class ConcurrentMapManager extends BaseManager {
             record.lockThreadId = req.lockThreadId;
             record.lockCount = req.lockCount;
             record.copyCount = (int) req.longValue;
+            
             return record;
         }
 
@@ -2133,6 +2134,7 @@ class ConcurrentMapManager extends BaseManager {
                 record.key.setNoData();
                 record.key = null;
             }
+
             return oldValue;
         }
 

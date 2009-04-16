@@ -308,13 +308,11 @@ public class Node {
             if (ip == null) {
                 JoinInfo joinInfo = new JoinInfo(true, address, config.groupName,
                         config.groupPassword, getLocalNodeType());
-                for (int i = 0; i < 5; i++) {
+
+                for (int i = 0; i < 200; i++) {
                     MulticastService.get().send(joinInfo);
-                    Thread.sleep(10);
-                }
-                for (int i = 0; i < 5; i++) {
                     if (masterAddress == null) {
-                        Thread.sleep(500);
+                        Thread.sleep(10);
                     } else {
                         return masterAddress;
                     }
