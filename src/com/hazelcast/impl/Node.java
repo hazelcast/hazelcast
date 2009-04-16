@@ -494,23 +494,23 @@ public class Node {
                 try {
                     if (DEBUG)
                         logger.log(Level.FINEST, "joining... " + masterAddress);
-                    while (!joined()) {
-                        joinExisting(masterAddress);
-                        Thread.sleep(500);
-                    }
                     if (masterAddress == null) {
                         joinWithMulticast();
                     } else if (masterAddress.equals(address)) {
                         setAsMaster();
                     }
+                    joinExisting(masterAddress);
+                    Thread.sleep(500);
                 } catch (final Exception e) {
-                    e.printStackTrace();
+                    logger.log (Level.FINEST, "multicast join", e);
                 }
             }
         }
     }
 
     private void joinExisting(final Address masterAddress) throws Exception {
+        if (masterAddress == null) return;
+        if (masterAddress.equals(getThisAddress())) return;
         Connection conn = ConnectionManager.get().getOrConnect(masterAddress);
         if (conn == null)
             Thread.sleep(1000);
