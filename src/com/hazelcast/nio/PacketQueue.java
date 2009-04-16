@@ -319,7 +319,7 @@ public class PacketQueue {
             if (objValue != null) {
                 value = ThreadContext.get().toData(objValue);
             }
-            if (objValue != null) {
+            if (objKey != null) {
                 key = ThreadContext.get().toData(objKey);
             }
         }
