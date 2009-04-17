@@ -60,6 +60,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         });
         ClusterService.get().registerPacketProcessor(OP_HEARTBEAT, new PacketProcessor() {
             public void process(Packet packet) {
+                packet.returnToContainer();
             }
         });
         ClusterService.get().registerPacketProcessor(OP_REMOTELY_PROCESS_AND_RESPOND,
@@ -852,6 +853,8 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                 Config.get().groupPassword, Node.get().getLocalNodeType()), toAddress);
     }
 
+
+
     public static class JoinRequest extends AbstractRemotelyProcessable {
 
         int nodeType = NODE_MEMBER;
@@ -937,6 +940,29 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 
         public void process() {
             ClusterManager.get().handleAddRemoveConnection(this);
+        }
+    }
+
+    public void sendBindRequest(Connection toConnection) {
+        sendProcessableTo(new Bind(thisAddress), toConnection);
+    }
+
+    public static class Bind extends Master {
+
+        public Bind() {
+        }
+
+        public Bind(Address localAddress) {
+            super(localAddress);
+        }
+
+        @Override
+        public String toString() {
+            return "Bind " + address;
+        }
+
+        public void process() {
+            ConnectionManager.get().bind(address, getConnection(), true);
         }
     }
 

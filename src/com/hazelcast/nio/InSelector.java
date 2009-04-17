@@ -19,6 +19,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.impl.Config;
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.ClusterManager;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

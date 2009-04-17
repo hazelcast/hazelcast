@@ -81,6 +81,7 @@ public class OutSelector extends SelectorBase {
                 final Connection connection = initChannel(socketChannel, false);
                 connection.localPort = localPort;
                 ConnectionManager.get().bind(address, connection, false);
+//                ClusterManager.get().sendBindRequest(connection);
             } catch (final Exception e) {
                 try {
                     if (DEBUG) {
