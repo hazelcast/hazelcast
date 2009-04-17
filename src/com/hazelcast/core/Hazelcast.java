@@ -50,7 +50,7 @@ public final class Hazelcast {
         return com.hazelcast.impl.FactoryImpl.getMultiMap(name);
     }
 
-    public static Lock getLock(Object obj) {
+    public static ILock getLock(Object obj) {
         return com.hazelcast.impl.FactoryImpl.getLock(obj);
     }
 

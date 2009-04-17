@@ -142,7 +142,7 @@ public class FactoryImpl implements Constants {
         return txn;
     }
 
-    public static Lock getLock(Object key) {
+    public static ILock getLock(Object key) {
         if (!inited.get())
             init();
         LockProxy lockProxy = (LockProxy) mapLockProxies.get(key);
@@ -215,7 +215,7 @@ public class FactoryImpl implements Constants {
         return proxy;
     }
 
-    static class LockProxy implements java.util.concurrent.locks.Lock {
+    static class LockProxy implements ILock {
 
         MProxy mapProxy = null;
 
