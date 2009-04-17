@@ -56,12 +56,12 @@ public class ClusterImpl implements Cluster {
         final Set<MembershipListener> setListeners = refListeners.get();
         Set<ClusterMember> setNew = new LinkedHashSet<ClusterMember>(lsMembers.size());
         for (MemberImpl member : lsMembers) {
-            final ClusterMember dummy = new ClusterMember(member.getAddress(), member.localMember());
+            final ClusterMember dummy = new ClusterMember(member.getAddress(), member.localMember(), member.getNodeType());
             ClusterMember clusterMember = mapClusterMembers.get(dummy);
             if (clusterMember == null) {
-                clusterMember = dummy;
+                clusterMember = dummy; 
                 if (setListeners != null && setListeners.size() > 0) {
-                    new Thread(new Runnable() {
+                    ExecutorManager.get().executeLocaly(new Runnable() {
                         public void run() {
                             MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
                                     dummy, MembershipEvent.MEMBER_ADDED);
@@ -69,7 +69,7 @@ public class ClusterImpl implements Cluster {
                                 listener.memberAdded(membershipEvent);
                             }
                         }
-                    }).start();
+                    });
                 }
             }
             if (clusterMember.localMember()) {
@@ -81,7 +81,7 @@ public class ClusterImpl implements Cluster {
             Set<ClusterMember> it = mapClusterMembers.keySet();
             for (final ClusterMember cm : it) {
                 if (!setNew.contains(cm)) {
-                    new Thread(new Runnable() {
+                    ExecutorManager.get().executeLocaly(new Runnable() {
                         public void run() {
                             MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
                                     cm, MembershipEvent.MEMBER_REMOVED);
@@ -89,7 +89,7 @@ public class ClusterImpl implements Cluster {
                                 listener.memberRemoved(membershipEvent);
                             }
                         }
-                    }).start();
+                    });
                 }
             }
         }
@@ -153,50 +153,26 @@ public class ClusterImpl implements Cluster {
         return sb.toString();
     }
 
-    public static class ClusterMember implements Member, DataSerializable {
+    public static class ClusterMember extends MemberImpl implements Member, DataSerializable {
 
-        Address address = null;
-
-        boolean localMember = false;
 
         public ClusterMember() {
-            super();
         }
 
-        public ClusterMember(Address address, boolean localMember) {
-            super();
-            this.address = address;
-            this.localMember = localMember;
-        }
-
-        public InetAddress getInetAddress() {
-            try {
-                return address.getInetAddress();
-            } catch (UnknownHostException e) {
-                return null;
-            }
-        }
-
-        public Address getAddress() {
-            return address;
-        }
-
-        public int getPort() {
-            return address.getPort();
-        }
-
-        public boolean localMember() {
-            return localMember;
+        public ClusterMember(Address address, boolean localMember, int nodeType) {
+            super(address, localMember, nodeType);
         }
 
         public void readData(DataInput in) throws IOException {
             address = new Address();
             address.readData(in);
             localMember = Node.get().getThisAddress().equals(address);
+            nodeType = in.readInt();
         }
 
         public void writeData(DataOutput out) throws IOException {
             address.writeData(out);
+            out.writeInt(nodeType);
         }
 
         @Override

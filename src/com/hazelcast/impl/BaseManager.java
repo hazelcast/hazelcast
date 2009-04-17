@@ -1126,7 +1126,7 @@ abstract class BaseManager implements Constants {
         int foundDistance = 0;
         for (int i = 0; i < size; i++) {
             final MemberImpl member = lsMembers.get((indexOfMember + i) % size);
-            if (!(skipSuperClient && member.superClient())) {
+            if (!(skipSuperClient && member.isSuperClient())) {
                 foundDistance++;
             }
             if (foundDistance == distance)
@@ -1164,7 +1164,7 @@ abstract class BaseManager implements Constants {
         int foundDistance = 0;
         for (int i = 0; i < size; i++) {
             final MemberImpl member = lsMembers.get((indexOfMember - i) % size);
-            if (!(skipSuperClient && member.superClient())) {
+            if (!(skipSuperClient && member.isSuperClient())) {
                 foundDistance++;
             }
             if (foundDistance == distance)

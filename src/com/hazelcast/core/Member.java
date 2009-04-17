@@ -27,4 +27,6 @@ public interface Member {
 
     InetAddress getInetAddress();
 
+    boolean isSuperClient();
+
 }

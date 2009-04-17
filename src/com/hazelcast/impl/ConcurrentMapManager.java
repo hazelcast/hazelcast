@@ -224,7 +224,7 @@ class ConcurrentMapManager extends BaseManager {
             Map<Address, Integer> addressBlocks = new HashMap<Address, Integer>();
             int storageEnabledMemberCount = 0;
             for (MemberImpl member : lsMembers) {
-                if (!member.superClient()) {
+                if (!member.isSuperClient()) {
                     addressBlocks.put(member.getAddress(), 0);
                     storageEnabledMemberCount++;
                 }

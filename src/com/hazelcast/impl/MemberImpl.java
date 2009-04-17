@@ -26,15 +26,19 @@ import java.net.UnknownHostException;
 
 public class MemberImpl implements Member {
 
-    private final boolean localMember;
+    protected boolean localMember;
 
-    private final Address address;
+    protected Address address;
 
-    private final int nodeType;
+    protected int nodeType;
 
-    private long lastRead = 0;
+    protected long lastRead = 0;
 
-    private long lastWrite = 0;
+    protected long lastWrite = 0;
+
+    public MemberImpl () {
+
+    }
 
     public MemberImpl(Address address, boolean localMember, int nodeType) {
         super();
@@ -85,7 +89,7 @@ public class MemberImpl implements Member {
         return lastWrite;
     }
 
-    public boolean superClient() {
+    public boolean isSuperClient() {
         return (nodeType == NODE_SUPER_CLIENT);
     }
 

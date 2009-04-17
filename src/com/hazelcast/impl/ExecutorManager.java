@@ -384,8 +384,12 @@ class ExecutorManager extends BaseManager implements MembershipListener {
                 if (DEBUG)
                     log(" Target " + target);
             } else {
-                final int random = (int) (Math.random() * 100);
-                target = lsMembers.get(random % lsMembers.size()).getAddress();
+                Set<Member> members = Node.get().getClusterImpl().getMembers();
+                final int random = (int) (Math.random() * 1000);
+                final int randomIndex = random % members.size();
+                ClusterMember randomClusterMember = (ClusterMember) members.toArray()[randomIndex];
+                target = randomClusterMember.getAddress();
+//                target = lsMembers.get(random % lsMembers.size()).getAddress();
                 randomTarget = target;
             }
             if (target == null)
