@@ -843,30 +843,6 @@ abstract class BaseManager implements Constants {
         }
     }
 
-    class CheckAllConnectionsOp extends ResponseQueueCall {
-
-        public boolean check() {
-            doOp();
-            return getResultAsBoolean();
-        }
-
-        public void process() {
-            for (MemberImpl member : lsMembers) {
-                if (!member.localMember()) {
-                    Connection conn = ConnectionManager.get().getConnection(member.getAddress());
-                    if (conn == null || !conn.live()) {
-                        setResult(OBJECT_REDO);
-                        return;
-                    }
-                }
-            }
-            setResult(Boolean.TRUE);
-        }
-
-        public void handleResponse(PacketQueue.Packet packet) {
-        }
-    }
-
     abstract class TargetAwareOp extends ResponseQueueCall {
 
         Address target = null;

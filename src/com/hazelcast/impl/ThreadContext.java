@@ -127,6 +127,10 @@ public class ThreadContext {
         return ConcurrentMapManager.get().new MPut();
     }
 
+    public MPutMulti getMPutMulti() {
+        return ConcurrentMapManager.get().new MPutMulti();
+    }
+
     public MRemove getMRemove() {
         return ConcurrentMapManager.get().new MRemove();
     }

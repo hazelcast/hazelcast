@@ -682,8 +682,8 @@ public class FactoryImpl implements Constants {
         public boolean putMulti(Object key, Object value) {
             check(key);
             check(value);
-            MPut mput = ThreadContext.get().getMPut();
-            return mput.putMulti(name, key, value, -1, -1);
+            MPutMulti mput = ThreadContext.get().getMPutMulti();
+            return mput.put(name, key, value);
         }
 
         public Object put(Object key, Object value) {
