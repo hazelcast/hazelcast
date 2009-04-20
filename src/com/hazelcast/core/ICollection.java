@@ -17,12 +17,11 @@
 
 package com.hazelcast.core;
 
-public interface ICollection<E> {
+public interface ICollection<E> extends ICommon {
     String getName();
 
     void addItemListener(ItemListener<E> listener, boolean includeValue);
 
     void removeItemListener(ItemListener<E> listener);
 
-    void destroy();
 }

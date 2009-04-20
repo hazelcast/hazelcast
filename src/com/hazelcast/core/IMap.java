@@ -20,7 +20,7 @@ package com.hazelcast.core;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
-public interface IMap<K, V> extends ConcurrentMap<K, V> {
+public interface IMap<K, V> extends ConcurrentMap<K, V>, ICommon {
 
     String getName();
 
@@ -39,7 +39,5 @@ public interface IMap<K, V> extends ConcurrentMap<K, V> {
     void addEntryListener(EntryListener listener, Object key, boolean includeValue);
 
     void removeEntryListener(EntryListener listener, Object key);
-
-    void destroy();
 
 }

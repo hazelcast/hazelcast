@@ -29,18 +29,20 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
 
 public class FactoryImpl implements Constants {
 
-    private static ConcurrentMap proxies = new ConcurrentHashMap(1000);
+    private static ConcurrentMap<String, ICommon> proxies = new ConcurrentHashMap<String, ICommon>(1000);
 
-    private static MProxy lockCProxy = new MProxy("m:locxtz3");
+    private static MProxy locksMapProxy = new MProxy("m:__hz_IdLocks");
 
-    private static ConcurrentMap mapLockProxies = new ConcurrentHashMap(100);
+    private static MProxy idGeneratorMapProxy = new MProxy("m:__hz_IdGenerator");
 
-    private static ConcurrentMap mapUUIDs = new ConcurrentHashMap(100);
+            private static ConcurrentMap<Object, LockProxy> mapLockProxies = new ConcurrentHashMap<Object, LockProxy>(100);
+
+    private static ConcurrentMap<String, IdGenerator> mapIdGenerators = new ConcurrentHashMap<String, IdGenerator>(100);
 
     static final ExecutorServiceProxy executorServiceImpl = new ExecutorServiceProxy();
 
@@ -65,17 +67,12 @@ public class FactoryImpl implements Constants {
         Node.get().shutdown();
     }
 
-    static IdGeneratorImpl getUUID(String name) {
-        IdGeneratorImpl uuid = (IdGeneratorImpl) mapUUIDs.get(name);
-        if (uuid != null)
-            return uuid;
-        synchronized (IdGeneratorImpl.class) {
-            uuid = new IdGeneratorImpl(name);
-            IdGeneratorImpl old = (IdGeneratorImpl) mapUUIDs.putIfAbsent(name, uuid);
-            if (old != null)
-                uuid = old;
-        }
-        return uuid;
+    public static Collection<ICommon> listProxies() {
+        List<ICommon> lsProxies = new ArrayList<ICommon>(proxies.size() + mapLockProxies.size());
+        lsProxies.addAll(proxies.values());
+        lsProxies.addAll(mapLockProxies.values());
+        lsProxies.addAll(mapIdGenerators.values());
+        return lsProxies;
     }
 
     static Collection getProxies() {
@@ -97,9 +94,19 @@ public class FactoryImpl implements Constants {
     }
 
     public static IdGenerator getIdGenerator(String name) {
-        if (!inited.get())
+        if (!inited.get()) {
             init();
-        return getUUID(name);
+        }
+        IdGenerator idGenerator = mapIdGenerators.get(name);
+        if (idGenerator != null)
+            return idGenerator;
+        synchronized (IdGeneratorProxy.class) {
+            idGenerator = new IdGeneratorProxy (name);
+            IdGeneratorProxy old = (IdGeneratorProxy) mapIdGenerators.putIfAbsent(name, idGenerator);
+            if (old != null)
+                idGenerator = old;
+        }
+        return idGenerator;
     }
 
     public static <K, V> IMap<K, V> getMap(String name) {
@@ -145,9 +152,9 @@ public class FactoryImpl implements Constants {
     public static ILock getLock(Object key) {
         if (!inited.get())
             init();
-        LockProxy lockProxy = (LockProxy) mapLockProxies.get(key);
+        LockProxy lockProxy = mapLockProxies.get(key);
         if (lockProxy == null) {
-            lockProxy = new LockProxy(lockCProxy, key);
+            lockProxy = new LockProxy(locksMapProxy, key);
             mapLockProxies.put(key, lockProxy);
         }
         return lockProxy;
@@ -174,7 +181,7 @@ public class FactoryImpl implements Constants {
 
     // should only be called from service thread!!
     static Object createProxy(String name) {
-        Object proxy = proxies.get(name);
+        ICommon proxy = proxies.get(name);
         if (proxy == null) {
             if (name.startsWith("q:")) {
                 proxy = proxies.get(name);
@@ -215,7 +222,7 @@ public class FactoryImpl implements Constants {
         return proxy;
     }
 
-    static class LockProxy implements ILock {
+    static class LockProxy implements ILock, ICommon {
 
         MProxy mapProxy = null;
 
@@ -252,6 +259,11 @@ public class FactoryImpl implements Constants {
 
         public void destroy() {
             mapProxy.remove(key);
+            mapLockProxies.remove(key);
+        }
+
+        public ICommon.InstanceType getInstanceType() {
+            return ICommon.InstanceType.LOCK;
         }
     }
 
@@ -278,7 +290,7 @@ public class FactoryImpl implements Constants {
         }
     }
 
-    static class TopicProxy implements ITopic {
+    static class TopicProxy implements ITopic, ICommon {
         String name;
         QProxy qProxy = null; // for global ordering support
 
@@ -322,6 +334,10 @@ public class FactoryImpl implements Constants {
         public void destroy() {
             TopicManager.TopicDestroy topicDestroy = TopicManager.get().new TopicDestroy();
             topicDestroy.destroy(name);
+        }
+
+        public ICommon.InstanceType getInstanceType() {
+            return ICommon.InstanceType.TOPIC;
         }
 
         @Override
@@ -380,6 +396,10 @@ public class FactoryImpl implements Constants {
             throw new UnsupportedOperationException();
         }
 
+        public ICommon.InstanceType getInstanceType() {
+            return ICommon.InstanceType.LIST;
+        }
+
         @Override
         public String toString() {
             return "List [" + getName() + "]";
@@ -395,9 +415,13 @@ public class FactoryImpl implements Constants {
         public String toString() {
             return "Set [" + getName() + "]";
         }
+
+        public ICommon.InstanceType getInstanceType() {
+            return ICommon.InstanceType.SET;
+        }
     }
 
-    static class CollectionProxy extends AbstractCollection implements ICollection, IProxy {
+    static abstract class CollectionProxy extends AbstractCollection implements ICollection, IRemoveAwareProxy, ICommon {
         String name = null;
 
         MProxy mapProxy;
@@ -469,7 +493,7 @@ public class FactoryImpl implements Constants {
         }
     }
 
-    public static class QProxy extends AbstractQueue implements Constants, IQueue, BlockingQueue {
+    public static class QProxy extends AbstractQueue implements Constants, IQueue, BlockingQueue, ICommon {
 
         String name = null;
 
@@ -569,11 +593,15 @@ public class FactoryImpl implements Constants {
         public void destroy() {
             clear();
             QDestroy qDestroy = BlockingQueueManager.get().new QDestroy();
-            qDestroy.destroy (name);
+            qDestroy.destroy(name);
+        }
+
+        public ICommon.InstanceType getInstanceType() {
+            return ICommon.InstanceType.QUEUE;
         }
     }
 
-    static class MultiMapProxy implements MultiMap, Constants {
+    static class MultiMapProxy implements MultiMap, Constants, ICommon {
         String name = null;
 
         MProxy mapProxy;
@@ -639,10 +667,17 @@ public class FactoryImpl implements Constants {
         public Collection values() {
             return null;
         }
+
+        public ICommon.InstanceType getInstanceType() {
+            return ICommon.InstanceType.MULTIMAP;
+        }
+
+        public void destroy() {
+
+        }
     }
 
-    interface IProxy {
-        boolean add(Object item);
+    interface IRemoveAwareProxy {
 
         boolean removeKey(Object key);
     }
@@ -658,7 +693,7 @@ public class FactoryImpl implements Constants {
             throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
     }
 
-    static class MProxy implements IMap, IProxy, Constants {
+    static class MProxy implements IMap, IRemoveAwareProxy, ICommon, Constants {
 
         String name = null;
 
@@ -668,6 +703,16 @@ public class FactoryImpl implements Constants {
             super();
             this.name = name;
             this.mapType = BaseManager.getMapType(name);
+        }
+
+        public ICommon.InstanceType getInstanceType() {
+            if (mapType == MAP_TYPE_MAP)
+                return ICommon.InstanceType.MAP;
+            else if (mapType == MAP_TYPE_SET)
+                return ICommon.InstanceType.SET;
+            else if (mapType == MAP_TYPE_LIST)
+                return ICommon.InstanceType.LIST;
+            else throw new RuntimeException("Unknown MProxy type " + mapType);
         }
 
         @Override
@@ -933,4 +978,105 @@ public class FactoryImpl implements Constants {
         }
 
     }
+
+    static class IdGeneratorProxy implements IdGenerator {
+
+        private static final long BILLION = 1 * 1000 * 1000;
+
+        private final String name;
+
+        public IdGeneratorProxy(String name) {
+            this.name = name;
+        }
+
+        AtomicLong billion = new AtomicLong(-1);
+
+        AtomicLong currentId = new AtomicLong(2 * BILLION);
+
+        AtomicBoolean fetching = new AtomicBoolean(false);
+
+        public String getName() {
+            return name;
+        }
+
+        public long newId() {
+            long billionNow = billion.get();
+            long idAddition = currentId.incrementAndGet();
+            if (idAddition >= BILLION) {
+                synchronized (this) {
+                    try {
+                        billionNow = billion.get();
+                        idAddition = currentId.incrementAndGet();
+                        if (idAddition >= BILLION) {
+                            Long idBillion = getNewBillion();
+                            long newBillion = idBillion.longValue() * BILLION;
+                            billion.set(newBillion);
+                            currentId.set(0);
+                        }
+                        billionNow = billion.get();
+                        idAddition = currentId.incrementAndGet();
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
+                }
+
+            }
+            long result = billionNow + idAddition;
+            return result;
+        }
+
+        private Long getNewBillion() {
+            try {
+                DistributedTask<Long> task = new DistributedTask<Long>(new IncrementTask(name));
+                FactoryImpl.executorServiceImpl.execute(task);
+                return task.get();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+
+
+        public InstanceType getInstanceType() {
+            return ICommon.InstanceType.ID_GENERATOR;
+        }
+
+        public void destroy() {
+            idGeneratorMapProxy.remove(name);
+        }
+    }
+
+    public static class IncrementTask implements Callable<Long>, Serializable {
+            String name = null;
+
+            public IncrementTask() {
+                super();
+            }
+
+            public IncrementTask(String uuidName) {
+                super();
+                this.name = uuidName;
+            }
+
+            public Long call() {
+                MProxy map = FactoryImpl.idGeneratorMapProxy;
+                map.lock(name);
+                try {
+                    Long max = (Long) map.get(name);
+                    if (max == null) {
+                        max = Long.valueOf(0l);
+                        map.put(name, Long.valueOf(0));
+                        return max;
+                    } else {
+                        Long newMax = Long.valueOf(max.longValue() + 1);
+                        map.put(name, newMax);
+                        return newMax;
+                    }
+                } finally {
+                    map.unlock(name);
+                }
+            }
+        }
+
 }

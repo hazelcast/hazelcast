@@ -19,6 +19,6 @@ package com.hazelcast.core;
 
 import java.util.concurrent.BlockingQueue;
 
-public interface IQueue<E> extends ICollection, BlockingQueue<E> {
+public interface IQueue<E> extends ICollection, BlockingQueue<E>, ICommon {
 
 }

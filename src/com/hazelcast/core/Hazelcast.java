@@ -19,6 +19,7 @@ package com.hazelcast.core;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.locks.Lock;
+import java.util.Collection;
 
 public final class Hazelcast {
 
@@ -77,5 +78,15 @@ public final class Hazelcast {
      */
     public static void shutdown() {
         com.hazelcast.impl.FactoryImpl.shutdown();
+    }
+
+    /**
+     * Returns all queue, map, set, list, topic, lock, multimap
+     * instances created by Hazelcast.
+     *
+     * @return the collection of instances created by Hazelcast.
+     */
+    public static Collection<ICommon> getInstances() {
+        return com.hazelcast.impl.FactoryImpl.listProxies();
     }
 }

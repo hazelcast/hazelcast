@@ -25,7 +25,7 @@ import java.util.Set;
  *
  * @author oztalip
  */
-public interface MultiMap<K, V> {
+public interface MultiMap<K, V> extends ICommon {
 
     /**
      * Stores a key-value pair in the multimap.

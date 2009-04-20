@@ -17,7 +17,7 @@
 
 package com.hazelcast.core;
 
-public interface ITopic<E> {
+public interface ITopic<E> extends ICommon {
 
     String getName();
 
@@ -26,6 +26,4 @@ public interface ITopic<E> {
     void addMessageListener(MessageListener<E> listener);
 
     void removeMessageListener(MessageListener<E> listener);
-
-    void destroy();
 }
