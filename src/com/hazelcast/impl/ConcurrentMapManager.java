@@ -23,7 +23,6 @@ import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.*;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
-import com.hazelcast.impl.FactoryImpl.IProxy;
 import com.hazelcast.nio.Address;
 import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.Data;
@@ -54,19 +53,19 @@ class ConcurrentMapManager extends BaseManager {
         ClusterService.get().registerPacketProcessor(OP_CMAP_BACKUP_PUT,
                 new PacketProcessor() {
                     public void process(Packet packet) {
-                        handleBackupSync(packet);
+                        handleBackup(packet);
                     }
                 });
         ClusterService.get().registerPacketProcessor(OP_CMAP_BACKUP_REMOVE,
                 new PacketProcessor() {
                     public void process(Packet packet) {
-                        handleBackupSync(packet);
+                        handleBackup(packet);
                     }
                 });
         ClusterService.get().registerPacketProcessor(OP_CMAP_BACKUP_LOCK,
                 new PacketProcessor() {
                     public void process(PacketQueue.Packet packet) {
-                        handleBackupSync(packet);
+                        handleBackup(packet);
                     }
                 });
         ClusterService.get().registerPacketProcessor(OP_CMAP_PUT_MULTI,
@@ -504,8 +503,8 @@ class ConcurrentMapManager extends BaseManager {
                     FactoryImpl.MProxy proxy = (FactoryImpl.MProxy) FactoryImpl.getProxy(name);
                     proxy.remove(next.getKey());
                 } else {
-                    IProxy iproxy = (IProxy) FactoryImpl.getProxy(name);
-                    iproxy.removeKey(next.getKey());
+                    FactoryImpl.IRemoveAwareProxy removeAwareProxy = (FactoryImpl.IRemoveAwareProxy) FactoryImpl.getProxy(name);
+                    removeAwareProxy.removeKey(next.getKey());
                 }
             }
         }
@@ -1217,7 +1216,7 @@ class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    void handleBackupSync(Packet packet) {
+    void handleBackup(Packet packet) {
         remoteReq.setFromPacket(packet);
         doBackup(remoteReq);
         if (remoteReq.response == Boolean.TRUE) {
@@ -1890,41 +1889,81 @@ class ConcurrentMapManager extends BaseManager {
                     req.key = null;
                     req.value = null;
 
-                    VersionedBackupOp bo = null;
-                    if (req.operation == OP_CMAP_BACKUP_PUT) {
-                        bo = new VersionedPutBackupOp(record, reqCopy);
-                    } else if (req.operation == OP_CMAP_BACKUP_REMOVE) {
-                        bo = new VersionedRemoveBackupOp(record, reqCopy);
-                    } else if (req.operation == OP_CMAP_BACKUP_LOCK) {
-                        bo = new VersionedLockBackupOp(record, reqCopy);
-                    } else if (req.operation == OP_CMAP_BACKUP_PUT_MULTI) {
-                        bo = new VersionedPutMultiBackupOp(record, reqCopy);
-                    } else if (req.operation == OP_CMAP_BACKUP_REMOVE_MULTI) {
-                        bo = new VersionedRemoveMultiBackupOp(record, reqCopy);
-                    } else {
-                        logger.log(Level.SEVERE, "Unknown backup operation " + req.operation);
-                        return false;
-                    }
-                    record.addBackupOp(bo);
+                    record.addBackupOp(new VersionedBackupOp(req));
                     return true;
                 } else if (req.version <= record.version) {
                     return false;
                 }
             }
-            if (req.operation == OP_CMAP_BACKUP_PUT) {
-                record = toRecord(req);
-                record.owner = req.caller;
-            } else if (req.operation == OP_CMAP_BACKUP_REMOVE) {
-                removeRecord(req.key);
-            } else if (req.operation == OP_CMAP_BACKUP_LOCK) {
-                record = toRecord(req);
-            }
+
+            doBackup(req);
+
+            record = getRecord(req.key);
             if (record != null) {
                 record.version = req.version;
                 record.runBackupOps();
             }
 
             return true;
+        }
+
+
+        public void doBackup(Request req) {
+            if (req.operation == OP_CMAP_BACKUP_PUT) {
+                Record record = toRecord(req);
+                if (record.value != null) {
+                    record.value.setNoData();
+                }
+                record.value = req.value;
+                record.copyCount = (int) req.longValue;
+                req.value = null;
+            } else if (req.operation == OP_CMAP_BACKUP_REMOVE) {
+                Record record = getRecord(req.key);
+                if (record != null) {
+                    if (record.value != null) {
+                        record.value.setNoData();
+                    }
+
+                    if (record.lsValues != null) {
+                        for (Data value : record.lsValues) {
+                            value.setNoData();
+                        }
+                    }
+                    record.copyCount--;
+                    record.value = null;
+                }
+            } else if (req.operation == OP_CMAP_BACKUP_LOCK) {
+                toRecord(req);
+            } else if (req.operation == OP_CMAP_BACKUP_PUT_MULTI) {
+                Record record = getRecord(req.key);
+                if (record == null) {
+                    record = createNewRecord(req.key, null);
+                }
+                record.addValue(req.value);
+                req.value = null;
+            } else if (req.operation == OP_CMAP_BACKUP_REMOVE_MULTI) {
+                Record record = getRecord(req.key);
+                if (record != null) {
+                    if (req.value == null) {
+                        removeRecord(req.key);
+                    } else {
+                        if (record.containsValue(req.value)) {
+                            if (record.lsValues != null) {
+                                Iterator<Data> itValues = record.lsValues.iterator();
+                                while (itValues.hasNext()) {
+                                    Data value = itValues.next();
+                                    if (req.value.equals(value)) {
+                                        itValues.remove();
+                                        value.setNoData();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                logger.log(Level.SEVERE, "Unknown backup operation " + req.operation);
+            }
         }
 
         public int backupSize() {
@@ -2056,8 +2095,6 @@ class ConcurrentMapManager extends BaseManager {
                 fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, record, null);
             }
             logger.log(Level.FINEST, record.value + " PutMulti " + record.lsValues);
-            req.key = null;
-            req.value = null;
             req.version = record.version;
             return added;
         }
@@ -2246,125 +2283,27 @@ class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class VersionedRemoveBackupOp extends VersionedRequestAwareRecordBackupOp {
-        VersionedRemoveBackupOp(Record record, Request request) {
-            super(record, request);
-        }
 
-        public void run() {
-            if (record.value != null) {
-                record.value.setNoData();
-            }
+    class VersionedBackupOp implements Runnable, Comparable {
+        final Request request;
 
-            if (record.lsValues != null) {
-                for (Data value : record.lsValues) {
-                    value.setNoData();
-                }
-            }
-            record.copyCount--;
-            record.value = null;
-            request.reset();
-        }
-    }
-
-    class VersionedRemoveMultiBackupOp extends VersionedRequestAwareRecordBackupOp {
-        VersionedRemoveMultiBackupOp(Record record, Request request) {
-            super(record, request);
-        }
-
-        public void run() {
-            if (request.value != null) {
-
-            } else {
-
-            }
-            record.addValue(request.value);
-            request.value = null;
-            if (request.key != null) {
-                request.key.setNoData();
-            }
-        }
-    }
-
-    class VersionedPutMultiBackupOp extends VersionedRequestAwareRecordBackupOp {
-        VersionedPutMultiBackupOp(Record record, Request request) {
-            super(record, request);
-        }
-
-        public void run() {
-            record.addValue(request.value);
-            request.value = null;
-            if (request.key != null) {
-                request.key.setNoData();
-            }
-        }
-    }
-
-    class VersionedLockBackupOp extends VersionedRequestAwareRecordBackupOp {
-        VersionedLockBackupOp(Record record, Request request) {
-            super(record, request);
-        }
-
-        public void run() {
-            record.lockAddress = request.lockAddress;
-            record.lockThreadId = request.lockThreadId;
-            record.lockCount = request.lockCount;
-            request.reset();
-        }
-    }
-
-    class VersionedPutBackupOp extends VersionedRequestAwareRecordBackupOp {
-        VersionedPutBackupOp(Record record, Request request) {
-            super(record, request);
-        }
-
-        public void run() {
-            if (record.value != null) {
-                record.value.setNoData();
-            }
-            record.value = request.value;
-            record.copyCount = (int) request.longValue;
-            request.value = null;
-            if (request.key != null) {
-                request.key.setNoData();
-            }
-        }
-    }
-
-    abstract class VersionedRequestAwareRecordBackupOp extends VersionedRecordBackupOp {
-        protected final Request request;
-
-        protected VersionedRequestAwareRecordBackupOp(Record record, Request request) {
-            super(request.version, record);
+        VersionedBackupOp(Request request) {
             this.request = request;
         }
-    }
 
-    abstract class VersionedRecordBackupOp extends VersionedBackupOp {
-        protected final Record record;
-
-        protected VersionedRecordBackupOp(long version, Record record) {
-            super(version);
-            this.record = record;
-        }
-    }
-
-
-    abstract class VersionedBackupOp implements Runnable, Comparable {
-        protected final long version;
-
-        protected VersionedBackupOp(long version) {
-            this.version = version;
+        public void run() {
+            CMap cmap = getMap(request.name);
+            cmap.doBackup(request);
         }
 
         long getVersion() {
-            return version;
+            return request.version;
         }
 
         public int compareTo(Object o) {
             long v = ((VersionedBackupOp) o).getVersion();
-            if (version > v) return 1;
-            else if (version < v) return -1;
+            if (request.version > v) return 1;
+            else if (request.version < v) return -1;
             else return 0;
         }
 
@@ -2375,16 +2314,17 @@ class ConcurrentMapManager extends BaseManager {
 
             VersionedBackupOp that = (VersionedBackupOp) o;
 
-            if (version != that.version) return false;
+            if (request.version != that.request.version) return false;
 
             return true;
         }
 
         @Override
         public int hashCode() {
-            return (int) (version ^ (version >>> 32));
+            return (int) (request.version ^ (request.version >>> 32));
         }
     }
+
 
     class Record {
 
@@ -2427,6 +2367,7 @@ class ConcurrentMapManager extends BaseManager {
                         } else if (bo.getVersion() == version + 1) {
                             bo.run();
                             version = bo.getVersion();
+                            bo.request.reset();
                             it.remove();
                         } else {
                             return;
@@ -2442,12 +2383,13 @@ class ConcurrentMapManager extends BaseManager {
             }
             backupOps.add(bo);
             if (backupOps.size() > 5) {
-                logger.log(Level.FINEST, id + " Running backup versions " + version);
+                logger.log(Level.FINEST, id + " Forcing backup.run version " + version);
                 Iterator<VersionedBackupOp> it = backupOps.iterator();
                 while (it.hasNext()) {
                     VersionedBackupOp v = it.next();
                     v.run();
                     version = v.getVersion();
+                    v.request.reset();
                     it.remove();
                 }
             }
