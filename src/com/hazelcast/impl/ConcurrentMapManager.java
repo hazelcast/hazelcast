@@ -1880,16 +1880,17 @@ class ConcurrentMapManager extends BaseManager {
         }
 
         public boolean backup(Request req) {
+
             Record record = getRecord(req.key);
 
             if (record != null) {
+                record.version = req.version;
                 if (req.version > record.version + 1) {
                     Request reqCopy = new Request();
                     reqCopy.setFromRequest(req, false);
                     req.key = null;
                     req.value = null;
-
-                    record.addBackupOp(new VersionedBackupOp(req));
+                    record.addBackupOp(new VersionedBackupOp(reqCopy));
                     return true;
                 } else if (req.version <= record.version) {
                     return false;
@@ -1898,7 +1899,6 @@ class ConcurrentMapManager extends BaseManager {
 
             doBackup(req);
 
-            record = getRecord(req.key);
             if (record != null) {
                 record.version = req.version;
                 record.runBackupOps();
@@ -1910,13 +1910,7 @@ class ConcurrentMapManager extends BaseManager {
 
         public void doBackup(Request req) {
             if (req.operation == OP_CMAP_BACKUP_PUT) {
-                Record record = toRecord(req);
-                if (record.value != null) {
-                    record.value.setNoData();
-                }
-                record.value = req.value;
-                record.copyCount = (int) req.longValue;
-                req.value = null;
+                toRecord(req);
             } else if (req.operation == OP_CMAP_BACKUP_REMOVE) {
                 Record record = getRecord(req.key);
                 if (record != null) {
@@ -1929,8 +1923,13 @@ class ConcurrentMapManager extends BaseManager {
                             value.setNoData();
                         }
                     }
-                    record.copyCount--;
+                    if (record.copyCount > 0) {
+                        record.decrementCopyCount();
+                    }
                     record.value = null;
+                    if (record.isRemovable()) {
+                        removeRecord(record.key);
+                    }
                 }
             } else if (req.operation == OP_CMAP_BACKUP_LOCK) {
                 toRecord(req);
@@ -1960,6 +1959,9 @@ class ConcurrentMapManager extends BaseManager {
                             }
                         }
                     }
+                    if (record.isRemovable()) {
+                        removeRecord(record.key);
+                    }
                 }
             } else {
                 logger.log(Level.SEVERE, "Unknown backup operation " + req.operation);
@@ -1972,7 +1974,7 @@ class ConcurrentMapManager extends BaseManager {
             for (Record record : records) {
                 Block block = mapBlocks.get(record.blockId);
                 if (!thisAddress.equals(block.owner)) {
-                    size++;
+                    size += record.valueCount();
                 }
             }
             return size;
@@ -1987,7 +1989,7 @@ class ConcurrentMapManager extends BaseManager {
                     size += record.valueCount();
                 }
             }
-//            System.out.println(size + " is size.. backup.size " + backupSize());
+            System.out.println(size + " is size.. backup.size " + backupSize());
             return size;
         }
 
@@ -2437,7 +2439,7 @@ class ConcurrentMapManager extends BaseManager {
                 count = 1;
             } else if (lsValues != null) {
                 count = lsValues.size();
-            } else {
+            } else if (copyCount > 0) {
                 count += copyCount;
             }
             return count;
@@ -2586,7 +2588,7 @@ class ConcurrentMapManager extends BaseManager {
         }
 
         public boolean isRemovable() {
-            return (copyCount == 0 && !hasListener());
+            return (valueCount() <= 0 && !hasListener() && (backupOps == null || backupOps.size() == 0));
         }
 
         public boolean hasListener() {
@@ -2614,7 +2616,9 @@ class ConcurrentMapManager extends BaseManager {
         }
 
         public void decrementCopyCount() {
-            --copyCount;
+            if (copyCount > 0) {
+                --copyCount;
+            }
         }
 
         public int getCopyCount() {

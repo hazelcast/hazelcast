@@ -17,9 +17,8 @@
 
 package com.hazelcast.core;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.locks.Lock;
 import java.util.Collection;
+import java.util.concurrent.ExecutorService;
 
 public final class Hazelcast {
 
@@ -87,6 +86,6 @@ public final class Hazelcast {
      * @return the collection of instances created by Hazelcast.
      */
     public static Collection<ICommon> getInstances() {
-        return com.hazelcast.impl.FactoryImpl.listProxies();
+        return com.hazelcast.impl.FactoryImpl.getInstances();
     }
 }

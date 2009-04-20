@@ -67,7 +67,7 @@ public class FactoryImpl implements Constants {
         Node.get().shutdown();
     }
 
-    public static Collection<ICommon> listProxies() {
+    public static Collection<ICommon> getInstances() {
         List<ICommon> lsProxies = new ArrayList<ICommon>(proxies.size() + mapLockProxies.size());
         lsProxies.addAll(proxies.values());
         lsProxies.addAll(mapLockProxies.values());
