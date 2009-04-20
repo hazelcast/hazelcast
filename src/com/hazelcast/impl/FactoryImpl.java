@@ -36,11 +36,11 @@ public class FactoryImpl implements Constants {
 
     private static ConcurrentMap<String, ICommon> proxies = new ConcurrentHashMap<String, ICommon>(1000);
 
-    private static MProxy locksMapProxy = new MProxy("m:__hz_IdLocks");
+    private static MProxy locksMapProxy = new MProxy("m:__hz_Locks");
 
     private static MProxy idGeneratorMapProxy = new MProxy("m:__hz_IdGenerator");
 
-            private static ConcurrentMap<Object, LockProxy> mapLockProxies = new ConcurrentHashMap<Object, LockProxy>(100);
+    private static ConcurrentMap<Object, LockProxy> mapLockProxies = new ConcurrentHashMap<Object, LockProxy>(100);
 
     private static ConcurrentMap<String, IdGenerator> mapIdGenerators = new ConcurrentHashMap<String, IdGenerator>(100);
 
@@ -101,7 +101,7 @@ public class FactoryImpl implements Constants {
         if (idGenerator != null)
             return idGenerator;
         synchronized (IdGeneratorProxy.class) {
-            idGenerator = new IdGeneratorProxy (name);
+            idGenerator = new IdGeneratorProxy(name);
             IdGeneratorProxy old = (IdGeneratorProxy) mapIdGenerators.putIfAbsent(name, idGenerator);
             if (old != null)
                 idGenerator = old;
@@ -334,6 +334,7 @@ public class FactoryImpl implements Constants {
         public void destroy() {
             TopicManager.TopicDestroy topicDestroy = TopicManager.get().new TopicDestroy();
             topicDestroy.destroy(name);
+            proxies.remove(name);
         }
 
         public ICommon.InstanceType getInstanceType() {
@@ -490,6 +491,7 @@ public class FactoryImpl implements Constants {
 
         public void destroy() {
             mapProxy.destroy();
+            proxies.remove(name);
         }
     }
 
@@ -594,6 +596,7 @@ public class FactoryImpl implements Constants {
             clear();
             QDestroy qDestroy = BlockingQueueManager.get().new QDestroy();
             qDestroy.destroy(name);
+            proxies.remove(name);
         }
 
         public ICommon.InstanceType getInstanceType() {
@@ -673,7 +676,8 @@ public class FactoryImpl implements Constants {
         }
 
         public void destroy() {
-
+            mapProxy.destroy();
+            proxies.remove(name);
         }
     }
 
@@ -975,6 +979,7 @@ public class FactoryImpl implements Constants {
             clear();
             MDestroy mDestroy = ConcurrentMapManager.get().new MDestroy();
             mDestroy.destroy(name);
+            proxies.remove(name);
         }
 
     }
@@ -1037,46 +1042,46 @@ public class FactoryImpl implements Constants {
         }
 
 
-
         public InstanceType getInstanceType() {
             return ICommon.InstanceType.ID_GENERATOR;
         }
 
         public void destroy() {
+            mapIdGenerators.remove(name);
             idGeneratorMapProxy.remove(name);
         }
     }
 
     public static class IncrementTask implements Callable<Long>, Serializable {
-            String name = null;
+        String name = null;
 
-            public IncrementTask() {
-                super();
-            }
+        public IncrementTask() {
+            super();
+        }
 
-            public IncrementTask(String uuidName) {
-                super();
-                this.name = uuidName;
-            }
+        public IncrementTask(String uuidName) {
+            super();
+            this.name = uuidName;
+        }
 
-            public Long call() {
-                MProxy map = FactoryImpl.idGeneratorMapProxy;
-                map.lock(name);
-                try {
-                    Long max = (Long) map.get(name);
-                    if (max == null) {
-                        max = Long.valueOf(0l);
-                        map.put(name, Long.valueOf(0));
-                        return max;
-                    } else {
-                        Long newMax = Long.valueOf(max.longValue() + 1);
-                        map.put(name, newMax);
-                        return newMax;
-                    }
-                } finally {
-                    map.unlock(name);
+        public Long call() {
+            MProxy map = FactoryImpl.idGeneratorMapProxy;
+            map.lock(name);
+            try {
+                Long max = (Long) map.get(name);
+                if (max == null) {
+                    max = Long.valueOf(0l);
+                    map.put(name, Long.valueOf(0));
+                    return max;
+                } else {
+                    Long newMax = Long.valueOf(max.longValue() + 1);
+                    map.put(name, newMax);
+                    return newMax;
                 }
+            } finally {
+                map.unlock(name);
             }
         }
+    }
 
 }
