@@ -23,6 +23,8 @@ public interface Cluster {
 
     void addMembershipListener(MembershipListener listener);
 
+    void removeMembershipListener(MembershipListener listener);
+
     Set<Member> getMembers();
 
     Member getLocalMember();
