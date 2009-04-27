@@ -92,7 +92,7 @@ public class Config {
         public boolean globalOrderingEnabled = false;
     }
 
-    protected static Logger logger = Logger.getLogger(Config.class.getName());
+    protected final static Logger logger = Logger.getLogger(Config.class.getName());
 
     private static Config instance = new Config();
 
@@ -353,9 +353,10 @@ public class Config {
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String value = getTextContent(n).trim();
-            if (n.getNodeName().equalsIgnoreCase("name")) {
+            final String nodeName = n.getNodeName();
+            if ("name".equalsIgnoreCase(nodeName)) {
                 groupName = value;
-            } else if (n.getNodeName().equalsIgnoreCase("password")) {
+            } else if ("password".equalsIgnoreCase(nodeName)) {
                 groupPassword = value;
             }
         }
