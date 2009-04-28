@@ -20,7 +20,6 @@ package com.hazelcast.impl;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IMap;
 import com.hazelcast.impl.ClusterManager.RemotelyProcessable;
-import com.hazelcast.impl.ConcurrentMapManager.Record;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_PROCESS;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_RESPONSE;
 import static com.hazelcast.impl.Constants.EventOperations.OP_EVENT;
@@ -32,14 +31,14 @@ import com.hazelcast.nio.*;
 import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.PacketQueue.Packet;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.DataInput;
-import java.io.IOException;
-import java.io.DataOutput;
 
 abstract class BaseManager implements Constants {
 
@@ -57,9 +56,6 @@ abstract class BaseManager implements Constants {
     protected final static boolean DEBUG = Build.DEBUG;
 
     protected final static Map<Long, Call> mapCalls = new HashMap<Long, Call>();
-
-    protected final static Map<String, OrderedEventQueue> mapOrderedEventQueues = new HashMap<String, OrderedEventQueue>(
-            10);
 
     protected final static EventQueue[] eventQueues = new EventQueue[EVENT_QUEUE_COUNT];
 
@@ -179,6 +175,95 @@ abstract class BaseManager implements Constants {
         }
     }
 
+    public static class Pairs implements DataSerializable {
+        List<KeyValue> lsKeyValues = null;
+
+        public Pairs() {
+        }
+
+        public void addKeyValue(KeyValue keyValue) {
+            if (lsKeyValues == null) {
+                lsKeyValues = new ArrayList<KeyValue>();
+            }
+            lsKeyValues.add(keyValue);
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            int size = (lsKeyValues == null) ? 0 : lsKeyValues.size();
+            out.writeInt(size);
+            for (int i = 0; i < size; i++) {
+                lsKeyValues.get(i).writeData(out);
+            }
+        }
+
+        public void readData(DataInput in) throws IOException {
+            int size = in.readInt();
+            for (int i = 0; i < size; i++) {
+                if (lsKeyValues == null) {
+                    lsKeyValues = new ArrayList<KeyValue>();
+                }
+                KeyValue kv = new KeyValue();
+                kv.readData(in);
+                lsKeyValues.add(kv);
+            }
+        }
+
+        public long size() {
+            return (lsKeyValues == null) ? 0 : lsKeyValues.size();
+        }
+
+    }
+
+    public static class KeyValue implements Map.Entry, DataSerializable {
+        Data key;
+        Data value;
+
+        public KeyValue() {
+        }
+
+        public KeyValue(Data key, Data value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            key.writeData(out);
+            boolean gotValue = (value != null && value.size() > 0);
+            out.writeBoolean(gotValue);
+            if (gotValue) {
+                value.writeData(out);
+            }
+
+        }
+
+        public void readData(DataInput in) throws IOException {
+            key = new Data();
+            key.readData(in);
+            boolean gotValue = in.readBoolean();
+            if (gotValue) {
+                value = new Data();
+                value.readData(in);
+            }
+        }
+
+        public Object getKey() {
+            return ThreadContext.get().toObject(key);
+        }
+
+        public Object getValue() {
+            return ThreadContext.get().toObject(value);
+        }
+
+        public Object setValue(Object value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String toString() {
+            return "Map.Entry key=" + getKey() + ", value=" + getValue();
+        }
+    }
+
     public static class SimpleDataEntry implements Map.Entry {
         String name;
 
@@ -244,11 +329,11 @@ abstract class BaseManager implements Constants {
             return valueData;
         }
 
-        public Object setValue(final Object value) {
+        public Object setValue(final Object newValue) {
             final IMap map = (IMap) FactoryImpl.getProxy(name);
-            map.put(keyData, value);
-            final Object oldValue = value;
-            this.value = value;
+            map.put(keyData, newValue);
+            final Object oldValue = this.value;
+            this.value = newValue;
             return oldValue;
         }
 
@@ -407,43 +492,6 @@ abstract class BaseManager implements Constants {
         }
     }
 
-    static class OrderedEventQueue extends ConcurrentLinkedQueue<EventTask> implements Runnable {
-        protected static Logger logger = Logger.getLogger(OrderedEventQueue.class.getName());
-
-        volatile long expectedRecordId = -1;
-
-        Map<Long, EventTask> mapDelayedEventTasks = new HashMap<Long, EventTask>(10);
-
-        public OrderedEventQueue(final long expectedRecordId) {
-            super();
-            this.expectedRecordId = expectedRecordId;
-        }
-
-        public void run() {
-            EventTask eventTask = poll();
-            if (eventTask == null)
-                return;
-            logger.log(Level.FINEST, expectedRecordId + "  running event " + eventTask.recordId);
-            if (expectedRecordId == eventTask.recordId) {
-                try {
-                    eventTask.run();
-                } catch (final Throwable e) {
-                    e.printStackTrace();
-                }
-                expectedRecordId++;
-                while (eventTask != null && mapDelayedEventTasks.size() > 0) {
-                    eventTask = mapDelayedEventTasks.remove(expectedRecordId);
-                    if (eventTask != null) {
-                        eventTask.run();
-                        expectedRecordId++;
-                    }
-                }
-            } else if (eventTask.recordId > expectedRecordId) {
-                mapDelayedEventTasks.put(eventTask.recordId, eventTask);
-                // ignore recordIds less than expected
-            }
-        }
-    }
 
     interface Processable {
         void process();
@@ -788,7 +836,7 @@ abstract class BaseManager implements Constants {
                     return getResult();
                 }
             } catch (final Throwable e) {
-                logger.log (Level.FINEST, "ResponseQueueCall.getResult()", e);
+                logger.log(Level.FINEST, "ResponseQueueCall.getResult()", e);
             }
             return result;
         }
@@ -879,10 +927,6 @@ abstract class BaseManager implements Constants {
             }
         }
 
-        protected void postProcess() {
-
-        }
-
         protected void invoke() {
             addCall(TargetAwareOp.this);
             final PacketQueue.Packet packet = request.toPacket();
@@ -925,6 +969,14 @@ abstract class BaseManager implements Constants {
         call.setId(id);
         mapCalls.put(id, call);
         return id;
+    }
+
+    public static Data toData(Object obj) {
+        return ThreadContext.get().toData(obj);
+    }
+
+    public static Object toObject(Data data) {
+        return ThreadContext.get().toObject(data);
     }
 
     public void enqueueAndReturn(final Object obj) {
@@ -994,7 +1046,7 @@ abstract class BaseManager implements Constants {
     }
 
     public void sendEvents(final int eventType, final String name, final Data key,
-                           final Data value, final Map<Address, Boolean> mapListeners, final long recordId) {
+                           final Data value, final Map<Address, Boolean> mapListeners) {
         if (mapListeners != null) {
             final PacketQueue sq = PacketQueue.get();
             final Set<Map.Entry<Address, Boolean>> entries = mapListeners.entrySet();
@@ -1009,7 +1061,7 @@ abstract class BaseManager implements Constants {
                         Data eventValue = null;
                         if (includeValue)
                             eventValue = ThreadContext.get().hardCopy(value);
-                        enqueueEvent(eventType, name, eventKey, eventValue, address, recordId);
+                        enqueueEvent(eventType, name, eventKey, eventValue, address);
                     } catch (final Exception e) {
                         e.printStackTrace();
                     }
@@ -1023,7 +1075,6 @@ abstract class BaseManager implements Constants {
                             eventValue = value;
                         packet.set(name, OP_EVENT, eventKey, eventValue);
                         packet.longValue = eventType;
-                        packet.recordId = recordId;
                     } catch (final Exception e) {
                         e.printStackTrace();
                     }
@@ -1227,28 +1278,18 @@ abstract class BaseManager implements Constants {
     }
 
     void enqueueEvent(final int eventType, final String name, final Data eventKey,
-                      final Data eventValue, final Address from, final long recordId) {
-        final EventTask eventTask = new EventTask(eventType, name, eventKey, eventValue, recordId);
-        if (name.startsWith("q:t:")) {
-            OrderedEventQueue orderedEventQueue = mapOrderedEventQueues.get(name);
-            if (orderedEventQueue == null) {
-                orderedEventQueue = new OrderedEventQueue(recordId);
-                mapOrderedEventQueues.put(name, orderedEventQueue);
-            }
-            logger.log(Level.FINE, eventTask.recordId + "offering eventTask " + recordId);
-            orderedEventQueue.offer(eventTask);
-            executeLocally(orderedEventQueue);
+                      final Data eventValue, final Address from) {
+        final EventTask eventTask = new EventTask(eventType, name, eventKey, eventValue);
+
+        int eventQueueIndex = -1;
+        if (eventKey != null) {
+            eventQueueIndex = Math.abs(eventKey.hashCode()) % EVENT_QUEUE_COUNT;
         } else {
-            int eventQueueIndex = -1;
-            if (eventKey != null) {
-                eventQueueIndex = Math.abs(eventKey.hashCode()) % EVENT_QUEUE_COUNT;
-            } else {
-                eventQueueIndex = Math.abs(from.hashCode()) % EVENT_QUEUE_COUNT;
-            }
-            final EventQueue eventQueue = eventQueues[eventQueueIndex];
-            final int size = eventQueue.offerRunnable(eventTask);
-            if (size == 1) executeLocally(eventQueue);
+            eventQueueIndex = Math.abs(from.hashCode()) % EVENT_QUEUE_COUNT;
         }
+        final EventQueue eventQueue = eventQueues[eventQueueIndex];
+        final int size = eventQueue.offerRunnable(eventTask);
+        if (size == 1) executeLocally(eventQueue);
     }
 
     static class EventQueue extends ConcurrentLinkedQueue<Runnable> implements Runnable {
@@ -1278,15 +1319,12 @@ abstract class BaseManager implements Constants {
 
         protected final Data dataValue;
 
-        protected final long recordId;
-
         public EventTask(final int eventType, final String name, final Data dataKey,
-                         final Data dataValue, final long recordId) {
+                         final Data dataValue) {
             super(name);
             this.eventType = eventType;
             this.dataValue = dataValue;
             this.dataKey = dataKey;
-            this.recordId = recordId;
         }
 
         public void run() {
@@ -1304,28 +1342,23 @@ abstract class BaseManager implements Constants {
         }
     }
 
+    
+
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
-                      final int eventType, final Object record, final Data oldValue) {
-        fireMapEvent(mapListeners, name, eventType, record, oldValue, -1);
+                      final int eventType, final Data value) {
+        fireMapEvent(mapListeners, name, eventType, null, value, null);
+
     }
 
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
-                      final int eventType, final Object record, final Data oldValue, final long recordId) {
+                      final int eventType, final Data key, final Data value, Map<Address, Boolean> keyListeners) {
         try {
-            // logger.log(Level.FINE,eventType + " FireMapEvent " + record);
+            // logger.log(Level.FINEST,eventType + " FireMapEvent " + record);
             Map<Address, Boolean> mapTargetListeners = null;
-            Data dataRecordKey = null;
-            Data dataRecordValue = null;
-            if (record instanceof Record) {
-                final Record rec = (Record) record;
-                dataRecordKey = rec.getKey();
-                dataRecordValue = rec.getValue();
-                if (rec.hasListener()) {
-                    mapTargetListeners = new HashMap<Address, Boolean>(rec.getMapListeners());
-                }
-            } else {
-                dataRecordValue = (Data) record;
+            if (keyListeners != null) {
+                mapTargetListeners = new HashMap<Address, Boolean>(keyListeners);
             }
+
             if (mapListeners != null && mapListeners.size() > 0) {
                 if (mapTargetListeners == null) {
                     mapTargetListeners = new HashMap<Address, Boolean>(mapListeners);
@@ -1344,13 +1377,7 @@ abstract class BaseManager implements Constants {
             if (mapTargetListeners == null || mapTargetListeners.size() == 0) {
                 return;
             }
-            final Data key = (dataRecordKey != null) ? ThreadContext.get().hardCopy(dataRecordKey)
-                    : null;
-            Data value = null;
-            if (dataRecordValue != null) {
-                value = ThreadContext.get().hardCopy(dataRecordValue);
-            }
-            sendEvents(eventType, name, key, value, mapTargetListeners, recordId);
+            sendEvents(eventType, name, doHardCopy(key), doHardCopy(value), mapTargetListeners);
         } catch (final Exception e) {
             e.printStackTrace();
         }
@@ -1373,7 +1400,7 @@ abstract class BaseManager implements Constants {
 
         public void process() {
             if (name.startsWith("q:")) {
-               BlockingQueueManager.get().destroy(name);
+                BlockingQueueManager.get().destroy(name);
             } else if (name.startsWith("c:")) {
                 ConcurrentMapManager.get().destroy(name);
             } else if (name.startsWith("m:")) {
@@ -1381,7 +1408,7 @@ abstract class BaseManager implements Constants {
             } else if (name.startsWith("t:")) {
                 TopicManager.get().destroy(name);
             } else {
-                logger.log (Level.SEVERE, "Destroy: Unknown data type=" + name);
+                logger.log(Level.SEVERE, "Destroy: Unknown data type=" + name);
             }
         }
 
@@ -1392,7 +1419,7 @@ abstract class BaseManager implements Constants {
 
         @Override
         public void writeData(DataOutput out) throws IOException {
-            out.writeUTF (name);
+            out.writeUTF(name);
         }
     }
 
@@ -1438,7 +1465,7 @@ abstract class BaseManager implements Constants {
         }
     }
 
-    final private boolean writePacket(final Connection conn, final PacketQueue.Packet packet) {
+    private boolean writePacket(final Connection conn, final PacketQueue.Packet packet) {
         if (!conn.live()) {
             return false;
         }

@@ -364,7 +364,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     private void handleMapLock(String[] args) {
-        ((IMap) map).lock(args[1]);
+        map.lock(args[1]);
         print("true");
     }
 
@@ -398,14 +398,14 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         long time = (args.length > 2) ? Long.valueOf(args[2]) : 0;
         boolean locked = false;
         if (time == 0)
-            locked = ((IMap) map).tryLock(key);
+            locked = map.tryLock(key);
         else
-            locked = ((IMap) map).tryLock(key, time, TimeUnit.SECONDS);
+            locked = map.tryLock(key, time, TimeUnit.SECONDS);
         print(locked);
     }
 
     private void handleMapUnlock(String[] args) {
-        ((IMap) map).unlock(args[1]);
+        map.unlock(args[1]);
         print("true");
     }
 

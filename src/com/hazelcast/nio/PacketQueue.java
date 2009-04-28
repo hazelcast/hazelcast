@@ -109,10 +109,6 @@ public class PacketQueue {
 
         public byte responseType = RESPONSE_NONE;
 
-        public boolean scheduled = false;
-
-        public Object attachment;
-
         public long longValue = Long.MIN_VALUE;
 
         public long recordId = -1;
@@ -165,7 +161,7 @@ public class PacketQueue {
         }
 
         protected boolean readBoolean(ByteBuffer bb) {
-            return (bb.get() == (byte) 1) ? true : false;
+            return (bb.get() == (byte) 1);
         }
 
         public void write() {
@@ -234,7 +230,6 @@ public class PacketQueue {
             responseType = RESPONSE_NONE;
             local = true;
             currentCallCount = 0;
-            scheduled = false;
             blockId = -1;
             longValue = Long.MIN_VALUE;
             recordId = -1;
@@ -244,7 +239,6 @@ public class PacketQueue {
             bbHeader.clear();
             key.setNoData();
             value.setNoData();
-            attachment = null;
             conn = null;
             totalSize = 0;
         }
@@ -301,14 +295,6 @@ public class PacketQueue {
 
         public void returnToContainer() {
             returnPacket(this);
-        }
-
-        public Object getValueObject() {
-            return ThreadContext.get().toObject(value);
-        }
-
-        public Object getKeyObject() {
-            return ThreadContext.get().toObject(key);
         }
 
         public void set(String name, int operation, Object objKey, Object objValue)

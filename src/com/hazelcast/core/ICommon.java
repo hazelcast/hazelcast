@@ -19,7 +19,7 @@ package com.hazelcast.core;
 
 public interface ICommon {
 
-    enum InstanceType {QUEUE, MAP, SET, LIST, LOCK, TOPIC, MULTIMAP, ID_GENERATOR};
+    enum InstanceType {QUEUE, MAP, SET, LIST, LOCK, TOPIC, MULTIMAP, ID_GENERATOR}
 
     InstanceType getInstanceType ();
 

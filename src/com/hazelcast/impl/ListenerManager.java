@@ -61,20 +61,19 @@ class ListenerManager extends BaseManager {
         });
     }
 
-    private final void handleEvent(Packet packet) {
+    private void handleEvent(Packet packet) {
         int eventType = (int) packet.longValue;
         Data key = BufferUtil.doTake(packet.key);
         Data value = BufferUtil.doTake(packet.value);
         String name = packet.name;
         Address from = packet.conn.getEndPoint();
-        long recordId = packet.recordId;
         packet.returnToContainer();
-        enqueueEvent(eventType, name, key, value, from, recordId);
+        enqueueEvent(eventType, name, key, value, from);
     }
 
-    private final void handleAddRemoveListener(boolean add, Packet packet) {
+    private void handleAddRemoveListener(boolean add, Packet packet) {
         Data key = (packet.key != null) ? BufferUtil.doTake(packet.key) : null;
-        boolean returnValue = (packet.longValue == 1) ? true : false;
+        boolean returnValue = (packet.longValue == 1);
         String name = packet.name;
         Address address = packet.conn.getEndPoint();
         packet.returnToContainer();
@@ -86,9 +85,6 @@ class ListenerManager extends BaseManager {
     }
 
     public void syncForAdd() {
-//		for (ListenerItem listenerItem : lsListeners) {
-//			registerListener(listenerItem.name, listenerItem.key, true, listenerItem.includeValue);
-//		}
     }
 
     public void syncForAdd(Address newAddress) {

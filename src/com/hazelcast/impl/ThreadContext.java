@@ -135,6 +135,10 @@ public class ThreadContext {
         return ConcurrentMapManager.get().new MRemove();
     }
 
+    public MRemoveMulti getMRemoveMulti() {
+        return ConcurrentMapManager.get().new MRemoveMulti();
+    }
+
     public Offer getOffer() {
         return BlockingQueueManager.get().new Offer();
     }

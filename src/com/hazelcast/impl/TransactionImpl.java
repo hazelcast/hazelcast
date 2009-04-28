@@ -129,10 +129,6 @@ class TransactionImpl implements Transaction, Constants {
         this.id = txnId;
     }
 
-    public static void main(final String[] args) {
-        logger.log(Level.INFO, new Long(Long.MAX_VALUE / 1000000000).toString());
-    }
-
     public Object attachPutOp(final String name, final Object key, final Object value,
                               final boolean newRecord) {
         TxnRecord rec = findTxnRecord(name, key);

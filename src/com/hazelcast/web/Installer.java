@@ -479,7 +479,7 @@ public class Installer {
         print("clusterWebapp.bat <war-file-path or ear-file-path>");
     }
 
-    private final void processApp(final String appFilename) {
+    private void processApp(final String appFilename) {
         final File file = new File(appFilename);
         final String clusteredFileName = clusteredFilePrefix + file.getName();
         final File fileOriginal = new File(file.getParentFile(), clusteredFileName);

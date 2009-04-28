@@ -142,7 +142,7 @@ public class ClusterService implements Runnable, Constants {
                 Node.get().handleInterruptedException(Thread.currentThread(), e);
             } catch (final Throwable e) {
                 logger.log(Level.FINEST, e + ",  message: " + e + ", obj=" + obj, e);
-
+                e.printStackTrace();
             }
         }
         lsBuffer.clear();
@@ -180,7 +180,7 @@ public class ClusterService implements Runnable, Constants {
                 + " master= " + Node.get().getMasterAddress();
     }
 
-    private final void checkPeriodics() {
+    private void checkPeriodics() {
         final long now = System.nanoTime();
         if ((now - lastPeriodicCheck) > PERIODIC_CHECK_INTERVAL) {
             ClusterManager.get().heartBeater();

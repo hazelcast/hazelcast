@@ -19,6 +19,7 @@ package com.hazelcast.core;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.Map;
 
 /**
  * A specialized map whose keys can be associated with multiple values.
@@ -78,6 +79,22 @@ public interface MultiMap<K, V> extends ICommon {
      *         but it has no effect on the multimap
      */
     Set<K> keySet();
+
+    /**
+     * Returns the collection of values in the multimap.
+     *
+     * @return the collection of values in the multimap. Returned collection might be modifiable
+     *         but it has no effect on the multimap
+     */
+    Collection<V> values();
+
+    /**
+     * Returns the set of key-value pairs in the multimap.
+     *
+     * @return the set of key-value pairs in the multimap. Returned set might be modifiable
+     *         but it has no effect on the multimap
+     */
+    Set<Map.Entry<K, V>> entrySet();
 
     /**
      * Returns the number of values associated with the key.

@@ -28,7 +28,7 @@ import java.io.*;
 
 public class Util {
 
-    public static final void copyFile(final File src, final File dest) {
+    public static void copyFile(final File src, final File dest) {
         try {
             final FileInputStream in = new FileInputStream(src);
             final FileOutputStream out = new FileOutputStream(dest);
@@ -40,7 +40,7 @@ public class Util {
         }
     }
 
-    public static final void copyStream(final InputStream in, final OutputStream out)
+    public static void copyStream(final InputStream in, final OutputStream out)
             throws IOException {
         final byte[] buffer = new byte[1024];
         int len;
@@ -84,7 +84,7 @@ public class Util {
         }
     }
 
-    public static final void writeText(final String str, final OutputStream out) {
+    public static void writeText(final String str, final OutputStream out) {
         try {
             final BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));
             bw.write(str);

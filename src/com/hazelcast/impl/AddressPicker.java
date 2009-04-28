@@ -226,8 +226,7 @@ public class AddressPicker {
                 }
             }
             serverSocketChannel.configureBlocking(false);
-            final Address selectedAddress = new Address(currentAddress, port);
-            return selectedAddress;
+            return new Address(currentAddress, port);
         } catch (
                 final Exception e) {
             Node.get().dumpCore(e);

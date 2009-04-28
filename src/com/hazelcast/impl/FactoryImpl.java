@@ -23,7 +23,6 @@ import com.hazelcast.impl.BlockingQueueManager.*;
 import com.hazelcast.impl.ClusterManager.CreateProxy;
 import com.hazelcast.impl.ConcurrentMapManager.*;
 import static com.hazelcast.impl.Constants.MapTypes.*;
-import com.hazelcast.nio.DataSerializable;
 
 import java.io.Serializable;
 import java.util.*;
@@ -463,7 +462,7 @@ public class FactoryImpl implements Constants {
 
         @Override
         public Iterator iterator() {
-            return mapProxy.values().iterator();
+            return mapProxy.keySet().iterator();
         }
 
         @Override
@@ -639,16 +638,13 @@ public class FactoryImpl implements Constants {
             return (Collection) mapProxy.get(key);
         }
 
-        public Set keySet() {
-            return mapProxy.keySet();
-        }
 
         public boolean put(Object key, Object value) {
             return mapProxy.putMulti(key, value);
         }
 
         public boolean remove(Object key, Object value) {
-            return false;
+            return mapProxy.removeMulti(key, value);
         }
 
         public boolean remove(Object key) {
@@ -667,8 +663,16 @@ public class FactoryImpl implements Constants {
             return 0;
         }
 
+        public Set keySet() {
+            return mapProxy.keySet();
+        }
+
         public Collection values() {
-            return null;
+            return mapProxy.values();
+        }
+
+        public Set entrySet() {
+            return mapProxy.entrySet();
         }
 
         public ICommon.InstanceType getInstanceType() {
@@ -688,13 +692,11 @@ public class FactoryImpl implements Constants {
 
     private static void check(Object obj) {
         if (obj == null)
-            throw new RuntimeException();
-        if (obj instanceof DataSerializable)
-            return;
-        if (obj instanceof Serializable)
-            return;
-        else
+            throw new RuntimeException("Object cannot be null.");
+
+        if (!(obj instanceof Serializable)) {
             throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
+        }
     }
 
     static class MProxy implements IMap, IRemoveAwareProxy, ICommon, Constants {
@@ -769,6 +771,13 @@ public class FactoryImpl implements Constants {
             check(value);
             MPut mput = ThreadContext.get().getMPut();
             return mput.putIfAbsent(name, key, value, -1, -1);
+        }
+
+        public boolean removeMulti(Object key, Object value) {
+            check(key);
+            check(value);
+            MRemoveMulti mremove = ThreadContext.get().getMRemoveMulti();
+            return mremove.remove(name, key, value);
         }
 
         public boolean remove(Object key, Object value) {
@@ -939,15 +948,22 @@ public class FactoryImpl implements Constants {
         }
 
         public Set entrySet() {
-            return new EntrySet(EntrySet.TYPE_ENTRIES);
+//            return new EntrySet(EntrySet.TYPE_ENTRIES);
+            MIterate miterate = ConcurrentMapManager.get().new MIterate();
+            return miterate.iterate(name, MIterate.TYPE_ENTRIES);
         }
 
         public Set keySet() {
-            return new EntrySet(EntrySet.TYPE_KEYS);
+//            return new EntrySet(EntrySet.TYPE_KEYS);
+            MIterate miterate = ConcurrentMapManager.get().new MIterate();
+            return miterate.iterate(name, MIterate.TYPE_KEYS);
         }
 
         public Collection values() {
-            return new EntrySet(EntrySet.TYPE_VALUES);
+//            return new EntrySet(EntrySet.TYPE_VALUES);
+            MIterate miterate = ConcurrentMapManager.get().new MIterate();
+            return miterate.iterate(name, MIterate.TYPE_VALUES);
+
         }
 
         class EntrySet extends AbstractSet {

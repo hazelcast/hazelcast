@@ -114,7 +114,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
         registerOp(inSelector.selector, SelectionKey.OP_READ);
     }
 
-    private final Packet obtainReadable() {
+    private Packet obtainReadable() {
         final Packet packet = PacketQueue.get().obtainPacket();
         packet.reset();
         packet.local = false;

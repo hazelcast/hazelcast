@@ -23,7 +23,7 @@ import java.nio.ByteBuffer;
 
 public final class BufferUtil {
 
-    public static final int copy(ByteBuffer src, ByteBuffer dest) {
+    public static int copy(ByteBuffer src, ByteBuffer dest) {
         int n = Math.min(src.remaining(), dest.remaining());
         int srcPosition = src.position();
         int destPosition = dest.position();
@@ -37,12 +37,12 @@ public final class BufferUtil {
         return n;
     }
 
-    public static final void putBoolean(ByteBuffer bb, boolean value) {
+    public static void putBoolean(ByteBuffer bb, boolean value) {
         bb.put((byte) (value ? 1 : 0));
     }
 
-    public static final boolean getBoolean(ByteBuffer bb) {
-        return bb.get() == 1 ? true : false;
+    public static boolean getBoolean(ByteBuffer bb) {
+        return bb.get() == 1;
     }
 
     public static Data doHardCopy(Data from) {

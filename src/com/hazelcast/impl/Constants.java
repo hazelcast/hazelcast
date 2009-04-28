@@ -145,11 +145,13 @@ public interface Constants {
 
         public static final int OP_CMAP_BLOCK_INFO = 206;
 
-        public static final int OP_CMAP_REMOVE_OWNER = 207;
+        public static final int OP_CMAP_SIZE = 207;
 
-        public static final int OP_CMAP_SIZE = 208;
+        public static final int OP_CMAP_CONTAINS = 208;
 
-        public static final int OP_CMAP_CONTAINS = 209;
+        public static final int OP_CMAP_ITERATE = 209;
+
+        public static final int OP_CMAP_ITERATE_KEYS = 210;
 
         public static final int OP_CMAP_CLEAR = 211;
 
@@ -194,6 +196,8 @@ public interface Constants {
         public static final int OP_CMAP_BACKUP_REMOVE_MULTI = 234;
 
         public static final int OP_CMAP_BACKUP_LOCK = 235;
+
+        public static final int OP_CMAP_BACKUP_ADD = 236;
 
 
     }

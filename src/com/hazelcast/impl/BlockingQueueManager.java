@@ -128,10 +128,9 @@ class BlockingQueueManager extends BaseManager {
     }
 
     class BlockBackupSyncRunner implements Runnable {
-        BlockBackupSync blockSync = null;
+        final BlockBackupSync blockSync;
 
         public BlockBackupSyncRunner(BlockBackupSync blockSync) {
-            super();
             this.blockSync = blockSync;
         }
 
