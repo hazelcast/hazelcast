@@ -85,6 +85,9 @@ class ListenerManager extends BaseManager {
     }
 
     public void syncForAdd() {
+        for (ListenerItem listenerItem : lsListeners) {
+            registerListener(listenerItem.name, listenerItem.key, true, listenerItem.includeValue);
+        }
     }
 
     public void syncForAdd(Address newAddress) {
