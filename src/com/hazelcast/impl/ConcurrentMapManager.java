@@ -1892,7 +1892,7 @@ class ConcurrentMapManager extends BaseManager {
                     size += record.valueCount();
                 }
             }
-            System.out.println(size + " is size.. backup.size " + backupSize());
+//            System.out.println(size + " is size.. backup.size " + backupSize());
             return size;
         }
 
