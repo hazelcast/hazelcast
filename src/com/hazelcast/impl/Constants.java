@@ -153,8 +153,6 @@ public interface Constants {
 
         public static final int OP_CMAP_ITERATE_KEYS = 210;
 
-        public static final int OP_CMAP_CLEAR = 211;
-
         public static final int OP_CMAP_LOCK = 212;
 
         public static final int OP_CMAP_UNLOCK = 213;

@@ -938,13 +938,10 @@ public class FactoryImpl implements Constants {
         }
 
         public void clear() {
-            MIterator it = ConcurrentMapManager.get().new MIterator();
-            it.set(name, EntrySet.TYPE_KEYS);
-            while (it.hasNext()) {
-                it.next();
-                it.remove();
-            }
-
+            Set keys = keySet();
+            for (Object key : keys) {
+                removeKey (key);
+            } 
         }
 
         public Set entrySet() {
@@ -964,31 +961,6 @@ public class FactoryImpl implements Constants {
             MIterate miterate = ConcurrentMapManager.get().new MIterate();
             return miterate.iterate(name, MIterate.TYPE_VALUES);
 
-        }
-
-        class EntrySet extends AbstractSet {
-            final static int TYPE_ENTRIES = 1;
-            final static int TYPE_KEYS = 2;
-            final static int TYPE_VALUES = 3;
-
-            int type = TYPE_ENTRIES;
-
-            public EntrySet(int type) {
-                super();
-                this.type = type;
-            }
-
-            @Override
-            public Iterator iterator() {
-                MIterator it = ConcurrentMapManager.get().new MIterator();
-                it.set(name, type);
-                return it;
-            }
-
-            @Override
-            public int size() {
-                return MProxy.this.size();
-            }
         }
 
         public void destroy() {

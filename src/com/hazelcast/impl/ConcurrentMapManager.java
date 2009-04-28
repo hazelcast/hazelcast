@@ -59,6 +59,18 @@ class ConcurrentMapManager extends BaseManager {
                         doBackup(request);
                     }
                 });
+        ClusterService.get().registerPacketProcessor(OP_CMAP_PUT_IF_ABSENT,
+                new DefaultPacketProcessor(false, true, true, true) {
+                    void handle(Request request) {
+                        doPut(request, true);
+                    }
+                });
+        ClusterService.get().registerPacketProcessor(OP_CMAP_REPLACE_IF_NOT_NULL,
+                new DefaultPacketProcessor(false, true, true, true) {
+                    void handle(Request request) {
+                        doPut(request, true);
+                    }
+                });
         ClusterService.get().registerPacketProcessor(OP_CMAP_BACKUP_ADD,
                 new DefaultPacketProcessor() {
                     void handle(Request request) {
@@ -139,6 +151,13 @@ class ConcurrentMapManager extends BaseManager {
                         cmap.getEntries(remoteReq);
                     }
                 });
+        ClusterService.get().registerPacketProcessor(OP_CMAP_ITERATE_KEYS,
+                new DefaultPacketProcessor(true, false, false, true) {
+                    void handle(Request request) {
+                        CMap cmap = getMap(request.name);
+                        cmap.getEntries(remoteReq);
+                    }
+                });
         ClusterService.get().registerPacketProcessor(OP_CMAP_ADD_TO_LIST,
                 new DefaultPacketProcessor(false, true, false, false) {
                     void handle(Request request) {
@@ -152,7 +171,7 @@ class ConcurrentMapManager extends BaseManager {
                     }
                 });
         ClusterService.get().registerPacketProcessor(OP_CMAP_CONTAINS,
-                new DefaultPacketProcessor(true, true, false, false) {
+                new DefaultPacketProcessor(true, false, false, false) {
                     void handle(Request request) {
                         doContains(request);
                     }
@@ -167,18 +186,6 @@ class ConcurrentMapManager extends BaseManager {
                 new PacketProcessor() {
                     public void process(Packet packet) {
                         handleBlocks(packet);
-                    }
-                });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_PUT_IF_ABSENT,
-                new DefaultPacketProcessor(false, true, true, true) {
-                    void handle(Request request) {
-                        doPut(request, true);
-                    }
-                });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_REPLACE_IF_NOT_NULL,
-                new DefaultPacketProcessor(false, true, true, true) {
-                    void handle(Request request) {
-                        doPut(request, true);
                     }
                 });
         ClusterService.get().registerPacketProcessor(OP_CMAP_MIGRATION_COMPLETE,
@@ -421,112 +428,7 @@ class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MIterator implements Iterator {
-
-        volatile String name;
-        volatile List<Integer> blocks = null;
-        int currentBlockId = -1;
-        long currentIndex = -1;
-        MRead read = new MRead();
-        SimpleDataEntry next = null;
-        boolean hasNextCalled = false;
-        final static int TYPE_ENTRIES = 1;
-        final static int TYPE_KEYS = 2;
-        final static int TYPE_VALUES = 3;
-
-        int type = TYPE_ENTRIES;
-
-        List<SimpleDataEntry> lsEntries = null;
-
-        public void set(String name, int type) {
-            this.name = name;
-            this.type = type;
-            TransactionImpl txn = ThreadContext.get().txn;
-            if (txn != null) {
-                lsEntries = txn.entries(name);
-            }
-        }
-
-        public boolean hasNext() {
-            if (next != null) {
-                if (next.copyCount-- <= 0) {
-                    next = null;
-                }
-            }
-            if (lsEntries != null) {
-                if (lsEntries.size() > 0) {
-                    next = lsEntries.remove(0);
-                } else {
-                    next = null;
-                    lsEntries = null;
-                }
-            }
-            while (next == null) {
-                boolean canRead = setNextBlock();
-                if (!canRead)
-                    return false;
-                next = read.read(name, currentBlockId, currentIndex);
-                if (next == null) {
-                    currentIndex = -1;
-                } else {
-                    currentIndex = read.lastReadRecordId;
-                    currentIndex++;
-                    TransactionImpl txn = ThreadContext.get().txn;
-                    if (txn != null) {
-                        Object key = next.getKey();
-                        if (txn.has(name, key)) {
-                            next = null;
-                        }
-                    }
-                }
-            }
-            hasNextCalled = true;
-            return true;
-        }
-
-        boolean setNextBlock() {
-            if (currentIndex == -1) {
-                currentBlockId++;
-                if (currentBlockId >= BLOCK_COUNT) {
-                    return false;
-                }
-                currentIndex = 0;
-                return true;
-            }
-            return true;
-        }
-
-        public Object next() {
-            if (!hasNextCalled) {
-                boolean hasNext = hasNext();
-                if (!hasNext) {
-                    return null;
-                }
-            }
-            if (next != null) {
-                hasNextCalled = false;
-            }
-            if (type == TYPE_ENTRIES)
-                return next;
-            else if (type == TYPE_KEYS)
-                return next.getKey();
-            else
-                return next.getValue();
-        }
-
-        public void remove() {
-            if (next != null) {
-                byte mapType = getMapType(name);
-                if (mapType == MapTypes.MAP_TYPE_MAP) {
-                    FactoryImpl.MProxy proxy = (FactoryImpl.MProxy) FactoryImpl.getProxy(name);
-                    proxy.remove(next.getKey());
-                } else {
-                    FactoryImpl.IRemoveAwareProxy removeAwareProxy = (FactoryImpl.IRemoveAwareProxy) FactoryImpl.getProxy(name);
-                    removeAwareProxy.removeKey(next.getKey());
-                }
-            }
-        }
-    }
+    
 
     class MMigrate extends MBackupAwareOp {
         public boolean migrate(Record record) {
@@ -562,59 +464,6 @@ class ConcurrentMapManager extends BaseManager {
         }
     }
 
-
-    class MRead extends MTargetAwareOp {
-        long lastReadRecordId = 0;
-        boolean containsValue = true;
-
-        public SimpleDataEntry read(String name, int blockId, long recordId) {
-            setLocal(OP_CMAP_READ, name, null, null, 0, -1, recordId);
-            request.blockId = blockId;
-            return (SimpleDataEntry) objectCall();
-        }
-
-        @Override
-        void doLocalOp() {
-            doRead(request);
-            lastReadRecordId = request.recordId;
-            if (request.response == null) {
-                setResult(null);
-            } else {
-                Record record = (Record) request.response;
-                request.recordId = record.id;
-                lastReadRecordId = request.recordId;
-                Data key = ThreadContext.get().hardCopy(record.getKey());
-                Data value = null;
-                if (containsValue) {
-                    value = ThreadContext.get().hardCopy(record.getValue());
-                }
-                setResult(new SimpleDataEntry(request.name, request.blockId, key, value, record
-                        .getCopyCount()));
-            }
-        }
-
-        @Override
-        void handleNoneRedoResponse(Packet packet) {
-            removeCall(getId());
-            lastReadRecordId = packet.recordId;
-            Data key = doTake(packet.key);
-            if (key == null) {
-                setResult(null);
-            } else {
-                Data value = null;
-                if (containsValue) {
-                    value = doTake(packet.value);
-                }
-                setResult(new SimpleDataEntry(request.name, request.blockId, key, value,
-                        (int) packet.longValue));
-            }
-        }
-
-        @Override
-        void setTarget() {
-            setTargetBasedOnBlockId();
-        }
-    }
 
     class MGet extends MTargetAwareOp {
         public Object get(String name, Object key, long timeout, long txnId) {
