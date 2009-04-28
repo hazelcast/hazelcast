@@ -634,8 +634,8 @@ class BlockingQueueManager extends BaseManager {
         }
     }
 
-    public void destroy (String name) {
-        mapQueues.remove (name);
+    public void destroy(String name) {
+        mapQueues.remove(name);
     }
 
     public class Size extends AbstractCall {
@@ -1261,7 +1261,7 @@ class BlockingQueueManager extends BaseManager {
             } else {
                 QConfig qconfig = Config.get().getQConfig(name.substring(2));
                 if (qconfig != null) {
-                    maxSizePerJVM = qconfig.maxSizePerJVM;
+                    maxSizePerJVM = qconfig.maxSizePerJVM; 
                     log("qConfig " + qconfig.maxSizePerJVM);
                 }
             }
@@ -1492,9 +1492,9 @@ class BlockingQueueManager extends BaseManager {
             if (mapListeners.size() == 0)
                 return;
             if (add) {
-                fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, value, null, recordId);
+                fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, value);
             } else {
-                fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, value, null, recordId);
+                fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, value);
             }
         }
 
@@ -1517,26 +1517,30 @@ class BlockingQueueManager extends BaseManager {
 
         int offer(Request req) {
             int addIndex = blCurrentPut.add(req.value);
-            long recordId = getRecordId(blCurrentPut.blockId, addIndex);
-            req.recordId = recordId;
-            doFireEntryEvent(true, req.value, recordId);
-            size++;
-            while (lsScheduledPollActions.size() > 0) {
-                ScheduledAction pollAction = lsScheduledPollActions.remove(0);
-                ClusterManager.get().deregisterScheduledAction(pollAction);
-                if (pollAction.expired()) {
-                    pollAction.onExpire();
-                } else {
-                    boolean consumed = pollAction.consume();
-                    if (consumed)
-                        return -1;
+            try {
+                long recordId = getRecordId(blCurrentPut.blockId, addIndex);
+                req.recordId = recordId;
+                doFireEntryEvent(true, req.value, recordId);
+                size++;
+                while (lsScheduledPollActions.size() > 0) {
+                    ScheduledAction pollAction = lsScheduledPollActions.remove(0);
+                    ClusterManager.get().deregisterScheduledAction(pollAction);
+                    if (pollAction.expired()) {
+                        pollAction.onExpire();
+                    } else {
+                        boolean consumed = pollAction.consume();
+                        if (consumed)
+                            return -1;
+                    }
                 }
-            }
-            sendBackup(true, req.caller, req.value, blCurrentPut.blockId, addIndex);
-            if (blCurrentPut.isFull()) {
-                fireBlockFullEvent(blCurrentPut);
-                blCurrentPut = null;
-                setCurrentPut();
+                sendBackup(true, req.caller, req.value, blCurrentPut.blockId, addIndex);
+
+            } finally {
+                if (blCurrentPut.isFull()) {
+                    fireBlockFullEvent(blCurrentPut);
+                    blCurrentPut = null;
+                    setCurrentPut();
+                }
             }
             return addIndex;
         }
