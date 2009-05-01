@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.Member;
 import com.hazelcast.impl.ClusterManager.RemotelyProcessable;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_PROCESS;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_RESPONSE;
@@ -367,113 +368,6 @@ abstract class BaseManager implements Constants {
         }
     }
 
-    abstract class AllOp extends RequestBasedCall {
-        int numberOfExpectedResponses = 0;
-
-        int numberOfResponses = 0;
-
-        protected boolean done = false;
-
-        protected Set<Address> setAddresses = new HashSet<Address>();
-
-        public AllOp() {
-        }
-
-        @Override
-        public Object getResult() {
-            return null;
-        }
-
-        public void handleResponse(final PacketQueue.Packet packet) {
-            consumeResponse(packet);
-        }
-
-        @Override
-        public void onDisconnect(final Address dead) {
-            log(dead + " onDisconnect " + AllOp.this);
-            reset();
-            redo();
-        }
-
-        public void process() {
-            doLocalOp();
-            if (setAddresses.size() == 0) {
-                for (final MemberImpl member : lsMembers) {
-                    setAddresses.add(member.getAddress());
-                }
-            }
-            numberOfResponses = 1;
-            numberOfExpectedResponses = setAddresses.size();
-            if (setAddresses.size() > 1) {
-                addCall(AllOp.this);
-                for (final Address address : setAddresses) {
-                    if (!address.equals(thisAddress)) {
-                        final PacketQueue.Packet packet = request.toPacket();
-                        packet.callId = getId();
-                        final boolean sent = send(packet, address);
-                        if (!sent) {
-                            packet.returnToContainer();
-                            log(address + " not reachable: operation redoing:  " + AllOp.this);
-                            redo();
-                        }
-
-                    }
-                }
-            } else {
-                complete(false);
-            }
-        }
-
-        public void reset() {
-            done = false;
-            numberOfResponses = 0;
-            numberOfExpectedResponses = 0;
-            setAddresses.clear();
-        }
-
-        void complete(final boolean call) {
-            if (!done) {
-                done = true;
-                if (call) {
-                    removeCall(getId());
-                }
-                synchronized (this) {
-                    notify();
-                }
-            }
-        }
-
-        void consumeResponse(final PacketQueue.Packet packet) {
-            numberOfResponses++;
-            if (numberOfResponses >= numberOfExpectedResponses) {
-                complete(true);
-            }
-            packet.returnToContainer();
-        }
-
-        abstract void doLocalOp();
-
-        @Override
-        void doOp() {
-            reset();
-            try {
-                synchronized (this) {
-                    enqueueAndReturn(this);
-                    wait();
-                }
-            } catch (final Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    abstract class BooleanOp extends TargetAwareOp {
-        @Override
-        void handleNoneRedoResponse(final PacketQueue.Packet packet) {
-            handleBooleanNoneRedoResponse(packet);
-        }
-    }
-
     interface Call extends Processable {
 
         long getId();
@@ -483,13 +377,6 @@ abstract class BaseManager implements Constants {
         void onDisconnect(Address dead);
 
         void setId(long id);
-    }
-
-    abstract class LongOp extends TargetAwareOp {
-        @Override
-        void handleNoneRedoResponse(final PacketQueue.Packet packet) {
-            handleLongNoneRedoResponse(packet);
-        }
     }
 
 
@@ -883,11 +770,31 @@ abstract class BaseManager implements Constants {
         }
 
         void setResult(final Object obj) {
-            if (obj == null) {
-                responses.add(OBJECT_NULL);
-            } else {
-                responses.add(obj);
+
+            try {
+                if (obj == null) {
+                    responses.add(OBJECT_NULL);
+                } else {
+                    responses.add(obj);
+                }
+            } catch (Throwable e) {
+                System.out.println("Exception when handling " + ResponseQueueCall.this);
+                e.printStackTrace();
             }
+        }
+    }
+
+    abstract class BooleanOp extends TargetAwareOp {
+        @Override
+        void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+            handleBooleanNoneRedoResponse(packet);
+        }
+    }
+
+    abstract class LongOp extends TargetAwareOp {
+        @Override
+        void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+            handleLongNoneRedoResponse(packet);
         }
     }
 
@@ -948,6 +855,108 @@ abstract class BaseManager implements Constants {
         }
 
         abstract void setTarget();
+    }
+
+
+    abstract class MMultiCall {
+        abstract TargetAwareOp createNewTargetAwareOp(Address target);
+
+        /**
+         * As MMultiCall receives the responses from the target members
+         * it will pass each response to the extending call so that it can
+         * consume and checks if the call should continue.
+         *
+         * @param response response object from one of the targets
+         * @return false if call is completed.
+         */
+        abstract boolean onResponse(Object response);
+
+        void onComplete() {
+        }
+
+        void onRedo() {
+        }
+
+        void onCall() {
+        }
+
+        abstract Object returnResult();
+
+        Object call() {
+            onCall();
+            //local call first
+            TargetAwareOp localCall = createNewTargetAwareOp(thisAddress);
+            localCall.doOp();
+            Object result = localCall.getResultAsObject();
+            if (result == OBJECT_REDO) {
+                onRedo();
+                return call();
+            }
+            if (onResponse(result)) {
+                Set<Member> members = Node.get().getClusterImpl().getMembers();
+                List<TargetAwareOp> lsCalls = new ArrayList<TargetAwareOp>();
+                for (Member member : members) {
+                    if (!member.localMember()) { // now other members
+                        ClusterImpl.ClusterMember cMember = (ClusterImpl.ClusterMember) member;
+                        TargetAwareOp targetAwareOp = createNewTargetAwareOp(cMember.getAddress());
+                        targetAwareOp.doOp();
+                        lsCalls.add(targetAwareOp);
+                    }
+                }
+                getResults:
+                for (TargetAwareOp call : lsCalls) {
+                    result = call.getResultAsObject();
+                    if (result == OBJECT_REDO) {
+                        onRedo();
+                        return call();
+                    } else {
+                        if (!onResponse(result)) {
+                            break getResults;
+                        }
+                    }
+                }
+                onComplete();
+            }
+            return returnResult();
+        }
+    }
+
+    abstract class MMigrationAwareTargettedCall extends TargetAwareOp {
+
+        public void onDisconnect(final Address dead) {
+            redo();
+        }
+
+        @Override
+        public void setTarget() {
+        }
+
+        @Override
+        public Object getResult() {
+            Object result = null;
+            try {
+                result = responses.take();
+            } catch (final Throwable e) {
+                logger.log(Level.FINEST, "getResult()", e);
+            }
+            return result;
+        }
+
+        @Override
+        public void doLocalOp() {
+            if (migrating()) {
+                setResult(OBJECT_REDO);
+            } else {
+                doLocalCall();
+                setResult(request.response);
+            }
+        }
+
+        abstract void doLocalCall();
+    }
+
+    protected boolean migrating () {
+        return false;
     }
 
     public static byte getMapType(final String name) {
@@ -1342,7 +1351,6 @@ abstract class BaseManager implements Constants {
         }
     }
 
-    
 
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
                       final int eventType, final Data value) {

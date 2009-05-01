@@ -599,7 +599,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
                         e.printStackTrace();
                     }
                 } else {
-                    // action.onResult(executionResult);
+                    // action.onResponse(executionResult);
                     action.handleStreamResponse(executionResult);
                 }
             }

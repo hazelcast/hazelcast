@@ -18,9 +18,11 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.*;
+import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
 import com.hazelcast.nio.Address;
@@ -428,7 +430,6 @@ class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    
 
     class MMigrate extends MBackupAwareOp {
         public boolean migrate(Record record) {
@@ -884,152 +885,150 @@ class ConcurrentMapManager extends BaseManager {
         return getTarget(name, key);
     }
 
-    public class MContainsValue extends AllOp {
-        boolean contains = false;
 
-        public boolean containsValue(String name, Object value, long txnId) {
+    public class MContainsValue extends MMultiCall {
+        boolean contains = false;
+        final String name;
+        final Object value;
+
+        public MContainsValue(String name, Object value) {
+            this.name = name;
+            this.value = value;
+        }
+
+        TargetAwareOp createNewTargetAwareOp(Address target) {
+            return new MGetContainsValue(target);
+        }
+
+        boolean onResponse(Object response) {
+            if (response == Boolean.TRUE) {
+                this.contains = true;
+                return false;
+            }
+            return true;
+        }
+
+        void onCall() {
             contains = false;
-            reset();
-            setLocal(OP_CMAP_CONTAINS, name, null, value, 0, txnId, -1);
-            doOp();
+        }
+
+        Object returnResult() {
             return contains;
         }
 
-        @Override
-        public void process() {
-            doContains(request);
-            if (request.response == Boolean.TRUE) {
-                contains = true;
-                complete(false);
-                return;
+        class MGetContainsValue extends MMigrationAwareTargettedCall {
+            public MGetContainsValue(Address target) {
+                this.target = target;
+                request.reset();
+                setLocal(OP_CMAP_CONTAINS, name, null, value, 0, -1, -1);
             }
-            super.process();
-        }
 
-        @Override
-        void doLocalOp() {
-        }
-
-        @Override
-        public void handleResponse(Packet packet) {
-            if (packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
-                contains = true;
-                complete(true);
+            @Override
+            void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+                handleBooleanNoneRedoResponse(packet);
             }
-            consumeResponse(packet);
+
+            public void doLocalCall() {
+                CMap cmap = getMap(request.name);
+                request.response = cmap.contains(request);
+            }
         }
     }
 
-    public class MSize extends AllOp {
-        int total = 0;
-        volatile boolean shouldRedo = false;
 
-        public int getSize(String name) {
-            reset();
-            shouldRedo = false;
-            total = 0;
-            setLocal(OP_CMAP_SIZE, name, null, null, 0, -1, -1);
-            doOp();
-            if (shouldRedo) {
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                return getSize(name);
-            }
-            return total;
+    public class MSize extends MMultiCall {
+        int size = 0;
+        final String name;
+
+        public MSize(String name) {
+            this.name = name;
         }
 
-        @Override
-        public void process() {
-            if (migrating()) {
-                shouldRedo = true;
-                complete(true);
-                return;
-            }
-            super.process();
+        TargetAwareOp createNewTargetAwareOp(Address target) {
+            return new MGetSize(target);
         }
 
-        @Override
-        void doLocalOp() {
-            CMap cmap = getMap(request.name);
-            total += cmap.size();
+        boolean onResponse(Object response) {
+            size += ((Long) response).intValue();
+            return true;
         }
 
-        @Override
-        public void handleResponse(PacketQueue.Packet packet) {
-            if (packet.responseType == RESPONSE_REDO) {
-                shouldRedo = true;
-                complete(true);
-                packet.returnToContainer();
-                return;
+        void onCall() {
+            size = 0;
+        }
+
+        Object returnResult() {
+            return size;
+        }
+
+        class MGetSize extends MMigrationAwareTargettedCall {
+            public MGetSize(Address target) {
+                this.target = target;
+                request.reset();
+                request.name = name;
+                request.operation = OP_CMAP_SIZE;
             }
-            total += (int) packet.longValue;
-            consumeResponse(packet);
+
+            @Override
+            void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+                handleLongNoneRedoResponse(packet);
+            }
+
+            public void doLocalCall() {
+                CMap cmap = getMap(request.name);
+                request.response = Long.valueOf(cmap.size());
+            }
         }
     }
 
-    public class MIterate extends AllOp {
+    public class MIterate extends MMultiCall {
         Entries entries = null;
-        volatile boolean shouldRedo = false;
         final static int TYPE_ENTRIES = 1;
         final static int TYPE_KEYS = 2;
         final static int TYPE_VALUES = 3;
 
-        public Entries iterate(final String name, final int iteratorType) {
-            reset();
-            shouldRedo = false;
+        final String name;
+        final int iteratorType;
+
+        public MIterate(String name, int iteratorType) {
+            this.name = name;
+            this.iteratorType = iteratorType;
+        }
+
+        TargetAwareOp createNewTargetAwareOp(Address target) {
+            return new MGetEntries(target);
+        }
+
+        void onCall() {
             entries = new Entries(name, iteratorType);
-            int operation = (iteratorType == TYPE_KEYS) ? OP_CMAP_ITERATE_KEYS : OP_CMAP_ITERATE;
-            setLocal(operation, name, null, null, 0, -1, -1);
-            doOp();
-            if (shouldRedo) {
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                return iterate(name, iteratorType);
-            }
+        }
+
+        boolean onResponse(Object response) {
+            entries.addEntries((Pairs) response);
+            return true;
+        }
+
+        Object returnResult() {
             return entries;
         }
 
-        @Override
-        public void process() {
-            if (migrating()) {
-                shouldRedo = true;
-                complete(true);
-                return;
+        class MGetEntries extends MMigrationAwareTargettedCall {
+            public MGetEntries(Address target) {
+                this.target = target;
+                request.reset();
+                request.name = name;
+                request.operation = (iteratorType == MIterate.TYPE_KEYS)
+                        ? OP_CMAP_ITERATE_KEYS
+                        : OP_CMAP_ITERATE;
             }
-            super.process();
-        }
 
-        @Override
-        void doLocalOp() {
-            CMap cmap = getMap(request.name);
-            cmap.getEntries(request);
-            Pairs pairs = (Pairs) toObject((Data) request.response);
-            entries.addEntries(pairs);
-
-        }
-
-        @Override
-        public void handleResponse(PacketQueue.Packet packet) {
-            if (packet.responseType == RESPONSE_REDO) {
-                shouldRedo = true;
-                complete(true);
-                packet.returnToContainer();
-                return;
+            public void doLocalCall() {
+                CMap cmap = getMap(request.name);
+                cmap.getEntries(request);
             }
-            int size = (int) packet.longValue;
-            if (size > 0) {
-                Pairs pairs = (Pairs) toObject(packet.value);
-                entries.addEntries(pairs);
-            }
-            consumeResponse(packet);
         }
     }
+
 
     Address getTarget(String name, Data key) {
         int blockId = getBlockId(key);
@@ -1077,7 +1076,8 @@ class ConcurrentMapManager extends BaseManager {
         return block.owner;
     }
 
-    private boolean migrating() {
+    @Override
+    public boolean migrating() {
         Collection<Block> blocks = mapBlocks.values();
         for (Block block : blocks) {
             if (block.isMigrating()) {
@@ -1365,7 +1365,6 @@ class ConcurrentMapManager extends BaseManager {
                 packet.responseType = RESPONSE_REDO;
                 sendResponse(packet);
             } else if (targetAware && !rightRemoteTarget(packet)) {
-                packet.returnToContainer();
             } else {
                 remoteReq.setFromPacket(packet);
                 handle(remoteReq);
@@ -1753,17 +1752,23 @@ class ConcurrentMapManager extends BaseManager {
                 if (record == null)
                     return false;
                 else {
-                    if (value == null) {
-                        return record.valueCount() > 0;
-                    } else {
-                        return record.containsValue(value);
+                    Block block = mapBlocks.get(record.blockId);
+                    if (thisAddress.equals(block.owner)) {
+                        if (value == null) {
+                            return record.valueCount() > 0;
+                        } else {
+                            return record.containsValue(value);
+                        }
                     }
                 }
             } else {
                 Collection<Record> records = mapRecords.values();
                 for (Record record : records) {
-                    if (record.containsValue(value)) {
-                        return true;
+                    Block block = mapBlocks.get(record.blockId);
+                    if (thisAddress.equals(block.owner)) {
+                        if (record.containsValue(value)) {
+                            return true;
+                        }
                     }
                 }
             }

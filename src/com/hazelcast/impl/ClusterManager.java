@@ -395,43 +395,6 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         }
     }
 
-
-    public class ProcessEverywhere extends AllOp {
-        private Processable processable = null;
-        private List<Address> addresses = null;
-
-        public void process(List<Address> addresses, Processable processable) {
-            this.processable = processable;
-            this.addresses = addresses;
-            Data value = ThreadContext.get().toData(processable);
-            setLocal(OP_REMOTELY_PROCESS_AND_RESPOND, "clustermanager", null, value, 0, -1, -1);
-            doOp();
-        }
-
-        @Override
-        public void process() {
-            if (addresses != null) {
-                setAddresses.addAll(addresses);
-            }
-            super.process();
-        }
-
-        @Override
-        void consumeResponse(Packet packet) {
-            complete(true);
-            packet.returnToContainer();
-        }
-
-        @Override
-        public void onDisconnect(Address deadAddress) {
-        }
-
-        @Override
-        void doLocalOp() {
-            processable.process();
-        }
-    }
-
     void joinReset() {
         joinInProgress = false;
         setJoins.clear();

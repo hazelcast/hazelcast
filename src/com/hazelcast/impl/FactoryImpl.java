@@ -757,8 +757,10 @@ public class FactoryImpl implements Constants {
         }
 
         public int size() {
-            MSize msize = ConcurrentMapManager.get().new MSize();
-            int size = msize.getSize(name);
+//            MSize msize = ConcurrentMapManager.get().new MSize();
+//            int size = msize.getSize(name);
+            MSize msize = ConcurrentMapManager.get().new MSize(name);
+            int size = (Integer) msize.call();
             TransactionImpl txn = ThreadContext.get().txn;
             if (txn != null) {
                 size += txn.size(name);
@@ -904,8 +906,8 @@ public class FactoryImpl implements Constants {
                 if (txn.containsValue(name, value))
                     return true;
             }
-            MContainsValue mContainsValue = ConcurrentMapManager.get().new MContainsValue();
-            return mContainsValue.containsValue(name, value, -1);
+            MContainsValue mContainsValue = ConcurrentMapManager.get().new MContainsValue(name, value);
+            return (Boolean) mContainsValue.call();
         }
 
         public boolean isEmpty() {
@@ -940,27 +942,26 @@ public class FactoryImpl implements Constants {
         public void clear() {
             Set keys = keySet();
             for (Object key : keys) {
-                removeKey (key);
-            } 
+                removeKey(key);
+            }
         }
 
         public Set entrySet() {
-//            return new EntrySet(EntrySet.TYPE_ENTRIES);
-            MIterate miterate = ConcurrentMapManager.get().new MIterate();
-            return miterate.iterate(name, MIterate.TYPE_ENTRIES);
+            return (Set) iterate(MIterate.TYPE_ENTRIES);
         }
 
         public Set keySet() {
-//            return new EntrySet(EntrySet.TYPE_KEYS);
-            MIterate miterate = ConcurrentMapManager.get().new MIterate();
-            return miterate.iterate(name, MIterate.TYPE_KEYS);
+            return (Set) iterate(MIterate.TYPE_KEYS);
         }
 
         public Collection values() {
-//            return new EntrySet(EntrySet.TYPE_VALUES);
-            MIterate miterate = ConcurrentMapManager.get().new MIterate();
-            return miterate.iterate(name, MIterate.TYPE_VALUES);
+            return iterate(MIterate.TYPE_VALUES);
 
+        }
+
+        private Collection iterate(int iteratorType) {
+            MIterate miterate = ConcurrentMapManager.get().new MIterate(name, iteratorType);
+            return (Collection) miterate.call();
         }
 
         public void destroy() {
