@@ -18,11 +18,9 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.Member;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.*;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
 import com.hazelcast.nio.Address;
@@ -128,7 +126,7 @@ class ConcurrentMapManager extends BaseManager {
                     }
                 });
         ClusterService.get().registerPacketProcessor(OP_CMAP_LOCK_RETURN_OLD,
-                new DefaultPacketProcessor(false, true, true, true) {
+                new DefaultPacketProcessor(false, true, true, false) {
                     void handle(Request request) {
                         doLock(request);
                     }
@@ -1212,6 +1210,7 @@ class ConcurrentMapManager extends BaseManager {
         }
         for (Object recObj : records) {
             final Record rec = (Record) recObj;
+            rec.runBackupOps();
             CMap cmap = getMap(rec.name);
             cmap.removeRecord(rec.key);
             executeLocally(new Runnable() {
@@ -1344,6 +1343,7 @@ class ConcurrentMapManager extends BaseManager {
         final boolean schedulable;
         final boolean returnsObject;
         final boolean checkIfMigrating;
+        int operation = -1;
 
         protected DefaultPacketProcessor() {
             targetAware = false;
@@ -1361,6 +1361,7 @@ class ConcurrentMapManager extends BaseManager {
         }
 
         public void process(Packet packet) {
+            operation = packet.operation;
             if (checkIfMigrating && migrating()) {
                 packet.responseType = RESPONSE_REDO;
                 sendResponse(packet);
@@ -1390,6 +1391,11 @@ class ConcurrentMapManager extends BaseManager {
         }
 
         abstract void handle(Request request);
+
+        @Override
+        public String toString() {
+            return "DefaultProcessor operation=" + operation;
+        }
     }
 
     final void doLock(Request request) {
@@ -1629,11 +1635,9 @@ class ConcurrentMapManager extends BaseManager {
         }
 
         public boolean backup(Request req) {
-
             Record record = getRecord(req.key);
 
             if (record != null) {
-                record.version = req.version;
                 if (req.version > record.version + 1) {
                     Request reqCopy = new Request();
                     reqCopy.setFromRequest(req, false);
@@ -1645,9 +1649,7 @@ class ConcurrentMapManager extends BaseManager {
                     return false;
                 }
             }
-
             doBackup(req);
-
             if (record != null) {
                 record.version = req.version;
                 record.runBackupOps();
