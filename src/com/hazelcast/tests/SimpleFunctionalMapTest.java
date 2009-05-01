@@ -136,6 +136,7 @@ public class SimpleFunctionalMapTest {
             return newOne;
         }
 
+        @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
             long total = 0;
