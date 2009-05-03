@@ -1372,6 +1372,8 @@ class ConcurrentMapManager extends BaseManager {
                 if (schedulable && remoteReq.scheduled) {
                     packet.returnToContainer();
                 } else {
+                    packet.version = remoteReq.version;
+                    packet.longValue = remoteReq.longValue;
                     if (returnsObject) {
                         Data oldValue = (Data) remoteReq.response;
                         if (oldValue != null && oldValue.size() > 0) {
