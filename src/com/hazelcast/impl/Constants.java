@@ -109,8 +109,6 @@ public interface Constants {
 
         public static final int OP_B_FULL_BLOCK = 105;
 
-        public static final int OP_B_GO_NEXT = 106;
-
         public static final int OP_B_BACKUP_ADD = 107;
 
         public static final int OP_B_BACKUP_REMOVE = 108;
