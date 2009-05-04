@@ -59,18 +59,10 @@ public interface MultiMap<K, V> extends ICommon {
      * Removes all the entries with the given key.
      *
      * @param key the key of the entries to remove
-     * @return true if the size of the multimap changed after the remove operation, false otherwise.
-     */
-    boolean remove(K key);
-
-    /**
-     * Removes all the entries with the given key.
-     *
-     * @param key the key of the entries to remove
      * @return the collection of removed values associated with the given key. Returned collection
      *         might be modifiable but it has no effect on the multimap
      */
-    Collection<V> removeAll(K key);
+    Collection<V> remove(K key);
 
     /**
      * Returns the set of keys in the multimap.
@@ -95,15 +87,7 @@ public interface MultiMap<K, V> extends ICommon {
      *         but it has no effect on the multimap
      */
     Set<Map.Entry<K, V>> entrySet();
-
-    /**
-     * Returns the number of values associated with the key.
-     *
-     * @param key the key whose value count is to be returned.
-     * @return the number of values associated with the key.
-     */
-    int valueCount(K key);
-
+    
     /**
      * Returns whether the multimap contains an entry with the key.
      *

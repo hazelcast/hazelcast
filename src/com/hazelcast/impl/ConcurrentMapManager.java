@@ -1822,7 +1822,6 @@ class ConcurrentMapManager extends BaseManager {
                 return doHardCopy(data);
             } else {
                 if (record.lsValues != null) {
-
                     Values values = new Values(record.lsValues);
                     return ThreadContext.get().toData(values);
                 }
@@ -2005,8 +2004,13 @@ class ConcurrentMapManager extends BaseManager {
                 }
             }
             Data oldValue = record.getValue();
-            if (record.value != null) {
-                fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record);
+            if (oldValue == null && record.lsValues != null && record.lsValues.size() > 0) {
+                Values values = new Values(record.lsValues);
+                oldValue = ThreadContext.get().toData(values);
+                record.lsValues = null;
+            }
+            if (oldValue != null) {
+                fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record.key, oldValue, record.mapListeners);
                 record.version++;
                 record.value = null;
             }

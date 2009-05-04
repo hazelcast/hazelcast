@@ -647,20 +647,12 @@ public class FactoryImpl implements Constants {
             return mapProxy.removeMulti(key, value);
         }
 
-        public boolean remove(Object key) {
-            return false;
-        }
-
-        public Collection removeAll(Object key) {
-            return null;
+        public Collection remove(Object key) {
+            return (Collection) mapProxy.remove(key);
         }
 
         public int size() {
             return mapProxy.size();
-        }
-
-        public int valueCount(Object key) {
-            return 0;
         }
 
         public Set keySet() {
