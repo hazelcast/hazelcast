@@ -51,6 +51,8 @@ public class Node {
 
     private volatile boolean joined = false;
 
+    private volatile boolean completelyShutdown = false;
+
     private ClusterImpl clusterImpl = null;
 
     private final CoreDump coreDump = new CoreDump();
@@ -245,6 +247,7 @@ public class Node {
     }
 
     public void start() {
+        if (completelyShutdown) return;
         firstMainThread = Thread.currentThread();
         clusterImpl = new ClusterImpl();
         final boolean inited = init();
@@ -272,13 +275,16 @@ public class Node {
 
 
         firstMainThread = null;
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                logger.log(Level.FINEST, "Hazelcast ShutdownHook is shutting down!");
-                shutdown();
-            }
-        });
+        if (!completelyShutdown) {
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                @Override
+                public void run() {
+                    completelyShutdown = true;
+                    logger.log(Level.FINEST, "Hazelcast ShutdownHook is shutting down!");
+                    shutdown();
+                }
+            });
+        }
     }
 
     public void startMulticastService() {
@@ -500,7 +506,7 @@ public class Node {
                     joinExisting(masterAddress);
                     Thread.sleep(500);
                 } catch (final Exception e) {
-                    logger.log (Level.FINEST, "multicast join", e);
+                    logger.log(Level.FINEST, "multicast join", e);
                 }
             }
         }
