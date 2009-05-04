@@ -2521,12 +2521,79 @@ class ConcurrentMapManager extends BaseManager {
 
     public static class Entries implements Set {
         final String name;
-        final List<KeyValue> lsKeyValues = new ArrayList<KeyValue>();
+        final List<Map.Entry> lsKeyValues = new ArrayList<Map.Entry>();
         final int iteratorType;
 
         public Entries(String name, int iteratorType) {
             this.name = name;
             this.iteratorType = iteratorType;
+            TransactionImpl txn = ThreadContext.get().txn;
+            if (txn != null) {
+                lsKeyValues.addAll(txn.newEntries(name));
+            }
+        }
+
+        public boolean isEmpty() {
+            return (size() == 0);
+        }
+
+        public int size() {
+            return lsKeyValues.size();
+        }
+
+        public Iterator iterator() {
+            return new EntryIterator(lsKeyValues.iterator());
+        }
+
+        public void addEntries(Pairs pairs) {
+            if (pairs.lsKeyValues == null) return;
+            for (KeyValue entry : pairs.lsKeyValues) {
+                TransactionImpl txn = ThreadContext.get().txn;
+                if (txn != null) {
+                    Object key = entry.getKey();
+                    if (txn.has(name, key)) {
+                        Object value = txn.get(name, key);
+                        if (value != null) {
+                            lsKeyValues.add(createSimpleEntry(name, key, value));
+                        }
+                    } else {
+                        lsKeyValues.add(entry);
+                    }
+                } else {
+                    entry.setName(name);
+                    lsKeyValues.add(entry);
+                }
+            }
+        }
+
+        class EntryIterator implements Iterator {
+            final Iterator<Map.Entry> it;
+            Map.Entry entry = null;
+
+            public EntryIterator(Iterator<Map.Entry> it) {
+                super();
+                this.it = it;
+            }
+
+            public boolean hasNext() {
+                return it.hasNext();
+            }
+
+            public Object next() {
+                entry = it.next();
+                if (iteratorType == MIterate.TYPE_KEYS) {
+                    return entry.getKey();
+                } else if (iteratorType == MIterate.TYPE_VALUES) {
+                    return entry.getValue();
+                } else if (iteratorType == MIterate.TYPE_ENTRIES) {
+                    return entry;
+                } else throw new RuntimeException("Unknown iteration type " + iteratorType);
+            }
+
+            public void remove() {
+                ((FactoryImpl.MProxy) FactoryImpl.getProxy(name)).put(entry.getKey(), entry.getValue());
+                it.remove();
+            }
         }
 
         public boolean add(Object o) {
@@ -2549,47 +2616,6 @@ class ConcurrentMapManager extends BaseManager {
             throw new UnsupportedOperationException();
         }
 
-        public boolean isEmpty() {
-            return (size() == 0);
-        }
-
-        public Iterator iterator() {
-            return new EntryIterator(lsKeyValues.iterator());
-        }
-
-        public void addEntries(Pairs pairs) {
-            if (pairs.lsKeyValues == null) return;
-            lsKeyValues.addAll(pairs.lsKeyValues);
-        }
-
-        class EntryIterator implements Iterator {
-            final Iterator<KeyValue> it;
-
-            public EntryIterator(Iterator<KeyValue> it) {
-                super();
-                this.it = it;
-            }
-
-            public boolean hasNext() {
-                return it.hasNext();
-            }
-
-            public Object next() {
-                KeyValue keyValue = it.next();
-                if (iteratorType == MIterate.TYPE_KEYS) {
-                    return ThreadContext.get().toObject(keyValue.key);
-                } else if (iteratorType == MIterate.TYPE_VALUES) {
-                    return ThreadContext.get().toObject(keyValue.value);
-                } else if (iteratorType == MIterate.TYPE_ENTRIES) {
-                    return keyValue;
-                } else throw new RuntimeException("Unknown iteration type " + iteratorType);
-
-            }
-
-            public void remove() {
-                it.remove();
-            }
-        }
 
         public boolean remove(Object o) {
             throw new UnsupportedOperationException();
@@ -2601,10 +2627,6 @@ class ConcurrentMapManager extends BaseManager {
 
         public boolean retainAll(Collection c) {
             throw new UnsupportedOperationException();
-        }
-
-        public int size() {
-            return lsKeyValues.size();
         }
 
         public Object[] toArray() {

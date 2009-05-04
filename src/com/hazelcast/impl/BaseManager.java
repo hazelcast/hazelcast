@@ -18,7 +18,6 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.ClusterManager.RemotelyProcessable;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_PROCESS;
@@ -215,9 +214,33 @@ abstract class BaseManager implements Constants {
 
     }
 
+    public static Map.Entry createSimpleEntry(final String name, final Object key, final Object value) {
+        return new Map.Entry() {
+            public Object getKey() {
+                return key;
+            }
+
+            public Object getValue() {
+                return value;
+            }
+
+            public Object setValue(Object newValue) {
+                return ((FactoryImpl.MProxy) FactoryImpl.getProxy(name)).put(key, newValue);
+            }
+
+            @Override
+            public String toString() {
+                return "Map.Entry key=" + getKey() + ", value=" + getValue();
+            }
+        };
+    }
+
     public static class KeyValue implements Map.Entry, DataSerializable {
-        Data key;
-        Data value;
+        Data key = null;
+        Data value = null;
+        Object objKey = null;
+        Object objValue = null;
+        String name = null;
 
         public KeyValue() {
         }
@@ -248,15 +271,26 @@ abstract class BaseManager implements Constants {
         }
 
         public Object getKey() {
-            return ThreadContext.get().toObject(key);
+            if (objKey == null) {
+                objKey = ThreadContext.get().toObject(key);
+            }
+            return objKey;
         }
 
         public Object getValue() {
-            return ThreadContext.get().toObject(value);
+            if (objValue == null) {
+                objValue = ThreadContext.get().toObject(value);
+            }
+            return objValue;
         }
 
         public Object setValue(Object value) {
-            throw new UnsupportedOperationException();
+            if (name == null) throw new UnsupportedOperationException();
+            return ((FactoryImpl.MProxy) FactoryImpl.getProxy(name)).put(getKey(), getValue());
+        }
+
+        public void setName(String name) {
+            this.name = name;
         }
 
         @Override
@@ -265,84 +299,6 @@ abstract class BaseManager implements Constants {
         }
     }
 
-    public static class SimpleDataEntry implements Map.Entry {
-        String name;
-
-        int blockId;
-
-        Data keyData;
-
-        Data valueData;
-
-        Object key = null;
-
-        Object value = null;
-
-        int copyCount = 0;
-
-        public SimpleDataEntry(final String name, final int blockId, final Data key,
-                               final Data value, final int copyCount) {
-            super();
-            this.blockId = blockId;
-            this.keyData = key;
-            this.name = name;
-            this.valueData = value;
-            this.copyCount = copyCount - 1;
-        }
-
-        public SimpleDataEntry(final String name, final Object key, final Object value) {
-            this.key = key;
-            this.value = value;
-            this.name = name;
-        }
-
-        public int getBlockId() {
-            return blockId;
-        }
-
-        public Object getKey() {
-            if (key == null) {
-                key = ThreadContext.get().toObject(keyData);
-            }
-            return key;
-        }
-
-        public Data getKeyData() {
-            return keyData;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public Object getValue() {
-            if (value == null) {
-                if (valueData != null) {
-                    value = ThreadContext.get().toObject(valueData);
-                } else {
-                    return getKey();
-                }
-            }
-            return value;
-        }
-
-        public Data getValueData() {
-            return valueData;
-        }
-
-        public Object setValue(final Object newValue) {
-            final IMap map = (IMap) FactoryImpl.getProxy(name);
-            map.put(keyData, newValue);
-            final Object oldValue = this.value;
-            this.value = newValue;
-            return oldValue;
-        }
-
-        @Override
-        public String toString() {
-            return "MapEntry key=" + getKey() + ", value=" + getValue();
-        }
-    }
 
     abstract class AbstractCall implements Call {
         private long id = -1;
@@ -955,7 +911,7 @@ abstract class BaseManager implements Constants {
         abstract void doLocalCall();
     }
 
-    protected boolean migrating () {
+    protected boolean migrating() {
         return false;
     }
 

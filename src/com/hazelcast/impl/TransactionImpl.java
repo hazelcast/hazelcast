@@ -18,7 +18,6 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.Transaction;
-import com.hazelcast.impl.BaseManager.SimpleDataEntry;
 import com.hazelcast.impl.BlockingQueueManager.CommitPoll;
 import com.hazelcast.impl.BlockingQueueManager.Offer;
 import com.hazelcast.impl.FactoryImpl.CollectionProxy;
@@ -26,7 +25,7 @@ import com.hazelcast.impl.FactoryImpl.MProxy;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
+import java.util.Map;
 import java.util.logging.Logger;
 
 class TransactionImpl implements Transaction, Constants {
@@ -230,6 +229,17 @@ class TransactionImpl implements Transaction, Constants {
         return true;
     }
 
+    public boolean isNew(final String name, final Object key) {
+        final TxnRecord rec = findTxnRecord(name, key);
+        return (rec != null && !rec.removed && rec.newRecord);
+    }
+
+    public boolean isRemoved(final String name, final Object key) {
+        final TxnRecord rec = findTxnRecord(name, key);
+        return (rec != null && rec.removed);
+    }
+
+
     public void rollback() throws IllegalStateException {
         if (status == TXN_STATUS_NO_TXN || status == TXN_STATUS_UNKNOWN
                 || status == TXN_STATUS_COMMITTED || status == TXN_STATUS_ROLLED_BACK)
@@ -266,16 +276,18 @@ class TransactionImpl implements Transaction, Constants {
         return size;
     }
 
-    public List<SimpleDataEntry> entries(final String name) {
-        List<SimpleDataEntry> lsEntries = null;
+    public List<Map.Entry> newEntries(final String name) {
+        List<Map.Entry> lsEntries = null;
         for (final TxnRecord txnRecord : lsTxnRecords) {
             if (txnRecord.name.equals(name)) {
                 if (!txnRecord.removed) {
                     if (txnRecord.value != null) {
-                        if (lsEntries == null) {
-                            lsEntries = new ArrayList<SimpleDataEntry>(2);
+                        if (txnRecord.newRecord) {
+                            if (lsEntries == null) {
+                                lsEntries = new ArrayList<Map.Entry>(2);
+                            }
+                            lsEntries.add(BaseManager.createSimpleEntry(name, txnRecord.key, txnRecord.value));
                         }
-                        lsEntries.add(new SimpleDataEntry(name, txnRecord.key, txnRecord.value));
                     }
                 }
             }
