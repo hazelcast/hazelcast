@@ -1210,7 +1210,7 @@ class ConcurrentMapManager extends BaseManager {
         }
         for (Object recObj : records) {
             final Record rec = (Record) recObj;
-            rec.runBackupOps();
+            rec.forceBackupOps();
             CMap cmap = getMap(rec.name);
             cmap.removeRecord(rec.key);
             executeLocally(new Runnable() {
@@ -2202,14 +2202,19 @@ class ConcurrentMapManager extends BaseManager {
             backupOps.add(bo);
             if (backupOps.size() > 5) {
                 logger.log(Level.FINEST, id + " Forcing backup.run version " + version);
-                Iterator<VersionedBackupOp> it = backupOps.iterator();
-                while (it.hasNext()) {
-                    VersionedBackupOp v = it.next();
-                    v.run();
-                    version = v.getVersion();
-                    v.request.reset();
-                    it.remove();
-                }
+                forceBackupOps();
+            }
+        }
+
+        public void forceBackupOps() {
+            if (backupOps == null) return;
+            Iterator<VersionedBackupOp> it = backupOps.iterator();
+            while (it.hasNext()) {
+                VersionedBackupOp v = it.next();
+                v.run();
+                version = v.getVersion();
+                v.request.reset();
+                it.remove();
             }
         }
 
