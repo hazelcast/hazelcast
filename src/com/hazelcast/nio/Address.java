@@ -163,13 +163,7 @@ public class Address implements DataSerializable {
             return false;
 
         final Address address = (Address) o;
-
-        if (port != address.port)
-            return false;
-        if (!Arrays.equals(ip, address.ip))
-            return false;
-
-        return true;
+        return port == address.port && Arrays.equals(ip, address.ip);
     }
 
     @Override
@@ -185,8 +179,8 @@ public class Address implements DataSerializable {
 
     private int hash(byte[] id) {
         int hash = 0;
-        for (int i = 0; i < id.length; i++) {
-            hash = (hash * 29) + id[i];
+        for (byte anId : id) {
+            hash = (hash * 29) + anId;
         }
         return hash;
     }
