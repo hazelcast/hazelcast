@@ -236,7 +236,7 @@ class ConcurrentMapManager extends BaseManager {
                 record.onDisconnect(deadAddress);
             }
         }
-        doResetRecords();
+        doResetRecords(deadAddress);
     }
 
     public void syncForAdd() {
@@ -324,7 +324,7 @@ class ConcurrentMapManager extends BaseManager {
                     send("blocks", OP_CMAP_BLOCKS, dataAllBlocks, member.getAddress());
                 }
             }
-            doResetRecords();
+            doResetRecords(null);
             if (DEBUG) {
                 printBlocks();
             }
@@ -1051,14 +1051,14 @@ class ConcurrentMapManager extends BaseManager {
                 if (record == null)
                     return block.migrationAddress;
                 else {
-                    Address recordOwner = record.getOwner();
+                    Address recordOwner = record.owner;
                     if (recordOwner == null)
                         return thisAddress;
                     if ((!recordOwner.equals(thisAddress))
                             && (!recordOwner.equals(block.migrationAddress))) {
-                        record.setOwner(thisAddress);
+                        record.owner = thisAddress;
                     }
-                    return record.getOwner();
+                    return record.owner;
                 }
             }
         } else if (thisAddress.equals(block.migrationAddress)) {
@@ -1069,7 +1069,7 @@ class ConcurrentMapManager extends BaseManager {
             if (record == null)
                 return thisAddress;
             else
-                return record.getOwner();
+                return record.owner;
         }
         return block.owner;
     }
@@ -1132,7 +1132,7 @@ class ConcurrentMapManager extends BaseManager {
         Blocks blocks = (Blocks) ThreadContext.get().toObject(packet.value);
         handleBlocks(blocks);
         packet.returnToContainer();
-        doResetRecords();
+        doResetRecords(null);
         if (DEBUG) {
             // printBlocks();
         }
@@ -1198,7 +1198,8 @@ class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    void doResetRecords() {
+
+    void doResetRecords(Address deadAddress) {
         if (isSuperClient())
             return;
 
@@ -1210,15 +1211,23 @@ class ConcurrentMapManager extends BaseManager {
         }
         for (Object recObj : records) {
             final Record rec = (Record) recObj;
-            rec.forceBackupOps();
             CMap cmap = getMap(rec.name);
             cmap.removeRecord(rec.key);
-            executeLocally(new Runnable() {
-                public void run() {
-                    MMigrate mmigrate = new MMigrate();
-                    mmigrate.migrate(rec);
-                }
-            });
+            boolean shouldMigrate = false;
+            if (thisAddress.equals(rec.owner)) {
+                shouldMigrate = true;
+            } else if (deadAddress != null && deadAddress.equals(rec.owner)) {
+                rec.forceBackupOps();
+                shouldMigrate = true;
+            }
+            if (shouldMigrate) {
+                executeLocally(new Runnable() {
+                    public void run() {
+                        MMigrate mmigrate = new MMigrate();
+                        mmigrate.migrate(rec);
+                    }
+                });
+            }
         }
         executeLocally(new Runnable() {
             public void run() {
@@ -1237,7 +1246,6 @@ class ConcurrentMapManager extends BaseManager {
             }
         });
     }
-
 
     private void doMigrationComplete(Address from) {
         logger.log(Level.FINEST, "Migration Complete from " + from);
@@ -1483,11 +1491,6 @@ class ConcurrentMapManager extends BaseManager {
         request.response = cmap.backup(request);
     }
 
-    final void doRead(Request request) {
-        CMap cmap = getMap(request.name);
-        request.response = cmap.read(request);
-    }
-
     final void doMigrate(Request request) {
         CMap cmap = getMap(request.name);
         cmap.own(request);
@@ -1642,7 +1645,7 @@ class ConcurrentMapManager extends BaseManager {
             if (record != null) {
                 if (req.version > record.version + 1) {
                     Request reqCopy = new Request();
-                    reqCopy.setFromRequest(req, false);
+                    reqCopy.setFromRequest(req, true);
                     req.key = null;
                     req.value = null;
                     record.addBackupOp(new VersionedBackupOp(reqCopy));
@@ -2035,31 +2038,6 @@ class ConcurrentMapManager extends BaseManager {
             return rec;
         }
 
-        public Record read(Request req) {
-            return nextOwnedRecord(req.name, req.recordId, req.blockId);
-        }
-
-        Record nextOwnedRecord(String name, long recordId, int blockId) {
-            Record rec = null;
-            while (rec == null && recordId <= maxId) {
-                rec = getRecordById(recordId);
-                if (rec != null) {
-                    if (rec.valueCount() > 0) {
-                        if (name != null && name.equals(rec.name)) {
-                            if (rec.blockId == blockId) {
-                                if (rec.owner.equals(thisAddress)) {
-                                    return rec;
-                                }
-                            }
-                        }
-                    }
-                }
-                rec = null;
-                recordId++;
-            }
-            return rec;
-        }
-
         Record createNewRecord(Data key, Data value) {
             long id = ++maxId;
             int blockId = getBlockId(key);
@@ -2097,8 +2075,6 @@ class ConcurrentMapManager extends BaseManager {
         public String toString() {
             return "CMap [" + name + "] size=" + size() + ", backup-size=" + backupSize();
         }
-
-
     }
 
 
@@ -2200,7 +2176,7 @@ class ConcurrentMapManager extends BaseManager {
                 backupOps = new TreeSet<VersionedBackupOp>();
             }
             backupOps.add(bo);
-            if (backupOps.size() > 5) {
+            if (backupOps.size() > 4) {
                 logger.log(Level.FINEST, id + " Forcing backup.run version " + version);
                 forceBackupOps();
             }
@@ -2224,14 +2200,6 @@ class ConcurrentMapManager extends BaseManager {
 
         public String getName() {
             return name;
-        }
-
-        public Address getOwner() {
-            return owner;
-        }
-
-        public void setOwner(Address owner) {
-            this.owner = owner;
         }
 
         public Data getKey() {
