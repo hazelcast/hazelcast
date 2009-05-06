@@ -88,7 +88,6 @@ public class OutSelector extends SelectorBase {
                         final String msg = "Couldn't connect to " + address + ", cause: "
                                 + e.getMessage();
                         logger.log(Level.FINEST, msg);
-                        ClusterManager.get().publishLog(msg);
                         e.printStackTrace();
                     }
                     socketChannel.close();

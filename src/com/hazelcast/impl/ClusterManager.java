@@ -226,17 +226,6 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         }
     }
 
-    public void publishLog(final String log) {
-        if (DEBUG) {
-            final String msg = thisAddress.toString() + ": " + log;
-            ExecutorManager.get().executeLocaly(new Runnable() {
-                public void run() {
-                    Hazelcast.getTopic("_hz_logs").publish(msg);
-                }
-            });
-        }
-    }
-
     public void handleMaster(Master master) {
         if (!Node.get().joined()) {
             Node.get().setMasterAddress(master.address);

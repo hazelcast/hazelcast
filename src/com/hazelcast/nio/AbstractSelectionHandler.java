@@ -62,13 +62,6 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 
         if (sk != null)
             sk.cancel();
-        if (connection.live()) {
-            if (DEBUG) {
-                ClusterManager.get().publishLog(
-                        "Connection.close endPoint:" + connection.getEndPoint() + ", cause"
-                                + e.toString());
-            }
-        }
         connection.close();
     }
 

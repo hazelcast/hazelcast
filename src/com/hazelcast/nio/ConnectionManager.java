@@ -67,7 +67,6 @@ public class ConnectionManager {
                         + ", acceptTypeConnection=" + acceptTypeConnection + ",  now accept="
                         + accept;
                 logger.log(Level.INFO, msg);
-                ClusterManager.get().publishLog(msg);
             }
             return;
         }

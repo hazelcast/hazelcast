@@ -107,10 +107,7 @@ public class SelectorBase implements Runnable {
                     Node.get().handleInterruptedException(Thread.currentThread(),
                             new RuntimeException());
                 }
-            } catch (final IOException ioe) {
-                // normally select should never throw an exception
-                // operation. If happens, continue selecting...
-                logger.log(Level.FINEST, "Ignorable", ioe);
+            } catch (final Throwable exp) {
                 continue select;
             }
             if (selectedKeys == 0) {
@@ -138,7 +135,6 @@ public class SelectorBase implements Runnable {
         msg += ", cause= " + e.toString();
         if (Build.DEBUG) {
             logger.log(Level.INFO, msg);
-            ClusterManager.get().publishLog(msg);
             e.printStackTrace(System.out);
         }
     }
