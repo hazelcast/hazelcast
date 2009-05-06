@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-class TransactionImpl implements Transaction, Constants {
+class TransactionImpl implements Transaction {
 
     public class TxnRecord {
         public String name;
@@ -94,7 +94,7 @@ class TransactionImpl implements Transaction, Constants {
             } else if (proxy instanceof CollectionProxy) {
                 mapProxy = ((CollectionProxy) proxy).getCProxy();
             }
-            mapProxy.unlock(key);
+            if(mapProxy!=null) mapProxy.unlock(key);
         }
 
         public void rollbackQueue() {
@@ -224,9 +224,7 @@ class TransactionImpl implements Transaction, Constants {
 
     public boolean has(final String name, final Object key) {
         final TxnRecord rec = findTxnRecord(name, key);
-        if (rec == null)
-            return false;
-        return true;
+        return rec != null;
     }
 
     public boolean isNew(final String name, final Object key) {
