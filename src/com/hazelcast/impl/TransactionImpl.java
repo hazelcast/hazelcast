@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 
 class TransactionImpl implements Transaction {
 
-    public class TxnRecord {
+    private class TransactionRecord {
         public String name;
 
         public Object key;
@@ -43,7 +43,7 @@ class TransactionImpl implements Transaction {
 
         public boolean map = true;
 
-        public TxnRecord(final String name, final Object key, final Object value,
+        public TransactionRecord(final String name, final Object key, final Object value,
                          final boolean newRecord) {
             this.name = name;
             this.key = key;
@@ -120,7 +120,7 @@ class TransactionImpl implements Transaction {
 
     private final long id;
 
-    List<TxnRecord> lsTxnRecords = new ArrayList<TxnRecord>(1);
+    List<TransactionRecord> transactionRecords = new ArrayList<TransactionRecord>(1);
 
     private int status = TXN_STATUS_NO_TXN;
 
@@ -130,10 +130,10 @@ class TransactionImpl implements Transaction {
 
     public Object attachPutOp(final String name, final Object key, final Object value,
                               final boolean newRecord) {
-        TxnRecord rec = findTxnRecord(name, key);
+        TransactionRecord rec = findTransactionRecord(name, key);
         if (rec == null) {
-            rec = new TxnRecord(name, key, value, newRecord);
-            lsTxnRecords.add(rec);
+            rec = new TransactionRecord(name, key, value, newRecord);
+            transactionRecords.add(rec);
             return null;
         } else {
             final Object old = rec.value;
@@ -145,12 +145,12 @@ class TransactionImpl implements Transaction {
 
     public Object attachRemoveOp(final String name, final Object key, final Object value,
                                  final boolean newRecord) {
-        TxnRecord rec = findTxnRecord(name, key);
+        TransactionRecord rec = findTransactionRecord(name, key);
         Object oldValue = null;
         if (rec == null) {
-            rec = new TxnRecord(name, key, value, newRecord);
+            rec = new TransactionRecord(name, key, value, newRecord);
             rec.removed = true;
-            lsTxnRecords.add(rec);
+            transactionRecords.add(rec);
         } else {
             oldValue = rec.value;
             rec.value = value;
@@ -170,8 +170,8 @@ class TransactionImpl implements Transaction {
             throw new IllegalStateException("Transaction is not active");
         status = TXN_STATUS_COMMITTING;
         try {
-            for (final TxnRecord txnRecord : lsTxnRecords) {
-                txnRecord.commit();
+            for (final TransactionRecord transactionRecord : transactionRecords) {
+                transactionRecord.commit();
             }
         } catch (final Exception e) {
             e.printStackTrace();
@@ -182,10 +182,10 @@ class TransactionImpl implements Transaction {
     }
 
     public boolean containsValue(final String name, final Object value) {
-        for (final TxnRecord txnRecord : lsTxnRecords) {
-            if (txnRecord.name.equals(name)) {
-                if (!txnRecord.removed) {
-                    if (value.equals(txnRecord.value))
+        for (final TransactionRecord transactionRecord : transactionRecords) {
+            if (transactionRecord.name.equals(name)) {
+                if (!transactionRecord.removed) {
+                    if (value.equals(transactionRecord.value))
                         return true;
                 }
             }
@@ -193,12 +193,12 @@ class TransactionImpl implements Transaction {
         return false;
     }
 
-    public TxnRecord findTxnRecord(final String name, final Object key) {
-        for (final TxnRecord txnRecord : lsTxnRecords) {
-            if (txnRecord.name.equals(name)) {
-                if (txnRecord.key != null) {
-                    if (txnRecord.key.equals(key))
-                        return txnRecord;
+    public TransactionRecord findTransactionRecord(final String name, final Object key) {
+        for (final TransactionRecord transactionRecord : transactionRecords) {
+            if (transactionRecord.name.equals(name)) {
+                if (transactionRecord.key != null) {
+                    if (transactionRecord.key.equals(key))
+                        return transactionRecord;
                 }
             }
         }
@@ -206,7 +206,7 @@ class TransactionImpl implements Transaction {
     }
 
     public Object get(final String name, final Object key) {
-        final TxnRecord rec = findTxnRecord(name, key);
+        final TransactionRecord rec = findTransactionRecord(name, key);
         if (rec == null)
             return null;
         if (rec.removed)
@@ -223,17 +223,17 @@ class TransactionImpl implements Transaction {
     }
 
     public boolean has(final String name, final Object key) {
-        final TxnRecord rec = findTxnRecord(name, key);
+        final TransactionRecord rec = findTransactionRecord(name, key);
         return rec != null;
     }
 
     public boolean isNew(final String name, final Object key) {
-        final TxnRecord rec = findTxnRecord(name, key);
+        final TransactionRecord rec = findTransactionRecord(name, key);
         return (rec != null && !rec.removed && rec.newRecord);
     }
 
     public boolean isRemoved(final String name, final Object key) {
-        final TxnRecord rec = findTxnRecord(name, key);
+        final TransactionRecord rec = findTransactionRecord(name, key);
         return (rec != null && rec.removed);
     }
 
@@ -245,8 +245,8 @@ class TransactionImpl implements Transaction {
                     + status);
         status = TXN_STATUS_ROLLING_BACK;
         try {
-            for (final TxnRecord txnRecord : lsTxnRecords) {
-                txnRecord.rollback();
+            for (final TransactionRecord transactionRecord : transactionRecords) {
+                transactionRecord.rollback();
             }
         } catch (final Exception e) {
             e.printStackTrace();
@@ -258,11 +258,11 @@ class TransactionImpl implements Transaction {
 
     public int size(final String name) {
         int size = 0;
-        for (final TxnRecord txnRecord : lsTxnRecords) {
-            if (txnRecord.name.equals(name)) {
-                if (txnRecord.removed) {
-                    if (!txnRecord.newRecord) {
-                        if (txnRecord.map) {
+        for (final TransactionRecord transactionRecord : transactionRecords) {
+            if (transactionRecord.name.equals(name)) {
+                if (transactionRecord.removed) {
+                    if (!transactionRecord.newRecord) {
+                        if (transactionRecord.map) {
                             size--;
                         }
                     }
@@ -276,15 +276,15 @@ class TransactionImpl implements Transaction {
 
     public List<Map.Entry> newEntries(final String name) {
         List<Map.Entry> lsEntries = null;
-        for (final TxnRecord txnRecord : lsTxnRecords) {
-            if (txnRecord.name.equals(name)) {
-                if (!txnRecord.removed) {
-                    if (txnRecord.value != null) {
-                        if (txnRecord.newRecord) {
+        for (final TransactionRecord transactionRecord : transactionRecords) {
+            if (transactionRecord.name.equals(name)) {
+                if (!transactionRecord.removed) {
+                    if (transactionRecord.value != null) {
+                        if (transactionRecord.newRecord) {
                             if (lsEntries == null) {
                                 lsEntries = new ArrayList<Map.Entry>(2);
                             }
-                            lsEntries.add(BaseManager.createSimpleEntry(name, txnRecord.key, txnRecord.value));
+                            lsEntries.add(BaseManager.createSimpleEntry(name, transactionRecord.key, transactionRecord.value));
                         }
                     }
                 }
@@ -299,7 +299,7 @@ class TransactionImpl implements Transaction {
     }
 
     private void finalizeTxn() {
-        lsTxnRecords.clear();
+        transactionRecords.clear();
         status = TXN_STATUS_NO_TXN;
         ThreadContext.get().finalizeTxn();
     }
