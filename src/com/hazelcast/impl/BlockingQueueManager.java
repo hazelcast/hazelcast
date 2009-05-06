@@ -18,6 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
@@ -317,9 +318,6 @@ class BlockingQueueManager extends BaseManager {
 
     final void handleSize(PacketQueue.Packet packet) {
         Q q = getQ(packet.name);
-        if (DEBUG) {
-            q.printStack();
-        }
         packet.longValue = q.size;
         sendResponse(packet);
     }
@@ -340,7 +338,7 @@ class BlockingQueueManager extends BaseManager {
     }
 
     final void handleTxnCommit(PacketQueue.Packet packet) {
-        List<Data> lsTxnPolledElements = mapTxnPolledElements.remove(packet.txnId);
+        mapTxnPolledElements.remove(packet.txnId);
     }
 
     final void doTxnBackupPoll(long txnId, Data value) {
@@ -970,6 +968,8 @@ class BlockingQueueManager extends BaseManager {
 
     class Offer extends BooleanOp {
 
+        int doCount = 1;
+
         public boolean publish(String name, Object value, long timeout, long txnId) {
             return booleanCall(OP_B_PUBLISH, name, null, value, timeout, txnId, -1);
         }
@@ -997,6 +997,23 @@ class BlockingQueueManager extends BaseManager {
                 }
             }
             super.handleNoneRedoResponse(packet);
+        }
+
+        @Override
+        public void process() {
+            if (doCount++ % 4 == 0) {
+                Q q = getQ(request.name);
+                q.printStack();
+                System.out.println("===== CurrentRequest === " + doCount);
+                System.out.println("blockId: " + request.blockId);
+                System.out.println("operation: " + request.operation);
+                System.out.println("version: " + request.version);
+                System.out.println("timeout: " + request.timeout);
+                System.out.println("target: " + target);
+                System.out.println("=========== DONE =======");
+
+            }
+            super.process();
         }
 
         @Override
@@ -1258,6 +1275,8 @@ class BlockingQueueManager extends BaseManager {
         Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
         boolean keepValues = true;
 
+        long maxAge = Long.MAX_VALUE;
+
         public Q(String name) {
             if (name.startsWith("q:t:")) {
                 keepValues = false;
@@ -1285,7 +1304,7 @@ class BlockingQueueManager extends BaseManager {
         }
 
         public Block createBlock(Address address, int blockId) {
-            return new Block(address, blockId, name, keepValues);
+            return new Block(address, blockId, maxAge, name, keepValues);
         }
 
         public Address getBlockOwner(int blockId) {
@@ -1713,17 +1732,17 @@ class BlockingQueueManager extends BaseManager {
         }
 
         void printStack() {
-            if (DEBUG) {
-                log("====================");
-                for (Block block : lsBlocks) {
-                    log(block);
-                }
-                log("=====================");
-                log("CurrenTake " + blCurrentTake);
-                log("CurrentPut " + blCurrentPut);
-                log("---------------------");
+            System.out.println("=========================");
+            System.out.println(Hazelcast.getCluster());
+            System.out.println("== " + thisAddress + " ==");
+            for (Block block : lsBlocks) {
+                System.out.println(block);
             }
-        }
+            System.out.println("--------------------");
+            System.out.println("CurrenTake " + blCurrentTake);
+            System.out.println("CurrentPut " + blCurrentPut);
+            System.out.println("== " + new Date () + " ==");
+                    }
     }
 
     class Block {
@@ -1735,11 +1754,13 @@ class BlockingQueueManager extends BaseManager {
         Data[] values = null;
         int size = 0;
         boolean full = false;
+        final long maxAge;
 
-        public Block(Address address, int blockId, String name, boolean keepValues) {
+        public Block(Address address, int blockId, long maxAge, String name, boolean keepValues) {
             super();
             this.address = address;
             this.blockId = blockId;
+            this.maxAge = maxAge;
             this.name = name;
             if (keepValues)
                 values = new Data[BLOCK_SIZE];
@@ -1812,6 +1833,22 @@ class BlockingQueueManager extends BaseManager {
             if (value != null)
                 size--;
             return value;
+        }
+
+        public boolean readyToPoll() {
+            for (int i = removeIndex; i < BLOCK_SIZE; i++) {
+                if (values[i] != null) {
+                    Data value = values[i];
+                    long age = System.currentTimeMillis() - value.createDate;
+                    if (age > maxAge) {
+                        values[i] = null;
+                        size--;
+                    } else {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         public Data remove() {

@@ -38,6 +38,8 @@ public final class Data implements DataSerializable {
 
     int hash = Integer.MIN_VALUE;
 
+    public long createDate = -1;
+
     public Data() {
     }
 
