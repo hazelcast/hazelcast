@@ -91,9 +91,7 @@ class TransactionImpl implements Transaction {
             final Object proxy = FactoryImpl.getProxy(name);
             if (proxy instanceof MProxy) {
                 mapProxy = (MProxy) proxy;
-            } else if (proxy instanceof CollectionProxy) {
-                mapProxy = ((CollectionProxy) proxy).getCProxy();
-            }
+            } 
             if(mapProxy!=null) mapProxy.unlock(key);
         }
 

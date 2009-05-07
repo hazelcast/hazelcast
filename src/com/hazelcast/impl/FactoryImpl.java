@@ -23,7 +23,12 @@ import com.hazelcast.impl.BlockingQueueManager.*;
 import com.hazelcast.impl.ClusterManager.CreateProxy;
 import com.hazelcast.impl.ConcurrentMapManager.*;
 import static com.hazelcast.impl.Constants.MapTypes.*;
+import com.hazelcast.nio.Data;
+import com.hazelcast.nio.DataSerializable;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
@@ -35,9 +40,9 @@ public class FactoryImpl implements Constants {
 
     private static ConcurrentMap<String, ICommon> proxies = new ConcurrentHashMap<String, ICommon>(1000);
 
-    private static MProxy locksMapProxy = new MProxy("m:__hz_Locks");
+    private static MProxy locksMapProxy = new MProxyImpl("m:__hz_Locks");
 
-    private static MProxy idGeneratorMapProxy = new MProxy("m:__hz_IdGenerator");
+    private static MProxy idGeneratorMapProxy = new MProxyImpl("m:__hz_IdGenerator");
 
     private static ConcurrentMap<Object, LockProxy> mapLockProxies = new ConcurrentHashMap<Object, LockProxy>(100);
 
@@ -151,9 +156,10 @@ public class FactoryImpl implements Constants {
     public static ILock getLock(Object key) {
         if (!inited.get())
             init();
+        check(key);
         LockProxy lockProxy = mapLockProxies.get(key);
         if (lockProxy == null) {
-            lockProxy = new LockProxy(locksMapProxy, key);
+            lockProxy = new LockProxy(key);
             mapLockProxies.put(key, lockProxy);
         }
         return lockProxy;
@@ -185,34 +191,28 @@ public class FactoryImpl implements Constants {
             if (name.startsWith("q:")) {
                 proxy = proxies.get(name);
                 if (proxy == null) {
-                    proxy = new QProxy(name);
+                    proxy = new QProxyImpl(name);
                     proxies.put(name, proxy);
                 }
             } else if (name.startsWith("t:")) {
                 proxy = proxies.get(name);
                 if (proxy == null) {
-                    proxy = new TopicProxy(name);
+                    proxy = new TopicProxyImpl(name);
                     proxies.put(name, proxy);
                 }
             } else if (name.startsWith("c:")) {
                 proxy = proxies.get(name);
                 if (proxy == null) {
-                    proxy = new MProxy(name);
+                    proxy = new MProxyImpl(name);
                     proxies.put(name, proxy);
                 }
             } else if (name.startsWith("m:")) {
                 proxy = proxies.get(name);
                 if (proxy == null) {
-                    byte mapType = BaseManager.getMapType(name);
-                    MProxy mapProxy = new MProxy(name);
-                    if (mapType == MAP_TYPE_SET) {
-                        proxy = new SetProxy(mapProxy);
-                    } else if (mapType == MAP_TYPE_LIST) {
-                        proxy = new ListProxy(mapProxy);
-                    } else if (mapType == MAP_TYPE_MULTI_MAP) {
-                        proxy = new MultiMapProxy(mapProxy);
+                    if (BaseManager.getMapType(name) == MAP_TYPE_MULTI_MAP) {
+                        proxy = new MultiMapProxy(name);
                     } else {
-                        proxy = mapProxy;
+                        proxy = new CollectionProxyImpl(name);
                     }
                     proxies.put(name, proxy);
                 }
@@ -221,48 +221,131 @@ public class FactoryImpl implements Constants {
         return proxy;
     }
 
-    static class LockProxy implements ILock, ICommon {
+    public static class LockProxy implements ILock, DataSerializable {
 
-        MProxy mapProxy = null;
+        private Object key = null;
+        private transient ILock base = null;
 
-        Object key = null;
+        public LockProxy() {
+        }
 
-        public LockProxy(MProxy mapProxy, Object key) {
+        public LockProxy(Object key) {
             super();
-            this.mapProxy = mapProxy;
             this.key = key;
+            base = new LockProxyBase();
+        }
+
+        private void ensure() {
+            if (base == null) {
+                base = getLock(key);
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "ILock [" + key + "]";
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            LockProxy lockProxy = (LockProxy) o;
+
+            if (key != null ? !key.equals(lockProxy.key) : lockProxy.key != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return key != null ? key.hashCode() : 0;
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            Data data = ThreadContext.get().toData(key);
+            data.writeData(out);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            Data data = new Data();
+            data.readData(in);
+            key = ThreadContext.get().toObject(data);
         }
 
         public void lock() {
-            mapProxy.lock(key);
+            ensure();
+            base.lock();
         }
 
         public void lockInterruptibly() throws InterruptedException {
-        }
-
-        public Condition newCondition() {
-            return null;
+            ensure();
+            base.lockInterruptibly();
         }
 
         public boolean tryLock() {
-            return mapProxy.tryLock(key);
+            ensure();
+            return base.tryLock();
         }
 
         public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-            return mapProxy.tryLock(key, time, unit);
+            ensure();
+            return base.tryLock(time, unit);
         }
 
         public void unlock() {
-            mapProxy.unlock(key);
+            ensure();
+            base.unlock();
+        }
+
+        public Condition newCondition() {
+            ensure();
+            return base.newCondition();
+        }
+
+        public InstanceType getInstanceType() {
+            ensure();
+            return InstanceType.LOCK;
         }
 
         public void destroy() {
-            mapProxy.remove(key);
-            mapLockProxies.remove(key);
+            ensure();
+            base.destroy();
         }
 
-        public ICommon.InstanceType getInstanceType() {
-            return ICommon.InstanceType.LOCK;
+        private class LockProxyBase implements ILock {
+            public void lock() {
+                locksMapProxy.lock(key);
+            }
+
+            public void lockInterruptibly() throws InterruptedException {
+            }
+
+            public Condition newCondition() {
+                return null;
+            }
+
+            public boolean tryLock() {
+                return locksMapProxy.tryLock(key);
+            }
+
+            public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+                return locksMapProxy.tryLock(key, time, unit);
+            }
+
+            public void unlock() {
+                locksMapProxy.unlock(key);
+            }
+
+            public void destroy() {
+                locksMapProxy.remove(key);
+                mapLockProxies.remove(key);
+            }
+
+            public InstanceType getInstanceType() {
+                return InstanceType.LOCK;
+            }
         }
     }
 
@@ -289,55 +372,26 @@ public class FactoryImpl implements Constants {
         }
     }
 
-    static class TopicProxy implements ITopic, ICommon {
-        String name;
-        QProxy qProxy = null; // for global ordering support
+    interface TopicProxy extends ITopic, ICommon {
 
-        public TopicProxy(String name) {
-            super();
+    }
+
+    public static class TopicProxyImpl implements TopicProxy, DataSerializable {
+        private transient TopicProxy base = null;
+        private String name = null;
+
+        public TopicProxyImpl() {
+        }
+
+        public TopicProxyImpl(String name) {
             this.name = name;
-            // if (Config.get().getTopicConfig(getName()).globalOrderingEnabled)
-            // {
-            // qProxy = new QProxy("q:" + name);
-            // }
+            base = new TopicProxyReal();
         }
 
-        public void publish(Object msg) {
-            if (qProxy == null) {
-                TopicManager.get().doPublish(name, msg);
-            } else {
-                qProxy.publish(msg);
+        private void ensure() {
+            if (base == null) {
+                base = (TopicProxy) getProxy(name);
             }
-        }
-
-        public void addMessageListener(MessageListener listener) {
-            if (qProxy == null) {
-                ListenerManager.get().addListener(name, listener, null, true,
-                        ListenerManager.LISTENER_TYPE_MESSAGE);
-            } else {
-                AddTopicListener atl = BlockingQueueManager.get().new AddTopicListener();
-                atl.add(qProxy.name, null, 0, -1);
-                ListenerManager.get().addListener(qProxy.name, listener, null, true,
-                        ListenerManager.LISTENER_TYPE_MESSAGE, false);
-            }
-        }
-
-        public void removeMessageListener(MessageListener listener) {
-            if (qProxy == null) {
-                ListenerManager.get().removeListener(name, listener, null);
-            } else {
-                ListenerManager.get().removeListener(qProxy.name, listener, null);
-            }
-        }
-
-        public void destroy() {
-            TopicManager.TopicDestroy topicDestroy = TopicManager.get().new TopicDestroy();
-            topicDestroy.destroy(name);
-            proxies.remove(name);
-        }
-
-        public ICommon.InstanceType getInstanceType() {
-            return ICommon.InstanceType.TOPIC;
         }
 
         @Override
@@ -345,16 +399,295 @@ public class FactoryImpl implements Constants {
             return "Topic [" + getName() + "]";
         }
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            TopicProxyImpl that = (TopicProxyImpl) o;
+
+            if (name != null ? !name.equals(that.name) : that.name != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return name != null ? name.hashCode() : 0;
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(name);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            name = in.readUTF();
+        }
+
+        public void publish(Object msg) {
+            ensure();
+            base.publish(msg);
+        }
+
+        public void addMessageListener(MessageListener listener) {
+            ensure();
+            base.addMessageListener(listener);
+        }
+
+        public void removeMessageListener(MessageListener listener) {
+            ensure();
+            base.removeMessageListener(listener);
+        }
+
+        public void destroy() {
+            ensure();
+            base.destroy();
+        }
+
+        public InstanceType getInstanceType() {
+            ensure();
+            return base.getInstanceType();
+        }
+
         public String getName() {
-            return name.substring(2);
+            ensure();
+            return base.getName();
+        }
+
+        class TopicProxyReal implements TopicProxy {
+
+            public void publish(Object msg) {
+                TopicManager.get().doPublish(name, msg);
+            }
+
+            public void addMessageListener(MessageListener listener) {
+                ListenerManager.get().addListener(name, listener, null, true,
+                        ListenerManager.LISTENER_TYPE_MESSAGE);
+            }
+
+            public void removeMessageListener(MessageListener listener) {
+                ListenerManager.get().removeListener(name, listener, null);
+            }
+
+            public void destroy() {
+                TopicManager.TopicDestroy topicDestroy = TopicManager.get().new TopicDestroy();
+                topicDestroy.destroy(name);
+                proxies.remove(name);
+            }
+
+            public ICommon.InstanceType getInstanceType() {
+                return ICommon.InstanceType.TOPIC;
+            }
+
+            public String getName() {
+                return name.substring(2);
+            }
+        }
+    }
+
+    interface CollectionProxy extends IRemoveAwareProxy, ISet, IList {
+
+    }
+
+    public static class CollectionProxyImpl extends BaseCollection implements CollectionProxy, DataSerializable {
+        String name = null;
+        private transient CollectionProxy base = null;
+
+        public CollectionProxyImpl() {
+        }
+
+        public CollectionProxyImpl(String name) {
+            this.name = name;
+            this.base = new CollectionProxyReal();
+        }
+
+        private void ensure() {
+            if (base == null) {
+                base = (CollectionProxy) getProxy(name);
+            }
+        }
+
+        @Override
+        public String toString() {
+            ensure();
+            if (getInstanceType() == InstanceType.SET) {
+                return "Set [+ " + getName() + "]";
+            } else {
+                return "List [+ " + getName() + "]";
+            }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            CollectionProxyImpl that = (CollectionProxyImpl) o;
+
+            if (name != null ? !name.equals(that.name) : that.name != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return name != null ? name.hashCode() : 0;
+        }
+
+        public int size() {
+            ensure();
+            return base.size();
+        }
+
+        public boolean contains(Object o) {
+            ensure();
+            return base.contains(o);
+        }
+
+        public Iterator iterator() {
+            ensure();
+            return base.iterator();
+        }
+
+        public boolean add(Object o) {
+            ensure();
+            return base.add(o);
+        }
+
+        public boolean remove(Object o) {
+            ensure();
+            return base.remove(o);
+        }
+
+        public void clear() {
+            ensure();
+            base.clear();
+        }
+
+        public InstanceType getInstanceType() {
+            ensure();
+            return base.getInstanceType();
+        }
+
+        public void destroy() {
+            ensure();
+            base.destroy();
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(name);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            name = in.readUTF();
+        }
+
+        public String getName() {
+            ensure();
+            return base.getName();
+        }
+
+        public void addItemListener(ItemListener itemListener, boolean includeValue) {
+            ensure();
+            base.addItemListener(itemListener, includeValue);
+        }
+
+        public void removeItemListener(ItemListener itemListener) {
+            ensure();
+            base.removeItemListener(itemListener);
+        }
+
+        public boolean removeKey(Object key) {
+            ensure();
+            return base.removeKey(key);
+        }
+
+        class CollectionProxyReal extends BaseCollection implements CollectionProxy {
+
+            final MProxy mapProxy;
+
+            public CollectionProxyReal() {
+                mapProxy = new MProxyImpl(name);
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                return CollectionProxyImpl.this.equals(o);
+            }
+
+            @Override
+            public int hashCode() {
+                return CollectionProxyImpl.this.hashCode();
+            }
+
+            public InstanceType getInstanceType() {
+                byte mapType = BaseManager.getMapType(name);
+                if (mapType == MAP_TYPE_SET) {
+                    return InstanceType.SET;
+                } else if (mapType == MAP_TYPE_LIST) {
+                    return InstanceType.SET;
+                } else {
+                    throw new RuntimeException("Unknown collection type " + name);
+                }
+
+            }
+
+            public void addItemListener(ItemListener listener, boolean includeValue) {
+                mapProxy.addGenericListener(listener, null, includeValue,
+                        ListenerManager.LISTENER_TYPE_ITEM);
+            }
+
+            public void removeItemListener(ItemListener listener) {
+                mapProxy.removeGenericListener(listener, null);
+            }
+
+            public String getName() {
+                return name.substring(4);
+            }
+
+            @Override
+            public boolean add(Object obj) {
+                return mapProxy.add(obj);
+            }
+
+            @Override
+            public boolean remove(Object obj) {
+                return mapProxy.removeKey(obj);
+            }
+
+            public boolean removeKey(Object obj) {
+                return mapProxy.removeKey(obj);
+            }
+
+            @Override
+            public boolean contains(Object obj) {
+                return mapProxy.containsKey(obj);
+            }
+
+            @Override
+            public Iterator iterator() {
+                return mapProxy.keySet().iterator();
+            }
+
+            @Override
+            public int size() {
+                return mapProxy.size();
+            }
+
+            public MProxy getCProxy() {
+                return mapProxy;
+            }
+
+            public void destroy() {
+                mapProxy.destroy();
+                proxies.remove(name);
+            }
+
         }
 
     }
 
-    static class ListProxy extends CollectionProxy implements IList {
-        public ListProxy(MProxy mapProxy) {
-            super(mapProxy);
-        }
+    public static abstract class BaseCollection extends AbstractCollection implements List {
 
         public void add(int index, Object element) {
             throw new UnsupportedOperationException();
@@ -395,285 +728,487 @@ public class FactoryImpl implements Constants {
         public List subList(int fromIndex, int toIndex) {
             throw new UnsupportedOperationException();
         }
+    }
 
-        public ICommon.InstanceType getInstanceType() {
-            return ICommon.InstanceType.LIST;
+    interface QProxy extends IQueue {
+
+        boolean publish(Object obj);
+
+        boolean offer(Object obj);
+
+        boolean offer(Object obj, long timeout, TimeUnit unit) throws InterruptedException;
+
+        void put(Object obj) throws InterruptedException;
+
+        Object peek();
+
+        Object poll();
+
+        Object poll(long timeout, TimeUnit unit) throws InterruptedException;
+
+        Object take() throws InterruptedException;
+
+        int remainingCapacity();
+
+        Iterator iterator();
+
+        int size();
+
+        void addItemListener(ItemListener listener, boolean includeValue);
+
+        void removeItemListener(ItemListener listener);
+
+        String getName();
+
+        boolean remove(Object obj);
+
+        int drainTo(Collection c);
+
+        int drainTo(Collection c, int maxElements);
+
+        void destroy();
+
+        InstanceType getInstanceType();
+    }
+
+    public static class QProxyImpl extends AbstractQueue implements QProxy, DataSerializable {
+        private transient QProxy qproxyReal = null;
+        private String name = null;
+
+        public QProxyImpl() {
+        }
+
+        private QProxyImpl(String name) {
+            this.name = name;
+            qproxyReal = new QProxyReal();
+        }
+
+        private void ensure() {
+            if (qproxyReal == null) {
+                qproxyReal = (QProxy) getProxy(name);
+            }
         }
 
         @Override
         public String toString() {
-            return "List [" + getName() + "]";
-        }
-    }
-
-    static class SetProxy extends CollectionProxy implements ISet {
-        public SetProxy(MProxy mapProxy) {
-            super(mapProxy);
-        }
-
-        @Override
-        public String toString() {
-            return "Set [" + getName() + "]";
-        }
-
-        public ICommon.InstanceType getInstanceType() {
-            return ICommon.InstanceType.SET;
-        }
-    }
-
-    static abstract class CollectionProxy extends AbstractCollection implements ICollection, IRemoveAwareProxy, ICommon {
-        String name = null;
-
-        MProxy mapProxy;
-
-        public CollectionProxy(MProxy mapProxy) {
-            super();
-            this.mapProxy = mapProxy;
-            this.name = mapProxy.name;
-        }
-
-        public void addItemListener(ItemListener listener, boolean includeValue) {
-            mapProxy.addGenericListener(listener, null, includeValue,
-                    ListenerManager.LISTENER_TYPE_ITEM);
-        }
-
-        public void removeItemListener(ItemListener listener) {
-            mapProxy.removeGenericListener(listener, null);
-        }
-
-        @Override
-        public boolean add(Object obj) {
-            return mapProxy.add(obj);
-        }
-
-        @Override
-        public boolean remove(Object obj) {
-            return mapProxy.removeKey(obj);
-        }
-
-        public boolean removeKey(Object obj) {
-            return mapProxy.removeKey(obj);
-        }
-
-        @Override
-        public boolean contains(Object obj) {
-            return mapProxy.containsKey(obj);
-        }
-
-        @Override
-        public Iterator iterator() {
-            return mapProxy.keySet().iterator();
-        }
-
-        @Override
-        public int size() {
-            return mapProxy.size();
-        }
-
-        public String getName() {
-            return name.substring(4);
-        }
-
-        public MProxy getCProxy() {
-            return mapProxy;
-        }
-
-        @Override
-        public int hashCode() {
-            return super.hashCode();
+            return "Queue [" + getName() + "]";
         }
 
         @Override
         public boolean equals(Object o) {
-            return super.equals(o);
-        }
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
 
-        public void destroy() {
-            mapProxy.destroy();
-            proxies.remove(name);
-        }
-    }
+            QProxyImpl qProxy = (QProxyImpl) o;
 
-    public static class QProxy extends AbstractQueue implements Constants, IQueue, BlockingQueue, ICommon {
+            if (name != null ? !name.equals(qProxy.name) : qProxy.name != null) return false;
 
-        String name = null;
-
-        public QProxy(String qname) {
-            this.name = qname;
-        }
-
-        public boolean publish(Object obj) {
-            Offer offer = ThreadContext.get().getOffer();
-            return offer.publish(name, obj, 0, ThreadContext.get().getTxnId());
-        }
-
-        public boolean offer(Object obj) {
-            Offer offer = ThreadContext.get().getOffer();
-            return offer.offer(name, obj, 0, ThreadContext.get().getTxnId());
-        }
-
-        public boolean offer(Object obj, long timeout, TimeUnit unit) throws InterruptedException {
-            if (timeout < 0) {
-                timeout = 0;
-            }
-            Offer offer = ThreadContext.get().getOffer();
-            return offer.offer(name, obj, unit.toMillis(timeout), ThreadContext.get().getTxnId());
-        }
-
-        public void put(Object obj) throws InterruptedException {
-            Offer offer = ThreadContext.get().getOffer();
-            offer.offer(name, obj, -1, ThreadContext.get().getTxnId());
-        }
-
-        public Object peek() {
-            Poll poll = BlockingQueueManager.get().new Poll();
-            return poll.peek(name);
-        }
-
-        public Object poll() {
-            Poll poll = BlockingQueueManager.get().new Poll();
-            return poll.poll(name, 0);
-        }
-
-        public Object poll(long timeout, TimeUnit unit) throws InterruptedException {
-            if (timeout < 0) {
-                timeout = 0;
-            }
-            Poll poll = BlockingQueueManager.get().new Poll();
-            return poll.poll(name, unit.toMillis(timeout));
-        }
-
-        public Object take() throws InterruptedException {
-            Poll poll = BlockingQueueManager.get().new Poll();
-            return poll.poll(name, -1);
-        }
-
-        public int remainingCapacity() {
-            throw new UnsupportedOperationException();
+            return true;
         }
 
         @Override
+        public int hashCode() {
+            return name != null ? name.hashCode() : 0;
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(name);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            name = in.readUTF();
+        }
+
         public Iterator iterator() {
-            QIterator iterator = BlockingQueueManager.get().new QIterator();
-            iterator.set(name);
-            return iterator;
+            ensure();
+            return qproxyReal.iterator();
         }
 
-        @Override
         public int size() {
-            Size size = BlockingQueueManager.get().new Size();
-            return size.getSize(name);
+            ensure();
+            return qproxyReal.size();
         }
 
         public void addItemListener(ItemListener listener, boolean includeValue) {
-            ListenerManager.get().addListener(name, listener, null, includeValue,
-                    ListenerManager.LISTENER_TYPE_ITEM);
+            ensure();
+            qproxyReal.addItemListener(listener, includeValue);
         }
 
         public void removeItemListener(ItemListener listener) {
-            ListenerManager.get().removeListener(name, listener, null);
+            ensure();
+            qproxyReal.removeItemListener(listener);
         }
 
         public String getName() {
-            return name;
-        }
-
-        @Override
-        public boolean remove(Object obj) {
-            throw new UnsupportedOperationException();
+            ensure();
+            return qproxyReal.getName();
         }
 
         public int drainTo(Collection c) {
-            throw new UnsupportedOperationException();
+            ensure();
+            return qproxyReal.drainTo(c);
         }
 
         public int drainTo(Collection c, int maxElements) {
-            throw new UnsupportedOperationException();
+            ensure();
+            return qproxyReal.drainTo(c, maxElements);
         }
 
         public void destroy() {
-            clear();
-            QDestroy qDestroy = BlockingQueueManager.get().new QDestroy();
-            qDestroy.destroy(name);
-            proxies.remove(name);
+            ensure();
+            qproxyReal.destroy();
         }
 
-        public ICommon.InstanceType getInstanceType() {
-            return ICommon.InstanceType.QUEUE;
+        public InstanceType getInstanceType() {
+            ensure();
+            return qproxyReal.getInstanceType();
+        }
+
+        public boolean publish(Object obj) {
+            ensure();
+            return qproxyReal.publish(obj);
+        }
+
+        public boolean offer(Object o) {
+            ensure();
+            return qproxyReal.offer(o);
+        }
+
+        public boolean offer(Object obj, long timeout, TimeUnit unit) throws InterruptedException {
+            ensure();
+            return qproxyReal.offer(obj, timeout, unit);
+        }
+
+        public void put(Object obj) throws InterruptedException {
+            ensure();
+            qproxyReal.put(obj);
+        }
+
+        public Object poll() {
+            ensure();
+            return qproxyReal.poll();
+        }
+
+        public Object poll(long timeout, TimeUnit unit) throws InterruptedException {
+            ensure();
+            return qproxyReal.poll(timeout, unit);
+        }
+
+        public Object take() throws InterruptedException {
+            ensure();
+            return qproxyReal.take();
+        }
+
+        public int remainingCapacity() {
+            ensure();
+            return qproxyReal.remainingCapacity();
+        }
+
+        public Object peek() {
+            ensure();
+            return qproxyReal.peek();
+        }
+
+        private class QProxyReal extends AbstractQueue implements QProxy {
+
+
+            public QProxyReal() {
+            }
+
+            public boolean publish(Object obj) {
+                Offer offer = ThreadContext.get().getOffer();
+                return offer.publish(name, obj, 0, ThreadContext.get().getTxnId());
+            }
+
+            public boolean offer(Object obj) {
+                Offer offer = ThreadContext.get().getOffer();
+                return offer.offer(name, obj, 0, ThreadContext.get().getTxnId());
+            }
+
+            public boolean offer(Object obj, long timeout, TimeUnit unit) throws InterruptedException {
+                if (timeout < 0) {
+                    timeout = 0;
+                }
+                Offer offer = ThreadContext.get().getOffer();
+                return offer.offer(name, obj, unit.toMillis(timeout), ThreadContext.get().getTxnId());
+            }
+
+            public void put(Object obj) throws InterruptedException {
+                Offer offer = ThreadContext.get().getOffer();
+                offer.offer(name, obj, -1, ThreadContext.get().getTxnId());
+            }
+
+            public Object peek() {
+                Poll poll = BlockingQueueManager.get().new Poll();
+                return poll.peek(name);
+            }
+
+            public Object poll() {
+                Poll poll = BlockingQueueManager.get().new Poll();
+                return poll.poll(name, 0);
+            }
+
+            public Object poll(long timeout, TimeUnit unit) throws InterruptedException {
+                if (timeout < 0) {
+                    timeout = 0;
+                }
+                Poll poll = BlockingQueueManager.get().new Poll();
+                return poll.poll(name, unit.toMillis(timeout));
+            }
+
+            public Object take() throws InterruptedException {
+                Poll poll = BlockingQueueManager.get().new Poll();
+                return poll.poll(name, -1);
+            }
+
+            public int remainingCapacity() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Iterator iterator() {
+                QIterator iterator = BlockingQueueManager.get().new QIterator();
+                iterator.set(name);
+                return iterator;
+            }
+
+            @Override
+            public int size() {
+                Size size = BlockingQueueManager.get().new Size();
+                return size.getSize(name);
+            }
+
+            public void addItemListener(ItemListener listener, boolean includeValue) {
+                ListenerManager.get().addListener(name, listener, null, includeValue,
+                        ListenerManager.LISTENER_TYPE_ITEM);
+            }
+
+            public void removeItemListener(ItemListener listener) {
+                ListenerManager.get().removeListener(name, listener, null);
+            }
+
+            public String getName() {
+                return name;
+            }
+
+            @Override
+            public boolean remove(Object obj) {
+                throw new UnsupportedOperationException();
+            }
+
+            public int drainTo(Collection c) {
+                throw new UnsupportedOperationException();
+            }
+
+            public int drainTo(Collection c, int maxElements) {
+                throw new UnsupportedOperationException();
+            }
+
+            public void destroy() {
+                clear();
+                QDestroy qDestroy = BlockingQueueManager.get().new QDestroy();
+                qDestroy.destroy(name);
+                proxies.remove(name);
+            }
+
+            public ICommon.InstanceType getInstanceType() {
+                return ICommon.InstanceType.QUEUE;
+            }
         }
     }
 
-    static class MultiMapProxy implements MultiMap, Constants, ICommon {
-        String name = null;
+    public static class MultiMapProxy implements MultiMap, DataSerializable {
 
-        MProxy mapProxy;
+        private String name = null;
 
-        public MultiMapProxy(MProxy mapProxy) {
-            super();
-            this.mapProxy = mapProxy;
-            this.name = mapProxy.name;
+        private transient MultiMap base = null;
+
+        public MultiMapProxy() {
         }
 
-        public String getName() {
-            return name.substring(4);
+        public MultiMapProxy(String name) {
+            this.name = name;
+            this.base = new MultiMapBase();
         }
 
-        public void clear() {
-            mapProxy.clear();
+        private void ensure() {
+            if (base == null) {
+                base = (MultiMap) getProxy(name);
+            }
         }
 
-        public boolean containsEntry(Object key, Object value) {
-            return mapProxy.containsEntry(key, value);
+        @Override
+        public String toString() {
+            return "MultiMap [" + getName() + "]";
         }
 
-        public boolean containsKey(Object key) {
-            return mapProxy.containsKey(key);
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            MultiMapProxy that = (MultiMapProxy) o;
+
+            if (name != null ? !name.equals(that.name) : that.name != null) return false;
+
+            return true;
         }
 
-        public boolean containsValue(Object value) {
-            return mapProxy.containsValue(value);
+        @Override
+        public int hashCode() {
+            return name != null ? name.hashCode() : 0;
         }
 
-        public Collection get(Object key) {
-            return (Collection) mapProxy.get(key);
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(name);
         }
 
-
-        public boolean put(Object key, Object value) {
-            return mapProxy.putMulti(key, value);
+        public void readData(DataInput in) throws IOException {
+            name = in.readUTF();
         }
 
-        public boolean remove(Object key, Object value) {
-            return mapProxy.removeMulti(key, value);
-        }
-
-        public Collection remove(Object key) {
-            return (Collection) mapProxy.remove(key);
-        }
-
-        public int size() {
-            return mapProxy.size();
-        }
-
-        public Set keySet() {
-            return mapProxy.keySet();
-        }
-
-        public Collection values() {
-            return mapProxy.values();
-        }
-
-        public Set entrySet() {
-            return mapProxy.entrySet();
-        }
-
-        public ICommon.InstanceType getInstanceType() {
-            return ICommon.InstanceType.MULTIMAP;
+        public InstanceType getInstanceType() {
+            ensure();
+            return base.getInstanceType();
         }
 
         public void destroy() {
-            mapProxy.destroy();
-            proxies.remove(name);
+            ensure();
+            base.destroy();
+        }
+
+        public String getName() {
+            ensure();
+            return base.getName();
+        }
+
+        public boolean put(Object key, Object value) {
+            ensure();
+            return base.put(key, value);
+        }
+
+        public Collection get(Object key) {
+            ensure();
+            return base.get(key);
+        }
+
+        public boolean remove(Object key, Object value) {
+            ensure();
+            return base.remove(key, value);
+        }
+
+        public Collection remove(Object key) {
+            ensure();
+            return base.remove(key);
+        }
+
+        public Set keySet() {
+            ensure();
+            return base.keySet();
+        }
+
+        public Collection values() {
+            ensure();
+            return base.values();
+        }
+
+        public Set entrySet() {
+            ensure();
+            return base.entrySet();
+        }
+
+        public boolean containsKey(Object key) {
+            ensure();
+            return base.containsKey(key);
+        }
+
+        public boolean containsValue(Object value) {
+            ensure();
+            return base.containsValue(value);
+        }
+
+        public boolean containsEntry(Object key, Object value) {
+            ensure();
+            return base.containsEntry(key, value);
+        }
+
+        public int size() {
+            ensure();
+            return base.size();
+        }
+
+        public void clear() {
+            ensure();
+            base.clear();
+        }
+
+        private class MultiMapBase implements MultiMap {
+            final MProxy mapProxy;
+
+            private MultiMapBase() {
+                mapProxy = new MProxyImpl(name);
+            }
+
+            public String getName() {
+                return name.substring(4);
+            }
+
+            public void clear() {
+                mapProxy.clear();
+            }
+
+            public boolean containsEntry(Object key, Object value) {
+                return mapProxy.containsEntry(key, value);
+            }
+
+            public boolean containsKey(Object key) {
+                return mapProxy.containsKey(key);
+            }
+
+            public boolean containsValue(Object value) {
+                return mapProxy.containsValue(value);
+            }
+
+            public Collection get(Object key) {
+                return (Collection) mapProxy.get(key);
+            }
+
+            public boolean put(Object key, Object value) {
+                return mapProxy.putMulti(key, value);
+            }
+
+            public boolean remove(Object key, Object value) {
+                return mapProxy.removeMulti(key, value);
+            }
+
+            public Collection remove(Object key) {
+                return (Collection) mapProxy.remove(key);
+            }
+
+            public int size() {
+                return mapProxy.size();
+            }
+
+            public Set keySet() {
+                return mapProxy.keySet();
+            }
+
+            public Collection values() {
+                return mapProxy.values();
+            }
+
+            public Set entrySet() {
+                return mapProxy.entrySet();
+            }
+
+            public InstanceType getInstanceType() {
+                return InstanceType.MULTIMAP;
+            }
+
+            public void destroy() {
+                mapProxy.destroy();
+                proxies.remove(name);
+            }
         }
     }
 
@@ -691,26 +1226,49 @@ public class FactoryImpl implements Constants {
         }
     }
 
-    static class MProxy implements IMap, IRemoveAwareProxy, ICommon, Constants {
+    interface MProxy extends IMap, IRemoveAwareProxy {
+        String getLongName();
 
-        String name = null;
+        void addGenericListener(Object listener, Object key, boolean includeValue, int listenerType);
 
-        byte mapType = MAP_TYPE_MAP;
+        void removeGenericListener(Object listener, Object key);
 
-        public MProxy(String name) {
-            super();
-            this.name = name;
-            this.mapType = BaseManager.getMapType(name);
+        boolean containsEntry(Object key, Object value);
+
+        boolean putMulti(Object key, Object value);
+
+        boolean removeMulti(Object key, Object value);
+
+        boolean add(Object value);
+    }
+
+
+    public static class MProxyImpl implements MProxy, DataSerializable {
+
+        private String name = null;
+
+        private transient MProxy mproxyReal = null;
+
+        public MProxyImpl() {
         }
 
-        public ICommon.InstanceType getInstanceType() {
-            if (mapType == MAP_TYPE_MAP)
-                return ICommon.InstanceType.MAP;
-            else if (mapType == MAP_TYPE_SET)
-                return ICommon.InstanceType.SET;
-            else if (mapType == MAP_TYPE_LIST)
-                return ICommon.InstanceType.LIST;
-            else throw new RuntimeException("Unknown MProxy type " + mapType);
+        private MProxyImpl(String name) {
+            this.name = name;
+            mproxyReal = new MProxyReal();
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(name);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            name = in.readUTF();
+        }
+
+        private void ensure() {
+            if (mproxyReal == null) {
+                mproxyReal = (MProxy) getProxy(name);
+            }
         }
 
         @Override
@@ -718,318 +1276,615 @@ public class FactoryImpl implements Constants {
             return "Map [" + getName() + "]";
         }
 
-        public String getName() {
-            return name.substring(2);
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            MProxyImpl mProxy = (MProxyImpl) o;
+
+            if (name != null ? !name.equals(mProxy.name) : mProxy.name != null) return false;
+
+            return true;
         }
 
-        public boolean putMulti(Object key, Object value) {
-            check(key);
-            check(value);
-            MPutMulti mput = ThreadContext.get().getMPutMulti();
-            return mput.put(name, key, value);
+        @Override
+        public int hashCode() {
+            return name != null ? name.hashCode() : 0;
         }
 
-        public Object put(Object key, Object value) {
-            check(key);
-            check(value);
-            MPut mput = ThreadContext.get().getMPut();
-            return mput.put(name, key, value, -1, -1);
+        public void destroy() {
+            ensure();
+            mproxyReal.destroy();
         }
 
-        public Object get(Object key) {
-            check(key);
-            MGet mget = ThreadContext.get().getMGet();
-            return mget.get(name, key, -1, -1);
-        }
-
-        public Object remove(Object key) {
-            check(key);
-            MRemove mremove = ThreadContext.get().getMRemove();
-            return mremove.remove(name, key, -1, -1);
-        }
-
-        public int size() {
-//            MSize msize = ConcurrentMapManager.get().new MSize();
-//            int size = msize.getSize(name);
-            MSize msize = ConcurrentMapManager.get().new MSize(name);
-            int size = (Integer) msize.call();
-            TransactionImpl txn = ThreadContext.get().txn;
-            if (txn != null) {
-                size += txn.size(name);
-            }
-            return (size < 0) ? 0 : size;
-        }
-
-        public Object putIfAbsent(Object key, Object value) {
-            check(key);
-            check(value);
-            MPut mput = ThreadContext.get().getMPut();
-            return mput.putIfAbsent(name, key, value, -1, -1);
-        }
-
-        public boolean removeMulti(Object key, Object value) {
-            check(key);
-            check(value);
-            MRemoveMulti mremove = ThreadContext.get().getMRemoveMulti();
-            return mremove.remove(name, key, value);
-        }
-
-        public boolean remove(Object key, Object value) {
-            check(key);
-            check(value);
-            MRemove mremove = ThreadContext.get().getMRemove();
-            return (mremove.removeIfSame(name, key, value, -1, -1) != null);
-        }
-
-        public Object replace(Object key, Object value) {
-            check(key);
-            check(value);
-            MPut mput = ThreadContext.get().getMPut();
-            return mput.replace(name, key, value, -1, -1);
-        }
-
-        public boolean replace(Object key, Object oldValue, Object newValue) {
-            check(key);
-            check(newValue);
-            throw new UnsupportedOperationException();
-        }
-
-        public void lock(Object key) {
-            check(key);
-            MLock mlock = ThreadContext.get().getMLock();
-            mlock.lock(name, key, -1, -1);
-        }
-
-        public boolean tryLock(Object key) {
-            check(key);
-            MLock mlock = ThreadContext.get().getMLock();
-            return mlock.lock(name, key, 0, -1);
-        }
-
-        public boolean tryLock(Object key, long time, TimeUnit timeunit) {
-            check(key);
-            if (time < 0)
-                throw new IllegalArgumentException("Time cannot be negative. time = " + time);
-            MLock mlock = ThreadContext.get().getMLock();
-            return mlock.lock(name, key, timeunit.toMillis(time), -1);
-        }
-
-        public void unlock(Object key) {
-            check(key);
-            MLock mlock = ThreadContext.get().getMLock();
-            mlock.unlock(name, key, 0, -1);
-        }
-
-        void addGenericListener(Object listener, Object key, boolean includeValue, int listenerType) {
-            if (listener == null)
-                throw new IllegalArgumentException("Listener cannot be null");
-            ListenerManager.get().addListener(name, listener, key, includeValue, listenerType);
-        }
-
-        public void removeGenericListener(Object listener, Object key) {
-            if (listener == null)
-                throw new IllegalArgumentException("Listener cannot be null");
-            ListenerManager.get().removeListener(name, listener, key);
-        }
-
-        public void addEntryListener(EntryListener listener, boolean includeValue) {
-            if (listener == null)
-                throw new IllegalArgumentException("Listener cannot be null");
-            addGenericListener(listener, null, includeValue, ListenerManager.LISTENER_TYPE_MAP);
-        }
-
-        public void addEntryListener(EntryListener listener, Object key, boolean includeValue) {
-            if (listener == null)
-                throw new IllegalArgumentException("Listener cannot be null");
-            check(key);
-            addGenericListener(listener, key, includeValue, ListenerManager.LISTENER_TYPE_MAP);
-        }
-
-        public void removeEntryListener(EntryListener listener) {
-            if (listener == null)
-                throw new IllegalArgumentException("Listener cannot be null");
-            removeGenericListener(listener, null);
-        }
-
-        public void removeEntryListener(EntryListener listener, Object key) {
-            if (listener == null)
-                throw new IllegalArgumentException("Listener cannot be null");
-            check(key);
-            removeGenericListener(listener, key);
-        }
-
-        public boolean containsEntry(Object key, Object value) {
-            check(key);
-            check(value);
-            TransactionImpl txn = ThreadContext.get().txn;
-            if (txn != null) {
-                if (txn.has(name, key)) {
-                    Object v = txn.get(name, key);
-                    if (v == null)
-                        return false; // removed inside the txn
-                    else
-                        return true;
-                }
-            }
-            MContainsKey mContainsKey = ConcurrentMapManager.get().new MContainsKey();
-            return mContainsKey.containsEntry(name, key, value, -1);
-        }
-
-        public boolean containsKey(Object key) {
-            check(key);
-            TransactionImpl txn = ThreadContext.get().txn;
-            if (txn != null) {
-                if (txn.has(name, key)) {
-                    Object value = txn.get(name, key);
-                    if (value == null)
-                        return false; // removed inside the txn
-                    else
-                        return true;
-                }
-            }
-            MContainsKey mContainsKey = ConcurrentMapManager.get().new MContainsKey();
-            return mContainsKey.containsKey(name, key, -1);
-        }
-
-        public boolean containsValue(Object value) {
-            check(value);
-            TransactionImpl txn = ThreadContext.get().txn;
-            if (txn != null) {
-                if (txn.containsValue(name, value))
-                    return true;
-            }
-            MContainsValue mContainsValue = ConcurrentMapManager.get().new MContainsValue(name, value);
-            return (Boolean) mContainsValue.call();
-        }
-
-        public boolean isEmpty() {
-            return (size() == 0);
-        }
-
-        public void putAll(Map map) {
-            Set<Map.Entry> entries = map.entrySet();
-            for (Entry entry : entries) {
-                put(entry.getKey(), entry.getValue());
-            }
-        }
-
-        public boolean add(Object value) {
-            if (value == null)
-                throw new NullPointerException();
-            MAdd madd = ThreadContext.get().getMAdd();
-            if (mapType == MAP_TYPE_LIST) {
-                return madd.addToList(name, value);
-            } else {
-                return madd.addToSet(name, value);
-            }
+        public ICommon.InstanceType getInstanceType() {
+            ensure();
+            return mproxyReal.getInstanceType();
         }
 
         public boolean removeKey(Object key) {
-            if (key == null)
-                throw new NullPointerException();
-            MRemoveItem mRemoveItem = ConcurrentMapManager.get().new MRemoveItem();
-            return mRemoveItem.removeItem(name, key);
+            ensure();
+            return mproxyReal.removeKey(key);
+        }
+
+        public int size() {
+            ensure();
+            return mproxyReal.size();
+        }
+
+        public boolean isEmpty() {
+            ensure();
+            return mproxyReal.isEmpty();
+        }
+
+        public boolean containsKey(Object key) {
+            ensure();
+            return mproxyReal.containsKey(key);
+        }
+
+        public boolean containsValue(Object value) {
+            ensure();
+            return mproxyReal.containsValue(value);
+        }
+
+        public Object get(Object key) {
+            ensure();
+            return mproxyReal.get(key);
+        }
+
+        public Object put(Object key, Object value) {
+            ensure();
+            return mproxyReal.put(key, value);
+        }
+
+        public Object remove(Object key) {
+            ensure();
+            return mproxyReal.remove(key);
+        }
+
+        public void putAll(Map t) {
+            ensure();
+            mproxyReal.putAll(t);
         }
 
         public void clear() {
-            Set keys = keySet();
-            for (Object key : keys) {
-                removeKey(key);
-            }
-        }
-
-        public Set entrySet() {
-            return (Set) iterate(MIterate.TYPE_ENTRIES);
+            ensure();
+            mproxyReal.clear();
         }
 
         public Set keySet() {
-            return (Set) iterate(MIterate.TYPE_KEYS);
+            ensure();
+            return mproxyReal.keySet();
         }
 
         public Collection values() {
-            return iterate(MIterate.TYPE_VALUES);
-
+            ensure();
+            return mproxyReal.values();
         }
 
-        private Collection iterate(int iteratorType) {
-            MIterate miterate = ConcurrentMapManager.get().new MIterate(name, iteratorType);
-            return (Collection) miterate.call();
+        public Set entrySet() {
+            ensure();
+            return mproxyReal.entrySet();
         }
 
-        public void destroy() {
-            clear();
-            MDestroy mDestroy = ConcurrentMapManager.get().new MDestroy();
-            mDestroy.destroy(name);
-            proxies.remove(name);
+        public Object putIfAbsent(Object key, Object value) {
+            ensure();
+            return mproxyReal.putIfAbsent(key, value);
         }
 
+        public boolean remove(Object key, Object value) {
+            ensure();
+            return mproxyReal.remove(key, value);
+        }
+
+        public boolean replace(Object key, Object oldValue, Object newValue) {
+            ensure();
+            return mproxyReal.replace(key, oldValue, newValue);
+        }
+
+        public Object replace(Object key, Object value) {
+            ensure();
+            return mproxyReal.replace(key, value);
+        }
+
+        public String getName() {
+            ensure();
+            return mproxyReal.getName();
+        }
+
+        public void lock(Object key) {
+            ensure();
+            mproxyReal.lock(key);
+        }
+
+        public boolean tryLock(Object key) {
+            ensure();
+            return mproxyReal.tryLock(key);
+        }
+
+        public boolean tryLock(Object key, long time, TimeUnit timeunit) {
+            ensure();
+            return mproxyReal.tryLock(key, time, timeunit);
+        }
+
+        public void unlock(Object key) {
+            ensure();
+            mproxyReal.unlock(key);
+        }
+
+        public String getLongName() {
+            ensure();
+            return mproxyReal.getLongName();
+        }
+
+        public void addGenericListener(Object listener, Object key, boolean includeValue, int listenerType) {
+            ensure();
+            mproxyReal.addGenericListener(listener, key, includeValue, listenerType);
+        }
+
+        public void removeGenericListener(Object listener, Object key) {
+            ensure();
+            mproxyReal.removeGenericListener(listener, key);
+        }
+
+        public void addEntryListener(EntryListener listener, boolean includeValue) {
+            ensure();
+            mproxyReal.addEntryListener(listener, includeValue);
+        }
+
+        public void addEntryListener(EntryListener listener, Object key, boolean includeValue) {
+            ensure();
+            mproxyReal.addEntryListener(listener, key, includeValue);
+        }
+
+        public void removeEntryListener(EntryListener listener) {
+            ensure();
+            mproxyReal.removeEntryListener(listener);
+        }
+
+        public void removeEntryListener(EntryListener listener, Object key) {
+            ensure();
+            mproxyReal.removeEntryListener(listener, key);
+        }
+
+        public boolean containsEntry(Object key, Object value) {
+            ensure();
+            return mproxyReal.containsEntry(key, value);
+        }
+
+        public boolean putMulti(Object key, Object value) {
+            ensure();
+            return mproxyReal.putMulti(key, value);
+        }
+
+        public boolean removeMulti(Object key, Object value) {
+            ensure();
+            return mproxyReal.removeMulti(key, value);
+        }
+
+        public boolean add(Object value) {
+            ensure();
+            return mproxyReal.add(value);
+        }
+
+        private class MProxyReal implements MProxy {
+
+            final byte mapType;
+
+            public MProxyReal() {
+                super();
+                this.mapType = BaseManager.getMapType(name);
+            }
+
+            @Override
+            public String toString() {
+                return "Map [" + getName() + "]";
+            }
+
+            public InstanceType getInstanceType() {
+                if (mapType == MAP_TYPE_MAP)
+                    return InstanceType.MAP;
+                else if (mapType == MAP_TYPE_SET)
+                    return InstanceType.SET;
+                else if (mapType == MAP_TYPE_LIST)
+                    return InstanceType.LIST;
+                else throw new RuntimeException("Unknown MProxy type " + mapType);
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                return MProxyImpl.this.equals(o);
+            }
+
+            @Override
+            public int hashCode() {
+                return MProxyImpl.this.hashCode();
+            }
+
+            public String getLongName() {
+                return name;
+            }
+
+            public String getName() {
+                return name.substring(2);
+            }
+
+            public boolean putMulti(Object key, Object value) {
+                check(key);
+                check(value);
+                MPutMulti mput = ThreadContext.get().getMPutMulti();
+                return mput.put(name, key, value);
+            }
+
+            public Object put(Object key, Object value) {
+                check(key);
+                check(value);
+                MPut mput = ThreadContext.get().getMPut();
+                return mput.put(name, key, value, -1, -1);
+            }
+
+            public Object get(Object key) {
+                check(key);
+                MGet mget = ThreadContext.get().getMGet();
+                return mget.get(name, key, -1, -1);
+            }
+
+            public Object remove(Object key) {
+                check(key);
+                MRemove mremove = ThreadContext.get().getMRemove();
+                return mremove.remove(name, key, -1, -1);
+            }
+
+            public int size() {
+                //            MSize msize = ConcurrentMapManager.get().new MSize();
+                //            int size = msize.getSize(name);
+                MSize msize = ConcurrentMapManager.get().new MSize(name);
+                int size = (Integer) msize.call();
+                TransactionImpl txn = ThreadContext.get().txn;
+                if (txn != null) {
+                    size += txn.size(name);
+                }
+                return (size < 0) ? 0 : size;
+            }
+
+            public Object putIfAbsent(Object key, Object value) {
+                check(key);
+                check(value);
+                MPut mput = ThreadContext.get().getMPut();
+                return mput.putIfAbsent(name, key, value, -1, -1);
+            }
+
+            public boolean removeMulti(Object key, Object value) {
+                check(key);
+                check(value);
+                MRemoveMulti mremove = ThreadContext.get().getMRemoveMulti();
+                return mremove.remove(name, key, value);
+            }
+
+            public boolean remove(Object key, Object value) {
+                check(key);
+                check(value);
+                MRemove mremove = ThreadContext.get().getMRemove();
+                return (mremove.removeIfSame(name, key, value, -1, -1) != null);
+            }
+
+            public Object replace(Object key, Object value) {
+                check(key);
+                check(value);
+                MPut mput = ThreadContext.get().getMPut();
+                return mput.replace(name, key, value, -1, -1);
+            }
+
+            public boolean replace(Object key, Object oldValue, Object newValue) {
+                check(key);
+                check(newValue);
+                throw new UnsupportedOperationException();
+            }
+
+            public void lock(Object key) {
+                check(key);
+                MLock mlock = ThreadContext.get().getMLock();
+                mlock.lock(name, key, -1, -1);
+            }
+
+            public boolean tryLock(Object key) {
+                check(key);
+                MLock mlock = ThreadContext.get().getMLock();
+                return mlock.lock(name, key, 0, -1);
+            }
+
+            public boolean tryLock(Object key, long time, TimeUnit timeunit) {
+                check(key);
+                if (time < 0)
+                    throw new IllegalArgumentException("Time cannot be negative. time = " + time);
+                MLock mlock = ThreadContext.get().getMLock();
+                return mlock.lock(name, key, timeunit.toMillis(time), -1);
+            }
+
+            public void unlock(Object key) {
+                check(key);
+                MLock mlock = ThreadContext.get().getMLock();
+                mlock.unlock(name, key, 0, -1);
+            }
+
+            public void addGenericListener(Object listener, Object key, boolean includeValue, int listenerType) {
+                if (listener == null)
+                    throw new IllegalArgumentException("Listener cannot be null");
+                ListenerManager.get().addListener(name, listener, key, includeValue, listenerType);
+            }
+
+            public void removeGenericListener(Object listener, Object key) {
+                if (listener == null)
+                    throw new IllegalArgumentException("Listener cannot be null");
+                ListenerManager.get().removeListener(name, listener, key);
+            }
+
+            public void addEntryListener(EntryListener listener, boolean includeValue) {
+                if (listener == null)
+                    throw new IllegalArgumentException("Listener cannot be null");
+                addGenericListener(listener, null, includeValue, ListenerManager.LISTENER_TYPE_MAP);
+            }
+
+            public void addEntryListener(EntryListener listener, Object key, boolean includeValue) {
+                if (listener == null)
+                    throw new IllegalArgumentException("Listener cannot be null");
+                check(key);
+                addGenericListener(listener, key, includeValue, ListenerManager.LISTENER_TYPE_MAP);
+            }
+
+            public void removeEntryListener(EntryListener listener) {
+                if (listener == null)
+                    throw new IllegalArgumentException("Listener cannot be null");
+                removeGenericListener(listener, null);
+            }
+
+            public void removeEntryListener(EntryListener listener, Object key) {
+                if (listener == null)
+                    throw new IllegalArgumentException("Listener cannot be null");
+                check(key);
+                removeGenericListener(listener, key);
+            }
+
+            public boolean containsEntry(Object key, Object value) {
+                check(key);
+                check(value);
+                TransactionImpl txn = ThreadContext.get().txn;
+                if (txn != null) {
+                    if (txn.has(name, key)) {
+                        Object v = txn.get(name, key);
+                        if (v == null)
+                            return false; // removed inside the txn
+                        else
+                            return true;
+                    }
+                }
+                MContainsKey mContainsKey = ConcurrentMapManager.get().new MContainsKey();
+                return mContainsKey.containsEntry(name, key, value, -1);
+            }
+
+            public boolean containsKey(Object key) {
+                check(key);
+                TransactionImpl txn = ThreadContext.get().txn;
+                if (txn != null) {
+                    if (txn.has(name, key)) {
+                        Object value = txn.get(name, key);
+                        if (value == null)
+                            return false; // removed inside the txn
+                        else
+                            return true;
+                    }
+                }
+                MContainsKey mContainsKey = ConcurrentMapManager.get().new MContainsKey();
+                return mContainsKey.containsKey(name, key, -1);
+            }
+
+            public boolean containsValue(Object value) {
+                check(value);
+                TransactionImpl txn = ThreadContext.get().txn;
+                if (txn != null) {
+                    if (txn.containsValue(name, value))
+                        return true;
+                }
+                MContainsValue mContainsValue = ConcurrentMapManager.get().new MContainsValue(name, value);
+                return (Boolean) mContainsValue.call();
+            }
+
+            public boolean isEmpty() {
+                return (size() == 0);
+            }
+
+            public void putAll(Map map) {
+                Set<Entry> entries = map.entrySet();
+                for (Entry entry : entries) {
+                    put(entry.getKey(), entry.getValue());
+                }
+            }
+
+            public boolean add(Object value) {
+                if (value == null)
+                    throw new NullPointerException();
+                MAdd madd = ThreadContext.get().getMAdd();
+                if (mapType == MAP_TYPE_LIST) {
+                    return madd.addToList(name, value);
+                } else {
+                    return madd.addToSet(name, value);
+                }
+            }
+
+            public boolean removeKey(Object key) {
+                if (key == null)
+                    throw new NullPointerException();
+                MRemoveItem mRemoveItem = ConcurrentMapManager.get().new MRemoveItem();
+                return mRemoveItem.removeItem(name, key);
+            }
+
+            public void clear() {
+                Set keys = keySet();
+                for (Object key : keys) {
+                    removeKey(key);
+                }
+            }
+
+            public Set entrySet() {
+                return (Set) iterate(MIterate.TYPE_ENTRIES);
+            }
+
+            public Set keySet() {
+                return (Set) iterate(MIterate.TYPE_KEYS);
+            }
+
+            public Collection values() {
+                return iterate(MIterate.TYPE_VALUES);
+
+            }
+
+            private Collection iterate(int iteratorType) {
+                MIterate miterate = ConcurrentMapManager.get().new MIterate(name, iteratorType);
+                return (Collection) miterate.call();
+            }
+
+            public void destroy() {
+                clear();
+                MDestroy mDestroy = ConcurrentMapManager.get().new MDestroy();
+                mDestroy.destroy(name);
+                proxies.remove(name);
+            }
+        }
     }
 
-    static class IdGeneratorProxy implements IdGenerator {
+    public static class IdGeneratorProxy implements IdGenerator, DataSerializable {
 
-        private static final long BILLION = 1 * 1000 * 1000;
+        private String name = null;
+        private transient IdGenerator base = null;
 
-        private final String name;
+        public IdGeneratorProxy() {
+        }
 
         public IdGeneratorProxy(String name) {
             this.name = name;
+            base = new IdGeneratorBase();
         }
 
-        AtomicLong billion = new AtomicLong(-1);
 
-        AtomicLong currentId = new AtomicLong(2 * BILLION);
-
-        AtomicBoolean fetching = new AtomicBoolean(false);
-
-        public String getName() {
-            return name;
-        }
-
-        public long newId() {
-            long billionNow = billion.get();
-            long idAddition = currentId.incrementAndGet();
-            if (idAddition >= BILLION) {
-                synchronized (this) {
-                    try {
-                        billionNow = billion.get();
-                        idAddition = currentId.incrementAndGet();
-                        if (idAddition >= BILLION) {
-                            Long idBillion = getNewBillion();
-                            long newBillion = idBillion.longValue() * BILLION;
-                            billion.set(newBillion);
-                            currentId.set(0);
-                        }
-                        billionNow = billion.get();
-                        idAddition = currentId.incrementAndGet();
-                    } catch (Throwable t) {
-                        t.printStackTrace();
-                    }
-                }
-
+        private void ensure() {
+            if (base == null) {
+                base = getIdGenerator(name);
             }
-            long result = billionNow + idAddition;
-            return result;
         }
 
-        private Long getNewBillion() {
-            try {
-                DistributedTask<Long> task = new DistributedTask<Long>(new IncrementTask(name));
-                FactoryImpl.executorServiceImpl.execute(task);
-                return task.get();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return null;
+        @Override
+        public String toString() {
+            return "IdGenerator [" + getName() + "]";
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            IdGeneratorProxy that = (IdGeneratorProxy) o;
+
+            if (name != null ? !name.equals(that.name) : that.name != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return name != null ? name.hashCode() : 0;
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(name);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            name = in.readUTF();
         }
 
 
-        public InstanceType getInstanceType() {
-            return ICommon.InstanceType.ID_GENERATOR;
+        public ICommon.InstanceType getInstanceType() {
+            ensure();
+            return base.getInstanceType();
         }
 
         public void destroy() {
-            mapIdGenerators.remove(name);
-            idGeneratorMapProxy.remove(name);
+            ensure();
+            base.destroy();
+        }
+
+        public String getName() {
+            ensure();
+            return base.getName();
+        }
+
+        public long newId() {
+            ensure();
+            return base.newId();
+        }
+
+
+        private class IdGeneratorBase implements IdGenerator {
+
+            private static final long BILLION = 1 * 1000 * 1000;
+
+            AtomicLong billion = new AtomicLong(-1);
+
+            AtomicLong currentId = new AtomicLong(2 * BILLION);
+
+            AtomicBoolean fetching = new AtomicBoolean(false);
+
+
+            public String getName() {
+                return name;
+            }
+
+            public long newId() {
+                long billionNow = billion.get();
+                long idAddition = currentId.incrementAndGet();
+                if (idAddition >= BILLION) {
+                    synchronized (this) {
+                        try {
+                            billionNow = billion.get();
+                            idAddition = currentId.incrementAndGet();
+                            if (idAddition >= BILLION) {
+                                Long idBillion = getNewBillion();
+                                long newBillion = idBillion.longValue() * BILLION;
+                                billion.set(newBillion);
+                                currentId.set(0);
+                            }
+                            billionNow = billion.get();
+                            idAddition = currentId.incrementAndGet();
+                        } catch (Throwable t) {
+                            t.printStackTrace();
+                        }
+                    }
+
+                }
+                long result = billionNow + idAddition;
+                return result;
+            }
+
+            private Long getNewBillion() {
+                try {
+                    DistributedTask<Long> task = new DistributedTask<Long>(new IncrementTask(name));
+                    FactoryImpl.executorServiceImpl.execute(task);
+                    return task.get();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+
+            public InstanceType getInstanceType() {
+                return InstanceType.ID_GENERATOR;
+            }
+
+            public void destroy() {
+                mapIdGenerators.remove(name);
+                idGeneratorMapProxy.remove(name);
+            }
         }
     }
 
