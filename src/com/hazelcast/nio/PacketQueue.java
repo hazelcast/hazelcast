@@ -77,7 +77,7 @@ public class PacketQueue {
         return new Packet();
     }
 
-    public final class Packet implements Constants, Constants.ResponseTypes {
+    private final class Packet {
 
         public String name;
 
@@ -107,7 +107,7 @@ public class PacketQueue {
 
         public int blockId = -1;
 
-        public byte responseType = RESPONSE_NONE;
+        public byte responseType = Constants.ResponseTypes.RESPONSE_NONE;
 
         public long longValue = Long.MIN_VALUE;
 
@@ -227,7 +227,7 @@ public class PacketQueue {
             lockAddress = null;
             timeout = -1;
             txnId = -1;
-            responseType = RESPONSE_NONE;
+            responseType = Constants.ResponseTypes.RESPONSE_NONE;
             local = true;
             currentCallCount = 0;
             blockId = -1;
