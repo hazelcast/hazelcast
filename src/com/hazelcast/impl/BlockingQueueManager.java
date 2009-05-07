@@ -725,7 +725,6 @@ class BlockingQueueManager extends BaseManager {
         volatile List<Integer> blocks = null;
         int currentBlockId = -1;
         int currentIndex = -1;
-        Read read = new Read();
         Object next = null;
         boolean hasNextCalled = false;
 
@@ -760,6 +759,7 @@ class BlockingQueueManager extends BaseManager {
                 // System.out.println(currentBlockId + " Can read " + canRead);
                 if (!canRead)
                     return false;
+                Read read = new Read();                
                 next = read.read(name, currentBlockId, currentIndex);
                 // System.out.println(currentIndex + " Next " + next);
                 if (next == null) {
@@ -902,6 +902,7 @@ class BlockingQueueManager extends BaseManager {
         }
 
         void setResponse(Data value, int index) {
+            responses.clear();
             readIndex = index;
             responses.add((value == null) ? OBJECT_NULL : value);
         }
@@ -910,24 +911,26 @@ class BlockingQueueManager extends BaseManager {
             Data value = doTake(packet.value);
             int indexRead = (int) packet.longValue;
             setResponse(value, indexRead);
+            removeCall(getId());
             packet.returnToContainer();
         }
 
         @Override
         public void onDisconnect(Address dead) {
+            removeCall(getId());
             enqueueAndReturn(Read.this);
         }
 
         public void process() {
-            addCall(this);
+            responses.clear();
             Q q = getQ(name);
-
             Address target = q.getBlockOwner(blockId);
             if (target == null) {
                 responses.add(OBJECT_NULL);
             } else if (target.equals(thisAddress)) {
                 q.read(this);
             } else {
+                addCall(this);
                 PacketQueue.Packet packet = obtainPacket();
                 packet.name = name;
                 packet.operation = getOperation();
