@@ -77,7 +77,7 @@ public class PacketQueue {
         return new Packet();
     }
 
-    private final class Packet {
+    public final class Packet {
 
         public String name;
 
