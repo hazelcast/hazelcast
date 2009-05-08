@@ -48,7 +48,14 @@ class BlockingQueueManager extends BaseManager {
     private BlockingQueueManager() {
         ClusterService.get().registerPacketProcessor(OP_B_POLL, new PacketProcessor() {
             public void process(PacketQueue.Packet packet) {
-                handlePoll(packet);
+                try {
+                    handlePoll(packet);
+                } catch (Throwable t) {
+                    Request req = new Request();
+                    req.setFromPacket(packet);
+                    printState(req, false, packet.conn.getEndPoint(), 1);
+                    t.printStackTrace();
+                }
             }
         });
         ClusterService.get().registerPacketProcessor(OP_B_OFFER, new PacketProcessor() {
@@ -383,11 +390,10 @@ class BlockingQueueManager extends BaseManager {
 
     public void doRemoveBlock(Q q, Address originalRemover, int blockId) {
         Block blockRemoved = q.removeBlock(blockId);
-        if (blockRemoved != null) {
-            if (isMaster()) {
-                sendAddBlockMessageToOthers(blockRemoved, -1, originalRemover, false);
-            }
+        if (isMaster()) {
+            sendAddBlockMessageToOthers(q.name, null, blockId, -1, originalRemover, false);
         }
+
     }
 
     final void handleFullBlock(PacketQueue.Packet packet) {
@@ -759,7 +765,7 @@ class BlockingQueueManager extends BaseManager {
                 // System.out.println(currentBlockId + " Can read " + canRead);
                 if (!canRead)
                     return false;
-                Read read = new Read();                
+                Read read = new Read();
                 next = read.read(name, currentBlockId, currentIndex);
                 // System.out.println(currentIndex + " Next " + next);
                 if (next == null) {
@@ -1005,15 +1011,7 @@ class BlockingQueueManager extends BaseManager {
         @Override
         public void process() {
             if (doCount++ % 4 == 0) {
-                Q q = getQ(request.name);
-                q.printStack();
-                System.out.println("===== CurrentRequest === " + doCount);
-                System.out.println("blockId: " + request.blockId);
-                System.out.println("operation: " + request.operation);
-                System.out.println("version: " + request.version);
-                System.out.println("timeout: " + request.timeout);
-                System.out.println("target: " + target);
-                System.out.println("=========== DONE =======");
+                printState(request, true, target, doCount);
 
             }
             super.process();
@@ -1154,6 +1152,18 @@ class BlockingQueueManager extends BaseManager {
 
     }
 
+    void printState(Request request, boolean local, Address address, int doCount) {
+        Q q = getQ(request.name);
+        q.printStack();
+        System.out.println(local + " ===== CurrentRequest === " + doCount);
+        System.out.println("blockId: " + request.blockId);
+        System.out.println("operation: " + request.operation);
+        System.out.println("version: " + request.version);
+        System.out.println("timeout: " + request.timeout);
+        System.out.println("target: " + address);
+        System.out.println("=========== DONE =======");
+    }
+
     void doPublish(Request req) {
         Q q = getQ(req.name);
         if (q.blCurrentPut == null) {
@@ -1220,6 +1230,11 @@ class BlockingQueueManager extends BaseManager {
 
     public void sendAddBlockMessageToOthers(Block block, int fullBlockId, Address except,
                                             boolean add) {
+        sendAddBlockMessageToOthers(block.name, block.address, block.blockId, fullBlockId, except, add);
+    }
+
+    public void sendAddBlockMessageToOthers(String name, Address addAddress, int blockId, int fullBlockId, Address except,
+                                            boolean add) {
         int operation = OP_B_ADD_BLOCK;
         if (!add) {
             operation = OP_B_REMOVE_BLOCK;
@@ -1227,13 +1242,11 @@ class BlockingQueueManager extends BaseManager {
         if (lsMembers.size() > 1) {
             int addBlockId = -1;
             int removeBlockId = -1;
-            Address addAddress = null;
             if (add) {
-                addBlockId = block.blockId;
-                addAddress = block.address;
+                addBlockId = blockId;
                 except = null;
             } else {
-                removeBlockId = block.blockId;
+                removeBlockId = blockId;
             }
             BlockUpdate addRemove = new BlockUpdate(addAddress, addBlockId, fullBlockId,
                     removeBlockId);
@@ -1241,7 +1254,7 @@ class BlockingQueueManager extends BaseManager {
                 if (!member.localMember()) {
                     Address dest = member.getAddress();
                     if (!dest.equals(except)) {
-                        send(block.name, operation, addRemove, dest);
+                        send(name, operation, addRemove, dest);
                     }
                 }
             }
@@ -1421,6 +1434,13 @@ class BlockingQueueManager extends BaseManager {
 
         public void setBlockFull(int fullBlockId) {
             // System.out.println("FULL block " + fullBlockId);
+            if (blCurrentPut != null && blCurrentPut.blockId == fullBlockId) {
+                blCurrentPut.setFull(true);
+                blCurrentPut = null;
+            }
+            if (blCurrentTake != null && blCurrentTake.blockId == fullBlockId) {
+                blCurrentTake.setFull(true);
+            }
             int size = lsBlocks.size();
             for (int i = 0; i < size; i++) {
                 Block block = lsBlocks.get(i);
@@ -1433,15 +1453,28 @@ class BlockingQueueManager extends BaseManager {
         }
 
         public Block removeBlock(int blockId) {
-            int size = lsBlocks.size();
-            for (int i = 0; i < size; i++) {
-                Block b = lsBlocks.get(i);
-                if (b.blockId == blockId) {
+            try {
+                if (blCurrentPut != null && blCurrentPut.blockId == blockId) {
+                    blCurrentPut = null;
+                }
+
+                if (blCurrentTake != null && blCurrentTake.blockId == blockId) {
                     blCurrentTake = null;
-                    return lsBlocks.remove(i);
+                }
+                int size = lsBlocks.size();
+                for (int i = 0; i < size; i++) {
+                    Block b = lsBlocks.get(i);
+                    if (b.blockId == blockId) {
+                        blCurrentTake = null;
+                        return lsBlocks.remove(i);
+                    }
+                }
+                return null;
+            } finally {
+                if (blCurrentPut == null) {
+                    setCurrentPut();
                 }
             }
-            return null;
         }
 
         public void addBlock(Block newBlock) {
@@ -1561,33 +1594,77 @@ class BlockingQueueManager extends BaseManager {
         }
 
         int offer(Request req) {
-            int addIndex = blCurrentPut.add(req.value);
             try {
+                int addIndex = blCurrentPut.add(req.value);
                 long recordId = getRecordId(blCurrentPut.blockId, addIndex);
                 req.recordId = recordId;
                 doFireEntryEvent(true, req.value, recordId);
                 size++;
-                while (lsScheduledPollActions.size() > 0) {
-                    ScheduledAction pollAction = lsScheduledPollActions.remove(0);
-                    ClusterManager.get().deregisterScheduledAction(pollAction);
-                    if (pollAction.expired()) {
-                        pollAction.onExpire();
-                    } else {
-                        boolean consumed = pollAction.consume();
-                        if (consumed)
-                            return -1;
-                    }
-                }
                 sendBackup(true, req.caller, req.value, blCurrentPut.blockId, addIndex);
-            } finally {
                 req.longValue = addIndex;
                 if (blCurrentPut.isFull()) {
                     fireBlockFullEvent(blCurrentPut);
                     blCurrentPut = null;
                     setCurrentPut();
                 }
+                return addIndex;
+            } finally {
+                boolean consumed = false;
+                while (!consumed && lsScheduledPollActions.size() > 0) {
+                    ScheduledAction pollAction = lsScheduledPollActions.remove(0);
+                    ClusterManager.get().deregisterScheduledAction(pollAction);
+                    if (pollAction.expired()) {
+                        pollAction.onExpire();
+                    } else {
+                        consumed = pollAction.consume();
+                    }
+                }
             }
-            return addIndex;
+        }
+
+        public Data poll(Request request) {
+            try {
+                setCurrentTake();
+                Data value = blCurrentTake.remove();
+                if (request.txnId != -1) {
+                    MemberImpl backup = null;
+                    if (request.caller.equals(thisAddress)) {
+                        backup = getNextMemberAfter(thisAddress, true, 1);
+                    } else {
+                        backup = getNextMemberAfter(request.caller, true, 1);
+                    }
+                    if (backup != null) {
+                        if (backup.getAddress().equals(thisAddress)) {
+                            doTxnBackupPoll(request.txnId, value);
+                        } else {
+                            sendTxnBackup(backup.getAddress(), value, request.txnId);
+                        }
+                    }
+                }
+                size--;
+                long recordId = getRecordId(blCurrentTake.blockId, blCurrentTake.removeIndex);
+                request.recordId = recordId;
+                doFireEntryEvent(false, value, recordId);
+
+                sendBackup(false, request.caller, null, blCurrentTake.blockId, 0);
+                if (blCurrentTake.size() == 0 && blCurrentTake.isFull()) {
+                    fireBlockRemoveEvent(blCurrentTake);
+                    blCurrentTake = null;
+                }
+                return value;
+            } finally {
+                boolean consumed = false;
+                while (!consumed && lsScheduledOfferActions.size() > 0) {
+                    ScheduledOfferAction offerAction = lsScheduledOfferActions.remove(0);
+                    ClusterManager.get().deregisterScheduledAction(offerAction);
+                    if (offerAction.expired()) {
+                        offerAction.onExpire();
+                    } else {
+                        consumed = offerAction.consume();
+                    }
+                }
+            }
+
         }
 
         public Data peek() {
@@ -1599,49 +1676,6 @@ class BlockingQueueManager extends BaseManager {
                 return null;
             }
             return ThreadContext.get().hardCopy(value);
-        }
-
-        public Data poll(Request request) {
-            setCurrentTake();
-            Data value = blCurrentTake.remove();
-            if (request.txnId != -1) {
-                MemberImpl backup = null;
-                if (request.caller.equals(thisAddress)) {
-                    backup = getNextMemberAfter(thisAddress, true, 1);
-                } else {
-                    backup = getNextMemberAfter(request.caller, true, 1);
-                }
-                if (backup != null) {
-                    if (backup.getAddress().equals(thisAddress)) {
-                        doTxnBackupPoll(request.txnId, value);
-                    } else {
-                        sendTxnBackup(backup.getAddress(), value, request.txnId);
-                    }
-                }
-            }
-            size--;
-            long recordId = getRecordId(blCurrentTake.blockId, blCurrentTake.removeIndex);
-            request.recordId = recordId;
-            doFireEntryEvent(false, value, recordId);
-            runScheduledOffer:
-            while (lsScheduledOfferActions.size() > 0) {
-                ScheduledOfferAction offerAction = lsScheduledOfferActions.remove(0);
-                ClusterManager.get().deregisterScheduledAction(offerAction);
-                if (offerAction.expired()) {
-                    offerAction.onExpire();
-                } else {
-                    boolean consumed = offerAction.consume();
-                    if (consumed) {
-                        break runScheduledOffer;
-                    }
-                }
-            }
-            sendBackup(false, request.caller, null, blCurrentTake.blockId, 0);
-            if (blCurrentTake.size() == 0 && blCurrentTake.isFull()) {
-                fireBlockRemoveEvent(blCurrentTake);
-                blCurrentTake = null;
-            }
-            return value;
         }
 
         boolean doBackup(boolean add, Data data, int blockId, int addIndex) {
@@ -1744,8 +1778,8 @@ class BlockingQueueManager extends BaseManager {
             System.out.println("--------------------");
             System.out.println("CurrenTake " + blCurrentTake);
             System.out.println("CurrentPut " + blCurrentPut);
-            System.out.println("== " + new Date () + " ==");
-                    }
+            System.out.println("== " + new Date() + " ==");
+        }
     }
 
     class Block {
