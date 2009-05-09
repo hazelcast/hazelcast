@@ -21,7 +21,6 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
-import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
 import com.hazelcast.impl.Config.QConfig;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
@@ -71,16 +70,6 @@ class BlockingQueueManager extends BaseManager {
         ClusterService.get().registerPacketProcessor(OP_B_BACKUP_REMOVE, new PacketProcessor() {
             public void process(Packet packet) {
                 handleBackup(packet);
-            }
-        });
-        ClusterService.get().registerPacketProcessor(OP_B_PUBLISH, new PacketProcessor() {
-            public void process(PacketQueue.Packet packet) {
-                handlePublish(packet);
-            }
-        });
-        ClusterService.get().registerPacketProcessor(OP_B_ADD_TOPIC_LISTENER, new PacketProcessor() {
-            public void process(PacketQueue.Packet packet) {
-                handleAddTopicListener(packet);
             }
         });
         ClusterService.get().registerPacketProcessor(OP_B_SIZE, new PacketProcessor() {
@@ -467,93 +456,22 @@ class BlockingQueueManager extends BaseManager {
         }
     }
 
-    final void handlePublish(Packet packet) {
-        if (rightRemoteOfferTarget(packet)) {
-            remoteReq.setFromPacket(packet);
-            doPublish(remoteReq);
-            packet.longValue = remoteReq.longValue;
-            if (!remoteReq.scheduled) {
-                if (remoteReq.response == Boolean.TRUE) {
-                    sendResponse(packet);
-                } else {
-                    sendResponseFailure(packet);
-                }
-            } else {
-                packet.returnToContainer();
-            }
-            remoteReq.reset();
-        }
-    }
-
-    final void handleAddTopicListener(PacketQueue.Packet packet) {
-        if (rightRemoteOfferTarget(packet)) {
-            remoteReq.setFromPacket(packet);
-            doAddTopicListener(remoteReq);
-            packet.longValue = remoteReq.longValue;
-            sendResponse(packet);
-            remoteReq.reset();
-        }
-    }
-
     final boolean rightRemoteOfferTarget(PacketQueue.Packet packet) {
         Q q = getQ(packet.name);
-        if (q.blCurrentPut == null) {
-            q.setCurrentPut();
-        }
-        boolean invalid = false;
-        if (packet.blockId != q.blCurrentPut.blockId) {
-            if (packet.blockId > q.blCurrentPut.blockId) {
-                int size = q.lsBlocks.size();
-                for (int i = 0; i < size; i++) {
-                    Block block = q.lsBlocks.get(i);
-                    if (block.blockId == packet.blockId) {
-                        if (thisAddress.equals(block.address)) {
-                            q.blCurrentPut = block;
-                        }
-                    }
-                }
-            } else {
-                invalid = true;
-            }
-        }
-        if (q.blCurrentPut.isFull() || !thisAddress.equals(q.blCurrentPut.address)) {
-            invalid = true;
-        }
-        if (invalid) {
+        boolean valid = q.rightPutTarget(packet.blockId);
+        if (!valid) {
             sendRedoResponse(packet);
         }
-        return (!invalid);
+        return valid;
     }
 
     boolean rightRemotePollTarget(Packet packet) {
         Q q = getQ(packet.name);
-        if (q.blCurrentTake == null) {
-            q.setCurrentTake();
-        }
-        boolean invalid = false;
-        if (packet.blockId != q.blCurrentTake.blockId) {
-            if (packet.blockId > q.blCurrentTake.blockId) {
-                int size = q.lsBlocks.size();
-                for (int i = 0; i < size; i++) {
-                    Block block = q.lsBlocks.get(i);
-                    if (block.blockId == packet.blockId) {
-                        if (thisAddress.equals(block.address)) {
-                            q.blCurrentTake = block;
-                        }
-                    }
-                }
-            } else {
-                invalid = true;
-            }
-        }
-        if ((q.blCurrentTake.size() == 0 && q.blCurrentTake.isFull())
-                || !thisAddress.equals(q.blCurrentTake.address)) {
-            invalid = true;
-        }
-        if (invalid) {
+        boolean valid = q.rightTakeTarget(packet.blockId);
+        if (!valid) {
             sendRedoResponse(packet);
         }
-        return (!invalid);
+        return (valid);
     }
 
     final void handlePoll(PacketQueue.Packet packet) {
@@ -958,30 +876,9 @@ class BlockingQueueManager extends BaseManager {
 
     }
 
-    class AddTopicListener extends LongOp {
-        public Long add(String name, Object value, long timeout, long txnId) {
-            return (Long) objectCall(OP_B_ADD_TOPIC_LISTENER, name, null, value, timeout, txnId, -1);
-        }
-
-        @Override
-        void setTarget() {
-            target = getTargetForOffer(request);
-        }
-
-        @Override
-        void doLocalOp() {
-            doAddTopicListener(request);
-            setResult(Long.valueOf(request.recordId));
-        }
-    }
-
     class Offer extends BooleanOp {
 
         int doCount = 1;
-
-        public boolean publish(String name, Object value, long timeout, long txnId) {
-            return booleanCall(OP_B_PUBLISH, name, null, value, timeout, txnId, -1);
-        }
 
         public boolean offer(String name, Object value, long timeout, long txnId) {
             return booleanCall(OP_B_OFFER, name, null, value, timeout, txnId, -1);
@@ -1012,7 +909,6 @@ class BlockingQueueManager extends BaseManager {
         public void process() {
             if (doCount++ % 4 == 0) {
                 printState(request, true, target, doCount);
-
             }
             super.process();
         }
@@ -1024,13 +920,8 @@ class BlockingQueueManager extends BaseManager {
 
         @Override
         void doLocalOp() {
-            if (request.operation == OP_B_OFFER) {
-                doOffer(request);
-                if (!request.scheduled) {
-                    setResult(request.response);
-                }
-            } else {
-                doPublish(request);
+            doOffer(request);
+            if (!request.scheduled) {
                 setResult(request.response);
             }
         }
@@ -1099,59 +990,6 @@ class BlockingQueueManager extends BaseManager {
         }
     }
 
-    void doAddTopicListener(Request req) {
-        for (MemberImpl member : lsMembers) {
-            if (member.localMember()) {
-                handleListenerRegisterations(true, req.name, req.key, req.caller, true);
-            } else if (!member.getAddress().equals(req.caller)) {
-                sendProcessableTo(new TopicListenerRegistration(req.name, true, req.caller), member
-                        .getAddress());
-            }
-        }
-        Q q = getQ(req.name);
-        if (q.blCurrentPut == null) {
-            q.setCurrentPut();
-        }
-        req.recordId = q.getRecordId(q.blCurrentPut.blockId, q.blCurrentPut.addIndex);
-    }
-
-    public static class TopicListenerRegistration extends AbstractRemotelyProcessable {
-        String name = null;
-        boolean add = true;
-        Address listenerAddress = null;
-
-        public TopicListenerRegistration() {
-        }
-
-        public TopicListenerRegistration(String name, boolean add, Address listenerAddress) {
-            super();
-            this.name = name;
-            this.add = add;
-            this.listenerAddress = listenerAddress;
-        }
-
-        @Override
-        public void readData(DataInput in) throws IOException {
-            add = in.readBoolean();
-            listenerAddress = new Address();
-            listenerAddress.readData(in);
-            name = in.readUTF();
-        }
-
-        @Override
-        public void writeData(DataOutput out) throws IOException {
-            out.writeBoolean(add);
-            listenerAddress.writeData(out);
-            out.writeUTF(name);
-        }
-
-        public void process() {
-            ListenerManager.get().handleListenerRegisterations(true, name, null, listenerAddress,
-                    true);
-        }
-
-    }
-
     void printState(Request request, boolean local, Address address, int doCount) {
         Q q = getQ(request.name);
         q.printStack();
@@ -1162,16 +1000,6 @@ class BlockingQueueManager extends BaseManager {
         System.out.println("timeout: " + request.timeout);
         System.out.println("target: " + address);
         System.out.println("=========== DONE =======");
-    }
-
-    void doPublish(Request req) {
-        Q q = getQ(req.name);
-        if (q.blCurrentPut == null) {
-            q.setCurrentPut();
-        }
-        int index = q.publish(req);
-        req.longValue = index;
-        req.response = Boolean.TRUE;
     }
 
     void doOffer(Request req) {
@@ -1361,10 +1189,7 @@ class BlockingQueueManager extends BaseManager {
             @Override
             public boolean consume() {
                 Q q = getQ(request.name);
-                Block currentTakeBlock = q.getCurrentTakeBlock();
-                valid = (currentTakeBlock.blockId == request.blockId)
-                        && thisAddress.equals(currentTakeBlock.address)
-                        && currentTakeBlock.size() > 0;
+                valid = rightTakeTarget(request.blockId);
                 if (valid) {
                     Data value = poll(request);
                     request.response = value;
@@ -1397,10 +1222,7 @@ class BlockingQueueManager extends BaseManager {
             public boolean consume() {
                 // didn't expire but is it valid?
                 Q q = getQ(request.name);
-                Block currentPutBlock = q.getCurrentPutBlock();
-                valid = (currentPutBlock.blockId == request.blockId)
-                        && thisAddress.equals(currentPutBlock.address)
-                        && !currentPutBlock.isFull();
+                valid = q.rightPutTarget(request.blockId);
                 if (valid) {
                     offer(request);
                     request.response = Boolean.TRUE;
@@ -1488,30 +1310,6 @@ class BlockingQueueManager extends BaseManager {
             return latestAddedBlock;
         }
 
-        public Block getCurrentPutBlock() {
-            if (blCurrentPut == null) {
-                setCurrentPut();
-            }
-            return blCurrentPut;
-        }
-
-        Block getCurrentTakeBlock() {
-            if (blCurrentTake == null) {
-                if (lsBlocks.size() == 0) {
-                    return null;
-                }
-                blCurrentTake = lsBlocks.get(0);
-            }
-            return blCurrentTake;
-        }
-
-        public void setCurrentTake() {
-            if (blCurrentTake == null) {
-                blCurrentTake = lsBlocks.get(0);
-                // System.out.println("CurrentTake : " + blCurrentTake);
-            }
-        }
-
         void remove(Remove remove) {
             Block block = getBlock(remove.blockId);
             if (block != null) {
@@ -1579,18 +1377,6 @@ class BlockingQueueManager extends BaseManager {
 
         long getRecordId(int blockId, int addIndex) {
             return (blockId * BLOCK_SIZE) + addIndex;
-        }
-
-        int publish(Request req) {
-            int addIndex = blCurrentPut.add(req.value);
-            long recordId = getRecordId(blCurrentPut.blockId, addIndex);
-            doFireEntryEvent(true, req.value, recordId);
-            if (blCurrentPut.isFull()) {
-                fireBlockFullEvent(blCurrentPut);
-                blCurrentPut = null;
-                setCurrentPut();
-            }
-            return addIndex;
         }
 
         int offer(Request req) {
@@ -1675,7 +1461,7 @@ class BlockingQueueManager extends BaseManager {
             if (value == null) {
                 return null;
             }
-            return ThreadContext.get().hardCopy(value);
+            return doHardCopy(value);
         }
 
         boolean doBackup(boolean add, Data data, int blockId, int addIndex) {
@@ -1754,18 +1540,74 @@ class BlockingQueueManager extends BaseManager {
             }
         }
 
+        boolean rightPutTarget(int blockId) {
+            setCurrentPut();
+            return (blCurrentPut != null)
+                    && (blCurrentPut.blockId == blockId)
+                    && (thisAddress.equals(blCurrentPut.address))
+                    && (!blCurrentPut.isFull());
+
+        }
+
+        boolean rightTakeTarget(int blockId) {
+            setCurrentTake();
+            return (blCurrentTake != null)
+                    && (blCurrentTake.blockId == blockId)
+                    && (thisAddress.equals(blCurrentTake.address))
+                    && (blCurrentTake.size() > 0 || !blCurrentTake.isFull());
+        }
+
         void setCurrentPut() {
-            int size = lsBlocks.size();
-            for (int i = 0; i < size; i++) {
-                Block block = lsBlocks.get(i);
-                // System.out.println("setCurrentPut check " + block);
-                if (!block.isFull()) {
-                    blCurrentPut = block;
-                    // System.out.println("Setting..currentPut " +
-                    // blCurrentPut);
-                    return;
+            if (blCurrentPut == null || blCurrentPut.isFull()) {
+                int size = lsBlocks.size();
+                for (int i = 0; i < size; i++) {
+                    Block block = lsBlocks.get(i);
+                    if (!block.isFull()) {
+                        blCurrentPut = block;
+                        return;
+                    }
                 }
             }
+        }
+
+        Block getCurrentPutBlock() {
+            setCurrentPut();
+            return blCurrentPut;
+        }
+
+        Block getCurrentTakeBlock() {
+            setCurrentTake();
+            return blCurrentTake;
+        }
+
+        public void setCurrentTake() {
+            if (blCurrentTake == null || blCurrentTake.size() == 0) {
+                if (lsBlocks.size() > 0) {
+                    blCurrentTake = lsBlocks.get(0);
+                }
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "Q{name='" + name + "'}";
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Q q = (Q) o;
+
+            if (name != null ? !name.equals(q.name) : q.name != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return name != null ? name.hashCode() : 0;
         }
 
         void printStack() {
@@ -1903,6 +1745,26 @@ class BlockingQueueManager extends BaseManager {
 
         public int size() {
             return size;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Block block = (Block) o;
+
+            if (blockId != block.blockId) return false;
+            if (name != null ? !name.equals(block.name) : block.name != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = blockId;
+            result = 31 * result + (name != null ? name.hashCode() : 0);
+            return result;
         }
 
         @Override

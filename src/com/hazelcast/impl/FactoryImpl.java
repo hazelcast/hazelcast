@@ -732,8 +732,6 @@ public class FactoryImpl implements Constants {
 
     interface QProxy extends IQueue {
 
-        boolean publish(Object obj);
-
         boolean offer(Object obj);
 
         boolean offer(Object obj, long timeout, TimeUnit unit) throws InterruptedException;
@@ -864,11 +862,6 @@ public class FactoryImpl implements Constants {
             return qproxyReal.getInstanceType();
         }
 
-        public boolean publish(Object obj) {
-            ensure();
-            return qproxyReal.publish(obj);
-        }
-
         public boolean offer(Object o) {
             ensure();
             return qproxyReal.offer(o);
@@ -913,11 +906,6 @@ public class FactoryImpl implements Constants {
 
 
             public QProxyReal() {
-            }
-
-            public boolean publish(Object obj) {
-                Offer offer = ThreadContext.get().getOffer();
-                return offer.publish(name, obj, 0, ThreadContext.get().getTxnId());
             }
 
             public boolean offer(Object obj) {
