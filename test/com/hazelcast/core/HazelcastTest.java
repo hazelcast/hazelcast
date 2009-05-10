@@ -6,15 +6,29 @@ import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.assertFalse;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class HazelcastTest {
+
+    @Test
+    public void testGetCluster(){
+        Cluster cluster = Hazelcast.getCluster();
+        Set<Member> members = cluster.getMembers();
+        //Tests are run with only one member in the cluster, this may change later
+        assertEquals(1, members.size());
+    }
 
     @Test
     public void testMapGetName(){
         IMap<String,String> map = Hazelcast.getMap("testMapGetName");
         assertEquals("testMapGetName", map.getName());
+    }
+
+    @Test
+    public void testMapValuesSize(){
+        Map<String,String> map = Hazelcast.getMap("testMapValuesSize");
+        map.put("Hello", "World");
+        assertEquals(1,map.values().size());
     }
 
     @Test
@@ -76,11 +90,41 @@ public class HazelcastTest {
     }
 
     @Test
+    public void testMapPutAll(){
+        IMap<String,String> map = Hazelcast.getMap("testMapPutAll");
+        Map<String,String> m = new HashMap<String,String>();
+        m.put("Hello", "World");
+        m.put("hazel","cast");
+        map.putAll(m);
+        assertEquals(2,map.size()) ;
+        assertTrue(map.containsKey("Hello"));
+        assertTrue(map.containsKey("hazel"));
+    }
+
+    @Test
+    public void testMapEntrySet(){
+        IMap<String,String> map = Hazelcast.getMap("testMapEntrySet");
+        map.put("Hello","World");
+        Set<IMap.Entry<String,String>> set = map.entrySet();
+        for(IMap.Entry<String,String> e:set){
+            assertEquals("Hello",e.getKey());
+            assertEquals("World",e.getValue());
+        }
+    }
+
+    @Test
     public void testListAdd(){
         IList<String> list = Hazelcast.getList("testListAdd");
         list.add("Hello World");
         assertEquals(1,list.size());
         assertEquals("Hello World", list.iterator().next());
+    }
+
+    @Test
+    public void testListContains(){
+        IList<String> list = Hazelcast.getList("testListContains");
+        list.add("Hello World");
+        assertTrue(list.contains("Hello World"));
     }
 
     @Test
@@ -102,6 +146,21 @@ public class HazelcastTest {
         IList<String> list = Hazelcast.getList("testListListIterator");
         list.add("Hello World");
         assertEquals("Hello World", list.listIterator().next());
+    }
+
+    @Test
+    public void testListIndexOf(){
+        IList<String> list = Hazelcast.getList("testListIndexOf");
+        list.add("Hello World");
+        assertEquals(0, list.indexOf("Hello World"));
+    }
+
+    @Test
+    public void testListIsEmpty(){
+        IList<String> list = Hazelcast.getList("testListIsEmpty");
+        assertTrue(list.isEmpty());
+        list.add("Hello World");
+        assertFalse(list.isEmpty());
     }
 
     @Test
