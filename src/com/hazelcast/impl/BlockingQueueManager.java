@@ -1017,7 +1017,7 @@ class BlockingQueueManager extends BaseManager {
         if (q.blCurrentPut == null) {
             q.setCurrentPut();
         }
-        if (q.size() >= q.maxSizePerJVM) {
+        if (q.quickSize() >= q.maxSizePerJVM) {
             if (req.hasEnoughTimeToSchedule()) {
                 req.scheduled = true;
                 final Request reqScheduled = (req.local) ? req : req.hardCopy();
@@ -1042,7 +1042,7 @@ class BlockingQueueManager extends BaseManager {
         if (q.blCurrentTake == null) {
             q.setCurrentTake();
         }
-        if (q.blCurrentTake.size() == 0) {
+        if (!q.blCurrentTake.containsValidItem() && !q.blCurrentTake.isFull()) {
             if (req.hasEnoughTimeToSchedule()) {
                 req.scheduled = true;
                 final Request reqScheduled = (req.local) ? req : req.hardCopy();
@@ -1130,14 +1130,12 @@ class BlockingQueueManager extends BaseManager {
         long maxAge = Long.MAX_VALUE;
 
         public Q(String name) {
-
             QConfig qconfig = Config.get().getQConfig(name.substring(2));
             if (qconfig != null) {
                 maxSizePerJVM = qconfig.maxSizePerJVM;
-                maxAge = qconfig.timeToLiveSeconds * 1000;
-                log(name +".maxSizePerJVM=" + maxSizePerJVM);
-                log(name +".maxAge=" + maxAge);
-
+                maxAge = qconfig.timeToLiveSeconds * 1000l;
+                log(name + ".maxSizePerJVM=" + maxSizePerJVM);
+                log(name + ".maxAge=" + maxAge);
             }
             this.name = name;
             Address master = getMasterAddress();
@@ -1439,7 +1437,7 @@ class BlockingQueueManager extends BaseManager {
                 doFireEntryEvent(false, value, recordId);
 
                 sendBackup(false, request.caller, null, blCurrentTake.blockId, 0);
-                if (blCurrentTake.size() == 0 && blCurrentTake.isFull()) {
+                if (!blCurrentTake.containsValidItem() && blCurrentTake.isFull()) {
                     fireBlockRemoveEvent(blCurrentTake);
                     blCurrentTake = null;
                 }
@@ -1546,6 +1544,18 @@ class BlockingQueueManager extends BaseManager {
             }
         }
 
+        int quickSize() {
+            int size = 0;
+            int length = lsBlocks.size();
+            for (int i = 0; i < length; i++) {
+                Block block = lsBlocks.get(i);
+                if (thisAddress.equals(block.address)) {
+                    size += block.quickSize();
+                }
+            }
+            return size;
+        }
+
         int size() {
             int size = 0;
             int length = lsBlocks.size();
@@ -1564,7 +1574,6 @@ class BlockingQueueManager extends BaseManager {
                     && (blCurrentPut.blockId == blockId)
                     && (thisAddress.equals(blCurrentPut.address))
                     && (!blCurrentPut.isFull());
-
         }
 
         boolean rightTakeTarget(int blockId) {
@@ -1728,24 +1737,8 @@ class BlockingQueueManager extends BaseManager {
             return value;
         }
 
-        public boolean containsValidItem() {
-            for (int i = removeIndex; i < BLOCK_SIZE; i++) {
-                if (values[i] != null) {
-                    Data value = values[i];
-                    long age = System.currentTimeMillis() - value.createDate;
-                    System.out.println(age + " age, max " + maxAge + "  createDate " + value.createDate);
-                    if (age > maxAge) {
-                        values[i] = null;
-                    } else {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-
         public Data remove() {
-            for (int i = removeIndex; i < BLOCK_SIZE; i++) {
+            for (int i = removeIndex; i < addIndex; i++) {
                 if (values[i] != null) {
                     Data value = values[i];
                     values[i] = null;
@@ -1756,10 +1749,24 @@ class BlockingQueueManager extends BaseManager {
             return null;
         }
 
+        public boolean containsValidItem() {
+            for (int i = removeIndex; i < addIndex; i++) {
+                if (values[i] != null) {
+                    Data value = values[i];
+                    long age = System.currentTimeMillis() - value.createDate;
+                    if (age > maxAge) {
+                        values[i] = null;
+                    } else {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
         public int size() {
-            if (addIndex == 0) return 0;
             int s = 0;
-            for (int i = removeIndex; i < BLOCK_SIZE; i++) {
+            for (int i = removeIndex; i < addIndex; i++) {
                 if (values[i] != null) {
                     Data value = values[i];
                     long age = System.currentTimeMillis() - value.createDate;
@@ -1771,6 +1778,10 @@ class BlockingQueueManager extends BaseManager {
                 }
             }
             return s;
+        }
+
+        public int quickSize() {
+            return (addIndex - removeIndex);
         }
 
         @Override
