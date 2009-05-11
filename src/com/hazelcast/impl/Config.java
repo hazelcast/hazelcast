@@ -78,6 +78,8 @@ public class Config {
         public String name;
 
         public int maxSizePerJVM = Integer.MAX_VALUE;
+
+        public int timeToLiveSeconds = Integer.MAX_VALUE;
     }
 
     public class MapConfig {
@@ -440,6 +442,9 @@ public class Config {
             final String value = getTextContent(n).trim();
             if (n.getNodeName().equalsIgnoreCase("max-size-per-jvm")) {
                 qConfig.maxSizePerJVM = getIntegerValue("max-size-per-jvm", value,
+                        Integer.MAX_VALUE);
+            } else if (n.getNodeName().equalsIgnoreCase("time-to-live-seconds")) {
+                qConfig.timeToLiveSeconds = getIntegerValue("time-to-live-seconds", value,
                         Integer.MAX_VALUE);
             }
         }

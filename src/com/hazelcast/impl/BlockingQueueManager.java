@@ -24,6 +24,7 @@ import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
 import com.hazelcast.impl.Config.QConfig;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
+import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import com.hazelcast.nio.Address;
 import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.Data;
@@ -308,13 +309,12 @@ class BlockingQueueManager extends BaseManager {
                     size += block.size();
                 }
             }
-            q.size = size;
         }
     }
 
     final void handleSize(PacketQueue.Packet packet) {
         Q q = getQ(packet.name);
-        packet.longValue = q.size;
+        packet.longValue = q.size();
         sendResponse(packet);
     }
 
@@ -612,7 +612,7 @@ class BlockingQueueManager extends BaseManager {
             if (DEBUG) {
                 q.printStack();
             }
-            total += q.size;
+            total += q.size();
             numberOfResponses = 1;
             if (lsMembers.size() > 1) {
                 addCall(this);
@@ -920,9 +920,14 @@ class BlockingQueueManager extends BaseManager {
 
         @Override
         void doLocalOp() {
-            doOffer(request);
-            if (!request.scheduled) {
-                setResult(request.response);
+            Q q = getQ(request.name);
+            if (q.rightPutTarget(request.blockId)) {
+                doOffer(request);
+                if (!request.scheduled) {
+                    setResult(request.response);
+                }
+            } else {
+                setResult(OBJECT_REDO);
             }
         }
     }
@@ -966,9 +971,14 @@ class BlockingQueueManager extends BaseManager {
 
         @Override
         void doLocalOp() {
-            doPoll(request);
-            if (!request.scheduled) {
-                setResult(request.response);
+            Q q = getQ(request.name);
+            if (q.rightTakeTarget(request.blockId)) {
+                doPoll(request);
+                if (!request.scheduled) {
+                    setResult(request.response);
+                }
+            } else {
+                setResult(OBJECT_REDO);
             }
         }
 
@@ -1007,7 +1017,7 @@ class BlockingQueueManager extends BaseManager {
         if (q.blCurrentPut == null) {
             q.setCurrentPut();
         }
-        if (q.size >= q.maxSizePerJVM) {
+        if (q.size() >= q.maxSizePerJVM) {
             if (req.hasEnoughTimeToSchedule()) {
                 req.scheduled = true;
                 final Request reqScheduled = (req.local) ? req : req.hardCopy();
@@ -1105,7 +1115,6 @@ class BlockingQueueManager extends BaseManager {
 
     public class Q {
         String name;
-        int size = 0;
         List<Block> lsBlocks = new ArrayList<Block>(10);
         Block blCurrentPut = null;
         Block blCurrentTake = null;
@@ -1117,19 +1126,18 @@ class BlockingQueueManager extends BaseManager {
         int maxSizePerJVM = Integer.MAX_VALUE;
 
         Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
-        boolean keepValues = true;
 
         long maxAge = Long.MAX_VALUE;
 
         public Q(String name) {
-            if (name.startsWith("q:t:")) {
-                keepValues = false;
-            } else {
-                QConfig qconfig = Config.get().getQConfig(name.substring(2));
-                if (qconfig != null) {
-                    maxSizePerJVM = qconfig.maxSizePerJVM;
-                    log("qConfig " + qconfig.maxSizePerJVM);
-                }
+
+            QConfig qconfig = Config.get().getQConfig(name.substring(2));
+            if (qconfig != null) {
+                maxSizePerJVM = qconfig.maxSizePerJVM;
+                maxAge = qconfig.timeToLiveSeconds * 1000;
+                log(name +".maxSizePerJVM=" + maxSizePerJVM);
+                log(name +".maxAge=" + maxAge);
+
             }
             this.name = name;
             Address master = getMasterAddress();
@@ -1148,7 +1156,7 @@ class BlockingQueueManager extends BaseManager {
         }
 
         public Block createBlock(Address address, int blockId) {
-            return new Block(address, blockId, maxAge, name, keepValues);
+            return new Block(address, blockId, maxAge, name);
         }
 
         public Address getBlockOwner(int blockId) {
@@ -1385,7 +1393,6 @@ class BlockingQueueManager extends BaseManager {
                 long recordId = getRecordId(blCurrentPut.blockId, addIndex);
                 req.recordId = recordId;
                 doFireEntryEvent(true, req.value, recordId);
-                size++;
                 sendBackup(true, req.caller, req.value, blCurrentPut.blockId, addIndex);
                 req.longValue = addIndex;
                 if (blCurrentPut.isFull()) {
@@ -1427,7 +1434,6 @@ class BlockingQueueManager extends BaseManager {
                         }
                     }
                 }
-                size--;
                 long recordId = getRecordId(blCurrentTake.blockId, blCurrentTake.removeIndex);
                 request.recordId = recordId;
                 doFireEntryEvent(false, value, recordId);
@@ -1540,6 +1546,18 @@ class BlockingQueueManager extends BaseManager {
             }
         }
 
+        int size() {
+            int size = 0;
+            int length = lsBlocks.size();
+            for (int i = 0; i < length; i++) {
+                Block block = lsBlocks.get(i);
+                if (thisAddress.equals(block.address)) {
+                    size += block.size();
+                }
+            }
+            return size;
+        }
+
         boolean rightPutTarget(int blockId) {
             setCurrentPut();
             return (blCurrentPut != null)
@@ -1554,7 +1572,7 @@ class BlockingQueueManager extends BaseManager {
             return (blCurrentTake != null)
                     && (blCurrentTake.blockId == blockId)
                     && (thisAddress.equals(blCurrentTake.address))
-                    && (blCurrentTake.size() > 0 || !blCurrentTake.isFull());
+                    && (blCurrentTake.containsValidItem() || !blCurrentTake.isFull());
         }
 
         void setCurrentPut() {
@@ -1581,7 +1599,7 @@ class BlockingQueueManager extends BaseManager {
         }
 
         public void setCurrentTake() {
-            if (blCurrentTake == null || blCurrentTake.size() == 0) {
+            if (blCurrentTake == null || !blCurrentTake.containsValidItem()) {
                 if (lsBlocks.size() > 0) {
                     blCurrentTake = lsBlocks.get(0);
                 }
@@ -1627,22 +1645,20 @@ class BlockingQueueManager extends BaseManager {
     class Block {
         final int blockId;
         final String name;
+        final Data[] values;
+        final long maxAge;
         Address address;
         int addIndex = 0;
         int removeIndex = 0;
-        Data[] values = null;
-        int size = 0;
         boolean full = false;
-        final long maxAge;
 
-        public Block(Address address, int blockId, long maxAge, String name, boolean keepValues) {
+        public Block(Address address, int blockId, long maxAge, String name) {
             super();
             this.address = address;
             this.blockId = blockId;
             this.maxAge = maxAge;
             this.name = name;
-            if (keepValues)
-                values = new Data[BLOCK_SIZE];
+            this.values = new Data[BLOCK_SIZE];
         }
 
         public Data peek() {
@@ -1662,7 +1678,7 @@ class BlockingQueueManager extends BaseManager {
 
         void resetAddIndex() {
             int index = BLOCK_SIZE - 1;
-            while (index > 0) {
+            while (index >= 0) {
                 if (values[index] != null) {
                     addIndex = index + 1;
                     if (addIndex >= BLOCK_SIZE) {
@@ -1676,12 +1692,12 @@ class BlockingQueueManager extends BaseManager {
         }
 
         public int add(Data data) {
+            data.createDate = System.currentTimeMillis();
             if (values != null) {
                 if (values[addIndex] != null)
                     return -1;
                 values[addIndex] = data;
             }
-            size++;
             int addedCurrentIndex = addIndex;
             addIndex++;
             if (addIndex >= BLOCK_SIZE) {
@@ -1691,10 +1707,10 @@ class BlockingQueueManager extends BaseManager {
         }
 
         public boolean add(int index, Data data) {
+            data.createDate = System.currentTimeMillis();
             if (values[index] != null)
                 return false;
             values[index] = data;
-            size++;
             return true;
         }
 
@@ -1709,19 +1725,17 @@ class BlockingQueueManager extends BaseManager {
         public Data remove(int index) {
             Data value = values[index];
             values[index] = null;
-            if (value != null)
-                size--;
             return value;
         }
 
-        public boolean readyToPoll() {
+        public boolean containsValidItem() {
             for (int i = removeIndex; i < BLOCK_SIZE; i++) {
                 if (values[i] != null) {
                     Data value = values[i];
                     long age = System.currentTimeMillis() - value.createDate;
+                    System.out.println(age + " age, max " + maxAge + "  createDate " + value.createDate);
                     if (age > maxAge) {
                         values[i] = null;
-                        size--;
                     } else {
                         return true;
                     }
@@ -1735,8 +1749,7 @@ class BlockingQueueManager extends BaseManager {
                 if (values[i] != null) {
                     Data value = values[i];
                     values[i] = null;
-                    size--;
-                    removeIndex = i;
+                    removeIndex = i + 1;
                     return value;
                 }
             }
@@ -1744,7 +1757,20 @@ class BlockingQueueManager extends BaseManager {
         }
 
         public int size() {
-            return size;
+            if (addIndex == 0) return 0;
+            int s = 0;
+            for (int i = removeIndex; i < BLOCK_SIZE; i++) {
+                if (values[i] != null) {
+                    Data value = values[i];
+                    long age = System.currentTimeMillis() - value.createDate;
+                    if (age > maxAge) {
+                        values[i] = null;
+                    } else {
+                        s++;
+                    }
+                }
+            }
+            return s;
         }
 
         @Override
