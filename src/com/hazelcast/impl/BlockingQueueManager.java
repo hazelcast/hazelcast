@@ -1123,20 +1123,19 @@ class BlockingQueueManager extends BaseManager {
         List<ScheduledPollAction> lsScheduledPollActions = new ArrayList<ScheduledPollAction>(100);
         List<ScheduledOfferAction> lsScheduledOfferActions = new ArrayList<ScheduledOfferAction>(
                 100);
-        int maxSizePerJVM = Integer.MAX_VALUE;
+        final int maxSizePerJVM;
 
         Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
 
-        long maxAge = Long.MAX_VALUE;
+        final long maxAge;
 
         public Q(String name) {
             QConfig qconfig = Config.get().getQConfig(name.substring(2));
-            if (qconfig != null) {
-                maxSizePerJVM = qconfig.maxSizePerJVM;
-                maxAge = qconfig.timeToLiveSeconds * 1000l;
-                log(name + ".maxSizePerJVM=" + maxSizePerJVM);
-                log(name + ".maxAge=" + maxAge);
-            }
+            maxSizePerJVM = (qconfig.maxSizePerJVM == 0) ? Integer.MAX_VALUE : qconfig.maxSizePerJVM;
+            maxAge = (qconfig.timeToLiveSeconds == 0) ? Long.MAX_VALUE : qconfig.timeToLiveSeconds * 1000l;
+            log(name + ".maxSizePerJVM=" + maxSizePerJVM);
+            log(name + ".maxAge=" + maxAge);
+
             this.name = name;
             Address master = getMasterAddress();
             if (master.isThisAddress()) {

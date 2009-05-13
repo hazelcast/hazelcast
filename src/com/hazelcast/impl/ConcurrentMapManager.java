@@ -1682,7 +1682,7 @@ class ConcurrentMapManager extends BaseManager {
             if (evictionPolicy == OrderingType.NONE) {
                 maxSize = Integer.MAX_VALUE;
             } else {
-                maxSize = mapConfig.maxSize;
+                maxSize = (mapConfig.maxSize == 0) ? Integer.MAX_VALUE : mapConfig.maxSize;
             }
         }
 

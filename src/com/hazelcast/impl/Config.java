@@ -87,7 +87,7 @@ public class Config {
 
         public int backupCount = 1;
 
-        public float evictionPercentage = 0.25f;
+        public int evictionPercentage = 25;
 
         public int maxSize = Integer.MAX_VALUE;
 
