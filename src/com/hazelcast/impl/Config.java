@@ -86,6 +86,12 @@ public class Config {
         public String name;
 
         public int backupCount = 1;
+
+        public float evictionPercentage = 0.25f;
+
+        public int maxSize = Integer.MAX_VALUE;
+
+        public String evictionPolicy = "NONE";
     }
 
     public class TopicConfig {
@@ -463,6 +469,14 @@ public class Config {
             if (n.getNodeName().equalsIgnoreCase("backup-count")) {
                 config.backupCount = getIntegerValue("backup-count", value,
                         1);
+            } else if (n.getNodeName().equalsIgnoreCase("eviction-policy")) {
+                config.evictionPolicy = value;
+            } else if (n.getNodeName().equalsIgnoreCase("max-size")) {
+                config.maxSize = getIntegerValue("max-size", value,
+                        Integer.MAX_VALUE);
+            } else if (n.getNodeName().equalsIgnoreCase("eviction-percentage")) {
+                config.evictionPercentage = getIntegerValue("eviction-percentage", value,
+                        25);
             }
         }
         mapMapConfigs.put(name, config);

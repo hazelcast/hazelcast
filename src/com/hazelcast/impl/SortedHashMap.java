@@ -509,49 +509,21 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V>
     }
 
     public static void main(String[] args) {
-        SortedHashMap m = new SortedHashMap(100, SortedHashMap.OrderingType.LRU);
-        for (int i = 0; i < 20; i++) {
+        SortedHashMap m = new SortedHashMap(100, SortedHashMap.OrderingType.LFU);
+        for (int i = 0; i < 10; i++) {
             m.put(i, "value" + i);
         }
-//
-//        for(int i=0; i < 125; i++) {
-//            System.out.println("value " + m.get (i));
-//            if (!("value"+i).equals(m.get (i))) {
-//                System.out.println("wrong " + m.get (i));
-//            }
-//        }
 
-//        for (int i = 0; i < 10; i++) {
-//            System.out.println("value " + m.get(i));
-//
-//        }
-
-
-//        Collection values = m.values();
-//
-//        for (Object o : values) {
-//            System.out.println("vv " + o);
-//        }
-
-        m.get(0);
-
-        m.get(10);
-        m.get(4);
-        m.get(4);
-        m.get(10);
-        m.get(4);
-        m.get(4);
-        m.get(7);
-        m.get(0);
-        m.get(4);
-        m.get(1);
-//        m.remove(0);
-
+        m.remove (0);
+        m.remove (4);
         Collection values = m.values();
 
         for (Object o : values) {
             System.out.println("vv " + o);
         }
+
+        System.out.println("0 " + m.get (0));
+        System.out.println("4 " + m.get (4));
 
     }
 

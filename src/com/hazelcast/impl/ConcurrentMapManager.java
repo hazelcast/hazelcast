@@ -1670,12 +1670,19 @@ class ConcurrentMapManager extends BaseManager {
             this.name = name;
             Config.MapConfig mapConfig = Config.get().getMapConfig(name.substring(2));
             this.backupCount = mapConfig.backupCount;
-            evictionPolicy = OrderingType.LFU;
-            evictionRate = .25f;
+
+            if ("LFU".equalsIgnoreCase(mapConfig.evictionPolicy)) {
+                evictionPolicy = OrderingType.LFU;
+            } else if ("LRU".equalsIgnoreCase(mapConfig.evictionPolicy)) {
+                evictionPolicy = OrderingType.LRU;
+            } else {
+                evictionPolicy = OrderingType.NONE;
+            }
+            evictionRate = mapConfig.evictionPercentage / 100;
             if (evictionPolicy == OrderingType.NONE) {
                 maxSize = Integer.MAX_VALUE;
             } else {
-                maxSize = 1200;
+                maxSize = mapConfig.maxSize;
             }
         }
 
@@ -1800,7 +1807,7 @@ class ConcurrentMapManager extends BaseManager {
                     size += record.valueCount();
                 }
             }
-            System.out.println(size + " is size.. backup.size " + backupSize());
+//            System.out.println(size + " is size.. backup.size " + backupSize() + " ownedEntryCount:" + ownedEntryCount);
             return size;
         }
 
@@ -2019,7 +2026,7 @@ class ConcurrentMapManager extends BaseManager {
                 }
             }
             if (lsKeysToEvict.size() > 1) {
-//                System.out.println("stating eviction..." + lsKeysToEvict.size());
+//                System.out.println(ownedEntryCount + " stating eviction..." + lsKeysToEvict.size());
                 evicting = true;
                 int latchCount = lsKeysToEvict.size();
                 final CountDownLatch countDownLatchEvictionStart = new CountDownLatch(1);
@@ -2175,7 +2182,7 @@ class ConcurrentMapManager extends BaseManager {
         Record createNewRecord(Data key, Data value) {
             int blockId = getBlockId(key);
             Record rec = new Record(name, blockId, key, value);
-            Block ownerBlock = getOrCreateBlock(key);
+            Block ownerBlock = blocks[blockId];
             if (thisAddress.equals(ownerBlock.getRealOwner())) {
                 ownedEntryCount++;
             }
