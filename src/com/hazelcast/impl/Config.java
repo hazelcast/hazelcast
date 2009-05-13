@@ -85,7 +85,7 @@ public class Config {
     public class MapConfig {
         public String name;
 
-        public int replicaCount = 1;
+        public int backupCount = 1;
     }
 
     public class TopicConfig {
@@ -460,8 +460,8 @@ public class Config {
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String value = getTextContent(n).trim();
-            if (n.getNodeName().equalsIgnoreCase("replica-count")) {
-                config.replicaCount = getIntegerValue("replica-count", value,
+            if (n.getNodeName().equalsIgnoreCase("backup-count")) {
+                config.backupCount = getIntegerValue("backup-count", value,
                         1);
             }
         }

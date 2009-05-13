@@ -195,6 +195,8 @@ public interface Constants {
 
         public static final int OP_CMAP_BACKUP_ADD = 236;
 
+        public static final int OP_CMAP_EVICT = 237;
+
 
     }
 

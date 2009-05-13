@@ -900,7 +900,7 @@ abstract class BaseManager implements Constants {
 
         @Override
         public void doLocalOp() {
-            if (migrating()) {
+            if (isMigrating()) {
                 setResult(OBJECT_REDO);
             } else {
                 doLocalCall();
@@ -911,7 +911,7 @@ abstract class BaseManager implements Constants {
         abstract void doLocalCall();
     }
 
-    protected boolean migrating() {
+    protected boolean isMigrating() {
         return false;
     }
 
