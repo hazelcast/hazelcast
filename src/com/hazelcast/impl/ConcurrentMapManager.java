@@ -2182,7 +2182,7 @@ class ConcurrentMapManager extends BaseManager {
         Record createNewRecord(Data key, Data value) {
             int blockId = getBlockId(key);
             Record rec = new Record(name, blockId, key, value);
-            Block ownerBlock = blocks[blockId];
+            Block ownerBlock = getOrCreateBlock(blockId);
             if (thisAddress.equals(ownerBlock.getRealOwner())) {
                 ownedEntryCount++;
             }
