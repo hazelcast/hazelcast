@@ -1014,19 +1014,17 @@ abstract class BaseManager implements Constants {
                            final Data value, final Map<Address, Boolean> mapListeners) {
         if (mapListeners != null) {
             final PacketQueue sq = PacketQueue.get();
-            final Set<Map.Entry<Address, Boolean>> entries = mapListeners.entrySet();
+            final Set<Map.Entry<Address, Boolean>> listeners = mapListeners.entrySet();
 
-            for (final Map.Entry<Address, Boolean> entry : entries) {
-                final Address address = entry.getKey();
-                final boolean includeValue = entry.getValue();
+            for (final Map.Entry<Address, Boolean> listener : listeners) {
+                final Address address = listener.getKey();
+                final boolean includeValue = listener.getValue();
                 if (address.isThisAddress()) {
                     try {
-                        final Data eventKey = (key != null) ? ThreadContext.get().hardCopy(key)
-                                : null;
-                        Data eventValue = null;
-                        if (includeValue)
-                            eventValue = ThreadContext.get().hardCopy(value);
-                        enqueueEvent(eventType, name, eventKey, eventValue, address);
+                        enqueueEvent(eventType, name,
+                                doHardCopy(key),
+                                (includeValue) ? doHardCopy(value) : null,
+                                address);
                     } catch (final Exception e) {
                         e.printStackTrace();
                     }
@@ -1034,11 +1032,7 @@ abstract class BaseManager implements Constants {
                     final PacketQueue.Packet packet = sq.obtainPacket();
                     packet.reset();
                     try {
-                        final Data eventKey = key;
-                        Data eventValue = null;
-                        if (includeValue)
-                            eventValue = value;
-                        packet.set(name, OP_EVENT, eventKey, eventValue);
+                        packet.set(name, OP_EVENT, key, (includeValue) ? value : null);
                         packet.longValue = eventType;
                     } catch (final Exception e) {
                         e.printStackTrace();
@@ -1288,17 +1282,19 @@ abstract class BaseManager implements Constants {
                          final Data dataValue) {
             super(name);
             this.eventType = eventType;
-            this.dataValue = dataValue;
             this.dataKey = dataKey;
+            this.dataValue = dataValue;
         }
 
         public void run() {
             try {
-                if (!collection) {
-                    key = ThreadContext.get().toObject(dataKey);
+                if (dataKey != null) {
+                    key = toObject(dataKey);
                 }
                 if (dataValue != null) {
-                    value = ThreadContext.get().toObject(dataValue);
+                    value = toObject(dataValue);
+                } else if (collection) {
+                    value = key;
                 }
                 ListenerManager.get().callListeners(this);
             } catch (final Exception e) {

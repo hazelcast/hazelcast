@@ -302,12 +302,13 @@ public class PacketQueue {
             this.threadId = Thread.currentThread().hashCode();
             this.name = name;
             this.operation = operation;
-            if (objValue != null) {
-                value = ThreadContext.get().toData(objValue);
-            }
             if (objKey != null) {
                 key = ThreadContext.get().toData(objKey);
             }
+            if (objValue != null) {
+                value = ThreadContext.get().toData(objValue);
+            }
+
         }
 
         public void setFromConnection(Connection conn) {

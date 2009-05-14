@@ -1904,7 +1904,9 @@ class ConcurrentMapManager extends BaseManager {
                     return false;
                 }
             }
+            record.version++;
             record.incrementCopyCount();
+            fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, record);
             return true;
         }
 

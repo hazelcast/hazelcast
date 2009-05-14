@@ -1125,7 +1125,7 @@ class BlockingQueueManager extends BaseManager {
                 100);
         final int maxSizePerJVM;
 
-        Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
+        Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(2);
 
         final long maxAge;
 
@@ -1370,7 +1370,7 @@ class BlockingQueueManager extends BaseManager {
             sendResponse(packet);
         }
 
-        void doFireEntryEvent(boolean add, Data value, long recordId) {
+        void doFireEntryEvent(boolean add, Data value) {
             if (mapListeners.size() == 0)
                 return;
             if (add) {
@@ -1389,7 +1389,7 @@ class BlockingQueueManager extends BaseManager {
                 int addIndex = blCurrentPut.add(req.value);
                 long recordId = getRecordId(blCurrentPut.blockId, addIndex);
                 req.recordId = recordId;
-                doFireEntryEvent(true, req.value, recordId);
+                doFireEntryEvent(true, req.value);
                 sendBackup(true, req.caller, req.value, blCurrentPut.blockId, addIndex);
                 req.longValue = addIndex;
                 if (blCurrentPut.isFull()) {
@@ -1431,9 +1431,8 @@ class BlockingQueueManager extends BaseManager {
                         }
                     }
                 }
-                long recordId = getRecordId(blCurrentTake.blockId, blCurrentTake.removeIndex);
-                request.recordId = recordId;
-                doFireEntryEvent(false, value, recordId);
+                request.recordId = getRecordId(blCurrentTake.blockId, blCurrentTake.removeIndex);
+                doFireEntryEvent(false, value);
 
                 sendBackup(false, request.caller, null, blCurrentTake.blockId, 0);
                 if (!blCurrentTake.containsValidItem() && blCurrentTake.isFull()) {
