@@ -18,6 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.EntryEvent;
+import static com.hazelcast.core.ICommon.InstanceType;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.ClusterManager.RemotelyProcessable;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_PROCESS;
@@ -913,6 +914,29 @@ abstract class BaseManager implements Constants {
 
     protected boolean isMigrating() {
         return false;
+    }
+
+
+    public static InstanceType getInstanceType(final String name) {
+        if (name.startsWith("q:")) {
+            return InstanceType.QUEUE;
+        } else if (name.startsWith("t:")) {
+            return InstanceType.TOPIC;
+        } else if (name.startsWith("c:")) {
+            return InstanceType.MAP;
+        } else if (name.startsWith("m:")) {
+            if (name.length() > 3) {
+                final String typeStr = name.substring(2, 4);
+                if ("s:".equals(typeStr)) {
+                    return InstanceType.SET;
+                } else if ("l:".equals(typeStr)) {
+                    return InstanceType.LIST;
+                } else if ("u:".equals(typeStr)) {
+                    return InstanceType.MULTIMAP;
+                }
+            }
+            return InstanceType.MAP;
+        } else throw new RuntimeException("Unknown InstanceType " + name);
     }
 
     public static byte getMapType(final String name) {
