@@ -143,6 +143,23 @@ public class PacketQueue {
             }
         }
 
+        public void write2Socket(ByteBuffer socketBB) {
+            int totalWritten = 0;
+            socketBB.put(bbSizes.array(), 0, bbSizes.limit());
+            socketBB.put(bbHeader.array(), 0, bbHeader.limit());
+            totalWritten += bbSizes.limit();
+            totalWritten += bbHeader.limit();
+            if (key.size() > 0) {
+                totalWritten += key.copyToBuffer(socketBB);
+            }
+            if (value.size() > 0) {
+                totalWritten += value.copyToBuffer(socketBB);
+            }
+            if (totalSize != totalWritten) {
+                throw new RuntimeException(totalSize + " is totalSize but written: " + totalWritten);
+            }
+        }
+
         protected void putString(ByteBuffer bb, String str) {
             byte[] bytes = str.getBytes();
             bb.putInt(bytes.length);
@@ -241,6 +258,7 @@ public class PacketQueue {
             value.setNoData();
             conn = null;
             totalSize = 0;
+            totalWritten = 0;
         }
 
         @Override
@@ -255,6 +273,42 @@ public class PacketQueue {
         }
 
         private boolean sizeRead = false;
+        private int totalWritten = 0;
+
+        public final boolean doWrite(ByteBuffer dest) {
+//            System.out.println("dest " + dest.remaining());
+            totalWritten += doCopy(bbSizes, dest);
+            totalWritten += doCopy(bbHeader, dest);
+            if (key.size() > 0) {
+                int len = key.lsData.size();
+                for (int i = 0; i < len & dest.hasRemaining(); i++) {
+                    ByteBuffer bb = key.lsData.get(i);
+                    totalWritten += doCopy(bb, dest);
+                }
+            }
+
+            if (value.size() > 0) {
+                int len = value.lsData.size();
+                for (int i = 0; i < len & dest.hasRemaining(); i++) {
+                    ByteBuffer bb = value.lsData.get(i);
+                    totalWritten += doCopy(bb, dest);
+                }
+            }
+//            System.out.println(totalWritten + " packet.doWrite " + totalSize);
+            return totalWritten >= totalSize;
+        }
+
+        int doCopy(ByteBuffer src, ByteBuffer dest) {
+            int srcRemaining = src.remaining();
+            int destRemaining = dest.remaining();
+            int n = Math.min(srcRemaining, destRemaining);
+            if (n > 0) {
+                dest.put(src.array(), src.position(), n);
+                src.position(src.position() + n);
+            }
+            return n;
+        }
+
 
         public final boolean read(ByteBuffer bb) {
             while (!sizeRead && bbSizes.hasRemaining()) {

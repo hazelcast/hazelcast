@@ -25,15 +25,17 @@ public final class BufferUtil {
 
     public static int copy(ByteBuffer src, ByteBuffer dest) {
         int n = Math.min(src.remaining(), dest.remaining());
-        int srcPosition = src.position();
-        int destPosition = dest.position();
+        if (n > 0) {
+            int srcPosition = src.position();
+            int destPosition = dest.position();
 
-        int ixSrc = srcPosition + src.arrayOffset();
-        int ixDest = destPosition + dest.arrayOffset();
+            int ixSrc = srcPosition + src.arrayOffset();
+            int ixDest = destPosition + dest.arrayOffset();
 
-        System.arraycopy(src.array(), ixSrc, dest.array(), ixDest, n);
-        src.position(srcPosition + n);
-        dest.position(destPosition + n);
+            System.arraycopy(src.array(), ixSrc, dest.array(), ixDest, n);
+            src.position(srcPosition + n);
+            dest.position(destPosition + n);
+        }
         return n;
     }
 

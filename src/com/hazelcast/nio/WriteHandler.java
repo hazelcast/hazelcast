@@ -29,15 +29,16 @@ import java.util.logging.Level;
 
 public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
-    private static final boolean DEBUG = false;
-
-    private static final ByteBuffer bbOut = ByteBuffer.allocateDirect(1024 * 1024);
-
     private final BlockingQueue writeQueue = new LinkedBlockingQueue();
 
     private final AtomicBoolean informSelector = new AtomicBoolean(true);
 
-    boolean ready = false;
+    private final ByteBuffer socketBB = ByteBuffer.allocateDirect(32 * 1024);
+
+    private boolean ready = false;
+
+    private Packet lastPacket = null;
+
 
     WriteHandler(final Connection connection) {
         super(connection);
@@ -58,49 +59,45 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         }
     }
 
-    int writeCount = 1;
 
     public void handle() {
-        if (writeCount++ % 10000 == 0) {
-            logger.log(Level.FINEST, "writeHandler count " + writeCount);
-            writeCount = 1;
-        }
-        if (writeQueue.size() == 0) {
+        if (lastPacket == null && writeQueue.size() == 0) {
             ready = true;
             return;
         }
         if (!connection.live())
             return;
         try {
-            bbOut.clear();
-            copyLoop:
-            while (bbOut.position() < (32 * 1024)) {
-                final PacketQueue.Packet packet = (PacketQueue.Packet) writeQueue.poll();
-                if (packet == null)
-                    break copyLoop;
-                packet.write(bbOut);
-                packet.returnToContainer();
-            }
-            if (bbOut.position() == 0)
-                return;
-            bbOut.flip();
-            int remaining = bbOut.remaining();
-            int loopCount = 0;
-            while (remaining > 0) {
-                try {
-                    final int written = socketChannel.write(bbOut);
-                    remaining -= written;
-                    loopCount++;
-                    if (DEBUG) {
-                        if (loopCount > 1) {
-                            logger.log(Level.FINEST, "loopcount " + loopCount);
-                        }
-                    }
-                } catch (final Exception e) {
-                    handleSocketException(e);
-                    return;
+            loop:
+            while (socketBB.hasRemaining()) {
+                if (lastPacket == null) {
+                    lastPacket = (Packet) writeQueue.poll();
                 }
+                if (lastPacket != null) {
+                    boolean packetDone = lastPacket.doWrite(socketBB);
+                    if (packetDone) {
+                        lastPacket.returnToContainer();
+                        lastPacket = null;
+                    }
+                } else break loop;
             }
+            socketBB.flip();
+            try {
+                socketChannel.write(socketBB);
+            } catch (final Exception e) {
+                if (lastPacket != null) {
+                    lastPacket.returnToContainer();
+                    lastPacket = null;
+                }
+                handleSocketException(e);
+                return;
+            }
+            if (socketBB.hasRemaining()) {
+                socketBB.compact();
+            } else {
+                socketBB.clear();
+            }
+
         } catch (final Throwable t) {
             logger.log(Level.SEVERE, "Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
         } finally {

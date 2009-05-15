@@ -124,6 +124,7 @@ public final class Data implements DataSerializable {
         }
     }
 
+
     public void postRead() {
         int totalRead = 0;
         int len = lsData.size();

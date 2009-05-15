@@ -26,18 +26,13 @@ import java.util.logging.Level;
 
 class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
-    ByteBuffer inBuffer = null;
+    final ByteBuffer inBuffer = ByteBuffer.allocate(32 * 1024);
 
     Packet packet = null;
 
-    long messageRead = 0;
-
     public ReadHandler(final Connection connection) {
         super(connection);
-        inBuffer = ByteBuffer.allocate(32 * 1024);
     }
-
-    int readCount = 1;
 
     public final void handle() {
 
@@ -73,7 +68,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
                     if (remaining >= 12) {
                         packet = obtainReadable();
                         if (packet == null) {
-                            throw new RuntimeException(messageRead + " Unknown message type  from "
+                            throw new RuntimeException("Unknown message type  from "
                                     + connection.getEndPoint());
                         }
                     } else {
@@ -83,11 +78,6 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
                 }
                 final boolean full = packet.read(inBuffer);
                 if (full) {
-                    if (readCount++ % 10000 == 0) {
-                        logger.log(Level.FINEST, "readHandler count " + readCount);
-                        readCount = 1;
-                    }
-                    messageRead++;
                     packet.flipBuffers();
                     packet.read();
                     packet.setFromConnection(connection);
