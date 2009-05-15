@@ -304,6 +304,14 @@ public class HazelcastTest {
     }
 
     @Test
+    public void testMultiMapGetNameAndType(){
+        MultiMap<String,String> map = Hazelcast.getMultiMap("testMultiMapGetNameAndType");
+        assertEquals("testMultiMapGetNameAndType",map.getName());
+        ICommon.InstanceType type = map.getInstanceType();
+        assertEquals(ICommon.InstanceType.MULTIMAP,type);
+    }
+
+    @Test
     public void testMultiMapClear(){
         MultiMap<String,String> map = Hazelcast.getMultiMap("testMultiMapClear");
         map.put("Hello","World");
