@@ -185,8 +185,6 @@ public interface Constants {
 
         public static final int OP_CMAP_BACKUP_PUT = 231;
 
-        public static final int OP_CMAP_BACKUP_PUT_MULTI = 232;
-
         public static final int OP_CMAP_BACKUP_REMOVE = 233;
 
         public static final int OP_CMAP_BACKUP_REMOVE_MULTI = 234;

@@ -18,6 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.EntryEvent;
+import static com.hazelcast.core.ICommon.InstanceType;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.*;
@@ -75,6 +76,12 @@ class ConcurrentMapManager extends BaseManager {
                     }
                 });
         ClusterService.get().registerPacketProcessor(OP_CMAP_BACKUP_ADD,
+                new DefaultPacketProcessor() {
+                    void handle(Request request) {
+                        doBackup(request);
+                    }
+                });
+        ClusterService.get().registerPacketProcessor(OP_CMAP_BACKUP_REMOVE_MULTI,
                 new DefaultPacketProcessor() {
                     void handle(Request request) {
                         doBackup(request);
@@ -464,6 +471,16 @@ class ConcurrentMapManager extends BaseManager {
 
 
     class MMigrate extends MBackupAwareOp {
+        public boolean migrateMulti(Record record, Data value) {
+            copyRecordToRequest(record, request, true);
+            request.value = value;
+            request.operation = OP_CMAP_MIGRATE_RECORD;
+            doOp();
+            boolean result = getResultAsBoolean();
+            backup(OP_CMAP_BACKUP_PUT);
+            return result;
+        }
+
         public boolean migrate(Record record) {
             copyRecordToRequest(record, request, true);
             request.operation = OP_CMAP_MIGRATE_RECORD;
@@ -707,7 +724,7 @@ class ConcurrentMapManager extends BaseManager {
         boolean put(String name, Object key, Object value) {
             boolean result = booleanCall(OP_CMAP_PUT_MULTI, name, key, value, 0, -1, -1);
             if (result) {
-                backup(OP_CMAP_BACKUP_PUT_MULTI);
+                backup(OP_CMAP_BACKUP_PUT);
             }
             return result;
         }
@@ -1234,7 +1251,7 @@ class ConcurrentMapManager extends BaseManager {
         if (isSuperClient())
             return;
         Collection<CMap> cmaps = maps.values();
-        for (CMap cmap : cmaps) {
+        for (final CMap cmap : cmaps) {
             final Object[] records = cmap.mapRecords.values().toArray();
             cmap.reset();
             for (Object recObj : records) {
@@ -1250,7 +1267,18 @@ class ConcurrentMapManager extends BaseManager {
                     executeLocally(new Runnable() {
                         public void run() {
                             MMigrate mmigrate = new MMigrate();
-                            mmigrate.migrate(rec);
+                            if (cmap.isMultiMap()) {
+                                List<Data> values = rec.lsValues;
+                                if (values == null || values.size() == 0) {
+                                    mmigrate.migrateMulti(rec, null);
+                                } else {
+                                    for (Data value : values) {
+                                        mmigrate.migrateMulti(rec, value);
+                                    }
+                                }
+                            } else {
+                                mmigrate.migrate(rec);
+                            }
                         }
                     });
                 }
@@ -1665,6 +1693,8 @@ class ConcurrentMapManager extends BaseManager {
 
         int ownedEntryCount = 0;
 
+        InstanceType instanceType;
+
         public CMap(String name) {
             super();
             this.name = name;
@@ -1684,6 +1714,7 @@ class ConcurrentMapManager extends BaseManager {
             } else {
                 maxSize = (mapConfig.maxSize == 0) ? Integer.MAX_VALUE : mapConfig.maxSize;
             }
+            instanceType = getInstanceType(name);
         }
 
         public Record getRecord(Data key) {
@@ -1697,6 +1728,10 @@ class ConcurrentMapManager extends BaseManager {
         public void own(Request req) {
             Record record = toRecord(req);
             record.owner = thisAddress;
+        }
+
+        public boolean isMultiMap() {
+            return (instanceType == InstanceType.MULTIMAP);
         }
 
         public boolean backup(Request req) {
@@ -1751,13 +1786,6 @@ class ConcurrentMapManager extends BaseManager {
                 toRecord(req);
             } else if (req.operation == OP_CMAP_BACKUP_ADD) {
                 add(req);
-            } else if (req.operation == OP_CMAP_BACKUP_PUT_MULTI) {
-                Record record = getRecord(req.key);
-                if (record == null) {
-                    record = createNewRecord(req.key, null);
-                }
-                record.addValue(req.value);
-                req.value = null;
             } else if (req.operation == OP_CMAP_BACKUP_REMOVE_MULTI) {
                 Record record = getRecord(req.key);
                 if (record != null) {
@@ -1934,7 +1962,7 @@ class ConcurrentMapManager extends BaseManager {
             }
             if (removed) {
                 record.version++;
-                fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record);
+                fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record.key, req.value, record.mapListeners);
                 logger.log(Level.FINEST, record.value + " RemoveMulti " + record.lsValues);
             }
             req.version = record.version;
@@ -1957,7 +1985,7 @@ class ConcurrentMapManager extends BaseManager {
                 req.value = null;
                 record.version++;
                 touch(record);
-                fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, record);
+                fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, record.key, req.value, record.mapListeners);
             }
             logger.log(Level.FINEST, record.value + " PutMulti " + record.lsValues);
             req.version = record.version;
@@ -2076,13 +2104,22 @@ class ConcurrentMapManager extends BaseManager {
         public Record toRecord(Request req) {
             Record record = getRecord(req.key);
             if (record == null) {
-                record = createNewRecord(req.key, req.value);
+                if (isMultiMap()) {
+                    record = createNewRecord(req.key, null);
+                    record.addValue(req.value);
+                } else {
+                    record = createNewRecord(req.key, req.value);
+                }
             } else {
                 if (req.value != null) {
                     if (record.value != null) {
                         record.value.setNoData();
                     }
-                    record.setValue(req.value);
+                    if (isMultiMap()) {
+                        record.addValue(req.value);
+                    } else {
+                        record.setValue(req.value);
+                    }
                     record.version++;
                 }
                 req.key.setNoData();
