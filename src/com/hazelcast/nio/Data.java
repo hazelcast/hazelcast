@@ -105,7 +105,7 @@ public final class Data implements DataSerializable {
                 bbCurrentlyRead = ThreadContext.get().getBufferPool().obtain();
                 bbCurrentlyRead.limit((remaining > 1024) ? 1024 : remaining);
             }
-            readSize += BufferUtil.copy(src, bbCurrentlyRead);
+            readSize += BufferUtil.copyToHeapBuffer(src, bbCurrentlyRead);
             if (readSize >= size) {
                 if (bbCurrentlyRead.position() == 0)
                     throw new RuntimeException("Position cannot be 0");

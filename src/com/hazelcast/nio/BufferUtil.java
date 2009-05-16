@@ -23,7 +23,7 @@ import java.nio.ByteBuffer;
 
 public final class BufferUtil {
 
-    public static int copy(ByteBuffer src, ByteBuffer dest) {
+    public static int copyToHeapBuffer(ByteBuffer src, ByteBuffer dest) {
         int n = Math.min(src.remaining(), dest.remaining());
         if (n > 0) {
             int srcPosition = src.position();
@@ -35,6 +35,15 @@ public final class BufferUtil {
             System.arraycopy(src.array(), ixSrc, dest.array(), ixDest, n);
             src.position(srcPosition + n);
             dest.position(destPosition + n);
+        }
+        return n;
+    }
+
+    public static int copyToDirectBuffer(ByteBuffer src, ByteBuffer dest) {
+        int n = Math.min(src.remaining(), dest.remaining());
+        if (n > 0) {
+            dest.put(src.array(), src.position(), n);
+            src.position(src.position() + n);
         }
         return n;
     }

@@ -59,7 +59,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         }
     }
 
-
     public void handle() {
         if (lastPacket == null && writeQueue.size() == 0) {
             ready = true;
@@ -74,7 +73,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                     lastPacket = (Packet) writeQueue.poll();
                 }
                 if (lastPacket != null) {
-                    boolean packetDone = lastPacket.doWrite(socketBB);
+                    boolean packetDone = lastPacket.writeToSocketBuffer(socketBB);
                     if (packetDone) {
                         lastPacket.returnToContainer();
                         lastPacket = null;
