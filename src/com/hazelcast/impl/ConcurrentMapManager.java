@@ -226,15 +226,17 @@ class ConcurrentMapManager extends BaseManager {
     public void syncForDead(Address deadAddress) {
 //        Collection<Block> blocks = mapBlocks.values();
         for (Block block : blocks) {
-            if (deadAddress.equals(block.owner)) {
-                MemberImpl member = getNextMemberBeforeSync(block.owner, true, 1);
-                block.owner = (member == null) ? thisAddress : member.getAddress();
-            }
-            if (block.migrationAddress != null) {
-                if (deadAddress.equals(block.migrationAddress)) {
-                    MemberImpl member = getNextMemberBeforeSync(block.migrationAddress, true, 1);
-                    block.migrationAddress = (member == null) ? thisAddress : member
-                            .getAddress();
+            if (block != null) {
+                if (deadAddress.equals(block.owner)) {
+                    MemberImpl member = getNextMemberBeforeSync(block.owner, true, 1);
+                    block.owner = (member == null) ? thisAddress : member.getAddress();
+                }
+                if (block.migrationAddress != null) {
+                    if (deadAddress.equals(block.migrationAddress)) {
+                        MemberImpl member = getNextMemberBeforeSync(block.migrationAddress, true, 1);
+                        block.migrationAddress = (member == null) ? thisAddress : member
+                                .getAddress();
+                    }
                 }
             }
         }
@@ -483,6 +485,7 @@ class ConcurrentMapManager extends BaseManager {
 
         public boolean migrate(Record record) {
             copyRecordToRequest(record, request, true);
+            if (request.key == null) throw new RuntimeException("req.key is null");
             request.operation = OP_CMAP_MIGRATE_RECORD;
             doOp();
             boolean result = getResultAsBoolean();
@@ -694,7 +697,12 @@ class ConcurrentMapManager extends BaseManager {
             request.operation = operation;
             request.caller = thisAddress;
             doOp();
+        }
 
+        public void reset() {
+            super.reset();
+            owner = null;
+            distance = 0;
         }
 
         @Override
@@ -831,6 +839,12 @@ class ConcurrentMapManager extends BaseManager {
         protected int backupCount = 0;
         protected Request reqBackup = new Request();
 
+        public void reset() {
+            super.reset();
+            reqBackup.reset();
+            backupCount = 0;
+        }
+
         protected void backup(int operation) {
             if (backupCount > 0) {
                 for (int i = 0; i < backupCount; i++) {
@@ -845,6 +859,7 @@ class ConcurrentMapManager extends BaseManager {
                 for (int i = 0; i < backupCount; i++) {
                     MBackup backupOp = backupOps[i];
                     backupOp.getResultAsBoolean();
+                    backupOp.reset();
                 }
             }
         }
@@ -1256,6 +1271,10 @@ class ConcurrentMapManager extends BaseManager {
             cmap.reset();
             for (Object recObj : records) {
                 final Record rec = (Record) recObj;
+                if (rec.key == null || rec.key.size() == 0) {
+                    System.out.println("Record.key is null " + rec.key);
+                    System.exit(0);
+                }
                 boolean shouldMigrate = false;
                 if (thisAddress.equals(rec.owner)) {
                     shouldMigrate = true;
@@ -1675,7 +1694,7 @@ class ConcurrentMapManager extends BaseManager {
     }
 
     class CMap {
-        final SortedHashMap<Data, Record> mapRecords = new SortedHashMap<Data, Record>(1000);
+        final Map<Data, Record> mapRecords;
 
         final String name;
 
@@ -1689,11 +1708,11 @@ class ConcurrentMapManager extends BaseManager {
 
         final float evictionRate;
 
+        final InstanceType instanceType;
+
         boolean evicting = false;
 
         int ownedEntryCount = 0;
-
-        InstanceType instanceType;
 
         public CMap(String name) {
             super();
@@ -1711,7 +1730,9 @@ class ConcurrentMapManager extends BaseManager {
             evictionRate = mapConfig.evictionPercentage / 100;
             if (evictionPolicy == OrderingType.NONE) {
                 maxSize = Integer.MAX_VALUE;
+                mapRecords = new HashMap<Data, Record>(10000);
             } else {
+                mapRecords = new SortedHashMap<Data, Record>(10000);
                 maxSize = (mapConfig.maxSize == 0) ? Integer.MAX_VALUE : mapConfig.maxSize;
             }
             instanceType = getInstanceType(name);
@@ -1768,7 +1789,6 @@ class ConcurrentMapManager extends BaseManager {
                     if (record.value != null) {
                         record.value.setNoData();
                     }
-
                     if (record.lsValues != null) {
                         for (Data value : record.lsValues) {
                             value.setNoData();
@@ -1780,6 +1800,7 @@ class ConcurrentMapManager extends BaseManager {
                     record.value = null;
                     if (record.isRemovable()) {
                         removeRecord(record.key);
+                        record.key.setNoData();
                     }
                 }
             } else if (req.operation == OP_CMAP_BACKUP_LOCK) {
@@ -1878,20 +1899,20 @@ class ConcurrentMapManager extends BaseManager {
                 Block block = blocks[record.blockId];
                 if (thisAddress.equals(block.owner)) {
                     if (record.value != null) {
-                        pairs.addKeyValue(new KeyValue(doHardCopy(record.key), doHardCopy(record.value)));
+                        pairs.addKeyValue(new KeyValue(record.key, null));
                     } else if (record.copyCount > 0) {
                         for (int i = 0; i < record.copyCount; i++) {
-                            pairs.addKeyValue(new KeyValue(doHardCopy(record.key), null));
+                            pairs.addKeyValue(new KeyValue(record.key, null));
                         }
                     } else if (record.lsValues != null) {
                         int size = record.lsValues.size();
                         if (size > 0) {
                             if (request.operation == OP_CMAP_ITERATE_KEYS) {
-                                pairs.addKeyValue(new KeyValue(doHardCopy(record.key), null));
+                                pairs.addKeyValue(new KeyValue(record.key, null));
                             } else {
                                 for (int i = 0; i < size; i++) {
                                     Data value = record.lsValues.get(i);
-                                    pairs.addKeyValue(new KeyValue(doHardCopy(record.key), doHardCopy(value)));
+                                    pairs.addKeyValue(new KeyValue(record.key, null));
                                 }
                             }
                         }
@@ -1905,21 +1926,26 @@ class ConcurrentMapManager extends BaseManager {
 
         public Data get(Request req) {
             Record record = getRecord(req.key);
-            req.key.setNoData();
-            req.key = null;
             if (record == null)
                 return null;
             touch(record);
             Data data = record.getValue();
+            Data returnValue = null;
             if (data != null) {
-                return doHardCopy(data);
+                returnValue = doHardCopy(data);
             } else {
                 if (record.lsValues != null) {
                     Values values = new Values(record.lsValues);
-                    return toData(values);
+                    returnValue = toData(values);
                 }
             }
-            return null;
+            if (returnValue != null) {
+                req.key.setNoData();
+                ThreadContext.get().releaseData(req.key);
+                req.key = null;
+            }
+
+            return returnValue;
         }
 
         public boolean add(Request req) {
@@ -2008,16 +2034,15 @@ class ConcurrentMapManager extends BaseManager {
             Data oldValue = null;
             if (record == null) {
                 record = createNewRecord(req.key, req.value);
+                req.key = null;
             } else {
                 oldValue = record.getValue();
                 record.setValue(req.value);
                 record.version++;
                 touch(record);
-                req.key.setNoData();
             }
             req.version = record.version;
             req.longValue = record.copyCount;
-            req.key = null;
             req.value = null;
             if (oldValue == null) {
                 fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, record);
@@ -2036,7 +2061,7 @@ class ConcurrentMapManager extends BaseManager {
         void touch(Record record) {
             if (evictionPolicy == OrderingType.NONE) return;
             record.lastTouchTime = System.currentTimeMillis();
-            SortedHashMap.touch(mapRecords, record.key, evictionPolicy);
+            SortedHashMap.touch((SortedHashMap) mapRecords, record.key, evictionPolicy);
         }
 
         void startEviction() {
@@ -2110,6 +2135,7 @@ class ConcurrentMapManager extends BaseManager {
                 } else {
                     record = createNewRecord(req.key, req.value);
                 }
+                req.key = null;
             } else {
                 if (req.value != null) {
                     if (record.value != null) {
@@ -2122,9 +2148,7 @@ class ConcurrentMapManager extends BaseManager {
                     }
                     record.version++;
                 }
-                req.key.setNoData();
             }
-            req.key = null;
             req.value = null;
             record.lockAddress = req.lockAddress;
             record.lockThreadId = req.lockThreadId;
@@ -2171,8 +2195,6 @@ class ConcurrentMapManager extends BaseManager {
 
         public Data remove(Request req) {
             Record record = mapRecords.get(req.key);
-            req.key.setNoData();
-            req.key = null;
             if (record == null) {
                 return null;
             }
@@ -2203,6 +2225,12 @@ class ConcurrentMapManager extends BaseManager {
                 record.key.setNoData();
                 record.key = null;
             }
+            if (oldValue != null) {
+                req.key.setNoData();
+                ThreadContext.get().releaseData(req.key);
+                req.key = null;
+            }
+
 
             return oldValue;
         }
@@ -2734,8 +2762,8 @@ class ConcurrentMapManager extends BaseManager {
 
         public void addEntries(Pairs pairs) {
             if (pairs.lsKeyValues == null) return;
+            TransactionImpl txn = ThreadContext.get().txn;
             for (KeyValue entry : pairs.lsKeyValues) {
-                TransactionImpl txn = ThreadContext.get().txn;
                 if (txn != null) {
                     Object key = entry.getKey();
                     if (txn.has(name, key)) {
@@ -2778,7 +2806,7 @@ class ConcurrentMapManager extends BaseManager {
             }
 
             public void remove() {
-                ((FactoryImpl.MProxy) FactoryImpl.getProxy(name)).put(entry.getKey(), entry.getValue());
+                ((FactoryImpl.MProxy) FactoryImpl.getProxy(name)).remove(entry.getKey(), entry.getValue());
                 it.remove();
             }
         }

@@ -38,6 +38,8 @@ import java.util.logging.Logger;
 
 public class ThreadContext {
 
+    private final static BlockingQueue<Data> dataq = new ArrayBlockingQueue<Data>(6000);
+
     private final static BlockingQueue<ByteBuffer> bufferq = new ArrayBlockingQueue<ByteBuffer>(6000);
 
     private final static Logger logger = Logger.getLogger(ThreadContext.class.getName());
@@ -54,20 +56,27 @@ public class ThreadContext {
 
     final ObjectPool<PacketQueue.Packet> packetCache;
 
+    final ObjectPool<Data> dataCache;
+
     private ThreadContext() {
+
+        int dataCacheSize = 12;
         int bufferCacheSize = 12;
         int packetCacheSize = 0;
         String threadName = Thread.currentThread().getName();
         if (threadName.startsWith("hz.")) {
             if ("hz.InThread".equals(threadName)) {
+                dataCacheSize = 100;
                 bufferCacheSize = 100;
                 packetCacheSize = 100;
             } else if ("hz.OutThread".equals(threadName)) {
                 bufferCacheSize = 0;
                 packetCacheSize = 0;
+                dataCacheSize = 0;
             } else if ("hz.ServiceThread".equals(threadName)) {
                 bufferCacheSize = 100;
                 packetCacheSize = 100;
+                dataCacheSize = 100;
             }
         }
         logger.log(Level.FINEST, threadName + " is starting with cacheSize " + bufferCacheSize);
@@ -87,6 +96,15 @@ public class ThreadContext {
         };
         packetCache = new ObjectPool<Packet>("PacketCache", packetCacheFactory,
                 packetCacheSize, PacketQueue.get().qPackets);
+
+        ObjectFactory<Data> dataCacheFactory = new ObjectFactory<Data>() {
+            public Data createNew() {
+                return new Data();
+            }
+        };
+        dataCache = new ObjectPool<Data>("DataCache", dataCacheFactory,
+                dataCacheSize, dataq);
+
     }
 
     public static ThreadContext get() {
@@ -96,6 +114,19 @@ public class ThreadContext {
             threadLocal.set(threadContext);
         }
         return threadContext;
+    }
+
+    public Data obtainData() {
+        return new Data();
+    }
+
+    public void releaseData (Data data) {
+//        data.reset();
+//        dataCache.release(data);
+    }
+
+    public ObjectPool<Data> getDataCache () {
+        return dataCache;
     }
 
     public ObjectPool<Packet> getPacketPool() {
@@ -115,24 +146,33 @@ public class ThreadContext {
         return ConcurrentMapManager.get().new MAdd();
     }
 
+    MGet mget = ConcurrentMapManager.get().new MGet();
+
     public MGet getMGet() {
-        return ConcurrentMapManager.get().new MGet();
+        mget.reset();
+        return mget;
     }
 
     public MLock getMLock() {
         return ConcurrentMapManager.get().new MLock();
     }
 
+    MPut mput = ConcurrentMapManager.get().new MPut();
+
     public MPut getMPut() {
-        return ConcurrentMapManager.get().new MPut();
+        mput.reset();
+        return mput;
     }
 
     public MPutMulti getMPutMulti() {
         return ConcurrentMapManager.get().new MPutMulti();
     }
 
+    MRemove mremove = ConcurrentMapManager.get().new MRemove();
+
     public MRemove getMRemove() {
-        return ConcurrentMapManager.get().new MRemove();
+        mremove.reset();
+        return mremove;
     }
 
     public MRemoveMulti getMRemoveMulti() {
@@ -226,11 +266,11 @@ public class ThreadContext {
                 if (value == null) {
                     int totalDrained = objectQueue.drainTo(localPool, maxSize);
                     if (totalDrained == 0) {
-//						if (++zero % 10000 == 0) {
-//							System.out.println(name + " : " + Thread.currentThread().getName()
-//									+ " DRAINED " + totalDrained + "  size:" + objectQueue.size()
-//									+ ", zeroCount:" + zero);
-//						}		
+						if (++zero % 10000 == 0) {
+							System.out.println(name + " : " + Thread.currentThread().getName()
+									+ " DRAINED " + totalDrained + "  size:" + objectQueue.size()
+									+ ", zeroCount:" + zero);
+						}		
                         for (int i = 0; i < 4; i++) {
                             localPool.add(objectFactory.createNew());
                         }

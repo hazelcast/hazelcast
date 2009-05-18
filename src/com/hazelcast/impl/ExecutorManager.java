@@ -25,6 +25,7 @@ import static com.hazelcast.impl.Constants.Objects.*;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TIMEOUT;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferUtil;
+import static com.hazelcast.nio.BufferUtil.toObject;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.PacketQueue.Packet;
@@ -269,7 +270,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
                 if (result instanceof Data) {
                     // returning the remote result
                     // on the client thread
-                    return ThreadContext.get().toObject((Data) result);
+                    return toObject((Data) result);
                 } else {
                     // local execution result
                     return result;
@@ -577,7 +578,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
                 return;
             Object executionResult = null;
             if (callable == null) {
-                callable = ThreadContext.get().toObject(value);
+                callable = toObject(value);
                 executor.execute(this);
             } else {
                 runningThread = Thread.currentThread();

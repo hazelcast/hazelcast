@@ -105,6 +105,7 @@ public final class Serializer {
             byte typeId = bbis.readByte();
             result = typeSerizalizers[typeId].read(bbis, data);
             data.setNoData();
+            ThreadContext.get().releaseData(data);
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -44,10 +44,12 @@ public class SimpleMapTest {
                         if (operation < 4) {
                             map.put(String.valueOf(key), new byte[VALUE_SIZE]);
                             stats.mapPuts.incrementAndGet();
-                        } else if (operation < 8) {
+                        }
+                        else if (operation < 8) {
                             map.get(String.valueOf(key));
                             stats.mapGets.incrementAndGet();
-                        } else {
+                        }
+                        else {
                             map.remove(String.valueOf(key));
                             stats.mapRemoves.incrementAndGet();
                         }

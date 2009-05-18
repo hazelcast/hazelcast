@@ -43,6 +43,14 @@ public final class Data implements DataSerializable {
     public Data() {
     }
 
+    public void reset() {
+        lsData.clear();
+        size = 0;
+        readSize = 0;
+        hash = Integer.MIN_VALUE;
+        createDate = -1;
+    }
+
     public void digest(MessageDigest md) {
         for (ByteBuffer bb : lsData) {
             md.update(bb.array(), 0, bb.limit());

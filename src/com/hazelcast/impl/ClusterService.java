@@ -45,7 +45,7 @@ public class ClusterService implements Runnable, Constants {
 
     protected volatile boolean running = true;
 
-    protected final List lsBuffer = new ArrayList(2000);
+    protected final List lsBuffer = new ArrayList(64);
 
     protected long start = 0;
 
@@ -121,8 +121,7 @@ public class ClusterService implements Runnable, Constants {
         while (running) {
             Object obj = null;
             try {
-                lsBuffer.clear();
-                queue.drainTo(lsBuffer);
+                queue.drainTo(lsBuffer, 64);
                 final int size = lsBuffer.size();
                 if (size > 0) {
                     for (int i = 0; i < size; i++) {

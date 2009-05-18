@@ -64,9 +64,7 @@ abstract class BaseManager implements Constants {
 
     private static long scheduledActionIdIndex = 0;
 
-    private static long callId = 1;
-
-    private static long idGen = 0;
+    private static long callIdGen = 0;
 
     protected Address thisAddress;
 
@@ -273,14 +271,19 @@ abstract class BaseManager implements Constants {
 
         public Object getKey() {
             if (objKey == null) {
-                objKey = ThreadContext.get().toObject(key);
+                objKey = toObject(key);
+                key = null; // consumed on toObject(key)
             }
             return objKey;
         }
 
         public Object getValue() {
             if (objValue == null) {
-                objValue = ThreadContext.get().toObject(value);
+                if (value != null) {
+                    objValue = toObject(value);
+                } else {
+                    objValue = ((FactoryImpl.MProxy) FactoryImpl.getProxy(name)).get((key == null) ? getKey() : key);
+                }
             }
             return objValue;
         }
@@ -322,6 +325,10 @@ abstract class BaseManager implements Constants {
 
         public void setId(final long id) {
             this.id = id;
+        }
+
+        public void reset(){
+            id = -1;
         }
     }
 
@@ -396,15 +403,15 @@ abstract class BaseManager implements Constants {
 
         int operation = -1;
 
-        String name = null;
+        volatile String name = null;
 
-        Data key = null;
+        volatile Data key = null;
 
-        Data value = null;
+        volatile Data value = null;
 
         int blockId = -1;
 
-        long timeout = -1;
+        volatile long timeout = -1;
 
         long txnId = -1;
 
@@ -437,9 +444,11 @@ abstract class BaseManager implements Constants {
         public void reset() {
             if (this.key != null) {
                 this.key.setNoData();
+                ThreadContext.get().releaseData(this.key);
             }
             if (this.value != null) {
                 this.value.setNoData();
+                ThreadContext.get().releaseData(this.value);
             }
             this.resetCount++;
             this.local = true;
@@ -572,6 +581,12 @@ abstract class BaseManager implements Constants {
             doOp();
         }
 
+        public void reset() {
+            super.reset();
+            request.reset();
+        }
+
+
         public boolean getResultAsBoolean() {
             try {
                 final Object result = getResult();
@@ -602,7 +617,7 @@ abstract class BaseManager implements Constants {
                     final Data data = (Data) result;
                     if (data.size() == 0)
                         return null;
-                    return ThreadContext.get().toObject(data);
+                    return toObject(data);
                 }
                 return result;
             } catch (final Throwable e) {
@@ -629,10 +644,10 @@ abstract class BaseManager implements Constants {
             Data keyData = null;
             Data valueData = null;
             if (key != null) {
-                keyData = ThreadContext.get().toData(key);
+                keyData = toData(key);
             }
             if (value != null) {
-                valueData = ThreadContext.get().toData(value);
+                valueData = toData(value);
             }
             request.setLocal(operation, name, keyData, valueData, -1, timeout, recordId);
             request.attachment = this;
@@ -690,6 +705,11 @@ abstract class BaseManager implements Constants {
             removeCall(getId());
             responses.clear();
             setResult(OBJECT_REDO);
+        }
+
+        public void reset() {
+            super.reset();
+            responses.clear();
         }
 
         public void handleBooleanNoneRedoResponse(final PacketQueue.Packet packet) {
@@ -777,6 +797,12 @@ abstract class BaseManager implements Constants {
                 redo();
             }
         }
+
+        public void reset() {
+            super.reset();
+            target = null;
+        }
+
 
         public void process() {
             setTarget();
@@ -954,18 +980,10 @@ abstract class BaseManager implements Constants {
     }
 
     public long addCall(final Call call) {
-        final long id = idGen++;
+        final long id = callIdGen++;
         call.setId(id);
         mapCalls.put(id, call);
         return id;
-    }
-
-    public static Data toData(Object obj) {
-        return ThreadContext.get().toData(obj);
-    }
-
-    public static Object toObject(Data data) {
-        return ThreadContext.get().toObject(data);
     }
 
     public void enqueueAndReturn(final Object obj) {
@@ -1070,7 +1088,7 @@ abstract class BaseManager implements Constants {
     }
 
     public void sendProcessableTo(final RemotelyProcessable rp, final Address address) {
-        final Data value = ThreadContext.get().toData(rp);
+        final Data value = toData(rp);
         final PacketQueue.Packet packet = obtainPacket();
         try {
             packet.set("remotelyProcess", OP_REMOTELY_PROCESS, null, value);
@@ -1087,7 +1105,7 @@ abstract class BaseManager implements Constants {
         if (processLocally) {
             rp.process();
         }
-        Data value = ThreadContext.get().toData(rp);
+        Data value = toData(rp);
         for (MemberImpl member : lsMembers) {
             if (!member.localMember()) {
                 Packet packet = obtainPacket();

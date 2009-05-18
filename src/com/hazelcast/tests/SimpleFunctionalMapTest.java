@@ -1,12 +1,12 @@
-/* 
+/*
  * Copyright (c) 2007-2008, Hazel Ltd. All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at 
- * 
+ * You may obtain a copy of the License at
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,9 +20,9 @@ package com.hazelcast.tests;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -30,8 +30,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class SimpleFunctionalMapTest {
 
-    public static final int ENTRY_COUNT = 10 * 100;
-    public static final int VALUE_SIZE = 1000;
+    public static final int ENTRY_COUNT = 100;
+    public static final int KB = 1024;
     public static final int STATS_SECONDS = 10;
 
     public static void main(String[] args) {
@@ -46,42 +46,42 @@ public class SimpleFunctionalMapTest {
                         int keyInt = (int) (Math.random() * ENTRY_COUNT);
                         int operation = ((int) (Math.random() * 1000)) % 20;
                         Object key = String.valueOf(keyInt);
-                        Object value = new String(String.valueOf(key));
                         if (operation < 1) {
                             map.size();
                             stats.increment("size");
                         } else if (operation < 2) {
-                            Collection col =map.values();
+                            map.get(key);
+                            stats.increment("get");
+                        } else if (operation < 3) {
+                            map.remove(key);
+                            stats.increment("remove");
+                        } else if (operation < 4) {
+                            map.containsKey(key);
+                            stats.increment("containsKey");
+                        } else if (operation < 5) {
+                            Object value = new String(String.valueOf(key));
+                            map.containsValue(value);
+                            stats.increment("containsValue");
+                        } else if (operation < 6) {
+                            map.putIfAbsent(key, createValue());
+                            stats.increment("putIfAbsent");
+                        } else if (operation < 7) {
+                            Collection col = map.values();
                             for (Object o : col) {
                             }
                             stats.increment("values");
-                        } else if (operation < 3) {
-                            map.get(key);
-                            stats.increment("get");
-                        } else if (operation < 4) {
-                            map.remove(key);
-                            stats.increment("remove");
-                        } else if (operation < 5) {
-                            map.containsKey(key);
-                            stats.increment("containsKey");
-                        } else if (operation < 6) {
-                            map.containsValue(value);
-                            stats.increment("containsValue");
-                        } else if (operation < 7) {
-                            map.putIfAbsent(key,value);
-                            stats.increment("putIfAbsent");
                         } else if (operation < 8) {
-                            Collection col =map.keySet();
+                            Collection col = map.keySet();
                             for (Object o : col) {
                             }
                             stats.increment("keySet");
                         } else if (operation < 9) {
-                            Collection col =map.entrySet();
+                            Collection col = map.entrySet();
                             for (Object o : col) {
                             }
                             stats.increment("entrySet");
                         } else {
-                            map.put(key, value);
+                            map.put(key, createValue());
                             stats.increment("put");
                         }
                     }
@@ -104,6 +104,11 @@ public class SimpleFunctionalMapTest {
                 }
             }
         });
+    }
+
+    public static Object createValue() {
+        int numberOfK = (((int) (Math.random() * 1000)) % 40) + 1;
+        return new byte[numberOfK * KB];
     }
 
     public static class Stats {

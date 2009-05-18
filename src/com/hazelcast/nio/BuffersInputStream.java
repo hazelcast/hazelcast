@@ -420,7 +420,7 @@ public class BuffersInputStream extends InputStream implements DataInput {
             c = bytearr[count] & 0xff;
             if (c > 127)
                 break;
-            count++;
+            count++;                   
             chararr[chararr_count++] = (char) c;
         }
 

@@ -56,6 +56,15 @@ public final class BufferUtil {
         return bb.get() == 1;
     }
 
+
+    public static Data toData(Object obj) {
+        return ThreadContext.get().toData(obj);
+    }
+
+    public static Object toObject(Data data) {
+        return ThreadContext.get().toObject(data);
+    }
+
     public static Data doHardCopy(Data from) {
         if (from == null || from.size == 0)
             return null;
@@ -119,7 +128,7 @@ public final class BufferUtil {
     }
 
     public static Data createNewData() {
-        return new Data();
+        return ThreadContext.get().obtainData();
     }
 
 }
