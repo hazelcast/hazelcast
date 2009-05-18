@@ -403,7 +403,7 @@ public class BuffersInputStream extends InputStream implements DataInput {
      * @see java.io.DataInputStream#readUTF(java.io.DataInput)
      */
     public final String readUTF() throws IOException {
-        final int utflen = readUnsignedShort();
+        final int utflen = readInt();
         byte[] bytearr = null;
         char[] chararr = null;
 

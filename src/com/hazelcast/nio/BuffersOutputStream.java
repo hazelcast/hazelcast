@@ -183,11 +183,13 @@ public class BuffersOutputStream extends OutputStream implements DataOutput {
             }
         }
 
-        if (utflen > 65535)
-            throw new UTFDataFormatException("encoded string too long: " + utflen + " bytes");
+//        if (utflen > 65535)
+//            throw new UTFDataFormatException("encoded string too long: " + utflen + " bytes");
 
-        final byte[] bytearr = new byte[utflen + 2];
+        final byte[] bytearr = new byte[utflen + 4];
 
+        bytearr[count++] = (byte) ((utflen >>> 24) & 0xFF);
+        bytearr[count++] = (byte) ((utflen >>> 16) & 0xFF);
         bytearr[count++] = (byte) ((utflen >>> 8) & 0xFF);
         bytearr[count++] = (byte) ((utflen >>> 0) & 0xFF);
 
@@ -213,6 +215,6 @@ public class BuffersOutputStream extends OutputStream implements DataOutput {
                 bytearr[count++] = (byte) (0x80 | ((c >> 0) & 0x3F));
             }
         }
-        write(bytearr, 0, utflen + 2);
+        write(bytearr, 0, utflen + 4);
     }
 }
