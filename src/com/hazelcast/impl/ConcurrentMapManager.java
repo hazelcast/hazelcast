@@ -1740,6 +1740,8 @@ class ConcurrentMapManager extends BaseManager {
 
         final float evictionRate;
 
+        final long ttl; //ttl for entries
+
         final InstanceType instanceType;
 
         boolean evicting = false;
@@ -1751,7 +1753,7 @@ class ConcurrentMapManager extends BaseManager {
             this.name = name;
             Config.MapConfig mapConfig = Config.get().getMapConfig(name.substring(2));
             this.backupCount = mapConfig.backupCount;
-
+            ttl = mapConfig.timeToLiveSeconds * 1000;
             if ("LFU".equalsIgnoreCase(mapConfig.evictionPolicy)) {
                 evictionPolicy = OrderingType.LFU;
             } else if ("LRU".equalsIgnoreCase(mapConfig.evictionPolicy)) {
@@ -1880,12 +1882,15 @@ class ConcurrentMapManager extends BaseManager {
         }
 
         public int size() {
+            long now = System.currentTimeMillis();
             int size = 0;
             Collection<Record> records = mapRecords.values();
             for (Record record : records) {
-                Block block = blocks[record.blockId];
-                if (thisAddress.equals(block.owner)) {
-                    size += record.valueCount();
+                if (record.isValid(now)) {
+                    Block block = blocks[record.blockId];
+                    if (thisAddress.equals(block.owner)) {
+                        size += record.valueCount();
+                    }
                 }
             }
 //            System.out.println(size + " is size.. backup.size " + backupSize() + " ownedEntryCount:" + ownedEntryCount);
@@ -1960,6 +1965,9 @@ class ConcurrentMapManager extends BaseManager {
             Record record = getRecord(req.key);
             if (record == null)
                 return null;
+            if (!record.isValid()) {
+                return null;
+            }
             CMapEntry cMapEntry = new CMapEntry(record.getCost(), record.expirationTime, record.lastAccessTime, record.lastUpdateTime, record.createTime, record.version, record.hits, true);
             return cMapEntry;
         }
@@ -1968,6 +1976,9 @@ class ConcurrentMapManager extends BaseManager {
             Record record = getRecord(req.key);
             if (record == null)
                 return null;
+            if (!record.isValid()) {
+                return null;
+            }
             record.setLastAccessed();
             touch(record);
             Data data = record.getValue();
@@ -2072,6 +2083,9 @@ class ConcurrentMapManager extends BaseManager {
                 }
             }
             Record record = getRecord(req.key);
+            if (!record.isValid()) {
+                record.setExpirationTime(ttl);
+            }
             Data oldValue = null;
             if (record == null) {
                 record = createNewRecord(req.key, req.value);
@@ -2290,7 +2304,7 @@ class ConcurrentMapManager extends BaseManager {
 
         Record createNewRecord(Data key, Data value) {
             int blockId = getBlockId(key);
-            Record rec = new Record(name, blockId, key, value);
+            Record rec = new Record(name, blockId, key, value, ttl);
             Block ownerBlock = getOrCreateBlock(blockId);
             if (thisAddress.equals(ownerBlock.getRealOwner())) {
                 ownedEntryCount++;
@@ -2387,7 +2401,7 @@ class ConcurrentMapManager extends BaseManager {
         private long version = 0;
         private final long createTime;
         private long lastTouchTime = 0;
-        private long expirationTime = 0;
+        private long expirationTime = Long.MAX_VALUE;
         private long lastAccessTime = 0;
         private long lastUpdateTime = 0;
         private int hits = 0;
@@ -2402,13 +2416,14 @@ class ConcurrentMapManager extends BaseManager {
         private List<Data> lsValues = null; // multimap values
         private SortedSet<VersionedBackupOp> backupOps = null;
 
-        public Record(String name, int blockId, Data key, Data value) {
+        public Record(String name, int blockId, Data key, Data value, long ttl) {
             super();
             this.name = name;
             this.blockId = blockId;
             this.key = key;
             this.value = value;
             this.createTime = System.currentTimeMillis();
+            setExpirationTime(ttl);
             this.lastTouchTime = createTime;
             this.version = 0;
         }
@@ -2501,7 +2516,7 @@ class ConcurrentMapManager extends BaseManager {
                     cost += data.size();
                 }
             }
-            return cost;
+            return cost + key.size();
         }
 
         public boolean containsValue(Data value) {
@@ -2672,6 +2687,22 @@ class ConcurrentMapManager extends BaseManager {
         public void setLastAccessed() {
             lastAccessTime = System.currentTimeMillis();
             hits++;
+        }
+
+        public void setExpirationTime(long ttl) {
+            if (ttl == 0) {
+                expirationTime = Long.MAX_VALUE;
+            } else {
+                expirationTime = createTime + ttl;
+            }
+        }
+
+        public boolean isValid(long now) {
+            return now > expirationTime;
+        }
+
+        public boolean isValid() {
+            return System.currentTimeMillis() > expirationTime;
         }
 
         @Override

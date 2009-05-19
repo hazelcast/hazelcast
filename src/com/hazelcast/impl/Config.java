@@ -89,6 +89,8 @@ public class Config {
 
         public int evictionPercentage = 25;
 
+        public int timeToLiveSeconds = 0;
+
         public int maxSize = Integer.MAX_VALUE;
 
         public String evictionPolicy = "NONE";
@@ -477,6 +479,9 @@ public class Config {
             } else if (n.getNodeName().equalsIgnoreCase("eviction-percentage")) {
                 config.evictionPercentage = getIntegerValue("eviction-percentage", value,
                         25);
+            } else if (n.getNodeName().equalsIgnoreCase("time-to-live-seconds")) {
+                config.timeToLiveSeconds = getIntegerValue("time-to-live-seconds", value,
+                        0);
             }
         }
         mapMapConfigs.put(name, config);
