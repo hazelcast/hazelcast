@@ -63,7 +63,7 @@ class MulticastService implements Runnable {
             try {
                 final JoinInfo joinInfo = receive();
                 if (joinInfo != null) {
-                    if (!Node.get().address.equals(joinInfo.address)) {
+                    if (Node.get().address != null && !Node.get().address.equals(joinInfo.address)) {
                         if (Config.get().groupName.equals(joinInfo.groupName)) {
                             if (Config.get().groupPassword.equals(joinInfo.groupPassword)) {
                                 if (Node.get().master()) {

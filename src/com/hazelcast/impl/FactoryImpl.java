@@ -1316,6 +1316,11 @@ public class FactoryImpl implements Constants {
             return mproxyReal.containsValue(value);
         }
 
+        public MapEntry getMapEntry(Object key) {
+            ensure();
+            return mproxyReal.getMapEntry(key);
+        }
+
         public Object get(Object key) {
             ensure();
             return mproxyReal.get(key);
@@ -1496,6 +1501,12 @@ public class FactoryImpl implements Constants {
 
             public String getName() {
                 return name.substring(2);
+            }
+
+            public MapEntry getMapEntry(Object key) {
+                check(key);
+                MGetMapEntry mgetMapEntry = ConcurrentMapManager.get(). new MGetMapEntry();
+                return mgetMapEntry.get (name, key);
             }
 
             public boolean putMulti(Object key, Object value) {

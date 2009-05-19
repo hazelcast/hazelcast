@@ -40,4 +40,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, ICommon {
 
     void removeEntryListener(EntryListener listener, Object key);
 
+    MapEntry getMapEntry(Object key);
+
 }

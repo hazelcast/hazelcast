@@ -228,6 +228,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleMapPut(args);
         } else if (first.equals("m.get")) {
             handleMapGet(args);
+        } else if (first.equalsIgnoreCase("m.getMapEntry")) {
+            handleMapGetMapEntry(args);
         } else if (first.equals("m.remove")) {
             handleMapRemove(args);
         } else if (first.equals("m.putmany")) {
@@ -307,6 +309,10 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private void handleMapGet(String[] args) {
         print(map.get(args[1]));
+    }
+
+    private void handleMapGetMapEntry(String[] args) {
+        print(map.getMapEntry(args[1]));
     }
 
     private void handleMapRemove(String[] args) {

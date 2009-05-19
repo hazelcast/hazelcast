@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.EntryEvent;
 import static com.hazelcast.core.ICommon.InstanceType;
+import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.*;
@@ -49,6 +50,12 @@ class ConcurrentMapManager extends BaseManager {
                 new DefaultPacketProcessor(false, true, false, true) {
                     void handle(Request request) {
                         doGet(request);
+                    }
+                });
+        ClusterService.get().registerPacketProcessor(OP_CMAP_GET_MAP_ENTRY,
+                new DefaultPacketProcessor(false, true, false, true) {
+                    void handle(Request request) {
+                        doGetMapEntry(request);
                     }
                 });
         ClusterService.get().registerPacketProcessor(OP_CMAP_PUT,
@@ -514,6 +521,20 @@ class ConcurrentMapManager extends BaseManager {
             if (!request.scheduled) {
                 setResult(request.response);
             }
+        }
+    }
+
+    class MGetMapEntry extends MTargetAwareOp {
+        public MapEntry get(String name, Object key) {
+            CMapEntry mapEntry = (CMapEntry) objectCall(OP_CMAP_GET_MAP_ENTRY, name, key, null, 0, -1, -1);
+            mapEntry.set(name, key);
+            return mapEntry;
+        }
+
+        @Override
+        public void doLocalOp() {
+            doGetMapEntry(request);
+            setResult(request.response);
         }
     }
 
@@ -1272,8 +1293,7 @@ class ConcurrentMapManager extends BaseManager {
             for (Object recObj : records) {
                 final Record rec = (Record) recObj;
                 if (rec.key == null || rec.key.size() == 0) {
-                    System.out.println("Record.key is null " + rec.key);
-                    System.exit(0);
+                    logger.log(Level.SEVERE, "Record.key is null or empty " + rec.key);
                 }
                 boolean shouldMigrate = false;
                 if (thisAddress.equals(rec.owner)) {
@@ -1455,9 +1475,16 @@ class ConcurrentMapManager extends BaseManager {
                     packet.version = remoteReq.version;
                     packet.longValue = remoteReq.longValue;
                     if (returnsObject) {
-                        Data oldValue = (Data) remoteReq.response;
-                        if (oldValue != null && oldValue.size() > 0) {
-                            doSet(oldValue, packet.value);
+                        if (remoteReq != null) {
+                            Data data = null;
+                            if (remoteReq.response instanceof Data) {
+                                data = (Data) remoteReq.response;
+                            } else {
+                                data = toData(remoteReq.response);
+                            }
+                            if (data != null && data.size() > 0) {
+                                doSet(data, packet.value);
+                            }
                         }
                         sendResponse(packet);
                     } else {
@@ -1577,6 +1604,11 @@ class ConcurrentMapManager extends BaseManager {
     final void doGet(Request request) {
         CMap cmap = getMap(request.name);
         request.response = cmap.get(request);
+    }
+
+    final void doGetMapEntry(Request request) {
+        CMap cmap = getMap(request.name);
+        request.response = cmap.getMapEntry(request);
     }
 
     final void doContains(Request request) {
@@ -1730,7 +1762,7 @@ class ConcurrentMapManager extends BaseManager {
             evictionRate = mapConfig.evictionPercentage / 100;
             if (evictionPolicy == OrderingType.NONE) {
                 maxSize = Integer.MAX_VALUE;
-                mapRecords = new HashMap<Data, Record>(10000);
+                mapRecords = new SortedHashMap<Data, Record>(10000);
             } else {
                 mapRecords = new SortedHashMap<Data, Record>(10000);
                 maxSize = (mapConfig.maxSize == 0) ? Integer.MAX_VALUE : mapConfig.maxSize;
@@ -1924,10 +1956,19 @@ class ConcurrentMapManager extends BaseManager {
             request.response = dataEntries;
         }
 
+        public CMapEntry getMapEntry(Request req) {
+            Record record = getRecord(req.key);
+            if (record == null)
+                return null;
+            CMapEntry cMapEntry = new CMapEntry(record.getCost(), record.expirationTime, record.lastAccessTime, record.lastUpdateTime, record.createTime, record.version, record.hits, true);
+            return cMapEntry;
+        }
+
         public Data get(Request req) {
             Record record = getRecord(req.key);
             if (record == null)
                 return null;
+            record.setLastAccessed();
             touch(record);
             Data data = record.getValue();
             Data returnValue = null;
@@ -2040,6 +2081,7 @@ class ConcurrentMapManager extends BaseManager {
                 record.setValue(req.value);
                 record.version++;
                 touch(record);
+                record.setLastUpdated();
             }
             req.version = record.version;
             req.longValue = record.copyCount;
@@ -2059,8 +2101,8 @@ class ConcurrentMapManager extends BaseManager {
         }
 
         void touch(Record record) {
-            if (evictionPolicy == OrderingType.NONE) return;
             record.lastTouchTime = System.currentTimeMillis();
+            if (evictionPolicy == OrderingType.NONE) return;
             SortedHashMap.touch((SortedHashMap) mapRecords, record.key, evictionPolicy);
         }
 
@@ -2344,7 +2386,11 @@ class ConcurrentMapManager extends BaseManager {
         private Data value;
         private long version = 0;
         private final long createTime;
-        private long lastTouchTime;
+        private long lastTouchTime = 0;
+        private long expirationTime = 0;
+        private long lastAccessTime = 0;
+        private long lastUpdateTime = 0;
+        private int hits = 0;
         private final String name;
         private final int blockId;
         private int lockThreadId = -1;
@@ -2441,6 +2487,21 @@ class ConcurrentMapManager extends BaseManager {
                 count += copyCount;
             }
             return count;
+        }
+
+        public long getCost() {
+            long cost = 0;
+            if (value != null) {
+                cost = value.size();
+                if (copyCount > 0) {
+                    cost *= copyCount;
+                }
+            } else if (lsValues != null) {
+                for (Data data : lsValues) {
+                    cost += data.size();
+                }
+            }
+            return cost;
         }
 
         public boolean containsValue(Data value) {
@@ -2602,6 +2663,15 @@ class ConcurrentMapManager extends BaseManager {
 
         public int getCopyCount() {
             return copyCount;
+        }
+
+        public void setLastUpdated() {
+            lastUpdateTime = System.currentTimeMillis();
+        }
+
+        public void setLastAccessed() {
+            lastAccessTime = System.currentTimeMillis();
+            hits++;
         }
 
         @Override
@@ -2852,6 +2922,152 @@ class ConcurrentMapManager extends BaseManager {
             throw new UnsupportedOperationException();
         }
 
+    }
+
+
+    public static class CMapEntry implements MapEntry, DataSerializable {
+        private long cost = 0;
+        private long expirationTime = 0;
+        private long lastAccessTime = 0;
+        private long lastUpdateTime = 0;
+        private long creationTime = 0;
+        private long version = 0;
+        private int hits = 0;
+        private boolean valid = true;
+        private String name = null;
+        private Object key = null;
+        private Object value = null;
+
+        public CMapEntry() {
+        }
+
+        public CMapEntry(long cost, long expirationTime, long lastAccessTime, long lastUpdateTime, long creationTime, long version, int hits, boolean valid) {
+            this.cost = cost;
+            this.expirationTime = expirationTime;
+            this.lastAccessTime = lastAccessTime;
+            this.lastUpdateTime = lastUpdateTime;
+            this.creationTime = creationTime;
+            this.version = version;
+            this.hits = hits;
+            this.valid = valid;
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeLong(cost);
+            out.writeLong(expirationTime);
+            out.writeLong(lastAccessTime);
+            out.writeLong(lastUpdateTime);
+            out.writeLong(creationTime);
+            out.writeLong(version);
+            out.writeInt(hits);
+            out.writeBoolean(valid);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            cost = in.readLong();
+            expirationTime = in.readLong();
+            lastAccessTime = in.readLong();
+            lastUpdateTime = in.readLong();
+            creationTime = in.readLong();
+            version = in.readLong();
+            hits = in.readInt();
+            valid = in.readBoolean();
+        }
+
+        public void set(String name, Object key) {
+            this.name = name;
+            this.key = key;
+        }
+
+        public long getCost() {
+            return cost;
+        }
+
+        public long getCreationTime() {
+            return creationTime;
+        }
+
+        public long getExpirationTime() {
+            return expirationTime;
+        }
+
+        public long getLastUpdateTime() {
+            return lastUpdateTime;
+        }
+
+        public int getHits() {
+            return hits;
+        }
+
+        public long getLastAccessTime() {
+            return lastAccessTime;
+        }
+
+        public long getVersion() {
+            return version;
+        }
+
+        public boolean isValid() {
+            return valid;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Object getKey() {
+            return key;
+        }
+
+        public Object getValue() {
+            if (value == null) {
+                value = ((FactoryImpl.MProxy) FactoryImpl.getProxy(name)).get(key);
+            }
+            return value;
+        }
+
+        public Object setValue(Object value) {
+            Object oldValue = this.value;
+            ((FactoryImpl.MProxy) FactoryImpl.getProxy(name)).put(key, value);
+            return oldValue;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            CMapEntry cMapEntry = (CMapEntry) o;
+
+            if (key != null ? !key.equals(cMapEntry.key) : cMapEntry.key != null) return false;
+            if (name != null ? !name.equals(cMapEntry.name) : cMapEntry.name != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = name != null ? name.hashCode() : 0;
+            result = 31 * result + (key != null ? key.hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuffer sb = new StringBuffer();
+            sb.append("MapEntry");
+            sb.append("{key=").append(key);
+            sb.append(", valid=").append(valid);
+            sb.append(", hits=").append(hits);
+            sb.append(", version=").append(version);
+            sb.append(", creationTime=").append(creationTime);
+            sb.append(", lastUpdateTime=").append(lastUpdateTime);
+            sb.append(", lastAccessTime=").append(lastAccessTime);
+            sb.append(", expirationTime=").append(expirationTime);
+            sb.append(", cost=").append(cost);
+            sb.append('}');
+            return sb.toString();
+        }
     }
 
 
