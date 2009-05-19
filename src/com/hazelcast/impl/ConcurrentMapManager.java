@@ -2083,14 +2083,14 @@ class ConcurrentMapManager extends BaseManager {
                 }
             }
             Record record = getRecord(req.key);
-            if (!record.isValid()) {
-                record.setExpirationTime(ttl);
-            }
             Data oldValue = null;
             if (record == null) {
                 record = createNewRecord(req.key, req.value);
                 req.key = null;
             } else {
+                if (!record.isValid()) {
+                    record.setExpirationTime(ttl);
+                }
                 oldValue = record.getValue();
                 record.setValue(req.value);
                 record.version++;
