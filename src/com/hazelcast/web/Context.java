@@ -18,6 +18,7 @@
 package com.hazelcast.web;
 
 public interface Context {
+	
     public final static String ATTRIBUTE_NAME = "*hazelcast-servlet-context";
 
     void addSnapshotListener(SnapshotListener snapshotListener);
