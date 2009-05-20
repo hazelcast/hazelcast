@@ -17,7 +17,6 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.Member;
 import static com.hazelcast.impl.Constants.ClusterOperations.*;
 import static com.hazelcast.impl.Constants.NodeTypes.NODE_MEMBER;
@@ -52,6 +51,16 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
     private final long waitTimeBeforeJoin = 5000;
 
     private ClusterManager() {
+        ClusterService.get().registerPeriodicRunnable(new Runnable() {
+            public void run() {
+                heartBeater();
+            }
+        });
+        ClusterService.get().registerPeriodicRunnable(new Runnable() {
+            public void run() {
+                checkScheduledActions();
+            }
+        });
         ConnectionManager.get().addConnectionListener(this);
         ClusterService.get().registerPacketProcessor(OP_RESPONSE, new PacketProcessor() {
             public void process(Packet packet) {
@@ -161,7 +170,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                             if ((now - memberImpl.getLastWrite()) > 500) {
                                 Packet packet = obtainPacket("heartbeat", null, null,
                                         OP_HEARTBEAT, 0);
-                                send(packet, address);
+                                sendOrReleasePacket(packet, conn);
                             }
                         }
                     } catch (Exception e) {
@@ -190,7 +199,8 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                 if (!removed) {
                     Packet packet = obtainPacket("heartbeat", null, null, OP_HEARTBEAT,
                             0);
-                    send(packet, getMasterAddress());
+                    Connection connMaster = ConnectionManager.get().getOrConnect(getMasterAddress());
+                    sendOrReleasePacket(packet, connMaster);
                 }
             }
             for (MemberImpl member : lsMembers) {
@@ -201,7 +211,16 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                         if (conn != null) {
                             Packet packet = obtainPacket("heartbeat", null, null,
                                     OP_HEARTBEAT, 0);
-                            send(packet, conn);
+                            sendOrReleasePacket(packet, conn);
+                        }
+                    } else {
+                        Connection conn = ConnectionManager.get().getConnection(address);
+                        if (conn != null && conn.live()) {
+                            if ((now - member.getLastWrite()) > 1000) {
+                                Packet packet = obtainPacket("heartbeat", null, null,
+                                        OP_HEARTBEAT, 0);
+                                sendOrReleasePacket(packet, conn);
+                            }
                         }
                     }
                 }
@@ -804,7 +823,6 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         sendProcessableTo(new JoinRequest(thisAddress, Config.get().groupName,
                 Config.get().groupPassword, Node.get().getLocalNodeType()), toAddress);
     }
-
 
 
     public static class JoinRequest extends AbstractRemotelyProcessable {

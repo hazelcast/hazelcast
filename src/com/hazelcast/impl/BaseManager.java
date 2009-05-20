@@ -327,7 +327,7 @@ abstract class BaseManager implements Constants {
             this.id = id;
         }
 
-        public void reset(){
+        public void reset() {
             id = -1;
         }
     }
@@ -1452,7 +1452,7 @@ abstract class BaseManager implements Constants {
 
     final boolean send(final PacketQueue.Packet packet, final Address address) {
         final Connection conn = ConnectionManager.get().getConnection(address);
-        if (conn != null) {
+        if (conn != null && conn.live()) {
             return writePacket(conn, packet);
         } else {
             return false;
@@ -1460,17 +1460,24 @@ abstract class BaseManager implements Constants {
     }
 
     final boolean send(final PacketQueue.Packet packet, final Connection conn) {
-        if (conn != null) {
+        if (conn != null && conn.live()) {
             return writePacket(conn, packet);
         } else {
             return false;
         }
     }
 
-    private boolean writePacket(final Connection conn, final PacketQueue.Packet packet) {
-        if (!conn.live()) {
-            return false;
+    final boolean sendOrReleasePacket(final PacketQueue.Packet packet, final Connection conn) {
+        if (conn != null && conn.live()) {
+            if (writePacket(conn, packet)) {
+                return true;
+            }
         }
+        packet.returnToContainer();
+        return false;
+    }
+
+    final private boolean writePacket(final Connection conn, final PacketQueue.Packet packet) {
         final MemberImpl memberImpl = getMember(conn.getEndPoint());
         if (memberImpl != null) {
             memberImpl.didWrite();

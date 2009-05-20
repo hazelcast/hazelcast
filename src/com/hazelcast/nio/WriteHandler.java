@@ -17,19 +17,18 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.Node;
 import com.hazelcast.nio.PacketQueue.Packet;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
-    private final BlockingQueue writeQueue = new LinkedBlockingQueue();
+    private final Queue writeQueue = new ConcurrentLinkedQueue();
 
     private final AtomicBoolean informSelector = new AtomicBoolean(true);
 
@@ -45,11 +44,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     public void enqueuePacket(final PacketQueue.Packet packet) {
-        try {
-            writeQueue.put(packet);
-        } catch (final InterruptedException e) {
-            Node.get().handleInterruptedException(Thread.currentThread(), e);
-        }
+        writeQueue.offer(packet);
         if (informSelector.get()) {
             informSelector.set(false);
             outSelector.addTask(this);
@@ -60,9 +55,12 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     public void handle() {
-        if (lastPacket == null && writeQueue.size() == 0) {
-            ready = true;
-            return;
+        if (lastPacket == null) {
+            lastPacket = (Packet) writeQueue.poll();
+            if (lastPacket == null) {
+                ready = true;
+                return;
+            }
         }
         if (!connection.live())
             return;

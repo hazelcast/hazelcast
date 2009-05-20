@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,7 +42,7 @@ public class SelectorBase implements Runnable {
 
     protected Selector selector = null;
 
-    protected BlockingQueue<Runnable> selectorQueue = new ArrayBlockingQueue<Runnable>(10000);
+    protected BlockingQueue<Runnable> selectorQueue = new LinkedBlockingQueue<Runnable>();
 
     protected volatile boolean live = true;
 

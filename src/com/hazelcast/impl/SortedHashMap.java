@@ -81,6 +81,13 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V>
         }
     }
 
+    public static void moveToTop(SortedHashMap linkedMap, Object key) {
+        Entry e = linkedMap.getEntry(key);
+        if (e != null) {
+            e.moveToTop(linkedMap);
+        }
+    }
+
     public V get(Object key) {
         Entry<K, V> e = getEntry(key);
         if (e == null)
@@ -312,6 +319,11 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V>
             after.before = this;
         }
 
+        private void addAfter(Entry<K, V> existingEntry) {
+            addBefore(existingEntry.after);
+        }
+
+
         /**
          * This method is invoked by the superclass whenever the value
          * of a pre-existing entry is read by Map.get or modified by Map.set.
@@ -351,6 +363,11 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V>
                 remove();
                 addBefore(nextOne);
             }
+        }
+
+        void moveToTop(SortedHashMap lm) {
+            remove();
+            addAfter(lm.header);
         }
 
         void recordRemoval(SortedHashMap<K, V> lm) {
@@ -509,21 +526,20 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V>
     }
 
     public static void main(String[] args) {
-        SortedHashMap m = new SortedHashMap(100, SortedHashMap.OrderingType.LFU);
+        SortedHashMap m = new SortedHashMap(100, SortedHashMap.OrderingType.LRU);
         for (int i = 0; i < 10; i++) {
             m.put(i, "value" + i);
         }
 
-        m.remove (0);
-        m.remove (4);
+        m.get(0);
+        m.get(4);
+        SortedHashMap.moveToTop(m, 7);
         Collection values = m.values();
 
         for (Object o : values) {
             System.out.println("vv " + o);
         }
 
-        System.out.println("0 " + m.get (0));
-        System.out.println("4 " + m.get (4));
 
     }
 

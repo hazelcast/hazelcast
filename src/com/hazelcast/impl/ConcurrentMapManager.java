@@ -41,10 +41,20 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-class ConcurrentMapManager extends BaseManager {
+final class ConcurrentMapManager extends BaseManager {
     private static ConcurrentMapManager instance = new ConcurrentMapManager();
 
     private ConcurrentMapManager() {
+        ClusterService.get().registerPeriodicRunnable(new Runnable() {
+            public void run() {
+                Collection<CMap> cmaps = maps.values();
+                for (CMap cmap : cmaps) {
+                    if (cmap.ttl != 0) {
+                        cmap.startEviction();
+                    }
+                }
+            }
+        });
         //checkIfMigrating, targetAware, schedulable, returnsObject
         ClusterService.get().registerPacketProcessor(OP_CMAP_GET,
                 new DefaultPacketProcessor(false, true, false, true) {
@@ -1618,11 +1628,7 @@ class ConcurrentMapManager extends BaseManager {
 
     final void doEvict(Request request) {
         CMap cmap = getMap(request.name);
-        if (testLock(request)) {
-            request.response = cmap.evict(request);
-        } else {
-            request.response = false;
-        }
+        request.response = cmap.evict(request);
     }
 
     final void doRemoveMulti(Request request) {
@@ -1932,27 +1938,34 @@ class ConcurrentMapManager extends BaseManager {
         public void getEntries(Request request) {
             Collection<Record> colRecords = mapRecords.values();
             Pairs pairs = new Pairs();
+            long now = System.currentTimeMillis();
             for (Record record : colRecords) {
-                Block block = blocks[record.blockId];
-                if (thisAddress.equals(block.owner)) {
-                    if (record.value != null) {
-                        pairs.addKeyValue(new KeyValue(record.key, null));
-                    } else if (record.copyCount > 0) {
-                        for (int i = 0; i < record.copyCount; i++) {
+                if (record.isValid(now)) {
+                    Block block = blocks[record.blockId];
+                    if (thisAddress.equals(block.owner)) {
+                        if (record.value != null) {
                             pairs.addKeyValue(new KeyValue(record.key, null));
-                        }
-                    } else if (record.lsValues != null) {
-                        int size = record.lsValues.size();
-                        if (size > 0) {
-                            if (request.operation == OP_CMAP_ITERATE_KEYS) {
+                        } else if (record.copyCount > 0) {
+                            for (int i = 0; i < record.copyCount; i++) {
                                 pairs.addKeyValue(new KeyValue(record.key, null));
-                            } else {
-                                for (int i = 0; i < size; i++) {
-                                    Data value = record.lsValues.get(i);
+                            }
+                        } else if (record.lsValues != null) {
+                            int size = record.lsValues.size();
+                            if (size > 0) {
+                                if (request.operation == OP_CMAP_ITERATE_KEYS) {
                                     pairs.addKeyValue(new KeyValue(record.key, null));
+                                } else {
+                                    for (int i = 0; i < size; i++) {
+                                        Data value = record.lsValues.get(i);
+                                        pairs.addKeyValue(new KeyValue(record.key, null));
+                                    }
                                 }
                             }
                         }
+                    }
+                } else {
+                    if (!record.isEvictable()) {
+                        scheduleForEviction(record);
                     }
                 }
             }
@@ -1977,7 +1990,10 @@ class ConcurrentMapManager extends BaseManager {
             if (record == null)
                 return null;
             if (!record.isValid()) {
-                return null;
+                if (record.isEvictable()) {
+                    scheduleForEviction(record);
+                    return null;
+                }
             }
             record.setLastAccessed();
             touch(record);
@@ -2114,6 +2130,10 @@ class ConcurrentMapManager extends BaseManager {
             evicting = false;
         }
 
+        void scheduleForEviction(Record record) {
+            SortedHashMap.moveToTop((SortedHashMap) mapRecords, record.key);
+        }
+
         void touch(Record record) {
             record.lastTouchTime = System.currentTimeMillis();
             if (evictionPolicy == OrderingType.NONE) return;
@@ -2122,21 +2142,43 @@ class ConcurrentMapManager extends BaseManager {
 
         void startEviction() {
             if (evicting) return;
-            if (evictionPolicy == OrderingType.NONE) return;
-            Collection<Record> values = mapRecords.values();
-            int numberOfRecordsToEvict = (int) (ownedEntryCount * evictionRate);
-            int evictedCount = 0;
-            List<Data> lsKeysToEvict = new ArrayList<Data>(numberOfRecordsToEvict);
-            recordsLoop:
-            for (Record record : values) {
-                if (record.isEvictable()) {
-                    lsKeysToEvict.add(doHardCopy(record.key));
-                    if (++evictedCount >= numberOfRecordsToEvict) {
-                        break recordsLoop;
+            List<Data> lsKeysToEvict = null;
+            if (evictionPolicy == OrderingType.NONE) {
+                if (ttl != 0) {
+                    long now = System.currentTimeMillis();
+                    Collection<Record> values = mapRecords.values();
+                    recordsLoop:
+                    for (Record record : values) {
+                        if (!record.isValid(now)) {
+                            if (record.isEvictable()) {
+                                if (lsKeysToEvict == null) {
+                                    lsKeysToEvict = new ArrayList<Data>(100);
+                                }
+                                lsKeysToEvict.add(doHardCopy(record.key));
+                            }
+                        } else {
+                            break recordsLoop;
+                        }
+                    }
+                }
+            } else {
+                Collection<Record> values = mapRecords.values();
+                int numberOfRecordsToEvict = (int) (ownedEntryCount * evictionRate);
+                int evictedCount = 0;
+                recordsLoop:
+                for (Record record : values) {
+                    if (record.isEvictable()) {
+                        if (lsKeysToEvict == null) {
+                            lsKeysToEvict = new ArrayList<Data>(numberOfRecordsToEvict);
+                        }
+                        lsKeysToEvict.add(doHardCopy(record.key));
+                        if (++evictedCount >= numberOfRecordsToEvict) {
+                            break recordsLoop;
+                        }
                     }
                 }
             }
-            if (lsKeysToEvict.size() > 1) {
+            if (lsKeysToEvict != null && lsKeysToEvict.size() > 1) {
 //                System.out.println(ownedEntryCount + " stating eviction..." + lsKeysToEvict.size());
                 evicting = true;
                 int latchCount = lsKeysToEvict.size();
@@ -2173,13 +2215,22 @@ class ConcurrentMapManager extends BaseManager {
             }
         }
 
-        boolean evict(Request req) {
+        final boolean evict(Request req) {
             Record record = getRecord(req.key);
             if (record != null && record.isEvictable()) {
-                removeRecord(req.key);
-                return true;
+                if (ownerForSure(record)) {
+                    removeRecord(req.key);
+                    return true;
+                }
             }
             return false;
+        }
+
+        final boolean ownerForSure(Record record) {
+            Block block = blocks[record.blockId];
+            if (block == null) return false;
+            else if (block.isMigrating()) return false;
+            else return thisAddress.equals(block.owner);
         }
 
         public Record toRecord(Request req) {
@@ -2254,6 +2305,12 @@ class ConcurrentMapManager extends BaseManager {
             if (record == null) {
                 return null;
             }
+            if (!record.isValid()) {
+                if (record.isEvictable()) {
+                    scheduleForEviction(record);
+                    return null;
+                }
+            }
             if (req.value != null) {
                 if (record.value != null) {
                     if (!record.value.equals(req.value)) {
@@ -2271,6 +2328,7 @@ class ConcurrentMapManager extends BaseManager {
                 fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record.key, oldValue, record.mapListeners);
                 record.version++;
                 record.value = null;
+                record.lsValues = null;
             }
 
             req.version = record.version;
@@ -2643,11 +2701,11 @@ class ConcurrentMapManager extends BaseManager {
         }
 
         public boolean isRemovable() {
-            return (valueCount() <= 0 && !hasListener() && (backupOps == null || backupOps.size() == 0));
+            return (valueCount() <= 0 && !hasListener() && (lsScheduledActions == null || lsScheduledActions.size() == 0) && (backupOps == null || backupOps.size() == 0));
         }
 
         public boolean isEvictable() {
-            return (lockCount == 0 && !hasListener());
+            return (lockCount == 0 && !hasListener() && (lsScheduledActions == null || lsScheduledActions.size() == 0));
         }
 
         public boolean hasListener() {
@@ -2698,11 +2756,11 @@ class ConcurrentMapManager extends BaseManager {
         }
 
         public boolean isValid(long now) {
-            return now > expirationTime;
+            return expirationTime > now;
         }
 
         public boolean isValid() {
-            return System.currentTimeMillis() > expirationTime;
+            return expirationTime > System.currentTimeMillis();
         }
 
         @Override

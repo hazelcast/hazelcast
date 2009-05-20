@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ClusterService implements Runnable, Constants {
+public final class ClusterService implements Runnable, Constants {
     protected static Logger logger = Logger.getLogger(ClusterService.class.getName());
 
     private static final ClusterService instance = new ClusterService();
@@ -55,12 +55,25 @@ public class ClusterService implements Runnable, Constants {
 
     private final BaseManager.PacketProcessor[] packetProcessors = new BaseManager.PacketProcessor[300];
 
+    private final Runnable[] periodicRunnables = new Runnable[3];
+
     private ClusterService() {
         this.queue = new LinkedBlockingQueue();
     }
 
     public static ClusterService get() {
         return instance;
+    }
+
+    void registerPeriodicRunnable(Runnable runnable) {
+        int len = periodicRunnables.length;
+        for (int i = 0; i < len; i++) {
+            if (periodicRunnables[i] == null) {
+                periodicRunnables[i] = runnable;
+                return;
+            }
+        }
+        throw new RuntimeException("Not enough space for a runnable " + runnable);
     }
 
     void registerPacketProcessor(int operation, BaseManager.PacketProcessor packetProcessor) {
@@ -183,8 +196,13 @@ public class ClusterService implements Runnable, Constants {
     private void checkPeriodics() {
         final long now = System.nanoTime();
         if ((now - lastPeriodicCheck) > PERIODIC_CHECK_INTERVAL) {
-            ClusterManager.get().heartBeater();
-            ClusterManager.get().checkScheduledActions();
+//            ClusterManager.get().heartBeater();
+//            ClusterManager.get().checkScheduledActions();
+            for (Runnable runnable : periodicRunnables) {
+                if (runnable != null) {
+                    runnable.run();
+                }
+            }
             lastPeriodicCheck = now;
         }
     }

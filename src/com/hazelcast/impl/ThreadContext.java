@@ -36,9 +36,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ThreadContext {
-
-    private final static BlockingQueue<Data> dataq = new ArrayBlockingQueue<Data>(6000);
+public final class ThreadContext {
 
     private final static BlockingQueue<ByteBuffer> bufferq = new ArrayBlockingQueue<ByteBuffer>(6000);
 
@@ -56,27 +54,21 @@ public class ThreadContext {
 
     final ObjectPool<PacketQueue.Packet> packetCache;
 
-    final ObjectPool<Data> dataCache;
-
     private ThreadContext() {
 
-        int dataCacheSize = 12;
         int bufferCacheSize = 12;
         int packetCacheSize = 0;
         String threadName = Thread.currentThread().getName();
         if (threadName.startsWith("hz.")) {
             if ("hz.InThread".equals(threadName)) {
-                dataCacheSize = 100;
                 bufferCacheSize = 100;
                 packetCacheSize = 100;
             } else if ("hz.OutThread".equals(threadName)) {
                 bufferCacheSize = 0;
                 packetCacheSize = 0;
-                dataCacheSize = 0;
             } else if ("hz.ServiceThread".equals(threadName)) {
                 bufferCacheSize = 100;
                 packetCacheSize = 100;
-                dataCacheSize = 100;
             }
         }
         logger.log(Level.FINEST, threadName + " is starting with cacheSize " + bufferCacheSize);
@@ -102,9 +94,6 @@ public class ThreadContext {
                 return new Data();
             }
         };
-        dataCache = new ObjectPool<Data>("DataCache", dataCacheFactory,
-                dataCacheSize, dataq);
-
     }
 
     public static ThreadContext get() {
@@ -121,13 +110,7 @@ public class ThreadContext {
     }
 
     public void releaseData (Data data) {
-//        data.reset();
-//        dataCache.release(data);
-    }
-
-    public ObjectPool<Data> getDataCache () {
-        return dataCache;
-    }
+    } 
 
     public ObjectPool<Packet> getPacketPool() {
         return packetCache;
