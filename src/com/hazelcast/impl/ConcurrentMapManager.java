@@ -1725,12 +1725,6 @@ final class ConcurrentMapManager extends BaseManager {
         return record.testLock(req.lockThreadId, req.lockAddress);
     }
 
-    class LRUComparator implements Comparator<Record> {
-        public int compare(Record r1, Record r2) {
-            return (r1.lastTouchTime < r2.lastTouchTime) ? -1 : ((r1.lastTouchTime == r2.lastTouchTime) ? 0 : 1);
-        }
-    }
-
     class CMap {
         final SortedHashMap<Data, Record> mapRecords;
 
