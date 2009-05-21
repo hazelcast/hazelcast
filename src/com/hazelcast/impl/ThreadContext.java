@@ -242,11 +242,11 @@ public final class ThreadContext {
                 if (value == null) {
                     int totalDrained = objectQueue.drainTo(localPool, maxSize);
                     if (totalDrained == 0) {
-						if (++zero % 10000 == 0) {
-							System.out.println(name + " : " + Thread.currentThread().getName()
-									+ " DRAINED " + totalDrained + "  size:" + objectQueue.size()
-									+ ", zeroCount:" + zero);
-						}		
+//						if (++zero % 10000 == 0) {
+//							System.out.println(name + " : " + Thread.currentThread().getName()
+//									+ " DRAINED " + totalDrained + "  size:" + objectQueue.size()
+//									+ ", zeroCount:" + zero);
+//						}		
                         for (int i = 0; i < 4; i++) {
                             localPool.add(objectFactory.createNew());
                         }

@@ -142,7 +142,7 @@ public class SelectorBase implements Runnable {
             throws Exception {
         socketChannel.socket().setReceiveBufferSize(AbstractSelectionHandler.RECEIVE_SOCKET_BUFFER_SIZE);
         socketChannel.socket().setSendBufferSize(AbstractSelectionHandler.SEND_SOCKET_BUFFER_SIZE);
-//        socketChannel.socket().setKeepAlive(true);
+        socketChannel.socket().setKeepAlive(true);
         socketChannel.configureBlocking(false);
         final Connection connection = ConnectionManager.get().createConnection(socketChannel,
                 acceptor);

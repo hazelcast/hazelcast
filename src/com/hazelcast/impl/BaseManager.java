@@ -288,9 +288,10 @@ abstract class BaseManager implements Constants {
             return objValue;
         }
 
-        public Object setValue(Object value) {
+        public Object setValue(Object newValue) {
             if (name == null) throw new UnsupportedOperationException();
-            return ((FactoryImpl.MProxy) FactoryImpl.getProxy(name)).put(getKey(), getValue());
+            this.objValue = value;
+            return ((FactoryImpl.MProxy) FactoryImpl.getProxy(name)).put(getKey(), newValue);
         }
 
         public void setName(String name) {
@@ -645,6 +646,9 @@ abstract class BaseManager implements Constants {
             Data valueData = null;
             if (key != null) {
                 keyData = toData(key);
+                if (keyData.size() == 0) {
+                    throw new RuntimeException(name + " Key with zero-size " + operation);
+                }
             }
             if (value != null) {
                 valueData = toData(value);
@@ -841,11 +845,11 @@ abstract class BaseManager implements Constants {
     }
 
 
-    abstract class MMultiCall {
+    abstract class MultiCall {
         abstract TargetAwareOp createNewTargetAwareOp(Address target);
 
         /**
-         * As MMultiCall receives the responses from the target members
+         * As MultiCall receives the responses from the target members
          * it will pass each response to the extending call so that it can
          * consume and checks if the call should continue.
          *
@@ -866,45 +870,51 @@ abstract class BaseManager implements Constants {
         abstract Object returnResult();
 
         Object call() {
-            onCall();
-            //local call first
-            TargetAwareOp localCall = createNewTargetAwareOp(thisAddress);
-            localCall.doOp();
-            Object result = localCall.getResultAsObject();
-            if (result == OBJECT_REDO) {
-                onRedo();
-                return call();
-            }
-            if (onResponse(result)) {
-                Set<Member> members = Node.get().getClusterImpl().getMembers();
-                List<TargetAwareOp> lsCalls = new ArrayList<TargetAwareOp>();
-                for (Member member : members) {
-                    if (!member.localMember()) { // now other members
-                        ClusterImpl.ClusterMember cMember = (ClusterImpl.ClusterMember) member;
-                        TargetAwareOp targetAwareOp = createNewTargetAwareOp(cMember.getAddress());
-                        targetAwareOp.doOp();
-                        lsCalls.add(targetAwareOp);
-                    }
+            try {
+                onCall();
+                //local call first
+                TargetAwareOp localCall = createNewTargetAwareOp(thisAddress);
+                localCall.doOp();
+                Object result = localCall.getResultAsObject();
+                if (result == OBJECT_REDO) {
+                    onRedo();
+                    Thread.sleep(2000);
+                    return call();
                 }
-                getResults:
-                for (TargetAwareOp call : lsCalls) {
-                    result = call.getResultAsObject();
-                    if (result == OBJECT_REDO) {
-                        onRedo();
-                        return call();
-                    } else {
-                        if (!onResponse(result)) {
-                            break getResults;
+                if (onResponse(result)) {
+                    Set<Member> members = Node.get().getClusterImpl().getMembers();
+                    List<TargetAwareOp> lsCalls = new ArrayList<TargetAwareOp>();
+                    for (Member member : members) {
+                        if (!member.localMember()) { // now other members
+                            ClusterImpl.ClusterMember cMember = (ClusterImpl.ClusterMember) member;
+                            TargetAwareOp targetAwareOp = createNewTargetAwareOp(cMember.getAddress());
+                            targetAwareOp.doOp();
+                            lsCalls.add(targetAwareOp);
                         }
                     }
+                    getResults:
+                    for (TargetAwareOp call : lsCalls) {
+                        result = call.getResultAsObject();
+                        if (result == OBJECT_REDO) {
+                            onRedo();
+                            Thread.sleep(2000);
+                            return call();
+                        } else {
+                            if (!onResponse(result)) {
+                                break getResults;
+                            }
+                        }
+                    }
+                    onComplete();
                 }
-                onComplete();
+            } catch (Throwable t) {
+                t.printStackTrace();
             }
             return returnResult();
         }
     }
 
-    abstract class MMigrationAwareTargettedCall extends TargetAwareOp {
+    abstract class MigrationAwareTargettedCall extends TargetAwareOp {
 
         public void onDisconnect(final Address dead) {
             redo();

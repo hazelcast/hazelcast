@@ -979,7 +979,7 @@ final class ConcurrentMapManager extends BaseManager {
     }
 
 
-    public class MContainsValue extends MMultiCall {
+    public class MContainsValue extends MultiCall {
         boolean contains = false;
         final String name;
         final Object value;
@@ -1009,7 +1009,7 @@ final class ConcurrentMapManager extends BaseManager {
             return contains;
         }
 
-        class MGetContainsValue extends MMigrationAwareTargettedCall {
+        class MGetContainsValue extends MigrationAwareTargettedCall {
             public MGetContainsValue(Address target) {
                 this.target = target;
                 request.reset();
@@ -1029,7 +1029,7 @@ final class ConcurrentMapManager extends BaseManager {
     }
 
 
-    public class MSize extends MMultiCall {
+    public class MSize extends MultiCall {
         int size = 0;
         final String name;
 
@@ -1054,7 +1054,7 @@ final class ConcurrentMapManager extends BaseManager {
             return size;
         }
 
-        class MGetSize extends MMigrationAwareTargettedCall {
+        class MGetSize extends MigrationAwareTargettedCall {
             public MGetSize(Address target) {
                 this.target = target;
                 request.reset();
@@ -1074,7 +1074,7 @@ final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    public class MIterate extends MMultiCall {
+    public class MIterate extends MultiCall {
         Entries entries = null;
         final static int TYPE_ENTRIES = 1;
         final static int TYPE_KEYS = 2;
@@ -1105,7 +1105,7 @@ final class ConcurrentMapManager extends BaseManager {
             return entries;
         }
 
-        class MGetEntries extends MMigrationAwareTargettedCall {
+        class MGetEntries extends MigrationAwareTargettedCall {
             public MGetEntries(Address target) {
                 this.target = target;
                 request.reset();
