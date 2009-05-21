@@ -597,7 +597,7 @@ abstract class BaseManager implements Constants {
                     return true;
                 else
                     return false;
-            } catch (final Exception e) {
+            } catch (final Throwable e) {
                 logger.log(Level.SEVERE, "getResultAsBoolean", e);
             } finally {
                 request.reset();

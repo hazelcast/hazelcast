@@ -18,7 +18,6 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.impl.Build;
-import com.hazelcast.impl.ClusterManager;
 import com.hazelcast.impl.Node;
 
 import java.io.IOException;
@@ -27,7 +26,6 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -142,10 +140,9 @@ public class SelectorBase implements Runnable {
 
     protected Connection initChannel(final SocketChannel socketChannel, final boolean acceptor)
             throws Exception {
-        socketChannel.socket().setReceiveBufferSize(32 * 1024);
-        socketChannel.socket().setSendBufferSize(64 * 1024);
-        socketChannel.socket().setKeepAlive(true);
-        // socketChannel.socket().setTcpNoDelay(true);
+        socketChannel.socket().setReceiveBufferSize(AbstractSelectionHandler.RECEIVE_SOCKET_BUFFER_SIZE);
+        socketChannel.socket().setSendBufferSize(AbstractSelectionHandler.SEND_SOCKET_BUFFER_SIZE);
+//        socketChannel.socket().setKeepAlive(true);
         socketChannel.configureBlocking(false);
         final Connection connection = ConnectionManager.get().createConnection(socketChannel,
                 acceptor);

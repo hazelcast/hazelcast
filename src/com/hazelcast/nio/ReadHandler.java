@@ -26,7 +26,7 @@ import java.util.logging.Level;
 
 class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
-    final ByteBuffer inBuffer = ByteBuffer.allocate(32 * 1024);
+    final ByteBuffer inBuffer = ByteBuffer.allocate(RECEIVE_SOCKET_BUFFER_SIZE);
 
     Packet packet = null;
 

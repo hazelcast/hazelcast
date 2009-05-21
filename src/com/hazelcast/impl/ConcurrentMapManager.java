@@ -1732,7 +1732,7 @@ final class ConcurrentMapManager extends BaseManager {
     }
 
     class CMap {
-        final Map<Data, Record> mapRecords;
+        final SortedHashMap<Data, Record> mapRecords;
 
         final String name;
 
@@ -1757,6 +1757,7 @@ final class ConcurrentMapManager extends BaseManager {
         public CMap(String name) {
             super();
             this.name = name;
+            mapRecords = new SortedHashMap<Data, Record>(10000);
             Config.MapConfig mapConfig = Config.get().getMapConfig(name.substring(2));
             this.backupCount = mapConfig.backupCount;
             ttl = mapConfig.timeToLiveSeconds * 1000;
@@ -1770,9 +1771,7 @@ final class ConcurrentMapManager extends BaseManager {
             evictionRate = mapConfig.evictionPercentage / 100;
             if (evictionPolicy == OrderingType.NONE) {
                 maxSize = Integer.MAX_VALUE;
-                mapRecords = new SortedHashMap<Data, Record>(10000);
             } else {
-                mapRecords = new SortedHashMap<Data, Record>(10000);
                 maxSize = (mapConfig.maxSize == 0) ? Integer.MAX_VALUE : mapConfig.maxSize;
             }
             instanceType = getInstanceType(name);

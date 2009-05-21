@@ -32,7 +32,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     private final AtomicBoolean informSelector = new AtomicBoolean(true);
 
-    private final ByteBuffer socketBB = ByteBuffer.allocateDirect(32 * 1024);
+    private final ByteBuffer socketBB = ByteBuffer.allocateDirect(SEND_SOCKET_BUFFER_SIZE);
 
     private boolean ready = false;
 

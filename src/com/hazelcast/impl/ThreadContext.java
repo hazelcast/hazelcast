@@ -55,7 +55,6 @@ public final class ThreadContext {
     final ObjectPool<PacketQueue.Packet> packetCache;
 
     private ThreadContext() {
-
         int bufferCacheSize = 12;
         int packetCacheSize = 0;
         String threadName = Thread.currentThread().getName();
@@ -88,12 +87,6 @@ public final class ThreadContext {
         };
         packetCache = new ObjectPool<Packet>("PacketCache", packetCacheFactory,
                 packetCacheSize, PacketQueue.get().qPackets);
-
-        ObjectFactory<Data> dataCacheFactory = new ObjectFactory<Data>() {
-            public Data createNew() {
-                return new Data();
-            }
-        };
     }
 
     public static ThreadContext get() {

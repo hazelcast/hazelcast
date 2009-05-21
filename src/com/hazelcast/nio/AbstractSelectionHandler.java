@@ -18,7 +18,6 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.impl.Build;
-import com.hazelcast.impl.ClusterManager;
 
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -29,6 +28,10 @@ import java.util.logging.Logger;
 abstract class AbstractSelectionHandler implements SelectionHandler {
 
     protected static Logger logger = Logger.getLogger(AbstractSelectionHandler.class.getName());
+
+    public static final int RECEIVE_SOCKET_BUFFER_SIZE = 32 * 1024;
+
+    public static final int SEND_SOCKET_BUFFER_SIZE = 32 * 1024;
 
     public static final boolean DEBUG = Build.DEBUG;
 
