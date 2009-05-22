@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.core.EntryEvent;
 import static com.hazelcast.core.ICommon.InstanceType;
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.*;
@@ -1956,13 +1957,13 @@ final class ConcurrentMapManager extends BaseManager {
                         } else if (record.lsValues != null) {
                             int size = record.lsValues.size();
                             if (size > 0) {
-                                if (request.operation == OP_CMAP_ITERATE_VALUES) {
+                                if (request.operation == OP_CMAP_ITERATE_KEYS) {
+                                    pairs.addKeyValue(new KeyValue(record.key, null));
+                                } else {
                                     for (int i = 0; i < size; i++) {
                                         Data value = record.lsValues.get(i);
                                         pairs.addKeyValue(new KeyValue(record.key, value));
                                     }
-                                } else {
-                                    pairs.addKeyValue(new KeyValue(record.key, null));
                                 }
                             }
                         }
@@ -2976,8 +2977,16 @@ final class ConcurrentMapManager extends BaseManager {
             }
 
             public void remove() {
-                System.out.println("REmoving..");
-                ((FactoryImpl.MProxy) FactoryImpl.getProxy(name)).remove(entry.getKey(), entry.getValue());
+                if (getInstanceType(name) == InstanceType.MULTIMAP) {
+                    if (iteratorType == MIterate.TYPE_KEYS) {
+                        ((MultiMap) FactoryImpl.getProxy(name)).remove(entry.getKey(), null);
+                    } else {
+                        ((MultiMap) FactoryImpl.getProxy(name)).remove(entry.getKey(), entry.getValue());
+                    }
+                } else {
+                    ((FactoryImpl.IRemoveAwareProxy) FactoryImpl.getProxy(name)).removeKey(entry.getKey());
+                }
+
                 it.remove();
             }
         }

@@ -209,7 +209,7 @@ public class FactoryImpl implements Constants {
             } else if (name.startsWith("m:")) {
                 proxy = proxies.get(name);
                 if (proxy == null) {
-                    if (BaseManager.getMapType(name) == MAP_TYPE_MULTI_MAP) {
+                    if (BaseManager.getInstanceType(name) == ICommon.InstanceType.MULTIMAP) {
                         proxy = new MultiMapProxy(name);
                     } else {
                         proxy = new CollectionProxyImpl(name);
@@ -621,15 +621,7 @@ public class FactoryImpl implements Constants {
             }
 
             public InstanceType getInstanceType() {
-                byte mapType = BaseManager.getMapType(name);
-                if (mapType == MAP_TYPE_SET) {
-                    return InstanceType.SET;
-                } else if (mapType == MAP_TYPE_LIST) {
-                    return InstanceType.SET;
-                } else {
-                    throw new RuntimeException("Unknown collection type " + name);
-                }
-
+                return BaseManager.getInstanceType(name);
             }
 
             public void addItemListener(ItemListener listener, boolean includeValue) {
@@ -1009,7 +1001,7 @@ public class FactoryImpl implements Constants {
 
         private String name = null;
 
-        private transient MultiMap base = null;
+        private transient MultiMapBase base = null;
 
         public MultiMapProxy() {
         }
@@ -1021,7 +1013,7 @@ public class FactoryImpl implements Constants {
 
         private void ensure() {
             if (base == null) {
-                base = (MultiMap) getProxy(name);
+                base = (MultiMapBase) getProxy(name);
             }
         }
 
@@ -1510,8 +1502,8 @@ public class FactoryImpl implements Constants {
 
             public MapEntry getMapEntry(Object key) {
                 check(key);
-                MGetMapEntry mgetMapEntry = ConcurrentMapManager.get(). new MGetMapEntry();
-                return mgetMapEntry.get (name, key);
+                MGetMapEntry mgetMapEntry = ConcurrentMapManager.get().new MGetMapEntry();
+                return mgetMapEntry.get(name, key);
             }
 
             public boolean putMulti(Object key, Object value) {
