@@ -171,7 +171,14 @@ final class ConcurrentMapManager extends BaseManager {
                         handleSize(packet);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_ITERATE,
+        ClusterService.get().registerPacketProcessor(OP_CMAP_ITERATE_ENTRIES,
+                new DefaultPacketProcessor(true, false, false, true) {
+                    void handle(Request request) {
+                        CMap cmap = getMap(request.name);
+                        cmap.getEntries(remoteReq);
+                    }
+                });
+        ClusterService.get().registerPacketProcessor(OP_CMAP_ITERATE_VALUES,
                 new DefaultPacketProcessor(true, false, false, true) {
                     void handle(Request request) {
                         CMap cmap = getMap(request.name);
@@ -1110,9 +1117,13 @@ final class ConcurrentMapManager extends BaseManager {
                 this.target = target;
                 request.reset();
                 request.name = name;
-                request.operation = (iteratorType == MIterate.TYPE_KEYS)
-                        ? OP_CMAP_ITERATE_KEYS
-                        : OP_CMAP_ITERATE;
+                if (iteratorType == MIterate.TYPE_ENTRIES) {
+                    request.operation = OP_CMAP_ITERATE_ENTRIES;
+                } else if (iteratorType == MIterate.TYPE_KEYS) {
+                    request.operation = OP_CMAP_ITERATE_KEYS;
+                } else if (iteratorType == MIterate.TYPE_VALUES) {
+                    request.operation = OP_CMAP_ITERATE_VALUES;
+                }
             }
 
             public void doLocalCall() {
@@ -1945,13 +1956,13 @@ final class ConcurrentMapManager extends BaseManager {
                         } else if (record.lsValues != null) {
                             int size = record.lsValues.size();
                             if (size > 0) {
-                                if (request.operation == OP_CMAP_ITERATE_KEYS) {
-                                    pairs.addKeyValue(new KeyValue(record.key, null));
-                                } else {
+                                if (request.operation == OP_CMAP_ITERATE_VALUES) {
                                     for (int i = 0; i < size; i++) {
                                         Data value = record.lsValues.get(i);
-                                        pairs.addKeyValue(new KeyValue(record.key, null));
+                                        pairs.addKeyValue(new KeyValue(record.key, value));
                                     }
+                                } else {
+                                    pairs.addKeyValue(new KeyValue(record.key, null));
                                 }
                             }
                         }
@@ -2271,6 +2282,8 @@ final class ConcurrentMapManager extends BaseManager {
                 removed = true;
             } else if (record.value != null) {
                 removed = true;
+            } else if (record.lsValues != null) {
+                removed = true;
             }
 
             if (removed) {
@@ -2279,6 +2292,11 @@ final class ConcurrentMapManager extends BaseManager {
                 if (record.value != null) {
                     record.value.setNoData();
                     record.value = null;
+                } else if (record.lsValues != null) {
+                    for (Data v : record.lsValues) {
+                        v.setNoData();
+                    }
+                    record.lsValues = null;
                 }
             }
 
@@ -2958,6 +2976,7 @@ final class ConcurrentMapManager extends BaseManager {
             }
 
             public void remove() {
+                System.out.println("REmoving..");
                 ((FactoryImpl.MProxy) FactoryImpl.getProxy(name)).remove(entry.getKey(), entry.getValue());
                 it.remove();
             }

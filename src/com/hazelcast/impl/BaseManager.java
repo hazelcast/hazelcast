@@ -282,7 +282,7 @@ abstract class BaseManager implements Constants {
                 if (value != null) {
                     objValue = toObject(value);
                 } else {
-                    objValue = ((FactoryImpl.MProxy) FactoryImpl.getProxy(name)).get((key == null) ? getKey() : key);
+                    objValue = ((FactoryImpl.IGetAwareProxy) FactoryImpl.getProxy(name)).get((key == null) ? getKey() : key);
                 }
             }
             return objValue;

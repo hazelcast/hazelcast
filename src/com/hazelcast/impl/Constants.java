@@ -149,9 +149,11 @@ public interface Constants {
 
         public static final int OP_CMAP_CONTAINS = 208;
 
-        public static final int OP_CMAP_ITERATE = 209;
+        public static final int OP_CMAP_ITERATE_ENTRIES = 209;
 
         public static final int OP_CMAP_ITERATE_KEYS = 210;
+
+        public static final int OP_CMAP_ITERATE_VALUES = 211;
 
         public static final int OP_CMAP_LOCK = 212;
 

@@ -1005,7 +1005,7 @@ public class FactoryImpl implements Constants {
         }
     }
 
-    public static class MultiMapProxy implements MultiMap, DataSerializable {
+    public static class MultiMapProxy implements MultiMap, DataSerializable, IGetAwareProxy {
 
         private String name = null;
 
@@ -1130,7 +1130,7 @@ public class FactoryImpl implements Constants {
             base.clear();
         }
 
-        private class MultiMapBase implements MultiMap {
+        private class MultiMapBase implements MultiMap, IGetAwareProxy {
             final MProxy mapProxy;
 
             private MultiMapBase() {
@@ -1205,6 +1205,11 @@ public class FactoryImpl implements Constants {
         boolean removeKey(Object key);
     }
 
+    interface IGetAwareProxy {
+
+        Object get(Object key);
+    }
+
     private static void check(Object obj) {
         if (obj == null)
             throw new RuntimeException("Object cannot be null.");
@@ -1214,7 +1219,7 @@ public class FactoryImpl implements Constants {
         }
     }
 
-    interface MProxy extends IMap, IRemoveAwareProxy {
+    interface MProxy extends IMap, IRemoveAwareProxy, IGetAwareProxy {
         String getLongName();
 
         void addGenericListener(Object listener, Object key, boolean includeValue, int listenerType);
