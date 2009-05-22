@@ -1766,7 +1766,7 @@ final class ConcurrentMapManager extends BaseManager {
             mapRecords = new SortedHashMap<Data, Record>(10000);
             Config.MapConfig mapConfig = Config.get().getMapConfig(name.substring(2));
             this.backupCount = mapConfig.backupCount;
-            ttl = mapConfig.timeToLiveSeconds * 1000;
+            ttl = mapConfig.timeToLiveSeconds * 1000L;
             if ("LFU".equalsIgnoreCase(mapConfig.evictionPolicy)) {
                 evictionPolicy = OrderingType.LFU;
             } else if ("LRU".equalsIgnoreCase(mapConfig.evictionPolicy)) {
