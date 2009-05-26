@@ -1460,11 +1460,11 @@ public class FactoryImpl implements Constants {
 
         private class MProxyReal implements MProxy {
 
-            final byte mapType;
+            final InstanceType instanceType;
 
             public MProxyReal() {
                 super();
-                this.mapType = BaseManager.getMapType(name);
+                this.instanceType = BaseManager.getInstanceType(name);
             }
 
             @Override
@@ -1473,13 +1473,7 @@ public class FactoryImpl implements Constants {
             }
 
             public InstanceType getInstanceType() {
-                if (mapType == MAP_TYPE_MAP)
-                    return InstanceType.MAP;
-                else if (mapType == MAP_TYPE_SET)
-                    return InstanceType.SET;
-                else if (mapType == MAP_TYPE_LIST)
-                    return InstanceType.LIST;
-                else throw new RuntimeException("Unknown MProxy type " + mapType);
+                return instanceType;
             }
 
             @Override
@@ -1701,7 +1695,7 @@ public class FactoryImpl implements Constants {
                 if (value == null)
                     throw new NullPointerException();
                 MAdd madd = ThreadContext.get().getMAdd();
-                if (mapType == MAP_TYPE_LIST) {
+                if (instanceType == InstanceType.LIST) {
                     return madd.addToList(name, value);
                 } else {
                     return madd.addToSet(name, value);

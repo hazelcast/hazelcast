@@ -18,7 +18,8 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.impl.ClusterService;
-import com.hazelcast.nio.PacketQueue.Packet;
+import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.nio.Packet;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -105,7 +106,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
     }
 
     private Packet obtainReadable() {
-        final Packet packet = PacketQueue.get().obtainPacket();
+        final Packet packet = ThreadContext.get().getPacketPool().obtain();
         packet.reset();
         packet.local = false;
         return packet;

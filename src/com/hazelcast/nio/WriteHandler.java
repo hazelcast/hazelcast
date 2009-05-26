@@ -17,7 +17,7 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.nio.PacketQueue.Packet;
+import com.hazelcast.nio.Packet;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -43,7 +43,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         super(connection);
     }
 
-    public void enqueuePacket(final PacketQueue.Packet packet) {
+    public void enqueuePacket(final Packet packet) {
         writeQueue.offer(packet);
         if (informSelector.get()) {
             informSelector.set(false);
@@ -119,10 +119,10 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     @Override
     public void shutdown() {
-        PacketQueue.Packet packet = (Packet) writeQueue.poll();
+        Packet packet = (Packet) writeQueue.poll();
         while (packet != null) {
             packet.returnToContainer();
-            packet = (PacketQueue.Packet) writeQueue.poll();
+            packet = (Packet) writeQueue.poll();
         }
         writeQueue.clear();
     }

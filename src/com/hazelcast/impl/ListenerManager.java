@@ -22,11 +22,8 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.MessageListener;
 import static com.hazelcast.impl.Constants.EventOperations.*;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.BufferUtil;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.PacketQueue;
-import com.hazelcast.nio.PacketQueue.Packet;
+import com.hazelcast.nio.*;
+import com.hazelcast.nio.Packet;
 
 import java.util.Iterator;
 import java.util.List;
@@ -45,7 +42,7 @@ class ListenerManager extends BaseManager {
 
     private ListenerManager() {
         ClusterService.get().registerPacketProcessor(OP_EVENT, new PacketProcessor() {
-            public void process(PacketQueue.Packet packet) {
+            public void process(Packet packet) {
                 handleEvent(packet);
             }
         });
@@ -55,7 +52,7 @@ class ListenerManager extends BaseManager {
             }
         });
         ClusterService.get().registerPacketProcessor(OP_LISTENER_REMOVE, new PacketProcessor() {
-            public void process(PacketQueue.Packet packet) {
+            public void process(Packet packet) {
                 handleAddRemoveListener(false, packet);
             }
         });

@@ -128,7 +128,7 @@ public final class BufferUtil {
     }
 
     public static Data createNewData() {
-        return ThreadContext.get().obtainData();
+        return new Data();
     }
 
 }

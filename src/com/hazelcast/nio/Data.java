@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class Data implements DataSerializable {
-    final List<ByteBuffer> lsData = new ArrayList<ByteBuffer>(12);
+    final List<ByteBuffer> lsData = new ArrayList<ByteBuffer>(6);
 
     int size = 0;
 

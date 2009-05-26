@@ -24,13 +24,11 @@ import com.hazelcast.impl.ClusterManager.RemotelyProcessable;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_PROCESS;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_RESPONSE;
 import static com.hazelcast.impl.Constants.EventOperations.OP_EVENT;
-import static com.hazelcast.impl.Constants.MapTypes.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.ResponseTypes.*;
 import com.hazelcast.nio.*;
 import static com.hazelcast.nio.BufferUtil.*;
-import com.hazelcast.nio.PacketQueue.Packet;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -337,7 +335,7 @@ abstract class BaseManager implements Constants {
 
         long getId();
 
-        void handleResponse(PacketQueue.Packet packet);
+        void handleResponse(Packet packet);
 
         void onDisconnect(Address dead);
 
@@ -364,7 +362,7 @@ abstract class BaseManager implements Constants {
             }
         }
 
-        public void handleBooleanNoneRedoResponse(final PacketQueue.Packet packet) {
+        public void handleBooleanNoneRedoResponse(final Packet packet) {
             removeCall(getId());
             if (packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
                 responses.add(Boolean.TRUE);
@@ -380,7 +378,7 @@ abstract class BaseManager implements Constants {
             responses.add(OBJECT_REDO);
         }
 
-        void handleObjectNoneRedoResponse(final PacketQueue.Packet packet) {
+        void handleObjectNoneRedoResponse(final Packet packet) {
             removeCall(getId());
             if (packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
                 final Data oldValue = doTake(packet.value);
@@ -396,9 +394,7 @@ abstract class BaseManager implements Constants {
     }
 
     class Request {
-        volatile int redoCount = 0;
-
-        volatile int resetCount = 0;
+        int redoCount = 0;
 
         boolean local = true;
 
@@ -445,13 +441,10 @@ abstract class BaseManager implements Constants {
         public void reset() {
             if (this.key != null) {
                 this.key.setNoData();
-                ThreadContext.get().releaseData(this.key);
             }
             if (this.value != null) {
                 this.value.setNoData();
-                ThreadContext.get().releaseData(this.value);
             }
-            this.resetCount++;
             this.local = true;
             this.operation = -1;
             this.name = null;
@@ -471,6 +464,7 @@ abstract class BaseManager implements Constants {
             this.attachment = null;
             this.recordId = -1;
             this.version = -1;
+            this.redoCount = 0;
         }
 
         public void set(final boolean local, final int operation, final String name,
@@ -511,7 +505,7 @@ abstract class BaseManager implements Constants {
             }
         }
 
-        public void setFromPacket(final PacketQueue.Packet packet) {
+        public void setFromPacket(final Packet packet) {
             reset();
             set(false, packet.operation, packet.name, doTake(packet.key), doTake(packet.value),
                     packet.blockId, packet.timeout, packet.txnId, packet.callId, packet.threadId,
@@ -543,8 +537,8 @@ abstract class BaseManager implements Constants {
             return copy;
         }
 
-        public PacketQueue.Packet toPacket() {
-            final PacketQueue.Packet packet = obtainPacket();
+        public Packet toPacket() {
+            final Packet packet = obtainPacket();
             packet.local = false;
             packet.operation = operation;
             packet.name = name;
@@ -690,11 +684,11 @@ abstract class BaseManager implements Constants {
             try {
                 result = responses.take();
                 if (result == OBJECT_REDO) {
-                    Thread.sleep(2000);
-                    // if (DEBUG) {
-                    // log(getId() + " Redoing.. " + this);
-                    // }
                     request.redoCount++;
+                    Thread.sleep(1000 * request.redoCount);
+                    if (request.redoCount > 5) {
+                        logger.log(Level.INFO, "Re-doing [" + request.redoCount + "] times! " + ResponseQueueCall.this);
+                    }
                     doOp();
                     return getResult();
                 }
@@ -716,7 +710,7 @@ abstract class BaseManager implements Constants {
             responses.clear();
         }
 
-        public void handleBooleanNoneRedoResponse(final PacketQueue.Packet packet) {
+        public void handleBooleanNoneRedoResponse(final Packet packet) {
             removeCall(getId());
             if (packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
                 setResult(Boolean.TRUE);
@@ -725,7 +719,7 @@ abstract class BaseManager implements Constants {
             }
         }
 
-        void handleLongNoneRedoResponse(final PacketQueue.Packet packet) {
+        void handleLongNoneRedoResponse(final Packet packet) {
             removeCall(getId());
             if (packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
                 setResult(packet.longValue);
@@ -735,7 +729,7 @@ abstract class BaseManager implements Constants {
             }
         }
 
-        void handleObjectNoneRedoResponse(final PacketQueue.Packet packet) {
+        void handleObjectNoneRedoResponse(final Packet packet) {
             removeCall(getId());
             if (packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
                 final Data oldValue = doTake(packet.value);
@@ -767,14 +761,14 @@ abstract class BaseManager implements Constants {
 
     abstract class BooleanOp extends TargetAwareOp {
         @Override
-        void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+        void handleNoneRedoResponse(final Packet packet) {
             handleBooleanNoneRedoResponse(packet);
         }
     }
 
     abstract class LongOp extends TargetAwareOp {
         @Override
-        void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+        void handleNoneRedoResponse(final Packet packet) {
             handleLongNoneRedoResponse(packet);
         }
     }
@@ -786,7 +780,7 @@ abstract class BaseManager implements Constants {
         public TargetAwareOp() {
         }
 
-        public void handleResponse(final PacketQueue.Packet packet) {
+        public void handleResponse(final Packet packet) {
             if (packet.responseType == RESPONSE_REDO) {
                 redo();
             } else {
@@ -798,6 +792,7 @@ abstract class BaseManager implements Constants {
         @Override
         public void onDisconnect(final Address dead) {
             if (dead.equals(target)) {
+                target = null;
                 redo();
             }
         }
@@ -823,12 +818,12 @@ abstract class BaseManager implements Constants {
 
         protected void invoke() {
             addCall(TargetAwareOp.this);
-            final PacketQueue.Packet packet = request.toPacket();
+            final Packet packet = request.toPacket();
             packet.callId = getId();
             final boolean sent = send(packet, target);
             if (!sent) {
                 if (DEBUG) {
-                    log("packetocation cannot be sent to " + target);
+                    log(TargetAwareOp.this + " Packet cannot be sent to " + target);
                 }
                 packet.returnToContainer();
                 redo();
@@ -837,7 +832,7 @@ abstract class BaseManager implements Constants {
 
         abstract void doLocalOp();
 
-        void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+        void handleNoneRedoResponse(final Packet packet) {
             handleObjectNoneRedoResponse(packet);
         }
 
@@ -952,7 +947,6 @@ abstract class BaseManager implements Constants {
         return false;
     }
 
-
     public static InstanceType getInstanceType(final String name) {
         if (name.startsWith("q:")) {
             return InstanceType.QUEUE;
@@ -975,20 +969,6 @@ abstract class BaseManager implements Constants {
         } else throw new RuntimeException("Unknown InstanceType " + name);
     }
 
-    public static byte getMapType(final String name) {
-        byte mapType = MAP_TYPE_MAP;
-        if (name.length() > 3) {
-            final String typeStr = name.substring(2, 4);
-            if ("s:".equals(typeStr))
-                mapType = MAP_TYPE_SET;
-            else if ("l:".equals(typeStr))
-                mapType = MAP_TYPE_LIST;
-            else if ("u:".equals(typeStr))
-                mapType = MAP_TYPE_MULTI_MAP;
-        }
-        return mapType;
-    }
-
     public long addCall(final Call call) {
         final long id = callIdGen++;
         call.setId(id);
@@ -1008,10 +988,10 @@ abstract class BaseManager implements Constants {
         return ClusterManager.get().getLocalMember();
     }
 
-    public PacketQueue.Packet obtainPacket(final String name, final Object key,
-                                           final Object value, final int operation, final long timeout) {
+    public Packet obtainPacket(final String name, final Object key,
+                               final Object value, final int operation, final long timeout) {
         try {
-            final PacketQueue.Packet packet = obtainPacket();
+            final Packet packet = obtainPacket();
             packet.set(name, operation, key, value);
             packet.timeout = timeout;
             return packet;
@@ -1031,7 +1011,7 @@ abstract class BaseManager implements Constants {
             final TargetAwareOp mop = (TargetAwareOp) request.attachment;
             mop.setResult(request.response);
         } else {
-            final PacketQueue.Packet packet = request.toPacket();
+            final Packet packet = request.toPacket();
             if (request.response == Boolean.TRUE) {
                 final boolean sent = sendResponse(packet, request.caller);
                 if (DEBUG) {
@@ -1048,7 +1028,7 @@ abstract class BaseManager implements Constants {
             final TargetAwareOp mop = (TargetAwareOp) request.attachment;
             mop.setResult(request.response);
         } else {
-            final PacketQueue.Packet packet = request.toPacket();
+            final Packet packet = request.toPacket();
             final Object result = request.response;
             if (result != null) {
                 if (result instanceof Data) {
@@ -1065,7 +1045,6 @@ abstract class BaseManager implements Constants {
     public void sendEvents(final int eventType, final String name, final Data key,
                            final Data value, final Map<Address, Boolean> mapListeners) {
         if (mapListeners != null) {
-            final PacketQueue sq = PacketQueue.get();
             final Set<Map.Entry<Address, Boolean>> listeners = mapListeners.entrySet();
 
             for (final Map.Entry<Address, Boolean> listener : listeners) {
@@ -1081,7 +1060,7 @@ abstract class BaseManager implements Constants {
                         e.printStackTrace();
                     }
                 } else {
-                    final PacketQueue.Packet packet = sq.obtainPacket();
+                    final Packet packet = ThreadContext.get().getPacketPool().obtain();
                     packet.reset();
                     try {
                         packet.set(name, OP_EVENT, key, (includeValue) ? value : null);
@@ -1099,7 +1078,7 @@ abstract class BaseManager implements Constants {
 
     public void sendProcessableTo(final RemotelyProcessable rp, final Address address) {
         final Data value = toData(rp);
-        final PacketQueue.Packet packet = obtainPacket();
+        final Packet packet = obtainPacket();
         try {
             packet.set("remotelyProcess", OP_REMOTELY_PROCESS, null, value);
             final boolean sent = send(packet, address);
@@ -1225,14 +1204,13 @@ abstract class BaseManager implements Constants {
     }
 
     protected Packet obtainPacket() {
-        final PacketQueue sq = PacketQueue.get();
-        return sq.obtainPacket();
+        return ThreadContext.get().getPacketPool().obtain();
     }
 
     protected final boolean send(final String name, final int operation, final DataSerializable ds,
                                  final Address address) {
         try {
-            final PacketQueue.Packet packet = PacketQueue.get().obtainPacket();
+            final Packet packet = obtainPacket();
             packet.set(name, operation, null, ds);
             final boolean sent = send(packet, address);
             if (!sent)
@@ -1244,12 +1222,12 @@ abstract class BaseManager implements Constants {
         return true;
     }
 
-    protected void sendRedoResponse(final PacketQueue.Packet packet) {
+    protected void sendRedoResponse(final Packet packet) {
         packet.responseType = RESPONSE_REDO;
         sendResponse(packet);
     }
 
-    protected boolean sendResponse(final PacketQueue.Packet packet) {
+    protected boolean sendResponse(final Packet packet) {
         packet.local = false;
         packet.operation = OP_RESPONSE;
         if (packet.responseType == RESPONSE_NONE) {
@@ -1262,12 +1240,12 @@ abstract class BaseManager implements Constants {
         return sent;
     }
 
-    protected boolean sendResponse(final PacketQueue.Packet packet, final Address address) {
+    protected boolean sendResponse(final Packet packet, final Address address) {
         packet.conn = ConnectionManager.get().getConnection(address);
         return sendResponse(packet);
     }
 
-    protected boolean sendResponseFailure(final PacketQueue.Packet packet) {
+    protected boolean sendResponseFailure(final Packet packet) {
         packet.local = false;
         packet.operation = OP_RESPONSE;
         packet.responseType = RESPONSE_FAILURE;
@@ -1278,7 +1256,7 @@ abstract class BaseManager implements Constants {
         return sent;
     }
 
-    protected boolean sendResponseFailure(final PacketQueue.Packet packet, final Address address) {
+    protected boolean sendResponseFailure(final Packet packet, final Address address) {
         packet.conn = ConnectionManager.get().getConnection(address);
         return sendResponseFailure(packet);
     }
@@ -1448,7 +1426,7 @@ abstract class BaseManager implements Constants {
         }
     }
 
-    final void handleResponse(final PacketQueue.Packet packetResponse) {
+    final void handleResponse(final Packet packetResponse) {
         final Call call = mapCalls.get(packetResponse.callId);
         if (call != null) {
             call.handleResponse(packetResponse);
@@ -1460,7 +1438,7 @@ abstract class BaseManager implements Constants {
         }
     }
 
-    final boolean send(final PacketQueue.Packet packet, final Address address) {
+    final boolean send(final Packet packet, final Address address) {
         final Connection conn = ConnectionManager.get().getConnection(address);
         if (conn != null && conn.live()) {
             return writePacket(conn, packet);
@@ -1469,7 +1447,7 @@ abstract class BaseManager implements Constants {
         }
     }
 
-    final boolean send(final PacketQueue.Packet packet, final Connection conn) {
+    final boolean send(final Packet packet, final Connection conn) {
         if (conn != null && conn.live()) {
             return writePacket(conn, packet);
         } else {
@@ -1477,7 +1455,7 @@ abstract class BaseManager implements Constants {
         }
     }
 
-    final boolean sendOrReleasePacket(final PacketQueue.Packet packet, final Connection conn) {
+    final boolean sendOrReleasePacket(final Packet packet, final Connection conn) {
         if (conn != null && conn.live()) {
             if (writePacket(conn, packet)) {
                 return true;
@@ -1487,7 +1465,7 @@ abstract class BaseManager implements Constants {
         return false;
     }
 
-    final private boolean writePacket(final Connection conn, final PacketQueue.Packet packet) {
+    final private boolean writePacket(final Connection conn, final Packet packet) {
         final MemberImpl memberImpl = getMember(conn.getEndPoint());
         if (memberImpl != null) {
             memberImpl.didWrite();
@@ -1499,6 +1477,6 @@ abstract class BaseManager implements Constants {
     }
 
     interface PacketProcessor {
-        void process(PacketQueue.Packet packet);
+        void process(Packet packet);
     }
 }

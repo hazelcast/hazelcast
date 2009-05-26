@@ -19,11 +19,8 @@ package com.hazelcast.impl;
 
 import com.hazelcast.impl.BaseManager.PacketProcessor;
 import com.hazelcast.impl.BaseManager.Processable;
-import com.hazelcast.nio.PacketQueue;
-import com.hazelcast.nio.PacketQueue.Packet;
+import com.hazelcast.nio.Packet;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -41,11 +38,13 @@ public final class ClusterService implements Runnable, Constants {
 
     protected final boolean DEBUG = Build.DEBUG;
 
-    protected final BlockingQueue queue;
+    protected final BlockingQueue queue = new LinkedBlockingQueue();
 
     protected volatile boolean running = true;
 
-    protected final List lsBuffer = new ArrayList(64);
+    private static final int BULK_SIZE = 64;
+
+    protected final SimpleBoundedQueue bulk = new SimpleBoundedQueue(BULK_SIZE);
 
     protected long start = 0;
 
@@ -58,7 +57,6 @@ public final class ClusterService implements Runnable, Constants {
     private final Runnable[] periodicRunnables = new Runnable[3];
 
     private ClusterService() {
-        this.queue = new LinkedBlockingQueue();
     }
 
     public static ClusterService get() {
@@ -95,7 +93,7 @@ public final class ClusterService implements Runnable, Constants {
     public void process(final Object obj) {
         if (!running) return;
         final long processStart = System.nanoTime();
-        if (obj instanceof PacketQueue.Packet) {
+        if (obj instanceof Packet) {
             final Packet packet = (Packet) obj;
             final MemberImpl memberFrom = ClusterManager.get().getMember(packet.conn.getEndPoint());
             if (memberFrom != null) {
@@ -119,7 +117,7 @@ public final class ClusterService implements Runnable, Constants {
         final long processEnd = System.nanoTime();
         final long elipsedTime = processEnd - processStart;
         totalProcessTime += elipsedTime;
-        final long duration = (processEnd - start);
+//        final long duration = (processEnd - start);
 //		if (duration > UTILIZATION_CHECK_INTERVAL) {
 //			if (DEBUG) {
 //				logger.log(Level.FINEST, "ServiceProcessUtilization: "
@@ -134,15 +132,14 @@ public final class ClusterService implements Runnable, Constants {
         while (running) {
             Object obj = null;
             try {
-                queue.drainTo(lsBuffer, 64);
-                final int size = lsBuffer.size();
+                queue.drainTo(bulk, BULK_SIZE);
+                final int size = bulk.size();
                 if (size > 0) {
                     for (int i = 0; i < size; i++) {
-                        obj = lsBuffer.get(i);
+                        obj = bulk.remove();
                         checkPeriodics();
                         process(obj);
                     }
-                    lsBuffer.clear();
                 } else {
                     obj = queue.poll(100, TimeUnit.MILLISECONDS);
                     checkPeriodics();
@@ -158,22 +155,8 @@ public final class ClusterService implements Runnable, Constants {
                 System.out.println("Exception when handling " + obj);
             }
         }
-        lsBuffer.clear();
+        bulk.clear();
         queue.clear();
-    }
-
-    public void run3() {
-        Object obj = null;
-        while (running) {
-            try {
-                obj = queue.take();
-                process(obj);
-            } catch (final InterruptedException e) {
-                Node.get().handleInterruptedException(Thread.currentThread(), e);
-            } catch (final Exception e) {
-                logger.log(Level.FINEST, e + ",  message: " + e.getMessage() + "  obj=" + obj, e);
-            }
-        }
     }
 
     public void start() {

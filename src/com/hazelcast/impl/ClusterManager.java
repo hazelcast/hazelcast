@@ -21,7 +21,7 @@ import com.hazelcast.core.Member;
 import static com.hazelcast.impl.Constants.ClusterOperations.*;
 import static com.hazelcast.impl.Constants.NodeTypes.NODE_MEMBER;
 import com.hazelcast.nio.*;
-import com.hazelcast.nio.PacketQueue.Packet;
+import com.hazelcast.nio.Packet;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -74,7 +74,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         });
         ClusterService.get().registerPacketProcessor(OP_REMOTELY_PROCESS_AND_RESPOND,
                 new PacketProcessor() {
-                    public void process(PacketQueue.Packet packet) {
+                    public void process(Packet packet) {
                         Data data = BufferUtil.doTake(packet.value);
                         RemotelyProcessable rp = (RemotelyProcessable) ThreadContext.get()
                                 .toObject(data);

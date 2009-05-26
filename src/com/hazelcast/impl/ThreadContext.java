@@ -23,22 +23,19 @@ import com.hazelcast.impl.BlockingQueueManager.Poll;
 import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.nio.BufferUtil;
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.PacketQueue;
-import com.hazelcast.nio.PacketQueue.Packet;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.Serializer;
 
 import java.nio.ByteBuffer;
-import java.util.AbstractQueue;
-import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public final class ThreadContext {
-
-    private final static BlockingQueue<ByteBuffer> bufferq = new ArrayBlockingQueue<ByteBuffer>(6000);
 
     private final static Logger logger = Logger.getLogger(ThreadContext.class.getName());
 
@@ -52,7 +49,14 @@ public final class ThreadContext {
 
     final ObjectPool<ByteBuffer> bufferCache;
 
-    final ObjectPool<PacketQueue.Packet> packetCache;
+    final ObjectPool<Packet> packetCache;
+
+    final static ConcurrentMap<String, BlockingQueue> mapGlobalQueues = new ConcurrentHashMap();
+
+    static {
+        mapGlobalQueues.put("BufferCache", new ArrayBlockingQueue(6000));
+        mapGlobalQueues.put("PacketCache", new ArrayBlockingQueue(2000));
+    }
 
     private ThreadContext() {
         int bufferCacheSize = 12;
@@ -72,21 +76,35 @@ public final class ThreadContext {
         }
         logger.log(Level.FINEST, threadName + " is starting with cacheSize " + bufferCacheSize);
 
-        ObjectFactory<ByteBuffer> byteBufferCacheFactory = new ObjectFactory<ByteBuffer>() {
+        bufferCache = new ObjectPool<ByteBuffer>("BufferCache", bufferCacheSize) {
             public ByteBuffer createNew() {
                 return ByteBuffer.allocate(1024);
             }
-        };
-        bufferCache = new ObjectPool<ByteBuffer>("BufferCache", byteBufferCacheFactory,
-                bufferCacheSize, bufferq);
 
-        ObjectFactory<Packet> packetCacheFactory = new ObjectFactory<Packet>() {
-            public Packet createNew() {
-                return PacketQueue.get().createNewPacket();
+            public void onRelease(ByteBuffer byteBuffer) {
+                byteBuffer.clear();
+            }
+
+            public void onObtain(ByteBuffer byteBuffer) {
+                byteBuffer.clear();
             }
         };
-        packetCache = new ObjectPool<Packet>("PacketCache", packetCacheFactory,
-                packetCacheSize, PacketQueue.get().qPackets);
+
+        packetCache = new ObjectPool<Packet>("PacketCache", packetCacheSize) {
+            public Packet createNew() {
+                return new Packet();
+            }
+
+            public void onRelease(Packet packet) {
+                packet.reset();
+                packet.released = true;
+            }
+
+            public void onObtain(Packet packet) {
+                packet.reset();
+                packet.released = false;
+            }
+        };
     }
 
     public static ThreadContext get() {
@@ -96,13 +114,6 @@ public final class ThreadContext {
             threadLocal.set(threadContext);
         }
         return threadContext;
-    }
-
-    public Data obtainData() {
-        return new Data();
-    }
-
-    public void releaseData (Data data) {
     } 
 
     public ObjectPool<Packet> getPacketPool() {
@@ -196,33 +207,36 @@ public final class ThreadContext {
         return serializer.readObject(data);
     }
 
-    private interface ObjectFactory<E> {
-        E createNew();
-    }
-
-    public class ObjectPool<E> {
+    public abstract class ObjectPool<E> {
         private final String name;
         private final int maxSize;
         private final Queue<E> localPool;
-        private final ObjectFactory<E> objectFactory;
         private final BlockingQueue<E> objectQueue;
-        private long zero = 0;
 
-        public ObjectPool(String name, ObjectFactory<E> objectFactory, int maxSize,
-                          BlockingQueue<E> objectQueue) {
+        public ObjectPool(String name, int maxSize) {
             super();
             this.name = name;
-            this.objectFactory = objectFactory;
             this.maxSize = maxSize;
-            this.objectQueue = objectQueue;
+            this.objectQueue = mapGlobalQueues.get(name);
             if (maxSize > 0) {
-                this.localPool = new SimpleQueue<E>(maxSize);
+                this.localPool = new SimpleBoundedQueue<E>(maxSize);
             } else {
                 this.localPool = null;
             }
         }
 
+        public abstract E createNew();
+
+        public abstract void onRelease(E e);
+
+        public abstract void onObtain(E e);
+
+        public String getName() {
+            return name;
+        }
+
         public void release(E obj) {
+            onRelease(obj);
             if (localPool == null) {
                 objectQueue.offer(obj);
             } else if (!localPool.add(obj)) {
@@ -235,7 +249,7 @@ public final class ThreadContext {
             if (localPool == null) {
                 value = objectQueue.poll();
                 if (value == null) {
-                    value = objectFactory.createNew();
+                    value = createNew();
                 }
             } else {
                 value = localPool.poll();
@@ -248,74 +262,18 @@ public final class ThreadContext {
 //									+ ", zeroCount:" + zero);
 //						}		
                         for (int i = 0; i < 4; i++) {
-                            localPool.add(objectFactory.createNew());
+                            localPool.add(createNew());
                         }
                     }
                     value = localPool.poll();
                     if (value == null) {
-                        value = objectFactory.createNew();
+                        value = createNew();
                     }
                 }
             }
-
+            onObtain(value);
             return value;
         }
     }
 
-    class SimpleQueue<E> extends AbstractQueue<E> {
-        final int maxSize;
-        final E[] objects;
-        int add = 0;
-        int remove = 0;
-        int size = 0;
-
-        public SimpleQueue(int maxSize) {
-            this.maxSize = maxSize;
-            objects = (E[]) new Object[maxSize];
-        }
-
-        @Override
-        public boolean add(E obj) {
-            if (size == maxSize)
-                return false;
-            objects[add] = obj;
-            add++;
-            size++;
-            if (add == maxSize) {
-                add = 0;
-            }
-            return true;
-        }
-
-        @Override
-        public int size() {
-            return size;
-        }
-
-        public boolean offer(E o) {
-            return add(o);
-        }
-
-        public E peek() {
-            return null;
-        }
-
-        public E poll() {
-            if (size == 0)
-                return null;
-            E value = objects[remove];
-            objects[remove] = null;
-            remove++;
-            size--;
-            if (remove == maxSize) {
-                remove = 0;
-            }
-            return value;
-        }
-
-        @Override
-        public Iterator<E> iterator() {
-            return null;
-        }
-    }
 }

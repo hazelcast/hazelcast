@@ -31,15 +31,17 @@ import com.hazelcast.nio.Address;
 import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.PacketQueue;
-import com.hazelcast.nio.PacketQueue.Packet;
+import com.hazelcast.nio.Packet;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 final class ConcurrentMapManager extends BaseManager {
@@ -168,7 +170,7 @@ final class ConcurrentMapManager extends BaseManager {
 
         ClusterService.get().registerPacketProcessor(OP_CMAP_SIZE,
                 new PacketProcessor() {
-                    public void process(PacketQueue.Packet packet) {
+                    public void process(Packet packet) {
                         handleSize(packet);
                     }
                 });
@@ -213,7 +215,7 @@ final class ConcurrentMapManager extends BaseManager {
                 });
         ClusterService.get().registerPacketProcessor(OP_CMAP_BLOCK_INFO,
                 new PacketProcessor() {
-                    public void process(PacketQueue.Packet packet) {
+                    public void process(Packet packet) {
                         handleBlockInfo(packet);
                     }
                 });
@@ -231,7 +233,7 @@ final class ConcurrentMapManager extends BaseManager {
                 });
         ClusterService.get().registerPacketProcessor(OP_CMAP_MIGRATE_RECORD,
                 new PacketProcessor() {
-                    public void process(PacketQueue.Packet packet) {
+                    public void process(Packet packet) {
                         handleMigrateRecord(packet);
                     }
                 });
@@ -369,7 +371,7 @@ final class ConcurrentMapManager extends BaseManager {
 
     abstract class MBooleanOp extends MTargetAwareOp {
         @Override
-        void handleNoneRedoResponse(PacketQueue.Packet packet) {
+        void handleNoneRedoResponse(Packet packet) {
             handleBooleanNoneRedoResponse(packet);
         }
     }
@@ -436,7 +438,7 @@ final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
-        void handleNoneRedoResponse(PacketQueue.Packet packet) {
+        void handleNoneRedoResponse(Packet packet) {
             if (request.operation == OP_CMAP_LOCK_RETURN_OLD) {
                 oldValue = doTake(packet.value);
             }
@@ -474,7 +476,7 @@ final class ConcurrentMapManager extends BaseManager {
             return result;
         }
 
-        void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+        void handleNoneRedoResponse(final Packet packet) {
             handleBooleanNoneRedoResponse(packet);
         }
 
@@ -518,7 +520,7 @@ final class ConcurrentMapManager extends BaseManager {
             return result;
         }
 
-        void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+        void handleNoneRedoResponse(final Packet packet) {
             handleBooleanNoneRedoResponse(packet);
         }
 
@@ -619,7 +621,7 @@ final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
-        void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+        void handleNoneRedoResponse(final Packet packet) {
             handleBooleanNoneRedoResponse(packet);
         }
 
@@ -718,7 +720,7 @@ final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
-        void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+        void handleNoneRedoResponse(final Packet packet) {
             handleBooleanNoneRedoResponse(packet);
         }
     }
@@ -785,7 +787,7 @@ final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
-        void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+        void handleNoneRedoResponse(final Packet packet) {
             handleBooleanNoneRedoResponse(packet);
         }
     }
@@ -867,7 +869,7 @@ final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
-        void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+        void handleNoneRedoResponse(final Packet packet) {
             handleBooleanNoneRedoResponse(packet);
         }
     }
@@ -1025,7 +1027,7 @@ final class ConcurrentMapManager extends BaseManager {
             }
 
             @Override
-            void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+            void handleNoneRedoResponse(final Packet packet) {
                 handleBooleanNoneRedoResponse(packet);
             }
 
@@ -1071,7 +1073,7 @@ final class ConcurrentMapManager extends BaseManager {
             }
 
             @Override
-            void handleNoneRedoResponse(final PacketQueue.Packet packet) {
+            void handleNoneRedoResponse(final Packet packet) {
                 handleLongNoneRedoResponse(packet);
             }
 
@@ -1234,7 +1236,7 @@ final class ConcurrentMapManager extends BaseManager {
         send("mapblock", OP_CMAP_BLOCK_INFO, block, address);
     }
 
-    void handleBlocks(PacketQueue.Packet packet) {
+    void handleBlocks(Packet packet) {
         Blocks blocks = (Blocks) toObject(packet.value);
         handleBlocks(blocks);
         packet.returnToContainer();
@@ -1270,7 +1272,7 @@ final class ConcurrentMapManager extends BaseManager {
 
     }
 
-    void handleBlockInfo(PacketQueue.Packet packet) {
+    void handleBlockInfo(Packet packet) {
         Block blockInfo = (Block) toObject(packet.value);
         doBlockInfo(blockInfo);
         packet.returnToContainer();
@@ -1446,7 +1448,7 @@ final class ConcurrentMapManager extends BaseManager {
         remoteReq.reset();
     }
 
-    void handleSize(PacketQueue.Packet packet) {
+    void handleSize(Packet packet) {
         if (isMigrating()) {
             packet.responseType = RESPONSE_REDO;
         } else {
@@ -2014,7 +2016,6 @@ final class ConcurrentMapManager extends BaseManager {
             }
             if (returnValue != null) {
                 req.key.setNoData();
-                ThreadContext.get().releaseData(req.key);
                 req.key = null;
             }
 
@@ -2089,6 +2090,64 @@ final class ConcurrentMapManager extends BaseManager {
             logger.log(Level.FINEST, record.value + " PutMulti " + record.lsValues);
             req.version = record.version;
             return added;
+        }
+
+        class LoadStoreFork {
+            Queue<Request> qResponses = new ConcurrentLinkedQueue();
+            Queue<Request> qRequests = new ConcurrentLinkedQueue();
+            AtomicInteger offerSize = new AtomicInteger();
+            AtomicBoolean processing = new AtomicBoolean(false);
+
+            int offer(Request request) {
+                qRequests.offer(request);
+                return offerSize.incrementAndGet();
+            }
+
+            public void run() {
+                while (true) {
+                    final Request request = qRequests.poll();
+                    if (request != null) {
+                        execute(request);
+                        offerSize.decrementAndGet();
+                        qResponses.offer(request);
+                        if (!processing.get()) {
+                            enqueueAndReturn(LoadStoreFork.this);
+                        }
+                    } else {
+                        return;
+                    }
+                }
+            }
+
+            public void process() {
+                processing.set(true);
+                for (int i = 0; i < 5; i++) {
+                    final Request request = qRequests.poll();
+                    if (request != null) {
+                        execute(request);
+                        offerSize.decrementAndGet();
+                        qResponses.offer(request);
+                        if (!processing.get()) {
+                            enqueueAndReturn(LoadStoreFork.this);
+                        }
+                    } else {
+                        processing.set(false);
+                        return;
+                    }
+                }
+
+            }
+
+            public void execute(Request request) {
+                if (request.operation == OP_CMAP_GET) {
+                    // load the entry
+                } else if (request.operation == OP_CMAP_PUT || request.operation == OP_CMAP_PUT_IF_ABSENT) {
+                    //store the entry
+
+                } else if (request.operation == OP_CMAP_REMOVE) {
+                    // remove the entry
+                }
+            }
         }
 
         public Data put(Request req) {
@@ -2353,11 +2412,8 @@ final class ConcurrentMapManager extends BaseManager {
             }
             if (oldValue != null) {
                 req.key.setNoData();
-                ThreadContext.get().releaseData(req.key);
                 req.key = null;
             }
-
-
             return oldValue;
         }
 
