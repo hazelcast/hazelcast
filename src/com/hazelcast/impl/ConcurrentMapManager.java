@@ -2092,64 +2092,6 @@ final class ConcurrentMapManager extends BaseManager {
             return added;
         }
 
-        class LoadStoreFork {
-            Queue<Request> qResponses = new ConcurrentLinkedQueue();
-            Queue<Request> qRequests = new ConcurrentLinkedQueue();
-            AtomicInteger offerSize = new AtomicInteger();
-            AtomicBoolean processing = new AtomicBoolean(false);
-
-            int offer(Request request) {
-                qRequests.offer(request);
-                return offerSize.incrementAndGet();
-            }
-
-            public void run() {
-                while (true) {
-                    final Request request = qRequests.poll();
-                    if (request != null) {
-                        execute(request);
-                        offerSize.decrementAndGet();
-                        qResponses.offer(request);
-                        if (!processing.get()) {
-                            enqueueAndReturn(LoadStoreFork.this);
-                        }
-                    } else {
-                        return;
-                    }
-                }
-            }
-
-            public void process() {
-                processing.set(true);
-                for (int i = 0; i < 5; i++) {
-                    final Request request = qRequests.poll();
-                    if (request != null) {
-                        execute(request);
-                        offerSize.decrementAndGet();
-                        qResponses.offer(request);
-                        if (!processing.get()) {
-                            enqueueAndReturn(LoadStoreFork.this);
-                        }
-                    } else {
-                        processing.set(false);
-                        return;
-                    }
-                }
-
-            }
-
-            public void execute(Request request) {
-                if (request.operation == OP_CMAP_GET) {
-                    // load the entry
-                } else if (request.operation == OP_CMAP_PUT || request.operation == OP_CMAP_PUT_IF_ABSENT) {
-                    //store the entry
-
-                } else if (request.operation == OP_CMAP_REMOVE) {
-                    // remove the entry
-                }
-            }
-        }
-
         public Data put(Request req) {
             if (req.operation == OP_CMAP_PUT_IF_ABSENT) {
                 Record record = recordExist(req);
