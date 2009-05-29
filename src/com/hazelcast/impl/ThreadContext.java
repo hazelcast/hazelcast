@@ -34,6 +34,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
+
 
 public final class ThreadContext {
 
@@ -78,7 +80,7 @@ public final class ThreadContext {
 
         bufferCache = new ObjectPool<ByteBuffer>("BufferCache", bufferCacheSize) {
             public ByteBuffer createNew() {
-                return ByteBuffer.allocate(1024);
+                return ByteBuffer.allocate(BYTE_BUFFER_SIZE);
             }
 
             public void onRelease(ByteBuffer byteBuffer) {

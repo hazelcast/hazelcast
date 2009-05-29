@@ -24,6 +24,8 @@ import static com.hazelcast.nio.BufferUtil.doHardCopy;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
+import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
+
 
 public final class Serializer {
 
@@ -262,7 +264,7 @@ public final class Serializer {
 
         public ByteBuffer takeEmptyBuffer() {
             ByteBuffer empty = ThreadContext.get().getBufferPool().obtain();
-            if (empty.position() != 0 || empty.limit() != 1024)
+            if (empty.position() != 0 || empty.limit() != BYTE_BUFFER_SIZE)
                 throw new RuntimeException("" + empty);
             return empty;
         }

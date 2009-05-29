@@ -44,11 +44,13 @@ public interface Constants {
         public static final Object OBJECT_TIMEOUT = new Object();
     }
 
+    interface IO {
+
+        public static final int BYTE_BUFFER_SIZE = 1024;
+    }
+
+
     interface Timeouts {
-
-        public static final long TIMEOUT_ADDITION = 10000;
-
-        public static final long DEFAULT_LOCK_WAIT = 8000;
 
         public static final long DEFAULT_TXN_TIMEOUT = 8000;
 
@@ -198,7 +200,6 @@ public interface Constants {
         public static final int OP_CMAP_BACKUP_ADD = 236;
 
         public static final int OP_CMAP_EVICT = 237;
-
 
     }
 

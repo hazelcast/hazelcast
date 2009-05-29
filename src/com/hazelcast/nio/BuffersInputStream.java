@@ -21,6 +21,8 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
+
 
 public class BuffersInputStream extends InputStream implements DataInput {
 
@@ -526,7 +528,7 @@ public class BuffersInputStream extends InputStream implements DataInput {
         remaining -= x;
         if (remaining < 0)
             throw new RuntimeException();
-        if (pos > 1024)
+        if (pos > BYTE_BUFFER_SIZE)
             throw new RuntimeException();
     }
 

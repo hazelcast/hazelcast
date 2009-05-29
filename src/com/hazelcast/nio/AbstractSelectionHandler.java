@@ -24,14 +24,15 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 
 abstract class AbstractSelectionHandler implements SelectionHandler {
 
     protected static Logger logger = Logger.getLogger(AbstractSelectionHandler.class.getName());
 
-    public static final int RECEIVE_SOCKET_BUFFER_SIZE = 32 * 1024;
+    public static final int RECEIVE_SOCKET_BUFFER_SIZE = 32 * BYTE_BUFFER_SIZE;
 
-    public static final int SEND_SOCKET_BUFFER_SIZE = 32 * 1024;
+    public static final int SEND_SOCKET_BUFFER_SIZE = 32 * BYTE_BUFFER_SIZE;
 
     public static final boolean DEBUG = Build.DEBUG;
 

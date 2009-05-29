@@ -26,6 +26,7 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
+import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 
 public final class Data implements DataSerializable {
     final List<ByteBuffer> lsData = new ArrayList<ByteBuffer>(6);
@@ -111,7 +112,7 @@ public final class Data implements DataSerializable {
             int remaining = size - readSize;
             if (bbCurrentlyRead == null) {
                 bbCurrentlyRead = ThreadContext.get().getBufferPool().obtain();
-                bbCurrentlyRead.limit((remaining > 1024) ? 1024 : remaining);
+                bbCurrentlyRead.limit((remaining > BYTE_BUFFER_SIZE) ? BYTE_BUFFER_SIZE : remaining);
             }
             readSize += BufferUtil.copyToHeapBuffer(src, bbCurrentlyRead);
             if (readSize >= size) {
@@ -139,8 +140,8 @@ public final class Data implements DataSerializable {
         for (int i = 0; i < len; i++) {
             ByteBuffer bb = lsData.get(i);
             totalRead += bb.position();
-            if (i < (len - 1) && bb.position() != 1024) {
-                throw new RuntimeException(len + " This buffer size has to be 1024. "
+            if (i < (len - 1) && bb.position() != BYTE_BUFFER_SIZE) {
+                throw new RuntimeException(len + " This buffer size has to be " + BYTE_BUFFER_SIZE + ". "
                         + bb.position() + "  index: " + i);
             }
             if (i == (len - 1) && bb.position() == 0) {
@@ -166,7 +167,7 @@ public final class Data implements DataSerializable {
         int remaining = in.readInt();
         while (remaining > 0) {
             ByteBuffer bb = ThreadContext.get().getBufferPool().obtain();
-            int sizeToRead = (remaining > 1024) ? 1024 : remaining;
+            int sizeToRead = (remaining > BYTE_BUFFER_SIZE) ? BYTE_BUFFER_SIZE : remaining;
             byte[] bytes = new byte[sizeToRead];
             in.readFully(bytes);
             bb.put(bytes);

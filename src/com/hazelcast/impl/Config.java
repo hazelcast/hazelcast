@@ -134,30 +134,43 @@ public class Config {
 
     private Config() {
         boolean usingSystemConfig = false;
-        final String configFile = System.getProperty("hazelcast.config");
+        String configFile = System.getProperty("hazelcast.config");
+        File fileConfig = null;
+        InputStream in = null;
         try {
-            InputStream in = null;
             if (configFile != null) {
-                final File fileConfig = new File(configFile);
+                fileConfig = new File(configFile);
                 if (!fileConfig.exists()) {
                     String msg = "Config file at '" + configFile + "' doesn't exist.";
                     msg += "\nHazelcast will try to use the hazelcast.xml config file in the classpath.";
                     logger.log(Level.WARNING, msg);
-                } else {
-                    try {
-                        in = new FileInputStream(fileConfig);
-                        urlConfig = fileConfig.toURL();
-                        usingSystemConfig = true;
-                    } catch (final Exception e) {
-                        String msg = "Having problem reading config file at '" + configFile + "'.";
-                        msg += "\nException message: " + e.getMessage();
-                        msg += "\nHazelcast will try to use the hazelcast.xml config file in the jar.";
-                        logger.log(Level.WARNING, msg);
-                        in = null;
-                    }
+                    fileConfig = null;
                 }
-
             }
+
+            if (fileConfig == null) {
+                configFile = "hazelcast.xml";
+                fileConfig = new File("hazelcast.xml");
+                if (!fileConfig.exists()) {
+                    fileConfig = null;
+                }
+            }
+
+            if (fileConfig != null) {
+                logger.log (Level.INFO, "Using configuration file at " + fileConfig.getAbsolutePath());
+                try {
+                    in = new FileInputStream(fileConfig);
+                    urlConfig = fileConfig.toURL();
+                    usingSystemConfig = true;
+                } catch (final Exception e) {
+                    String msg = "Having problem reading config file at '" + configFile + "'.";
+                    msg += "\nException message: " + e.getMessage();
+                    msg += "\nHazelcast will try to use the hazelcast.xml config file in the jar.";
+                    logger.log(Level.WARNING, msg);
+                    in = null;
+                }
+            }
+
             if (in == null) {
                 urlConfig = Config.class.getClassLoader().getResource("hazelcast.xml");
                 if (urlConfig == null)
