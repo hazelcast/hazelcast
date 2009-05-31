@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2007-2008, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2007-2009, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,18 +20,41 @@ package com.hazelcast.impl;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-public class CoreDump {
-    StringWriter sw = new StringWriter();
+/**
+ * The Class CoreDump.
+ */
+public final class CoreDump {
 
-    PrintWriter printWriter = new PrintWriter(sw);
+    /** The string writer. */
+    private final StringWriter stringWriter;
+    
+    /** The print writer. */
+    private final PrintWriter printWriter;
+    
+    /**
+     * Instantiates a new core dump.
+     */
+    public CoreDump() {
+        stringWriter = new StringWriter();
+        printWriter = new PrintWriter(stringWriter);
+    }
 
+    /**
+     * Gets the PrintWriter.
+     * 
+     * @return the PrintWriter
+     */
     public PrintWriter getPrintWriter() {
         return printWriter;
     }
 
+    /**
+     * @see Object#toString()
+     * @return the core dump as string
+     */
     @Override
     public String toString() {
-        return sw.toString();
+        return stringWriter.toString();
     }
 
 }
