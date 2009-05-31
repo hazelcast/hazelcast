@@ -2,15 +2,14 @@ package com.hazelcast.impl;
 
 import java.util.*;
 
-public class SortedHashMap<K, V> extends AbstractMap<K, V>
-        implements Map<K, V> {
+public class SortedHashMap<K, V> extends AbstractMap<K, V> {
 
     static final int MAXIMUM_CAPACITY = 1 << 30;
     static final int DEFAULT_INITIAL_CAPACITY = 16;
     static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
     int modCount = 0;
-    Entry[] table;
+    Entry<K, V>[] table;
     private transient Entry<K, V> header = null;
     int size;
     int threshold;
@@ -238,11 +237,11 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V>
     public boolean containsValue(Object value) {
         // Overridden to take advantage of faster iterator
         if (value == null) {
-            for (Entry e = header.after; e != header; e = e.after)
+            for (Entry<K, V> e = header.after; e != header; e = e.after)
                 if (e.value == null)
                     return true;
         } else {
-            for (Entry e = header.after; e != header; e = e.after)
+            for (Entry<K, V> e = header.after; e != header; e = e.after)
                 if (value.equals(e.value))
                     return true;
         }
@@ -284,16 +283,19 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V>
         }
 
         public boolean equals(Object o) {
-            if (!(o instanceof Map.Entry))
+            if (!(o instanceof Map.Entry)) {
                 return false;
+            }
+            
             Map.Entry e = (Map.Entry) o;
             Object k1 = getKey();
             Object k2 = e.getKey();
             if (k1 == k2 || (k1 != null && k1.equals(k2))) {
                 Object v1 = getValue();
                 Object v2 = e.getValue();
-                if (v1 == v2 || (v1 != null && v1.equals(v2)))
+                if (v1 == v2 || (v1 != null && v1.equals(v2))) {
                     return true;
+                }
             }
             return false;
         }
@@ -353,7 +355,7 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V>
         }
 
         void moveLFU(SortedHashMap lm) {
-            Entry nextOne = after;
+            Entry<K, V> nextOne = after;
             boolean shouldMove = false;
             while (nextOne != null && accessCount >= nextOne.accessCount && nextOne != lm.header) {
                 shouldMove = true;
