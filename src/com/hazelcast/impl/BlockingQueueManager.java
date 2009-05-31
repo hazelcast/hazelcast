@@ -18,7 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.QConfig;
+import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
@@ -1127,9 +1127,9 @@ class BlockingQueueManager extends BaseManager {
         final long maxAge;
 
         public Q(String name) {
-            QConfig qconfig = Config.get().getQConfig(name.substring(2));
-            maxSizePerJVM = (qconfig.maxSizePerJVM == 0) ? Integer.MAX_VALUE : qconfig.maxSizePerJVM;
-            maxAge = (qconfig.timeToLiveSeconds == 0) ? Long.MAX_VALUE : qconfig.timeToLiveSeconds * 1000l;
+            QueueConfig qconfig = Config.get().getQConfig(name.substring(2));
+            maxSizePerJVM = (qconfig.getMaxSizePerJVM() == 0) ? Integer.MAX_VALUE : qconfig.getMaxSizePerJVM();
+            maxAge = (qconfig.getTimeToLiveSeconds() == 0) ? Long.MAX_VALUE : qconfig.getTimeToLiveSeconds() * 1000l;
             log(name + ".maxSizePerJVM=" + maxSizePerJVM);
             log(name + ".maxAge=" + maxAge);
 

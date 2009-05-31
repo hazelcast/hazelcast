@@ -22,7 +22,6 @@ import com.hazelcast.impl.BaseManager.Processable;
 import com.hazelcast.impl.BlockingQueueManager.*;
 import com.hazelcast.impl.ClusterManager.CreateProxy;
 import com.hazelcast.impl.ConcurrentMapManager.*;
-import static com.hazelcast.impl.Constants.MapTypes.*;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 
@@ -54,8 +53,7 @@ public class FactoryImpl implements Constants {
 
     static AtomicBoolean inited = new AtomicBoolean(false);
 
-    static void init() {
-
+    private static void init() {
         if (!inited.get()) {
             synchronized (Node.class) {
                 if (!inited.get()) {
@@ -79,28 +77,24 @@ public class FactoryImpl implements Constants {
         return lsProxies;
     }
 
-    static Collection getProxies() {
-        if (!inited.get())
-            init();
+    static Collection<ICommon> getProxies() {
+        init();
         return proxies.values();
     }
 
     public static ExecutorService getExecutorService() {
-        if (!inited.get())
-            init();
+        init();
         return executorServiceImpl;
     }
 
     public static ClusterImpl getCluster() {
-        if (!inited.get())
-            init();
+        init();
         return node.getClusterImpl();
     }
 
     public static IdGenerator getIdGenerator(String name) {
-        if (!inited.get()) {
-            init();
-        }
+        init();
+
         IdGenerator idGenerator = mapIdGenerators.get(name);
         if (idGenerator != null)
             return idGenerator;

@@ -68,7 +68,7 @@ public class Config {
 
     public Map<String, TopicConfig> mapTopicConfigs = new HashMap<String, TopicConfig>();
 
-    public Map<String, QConfig> mapQConfigs = new HashMap<String, QConfig>();
+    public Map<String, QueueConfig> mapQConfigs = new HashMap<String, QueueConfig>();
 
     public Map<String, MapConfig> mapMapConfigs = new HashMap<String, MapConfig>();
 
@@ -194,16 +194,16 @@ public class Config {
         return false;
     }
 
-    public QConfig getQConfig(final String name) {
+    public QueueConfig getQConfig(final String name) {
         final Set<String> qNames = mapQConfigs.keySet();
         for (final String pattern : qNames) {
             if (nameMatches(name, pattern)) {
                 return mapQConfigs.get(pattern);
             }
         }
-        QConfig defaultConfig = mapQConfigs.get("default");
+        QueueConfig defaultConfig = mapQConfigs.get("default");
         if (defaultConfig == null) {
-            defaultConfig = new QConfig();
+            defaultConfig = new QueueConfig();
         }
         return defaultConfig;
     }
@@ -395,18 +395,16 @@ public class Config {
     private void handleQueue(final org.w3c.dom.Node node) {
         final Node attName = node.getAttributes().getNamedItem("name");
         final String name = getTextContent(attName);
-        final QConfig qConfig = new QConfig();
+        final QueueConfig qConfig = new QueueConfig();
         qConfig.name = name;
         final NodeList nodelist = node.getChildNodes();
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String value = getTextContent(n).trim();
             if (n.getNodeName().equalsIgnoreCase("max-size-per-jvm")) {
-                qConfig.maxSizePerJVM = getIntegerValue("max-size-per-jvm", value,
-                        Integer.MAX_VALUE);
+                qConfig.setMaxSizePerJVM(getIntegerValue("max-size-per-jvm", value, Integer.MAX_VALUE));
             } else if (n.getNodeName().equalsIgnoreCase("time-to-live-seconds")) {
-                qConfig.timeToLiveSeconds = getIntegerValue("time-to-live-seconds", value,
-                        Integer.MAX_VALUE);
+                qConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value, Integer.MAX_VALUE));
             }
         }
         mapQConfigs.put(name, qConfig);
