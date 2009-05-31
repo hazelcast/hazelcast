@@ -28,7 +28,12 @@ import java.util.StringTokenizer;
 
 public class Address implements DataSerializable {
 
-    private String host = null;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = -7626390274220424603L;
+
+	private String host = null;
 
     private byte[] ip;
 
