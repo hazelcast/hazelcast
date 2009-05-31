@@ -20,7 +20,6 @@ package com.hazelcast.nio;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UTFDataFormatException;
 import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -48,8 +47,9 @@ public class BuffersOutputStream extends OutputStream implements DataOutput {
             if (first) {
                 bb = null;
                 first = false;
-            } else
+            } else {
                 bufferProvider.addBuffer(bb);
+            }
         }
     }
 
