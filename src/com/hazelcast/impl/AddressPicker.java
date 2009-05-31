@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.nio.Address;
 
 import java.lang.reflect.Method;

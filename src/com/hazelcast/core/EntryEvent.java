@@ -46,11 +46,7 @@ public class EntryEvent extends EventObject {
     public EntryEvent(Object source) {
         super(source);
         this.name = (String) source;
-        if (name.charAt(0) == 't' || name.charAt(0) == 'q' || name.charAt(3) == ':') {
-            collection = true;
-        } else
-            collection = false;
-
+        collection = (name.charAt(0) == 't') || (name.charAt(0) == 'q') || (name.charAt(3) == ':');
     }
 
     public EntryEvent(Object source, int eventType, Object key, Object value) {

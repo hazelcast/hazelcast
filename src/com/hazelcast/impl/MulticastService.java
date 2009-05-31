@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.impl.ClusterManager.JoinRequest;
 import com.hazelcast.nio.Address;
 

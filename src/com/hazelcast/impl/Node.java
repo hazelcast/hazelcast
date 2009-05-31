@@ -19,6 +19,8 @@ package com.hazelcast.impl;
 
 import static com.hazelcast.impl.Constants.NodeTypes.NODE_MEMBER;
 import static com.hazelcast.impl.Constants.NodeTypes.NODE_SUPER_CLIENT;
+
+import com.hazelcast.config.Config;
 import com.hazelcast.impl.MulticastService.JoinInfo;
 import com.hazelcast.nio.*;
 

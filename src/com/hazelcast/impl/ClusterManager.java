@@ -17,11 +17,11 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Member;
 import static com.hazelcast.impl.Constants.ClusterOperations.*;
 import static com.hazelcast.impl.Constants.NodeTypes.NODE_MEMBER;
 import com.hazelcast.nio.*;
-import com.hazelcast.nio.Packet;
 
 import java.io.DataInput;
 import java.io.DataOutput;

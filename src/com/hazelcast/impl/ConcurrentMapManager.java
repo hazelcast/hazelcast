@@ -17,6 +17,8 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEvent;
 import static com.hazelcast.core.ICommon.InstanceType;
 import com.hazelcast.core.MapEntry;
@@ -1766,7 +1768,7 @@ final class ConcurrentMapManager extends BaseManager {
             super();
             this.name = name;
             mapRecords = new SortedHashMap<Data, Record>(10000);
-            Config.MapConfig mapConfig = Config.get().getMapConfig(name.substring(2));
+            MapConfig mapConfig = Config.get().getMapConfig(name.substring(2));
             this.backupCount = mapConfig.backupCount;
             ttl = mapConfig.timeToLiveSeconds * 1000L;
             if ("LFU".equalsIgnoreCase(mapConfig.evictionPolicy)) {

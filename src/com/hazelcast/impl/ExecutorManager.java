@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.ClusterImpl.ClusterMember;
 import static com.hazelcast.impl.Constants.ExecutorOperations.OP_EXE_REMOTE_EXECUTION;
@@ -25,7 +26,6 @@ import static com.hazelcast.impl.Constants.Objects.*;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TIMEOUT;
 import static com.hazelcast.nio.BufferUtil.toObject;
 import com.hazelcast.nio.*;
-import com.hazelcast.nio.Packet;
 
 import java.io.DataInput;
 import java.io.DataOutput;

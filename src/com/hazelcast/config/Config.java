@@ -15,10 +15,12 @@
  *
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.config;
 
 import org.w3c.dom.*;
 import org.w3c.dom.Node;
+
+import com.hazelcast.impl.Util;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -30,87 +32,15 @@ import java.util.logging.Logger;
 
 public class Config {
 
-    public class ExecutorConfig {
-        public int corePoolSize = 10;
-
-        public int maxPoolsize = 50;
-
-        public long keepAliveSeconds = 60;
-    }
-
-    public class Interfaces {
-        public boolean enabled = false;
-
-        public List<String> lsInterfaces = new ArrayList<String>();
-    }
-
-    public class Join {
-        public MulticastConfig multicastConfig = new MulticastConfig();
-
-        public JoinMembers joinMembers = new JoinMembers();
-
-    }
-
-    public class JoinMembers {
-        public int connectionTimeoutSeconds = 5;
-
-        public boolean enabled = false;
-
-        public List<String> lsMembers = new ArrayList<String>();
-
-        public String requiredMember = null;
-
-        public void add(final String member) {
-            lsMembers.add(member);
-        }
-    }
-
-    public class MulticastConfig {
-
-        public boolean enabled = true;
-
-        public String multicastGroup = "224.2.2.3";
-
-        public int multicastPort = 54327;
-    }
-
-    public class QConfig {
-        public String name;
-
-        public int maxSizePerJVM = Integer.MAX_VALUE;
-
-        public int timeToLiveSeconds = Integer.MAX_VALUE;
-    }
-
-    public class MapConfig {
-        public String name;
-
-        public int backupCount = 1;
-
-        public int evictionPercentage = 25;
-
-        public int timeToLiveSeconds = 0;
-
-        public int maxSize = Integer.MAX_VALUE;
-
-        public String evictionPolicy = "NONE";
-    }
-
-    public class TopicConfig {
-        public String name;
-
-        public boolean globalOrderingEnabled = false;
-    }
-
     protected final static Logger logger = Logger.getLogger(Config.class.getName());
 
     private static Config instance = new Config();
 
     boolean domLevel3 = true;
 
-    URL urlConfig = null;
+    public URL urlConfig = null;
 
-    String xmlConfig = null;
+    public String xmlConfig = null;
 
     public String groupName = "group-dev";
 

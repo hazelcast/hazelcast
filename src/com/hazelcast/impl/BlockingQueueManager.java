@@ -17,17 +17,17 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.QConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
-import com.hazelcast.impl.Config.QConfig;
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.*;
-import com.hazelcast.nio.Packet;
 
 import java.io.DataInput;
 import java.io.DataOutput;

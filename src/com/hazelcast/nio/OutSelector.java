@@ -17,8 +17,8 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.impl.ClusterManager;
-import com.hazelcast.impl.Config;
 import com.hazelcast.impl.Node;
 
 import java.io.IOException;
