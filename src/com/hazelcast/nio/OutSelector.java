@@ -17,10 +17,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.impl.ClusterManager;
-import com.hazelcast.impl.Node;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
@@ -29,6 +25,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import com.hazelcast.config.Config;
+import com.hazelcast.impl.Node;
 
 public class OutSelector extends SelectorBase {
 
