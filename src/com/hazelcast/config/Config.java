@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2007-2008, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2007-2009, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,28 @@
 
 package com.hazelcast.config;
 
-import org.w3c.dom.*;
-import org.w3c.dom.Node;
-
-import com.hazelcast.impl.Util;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.*;
-import java.net.URL;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import com.hazelcast.impl.Util;
 
 public class Config {
 
@@ -90,7 +100,7 @@ public class Config {
                 logger.log (Level.INFO, "Using configuration file at " + fileConfig.getAbsolutePath());
                 try {
                     in = new FileInputStream(fileConfig);
-                    urlConfig = fileConfig.toURL();
+                    urlConfig = fileConfig.toURI().toURL();
                     usingSystemConfig = true;
                 } catch (final Exception e) {
                     String msg = "Having problem reading config file at '" + configFile + "'.";
