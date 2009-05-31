@@ -29,7 +29,12 @@ import java.util.List;
 import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 
 public final class Data implements DataSerializable {
-    final List<ByteBuffer> lsData = new ArrayList<ByteBuffer>(6);
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 5382795596398809726L;
+
+	final List<ByteBuffer> lsData = new ArrayList<ByteBuffer>(6);
 
     int size = 0;
 
