@@ -23,7 +23,12 @@ import java.util.EventObject;
 
 public class EntryEvent extends EventObject {
 
-    public static final int TYPE_ADDED = 1;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = -2296203982913729851L;
+
+	public static final int TYPE_ADDED = 1;
 
     public static final int TYPE_REMOVED = 2;
 
