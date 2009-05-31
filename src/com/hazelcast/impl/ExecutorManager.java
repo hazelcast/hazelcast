@@ -86,10 +86,15 @@ class ExecutorManager extends BaseManager implements MembershipListener {
 
         public Thread newThread(Runnable r) {
             Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
-            if (t.isDaemon())
+            
+            if (t.isDaemon()) {
                 t.setDaemon(false);
-            if (t.getPriority() != Thread.NORM_PRIORITY)
+            }
+            
+            if (t.getPriority() != Thread.NORM_PRIORITY) {
                 t.setPriority(Thread.NORM_PRIORITY);
+            }
+            
             return t;
         }
     }
@@ -97,9 +102,9 @@ class ExecutorManager extends BaseManager implements MembershipListener {
     public void init() {
         super.init();
         if (started) return;
-        final int corePoolSize = Config.get().executorConfig.corePoolSize;
-        final int maxPoolSize = Config.get().executorConfig.maxPoolsize;
-        final long keepAliveSeconds = Config.get().executorConfig.keepAliveSeconds;
+        final int corePoolSize = Config.get().executorConfig.getCorePoolSize();
+        final int maxPoolSize = Config.get().executorConfig.getMaxPoolsize();
+        final long keepAliveSeconds = Config.get().executorConfig.getKeepAliveSeconds();
         if (DEBUG) {
             log("Executor core:" + corePoolSize + ", max:" + maxPoolSize + ", keepAlive:"
                     + keepAliveSeconds);
@@ -109,7 +114,7 @@ class ExecutorManager extends BaseManager implements MembershipListener {
                 TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new ExecutorThreadFactory());
         Node.get().getClusterImpl().addMembershipListener(this);
         for (int i = 0; i < 100; i++) {
-            executionIds.add(new Long(i));
+            executionIds.add(Long.valueOf(i));
         }
         started = true;
     }

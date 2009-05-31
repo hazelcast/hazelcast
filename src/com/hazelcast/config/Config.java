@@ -292,11 +292,11 @@ public class Config {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String value = getTextContent(n).trim();
             if (n.getNodeName().equalsIgnoreCase("core-pool-size")) {
-                executorConfig.corePoolSize = getIntegerValue("core-pool-size", value, 10);
+                executorConfig.setCorePoolSize(getIntegerValue("core-pool-size", value, 10));
             } else if (n.getNodeName().equalsIgnoreCase("max-pool-size")) {
-                executorConfig.maxPoolsize = getIntegerValue("max-pool-size", value, 50);
+                executorConfig.setMaxPoolsize(getIntegerValue("max-pool-size", value, 50));
             } else if (n.getNodeName().equalsIgnoreCase("keep-alive-seconds")) {
-                executorConfig.keepAliveSeconds = getIntegerValue("keep-alive-seconds", value, 50);
+                executorConfig.setKeepAliveSeconds(getIntegerValue("keep-alive-seconds", value, 50));
             }
         }
     }
