@@ -18,121 +18,92 @@
 package com.hazelcast.core;
 
 import org.junit.Test;
+import org.junit.After;
 
-public class IMapPerformance {
+public class IMapPerformance extends PerformanceTest{
+
+    private IMap map = Hazelcast.getMap("IMapPerformance");
+
+    @After
+    public void clear(){
+        map.clear();
+        t.stop();
+        t.printResult();
+    }
 
     @Test
     public void testMapPutWithSameKey(){
-        IMap<String,String> map = Hazelcast.getMap("testMapPutWithSameKey");
-        long ops = 100000;
-        Timer t = new Timer(ops);
+        t = new PerformanceTimer("testMapPutWithSameKey", ops);
         for(int i=0; i<ops; ++i){
             map.put("Hello","World");
         }
-        t.stop();
-        t.printResult("testMapPutWithSameKey");
-        map.clear();
     }
 
     @Test
     public void testMapPutWithDifferentKey(){
-        IMap<Integer,String> map = Hazelcast.getMap("testMapPutWithDifferentKey");
-        long ops = 100000;
-        Timer t = new Timer(ops);
+        t = new PerformanceTimer("testMapPutWithDifferentKey", ops);
         for(int i=0; i<ops; ++i){
             map.put(i,"Hello World");
         }
-        t.stop();
-        t.printResult("testMapPutWithDifferentKey");
-        map.clear();
     }
 
     @Test
     public void testMapRemove(){
-        IMap<Integer,String> map = Hazelcast.getMap("testMapRemove");
-        long ops = 100000;
         for(int i=0; i<ops; ++i){
             map.put(i,"Hello World");
         }
-        
-        Timer t = new Timer(ops/10);
+        t = new PerformanceTimer("testMapRemove", ops/10);
         for(int i=0; i<ops/10; ++i){
             int index = (int)((int)ops*Math.random());
             map.remove(index);
         }
-        t.stop();
-        t.printResult("testMapRemove");
-        map.clear();
     }
 
     @Test
     public void testMapValues(){
-        IMap<Integer,String> map = Hazelcast.getMap("testMapValues");
-        long ops = 100000;
         for(int i=0; i<ops; ++i){
             map.put(i,"Hello World");
         }
 
-        Timer t = new Timer(ops);
-        for(String value: map.values()){
-            String a = value;
+        t = new PerformanceTimer("testMapValues", ops);
+        for(Object value: map.values()){
+            Object a = value;
         }
-        t.stop();
-        t.printResult("testMapValues");
-        map.clear();
     }
 
     @Test
     public void testMapReplace(){
-        IMap<Integer,String> map = Hazelcast.getMap("testMapReplace");
-        long ops = 100000;
         for(int i=0; i<ops; ++i){
             map.put(i,"Hello World");
         }
 
-        Timer t = new Timer(ops);
+        t = new PerformanceTimer("testMapReplace", ops);
         for(int i=0; i<ops; ++i){
             map.replace(i,"FooBar");
         }
-        t.stop();
-        t.printResult("testMapReplace");
-        map.clear();
     }
 
     @Test
     public void testMapContainsKey(){
         String test = "testMapContainsKey";
-        IMap<Integer,String> map = Hazelcast.getMap(test);
-        long ops = 100000;
         for(int i=0; i<ops; ++i){
             map.put(i,"Hello World");
         }
-
-        Timer t = new Timer(ops);
+        t = new PerformanceTimer(test, ops);
         for(int i=0; i<ops; ++i){
             map.containsKey(i);
         }
-        t.stop();
-        t.printResult(test);
-        map.clear();
     }
 
     @Test
     public void testMapContainsValue(){
         String test = "testMapContainsValue";
-        IMap<Integer,String> map = Hazelcast.getMap(test);
-        long ops = 100000;
         for(int i=0; i<ops; ++i){
             map.put(i,"Hello World" +i);
         }
-
-        Timer t = new Timer(ops);
+        t = new PerformanceTimer(test, ops);
         for(int i=0; i<ops; ++i){
             map.containsValue("Hello World" +i);
         }
-        t.stop();
-        t.printResult(test);
-        map.clear();
     }
-
 }

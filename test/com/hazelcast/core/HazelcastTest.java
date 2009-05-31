@@ -9,6 +9,19 @@ import static junit.framework.Assert.assertFalse;
 import java.util.*;
 
 public class HazelcastTest {
+    @Test
+    public void testGetInstances(){
+        /**@todo need to rethink this test so that it runs in isolation
+        /*Hazelcast.getList("A");
+        Hazelcast.getMap("A");
+        Hazelcast.getMultiMap("A");
+        Hazelcast.getQueue("A");
+        Hazelcast.getSet("A");
+        Hazelcast.getTopic("A");
+        Collection<ICommon> caches = Hazelcast.getInstances();
+        assertEquals(6,caches.size());
+        */
+    }
 
     @Test
     public void testGetCluster(){
@@ -417,4 +430,5 @@ public class HazelcastTest {
             assertEquals("Hello",entry.getKey());
         }
     }
+
 }
