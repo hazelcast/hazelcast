@@ -1127,7 +1127,7 @@ class BlockingQueueManager extends BaseManager {
         final long maxAge;
 
         public Q(String name) {
-            QueueConfig qconfig = Config.get().getQConfig(name.substring(2));
+            QueueConfig qconfig = Config.get().getQueueConfig(name.substring(2));
             maxSizePerJVM = (qconfig.getMaxSizePerJVM() == 0) ? Integer.MAX_VALUE : qconfig.getMaxSizePerJVM();
             maxAge = (qconfig.getTimeToLiveSeconds() == 0) ? Long.MAX_VALUE : qconfig.getTimeToLiveSeconds() * 1000l;
             log(name + ".maxSizePerJVM=" + maxSizePerJVM);

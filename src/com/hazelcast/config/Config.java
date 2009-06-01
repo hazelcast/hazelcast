@@ -133,7 +133,7 @@ public class Config {
         return instance;
     }
 
-    public QueueConfig getQConfig(final String name) {
+    public QueueConfig getQueueConfig(final String name) {
         final Set<String> qNames = mapQueueConfigs.keySet();
         for (final String pattern : qNames) {
             if (nameMatches(name, pattern)) {
