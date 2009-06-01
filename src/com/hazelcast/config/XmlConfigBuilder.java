@@ -17,7 +17,7 @@ import org.w3c.dom.NodeList;
 
 import com.hazelcast.impl.Util;
 
-public class XmlConfigBuilder {
+public class XmlConfigBuilder implements ConfigBuilder {
 
 	private final static Logger logger = Logger.getLogger(XmlConfigBuilder.class.getName());
     private boolean domLevel3 = true;
@@ -28,6 +28,9 @@ public class XmlConfigBuilder {
     	this.inputStream = inputStream;
     }
     
+	/* (non-Javadoc)
+	 * @see com.hazelcast.config.ConfigBuilder#parse(com.hazelcast.config.Config)
+	 */
 	public void parse(final Config config) throws Exception {
 		this.config = config;
 		
