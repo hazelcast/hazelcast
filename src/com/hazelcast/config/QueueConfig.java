@@ -8,7 +8,7 @@ public final class QueueConfig {
 	public final static int DEFAULT_MAX_SIZE_PER_JVM = Integer.MAX_VALUE;
 	public final static int DEFAULT_TTL_SECONDS = Integer.MAX_VALUE;
 	
-    public String name;
+    private String name;
 
     private int maxSizePerJVM = DEFAULT_MAX_SIZE_PER_JVM;
 

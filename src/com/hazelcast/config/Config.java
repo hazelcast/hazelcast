@@ -362,7 +362,7 @@ public class Config {
             final org.w3c.dom.Node att = atts.item(a);
             final String value = getTextContent(att).trim();
             if (att.getNodeName().equals("enabled")) {
-                join.multicastConfig.enabled = checkTrue(value);
+                join.multicastConfig.setEnabled(checkTrue(value));
             }
         }
         final NodeList nodelist = node.getChildNodes();
@@ -370,9 +370,9 @@ public class Config {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String value = getTextContent(n).trim();
             if (n.getNodeName().equalsIgnoreCase("multicast-group")) {
-                join.multicastConfig.multicastGroup = value;
+                join.multicastConfig.setMulticastGroup(value);
             } else if (n.getNodeName().equalsIgnoreCase("multicast-port")) {
-                join.multicastConfig.multicastPort = Integer.parseInt(value);
+                join.multicastConfig.setMulticastPort(Integer.parseInt(value));
             }
         }
     }
@@ -396,7 +396,7 @@ public class Config {
         final Node attName = node.getAttributes().getNamedItem("name");
         final String name = getTextContent(attName);
         final QueueConfig qConfig = new QueueConfig();
-        qConfig.name = name;
+        qConfig.setName(name);
         final NodeList nodelist = node.getChildNodes();
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
@@ -498,13 +498,13 @@ public class Config {
         final Node attName = node.getAttributes().getNamedItem("name");
         final String name = getTextContent(attName);
         final TopicConfig tConfig = new TopicConfig();
-        tConfig.name = name;
+        tConfig.setName(name);
         final NodeList nodelist = node.getChildNodes();
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String value = getTextContent(n).trim();
             if (n.getNodeName().equalsIgnoreCase("global-ordering-enabled")) {
-                tConfig.globalOrderingEnabled = checkTrue(value);
+                tConfig.setGlobalOrderingEnabled(checkTrue(value));
             }
         }
         mapTopicConfigs.put(name, tConfig);

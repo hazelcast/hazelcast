@@ -270,7 +270,7 @@ public class Node {
         clusterServiceThread.setPriority(7);
         lsThreads.add(clusterServiceThread);
 
-        if (Config.get().join.multicastConfig.enabled) {
+        if (Config.get().join.multicastConfig.isEnabled()) {
             startMulticastService();
         }
         join();
@@ -442,19 +442,19 @@ public class Node {
                     + Build.build + ") starting at " + address);
             systemLogger.log(Level.INFO, "Copyright (C) 2009 Hazelcast.com");
 
-            if (config.join.multicastConfig.enabled) {
+            if (config.join.multicastConfig.isEnabled()) {
                 final MulticastSocket multicastSocket = new MulticastSocket(null);
                 multicastSocket.setReuseAddress(true);
                 // bind to receive interface
                 multicastSocket.bind(new InetSocketAddress(
-                        config.join.multicastConfig.multicastPort));
+                        config.join.multicastConfig.getMulticastPort()));
                 multicastSocket.setTimeToLive(32);
                 // set the send interface
                 multicastSocket.setInterface(address.getInetAddress());
                 multicastSocket.setReceiveBufferSize(1 * 1024);
                 multicastSocket.setSendBufferSize(1 * 1024);
                 multicastSocket.joinGroup(InetAddress
-                        .getByName(config.join.multicastConfig.multicastGroup));
+                        .getByName(config.join.multicastConfig.getMulticastGroup()));
                 multicastSocket.setSoTimeout(1000);
                 MulticastService.get().init(multicastSocket);
             }
@@ -469,7 +469,7 @@ public class Node {
 
     private void join() {
         final Config config = Config.get();
-        if (!config.join.multicastConfig.enabled) {
+        if (!config.join.multicastConfig.isEnabled()) {
             joinWithTCP();
         } else {
             joinWithMulticast();

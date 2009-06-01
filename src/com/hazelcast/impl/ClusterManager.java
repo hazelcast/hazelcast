@@ -333,7 +333,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
             // log("Handling  " + joinRequest);
         }
         Connection conn = joinRequest.getConnection();
-        if (!Config.get().join.multicastConfig.enabled) {
+        if (!Config.get().join.multicastConfig.isEnabled()) {
             if (Node.get().getMasterAddress() != null && !isMaster()) {
                 sendProcessableTo(new Master(Node.get().getMasterAddress()), conn);
             }
