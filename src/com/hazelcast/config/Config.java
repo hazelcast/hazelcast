@@ -121,7 +121,7 @@ public class Config {
             }
 
             // TODO: make ConfigBuilder configurable
-            new ConfigBuilder().parse(in, this);
+            new XmlConfigBuilder(in).parse(this);
             
         } catch (final Exception e) {
         	logger.log(Level.SEVERE, "Error while creating configuration", e);
