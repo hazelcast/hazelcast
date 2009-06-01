@@ -49,8 +49,8 @@ class MulticastService implements Runnable {
         this.multicastSocket = multicastSocket;
         this.datagramPacketReceive = new DatagramPacket(new byte[bufferSize], bufferSize);
         this.datagramPacketSend = new DatagramPacket(new byte[bufferSize], bufferSize, InetAddress
-                .getByName(config.join.multicastConfig.getMulticastGroup()),
-                config.join.multicastConfig.getMulticastPort());
+                .getByName(config.getJoin().multicastConfig.getMulticastGroup()),
+                config.getJoin().multicastConfig.getMulticastPort());
         running = true;
 
     }
@@ -65,8 +65,8 @@ class MulticastService implements Runnable {
                 final JoinInfo joinInfo = receive();
                 if (joinInfo != null) {
                     if (Node.get().address != null && !Node.get().address.equals(joinInfo.address)) {
-                        if (Config.get().groupName.equals(joinInfo.groupName)) {
-                            if (Config.get().groupPassword.equals(joinInfo.groupPassword)) {
+                        if (Config.get().getGroupName().equals(joinInfo.groupName)) {
+                            if (Config.get().getGroupPassword().equals(joinInfo.groupPassword)) {
                                 if (Node.get().master()) {
                                     if (joinInfo.request) {
                                         send(joinInfo.copy(false, Node.get().address));

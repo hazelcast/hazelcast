@@ -42,35 +42,35 @@ import com.hazelcast.impl.Util;
 
 public class Config {
 
-    protected final static Logger logger = Logger.getLogger(Config.class.getName());
+	private final static Logger logger = Logger.getLogger(Config.class.getName());
 
     private static Config instance = new Config();
 
-    boolean domLevel3 = true;
+    private boolean domLevel3 = true;
 
-    public URL urlConfig = null;
+    private URL urlConfig = null;
 
-    public String xmlConfig = null;
+    private String xmlConfig = null;
 
-    public String groupName = "group-dev";
+    private String groupName = "group-dev";
 
-    public String groupPassword = "group-pass";
+    private String groupPassword = "group-pass";
 
-    public int port = 5701;
+    private int port = 5701;
 
-    public boolean portAutoIncrement = true;
+    private boolean portAutoIncrement = true;
 
-    public Interfaces interfaces = new Interfaces();
+    private Interfaces interfaces = new Interfaces();
 
-    public Join join = new Join();
+    private Join join = new Join();
 
-    public ExecutorConfig executorConfig = new ExecutorConfig();
+    private ExecutorConfig executorConfig = new ExecutorConfig();
 
-    public Map<String, TopicConfig> mapTopicConfigs = new HashMap<String, TopicConfig>();
+    private Map<String, TopicConfig> mapTopicConfigs = new HashMap<String, TopicConfig>();
 
-    public Map<String, QueueConfig> mapQConfigs = new HashMap<String, QueueConfig>();
+    private Map<String, QueueConfig> mapQConfigs = new HashMap<String, QueueConfig>();
 
-    public Map<String, MapConfig> mapMapConfigs = new HashMap<String, MapConfig>();
+    private Map<String, MapConfig> mapMapConfigs = new HashMap<String, MapConfig>();
 
     private Config() {
         boolean usingSystemConfig = false;
@@ -541,5 +541,173 @@ public class Config {
             return true;
         }
     }
+
+	/**
+	 * @return the urlConfig
+	 */
+	public URL getUrlConfig() {
+		return urlConfig;
+	}
+
+	/**
+	 * @param urlConfig the urlConfig to set
+	 */
+	public void setUrlConfig(URL urlConfig) {
+		this.urlConfig = urlConfig;
+	}
+
+	/**
+	 * @return the xmlConfig
+	 */
+	public String getXmlConfig() {
+		return xmlConfig;
+	}
+
+	/**
+	 * @param xmlConfig the xmlConfig to set
+	 */
+	public void setXmlConfig(String xmlConfig) {
+		this.xmlConfig = xmlConfig;
+	}
+
+	/**
+	 * @return the groupName
+	 */
+	public String getGroupName() {
+		return groupName;
+	}
+
+	/**
+	 * @param groupName the groupName to set
+	 */
+	public void setGroupName(String groupName) {
+		this.groupName = groupName;
+	}
+
+	/**
+	 * @return the groupPassword
+	 */
+	public String getGroupPassword() {
+		return groupPassword;
+	}
+
+	/**
+	 * @param groupPassword the groupPassword to set
+	 */
+	public void setGroupPassword(String groupPassword) {
+		this.groupPassword = groupPassword;
+	}
+
+	/**
+	 * @return the port
+	 */
+	public int getPort() {
+		return port;
+	}
+
+	/**
+	 * @param port the port to set
+	 */
+	public void setPort(int port) {
+		this.port = port;
+	}
+
+	/**
+	 * @return the portAutoIncrement
+	 */
+	public boolean isPortAutoIncrement() {
+		return portAutoIncrement;
+	}
+
+	/**
+	 * @param portAutoIncrement the portAutoIncrement to set
+	 */
+	public void setPortAutoIncrement(boolean portAutoIncrement) {
+		this.portAutoIncrement = portAutoIncrement;
+	}
+
+	/**
+	 * @return the interfaces
+	 */
+	public Interfaces getInterfaces() {
+		return interfaces;
+	}
+
+	/**
+	 * @param interfaces the interfaces to set
+	 */
+	public void setInterfaces(Interfaces interfaces) {
+		this.interfaces = interfaces;
+	}
+
+	/**
+	 * @return the join
+	 */
+	public Join getJoin() {
+		return join;
+	}
+
+	/**
+	 * @param join the join to set
+	 */
+	public void setJoin(Join join) {
+		this.join = join;
+	}
+
+	/**
+	 * @return the executorConfig
+	 */
+	public ExecutorConfig getExecutorConfig() {
+		return executorConfig;
+	}
+
+	/**
+	 * @param executorConfig the executorConfig to set
+	 */
+	public void setExecutorConfig(ExecutorConfig executorConfig) {
+		this.executorConfig = executorConfig;
+	}
+
+	/**
+	 * @return the mapTopicConfigs
+	 */
+	public Map<String, TopicConfig> getMapTopicConfigs() {
+		return mapTopicConfigs;
+	}
+
+	/**
+	 * @param mapTopicConfigs the mapTopicConfigs to set
+	 */
+	public void setMapTopicConfigs(Map<String, TopicConfig> mapTopicConfigs) {
+		this.mapTopicConfigs = mapTopicConfigs;
+	}
+
+	/**
+	 * @return the mapQConfigs
+	 */
+	public Map<String, QueueConfig> getMapQConfigs() {
+		return mapQConfigs;
+	}
+
+	/**
+	 * @param mapQConfigs the mapQConfigs to set
+	 */
+	public void setMapQConfigs(Map<String, QueueConfig> mapQConfigs) {
+		this.mapQConfigs = mapQConfigs;
+	}
+
+	/**
+	 * @return the mapMapConfigs
+	 */
+	public Map<String, MapConfig> getMapMapConfigs() {
+		return mapMapConfigs;
+	}
+
+	/**
+	 * @param mapMapConfigs the mapMapConfigs to set
+	 */
+	public void setMapMapConfigs(Map<String, MapConfig> mapMapConfigs) {
+		this.mapMapConfigs = mapMapConfigs;
+	}
 
 }

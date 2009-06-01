@@ -83,7 +83,7 @@ public class InSelector extends SelectorBase {
                     final Connection connection = initChannel(channel, true);
                     final InetSocketAddress remoteSocket = (InetSocketAddress) channel.socket()
                             .getRemoteSocketAddress();
-                    final int remoteRealPort = Config.get().port
+                    final int remoteRealPort = Config.get().getPort()
                             + ((remoteSocket.getPort() - 10000) % 20);
                     final Address endPoint = new Address(remoteSocket.getAddress(), remoteRealPort);
                     ConnectionManager.get().bind(endPoint, connection, true);

@@ -108,7 +108,7 @@ public class OutSelector extends SelectorBase {
             try {
                 socketChannel = SocketChannel.open();
                 final Address thisAddress = Node.get().getThisAddress();
-                final int addition = (thisAddress.getPort() - Config.get().port);
+                final int addition = (thisAddress.getPort() - Config.get().getPort());
                 localPort = 10000 + addition;
                 boolean bindOk = false;
                 while (!bindOk) {

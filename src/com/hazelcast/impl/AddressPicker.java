@@ -54,8 +54,8 @@ public class AddressPicker {
     public static String createCoreDump() {
         final StringBuilder sb = new StringBuilder();
         addLine(sb, "== Config ==");
-        addLine(sb, "config url: " + Config.get().urlConfig);
-        addLine(sb, Config.get().xmlConfig);
+        addLine(sb, "config url: " + Config.get().getUrlConfig());
+        addLine(sb, Config.get().getXmlConfig());
         final Set<Object> propKeys = System.getProperties().keySet();
         addLine(sb, "== System Properies ==");
         for (final Object key : propKeys) {
@@ -87,7 +87,7 @@ public class AddressPicker {
                         }
                         addLine(1, sb, "multicast : " + inetAddress.isMulticastAddress());
                         addLine(1, sb, "loopback : " + inetAddress.isLoopbackAddress());
-                        if (Config.get().interfaces.enabled) {
+                        if (Config.get().getInterfaces().enabled) {
                             addLine(1, sb, "has match : " + matchAddress(address));
                         }
                     } catch (final Exception ex) {
@@ -126,7 +126,7 @@ public class AddressPicker {
         while (st.hasMoreTokens()) {
             ip[i++] = Integer.parseInt(st.nextToken());
         }
-        final List<String> interfaces = Config.get().interfaces.lsInterfaces;
+        final List<String> interfaces = Config.get().getInterfaces().lsInterfaces;
         for (final String ipmask : interfaces) {
             if (matchAddress(ipmask, ip)) {
                 return true;
@@ -182,7 +182,7 @@ public class AddressPicker {
                         final InetAddress inetAddress = e.nextElement();
                         if (inetAddress instanceof Inet4Address) {
                             final String address = inetAddress.getHostAddress();
-                            if (config.interfaces.enabled) {
+                            if (config.getInterfaces().enabled) {
                                 if (matchAddress(address)) {
                                     currentAddress = address;
                                     break interfaces;
@@ -196,7 +196,7 @@ public class AddressPicker {
                         }
                     }
                 }
-                if (config.interfaces.enabled && currentAddress == null) {
+                if (config.getInterfaces().enabled && currentAddress == null) {
                     String msg = "Hazelcast CANNOT start on this node. No matching network interface found. ";
                     msg += "\nInterface matching must be either disabled or updated in the hazelcast.xml config file.";
                     logger.log(Level.SEVERE, msg);
@@ -212,7 +212,7 @@ public class AddressPicker {
             serverSocket.setReuseAddress(false);
             InetSocketAddress isa = null;
 
-            int port = config.port;
+            int port = config.getPort();
             socket:
             for (int i = 0; i < 100; i++) {
                 try {
