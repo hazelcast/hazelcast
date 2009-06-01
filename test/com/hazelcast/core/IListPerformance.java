@@ -17,10 +17,7 @@
 package com.hazelcast.core;
 
 import org.junit.Test;
-import org.junit.AfterClass;
 import org.junit.After;
-
-import java.io.IOException;
 
 import static junit.framework.Assert.assertTrue;
 
