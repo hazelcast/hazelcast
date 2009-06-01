@@ -72,4 +72,16 @@ public class MultiMapPerformance extends PerformanceTest{
         Collection<String> values = map.values();
     }
 
+    @Test
+    public void testMultiMapGet(){
+        String test = "testMultiMapGet";
+        for(int i=0; i<ops; ++i){
+            map.put("Hello"+i,"World");
+        }
+        t = new PerformanceTimer(test, ops);
+        for(int i=0; i< ops; ++i){
+            Collection<String> values = map.get("Hello"+i);
+        }
+    }
+
 }

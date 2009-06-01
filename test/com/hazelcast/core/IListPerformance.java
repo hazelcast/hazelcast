@@ -22,14 +22,17 @@ import org.junit.After;
 
 import java.io.IOException;
 
+import static junit.framework.Assert.assertTrue;
+
 public class IListPerformance extends PerformanceTest{
     private IList<Integer> list= Hazelcast.getList("IListPerformance");
 
     @After
     public void clear(){
-        list.clear();
         t.stop();
         t.printResult();
+        list.clear();
+        assertTrue(list.isEmpty());
     }
 
     @Test

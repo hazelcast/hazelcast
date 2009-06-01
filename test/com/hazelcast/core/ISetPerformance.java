@@ -28,10 +28,10 @@ public class ISetPerformance extends PerformanceTest{
 
     @After
     public void clear(){
-        set.clear();
-        assertTrue(set.isEmpty());
         t.stop();
         t.printResult();
+        set.clear();
+        assertTrue(set.isEmpty());
     }
 
     @Test

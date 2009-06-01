@@ -23,9 +23,9 @@ import java.io.*;
 import java.util.Map;
 
 public class PerformanceTest {
-    private static boolean createBaseline = true;
-    private static String outputFile = "C:\\Temp\\hazelcast.csv" ;
-    private static String inputFileName;
+    private static final boolean createBaseline = true;
+    private static final String outputFile = "C:\\Temp\\hazelcast_out.csv";
+    private static final String inputFileName= "C:\\Temp\\hazelcast_in.csv";
     private static final IMap<String,PerformanceTimer> baselinePerformance = Hazelcast.getMap("baselinePerformance");
     private static final IMap<String,PerformanceTimer> performance = Hazelcast.getMap("performance");
     protected static long ops = 10000;
@@ -54,7 +54,8 @@ public class PerformanceTest {
     public static void writeBaseline() throws IOException {
         BufferedWriter writer = new BufferedWriter((new FileWriter(outputFile)));
         for(Map.Entry<String,PerformanceTimer> measurement: baselinePerformance.entrySet()){
-            writer.write(measurement.getValue().toString() + "\n");
+            writer.write(measurement.getValue().toString());
+            writer.newLine();
         }
         writer.flush();
         writer.close();
