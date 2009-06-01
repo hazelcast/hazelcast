@@ -185,12 +185,18 @@ public class Config {
     }
 
     public boolean checkTrue(final String value) {
-        if (value.equalsIgnoreCase("true"))
+        if ("true".equalsIgnoreCase(value)) {
             return true;
-        else if (value.equalsIgnoreCase("yes"))
+        }
+        
+        if ("yes".equalsIgnoreCase(value)) {
             return true;
-        else if (value.equalsIgnoreCase("on"))
+        }
+        
+        if ("on".equalsIgnoreCase(value)) {
             return true;
+        }
+        
         return false;
     }
 
@@ -238,17 +244,19 @@ public class Config {
 
     public void handleNetwork(final org.w3c.dom.Node node) {
         final NodeList nodelist = node.getChildNodes();
+        
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node child = nodelist.item(i);
-            if (child.getNodeName().equals("port")) {
+            final String nodeName = child.getNodeName();
+            
+            if ("port".equals(nodeName)) {
                 handlePort(child);
-            } else if (child.getNodeName().equals("join")) {
+            } else if ("join".equals(nodeName)) {
                 handleJoin(child);
-            } else if (child.getNodeName().equals("interfaces")) {
+            } else if ("interfaces".equals(nodeName)) {
                 handleInterfaces(child);
             }
         }
-
     }
 
     private int getIntegerValue(final String parameterName, final String value,
