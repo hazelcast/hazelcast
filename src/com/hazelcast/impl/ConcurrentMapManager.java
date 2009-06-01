@@ -1766,20 +1766,20 @@ final class ConcurrentMapManager extends BaseManager {
             this.name = name;
             mapRecords = new SortedHashMap<Data, Record>(10000);
             MapConfig mapConfig = Config.get().getMapConfig(name.substring(2));
-            this.backupCount = mapConfig.backupCount;
-            ttl = mapConfig.timeToLiveSeconds * 1000L;
-            if ("LFU".equalsIgnoreCase(mapConfig.evictionPolicy)) {
+            this.backupCount = mapConfig.getBackupCount();
+            ttl = mapConfig.getTimeToLiveSeconds() * 1000L;
+            if ("LFU".equalsIgnoreCase(mapConfig.getEvictionPolicy())) {
                 evictionPolicy = OrderingType.LFU;
-            } else if ("LRU".equalsIgnoreCase(mapConfig.evictionPolicy)) {
+            } else if ("LRU".equalsIgnoreCase(mapConfig.getEvictionPolicy())) {
                 evictionPolicy = OrderingType.LRU;
             } else {
                 evictionPolicy = OrderingType.NONE;
             }
-            evictionRate = mapConfig.evictionPercentage / 100;
+            evictionRate = mapConfig.getEvictionPercentage() / 100;
             if (evictionPolicy == OrderingType.NONE) {
                 maxSize = Integer.MAX_VALUE;
             } else {
-                maxSize = (mapConfig.maxSize == 0) ? Integer.MAX_VALUE : mapConfig.maxSize;
+                maxSize = (mapConfig.getMaxSize() == 0) ? MapConfig.DEFAULT_MAX_SIZE : mapConfig.getMaxSize();
             }
             instanceType = getInstanceType(name);
         }

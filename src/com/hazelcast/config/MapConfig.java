@@ -4,15 +4,106 @@
 package com.hazelcast.config;
 
 public class MapConfig {
-    public String name;
+	
+	public final static int DEFAULT_BACKUP_COUNT = 1;
+	public final static int DEFAULT_EVICTION_PERCENTAGE = 25;
+	public final static int DEFAULT_TTL_SECONDS = 0;
+	public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
+	public final static String DEFAULT_EVICTION_POLICY = "NONE";
+	
+    private String name;
 
-    public int backupCount = 1;
+    private int backupCount = DEFAULT_BACKUP_COUNT;
 
-    public int evictionPercentage = 25;
+    private int evictionPercentage = DEFAULT_EVICTION_PERCENTAGE;
 
-    public int timeToLiveSeconds = 0;
+    private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
 
-    public int maxSize = Integer.MAX_VALUE;
+    private int maxSize = DEFAULT_MAX_SIZE;
 
-    public String evictionPolicy = "NONE";
+    private String evictionPolicy = DEFAULT_EVICTION_POLICY;
+
+	/**
+	 * @return the name
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * @param name the name to set
+	 */
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	/**
+	 * @return the backupCount
+	 */
+	public int getBackupCount() {
+		return backupCount;
+	}
+
+	/**
+	 * @param backupCount the backupCount to set
+	 */
+	public void setBackupCount(int backupCount) {
+		this.backupCount = backupCount;
+	}
+
+	/**
+	 * @return the evictionPercentage
+	 */
+	public int getEvictionPercentage() {
+		return evictionPercentage;
+	}
+
+	/**
+	 * @param evictionPercentage the evictionPercentage to set
+	 */
+	public void setEvictionPercentage(int evictionPercentage) {
+		this.evictionPercentage = evictionPercentage;
+	}
+
+	/**
+	 * @return the timeToLiveSeconds
+	 */
+	public int getTimeToLiveSeconds() {
+		return timeToLiveSeconds;
+	}
+
+	/**
+	 * @param timeToLiveSeconds the timeToLiveSeconds to set
+	 */
+	public void setTimeToLiveSeconds(int timeToLiveSeconds) {
+		this.timeToLiveSeconds = timeToLiveSeconds;
+	}
+
+	/**
+	 * @return the maxSize
+	 */
+	public int getMaxSize() {
+		return maxSize;
+	}
+
+	/**
+	 * @param maxSize the maxSize to set
+	 */
+	public void setMaxSize(int maxSize) {
+		this.maxSize = maxSize;
+	}
+
+	/**
+	 * @return the evictionPolicy
+	 */
+	public String getEvictionPolicy() {
+		return evictionPolicy;
+	}
+
+	/**
+	 * @param evictionPolicy the evictionPolicy to set
+	 */
+	public void setEvictionPolicy(String evictionPolicy) {
+		this.evictionPolicy = evictionPolicy;
+	}
 }

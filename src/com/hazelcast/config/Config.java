@@ -414,25 +414,24 @@ public class Config {
         final Node attName = node.getAttributes().getNamedItem("name");
         final String name = getTextContent(attName);
         final MapConfig config = new MapConfig();
-        config.name = name;
+        config.setName(name);
         final NodeList nodelist = node.getChildNodes();
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String value = getTextContent(n).trim();
             if (n.getNodeName().equalsIgnoreCase("backup-count")) {
-                config.backupCount = getIntegerValue("backup-count", value,
-                        1);
+                config.setBackupCount(getIntegerValue("backup-count", value, MapConfig.DEFAULT_BACKUP_COUNT));
             } else if (n.getNodeName().equalsIgnoreCase("eviction-policy")) {
-                config.evictionPolicy = value;
+                config.setEvictionPolicy(value);
             } else if (n.getNodeName().equalsIgnoreCase("max-size")) {
-                config.maxSize = getIntegerValue("max-size", value,
-                        Integer.MAX_VALUE);
+                config.setMaxSize(getIntegerValue("max-size", value,
+                        MapConfig.DEFAULT_MAX_SIZE));
             } else if (n.getNodeName().equalsIgnoreCase("eviction-percentage")) {
-                config.evictionPercentage = getIntegerValue("eviction-percentage", value,
-                        25);
+                config.setEvictionPercentage(getIntegerValue("eviction-percentage", value,
+                        MapConfig.DEFAULT_EVICTION_PERCENTAGE));
             } else if (n.getNodeName().equalsIgnoreCase("time-to-live-seconds")) {
-                config.timeToLiveSeconds = getIntegerValue("time-to-live-seconds", value,
-                        0);
+                config.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value,
+                        MapConfig.DEFAULT_TTL_SECONDS));
             }
         }
         mapMapConfigs.put(name, config);
