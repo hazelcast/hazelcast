@@ -128,8 +128,10 @@ public class Config {
                     logger.log(Level.WARNING, msg);
                 }
             }
-            if (in == null)
+            
+            if (in == null) {
                 return;
+            }
 
             final DocumentBuilder builder = DocumentBuilderFactory.newInstance()
                     .newDocumentBuilder();
@@ -150,8 +152,9 @@ public class Config {
                 }
             } catch (final Exception e) {
                 String msgPart = "config file '" + configFile + "' set as a system property.";
-                if (!usingSystemConfig)
+                if (!usingSystemConfig) {
                     msgPart = "hazelcast.xml config file in the classpath.";
+                }
                 String msg = "Having problem parsing the " + msgPart;
                 msg += "\nException: " + e.getMessage();
                 msg += "\nHazelcast will start with default configuration.";
@@ -167,22 +170,25 @@ public class Config {
             final NodeList nodelist = docElement.getChildNodes();
             for (int i = 0; i < nodelist.getLength(); i++) {
                 final org.w3c.dom.Node node = nodelist.item(i);
-                if (node.getNodeName().equals("network")) {
+                final String nodeName = node.getNodeName();
+                
+                if ("network".equals(nodeName)) {
                     handleNetwork(node);
-                } else if (node.getNodeName().equals("group")) {
+                } else if ("group".equals(nodeName)) {
                     handleGroup(node);
-                } else if (node.getNodeName().equals("executor-service")) {
+                } else if ("executor-service".equals(nodeName)) {
                     handleExecutor(node);
-                } else if (node.getNodeName().equals("queue")) {
+                } else if ("queue".equals(nodeName)) {
                     handleQueue(node);
-                } else if (node.getNodeName().equals("map")) {
+                } else if ("map".equals(nodeName)) {
                     handleMap(node);
-                } else if (node.getNodeName().equals("topic")) {
+                } else if ("topic".equals(nodeName)) {
                     handleTopic(node);
                 }
             }
         } catch (final Exception e) {
-            e.printStackTrace();
+        	logger.log(Level.SEVERE, "Error while creating configuration", e);
+        	e.printStackTrace();
         }
     }
 
@@ -279,10 +285,11 @@ public class Config {
     }
 
     private String getTextContent(final Node node) {
-        if (domLevel3)
+        if (domLevel3) {
             return node.getTextContent();
-        else
+        } else {
             return getTextContent2(node);
+        }
     }
 
     private String getTextContent2(final Node node) {
@@ -307,20 +314,22 @@ public class Config {
             }
             child = child.getNextSibling();
         }
-
     }
 
     private void handleExecutor(final org.w3c.dom.Node node) {
         final NodeList nodelist = node.getChildNodes();
+
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
+            final String name = n.getNodeName().toLowerCase();
             final String value = getTextContent(n).trim();
-            if (n.getNodeName().equalsIgnoreCase("core-pool-size")) {
-                executorConfig.setCorePoolSize(getIntegerValue("core-pool-size", value, 10));
-            } else if (n.getNodeName().equalsIgnoreCase("max-pool-size")) {
-                executorConfig.setMaxPoolsize(getIntegerValue("max-pool-size", value, 50));
-            } else if (n.getNodeName().equalsIgnoreCase("keep-alive-seconds")) {
-                executorConfig.setKeepAliveSeconds(getIntegerValue("keep-alive-seconds", value, 50));
+            
+            if ("core-pool-size".equals(name)) {
+                executorConfig.setCorePoolSize(getIntegerValue("core-pool-size", value, ExecutorConfig.DEFAULT_CORE_POOL_SIZE));
+            } else if ("max-pool-size".equals(name)) {
+                executorConfig.setMaxPoolsize(getIntegerValue("max-pool-size", value, ExecutorConfig.DEFAULT_MAX_POOL_SIZE));
+            } else if ("keep-alive-seconds".equals(name)) {
+                executorConfig.setKeepAliveSeconds(getIntegerValue("keep-alive-seconds", value, ExecutorConfig.DEFAULT_KEEPALIVE_SECONDS));
             }
         }
     }
@@ -330,10 +339,10 @@ public class Config {
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String value = getTextContent(n).trim();
-            final String nodeName = n.getNodeName();
-            if ("name".equalsIgnoreCase(nodeName)) {
+            final String nodeName = n.getNodeName().toLowerCase();
+            if ("name".equals(nodeName)) {
                 groupName = value;
-            } else if ("password".equalsIgnoreCase(nodeName)) {
+            } else if ("password".equals(nodeName)) {
                 groupPassword = value;
             }
         }
@@ -344,7 +353,7 @@ public class Config {
         for (int a = 0; a < atts.getLength(); a++) {
             final org.w3c.dom.Node att = atts.item(a);
             final String value = att.getNodeValue();
-            if (att.getNodeName().equals("enabled")) {
+            if ("enabled".equals(att.getNodeName())) {
                 interfaces.enabled = checkTrue(value);
             }
         }
@@ -352,7 +361,7 @@ public class Config {
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String value = getTextContent(n).trim();
-            if (n.getNodeName().equalsIgnoreCase("interface")) {
+            if ("interface".equalsIgnoreCase(n.getNodeName())) {
                 interfaces.lsInterfaces.add(value);
             }
         }
@@ -362,9 +371,11 @@ public class Config {
         final NodeList nodelist = node.getChildNodes();
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node child = nodelist.item(i);
-            if (child.getNodeName().equalsIgnoreCase("multicast")) {
+            final String name = child.getNodeName().toLowerCase();
+            
+            if ("multicast".equals(name)) {
                 handleMulticast(child);
-            } else if (child.getNodeName().equalsIgnoreCase("tcp-ip")) {
+            } else if ("tcp-ip".equals(name)) {
                 handleTcpIp(child);
             }
         }
@@ -414,11 +425,13 @@ public class Config {
         final NodeList nodelist = node.getChildNodes();
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
+            final String nodeName = n.getNodeName().toLowerCase();
             final String value = getTextContent(n).trim();
-            if (n.getNodeName().equalsIgnoreCase("max-size-per-jvm")) {
-                qConfig.setMaxSizePerJVM(getIntegerValue("max-size-per-jvm", value, Integer.MAX_VALUE));
-            } else if (n.getNodeName().equalsIgnoreCase("time-to-live-seconds")) {
-                qConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value, Integer.MAX_VALUE));
+            
+            if ("max-size-per-jvm".equals(nodeName)) {
+                qConfig.setMaxSizePerJVM(getIntegerValue("max-size-per-jvm", value, QueueConfig.DEFAULT_MAX_SIZE_PER_JVM));
+            } else if ("time-to-live-seconds".equals(nodeName)) {
+                qConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value, QueueConfig.DEFAULT_TTL_SECONDS));
             }
         }
         mapQueueConfigs.put(name, qConfig);
@@ -432,18 +445,20 @@ public class Config {
         final NodeList nodelist = node.getChildNodes();
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
+            final String nodeName = n.getNodeName().toLowerCase();
             final String value = getTextContent(n).trim();
-            if (n.getNodeName().equalsIgnoreCase("backup-count")) {
+            
+            if ("backup-count".equals(nodeName)) {
                 config.setBackupCount(getIntegerValue("backup-count", value, MapConfig.DEFAULT_BACKUP_COUNT));
-            } else if (n.getNodeName().equalsIgnoreCase("eviction-policy")) {
+            } else if ("eviction-policy".equals(nodeName)) {
                 config.setEvictionPolicy(value);
-            } else if (n.getNodeName().equalsIgnoreCase("max-size")) {
+            } else if ("max-size".equals(nodeName)) {
                 config.setMaxSize(getIntegerValue("max-size", value,
                         MapConfig.DEFAULT_MAX_SIZE));
-            } else if (n.getNodeName().equalsIgnoreCase("eviction-percentage")) {
+            } else if ("eviction-percentage".equals(nodeName)) {
                 config.setEvictionPercentage(getIntegerValue("eviction-percentage", value,
                         MapConfig.DEFAULT_EVICTION_PERCENTAGE));
-            } else if (n.getNodeName().equalsIgnoreCase("time-to-live-seconds")) {
+            } else if ("time-to-live-seconds".equals(nodeName)) {
                 config.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value,
                         MapConfig.DEFAULT_TTL_SECONDS));
             }
@@ -478,9 +493,9 @@ public class Config {
                 final int indexStar = value.indexOf('*');
                 final int indexDash = value.indexOf('-');
 
-                if (indexStar == -1 && indexDash == -1)
+                if (indexStar == -1 && indexDash == -1) {
                     join.joinMembers.add(value);
-                else {
+                } else {
                     final String first3 = value.substring(0, value.lastIndexOf('.'));
                     final String lastOne = value.substring(value.lastIndexOf('.') + 1);
                     if (first3.indexOf('*') != -1 && first3.indexOf('-') != -1) {
@@ -537,13 +552,16 @@ public class Config {
         } else {
             final String firstPart = pattern.substring(0, index);
             final int indexFirstPart = name.indexOf(firstPart, 0);
-            if (indexFirstPart == -1)
+            if (indexFirstPart == -1) {
                 return false;
+            }
 
             final String secondPart = pattern.substring(index + 1);
             final int indextSecondPart = name.indexOf(secondPart, index + 1);
-            if (indextSecondPart == -1)
+            if (indextSecondPart == -1) {
                 return false;
+            }
+            
             return true;
         }
     }
