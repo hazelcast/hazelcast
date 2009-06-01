@@ -67,6 +67,8 @@ public class Config {
     
     private File configurationFile;
     
+    private ConfigBuilder configBuilder;
+    
     private Config() {
         String configFile = System.getProperty("hazelcast.config");
         InputStream in = null;
@@ -121,7 +123,8 @@ public class Config {
             }
 
             // TODO: make ConfigBuilder configurable
-            new XmlConfigBuilder(in).parse(this);
+            configBuilder = new XmlConfigBuilder(in);
+            configBuilder.parse(this);
             
         } catch (final Exception e) {
         	logger.log(Level.SEVERE, "Error while creating configuration", e);
