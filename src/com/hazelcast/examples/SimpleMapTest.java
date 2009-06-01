@@ -15,7 +15,7 @@
  *
  */
 
-package com.hazelcast.tests;
+package com.hazelcast.examples;
 
 import com.hazelcast.core.Hazelcast;
 
