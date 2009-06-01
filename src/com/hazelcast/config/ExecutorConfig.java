@@ -7,13 +7,13 @@ public final class ExecutorConfig {
 
 	public final static int DEFAULT_CORE_POOL_SIZE = 10;
 	public final static int DEFAULT_MAX_POOL_SIZE = 50;
-	public final static long DEFAULT_KEEPALIVE_SECONDS = 60;
+	public final static int DEFAULT_KEEPALIVE_SECONDS = 60;
 	
     private int corePoolSize = DEFAULT_CORE_POOL_SIZE;
 
     private int maxPoolsize = DEFAULT_MAX_POOL_SIZE;
 
-    private long keepAliveSeconds = DEFAULT_KEEPALIVE_SECONDS;
+    private int keepAliveSeconds = DEFAULT_KEEPALIVE_SECONDS;
 
 	/**
 	 * @return the corePoolSize
@@ -46,14 +46,14 @@ public final class ExecutorConfig {
 	/**
 	 * @return the keepAliveSeconds
 	 */
-	public long getKeepAliveSeconds() {
+	public int getKeepAliveSeconds() {
 		return keepAliveSeconds;
 	}
 
 	/**
 	 * @param keepAliveSeconds the keepAliveSeconds to set
 	 */
-	public void setKeepAliveSeconds(long keepAliveSeconds) {
+	public void setKeepAliveSeconds(int keepAliveSeconds) {
 		this.keepAliveSeconds = keepAliveSeconds;
 	}
     
