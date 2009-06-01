@@ -42,6 +42,12 @@ import com.hazelcast.impl.Util;
 
 public class Config {
 
+	public static final int DEFAULT_PORT = 5701;
+
+	public static final String DEFAULT_GROUP_PASSWORD = "group-pass";
+
+	public static final String DEFAULT_GROUP_NAME = "group-dev";
+
 	private final static Logger logger = Logger.getLogger(Config.class.getName());
 
     private static Config instance = new Config();
@@ -52,11 +58,11 @@ public class Config {
 
     private String xmlConfig = null;
 
-    private String groupName = "group-dev";
+    private String groupName = DEFAULT_GROUP_NAME;
 
-    private String groupPassword = "group-pass";
+    private String groupPassword = DEFAULT_GROUP_PASSWORD;
 
-    private int port = 5701;
+    private int port = DEFAULT_PORT;
 
     private boolean portAutoIncrement = true;
 
@@ -68,7 +74,7 @@ public class Config {
 
     private Map<String, TopicConfig> mapTopicConfigs = new HashMap<String, TopicConfig>();
 
-    private Map<String, QueueConfig> mapQConfigs = new HashMap<String, QueueConfig>();
+    private Map<String, QueueConfig> mapQueueConfigs = new HashMap<String, QueueConfig>();
 
     private Map<String, MapConfig> mapMapConfigs = new HashMap<String, MapConfig>();
 
@@ -184,7 +190,7 @@ public class Config {
         return instance;
     }
 
-    public boolean checkTrue(final String value) {
+    private boolean checkTrue(final String value) {
         if ("true".equalsIgnoreCase(value)) {
             return true;
         }
@@ -201,13 +207,13 @@ public class Config {
     }
 
     public QueueConfig getQConfig(final String name) {
-        final Set<String> qNames = mapQConfigs.keySet();
+        final Set<String> qNames = mapQueueConfigs.keySet();
         for (final String pattern : qNames) {
             if (nameMatches(name, pattern)) {
-                return mapQConfigs.get(pattern);
+                return mapQueueConfigs.get(pattern);
             }
         }
-        QueueConfig defaultConfig = mapQConfigs.get("default");
+        QueueConfig defaultConfig = mapQueueConfigs.get("default");
         if (defaultConfig == null) {
             defaultConfig = new QueueConfig();
         }
@@ -242,7 +248,7 @@ public class Config {
         return defaultConfig;
     }
 
-    public void handleNetwork(final org.w3c.dom.Node node) {
+    private void handleNetwork(final org.w3c.dom.Node node) {
         final NodeList nodelist = node.getChildNodes();
         
         for (int i = 0; i < nodelist.getLength(); i++) {
@@ -415,7 +421,7 @@ public class Config {
                 qConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value, Integer.MAX_VALUE));
             }
         }
-        mapQConfigs.put(name, qConfig);
+        mapQueueConfigs.put(name, qConfig);
     }
 
     private void handleMap(final org.w3c.dom.Node node) {
@@ -686,14 +692,14 @@ public class Config {
 	 * @return the mapQConfigs
 	 */
 	public Map<String, QueueConfig> getMapQConfigs() {
-		return mapQConfigs;
+		return mapQueueConfigs;
 	}
 
 	/**
 	 * @param mapQConfigs the mapQConfigs to set
 	 */
 	public void setMapQConfigs(Map<String, QueueConfig> mapQConfigs) {
-		this.mapQConfigs = mapQConfigs;
+		this.mapQueueConfigs = mapQConfigs;
 	}
 
 	/**
