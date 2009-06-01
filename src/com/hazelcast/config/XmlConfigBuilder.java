@@ -244,7 +244,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
             final org.w3c.dom.Node att = atts.item(a);
             final String value = getTextContent(att).trim();
             if (att.getNodeName().equals("enabled")) {
-                join.multicastConfig.setEnabled(checkTrue(value));
+                join.getMulticastConfig().setEnabled(checkTrue(value));
             }
         }
         final NodeList nodelist = node.getChildNodes();
@@ -252,9 +252,9 @@ public class XmlConfigBuilder implements ConfigBuilder {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String value = getTextContent(n).trim();
             if (n.getNodeName().equalsIgnoreCase("multicast-group")) {
-                join.multicastConfig.setMulticastGroup(value);
+                join.getMulticastConfig().setMulticastGroup(value);
             } else if (n.getNodeName().equalsIgnoreCase("multicast-port")) {
-                join.multicastConfig.setMulticastPort(Integer.parseInt(value));
+                join.getMulticastConfig().setMulticastPort(Integer.parseInt(value));
             }
         }
     }
@@ -331,9 +331,9 @@ public class XmlConfigBuilder implements ConfigBuilder {
             final org.w3c.dom.Node att = atts.item(a);
             final String value = getTextContent(att).trim();
             if (att.getNodeName().equals("enabled")) {
-                join.joinMembers.enabled = checkTrue(value);
+                join.getJoinMembers().enabled = checkTrue(value);
             } else if (att.getNodeName().equals("conn-timeout-seconds")) {
-                join.joinMembers.connectionTimeoutSeconds = getIntegerValue("conn-timeout-seconds",
+                join.getJoinMembers().connectionTimeoutSeconds = getIntegerValue("conn-timeout-seconds",
                         value, 5);
             }
         }
@@ -345,15 +345,15 @@ public class XmlConfigBuilder implements ConfigBuilder {
             final String value = getTextContent(n).trim();
 
             if (n.getNodeName().equalsIgnoreCase("required-member")) {
-                join.joinMembers.requiredMember = value;
+                join.getJoinMembers().requiredMember = value;
             } else if (n.getNodeName().equalsIgnoreCase("hostname")) {
-                join.joinMembers.add(value);
+                join.getJoinMembers().add(value);
             } else if (n.getNodeName().equalsIgnoreCase("interface")) {
                 final int indexStar = value.indexOf('*');
                 final int indexDash = value.indexOf('-');
 
                 if (indexStar == -1 && indexDash == -1) {
-                    join.joinMembers.add(value);
+                    join.getJoinMembers().add(value);
                 } else {
                     final String first3 = value.substring(0, value.lastIndexOf('.'));
                     final String lastOne = value.substring(value.lastIndexOf('.') + 1);
@@ -365,7 +365,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
                     }
                     if (lastOne.equals("*")) {
                         for (int j = 0; j < 256; j++) {
-                            join.joinMembers.add(first3 + "." + String.valueOf(j));
+                            join.getJoinMembers().add(first3 + "." + String.valueOf(j));
                         }
                     } else if (lastOne.indexOf('-') != -1) {
                         final int start = Integer.parseInt(lastOne.substring(0, lastOne
@@ -373,7 +373,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
                         final int end = Integer.parseInt(lastOne
                                 .substring(lastOne.indexOf('-') + 1));
                         for (int j = start; j <= end; j++) {
-                            join.joinMembers.add(first3 + "." + String.valueOf(j));
+                            join.getJoinMembers().add(first3 + "." + String.valueOf(j));
                         }
                     }
                 }

@@ -49,8 +49,8 @@ class MulticastService implements Runnable {
         this.multicastSocket = multicastSocket;
         this.datagramPacketReceive = new DatagramPacket(new byte[bufferSize], bufferSize);
         this.datagramPacketSend = new DatagramPacket(new byte[bufferSize], bufferSize, InetAddress
-                .getByName(config.getJoin().multicastConfig.getMulticastGroup()),
-                config.getJoin().multicastConfig.getMulticastPort());
+                .getByName(config.getJoin().getMulticastConfig().getMulticastGroup()),
+                config.getJoin().getMulticastConfig().getMulticastPort());
         running = true;
 
     }

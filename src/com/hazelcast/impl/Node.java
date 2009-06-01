@@ -270,7 +270,7 @@ public class Node {
         clusterServiceThread.setPriority(7);
         lsThreads.add(clusterServiceThread);
 
-        if (Config.get().getJoin().multicastConfig.isEnabled()) {
+        if (Config.get().getJoin().getMulticastConfig().isEnabled()) {
             startMulticastService();
         }
         join();
@@ -442,19 +442,19 @@ public class Node {
                     + Build.build + ") starting at " + address);
             systemLogger.log(Level.INFO, "Copyright (C) 2009 Hazelcast.com");
 
-            if (config.getJoin().multicastConfig.isEnabled()) {
+            if (config.getJoin().getMulticastConfig().isEnabled()) {
                 final MulticastSocket multicastSocket = new MulticastSocket(null);
                 multicastSocket.setReuseAddress(true);
                 // bind to receive interface
                 multicastSocket.bind(new InetSocketAddress(
-                        config.getJoin().multicastConfig.getMulticastPort()));
+                        config.getJoin().getMulticastConfig().getMulticastPort()));
                 multicastSocket.setTimeToLive(32);
                 // set the send interface
                 multicastSocket.setInterface(address.getInetAddress());
                 multicastSocket.setReceiveBufferSize(1 * 1024);
                 multicastSocket.setSendBufferSize(1 * 1024);
                 multicastSocket.joinGroup(InetAddress
-                        .getByName(config.getJoin().multicastConfig.getMulticastGroup()));
+                        .getByName(config.getJoin().getMulticastConfig().getMulticastGroup()));
                 multicastSocket.setSoTimeout(1000);
                 MulticastService.get().init(multicastSocket);
             }
@@ -469,7 +469,7 @@ public class Node {
 
     private void join() {
         final Config config = Config.get();
-        if (!config.getJoin().multicastConfig.isEnabled()) {
+        if (!config.getJoin().getMulticastConfig().isEnabled()) {
             joinWithTCP();
         } else {
             joinWithMulticast();
@@ -531,7 +531,7 @@ public class Node {
     private void joinViaPossibleMembers() {
         final Config config = Config.get();
         try {
-            final List<Address> lsPossibleAddresses = getPossibleMembers(config.getJoin().joinMembers.lsMembers);
+            final List<Address> lsPossibleAddresses = getPossibleMembers(config.getJoin().getJoinMembers().lsMembers);
             lsPossibleAddresses.remove(address);
             for (final Address adrs : lsPossibleAddresses) {
                 if (DEBUG)
@@ -542,7 +542,7 @@ public class Node {
             int numberOfSeconds = 0;
             connectionTimeout:
             while (!found
-                    && numberOfSeconds < config.getJoin().joinMembers.connectionTimeoutSeconds) {
+                    && numberOfSeconds < config.getJoin().getJoinMembers().connectionTimeoutSeconds) {
                 Address addressFailed = null;
                 while ((addressFailed = qFailedConnections.poll()) != null) {
                     lsPossibleAddresses.remove(addressFailed);
@@ -606,13 +606,13 @@ public class Node {
 
         try {
             final Config config = Config.get();
-            final Address requiredAddress = getAddressFor(config.getJoin().joinMembers.requiredMember);
+            final Address requiredAddress = getAddressFor(config.getJoin().getJoinMembers().requiredMember);
             if (DEBUG) {
                 logger.log(Level.FINEST, "Joining over required member " + requiredAddress);
             }
             if (requiredAddress == null) {
                 throw new RuntimeException("Invalid required member "
-                        + config.getJoin().joinMembers.requiredMember);
+                        + config.getJoin().getJoinMembers().requiredMember);
             }
             if (requiredAddress.equals(address)) {
                 setAsMaster();
@@ -642,7 +642,7 @@ public class Node {
 
     private void joinWithTCP() {
         final Config config = Config.get();
-        if (config.getJoin().joinMembers.requiredMember != null) {
+        if (config.getJoin().getJoinMembers().requiredMember != null) {
             joinViaRequiredMember();
         } else {
             joinViaPossibleMembers();
