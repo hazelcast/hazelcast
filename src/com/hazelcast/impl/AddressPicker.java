@@ -54,7 +54,7 @@ public class AddressPicker {
     public static String createCoreDump() {
         final StringBuilder sb = new StringBuilder();
         addLine(sb, "== Config ==");
-        addLine(sb, "config url: " + Config.get().getUrlConfig());
+        addLine(sb, "config url: " + Config.get().getConfigurationUrl());
         addLine(sb, Config.get().getXmlConfig());
         final Set<Object> propKeys = System.getProperties().keySet();
         addLine(sb, "== System Properies ==");
