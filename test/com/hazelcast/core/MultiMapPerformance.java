@@ -84,4 +84,15 @@ public class MultiMapPerformance extends PerformanceTest{
         }
     }
 
+    @Test
+    public void testMultiMapValueCount(){
+        String test = "testMultiMapGet";
+        for(int i=0; i<ops; ++i){
+            map.put("Hello"+i,"World");
+        }
+        t = new PerformanceTimer(test, ops);
+        for(int i=0; i< ops; ++i){
+            int count = map.valueCount("Hello"+i);
+        }
+    }
 }
