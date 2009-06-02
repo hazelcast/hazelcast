@@ -430,5 +430,20 @@ public class HazelcastTest {
             assertEquals("Hello",entry.getKey());
         }
     }
+    
+    @Test
+    public void testMultiMapValueCount() {
+    	MultiMap<Integer, String> map = Hazelcast.getMultiMap("testMultiMapValueCount");
+    	 map.put(1,"World");
+    	 map.put(2,"Africa");
+         map.put(1,"America");
+         map.put(2,"Antartica");
+         map.put(1,"Asia");
+         map.put(1,"Europe");
+         map.put(2,"Australia");
+         
+         assertEquals(4, map.valueCount(1));
+         assertEquals(3, map.valueCount(2));
+    }
 
 }
