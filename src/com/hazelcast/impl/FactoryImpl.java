@@ -1115,6 +1115,11 @@ public class FactoryImpl implements Constants {
             ensure();
             base.clear();
         }
+        
+        public int valueCount(Object key) {
+        	ensure();
+        	return base.valueCount(key);
+        }
 
         private class MultiMapBase implements MultiMap, IGetAwareProxy {
             final MProxy mapProxy;
@@ -1174,6 +1179,10 @@ public class FactoryImpl implements Constants {
             public Set entrySet() {
                 return mapProxy.entrySet();
             }
+            
+            public int valueCount(Object key) {
+            	return mapProxy.valueCount(key);
+            }
 
             public InstanceType getInstanceType() {
                 return InstanceType.MULTIMAP;
@@ -1219,6 +1228,8 @@ public class FactoryImpl implements Constants {
         boolean removeMulti(Object key, Object value);
 
         boolean add(Object value);
+        
+        int valueCount(Object key);
     }
 
 
@@ -1335,6 +1346,11 @@ public class FactoryImpl implements Constants {
         public void clear() {
             ensure();
             mproxyReal.clear();
+        }
+        
+        public int valueCount(Object key) {
+        	ensure();
+        	return mproxyReal.valueCount(key);
         }
 
         public Set keySet() {
@@ -1530,6 +1546,13 @@ public class FactoryImpl implements Constants {
                     size += txn.size(name);
                 }
                 return (size < 0) ? 0 : size;
+            }
+            
+            public int valueCount(Object key) {
+            	int count = 0;
+            	MValueCount mcount = ConcurrentMapManager.get().new MValueCount();
+            	count = ((Number) mcount.count(name, key, -1, -1)).intValue();
+            	return count;
             }
 
             public Object putIfAbsent(Object key, Object value) {
