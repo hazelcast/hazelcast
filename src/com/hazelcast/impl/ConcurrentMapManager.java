@@ -236,6 +236,13 @@ final class ConcurrentMapManager extends BaseManager {
                         handleMigrateRecord(packet);
                     }
                 });
+        
+        ClusterService.get().registerPacketProcessor(OP_CMAP_VALUE_COUNT,
+                new DefaultPacketProcessor(false, true, false, true) {
+                    void handle(Request request) {
+                        doValueCount(request);
+                    }
+                });
     }
 
     public static ConcurrentMapManager get() {
@@ -575,6 +582,23 @@ final class ConcurrentMapManager extends BaseManager {
             doGet(request);
             Data value = (Data) request.response;
             setResult(value);
+        }
+    }
+    
+    class MValueCount extends MTargetAwareOp {
+        public Object count(String name, Object key, long timeout, long txnId) {
+            return objectCall(OP_CMAP_VALUE_COUNT, name, key, null, timeout, txnId, -1);
+        }
+
+        @Override
+		void handleNoneRedoResponse(Packet packet) {
+			super.handleLongNoneRedoResponse(packet);
+		}
+
+		@Override
+        public void doLocalOp() {
+            doValueCount(request);
+            setResult(request.longValue);
         }
     }
 
@@ -1628,6 +1652,11 @@ final class ConcurrentMapManager extends BaseManager {
         CMap cmap = getMap(request.name);
         request.response = cmap.get(request);
     }
+    
+    final void doValueCount(Request request) {
+        CMap cmap = getMap(request.name);
+        request.longValue = cmap.valueCount(request.key);
+    }
 
     final void doGetMapEntry(Request request) {
         CMap cmap = getMap(request.name);
@@ -1907,6 +1936,16 @@ final class ConcurrentMapManager extends BaseManager {
             }
 //            System.out.println(size + " is size.. backup.size " + backupSize() + " ownedEntryCount:" + ownedEntryCount);
             return size;
+        }
+        
+        public int valueCount(Data key) {
+            long now = System.currentTimeMillis();
+            int count = 0;
+            Record record = mapRecords.get(key);
+            if (record!= null && record.isValid(now)) {
+               	count = record.valueCount();
+            }
+            return count;
         }
 
         public boolean contains(Request req) {
