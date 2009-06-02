@@ -446,4 +446,18 @@ public class HazelcastTest {
          assertEquals(3, map.valueCount(2));
     }
 
+    @Test
+    public void testIdGenerator(){
+        IdGenerator id = Hazelcast.getIdGenerator("testIdGenerator");
+        assertEquals(1,id.newId());
+        assertEquals(2,id.newId());
+        assertEquals("testIdGenerator",id.getName());
+    }
+
+    @Test
+    public void testLock(){
+        ILock lock = Hazelcast.getLock("testLock");
+        assertTrue(lock.tryLock());
+        lock.unlock();
+    }
 }
