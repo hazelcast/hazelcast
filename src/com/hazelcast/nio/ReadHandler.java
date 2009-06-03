@@ -19,7 +19,6 @@ package com.hazelcast.nio;
 
 import com.hazelcast.impl.ClusterService;
 import com.hazelcast.impl.ThreadContext;
-import com.hazelcast.nio.Packet;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
