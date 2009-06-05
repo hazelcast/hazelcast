@@ -25,7 +25,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-class TopicManager extends BaseManager {
+public class TopicManager extends BaseManager {
     private static final TopicManager instance = new TopicManager();
 
     public static TopicManager get() {

@@ -23,6 +23,9 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
+import com.hazelcast.impl.cluster.ClusterManager;
+import com.hazelcast.impl.cluster.ClusterService;
+
 import static com.hazelcast.impl.Constants.BlockingQueueOperations.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
@@ -34,7 +37,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 
-class BlockingQueueManager extends BaseManager {
+public class BlockingQueueManager extends BaseManager {
     private final Request remoteReq = new Request();
     private final static BlockingQueueManager instance = new BlockingQueueManager();
     private final Map<String, Q> mapQueues = new HashMap<String, Q>(10);
@@ -189,7 +192,7 @@ class BlockingQueueManager extends BaseManager {
         }
     }
 
-    void syncForDead(Address addressDead) {
+    public void syncForDead(Address addressDead) {
         MemberImpl member = getNextMemberBeforeSync(addressDead, true, 1);
         if (DEBUG) {
             log(addressDead + " is dead and its backup was " + member);
@@ -911,12 +914,13 @@ class BlockingQueueManager extends BaseManager {
         }
 
         @Override
+		public
         void setTarget() {
             target = getTargetForOffer(request);
         }
 
         @Override
-        void doLocalOp() {
+        public void doLocalOp() {
             Q q = getQ(request.name);
             if (q.rightPutTarget(request.blockId)) {
                 doOffer(request);
@@ -954,6 +958,7 @@ class BlockingQueueManager extends BaseManager {
         }
 
         @Override
+		public
         void setTarget() {
             Q q = getQ(request.name);
             Block takeBlock = q.getCurrentTakeBlock();
@@ -967,6 +972,7 @@ class BlockingQueueManager extends BaseManager {
         }
 
         @Override
+		public
         void doLocalOp() {
             Q q = getQ(request.name);
             if (q.rightTakeTarget(request.blockId)) {

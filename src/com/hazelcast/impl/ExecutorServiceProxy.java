@@ -19,6 +19,8 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.impl.BaseManager.Processable;
+import com.hazelcast.impl.cluster.ClusterService;
+
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TIMEOUT;
 
 import java.util.Collection;

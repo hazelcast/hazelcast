@@ -20,7 +20,11 @@ package com.hazelcast.impl;
 import com.hazelcast.core.EntryEvent;
 import static com.hazelcast.core.ICommon.InstanceType;
 import com.hazelcast.core.Member;
-import com.hazelcast.impl.ClusterManager.RemotelyProcessable;
+import com.hazelcast.impl.cluster.ClusterImpl;
+import com.hazelcast.impl.cluster.ClusterManager;
+import com.hazelcast.impl.cluster.ClusterService;
+import com.hazelcast.impl.cluster.ClusterManager.RemotelyProcessable;
+
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_PROCESS;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_RESPONSE;
 import static com.hazelcast.impl.Constants.EventOperations.OP_EVENT;
@@ -39,7 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-abstract class BaseManager implements Constants {
+public abstract class BaseManager implements Constants {
 
     protected final static boolean zeroBackup = false;
 
@@ -331,7 +335,7 @@ abstract class BaseManager implements Constants {
         }
     }
 
-    interface Call extends Processable {
+    public interface Call extends Processable {
 
         long getId();
 
@@ -343,7 +347,7 @@ abstract class BaseManager implements Constants {
     }
 
 
-    interface Processable {
+    public interface Processable {
         void process();
     }
 
@@ -561,7 +565,7 @@ abstract class BaseManager implements Constants {
 
     }
 
-    abstract class RequestBasedCall extends AbstractCall {
+    public abstract class RequestBasedCall extends AbstractCall {
         final protected Request request = new Request();
 
         public boolean booleanCall(final int operation, final String name, final Object key,
@@ -657,7 +661,7 @@ abstract class BaseManager implements Constants {
 
     }
 
-    abstract class ResponseQueueCall extends RequestBasedCall {
+    public abstract class ResponseQueueCall extends RequestBasedCall {
         final protected BlockingQueue responses;
 
         public ResponseQueueCall() {
@@ -744,7 +748,7 @@ abstract class BaseManager implements Constants {
             }
         }
 
-        void setResult(final Object obj) {
+        protected void setResult(final Object obj) {
 
             try {
                 if (obj == null) {
@@ -759,7 +763,7 @@ abstract class BaseManager implements Constants {
         }
     }
 
-    abstract class BooleanOp extends TargetAwareOp {
+    public abstract class BooleanOp extends TargetAwareOp {
         @Override
         void handleNoneRedoResponse(final Packet packet) {
             handleBooleanNoneRedoResponse(packet);
@@ -773,9 +777,9 @@ abstract class BaseManager implements Constants {
         }
     }
 
-    abstract class TargetAwareOp extends ResponseQueueCall {
+    public abstract class TargetAwareOp extends ResponseQueueCall {
 
-        Address target = null;
+        protected Address target = null;
 
         public TargetAwareOp() {
         }
@@ -830,13 +834,13 @@ abstract class BaseManager implements Constants {
             }
         }
 
-        abstract void doLocalOp();
+        public abstract void doLocalOp();
 
         void handleNoneRedoResponse(final Packet packet) {
             handleObjectNoneRedoResponse(packet);
         }
 
-        abstract void setTarget();
+        public abstract void setTarget();
     }
 
 
@@ -1426,7 +1430,7 @@ abstract class BaseManager implements Constants {
         }
     }
 
-    final void handleResponse(final Packet packetResponse) {
+    public final void handleResponse(final Packet packetResponse) {
         final Call call = mapCalls.get(packetResponse.callId);
         if (call != null) {
             call.handleResponse(packetResponse);
@@ -1447,7 +1451,7 @@ abstract class BaseManager implements Constants {
         }
     }
 
-    final boolean send(final Packet packet, final Connection conn) {
+    protected final boolean send(final Packet packet, final Connection conn) {
         if (conn != null && conn.live()) {
             return writePacket(conn, packet);
         } else {
@@ -1455,7 +1459,7 @@ abstract class BaseManager implements Constants {
         }
     }
 
-    final boolean sendOrReleasePacket(final Packet packet, final Connection conn) {
+    protected final boolean sendOrReleasePacket(final Packet packet, final Connection conn) {
         if (conn != null && conn.live()) {
             if (writePacket(conn, packet)) {
                 return true;
@@ -1476,7 +1480,7 @@ abstract class BaseManager implements Constants {
         return true;
     }
 
-    interface PacketProcessor {
+    public interface PacketProcessor {
         void process(Packet packet);
     }
 }

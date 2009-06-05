@@ -19,7 +19,10 @@ package com.hazelcast.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
-import com.hazelcast.impl.ClusterImpl.ClusterMember;
+import com.hazelcast.impl.cluster.ClusterManager;
+import com.hazelcast.impl.cluster.ClusterService;
+import com.hazelcast.impl.cluster.ClusterImpl.ClusterMember;
+
 import static com.hazelcast.impl.Constants.ExecutorOperations.OP_EXE_REMOTE_EXECUTION;
 import static com.hazelcast.impl.Constants.ExecutorOperations.OP_STREAM;
 import static com.hazelcast.impl.Constants.Objects.*;
@@ -38,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-class ExecutorManager extends BaseManager implements MembershipListener {
+public class ExecutorManager extends BaseManager implements MembershipListener {
 
     static ExecutorManager instance = new ExecutorManager();
 

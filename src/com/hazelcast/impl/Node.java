@@ -22,6 +22,9 @@ import static com.hazelcast.impl.Constants.NodeTypes.NODE_SUPER_CLIENT;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.impl.MulticastService.JoinInfo;
+import com.hazelcast.impl.cluster.ClusterImpl;
+import com.hazelcast.impl.cluster.ClusterManager;
+import com.hazelcast.impl.cluster.ClusterService;
 import com.hazelcast.nio.*;
 
 import java.io.FileOutputStream;

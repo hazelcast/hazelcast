@@ -24,7 +24,10 @@ import static com.hazelcast.core.ICommon.InstanceType;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Transaction;
-import com.hazelcast.impl.ClusterManager.AbstractRemotelyProcessable;
+import com.hazelcast.impl.cluster.ClusterManager;
+import com.hazelcast.impl.cluster.ClusterService;
+import com.hazelcast.impl.cluster.ClusterManager.AbstractRemotelyProcessable;
+
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.*;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
@@ -43,7 +46,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-final class ConcurrentMapManager extends BaseManager {
+public final class ConcurrentMapManager extends BaseManager {
     private static ConcurrentMapManager instance = new ConcurrentMapManager();
 
     private ConcurrentMapManager() {
@@ -498,6 +501,7 @@ final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
+		public
         void doLocalOp() {
             doEvict(request);
             setResult(request.response);
@@ -542,6 +546,7 @@ final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
+		public
         void doLocalOp() {
             doMigrate(request);
             if (!request.scheduled) {
@@ -737,6 +742,7 @@ final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
+		public
         void doLocalOp() {
             doAdd(request);
             setResult(request.response);
@@ -785,6 +791,7 @@ final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
+		public
         void doLocalOp() {
             doBackup(request);
             setResult(request.response);
@@ -802,6 +809,7 @@ final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
+		public
         void doLocalOp() {
             doPut(request, false);
             if (!request.scheduled) {
@@ -884,6 +892,7 @@ final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
+		public
         void doLocalOp() {
             doRemoveMulti(request);
             if (!request.scheduled) {
@@ -947,6 +956,7 @@ final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
+		protected
         void setResult(Object obj) {
             if (reqBackup.local) {
                 reqBackup.version = request.version;
@@ -978,6 +988,7 @@ final class ConcurrentMapManager extends BaseManager {
 
     abstract class MTargetAwareOp extends TargetAwareOp {
         @Override
+		public
         void setTarget() {
             setTargetBasedOnKey();
         }

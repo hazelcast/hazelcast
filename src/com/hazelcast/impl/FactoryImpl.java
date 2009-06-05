@@ -20,8 +20,11 @@ package com.hazelcast.impl;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.BaseManager.Processable;
 import com.hazelcast.impl.BlockingQueueManager.*;
-import com.hazelcast.impl.ClusterManager.CreateProxy;
 import com.hazelcast.impl.ConcurrentMapManager.*;
+import com.hazelcast.impl.cluster.ClusterImpl;
+import com.hazelcast.impl.cluster.ClusterManager;
+import com.hazelcast.impl.cluster.ClusterService;
+import com.hazelcast.impl.cluster.ClusterManager.CreateProxy;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 
@@ -179,7 +182,7 @@ public class FactoryImpl implements Constants {
     }
 
     // should only be called from service thread!!
-    static Object createProxy(String name) {
+    public static Object createProxy(String name) {
         ICommon proxy = proxies.get(name);
         if (proxy == null) {
             if (name.startsWith("q:")) {

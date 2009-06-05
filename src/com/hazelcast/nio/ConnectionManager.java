@@ -18,8 +18,8 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.impl.Build;
-import com.hazelcast.impl.ClusterManager;
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.cluster.ClusterManager;
 
 import java.nio.channels.SocketChannel;
 import java.util.Map;
