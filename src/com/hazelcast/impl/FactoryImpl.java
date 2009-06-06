@@ -73,7 +73,8 @@ public class FactoryImpl implements Constants {
     }
 
     public static Collection<ICommon> getInstances() {
-        List<ICommon> lsProxies = new ArrayList<ICommon>(proxies.size() + mapLockProxies.size());
+    	final int totalSize = proxies.size() + mapLockProxies.size() + mapIdGenerators.size();
+        List<ICommon> lsProxies = new ArrayList<ICommon>(totalSize);
         lsProxies.addAll(proxies.values());
         lsProxies.addAll(mapLockProxies.values());
         lsProxies.addAll(mapIdGenerators.values());
