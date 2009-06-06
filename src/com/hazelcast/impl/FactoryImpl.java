@@ -1839,7 +1839,7 @@ public class FactoryImpl implements Constants {
 
             private static final long MILLION = 1 * 1000 * 1000;
 
-            AtomicLong billion = new AtomicLong(-1);
+            AtomicLong million = new AtomicLong(-1);
 
             AtomicLong currentId = new AtomicLong(2 * MILLION);
 
@@ -1851,20 +1851,20 @@ public class FactoryImpl implements Constants {
             }
 
             public long newId() {
-                long billionNow = billion.get();
+                long millionNow = million.get();
                 long idAddition = currentId.incrementAndGet();
                 if (idAddition >= MILLION) {
                     synchronized (this) {
                         try {
-                            billionNow = billion.get();
+                        	millionNow = million.get();
                             idAddition = currentId.incrementAndGet();
                             if (idAddition >= MILLION) {
-                                Long idBillion = getNewBillion();
-                                long newBillion = idBillion.longValue() * MILLION;
-                                billion.set(newBillion);
+                                Long idMillion = getNewMillion();
+                                long newMillion = idMillion.longValue() * MILLION;
+                                million.set(newMillion);
                                 currentId.set(0);
                             }
-                            billionNow = billion.get();
+                            millionNow = million.get();
                             idAddition = currentId.incrementAndGet();
                         } catch (Throwable t) {
                             t.printStackTrace();
@@ -1872,11 +1872,11 @@ public class FactoryImpl implements Constants {
                     }
 
                 }
-                long result = billionNow + idAddition;
+                long result = millionNow + idAddition;
                 return result;
             }
 
-            private Long getNewBillion() {
+            private Long getNewMillion() {
                 try {
                     DistributedTask<Long> task = new DistributedTask<Long>(new IncrementTask(name));
                     FactoryImpl.executorServiceImpl.execute(task);
