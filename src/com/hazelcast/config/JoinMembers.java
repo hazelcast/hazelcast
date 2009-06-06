@@ -11,12 +11,12 @@ public class JoinMembers {
 
     private boolean enabled = false;
 
-    private List<String> lsMembers = new ArrayList<String>();
+    private List<String> members = new ArrayList<String>();
 
     private String requiredMember = null;
 
     public void add(final String member) {
-        lsMembers.add(member);
+        members.add(member);
     }
 
 	/**
@@ -50,15 +50,15 @@ public class JoinMembers {
 	/**
 	 * @return the lsMembers
 	 */
-	public List<String> getLsMembers() {
-		return lsMembers;
+	public List<String> getMembers() {
+		return members;
 	}
 
 	/**
-	 * @param lsMembers the lsMembers to set
+	 * @param members the members to set
 	 */
-	public void setLsMembers(List<String> lsMembers) {
-		this.lsMembers = lsMembers;
+	public void setMembers(List<String> members) {
+		this.members = members;
 	}
 
 	/**

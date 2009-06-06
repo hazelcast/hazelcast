@@ -534,7 +534,7 @@ public class Node {
     private void joinViaPossibleMembers() {
         final Config config = Config.get();
         try {
-            final List<Address> lsPossibleAddresses = getPossibleMembers(config.getJoin().getJoinMembers().getLsMembers());
+            final List<Address> lsPossibleAddresses = getPossibleMembers(config.getJoin().getJoinMembers().getMembers());
             lsPossibleAddresses.remove(address);
             for (final Address adrs : lsPossibleAddresses) {
                 if (DEBUG)
