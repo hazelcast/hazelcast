@@ -331,10 +331,9 @@ public class XmlConfigBuilder implements ConfigBuilder {
             final org.w3c.dom.Node att = atts.item(a);
             final String value = getTextContent(att).trim();
             if (att.getNodeName().equals("enabled")) {
-                join.getJoinMembers().enabled = checkTrue(value);
+                join.getJoinMembers().setEnabled(checkTrue(value));
             } else if (att.getNodeName().equals("conn-timeout-seconds")) {
-                join.getJoinMembers().connectionTimeoutSeconds = getIntegerValue("conn-timeout-seconds",
-                        value, 5);
+                join.getJoinMembers().setConnectionTimeoutSeconds(getIntegerValue("conn-timeout-seconds", value, 5));
             }
         }
 
@@ -345,7 +344,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
             final String value = getTextContent(n).trim();
 
             if (n.getNodeName().equalsIgnoreCase("required-member")) {
-                join.getJoinMembers().requiredMember = value;
+                join.getJoinMembers().setRequiredMember(value);
             } else if (n.getNodeName().equalsIgnoreCase("hostname")) {
                 join.getJoinMembers().add(value);
             } else if (n.getNodeName().equalsIgnoreCase("interface")) {

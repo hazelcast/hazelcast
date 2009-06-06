@@ -534,7 +534,7 @@ public class Node {
     private void joinViaPossibleMembers() {
         final Config config = Config.get();
         try {
-            final List<Address> lsPossibleAddresses = getPossibleMembers(config.getJoin().getJoinMembers().lsMembers);
+            final List<Address> lsPossibleAddresses = getPossibleMembers(config.getJoin().getJoinMembers().getLsMembers());
             lsPossibleAddresses.remove(address);
             for (final Address adrs : lsPossibleAddresses) {
                 if (DEBUG)
@@ -545,7 +545,7 @@ public class Node {
             int numberOfSeconds = 0;
             connectionTimeout:
             while (!found
-                    && numberOfSeconds < config.getJoin().getJoinMembers().connectionTimeoutSeconds) {
+                    && numberOfSeconds < config.getJoin().getJoinMembers().getConnectionTimeoutSeconds()) {
                 Address addressFailed = null;
                 while ((addressFailed = qFailedConnections.poll()) != null) {
                     lsPossibleAddresses.remove(addressFailed);
@@ -609,13 +609,13 @@ public class Node {
 
         try {
             final Config config = Config.get();
-            final Address requiredAddress = getAddressFor(config.getJoin().getJoinMembers().requiredMember);
+            final Address requiredAddress = getAddressFor(config.getJoin().getJoinMembers().getRequiredMember());
             if (DEBUG) {
                 logger.log(Level.FINEST, "Joining over required member " + requiredAddress);
             }
             if (requiredAddress == null) {
                 throw new RuntimeException("Invalid required member "
-                        + config.getJoin().getJoinMembers().requiredMember);
+                        + config.getJoin().getJoinMembers().getRequiredMember());
             }
             if (requiredAddress.equals(address)) {
                 setAsMaster();
@@ -645,7 +645,7 @@ public class Node {
 
     private void joinWithTCP() {
         final Config config = Config.get();
-        if (config.getJoin().getJoinMembers().requiredMember != null) {
+        if (config.getJoin().getJoinMembers().getRequiredMember() != null) {
             joinViaRequiredMember();
         } else {
             joinViaPossibleMembers();
