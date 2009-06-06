@@ -415,7 +415,7 @@ public class WebFilter implements Filter {
 
         private String encodeURL(final String url, final String sessionURLPhrase) {
             // should not encode if cookies in evidence
-            if (url == null || req == null || req.isRequestedSessionIdFromCookie()) {
+            if (url != null || req == null || req.isRequestedSessionIdFromCookie()) {
                 final int prefix = url.indexOf(sessionURLPhrase);
                 if (prefix != -1) {
                     int suffix = url.indexOf("?", prefix);
