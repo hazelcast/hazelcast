@@ -357,7 +357,7 @@ public class Node {
                 for (final InetAddress inetAddress : allAddresses) {
                     boolean shouldCheck = true;
                     Address address = null;
-                    if (config.getInterfaces().enabled) {
+                    if (config.getInterfaces().isEnabled()) {
                         address = new Address(inetAddress.getAddress(), config.getPort());
                         shouldCheck = AddressPicker.matchAddress(address.getHost());
                     }
@@ -391,7 +391,7 @@ public class Node {
                     for (final InetAddress inetAddress : allAddresses) {
                         boolean shouldCheck = true;
                         Address addrs = null;
-                        if (config.getInterfaces().enabled) {
+                        if (config.getInterfaces().isEnabled()) {
                             addrs = new Address(inetAddress.getAddress(), config.getPort());
                             shouldCheck = AddressPicker.matchAddress(addrs.getHost());
                         }

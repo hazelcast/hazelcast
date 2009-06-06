@@ -209,7 +209,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
             final org.w3c.dom.Node att = atts.item(a);
             final String value = att.getNodeValue();
             if ("enabled".equals(att.getNodeName())) {
-                interfaces.enabled = checkTrue(value);
+                interfaces.setEnabled(checkTrue(value));
             }
         }
         final NodeList nodelist = node.getChildNodes();
@@ -217,7 +217,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String value = getTextContent(n).trim();
             if ("interface".equalsIgnoreCase(n.getNodeName())) {
-                interfaces.lsInterfaces.add(value);
+                interfaces.getLsInterfaces().add(value);
             }
         }
     }
