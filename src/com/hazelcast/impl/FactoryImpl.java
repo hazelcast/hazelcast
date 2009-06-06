@@ -1837,11 +1837,11 @@ public class FactoryImpl implements Constants {
 
         private class IdGeneratorBase implements IdGenerator {
 
-            private static final long BILLION = 1 * 1000 * 1000;
+            private static final long MILLION = 1 * 1000 * 1000;
 
             AtomicLong billion = new AtomicLong(-1);
 
-            AtomicLong currentId = new AtomicLong(2 * BILLION);
+            AtomicLong currentId = new AtomicLong(2 * MILLION);
 
             AtomicBoolean fetching = new AtomicBoolean(false);
 
@@ -1853,14 +1853,14 @@ public class FactoryImpl implements Constants {
             public long newId() {
                 long billionNow = billion.get();
                 long idAddition = currentId.incrementAndGet();
-                if (idAddition >= BILLION) {
+                if (idAddition >= MILLION) {
                     synchronized (this) {
                         try {
                             billionNow = billion.get();
                             idAddition = currentId.incrementAndGet();
-                            if (idAddition >= BILLION) {
+                            if (idAddition >= MILLION) {
                                 Long idBillion = getNewBillion();
-                                long newBillion = idBillion.longValue() * BILLION;
+                                long newBillion = idBillion.longValue() * MILLION;
                                 billion.set(newBillion);
                                 currentId.set(0);
                             }
