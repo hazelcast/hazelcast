@@ -20,10 +20,11 @@ package com.hazelcast.impl;
 import com.hazelcast.core.EntryEvent;
 import static com.hazelcast.core.ICommon.InstanceType;
 import com.hazelcast.core.Member;
+import com.hazelcast.impl.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.impl.cluster.ClusterImpl;
 import com.hazelcast.impl.cluster.ClusterManager;
 import com.hazelcast.impl.cluster.ClusterService;
-import com.hazelcast.impl.cluster.ClusterManager.RemotelyProcessable;
+import com.hazelcast.impl.cluster.RemotelyProcessable;
 
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_REMOTELY_PROCESS;
 import static com.hazelcast.impl.Constants.ClusterOperations.OP_RESPONSE;
@@ -51,7 +52,7 @@ public abstract class BaseManager implements Constants {
 
     protected static Logger logger = Logger.getLogger(BaseManager.class.getName());
 
-    protected final static LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
+    public final static LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
 
     protected final static Map<Address, MemberImpl> mapMembers = new HashMap<Address, MemberImpl>(
             100);
@@ -1382,7 +1383,7 @@ public abstract class BaseManager implements Constants {
     }
 
 
-    public static class Destroy extends ClusterManager.AbstractRemotelyProcessable {
+    public static class Destroy extends AbstractRemotelyProcessable {
         String name = null;
 
         public Destroy() {

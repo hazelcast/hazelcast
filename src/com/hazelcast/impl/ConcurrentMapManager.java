@@ -24,9 +24,9 @@ import static com.hazelcast.core.ICommon.InstanceType;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Transaction;
+import com.hazelcast.impl.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.impl.cluster.ClusterManager;
 import com.hazelcast.impl.cluster.ClusterService;
-import com.hazelcast.impl.cluster.ClusterManager.AbstractRemotelyProcessable;
 
 import static com.hazelcast.impl.Constants.ConcurrentMapOperations.*;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_REDO;

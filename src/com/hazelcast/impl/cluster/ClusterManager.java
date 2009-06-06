@@ -20,12 +20,10 @@ package com.hazelcast.impl.cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Member;
 import static com.hazelcast.impl.Constants.ClusterOperations.*;
-import static com.hazelcast.impl.Constants.NodeTypes.NODE_MEMBER;
 
 import com.hazelcast.impl.BaseManager;
 import com.hazelcast.impl.BlockingQueueManager;
 import com.hazelcast.impl.ConcurrentMapManager;
-import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.ListenerManager;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.Node;
@@ -39,11 +37,7 @@ import com.hazelcast.impl.BaseManager.ScheduledAction;
 import com.hazelcast.impl.BaseManager.TargetAwareOp;
 import com.hazelcast.nio.*;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
 public class ClusterManager extends BaseManager implements ConnectionListener {
@@ -341,7 +335,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         return lsMembersBefore;
     }
 
-    private void handleJoinRequest(JoinRequest joinRequest) {
+    void handleJoinRequest(JoinRequest joinRequest) {
         logger.log(Level.FINEST, joinInProgress + " Handling " + joinRequest);
         if (getMember(joinRequest.address) != null)
             return;
@@ -555,121 +549,6 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         });
     }
 
-    public static class SyncProcess extends AbstractRemotelyCallable<Boolean> implements
-            RemotelyProcessable {
-
-        Connection conn;
-
-        public Connection getConnection() {
-            return conn;
-        }
-
-        public void setConnection(Connection conn) {
-            this.conn = conn;
-        }
-
-        public void readData(DataInput in) throws IOException {
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-        }
-
-        public Boolean call() {
-            process();
-            return Boolean.TRUE;
-        }
-
-        public void process() {
-            ConcurrentMapManager.get().syncForAdd();
-            BlockingQueueManager.get().syncForAdd();
-            ListenerManager.get().syncForAdd();
-            TopicManager.get().syncForAdd();
-            ClusterManager.get().joinReset();
-        }
-    }
-
-    public static abstract class AbstractRemotelyCallable<T> implements DataSerializable,
-            Callable<T> {
-        Connection conn;
-
-        public Connection getConnection() {
-            return conn;
-        }
-
-        public void setConnection(Connection conn) {
-            this.conn = conn;
-        }
-
-        public void readData(DataInput in) throws IOException {
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-        }
-    }
-
-    public static abstract class AbstractRemotelyProcessable implements RemotelyProcessable {
-        Connection conn;
-
-        public Connection getConnection() {
-            return conn;
-        }
-
-        public void setConnection(Connection conn) {
-            this.conn = conn;
-        }
-
-        public void readData(DataInput in) throws IOException {
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-        }
-    }
-
-    public static class MultiRemotelyProcessable extends AbstractRemotelyProcessable {
-        List<RemotelyProcessable> lsProcessables = new LinkedList<RemotelyProcessable>();
-
-        public void add(RemotelyProcessable rp) {
-            if (rp != null) {
-                lsProcessables.add(rp);
-            }
-        }
-
-        @Override
-        public void readData(DataInput in) throws IOException {
-            int size = in.readInt();
-            for (int i = 0; i < size; i++) {
-                String className = in.readUTF();
-                try {
-                    RemotelyProcessable rp = (RemotelyProcessable) Class.forName(className)
-                            .newInstance();
-                    rp.readData(in);
-                    lsProcessables.add(rp);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        @Override
-        public void writeData(DataOutput out) throws IOException {
-            out.writeInt(lsProcessables.size());
-            for (RemotelyProcessable remotelyProcessable : lsProcessables) {
-                out.writeUTF(remotelyProcessable.getClass().getName());
-                remotelyProcessable.writeData(out);
-            }
-        }
-
-        public void process() {
-            for (RemotelyProcessable remotelyProcessable : lsProcessables) {
-                remotelyProcessable.process();
-            }
-        }
-    }
-
-    public interface RemotelyProcessable extends DataSerializable, Processable {
-        void setConnection(Connection conn);
-    }
-
     void updateMembers(List<MemberInfo> lsMemberInfos) {
         if (DEBUG) {
             log("MEMBERS UPDATE!!");
@@ -704,136 +583,6 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         logger.log(Level.INFO, this.toString());
     }
 
-    public static class MemberInfo implements DataSerializable {
-        Address address = null;
-        int nodeType = NODE_MEMBER;
-
-        public MemberInfo() {
-        }
-
-        public MemberInfo(Address address, int nodeType) {
-            super();
-            this.address = address;
-            this.nodeType = nodeType;
-        }
-
-        public void readData(DataInput in) throws IOException {
-            address = new Address();
-            address.readData(in);
-            nodeType = in.readInt();
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            address.writeData(out);
-            out.writeInt(nodeType);
-        }
-
-        @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + ((address == null) ? 0 : address.hashCode());
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (obj == null)
-                return false;
-            if (getClass() != obj.getClass())
-                return false;
-            MemberInfo other = (MemberInfo) obj;
-            if (address == null) {
-                if (other.address != null)
-                    return false;
-            } else if (!address.equals(other.address))
-                return false;
-            return true;
-        }
-    }
-
-    public static class FinalizeJoin extends AbstractRemotelyCallable<Boolean> {
-        public Boolean call() throws Exception {
-            ListenerManager.get().syncForAdd(getConnection().getEndPoint());
-            return Boolean.TRUE;
-        }
-    }
-
-    public static class ConnectionCheckCall extends AbstractRemotelyCallable<Boolean> {
-        public Boolean call() throws Exception {
-            for (MemberImpl member : lsMembers) {
-                if (!member.localMember()) {
-                    if (ConnectionManager.get().getConnection(member.getAddress()) == null) {
-                        return Boolean.FALSE;
-                    }
-                }
-            }
-            return Boolean.TRUE;
-        }
-    }
-
-    public static class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
-
-        public List<MemberInfo> lsMemberInfos = null;
-
-        public MembersUpdateCall() {
-        }
-
-        public MembersUpdateCall(List<MemberImpl> lsMembers) {
-            int size = lsMembers.size();
-            lsMemberInfos = new ArrayList<MemberInfo>(size);
-            for (int i = 0; i < size; i++) {
-                MemberImpl member = lsMembers.get(i);
-                lsMemberInfos.add(new MemberInfo(member.getAddress(), member.getNodeType()));
-            }
-        }
-
-        public Boolean call() {
-            ClusterManager.get().updateMembers(lsMemberInfos);
-            return Boolean.TRUE;
-        }
-
-        public void addMemberInfo(MemberInfo address) {
-            if (!lsMemberInfos.contains(address)) {
-                lsMemberInfos.add(address);
-            }
-        }
-
-        @Override
-        public void readData(DataInput in) throws IOException {
-            int size = in.readInt();
-            lsMemberInfos = new ArrayList<MemberInfo>(size);
-            for (int i = 0; i < size; i++) {
-                MemberInfo memberInfo = new MemberInfo();
-                memberInfo.readData(in);
-                lsMemberInfos.add(memberInfo);
-            }
-        }
-
-        @Override
-        public void writeData(DataOutput out) throws IOException {
-            int size = lsMemberInfos.size();
-            out.writeInt(size);
-            for (int i = 0; i < size; i++) {
-                MemberInfo memberInfo = lsMemberInfos.get(i);
-                memberInfo.writeData(out);
-            }
-        }
-
-        @Override
-        public String toString() {
-            StringBuffer sb = new StringBuffer("MembersUpdateCall {");
-            for (MemberInfo address : lsMemberInfos) {
-                sb.append("\n" + address);
-            }
-            sb.append("\n}");
-            return sb.toString();
-        }
-
-    }
-
     public void sendJoinRequest(Address toAddress) {
         if (toAddress == null) {
             toAddress = Node.get().getMasterAddress();
@@ -843,179 +592,8 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
     }
 
 
-    public static class JoinRequest extends AbstractRemotelyProcessable {
-
-        protected int nodeType = NODE_MEMBER;
-        public Address address;
-        public String groupName;
-        public String groupPassword;
-
-        public JoinRequest() {
-        }
-
-        public JoinRequest(Address address, String groupName, String groupPassword, int type) {
-            super();
-            this.address = address;
-            this.groupName = groupName;
-            this.groupPassword = groupPassword;
-            this.nodeType = type;
-        }
-
-        @Override
-        public void readData(DataInput in) throws IOException {
-            address = new Address();
-            address.readData(in);
-            nodeType = in.readInt();
-            groupName = in.readUTF();
-            groupPassword = in.readUTF();
-        }
-
-        @Override
-        public void writeData(DataOutput out) throws IOException {
-            address.writeData(out);
-            out.writeInt(nodeType);
-            out.writeUTF(groupName);
-            out.writeUTF(groupPassword);
-        }
-
-        @Override
-        public String toString() {
-            return "JoinRequest{" +
-                    "nodeType=" + nodeType +
-                    ", address=" + address +
-                    ", groupName='" + groupName + '\'' +
-                    ", groupPassword='" + groupPassword + '\'' +
-                    '}';
-        }
-
-        public void process() {
-            ClusterManager.get().handleJoinRequest(this);
-        }
-    }
-
-    public static class AddRemoveConnection extends AbstractRemotelyProcessable {
-        public Address address = null;
-
-        public boolean add = true;
-
-        public AddRemoveConnection() {
-
-        }
-
-        public AddRemoveConnection(Address address, boolean add) {
-            super();
-            this.address = address;
-            this.add = add;
-        }
-
-        @Override
-        public void readData(DataInput in) throws IOException {
-            address = new Address();
-            address.readData(in);
-            add = in.readBoolean();
-        }
-
-        @Override
-        public void writeData(DataOutput out) throws IOException {
-            address.writeData(out);
-            out.writeBoolean(add);
-        }
-
-        @Override
-        public String toString() {
-            return "AddRemoveConnection add=" + add + ", " + address;
-        }
-
-        public void process() {
-            ClusterManager.get().handleAddRemoveConnection(this);
-        }
-    }
-
     public void sendBindRequest(Connection toConnection) {
         sendProcessableTo(new Bind(thisAddress), toConnection);
-    }
-
-    public static class Bind extends Master {
-
-        public Bind() {
-        }
-
-        public Bind(Address localAddress) {
-            super(localAddress);
-        }
-
-        @Override
-        public String toString() {
-            return "Bind " + address;
-        }
-
-        public void process() {
-            ConnectionManager.get().bind(address, getConnection(), true);
-        }
-    }
-
-    public static class Master extends AbstractRemotelyProcessable {
-        public Address address = null;
-
-        public Master() {
-
-        }
-
-        public Master(Address originAddress) {
-            super();
-            this.address = originAddress;
-        }
-
-        @Override
-        public void readData(DataInput in) throws IOException {
-            address = new Address();
-            address.readData(in);
-        }
-
-        @Override
-        public void writeData(DataOutput out) throws IOException {
-            address.writeData(out);
-        }
-
-        @Override
-        public String toString() {
-            return "Master " + address;
-        }
-
-        public void process() {
-            ClusterManager.get().handleMaster(this);
-        }
-    }
-
-    public static class CreateProxy extends AbstractRemotelyProcessable {
-
-        public String name;
-
-        public CreateProxy() {
-        }
-
-        public CreateProxy(String name) {
-            this.name = name;
-        }
-
-        public void process() {
-            FactoryImpl.createProxy(name);
-        }
-
-        @Override
-        public void readData(DataInput in) throws IOException {
-            name = in.readUTF();
-        }
-
-        @Override
-        public void writeData(DataOutput out) throws IOException {
-            out.writeUTF(name);
-        }
-
-        @Override
-        public String toString() {
-            return "CreateProxy [" + name + "]";
-        }
     }
 
     public void registerScheduledAction(ScheduledAction scheduledAction) {
@@ -1051,34 +629,6 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
     }
 
     public void connectionRemoved(Connection connection) {
-    }
-
-    public static class MemberRemover implements RemotelyProcessable {
-        private Address deadAddress = null;
-
-        public MemberRemover() {
-        }
-
-        public MemberRemover(Address deadAddress) {
-            super();
-            this.deadAddress = deadAddress;
-        }
-
-        public void process() {
-            ClusterManager.get().doRemoveAddress(deadAddress);
-        }
-
-        public void setConnection(Connection conn) {
-        }
-
-        public void readData(DataInput in) throws IOException {
-            deadAddress = new Address();
-            deadAddress.readData(in);
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            deadAddress.writeData(out);
-        }
     }
 
     public Member addMember(MemberImpl member) {
