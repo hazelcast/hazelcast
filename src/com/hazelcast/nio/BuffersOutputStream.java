@@ -122,7 +122,7 @@ public class BuffersOutputStream extends OutputStream implements DataOutput {
 
     public final void writeChar(final int v) throws IOException {
         write((v >>> 8) & 0xFF);
-        write((v >>> 0) & 0xFF);
+        write((v) & 0xFF);
     }
 
     public final void writeChars(final String s) throws IOException {
@@ -130,7 +130,7 @@ public class BuffersOutputStream extends OutputStream implements DataOutput {
         for (int i = 0; i < len; i++) {
             final int v = s.charAt(i);
             write((v >>> 8) & 0xFF);
-            write((v >>> 0) & 0xFF);
+            write((v) & 0xFF);
         }
     }
 
@@ -146,7 +146,7 @@ public class BuffersOutputStream extends OutputStream implements DataOutput {
         write((v >>> 24) & 0xFF);
         write((v >>> 16) & 0xFF);
         write((v >>> 8) & 0xFF);
-        write((v >>> 0) & 0xFF);
+        write((v) & 0xFF);
     }
 
     public final void writeLong(final long v) throws IOException {
@@ -157,13 +157,13 @@ public class BuffersOutputStream extends OutputStream implements DataOutput {
         writeBuffer[4] = (byte) (v >>> 24);
         writeBuffer[5] = (byte) (v >>> 16);
         writeBuffer[6] = (byte) (v >>> 8);
-        writeBuffer[7] = (byte) (v >>> 0);
+        writeBuffer[7] = (byte) (v);
         write(writeBuffer, 0, 8);
     }
 
     public final void writeShort(final int v) throws IOException {
         write((v >>> 8) & 0xFF);
-        write((v >>> 0) & 0xFF);
+        write((v) & 0xFF);
     }
 
     public final void writeUTF(final String str) throws IOException {
@@ -191,9 +191,9 @@ public class BuffersOutputStream extends OutputStream implements DataOutput {
         bytearr[count++] = (byte) ((utflen >>> 24) & 0xFF);
         bytearr[count++] = (byte) ((utflen >>> 16) & 0xFF);
         bytearr[count++] = (byte) ((utflen >>> 8) & 0xFF);
-        bytearr[count++] = (byte) ((utflen >>> 0) & 0xFF);
+        bytearr[count++] = (byte) ((utflen) & 0xFF);
 
-        int i = 0;
+        int i;
         for (i = 0; i < strlen; i++) {
             c = str.charAt(i);
             if (!((c >= 0x0001) && (c <= 0x007F)))
@@ -209,10 +209,10 @@ public class BuffersOutputStream extends OutputStream implements DataOutput {
             } else if (c > 0x07FF) {
                 bytearr[count++] = (byte) (0xE0 | ((c >> 12) & 0x0F));
                 bytearr[count++] = (byte) (0x80 | ((c >> 6) & 0x3F));
-                bytearr[count++] = (byte) (0x80 | ((c >> 0) & 0x3F));
+                bytearr[count++] = (byte) (0x80 | ((c) & 0x3F));
             } else {
                 bytearr[count++] = (byte) (0xC0 | ((c >> 6) & 0x1F));
-                bytearr[count++] = (byte) (0x80 | ((c >> 0) & 0x3F));
+                bytearr[count++] = (byte) (0x80 | ((c) & 0x3F));
             }
         }
         write(bytearr, 0, utflen + 4);

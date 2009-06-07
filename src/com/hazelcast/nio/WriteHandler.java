@@ -17,8 +17,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.nio.Packet;
-
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.Queue;
@@ -65,7 +63,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         if (!connection.live())
             return;
         try {
-            loop:
             while (socketBB.hasRemaining()) {
                 if (lastPacket == null) {
                     lastPacket = (Packet) writeQueue.poll();
@@ -76,7 +73,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                         lastPacket.returnToContainer();
                         lastPacket = null;
                     }
-                } else break loop;
+                } else break;
             }
             socketBB.flip();
             try {

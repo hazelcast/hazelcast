@@ -187,7 +187,7 @@ public class Installer {
                             final String wrapperClass = "com.hazelcast.web.ServletWrapper";
                             final String hazelParam = "*hazelcast-base-servlet-class";
                             n.setTextContent(wrapperClass);
-                            Node initParam = null;
+                            Node initParam;
                             initParam = append(doc, node, "init-param", null);
                             append(doc, initParam, "param-name", hazelParam);
                             append(doc, initParam, "param-value", className);
@@ -312,7 +312,6 @@ public class Installer {
             zipFile.close();
         } catch (final IOException ioe) {
             ioe.printStackTrace();
-            return;
         }
     }
 
@@ -343,37 +342,6 @@ public class Installer {
         return child;
     }
 
-    private String getTextContent(final Node node) {
-        final Node child = node.getFirstChild();
-        if (child != null) {
-            final Node next = child.getNextSibling();
-            if (next == null) {
-                return hasTextContent(child) ? getTextContent(child) : "";
-            }
-            final StringBuffer buf = new StringBuffer();
-            getTextContent(node, buf);
-            return buf.toString();
-        }
-        return "";
-    }
-
-    private void getTextContent(final Node node, final StringBuffer buf) {
-        Node child = node.getFirstChild();
-        while (child != null) {
-            if (hasTextContent(child)) {
-                getTextContent(child, buf);
-            }
-            child = child.getNextSibling();
-        }
-
-    }
-
-    private boolean hasTextContent(final Node child) {
-        return child.getNodeType() != Node.COMMENT_NODE
-                && child.getNodeType() != Node.PROCESSING_INSTRUCTION_NODE
-                && (child.getNodeType() != Node.TEXT_NODE);
-    }
-
     private void install(final String[] args) {
         if (args == null || args.length == 0) {
             print("No application is specified!");
@@ -381,14 +349,16 @@ public class Installer {
         }
 
         final Set<String> setApps = new HashSet<String>();
-        for (final String arg : args) {
-            if (arg.startsWith("-")) {
-                if (arg.equals("-apps-sharing-sessions")) {
-                    appsSharingSessions = true;
-                    addHazellib = false;
+        if (args != null) {
+            for (final String arg : args) {
+                if (arg.startsWith("-")) {
+                    if (arg.equals("-apps-sharing-sessions")) {
+                        appsSharingSessions = true;
+                        addHazellib = false;
+                    }
+                } else {
+                    setApps.add(arg);
                 }
-            } else {
-                setApps.add(arg);
             }
         }
 

@@ -94,12 +94,11 @@ public class SelectorBase implements Runnable {
     }
 
     public void run() {
-        select:
         while (live) {
             if (size.get() > 0) {
                 processSelectionQueue();
             }
-            int selectedKeys = 0;
+            int selectedKeys;
             try {
                 selectedKeys = selector.select(waitTime);
                 if (Thread.interrupted()) {
@@ -107,10 +106,10 @@ public class SelectorBase implements Runnable {
                             new RuntimeException());
                 }
             } catch (final Throwable exp) {
-                continue select;
+                continue;
             }
             if (selectedKeys == 0) {
-                continue select;
+                continue;
             }
             final Set<SelectionKey> setSelectedKeys = selector.selectedKeys();
             final Iterator<SelectionKey> it = setSelectedKeys.iterator();
@@ -144,8 +143,7 @@ public class SelectorBase implements Runnable {
         socketChannel.socket().setSendBufferSize(AbstractSelectionHandler.SEND_SOCKET_BUFFER_SIZE);
         socketChannel.socket().setKeepAlive(true);
         socketChannel.configureBlocking(false);
-        final Connection connection = ConnectionManager.get().createConnection(socketChannel,
+        return ConnectionManager.get().createConnection(socketChannel,
                 acceptor);
-        return connection;
     }
 }

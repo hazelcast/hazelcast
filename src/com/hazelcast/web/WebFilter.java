@@ -92,9 +92,7 @@ public class WebFilter implements Filter {
         }
 
         public boolean hasMoreElements() {
-            if (it == null)
-                return false;
-            return it.hasNext();
+            return it != null && it.hasNext();
         }
 
         public String nextElement() {
@@ -257,8 +255,7 @@ public class WebFilter implements Filter {
                         final Cookie[] cookies = getCookies();
                         if (cookies != null) {
                             removeCookies:
-                            for (int i = 0; i < cookies.length; i++) {
-                                final Cookie cookie = cookies[i];
+                            for (final Cookie cookie : cookies) {
                                 final String name = cookie.getName();
                                 final String value = cookie.getValue();
                                 final String path = cookie.getPath();
@@ -780,9 +777,8 @@ public class WebFilter implements Filter {
         }
 
         public void run() {
-            final Iterator<AppContext> apps = mapApps.values().iterator();
-            while (apps.hasNext()) {
-                control(apps.next());
+            for (AppContext appContext : mapApps.values()) {
+                control(appContext);
             }
         }
     } // END of Controller
@@ -935,7 +931,7 @@ public class WebFilter implements Filter {
                 if (oldValue instanceof HttpSessionBindingListener) {
                     executor.execute(new Runnable() {
                         public void run() {
-                            HttpSessionBindingEvent bindingEvent = null;
+                            HttpSessionBindingEvent bindingEvent;
                             bindingEvent = new HttpSessionBindingEvent(HazelSession.this, name,
                                     oldValue);
                             ((HttpSessionBindingListener) oldValue).valueUnbound(bindingEvent);
@@ -1191,9 +1187,8 @@ public class WebFilter implements Filter {
         executor.scheduleAtFixedRate(new Controller(), 0, 60, TimeUnit.SECONDS);
         executor.scheduleAtFixedRate(new Runnable() {
             public void run() {
-                final Iterator<AppContext> apps = mapApps.values().iterator();
-                while (apps.hasNext()) {
-                    apps.next().getSnapshot();
+                for (AppContext appContext : mapApps.values()) {
+                    appContext.getSnapshot();
                 }
             }
         }, 0, 10, TimeUnit.SECONDS);
@@ -1278,9 +1273,7 @@ public class WebFilter implements Filter {
     private static void removeCookieForSession(final RequestWrapper req, final String sessionId) {
         final Cookie[] cookies = req.getCookies();
         if (cookies != null) {
-            removeCookies:
-            for (int i = 0; i < cookies.length; i++) {
-                final Cookie cookie = cookies[i];
+            for (final Cookie cookie : cookies) {
                 final String name = cookie.getName();
                 final String value = cookie.getValue();
                 final String path = cookie.getPath();
@@ -1291,7 +1284,7 @@ public class WebFilter implements Filter {
                         }
                         cookie.setMaxAge(0);
                         req.res.addCookie(cookie);
-                        break removeCookies;
+                        break;
                     }
                 }
             }

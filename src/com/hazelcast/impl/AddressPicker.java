@@ -110,10 +110,9 @@ public class AddressPicker {
         boolean result = defaultValue;
         if (jvmVersion >= minJVMVersion) {
             try {
-                final Method method = ni.getClass().getMethod(methodName, null);
-                final Boolean obj = (Boolean) method.invoke(ni, null);
-                result = obj.booleanValue();
-            } catch (final Exception e) {
+                final Method method = ni.getClass().getMethod(methodName);
+                result = (Boolean) method.invoke(ni);
+            } catch (final Exception ignored) {
             }
         }
         return result;
@@ -210,20 +209,18 @@ public class AddressPicker {
             final InetAddress inetAddress = InetAddress.getByName(currentAddress);
             ServerSocket serverSocket = serverSocketChannel.socket();
             serverSocket.setReuseAddress(false);
-            InetSocketAddress isa = null;
+            InetSocketAddress isa;
 
             int port = config.getPort();
-            socket:
             for (int i = 0; i < 100; i++) {
                 try {
                     isa = new InetSocketAddress(inetAddress, port);
                     serverSocket.bind(isa, 100);
-                    break socket;
+                    break;
                 } catch (final Exception e) {
                     serverSocket = serverSocketChannel.socket();
                     serverSocket.setReuseAddress(false);
                     port++;
-                    continue socket;
                 }
             }
             serverSocketChannel.configureBlocking(false);

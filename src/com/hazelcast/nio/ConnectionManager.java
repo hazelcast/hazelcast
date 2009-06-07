@@ -157,7 +157,7 @@ public class ConnectionManager {
         for (final Connection conn : mapConnections.values()) {
             try {
                 remove(conn);
-            } catch (final Exception e) {
+            } catch (final Exception ignore) {
             }
         }
         setConnectionInProgress.clear();
@@ -166,11 +166,13 @@ public class ConnectionManager {
 
     @Override
     public synchronized String toString() {
-        final StringBuffer sb = new StringBuffer("Connections {");
+        final StringBuilder sb = new StringBuilder("Connections {");
         for (final Connection conn : mapConnections.values()) {
-            sb.append("\n" + conn);
+            sb.append("\n");
+            sb.append(conn);
         }
-        sb.append("\nlive=" + live);
+        sb.append("\nlive=");
+        sb.append(live);
         sb.append("\n}");
         return sb.toString();
     }

@@ -68,8 +68,7 @@ public class ServletBase extends HttpServlet {
         }
 
         public ServletContext getServletContext() {
-            final ServletContext context = getCurrentContext();
-            return context;
+            return getCurrentContext();
         }
 
         public String getServletName() {

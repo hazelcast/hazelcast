@@ -123,7 +123,7 @@ public final class Serializer {
         }
 
         public Long read(BuffersInputStream bbis, Data data) throws Exception {
-            return Long.valueOf(bbis.readLong());
+            return bbis.readLong();
         }
 
         public void write(BuffersOutputStream bbos, Long obj) throws Exception {
@@ -137,7 +137,7 @@ public final class Serializer {
         }
 
         public Integer read(BuffersInputStream bbis, Data data) throws Exception {
-            return Integer.valueOf(bbis.readInt());
+            return bbis.readInt();
         }
 
         public void write(BuffersOutputStream bbos, Integer obj) throws Exception {

@@ -95,7 +95,7 @@ public class InSelector extends SelectorBase {
                 e.printStackTrace();
                 try {
                     serverSocketChannel.close();
-                } catch (final Exception e1) {
+                } catch (final Exception ignore) {
                 }
                 Node.get().shutdown();
             }

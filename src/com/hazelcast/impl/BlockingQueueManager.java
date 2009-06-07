@@ -887,7 +887,7 @@ public class BlockingQueueManager extends BaseManager {
         @Override
         void handleNoneRedoResponse(Packet packet) {
             if (request.operation == OP_B_OFFER
-                    && packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+                    && packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
                 if (!zeroBackup) {
                     if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(
                             packet.conn.getEndPoint())) {
@@ -988,7 +988,7 @@ public class BlockingQueueManager extends BaseManager {
         @Override
         void handleNoneRedoResponse(Packet packet) {
             if (request.operation == OP_B_POLL
-                    && packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+                    && packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
                 if (!zeroBackup) {
                     if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(
                             packet.conn.getEndPoint())) {

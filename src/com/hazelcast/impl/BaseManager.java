@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public abstract class BaseManager implements Constants {
+public abstract class BaseManager {
 
     protected final static boolean zeroBackup = false;
 
@@ -369,7 +369,7 @@ public abstract class BaseManager implements Constants {
 
         public void handleBooleanNoneRedoResponse(final Packet packet) {
             removeCall(getId());
-            if (packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+            if (packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
                 responses.add(Boolean.TRUE);
             } else {
                 responses.add(Boolean.FALSE);
@@ -385,7 +385,7 @@ public abstract class BaseManager implements Constants {
 
         void handleObjectNoneRedoResponse(final Packet packet) {
             removeCall(getId());
-            if (packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+            if (packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
                 final Data oldValue = doTake(packet.value);
                 if (oldValue == null || oldValue.size() == 0) {
                     responses.add(OBJECT_NULL);
@@ -717,7 +717,7 @@ public abstract class BaseManager implements Constants {
 
         public void handleBooleanNoneRedoResponse(final Packet packet) {
             removeCall(getId());
-            if (packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+            if (packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
                 setResult(Boolean.TRUE);
             } else {
                 setResult(Boolean.FALSE);
@@ -726,7 +726,7 @@ public abstract class BaseManager implements Constants {
 
         void handleLongNoneRedoResponse(final Packet packet) {
             removeCall(getId());
-            if (packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+            if (packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
                 setResult(packet.longValue);
             } else {
                 throw new RuntimeException("handleLongNoneRedoResponse.responseType "
@@ -736,7 +736,7 @@ public abstract class BaseManager implements Constants {
 
         void handleObjectNoneRedoResponse(final Packet packet) {
             removeCall(getId());
-            if (packet.responseType == ResponseTypes.RESPONSE_SUCCESS) {
+            if (packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
                 final Data oldValue = doTake(packet.value);
                 if (oldValue == null || oldValue.size() == 0) {
                     setResult(OBJECT_NULL);

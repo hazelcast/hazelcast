@@ -47,7 +47,7 @@ public class SnapshotEvent extends EventObject {
         this.numberOfRequests = numberOfRequests;
     }
 
-    public SnapshotEvent(ServletContext servletContext, int intervalSec) {
+    public SnapshotEvent(ServletContext servletContext) {
         super(servletContext);
     }
 
