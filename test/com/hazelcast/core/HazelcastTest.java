@@ -1,6 +1,7 @@
 package com.hazelcast.core;
 
 import org.junit.Test;
+import org.junit.Ignore;
 import static org.junit.Assert.assertEquals;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
@@ -10,9 +11,10 @@ import java.util.*;
 
 public class HazelcastTest {
     @Test
+    @Ignore
     public void testGetInstances(){
-        /**@todo need to rethink this test so that it runs in isolation
-        /*Hazelcast.getList("A");
+        /**@todo need to rethink this test so that it runs in isolation*/
+        Hazelcast.getList("A");
         Hazelcast.getMap("A");
         Hazelcast.getMultiMap("A");
         Hazelcast.getQueue("A");
@@ -20,7 +22,6 @@ public class HazelcastTest {
         Hazelcast.getTopic("A");
         Collection<ICommon> caches = Hazelcast.getInstances();
         assertEquals(6,caches.size());
-        */
     }
 
     @Test
@@ -459,5 +460,31 @@ public class HazelcastTest {
         ILock lock = Hazelcast.getLock("testLock");
         assertTrue(lock.tryLock());
         lock.unlock();
+    }
+
+    @Test
+    public void testGetMapEntryHits(){
+        IMap<String,String> map = Hazelcast.getMap("testGetMapEntryHits");
+        map.put("Hello", "World");
+        MapEntry me = map.getMapEntry("Hello");
+        assertEquals(0,me.getHits());
+        map.get("Hello");
+        map.get("Hello");
+        map.get("Hello");
+        me = map.getMapEntry("Hello");
+        assertEquals(3,me.getHits());
+    }
+
+    @Test
+    public void testGetMapEntryVersion(){
+        IMap<String,String> map = Hazelcast.getMap("testGetMapEntryVersion");
+        map.put("Hello", "World");
+        MapEntry me = map.getMapEntry("Hello");
+        assertEquals(0,me.getVersion());
+        map.put("Hello","1");
+        map.put("Hello","2");
+        map.put("Hello","3");
+        me = map.getMapEntry("Hello");
+        assertEquals(3,me.getVersion());
     }
 }
