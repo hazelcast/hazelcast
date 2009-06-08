@@ -17,16 +17,15 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.core.Transaction;
-import com.hazelcast.impl.BlockingQueueManager.CommitPoll;
-import com.hazelcast.impl.BlockingQueueManager.Offer;
-import com.hazelcast.impl.FactoryImpl.CollectionProxy;
-import com.hazelcast.impl.FactoryImpl.MProxy;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import com.hazelcast.core.Transaction;
+import com.hazelcast.impl.BlockingQueueManager.CommitPoll;
+import com.hazelcast.impl.BlockingQueueManager.Offer;
+import com.hazelcast.impl.FactoryImpl.MProxy;
 
 class TransactionImpl implements Transaction {
 
