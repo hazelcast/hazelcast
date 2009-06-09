@@ -18,7 +18,6 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.Member;
-import static com.hazelcast.impl.Constants.NodeTypes.NODE_SUPER_CLIENT;
 import com.hazelcast.nio.Address;
 
 import java.net.InetAddress;
@@ -27,20 +26,15 @@ import java.net.UnknownHostException;
 public class MemberImpl implements Member {
 
     protected boolean localMember;
-
     protected Address address;
-
-    protected int nodeType;
-
+    protected Node.Type nodeType;
     protected long lastRead = 0;
-
     protected long lastWrite = 0;
 
     public MemberImpl () {
-
     }
 
-    public MemberImpl(Address address, boolean localMember, int nodeType) {
+    public MemberImpl(Address address, boolean localMember, Node.Type nodeType) {
         super();
         this.nodeType = nodeType;
         this.localMember = localMember;
@@ -56,7 +50,7 @@ public class MemberImpl implements Member {
         return address.getPort();
     }
 
-    public int getNodeType() {
+    public Node.Type getNodeType() {
         return nodeType;
     }
 
@@ -90,7 +84,7 @@ public class MemberImpl implements Member {
     }
 
     public boolean isSuperClient() {
-        return (nodeType == NODE_SUPER_CLIENT);
+        return (nodeType == Node.Type.SUPER_CLIENT);
     }
 
     @Override

@@ -9,16 +9,16 @@ import java.io.IOException;
 
 import com.hazelcast.nio.Address;
 
-public class AddRemoveConnection extends AbstractRemotelyProcessable {
+public class AddOrRemoveConnection extends AbstractRemotelyProcessable {
     public Address address = null;
 
     public boolean add = true;
 
-    public AddRemoveConnection() {
+    public AddOrRemoveConnection() {
 
     }
 
-    public AddRemoveConnection(Address address, boolean add) {
+    public AddOrRemoveConnection(Address address, boolean add) {
         super();
         this.address = address;
         this.add = add;
@@ -39,7 +39,7 @@ public class AddRemoveConnection extends AbstractRemotelyProcessable {
 
     @Override
     public String toString() {
-        return "AddRemoveConnection add=" + add + ", " + address;
+        return "AddOrRemoveConnection add=" + add + ", " + address;
     }
 
     public void process() {

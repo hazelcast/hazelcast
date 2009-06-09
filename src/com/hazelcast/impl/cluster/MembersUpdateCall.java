@@ -63,7 +63,7 @@ public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
     public String toString() {
         StringBuffer sb = new StringBuffer("MembersUpdateCall {");
         for (MemberInfo address : lsMemberInfos) {
-            sb.append("\n" + address);
+            sb.append("\n").append(address);
         }
         sb.append("\n}");
         return sb.toString();

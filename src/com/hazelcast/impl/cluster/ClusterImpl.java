@@ -30,8 +30,6 @@ import com.hazelcast.nio.DataSerializable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -146,7 +144,7 @@ public class ClusterImpl implements Cluster {
             sb.append(members.size());
             sb.append("] {");
             for (Member member : members) {
-                sb.append("\n\t" + member);
+                sb.append("\n\t").append(member);
                 if (member.localMember()) {
                     sb.append(" local");
                 }
@@ -162,7 +160,7 @@ public class ClusterImpl implements Cluster {
         public ClusterMember() {
         }
 
-        public ClusterMember(Address address, boolean localMember, int nodeType) {
+        public ClusterMember(Address address, boolean localMember, Node.Type nodeType) {
             super(address, localMember, nodeType);
         }
 
@@ -170,12 +168,12 @@ public class ClusterImpl implements Cluster {
             address = new Address();
             address.readData(in);
             localMember = Node.get().getThisAddress().equals(address);
-            nodeType = in.readInt();
+            nodeType = Node.Type.create(in.readInt());
         }
 
         public void writeData(DataOutput out) throws IOException {
             address.writeData(out);
-            out.writeInt(nodeType);
+            out.writeInt(nodeType.getValue());
         }
 
         @Override
@@ -184,7 +182,7 @@ public class ClusterImpl implements Cluster {
             sb.append(address.getHost());
             sb.append(":");
             sb.append(address.getPort());
-            sb.append("] " + localMember);
+            sb.append("] ").append(localMember);
             return sb.toString();
         }
 

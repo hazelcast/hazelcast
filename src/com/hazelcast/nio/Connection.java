@@ -17,7 +17,7 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.cluster.AddRemoveConnection;
+import com.hazelcast.impl.cluster.AddOrRemoveConnection;
 import com.hazelcast.impl.cluster.ClusterService;
 
 import java.nio.channels.SocketChannel;
@@ -108,7 +108,7 @@ public class Connection {
             e.printStackTrace();
         }
         ConnectionManager.get().remove(this);
-        ClusterService.get().enqueueAndReturn(new AddRemoveConnection(endPoint, false));
+        ClusterService.get().enqueueAndReturn(new AddOrRemoveConnection(endPoint, false));
     }
 
     @Override

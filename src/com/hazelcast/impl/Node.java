@@ -17,9 +17,6 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.impl.Constants.NodeTypes.NODE_MEMBER;
-import static com.hazelcast.impl.Constants.NodeTypes.NODE_SUPER_CLIENT;
-
 import com.hazelcast.config.Config;
 import com.hazelcast.impl.MulticastService.JoinInfo;
 import com.hazelcast.impl.cluster.ClusterImpl;
@@ -64,13 +61,40 @@ public class Node {
 
     private Thread firstMainThread = null;
 
-    private final List<Thread> lsThreads = new ArrayList<Thread>(3);
+    private final List<Thread> threads = new ArrayList<Thread>(3);
 
-    private final BlockingQueue<Address> qFailedConnections = new LinkedBlockingQueue<Address>();
+    private final BlockingQueue<Address> failedConnections = new LinkedBlockingQueue<Address>();
 
     private final boolean superClient;
 
-    private final int localNodeType;
+    private final Type localNodeType;
+
+    public enum Type {
+        MEMBER(1),
+        SUPER_CLIENT(2),
+        JAVA_CLIENT(3),
+        CSHARP_CLIENT(4);
+        
+        Type(int type){
+            this.value = type;
+        }
+
+        private int value;
+
+        public int getValue(){
+            return value;
+        }
+
+        public static Type create(int value){
+            switch(value){
+                case 1: return MEMBER;
+                case 2: return SUPER_CLIENT;
+                case 3: return JAVA_CLIENT;
+                case 4: return CSHARP_CLIENT;
+                default: return null;
+            }
+        }
+    }
 
     private Node() {
         boolean sClient = false;
@@ -81,7 +105,7 @@ public class Node {
             }
         }
         superClient = sClient;
-        localNodeType = (superClient) ? NODE_SUPER_CLIENT : NODE_MEMBER;
+        localNodeType = (superClient) ? Type.SUPER_CLIENT : Type.MEMBER;
     }
 
     public static Node get() {
@@ -94,22 +118,22 @@ public class Node {
             if (ex != null) {
                 exceptionToStringBuffer(ex, sb);
             }
-            sb.append("Hazelcast.version : " + Build.version + "\n");
-            sb.append("Hazelcast.build   : " + Build.build + "\n");
-            sb.append("Hazelcast.address   : " + address + "\n");
-            sb.append("joined : " + joined + "\n");
+            sb.append("Hazelcast.version : ").append(Build.version).append("\n");
+            sb.append("Hazelcast.build   : ").append(Build.build).append("\n");
+            sb.append("Hazelcast.address   : ").append(address).append("\n");
+            sb.append("joined : ").append(joined).append("\n");
             sb.append(AddressPicker.createCoreDump());
             coreDump.getPrintWriter().write(sb.toString());
             coreDump.getPrintWriter().write("\n");
             coreDump.getPrintWriter().write("\n");
-            for (final Thread thread : lsThreads) {
+            for (final Thread thread : threads) {
                 thread.interrupt();
             }
             if (!joined) {
                 if (firstMainThread != null) {
                     try {
                         firstMainThread.interrupt();
-                    } catch (final Exception e) {
+                    } catch (final Exception ignore) {
                     }
                 }
             }
@@ -130,16 +154,16 @@ public class Node {
 
         final StackTraceElement[] stEls = e.getStackTrace();
         for (final StackTraceElement stackTraceElement : stEls) {
-            sb.append("\tat " + stackTraceElement + "\n");
+            sb.append("\tat ").append(stackTraceElement).append("\n");
         }
         final Throwable cause = e.getCause();
         if (cause != null) {
-            sb.append("\tcaused by " + cause);
+            sb.append("\tcaused by ").append(cause);
         }
     }
 
     public void failedConnection(final Address address) {
-        qFailedConnections.offer(address);
+        failedConnections.offer(address);
     }
 
     public ClusterImpl getClusterImpl() {
@@ -154,7 +178,7 @@ public class Node {
         return localMember;
     }
 
-    public final int getLocalNodeType() {
+    public final Node.Type getLocalNodeType() {
         return localNodeType;
     }
 
@@ -261,17 +285,17 @@ public class Node {
         final Thread inThread = new Thread(InSelector.get(), "hz.InThread");
         inThread.start();
         inThread.setPriority(8);
-        lsThreads.add(inThread);
+        threads.add(inThread);
 
         final Thread outThread = new Thread(OutSelector.get(), "hz.OutThread");
         outThread.start();
         outThread.setPriority(8);
-        lsThreads.add(outThread);
+        threads.add(outThread);
 
         final Thread clusterServiceThread = new Thread(ClusterService.get(), "hz.ServiceThread");
         clusterServiceThread.start();
         clusterServiceThread.setPriority(7);
-        lsThreads.add(clusterServiceThread);
+        threads.add(clusterServiceThread);
 
         if (Config.get().getJoin().getMulticastConfig().isEnabled()) {
             startMulticastService();
@@ -308,7 +332,7 @@ public class Node {
             logger.log(Level.FINEST, "adding member myself");
         ClusterManager.get().addMember(address, getLocalNodeType()); // add
         // myself
-        clusterImpl.setMembers(ClusterManager.get().lsMembers);
+        clusterImpl.setMembers(BaseManager.lsMembers);
         unlock();
     }
 
@@ -356,7 +380,7 @@ public class Node {
                 final InetAddress[] allAddresses = InetAddress.getAllByName(host);
                 for (final InetAddress inetAddress : allAddresses) {
                     boolean shouldCheck = true;
-                    Address address = null;
+                    Address address;
                     if (config.getInterfaces().isEnabled()) {
                         address = new Address(inetAddress.getAddress(), config.getPort());
                         shouldCheck = AddressPicker.matchAddress(address.getHost());
@@ -390,7 +414,7 @@ public class Node {
                     final InetAddress[] allAddresses = InetAddress.getAllByName(host);
                     for (final InetAddress inetAddress : allAddresses) {
                         boolean shouldCheck = true;
-                        Address addrs = null;
+                        Address addrs;
                         if (config.getInterfaces().isEnabled()) {
                             addrs = new Address(inetAddress.getAddress(), config.getPort());
                             shouldCheck = AddressPicker.matchAddress(addrs.getHost());
@@ -454,8 +478,8 @@ public class Node {
                 multicastSocket.setTimeToLive(32);
                 // set the send interface
                 multicastSocket.setInterface(address.getInetAddress());
-                multicastSocket.setReceiveBufferSize(1 * 1024);
-                multicastSocket.setSendBufferSize(1 * 1024);
+                multicastSocket.setReceiveBufferSize(1024);
+                multicastSocket.setSendBufferSize(1024);
                 multicastSocket.joinGroup(InetAddress
                         .getByName(config.getJoin().getMulticastConfig().getMulticastGroup()));
                 multicastSocket.setSoTimeout(1000);
@@ -480,7 +504,7 @@ public class Node {
         if (DEBUG)
             logger.log(Level.FINEST, "Join DONE");
         ClusterManager.get().finalizeJoin();
-        if (ClusterManager.get().lsMembers.size() == 1) {
+        if (BaseManager.lsMembers.size() == 1) {
             final StringBuilder sb = new StringBuilder();
             sb.append("\n");
             sb.append(ClusterManager.get());
@@ -496,7 +520,7 @@ public class Node {
             ClusterManager.get().addMember(address, getLocalNodeType()); // add
             // myself
             masterAddress = address;
-            clusterImpl.setMembers(ClusterManager.get().lsMembers);
+            clusterImpl.setMembers(BaseManager.lsMembers);
             unlock();
         } else {
             while (!joined) {
@@ -543,15 +567,14 @@ public class Node {
             }
             boolean found = false;
             int numberOfSeconds = 0;
-            connectionTimeout:
             while (!found
                     && numberOfSeconds < config.getJoin().getJoinMembers().getConnectionTimeoutSeconds()) {
-                Address addressFailed = null;
-                while ((addressFailed = qFailedConnections.poll()) != null) {
+                Address addressFailed;
+                while ((addressFailed = failedConnections.poll()) != null) {
                     lsPossibleAddresses.remove(addressFailed);
                 }
                 if (lsPossibleAddresses.size() == 0)
-                    break connectionTimeout;
+                    break;
                 Thread.sleep(1000);
                 numberOfSeconds++;
                 int numberOfJoinReq = 0;
@@ -576,7 +599,6 @@ public class Node {
                     for (final Address adrs : lsPossibleAddresses) {
                         final Connection conn = ConnectionManager.get().getOrConnect(adrs);
                         if (conn != null && numberOfJoinReq < 5) {
-                            found = true;
                             ClusterManager.get().sendJoinRequest(adrs);
                             numberOfJoinReq++;
                         }
@@ -599,7 +621,7 @@ public class Node {
 
             }
             lsPossibleAddresses.clear();
-            qFailedConnections.clear();
+            failedConnections.clear();
         } catch (final Exception e) {
             e.printStackTrace();
         }

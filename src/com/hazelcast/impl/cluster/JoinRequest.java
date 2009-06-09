@@ -3,7 +3,7 @@
  */
 package com.hazelcast.impl.cluster;
 
-import static com.hazelcast.impl.Constants.NodeTypes.NODE_MEMBER;
+import com.hazelcast.impl.Node;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -13,7 +13,7 @@ import com.hazelcast.nio.Address;
 
 public class JoinRequest extends AbstractRemotelyProcessable {
 
-    protected int nodeType = NODE_MEMBER;
+    protected Node.Type nodeType = Node.Type.MEMBER;
     public Address address;
     public String groupName;
     public String groupPassword;
@@ -21,7 +21,7 @@ public class JoinRequest extends AbstractRemotelyProcessable {
     public JoinRequest() {
     }
 
-    public JoinRequest(Address address, String groupName, String groupPassword, int type) {
+    public JoinRequest(Address address, String groupName, String groupPassword, Node.Type type) {
         super();
         this.address = address;
         this.groupName = groupName;
@@ -33,7 +33,7 @@ public class JoinRequest extends AbstractRemotelyProcessable {
     public void readData(DataInput in) throws IOException {
         address = new Address();
         address.readData(in);
-        nodeType = in.readInt();
+        nodeType = Node.Type.create(in.readInt());
         groupName = in.readUTF();
         groupPassword = in.readUTF();
     }
@@ -41,7 +41,7 @@ public class JoinRequest extends AbstractRemotelyProcessable {
     @Override
     public void writeData(DataOutput out) throws IOException {
         address.writeData(out);
-        out.writeInt(nodeType);
+        out.writeInt(nodeType.getValue());
         out.writeUTF(groupName);
         out.writeUTF(groupPassword);
     }

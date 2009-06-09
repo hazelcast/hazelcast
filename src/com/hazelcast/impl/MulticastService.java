@@ -32,7 +32,7 @@ class MulticastService implements Runnable {
     private MulticastSocket multicastSocket;
     private DatagramPacket datagramPacketSend;
     private DatagramPacket datagramPacketReceive;
-    private int bufferSize = 1 * 1024;
+    private int bufferSize = 1024;
     private volatile boolean running = true;
 
     private static final MulticastService instance = new MulticastService();
@@ -91,21 +91,13 @@ class MulticastService implements Runnable {
     public JoinInfo receive() {
         synchronized (datagramPacketReceive) {
             try {
-                try {
-                    multicastSocket.receive(datagramPacketReceive);
-                    try {
+                    try{
+                        multicastSocket.receive(datagramPacketReceive);
                         JoinInfo joinInfo = new JoinInfo();
                         joinInfo.readFromPacket(datagramPacketReceive);
-//                        System.out.println("M.Received " + joinInfo);
                         return joinInfo;
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                } catch (SocketTimeoutException e) {
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+                    } catch (SocketTimeoutException ignore) {}
+            } catch(Exception e){e.printStackTrace();}
             return null;
         }
     }
@@ -129,7 +121,7 @@ class MulticastService implements Runnable {
         }
 
         public JoinInfo(boolean request, Address address, String groupName, String groupPassword,
-                        int type) {
+                        Node.Type type) {
             super(address, groupName, groupPassword, type);
             this.request = request;
         }

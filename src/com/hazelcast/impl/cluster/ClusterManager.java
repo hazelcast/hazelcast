@@ -29,12 +29,6 @@ import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.TopicManager;
-import com.hazelcast.impl.BaseManager.BooleanOp;
-import com.hazelcast.impl.BaseManager.Call;
-import com.hazelcast.impl.BaseManager.PacketProcessor;
-import com.hazelcast.impl.BaseManager.Processable;
-import com.hazelcast.impl.BaseManager.ScheduledAction;
-import com.hazelcast.impl.BaseManager.TargetAwareOp;
 import com.hazelcast.nio.*;
 
 import java.util.*;
@@ -108,7 +102,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         ClusterService.get().registerPacketProcessor(OP_REMOTELY_BOOLEAN_CALLABLE,
                 new PacketProcessor() {
                     public void process(Packet packet) {
-                        Boolean result = null;
+                        Boolean result;
                         try {
                             Data data = BufferUtil.doTake(packet.value);
                             AbstractRemotelyCallable<Boolean> callable = (AbstractRemotelyCallable<Boolean>) ThreadContext
@@ -130,7 +124,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         ClusterService.get().registerPacketProcessor(OP_REMOTELY_OBJECT_CALLABLE,
                 new PacketProcessor() {
                     public void process(Packet packet) {
-                        Object result = null;
+                        Object result;
                         try {
                             Data data = BufferUtil.doTake(packet.value);
                             AbstractRemotelyCallable callable = (AbstractRemotelyCallable) ThreadContext
@@ -142,7 +136,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                             result = null;
                         }
                         if (result != null) {
-                            Data value = null;
+                            Data value;
                             if (result instanceof Data) {
                                 value = (Data) result;
                             } else {
@@ -239,9 +233,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
     }
 
     public boolean shouldConnectTo(Address address) {
-        if (!Node.get().joined())
-            return true;
-        return (lsMembers.indexOf(getMember(thisAddress)) > lsMembers.indexOf(getMember(address)));
+        return !Node.get().joined() || (lsMembers.indexOf(getMember(thisAddress)) > lsMembers.indexOf(getMember(address)));
     }
 
     private void sendRemoveMemberToOthers(final Address deadAddress) {
@@ -265,17 +257,14 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         }
     }
 
-    public void handleAddRemoveConnection(AddRemoveConnection addRemoveConnection) {
-        boolean add = addRemoveConnection.add;
-        Address addressChanged = addRemoveConnection.address;
-        if (add) { // Just connect to the new address if not connected already.
-            if (!addressChanged.equals(thisAddress)) {
-                ConnectionManager.get().getOrConnect(addressChanged);
+    public void handleAddRemoveConnection(AddOrRemoveConnection connection) {
+        if (connection.add) { // Just connect to the new address if not connected already.
+            if (!connection.address.equals(thisAddress)) {
+                ConnectionManager.get().getOrConnect(connection.address);
             }
         } else { // Remove dead member
-            addressChanged.setDead();
-            final Address deadAddress = addressChanged;
-            doRemoveAddress(deadAddress);
+            connection.address.setDead();
+            doRemoveAddress(connection.address);
         } // end of REMOVE CONNECTION
     }
 
@@ -301,7 +290,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         }
 
         if (isMaster()) {
-            setJoins.remove(new MemberInfo(deadAddress, 0));
+            setJoins.remove(new MemberInfo(deadAddress));
         }
 
         lsMembersBefore.clear();
@@ -371,7 +360,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         sb.append(lsMembers.size());
         sb.append("] {");
         for (MemberImpl member : lsMembers) {
-            sb.append("\n\t" + member);
+            sb.append("\n\t").append(member);
         }
         sb.append("\n}\n");
         return sb.toString();
@@ -659,7 +648,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         }
     }
 
-    protected MemberImpl createMember(Address address, int nodeType) {
+    protected MemberImpl createMember(Address address, Node.Type nodeType) {
         return new MemberImpl(address, thisAddress.equals(address), nodeType);
     }
 
@@ -667,7 +656,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         return mapMembers.get(address);
     }
 
-    final public MemberImpl addMember(Address address, int nodeType) {
+    final public MemberImpl addMember(Address address, Node.Type nodeType) {
         if (address == null) {
             if (DEBUG) {
                 log("Address cannot be null");

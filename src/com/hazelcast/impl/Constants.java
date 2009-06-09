@@ -19,17 +19,6 @@ package com.hazelcast.impl;
 
 public interface Constants {
 
-    interface NodeTypes {
-        public static final int NODE_MEMBER = 1;
-
-        public static final int NODE_SUPER_CLIENT = 2;
-
-        public static final int NODE_JAVA_CLIENT = 3;
-
-        public static final int NODE_CSHARP_CLIENT = 4;
-
-    }
-
     interface Objects {
         public static final Object OBJECT_DONE = new Object();
 

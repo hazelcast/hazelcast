@@ -3,7 +3,7 @@
  */
 package com.hazelcast.impl.cluster;
 
-import static com.hazelcast.impl.Constants.NodeTypes.NODE_MEMBER;
+import com.hazelcast.impl.Node;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -14,12 +14,17 @@ import com.hazelcast.nio.DataSerializable;
 
 public class MemberInfo implements DataSerializable {
     Address address = null;
-    int nodeType = NODE_MEMBER;
+    Node.Type nodeType = Node.Type.MEMBER;
 
     public MemberInfo() {
     }
 
-    public MemberInfo(Address address, int nodeType) {
+    public MemberInfo(Address address) {
+        super();
+        this.address = address;
+    }
+
+    public MemberInfo(Address address, Node.Type nodeType) {
         super();
         this.address = address;
         this.nodeType = nodeType;
@@ -28,12 +33,12 @@ public class MemberInfo implements DataSerializable {
     public void readData(DataInput in) throws IOException {
         address = new Address();
         address.readData(in);
-        nodeType = in.readInt();
+        nodeType = Node.Type.create(in.readInt());
     }
 
     public void writeData(DataOutput out) throws IOException {
         address.writeData(out);
-        out.writeInt(nodeType);
+        out.writeInt(nodeType.getValue());
     }
 
     @Override
