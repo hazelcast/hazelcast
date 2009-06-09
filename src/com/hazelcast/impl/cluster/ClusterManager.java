@@ -19,7 +19,6 @@ package com.hazelcast.impl.cluster;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Member;
-import static com.hazelcast.impl.Constants.ClusterOperations.*;
 
 import com.hazelcast.impl.BaseManager;
 import com.hazelcast.impl.BlockingQueueManager;
@@ -66,17 +65,17 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
             }
         });
         ConnectionManager.get().addConnectionListener(this);
-        ClusterService.get().registerPacketProcessor(OP_RESPONSE, new PacketProcessor() {
+        ClusterService.get().registerPacketProcessor(ClusterOperation.RESPONSE, new PacketProcessor() {
             public void process(Packet packet) {
                 handleResponse(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(OP_HEARTBEAT, new PacketProcessor() {
+        ClusterService.get().registerPacketProcessor(ClusterOperation.HEARTBEAT, new PacketProcessor() {
             public void process(Packet packet) {
                 packet.returnToContainer();
             }
         });
-        ClusterService.get().registerPacketProcessor(OP_REMOTELY_PROCESS_AND_RESPOND,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.REMOTELY_PROCESS_AND_RESPOND,
                 new PacketProcessor() {
                     public void process(Packet packet) {
                         Data data = BufferUtil.doTake(packet.value);
@@ -87,7 +86,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                         sendResponse(packet);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_REMOTELY_PROCESS,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.REMOTELY_PROCESS,
                 new PacketProcessor() {
                     public void process(Packet packet) {
                         Data data = BufferUtil.doTake(packet.value);
@@ -99,7 +98,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                     }
                 });
 
-        ClusterService.get().registerPacketProcessor(OP_REMOTELY_BOOLEAN_CALLABLE,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.REMOTELY_CALLABLE_BOOLEAN,
                 new PacketProcessor() {
                     public void process(Packet packet) {
                         Boolean result;
@@ -121,7 +120,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                     }
                 });
 
-        ClusterService.get().registerPacketProcessor(OP_REMOTELY_OBJECT_CALLABLE,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.REMOTELY_CALLABLE_OBJECT,
                 new PacketProcessor() {
                     public void process(Packet packet) {
                         Object result;
@@ -173,7 +172,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                         if (conn != null && conn.live()) {
                             if ((now - memberImpl.getLastWrite()) > 500) {
                                 Packet packet = obtainPacket("heartbeat", null, null,
-                                        OP_HEARTBEAT, 0);
+                                        ClusterOperation.HEARTBEAT, 0);
                                 sendOrReleasePacket(packet, conn);
                             }
                         }
@@ -201,7 +200,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                     }
                 }
                 if (!removed) {
-                    Packet packet = obtainPacket("heartbeat", null, null, OP_HEARTBEAT,
+                    Packet packet = obtainPacket("heartbeat", null, null, ClusterOperation.HEARTBEAT,
                             0);
                     Connection connMaster = ConnectionManager.get().getOrConnect(getMasterAddress());
                     sendOrReleasePacket(packet, connMaster);
@@ -214,7 +213,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                         Connection conn = ConnectionManager.get().getOrConnect(address);
                         if (conn != null) {
                             Packet packet = obtainPacket("heartbeat", null, null,
-                                    OP_HEARTBEAT, 0);
+                                    ClusterOperation.HEARTBEAT, 0);
                             sendOrReleasePacket(packet, conn);
                         }
                     } else {
@@ -222,7 +221,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                         if (conn != null && conn.live()) {
                             if ((now - member.getLastWrite()) > 1000) {
                                 Packet packet = obtainPacket("heartbeat", null, null,
-                                        OP_HEARTBEAT, 0);
+                                        ClusterOperation.HEARTBEAT, 0);
                                 sendOrReleasePacket(packet, conn);
                             }
                         }
@@ -392,7 +391,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         Data value = ThreadContext.get().toData(rp);
         Packet packet = obtainPacket();
         try {
-            packet.set("remotelyProcess", OP_REMOTELY_PROCESS, null, value);
+            packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
             boolean sent = send(packet, conn);
             if (!sent) {
                 packet.returnToContainer();
@@ -414,7 +413,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         public void executeProcess(Address address, AbstractRemotelyCallable arp) {
             this.arp = arp;
             super.target = address;
-            doOp(OP_REMOTELY_OBJECT_CALLABLE, "call", null, arp, 0, -1, -1);
+            doOp(ClusterOperation.REMOTELY_CALLABLE_OBJECT, "call", null, arp, 0, -1, -1);
         }
 
         @Override
@@ -440,7 +439,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         public void executeProcess(Address address, AbstractRemotelyCallable<Boolean> arp) {
             this.arp = arp;
             super.target = address;
-            doOp(OP_REMOTELY_BOOLEAN_CALLABLE, "call", null, arp, 0, -1, -1);
+            doOp(ClusterOperation.REMOTELY_CALLABLE_BOOLEAN, "call", null, arp, 0, -1, -1);
         }
 
         @Override
@@ -465,7 +464,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         public boolean executeProcess(Address address, AbstractRemotelyProcessable arp) {
             this.arp = arp;
             super.target = address;
-            return booleanCall(OP_REMOTELY_PROCESS_AND_RESPOND, "exe", null, arp, 0, -1, -1);
+            return booleanCall(ClusterOperation.REMOTELY_PROCESS_AND_RESPOND, "exe", null, arp, 0, -1, -1);
         }
 
         @Override

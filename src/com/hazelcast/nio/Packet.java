@@ -19,6 +19,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.impl.Constants;
 import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.impl.BaseManager;
 
 import java.nio.ByteBuffer;
 
@@ -26,7 +27,7 @@ public final class Packet {
 
     public String name;
 
-    public int operation = -1;
+    public BaseManager.ClusterOperation operation = BaseManager.ClusterOperation.NONE;
 
     public ByteBuffer bbSizes = ByteBuffer.allocate(12);
 
@@ -96,7 +97,7 @@ public final class Packet {
         bbSizes.clear();
         bbHeader.clear();
 
-        bbHeader.putInt(operation);
+        bbHeader.putInt(operation.getValue());
         bbHeader.putInt(blockId);
         bbHeader.putInt(threadId);
         bbHeader.putInt(lockCount);
@@ -128,7 +129,7 @@ public final class Packet {
     }
 
     public void read() {
-        operation = bbHeader.getInt();
+        operation = BaseManager.ClusterOperation.create(bbHeader.getInt());
         blockId = bbHeader.getInt();
         threadId = bbHeader.getInt();
         lockCount = bbHeader.getInt();
@@ -149,7 +150,7 @@ public final class Packet {
 
     public void reset() {
         name = null;
-        operation = -1;
+        operation = BaseManager.ClusterOperation.NONE;
         threadId = -1;
         lockCount = 0;
         lockAddress = null;
@@ -248,7 +249,7 @@ public final class Packet {
         ThreadContext.get().getPacketPool().release(this);
     }
 
-    public void set(String name, int operation, Object objKey, Object objValue)
+    public void set(String name, BaseManager.ClusterOperation operation, Object objKey, Object objValue)
             throws Exception {
         this.threadId = Thread.currentThread().hashCode();
         this.name = name;

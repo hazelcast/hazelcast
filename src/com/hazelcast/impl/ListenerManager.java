@@ -21,7 +21,6 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.MessageListener;
-import static com.hazelcast.impl.Constants.EventOperations.*;
 
 import com.hazelcast.impl.cluster.ClusterService;
 import com.hazelcast.nio.*;
@@ -42,17 +41,17 @@ public class ListenerManager extends BaseManager {
     }
 
     private ListenerManager() {
-        ClusterService.get().registerPacketProcessor(OP_EVENT, new PacketProcessor() {
+        ClusterService.get().registerPacketProcessor(ClusterOperation.EVENT, new PacketProcessor() {
             public void process(Packet packet) {
                 handleEvent(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(OP_LISTENER_ADD, new PacketProcessor() {
+        ClusterService.get().registerPacketProcessor(ClusterOperation.ADD_LISTENER, new PacketProcessor() {
             public void process(Packet packet) {
                 handleAddRemoveListener(true, packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(OP_LISTENER_REMOVE, new PacketProcessor() {
+        ClusterService.get().registerPacketProcessor(ClusterOperation.REMOVE_LISTENER, new PacketProcessor() {
             public void process(Packet packet) {
                 handleAddRemoveListener(false, packet);
             }
@@ -124,7 +123,7 @@ public class ListenerManager extends BaseManager {
         String name;
         Data key;
         boolean add = true;
-        int packetProcess = OP_LISTENER_ADD;
+        ClusterOperation packetProcess = ClusterOperation.ADD_LISTENER;
         boolean includeValue = true;
 
         public ListenerRegistrationProcess(String name, Data key, boolean add, boolean includeValue) {
@@ -134,7 +133,7 @@ public class ListenerManager extends BaseManager {
             this.add = add;
             this.includeValue = includeValue;
             if (!add)
-                packetProcess = OP_LISTENER_REMOVE;
+                packetProcess = ClusterOperation.REMOVE_LISTENER;
         }
 
         public void process() {
@@ -171,7 +170,7 @@ public class ListenerManager extends BaseManager {
                                       boolean includeValue) {
         Packet packet = obtainPacket();
         try {
-            packet.set(name, (add) ? OP_LISTENER_ADD : OP_LISTENER_REMOVE, key, null);
+            packet.set(name, (add) ? ClusterOperation.ADD_LISTENER: ClusterOperation.REMOVE_LISTENER, key, null);
         } catch (Exception e) {
             e.printStackTrace();
         }

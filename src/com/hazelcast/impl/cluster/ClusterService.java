@@ -80,12 +80,12 @@ public final class ClusterService implements Runnable, Constants {
         throw new RuntimeException("Not enough space for a runnable " + runnable);
     }
 
-    public void registerPacketProcessor(int operation, BaseManager.PacketProcessor packetProcessor) {
-        if (packetProcessors[operation] != null) {
+    public void registerPacketProcessor(BaseManager.ClusterOperation operation, BaseManager.PacketProcessor packetProcessor) {
+        if (packetProcessors[operation.getValue()] != null) {
             logger.log(Level.SEVERE, operation + " is registered already with "
-                    + packetProcessors[operation]);
+                    + packetProcessors[operation.getValue()]);
         }
-        packetProcessors[operation] = packetProcessor;
+        packetProcessors[operation.getValue()] = packetProcessor;
     }
 
     public void enqueueAndReturn(final Object message) {
@@ -105,11 +105,11 @@ public final class ClusterService implements Runnable, Constants {
             if (memberFrom != null) {
                 memberFrom.didRead();
             }
-            if (packet.operation < 0 || packet.operation >= packetProcessors.length) {
+            if (packet.operation.getValue() < 0 || packet.operation.getValue() >= packetProcessors.length) {
                 logger.log(Level.SEVERE, "Unknown operation " + packet.operation);
                 return;
             }
-            PacketProcessor packetProcessor = packetProcessors[packet.operation];
+            PacketProcessor packetProcessor = packetProcessors[packet.operation.getValue()];
             if (packetProcessor == null) {
                 logger.log(Level.SEVERE, "No Packet processor found for operation : "
                         + packet.operation);

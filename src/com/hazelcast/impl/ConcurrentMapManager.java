@@ -28,10 +28,11 @@ import com.hazelcast.impl.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.impl.cluster.ClusterManager;
 import com.hazelcast.impl.cluster.ClusterService;
 
-import static com.hazelcast.impl.Constants.ConcurrentMapOperations.*;
+
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
 import static com.hazelcast.impl.SortedHashMap.OrderingType;
+import static com.hazelcast.impl.BaseManager.ClusterOperation.*;
 import com.hazelcast.nio.Address;
 import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.Data;
@@ -61,186 +62,186 @@ public final class ConcurrentMapManager extends BaseManager {
             }
         });
         //checkIfMigrating, targetAware, schedulable, returnsObject
-        ClusterService.get().registerPacketProcessor(OP_CMAP_GET,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_GET,
                 new DefaultPacketProcessor(false, true, false, true) {
                     void handle(Request request) {
                         doGet(request);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_GET_MAP_ENTRY,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_GET_MAP_ENTRY,
                 new DefaultPacketProcessor(false, true, false, true) {
                     void handle(Request request) {
                         doGetMapEntry(request);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_PUT,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_PUT,
                 new DefaultPacketProcessor(false, true, true, true) {
                     void handle(Request request) {
                         doPut(request, true);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_BACKUP_PUT,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_BACKUP_PUT,
                 new DefaultPacketProcessor() {
                     void handle(Request request) {
                         doBackup(request);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_PUT_IF_ABSENT,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT,
                 new DefaultPacketProcessor(false, true, true, true) {
                     void handle(Request request) {
                         doPut(request, true);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_REPLACE_IF_NOT_NULL,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_REPLACE_IF_NOT_NULL,
                 new DefaultPacketProcessor(false, true, true, true) {
                     void handle(Request request) {
                         doPut(request, true);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_BACKUP_ADD,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_BACKUP_ADD,
                 new DefaultPacketProcessor() {
                     void handle(Request request) {
                         doBackup(request);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_BACKUP_REMOVE_MULTI,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_BACKUP_REMOVE_MULTI,
                 new DefaultPacketProcessor() {
                     void handle(Request request) {
                         doBackup(request);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_BACKUP_REMOVE,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_BACKUP_REMOVE,
                 new DefaultPacketProcessor(false, false, false, false) {
                     void handle(Request request) {
                         doBackup(request);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_BACKUP_LOCK,
+        ClusterService.get().registerPacketProcessor(CONCURRENT_MAP_BACKUP_LOCK,
                 new DefaultPacketProcessor(false, false, false, false) {
                     void handle(Request request) {
                         doLock(request);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_PUT_MULTI,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_PUT_MULTI,
                 new DefaultPacketProcessor(false, true, true, false) {
                     void handle(Request request) {
                         doPut(request, false);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_REMOVE,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_REMOVE,
                 new DefaultPacketProcessor(false, true, true, true) {
                     void handle(Request request) {
                         doRemove(request, true);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_REMOVE_MULTI,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_REMOVE_MULTI,
                 new DefaultPacketProcessor(false, true, true, true) {
                     void handle(Request request) {
                         doRemoveMulti(request);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_REMOVE_ITEM,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_REMOVE_ITEM,
                 new DefaultPacketProcessor(false, true, true, false) {
                     void handle(Request request) {
                         doRemove(request, false);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_REMOVE_IF_SAME,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_REMOVE_IF_SAME,
                 new DefaultPacketProcessor(false, true, true, false) {
                     void handle(Request request) {
                         doRemove(request, true);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_LOCK,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_LOCK,
                 new DefaultPacketProcessor(false, true, true, false) {
                     void handle(Request request) {
                         doLock(request);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_LOCK_RETURN_OLD,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_LOCK_RETURN_OLD,
                 new DefaultPacketProcessor(false, true, true, false) {
                     void handle(Request request) {
                         doLock(request);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_UNLOCK,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_UNLOCK,
                 new DefaultPacketProcessor(false, true, true, false) {
                     void handle(Request request) {
                         doLock(request);
                     }
                 });
 
-        ClusterService.get().registerPacketProcessor(OP_CMAP_SIZE,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_SIZE,
                 new PacketProcessor() {
                     public void process(Packet packet) {
                         handleSize(packet);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_ITERATE_ENTRIES,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES,
                 new DefaultPacketProcessor(true, false, false, true) {
                     void handle(Request request) {
                         CMap cmap = getMap(request.name);
                         cmap.getEntries(remoteReq);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_ITERATE_VALUES,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_ITERATE_VALUES,
                 new DefaultPacketProcessor(true, false, false, true) {
                     void handle(Request request) {
                         CMap cmap = getMap(request.name);
                         cmap.getEntries(remoteReq);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_ITERATE_KEYS,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS,
                 new DefaultPacketProcessor(true, false, false, true) {
                     void handle(Request request) {
                         CMap cmap = getMap(request.name);
                         cmap.getEntries(remoteReq);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_ADD_TO_LIST,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_ADD_TO_LIST,
                 new DefaultPacketProcessor(false, true, false, false) {
                     void handle(Request request) {
                         doAdd(request);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_ADD_TO_SET,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_ADD_TO_SET,
                 new DefaultPacketProcessor(false, true, false, false) {
                     void handle(Request request) {
                         doAdd(request);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_CONTAINS,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_CONTAINS,
                 new DefaultPacketProcessor(true, false, false, false) {
                     void handle(Request request) {
                         doContains(request);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_BLOCK_INFO,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_BLOCK_INFO,
                 new PacketProcessor() {
                     public void process(Packet packet) {
                         handleBlockInfo(packet);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_BLOCKS,
+        ClusterService.get().registerPacketProcessor(CONCURRENT_MAP_BLOCKS,
                 new PacketProcessor() {
                     public void process(Packet packet) {
                         handleBlocks(packet);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_MIGRATION_COMPLETE,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_MIGRATION_COMPLETE,
                 new PacketProcessor() {
                     public void process(Packet packet) {
                         doMigrationComplete(packet.conn.getEndPoint());
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_CMAP_MIGRATE_RECORD,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_MIGRATE_RECORD,
                 new PacketProcessor() {
                     public void process(Packet packet) {
                         handleMigrateRecord(packet);
                     }
                 });
         
-        ClusterService.get().registerPacketProcessor(OP_CMAP_VALUE_COUNT,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_VALUE_COUNT,
                 new DefaultPacketProcessor(false, true, false, true) {
                     void handle(Request request) {
                         doValueCount(request);
@@ -368,7 +369,7 @@ public final class ConcurrentMapManager extends BaseManager {
                         }
                         dataAllBlocks = ThreadContext.get().toData(allBlocks);
                     }
-                    send("blocks", OP_CMAP_BLOCKS, dataAllBlocks, member.getAddress());
+                    send("blocks", CONCURRENT_MAP_BLOCKS, dataAllBlocks, member.getAddress());
                 }
             }
             doResetRecords(null);
@@ -412,27 +413,27 @@ public final class ConcurrentMapManager extends BaseManager {
         Data oldValue = null;
 
         public boolean unlock(String name, Object key, long timeout, long txnId) {
-            boolean unlocked = booleanCall(OP_CMAP_UNLOCK, name, key, null, timeout, txnId, -1);
+            boolean unlocked = booleanCall(ClusterOperation.CONCURRENT_MAP_UNLOCK, name, key, null, timeout, txnId, -1);
             if (unlocked) {
-                backup(OP_CMAP_BACKUP_LOCK);
+                backup(CONCURRENT_MAP_BACKUP_LOCK);
             }
             return unlocked;
         }
 
         public boolean lock(String name, Object key, long timeout, long txnId) {
-            boolean locked = booleanCall(OP_CMAP_LOCK, name, key, null, timeout, txnId, -1);
+            boolean locked = booleanCall(ClusterOperation.CONCURRENT_MAP_LOCK, name, key, null, timeout, txnId, -1);
             if (locked) {
-                backup(OP_CMAP_BACKUP_LOCK);
+                backup(CONCURRENT_MAP_BACKUP_LOCK);
             }
             return locked;
         }
 
         public boolean lockAndReturnOld(String name, Object key, long timeout, long txnId) {
             oldValue = null;
-            boolean locked = booleanCall(OP_CMAP_LOCK_RETURN_OLD, name, key, null, timeout, txnId,
+            boolean locked = booleanCall(ClusterOperation.CONCURRENT_MAP_LOCK_RETURN_OLD, name, key, null, timeout, txnId,
                     -1);
             if (locked) {
-                backup(OP_CMAP_BACKUP_LOCK);
+                backup(CONCURRENT_MAP_BACKUP_LOCK);
             }
             return locked;
         }
@@ -448,7 +449,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         @Override
         void handleNoneRedoResponse(Packet packet) {
-            if (request.operation == OP_CMAP_LOCK_RETURN_OLD) {
+            if (request.operation == ClusterOperation.CONCURRENT_MAP_LOCK_RETURN_OLD) {
                 oldValue = doTake(packet.value);
             }
             super.handleBooleanNoneRedoResponse(packet);
@@ -458,11 +459,11 @@ public final class ConcurrentMapManager extends BaseManager {
     class MContainsKey extends MBooleanOp {
 
         public boolean containsEntry(String name, Object key, Object value, long txnId) {
-            return booleanCall(OP_CMAP_CONTAINS, name, key, value, 0, txnId, -1);
+            return booleanCall(ClusterOperation.CONCURRENT_MAP_CONTAINS, name, key, value, 0, txnId, -1);
         }
 
         public boolean containsKey(String name, Object key, long txnId) {
-            return booleanCall(OP_CMAP_CONTAINS, name, key, null, 0, txnId, -1);
+            return booleanCall(ClusterOperation.CONCURRENT_MAP_CONTAINS, name, key, null, 0, txnId, -1);
         }
 
         @Override
@@ -476,11 +477,11 @@ public final class ConcurrentMapManager extends BaseManager {
     class MEvict extends MBackupAwareOp {
         public boolean evict(String name, Object key) {
             Data k = (key instanceof Data) ? (Data) key : toData(key);
-            request.setLocal(OP_CMAP_EVICT, name, k, null, 0, -1, -1);
+            request.setLocal(ClusterOperation.CONCURRENT_MAP_EVICT, name, k, null, 0, -1, -1);
             doOp();
             boolean result = getResultAsBoolean();
             if (result) {
-                backup(OP_CMAP_BACKUP_REMOVE);
+                backup(ClusterOperation.CONCURRENT_MAP_BACKUP_REMOVE);
             }
             return result;
         }
@@ -513,20 +514,20 @@ public final class ConcurrentMapManager extends BaseManager {
         public boolean migrateMulti(Record record, Data value) {
             copyRecordToRequest(record, request, true);
             request.value = value;
-            request.operation = OP_CMAP_MIGRATE_RECORD;
+            request.operation = ClusterOperation.CONCURRENT_MAP_MIGRATE_RECORD;
             doOp();
             boolean result = getResultAsBoolean();
-            backup(OP_CMAP_BACKUP_PUT);
+            backup(ClusterOperation.CONCURRENT_MAP_BACKUP_PUT);
             return result;
         }
 
         public boolean migrate(Record record) {
             copyRecordToRequest(record, request, true);
             if (request.key == null) throw new RuntimeException("req.key is null");
-            request.operation = OP_CMAP_MIGRATE_RECORD;
+            request.operation = ClusterOperation.CONCURRENT_MAP_MIGRATE_RECORD;
             doOp();
             boolean result = getResultAsBoolean();
-            backup(OP_CMAP_BACKUP_PUT);
+            backup(ClusterOperation.CONCURRENT_MAP_BACKUP_PUT);
             return result;
         }
 
@@ -557,7 +558,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class MGetMapEntry extends MTargetAwareOp {
         public MapEntry get(String name, Object key) {
-            CMapEntry mapEntry = (CMapEntry) objectCall(OP_CMAP_GET_MAP_ENTRY, name, key, null, 0, -1, -1);
+            CMapEntry mapEntry = (CMapEntry) objectCall(ClusterOperation.CONCURRENT_MAP_GET_MAP_ENTRY, name, key, null, 0, -1, -1);
             mapEntry.set(name, key);
             return mapEntry;
         }
@@ -579,7 +580,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     return txn.get(name, key);
                 }
             }
-            return objectCall(OP_CMAP_GET, name, key, null, timeout, txnId, -1);
+            return objectCall(ClusterOperation.CONCURRENT_MAP_GET, name, key, null, timeout, txnId, -1);
         }
 
         @Override
@@ -592,7 +593,7 @@ public final class ConcurrentMapManager extends BaseManager {
     
     class MValueCount extends MTargetAwareOp {
         public Object count(String name, Object key, long timeout, long txnId) {
-            return objectCall(OP_CMAP_VALUE_COUNT, name, key, null, timeout, txnId, -1);
+            return objectCall(ClusterOperation.CONCURRENT_MAP_VALUE_COUNT, name, key, null, timeout, txnId, -1);
         }
 
         @Override
@@ -640,9 +641,9 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
                 return false;
             } else {
-                boolean removed = booleanCall(OP_CMAP_REMOVE_ITEM, name, key, value, 0, -1, -1);
+                boolean removed = booleanCall(ClusterOperation.CONCURRENT_MAP_REMOVE_ITEM, name, key, value, 0, -1, -1);
                 if (removed) {
-                    backup(OP_CMAP_BACKUP_REMOVE);
+                    backup(ClusterOperation.CONCURRENT_MAP_BACKUP_REMOVE);
                 }
                 return removed;
             }
@@ -664,20 +665,20 @@ public final class ConcurrentMapManager extends BaseManager {
     class MRemove extends MBackupAwareOp {
 
         public Object remove(String name, Object key, long timeout, long txnId) {
-            return txnalRemove(OP_CMAP_REMOVE, name, key, null, timeout, txnId);
+            return txnalRemove(ClusterOperation.CONCURRENT_MAP_REMOVE, name, key, null, timeout, txnId);
         }
 
         public Object removeIfSame(String name, Object key, Object value, long timeout, long txnId) {
-            return txnalRemove(OP_CMAP_REMOVE_IF_SAME, name, key, value, timeout, txnId);
+            return txnalRemove(ClusterOperation.CONCURRENT_MAP_REMOVE_IF_SAME, name, key, value, timeout, txnId);
         }
 
-        private Object txnalRemove(int operation, String name, Object key, Object value,
+        private Object txnalRemove(ClusterOperation operation, String name, Object key, Object value,
                                    long timeout, long txnId) {
             ThreadContext threadContext = ThreadContext.get();
             TransactionImpl txn = threadContext.txn;
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 try {
-                    boolean locked = false;
+                    boolean locked;
                     if (!txn.has(name, key)) {
                         MLock mlock = threadContext.getMLock();
                         locked = mlock
@@ -701,7 +702,7 @@ public final class ConcurrentMapManager extends BaseManager {
             } else {
                 Object oldValue = objectCall(operation, name, key, value, timeout, txnId, -1);
                 if (oldValue != null) {
-                    backup(OP_CMAP_BACKUP_REMOVE);
+                    backup(ClusterOperation.CONCURRENT_MAP_BACKUP_REMOVE);
                 }
                 return oldValue;
             }
@@ -729,15 +730,15 @@ public final class ConcurrentMapManager extends BaseManager {
     class MAdd extends MBackupAwareOp {
         boolean addToList(String name, Object value) {
             Data key = ThreadContext.get().toData(value);
-            boolean result = booleanCall(OP_CMAP_ADD_TO_LIST, name, key, null, 0, -1, -1);
-            backup(OP_CMAP_BACKUP_ADD);
+            boolean result = booleanCall(ClusterOperation.CONCURRENT_MAP_ADD_TO_LIST, name, key, null, 0, -1, -1);
+            backup(ClusterOperation.CONCURRENT_MAP_BACKUP_ADD);
             return result;
         }
 
         boolean addToSet(String name, Object value) {
             Data key = ThreadContext.get().toData(value);
-            boolean result = booleanCall(OP_CMAP_ADD_TO_SET, name, key, null, 0, -1, -1);
-            backup(OP_CMAP_BACKUP_ADD);
+            boolean result = booleanCall(ClusterOperation.CONCURRENT_MAP_ADD_TO_SET, name, key, null, 0, -1, -1);
+            backup(ClusterOperation.CONCURRENT_MAP_BACKUP_ADD);
             return result;
         }
 
@@ -758,7 +759,7 @@ public final class ConcurrentMapManager extends BaseManager {
         protected Address owner = null;
         protected int distance = 0;
 
-        public void sendBackup(int operation, Address owner, boolean hardCopy,
+        public void sendBackup(ClusterOperation operation, Address owner, boolean hardCopy,
                                int distance, Request reqBackup) {
             this.owner = owner;
             this.distance = distance;
@@ -801,9 +802,9 @@ public final class ConcurrentMapManager extends BaseManager {
     class MPutMulti extends MBackupAwareOp {
 
         boolean put(String name, Object key, Object value) {
-            boolean result = booleanCall(OP_CMAP_PUT_MULTI, name, key, value, 0, -1, -1);
+            boolean result = booleanCall(ClusterOperation.CONCURRENT_MAP_PUT_MULTI, name, key, value, 0, -1, -1);
             if (result) {
-                backup(OP_CMAP_BACKUP_PUT);
+                backup(ClusterOperation.CONCURRENT_MAP_BACKUP_PUT);
             }
             return result;
         }
@@ -827,18 +828,18 @@ public final class ConcurrentMapManager extends BaseManager {
 
 
         public Object replace(String name, Object key, Object value, long timeout, long txnId) {
-            return txnalPut(OP_CMAP_REPLACE_IF_NOT_NULL, name, key, value, timeout, txnId);
+            return txnalPut(ClusterOperation.CONCURRENT_MAP_REPLACE_IF_NOT_NULL, name, key, value, timeout, txnId);
         }
 
         public Object putIfAbsent(String name, Object key, Object value, long timeout, long txnId) {
-            return txnalPut(OP_CMAP_PUT_IF_ABSENT, name, key, value, timeout, txnId);
+            return txnalPut(ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT, name, key, value, timeout, txnId);
         }
 
         public Object put(String name, Object key, Object value, long timeout, long txnId) {
-            return txnalPut(OP_CMAP_PUT, name, key, value, timeout, txnId);
+            return txnalPut(ClusterOperation.CONCURRENT_MAP_PUT, name, key, value, timeout, txnId);
         }
 
-        private Object txnalPut(int operation, String name, Object key, Object value, long timeout,
+        private Object txnalPut(ClusterOperation operation, String name, Object key, Object value, long timeout,
                                 long txnId) {
             ThreadContext threadContext = ThreadContext.get();
             TransactionImpl txn = threadContext.txn;
@@ -867,7 +868,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 return null;
             } else {
                 Object oldValue = objectCall(operation, name, key, value, timeout, txnId, -1);
-                backup(OP_CMAP_BACKUP_PUT);
+                backup(ClusterOperation.CONCURRENT_MAP_BACKUP_PUT);
                 return oldValue;
             }
         }
@@ -884,9 +885,9 @@ public final class ConcurrentMapManager extends BaseManager {
     class MRemoveMulti extends MBackupAwareOp {
 
         boolean remove(String name, Object key, Object value) {
-            boolean result = booleanCall(OP_CMAP_REMOVE_MULTI, name, key, value, 0, -1, -1);
+            boolean result = booleanCall(ClusterOperation.CONCURRENT_MAP_REMOVE_MULTI, name, key, value, 0, -1, -1);
             if (result) {
-                backup(OP_CMAP_BACKUP_REMOVE_MULTI);
+                backup(ClusterOperation.CONCURRENT_MAP_BACKUP_REMOVE_MULTI);
             }
             return result;
         }
@@ -918,7 +919,7 @@ public final class ConcurrentMapManager extends BaseManager {
             backupCount = 0;
         }
 
-        protected void backup(int operation) {
+        protected void backup(ClusterOperation operation) {
             if (backupCount > 0) {
                 for (int i = 0; i < backupCount; i++) {
                     int distance = i + 1;
@@ -1057,7 +1058,7 @@ public final class ConcurrentMapManager extends BaseManager {
             public MGetContainsValue(Address target) {
                 this.target = target;
                 request.reset();
-                setLocal(OP_CMAP_CONTAINS, name, null, value, 0, -1, -1);
+                setLocal(ClusterOperation.CONCURRENT_MAP_CONTAINS, name, null, value, 0, -1, -1);
             }
 
             @Override
@@ -1103,7 +1104,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 this.target = target;
                 request.reset();
                 request.name = name;
-                request.operation = OP_CMAP_SIZE;
+                request.operation = ClusterOperation.CONCURRENT_MAP_SIZE;
             }
 
             @Override
@@ -1155,11 +1156,11 @@ public final class ConcurrentMapManager extends BaseManager {
                 request.reset();
                 request.name = name;
                 if (iteratorType == MIterate.TYPE_ENTRIES) {
-                    request.operation = OP_CMAP_ITERATE_ENTRIES;
+                    request.operation = ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES;
                 } else if (iteratorType == MIterate.TYPE_KEYS) {
-                    request.operation = OP_CMAP_ITERATE_KEYS;
+                    request.operation = ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS;
                 } else if (iteratorType == MIterate.TYPE_VALUES) {
-                    request.operation = OP_CMAP_ITERATE_VALUES;
+                    request.operation = ClusterOperation.CONCURRENT_MAP_ITERATE_VALUES;
                 }
             }
 
@@ -1267,7 +1268,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     // master should call this method
     void sendBlockInfo(Block block, Address address) {
-        send("mapblock", OP_CMAP_BLOCK_INFO, block, address);
+        send("mapblock", ClusterOperation.CONCURRENT_MAP_BLOCK_INFO, block, address);
     }
 
     void handleBlocks(Packet packet) {
@@ -1501,7 +1502,7 @@ public final class ConcurrentMapManager extends BaseManager {
         final boolean schedulable;
         final boolean returnsObject;
         final boolean checkIfMigrating;
-        int operation = -1;
+        ClusterOperation operation = ClusterOperation.NONE;
 
         protected DefaultPacketProcessor() {
             targetAware = false;
@@ -1566,7 +1567,7 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     final void doLock(Request request) {
-        boolean lock = (request.operation == OP_CMAP_LOCK || request.operation == OP_CMAP_LOCK_RETURN_OLD);
+        boolean lock = (request.operation == ClusterOperation.CONCURRENT_MAP_LOCK || request.operation == ClusterOperation.CONCURRENT_MAP_LOCK_RETURN_OLD);
         if (!lock) {
             // unlock
             boolean unlocked = true;
@@ -1591,7 +1592,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 // schedule
                 final Record record = ensureRecord(request);
                 final Request reqScheduled = (request.local) ? request : request.hardCopy();
-                if (request.operation == OP_CMAP_LOCK_RETURN_OLD) {
+                if (request.operation == ClusterOperation.CONCURRENT_MAP_LOCK_RETURN_OLD) {
                     reqScheduled.value = doHardCopy(record.getValue());
                 }
                 if (DEBUG) {
@@ -1607,7 +1608,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 log("Locking...");
             }
             Record rec = ensureRecord(request);
-            if (request.operation == OP_CMAP_LOCK_RETURN_OLD) {
+            if (request.operation == ClusterOperation.CONCURRENT_MAP_LOCK_RETURN_OLD) {
                 request.value = doHardCopy(rec.getValue());
             }
             rec.lock(request.lockThreadId, request.lockAddress);
@@ -1867,9 +1868,9 @@ public final class ConcurrentMapManager extends BaseManager {
 
 
         public void doBackup(Request req) {
-            if (req.operation == OP_CMAP_BACKUP_PUT) {
+            if (req.operation == ClusterOperation.CONCURRENT_MAP_BACKUP_PUT) {
                 toRecord(req);
-            } else if (req.operation == OP_CMAP_BACKUP_REMOVE) {
+            } else if (req.operation == ClusterOperation.CONCURRENT_MAP_BACKUP_REMOVE) {
                 Record record = getRecord(req.key);
                 if (record != null) {
                     if (record.value != null) {
@@ -1889,11 +1890,11 @@ public final class ConcurrentMapManager extends BaseManager {
                         record.key.setNoData();
                     }
                 }
-            } else if (req.operation == OP_CMAP_BACKUP_LOCK) {
+            } else if (req.operation == CONCURRENT_MAP_BACKUP_LOCK) {
                 toRecord(req);
-            } else if (req.operation == OP_CMAP_BACKUP_ADD) {
+            } else if (req.operation == ClusterOperation.CONCURRENT_MAP_BACKUP_ADD) {
                 add(req);
-            } else if (req.operation == OP_CMAP_BACKUP_REMOVE_MULTI) {
+            } else if (req.operation == ClusterOperation.CONCURRENT_MAP_BACKUP_REMOVE_MULTI) {
                 Record record = getRecord(req.key);
                 if (record != null) {
                     if (req.value == null) {
@@ -2008,7 +2009,7 @@ public final class ConcurrentMapManager extends BaseManager {
                         } else if (record.lsValues != null) {
                             int size = record.lsValues.size();
                             if (size > 0) {
-                                if (request.operation == OP_CMAP_ITERATE_KEYS) {
+                                if (request.operation == ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS) {
                                     pairs.addKeyValue(new KeyValue(record.key, null));
                                 } else {
                                     for (int i = 0; i < size; i++) {
@@ -2077,7 +2078,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 record = createNewRecord(req.key, null);
                 req.key = null;
             } else {
-                if (req.operation == OP_CMAP_ADD_TO_SET) {
+                if (req.operation == ClusterOperation.CONCURRENT_MAP_ADD_TO_SET) {
                     return false;
                 }
             }
@@ -2142,12 +2143,12 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public Data put(Request req) {
-            if (req.operation == OP_CMAP_PUT_IF_ABSENT) {
+            if (req.operation == ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT) {
                 Record record = recordExist(req);
                 if (record != null && record.getValue() != null) {
                     return doHardCopy(record.getValue());
                 }
-            } else if (req.operation == OP_CMAP_REPLACE_IF_NOT_NULL) {
+            } else if (req.operation == ClusterOperation.CONCURRENT_MAP_REPLACE_IF_NOT_NULL) {
                 Record record = recordExist(req);
                 if (record == null || record.getValue() == null) {
                     return null;

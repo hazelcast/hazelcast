@@ -23,8 +23,6 @@ import com.hazelcast.impl.cluster.ClusterManager;
 import com.hazelcast.impl.cluster.ClusterService;
 import com.hazelcast.impl.cluster.ClusterImpl.ClusterMember;
 
-import static com.hazelcast.impl.Constants.ExecutorOperations.OP_EXE_REMOTE_EXECUTION;
-import static com.hazelcast.impl.Constants.ExecutorOperations.OP_STREAM;
 import static com.hazelcast.impl.Constants.Objects.*;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TIMEOUT;
 import static com.hazelcast.nio.BufferUtil.toObject;
@@ -58,13 +56,13 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
     private boolean started = false;
 
     private ExecutorManager() {
-        ClusterService.get().registerPacketProcessor(OP_EXE_REMOTE_EXECUTION,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.REMOTELY_EXECUTION,
                 new PacketProcessor() {
                     public void process(Packet packet) {
                         handleRemoteExecution(packet);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(OP_STREAM, new PacketProcessor() {
+        ClusterService.get().registerPacketProcessor(ClusterOperation.STREAM, new PacketProcessor() {
             public void process(Packet packet) {
                 handleStream(packet);
             }
@@ -332,7 +330,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 } else {
                     localOnly = false;
                     final Packet packet = obtainPacket("m:exe", null, task,
-                            OP_EXE_REMOTE_EXECUTION, DEFAULT_TIMEOUT);
+                            ClusterOperation.REMOTELY_EXECUTION, DEFAULT_TIMEOUT);
                     packet.timeout = DEFAULT_TIMEOUT;
                     packet.longValue = executionId;
                     final boolean sent = send(packet, target);
@@ -349,7 +347,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                     } else {
                         localOnly = false;
                         final Packet packet = obtainPacket("m:exe", null, task,
-                                OP_EXE_REMOTE_EXECUTION, DEFAULT_TIMEOUT);
+                                ClusterOperation.REMOTELY_EXECUTION, DEFAULT_TIMEOUT);
                         packet.timeout = DEFAULT_TIMEOUT;
                         packet.longValue = executionId;
                         final boolean sent = send(packet, ((ClusterMember) member).getAddress());
@@ -615,7 +613,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
     public void sendStreamItem(final Address address, final Object value, final long streamId) {
         try {
             final Packet packet = ClusterManager.get().obtainPacket("exe", null, value,
-                    OP_STREAM, DEFAULT_TIMEOUT);
+                    ClusterOperation.STREAM, DEFAULT_TIMEOUT);
             packet.longValue = streamId;
             ClusterService.get().enqueueAndReturn(new Processable() {
                 public void process() {

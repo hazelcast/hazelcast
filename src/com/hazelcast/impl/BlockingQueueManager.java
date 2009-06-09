@@ -26,7 +26,6 @@ import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
 import com.hazelcast.impl.cluster.ClusterManager;
 import com.hazelcast.impl.cluster.ClusterService;
 
-import static com.hazelcast.impl.Constants.BlockingQueueOperations.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.nio.BufferUtil.*;
@@ -46,7 +45,7 @@ public class BlockingQueueManager extends BaseManager {
     private int nextIndex = 0;
 
     private BlockingQueueManager() {
-        ClusterService.get().registerPacketProcessor(OP_B_POLL, new PacketProcessor() {
+        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_POLL, new PacketProcessor() {
             public void process(Packet packet) {
                 try {
                     handlePoll(packet);
@@ -58,62 +57,62 @@ public class BlockingQueueManager extends BaseManager {
                 }
             }
         });
-        ClusterService.get().registerPacketProcessor(OP_B_OFFER, new PacketProcessor() {
+        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_OFFER, new PacketProcessor() {
             public void process(Packet packet) {
                 handleOffer(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(OP_B_BACKUP_ADD, new PacketProcessor() {
+        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_BACKUP_ADD, new PacketProcessor() {
             public void process(Packet packet) {
                 handleBackup(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(OP_B_BACKUP_REMOVE, new PacketProcessor() {
+        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_BACKUP_REMOVE, new PacketProcessor() {
             public void process(Packet packet) {
                 handleBackup(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(OP_B_SIZE, new PacketProcessor() {
+        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_SIZE, new PacketProcessor() {
             public void process(Packet packet) {
                 handleSize(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(OP_B_PEEK, new PacketProcessor() {
+        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_PEEK, new PacketProcessor() {
             public void process(Packet packet) {
                 handlePoll(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(OP_B_READ, new PacketProcessor() {
+        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_READ, new PacketProcessor() {
             public void process(Packet packet) {
                 handleRead(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(OP_B_REMOVE, new PacketProcessor() {
+        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_REMOVE, new PacketProcessor() {
             public void process(Packet packet) {
                 handleRemove(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(OP_B_TXN_BACKUP_POLL, new PacketProcessor() {
+        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_TXN_BACKUP_POLL, new PacketProcessor() {
             public void process(Packet packet) {
                 handleTxnBackupPoll(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(OP_B_TXN_COMMIT, new PacketProcessor() {
+        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_TXN_COMMIT, new PacketProcessor() {
             public void process(Packet packet) {
                 handleTxnCommit(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(OP_B_ADD_BLOCK, new PacketProcessor() {
+        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_ADD_BLOCK, new PacketProcessor() {
             public void process(Packet packet) {
                 handleAddBlock(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(OP_B_REMOVE_BLOCK, new PacketProcessor() {
+        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_REMOVE_BLOCK, new PacketProcessor() {
             public void process(Packet packet) {
                 handleRemoveBlock(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(OP_B_FULL_BLOCK, new PacketProcessor() {
+        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_FULL_BLOCK, new PacketProcessor() {
             public void process(Packet packet) {
                 handleFullBlock(packet);
             }
@@ -351,10 +350,10 @@ public class BlockingQueueManager extends BaseManager {
             String name = packet.name;
             int blockId = packet.blockId;
             Q q = getQ(name);
-            if (packet.operation == OP_B_BACKUP_ADD) {
+            if (packet.operation == ClusterOperation.BLOCKING_QUEUE_BACKUP_ADD) {
                 Data data = doTake(packet.value);
                 q.doBackup(true, data, blockId, (int) packet.longValue);
-            } else if (packet.operation == OP_B_BACKUP_REMOVE) {
+            } else if (packet.operation == ClusterOperation.BLOCKING_QUEUE_BACKUP_REMOVE) {
                 q.doBackup(false, null, blockId, 0);
             }
         } catch (Exception e) {
@@ -525,8 +524,8 @@ public class BlockingQueueManager extends BaseManager {
         volatile long txnId = -1;
         String name = null;
 
-        public int getOperation() {
-            return OP_B_TXN_COMMIT;
+        public ClusterOperation getOperation() {
+            return ClusterOperation.BLOCKING_QUEUE_TXN_COMMIT;
         }
 
         public void commitPoll(String name) {
@@ -638,8 +637,8 @@ public class BlockingQueueManager extends BaseManager {
             }
         }
 
-        public int getOperation() {
-            return OP_B_SIZE;
+        public ClusterOperation getOperation() {
+            return ClusterOperation.BLOCKING_QUEUE_SIZE;
         }
     }
 
@@ -794,8 +793,8 @@ public class BlockingQueueManager extends BaseManager {
             }
         }
 
-        public int getOperation() {
-            return OP_B_REMOVE;
+        public ClusterOperation getOperation() {
+            return ClusterOperation.BLOCKING_QUEUE_REMOVE;
         }
 
     }
@@ -870,8 +869,8 @@ public class BlockingQueueManager extends BaseManager {
             }
         }
 
-        public int getOperation() {
-            return OP_B_READ;
+        public ClusterOperation getOperation() {
+            return ClusterOperation.BLOCKING_QUEUE_READ;
         }
 
     }
@@ -881,12 +880,12 @@ public class BlockingQueueManager extends BaseManager {
         int doCount = 1;
 
         public boolean offer(String name, Object value, long timeout, long txnId) {
-            return booleanCall(OP_B_OFFER, name, null, value, timeout, txnId, -1);
+            return booleanCall(ClusterOperation.BLOCKING_QUEUE_OFFER, name, null, value, timeout, txnId, -1);
         }
 
         @Override
         void handleNoneRedoResponse(Packet packet) {
-            if (request.operation == OP_B_OFFER
+            if (request.operation == ClusterOperation.BLOCKING_QUEUE_OFFER
                     && packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
                 if (!zeroBackup) {
                     if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(
@@ -950,11 +949,11 @@ public class BlockingQueueManager extends BaseManager {
     class Poll extends TargetAwareOp {
 
         public Object peek(String name) {
-            return objectCall(OP_B_PEEK, name, null, null, 0, -1, -1);
+            return objectCall(ClusterOperation.BLOCKING_QUEUE_PEEK, name, null, null, 0, -1, -1);
         }
 
         public Object poll(String name, long timeout) {
-            return objectCall(OP_B_POLL, name, null, null, timeout, -1, -1);
+            return objectCall(ClusterOperation.BLOCKING_QUEUE_POLL, name, null, null, timeout, -1, -1);
         }
 
         @Override
@@ -987,7 +986,7 @@ public class BlockingQueueManager extends BaseManager {
 
         @Override
         void handleNoneRedoResponse(Packet packet) {
-            if (request.operation == OP_B_POLL
+            if (request.operation == ClusterOperation.BLOCKING_QUEUE_POLL
                     && packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
                 if (!zeroBackup) {
                     if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(
@@ -1061,7 +1060,7 @@ public class BlockingQueueManager extends BaseManager {
             return;
         }
         Data value = null;
-        if (req.operation == OP_B_PEEK) {
+        if (req.operation == ClusterOperation.BLOCKING_QUEUE_PEEK) {
             value = q.peek();
         } else {
             value = q.poll(req);
@@ -1076,9 +1075,9 @@ public class BlockingQueueManager extends BaseManager {
 
     public void sendAddBlockMessageToOthers(String name, Address addAddress, int blockId, int fullBlockId, Address except,
                                             boolean add) {
-        int operation = OP_B_ADD_BLOCK;
+        ClusterOperation operation = ClusterOperation.BLOCKING_QUEUE_ADD_BLOCK;
         if (!add) {
-            operation = OP_B_REMOVE_BLOCK;
+            operation = ClusterOperation.BLOCKING_QUEUE_REMOVE_BLOCK;
         }
         if (lsMembers.size() > 1) {
             int addBlockId = -1;
@@ -1105,7 +1104,7 @@ public class BlockingQueueManager extends BaseManager {
     public void sendFullMessage(Block block) {
         try {
             Packet packet = ThreadContext.get().getPacketPool().obtain();
-            packet.set(block.name, OP_B_FULL_BLOCK, null, null);
+            packet.set(block.name, ClusterOperation.BLOCKING_QUEUE_FULL_BLOCK, null, null);
             packet.blockId = block.blockId;
             Address master = getMasterAddress();
             boolean sent = send(packet, master);
@@ -1492,7 +1491,7 @@ public class BlockingQueueManager extends BaseManager {
 
         boolean sendTxnBackup(Address address, Data value, long txnId) {
             if (zeroBackup) return true;
-            Packet packet = obtainPacket(name, null, value, OP_B_TXN_BACKUP_POLL, 0);
+            Packet packet = obtainPacket(name, null, value, ClusterOperation.BLOCKING_QUEUE_TXN_BACKUP_POLL, 0);
             packet.txnId = txnId;
             boolean sent = send(packet, address);
             if (!sent) {
@@ -1510,9 +1509,9 @@ public class BlockingQueueManager extends BaseManager {
                 if (getNextMemberAfter(thisAddress, true, 1).getAddress().equals(packetoker)) {
                     return true;
                 }
-                int operation = OP_B_BACKUP_REMOVE;
+                ClusterOperation operation = ClusterOperation.BLOCKING_QUEUE_BACKUP_REMOVE;
                 if (add) {
-                    operation = OP_B_BACKUP_ADD;
+                    operation = ClusterOperation.BLOCKING_QUEUE_BACKUP_ADD;
                     data = doHardCopy(data);
                 }
                 Packet packet = obtainPacket(name, null, data, operation, 0);
