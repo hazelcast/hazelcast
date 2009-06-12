@@ -23,8 +23,8 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
-import com.hazelcast.impl.cluster.ClusterManager;
-import com.hazelcast.impl.cluster.ClusterService;
+import com.hazelcast.cluster.ClusterManager;
+import com.hazelcast.cluster.ClusterService;
 
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;

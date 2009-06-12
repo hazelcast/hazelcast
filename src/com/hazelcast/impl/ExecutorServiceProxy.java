@@ -19,7 +19,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.impl.BaseManager.Processable;
-import com.hazelcast.impl.cluster.ClusterService;
+import com.hazelcast.cluster.ClusterService;
 
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TIMEOUT;
 

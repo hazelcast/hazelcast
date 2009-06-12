@@ -19,9 +19,9 @@ package com.hazelcast.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
-import com.hazelcast.impl.cluster.ClusterManager;
-import com.hazelcast.impl.cluster.ClusterService;
-import com.hazelcast.impl.cluster.ClusterImpl.ClusterMember;
+import com.hazelcast.cluster.ClusterManager;
+import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.cluster.ClusterImpl.ClusterMember;
 
 import static com.hazelcast.impl.Constants.Objects.*;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TIMEOUT;

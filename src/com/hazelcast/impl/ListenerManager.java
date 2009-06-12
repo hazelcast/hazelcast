@@ -22,7 +22,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.MessageListener;
 
-import com.hazelcast.impl.cluster.ClusterService;
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.nio.*;
 
 import java.util.Iterator;
