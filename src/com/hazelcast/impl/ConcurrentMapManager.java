@@ -31,7 +31,8 @@ import com.hazelcast.cluster.ClusterService;
 
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
-import static com.hazelcast.impl.SortedHashMap.OrderingType;
+import static com.hazelcast.collection.SortedHashMap.OrderingType;
+import com.hazelcast.collection.SortedHashMap;
 import static com.hazelcast.impl.BaseManager.ClusterOperation.*;
 import com.hazelcast.nio.Address;
 import static com.hazelcast.nio.BufferUtil.*;

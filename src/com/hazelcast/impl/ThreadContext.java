@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
+import com.hazelcast.collection.SimpleBoundedQueue;
 
 
 public final class ThreadContext {

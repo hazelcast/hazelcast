@@ -22,7 +22,7 @@ import com.hazelcast.impl.Build;
 import com.hazelcast.impl.Constants;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.Node;
-import com.hazelcast.impl.SimpleBoundedQueue;
+import com.hazelcast.collection.SimpleBoundedQueue;
 import com.hazelcast.impl.BaseManager.PacketProcessor;
 import com.hazelcast.impl.BaseManager.Processable;
 import com.hazelcast.nio.Packet;
