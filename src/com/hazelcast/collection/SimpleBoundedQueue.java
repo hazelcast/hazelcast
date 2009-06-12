@@ -15,7 +15,7 @@
  *
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.collection;
 
 import java.util.AbstractQueue;
 import java.util.Iterator;

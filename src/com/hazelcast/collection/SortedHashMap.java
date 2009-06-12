@@ -1,4 +1,4 @@
-package com.hazelcast.impl;
+package com.hazelcast.collection;
 
 import java.util.*;
 
@@ -16,7 +16,7 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
     final float loadFactor;
     final OrderingType orderingType;
 
-    enum OrderingType {
+    public enum OrderingType {
         NONE, LRU, LFU
     }
 
@@ -277,9 +277,8 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
         }
 
         public V setValue(V value) {
-            V old = value;
             this.value = value;
-            return old;
+            return value;
         }
 
         public boolean equals(Object o) {
@@ -331,6 +330,7 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
          * of a pre-existing entry is read by Map.get or modified by Map.set.
          * If the enclosing Map is access-ordered, it moves the entry
          * to the end of the list; otherwise, it does nothing.
+         * @param lm
          */
         void recordAccess(SortedHashMap<K, V> lm) {
             touch(lm, lm.orderingType);
