@@ -46,18 +46,6 @@ public interface Constants {
         public static final long DEFAULT_TIMEOUT = 1000 * 1000;
     }
 
-    interface MapTypes {
-
-        public final static byte MAP_TYPE_MAP = 1;
-
-        public final static byte MAP_TYPE_SET = 2;
-
-        public final static byte MAP_TYPE_LIST = 3;
-
-        public final static byte MAP_TYPE_MULTI_MAP = 4;
-
-    }
-
     public interface ResponseTypes {
 
         public static final byte RESPONSE_NONE = 2;
