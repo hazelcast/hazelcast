@@ -21,8 +21,6 @@ import com.hazelcast.core.DistributedTask;
 import com.hazelcast.impl.BaseManager.Processable;
 import com.hazelcast.cluster.ClusterService;
 
-import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TIMEOUT;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
@@ -69,7 +67,7 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
 
     public <T> Future<T> submit(Callable<T> task) {
         DistributedTask dtask = new DistributedTask(task);
-        Processable action = ExecutorManager.get().createNewExecutionAction(dtask, DEFAULT_TIMEOUT);
+        Processable action = ExecutorManager.get().createNewExecutionAction(dtask);
         ClusterService clusterService = ClusterService.get();
         clusterService.enqueueAndReturn(action);
         return dtask;
@@ -82,7 +80,7 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
         } else {
             dtask = new DistributedTask(task, null);
         }
-        Processable action = ExecutorManager.get().createNewExecutionAction(dtask, DEFAULT_TIMEOUT);
+        Processable action = ExecutorManager.get().createNewExecutionAction(dtask);
         ClusterService clusterService = ClusterService.get();
         clusterService.enqueueAndReturn(action);
         return dtask;
@@ -95,7 +93,7 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
         } else {
             dtask = new DistributedTask(task, result);
         }
-        Processable action = ExecutorManager.get().createNewExecutionAction(dtask, DEFAULT_TIMEOUT);
+        Processable action = ExecutorManager.get().createNewExecutionAction(dtask);
         ClusterService clusterService = ClusterService.get();
         clusterService.enqueueAndReturn(action);
         return dtask;
@@ -108,7 +106,7 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
         } else {
             dtask = new DistributedTask(command, null);
         }
-        Processable action = ExecutorManager.get().createNewExecutionAction(dtask, DEFAULT_TIMEOUT);
+        Processable action = ExecutorManager.get().createNewExecutionAction(dtask);
         ClusterService.get().enqueueAndReturn(action);
     }
 }

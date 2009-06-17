@@ -87,7 +87,7 @@ public abstract class BaseManager {
         ADD_LISTENER(51),
         REMOVE_LISTENER(52),
         EVENT(53),
-        REMOTELY_EXECUTION(81),
+        REMOTELY_EXECUTE(81),
         STREAM(82),
         BLOCKING_QUEUE_POLL(101),
         BLOCKING_QUEUE_OFFER(102),
@@ -161,7 +161,7 @@ public abstract class BaseManager {
                 case 51: return ADD_LISTENER;
                 case 52: return REMOVE_LISTENER;
                 case 53: return EVENT;
-                case 81: return REMOTELY_EXECUTION;
+                case 81: return REMOTELY_EXECUTE;
                 case 82: return STREAM;
                 case 101: return BLOCKING_QUEUE_POLL;
                 case 102: return BLOCKING_QUEUE_OFFER;

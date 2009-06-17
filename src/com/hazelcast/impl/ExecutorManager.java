@@ -56,7 +56,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
     private boolean started = false;
 
     private ExecutorManager() {
-        ClusterService.get().registerPacketProcessor(ClusterOperation.REMOTELY_EXECUTION,
+        ClusterService.get().registerPacketProcessor(ClusterOperation.REMOTELY_EXECUTE,
                 new PacketProcessor() {
                     public void process(Packet packet) {
                         handleRemoteExecution(packet);
@@ -115,7 +115,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new ExecutorThreadFactory());
         Node.get().getClusterImpl().addMembershipListener(this);
         for (int i = 0; i < 100; i++) {
-            executionIds.add(Long.valueOf(i));
+            executionIds.add((long) i);
         }
         started = true;
     }
@@ -149,9 +149,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         public Boolean call() {
             final SimpleExecution simpleExecution = ExecutorManager.get().mapRemoteExecutions
                     .remove(executionId);
-            if (simpleExecution == null)
-                return false;
-            return simpleExecution.cancel(mayInterruptIfRunning);
+            return simpleExecution != null && simpleExecution.cancel(mayInterruptIfRunning);
         }
 
         public void readData(final DataInput in) throws IOException {
@@ -195,7 +193,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
 
         public DistributedExecutorAction(final Long executionId,
                                          final DistributedTask<T> distributedFutureTask, final Data task,
-                                         final Object callable, final long timeout) {
+                                         final Object callable) {
             if (executionId == null)
                 throw new RuntimeException("executionId cannot be null!");
             this.executionId = executionId;
@@ -221,7 +219,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                     final Callable<Boolean> callCancel = new CancelationTask(executionId
                             , thisAddress, mayInterruptIfRunning);
                     if (innerFutureTask.getMembers() == null) {
-                        DistributedTask<Boolean> task = null;
+                        DistributedTask<Boolean> task;
                         if (innerFutureTask.getKey() != null) {
                             task = new DistributedTask<Boolean>(callCancel, innerFutureTask
                                     .getKey());
@@ -330,7 +328,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 } else {
                     localOnly = false;
                     final Packet packet = obtainPacket("m:exe", null, task,
-                            ClusterOperation.REMOTELY_EXECUTION, DEFAULT_TIMEOUT);
+                            ClusterOperation.REMOTELY_EXECUTE, DEFAULT_TIMEOUT);
                     packet.timeout = DEFAULT_TIMEOUT;
                     packet.longValue = executionId;
                     final boolean sent = send(packet, target);
@@ -347,7 +345,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                     } else {
                         localOnly = false;
                         final Packet packet = obtainPacket("m:exe", null, task,
-                                ClusterOperation.REMOTELY_EXECUTION, DEFAULT_TIMEOUT);
+                                ClusterOperation.REMOTELY_EXECUTE, DEFAULT_TIMEOUT);
                         packet.timeout = DEFAULT_TIMEOUT;
                         packet.longValue = executionId;
                         final boolean sent = send(packet, ((ClusterMember) member).getAddress());
@@ -491,9 +489,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                     return false;
             } else if (!address.equals(other.address))
                 return false;
-            if (executionId != other.executionId)
-                return false;
-            return true;
+            return executionId == other.executionId;
         }
 
         @Override
@@ -625,18 +621,17 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         }
     }
 
-    public Processable createNewExecutionAction(final DistributedTask task, final long timeout) {
+    public Processable createNewExecutionAction(final DistributedTask task) {
         if (task == null)
             throw new RuntimeException("task cannot be null");
 
         try {
             final Long executionId = executionIds.take();
-            final DistributedTask dtask = task;
-            final InnerFutureTask inner = (InnerFutureTask) dtask.getInner();
+            final InnerFutureTask inner = (InnerFutureTask) task.getInner();
             final Callable callable = inner.getCallable();
             final Data callableData = ThreadContext.get().toData(callable);
             final DistributedExecutorAction action = new DistributedExecutorAction(executionId,
-                    dtask, callableData, callable, timeout);
+                    task, callableData, callable);
             inner.setExecutionManagerCallback(action);
             return action;
         } catch (final Exception e) {
