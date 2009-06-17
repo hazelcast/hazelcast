@@ -76,146 +76,6 @@ public abstract class BaseManager {
         }
     }
 
-    public enum ClusterOperation {
-        NONE(-1),
-        RESPONSE(1),
-        HEARTBEAT(2),
-        REMOTELY_PROCESS(3),
-        REMOTELY_PROCESS_AND_RESPOND(4),
-        REMOTELY_CALLABLE_BOOLEAN(5),
-        REMOTELY_CALLABLE_OBJECT(6),
-        ADD_LISTENER(51),
-        REMOVE_LISTENER(52),
-        EVENT(53),
-        REMOTELY_EXECUTE(81),
-        STREAM(82),
-        BLOCKING_QUEUE_POLL(101),
-        BLOCKING_QUEUE_OFFER(102),
-        BLOCKING_QUEUE_ADD_BLOCK(103),
-        BLOCKING_QUEUE_REMOVE_BLOCK(104),
-        BLOCKING_QUEUE_FULL_BLOCK(105),
-        BLOCKING_QUEUE_BACKUP_ADD(107),
-        BLOCKING_QUEUE_BACKUP_REMOVE(108),
-        BLOCKING_QUEUE_SIZE(109),
-        BLOCKING_QUEUE_PEEK(110),
-        BLOCKING_QUEUE_READ(111),
-        BLOCKING_QUEUE_REMOVE(112),
-        BLOCKING_QUEUE_TXN_BACKUP_POLL(113),
-        BLOCKING_QUEUE_TXN_COMMIT(114),
-        BLOCKING_QUEUE_PUBLISH(115),
-        BLOCKING_QUEUE_ADD_TOPIC_LISTENER(116),
-        CONCURRENT_MAP_PUT(201),
-        CONCURRENT_MAP_GET(202),
-        CONCURRENT_MAP_REMOVE(203),
-        CONCURRENT_MAP_REMOVE_ITEM(204),
-        CONCURRENT_MAP_GET_MAP_ENTRY(205),
-        CONCURRENT_MAP_BLOCK_INFO(206),
-        CONCURRENT_MAP_SIZE(207),
-        CONCURRENT_MAP_CONTAINS(208),
-        CONCURRENT_MAP_ITERATE_ENTRIES(209),
-        CONCURRENT_MAP_ITERATE_KEYS(210),
-        CONCURRENT_MAP_ITERATE_VALUES(211),
-        CONCURRENT_MAP_LOCK(212),
-        CONCURRENT_MAP_UNLOCK(213),
-        CONCURRENT_MAP_BLOCKS(214),
-        CONCURRENT_MAP_MIGRATION_COMPLETE(216),
-        CONCURRENT_MAP_PUT_IF_ABSENT(219),
-        CONCURRENT_MAP_REMOVE_IF_SAME(220),
-        CONCURRENT_MAP_REPLACE_IF_NOT_NULL(221),
-        CONCURRENT_MAP_REPLACE_IF_SAME(222),
-        CONCURRENT_MAP_LOCK_RETURN_OLD(223),
-        CONCURRENT_MAP_READ(224),
-        CONCURRENT_MAP_ADD_TO_LIST(225),
-        CONCURRENT_MAP_ADD_TO_SET(226),
-        CONCURRENT_MAP_MIGRATE_RECORD(227),
-        CONCURRENT_MAP_PUT_MULTI(228),
-        CONCURRENT_MAP_REMOVE_MULTI(229),
-        CONCURRENT_MAP_VALUE_COUNT(230),
-        CONCURRENT_MAP_BACKUP_PUT(231),
-        CONCURRENT_MAP_BACKUP_REMOVE(233),
-        CONCURRENT_MAP_BACKUP_REMOVE_MULTI(234),
-        CONCURRENT_MAP_BACKUP_LOCK(235),
-        CONCURRENT_MAP_BACKUP_ADD(236),
-        CONCURRENT_MAP_EVICT(237),
-        ;
-
-        private int value;
-
-        ClusterOperation(int op){
-            value = op;
-        }
-
-        public int getValue(){
-            return value;
-        }
-
-        public static ClusterOperation create(int operation){
-            switch(operation){
-                case -1: return NONE;
-                case 1: return RESPONSE;
-                case 2: return HEARTBEAT;
-                case 3: return REMOTELY_PROCESS;
-                case 4: return REMOTELY_PROCESS_AND_RESPOND;
-                case 5: return REMOTELY_CALLABLE_BOOLEAN;
-                case 6: return REMOTELY_CALLABLE_OBJECT;
-                case 51: return ADD_LISTENER;
-                case 52: return REMOVE_LISTENER;
-                case 53: return EVENT;
-                case 81: return REMOTELY_EXECUTE;
-                case 82: return STREAM;
-                case 101: return BLOCKING_QUEUE_POLL;
-                case 102: return BLOCKING_QUEUE_OFFER;
-                case 103: return BLOCKING_QUEUE_ADD_BLOCK;
-                case 104: return BLOCKING_QUEUE_REMOVE_BLOCK;
-                case 105: return BLOCKING_QUEUE_FULL_BLOCK;
-                case 107: return BLOCKING_QUEUE_BACKUP_ADD;
-                case 108: return BLOCKING_QUEUE_BACKUP_REMOVE;
-                case 109: return BLOCKING_QUEUE_SIZE;
-                case 110: return BLOCKING_QUEUE_PEEK;
-                case 111: return BLOCKING_QUEUE_READ;
-                case 112: return BLOCKING_QUEUE_REMOVE;
-                case 113: return BLOCKING_QUEUE_TXN_BACKUP_POLL;
-                case 114: return BLOCKING_QUEUE_TXN_COMMIT;
-                case 115: return BLOCKING_QUEUE_PUBLISH;
-                case 116: return BLOCKING_QUEUE_ADD_TOPIC_LISTENER;
-                case 201: return CONCURRENT_MAP_PUT;
-                case 202: return CONCURRENT_MAP_GET;
-                case 203: return CONCURRENT_MAP_REMOVE;
-                case 204: return CONCURRENT_MAP_REMOVE_ITEM;
-                case 205: return CONCURRENT_MAP_GET_MAP_ENTRY;
-                case 206: return CONCURRENT_MAP_BLOCK_INFO;
-                case 207: return CONCURRENT_MAP_SIZE;
-                case 208: return CONCURRENT_MAP_CONTAINS;
-                case 209: return CONCURRENT_MAP_ITERATE_ENTRIES;
-                case 210: return CONCURRENT_MAP_ITERATE_KEYS;
-                case 211: return CONCURRENT_MAP_ITERATE_VALUES;
-                case 212: return CONCURRENT_MAP_LOCK;
-                case 213: return CONCURRENT_MAP_UNLOCK;
-                case 214: return CONCURRENT_MAP_BLOCKS;
-                case 216: return CONCURRENT_MAP_MIGRATION_COMPLETE;
-                case 219: return CONCURRENT_MAP_PUT_IF_ABSENT;
-                case 220: return CONCURRENT_MAP_REMOVE_IF_SAME;
-                case 221: return CONCURRENT_MAP_REPLACE_IF_NOT_NULL;
-                case 222: return CONCURRENT_MAP_REPLACE_IF_SAME;
-                case 223: return CONCURRENT_MAP_LOCK_RETURN_OLD;
-                case 224: return CONCURRENT_MAP_READ;
-                case 225: return CONCURRENT_MAP_ADD_TO_LIST;
-                case 226: return CONCURRENT_MAP_ADD_TO_SET;
-                case 227: return CONCURRENT_MAP_MIGRATE_RECORD;
-                case 228: return CONCURRENT_MAP_PUT_MULTI;
-                case 229: return CONCURRENT_MAP_REMOVE_MULTI;
-                case 230: return CONCURRENT_MAP_VALUE_COUNT;
-                case 231: return CONCURRENT_MAP_BACKUP_PUT;
-                case 233: return CONCURRENT_MAP_BACKUP_REMOVE;
-                case 234: return CONCURRENT_MAP_BACKUP_REMOVE_MULTI;
-                case 235: return CONCURRENT_MAP_BACKUP_LOCK;
-                case 236: return CONCURRENT_MAP_BACKUP_ADD;
-                case 237: return CONCURRENT_MAP_EVICT;
-                default: return null;
-            }
-        }
-    }
-
     protected void init() {
         thisAddress = Node.get().address;
         thisMember = Node.get().localMember;
@@ -249,20 +109,11 @@ public abstract class BaseManager {
             if (getClass() != obj.getClass())
                 return false;
             final ScheduledAction other = (ScheduledAction) obj;
-            if (!getOuterType().equals(other.getOuterType()))
-                return false;
-            if (id != other.id)
-                return false;
-            return true;
+            return getOuterType().equals(other.getOuterType()) && id == other.id;
         }
 
         public boolean expired() {
-            if (!valid)
-                return true;
-            if (timeout == -1)
-                return false;
-            else
-                return System.currentTimeMillis() >= getExpireTime();
+            return !valid || timeout != -1 && System.currentTimeMillis() >= getExpireTime();
         }
 
         public long getExpireTime() {
@@ -535,186 +386,20 @@ public abstract class BaseManager {
         }
     }
 
-    class Request {
-        int redoCount = 0;
 
-        boolean local = true;
-
-        ClusterOperation operation;
-
-        volatile String name = null;
-
-        volatile Data key = null;
-
-        volatile Data value = null;
-
-        int blockId = -1;
-
-        volatile long timeout = -1;
-
-        long txnId = -1;
-
-        Address caller = null;
-
-        int lockThreadId = -1;
-
-        Address lockAddress = null;
-
-        int lockCount = 0;
-
-        long eventId = -1;
-
-        long longValue = -1;
-
-        long recordId = -1;
-
-        long version = -1;
-
-        Object attachment = null;
-
-        Object response = null;
-
-        boolean scheduled = false;
-
-        public boolean hasEnoughTimeToSchedule() {
-            return timeout == -1 || timeout > 100;
-        }
-
-        public void reset() {
-            if (this.key != null) {
-                this.key.setNoData();
-            }
-            if (this.value != null) {
-                this.value.setNoData();
-            }
-            this.local = true;
-            this.operation = ClusterOperation.NONE;
-            this.name = null;
-            this.key = null;
-            this.value = null;
-            this.blockId = -1;
-            this.timeout = -1;
-            this.txnId = -1;
-            this.eventId = -1;
-            this.lockThreadId = -1;
-            this.lockAddress = null;
-            this.lockCount = 0;
-            this.caller = null;
-            this.longValue = -1;
-            this.response = null;
-            this.scheduled = false;
-            this.attachment = null;
-            this.recordId = -1;
-            this.version = -1;
-            this.redoCount = 0;
-        }
-
-        public void set(final boolean local, final ClusterOperation operation, final String name,
-                        final Data key, final Data value, final int blockId, final long timeout,
-                        final long txnId, final long eventId, final int lockThreadId,
-                        final Address lockAddress, final int lockCount, final Address caller,
-                        final long longValue, final long recordId, final long version) {
-            this.local = local;
-            this.operation = operation;
-            this.name = name;
-            this.key = key;
-            this.value = value;
-            this.blockId = blockId;
-            this.timeout = timeout;
-            this.txnId = txnId;
-            this.eventId = eventId;
-            this.lockThreadId = lockThreadId;
-            this.lockAddress = lockAddress;
-            this.lockCount = lockCount;
-            this.caller = caller;
-            this.longValue = longValue;
-            this.recordId = recordId;
-            this.version = version;
-        }
-
-
-        public void setFromRequest(Request req, boolean hardCopy) {
-            reset();
-            set(req.local, req.operation, req.name, null, null, req.blockId, req.timeout,
-                    req.txnId, req.eventId, req.lockThreadId, req.lockAddress, req.lockCount,
-                    req.caller, req.longValue, req.recordId, req.version);
-            if (hardCopy) {
-                key = doHardCopy(req.key);
-                value = doHardCopy(req.value);
-            } else {
-                key = req.key;
-                value = req.value;
-            }
-        }
-
-        public void setFromPacket(final Packet packet) {
-            reset();
-            set(false, packet.operation, packet.name, doTake(packet.key), doTake(packet.value),
-                    packet.blockId, packet.timeout, packet.txnId, packet.callId, packet.threadId,
-                    packet.lockAddress, packet.lockCount, packet.conn.getEndPoint(), packet.longValue,
-                    packet.recordId, packet.version);
-
-        }
-
-        public void setLocal(final ClusterOperation operation, final String name, final Data key,
-                             final Data value, final int blockId, final long timeout, final long recordId) {
-            reset();
-            set(true, operation, name, key, value, blockId, timeout, -1, -1, -1, thisAddress, 0,
-                    thisAddress, -1, recordId, -1);
-            this.txnId = ThreadContext.get().getTxnId();
-            this.lockThreadId = Thread.currentThread().hashCode();
-            this.caller = thisAddress;
-        }
-
-        public Request hardCopy() {
-            final Request copy = new Request();
-            Data newKey = doHardCopy(key);
-            Data newValue = doHardCopy(value);
-
-            copy.set(local, operation, name, newKey, newValue, blockId, timeout, txnId, eventId,
-                    lockThreadId, lockAddress, lockCount, caller, longValue, recordId, version);
-            copy.attachment = attachment;
-            copy.response = response;
-            copy.scheduled = scheduled;
-            return copy;
-        }
-
-        public Packet toPacket() {
-            final Packet packet = obtainPacket();
-            packet.local = false;
-            packet.operation = operation;
-            packet.name = name;
-            if (key != null)
-                doHardCopy(key, packet.key);
-            if (value != null)
-                doHardCopy(value, packet.value);
-            packet.blockId = blockId;
-            packet.timeout = timeout;
-            packet.txnId = txnId;
-            packet.callId = eventId;
-            packet.threadId = lockThreadId;
-            packet.lockAddress = lockAddress;
-            packet.lockCount = lockCount;
-            packet.longValue = longValue;
-            packet.recordId = recordId;
-            packet.version = version;
-            return packet;
-        }
-
-    }
 
     public abstract class RequestBasedCall extends AbstractCall {
         final protected Request request = new Request();
 
         public boolean booleanCall(final ClusterOperation operation, final String name, final Object key,
-                                   final Object value, final long timeout, final long txnId, final long recordId) {
-            doOp(operation, name, key, value, timeout, txnId, recordId);
+                                   final Object value, final long timeout, final long recordId) {
+            doOp(operation, name, key, value, timeout, recordId);
             return getResultAsBoolean();
         }
 
         public void doOp(final ClusterOperation operation, final String name, final Object key,
-                         final Object value, final long timeout, final long txnId, final long recordId) {
-            setLocal(operation, name, key, value, timeout, txnId, recordId);
+                         final Object value, final long timeout, final long recordId) {
+            setLocal(operation, name, key, value, timeout, recordId);
             doOp();
         }
 
@@ -727,13 +412,7 @@ public abstract class BaseManager {
         public boolean getResultAsBoolean() {
             try {
                 final Object result = getResult();
-                if (result == OBJECT_NULL || result == null) {
-                    return false;
-                }
-                if (result == Boolean.TRUE)
-                    return true;
-                else
-                    return false;
+                return !(result == OBJECT_NULL || result == null) && result == Boolean.TRUE;
             } catch (final Throwable e) {
                 logger.log(Level.SEVERE, "getResultAsBoolean", e);
             } finally {
@@ -771,13 +450,13 @@ public abstract class BaseManager {
         }
 
         public Object objectCall(final ClusterOperation operation, final String name, final Object key,
-                                 final Object value, final long timeout, final long txnId, final long recordId) {
-            setLocal(operation, name, key, value, timeout, txnId, recordId);
+                                 final Object value, final long timeout, final long recordId) {
+            setLocal(operation, name, key, value, timeout, recordId);
             return objectCall();
         }
 
         public void setLocal(final ClusterOperation operation, final String name, final Object key,
-                             final Object value, final long timeout, final long txnId, final long recordId) {
+                             final Object value, final long timeout, final long recordId) {
             Data keyData = null;
             Data valueData = null;
             if (key != null) {
@@ -789,7 +468,7 @@ public abstract class BaseManager {
             if (value != null) {
                 valueData = toData(value);
             }
-            request.setLocal(operation, name, keyData, valueData, -1, timeout, recordId);
+            request.setLocal(operation, name, keyData, valueData, -1, timeout, recordId, thisAddress);
             request.attachment = this;
         }
 
@@ -960,7 +639,8 @@ public abstract class BaseManager {
 
         protected void invoke() {
             addCall(TargetAwareOp.this);
-            final Packet packet = request.toPacket();
+            final Packet packet = obtainPacket();
+            request.setPacket(packet);
             packet.callId = getId();
             final boolean sent = send(packet, target);
             if (!sent) {
@@ -1029,7 +709,6 @@ public abstract class BaseManager {
                             lsCalls.add(targetAwareOp);
                         }
                     }
-                    getResults:
                     for (TargetAwareOp call : lsCalls) {
                         result = call.getResultAsObject();
                         if (result == OBJECT_REDO) {
@@ -1038,7 +717,7 @@ public abstract class BaseManager {
                             return call();
                         } else {
                             if (!onResponse(result)) {
-                                break getResults;
+                                break;
                             }
                         }
                     }
@@ -1153,7 +832,8 @@ public abstract class BaseManager {
             final TargetAwareOp mop = (TargetAwareOp) request.attachment;
             mop.setResult(request.response);
         } else {
-            final Packet packet = request.toPacket();
+            final Packet packet = obtainPacket();
+            request.setPacket(packet);
             if (request.response == Boolean.TRUE) {
                 final boolean sent = sendResponse(packet, request.caller);
                 if (DEBUG) {
@@ -1170,7 +850,8 @@ public abstract class BaseManager {
             final TargetAwareOp mop = (TargetAwareOp) request.attachment;
             mop.setResult(request.response);
         } else {
-            final Packet packet = request.toPacket();
+            final Packet packet = obtainPacket();
+            request.setPacket(packet);
             final Object result = request.response;
             if (result != null) {
                 if (result instanceof Data) {
@@ -1412,7 +1093,7 @@ public abstract class BaseManager {
                       final Data eventValue, final Address from) {
         final EventTask eventTask = new EventTask(eventType, name, eventKey, eventValue);
 
-        int eventQueueIndex = -1;
+        int eventQueueIndex;
         if (eventKey != null) {
             eventQueueIndex = Math.abs(eventKey.hashCode()) % EVENT_QUEUE_COUNT;
         } else {
@@ -1582,19 +1263,11 @@ public abstract class BaseManager {
 
     final boolean send(final Packet packet, final Address address) {
         final Connection conn = ConnectionManager.get().getConnection(address);
-        if (conn != null && conn.live()) {
-            return writePacket(conn, packet);
-        } else {
-            return false;
-        }
+        return conn != null && conn.live() && writePacket(conn, packet);
     }
 
     protected final boolean send(final Packet packet, final Connection conn) {
-        if (conn != null && conn.live()) {
-            return writePacket(conn, packet);
-        } else {
-            return false;
-        }
+        return conn != null && conn.live() && writePacket(conn, packet);
     }
 
     protected final boolean sendOrReleasePacket(final Packet packet, final Connection conn) {
@@ -1607,7 +1280,7 @@ public abstract class BaseManager {
         return false;
     }
 
-    final private boolean writePacket(final Connection conn, final Packet packet) {
+    private boolean writePacket(final Connection conn, final Packet packet) {
         final MemberImpl memberImpl = getMember(conn.getEndPoint());
         if (memberImpl != null) {
             memberImpl.didWrite();

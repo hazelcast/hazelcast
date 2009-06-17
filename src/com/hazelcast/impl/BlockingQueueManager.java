@@ -880,7 +880,7 @@ public class BlockingQueueManager extends BaseManager {
         int doCount = 1;
 
         public boolean offer(String name, Object value, long timeout, long txnId) {
-            return booleanCall(ClusterOperation.BLOCKING_QUEUE_OFFER, name, null, value, timeout, txnId, -1);
+            return booleanCall(ClusterOperation.BLOCKING_QUEUE_OFFER, name, null, value, timeout, -1);
         }
 
         @Override
@@ -949,11 +949,11 @@ public class BlockingQueueManager extends BaseManager {
     class Poll extends TargetAwareOp {
 
         public Object peek(String name) {
-            return objectCall(ClusterOperation.BLOCKING_QUEUE_PEEK, name, null, null, 0, -1, -1);
+            return objectCall(ClusterOperation.BLOCKING_QUEUE_PEEK, name, null, null, 0, -1);
         }
 
         public Object poll(String name, long timeout) {
-            return objectCall(ClusterOperation.BLOCKING_QUEUE_POLL, name, null, null, timeout, -1, -1);
+            return objectCall(ClusterOperation.BLOCKING_QUEUE_POLL, name, null, null, timeout, -1);
         }
 
         @Override

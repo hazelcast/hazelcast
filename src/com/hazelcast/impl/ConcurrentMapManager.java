@@ -33,7 +33,7 @@ import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
 import static com.hazelcast.collection.SortedHashMap.OrderingType;
 import com.hazelcast.collection.SortedHashMap;
-import static com.hazelcast.impl.BaseManager.ClusterOperation.*;
+import static com.hazelcast.impl.ClusterOperation.*;
 import com.hazelcast.nio.Address;
 import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.Data;
@@ -414,7 +414,7 @@ public final class ConcurrentMapManager extends BaseManager {
         Data oldValue = null;
 
         public boolean unlock(String name, Object key, long timeout, long txnId) {
-            boolean unlocked = booleanCall(ClusterOperation.CONCURRENT_MAP_UNLOCK, name, key, null, timeout, txnId, -1);
+            boolean unlocked = booleanCall(ClusterOperation.CONCURRENT_MAP_UNLOCK, name, key, null, timeout, -1);
             if (unlocked) {
                 backup(CONCURRENT_MAP_BACKUP_LOCK);
             }
@@ -422,7 +422,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public boolean lock(String name, Object key, long timeout, long txnId) {
-            boolean locked = booleanCall(ClusterOperation.CONCURRENT_MAP_LOCK, name, key, null, timeout, txnId, -1);
+            boolean locked = booleanCall(ClusterOperation.CONCURRENT_MAP_LOCK, name, key, null, timeout, -1);
             if (locked) {
                 backup(CONCURRENT_MAP_BACKUP_LOCK);
             }
@@ -431,7 +431,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public boolean lockAndReturnOld(String name, Object key, long timeout, long txnId) {
             oldValue = null;
-            boolean locked = booleanCall(ClusterOperation.CONCURRENT_MAP_LOCK_RETURN_OLD, name, key, null, timeout, txnId,
+            boolean locked = booleanCall(ClusterOperation.CONCURRENT_MAP_LOCK_RETURN_OLD, name, key, null, timeout,
                     -1);
             if (locked) {
                 backup(CONCURRENT_MAP_BACKUP_LOCK);
@@ -460,11 +460,11 @@ public final class ConcurrentMapManager extends BaseManager {
     class MContainsKey extends MBooleanOp {
 
         public boolean containsEntry(String name, Object key, Object value, long txnId) {
-            return booleanCall(ClusterOperation.CONCURRENT_MAP_CONTAINS, name, key, value, 0, txnId, -1);
+            return booleanCall(ClusterOperation.CONCURRENT_MAP_CONTAINS, name, key, value, 0, -1);
         }
 
         public boolean containsKey(String name, Object key, long txnId) {
-            return booleanCall(ClusterOperation.CONCURRENT_MAP_CONTAINS, name, key, null, 0, txnId, -1);
+            return booleanCall(ClusterOperation.CONCURRENT_MAP_CONTAINS, name, key, null, 0, -1);
         }
 
         @Override
@@ -478,7 +478,7 @@ public final class ConcurrentMapManager extends BaseManager {
     class MEvict extends MBackupAwareOp {
         public boolean evict(String name, Object key) {
             Data k = (key instanceof Data) ? (Data) key : toData(key);
-            request.setLocal(ClusterOperation.CONCURRENT_MAP_EVICT, name, k, null, 0, -1, -1);
+            request.setLocal(ClusterOperation.CONCURRENT_MAP_EVICT, name, k, null, 0, -1, -1, thisAddress);
             doOp();
             boolean result = getResultAsBoolean();
             if (result) {
@@ -559,7 +559,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class MGetMapEntry extends MTargetAwareOp {
         public MapEntry get(String name, Object key) {
-            CMapEntry mapEntry = (CMapEntry) objectCall(ClusterOperation.CONCURRENT_MAP_GET_MAP_ENTRY, name, key, null, 0, -1, -1);
+            CMapEntry mapEntry = (CMapEntry) objectCall(ClusterOperation.CONCURRENT_MAP_GET_MAP_ENTRY, name, key, null, 0, -1);
             mapEntry.set(name, key);
             return mapEntry;
         }
@@ -581,7 +581,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     return txn.get(name, key);
                 }
             }
-            return objectCall(ClusterOperation.CONCURRENT_MAP_GET, name, key, null, timeout, txnId, -1);
+            return objectCall(ClusterOperation.CONCURRENT_MAP_GET, name, key, null, timeout, -1);
         }
 
         @Override
@@ -594,7 +594,7 @@ public final class ConcurrentMapManager extends BaseManager {
     
     class MValueCount extends MTargetAwareOp {
         public Object count(String name, Object key, long timeout, long txnId) {
-            return objectCall(ClusterOperation.CONCURRENT_MAP_VALUE_COUNT, name, key, null, timeout, txnId, -1);
+            return objectCall(ClusterOperation.CONCURRENT_MAP_VALUE_COUNT, name, key, null, timeout, -1);
         }
 
         @Override
@@ -642,7 +642,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
                 return false;
             } else {
-                boolean removed = booleanCall(ClusterOperation.CONCURRENT_MAP_REMOVE_ITEM, name, key, value, 0, -1, -1);
+                boolean removed = booleanCall(ClusterOperation.CONCURRENT_MAP_REMOVE_ITEM, name, key, value, 0, -1);
                 if (removed) {
                     backup(ClusterOperation.CONCURRENT_MAP_BACKUP_REMOVE);
                 }
@@ -701,7 +701,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
                 return null;
             } else {
-                Object oldValue = objectCall(operation, name, key, value, timeout, txnId, -1);
+                Object oldValue = objectCall(operation, name, key, value, timeout, -1);
                 if (oldValue != null) {
                     backup(ClusterOperation.CONCURRENT_MAP_BACKUP_REMOVE);
                 }
@@ -731,14 +731,14 @@ public final class ConcurrentMapManager extends BaseManager {
     class MAdd extends MBackupAwareOp {
         boolean addToList(String name, Object value) {
             Data key = ThreadContext.get().toData(value);
-            boolean result = booleanCall(ClusterOperation.CONCURRENT_MAP_ADD_TO_LIST, name, key, null, 0, -1, -1);
+            boolean result = booleanCall(ClusterOperation.CONCURRENT_MAP_ADD_TO_LIST, name, key, null, 0, -1);
             backup(ClusterOperation.CONCURRENT_MAP_BACKUP_ADD);
             return result;
         }
 
         boolean addToSet(String name, Object value) {
             Data key = ThreadContext.get().toData(value);
-            boolean result = booleanCall(ClusterOperation.CONCURRENT_MAP_ADD_TO_SET, name, key, null, 0, -1, -1);
+            boolean result = booleanCall(ClusterOperation.CONCURRENT_MAP_ADD_TO_SET, name, key, null, 0, -1);
             backup(ClusterOperation.CONCURRENT_MAP_BACKUP_ADD);
             return result;
         }
@@ -803,7 +803,7 @@ public final class ConcurrentMapManager extends BaseManager {
     class MPutMulti extends MBackupAwareOp {
 
         boolean put(String name, Object key, Object value) {
-            boolean result = booleanCall(ClusterOperation.CONCURRENT_MAP_PUT_MULTI, name, key, value, 0, -1, -1);
+            boolean result = booleanCall(ClusterOperation.CONCURRENT_MAP_PUT_MULTI, name, key, value, 0, -1);
             if (result) {
                 backup(ClusterOperation.CONCURRENT_MAP_BACKUP_PUT);
             }
@@ -868,7 +868,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
                 return null;
             } else {
-                Object oldValue = objectCall(operation, name, key, value, timeout, txnId, -1);
+                Object oldValue = objectCall(operation, name, key, value, timeout, -1);
                 backup(ClusterOperation.CONCURRENT_MAP_BACKUP_PUT);
                 return oldValue;
             }
@@ -886,7 +886,7 @@ public final class ConcurrentMapManager extends BaseManager {
     class MRemoveMulti extends MBackupAwareOp {
 
         boolean remove(String name, Object key, Object value) {
-            boolean result = booleanCall(ClusterOperation.CONCURRENT_MAP_REMOVE_MULTI, name, key, value, 0, -1, -1);
+            boolean result = booleanCall(ClusterOperation.CONCURRENT_MAP_REMOVE_MULTI, name, key, value, 0, -1);
             if (result) {
                 backup(ClusterOperation.CONCURRENT_MAP_BACKUP_REMOVE_MULTI);
             }
@@ -1059,7 +1059,7 @@ public final class ConcurrentMapManager extends BaseManager {
             public MGetContainsValue(Address target) {
                 this.target = target;
                 request.reset();
-                setLocal(ClusterOperation.CONCURRENT_MAP_CONTAINS, name, null, value, 0, -1, -1);
+                setLocal(ClusterOperation.CONCURRENT_MAP_CONTAINS, name, null, value, 0, -1);
             }
 
             @Override
