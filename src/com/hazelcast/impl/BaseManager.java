@@ -47,7 +47,7 @@ public abstract class BaseManager {
 
     private final static int EVENT_QUEUE_COUNT = 100;
 
-    protected static Logger logger = Logger.getLogger(BaseManager.class.getName());
+    protected static final Logger logger = Logger.getLogger(BaseManager.class.getName());
 
     public final static LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
 

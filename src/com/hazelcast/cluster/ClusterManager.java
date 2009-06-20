@@ -20,14 +20,7 @@ package com.hazelcast.cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Member;
 
-import com.hazelcast.impl.BaseManager;
-import com.hazelcast.impl.BlockingQueueManager;
-import com.hazelcast.impl.ConcurrentMapManager;
-import com.hazelcast.impl.ListenerManager;
-import com.hazelcast.impl.MemberImpl;
-import com.hazelcast.impl.Node;
-import com.hazelcast.impl.ThreadContext;
-import com.hazelcast.impl.TopicManager;
+import com.hazelcast.impl.*;
 import com.hazelcast.nio.*;
 
 import java.util.*;
@@ -413,7 +406,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         public void executeProcess(Address address, AbstractRemotelyCallable arp) {
             this.arp = arp;
             super.target = address;
-            doOp(ClusterOperation.REMOTELY_CALLABLE_OBJECT, "call", null, arp, 0, -1, -1);
+            doOp(ClusterOperation.REMOTELY_CALLABLE_OBJECT, "call", null, arp, 0, -1);
         }
 
         @Override
@@ -439,7 +432,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         public void executeProcess(Address address, AbstractRemotelyCallable<Boolean> arp) {
             this.arp = arp;
             super.target = address;
-            doOp(ClusterOperation.REMOTELY_CALLABLE_BOOLEAN, "call", null, arp, 0, -1, -1);
+            doOp(ClusterOperation.REMOTELY_CALLABLE_BOOLEAN, "call", null, arp, 0, -1);
         }
 
         @Override
@@ -464,7 +457,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         public boolean executeProcess(Address address, AbstractRemotelyProcessable arp) {
             this.arp = arp;
             super.target = address;
-            return booleanCall(ClusterOperation.REMOTELY_PROCESS_AND_RESPOND, "exe", null, arp, 0, -1, -1);
+            return booleanCall(ClusterOperation.REMOTELY_PROCESS_AND_RESPOND, "exe", null, arp, 0, -1);
         }
 
         @Override
