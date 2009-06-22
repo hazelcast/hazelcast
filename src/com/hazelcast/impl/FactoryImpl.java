@@ -251,9 +251,8 @@ public class FactoryImpl {
 
             LockProxy lockProxy = (LockProxy) o;
 
-            if (key != null ? !key.equals(lockProxy.key) : lockProxy.key != null) return false;
+            return !(key != null ? !key.equals(lockProxy.key) : lockProxy.key != null);
 
-            return true;
         }
 
         @Override
@@ -404,9 +403,8 @@ public class FactoryImpl {
 
             TopicProxyImpl that = (TopicProxyImpl) o;
 
-            if (name != null ? !name.equals(that.name) : that.name != null) return false;
+            return !(name != null ? !name.equals(that.name) : that.name != null);
 
-            return true;
         }
 
         @Override
@@ -460,7 +458,7 @@ public class FactoryImpl {
 
             public void addMessageListener(MessageListener listener) {
                 ListenerManager.get().addListener(name, listener, null, true,
-                        ListenerManager.LISTENER_TYPE_MESSAGE);
+                        ListenerManager.Type.Message);
             }
 
             public void removeMessageListener(MessageListener listener) {
@@ -522,9 +520,8 @@ public class FactoryImpl {
 
             CollectionProxyImpl that = (CollectionProxyImpl) o;
 
-            if (name != null ? !name.equals(that.name) : that.name != null) return false;
+            return !(name != null ? !name.equals(that.name) : that.name != null);
 
-            return true;
         }
 
         @Override
@@ -624,7 +621,7 @@ public class FactoryImpl {
 
             public void addItemListener(ItemListener listener, boolean includeValue) {
                 mapProxy.addGenericListener(listener, null, includeValue,
-                        ListenerManager.LISTENER_TYPE_ITEM);
+                        ListenerManager.Type.Item);
             }
 
             public void removeItemListener(ItemListener listener) {
@@ -789,9 +786,8 @@ public class FactoryImpl {
 
             QProxyImpl qProxy = (QProxyImpl) o;
 
-            if (name != null ? !name.equals(qProxy.name) : qProxy.name != null) return false;
+            return !(name != null ? !name.equals(qProxy.name) : qProxy.name != null);
 
-            return true;
         }
 
         @Override
@@ -958,7 +954,7 @@ public class FactoryImpl {
 
             public void addItemListener(ItemListener listener, boolean includeValue) {
                 ListenerManager.get().addListener(name, listener, null, includeValue,
-                        ListenerManager.LISTENER_TYPE_ITEM);
+                        ListenerManager.Type.Item);
             }
 
             public void removeItemListener(ItemListener listener) {
@@ -1027,9 +1023,8 @@ public class FactoryImpl {
 
             MultiMapProxy that = (MultiMapProxy) o;
 
-            if (name != null ? !name.equals(that.name) : that.name != null) return false;
+            return !(name != null ? !name.equals(that.name) : that.name != null);
 
-            return true;
         }
 
         @Override
@@ -1221,7 +1216,7 @@ public class FactoryImpl {
     interface MProxy extends IMap, IRemoveAwareProxy, IGetAwareProxy {
         String getLongName();
 
-        void addGenericListener(Object listener, Object key, boolean includeValue, int listenerType);
+        void addGenericListener(Object listener, Object key, boolean includeValue, ListenerManager.Type listenerType);
 
         void removeGenericListener(Object listener, Object key);
 
@@ -1277,9 +1272,8 @@ public class FactoryImpl {
 
             MProxyImpl mProxy = (MProxyImpl) o;
 
-            if (name != null ? !name.equals(mProxy.name) : mProxy.name != null) return false;
+            return !(name != null ? !name.equals(mProxy.name) : mProxy.name != null);
 
-            return true;
         }
 
         @Override
@@ -1422,7 +1416,8 @@ public class FactoryImpl {
             return mproxyReal.getLongName();
         }
 
-        public void addGenericListener(Object listener, Object key, boolean includeValue, int listenerType) {
+        public void addGenericListener(Object listener, Object key, boolean includeValue,
+                                       ListenerManager.Type listenerType) {
             ensure();
             mproxyReal.addGenericListener(listener, key, includeValue, listenerType);
         }
@@ -1553,7 +1548,7 @@ public class FactoryImpl {
             }
             
             public int valueCount(Object key) {
-            	int count = 0;
+            	int count;
             	MValueCount mcount = ConcurrentMapManager.get().new MValueCount();
             	count = ((Number) mcount.count(name, key, -1, -1)).intValue();
             	return count;
@@ -1619,7 +1614,8 @@ public class FactoryImpl {
                 mlock.unlock(name, key, 0, -1);
             }
 
-            public void addGenericListener(Object listener, Object key, boolean includeValue, int listenerType) {
+            public void addGenericListener(Object listener, Object key, boolean includeValue,
+                                           ListenerManager.Type listenerType) {
                 if (listener == null)
                     throw new IllegalArgumentException("Listener cannot be null");
                 ListenerManager.get().addListener(name, listener, key, includeValue, listenerType);
@@ -1634,14 +1630,14 @@ public class FactoryImpl {
             public void addEntryListener(EntryListener listener, boolean includeValue) {
                 if (listener == null)
                     throw new IllegalArgumentException("Listener cannot be null");
-                addGenericListener(listener, null, includeValue, ListenerManager.LISTENER_TYPE_MAP);
+                addGenericListener(listener, null, includeValue, ListenerManager.Type.Map);
             }
 
             public void addEntryListener(EntryListener listener, Object key, boolean includeValue) {
                 if (listener == null)
                     throw new IllegalArgumentException("Listener cannot be null");
                 check(key);
-                addGenericListener(listener, key, includeValue, ListenerManager.LISTENER_TYPE_MAP);
+                addGenericListener(listener, key, includeValue, ListenerManager.Type.Map);
             }
 
             public void removeEntryListener(EntryListener listener) {
@@ -1664,10 +1660,7 @@ public class FactoryImpl {
                 if (txn != null) {
                     if (txn.has(name, key)) {
                         Object v = txn.get(name, key);
-                        if (v == null)
-                            return false; // removed inside the txn
-                        else
-                            return true;
+                        return v != null;
                     }
                 }
                 MContainsKey mContainsKey = ConcurrentMapManager.get().new MContainsKey();
@@ -1680,10 +1673,7 @@ public class FactoryImpl {
                 if (txn != null) {
                     if (txn.has(name, key)) {
                         Object value = txn.get(name, key);
-                        if (value == null)
-                            return false; // removed inside the txn
-                        else
-                            return true;
+                        return value != null;
                     }
                 }
                 MContainsKey mContainsKey = ConcurrentMapManager.get().new MContainsKey();
@@ -1796,9 +1786,8 @@ public class FactoryImpl {
 
             IdGeneratorProxy that = (IdGeneratorProxy) o;
 
-            if (name != null ? !name.equals(that.name) : that.name != null) return false;
+            return !(name != null ? !name.equals(that.name) : that.name != null);
 
-            return true;
         }
 
         @Override
@@ -1838,7 +1827,7 @@ public class FactoryImpl {
 
         private class IdGeneratorBase implements IdGenerator {
 
-            private static final long MILLION = 1 * 1000 * 1000;
+            private static final long MILLION = 1000000;
 
             AtomicLong million = new AtomicLong(-1);
 

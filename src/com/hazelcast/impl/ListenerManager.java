@@ -30,10 +30,10 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ListenerManager extends BaseManager {
-    List<ListenerItem> lsListeners = new CopyOnWriteArrayList<ListenerItem>();
-    public static final int LISTENER_TYPE_MAP = 1;
-    public static final int LISTENER_TYPE_ITEM = 2;
-    public static final int LISTENER_TYPE_MESSAGE = 3;
+    private List<ListenerItem> listeners = new CopyOnWriteArrayList<ListenerItem>();
+
+    public enum Type{ Map, Item, Message; }
+
     private static final ListenerManager instance = new ListenerManager();
 
     public static ListenerManager get() {
@@ -82,13 +82,13 @@ public class ListenerManager extends BaseManager {
     }
 
     public void syncForAdd() {
-        for (ListenerItem listenerItem : lsListeners) {
+        for (ListenerItem listenerItem : listeners) {
             registerListener(listenerItem.name, listenerItem.key, true, listenerItem.includeValue);
         }
     }
 
     public void syncForAdd(Address newAddress) {
-        for (ListenerItem listenerItem : lsListeners) {
+        for (ListenerItem listenerItem : listeners) {
             Data dataKey = null;
             if (listenerItem.key != null) {
                 try {
@@ -101,12 +101,6 @@ public class ListenerManager extends BaseManager {
         }
     }
 
-    /**
-     * user thread calls this
-     *
-     * @param name
-     * @param key
-     */
     private void registerListener(String name, Object key, boolean add, boolean includeValue) {
         Data dataKey = null;
         if (key != null) {
@@ -120,8 +114,8 @@ public class ListenerManager extends BaseManager {
     }
 
     class ListenerRegistrationProcess implements Processable {
-        String name;
-        Data key;
+        final String name;
+        final Data key;
         boolean add = true;
         ClusterOperation packetProcess = ClusterOperation.ADD_LISTENER;
         boolean includeValue = true;
@@ -166,7 +160,7 @@ public class ListenerManager extends BaseManager {
         }
     }
 
-    public void sendAddRemoveListener(Address toAddress, boolean add, String name, Data key,
+    void sendAddRemoveListener(Address toAddress, boolean add, String name, Data key,
                                       boolean includeValue) {
         Packet packet = obtainPacket();
         try {
@@ -182,19 +176,19 @@ public class ListenerManager extends BaseManager {
     }
 
     public void addListener(String name, Object listener, Object key, boolean includeValue,
-                            int listenerType) {
+                            Type listenerType) {
         addListener(name, listener, key, includeValue, listenerType, true);
     }
 
-    public synchronized void addListener(String name, Object listener, Object key, boolean includeValue,
-                                         int listenerType, boolean shouldRemotelyRegister) {
+    synchronized void addListener(String name, Object listener, Object key, boolean includeValue,
+                                         Type listenerType, boolean shouldRemotelyRegister) {
         /**
          * check if already registered send this address to the key owner as a
          * listener add this listener to the local listeners map
          */
         if (shouldRemotelyRegister) {
             boolean remotelyRegister = true;
-            for (ListenerItem listenerItem : lsListeners) {
+            for (ListenerItem listenerItem : listeners) {
                 if (remotelyRegister) {
                     if (listenerItem.listener == listener) {
                         if (listenerItem.name.equals(name)) {
@@ -224,7 +218,7 @@ public class ListenerManager extends BaseManager {
         }
         ListenerItem listenerItem = new ListenerItem(name, key, listener, includeValue,
                 listenerType);
-        lsListeners.add(listenerItem);
+        listeners.add(listenerItem);
     }
 
     public synchronized void removeListener(String name, Object listener, Object key) {
@@ -233,18 +227,18 @@ public class ListenerManager extends BaseManager {
          * the local listeners map
          */
 
-        Iterator<ListenerItem> it = lsListeners.iterator();
+        Iterator<ListenerItem> it = listeners.iterator();
         for (; it.hasNext();) {
             ListenerItem listenerItem = it.next();
             if (listener == listenerItem.listener) {
                 if (key == null) {
                     if (listenerItem.key == null) {
                         registerListener(name, null, false, false);
-                        lsListeners.remove(listenerItem);
+                        listeners.remove(listenerItem);
                     }
                 } else if (key.equals(listenerItem.key)) {
                     registerListener(name, key, false, false);
-                    lsListeners.remove(listenerItem);
+                    listeners.remove(listenerItem);
                 }
             }
         }
@@ -252,7 +246,7 @@ public class ListenerManager extends BaseManager {
 
     void callListeners(EventTask event) {
         String name = event.getName();
-        for (ListenerItem listenerItem : lsListeners) {
+        for (ListenerItem listenerItem : listeners) {
             if (listenerItem.name.equals(name)) {
                 if (listenerItem.key == null) {
                     callListener(listenerItem, event);
@@ -265,22 +259,21 @@ public class ListenerManager extends BaseManager {
 
     private void callListener(ListenerItem listenerItem, EntryEvent event) {
         Object listener = listenerItem.listener;
-        if (listenerItem.listenerType == LISTENER_TYPE_MAP) {
+        if (listenerItem.type == Type.Map) {
             EntryListener l = (EntryListener) listener;
-            EntryEvent e = event;
             if (event.getEventType() == EntryEvent.TYPE_ADDED)
-                l.entryAdded(e);
+                l.entryAdded(event);
             else if (event.getEventType() == EntryEvent.TYPE_REMOVED)
-                l.entryRemoved(e);
+                l.entryRemoved(event);
             else if (event.getEventType() == EntryEvent.TYPE_UPDATED)
-                l.entryUpdated(e);
-        } else if (listenerItem.listenerType == LISTENER_TYPE_ITEM) {
+                l.entryUpdated(event);
+        } else if (listenerItem.type == Type.Item) {
             ItemListener l = (ItemListener) listener;
             if (event.getEventType() == EntryEvent.TYPE_ADDED)
                 l.itemAdded(event.getValue());
             else if (event.getEventType() == EntryEvent.TYPE_REMOVED)
                 l.itemRemoved(event.getValue());
-        } else if (listenerItem.listenerType == LISTENER_TYPE_MESSAGE) {
+        } else if (listenerItem.type == Type.Message) {
             MessageListener l = (MessageListener) listener;
             l.onMessage(event.getValue());
         }
@@ -291,16 +284,16 @@ public class ListenerManager extends BaseManager {
         public Object key;
         public Object listener;
         public boolean includeValue;
-        public int listenerType = ListenerManager.LISTENER_TYPE_MAP;
+        public ListenerManager.Type type = ListenerManager.Type.Map;
 
         public ListenerItem(String name, Object key, Object listener, boolean includeValue,
-                            int listenerType) {
+                            ListenerManager.Type listenerType) {
             super();
             this.key = key;
             this.listener = listener;
             this.name = name;
             this.includeValue = includeValue;
-            this.listenerType = listenerType;
+            this.type = listenerType;
         }
 
     }
