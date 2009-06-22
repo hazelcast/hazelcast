@@ -127,6 +127,32 @@ public class HazelcastTest {
     }
 
     @Test
+    public void testMapEntryListener(){
+        IMap<String,String> map = Hazelcast.getMap("testMapEntrySet");
+        map.addEntryListener(new EntryListener(){
+            public void entryAdded(EntryEvent event) {
+                assertEquals("world", event.getValue());
+                assertEquals("hello", event.getKey());
+            }
+
+            public void entryRemoved(EntryEvent event) {
+                assertEquals("hello", event.getKey());
+                assertEquals("new world", event.getValue());
+            }
+
+            public void entryUpdated(EntryEvent event) {
+                assertEquals("new world", event.getValue());
+                assertEquals("hello", event.getKey());
+            }
+                },true);
+        map.put("hello","world");
+        map.put("hello","new world");
+        map.remove("hello");
+    }
+
+
+
+    @Test
     public void testListAdd(){
         IList<String> list = Hazelcast.getList("testListAdd");
         list.add("Hello World");
