@@ -17,11 +17,11 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.impl.MulticastService.JoinInfo;
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.config.Config;
+import com.hazelcast.impl.MulticastService.JoinInfo;
 import com.hazelcast.nio.*;
 
 import java.io.FileOutputStream;
@@ -39,7 +39,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Node {
-    protected static Logger logger = Logger.getLogger(Node.class.getName());
+    final Logger logger = Logger.getLogger(Node.class.getName());
 
     static final boolean DEBUG = Build.DEBUG;
 
@@ -74,24 +74,29 @@ public class Node {
         SUPER_CLIENT(2),
         JAVA_CLIENT(3),
         CSHARP_CLIENT(4);
-        
-        Type(int type){
+
+        Type(int type) {
             this.value = type;
         }
 
         private int value;
 
-        public int getValue(){
+        public int getValue() {
             return value;
         }
 
-        public static Type create(int value){
-            switch(value){
-                case 1: return MEMBER;
-                case 2: return SUPER_CLIENT;
-                case 3: return JAVA_CLIENT;
-                case 4: return CSHARP_CLIENT;
-                default: return null;
+        public static Type create(int value) {
+            switch (value) {
+                case 1:
+                    return MEMBER;
+                case 2:
+                    return SUPER_CLIENT;
+                case 3:
+                    return JAVA_CLIENT;
+                case 4:
+                    return CSHARP_CLIENT;
+                default:
+                    return null;
             }
         }
     }
@@ -259,6 +264,7 @@ public class Node {
 
     public void shutdown() {
         try {
+            ConcurrentMapManager.get().reset();
             ClusterService.get().stop();
             MulticastService.get().stop();
             ConnectionManager.get().shutdown();
@@ -308,9 +314,13 @@ public class Node {
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 @Override
                 public void run() {
-                    completelyShutdown = true;
-                    logger.log(Level.FINEST, "Hazelcast ShutdownHook is shutting down!");
-                    shutdown();
+                    try {
+                        completelyShutdown = true;
+                        logger.log(Level.INFO, "Hazelcast ShutdownHook is shutting down!");
+                        shutdown();
+                    } catch (Exception e) {
+                        logger.log(Level.WARNING, "Hazelcast shutdownhook exception:", e);
+                    }
                 }
             });
         }

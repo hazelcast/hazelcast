@@ -24,10 +24,10 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
 
 class Request {
-    volatile String name = null;
-    volatile Data key = null;
-    volatile Data value = null;
-    volatile long timeout = -1;
+    String name = null;
+    Data key = null;
+    Data value = null;
+    long timeout = -1;
 
     boolean local = true;
     boolean scheduled = false;
