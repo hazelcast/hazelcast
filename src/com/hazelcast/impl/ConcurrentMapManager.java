@@ -46,6 +46,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public final class ConcurrentMapManager extends BaseManager {
@@ -241,13 +243,17 @@ public final class ConcurrentMapManager extends BaseManager {
                         handleMigrateRecord(packet);
                     }
                 });
-        
+
         ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_VALUE_COUNT,
                 new DefaultPacketProcessor(false, true, false, true) {
                     void handle(Request request) {
                         doValueCount(request);
                     }
                 });
+
+        for (int i = 0; i < BLOCK_COUNT; i++) {
+            loadStoreForks[i] = new LoadStoreFork();
+        }
     }
 
     public static ConcurrentMapManager get() {
@@ -258,8 +264,9 @@ public final class ConcurrentMapManager extends BaseManager {
 
     private Request remoteReq = new Request();
     //    private Map<Integer, Block> mapBlocks = new HashMap<Integer, Block>(BLOCK_COUNT);
-    Block[] blocks = new Block[BLOCK_COUNT];
+    private Block[] blocks = new Block[BLOCK_COUNT];
     private Map<String, CMap> maps = new HashMap<String, CMap>(10);
+    private LoadStoreFork[] loadStoreForks = new LoadStoreFork[BLOCK_COUNT];
 
     public void syncForDead(Address deadAddress) {
 //        Collection<Block> blocks = mapBlocks.values();
@@ -286,6 +293,13 @@ public final class ConcurrentMapManager extends BaseManager {
             }
         }
         doResetRecords(deadAddress);
+    }
+
+    public void reset() {
+        for (int i = 0; i < BLOCK_COUNT; i++) {
+            blocks[i] = null;
+        }
+        maps.clear();
     }
 
     public void syncForAdd() {
@@ -333,7 +347,7 @@ public final class ConcurrentMapManager extends BaseManager {
             setNewMembers:
             for (Address address : allAddress) {
                 Integer countInt = addressBlocks.get(address);
-                int count = (countInt == null) ? 0 : countInt;
+                int count = (countInt == null) ? 0 : countInt.intValue();
                 while (count < aveBlockOwnCount) {
                     if (lsBlocksToRedistribute.size() > 0) {
                         Block blockToMigrate = lsBlocksToRedistribute.remove(0);
@@ -846,7 +860,7 @@ public final class ConcurrentMapManager extends BaseManager {
             TransactionImpl txn = threadContext.txn;
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 try {
-                    boolean locked;
+                    boolean locked = false;
                     if (!txn.has(name, key)) {
                         MLock mlock = threadContext.getMLock();
                         locked = mlock
@@ -989,9 +1003,15 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     abstract class MTargetAwareOp extends TargetAwareOp {
+
         @Override
-		public
-        void setTarget() {
+        public void doOp() {
+            target = null;
+            super.doOp();
+        }
+
+        @Override
+        public void setTarget() {
             setTargetBasedOnKey();
         }
 
@@ -1404,7 +1424,7 @@ public final class ConcurrentMapManager extends BaseManager {
     private void doMigrationComplete(Address from) {
         logger.log(Level.FINEST, "Migration Complete from " + from);
         for (Block block : blocks) {
-            if (from.equals(block.owner)) {
+            if (block != null && from.equals(block.owner)) {
                 if (block.isMigrating()) {
                     block.owner = block.migrationAddress;
                     block.migrationAddress = null;
@@ -1518,7 +1538,8 @@ public final class ConcurrentMapManager extends BaseManager {
                     packet.version = remoteReq.version;
                     packet.longValue = remoteReq.longValue;
                     if (returnsObject) {
-                        Data data;
+                        if (remoteReq != null) {
+                            Data data = null;
                         if (remoteReq.response instanceof Data) {
                             data = (Data) remoteReq.response;
                         } else {
@@ -1526,6 +1547,7 @@ public final class ConcurrentMapManager extends BaseManager {
                         }
                         if (data != null && data.size() > 0) {
                             doSet(data, packet.value);
+                        }
                         }
                         sendResponse(packet);
                     } else {
@@ -1598,6 +1620,49 @@ public final class ConcurrentMapManager extends BaseManager {
             request.response = Boolean.TRUE;
         }
     }
+
+
+    final void doPut2(Request request, final boolean returnsValue) {
+        if (!testLock(request)) {
+            if (request.hasEnoughTimeToSchedule()) {
+                // schedule
+                Record record = ensureRecord(request);
+                request.scheduled = true;
+                final Request reqScheduled = (request.local) ? request : request.hardCopy();
+                record.addScheduledAction(new ScheduledAction(reqScheduled) {
+                    @Override
+                    public boolean consume() {
+                        putAsync(reqScheduled, returnsValue);
+                        return true;
+                    }
+                });
+            } else {
+                request.response = null;
+            }
+        } else {
+            CMap cmap = getMap(request.name);
+            if (cmap.writeThrough) {
+                request.scheduled = true;
+                final Request reqScheduled = (request.local) ? request : request.hardCopy();
+                LoadStoreFork loadStoreFork = loadStoreForks[getBlockId(request.key)];
+                int size = loadStoreFork.offer(reqScheduled);
+                if (size == 1) {
+                    executeLocally(loadStoreFork);
+                }
+            } else {
+                request.response = (returnsValue) ? cmap.put(request) : cmap.putMulti(request);
+            }
+        }
+    }
+
+    final void putAsync(Request request, final boolean returnsValue) {
+        CMap cmap = getMap(request.name);
+        request.response = (returnsValue) ? cmap.put(request) : cmap.putMulti(request);
+        request.key = null;
+        request.value = null;
+        returnScheduledAsSuccess(request);
+    }
+
 
     final void doPut(Request request, final boolean returnsValue) {
         if (!testLock(request)) {
@@ -1753,6 +1818,107 @@ public final class ConcurrentMapManager extends BaseManager {
         return record == null || record.testLock(req.lockThreadId, req.lockAddress);
     }
 
+    interface Loader {
+        Object load(Object key);
+
+        Map loadAll(Collection keys);
+    }
+
+    interface Store {
+        void store(Object key, Object value);
+
+        void storeAll(Map map);
+
+        void delete(Object key);
+
+        void deleteAll(Collection keys);
+    }
+
+    class DummyStore implements Loader, Store {
+        private final static boolean log = false;
+
+        public Object load(Object key) {
+            if (log) System.out.println("Loader.load " + key);
+            return "value";
+        }
+
+        public Map loadAll(Collection keys) {
+            if (log) System.out.println("Loader.loadAll keys " + keys);
+            return null;
+        }
+
+        public void store(Object key, Object value) {
+            if (log) System.out.println("Store.store key=" + key + ", value=" + value);
+        }
+
+        public void storeAll(Map map) {
+            if (log) System.out.println("Store.storeAll " + map.size());
+        }
+
+        public void delete(Object key) {
+            if (log) System.out.println("Store.delete " + key);
+        }
+
+        public void deleteAll(Collection keys) {
+            if (log) System.out.printf("Store.deleteAll " + keys);
+        }
+    }
+
+    class LoadStoreFork implements Runnable, Processable {
+        Queue<Request> qResponses = new ConcurrentLinkedQueue();
+        Queue<Request> qRequests = new ConcurrentLinkedQueue();
+        AtomicInteger offerSize = new AtomicInteger();
+
+        int offer(Request request) {
+            qRequests.offer(request);
+            return offerSize.incrementAndGet();
+        }
+
+        public void run() {
+            while (true) {
+                final Request request = qRequests.poll();
+                if (request != null) {
+                    execute(request);
+                    offerSize.decrementAndGet();
+                    qResponses.offer(request);
+                    enqueueAndReturn(LoadStoreFork.this);
+                } else {
+                    return;
+                }
+            }
+        }
+
+        public void process() {
+            final Request request = qResponses.poll();
+            if (request != null) {
+                if (request.operation == ClusterOperation.CONCURRENT_MAP_GET) {
+                    doGet(request);
+                } else if (request.operation == ClusterOperation.CONCURRENT_MAP_PUT || request.operation == ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT) {
+                    //store the entry
+                    putAsync(request, true);
+                } else if (request.operation == ClusterOperation.CONCURRENT_MAP_REMOVE) {
+                    // remove the entry
+                }
+            }
+        }
+
+        public void execute(Request request) {
+            CMap cmap = getMap(request.name);
+            if (request.operation == ClusterOperation.CONCURRENT_MAP_GET) {
+                // load the entry
+                cmap.loader.load(request.key);
+            } else if (request.operation == ClusterOperation.CONCURRENT_MAP_PUT || request.operation == ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT) {
+                //store the entry
+                cmap.store.store(request.key, request.value);
+
+            } else if (request.operation == ClusterOperation.CONCURRENT_MAP_REMOVE) {
+                // remove the entry
+                cmap.store.delete(request.key);
+            }
+        }
+    }
+
+
     class CMap {
         final SortedHashMap<Data, Record> mapRecords;
 
@@ -1772,9 +1938,15 @@ public final class ConcurrentMapManager extends BaseManager {
 
         final InstanceType instanceType;
 
+        final Loader loader;
+
+        final Store store;
+
         boolean evicting = false;
 
         int ownedEntryCount = 0;
+
+        boolean writeThrough = true;
 
         public CMap(String name) {
             super();
@@ -1797,6 +1969,9 @@ public final class ConcurrentMapManager extends BaseManager {
                 maxSize = (mapConfig.getMaxSize() == 0) ? MapConfig.DEFAULT_MAX_SIZE : mapConfig.getMaxSize();
             }
             instanceType = getInstanceType(name);
+
+            loader = null; //new DummyStore();
+            store = null;//new DummyStore();
         }
 
         public Record getRecord(Data key) {
@@ -1921,6 +2096,9 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
             }
 //            System.out.println(size + " is size.. backup.size " + backupSize() + " ownedEntryCount:" + ownedEntryCount);
+//            for (int i = 0; i < BLOCK_COUNT; i++) {
+//                System.out.println(blocks[i]);
+//            }
             return size;
         }
         
@@ -2165,6 +2343,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         void touch(Record record) {
+            record.lastTouchTime = System.currentTimeMillis();
             if (evictionPolicy == OrderingType.NONE) return;
             SortedHashMap.touch(mapRecords, record.key, evictionPolicy);
         }
@@ -2486,6 +2665,7 @@ public final class ConcurrentMapManager extends BaseManager {
         private Data value;
         private long version = 0;
         private final long createTime;
+        private long lastTouchTime = 0;
         private long expirationTime = Long.MAX_VALUE;
         private long lastAccessTime = 0;
         private long lastUpdateTime = 0;
@@ -2509,6 +2689,7 @@ public final class ConcurrentMapManager extends BaseManager {
             this.value = value;
             this.createTime = System.currentTimeMillis();
             setExpirationTime(ttl);
+            this.lastTouchTime = createTime;
             this.version = 0;
         }
 
@@ -2682,9 +2863,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     if (DEBUG) {
                         log("sa.expired " + sa.expired());
                     }
-                    if (sa.expired()) {
-                        sa.onExpire();
-                    } else {
+                    if (!sa.expired()) {
                         sa.consume();
                         return;
                     }

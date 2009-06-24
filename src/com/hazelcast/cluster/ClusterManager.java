@@ -264,6 +264,9 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         if (DEBUG) {
             log("Removing Address " + deadAddress);
         }
+        if (!Node.get().joined()) {
+            return;
+        }
         if (deadAddress.equals(thisAddress))
             return;
         if (deadAddress.equals(getMasterAddress())) {
@@ -330,6 +333,10 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
             }
         }
         if (isMaster()) {
+            if (joinRequest.to != null && !joinRequest.to.equals(thisAddress)) {
+                sendProcessableTo(new Master(Node.get().getMasterAddress()), conn);
+                return;
+            }
             Address newAddress = joinRequest.address;
             if (!joinInProgress) {
                 MemberInfo newMemberInfo = new MemberInfo(newAddress, joinRequest.nodeType);

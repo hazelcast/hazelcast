@@ -43,16 +43,50 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         set = Hazelcast.getSet(namespace);
         list = Hazelcast.getList(namespace);
 
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        LineReader lineReader = new DefaultLineReader();
         while (true) {
             System.out.print("hazelcast[" + namespace + "] > ");
             try {
-                final String command = in.readLine();
+                final String command = lineReader.readLine();
                 handleCommand(command);
 
             } catch (Throwable e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    interface LineReader {
+        String readLine() throws Exception;
+    }
+
+    class DefaultLineReader implements LineReader {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+
+        public String readLine() throws Exception {
+            return in.readLine();
+        }
+    }
+
+
+    class HistoricLineReader implements LineReader {
+        InputStream in = System.in;
+
+        public String readLine() throws Exception {
+            while (true) {
+//                System.out.println("reading..");
+//                int c = 0;
+//                if ((c = readCharacter()) == -1) {
+//                    return null;
+//                }
+                System.in.read();
+                System.out.println("char " + System.in.read());
+
+            }
+        }
+
+        int readCharacter() throws Exception {
+            return in.read();
         }
     }
 

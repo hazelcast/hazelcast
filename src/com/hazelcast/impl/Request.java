@@ -17,11 +17,11 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Packet;
 import static com.hazelcast.nio.BufferUtil.doHardCopy;
 import static com.hazelcast.nio.BufferUtil.doTake;
+import com.hazelcast.nio.Data;
+import com.hazelcast.nio.Packet;
 
 class Request {
     volatile String name = null;
@@ -106,15 +106,15 @@ class Request {
     }
 
     public void setLocal(final ClusterOperation operation, final String name, final Data key,
-                             final Data value, final int blockId, final long timeout, final long recordId,
-                             final Address thisAddress) {
-            reset();
-            set(true, operation, name, key, value, blockId, timeout, -1, -1, -1, thisAddress, 0,
-                    thisAddress, -1, recordId, -1);
-            this.txnId = ThreadContext.get().getTxnId();
-            this.lockThreadId = Thread.currentThread().hashCode();
-            this.caller = thisAddress;
-        }
+                         final Data value, final int blockId, final long timeout, final long recordId,
+                         final Address thisAddress) {
+        reset();
+        set(true, operation, name, key, value, blockId, timeout, -1, -1, -1, thisAddress, 0,
+                thisAddress, -1, recordId, -1);
+        this.txnId = ThreadContext.get().getTxnId();
+        this.lockThreadId = Thread.currentThread().hashCode();
+        this.caller = thisAddress;
+    }
 
     public void setFromRequest(Request req, boolean hardCopy) {
         reset();

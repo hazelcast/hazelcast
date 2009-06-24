@@ -17,17 +17,15 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.Node;
+
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.hazelcast.config.Config;
-import com.hazelcast.impl.Node;
 
 public class InSelector extends SelectorBase {
 
@@ -81,12 +79,6 @@ public class InSelector extends SelectorBase {
                             + channel.socket().getRemoteSocketAddress());
                 if (channel != null) {
                     final Connection connection = initChannel(channel, true);
-                    final InetSocketAddress remoteSocket = (InetSocketAddress) channel.socket()
-                            .getRemoteSocketAddress();
-                    final int remoteRealPort = Config.get().getPort()
-                            + ((remoteSocket.getPort() - 10000) % 20);
-                    final Address endPoint = new Address(remoteSocket.getAddress(), remoteRealPort);
-                    ConnectionManager.get().bind(endPoint, connection, true);
                     channel.register(selector, SelectionKey.OP_READ, connection.getReadHandler());
                 }
                 serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, Acceptor.this);
@@ -95,7 +87,7 @@ public class InSelector extends SelectorBase {
                 e.printStackTrace();
                 try {
                     serverSocketChannel.close();
-                } catch (final Exception ignore) {
+                } catch (final Exception e1) {
                 }
                 Node.get().shutdown();
             }

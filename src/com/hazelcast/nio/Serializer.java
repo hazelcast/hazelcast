@@ -17,14 +17,15 @@
 
 package com.hazelcast.nio;
 
+import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 import com.hazelcast.impl.ThreadContext;
 import static com.hazelcast.nio.BufferUtil.createNewData;
 import static com.hazelcast.nio.BufferUtil.doHardCopy;
 
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
-import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 
 
 public final class Serializer {
@@ -198,8 +199,13 @@ public final class Serializer {
 
         public DataSerializable read(BuffersInputStream bbis, Data data) throws Exception {
             String className = bbis.readUTF();
-            DataSerializable ds = (DataSerializable) Class.forName(className).newInstance();
-            ds.readData(bbis);
+            DataSerializable ds = null;
+            try {
+                ds = (DataSerializable) Class.forName(className).newInstance();
+                ds.readData(bbis);
+            } catch (Exception e) {
+                throw new IOException("Problem reading DataSerializable class : " + className + ", exception: " + e);
+            }
             return ds;
         }
 

@@ -41,15 +41,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public abstract class BaseManager {
+public abstract class BaseManager implements Constants {
 
     protected final static boolean zeroBackup = false;
 
     private final static int EVENT_QUEUE_COUNT = 100;
 
-    protected static final Logger logger = Logger.getLogger(BaseManager.class.getName());
+    protected static Logger logger = Logger.getLogger(BaseManager.class.getName());
 
-    public final static LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
+    protected final static LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
 
     protected final static Map<Address, MemberImpl> mapMembers = new HashMap<Address, MemberImpl>(
             100);
@@ -79,6 +79,10 @@ public abstract class BaseManager {
     protected void init() {
         thisAddress = Node.get().address;
         thisMember = Node.get().localMember;
+    }
+
+    public LinkedList<MemberImpl> getMembers() {
+        return lsMembers;
     }
 
     public abstract class ScheduledAction {
@@ -387,8 +391,7 @@ public abstract class BaseManager {
     }
 
 
-
-    public abstract class RequestBasedCall extends AbstractCall {
+    abstract class RequestBasedCall extends AbstractCall {
         final protected Request request = new Request();
 
         public boolean booleanCall(final ClusterOperation operation, final String name, final Object key,
@@ -509,6 +512,8 @@ public abstract class BaseManager {
                     Thread.sleep(1000 * request.redoCount);
                     if (request.redoCount > 5) {
                         logger.log(Level.INFO, "Re-doing [" + request.redoCount + "] times! " + ResponseQueueCall.this);
+                        logger.log(Level.INFO, "\t key= " + request.key + ", req.operation: " + request.operation);
+
                     }
                     doOp();
                     return getResult();
@@ -803,11 +808,7 @@ public abstract class BaseManager {
 
     public Address getKeyOwner(final Data key) {
         return ConcurrentMapManager.get().getKeyOwner(null, key);
-    }
-
-    public MemberImpl getLocalMember() {
-        return ClusterManager.get().getLocalMember();
-    }
+    } 
 
     public Packet obtainPacket(final String name, final Object key,
                                final Object value, final ClusterOperation operation, final long timeout) {

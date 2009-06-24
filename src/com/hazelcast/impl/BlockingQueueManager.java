@@ -1405,9 +1405,7 @@ public class BlockingQueueManager extends BaseManager {
                 while (!consumed && lsScheduledPollActions.size() > 0) {
                     ScheduledAction pollAction = lsScheduledPollActions.remove(0);
                     ClusterManager.get().deregisterScheduledAction(pollAction);
-                    if (pollAction.expired()) {
-                        pollAction.onExpire();
-                    } else {
+                    if (! pollAction.expired()) {
                         consumed = pollAction.consume();
                     }
                 }
@@ -1447,14 +1445,11 @@ public class BlockingQueueManager extends BaseManager {
                 while (!consumed && lsScheduledOfferActions.size() > 0) {
                     ScheduledOfferAction offerAction = lsScheduledOfferActions.remove(0);
                     ClusterManager.get().deregisterScheduledAction(offerAction);
-                    if (offerAction.expired()) {
-                        offerAction.onExpire();
-                    } else {
+                    if (!offerAction.expired()) {
                         consumed = offerAction.consume();
                     }
                 }
             }
-
         }
 
         public Data peek() {

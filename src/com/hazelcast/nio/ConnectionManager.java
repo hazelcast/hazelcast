@@ -57,7 +57,7 @@ public class ConnectionManager {
         setConnectionListeners.add(listener);
     }
 
-    public synchronized void bind(final Address endPoint, final Connection connection,
+    public synchronized boolean bind(final Address endPoint, final Connection connection,
                                   final boolean accept) {
         connection.setEndPoint(endPoint);
         final Connection connExisting = mapConnections.get(endPoint);
@@ -68,7 +68,7 @@ public class ConnectionManager {
                         + accept;
                 logger.log(Level.INFO, msg);
             }
-            return;
+            return true;
         }
         if (!endPoint.equals(Node.get().getThisAddress())) {
             acceptTypeConnection = accept;
@@ -77,8 +77,11 @@ public class ConnectionManager {
             for (final ConnectionListener listener : setConnectionListeners) {
                 listener.connectionAdded(connection);
             }
-        } else
-            throw new RuntimeException("ConnMan setting self!!");
+        } else  {
+            return false;
+//            throw new RuntimeException("ConnMan setting self!!");
+        }
+        return true;
     }
 
     public synchronized Connection createConnection(final SocketChannel socketChannel,
@@ -128,6 +131,7 @@ public class ConnectionManager {
             if (setConnectionInProgress.add(address)) {
                 if (!ClusterManager.get().shouldConnectTo(address))
                     throw new RuntimeException("Should not connect to " + address);
+
                 OutSelector.get().connect(address);
             }
         }
@@ -157,7 +161,7 @@ public class ConnectionManager {
         for (final Connection conn : mapConnections.values()) {
             try {
                 remove(conn);
-            } catch (final Exception ignore) {
+            } catch (final Exception e) {
             }
         }
         setConnectionInProgress.clear();
@@ -166,13 +170,11 @@ public class ConnectionManager {
 
     @Override
     public synchronized String toString() {
-        final StringBuilder sb = new StringBuilder("Connections {");
+        final StringBuffer sb = new StringBuffer("Connections {");
         for (final Connection conn : mapConnections.values()) {
-            sb.append("\n");
-            sb.append(conn);
+            sb.append("\n" + conn);
         }
-        sb.append("\nlive=");
-        sb.append(live);
+        sb.append("\nlive=" + live);
         sb.append("\n}");
         return sb.toString();
     }

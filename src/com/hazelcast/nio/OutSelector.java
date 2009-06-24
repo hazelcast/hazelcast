@@ -17,25 +17,21 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.cluster.ClusterManager;
+import com.hazelcast.impl.Node;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.hazelcast.config.Config;
-import com.hazelcast.impl.Node;
 
 public class OutSelector extends SelectorBase {
 
     protected static Logger logger = Logger.getLogger(OutSelector.class.getName());
 
     private static final OutSelector instance = new OutSelector();
-
-    private final Set<Integer> boundPorts = new HashSet<Integer>();
 
     private OutSelector() {
         super();
@@ -58,8 +54,6 @@ public class OutSelector extends SelectorBase {
 
         SocketChannel socketChannel = null;
 
-        int localPort = 0;
-
         int numberOfConnectionError = 0;
 
         public Connector(final Address address) {
@@ -78,9 +72,8 @@ public class OutSelector extends SelectorBase {
                     logger.log(Level.FINEST, "connected to " + address);
                 }
                 final Connection connection = initChannel(socketChannel, false);
-                connection.localPort = localPort;
                 ConnectionManager.get().bind(address, connection, false);
-//                ClusterManager.get().sendBindRequest(connection);
+                ClusterManager.get().sendBindRequest(connection);
             } catch (final Exception e) {
                 try {
                     if (DEBUG) {
@@ -90,12 +83,12 @@ public class OutSelector extends SelectorBase {
                         e.printStackTrace();
                     }
                     socketChannel.close();
-                    if (numberOfConnectionError++ < 5) {
+                    if (numberOfConnectionError++ < 2) {
                         if (DEBUG) {
                             logger.log(Level.FINEST, "Couldn't finish connecting, will try again. cause: "
                                     + e.getMessage());
                         }
-                        addTask(Connector.this);
+//                        addTask(Connector.this);
                     } else {
                         ConnectionManager.get().failedConnection(address);
                     }
@@ -108,49 +101,34 @@ public class OutSelector extends SelectorBase {
             try {
                 socketChannel = SocketChannel.open();
                 final Address thisAddress = Node.get().getThisAddress();
-                final int addition = (thisAddress.getPort() - Config.get().getPort());
-                localPort = 10000 + addition;
-                boolean bindOk = false;
-                while (!bindOk) {
-                    try {
-                        localPort += 20;
-                        if (boundPorts.size() > 2000 || localPort > 60000) {
-                            boundPorts.clear();
-                            final Connection[] conns = ConnectionManager.get().getConnections();
-                            for (final Connection conn : conns) {
-                                // conn is live or not, assume it is bounded
-                                boundPorts.add(conn.localPort);
-                            }
-                        }
-                        if (boundPorts.add(localPort)) {
-                            socketChannel.socket().bind(
-                                    new InetSocketAddress(thisAddress.getInetAddress(), localPort));
-                            bindOk = true;
-                            socketChannel.configureBlocking(false);
-                            if (DEBUG)
-                                logger.log(Level.FINEST, "connecting to " + address + ", localPort: " + localPort);
-                            boolean connected = socketChannel.connect(new InetSocketAddress(address.getInetAddress(),
-                                    address.getPort()));
-                            if (DEBUG)
-                                logger.log(Level.FINEST, "connection check. connected: " + connected + ", " + address + ", localPort: " + localPort);
-                            if (connected) {
-                                handle();
-                                return;
-                            }
-                        }
-                    } catch (final Throwable e) {
-                        if (DEBUG)
-                            logger.log(Level.FINEST, "ConnectionFailed. localPort: " + localPort, e);
-                        // ignore
+                try {
+
+                    socketChannel.socket().bind(
+                            new InetSocketAddress(thisAddress.getInetAddress(), 0));
+                    socketChannel.configureBlocking(false);
+                    if (DEBUG)
+                        logger.log(Level.FINEST, "connecting to " + address);
+                    boolean connected = socketChannel.connect(new InetSocketAddress(address.getInetAddress(),
+                            address.getPort()));
+                    if (DEBUG)
+                        logger.log(Level.FINEST, "connection check. connected: " + connected + ", " + address);
+                    if (connected) {
+                        handle();
+                        return;
                     }
+                } catch (final Throwable e) {
+                    logger.log(Level.FINEST, address + " ConnectionFailed." , e);
+                    // ignore
                 }
                 socketChannel.register(selector, SelectionKey.OP_CONNECT, Connector.this);
             } catch (final Exception e) {
-                try {
-                    socketChannel.close();
-                } catch (final IOException ignored) {
+                if (socketChannel != null) {
+                    try {
+                        socketChannel.close();
+                    } catch (final IOException ignored) {
+                    }
                 }
-                if (numberOfConnectionError++ < 5) {
+                if (numberOfConnectionError++ < 2) {
                     if (DEBUG) {
                         logger.log(Level.FINEST,
                                 "Couldn't register connect! will trying again. cause: "

@@ -4,7 +4,7 @@
 	<property name="rar.name" value="hazelcast-ra" />
 	<property name="src.dir" value="src" />
 	<property name="classes.dir" value="classes" />
-	<property name="version" value="1.5-snapshot" />
+	<property name="version" value="1.6" />
 
 	<path id="all.class.path">
 		<pathelement location="lib/servlet-api.jar" />
@@ -97,7 +97,7 @@
 			</fileset>
 			<manifest>
 				<attribute name="Built-By" value="Hazelcast.com" />
-				<attribute name="Main-Class" value="com.hazelcast.tests.SimpleMapTest" />
+				<attribute name="Main-Class" value="com.hazelcast.examples.SimpleMapTest" />
 			</manifest>
 		</jar>	 
 	</target>
