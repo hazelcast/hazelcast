@@ -19,9 +19,11 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Member;
-
 import com.hazelcast.impl.*;
 import com.hazelcast.nio.*;
+
+import static com.hazelcast.nio.BufferUtil.*;
+
 
 import java.util.*;
 import java.util.logging.Level;
@@ -95,14 +97,14 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                 new PacketProcessor() {
                     public void process(Packet packet) {
                         Boolean result;
+                        AbstractRemotelyCallable<Boolean> callable = null;
                         try {
                             Data data = BufferUtil.doTake(packet.value);
-                            AbstractRemotelyCallable<Boolean> callable = (AbstractRemotelyCallable<Boolean>) ThreadContext
-                                    .get().toObject(data);
+                            callable = (AbstractRemotelyCallable<Boolean>) toObject(data);
                             callable.setConnection(packet.conn);
                             result = callable.call();
                         } catch (Exception e) {
-                            e.printStackTrace(System.out);
+                            logger.log(Level.SEVERE, "Error processing " + callable, e);
                             result = Boolean.FALSE;
                         }
                         if (result == Boolean.TRUE) {
@@ -117,14 +119,14 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                 new PacketProcessor() {
                     public void process(Packet packet) {
                         Object result;
+                        AbstractRemotelyCallable<Boolean> callable = null;
                         try {
                             Data data = BufferUtil.doTake(packet.value);
-                            AbstractRemotelyCallable callable = (AbstractRemotelyCallable) ThreadContext
-                                    .get().toObject(data);
+                            callable = (AbstractRemotelyCallable) toObject(data);
                             callable.setConnection(packet.conn);
                             result = callable.call();
                         } catch (Exception e) {
-                            e.printStackTrace(System.out);
+                            logger.log(Level.SEVERE, "Error processing " + callable, e);
                             result = null;
                         }
                         if (result != null) {
@@ -132,9 +134,9 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                             if (result instanceof Data) {
                                 value = (Data) result;
                             } else {
-                                value = ThreadContext.get().toData(result);
+                                value = toData(result);
                             }
-                            BufferUtil.doSet(value, packet.value);
+                            doSet(value, packet.value);
                         }
 
                         sendResponse(packet);
@@ -312,7 +314,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         for (Object call : calls) {
             ((Call) call).onDisconnect(deadAddress);
         }
-        System.out.println(this);
+        logger.log(Level.INFO, this.toString());
     }
 
     public List<MemberImpl> getMembersBeforeSync() {
@@ -428,8 +430,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         }
 
         @Override
-		public
-        void setTarget() {
+        public void setTarget() {
         }
     }
 
@@ -474,8 +475,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         }
 
         @Override
-		public
-        void setTarget() {
+        public void setTarget() {
         }
     }
 

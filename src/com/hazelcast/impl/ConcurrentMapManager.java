@@ -1962,7 +1962,7 @@ public final class ConcurrentMapManager extends BaseManager {
             } else {
                 evictionPolicy = OrderingType.NONE;
             }
-            evictionRate = mapConfig.getEvictionPercentage() / 100;
+            evictionRate = mapConfig.getEvictionPercentage() / 100f;
             if (evictionPolicy == OrderingType.NONE) {
                 maxSize = Integer.MAX_VALUE;
             } else {
