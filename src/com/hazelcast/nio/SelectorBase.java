@@ -66,11 +66,7 @@ public class SelectorBase implements Runnable {
     public void shutdown() {
         live = false;
         selectorQueue.clear();
-        try {
-            selector.close();
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
+
     }
 
     public int addTask(final Runnable runnable) {
@@ -124,6 +120,11 @@ public class SelectorBase implements Runnable {
                     handleSelectorException(e);
                 }
             }
+        }
+        try {
+            selector.close();
+        } catch (final Exception e) {
+            e.printStackTrace();
         }
     }
 
