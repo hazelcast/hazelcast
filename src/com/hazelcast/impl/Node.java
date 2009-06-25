@@ -49,7 +49,7 @@ public class Node {
 
     volatile Address masterAddress = null;
 
-    private static Node instance = new Node();
+    private final static Node instance = new Node();
 
     private volatile boolean joined = false;
 
@@ -265,12 +265,12 @@ public class Node {
     public void shutdown() {
         try {
             ConcurrentMapManager.get().reset();
-            ClusterService.get().stop();
             MulticastService.get().stop();
             ConnectionManager.get().shutdown();
             ExecutorManager.get().stop();
             InSelector.get().shutdown();
             OutSelector.get().shutdown();
+            ClusterService.get().stop();
             address = null;
             masterAddress = null;
             joined = false;

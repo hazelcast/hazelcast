@@ -30,7 +30,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public final class ClusterService implements Runnable, Constants {
-    protected static Logger logger = Logger.getLogger(ClusterService.class.getName());
+    protected final static Logger logger = Logger.getLogger(ClusterService.class.getName());
 
     private static final ClusterService instance = new ClusterService();
 
@@ -38,21 +38,21 @@ public final class ClusterService implements Runnable, Constants {
 
     private static final long UTILIZATION_CHECK_INTERVAL = TimeUnit.SECONDS.toNanos(10);
 
-    protected final boolean DEBUG = Build.DEBUG;
+    private final boolean DEBUG = Build.DEBUG;
 
-    protected final BlockingQueue queue = new LinkedBlockingQueue();
+    private final BlockingQueue queue = new LinkedBlockingQueue();
 
-    protected volatile boolean running = true;
+    private volatile boolean running = true;
 
     private static final int BULK_SIZE = 64;
 
-    protected final SimpleBoundedQueue bulk = new SimpleBoundedQueue(BULK_SIZE);
+    private final SimpleBoundedQueue bulk = new SimpleBoundedQueue(BULK_SIZE);
 
-    protected long start = 0;
+    private long start = 0;
 
-    protected long totalProcessTime = 0;
+    private long totalProcessTime = 0;
 
-    protected long lastPeriodicCheck = 0;
+    private long lastPeriodicCheck = 0;
 
     private final BaseManager.PacketProcessor[] packetProcessors = new BaseManager.PacketProcessor[300];
 
@@ -154,7 +154,7 @@ public final class ClusterService implements Runnable, Constants {
             } catch (final Throwable e) {
                 logger.log(Level.FINEST, e + ",  message: " + e + ", obj=" + obj, e);
                 e.printStackTrace();
-                System.out.println("Exception when handling " + obj);
+                System.out.println(bulk + " Exception when handling " + obj);
             }
         }
         bulk.clear();
@@ -169,6 +169,7 @@ public final class ClusterService implements Runnable, Constants {
     }
 
     public void stop() {
+        queue.clear();
         running = false;
     }
 

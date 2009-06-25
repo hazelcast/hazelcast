@@ -25,7 +25,7 @@ import com.hazelcast.cluster.ClusterImpl.ClusterMember;
 
 import static com.hazelcast.impl.Constants.Objects.*;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TIMEOUT;
-import static com.hazelcast.nio.BufferUtil.toObject;
+import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.*;
 
 import java.io.DataInput;
@@ -404,7 +404,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
             boolean found = false;
             final ClusterMember clusterMember = (ClusterMember) member;
             if (innerFutureTask.getKey() != null) {
-                final Data keyData = ThreadContext.get().toData(innerFutureTask.getKey());
+                final Data keyData = toData(innerFutureTask.getKey());
                 final Address target = getKeyOwner(keyData);
                 if (clusterMember.getAddress().equals(target)) {
                     found = true;
