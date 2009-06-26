@@ -19,11 +19,8 @@ package com.hazelcast.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.EntryEvent;
 import static com.hazelcast.core.ICommon.InstanceType;
-import com.hazelcast.core.MapEntry;
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.core.Transaction;
+import com.hazelcast.core.*;
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.cluster.ClusterService;
@@ -1818,23 +1815,8 @@ public final class ConcurrentMapManager extends BaseManager {
         return record == null || record.testLock(req.lockThreadId, req.lockAddress);
     }
 
-    interface Loader {
-        Object load(Object key);
 
-        Map loadAll(Collection keys);
-    }
-
-    interface Store {
-        void store(Object key, Object value);
-
-        void storeAll(Map map);
-
-        void delete(Object key);
-
-        void deleteAll(Collection keys);
-    }
-
-    class DummyStore implements Loader, Store {
+    class DummyStore implements MapLoader, MapStore {
         private final static boolean log = false;
 
         public Object load(Object key) {
@@ -1938,9 +1920,9 @@ public final class ConcurrentMapManager extends BaseManager {
 
         final InstanceType instanceType;
 
-        final Loader loader;
+        final MapLoader loader;
 
-        final Store store;
+        final MapStore store;
 
         boolean evicting = false;
 
