@@ -209,7 +209,7 @@ public class Node {
         }
     }
 
-    public boolean isIP(final String address) {
+    public static boolean isIP(final String address) {
         if (address.indexOf('.') == -1) {
             return false;
         } else {
@@ -265,12 +265,12 @@ public class Node {
     public void shutdown() {
         try {
             ConcurrentMapManager.get().reset();
+            ClusterService.get().stop();
             MulticastService.get().stop();
             ConnectionManager.get().shutdown();
             ExecutorManager.get().stop();
             InSelector.get().shutdown();
             OutSelector.get().shutdown();
-            ClusterService.get().stop();
             address = null;
             masterAddress = null;
             joined = false;
@@ -406,8 +406,9 @@ public class Node {
         return null;
     }
 
-    private List<Address> getPossibleMembers(final List<String> lsJoinMembers) {
+    private List<Address> getPossibleMembers() {
         final Config config = Config.get();
+        final List<String> lsJoinMembers = config.getJoin().getJoinMembers().getMembers();
         final List<Address> lsPossibleAddresses = new ArrayList<Address>();
         for (final String host : lsJoinMembers) {
             // check if host is hostname of ip address
@@ -444,6 +445,7 @@ public class Node {
                 e.printStackTrace();
             }
         }
+        lsPossibleAddresses.addAll(config.getJoin().getJoinMembers().getAddresses());
         return lsPossibleAddresses;
     }
 
@@ -568,7 +570,7 @@ public class Node {
     private void joinViaPossibleMembers() {
         final Config config = Config.get();
         try {
-            final List<Address> lsPossibleAddresses = getPossibleMembers(config.getJoin().getJoinMembers().getMembers());
+            final List<Address> lsPossibleAddresses = getPossibleMembers();
             lsPossibleAddresses.remove(address);
             for (final Address adrs : lsPossibleAddresses) {
                 if (DEBUG)

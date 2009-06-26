@@ -191,10 +191,11 @@ public class BlockingQueueManager extends BaseManager {
         }
     }
 
-    public void syncForDead(Address addressDead) {
-        MemberImpl member = getNextMemberBeforeSync(addressDead, true, 1);
+    public void syncForDead(Address deadAddress) {
+        if (deadAddress.equals(thisAddress)) return;
+        MemberImpl member = getNextMemberBeforeSync(deadAddress, true, 1);
         if (DEBUG) {
-            log(addressDead + " is dead and its backup was " + member);
+            log(deadAddress + " is dead and its backup was " + member);
         }
         Address addressNewOwner = (member == null) ? thisAddress : member.getAddress();
 
@@ -202,7 +203,7 @@ public class BlockingQueueManager extends BaseManager {
         for (Q q : queues) {
             List<Block> lsBlocks = q.lsBlocks;
             for (Block block : lsBlocks) {
-                if (block.address.equals(addressDead)) {
+                if (block.address.equals(deadAddress)) {
                     // set the new owner
                     block.address = addressNewOwner;
                     block.resetAddIndex();
@@ -226,7 +227,7 @@ public class BlockingQueueManager extends BaseManager {
                     if (lsMembers.size() > 1) {
                         MemberImpl memberBackupWas = getNextMemberBeforeSync(thisAddress, true, 1);
                         if (memberBackupWas == null
-                                || memberBackupWas.getAddress().equals(addressDead)) {
+                                || memberBackupWas.getAddress().equals(deadAddress)) {
                             int indexUpto = block.size() - 1;
                             if (indexUpto > -1) {
                                 executeLocally(new BlockBackupSyncRunner(new BlockBackupSync(q, block,
@@ -239,14 +240,14 @@ public class BlockingQueueManager extends BaseManager {
             // packetalidate the dead member's scheduled actions
             List<ScheduledPollAction> scheduledPollActions = q.lsScheduledPollActions;
             for (ScheduledPollAction scheduledAction : scheduledPollActions) {
-                if (addressDead.equals(scheduledAction.request.caller)) {
+                if (deadAddress.equals(scheduledAction.request.caller)) {
                     scheduledAction.setValid(false);
                     ClusterManager.get().deregisterScheduledAction(scheduledAction);
                 }
             }
             List<ScheduledOfferAction> scheduledOfferActions = q.lsScheduledOfferActions;
             for (ScheduledOfferAction scheduledAction : scheduledOfferActions) {
-                if (addressDead.equals(scheduledAction.request.caller)) {
+                if (deadAddress.equals(scheduledAction.request.caller)) {
                     scheduledAction.setValid(false);
                     ClusterManager.get().deregisterScheduledAction(scheduledAction);
                 }

@@ -21,9 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.*;
 import com.hazelcast.nio.*;
-
 import static com.hazelcast.nio.BufferUtil.*;
-
 
 import java.util.*;
 import java.util.logging.Level;
@@ -620,9 +618,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
     }
 
     public Member addMember(MemberImpl member) {
-        if (DEBUG) {
-            log("ClusterManager adding " + member);
-        }
+        logger.log(Level.FINEST, "ClusterManager adding " + member);
         if (lsMembers.contains(member)) {
             for (MemberImpl m : lsMembers) {
                 if (m.equals(member))
@@ -638,10 +634,8 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
     }
 
     protected void removeMember(Address address) {
-        if (DEBUG) {
-            log("removing  " + address);
-        }
-        Member member = mapMembers.remove(address);
+        logger.log(Level.FINEST, "removing  " + address);
+        MemberImpl member = mapMembers.remove(address);
         if (member != null) {
             lsMembers.remove(member);
         }
@@ -657,10 +651,8 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 
     final public MemberImpl addMember(Address address, Node.Type nodeType) {
         if (address == null) {
-            if (DEBUG) {
-                log("Address cannot be null");
-                return null;
-            }
+            logger.log(Level.FINEST, "Address cannot be null");
+            return null;
         }
         MemberImpl member = getMember(address);
         if (member == null)

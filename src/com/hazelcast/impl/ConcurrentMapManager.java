@@ -260,12 +260,12 @@ public final class ConcurrentMapManager extends BaseManager {
     private static final int BLOCK_COUNT = 271;
 
     private Request remoteReq = new Request();
-    //    private Map<Integer, Block> mapBlocks = new HashMap<Integer, Block>(BLOCK_COUNT);
     private Block[] blocks = new Block[BLOCK_COUNT];
     private Map<String, CMap> maps = new HashMap<String, CMap>(10);
     private LoadStoreFork[] loadStoreForks = new LoadStoreFork[BLOCK_COUNT];
 
     public void syncForDead(Address deadAddress) {
+        if (deadAddress.equals(thisAddress)) return;
 //        Collection<Block> blocks = mapBlocks.values();
         for (Block block : blocks) {
             if (block != null) {

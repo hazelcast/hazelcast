@@ -3,6 +3,8 @@
  */
 package com.hazelcast.config;
 
+import com.hazelcast.nio.Address;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,8 +17,18 @@ public class JoinMembers {
 
     private String requiredMember = null;
 
-    public void add(final String member) {
+    private List<Address> addresses = new ArrayList<Address>();
+
+    public void addMember(final String member) {
         members.add(member);
+    }
+
+    public void addAddress(Address address) {
+       addresses.add (address);
+    }
+
+    public List<Address> getAddresses() {
+        return addresses;
     }
 
 	/**

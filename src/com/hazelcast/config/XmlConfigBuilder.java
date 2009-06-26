@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.UnknownHostException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -16,6 +17,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.hazelcast.impl.Util;
+import com.hazelcast.nio.Address;
 
 public class XmlConfigBuilder implements ConfigBuilder {
 
@@ -346,13 +348,26 @@ public class XmlConfigBuilder implements ConfigBuilder {
             if (n.getNodeName().equalsIgnoreCase("required-member")) {
                 join.getJoinMembers().setRequiredMember(value);
             } else if (n.getNodeName().equalsIgnoreCase("hostname")) {
-                join.getJoinMembers().add(value);
+                join.getJoinMembers().addMember(value);
+            } else if (n.getNodeName().equalsIgnoreCase("address")) {
+                int colonIndex = value.indexOf(':');
+                if (colonIndex == -1) {
+                    logger.log(Level.WARNING, "Address should be in the form of ip:port. Address [" + value + "] is not valid.");
+                } else {
+                    String hostStr = value.substring(0, colonIndex);
+                    String portStr = value.substring(colonIndex +1);
+                    try {
+                        join.getJoinMembers().addAddress(new Address(hostStr, Integer.parseInt(portStr), true));
+                    } catch (UnknownHostException e) {
+                        e.printStackTrace(); 
+                    }
+                }
             } else if (n.getNodeName().equalsIgnoreCase("interface")) {
                 final int indexStar = value.indexOf('*');
                 final int indexDash = value.indexOf('-');
 
                 if (indexStar == -1 && indexDash == -1) {
-                    join.getJoinMembers().add(value);
+                    join.getJoinMembers().addMember(value);
                 } else {
                     final String first3 = value.substring(0, value.lastIndexOf('.'));
                     final String lastOne = value.substring(value.lastIndexOf('.') + 1);
@@ -364,7 +379,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
                     }
                     if (lastOne.equals("*")) {
                         for (int j = 0; j < 256; j++) {
-                            join.getJoinMembers().add(first3 + "." + String.valueOf(j));
+                            join.getJoinMembers().addMember(first3 + "." + String.valueOf(j));
                         }
                     } else if (lastOne.indexOf('-') != -1) {
                         final int start = Integer.parseInt(lastOne.substring(0, lastOne
@@ -372,7 +387,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
                         final int end = Integer.parseInt(lastOne
                                 .substring(lastOne.indexOf('-') + 1));
                         for (int j = start; j <= end; j++) {
-                            join.getJoinMembers().add(first3 + "." + String.valueOf(j));
+                            join.getJoinMembers().addMember(first3 + "." + String.valueOf(j));
                         }
                     }
                 }
