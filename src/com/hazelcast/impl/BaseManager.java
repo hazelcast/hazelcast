@@ -85,6 +85,10 @@ public abstract class BaseManager implements Constants {
         return lsMembers;
     }
 
+    public Address getThisAddress() {
+        return thisAddress;
+    }
+
     public abstract class ScheduledAction {
         protected long timeToExpire;
 

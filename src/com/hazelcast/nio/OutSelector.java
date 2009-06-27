@@ -17,7 +17,9 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.cluster.Bind;
 import com.hazelcast.cluster.ClusterManager;
+import com.hazelcast.impl.BaseManager;
 import com.hazelcast.impl.Node;
 
 import java.io.IOException;
@@ -73,7 +75,12 @@ public class OutSelector extends SelectorBase {
                 }
                 final Connection connection = initChannel(socketChannel, false);
                 ConnectionManager.get().bind(address, connection, false);
-                ClusterManager.get().sendBindRequest(connection);
+                final ClusterManager clusterManager = ClusterManager.get();
+                clusterManager.enqueueAndReturn(new BaseManager.Processable() {
+                    public void process() {
+                        clusterManager.sendProcessableTo(new Bind(clusterManager.getThisAddress()), connection);
+                    }
+                });
             } catch (final Exception e) {
                 try {
                     if (DEBUG) {
@@ -88,7 +95,6 @@ public class OutSelector extends SelectorBase {
                             logger.log(Level.FINEST, "Couldn't finish connecting, will try again. cause: "
                                     + e.getMessage());
                         }
-//                        addTask(Connector.this);
                     } else {
                         ConnectionManager.get().failedConnection(address);
                     }
@@ -117,7 +123,7 @@ public class OutSelector extends SelectorBase {
                         return;
                     }
                 } catch (final Throwable e) {
-                    logger.log(Level.FINEST, address + " ConnectionFailed." , e);
+                    logger.log(Level.FINEST, address + " ConnectionFailed.", e);
                     // ignore
                 }
                 socketChannel.register(selector, SelectionKey.OP_CONNECT, Connector.this);

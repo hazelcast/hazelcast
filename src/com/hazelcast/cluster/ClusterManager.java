@@ -577,11 +577,6 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                 Config.get().getGroupPassword(), Node.get().getLocalNodeType()), toAddress);
     }
 
-
-    public void sendBindRequest(Connection toConnection) {
-        sendProcessableTo(new Bind(thisAddress), toConnection);
-    }
-
     public void registerScheduledAction(ScheduledAction scheduledAction) {
         setScheduledActions.add(scheduledAction);
     }
