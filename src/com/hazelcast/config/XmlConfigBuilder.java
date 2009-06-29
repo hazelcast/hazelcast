@@ -320,9 +320,37 @@ public class XmlConfigBuilder implements ConfigBuilder {
             } else if ("time-to-live-seconds".equals(nodeName)) {
                 config.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value,
                         MapConfig.DEFAULT_TTL_SECONDS));
+            } else if ("map-store".equals(nodeName)) {
+                MapStoreConfig mapStoreConfig = createMapStoreConfig(n);
+                config.setMapStoreConfig(mapStoreConfig);
             }
         }
         this.config.getMapMapConfigs().put(name, config);
+    }
+
+    private MapStoreConfig createMapStoreConfig (final org.w3c.dom.Node node) {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+
+        final NamedNodeMap atts = node.getAttributes();
+        for (int a = 0; a < atts.getLength(); a++) {
+            final org.w3c.dom.Node att = atts.item(a);
+            final String value = getTextContent(att).trim();
+            if (att.getNodeName().equals("enabled")) {
+                mapStoreConfig.setEnabled(checkTrue(value));
+            }
+        }
+        final NodeList nodelist = node.getChildNodes();
+        for (int i = 0; i < nodelist.getLength(); i++) {
+            final org.w3c.dom.Node n = nodelist.item(i);
+            final String nodeName = n.getNodeName().toLowerCase();
+            final String value = getTextContent(n).trim();
+            if ("class-name".equals(nodeName)) {
+                mapStoreConfig.setClassName(value);
+            } else if ("write-delay-seconds".equals(nodeName)) {
+                mapStoreConfig.setWriteDelaySeconds(getIntegerValue("write-delay-seconds", value, MapStoreConfig.DEFAULT_WRITE_DELAY_SECONDS));
+            }
+        }
+        return mapStoreConfig;
     }
 
     private void handleTcpIp(final org.w3c.dom.Node node) {

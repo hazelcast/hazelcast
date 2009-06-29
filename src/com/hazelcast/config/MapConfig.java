@@ -23,6 +23,8 @@ public class MapConfig {
 
     private String evictionPolicy = DEFAULT_EVICTION_POLICY;
 
+    private MapStoreConfig mapStoreConfig = null;
+
 	/**
 	 * @return the name
 	 */
@@ -106,4 +108,21 @@ public class MapConfig {
 	public void setEvictionPolicy(String evictionPolicy) {
 		this.evictionPolicy = evictionPolicy;
 	}
+
+    /**
+     *  Returns the map store configuration
+     * 
+     * @return the mapStoreConfig
+     */
+    public MapStoreConfig getMapStoreConfig() {
+        return mapStoreConfig;
+    }
+
+    /**
+     * Sets the mapStore configuration
+     * @param mapStoreConfig the mapStoreConfig to set
+     */
+    public void setMapStoreConfig(MapStoreConfig mapStoreConfig) {
+        this.mapStoreConfig = mapStoreConfig;
+    }
 }

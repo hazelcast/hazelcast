@@ -17,20 +17,20 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-import static com.hazelcast.core.ICommon.InstanceType;
-import com.hazelcast.core.*;
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.cluster.ClusterService;
-
-
+import com.hazelcast.collection.SortedHashMap;
+import static com.hazelcast.collection.SortedHashMap.OrderingType;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.*;
+import static com.hazelcast.core.ICommon.InstanceType;
+import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_BACKUP_LOCK;
+import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_BLOCKS;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
-import static com.hazelcast.collection.SortedHashMap.OrderingType;
-import com.hazelcast.collection.SortedHashMap;
-import static com.hazelcast.impl.ClusterOperation.*;
 import com.hazelcast.nio.Address;
 import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.Data;
@@ -41,9 +41,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -514,8 +514,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
-		public
-        void doLocalOp() {
+        public void doLocalOp() {
             doEvict(request);
             setResult(request.response);
         }
@@ -559,8 +558,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
-		public
-        void doLocalOp() {
+        public void doLocalOp() {
             doMigrate(request);
             if (!request.scheduled) {
                 setResult(request.response);
@@ -602,18 +600,18 @@ public final class ConcurrentMapManager extends BaseManager {
             setResult(value);
         }
     }
-    
+
     class MValueCount extends MTargetAwareOp {
         public Object count(String name, Object key, long timeout, long txnId) {
             return objectCall(ClusterOperation.CONCURRENT_MAP_VALUE_COUNT, name, key, null, timeout, -1);
         }
 
         @Override
-		void handleNoneRedoResponse(Packet packet) {
-			super.handleLongNoneRedoResponse(packet);
-		}
+        void handleNoneRedoResponse(Packet packet) {
+            super.handleLongNoneRedoResponse(packet);
+        }
 
-		@Override
+        @Override
         public void doLocalOp() {
             doValueCount(request);
             setResult(request.longValue);
@@ -755,8 +753,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
-		public
-        void doLocalOp() {
+        public void doLocalOp() {
             doAdd(request);
             setResult(request.response);
         }
@@ -804,8 +801,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
-		public
-        void doLocalOp() {
+        public void doLocalOp() {
             doBackup(request);
             setResult(request.response);
         }
@@ -822,8 +818,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
-		public
-        void doLocalOp() {
+        public void doLocalOp() {
             doPut(request, false);
             if (!request.scheduled) {
                 setResult(request.response);
@@ -905,8 +900,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
-		public
-        void doLocalOp() {
+        public void doLocalOp() {
             doRemoveMulti(request);
             if (!request.scheduled) {
                 setResult(request.response);
@@ -969,8 +963,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
-		protected
-        void setResult(Object obj) {
+        protected void setResult(Object obj) {
             if (reqBackup.local) {
                 reqBackup.version = request.version;
                 reqBackup.lockCount = request.lockCount;
@@ -1537,14 +1530,14 @@ public final class ConcurrentMapManager extends BaseManager {
                     if (returnsObject) {
                         if (remoteReq != null) {
                             Data data = null;
-                        if (remoteReq.response instanceof Data) {
-                            data = (Data) remoteReq.response;
-                        } else {
-                            data = toData(remoteReq.response);
-                        }
-                        if (data != null && data.size() > 0) {
-                            doSet(data, packet.value);
-                        }
+                            if (remoteReq.response instanceof Data) {
+                                data = (Data) remoteReq.response;
+                            } else {
+                                data = toData(remoteReq.response);
+                            }
+                            if (data != null && data.size() > 0) {
+                                doSet(data, packet.value);
+                            }
                         }
                         sendResponse(packet);
                     } else {
@@ -1619,7 +1612,7 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
 
-    final void doPut2(Request request, final boolean returnsValue) {
+    final void doPut(Request request, final boolean returnsValue) {
         if (!testLock(request)) {
             if (request.hasEnoughTimeToSchedule()) {
                 // schedule
@@ -1629,7 +1622,12 @@ public final class ConcurrentMapManager extends BaseManager {
                 record.addScheduledAction(new ScheduledAction(reqScheduled) {
                     @Override
                     public boolean consume() {
-                        putAsync(reqScheduled, returnsValue);
+                        boolean completed = doPutSafely(reqScheduled, returnsValue);
+                        if (completed) {
+                            reqScheduled.key = null;
+                            reqScheduled.value = null;
+                            returnScheduledAsSuccess(reqScheduled);
+                        }
                         return true;
                     }
                 });
@@ -1637,19 +1635,25 @@ public final class ConcurrentMapManager extends BaseManager {
                 request.response = null;
             }
         } else {
-            CMap cmap = getMap(request.name);
-            if (cmap.writeThrough) {
-                request.scheduled = true;
-                final Request reqScheduled = (request.local) ? request : request.hardCopy();
-                LoadStoreFork loadStoreFork = loadStoreForks[getBlockId(request.key)];
-                int size = loadStoreFork.offer(reqScheduled);
-                if (size == 1) {
-                    executeLocally(loadStoreFork);
-                }
-            } else {
-                request.response = (returnsValue) ? cmap.put(request) : cmap.putMulti(request);
-            }
+            doPutSafely(request, returnsValue);
         }
+    }
+
+    boolean doPutSafely(Request request, final boolean returnsValue) {
+        CMap cmap = getMap(request.name);
+        if (cmap.writeDelaySeconds == 0) {
+            request.scheduled = true;
+            final Request reqScheduled = (request.local) ? request : request.hardCopy();
+            LoadStoreFork loadStoreFork = loadStoreForks[getBlockId(request.key)];
+            int size = loadStoreFork.offer(reqScheduled);
+            if (size == 1) {
+                executeLocally(loadStoreFork);
+            }
+            return false;
+        } else {
+            request.response = (returnsValue) ? cmap.put(request) : cmap.putMulti(request);
+        }
+        return true;
     }
 
     final void putAsync(Request request, final boolean returnsValue) {
@@ -1661,7 +1665,7 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
 
-    final void doPut(Request request, final boolean returnsValue) {
+    final void doPut3(Request request, final boolean returnsValue) {
         if (!testLock(request)) {
             if (request.hasEnoughTimeToSchedule()) {
                 // schedule
@@ -1671,11 +1675,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 record.addScheduledAction(new ScheduledAction(reqScheduled) {
                     @Override
                     public boolean consume() {
-                        CMap cmap = getMap(reqScheduled.name);
-                        reqScheduled.response = (returnsValue) ? cmap.put(reqScheduled) : cmap.putMulti(reqScheduled);
-                        reqScheduled.key = null;
-                        reqScheduled.value = null;
-                        returnScheduledAsSuccess(reqScheduled);
+                        putAsync(reqScheduled, returnsValue);
                         return true;
                     }
                 });
@@ -1708,7 +1708,7 @@ public final class ConcurrentMapManager extends BaseManager {
         CMap cmap = getMap(request.name);
         request.response = cmap.get(request);
     }
-    
+
     final void doValueCount(Request request) {
         CMap cmap = getMap(request.name);
         request.longValue = cmap.valueCount(request.key);
@@ -1815,37 +1815,6 @@ public final class ConcurrentMapManager extends BaseManager {
         return record == null || record.testLock(req.lockThreadId, req.lockAddress);
     }
 
-
-    class DummyStore implements MapLoader, MapStore {
-        private final static boolean log = false;
-
-        public Object load(Object key) {
-            if (log) System.out.println("Loader.load " + key);
-            return "value";
-        }
-
-        public Map loadAll(Collection keys) {
-            if (log) System.out.println("Loader.loadAll keys " + keys);
-            return null;
-        }
-
-        public void store(Object key, Object value) {
-            if (log) System.out.println("Store.store key=" + key + ", value=" + value);
-        }
-
-        public void storeAll(Map map) {
-            if (log) System.out.println("Store.storeAll " + map.size());
-        }
-
-        public void delete(Object key) {
-            if (log) System.out.println("Store.delete " + key);
-        }
-
-        public void deleteAll(Collection keys) {
-            if (log) System.out.printf("Store.deleteAll " + keys);
-        }
-    }
-
     class LoadStoreFork implements Runnable, Processable {
         Queue<Request> qResponses = new ConcurrentLinkedQueue();
         Queue<Request> qRequests = new ConcurrentLinkedQueue();
@@ -1920,15 +1889,15 @@ public final class ConcurrentMapManager extends BaseManager {
 
         final InstanceType instanceType;
 
-        final MapLoader loader;
+        MapLoader loader = null;
 
-        final MapStore store;
+        MapStore store = null;
+
+        int writeDelaySeconds = -1;
 
         boolean evicting = false;
 
         int ownedEntryCount = 0;
-
-        boolean writeThrough = true;
 
         public CMap(String name) {
             super();
@@ -1944,16 +1913,31 @@ public final class ConcurrentMapManager extends BaseManager {
             } else {
                 evictionPolicy = OrderingType.NONE;
             }
-            evictionRate = mapConfig.getEvictionPercentage() / 100f;
             if (evictionPolicy == OrderingType.NONE) {
                 maxSize = Integer.MAX_VALUE;
             } else {
                 maxSize = (mapConfig.getMaxSize() == 0) ? MapConfig.DEFAULT_MAX_SIZE : mapConfig.getMaxSize();
             }
+            evictionRate = mapConfig.getEvictionPercentage() / 100f;
             instanceType = getInstanceType(name);
-
-            loader = null; //new DummyStore();
-            store = null;//new DummyStore();
+            MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
+            if (mapStoreConfig != null) {
+                if (mapStoreConfig.isEnabled()) {
+                    String mapStoreClassName = mapStoreConfig.getClassName();
+                    try {
+                        Object storeInstance = Class.forName(mapStoreClassName, true, Thread.currentThread().getContextClassLoader()).newInstance();
+                        if (storeInstance instanceof MapLoader) {
+                            loader = (MapLoader) storeInstance;
+                        }
+                        if (storeInstance instanceof MapStore) {
+                            store = (MapStore) storeInstance;
+                        }
+                        writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
         }
 
         public Record getRecord(Data key) {
@@ -2083,13 +2067,13 @@ public final class ConcurrentMapManager extends BaseManager {
 //            }
             return size;
         }
-        
+
         public int valueCount(Data key) {
             long now = System.currentTimeMillis();
             int count = 0;
             Record record = mapRecords.get(key);
-            if (record!= null && record.isValid(now)) {
-               	count = record.valueCount();
+            if (record != null && record.isValid(now)) {
+                count = record.valueCount();
             }
             return count;
         }
