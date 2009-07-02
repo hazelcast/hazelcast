@@ -17,9 +17,9 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Constants;
 import com.hazelcast.impl.ThreadContext;
-import com.hazelcast.impl.ClusterOperation;
 
 import java.nio.ByteBuffer;
 
@@ -67,7 +67,11 @@ public final class Packet {
 
     public int totalSize = 0;
 
-    public volatile boolean released = false;
+    public boolean released = false;
+
+    boolean sizeRead = false;
+
+    int totalWritten = 0;
 
     public Packet() {
     }
@@ -171,6 +175,7 @@ public final class Packet {
         conn = null;
         totalSize = 0;
         totalWritten = 0;
+        sizeRead = false;
     }
 
     @Override
@@ -184,8 +189,6 @@ public final class Packet {
         bbHeader.flip();
     }
 
-    private boolean sizeRead = false;
-    private int totalWritten = 0;
 
     public final boolean writeToSocketBuffer(ByteBuffer dest) {
         totalWritten += BufferUtil.copyToDirectBuffer(bbSizes, dest);
@@ -209,7 +212,7 @@ public final class Packet {
     }
 
     public final boolean read(ByteBuffer bb) {
-        while (!sizeRead && bbSizes.hasRemaining()) {
+        while (!sizeRead && bb.hasRemaining() && bbSizes.hasRemaining()) {
             BufferUtil.copyToHeapBuffer(bb, bbSizes);
         }
         if (!sizeRead && !bbSizes.hasRemaining()) {

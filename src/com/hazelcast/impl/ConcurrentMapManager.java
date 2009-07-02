@@ -58,6 +58,9 @@ public final class ConcurrentMapManager extends BaseManager {
                     if (cmap.ttl != 0) {
                         cmap.startEviction();
                     }
+                    if (cmap.writeDelaySeconds > 0) {
+                        cmap.startAsyncStoreWrite();
+                    }
                 }
             }
         });
@@ -77,7 +80,7 @@ public final class ConcurrentMapManager extends BaseManager {
         ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_PUT,
                 new DefaultPacketProcessor(false, true, true, true) {
                     void handle(Request request) {
-                        doPut(request, true);
+                        doPut(request);
                     }
                 });
         ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_BACKUP_PUT,
@@ -89,13 +92,13 @@ public final class ConcurrentMapManager extends BaseManager {
         ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT,
                 new DefaultPacketProcessor(false, true, true, true) {
                     void handle(Request request) {
-                        doPut(request, true);
+                        doPut(request);
                     }
                 });
         ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_REPLACE_IF_NOT_NULL,
                 new DefaultPacketProcessor(false, true, true, true) {
                     void handle(Request request) {
-                        doPut(request, true);
+                        doPut(request);
                     }
                 });
         ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_BACKUP_ADD,
@@ -125,7 +128,7 @@ public final class ConcurrentMapManager extends BaseManager {
         ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_PUT_MULTI,
                 new DefaultPacketProcessor(false, true, true, false) {
                     void handle(Request request) {
-                        doPut(request, false);
+                        doPut(request);
                     }
                 });
         ClusterService.get().registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_REMOVE,
@@ -819,7 +822,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void doLocalOp() {
-            doPut(request, false);
+            doPut(request);
             if (!request.scheduled) {
                 setResult(request.response);
             }
@@ -882,7 +885,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void doLocalOp() {
-            doPut(request, true);
+            doPut(request);
             if (!request.scheduled) {
                 setResult(request.response);
             }
@@ -1611,8 +1614,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-
-    final void doPut(Request request, final boolean returnsValue) {
+    final void doRemove(Request request, final boolean returnsValue) {
         if (!testLock(request)) {
             if (request.hasEnoughTimeToSchedule()) {
                 // schedule
@@ -1622,7 +1624,43 @@ public final class ConcurrentMapManager extends BaseManager {
                 record.addScheduledAction(new ScheduledAction(reqScheduled) {
                     @Override
                     public boolean consume() {
-                        boolean completed = doPutSafely(reqScheduled, returnsValue);
+                        CMap cmap = getMap(reqScheduled.name);
+                        if (returnsValue) {
+                            reqScheduled.response = cmap.remove(reqScheduled);
+                            returnScheduledAsSuccess(reqScheduled);
+                        } else {
+                            reqScheduled.response = cmap.removeItem(reqScheduled);
+                            reqScheduled.key = null;
+                            reqScheduled.value = null;
+                            returnScheduledAsBoolean(reqScheduled);
+                        }
+                        return true;
+                    }
+                });
+            } else {
+                request.response = null;
+            }
+        } else {
+            CMap cmap = getMap(request.name);
+            if (returnsValue) {
+                request.response = cmap.remove(request);
+            } else {
+                request.response = cmap.removeItem(request);
+            }
+        }
+    }
+
+    final void doSchedulable(Request request) {
+        if (!testLock(request)) {
+            if (request.hasEnoughTimeToSchedule()) {
+                // schedule
+                Record record = ensureRecord(request);
+                request.scheduled = true;
+                final Request reqScheduled = (request.local) ? request : request.hardCopy();
+                record.addScheduledAction(new ScheduledAction(reqScheduled) {
+                    @Override
+                    public boolean consume() {
+                        boolean completed = doSchedulableSafely(reqScheduled);
                         if (completed) {
                             reqScheduled.key = null;
                             reqScheduled.value = null;
@@ -1635,11 +1673,11 @@ public final class ConcurrentMapManager extends BaseManager {
                 request.response = null;
             }
         } else {
-            doPutSafely(request, returnsValue);
+            doSchedulableSafely(request);
         }
     }
 
-    boolean doPutSafely(Request request, final boolean returnsValue) {
+    boolean doSchedulableSafely(Request request) {
         CMap cmap = getMap(request.name);
         if (cmap.writeDelaySeconds == 0) {
             request.scheduled = true;
@@ -1651,6 +1689,56 @@ public final class ConcurrentMapManager extends BaseManager {
             }
             return false;
         } else {
+            doUnscheduledOperation(request);
+        }
+        return true;
+    }
+
+    void doUnscheduledOperation (Request request)  {
+          
+    }
+
+    final void doPut(Request request) {
+        if (!testLock(request)) {
+            if (request.hasEnoughTimeToSchedule()) {
+                // schedule
+                Record record = ensureRecord(request);
+                request.scheduled = true;
+                final Request reqScheduled = (request.local) ? request : request.hardCopy();
+                record.addScheduledAction(new ScheduledAction(reqScheduled) {
+                    @Override
+                    public boolean consume() {
+                        boolean completed = doPutSafely(reqScheduled);
+                        if (completed) {
+                            reqScheduled.key = null;
+                            reqScheduled.value = null;
+                            returnScheduledAsSuccess(reqScheduled);
+                        }
+                        return true;
+                    }
+                });
+            } else {
+                request.response = null;
+            }
+        } else {
+            doPutSafely(request);
+        }
+    }
+
+    boolean doPutSafely(Request request) {
+        CMap cmap = getMap(request.name);
+        if (cmap.writeDelaySeconds == 0) {
+            request.scheduled = true;
+            final Request reqScheduled = (request.local) ? request : request.hardCopy();
+            LoadStoreFork loadStoreFork = loadStoreForks[getBlockId(request.key)];
+            int size = loadStoreFork.offer(reqScheduled);
+            if (size == 1) {
+                executeLocally(loadStoreFork);
+            }
+            return false;
+        } else {
+//            System.out.println(request.key + " key " + request.value);
+            boolean returnsValue = (request.operation != ClusterOperation.CONCURRENT_MAP_PUT_MULTI);
             request.response = (returnsValue) ? cmap.put(request) : cmap.putMulti(request);
         }
         return true;
@@ -1756,41 +1844,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    final void doRemove(Request request, final boolean returnsValue) {
-        if (!testLock(request)) {
-            if (request.hasEnoughTimeToSchedule()) {
-                // schedule
-                Record record = ensureRecord(request);
-                request.scheduled = true;
-                final Request reqScheduled = (request.local) ? request : request.hardCopy();
-                record.addScheduledAction(new ScheduledAction(reqScheduled) {
-                    @Override
-                    public boolean consume() {
-                        CMap cmap = getMap(reqScheduled.name);
-                        if (returnsValue) {
-                            reqScheduled.response = cmap.remove(reqScheduled);
-                            returnScheduledAsSuccess(reqScheduled);
-                        } else {
-                            reqScheduled.response = cmap.removeItem(reqScheduled);
-                            reqScheduled.key = null;
-                            reqScheduled.value = null;
-                            returnScheduledAsBoolean(reqScheduled);
-                        }
-                        return true;
-                    }
-                });
-            } else {
-                request.response = null;
-            }
-        } else {
-            CMap cmap = getMap(request.name);
-            if (returnsValue) {
-                request.response = cmap.remove(request);
-            } else {
-                request.response = cmap.removeItem(request);
-            }
-        }
-    }
+
 
     Record recordExist(Request req) {
         CMap cmap = maps.get(req.name);
@@ -1899,6 +1953,8 @@ public final class ConcurrentMapManager extends BaseManager {
 
         int ownedEntryCount = 0;
 
+        private Set<Record> setDirtyRecords = null;
+
         public CMap(String name) {
             super();
             this.name = name;
@@ -1933,6 +1989,9 @@ public final class ConcurrentMapManager extends BaseManager {
                             store = (MapStore) storeInstance;
                         }
                         writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
+                        if (writeDelaySeconds > 0) {
+                            setDirtyRecords = new HashSet<Record>(1000);
+                        }
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -1959,7 +2018,6 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public boolean backup(Request req) {
             Record record = getRecord(req.key);
-
             if (record != null) {
                 if (req.version > record.version + 1) {
                     Request reqCopy = new Request();
@@ -1977,7 +2035,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 record.version = req.version;
                 record.runBackupOps();
             }
-
             return true;
         }
 
@@ -2295,7 +2352,81 @@ public final class ConcurrentMapManager extends BaseManager {
             } else {
                 fireMapEvent(mapListeners, name, EntryEvent.TYPE_UPDATED, record);
             }
+            markRecordDirty(record);
             return oldValue;
+        }
+
+        void markRecordDirty(Record record) {
+            if (true) return;
+            if (!record.dirty) {
+                record.dirty = true;
+                if (writeDelaySeconds > 0) {
+                    record.writeTime = System.currentTimeMillis() + (writeDelaySeconds * 1000L);
+                    setDirtyRecords.add(record);
+                }
+            }
+        }
+
+        void startAsyncStoreWrite() {
+            logger.log(Level.FINEST, "startAsyncStoreWrite " + setDirtyRecords.size());
+            long now = System.currentTimeMillis();
+            Iterator<Record> itDirtyRecords = setDirtyRecords.iterator();
+            final Map<Data, Data> entriesToStore = new HashMap<Data, Data>();
+            final Collection<Data> keysToDelete = new HashSet<Data>();
+
+            while (itDirtyRecords.hasNext()) {
+                Record dirtyRecord = itDirtyRecords.next();
+                if (dirtyRecord.writeTime > now) {
+                    if (dirtyRecord.value != null) {
+                        entriesToStore.put(doHardCopy(dirtyRecord.key), doHardCopy(dirtyRecord.value));
+                    } else {
+                        keysToDelete.add(doHardCopy(dirtyRecord.key));
+                    }
+                    dirtyRecord.dirty = false;
+                    itDirtyRecords.remove();
+                }
+            }
+            final int entriesToStoreSize = entriesToStore.size();
+            final int keysToDeleteSize = keysToDelete.size();
+            if (entriesToStoreSize > 0 || keysToDeleteSize > 0) {
+                executeLocally(new Runnable() {
+                    public void run() {
+                        if (keysToDeleteSize > 0) {
+                            if (keysToDeleteSize == 1) {
+                                Data key = keysToDelete.iterator().next();
+                                store.delete(toObject(key));
+                            } else {
+                                Collection realKeys = new HashSet();
+                                for (Data key : keysToDelete) {
+                                    realKeys.add(toObject(key));
+                                }
+                                store.deleteAll(realKeys);
+                            }
+                        }
+                        if (entriesToStoreSize > 0) {
+                            Object keyFirst = null;
+                            Object valueFirst = null;
+                            Set<Map.Entry<Data, Data>> entries = entriesToStore.entrySet();
+                            Map realEntries = new HashMap();
+                            for (Map.Entry<Data, Data> entry : entries) {
+                                Object key = toObject(entry.getKey());
+                                Object value = toObject(entry.getValue());
+                                realEntries.put(key, value);
+                                if (keyFirst == null) {
+                                    keyFirst = key;
+                                    valueFirst = value;
+                                }
+                            }
+                            if (entriesToStoreSize == 1) {
+                                store.store(keyFirst, valueFirst);
+                            } else {
+                                store.storeAll(realEntries);
+                            }
+                        }
+                    }
+                });
+            }
+
         }
 
         void reset() {
@@ -2646,6 +2777,8 @@ public final class ConcurrentMapManager extends BaseManager {
         private int copyCount = 0;
         private List<Data> lsValues = null; // multimap values
         private SortedSet<VersionedBackupOp> backupOps = null;
+        private boolean dirty = false;
+        private long writeTime = -1;
 
         public Record(String name, int blockId, Data key, Data value, long ttl) {
             super();

@@ -281,6 +281,63 @@ public class Node {
         }
     }
 
+    private boolean init() {
+        try {
+            final String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
+            final String preferIPv6Address = System.getProperty("java.net.preferIPv6Addresses");
+            if (preferIPv6Address == null && preferIPv4Stack == null) {
+                System.setProperty("java.net.preferIPv4Stack", "true");
+            }
+            final Config config = Config.get();
+            final ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+            address = AddressPicker.pickAddress(serverSocketChannel);
+            address.setThisAddress(true);
+            localMember = new MemberImpl(address, true, localNodeType);
+            //initialize managers..
+            ClusterService.get().start();
+            ClusterManager.get().init();
+            ConcurrentMapManager.get().init();
+            BlockingQueueManager.get().init();
+            ExecutorManager.get().init();
+            ListenerManager.get().init();
+            TopicManager.get().init();
+
+            ClusterManager.get().addMember(localMember);
+            InSelector.get().start();
+            OutSelector.get().start();
+            InSelector.get().setServerSocketChannel(serverSocketChannel);
+            if (address == null)
+                return false;
+            Logger systemLogger = Logger.getLogger("com.hazelcast.system");
+            systemLogger.log(Level.INFO, "Hazelcast " + Build.version + " ("
+                    + Build.build + ") starting at " + address);
+            systemLogger.log(Level.INFO, "Copyright (C) 2009 Hazelcast.com");
+
+            if (config.getJoin().getMulticastConfig().isEnabled()) {
+                final MulticastSocket multicastSocket = new MulticastSocket(null);
+                multicastSocket.setReuseAddress(true);
+                // bind to receive interface
+                multicastSocket.bind(new InetSocketAddress(
+                        config.getJoin().getMulticastConfig().getMulticastPort()));
+                multicastSocket.setTimeToLive(32);
+                // set the send interface
+                multicastSocket.setInterface(address.getInetAddress());
+                multicastSocket.setReceiveBufferSize(1024);
+                multicastSocket.setSendBufferSize(1024);
+                multicastSocket.joinGroup(InetAddress
+                        .getByName(config.getJoin().getMulticastConfig().getMulticastGroup()));
+                multicastSocket.setSoTimeout(1000);
+                MulticastService.get().init(multicastSocket);
+            }
+
+        } catch (final Exception e) {
+            dumpCore(e);
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
     public void start() {
         if (completelyShutdown) return;
         firstMainThread = Thread.currentThread();
@@ -316,10 +373,14 @@ public class Node {
                 public void run() {
                     try {
                         completelyShutdown = true;
-                        logger.log(Level.INFO, "Hazelcast ShutdownHook is shutting down!");
+                        if (logger != null){
+                            logger.log(Level.INFO, "Hazelcast ShutdownHook is shutting down!");
+                        }
                         shutdown();
                     } catch (Exception e) {
-                        logger.log(Level.WARNING, "Hazelcast shutdownhook exception:", e);
+                        if (logger != null) {
+                            logger.log(Level.WARNING, "Hazelcast shutdownhook exception:", e);
+                        }
                     }
                 }
             });
@@ -449,62 +510,7 @@ public class Node {
         return lsPossibleAddresses;
     }
 
-    private boolean init() {
-        try {
-            final String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
-            final String preferIPv6Address = System.getProperty("java.net.preferIPv6Addresses");
-            if (preferIPv6Address == null && preferIPv4Stack == null) {
-                System.setProperty("java.net.preferIPv4Stack", "true");
-            }
-            final Config config = Config.get();
-            final ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
-            address = AddressPicker.pickAddress(serverSocketChannel);
-            address.setThisAddress(true);
-            localMember = new MemberImpl(address, true, localNodeType);
-            //initialize managers..
-            ClusterService.get().start();
-            ClusterManager.get().init();
-            ConcurrentMapManager.get().init();
-            BlockingQueueManager.get().init();
-            ExecutorManager.get().init();
-            ListenerManager.get().init();
-            TopicManager.get().init();
 
-            ClusterManager.get().addMember(localMember);
-            InSelector.get().start();
-            OutSelector.get().start();
-            InSelector.get().setServerSocketChannel(serverSocketChannel);
-            if (address == null)
-                return false;
-            Logger systemLogger = Logger.getLogger("com.hazelcast.system");
-            systemLogger.log(Level.INFO, "Hazelcast " + Build.version + " ("
-                    + Build.build + ") starting at " + address);
-            systemLogger.log(Level.INFO, "Copyright (C) 2009 Hazelcast.com");
-
-            if (config.getJoin().getMulticastConfig().isEnabled()) {
-                final MulticastSocket multicastSocket = new MulticastSocket(null);
-                multicastSocket.setReuseAddress(true);
-                // bind to receive interface
-                multicastSocket.bind(new InetSocketAddress(
-                        config.getJoin().getMulticastConfig().getMulticastPort()));
-                multicastSocket.setTimeToLive(32);
-                // set the send interface
-                multicastSocket.setInterface(address.getInetAddress());
-                multicastSocket.setReceiveBufferSize(1024);
-                multicastSocket.setSendBufferSize(1024);
-                multicastSocket.joinGroup(InetAddress
-                        .getByName(config.getJoin().getMulticastConfig().getMulticastGroup()));
-                multicastSocket.setSoTimeout(1000);
-                MulticastService.get().init(multicastSocket);
-            }
-
-        } catch (final Exception e) {
-            dumpCore(e);
-            e.printStackTrace();
-            return false;
-        }
-        return true;
-    }
 
     private void join() {
         final Config config = Config.get();

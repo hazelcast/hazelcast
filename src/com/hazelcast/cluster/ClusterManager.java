@@ -536,9 +536,8 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
     }
 
     void updateMembers(List<MemberInfo> lsMemberInfos) {
-        if (DEBUG) {
-            log("MEMBERS UPDATE!!");
-        }
+        logger.log(Level.FINEST, "MEMBERS UPDATE!!");
+
         lsMembersBefore.clear();
         Map<Address, MemberImpl> mapOldMembers = new HashMap<Address, MemberImpl>();
         for (MemberImpl member : lsMembers) {

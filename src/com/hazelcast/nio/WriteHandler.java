@@ -38,8 +38,10 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
 
     WriteHandler(final Connection connection) {
-        super(connection);
+        super(connection, true);
     }
+
+    long enqueueTime = 0;
 
     public void enqueuePacket(final Packet packet) {
         writeQueue.offer(packet);
@@ -68,16 +70,22 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                     lastPacket = (Packet) writeQueue.poll();
                 }
                 if (lastPacket != null) {
-                    boolean packetDone = lastPacket.writeToSocketBuffer(socketBB);
+                    boolean packetDone = writeToSocket(lastPacket);
                     if (packetDone) {
                         lastPacket.returnToContainer();
                         lastPacket = null;
+                    } else {
+                        if (socketBB.hasRemaining()) {
+                            break;
+                        }
                     }
-                } else break;
+                } else {
+                    break;
+                }
             }
             socketBB.flip();
             try {
-                socketChannel.write(socketBB);
+                int written = socketChannel.write(socketBB);
             } catch (final Exception e) {
                 if (lastPacket != null) {
                     lastPacket.returnToContainer();
@@ -94,6 +102,8 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
         } catch (final Throwable t) {
             logger.log(Level.SEVERE, "Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
+            t.printStackTrace();
+            System.exit(0);
         } finally {
             ready = false;
             registerWrite();
@@ -108,6 +118,81 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             registerWrite();
         }
         ready = false;
+    }
+
+    private boolean writeToSocket(Packet packet) throws Exception {
+        if (cipherEnabled) {
+            return encryptAndWrite(packet);
+        } else {
+            return packet.writeToSocketBuffer(socketBB);
+        }
+    }
+
+
+    boolean sizeWritten = false;
+
+    public final boolean encryptAndWrite(Packet packet) throws Exception {
+        if (cipherBuffer.position() > 0 && socketBB.hasRemaining()) {
+            cipherBuffer.flip();
+            BufferUtil.copyToDirectBuffer(cipherBuffer, socketBB);
+            if (cipherBuffer.hasRemaining()) {
+                cipherBuffer.compact();
+            } else {
+                cipherBuffer.clear();
+            }
+        }
+        if (!sizeWritten) {
+            int cipherSize = cipher.getOutputSize(packet.totalSize);
+            socketBB.putInt(cipherSize);
+            sizeWritten = true;
+        }
+        packet.totalWritten += encryptAndWriteToSocket(packet.bbSizes);
+        packet.totalWritten += encryptAndWriteToSocket(packet.bbHeader);
+        if (packet.key.size() > 0) {
+            int len = packet.key.lsData.size();
+            for (int i = 0; i < len && socketBB.hasRemaining(); i++) {
+                ByteBuffer bb = packet.key.lsData.get(i);
+                packet.totalWritten += encryptAndWriteToSocket(bb);
+            }
+        }
+
+        if (packet.value.size() > 0) {
+            int len = packet.value.lsData.size();
+            for (int i = 0; i < len && socketBB.hasRemaining(); i++) {
+                ByteBuffer bb = packet.value.lsData.get(i);
+                packet.totalWritten += encryptAndWriteToSocket(bb);
+            }
+        }
+        boolean complete = packet.totalWritten >= packet.totalSize;
+        if (complete) {
+            if (socketBB.remaining() >= cipher.getOutputSize(0)) {
+                sizeWritten = false;
+                socketBB.put(cipher.doFinal());
+            } else {
+                return false;
+            }
+        }
+        return complete;
+    }
+
+    private final int encryptAndWriteToSocket(ByteBuffer src) throws Exception {
+        int remaining = src.remaining();
+        if (src.hasRemaining()) {
+            cipher.update(src, cipherBuffer);
+            cipherBuffer.flip();
+            BufferUtil.copyToDirectBuffer(cipherBuffer, socketBB);
+            if (cipherBuffer.hasRemaining()) {
+                cipherBuffer.compact();
+            } else {
+                cipherBuffer.clear();
+            }
+            return remaining - src.remaining();
+        }
+        return 0;
+    }
+
+    void log(String str) {
+//        System.out.println(str);
     }
 
     private void registerWrite() {

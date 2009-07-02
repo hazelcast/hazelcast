@@ -18,13 +18,21 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.impl.Build;
+import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.KeySpec;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 
 abstract class AbstractSelectionHandler implements SelectionHandler {
 
@@ -46,12 +54,26 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 
     protected SelectionKey sk = null;
 
-    public AbstractSelectionHandler(final Connection connection) {
+    protected ByteBuffer cipherBuffer = null;
+
+    protected Cipher cipher = null;
+
+    protected boolean cipherEnabled = false;
+
+    public AbstractSelectionHandler(final Connection connection, boolean writer) {
         super();
         this.connection = connection;
         this.socketChannel = connection.getSocketChannel();
         this.inSelector = InSelector.get();
         this.outSelector = OutSelector.get();
+        if (cipherEnabled) {
+            this.cipher = createCipher("hazelcast", writer);
+            if (writer) {
+                cipherBuffer = ByteBuffer.allocate(2 * SEND_SOCKET_BUFFER_SIZE);
+            } else {
+                cipherBuffer = ByteBuffer.allocate(2 * RECEIVE_SOCKET_BUFFER_SIZE);
+            }
+        }
     }
 
     protected void shutdown() {
@@ -81,6 +103,56 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
         } catch (final Exception e) {
             handleSocketException(e);
         }
+    }
+
+
+    // 8-byte Salt
+    byte[] salt = {
+            (byte) 0xA9, (byte) 0x9B, (byte) 0xC8, (byte) 0x32,
+            (byte) 0x56, (byte) 0x35, (byte) 0xE3, (byte) 0x03
+    };
+
+    public Cipher createCipher(String passPhrase, boolean encrypt) {
+        try {
+            int iterationCount = 32;
+            // Create the key
+            KeySpec keySpec = new PBEKeySpec(passPhrase.toCharArray(), salt, iterationCount);
+            SecretKey key = SecretKeyFactory.getInstance(
+                    "PBEWithMD5AndDES").generateSecret(keySpec);
+            Cipher cipher = Cipher.getInstance(key.getAlgorithm());
+
+            // Prepare the parameter to the ciphers
+            AlgorithmParameterSpec paramSpec = new PBEParameterSpec(salt, iterationCount);
+
+            // Create the ciphers
+            cipher.init((encrypt) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE, key, paramSpec);
+
+//            Security.addProvider(new BouncyCastleProvider());
+//
+//
+//            String xform = "RSA/NONE/PKCS1Padding";
+//            // Generate a key-pair
+////            KeyPairGenerator kpg = KeyPairGenerator.getInstance("DESede");
+////            kpg.initialize(112); // 512 is the keysize.
+////            KeyPair kp = kpg.generateKeyPair();
+////            PublicKey pubk = kp.getPublic();
+////            PrivateKey prvk = kp.getPrivate();
+//
+//            SecretKey key = KeyGenerator.getInstance("DESede").generateKey();
+//            Cipher cipher = Cipher.getInstance(xform);
+//
+//            if (encrypt) {
+//                cipher.init (Cipher.ENCRYPT_MODE, key);
+//            } else {
+//                cipher.init (Cipher.DECRYPT_MODE, key);
+//            }
+
+            return cipher;
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(0);
+        }
+        return null;
     }
 
 }
