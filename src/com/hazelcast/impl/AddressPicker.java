@@ -87,7 +87,7 @@ public class AddressPicker {
                         }
                         addLine(1, sb, "multicast : " + inetAddress.isMulticastAddress());
                         addLine(1, sb, "loopback : " + inetAddress.isLoopbackAddress());
-                        if (Config.get().getInterfaces().isEnabled()) {
+                        if (Config.get().getNetworkConfig().getInterfaces().isEnabled()) {
                             addLine(1, sb, "has match : " + matchAddress(address));
                         }
                     } catch (final Exception ex) {
@@ -125,7 +125,7 @@ public class AddressPicker {
         while (st.hasMoreTokens()) {
             ip[i++] = Integer.parseInt(st.nextToken());
         }
-        final List<String> interfaces = Config.get().getInterfaces().getLsInterfaces();
+        final List<String> interfaces = Config.get().getNetworkConfig().getInterfaces().getLsInterfaces();
         for (final String ipmask : interfaces) {
             if (matchAddress(ipmask, ip)) {
                 return true;
@@ -181,7 +181,7 @@ public class AddressPicker {
                         final InetAddress inetAddress = e.nextElement();
                         if (inetAddress instanceof Inet4Address) {
                             final String address = inetAddress.getHostAddress();
-                            if (config.getInterfaces().isEnabled()) {
+                            if (config.getNetworkConfig().getInterfaces().isEnabled()) {
                                 if (matchAddress(address)) {
                                     currentAddress = address;
                                     break interfaces;
@@ -195,7 +195,7 @@ public class AddressPicker {
                         }
                     }
                 }
-                if (config.getInterfaces().isEnabled() && currentAddress == null) {
+                if (config.getNetworkConfig().getInterfaces().isEnabled() && currentAddress == null) {
                     String msg = "Hazelcast CANNOT start on this node. No matching network interface found. ";
                     msg += "\nInterface matching must be either disabled or updated in the hazelcast.xml config file.";
                     logger.log(Level.SEVERE, msg);

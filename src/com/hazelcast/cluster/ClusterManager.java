@@ -143,6 +143,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
     }
 
     public final void heartBeater() {
+        if (true) return;
         if (!Node.get().joined())
             return;
         long now = System.currentTimeMillis();
@@ -327,7 +328,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
             // log("Handling  " + joinRequest);
         }
         Connection conn = joinRequest.getConnection();
-        if (!Config.get().getJoin().getMulticastConfig().isEnabled()) {
+        if (!Config.get().getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             if (Node.get().getMasterAddress() != null && !isMaster()) {
                 sendProcessableTo(new Master(Node.get().getMasterAddress()), conn);
             }

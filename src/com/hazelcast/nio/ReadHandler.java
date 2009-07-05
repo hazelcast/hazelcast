@@ -20,6 +20,7 @@ package com.hazelcast.nio;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.impl.ThreadContext;
 
+import javax.crypto.Cipher;
 import javax.crypto.ShortBufferException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -31,8 +32,20 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     Packet packet = null;
 
+    final PacketReader packetReader;
+
     public ReadHandler(final Connection connection) {
         super(connection, false);
+        if (cipherBuilder != null) {
+            if (cipherBuilder.isAsymmetric()) {
+                packetReader = new AsymmetricCipherPacketReader();
+            } else {
+                packetReader = new SymmetricCipherPacketReader();
+            }
+        } else {
+            packetReader = new DefaultPacketReader();
+        }
+        System.out.println("READHandler " + packetReader);
     }
 
     public final void handle() {
@@ -59,10 +72,13 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
         try {
             if (inBuffer.position() == 0) return;
             inBuffer.flip();
-            readFromSocket();
-            if (inBuffer.hasRemaining())
-                throw new RuntimeException ("InBuffer cannot have remaining : " + inBuffer.remaining());
-            inBuffer.clear(); 
+            packetReader.readPacket();
+            if (inBuffer.hasRemaining()) {
+                inBuffer.compact();
+            } else {
+                inBuffer.clear();
+            }
+
         } catch (final Throwable t) {
             logger.log(Level.SEVERE, "Fatal Error at ReadHandler for endPoint: "
                     + connection.getEndPoint(), t);
@@ -78,9 +94,60 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
         ClusterService.get().enqueueAndReturn(p);
     }
 
-    int size = -1;
-    public final void readFromSocket() throws Exception {
-        if (cipherEnabled) {
+    interface PacketReader {
+        void readPacket() throws Exception;
+    }
+
+    class DefaultPacketReader implements PacketReader {
+        public void readPacket() {
+            while (inBuffer.hasRemaining()) {
+                if (packet == null) {
+                    packet = obtainReadable();
+                }
+                boolean complete = packet.read(inBuffer);
+                if (complete) {
+                    enqueueFullPacket(packet);
+                    packet = null;
+                }
+            }
+        }
+    }
+
+    class AsymmetricCipherPacketReader implements PacketReader {
+        Cipher cipher = cipherBuilder.getReaderCipher();
+        ByteBuffer cipherBuffer = ByteBuffer.allocate(128);
+
+        public void readPacket() throws Exception{
+            while (inBuffer.remaining() >= 128) {
+                if (cipherBuffer.position() > 0) throw new RuntimeException();
+                int oldLimit = inBuffer.limit();
+                inBuffer.limit(inBuffer.position() + 128);
+                int cipherReadSize = cipher.doFinal(inBuffer, cipherBuffer);
+                inBuffer.limit(oldLimit);
+
+                cipherBuffer.flip();
+                while (cipherBuffer.hasRemaining()) {
+                    if (packet == null) {
+                        packet = obtainReadable();
+                    }
+                    boolean complete = false;
+                    complete = packet.read(cipherBuffer);
+                    if (complete) {
+                        enqueueFullPacket(packet);
+                        packet = null;
+                    }
+                }
+                cipherBuffer.clear();
+            }
+        }
+    }
+
+    class SymmetricCipherPacketReader implements PacketReader {
+        int size = -1;
+        Cipher cipher = cipherBuilder.getReaderCipher();
+        ByteBuffer cipherBuffer = ByteBuffer.allocate(2 * RECEIVE_SOCKET_BUFFER_SIZE);
+
+        public void readPacket()  throws Exception{
             while (inBuffer.hasRemaining()) {
                 try {
                     if (size == -1) {
@@ -118,20 +185,8 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
                 }
                 cipherBuffer.clear();
             }
-        } else {
-            while (inBuffer.hasRemaining()) {
-                if (packet == null) {
-                    packet = obtainReadable();
-                }
-                boolean complete = packet.read(inBuffer);
-                if (complete) {
-                    enqueueFullPacket(packet);
-                    packet = null;
-                }
-            }
         }
     }
-
 
     void log(String str) {
 //        System.out.println(str);

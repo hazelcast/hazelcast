@@ -21,6 +21,7 @@ import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.Join;
 import com.hazelcast.impl.MulticastService.JoinInfo;
 import com.hazelcast.nio.*;
 
@@ -243,6 +244,7 @@ public class Node {
     }
 
     public boolean master() {
+        if (address == null) return false;
         return address.equals(masterAddress);
     }
 
@@ -312,20 +314,20 @@ public class Node {
             systemLogger.log(Level.INFO, "Hazelcast " + Build.version + " ("
                     + Build.build + ") starting at " + address);
             systemLogger.log(Level.INFO, "Copyright (C) 2009 Hazelcast.com");
-
-            if (config.getJoin().getMulticastConfig().isEnabled()) {
+            Join join = config.getNetworkConfig().getJoin();
+            if (join.getMulticastConfig().isEnabled()) {
                 final MulticastSocket multicastSocket = new MulticastSocket(null);
                 multicastSocket.setReuseAddress(true);
                 // bind to receive interface
                 multicastSocket.bind(new InetSocketAddress(
-                        config.getJoin().getMulticastConfig().getMulticastPort()));
+                        join.getMulticastConfig().getMulticastPort()));
                 multicastSocket.setTimeToLive(32);
                 // set the send interface
                 multicastSocket.setInterface(address.getInetAddress());
                 multicastSocket.setReceiveBufferSize(1024);
                 multicastSocket.setSendBufferSize(1024);
                 multicastSocket.joinGroup(InetAddress
-                        .getByName(config.getJoin().getMulticastConfig().getMulticastGroup()));
+                        .getByName(join.getMulticastConfig().getMulticastGroup()));
                 multicastSocket.setSoTimeout(1000);
                 MulticastService.get().init(multicastSocket);
             }
@@ -360,7 +362,7 @@ public class Node {
         clusterServiceThread.setPriority(7);
         threads.add(clusterServiceThread);
 
-        if (Config.get().getJoin().getMulticastConfig().isEnabled()) {
+        if (Config.get().getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             startMulticastService();
         }
         join();
@@ -452,7 +454,7 @@ public class Node {
                 for (final InetAddress inetAddress : allAddresses) {
                     boolean shouldCheck = true;
                     Address address;
-                    if (config.getInterfaces().isEnabled()) {
+                    if (config.getNetworkConfig().getInterfaces().isEnabled()) {
                         address = new Address(inetAddress.getAddress(), config.getPort());
                         shouldCheck = AddressPicker.matchAddress(address.getHost());
                     }
@@ -469,7 +471,8 @@ public class Node {
 
     private List<Address> getPossibleMembers() {
         final Config config = Config.get();
-        final List<String> lsJoinMembers = config.getJoin().getJoinMembers().getMembers();
+        Join join = config.getNetworkConfig().getJoin();
+        final List<String> lsJoinMembers = join.getJoinMembers().getMembers();
         final List<Address> lsPossibleAddresses = new ArrayList<Address>();
         for (final String host : lsJoinMembers) {
             // check if host is hostname of ip address
@@ -487,7 +490,7 @@ public class Node {
                     for (final InetAddress inetAddress : allAddresses) {
                         boolean shouldCheck = true;
                         Address addrs;
-                        if (config.getInterfaces().isEnabled()) {
+                        if (config.getNetworkConfig().getInterfaces().isEnabled()) {
                             addrs = new Address(inetAddress.getAddress(), config.getPort());
                             shouldCheck = AddressPicker.matchAddress(addrs.getHost());
                         }
@@ -506,7 +509,7 @@ public class Node {
                 e.printStackTrace();
             }
         }
-        lsPossibleAddresses.addAll(config.getJoin().getJoinMembers().getAddresses());
+        lsPossibleAddresses.addAll(config.getNetworkConfig().getJoin().getJoinMembers().getAddresses());
         return lsPossibleAddresses;
     }
 
@@ -514,7 +517,7 @@ public class Node {
 
     private void join() {
         final Config config = Config.get();
-        if (!config.getJoin().getMulticastConfig().isEnabled()) {
+        if (!config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             joinWithTCP();
         } else {
             joinWithMulticast();
@@ -586,7 +589,7 @@ public class Node {
             boolean found = false;
             int numberOfSeconds = 0;
             while (!found
-                    && numberOfSeconds < config.getJoin().getJoinMembers().getConnectionTimeoutSeconds()) {
+                    && numberOfSeconds < config.getNetworkConfig().getJoin().getJoinMembers().getConnectionTimeoutSeconds()) {
                 Address addressFailed;
                 while ((addressFailed = failedConnections.poll()) != null) {
                     lsPossibleAddresses.remove(addressFailed);
@@ -649,13 +652,13 @@ public class Node {
 
         try {
             final Config config = Config.get();
-            final Address requiredAddress = getAddressFor(config.getJoin().getJoinMembers().getRequiredMember());
+            final Address requiredAddress = getAddressFor(config.getNetworkConfig().getJoin().getJoinMembers().getRequiredMember());
             if (DEBUG) {
                 logger.log(Level.FINEST, "Joining over required member " + requiredAddress);
             }
             if (requiredAddress == null) {
                 throw new RuntimeException("Invalid required member "
-                        + config.getJoin().getJoinMembers().getRequiredMember());
+                        + config.getNetworkConfig().getJoin().getJoinMembers().getRequiredMember());
             }
             if (requiredAddress.equals(address)) {
                 setAsMaster();
@@ -685,7 +688,7 @@ public class Node {
 
     private void joinWithTCP() {
         final Config config = Config.get();
-        if (config.getJoin().getJoinMembers().getRequiredMember() != null) {
+        if (config.getNetworkConfig().getJoin().getJoinMembers().getRequiredMember() != null) {
             joinViaRequiredMember();
         } else {
             joinViaPossibleMembers();

@@ -215,6 +215,7 @@ public final class ThreadContext {
         private final int maxSize;
         private final Queue<E> localPool;
         private final BlockingQueue<E> objectQueue;
+        private int zero = 0;
 
         public ObjectPool(String name, int maxSize) {
             super();
@@ -259,11 +260,13 @@ public final class ThreadContext {
                 if (value == null) {
                     int totalDrained = objectQueue.drainTo(localPool, maxSize);
                     if (totalDrained == 0) {
-//						if (++zero % 10000 == 0) {
-//							System.out.println(name + " : " + Thread.currentThread().getName()
-//									+ " DRAINED " + totalDrained + "  size:" + objectQueue.size()
-//									+ ", zeroCount:" + zero);
-//						}		
+						if (++zero % 10000 == 0) {
+							logger.log(Level.FINEST, "ObjectPool [" + name + "] : "
+                                    + Thread.currentThread().getName()
+									+ " DRAINED " + totalDrained + "  size:" + objectQueue.size()
+									+ ", zeroCount:" + zero);
+                            zero = 0;
+						}
                         for (int i = 0; i < 4; i++) {
                             localPool.add(createNew());
                         }

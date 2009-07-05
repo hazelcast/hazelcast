@@ -49,10 +49,6 @@ public class Config {
 
     private boolean portAutoIncrement = true;
 
-    private Interfaces interfaces = new Interfaces();
-
-    private Join join = new Join();
-
     private ExecutorConfig executorConfig = new ExecutorConfig();
 
     private Map<String, TopicConfig> mapTopicConfigs = new HashMap<String, TopicConfig>();
@@ -68,6 +64,8 @@ public class Config {
     private File configurationFile;
     
     private ConfigBuilder configBuilder;
+
+    private NetworkConfig networkConfig = new NetworkConfig();
     
     private Config() {
         String configFile = System.getProperty("hazelcast.config");
@@ -199,7 +197,15 @@ public class Config {
         }
     }
 
-	/**
+    public NetworkConfig getNetworkConfig() {
+        return networkConfig;
+    }
+
+    public void setNetworkConfig(NetworkConfig networkConfig) {
+        this.networkConfig = networkConfig;
+    }
+
+    /**
 	 * @return the xmlConfig
 	 */
 	public String getXmlConfig() {
@@ -267,34 +273,6 @@ public class Config {
 	 */
 	public void setPortAutoIncrement(boolean portAutoIncrement) {
 		this.portAutoIncrement = portAutoIncrement;
-	}
-
-	/**
-	 * @return the interfaces
-	 */
-	public Interfaces getInterfaces() {
-		return interfaces;
-	}
-
-	/**
-	 * @param interfaces the interfaces to set
-	 */
-	public void setInterfaces(Interfaces interfaces) {
-		this.interfaces = interfaces;
-	}
-
-	/**
-	 * @return the join
-	 */
-	public Join getJoin() {
-		return join;
-	}
-
-	/**
-	 * @param join the join to set
-	 */
-	public void setJoin(Join join) {
-		this.join = join;
 	}
 
 	/**

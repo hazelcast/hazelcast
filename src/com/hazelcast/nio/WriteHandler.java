@@ -17,6 +17,7 @@
 
 package com.hazelcast.nio;
 
+import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.Queue;
@@ -36,9 +37,20 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     private Packet lastPacket = null;
 
+    private final PacketWriter packetWriter;
 
     WriteHandler(final Connection connection) {
         super(connection, true);
+        if (cipherBuilder != null) {
+            if (cipherBuilder.isAsymmetric()) {
+                packetWriter = new AsymmetricCipherPacketWriter();
+            } else {
+                packetWriter = new SymmetricCipherPacketWriter();
+            }
+        } else {
+            packetWriter = new DefaultPacketWriter();
+        }
+        System.out.println("WRITEHandler " + packetWriter);
     }
 
     long enqueueTime = 0;
@@ -70,7 +82,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                     lastPacket = (Packet) writeQueue.poll();
                 }
                 if (lastPacket != null) {
-                    boolean packetDone = writeToSocket(lastPacket);
+                    boolean packetDone = packetWriter.writePacket(lastPacket);
                     if (packetDone) {
                         lastPacket.returnToContainer();
                         lastPacket = null;
@@ -120,75 +132,156 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         ready = false;
     }
 
-    private boolean writeToSocket(Packet packet) throws Exception {
-        if (cipherEnabled) {
-            return encryptAndWrite(packet);
-        } else {
+    interface PacketWriter {
+        boolean writePacket(Packet packet) throws Exception;
+    }
+
+    class DefaultPacketWriter implements PacketWriter {
+        public boolean writePacket(Packet packet) {
             return packet.writeToSocketBuffer(socketBB);
         }
     }
 
+    class AsymmetricCipherPacketWriter implements PacketWriter {
+        ByteBuffer cipherBuffer = ByteBuffer.allocate(2 * SEND_SOCKET_BUFFER_SIZE);
+        Cipher cipher = cipherBuilder.getWriterCipher();
 
-    boolean sizeWritten = false;
-
-    public final boolean encryptAndWrite(Packet packet) throws Exception {
-        if (cipherBuffer.position() > 0 && socketBB.hasRemaining()) {
-            cipherBuffer.flip();
-            BufferUtil.copyToDirectBuffer(cipherBuffer, socketBB);
-            if (cipherBuffer.hasRemaining()) {
-                cipherBuffer.compact();
-            } else {
-                cipherBuffer.clear();
-            }
-        }
-        if (!sizeWritten) {
-            int cipherSize = cipher.getOutputSize(packet.totalSize);
-            socketBB.putInt(cipherSize);
-            sizeWritten = true;
-        }
-        packet.totalWritten += encryptAndWriteToSocket(packet.bbSizes);
-        packet.totalWritten += encryptAndWriteToSocket(packet.bbHeader);
-        if (packet.key.size() > 0) {
-            int len = packet.key.lsData.size();
-            for (int i = 0; i < len && socketBB.hasRemaining(); i++) {
-                ByteBuffer bb = packet.key.lsData.get(i);
-                packet.totalWritten += encryptAndWriteToSocket(bb);
-            }
+        public boolean writePacket(Packet packet) throws Exception {
+            return encryptAndWrite(packet);
         }
 
-        if (packet.value.size() > 0) {
-            int len = packet.value.lsData.size();
-            for (int i = 0; i < len && socketBB.hasRemaining(); i++) {
-                ByteBuffer bb = packet.value.lsData.get(i);
-                packet.totalWritten += encryptAndWriteToSocket(bb);
+        public final boolean encryptAndWrite(Packet packet) throws Exception {
+            if (cipherBuffer.position() > 0 && socketBB.hasRemaining()) {
+                cipherBuffer.flip();
+                BufferUtil.copyToDirectBuffer(cipherBuffer, socketBB);
+                if (cipherBuffer.hasRemaining()) {
+                    cipherBuffer.compact();
+                } else {
+                    cipherBuffer.clear();
+                }
+            }
+            packet.totalWritten += encryptAndWriteToSocket(packet.bbSizes);
+            packet.totalWritten += encryptAndWriteToSocket(packet.bbHeader);
+            if (packet.key.size() > 0) {
+                int len = packet.key.lsData.size();
+                for (int i = 0; i < len && socketBB.hasRemaining(); i++) {
+                    ByteBuffer bb = packet.key.lsData.get(i);
+                    packet.totalWritten += encryptAndWriteToSocket(bb);
+                }
+            }
+
+            if (packet.value.size() > 0) {
+                int len = packet.value.lsData.size();
+                for (int i = 0; i < len && socketBB.hasRemaining(); i++) {
+                    ByteBuffer bb = packet.value.lsData.get(i);
+                    packet.totalWritten += encryptAndWriteToSocket(bb);
+                }
+            }
+            return packet.totalWritten >= packet.totalSize;
+        }
+
+        private final int encryptAndWriteToSocket(ByteBuffer src) throws Exception {
+            int remaining = src.remaining();
+            if (src.hasRemaining()) {
+                doCipherUpdate(src);
+                cipherBuffer.flip();
+                BufferUtil.copyToDirectBuffer(cipherBuffer, socketBB);
+                if (cipherBuffer.hasRemaining()) {
+                    cipherBuffer.compact();
+                } else {
+                    cipherBuffer.clear();
+                }
+                return remaining - src.remaining();
+            }
+            return 0;
+        }
+
+        private void doCipherUpdate(ByteBuffer src) throws Exception {
+            while (src.hasRemaining()) {
+
+                int remaining = src.remaining();
+                if (remaining > 100) {
+                    int oldLimit = src.limit();
+                    src.limit(src.position() + 100);
+                    int outputAppendSize = cipher.doFinal(src, cipherBuffer);
+                    src.limit(oldLimit);
+
+                } else {
+
+                    int outputAppendSize = cipher.doFinal(src, cipherBuffer);
+                }
             }
         }
-        boolean complete = packet.totalWritten >= packet.totalSize;
-        if (complete) {
-            if (socketBB.remaining() >= cipher.getOutputSize(0)) {
-                sizeWritten = false;
-                socketBB.put(cipher.doFinal());
-            } else {
-                return false;
-            }
-        }
-        return complete;
     }
 
-    private final int encryptAndWriteToSocket(ByteBuffer src) throws Exception {
-        int remaining = src.remaining();
-        if (src.hasRemaining()) {
-            cipher.update(src, cipherBuffer);
-            cipherBuffer.flip();
-            BufferUtil.copyToDirectBuffer(cipherBuffer, socketBB);
-            if (cipherBuffer.hasRemaining()) {
-                cipherBuffer.compact();
-            } else {
-                cipherBuffer.clear();
-            }
-            return remaining - src.remaining();
+    class SymmetricCipherPacketWriter implements PacketWriter {
+        boolean sizeWritten = false;
+        ByteBuffer cipherBuffer = ByteBuffer.allocate(2 * SEND_SOCKET_BUFFER_SIZE);
+        Cipher cipher = cipherBuilder.getWriterCipher();
+                                    
+        public boolean writePacket(Packet packet) throws Exception {
+            return encryptAndWrite(packet);
         }
-        return 0;
+
+        public final boolean encryptAndWrite(Packet packet) throws Exception {
+            if (cipherBuffer.position() > 0 && socketBB.hasRemaining()) {
+                cipherBuffer.flip();
+                BufferUtil.copyToDirectBuffer(cipherBuffer, socketBB);
+                if (cipherBuffer.hasRemaining()) {
+                    cipherBuffer.compact();
+                } else {
+                    cipherBuffer.clear();
+                }
+            }
+            if (!sizeWritten) {
+                int cipherSize = cipher.getOutputSize(packet.totalSize);
+                socketBB.putInt(cipherSize);
+                sizeWritten = true;
+            }
+            packet.totalWritten += encryptAndWriteToSocket(packet.bbSizes);
+            packet.totalWritten += encryptAndWriteToSocket(packet.bbHeader);
+            if (packet.key.size() > 0) {
+                int len = packet.key.lsData.size();
+                for (int i = 0; i < len && socketBB.hasRemaining(); i++) {
+                    ByteBuffer bb = packet.key.lsData.get(i);
+                    packet.totalWritten += encryptAndWriteToSocket(bb);
+                }
+            }
+
+            if (packet.value.size() > 0) {
+                int len = packet.value.lsData.size();
+                for (int i = 0; i < len && socketBB.hasRemaining(); i++) {
+                    ByteBuffer bb = packet.value.lsData.get(i);
+                    packet.totalWritten += encryptAndWriteToSocket(bb);
+                }
+            }
+            boolean complete = packet.totalWritten >= packet.totalSize;
+            if (complete) {
+                if (socketBB.remaining() >= cipher.getOutputSize(0)) {
+                    sizeWritten = false;
+                    socketBB.put(cipher.doFinal());
+                } else {
+                    return false;
+                }
+            }
+            return complete;
+        }
+
+        private final int encryptAndWriteToSocket(ByteBuffer src) throws Exception {
+            int remaining = src.remaining();
+            if (src.hasRemaining()) {
+                cipher.update(src, cipherBuffer);
+                cipherBuffer.flip();
+                BufferUtil.copyToDirectBuffer(cipherBuffer, socketBB);
+                if (cipherBuffer.hasRemaining()) {
+                    cipherBuffer.compact();
+                } else {
+                    cipherBuffer.clear();
+                }
+                return remaining - src.remaining();
+            }
+            return 0;
+        }
     }
 
     void log(String str) {
