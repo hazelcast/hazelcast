@@ -17,8 +17,8 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.impl.*;
 import com.hazelcast.collection.SimpleBoundedQueue;
+import com.hazelcast.impl.*;
 import com.hazelcast.impl.BaseManager.PacketProcessor;
 import com.hazelcast.impl.BaseManager.Processable;
 import com.hazelcast.nio.Packet;

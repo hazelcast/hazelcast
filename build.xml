@@ -56,6 +56,7 @@
 		<copy file="${hazelcast.jar.name}" todir="../aws-project/lib" />
 		<move file="${hazelcast.jar.name}" todir="${dist.dir}" />
 		<move file="${rar.name}.rar" todir="${dist.dir}" />
+        <copy file="dist/keystore" todir="${dist.dir}"/>        
 		<copy file="dist/run.bat" todir="${dist.dir}" />
 		<copy file="dist/run.sh" todir="${dist.dir}" />
 		<copy file="dist/test.bat" todir="${dist.dir}" />

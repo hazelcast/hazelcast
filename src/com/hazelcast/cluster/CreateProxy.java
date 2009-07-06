@@ -3,11 +3,11 @@
  */
 package com.hazelcast.cluster;
 
+import com.hazelcast.impl.FactoryImpl;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-
-import com.hazelcast.impl.FactoryImpl;
 
 public class CreateProxy extends AbstractRemotelyProcessable {
 

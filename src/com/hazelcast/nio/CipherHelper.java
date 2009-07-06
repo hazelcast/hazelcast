@@ -74,7 +74,7 @@ final class CipherHelper {
 
     public static String getKeyAlias() {
         AsymmetricEncryptionConfig aec = Config.get().getNetworkConfig().getAsymmetricEncryptionConfig();
-        return aec.getKeyAlias();         
+        return aec.getKeyAlias();
     }
 
 
@@ -93,8 +93,10 @@ final class CipherHelper {
 
         AsymmetricCipherBuilder() {
             try {
-                String provider = "org.bouncycastle.jce.provider.BouncyCastleProvider";
-                Security.addProvider((Provider) Class.forName(provider).newInstance());
+                if (Boolean.getBoolean("hazelcast.security.bouncy.enabled")) {
+                    String provider = "org.bouncycastle.jce.provider.BouncyCastleProvider";
+                    Security.addProvider((Provider) Class.forName(provider).newInstance());
+                }
                 AsymmetricEncryptionConfig aec = Config.get().getNetworkConfig().getAsymmetricEncryptionConfig();
 
                 algorithm = aec.getAlgorithm();
@@ -149,7 +151,7 @@ final class CipherHelper {
             algorithm = sec.getAlgorithm();
             passPhrase = sec.getPassword();
             salt = createSalt(sec.getSalt());
-            iterationCount = sec.getIterationCount(); 
+            iterationCount = sec.getIterationCount();
         }
 
         byte[] createSalt(String saltStr) {
@@ -192,7 +194,7 @@ final class CipherHelper {
         }
 
         public Cipher getReaderCipher(String ignored) {
-            return create (false);
+            return create(false);
         }
 
         public boolean isAsymmetric() {

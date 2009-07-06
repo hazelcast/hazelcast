@@ -17,11 +17,12 @@
 
 package com.hazelcast.nio;
 
+import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
+
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 
 
 public class BuffersInputStream extends InputStream implements DataInput {

@@ -3,11 +3,11 @@
  */
 package com.hazelcast.cluster;
 
+import com.hazelcast.nio.Address;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-
-import com.hazelcast.nio.Address;
 
 public class AddOrRemoveConnection extends AbstractRemotelyProcessable {
     public Address address = null;

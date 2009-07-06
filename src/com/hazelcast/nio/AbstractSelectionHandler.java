@@ -17,8 +17,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.impl.Build;
 import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 
@@ -48,7 +46,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 
     protected SelectionKey sk = null;
 
-    public AbstractSelectionHandler(final Connection connection, boolean writer) {
+    public AbstractSelectionHandler(final Connection connection) {
         super();
         this.connection = connection;
         this.socketChannel = connection.getSocketChannel();

@@ -17,15 +17,10 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.cluster.*;
 import com.hazelcast.core.EntryEvent;
 import static com.hazelcast.core.ICommon.InstanceType;
 import com.hazelcast.core.Member;
-import com.hazelcast.cluster.AbstractRemotelyProcessable;
-import com.hazelcast.cluster.ClusterImpl;
-import com.hazelcast.cluster.ClusterManager;
-import com.hazelcast.cluster.ClusterService;
-import com.hazelcast.cluster.RemotelyProcessable;
-
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.ResponseTypes.*;

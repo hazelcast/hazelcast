@@ -17,10 +17,10 @@
 
 package com.hazelcast.examples;
 
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.IMap;
 
 import java.io.IOException;
 import java.io.Serializable;

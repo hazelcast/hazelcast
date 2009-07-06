@@ -17,10 +17,12 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.collection.SimpleBoundedQueue;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.BlockingQueueManager.Offer;
 import com.hazelcast.impl.BlockingQueueManager.Poll;
 import com.hazelcast.impl.ConcurrentMapManager.*;
+import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 import com.hazelcast.nio.BufferUtil;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
@@ -34,8 +36,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
-import com.hazelcast.collection.SimpleBoundedQueue;
 
 
 public final class ThreadContext {

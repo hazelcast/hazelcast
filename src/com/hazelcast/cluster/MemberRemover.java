@@ -3,12 +3,12 @@
  */
 package com.hazelcast.cluster;
 
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 
 public class MemberRemover implements RemotelyProcessable {
     private Address deadAddress = null;

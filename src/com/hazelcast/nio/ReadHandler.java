@@ -37,17 +37,20 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
     final PacketReader packetReader;
 
     public ReadHandler(final Connection connection) {
-        super(connection, false);
+        super(connection);
         boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled();
         boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled();
 
         if (asymmetricEncryptionEnabled || symmetricEncryptionEnabled) {
             if (asymmetricEncryptionEnabled && symmetricEncryptionEnabled) {
                 packetReader = new ComplexCipherPacketReader();
+                logger.log (Level.INFO,  "Reader started with ComplexEncryption");
             } else if (symmetricEncryptionEnabled) {
                 packetReader = new SymmetricCipherPacketReader();
+                logger.log (Level.INFO,  "Reader started with SymmetricEncryption");
             } else {
                 packetReader = new AsymmetricCipherPacketReader();
+                logger.log (Level.INFO,  "Reader started with AsymmetricEncryption");
             }
         } else {
             packetReader = new DefaultPacketReader();
@@ -120,42 +123,68 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
     }
 
     class ComplexCipherPacketReader implements PacketReader {
-        public void readPacket() {
-            while (inBuffer.hasRemaining()) {
-                if (packet == null) {
-                    packet = obtainReadable();
+        AsymmetricCipherPacketReader apr = new AsymmetricCipherPacketReader();
+        SymmetricCipherPacketReader spr = new SymmetricCipherPacketReader();
+        boolean joinPartReadDone = false;
+        int totalJoinRead = 0;
+        int maxJoinRead = 2280;
+        ComplexCipherPacketReader() {
+        }
+
+        public void readPacket() throws Exception {
+            if (joinPartReadDone) {
+                spr.readPacket();
+            } else {
+                int left = maxJoinRead - totalJoinRead;
+                int current = inBuffer.position();
+                System.out.println(left + " left " + inBuffer.remaining());
+                System.out.println("CURRENT " + current);
+                if (inBuffer.remaining() < 128) return;
+                if (inBuffer.remaining() >= left) {
+                    int oldLimit = inBuffer.limit();
+                    inBuffer.limit(inBuffer.position() + left);
+                    apr.readPacket();
+                    System.out.println(inBuffer.limit() + " AFTER2 " + inBuffer.position());
+
+                    inBuffer.limit(oldLimit);
+
+                } else {
+                    System.out.println(inBuffer.remaining() + " NOw " + inBuffer.position());
+                    apr.readPacket();
+                    System.out.println("AFTER " + inBuffer.position());
                 }
-                boolean complete = packet.read(inBuffer);
-                if (complete) {
-                    enqueueFullPacket(packet);
-                    packet = null;
+                totalJoinRead += (inBuffer.position() - current);
+                joinPartReadDone = (totalJoinRead >= maxJoinRead);
+                System.out.println(totalJoinRead  + " total read " + maxJoinRead);
+                if (joinPartReadDone) {
+                    readPacket();
                 }
             }
         }
     }
 
     class AsymmetricCipherPacketReader implements PacketReader {
-        Cipher cipher = null;//cipherBuilder.getReaderCipher();
+        Cipher cipher = null;
         ByteBuffer cipherBuffer = ByteBuffer.allocate(128);
         ByteBuffer bbAlias = null;
         boolean aliasSizeSet = false;
 
         public void readPacket() throws Exception {
+            int aliasSize = 0;
             if (cipher == null) {
                 if (!aliasSizeSet) {
                     if (inBuffer.remaining() < 4) {
                         return;
                     } else {
-                        int aliasSize = inBuffer.getInt();
-                        bbAlias = ByteBuffer.allocate(aliasSize);
+                        aliasSize = inBuffer.getInt();
+                        bbAlias = ByteBuffer.allocate(996);
                     }
                 }
                 copyToHeapBuffer(inBuffer, bbAlias);
                 if (!bbAlias.hasRemaining()) {
                     bbAlias.flip();
-                    String remoteAlias = new String(bbAlias.array(), 0, bbAlias.limit());
+                    String remoteAlias = new String(bbAlias.array(), 0, aliasSize);
                     cipher = CipherHelper.createAsymmetricReaderCipher(remoteAlias);
-                    System.out.println("READ BLOCK SIZE " + cipher.getBlockSize());
                 }
             }
             while (inBuffer.remaining() >= 128) {

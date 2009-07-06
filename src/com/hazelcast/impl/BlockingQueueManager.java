@@ -17,19 +17,21 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.cluster.ClusterManager;
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
-import com.hazelcast.cluster.ClusterManager;
-import com.hazelcast.cluster.ClusterService;
-
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
+import com.hazelcast.nio.Address;
 import static com.hazelcast.nio.BufferUtil.*;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Data;
+import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.Packet;
 
 import java.io.DataInput;
 import java.io.DataOutput;

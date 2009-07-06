@@ -17,9 +17,9 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.impl.BaseManager.Processable;
-import com.hazelcast.cluster.ClusterService;
 
 import java.util.Collection;
 import java.util.List;

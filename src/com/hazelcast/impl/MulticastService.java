@@ -17,8 +17,8 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.cluster.JoinRequest;
+import com.hazelcast.config.Config;
 import com.hazelcast.nio.Address;
 
 import java.io.*;

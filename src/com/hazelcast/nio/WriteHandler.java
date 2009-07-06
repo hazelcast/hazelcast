@@ -17,6 +17,8 @@
 
 package com.hazelcast.nio;
 
+import static com.hazelcast.nio.BufferUtil.copyToDirectBuffer;
+
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -24,7 +26,6 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
-import static com.hazelcast.nio.BufferUtil.*;
 
 public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
@@ -41,17 +42,20 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     private final PacketWriter packetWriter;
 
     WriteHandler(final Connection connection) {
-        super(connection, true);
+        super(connection);
         boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled();
         boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled();
 
         if (asymmetricEncryptionEnabled || symmetricEncryptionEnabled) {
             if (asymmetricEncryptionEnabled && symmetricEncryptionEnabled) {
                 packetWriter = new ComplexCipherPacketWriter();
+                logger.log (Level.INFO,  "Writer started with ComplexEncryption");
             } else if (symmetricEncryptionEnabled) {
                 packetWriter = new SymmetricCipherPacketWriter();
+                logger.log (Level.INFO,  "Writer started with SymmetricEncryption");
             } else {
                 packetWriter = new AsymmetricCipherPacketWriter();
+                logger.log (Level.INFO,  "Writer started with AsymmetricEncryption");
             }
         } else {
             packetWriter = new DefaultPacketWriter();
@@ -151,18 +155,30 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         boolean joinPartDone = false;
         AsymmetricCipherPacketWriter apw = new AsymmetricCipherPacketWriter();
         SymmetricCipherPacketWriter spw = new SymmetricCipherPacketWriter();
-
+        int joinPartTotalWrites = 0;
+        final int maxJoinWrite;
         ComplexCipherPacketWriter() {
-            socketBB.limit(5* 1024);
+            maxJoinWrite = 2280;
         }
 
         public boolean writePacket(Packet packet) throws Exception {
             boolean result = false;
             if (!joinPartDone) {
+                int left = maxJoinWrite - joinPartTotalWrites;
+                if (socketBB.remaining() > left) {
+                    socketBB.limit(socketBB.position() + left);
+                }
+                int currentPosition = socketBB.position();
                 result = apw.writePacket(packet);
-                if (!socketBB.hasRemaining()) {
+                joinPartTotalWrites += (socketBB.position() - currentPosition);
+                socketBB.limit(socketBB.capacity());
+                if (joinPartTotalWrites == maxJoinWrite) {
+//                    apw.cipherBuffer.flip();
+//                    socketBB.put (apw.cipherBuffer);
+//                    System.out.println("LEFT " + apw.cipherBuffer.position());
                     joinPartDone = true;
                     apw = null;
+                    writePacket(packet);
                 }
             } else {
                 result = spw.writePacket(packet);
@@ -198,6 +214,8 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                 byte[] localAliasBytes = localAlias.getBytes();
                 socketBB.putInt (localAliasBytes.length);
                 socketBB.put (localAliasBytes);
+                socketBB.put (new byte[996 - localAliasBytes.length]);
+
                 aliasWritten = true;
             }
             return encryptAndWrite(packet);

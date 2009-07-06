@@ -3,13 +3,13 @@
  */
 package com.hazelcast.cluster;
 
+import com.hazelcast.impl.MemberImpl;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.hazelcast.impl.MemberImpl;
 
 public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
 

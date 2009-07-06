@@ -17,6 +17,7 @@
 
 package com.hazelcast.nio;
 
+import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 import com.hazelcast.impl.ThreadContext;
 
 import java.io.DataInput;
@@ -26,7 +27,6 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
-import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 
 public final class Data implements DataSerializable {
     /**

@@ -3,15 +3,15 @@
  */
 package com.hazelcast.cluster;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-
 import com.hazelcast.impl.BlockingQueueManager;
 import com.hazelcast.impl.ConcurrentMapManager;
 import com.hazelcast.impl.ListenerManager;
 import com.hazelcast.impl.TopicManager;
 import com.hazelcast.nio.Connection;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 public class SyncProcess extends AbstractRemotelyCallable<Boolean> implements
         RemotelyProcessable {

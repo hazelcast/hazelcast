@@ -3,13 +3,13 @@
  */
 package com.hazelcast.cluster;
 
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.DataSerializable;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.Callable;
-
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.DataSerializable;
 
 public abstract class AbstractRemotelyCallable<T> implements DataSerializable,
         Callable<T> {

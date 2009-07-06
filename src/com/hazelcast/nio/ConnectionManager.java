@@ -17,9 +17,9 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.impl.Build;
 import com.hazelcast.impl.Node;
-import com.hazelcast.cluster.ClusterManager;
 
 import java.nio.channels.SocketChannel;
 import java.util.Map;

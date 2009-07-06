@@ -17,6 +17,20 @@
         <interfaces enabled="false">
             <interface>10.3.17.*</interface>
         </interfaces>
+        <symmetric-encryption enabled="false">
+            <algorithm>PBEWithMD5AndDES</algorithm>
+            <salt>thesalt</salt>
+            <password>thepass</password>
+            <iteration-count>19</iteration-count>
+        </symmetric-encryption>
+        <asymmetric-encryption enabled="false">
+            <algorithm>RSA/NONE/PKCS1PADDING</algorithm>
+            <keyPassword>thekeypass</keyPassword>
+            <keyAlias>local</keyAlias>
+            <storeType>JKS</storeType>
+            <storePassword>thestorepass</storePassword>
+            <storePath>keystore</storePath>
+        </asymmetric-encryption>
     </network>
     <executor-service>
         <core-pool-size>16</core-pool-size>

@@ -4,13 +4,12 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.impl.Node;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.DataSerializable;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.DataSerializable;
 
 public class MemberInfo implements DataSerializable {
     Address address = null;
