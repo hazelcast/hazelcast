@@ -24,6 +24,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
+import static com.hazelcast.nio.BufferUtil.*;
 
 public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
@@ -41,16 +42,20 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     WriteHandler(final Connection connection) {
         super(connection, true);
-        if (cipherBuilder != null) {
-            if (cipherBuilder.isAsymmetric()) {
-                packetWriter = new AsymmetricCipherPacketWriter();
-            } else {
+        boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled();
+        boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled();
+
+        if (asymmetricEncryptionEnabled || symmetricEncryptionEnabled) {
+            if (asymmetricEncryptionEnabled && symmetricEncryptionEnabled) {
+                packetWriter = new ComplexCipherPacketWriter();
+            } else if (symmetricEncryptionEnabled) {
                 packetWriter = new SymmetricCipherPacketWriter();
+            } else {
+                packetWriter = new AsymmetricCipherPacketWriter();
             }
         } else {
             packetWriter = new DefaultPacketWriter();
         }
-        System.out.println("WRITEHandler " + packetWriter);
     }
 
     long enqueueTime = 0;
@@ -142,18 +147,66 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         }
     }
 
-    class AsymmetricCipherPacketWriter implements PacketWriter {
-        ByteBuffer cipherBuffer = ByteBuffer.allocate(2 * SEND_SOCKET_BUFFER_SIZE);
-        Cipher cipher = cipherBuilder.getWriterCipher();
+    class ComplexCipherPacketWriter implements PacketWriter {
+        boolean joinPartDone = false;
+        AsymmetricCipherPacketWriter apw = new AsymmetricCipherPacketWriter();
+        SymmetricCipherPacketWriter spw = new SymmetricCipherPacketWriter();
+
+        ComplexCipherPacketWriter() {
+            socketBB.limit(5* 1024);
+        }
 
         public boolean writePacket(Packet packet) throws Exception {
+            boolean result = false;
+            if (!joinPartDone) {
+                result = apw.writePacket(packet);
+                if (!socketBB.hasRemaining()) {
+                    joinPartDone = true;
+                    apw = null;
+                }
+            } else {
+                result = spw.writePacket(packet);
+            }
+            return result;
+        }
+    }
+
+    class AsymmetricCipherPacketWriter implements PacketWriter {
+        final ByteBuffer cipherBuffer = ByteBuffer.allocate(2 * SEND_SOCKET_BUFFER_SIZE);
+        final Cipher cipher;
+        final int writeBlockSize;
+
+        boolean aliasWritten = false;
+
+        AsymmetricCipherPacketWriter() {
+            cipher = init();
+            writeBlockSize = cipher.getBlockSize();
+        }
+
+        Cipher init() {
+            Cipher c = null;
+            try {
+                c = CipherHelper.createAsymmetricWriterCipher();
+            } catch (Exception e) {
+               logger.log(Level.SEVERE, "Asymmetric Cipher for WriteHandler cannot be initialized.", e);
+            }
+            return c;
+        }
+        public boolean writePacket(Packet packet) throws Exception {
+            if (!aliasWritten) {
+                String localAlias = CipherHelper.getKeyAlias();
+                byte[] localAliasBytes = localAlias.getBytes();
+                socketBB.putInt (localAliasBytes.length);
+                socketBB.put (localAliasBytes);
+                aliasWritten = true;
+            }
             return encryptAndWrite(packet);
         }
 
         public final boolean encryptAndWrite(Packet packet) throws Exception {
             if (cipherBuffer.position() > 0 && socketBB.hasRemaining()) {
                 cipherBuffer.flip();
-                BufferUtil.copyToDirectBuffer(cipherBuffer, socketBB);
+                copyToDirectBuffer(cipherBuffer, socketBB);
                 if (cipherBuffer.hasRemaining()) {
                     cipherBuffer.compact();
                 } else {
@@ -185,7 +238,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             if (src.hasRemaining()) {
                 doCipherUpdate(src);
                 cipherBuffer.flip();
-                BufferUtil.copyToDirectBuffer(cipherBuffer, socketBB);
+                copyToDirectBuffer(cipherBuffer, socketBB);
                 if (cipherBuffer.hasRemaining()) {
                     cipherBuffer.compact();
                 } else {
@@ -200,9 +253,9 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             while (src.hasRemaining()) {
 
                 int remaining = src.remaining();
-                if (remaining > 100) {
+                if (remaining > writeBlockSize) {
                     int oldLimit = src.limit();
-                    src.limit(src.position() + 100);
+                    src.limit(src.position() + writeBlockSize);
                     int outputAppendSize = cipher.doFinal(src, cipherBuffer);
                     src.limit(oldLimit);
 
@@ -216,9 +269,24 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     class SymmetricCipherPacketWriter implements PacketWriter {
         boolean sizeWritten = false;
-        ByteBuffer cipherBuffer = ByteBuffer.allocate(2 * SEND_SOCKET_BUFFER_SIZE);
-        Cipher cipher = cipherBuilder.getWriterCipher();
-                                    
+        final ByteBuffer cipherBuffer = ByteBuffer.allocate(2 * SEND_SOCKET_BUFFER_SIZE);
+        final Cipher cipher;
+
+        SymmetricCipherPacketWriter() {
+            cipher = init();
+        }
+
+        Cipher init() {
+            Cipher c = null;
+            try {
+                c = CipherHelper.createSymmetricWriterCipher();
+            } catch (Exception e) {
+               logger.log(Level.SEVERE, "Symmetric Cipher for WriteHandler cannot be initialized.", e);
+               CipherHelper.handleCipherException (e, connection);
+            }
+            return c;
+        }
+
         public boolean writePacket(Packet packet) throws Exception {
             return encryptAndWrite(packet);
         }
@@ -226,7 +294,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         public final boolean encryptAndWrite(Packet packet) throws Exception {
             if (cipherBuffer.position() > 0 && socketBB.hasRemaining()) {
                 cipherBuffer.flip();
-                BufferUtil.copyToDirectBuffer(cipherBuffer, socketBB);
+                copyToDirectBuffer(cipherBuffer, socketBB);
                 if (cipherBuffer.hasRemaining()) {
                     cipherBuffer.compact();
                 } else {
@@ -272,7 +340,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             if (src.hasRemaining()) {
                 cipher.update(src, cipherBuffer);
                 cipherBuffer.flip();
-                BufferUtil.copyToDirectBuffer(cipherBuffer, socketBB);
+                copyToDirectBuffer(cipherBuffer, socketBB);
                 if (cipherBuffer.hasRemaining()) {
                     cipherBuffer.compact();
                 } else {

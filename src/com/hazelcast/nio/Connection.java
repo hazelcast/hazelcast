@@ -23,17 +23,15 @@ import com.hazelcast.cluster.ClusterService;
 import java.nio.channels.SocketChannel;
 
 public class Connection {
-    SocketChannel socketChannel;
+    final SocketChannel socketChannel;
 
-    ReadHandler readHandler;
+    final ReadHandler readHandler;
 
-    WriteHandler writeHandler;
+    final WriteHandler writeHandler;
 
     private volatile boolean live = true;
 
     Address endPoint = null;
-
-    int localPort = -1;
 
     public Connection(SocketChannel socketChannel) {
         super();

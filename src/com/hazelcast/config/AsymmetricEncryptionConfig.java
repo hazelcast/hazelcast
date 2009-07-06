@@ -19,11 +19,11 @@ package com.hazelcast.config;
 
 public class AsymmetricEncryptionConfig {
     private boolean enabled = false;
-    private String transformation = "RSA/NONE/PKCS1PADDING";
-    private String keyPassword = "theKeyPass";
+    private String algorithm = "RSA/NONE/PKCS1PADDING";
+    private String keyPassword = "thekeypass";
     private String keyAlias = "local";
     private String storeType = "JKS";
-    private String storePassword = "theStorePass";
+    private String storePassword = "thestorepass";
     private String storePath = "keystore";
 
     public boolean isEnabled() {
@@ -34,12 +34,12 @@ public class AsymmetricEncryptionConfig {
         this.enabled = enabled;
     }
 
-    public String getTransformation() {
-        return transformation;
+    public String getAlgorithm() {
+        return algorithm;
     }
 
-    public void setTransformation(String transformation) {
-        this.transformation = transformation;
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
     }
 
     public String getKeyPassword() {
@@ -87,7 +87,7 @@ public class AsymmetricEncryptionConfig {
         final StringBuffer sb = new StringBuffer();
         sb.append("AsymmetricEncryptionConfig");
         sb.append("{enabled=").append(enabled);
-        sb.append(", transformation='").append(transformation).append('\'');
+        sb.append(", algorithm='").append(algorithm).append('\'');
         sb.append(", keyPassword='").append(keyPassword).append('\'');
         sb.append(", keyAlias='").append(keyAlias).append('\'');
         sb.append(", storeType='").append(storeType).append('\'');

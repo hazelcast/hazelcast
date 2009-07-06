@@ -19,12 +19,14 @@ package com.hazelcast.nio;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.impl.ThreadContext;
+import static com.hazelcast.nio.BufferUtil.copyToHeapBuffer;
 
 import javax.crypto.Cipher;
 import javax.crypto.ShortBufferException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.logging.Level;
+
 
 class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
@@ -36,16 +38,20 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     public ReadHandler(final Connection connection) {
         super(connection, false);
-        if (cipherBuilder != null) {
-            if (cipherBuilder.isAsymmetric()) {
-                packetReader = new AsymmetricCipherPacketReader();
-            } else {
+        boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled();
+        boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled();
+
+        if (asymmetricEncryptionEnabled || symmetricEncryptionEnabled) {
+            if (asymmetricEncryptionEnabled && symmetricEncryptionEnabled) {
+                packetReader = new ComplexCipherPacketReader();
+            } else if (symmetricEncryptionEnabled) {
                 packetReader = new SymmetricCipherPacketReader();
+            } else {
+                packetReader = new AsymmetricCipherPacketReader();
             }
         } else {
             packetReader = new DefaultPacketReader();
         }
-        System.out.println("READHandler " + packetReader);
     }
 
     public final void handle() {
@@ -113,11 +119,45 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
         }
     }
 
-    class AsymmetricCipherPacketReader implements PacketReader {
-        Cipher cipher = cipherBuilder.getReaderCipher();
-        ByteBuffer cipherBuffer = ByteBuffer.allocate(128);
+    class ComplexCipherPacketReader implements PacketReader {
+        public void readPacket() {
+            while (inBuffer.hasRemaining()) {
+                if (packet == null) {
+                    packet = obtainReadable();
+                }
+                boolean complete = packet.read(inBuffer);
+                if (complete) {
+                    enqueueFullPacket(packet);
+                    packet = null;
+                }
+            }
+        }
+    }
 
-        public void readPacket() throws Exception{
+    class AsymmetricCipherPacketReader implements PacketReader {
+        Cipher cipher = null;//cipherBuilder.getReaderCipher();
+        ByteBuffer cipherBuffer = ByteBuffer.allocate(128);
+        ByteBuffer bbAlias = null;
+        boolean aliasSizeSet = false;
+
+        public void readPacket() throws Exception {
+            if (cipher == null) {
+                if (!aliasSizeSet) {
+                    if (inBuffer.remaining() < 4) {
+                        return;
+                    } else {
+                        int aliasSize = inBuffer.getInt();
+                        bbAlias = ByteBuffer.allocate(aliasSize);
+                    }
+                }
+                copyToHeapBuffer(inBuffer, bbAlias);
+                if (!bbAlias.hasRemaining()) {
+                    bbAlias.flip();
+                    String remoteAlias = new String(bbAlias.array(), 0, bbAlias.limit());
+                    cipher = CipherHelper.createAsymmetricReaderCipher(remoteAlias);
+                    System.out.println("READ BLOCK SIZE " + cipher.getBlockSize());
+                }
+            }
             while (inBuffer.remaining() >= 128) {
                 if (cipherBuffer.position() > 0) throw new RuntimeException();
                 int oldLimit = inBuffer.limit();
@@ -144,10 +184,24 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     class SymmetricCipherPacketReader implements PacketReader {
         int size = -1;
-        Cipher cipher = cipherBuilder.getReaderCipher();
+        final Cipher cipher;
         ByteBuffer cipherBuffer = ByteBuffer.allocate(2 * RECEIVE_SOCKET_BUFFER_SIZE);
 
-        public void readPacket()  throws Exception{
+        SymmetricCipherPacketReader() {
+            cipher = init();
+        }
+
+        Cipher init() {
+            Cipher c = null;
+            try {
+                c = CipherHelper.createSymmetricReaderCipher();
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Symmetric Cipher for ReadHandler cannot be initialized.", e);
+            }
+            return c;
+        }
+
+        public void readPacket() throws Exception {
             while (inBuffer.hasRemaining()) {
                 try {
                     if (size == -1) {
