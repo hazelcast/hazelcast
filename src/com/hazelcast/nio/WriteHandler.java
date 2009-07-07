@@ -219,8 +219,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                 byte[] localAliasBytes = localAlias.getBytes();
                 socketBB.putInt (localAliasBytes.length);
                 socketBB.put (localAliasBytes);
-                socketBB.put (new byte[996 - localAliasBytes.length]);
-
                 aliasWritten = true;
             }
             return encryptAndWrite(packet);

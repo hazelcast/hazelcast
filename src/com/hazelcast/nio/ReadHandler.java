@@ -175,20 +175,19 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
         boolean aliasSizeSet = false;
 
         public void readPacket() throws Exception {
-            int aliasSize = 0;
             if (cipher == null) {
                 if (!aliasSizeSet) {
                     if (inBuffer.remaining() < 4) {
                         return;
                     } else {
-                        aliasSize = inBuffer.getInt();
-                        bbAlias = ByteBuffer.allocate(996);
+                        int aliasSize = inBuffer.getInt();
+                        bbAlias = ByteBuffer.allocate(aliasSize);
                     }
                 }
                 copyToHeapBuffer(inBuffer, bbAlias);
                 if (!bbAlias.hasRemaining()) {
                     bbAlias.flip();
-                    String remoteAlias = new String(bbAlias.array(), 0, aliasSize);
+                    String remoteAlias = new String(bbAlias.array(), 0, bbAlias.limit());
                     cipher = CipherHelper.createAsymmetricReaderCipher(remoteAlias);
                 }
             }

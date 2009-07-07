@@ -24,8 +24,8 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.PBEParameterSpec;
+import javax.crypto.spec.*;
+import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.KeySpec;
@@ -174,12 +174,40 @@ final class CipherHelper {
 
         public Cipher create(boolean encryptMode) {
             try {
-                KeySpec keySpec = new PBEKeySpec(passPhrase.toCharArray(), salt, iterationCount);
-                SecretKey key = SecretKeyFactory.getInstance(
-                        algorithm).generateSecret(keySpec);
-                Cipher cipher = Cipher.getInstance(key.getAlgorithm());
-                AlgorithmParameterSpec paramSpec = new PBEParameterSpec(salt, iterationCount);
-                cipher.init((encryptMode) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE, key, paramSpec);
+                int mode = (encryptMode) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
+                Cipher cipher = Cipher.getInstance(algorithm);
+
+                String keyAlgorithm = algorithm;
+                if (algorithm.indexOf('/') != -1) {
+                    keyAlgorithm = algorithm.substring(0, algorithm.indexOf('/'));
+                }
+                // 32-bit digest key=pass+salt
+                ByteBuffer bbPass = ByteBuffer.allocate(32);
+                MessageDigest md = MessageDigest.getInstance("MD5");
+                bbPass.put(md.digest(passPhrase.getBytes()));
+                md.reset();
+                bbPass.put(md.digest(salt));
+
+
+                SecretKey key = null;
+                AlgorithmParameterSpec paramSpec = null;
+                if (algorithm.startsWith("Blowfish")) {
+                    SecretKeySpec keySpec = new SecretKeySpec(bbPass.array(), "Blowfish");
+                    cipher.init(mode, keySpec);
+                    return cipher;
+                } else if (algorithm.startsWith("DESede")) {
+                    //requires at least 192 bits (24 bytes)
+                    KeySpec keySpec = new DESedeKeySpec(bbPass.array());
+                    key = SecretKeyFactory.getInstance("DESede").generateSecret(keySpec);
+                } else if (algorithm.startsWith("DES")) {
+                    KeySpec keySpec = new DESKeySpec(bbPass.array());
+                    key = SecretKeyFactory.getInstance("DES").generateSecret(keySpec);
+                } else if (algorithm.startsWith("PBEWith")) {
+                    paramSpec = new PBEParameterSpec(salt, iterationCount);
+                    KeySpec keySpec = new PBEKeySpec(passPhrase.toCharArray(), salt, iterationCount);
+                    key = SecretKeyFactory.getInstance(keyAlgorithm).generateSecret(keySpec);
+                }
+                cipher.init(mode, key, paramSpec);
 
                 return cipher;
             } catch (Exception e) {
