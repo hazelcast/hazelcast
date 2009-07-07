@@ -143,7 +143,6 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
     }
 
     public final void heartBeater() {
-        if (true) return;
         if (!Node.get().joined())
             return;
         long now = System.currentTimeMillis();

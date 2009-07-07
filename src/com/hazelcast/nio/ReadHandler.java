@@ -43,6 +43,11 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
         if (asymmetricEncryptionEnabled || symmetricEncryptionEnabled) {
             if (asymmetricEncryptionEnabled && symmetricEncryptionEnabled) {
+                if (true) {
+                    logger.log (Level.INFO, "Incorrect encryption configuration.");
+                    logger.log (Level.INFO, "You can enable either SymmetricEncryption or AsymmetricEncryption.");
+                    throw new RuntimeException ();
+                }                
                 packetReader = new ComplexCipherPacketReader();
                 logger.log (Level.INFO,  "Reader started with ComplexEncryption");
             } else if (symmetricEncryptionEnabled) {

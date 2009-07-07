@@ -48,6 +48,11 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
         if (asymmetricEncryptionEnabled || symmetricEncryptionEnabled) {
             if (asymmetricEncryptionEnabled && symmetricEncryptionEnabled) {
+                if (true) {
+                    logger.log (Level.INFO, "Incorrect encryption configuration.");
+                    logger.log (Level.INFO, "You can enable either SymmetricEncryption or AsymmetricEncryption.");
+                    throw new RuntimeException ();
+                }
                 packetWriter = new ComplexCipherPacketWriter();
                 logger.log (Level.INFO,  "Writer started with ComplexEncryption");
             } else if (symmetricEncryptionEnabled) {
