@@ -39,34 +39,29 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class ClusterImpl implements Cluster {
 
-    AtomicReference<Set> refListeners = new AtomicReference<Set>();
-
-    AtomicReference<Set> refMembers = new AtomicReference<Set>();
-
-    AtomicReference<ClusterMember> refLocalMember = new AtomicReference<ClusterMember>();
-
-    Map<ClusterMember, ClusterMember> mapClusterMembers = new ConcurrentHashMap<ClusterMember, ClusterMember>();
-
+    AtomicReference<Set<MembershipListener>> listeners = new AtomicReference<Set<MembershipListener>>();
+    AtomicReference<Set<Member>> members = new AtomicReference<Set<Member>>();
+    AtomicReference<Member> localMember = new AtomicReference<Member>();
+    Map<Member, Member> clusterMembers = new ConcurrentHashMap<Member, Member>();
     long clusterTimeDiff = 0;
 
     public ClusterImpl() {
-
     }
 
     public void setMembers(List<MemberImpl> lsMembers) {
-        final Set<MembershipListener> setListeners = refListeners.get();
-        Set<ClusterMember> setNew = new LinkedHashSet<ClusterMember>(lsMembers.size());
+        final Set<MembershipListener> listenerSet = listeners.get();
+        Set<Member> setNew = new LinkedHashSet<Member>(lsMembers.size());
         for (MemberImpl member : lsMembers) {
             final ClusterMember dummy = new ClusterMember(member.getAddress(), member.localMember(), member.getNodeType());
-            ClusterMember clusterMember = mapClusterMembers.get(dummy);
+            Member clusterMember = clusterMembers.get(dummy);
             if (clusterMember == null) {
                 clusterMember = dummy; 
-                if (setListeners != null && setListeners.size() > 0) {
+                if (listenerSet != null && listenerSet.size() > 0) {
                     ExecutorManager.get().executeLocaly(new Runnable() {
                         public void run() {
                             MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
                                     dummy, MembershipEvent.MEMBER_ADDED);
-                            for (MembershipListener listener : setListeners) {
+                            for (MembershipListener listener : listenerSet) {
                                 listener.memberAdded(membershipEvent);
                             }
                         }
@@ -74,19 +69,19 @@ public class ClusterImpl implements Cluster {
                 }
             }
             if (clusterMember.localMember()) {
-                refLocalMember.set(clusterMember);
+                localMember.set(clusterMember);
             }
             setNew.add(clusterMember);
         }
-        if (setListeners != null && setListeners.size() > 0) {
-            Set<ClusterMember> it = mapClusterMembers.keySet();
-            for (final ClusterMember cm : it) {
+        if (listenerSet != null && listenerSet.size() > 0) {
+            Set<Member> it = clusterMembers.keySet();
+            for (final Member cm : it) {
                 if (!setNew.contains(cm)) {
                     ExecutorManager.get().executeLocaly(new Runnable() {
                         public void run() {
                             MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
                                     cm, MembershipEvent.MEMBER_REMOVED);
-                            for (MembershipListener listener : setListeners) {
+                            for (MembershipListener listener : listenerSet) {
                                 listener.memberRemoved(membershipEvent);
                             }
                         }
@@ -95,45 +90,45 @@ public class ClusterImpl implements Cluster {
             }
         }
 
-        mapClusterMembers.clear();
-        for (ClusterMember cm : setNew) {
-            mapClusterMembers.put(cm, cm);
+        clusterMembers.clear();
+        for (Member cm : setNew) {
+            clusterMembers.put(cm, cm);
         }
-        refMembers.set(setNew);
+        members.set(setNew);
     }
 
     public void addMembershipListener(MembershipListener listener) {
-        Set<MembershipListener> setOldListeners = refListeners.get();
-        int size = (setOldListeners == null) ? 1 : setOldListeners.size() + 1;
-        Set<MembershipListener> setNewListeners = new LinkedHashSet<MembershipListener>(size);
-        if (setOldListeners != null) {
-            for (MembershipListener existingListener : setOldListeners) {
-                setNewListeners.add(existingListener);
+        Set<MembershipListener> oldListeners = listeners.get();
+        int size = (oldListeners == null) ? 1 : oldListeners.size() + 1;
+        Set<MembershipListener> newListeners = new LinkedHashSet<MembershipListener>(size);
+        if (oldListeners != null) {
+            for (MembershipListener existingListener : oldListeners) {
+                newListeners.add(existingListener);
             }
         }
-        setNewListeners.add(listener);
-        refListeners.set(setNewListeners);
+        newListeners.add(listener);
+        listeners.set(newListeners);
     }
 
     public void removeMembershipListener(MembershipListener listener) {
-        Set<MembershipListener> setOldListeners = refListeners.get();
-        if (setOldListeners == null || setOldListeners.size() == 0)
+        Set<MembershipListener> oldListeners = listeners.get();
+        if (oldListeners == null || oldListeners.size() == 0)
             return;
-        int size = setOldListeners.size() - 1;
-        Set<MembershipListener> setNewListeners = new LinkedHashSet<MembershipListener>(size);
-        for (MembershipListener existingListener : setOldListeners) {
+        int size = oldListeners.size() - 1;
+        Set<MembershipListener> newListeners = new LinkedHashSet<MembershipListener>(size);
+        for (MembershipListener existingListener : oldListeners) {
             if (existingListener.equals(listener))
-                setNewListeners.add(existingListener);
+                newListeners.add(existingListener);
         }
-        refListeners.set(setNewListeners);
+        listeners.set(newListeners);
     }
 
     public Member getLocalMember() {
-        return refLocalMember.get();
+        return localMember.get();
     }
 
     public Set<Member> getMembers() {
-        return refMembers.get();
+        return members.get();
     }
 
     @Override
