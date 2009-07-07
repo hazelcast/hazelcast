@@ -188,13 +188,13 @@ final class CipherHelper {
                 md.reset();
                 bbPass.put(md.digest(salt));
 
+                boolean isCBC = algorithm.indexOf("/CBC/") != -1;
 
                 SecretKey key = null;
-                AlgorithmParameterSpec paramSpec = null;
+                //CBC mode requires IvParameter with 8 byte input
+                AlgorithmParameterSpec paramSpec = (isCBC) ? new IvParameterSpec(salt) : null;
                 if (algorithm.startsWith("Blowfish")) {
-                    SecretKeySpec keySpec = new SecretKeySpec(bbPass.array(), "Blowfish");
-                    cipher.init(mode, keySpec);
-                    return cipher;
+                    key = new SecretKeySpec(bbPass.array(), "Blowfish");
                 } else if (algorithm.startsWith("DESede")) {
                     //requires at least 192 bits (24 bytes)
                     KeySpec keySpec = new DESedeKeySpec(bbPass.array());
