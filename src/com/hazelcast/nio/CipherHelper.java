@@ -34,6 +34,17 @@ final class CipherHelper {
     static AsymmetricCipherBuilder asymmetricCipherBuilder = null;
     static SymmetricCipherBuilder symmetricCipherBuilder = null;
 
+    static {
+        try {
+            if (Boolean.getBoolean("hazelcast.security.bouncy.enabled")) {
+                String provider = "org.bouncycastle.jce.provider.BouncyCastleProvider";
+                Security.addProvider((Provider) Class.forName(provider).newInstance());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } 
+    }
+
     public static synchronized Cipher createAsymmetricReaderCipher(String remoteAlias) throws Exception {
         if (asymmetricCipherBuilder == null) {
             asymmetricCipherBuilder = new AsymmetricCipherBuilder();
@@ -93,10 +104,7 @@ final class CipherHelper {
 
         AsymmetricCipherBuilder() {
             try {
-                if (Boolean.getBoolean("hazelcast.security.bouncy.enabled")) {
-                    String provider = "org.bouncycastle.jce.provider.BouncyCastleProvider";
-                    Security.addProvider((Provider) Class.forName(provider).newInstance());
-                }
+
                 AsymmetricEncryptionConfig aec = Config.get().getNetworkConfig().getAsymmetricEncryptionConfig();
 
                 algorithm = aec.getAlgorithm();
@@ -145,6 +153,7 @@ final class CipherHelper {
         final byte[] salt;
         final String passPhrase;
         final int iterationCount;
+        byte[] keyBytes;
 
         SymmetricCipherBuilder() {
             SymmetricEncryptionConfig sec = Config.get().getNetworkConfig().getSymmetricEncryptionConfig();
@@ -152,6 +161,7 @@ final class CipherHelper {
             passPhrase = sec.getPassword();
             salt = createSalt(sec.getSalt());
             iterationCount = sec.getIterationCount();
+            keyBytes = sec.getKey();
         }
 
         byte[] createSalt(String saltStr) {
@@ -186,26 +196,38 @@ final class CipherHelper {
                 MessageDigest md = MessageDigest.getInstance("MD5");
                 bbPass.put(md.digest(passPhrase.getBytes()));
                 md.reset();
-                bbPass.put(md.digest(salt));
+                byte[] saltDigest = md.digest(salt);
+                bbPass.put(saltDigest);
 
                 boolean isCBC = algorithm.indexOf("/CBC/") != -1;
 
                 SecretKey key = null;
                 //CBC mode requires IvParameter with 8 byte input
-                AlgorithmParameterSpec paramSpec = (isCBC) ? new IvParameterSpec(salt) : null;
-                if (algorithm.startsWith("Blowfish")) {
-                    key = new SecretKeySpec(bbPass.array(), "Blowfish");
+                int ivLength = 8;
+                AlgorithmParameterSpec paramSpec = null;
+                if (keyBytes == null) {
+                    keyBytes = bbPass.array();
+                }
+                if (algorithm.startsWith("AES")) {
+                    ivLength = 16;
+                    key = new SecretKeySpec(keyBytes, "AES");
+                } else if (algorithm.startsWith("Blowfish")) {
+                    key = new SecretKeySpec(keyBytes, "Blowfish");
                 } else if (algorithm.startsWith("DESede")) {
                     //requires at least 192 bits (24 bytes)
-                    KeySpec keySpec = new DESedeKeySpec(bbPass.array());
+                    KeySpec keySpec = new DESedeKeySpec(keyBytes);
                     key = SecretKeyFactory.getInstance("DESede").generateSecret(keySpec);
                 } else if (algorithm.startsWith("DES")) {
-                    KeySpec keySpec = new DESKeySpec(bbPass.array());
+                    KeySpec keySpec = new DESKeySpec(keyBytes);
                     key = SecretKeyFactory.getInstance("DES").generateSecret(keySpec);
                 } else if (algorithm.startsWith("PBEWith")) {
                     paramSpec = new PBEParameterSpec(salt, iterationCount);
                     KeySpec keySpec = new PBEKeySpec(passPhrase.toCharArray(), salt, iterationCount);
                     key = SecretKeyFactory.getInstance(keyAlgorithm).generateSecret(keySpec);
+                }
+                if (isCBC) {
+                    byte[] iv = (ivLength == 8) ? salt : saltDigest;
+                    paramSpec = new IvParameterSpec(iv);
                 }
                 cipher.init(mode, key, paramSpec);
 

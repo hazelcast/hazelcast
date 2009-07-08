@@ -23,6 +23,7 @@ public class SymmetricEncryptionConfig {
     private String password = "thepassword";
     private int iterationCount = 19;
     private String algorithm = "PBEWithMD5AndDES";
+    private byte[] key = null;
 
     public boolean isEnabled() {
         return enabled;
@@ -62,6 +63,14 @@ public class SymmetricEncryptionConfig {
 
     public void setAlgorithm(String algorithm) {
         this.algorithm = algorithm;
+    }
+
+    public byte[] getKey() {
+        return key;
+    }
+
+    public void setKey(byte[] key) {
+        this.key = key;
     }
 
     @Override
