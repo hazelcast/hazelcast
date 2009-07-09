@@ -36,10 +36,6 @@ public final class ClusterService implements Runnable, Constants {
 
     private static final long PERIODIC_CHECK_INTERVAL = TimeUnit.SECONDS.toNanos(1);
 
-    private static final long UTILIZATION_CHECK_INTERVAL = TimeUnit.SECONDS.toNanos(10);
-
-    private final boolean DEBUG = Build.DEBUG;
-
     private final BlockingQueue queue = new LinkedBlockingQueue();
 
     private volatile boolean running = true;
@@ -47,8 +43,6 @@ public final class ClusterService implements Runnable, Constants {
     private static final int BULK_SIZE = 64;
 
     private final SimpleBoundedQueue bulk = new SimpleBoundedQueue(BULK_SIZE);
-
-    private long start = 0;
 
     private long totalProcessTime = 0;
 
@@ -119,15 +113,6 @@ public final class ClusterService implements Runnable, Constants {
         final long processEnd = System.nanoTime();
         final long elipsedTime = processEnd - processStart;
         totalProcessTime += elipsedTime;
-//        final long duration = (processEnd - start);
-//		if (duration > UTILIZATION_CHECK_INTERVAL) {
-//			if (DEBUG) {
-//				logger.log(Level.FINEST, "ServiceProcessUtilization: "
-//						+ ((totalProcessTime * 100) / duration) + " %");
-//			}
-//			start = processEnd;
-//			totalProcessTime = 0;
-//		}
     }
 
     public void run() {
@@ -164,7 +149,6 @@ public final class ClusterService implements Runnable, Constants {
     public void start() {
         totalProcessTime = 0;
         lastPeriodicCheck = 0;
-        start = System.nanoTime();
         running = true;
     }
 
@@ -193,4 +177,7 @@ public final class ClusterService implements Runnable, Constants {
         }
     }
 
+    public long getTotalProcessTime() {
+        return totalProcessTime;
+    }
 }
