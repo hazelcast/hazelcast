@@ -56,6 +56,8 @@ public class FactoryImpl {
 
     static AtomicBoolean inited = new AtomicBoolean(false);
 
+    static CopyOnWriteArrayList<InstanceListener> lsInstanceListeners = new CopyOnWriteArrayList<InstanceListener>();
+
     private static void init() {
         if (!inited.get()) {
             synchronized (Node.class) {
@@ -73,7 +75,7 @@ public class FactoryImpl {
     }
 
     public static Collection<ICommon> getInstances() {
-    	final int totalSize = proxies.size() + mapLockProxies.size() + mapIdGenerators.size();
+        final int totalSize = proxies.size() + mapLockProxies.size() + mapIdGenerators.size();
         List<ICommon> lsProxies = new ArrayList<ICommon>(totalSize);
         lsProxies.addAll(proxies.values());
         lsProxies.addAll(mapLockProxies.values());
@@ -216,8 +218,46 @@ public class FactoryImpl {
                 }
             }
         }
+
+        fireInstanceCreateEvent(proxy);
         return proxy;
     }
+
+    public static void addInstanceListener(InstanceListener instanceListener) {
+        lsInstanceListeners.add(instanceListener);
+    }
+
+    public static void removeInstanceListener(InstanceListener instanceListener) {
+        lsInstanceListeners.remove(instanceListener);
+    }
+
+    static void fireInstanceCreateEvent(ICommon instance) {
+        if (lsInstanceListeners.size() > 0) {
+            final InstanceEvent instanceEvent = new InstanceEvent(InstanceEvent.InstanceEventType.CREATED, instance);
+            for (final InstanceListener instanceListener : lsInstanceListeners) {
+                ExecutorManager.get().executeLocaly(new Runnable() {
+                    public void run() {
+                        instanceListener.instanceCreated(instanceEvent);
+                    }
+                });
+            }
+        }
+    }
+
+    static void fireInstanceDestroyEvent(String name) {
+        ICommon instance = (ICommon) getProxy(name);
+        if (lsInstanceListeners.size() > 0) {
+            final InstanceEvent instanceEvent = new InstanceEvent(InstanceEvent.InstanceEventType.DESTROYED, instance);
+            for (final InstanceListener instanceListener : lsInstanceListeners) {
+                ExecutorManager.get().executeLocaly(new Runnable() {
+                    public void run() {
+                        instanceListener.instanceDestroyed(instanceEvent);
+                    }
+                });
+            }
+        }
+    }
+
 
     public static class LockProxy implements ILock, DataSerializable {
 
@@ -436,8 +476,11 @@ public class FactoryImpl {
         }
 
         public void destroy() {
-            ensure();
-            base.destroy();
+            ICommon instance = proxies.remove(name);
+            if (instance != null) {
+                ensure();
+                base.destroy();
+            }
         }
 
         public InstanceType getInstanceType() {
@@ -466,9 +509,11 @@ public class FactoryImpl {
             }
 
             public void destroy() {
-                TopicManager.TopicDestroy topicDestroy = TopicManager.get().new TopicDestroy();
-                topicDestroy.destroy(name);
-                proxies.remove(name);
+                ICommon instance = proxies.remove(name);
+                if (instance != null) {
+                    TopicManager.TopicDestroy topicDestroy = TopicManager.get().new TopicDestroy();
+                    topicDestroy.destroy(name);
+                }
             }
 
             public ICommon.InstanceType getInstanceType() {
@@ -565,8 +610,11 @@ public class FactoryImpl {
         }
 
         public void destroy() {
-            ensure();
-            base.destroy();
+            ICommon instance = proxies.remove(name);
+            if (instance != null) {
+                ensure();
+                base.destroy();
+            }
         }
 
         public void writeData(DataOutput out) throws IOException {
@@ -666,12 +714,12 @@ public class FactoryImpl {
             }
 
             public void destroy() {
-                mapProxy.destroy();
-                proxies.remove(name);
+                ICommon instance = proxies.remove(name);
+                if (instance != null) {
+                    mapProxy.destroy();
+                }
             }
-
-        }
-
+        } 
     }
 
     public static abstract class BaseCollection extends AbstractCollection implements List {
@@ -839,8 +887,11 @@ public class FactoryImpl {
         }
 
         public void destroy() {
-            ensure();
-            qproxyReal.destroy();
+            ICommon instance = proxies.remove(name);
+            if (instance != null) {
+                ensure();
+                qproxyReal.destroy();
+            }
         }
 
         public InstanceType getInstanceType() {
@@ -962,7 +1013,7 @@ public class FactoryImpl {
             }
 
             public String getName() {
-                return name;
+                return name.substring(2);
             }
 
             @Override
@@ -979,10 +1030,12 @@ public class FactoryImpl {
             }
 
             public void destroy() {
-                clear();
-                QDestroy qDestroy = BlockingQueueManager.get().new QDestroy();
-                qDestroy.destroy(name);
-                proxies.remove(name);
+                ICommon instance = proxies.remove(name);
+                if (instance != null) {
+                    clear();
+                    QDestroy qDestroy = BlockingQueueManager.get().new QDestroy();
+                    qDestroy.destroy(name);
+                }
             }
 
             public ICommon.InstanceType getInstanceType() {
@@ -1046,8 +1099,11 @@ public class FactoryImpl {
         }
 
         public void destroy() {
-            ensure();
-            base.destroy();
+            ICommon instance = proxies.remove(name);
+            if (instance != null) {
+                ensure();
+                base.destroy();
+            }
         }
 
         public String getName() {
@@ -1114,10 +1170,10 @@ public class FactoryImpl {
             ensure();
             base.clear();
         }
-        
+
         public int valueCount(Object key) {
-        	ensure();
-        	return base.valueCount(key);
+            ensure();
+            return base.valueCount(key);
         }
 
         private class MultiMapBase implements MultiMap, IGetAwareProxy {
@@ -1178,9 +1234,9 @@ public class FactoryImpl {
             public Set entrySet() {
                 return mapProxy.entrySet();
             }
-            
+
             public int valueCount(Object key) {
-            	return mapProxy.valueCount(key);
+                return mapProxy.valueCount(key);
             }
 
             public InstanceType getInstanceType() {
@@ -1188,8 +1244,10 @@ public class FactoryImpl {
             }
 
             public void destroy() {
-                mapProxy.destroy();
-                proxies.remove(name);
+                ICommon instance = proxies.remove(name);
+                if (instance != null) {
+                    mapProxy.destroy();
+                }
             }
         }
     }
@@ -1227,7 +1285,7 @@ public class FactoryImpl {
         boolean removeMulti(Object key, Object value);
 
         boolean add(Object value);
-        
+
         int valueCount(Object key);
     }
 
@@ -1282,8 +1340,11 @@ public class FactoryImpl {
         }
 
         public void destroy() {
-            ensure();
-            mproxyReal.destroy();
+            ICommon instance = proxies.remove(name);
+            if (instance != null) {
+                ensure();
+                mproxyReal.destroy();
+            }
         }
 
         public ICommon.InstanceType getInstanceType() {
@@ -1345,10 +1406,10 @@ public class FactoryImpl {
             ensure();
             mproxyReal.clear();
         }
-        
+
         public int valueCount(Object key) {
-        	ensure();
-        	return mproxyReal.valueCount(key);
+            ensure();
+            return mproxyReal.valueCount(key);
         }
 
         public Set keySet() {
@@ -1546,12 +1607,12 @@ public class FactoryImpl {
                 }
                 return (size < 0) ? 0 : size;
             }
-            
+
             public int valueCount(Object key) {
-            	int count;
-            	MValueCount mcount = ConcurrentMapManager.get().new MValueCount();
-            	count = ((Number) mcount.count(name, key, -1, -1)).intValue();
-            	return count;
+                int count;
+                MValueCount mcount = ConcurrentMapManager.get().new MValueCount();
+                count = ((Number) mcount.count(name, key, -1, -1)).intValue();
+                return count;
             }
 
             public Object putIfAbsent(Object key, Object value) {
@@ -1746,10 +1807,13 @@ public class FactoryImpl {
             }
 
             public void destroy() {
-                clear();
-                MDestroy mDestroy = ConcurrentMapManager.get().new MDestroy();
-                mDestroy.destroy(name);
-                proxies.remove(name);
+                ICommon instance = proxies.remove(name);
+                if (instance != null) {
+                    clear();
+                    MDestroy mDestroy = ConcurrentMapManager.get().new MDestroy();
+                    mDestroy.destroy(name);
+                }
+
             }
         }
     }
@@ -1846,7 +1910,7 @@ public class FactoryImpl {
                 if (idAddition >= MILLION) {
                     synchronized (this) {
                         try {
-                        	millionNow = million.get();
+                            millionNow = million.get();
                             idAddition = currentId.incrementAndGet();
                             if (idAddition >= MILLION) {
                                 Long idMillion = getNewMillion();

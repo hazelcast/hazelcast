@@ -1223,6 +1223,7 @@ public abstract class BaseManager implements Constants {
             } else {
                 logger.log(Level.SEVERE, "Destroy: Unknown data type=" + name);
             }
+            FactoryImpl.fireInstanceDestroyEvent(name);
         }
 
         @Override

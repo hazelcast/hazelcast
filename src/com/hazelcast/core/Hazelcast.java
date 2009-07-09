@@ -88,4 +88,13 @@ public final class Hazelcast {
     public static Collection<ICommon> getInstances() {
         return com.hazelcast.impl.FactoryImpl.getInstances();
     }
+
+
+    public static void addInstanceListener (InstanceListener instanceListener) {
+        com.hazelcast.impl.FactoryImpl.addInstanceListener (instanceListener);
+    }
+
+    public static void removeInstanceListener (InstanceListener instanceListener) {
+        com.hazelcast.impl.FactoryImpl.removeInstanceListener (instanceListener);
+    }
 }
