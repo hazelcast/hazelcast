@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.util.*;
 
 public class BlockingQueueManager extends BaseManager {
-    private final Request remoteReq = new Request();
     private final static BlockingQueueManager instance = new BlockingQueueManager();
     private final Map<String, Q> mapQueues = new HashMap<String, Q>(10);
     private final Map<Long, List<Data>> mapTxnPolledElements = new HashMap<Long, List<Data>>(10);
@@ -442,11 +441,12 @@ public class BlockingQueueManager extends BaseManager {
 
     final void handleOffer(Packet packet) {
         if (rightRemoteOfferTarget(packet)) {
-            remoteReq.setFromPacket(packet);
-            doOffer(remoteReq);
-            packet.longValue = remoteReq.longValue;
-            if (!remoteReq.scheduled) {
-                if (remoteReq.response == Boolean.TRUE) {
+            Request request = new Request();
+            request.setFromPacket(packet);
+            doOffer(request);
+            packet.longValue = request.longValue;
+            if (!request.scheduled) {
+                if (request.response == Boolean.TRUE) {
                     sendResponse(packet);
                 } else {
                     sendResponseFailure(packet);
@@ -454,7 +454,7 @@ public class BlockingQueueManager extends BaseManager {
             } else {
                 packet.returnToContainer();
             }
-            remoteReq.reset();
+            request.reset();
         }
     }
 
@@ -478,10 +478,11 @@ public class BlockingQueueManager extends BaseManager {
 
     final void handlePoll(Packet packet) {
         if (rightRemotePollTarget(packet)) {
-            remoteReq.setFromPacket(packet);
-            doPoll(remoteReq);
-            if (!remoteReq.scheduled) {
-                Data oldValue = (Data) remoteReq.response;
+            Request request = new Request();
+            request.setFromPacket(packet);
+            doPoll(request);
+            if (!request.scheduled) {
+                Data oldValue = (Data) request.response;
                 if (oldValue != null && oldValue.size() > 0) {
                     doSet(oldValue, packet.value);
                 }
@@ -489,7 +490,7 @@ public class BlockingQueueManager extends BaseManager {
             } else {
                 packet.returnToContainer();
             }
-            remoteReq.reset();
+            request.reset();
         }
     }
 

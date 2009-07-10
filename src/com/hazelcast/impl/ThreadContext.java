@@ -207,7 +207,11 @@ public final class ThreadContext {
     }
 
     public Object toObject(final Data data) {
-        return serializer.readObject(data);
+        return serializer.readObject(data, true);
+    }
+
+    public Object toObject(final Data data, boolean purgeData) {
+        return serializer.readObject(data, purgeData);
     }
 
     public abstract class ObjectPool<E> {

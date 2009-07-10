@@ -99,6 +99,10 @@ public final class Serializer {
     }
 
     public Object readObject(Data data) {
+        return readObject(data, true);
+    }
+
+    public Object readObject(Data data, boolean purgeData) {
         if (data == null || data.size() == 0)
             return null;
         Object result = null;
@@ -107,7 +111,7 @@ public final class Serializer {
             bufferProvider.setData(data);
             byte typeId = bbis.readByte();
             result = typeSerizalizers[typeId].read(bbis, data);
-            data.setNoData();
+            if (purgeData) data.setNoData();
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -151,7 +151,7 @@ class Request {
         copy.scheduled = scheduled;
         return copy;
     }
-
+    
     public void setPacket(Packet packet) {
         packet.local = false;
         packet.operation = operation;

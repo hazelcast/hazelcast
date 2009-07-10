@@ -343,6 +343,61 @@ public abstract class BaseManager implements Constants {
         void process();
     }
 
+    interface RequestHandler {
+        void handle(Request request);
+    }
+
+    abstract class AbstractOperationHandler implements PacketProcessor, RequestHandler {
+
+        public void process(Packet packet) {
+            Request request = new Request();
+            request.setFromPacket(packet);
+            request.local = false;
+            packet.returnToContainer();
+            handle(request);
+            request.reset();
+        }
+
+        abstract void doOperation(Request request);
+
+        public void handle(Request request) {
+            doOperation(request);
+            returnResponse(request);
+        }
+
+        public void returnResponse(Request request) {
+            if (request.local) {
+                final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;
+                targetAwareOp.setResult(request.response);
+            } else {
+                Packet packet = obtainPacket();
+                request.setPacket(packet);
+                packet.operation = ClusterOperation.RESPONSE;
+                packet.responseType = RESPONSE_SUCCESS;
+                if (request.response != null) {
+                    if (request.response instanceof Boolean) {
+                        if (request.response == Boolean.FALSE) {
+                            packet.responseType = RESPONSE_FAILURE;
+                        }
+                    } else {
+                        Data data = null;
+                        if (request.response instanceof Data) {
+                            data = (Data) request.response;
+                        } else {
+                            data = toData(request.response);
+                        }
+                        if (data != null && data.size() > 0) {
+                            doSet(data, packet.value);
+                        }
+                    }
+                }
+                sendResponse(packet, request.caller);
+                request.reset();                
+            }
+        }
+
+    }
+
     abstract class QueueBasedCall extends AbstractCall {
         final protected BlockingQueue responses;
 
@@ -570,15 +625,14 @@ public abstract class BaseManager implements Constants {
         }
 
         protected void setResult(final Object obj) {
-
             try {
                 if (obj == null) {
                     responses.add(OBJECT_NULL);
                 } else {
                     responses.add(obj);
-                }
+                } 
             } catch (Throwable e) {
-                System.out.println("Exception when handling " + ResponseQueueCall.this);
+                logger.log (Level.FINEST, "Exception when handling " + ResponseQueueCall.this, e);
                 e.printStackTrace();
             }
         }
@@ -656,7 +710,11 @@ public abstract class BaseManager implements Constants {
             }
         }
 
-        public abstract void doLocalOp();
+        public void doLocalOp() {
+            request.attachment = TargetAwareOp.this;
+            request.local = true;
+            ((RequestHandler) getPacketProcessor(request.operation)).handle(request);
+        }
 
         void handleNoneRedoResponse(final Packet packet) {
             handleObjectNoneRedoResponse(packet);
@@ -825,6 +883,14 @@ public abstract class BaseManager implements Constants {
 
     public Call removeCall(final Long id) {
         return mapCalls.remove(id);
+    }
+
+    public void registerPacketProcessor(ClusterOperation operation, PacketProcessor packetProcessor) {
+         ClusterService.get().registerPacketProcessor(operation, packetProcessor);
+    }
+
+    public PacketProcessor getPacketProcessor (ClusterOperation operation) {
+        return ClusterService.get().getPacketProcessor(operation);
     }
 
     public void returnScheduledAsBoolean(final Request request) {
@@ -1255,9 +1321,7 @@ public abstract class BaseManager implements Constants {
         if (call != null) {
             call.handleResponse(packetResponse);
         } else {
-            if (DEBUG) {
-                log(packetResponse.operation + " No call for callId " + packetResponse.callId);
-            }
+                logger.log(Level.FINEST, packetResponse.operation + " No call for callId " + packetResponse.callId);
             packetResponse.returnToContainer();
         }
     }

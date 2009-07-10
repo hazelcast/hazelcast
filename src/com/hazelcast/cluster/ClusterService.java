@@ -78,6 +78,14 @@ public final class ClusterService implements Runnable, Constants {
         packetProcessors[operation.getValue()] = packetProcessor;
     }
 
+    public PacketProcessor getPacketProcessor (ClusterOperation operation) {
+        PacketProcessor packetProcessor = packetProcessors[operation.getValue()];
+        if (packetProcessor == null) {
+           logger.log(Level.SEVERE, operation + " has no registered processor!");
+        }
+        return packetProcessor;
+    }
+
     public void enqueueAndReturn(final Object message) {
         try {
             queue.put(message);

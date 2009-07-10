@@ -18,17 +18,34 @@
             <interface>10.3.17.*</interface>
         </interfaces>
         <symmetric-encryption enabled="false">
+            <!--
+               encryption algorithm such as
+               DES/ECB/PKCS5Padding,
+               PBEWithMD5AndDES,
+               AES/CBC/PKCS5Padding,
+               Blowfish,
+               DESede
+            -->
             <algorithm>PBEWithMD5AndDES</algorithm>
+            <!-- salt value to use when generating the secret key -->
             <salt>thesalt</salt>
+            <!-- pass phrase to use when generating the secret key -->
             <password>thepass</password>
+            <!-- iteration count to use when generating the secret key -->
             <iteration-count>19</iteration-count>
         </symmetric-encryption>
         <asymmetric-encryption enabled="false">
+            <!-- encryption algorithm -->
             <algorithm>RSA/NONE/PKCS1PADDING</algorithm>
+            <!-- private key password -->
             <keyPassword>thekeypass</keyPassword>
+            <!-- private key alias -->
             <keyAlias>local</keyAlias>
+            <!-- key store type -->
             <storeType>JKS</storeType>
+            <!-- key store password -->
             <storePassword>thestorepass</storePassword>
+            <!-- path to the key store -->
             <storePath>keystore</storePath>
         </asymmetric-encryption>
     </network>
