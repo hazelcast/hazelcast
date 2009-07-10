@@ -374,7 +374,9 @@ public abstract class BaseManager implements Constants {
                 request.setPacket(packet);
                 packet.operation = ClusterOperation.RESPONSE;
                 packet.responseType = RESPONSE_SUCCESS;
-                if (request.response != null) {
+                if (request.response == OBJECT_REDO) {
+                    packet.responseType = RESPONSE_REDO;
+                } else if (request.response != null) {
                     if (request.response instanceof Boolean) {
                         if (request.response == Boolean.FALSE) {
                             packet.responseType = RESPONSE_FAILURE;

@@ -31,6 +31,7 @@ import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_BACKUP_LOCK;
 import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_BLOCKS;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
+import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import com.hazelcast.nio.Address;
 import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.Data;
@@ -1568,12 +1569,16 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         protected void afterLoadStore(Request request) {
-            if (request.value != null) {
-                Record record = ensureRecord(request);
-                if (record.value == null) {
-                    record.value = request.value;
+            if (request.response == Boolean.FALSE) {
+                request.response = OBJECT_REDO;
+            } else {
+                if (request.value != null) {
+                    Record record = ensureRecord(request);
+                    if (record.value == null) {
+                        record.value = request.value;
+                    }
+                    request.response = doHardCopy(record.value);
                 }
-                request.response = doHardCopy(record.value);
             }
             returnResponse(request);
         }
@@ -1634,7 +1639,11 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         protected void afterLoadStore(Request request) {
-            doOperation(request);
+            if (request.response == Boolean.FALSE) {
+                request.response = OBJECT_REDO;
+            } else {
+                doOperation(request);
+            }
             returnResponse(request);
         }
     }
@@ -1735,7 +1744,12 @@ public final class ConcurrentMapManager extends BaseManager {
             while (true) {
                 final Request request = qRequests.poll();
                 if (request != null) {
-                    execute(request);
+                    try {
+                        execute(request);
+                    } catch (Exception e) {
+                        logger.log (Level.FINEST, "Store throwed exception for " + request.operation, e);
+                        request.response = Boolean.FALSE;
+                    }
                     offerSize.decrementAndGet();
                     qResponses.offer(request);
                     enqueueAndReturn(LoadStoreFork.this);
@@ -1768,7 +1782,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 cmap.store.store(toObject(request.key, false), toObject(request.value, false));
             } else if (request.operation == ClusterOperation.CONCURRENT_MAP_REMOVE) {
                 // remove the entry
-                cmap.store.delete(toObject (request.key, false));
+                cmap.store.delete(toObject(request.key, false));
             }
         }
     }
