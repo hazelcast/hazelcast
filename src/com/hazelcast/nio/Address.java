@@ -43,8 +43,6 @@ public class Address implements DataSerializable {
 
     private int hash = -1;
 
-    private boolean dead = false;
-
     private boolean thisAddress = false;
 
     public Address() {
@@ -196,14 +194,6 @@ public class Address implements DataSerializable {
 
     public byte[] getIP() {
         return ip;
-    }
-
-    public void setDead() {
-        this.dead = true;
-    }
-
-    public boolean isDead() {
-        return dead;
     }
 
 }

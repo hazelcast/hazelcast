@@ -255,8 +255,9 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                 ConnectionManager.get().getOrConnect(connection.address);
             }
         } else { // Remove dead member
-            connection.address.setDead();
-            doRemoveAddress(connection.address);
+            if (connection.address != null) {
+                doRemoveAddress(connection.address);
+            }
         } // end of REMOVE CONNECTION
     }
 
