@@ -513,6 +513,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                 for (AsyncRemotelyBooleanCallable call : calls) {
                     call.getResultAsBoolean();
                 }
+
                 calls.clear();
                 for (final MemberInfo memberInfo : lsMemberInfos) {
                     AsyncRemotelyBooleanCallable call = new AsyncRemotelyBooleanCallable();
@@ -522,6 +523,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                 for (AsyncRemotelyBooleanCallable call : calls) {
                     call.getResultAsBoolean();
                 }
+
                 calls.clear();
                 AbstractRemotelyCallable<Boolean> connCheckcallable = new ConnectionCheckCall();
                 for (final MemberInfo memberInfo : lsMemberInfos) {
@@ -532,6 +534,8 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                 for (AsyncRemotelyBooleanCallable call : calls) {
                     call.getResultAsBoolean();
                 }
+
+
             }
         });
     }

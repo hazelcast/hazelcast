@@ -29,9 +29,9 @@ import com.hazelcast.core.*;
 import static com.hazelcast.core.ICommon.InstanceType;
 import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_BACKUP_LOCK;
 import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_BLOCKS;
+import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import com.hazelcast.nio.Address;
 import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.Data;
@@ -233,7 +233,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 record.onDisconnect(deadAddress);
             }
         }
-        doResetRecords(deadAddress);
+        doResetRecords();
     }
 
     public void reset() {
@@ -328,7 +328,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     send("blocks", CONCURRENT_MAP_BLOCKS, dataAllBlocks, member.getAddress());
                 }
             }
-            doResetRecords(null);
+            doResetRecords();
             if (DEBUG) {
                 printBlocks();
             }
@@ -1188,7 +1188,7 @@ public final class ConcurrentMapManager extends BaseManager {
         Blocks blocks = (Blocks) toObject(packet.value);
         handleBlocks(blocks);
         packet.returnToContainer();
-        doResetRecords(null);
+        doResetRecords();
         if (DEBUG) {
             // printBlocks();
         }
@@ -1255,7 +1255,7 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
 
-    void doResetRecords(Address deadAddress) {
+    void doResetRecords() {
         if (isSuperClient())
             return;
         Collection<CMap> cmaps = maps.values();
@@ -1267,32 +1267,26 @@ public final class ConcurrentMapManager extends BaseManager {
                 if (rec.key == null || rec.key.size() == 0) {
                     logger.log(Level.SEVERE, "Record.key is null or empty " + rec.key);
                 }
-                boolean shouldMigrate = false;
-                if (thisAddress.equals(rec.owner)) {
-                    shouldMigrate = true;
-                } else if (deadAddress != null && deadAddress.equals(rec.owner)) {
-                    rec.forceBackupOps();
-                    shouldMigrate = true;
-                }
-                if (shouldMigrate) {
-                    executeLocally(new Runnable() {
-                        public void run() {
-                            MMigrate mmigrate = new MMigrate();
-                            if (cmap.isMultiMap()) {
-                                List<Data> values = rec.lsValues;
-                                if (values == null || values.size() == 0) {
-                                    mmigrate.migrateMulti(rec, null);
-                                } else {
-                                    for (Data value : values) {
-                                        mmigrate.migrateMulti(rec, value);
-                                    }
-                                }
+                executeLocally(new Runnable() {
+                    public void run() {
+                        MMigrate mmigrate = new MMigrate();
+                        if (cmap.isMultiMap()) {
+                            List<Data> values = rec.lsValues;
+                            if (values == null || values.size() == 0) {
+                                mmigrate.migrateMulti(rec, null);
                             } else {
-                                mmigrate.migrate(rec);
+                                for (Data value : values) {
+                                    mmigrate.migrateMulti(rec, value);
+                                }
+                            }
+                        } else {
+                            boolean migrated = mmigrate.migrate(rec);
+                            if (!migrated) {
+                                logger.log(Level.FINEST, "Migration failed " + rec.key);
                             }
                         }
-                    });
-                }
+                    }
+                });
             }
         }
         executeLocally(new Runnable() {
@@ -1747,7 +1741,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     try {
                         execute(request);
                     } catch (Exception e) {
-                        logger.log (Level.FINEST, "Store throwed exception for " + request.operation, e);
+                        logger.log(Level.FINEST, "Store throwed exception for " + request.operation, e);
                         request.response = Boolean.FALSE;
                     }
                     offerSize.decrementAndGet();
@@ -1982,10 +1976,11 @@ public final class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
-//            System.out.println(size + " is size.. backup.size " + backupSize() + " ownedEntryCount:" + ownedEntryCount);
 //            for (int i = 0; i < BLOCK_COUNT; i++) {
 //                System.out.println(blocks[i]);
-//            }
+//            } 
+//            System.out.println(size + " is size.. backup.size " + backupSize() + " ownedEntryCount:" + ownedEntryCount);
+//            System.out.println("map size " + mapRecords.size());
             return size;
         }
 
