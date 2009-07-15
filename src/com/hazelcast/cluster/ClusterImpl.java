@@ -117,8 +117,9 @@ public class ClusterImpl implements Cluster {
         int size = oldListeners.size() - 1;
         Set<MembershipListener> newListeners = new LinkedHashSet<MembershipListener>(size);
         for (MembershipListener existingListener : oldListeners) {
-            if (existingListener.equals(listener))
+            if (!existingListener.equals(listener)) {
                 newListeners.add(existingListener);
+            }
         }
         listeners.set(newListeners);
     }
