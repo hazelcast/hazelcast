@@ -30,6 +30,7 @@ import static com.hazelcast.nio.BufferUtil.*;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -228,6 +229,33 @@ public abstract class BaseManager implements Constants {
         };
     }
 
+    protected void rethrowException(ClusterOperation operation, AddressAwareException exception) {
+        String msg = operation + " failed at " + thisAddress
+                + " because of an exception thrown at " + exception.getAddress();
+        throw new RuntimeException(msg, exception.getException());
+    }
+
+    public static class AddressAwareException implements Serializable {
+        private Exception exception;
+        private Address address; //where the exception happened
+
+        public AddressAwareException(Exception exception, Address address) {
+            this.exception = exception;
+            this.address = address;
+        }
+
+        public AddressAwareException() {
+        }
+
+        public Exception getException() {
+            return exception;
+        }
+
+        public Address getAddress() {
+            return address;
+        }
+    }
+
     public static class KeyValue implements Map.Entry, DataSerializable {
         Data key = null;
         Data value = null;
@@ -394,7 +422,7 @@ public abstract class BaseManager implements Constants {
                     }
                 }
                 sendResponse(packet, request.caller);
-                request.reset();                
+                request.reset();
             }
         }
 
@@ -632,9 +660,9 @@ public abstract class BaseManager implements Constants {
                     responses.add(OBJECT_NULL);
                 } else {
                     responses.add(obj);
-                } 
+                }
             } catch (Throwable e) {
-                logger.log (Level.FINEST, "Exception when handling " + ResponseQueueCall.this, e);
+                logger.log(Level.FINEST, "Exception when handling " + ResponseQueueCall.this, e);
                 e.printStackTrace();
             }
         }
@@ -867,7 +895,7 @@ public abstract class BaseManager implements Constants {
 
     public Address getKeyOwner(final Data key) {
         return ConcurrentMapManager.get().getKeyOwner(null, key);
-    } 
+    }
 
     public Packet obtainPacket(final String name, final Object key,
                                final Object value, final ClusterOperation operation, final long timeout) {
@@ -888,10 +916,10 @@ public abstract class BaseManager implements Constants {
     }
 
     public void registerPacketProcessor(ClusterOperation operation, PacketProcessor packetProcessor) {
-         ClusterService.get().registerPacketProcessor(operation, packetProcessor);
+        ClusterService.get().registerPacketProcessor(operation, packetProcessor);
     }
 
-    public PacketProcessor getPacketProcessor (ClusterOperation operation) {
+    public PacketProcessor getPacketProcessor(ClusterOperation operation) {
         return ClusterService.get().getPacketProcessor(operation);
     }
 
@@ -1323,7 +1351,7 @@ public abstract class BaseManager implements Constants {
         if (call != null) {
             call.handleResponse(packetResponse);
         } else {
-                logger.log(Level.FINEST, packetResponse.operation + " No call for callId " + packetResponse.callId);
+            logger.log(Level.FINEST, packetResponse.operation + " No call for callId " + packetResponse.callId);
             packetResponse.returnToContainer();
         }
     }

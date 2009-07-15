@@ -136,4 +136,18 @@ public final class BufferUtil {
         return new Data();
     }
 
+    public static final String exceptionToString(final Throwable e, Address address) {
+        StringBuilder sb = new StringBuilder(e.getMessage() +" at " + address + "\n");
+        final StackTraceElement[] stEls = e.getStackTrace();
+        for (final StackTraceElement stackTraceElement : stEls) {
+            sb.append("\tat ").append(stackTraceElement).append("\n");
+        }
+        final Throwable cause = e.getCause();
+        if (cause != null) {
+            sb.append("\tcaused by ").append(cause);
+        }
+        return sb.toString();
+    }
+
+
 }

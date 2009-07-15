@@ -534,7 +534,11 @@ public final class ConcurrentMapManager extends BaseManager {
                     return txn.get(name, key);
                 }
             }
-            return objectCall(ClusterOperation.CONCURRENT_MAP_GET, name, key, null, timeout, -1);
+            Object value = objectCall(ClusterOperation.CONCURRENT_MAP_GET, name, key, null, timeout, -1);
+            if (value instanceof AddressAwareException) {
+                rethrowException(request.operation, (AddressAwareException) value);
+            }
+            return value;
         }
     }
 
@@ -642,6 +646,9 @@ public final class ConcurrentMapManager extends BaseManager {
             } else {
                 Object oldValue = objectCall(operation, name, key, value, timeout, -1);
                 if (oldValue != null) {
+                    if (oldValue instanceof AddressAwareException) {
+                        rethrowException(operation, (AddressAwareException) oldValue);
+                    }
                     backup(ClusterOperation.CONCURRENT_MAP_BACKUP_REMOVE);
                 }
                 return oldValue;
@@ -783,6 +790,9 @@ public final class ConcurrentMapManager extends BaseManager {
                 return null;
             } else {
                 Object oldValue = objectCall(operation, name, key, value, timeout, -1);
+                if (oldValue instanceof AddressAwareException) {
+                    rethrowException(operation, (AddressAwareException) oldValue);                    
+                }
                 backup(ClusterOperation.CONCURRENT_MAP_BACKUP_PUT);
                 return oldValue;
             }
@@ -1633,10 +1643,10 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         protected void afterLoadStore(Request request) {
-            if (request.response == Boolean.FALSE) {
-                request.response = OBJECT_REDO;
-            } else {
+            if (request.response == null) {
                 doOperation(request);
+            } else {
+                request.value = (Data) request.response;
             }
             returnResponse(request);
         }
@@ -1742,7 +1752,7 @@ public final class ConcurrentMapManager extends BaseManager {
                         execute(request);
                     } catch (Exception e) {
                         logger.log(Level.FINEST, "Store throwed exception for " + request.operation, e);
-                        request.response = Boolean.FALSE;
+                        request.response = toData(new AddressAwareException(e, thisAddress));
                     }
                     offerSize.decrementAndGet();
                     qResponses.offer(request);

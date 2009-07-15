@@ -122,7 +122,7 @@ public class Node {
         try {
             final StringBuffer sb = new StringBuffer();
             if (ex != null) {
-                exceptionToStringBuffer(ex, sb);
+                sb.append(BufferUtil.exceptionToString(ex, address));
             }
             sb.append("Hazelcast.version : ").append(Build.version).append("\n");
             sb.append("Hazelcast.build   : ").append(Build.build).append("\n");
@@ -156,18 +156,7 @@ public class Node {
         }
     }
 
-    public synchronized void exceptionToStringBuffer(final Throwable e, final StringBuffer sb) {
-
-        final StackTraceElement[] stEls = e.getStackTrace();
-        for (final StackTraceElement stackTraceElement : stEls) {
-            sb.append("\tat ").append(stackTraceElement).append("\n");
-        }
-        final Throwable cause = e.getCause();
-        if (cause != null) {
-            sb.append("\tcaused by ").append(cause);
-        }
-    }
-
+    
     public void failedConnection(final Address address) {
         failedConnections.offer(address);
     }
