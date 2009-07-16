@@ -17,13 +17,13 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.ClusterImpl;
-import com.hazelcast.cluster.ClusterManager;
-import com.hazelcast.cluster.ClusterService;
-import com.hazelcast.cluster.CreateProxy;
+import com.hazelcast.cluster.*;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.BaseManager.Processable;
-import com.hazelcast.impl.BlockingQueueManager.*;
+import com.hazelcast.impl.BlockingQueueManager.Offer;
+import com.hazelcast.impl.BlockingQueueManager.Poll;
+import com.hazelcast.impl.BlockingQueueManager.QIterator;
+import com.hazelcast.impl.BlockingQueueManager.Size;
 import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
@@ -33,12 +33,16 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 
 public class FactoryImpl {
+
+    private static Logger logger = Logger.getLogger(FactoryImpl.class.getName());
 
     private static ConcurrentMap<String, ICommon> proxies = new ConcurrentHashMap<String, ICommon>(1000);
 
@@ -170,19 +174,11 @@ public class FactoryImpl {
             init();
         Object proxy = proxies.get(name);
         if (proxy == null) {
-            CreateProxyProcess createProxyProcess = new CreateProxyProcess(name);
-            synchronized (createProxyProcess) {
-                ClusterService.get().enqueueAndReturn(createProxyProcess);
-                try {
-                    createProxyProcess.wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            proxy = createProxyProcess.getProxy();
+            proxy = createInstanceClusterwide(name);
         }
         return proxy;
     }
+
 
     // should only be called from service thread!!
     public static Object createProxy(String name) {
@@ -386,26 +382,104 @@ public class FactoryImpl {
         }
     }
 
-    private static class CreateProxyProcess implements Processable, Constants {
+
+    static Object createInstanceClusterwide(String name) {
+        final CreateInstance createInstance = new CreateInstance(name);
+        ClusterService.get().enqueueAndReturn(new Processable() {
+            public void process() {
+                ClusterManager.get().sendProcessableToAll(createInstance, true);
+            }
+        });
+        return createInstance.getProxy();
+    }
+
+    static void destroyInstanceClusterwide(String name) {
+        final DestroyInstance destroyInstance = new DestroyInstance(name);
+        ClusterService.get().enqueueAndReturn(new Processable() {
+            public void process() {
+                ClusterManager.get().sendProcessableToAll(destroyInstance, true);
+            }
+        });
+    }
+
+
+    public static class CreateInstance extends AbstractRemotelyProcessable {
         String name;
 
-        Object proxy = null;
+        BlockingQueue proxyQ = new ArrayBlockingQueue(1);
 
-        public CreateProxyProcess(String name) {
+        public CreateInstance() {
+        }
+
+        public CreateInstance(String name) {
             super();
             this.name = name;
         }
 
+        public Object getProxy() {
+            try {
+                return proxyQ.take();
+            } catch (InterruptedException ignored) {
+            }
+            return null;
+        }
+
         public void process() {
-            proxy = createProxy(name);
-            ClusterManager.get().sendProcessableToAll(new CreateProxy(name), false);
-            synchronized (CreateProxyProcess.this) {
-                CreateProxyProcess.this.notify();
+            try {
+                proxyQ.put(createProxy(name));
+            } catch (InterruptedException ignored) {
             }
         }
 
-        public Object getProxy() {
-            return proxy;
+        @Override
+        public void readData(DataInput in) throws IOException {
+            name = in.readUTF();
+        }
+
+        @Override
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(name);
+        }
+
+        @Override
+        public String toString() {
+            return "CreateProxy [" + name + "]";
+        }
+    }
+
+    public static class DestroyInstance extends AbstractRemotelyProcessable {
+        String name = null;
+
+        public DestroyInstance() {
+        }
+
+        public DestroyInstance(String name) {
+            this.name = name;
+        }
+
+        public void process() {
+            if (name.startsWith("q:")) {
+                BlockingQueueManager.get().destroy(name);
+            } else if (name.startsWith("c:")) {
+                ConcurrentMapManager.get().destroy(name);
+            } else if (name.startsWith("m:")) {
+                ConcurrentMapManager.get().destroy(name);
+            } else if (name.startsWith("t:")) {
+                TopicManager.get().destroy(name);
+            } else {
+                logger.log(Level.SEVERE, "Destroy: Unknown data type=" + name);
+            }
+            FactoryImpl.fireInstanceDestroyEvent(name);
+        }
+
+        @Override
+        public void readData(DataInput in) throws IOException {
+            name = in.readUTF();
+        }
+
+        @Override
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(name);
         }
     }
 
@@ -511,8 +585,7 @@ public class FactoryImpl {
             public void destroy() {
                 ICommon instance = proxies.remove(name);
                 if (instance != null) {
-                    TopicManager.TopicDestroy topicDestroy = TopicManager.get().new TopicDestroy();
-                    topicDestroy.destroy(name);
+                    destroyInstanceClusterwide(name);
                 }
             }
 
@@ -719,7 +792,7 @@ public class FactoryImpl {
                     mapProxy.destroy();
                 }
             }
-        } 
+        }
     }
 
     public static abstract class BaseCollection extends AbstractCollection implements List {
@@ -1033,8 +1106,7 @@ public class FactoryImpl {
                 ICommon instance = proxies.remove(name);
                 if (instance != null) {
                     clear();
-                    QDestroy qDestroy = BlockingQueueManager.get().new QDestroy();
-                    qDestroy.destroy(name);
+                    destroyInstanceClusterwide(name);
                 }
             }
 
@@ -1244,10 +1316,7 @@ public class FactoryImpl {
             }
 
             public void destroy() {
-                ICommon instance = proxies.remove(name);
-                if (instance != null) {
-                    mapProxy.destroy();
-                }
+                mapProxy.destroy();
             }
         }
     }
@@ -1810,8 +1879,7 @@ public class FactoryImpl {
                 ICommon instance = proxies.remove(name);
                 if (instance != null) {
                     clear();
-                    MDestroy mDestroy = ConcurrentMapManager.get().new MDestroy();
-                    mDestroy.destroy(name);
+                    destroyInstanceClusterwide(name);
                 }
 
             }

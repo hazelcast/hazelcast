@@ -84,12 +84,6 @@ public class TopicManager extends BaseManager {
         enqueueAndReturn(new TopicPublishProcess(name, dataMsg));
     }
 
-    class TopicDestroy {
-        public void destroy(String name) {
-            sendProcessableToAll(new Destroy(name), true);
-        }
-    }
-
     class TopicPublishProcess implements Processable {
         final Data dataMsg;
         final String name;

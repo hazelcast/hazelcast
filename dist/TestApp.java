@@ -312,8 +312,20 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             executeOnMember(args);
         } else if (first.equalsIgnoreCase("executeOnMembers")) {
             executeOnMembers(args);
+        } else if (first.equalsIgnoreCase("instances")) {
+            handleInstances(args);
+        } else if (first.equalsIgnoreCase("quit") || first.equalsIgnoreCase("exit")) {
+            System.exit(0);
         } else {
             print("type 'help' for help");
+        }
+    }
+
+
+    private void handleInstances(String[] args) {
+        Collection<ICommon> instances = Hazelcast.getInstances();
+        for (ICommon instance : instances) {
+            print (instance);
         }
     }
 

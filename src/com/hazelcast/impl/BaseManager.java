@@ -1297,41 +1297,7 @@ public abstract class BaseManager implements Constants {
     }
 
 
-    public static class Destroy extends AbstractRemotelyProcessable {
-        String name = null;
 
-        public Destroy() {
-        }
-
-        public Destroy(String name) {
-            this.name = name;
-        }
-
-        public void process() {
-            if (name.startsWith("q:")) {
-                BlockingQueueManager.get().destroy(name);
-            } else if (name.startsWith("c:")) {
-                ConcurrentMapManager.get().destroy(name);
-            } else if (name.startsWith("m:")) {
-                ConcurrentMapManager.get().destroy(name);
-            } else if (name.startsWith("t:")) {
-                TopicManager.get().destroy(name);
-            } else {
-                logger.log(Level.SEVERE, "Destroy: Unknown data type=" + name);
-            }
-            FactoryImpl.fireInstanceDestroyEvent(name);
-        }
-
-        @Override
-        public void readData(DataInput in) throws IOException {
-            name = in.readUTF();
-        }
-
-        @Override
-        public void writeData(DataOutput out) throws IOException {
-            out.writeUTF(name);
-        }
-    }
 
     void handleListenerRegisterations(final boolean add, final String name, final Data key,
                                       final Address address, final boolean includeValue) {

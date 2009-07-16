@@ -656,12 +656,6 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MDestroy {
-        public void destroy(String name) {
-            sendProcessableToAll(new Destroy(name), true);
-        }
-    }
-
     public void destroy(String name) {
         maps.remove(name);
     }
