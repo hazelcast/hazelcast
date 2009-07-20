@@ -25,6 +25,7 @@ import com.hazelcast.impl.BlockingQueueManager.Poll;
 import com.hazelcast.impl.BlockingQueueManager.QIterator;
 import com.hazelcast.impl.BlockingQueueManager.Size;
 import com.hazelcast.impl.ConcurrentMapManager.*;
+import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 
@@ -69,12 +70,16 @@ public class FactoryImpl {
                     node = Node.get();
                     node.start();
                     inited.set(true);
+                    
+                    ManagementService.register(node.getClusterImpl());
                 }
             }
         }
     }
 
     public static void shutdown() {
+        ManagementService.shutdown();
+
         Node.get().shutdown();
     }
 
