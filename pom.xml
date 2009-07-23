@@ -18,13 +18,14 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jdk.version>1.5</jdk.version>
+        <target.dir>target</target.dir>
     </properties>
 
     <build>
         <sourceDirectory>src/main/java</sourceDirectory>
-        <outputDirectory>target/classes</outputDirectory>
+        <outputDirectory>${target.dir}/classes</outputDirectory>
         <testSourceDirectory>src/test/java</testSourceDirectory>
-        <testOutputDirectory>target/test-classes</testOutputDirectory>
+        <testOutputDirectory>${target.dir}/test-classes</testOutputDirectory>
 
         <plugins>
             <plugin>
