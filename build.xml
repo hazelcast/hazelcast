@@ -45,7 +45,7 @@
 
 		<move todir="${dist.dir}/testapp">
 			<fileset dir="${classes.dir}">
-				<include name="TestApp**" />
+				<include name="com.hazelcast.examples.TestApp**" />
 			</fileset>
 		</move>
 

@@ -5,10 +5,34 @@
     </formats>
     <fileSets>
         <fileSet>
-            <directory>hazelcast/</directory>
+            <directory>hazelcast-ra/target</directory>
             <outputDirectory>/</outputDirectory>
             <includes>
-                <include>pom.xml</include>
+                <include>hazelcast-ra-${project.version}.rar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>hazelcast-wm/target/</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>hazelcast-wm-${project.version}.jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>hazelcast/target/</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>hazelcast-${project.version}.jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>target/classes/</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>*.bat</include>
+                <include>*.sh</include>
+                <include>hazelcast.xml</include>
+                <include>keystore</include>
             </includes>
         </fileSet>
     </fileSets>

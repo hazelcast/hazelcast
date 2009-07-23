@@ -27,6 +27,17 @@
         <testSourceDirectory>src/test/java</testSourceDirectory>
         <testOutputDirectory>${target.dir}/test-classes</testOutputDirectory>
 
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/*.bat</include>
+                    <include>**/*.sh</include>
+                </includes>
+            </resource>
+        </resources>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

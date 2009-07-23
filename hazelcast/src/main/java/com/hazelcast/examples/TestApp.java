@@ -1,3 +1,5 @@
+package com.hazelcast.examples;
+
 import com.hazelcast.core.*;
 
 import java.io.*;
