@@ -57,12 +57,12 @@
 		<move file="${hazelcast.jar.name}" todir="${dist.dir}" />
 		<move file="${rar.name}.rar" todir="${dist.dir}" />
         <copy file="dist/keystore" todir="${dist.dir}"/>        
-		<copy file="dist/run.bat" todir="${dist.dir}" />
-		<copy file="dist/run.sh" todir="${dist.dir}" />
-		<copy file="dist/test.bat" todir="${dist.dir}" />
-		<copy file="dist/test.sh" todir="${dist.dir}" />
-		<copy file="dist/clusterWebapp.bat" todir="${dist.dir}" />
-		<copy file="dist/clusterWebapp.sh" todir="${dist.dir}" />
+		<copy file="src/main/resources/run.bat" todir="${dist.dir}" />
+		<copy file="src/main/resources/run.sh" todir="${dist.dir}" />
+		<copy file="src/main/resources/test.bat" todir="${dist.dir}" />
+		<copy file="src/main/resources/test.sh" todir="${dist.dir}" />
+		<copy file="src/main/resources/clusterWebapp.bat" todir="${dist.dir}" />
+		<copy file="src/main/resources/clusterWebapp.sh" todir="${dist.dir}" />
 
 		<zip zipfile="hazelcast-${version}.zip" basedir="dummy" />
 		<delete dir="dummy" failonerror="false" />
@@ -91,7 +91,7 @@
 
 	<target name="jar">
 		<delete file="${hazelcast.jar.name}" failonerror="false" />
-		<copy file="dist/hazelcast.xml" todir="${classes.dir}" />
+		<copy file="src/main/resources/hazelcast.xml" todir="${classes.dir}" />
 		<jar jarfile="${hazelcast.jar.name}">
 			<fileset dir="${classes.dir}"> 
 				<exclude name="**/jca/**" /> 
