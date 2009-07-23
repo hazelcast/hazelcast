@@ -17,7 +17,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.Build;
 import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 
 import java.nio.channels.SelectionKey;
@@ -33,8 +32,6 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
     public static final int RECEIVE_SOCKET_BUFFER_SIZE = 32 * BYTE_BUFFER_SIZE;
 
     public static final int SEND_SOCKET_BUFFER_SIZE = 32 * BYTE_BUFFER_SIZE;
-
-    public static final boolean DEBUG = Build.DEBUG;
 
     protected SocketChannel socketChannel;
 
@@ -59,11 +56,8 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
     }
 
     final void handleSocketException(final Exception e) {
-        if (DEBUG) {
-            logger.log(Level.FINEST,
-                    Thread.currentThread().getName() + " Closing Socket. cause:  ", e);
-        }
-
+        logger.log(Level.FINEST,
+                Thread.currentThread().getName() + " Closing Socket. cause:  ", e);
         if (sk != null)
             sk.cancel();
         connection.close();
@@ -81,5 +75,5 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
         } catch (Exception e) {
             handleSocketException(e);
         }
-    } 
+    }
 }

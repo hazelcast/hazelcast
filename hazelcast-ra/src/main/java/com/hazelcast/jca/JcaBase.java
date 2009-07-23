@@ -17,18 +17,13 @@
 
 package com.hazelcast.jca;
 
-import com.hazelcast.impl.Build;
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class JcaBase {
     protected static Logger logger = Logger.getLogger(JcaBase.class.getName());
 
-    private static final boolean DEBUG = Build.DEBUG;
-
     public void log(final Object caller, final Object msg) {
-        if (DEBUG)
-            logger.log(Level.FINEST, caller + " : " + msg);
+        logger.log(Level.FINEST, caller + " : " + msg);
     }
 }

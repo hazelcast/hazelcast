@@ -35,5 +35,13 @@
                 <include>keystore</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <directory>src/main/resources/</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes> 
+                <include>hazelcast.xml</include>
+                <include>keystore</include>
+            </includes>
+        </fileSet>
     </fileSets>
 </assembly>

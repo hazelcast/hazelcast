@@ -45,8 +45,7 @@ public class OutSelector extends SelectorBase {
     }
 
     public void connect(final Address address) {
-        if (DEBUG)
-            logger.log(Level.INFO, "connect to " + address);
+        logger.log(Level.FINEST, "connect to " + address);
         final Connector connector = new Connector(address);
         this.addTask(connector);
     }
@@ -70,9 +69,7 @@ public class OutSelector extends SelectorBase {
                     socketChannel.register(selector, SelectionKey.OP_CONNECT, Connector.this);
                     return;
                 }
-                if (DEBUG) {
-                    logger.log(Level.FINEST, "connected to " + address);
-                }
+                logger.log(Level.FINEST, "connected to " + address);
                 final Connection connection = initChannel(socketChannel, false);
                 ConnectionManager.get().bind(address, connection, false);
                 final ClusterManager clusterManager = ClusterManager.get();
@@ -83,18 +80,13 @@ public class OutSelector extends SelectorBase {
                 });
             } catch (final Exception e) {
                 try {
-                    if (DEBUG) {
-                        final String msg = "Couldn't connect to " + address + ", cause: "
-                                + e.getMessage();
-                        logger.log(Level.FINEST, msg);
-                        e.printStackTrace();
-                    }
+                    final String msg = "Couldn't connect to " + address + ", cause: "
+                            + e.getMessage();
+                    logger.log(Level.FINEST, msg, e);
                     socketChannel.close();
                     if (numberOfConnectionError++ < 2) {
-                        if (DEBUG) {
-                            logger.log(Level.FINEST, "Couldn't finish connecting, will try again. cause: "
-                                    + e.getMessage());
-                        }
+                        logger.log(Level.FINEST, "Couldn't finish connecting, will try again. cause: "
+                                + e.getMessage());
                     } else {
                         ConnectionManager.get().failedConnection(address);
                     }
@@ -112,12 +104,10 @@ public class OutSelector extends SelectorBase {
                     socketChannel.socket().bind(
                             new InetSocketAddress(thisAddress.getInetAddress(), 0));
                     socketChannel.configureBlocking(false);
-                    if (DEBUG)
-                        logger.log(Level.FINEST, "connecting to " + address);
+                    logger.log(Level.FINEST, "connecting to " + address);
                     boolean connected = socketChannel.connect(new InetSocketAddress(address.getInetAddress(),
                             address.getPort()));
-                    if (DEBUG)
-                        logger.log(Level.FINEST, "connection check. connected: " + connected + ", " + address);
+                    logger.log(Level.FINEST, "connection check. connected: " + connected + ", " + address);
                     if (connected) {
                         handle();
                         return;
@@ -135,11 +125,9 @@ public class OutSelector extends SelectorBase {
                     }
                 }
                 if (numberOfConnectionError++ < 2) {
-                    if (DEBUG) {
-                        logger.log(Level.FINEST,
-                                "Couldn't register connect! will trying again. cause: "
-                                        + e.getMessage());
-                    }
+                    logger.log(Level.FINEST,
+                            "Couldn't register connect! will trying again. cause: "
+                                    + e.getMessage(), e);
                     run();
                 } else {
                     ConnectionManager.get().failedConnection(address);

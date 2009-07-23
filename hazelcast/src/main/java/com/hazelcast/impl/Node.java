@@ -26,6 +26,7 @@ import com.hazelcast.impl.MulticastService.JoinInfo;
 import com.hazelcast.nio.*;
 
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -33,6 +34,7 @@ import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -41,8 +43,6 @@ import java.util.logging.Logger;
 
 public class Node {
     final Logger logger = Logger.getLogger(Node.class.getName());
-
-    static final boolean DEBUG = Build.DEBUG;
 
     volatile Address address = null;
 
@@ -69,6 +69,11 @@ public class Node {
     private final boolean superClient;
 
     private final Type localNodeType;
+
+    private final String version;
+
+    private final String build;
+
 
     public enum Type {
         MEMBER(1),
@@ -112,6 +117,20 @@ public class Node {
         }
         superClient = sClient;
         localNodeType = (superClient) ? Type.SUPER_CLIENT : Type.MEMBER;
+        String versionTemp = "unknown";
+        String buildTemp = "unknown";
+        try {
+            InputStream inRuntimeProperties = Node.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
+            if (inRuntimeProperties != null) {
+                Properties runtimeProperties = new Properties();
+                runtimeProperties.load(inRuntimeProperties);
+                versionTemp = runtimeProperties.getProperty("hazelcast.version");
+                buildTemp = runtimeProperties.getProperty("hazelcast.build");
+            }
+        } catch (Exception ignored) {
+        }
+        version = versionTemp;
+        build = buildTemp;
     }
 
     public static Node get() {
@@ -124,8 +143,9 @@ public class Node {
             if (ex != null) {
                 sb.append(BufferUtil.exceptionToString(ex, address));
             }
-            sb.append("Hazelcast.version : ").append(Build.version).append("\n");
-            sb.append("Hazelcast.build   : ").append(Build.build).append("\n");
+
+            sb.append("Hazelcast.version : ").append(version).append("\n");
+            sb.append("Hazelcast.build   : ").append(build).append("\n");
             sb.append("Hazelcast.address   : ").append(address).append("\n");
             sb.append("joined : ").append(joined).append("\n");
             sb.append(AddressPicker.createCoreDump());
@@ -156,7 +176,7 @@ public class Node {
         }
     }
 
-    
+
     public void failedConnection(final Address address) {
         failedConnections.offer(address);
     }
@@ -300,8 +320,8 @@ public class Node {
             if (address == null)
                 return false;
             Logger systemLogger = Logger.getLogger("com.hazelcast.system");
-            systemLogger.log(Level.INFO, "Hazelcast " + Build.version + " ("
-                    + Build.build + ") starting at " + address);
+            systemLogger.log(Level.INFO, "Hazelcast " + version + " ("
+                    + build + ") starting at " + address);
             systemLogger.log(Level.INFO, "Copyright (C) 2009 Hazelcast.com");
             Join join = config.getNetworkConfig().getJoin();
             if (join.getMulticastConfig().isEnabled()) {
@@ -364,7 +384,7 @@ public class Node {
                 public void run() {
                     try {
                         completelyShutdown = true;
-                        if (logger != null){
+                        if (logger != null) {
                             logger.log(Level.INFO, "Hazelcast ShutdownHook is shutting down!");
                         }
                         shutdown();
@@ -390,8 +410,7 @@ public class Node {
 
     void setAsMaster() {
         masterAddress = address;
-        if (DEBUG)
-            logger.log(Level.FINEST, "adding member myself");
+        logger.log(Level.FINEST, "adding member myself");
         ClusterManager.get().addMember(address, getLocalNodeType()); // add
         // myself
         clusterImpl.setMembers(BaseManager.lsMembers);
@@ -416,8 +435,7 @@ public class Node {
                 }
 
             } else {
-                if (DEBUG)
-                    logger.log(Level.FINEST, "RETURNING join.ip");
+                logger.log(Level.FINEST, "RETURNING join.ip");
                 return new Address(ip, config.getPort());
             }
 
@@ -503,7 +521,6 @@ public class Node {
     }
 
 
-
     private void join() {
         final Config config = Config.get();
         if (!config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
@@ -511,8 +528,7 @@ public class Node {
         } else {
             joinWithMulticast();
         }
-        if (DEBUG)
-            logger.log(Level.FINEST, "Join DONE");
+        logger.log(Level.FINEST, "Join DONE");
         ClusterManager.get().finalizeJoin();
         if (BaseManager.lsMembers.size() == 1) {
             final StringBuilder sb = new StringBuilder();
@@ -524,8 +540,7 @@ public class Node {
 
     private void joinWithMulticast() {
         masterAddress = findMaster();
-        if (DEBUG)
-            logger.log(Level.FINEST, address + " master: " + masterAddress);
+        logger.log(Level.FINEST, address + " master: " + masterAddress);
         if (masterAddress == null || masterAddress.equals(address)) {
             ClusterManager.get().addMember(address, getLocalNodeType()); // add
             // myself
@@ -535,8 +550,7 @@ public class Node {
         } else {
             while (!joined) {
                 try {
-                    if (DEBUG)
-                        logger.log(Level.FINEST, "joining... " + masterAddress);
+                    logger.log(Level.FINEST, "joining... " + masterAddress);
                     if (masterAddress == null) {
                         joinWithMulticast();
                     } else if (masterAddress.equals(address)) {
@@ -558,9 +572,7 @@ public class Node {
         if (conn == null)
             Thread.sleep(1000);
         conn = ConnectionManager.get().getConnection(masterAddress);
-        if (DEBUG) {
-            logger.log(Level.FINEST, "Master connnection " + conn);
-        }
+        logger.log(Level.FINEST, "Master connnection " + conn);
         if (conn != null)
             ClusterManager.get().sendJoinRequest(masterAddress);
     }
@@ -571,8 +583,7 @@ public class Node {
             final List<Address> lsPossibleAddresses = getPossibleMembers();
             lsPossibleAddresses.remove(address);
             for (final Address adrs : lsPossibleAddresses) {
-                if (DEBUG)
-                    logger.log(Level.FINEST, "connecting to " + adrs);
+                logger.log(Level.FINEST, "connecting to " + adrs);
                 ConnectionManager.get().getOrConnect(adrs);
             }
             boolean found = false;
@@ -590,8 +601,7 @@ public class Node {
                 int numberOfJoinReq = 0;
                 for (final Address adrs : lsPossibleAddresses) {
                     final Connection conn = ConnectionManager.get().getOrConnect(adrs);
-                    if (DEBUG)
-                        logger.log(Level.FINEST, "conn " + conn);
+                    logger.log(Level.FINEST, "conn " + conn);
                     if (conn != null && numberOfJoinReq < 5) {
                         found = true;
                         ClusterManager.get().sendJoinRequest(adrs);
@@ -599,8 +609,7 @@ public class Node {
                     }
                 }
             }
-            if (DEBUG)
-                logger.log(Level.FINEST, "FOUND " + found);
+            logger.log(Level.FINEST, "FOUND " + found);
             if (!found) {
                 setAsMaster();
             } else {
@@ -614,9 +623,7 @@ public class Node {
                         }
                     }
                     Thread.sleep(2000);
-                    if (DEBUG) {
-                        logger.log(Level.FINEST, masterAddress.toString());
-                    }
+                    logger.log(Level.FINEST, masterAddress.toString());
                     if (masterAddress == null) { // no-one knows the master
                         boolean masterCandidate = true;
                         for (final Address address : lsPossibleAddresses) {
@@ -642,9 +649,7 @@ public class Node {
         try {
             final Config config = Config.get();
             final Address requiredAddress = getAddressFor(config.getNetworkConfig().getJoin().getJoinMembers().getRequiredMember());
-            if (DEBUG) {
-                logger.log(Level.FINEST, "Joining over required member " + requiredAddress);
-            }
+            logger.log(Level.FINEST, "Joining over required member " + requiredAddress);
             if (requiredAddress == null) {
                 throw new RuntimeException("Invalid required member "
                         + config.getNetworkConfig().getJoin().getJoinMembers().getRequiredMember());
@@ -663,9 +668,7 @@ public class Node {
                 final Connection connection = ConnectionManager.get().getOrConnect(requiredAddress);
                 if (connection == null)
                     joinViaRequiredMember();
-                if (DEBUG) {
-                    logger.log(Level.FINEST, "Sending joinRequest " + requiredAddress);
-                }
+                logger.log(Level.FINEST, "Sending joinRequest " + requiredAddress);
                 ClusterManager.get().sendJoinRequest(requiredAddress);
 
                 Thread.sleep(2000);

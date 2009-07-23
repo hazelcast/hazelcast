@@ -17,7 +17,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.Build;
 import com.hazelcast.impl.Node;
 
 import java.io.IOException;
@@ -35,8 +34,6 @@ import java.util.logging.Logger;
 public class SelectorBase implements Runnable {
 
     protected Logger logger = Logger.getLogger(this.getClass().getName());
-
-    protected static final boolean DEBUG = Build.DEBUG;
 
     protected Selector selector = null;
 
@@ -132,10 +129,7 @@ public class SelectorBase implements Runnable {
     protected void handleSelectorException(final Exception e) {
         String msg = "Selector exception at  " + Thread.currentThread().getName();
         msg += ", cause= " + e.toString();
-        if (Build.DEBUG) {
-            logger.log(Level.INFO, msg);
-            e.printStackTrace(System.out);
-        }
+        logger.log(Level.FINEST, msg, e);
     }
 
     protected Connection initChannel(final SocketChannel socketChannel, final boolean acceptor)

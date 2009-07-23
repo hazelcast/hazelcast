@@ -18,7 +18,6 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.cluster.ClusterManager;
-import com.hazelcast.impl.Build;
 import com.hazelcast.impl.Node;
 
 import java.nio.channels.SocketChannel;
@@ -58,16 +57,14 @@ public class ConnectionManager {
     }
 
     public synchronized boolean bind(final Address endPoint, final Connection connection,
-                                  final boolean accept) {
+                                     final boolean accept) {
         connection.setEndPoint(endPoint);
         final Connection connExisting = mapConnections.get(endPoint);
         if (connExisting != null && connExisting != connection) {
-            if (Build.DEBUG) {
-                final String msg = "Two connections from the same endpoint " + endPoint
-                        + ", acceptTypeConnection=" + acceptTypeConnection + ",  now accept="
-                        + accept;
-                logger.log(Level.INFO, msg);
-            }
+            final String msg = "Two connections from the same endpoint " + endPoint
+                    + ", acceptTypeConnection=" + acceptTypeConnection + ",  now accept="
+                    + accept;
+            logger.log(Level.FINEST, msg);
             return true;
         }
         if (!endPoint.equals(Node.get().getThisAddress())) {
@@ -77,7 +74,7 @@ public class ConnectionManager {
             for (final ConnectionListener listener : setConnectionListeners) {
                 listener.connectionAdded(connection);
             }
-        } else  {
+        } else {
             return false;
 //            throw new RuntimeException("ConnMan setting self!!");
         }

@@ -19,7 +19,6 @@ package com.hazelcast.web;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
-import com.hazelcast.impl.Build;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.nio.Data;
 
@@ -1168,7 +1167,7 @@ public class WebFilter implements Filter {
 
     protected static Logger logger = Logger.getLogger(WebFilter.class.getName());
 
-    private static final boolean DEBUG = Build.DEBUG;
+    private static final boolean DEBUG = false;
 
     private static final String SESSION_URL_PHRASE = ";jsessionid=";
 

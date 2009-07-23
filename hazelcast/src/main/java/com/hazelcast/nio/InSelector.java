@@ -53,10 +53,8 @@ public class InSelector extends SelectorBase {
         } catch (final ClosedChannelException e) {
             e.printStackTrace();
         }
-        if (DEBUG) {
-            logger.log(Level.INFO, "Started Selector at "
-                    + serverSocketChannel.socket().getLocalPort());
-        }
+        logger.log(Level.FINEST, "Started Selector at "
+                + serverSocketChannel.socket().getLocalPort());
         selector.wakeup();
     }
 
@@ -73,8 +71,7 @@ public class InSelector extends SelectorBase {
         public void handle() {
             try {
                 final SocketChannel channel = serverSocketChannel.accept();
-                if (DEBUG)
-                    logger.log(Level.INFO, channel.socket().getLocalPort()
+                    logger.log(Level.FINEST, channel.socket().getLocalPort()
                             + " this socket is connected to "
                             + channel.socket().getRemoteSocketAddress());
                 if (channel != null) {
@@ -84,7 +81,7 @@ public class InSelector extends SelectorBase {
                 serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, Acceptor.this);
                 selector.wakeup();
             } catch (final Exception e) {
-                e.printStackTrace();
+                logger.log(Level.FINEST, e.getMessage(), e); 
                 try {
                     serverSocketChannel.close();
                 } catch (final Exception e1) {

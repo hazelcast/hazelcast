@@ -17,7 +17,6 @@
 
 package com.hazelcast.web;
 
-import com.hazelcast.impl.Build;
 import com.hazelcast.impl.Util;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -39,7 +38,7 @@ public class Installer {
 
     protected static Logger logger = Logger.getLogger(Installer.class.getName());
 
-    private static final boolean DEBUG = Build.DEBUG;
+    private static final boolean DEBUG = false;
 
     private String clusteredFilePrefix = "clustered-";
 

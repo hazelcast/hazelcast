@@ -96,10 +96,7 @@ public class MemberImpl implements Member {
         sb.append("] ");
         if (localMember) {
             sb.append("this ");
-        }
-        if (Node.DEBUG && address.equals(Node.get().getMasterAddress())) {
-            sb.append("* ");
-        }
+        } 
         return sb.toString();
     }
 
