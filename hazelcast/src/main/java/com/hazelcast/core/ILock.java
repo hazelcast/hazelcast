@@ -20,5 +20,5 @@ package com.hazelcast.core;
 import java.util.concurrent.locks.Lock;
 
 public interface ILock extends Lock, ICommon {
-    
+      Object getLockObject();
 }

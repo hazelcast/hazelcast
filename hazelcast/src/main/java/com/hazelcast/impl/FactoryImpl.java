@@ -17,7 +17,8 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.*;
+import com.hazelcast.cluster.ClusterImpl;
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.BaseManager.Processable;
 import com.hazelcast.impl.BlockingQueueManager.Offer;
@@ -26,6 +27,7 @@ import com.hazelcast.impl.BlockingQueueManager.QIterator;
 import com.hazelcast.impl.BlockingQueueManager.Size;
 import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.jmx.ManagementService;
+import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 
@@ -34,12 +36,12 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class FactoryImpl {
 
@@ -51,27 +53,56 @@ public class FactoryImpl {
 
     private static MProxy idGeneratorMapProxy = new MProxyImpl("m:__hz_IdGenerator");
 
-    private static ConcurrentMap<Object, LockProxy> mapLockProxies = new ConcurrentHashMap<Object, LockProxy>(100);
+    private static MProxy globalProxies = new MProxyImpl("m:__hz_Proxies");
 
-    private static ConcurrentMap<String, IdGenerator> mapIdGenerators = new ConcurrentHashMap<String, IdGenerator>(100);
+    private static ConcurrentMap<Object, LockProxy> mapLockProxies = new ConcurrentHashMap<Object, LockProxy>(100);
 
     static final ExecutorServiceProxy executorServiceImpl = new ExecutorServiceProxy();
 
     private static Node node = null;
 
-    static AtomicBoolean inited = new AtomicBoolean(false);
+    static volatile boolean inited = false;
 
-    static CopyOnWriteArrayList<InstanceListener> lsInstanceListeners = new CopyOnWriteArrayList<InstanceListener>();
+    private static CopyOnWriteArrayList<InstanceListener> lsInstanceListeners = new CopyOnWriteArrayList<InstanceListener>();
+
+    public static final Data EMPTY_DATA = new Data();
+
+    static {
+        globalProxies.addEntryListener(new EntryListener() {
+            public void entryAdded(EntryEvent event) {
+                ProxyKey proxyKey = (ProxyKey) event.getKey();
+                createProxy(proxyKey.name, proxyKey.key);
+            }
+
+            public void entryRemoved(EntryEvent event) {
+                ProxyKey proxyKey = (ProxyKey) event.getKey();
+                System.out.println("instance is removed " + proxyKey);
+                destroyProxy(proxyKey.name, proxyKey.key);
+            }
+
+            public void entryUpdated(EntryEvent event) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+        }, false);
+    }
 
     private static void init() {
-        if (!inited.get()) {
+        if (!inited) {
             synchronized (Node.class) {
-                if (!inited.get()) {
+                if (!inited) {
                     node = Node.get();
                     node.start();
-                    inited.set(true);
-                    
+                    inited = true;
+
                     ManagementService.register(node.getClusterImpl());
+                    try {
+                        Set<ProxyKey> proxyKeys = globalProxies.allKeys();
+                        for (ProxyKey proxyKey : proxyKeys) {
+                            createProxy(proxyKey.name, proxyKey.key);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -84,11 +115,10 @@ public class FactoryImpl {
     }
 
     public static Collection<ICommon> getInstances() {
-        final int totalSize = proxies.size() + mapLockProxies.size() + mapIdGenerators.size();
+        final int totalSize = proxies.size() + mapLockProxies.size();
         List<ICommon> lsProxies = new ArrayList<ICommon>(totalSize);
         lsProxies.addAll(proxies.values());
         lsProxies.addAll(mapLockProxies.values());
-        lsProxies.addAll(mapIdGenerators.values());
         return lsProxies;
     }
 
@@ -108,18 +138,17 @@ public class FactoryImpl {
     }
 
     public static IdGenerator getIdGenerator(String name) {
-        init();
+        return (IdGenerator) getProxy("i:" + name);
+    }
 
-        IdGenerator idGenerator = mapIdGenerators.get(name);
-        if (idGenerator != null)
-            return idGenerator;
-        synchronized (IdGeneratorProxy.class) {
-            idGenerator = new IdGeneratorProxy(name);
-            IdGeneratorProxy old = (IdGeneratorProxy) mapIdGenerators.putIfAbsent(name, idGenerator);
-            if (old != null)
-                idGenerator = old;
-        }
-        return idGenerator;
+    public static Transaction getTransaction() {
+        if (!inited)
+            init();
+        ThreadContext threadContext = ThreadContext.get();
+        Transaction txn = threadContext.txn;
+        if (txn == null)
+            txn = threadContext.getTransaction();
+        return txn;
     }
 
     public static <K, V> IMap<K, V> getMap(String name) {
@@ -152,75 +181,93 @@ public class FactoryImpl {
         return (MultiMap<K, V>) getProxy(name);
     }
 
-    public static Transaction getTransaction() {
-        if (!inited.get())
-            init();
-        ThreadContext threadContext = ThreadContext.get();
-        Transaction txn = threadContext.txn;
-        if (txn == null)
-            txn = threadContext.getTransaction();
-        return txn;
-    }
-
     public static ILock getLock(Object key) {
-        if (!inited.get())
+        if (!inited)
             init();
-        check(key);
-        LockProxy lockProxy = mapLockProxies.get(key);
-        if (lockProxy == null) {
-            lockProxy = new LockProxy(key);
-            mapLockProxies.put(key, lockProxy);
+        Object proxy = mapLockProxies.get(key);
+        if (proxy == null) {
+            proxy = createInstanceClusterwide("lock", key);
         }
-        return lockProxy;
+        return (ILock) proxy;
     }
 
     public static Object getProxy(final String name) {
-        if (!inited.get())
+        return getProxy(name, null);
+    }
+
+    public static Object getProxy(final String name, final Object key) {
+        if (!inited)
             init();
         Object proxy = proxies.get(name);
         if (proxy == null) {
-            proxy = createInstanceClusterwide(name);
+            proxy = createInstanceClusterwide(name, key);
         }
         return proxy;
     }
 
+    public static void destroyProxy(String name, Object key) {
+        ICommon proxy = null;
+        if (key == null) {
+            proxy = proxies.remove(name);
+        } else {
+            if ("lock".equals(name)) {
+                proxy = mapLockProxies.remove(key);
+            }
+        }
+        if (proxy != null) {
+            if (name.startsWith("q:")) {
+                BlockingQueueManager.get().destroy(name);
+            } else if (name.startsWith("c:")) {
+                ConcurrentMapManager.get().destroy(name);
+            } else if (name.startsWith("m:")) {
+                ConcurrentMapManager.get().destroy(name);
+            } else if (name.startsWith("t:")) {
+                TopicManager.get().destroy(name);
+            } else {
+                logger.log(Level.SEVERE, "Destroy: Unknown data type=" + name);
+            }
+            fireInstanceCreateEvent(proxy);
+        }
+    }
 
     // should only be called from service thread!!
-    public static Object createProxy(String name) {
-        ICommon proxy = proxies.get(name);
-        if (proxy == null) {
-            if (name.startsWith("q:")) {
-                proxy = proxies.get(name);
-                if (proxy == null) {
+    public static Object createProxy(String name, Object key) {
+        ICommon proxy = null;
+        boolean created = false;
+        if (key == null) {
+            proxy = proxies.get(name);
+            if (proxy == null) {
+                created = true;
+                if (name.startsWith("q:")) {
                     proxy = new QProxyImpl(name);
-                    proxies.put(name, proxy);
-                }
-            } else if (name.startsWith("t:")) {
-                proxy = proxies.get(name);
-                if (proxy == null) {
+                } else if (name.startsWith("t:")) {
                     proxy = new TopicProxyImpl(name);
-                    proxies.put(name, proxy);
-                }
-            } else if (name.startsWith("c:")) {
-                proxy = proxies.get(name);
-                if (proxy == null) {
+                } else if (name.startsWith("c:")) {
                     proxy = new MProxyImpl(name);
-                    proxies.put(name, proxy);
-                }
-            } else if (name.startsWith("m:")) {
-                proxy = proxies.get(name);
-                if (proxy == null) {
+                } else if (name.startsWith("m:")) {
                     if (BaseManager.getInstanceType(name) == ICommon.InstanceType.MULTIMAP) {
                         proxy = new MultiMapProxy(name);
                     } else {
                         proxy = new CollectionProxyImpl(name);
                     }
-                    proxies.put(name, proxy);
+                } else if (name.startsWith("i:")) {
+                    proxy = new IdGeneratorProxy(name);
+                }
+                proxies.put(name, proxy);
+            }
+        } else {
+            if (name.equals("lock")) {
+                proxy = mapLockProxies.get(key);
+                if (proxy == null) {
+                    created = true;
+                    proxy = new LockProxy(key);
+                    mapLockProxies.put(key, (LockProxy) proxy);
                 }
             }
         }
-
-        fireInstanceCreateEvent(proxy);
+        if (created) {
+            fireInstanceCreateEvent(proxy);
+        }
         return proxy;
     }
 
@@ -302,14 +349,14 @@ public class FactoryImpl {
         }
 
         public void writeData(DataOutput out) throws IOException {
-            Data data = ThreadContext.get().toData(key);
+            Data data = doHardCopy(toData(key));
             data.writeData(out);
         }
 
         public void readData(DataInput in) throws IOException {
             Data data = new Data();
             data.readData(in);
-            key = ThreadContext.get().toObject(data);
+            key = toObject(data);
         }
 
         public void lock() {
@@ -352,6 +399,10 @@ public class FactoryImpl {
             base.destroy();
         }
 
+        public Object getLockObject() {
+            return key;
+        }
+
         private class LockProxyBase implements ILock {
             public void lock() {
                 locksMapProxy.lock(key);
@@ -377,115 +428,69 @@ public class FactoryImpl {
             }
 
             public void destroy() {
-                locksMapProxy.remove(key);
-                mapLockProxies.remove(key);
+                destroyInstanceClusterwide("lock", key);
             }
 
             public InstanceType getInstanceType() {
                 return InstanceType.LOCK;
             }
+
+            public Object getLockObject() {
+                return key;
+            }
         }
     }
 
-
-    static Object createInstanceClusterwide(String name) {
-        final CreateInstance createInstance = new CreateInstance(name);
+    static Object createInstanceClusterwide(final String name, final Object key) {
+        final BlockingQueue result = new ArrayBlockingQueue(1);
         ClusterService.get().enqueueAndReturn(new Processable() {
             public void process() {
-                ClusterManager.get().sendProcessableToAll(createInstance, true);
+                try {
+                    result.put(createProxy(name, key));
+                } catch (InterruptedException e) {
+                }
             }
         });
-        return createInstance.getProxy();
-    }
-
-    static void destroyInstanceClusterwide(String name) {
-        final DestroyInstance destroyInstance = new DestroyInstance(name);
-        ClusterService.get().enqueueAndReturn(new Processable() {
-            public void process() {
-                ClusterManager.get().sendProcessableToAll(destroyInstance, true);
-            }
-        });
+        Object proxy = null;
+        try {
+            proxy = result.take();
+        } catch (InterruptedException e) {
+        }
+        globalProxies.put(new ProxyKey(name, key), EMPTY_DATA);
+        return proxy;
     }
 
 
-    public static class CreateInstance extends AbstractRemotelyProcessable {
+    public static class ProxyKey implements Serializable {
         String name;
+        Object key;
 
-        BlockingQueue proxyQ = new ArrayBlockingQueue(1);
-
-        public CreateInstance() {
+        public ProxyKey() {
         }
 
-        public CreateInstance(String name) {
-            super();
+        public ProxyKey(String name, Object key) {
             this.name = name;
-        }
-
-        public Object getProxy() {
-            try {
-                return proxyQ.take();
-            } catch (InterruptedException ignored) {
-            }
-            return null;
-        }
-
-        public void process() {
-            try {
-                proxyQ.put(createProxy(name));
-            } catch (InterruptedException ignored) {
-            }
-        }
-
-        @Override
-        public void readData(DataInput in) throws IOException {
-            name = in.readUTF();
-        }
-
-        @Override
-        public void writeData(DataOutput out) throws IOException {
-            out.writeUTF(name);
+            this.key = key;
         }
 
         @Override
         public String toString() {
-            return "CreateProxy [" + name + "]";
+            final StringBuffer sb = new StringBuffer();
+            sb.append("ProxyKey");
+            sb.append("{name='").append(name).append('\'');
+            sb.append(", key=").append(key);
+            sb.append('}');
+            return sb.toString();
         }
     }
 
-    public static class DestroyInstance extends AbstractRemotelyProcessable {
-        String name = null;
-
-        public DestroyInstance() {
+    static void destroyInstanceClusterwide(String name, Object key) {
+        if (name.equals("lock")) {
+            locksMapProxy.remove(key);
+        } else if (name.startsWith("i:")) {
+            idGeneratorMapProxy.remove(name);
         }
-
-        public DestroyInstance(String name) {
-            this.name = name;
-        }
-
-        public void process() {
-            if (name.startsWith("q:")) {
-                BlockingQueueManager.get().destroy(name);
-            } else if (name.startsWith("c:")) {
-                ConcurrentMapManager.get().destroy(name);
-            } else if (name.startsWith("m:")) {
-                ConcurrentMapManager.get().destroy(name);
-            } else if (name.startsWith("t:")) {
-                TopicManager.get().destroy(name);
-            } else {
-                logger.log(Level.SEVERE, "Destroy: Unknown data type=" + name);
-            }
-            FactoryImpl.fireInstanceDestroyEvent(name);
-        }
-
-        @Override
-        public void readData(DataInput in) throws IOException {
-            name = in.readUTF();
-        }
-
-        @Override
-        public void writeData(DataOutput out) throws IOException {
-            out.writeUTF(name);
-        }
+        globalProxies.remove(new ProxyKey(name, key));
     }
 
     interface TopicProxy extends ITopic, ICommon {
@@ -588,10 +593,7 @@ public class FactoryImpl {
             }
 
             public void destroy() {
-                ICommon instance = proxies.remove(name);
-                if (instance != null) {
-                    destroyInstanceClusterwide(name);
-                }
+                destroyInstanceClusterwide(name, null);
             }
 
             public ICommon.InstanceType getInstanceType() {
@@ -688,11 +690,7 @@ public class FactoryImpl {
         }
 
         public void destroy() {
-            ICommon instance = proxies.remove(name);
-            if (instance != null) {
-                ensure();
-                base.destroy();
-            }
+            destroyInstanceClusterwide(name, null);
         }
 
         public void writeData(DataOutput out) throws IOException {
@@ -792,10 +790,7 @@ public class FactoryImpl {
             }
 
             public void destroy() {
-                ICommon instance = proxies.remove(name);
-                if (instance != null) {
-                    mapProxy.destroy();
-                }
+                destroyInstanceClusterwide(name, null);
             }
         }
     }
@@ -1108,11 +1103,7 @@ public class FactoryImpl {
             }
 
             public void destroy() {
-                ICommon instance = proxies.remove(name);
-                if (instance != null) {
-                    clear();
-                    destroyInstanceClusterwide(name);
-                }
+                destroyInstanceClusterwide(name, null);
             }
 
             public ICommon.InstanceType getInstanceType() {
@@ -1361,6 +1352,8 @@ public class FactoryImpl {
         boolean add(Object value);
 
         int valueCount(Object key);
+
+        Set allKeys();
     }
 
 
@@ -1484,6 +1477,12 @@ public class FactoryImpl {
         public int valueCount(Object key) {
             ensure();
             return mproxyReal.valueCount(key);
+        }
+
+
+        public Set allKeys() {
+            ensure();
+            return mproxyReal.allKeys();
         }
 
         public Set keySet() {
@@ -1863,30 +1862,29 @@ public class FactoryImpl {
             }
 
             public Set entrySet() {
-                return (Set) iterate(MIterate.TYPE_ENTRIES);
+                return (Set) iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES);
             }
 
             public Set keySet() {
-                return (Set) iterate(MIterate.TYPE_KEYS);
+                return (Set) iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS);
+            }
+
+            public Set allKeys() {
+                return (Set) iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS_ALL);
             }
 
             public Collection values() {
-                return iterate(MIterate.TYPE_VALUES);
+                return iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_VALUES);
 
             }
 
-            private Collection iterate(int iteratorType) {
+            private Collection iterate(ClusterOperation iteratorType) {
                 MIterate miterate = ConcurrentMapManager.get().new MIterate(name, iteratorType);
                 return (Collection) miterate.call();
             }
 
             public void destroy() {
-                ICommon instance = proxies.remove(name);
-                if (instance != null) {
-                    clear();
-                    destroyInstanceClusterwide(name);
-                }
-
+                destroyInstanceClusterwide(name, null);
             }
         }
     }
@@ -1974,7 +1972,7 @@ public class FactoryImpl {
 
 
             public String getName() {
-                return name;
+                return name.substring(2);
             }
 
             public long newId() {
@@ -2019,8 +2017,7 @@ public class FactoryImpl {
             }
 
             public void destroy() {
-                mapIdGenerators.remove(name);
-                idGeneratorMapProxy.remove(name);
+                destroyInstanceClusterwide(name, null);
             }
         }
     }

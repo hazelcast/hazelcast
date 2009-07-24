@@ -198,6 +198,7 @@ public final class ThreadContext {
     }
 
     public Data toData(final Object obj) {
+        if (obj == null) return null;
         try {
             return serializer.writeObject(obj);
         } catch (final Exception e) {

@@ -285,7 +285,7 @@ public class Node {
             address = null;
             masterAddress = null;
             joined = false;
-            FactoryImpl.inited.set(false);
+            FactoryImpl.inited = false;
             ClusterManager.get().stop();
         } catch (Throwable e) {
             logger.log(Level.FINEST, "shutdown exception", e);

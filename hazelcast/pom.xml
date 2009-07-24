@@ -12,7 +12,6 @@
     <artifactId>hazelcast</artifactId>
     <packaging>jar</packaging>
 
-
     <build>
         <filters>
             <filter>${basedir}/target/filter.properties</filter>
@@ -36,8 +35,6 @@
                                 </tstamp>
                                 <echo file="${basedir}/target/filter.properties"
                                       message="timestamp=${timestamp}"/>
-
-                                <echo message="******TIMESTAMP IS --- ${timestamp}"/>
                             </tasks>
                         </configuration>
                     </execution>

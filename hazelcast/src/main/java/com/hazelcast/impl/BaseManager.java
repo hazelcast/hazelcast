@@ -17,7 +17,10 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.*;
+import com.hazelcast.cluster.ClusterImpl;
+import com.hazelcast.cluster.ClusterManager;
+import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.cluster.RemotelyProcessable;
 import com.hazelcast.core.EntryEvent;
 import static com.hazelcast.core.ICommon.InstanceType;
 import com.hazelcast.core.Member;
@@ -562,6 +565,12 @@ public abstract class BaseManager implements Constants {
         abstract void doOp();
 
         abstract Object getResult();
+
+
+        public String toString() {
+            return RequestBasedCall.this.getClass().getSimpleName()
+                    + " operation= " + ((request != null) ? request.operation : " unknown");
+        }
 
     }
 
@@ -1295,8 +1304,6 @@ public abstract class BaseManager implements Constants {
     MemberImpl getMember(final Address address) {
         return ClusterManager.get().getMember(address);
     }
-
-
 
 
     void handleListenerRegisterations(final boolean add, final String name, final Data key,

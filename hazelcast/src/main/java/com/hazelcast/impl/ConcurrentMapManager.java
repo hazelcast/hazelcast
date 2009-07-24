@@ -85,12 +85,8 @@ public final class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_BACKUP_ADD, new BackupPacketProcessor());
         registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_BACKUP_REMOVE_MULTI, new BackupPacketProcessor());
         registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_BACKUP_REMOVE, new BackupPacketProcessor());
-        registerPacketProcessor(CONCURRENT_MAP_BACKUP_LOCK,
-                new DefaultPacketProcessor(false, false, false, false) {
-                    void process(Request request) {
-                        doLock(request);
-                    }
-                });
+        registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_BACKUP_LOCK, new BackupPacketProcessor());
+
         registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_REMOVE_MULTI,
                 new DefaultPacketProcessor(false, true, true, true) {
                     void process(Request request) {
@@ -137,6 +133,13 @@ public final class ConcurrentMapManager extends BaseManager {
                     }
                 });
         registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS,
+                new DefaultPacketProcessor(true, false, false, true) {
+                    void process(Request request) {
+                        CMap cmap = getMap(request.name);
+                        cmap.getEntries(request);
+                    }
+                });
+        registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS_ALL,
                 new DefaultPacketProcessor(true, false, false, true) {
                     void process(Request request) {
                         CMap cmap = getMap(request.name);
@@ -785,7 +788,7 @@ public final class ConcurrentMapManager extends BaseManager {
             } else {
                 Object oldValue = objectCall(operation, name, key, value, timeout, -1);
                 if (oldValue instanceof AddressAwareException) {
-                    rethrowException(operation, (AddressAwareException) oldValue);                    
+                    rethrowException(operation, (AddressAwareException) oldValue);
                 }
                 backup(ClusterOperation.CONCURRENT_MAP_BACKUP_PUT);
                 return oldValue;
@@ -1038,16 +1041,13 @@ public final class ConcurrentMapManager extends BaseManager {
 
     public class MIterate extends MultiCall {
         Entries entries = null;
-        final static int TYPE_ENTRIES = 1;
-        final static int TYPE_KEYS = 2;
-        final static int TYPE_VALUES = 3;
 
         final String name;
-        final int iteratorType;
+        final ClusterOperation operation;
 
-        public MIterate(String name, int iteratorType) {
+        public MIterate(String name, ClusterOperation operation) {
             this.name = name;
-            this.iteratorType = iteratorType;
+            this.operation = operation;
         }
 
         TargetAwareOp createNewTargetAwareOp(Address target) {
@@ -1055,7 +1055,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         void onCall() {
-            entries = new Entries(name, iteratorType);
+            entries = new Entries(name, operation);
         }
 
         boolean onResponse(Object response) {
@@ -1072,13 +1072,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 this.target = target;
                 request.reset();
                 request.name = name;
-                if (iteratorType == MIterate.TYPE_ENTRIES) {
-                    request.operation = ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES;
-                } else if (iteratorType == MIterate.TYPE_KEYS) {
-                    request.operation = ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS;
-                } else if (iteratorType == MIterate.TYPE_VALUES) {
-                    request.operation = ClusterOperation.CONCURRENT_MAP_ITERATE_VALUES;
-                }
+                request.operation = operation;
             }
 
             public void doLocalCall() {
@@ -2038,7 +2032,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 if (record.isValid(now)) {
                     Block block = blocks[record.blockId];
                     if (thisAddress.equals(block.owner)) {
-                        if (record.value != null) {
+                        if (record.value != null || request.operation == ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS_ALL) {
                             pairs.addKeyValue(new KeyValue(record.key, null));
                         } else if (record.copyCount > 0) {
                             for (int i = 0; i < record.copyCount; i++) {
@@ -3056,11 +3050,11 @@ public final class ConcurrentMapManager extends BaseManager {
     public static class Entries implements Set {
         final String name;
         final List<Map.Entry> lsKeyValues = new ArrayList<Map.Entry>();
-        final int iteratorType;
+        final ClusterOperation operation;
 
-        public Entries(String name, int iteratorType) {
+        public Entries(String name, ClusterOperation operation) {
             this.name = name;
-            this.iteratorType = iteratorType;
+            this.operation = operation;
             TransactionImpl txn = ThreadContext.get().txn;
             if (txn != null) {
                 lsKeyValues.addAll(txn.newEntries(name));
@@ -3115,18 +3109,19 @@ public final class ConcurrentMapManager extends BaseManager {
 
             public Object next() {
                 entry = it.next();
-                if (iteratorType == MIterate.TYPE_KEYS) {
+                if (operation == ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS
+                        || operation == ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS_ALL) {
                     return entry.getKey();
-                } else if (iteratorType == MIterate.TYPE_VALUES) {
+                } else if (operation == ClusterOperation.CONCURRENT_MAP_ITERATE_VALUES) {
                     return entry.getValue();
-                } else if (iteratorType == MIterate.TYPE_ENTRIES) {
+                } else if (operation == ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES) {
                     return entry;
-                } else throw new RuntimeException("Unknown iteration type " + iteratorType);
+                } else throw new RuntimeException("Unknown iteration type " + operation);
             }
 
             public void remove() {
                 if (getInstanceType(name) == InstanceType.MULTIMAP) {
-                    if (iteratorType == MIterate.TYPE_KEYS) {
+                    if (operation == ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS) {
                         ((MultiMap) FactoryImpl.getProxy(name)).remove(entry.getKey(), null);
                     } else {
                         ((MultiMap) FactoryImpl.getProxy(name)).remove(entry.getKey(), entry.getValue());
@@ -3152,7 +3147,11 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public boolean contains(Object o) {
-            throw new UnsupportedOperationException();
+            Iterator it = iterator();
+            while (it.hasNext()) {
+                if (o.equals(it.next())) return true;
+            }
+            return false;
         }
 
         public boolean containsAll(Collection c) {
