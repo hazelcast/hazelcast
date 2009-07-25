@@ -19,6 +19,13 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>hazelcast-hibernate/target</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>hazelcast-hibernate-${project.version}.jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>hazelcast/target/</directory>
             <outputDirectory>/</outputDirectory>
             <includes>

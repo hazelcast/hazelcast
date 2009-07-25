@@ -12,6 +12,7 @@
 
     <modules>
         <module>hazelcast</module>
+        <module>hazelcast-hibernate</module>
         <module>hazelcast-wm</module>
         <module>hazelcast-ra</module>
     </modules>
