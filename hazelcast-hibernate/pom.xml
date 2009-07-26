@@ -14,6 +14,13 @@
   <packaging>jar</packaging>
   <version>1.7-RC1</version>
 
+  <repositories>
+    <repository>
+      <id>jboss</id>
+      <url>http://repository.jboss.org/maven2/</url>
+    </repository>
+  </repositories>
+
   <build>
     <plugins>
       <plugin>
