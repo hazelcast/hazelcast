@@ -23,10 +23,7 @@ import java.util.EventObject;
 
 public class EntryEvent extends EventObject {
 
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = -2296203982913729851L;
+    private static final long serialVersionUID = -2296203982913729851L;
 
 	public static final int TYPE_ADDED = 1;
 
@@ -34,7 +31,7 @@ public class EntryEvent extends EventObject {
 
     public static final int TYPE_UPDATED = 3;
 
-    protected int eventType;
+    protected EntryEventType entryEventType = EntryEventType.ADDED;
 
     protected Object key;
 
@@ -42,9 +39,11 @@ public class EntryEvent extends EventObject {
 
     protected final String name;
 
-    private final static String ADDED = "added";
-    private final static String REMOVED = "removed";
-    private final static String UPDATED = "updated";
+    public enum EntryEventType {
+        ADDED,
+        REMOVED,
+        UPDATED
+    }
 
     protected boolean collection;
 
@@ -56,17 +55,18 @@ public class EntryEvent extends EventObject {
 
     public EntryEvent(Object source, int eventType, Object key, Object value) {
         this(source);
-        this.eventType = eventType;
         this.key = key;
         this.value = value;
+        if (eventType == TYPE_REMOVED) {
+            entryEventType = EntryEventType.REMOVED;
+        } else if (eventType == TYPE_UPDATED) {
+            entryEventType = EntryEventType.UPDATED;
+        }
     }
 
     @Override
     public Object getSource() {
-        if (name.startsWith("q:t:")) {
-            return FactoryImpl.getProxy(name.substring(2));
-        }
-        return FactoryImpl.getProxy(name);
+        return FactoryImpl.getProxyByName(name);
     }
 
     public Object getKey() {
@@ -77,8 +77,8 @@ public class EntryEvent extends EventObject {
         return value;
     }
 
-    public int getEventType() {
-        return eventType;
+    public EntryEventType getEventType() {
+        return entryEventType;
     }
 
     public String getName() {
@@ -87,14 +87,8 @@ public class EntryEvent extends EventObject {
 
     @Override
     public String toString() {
-        String event = ADDED;
-        if (eventType == TYPE_REMOVED) {
-            event = REMOVED;
-        } else if (eventType == TYPE_UPDATED) {
-            event = UPDATED;
-        }
-        return "EntryEvent {" + getSource() + "} key=" + key + ", value=" + value + ", event="
-                + event;
-
+        return "EntryEvent {" + getSource() + "} key="
+                + key + ", value=" + value + ", event="
+                + entryEventType;
     }
 }

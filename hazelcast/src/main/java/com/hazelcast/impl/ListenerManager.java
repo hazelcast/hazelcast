@@ -263,17 +263,17 @@ public class ListenerManager extends BaseManager {
         Object listener = listenerItem.listener;
         if (listenerItem.type == Type.Map) {
             EntryListener l = (EntryListener) listener;
-            if (event.getEventType() == EntryEvent.TYPE_ADDED)
+            if (event.getEventType() == EntryEvent.EntryEventType.ADDED)
                 l.entryAdded(event);
-            else if (event.getEventType() == EntryEvent.TYPE_REMOVED)
+            else if (event.getEventType() == EntryEvent.EntryEventType.REMOVED)
                 l.entryRemoved(event);
-            else if (event.getEventType() == EntryEvent.TYPE_UPDATED)
+            else if (event.getEventType() == EntryEvent.EntryEventType.UPDATED)
                 l.entryUpdated(event);
         } else if (listenerItem.type == Type.Item) {
             ItemListener l = (ItemListener) listener;
-            if (event.getEventType() == EntryEvent.TYPE_ADDED)
+            if (event.getEventType() == EntryEvent.EntryEventType.ADDED)
                 l.itemAdded(event.getValue());
-            else if (event.getEventType() == EntryEvent.TYPE_REMOVED)
+            else if (event.getEventType() == EntryEvent.EntryEventType.REMOVED)
                 l.itemRemoved(event.getValue());
         } else if (listenerItem.type == Type.Message) {
             MessageListener l = (MessageListener) listener;

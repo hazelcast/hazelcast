@@ -534,8 +534,6 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                 for (AsyncRemotelyBooleanCallable call : calls) {
                     call.getResultAsBoolean();
                 }
-
-
             }
         });
     }

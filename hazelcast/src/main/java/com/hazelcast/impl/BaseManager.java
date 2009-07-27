@@ -222,7 +222,7 @@ public abstract class BaseManager implements Constants {
             }
 
             public Object setValue(Object newValue) {
-                return ((FactoryImpl.MProxy) FactoryImpl.getProxy(name)).put(key, newValue);
+                return ((FactoryImpl.MProxy) FactoryImpl.getProxyByName(name)).put(key, newValue);
             }
 
             @Override
@@ -307,7 +307,7 @@ public abstract class BaseManager implements Constants {
                 if (value != null) {
                     objValue = toObject(value);
                 } else {
-                    objValue = ((FactoryImpl.IGetAwareProxy) FactoryImpl.getProxy(name)).get((key == null) ? getKey() : key);
+                    objValue = ((FactoryImpl.IGetAwareProxy) FactoryImpl.getProxyByName(name)).get((key == null) ? getKey() : key);
                 }
             }
             return objValue;
@@ -316,7 +316,7 @@ public abstract class BaseManager implements Constants {
         public Object setValue(Object newValue) {
             if (name == null) throw new UnsupportedOperationException();
             this.objValue = value;
-            return ((FactoryImpl.MProxy) FactoryImpl.getProxy(name)).put(getKey(), newValue);
+            return ((FactoryImpl.MProxy) FactoryImpl.getProxyByName(name)).put(getKey(), newValue);
         }
 
         public void setName(String name) {
@@ -1238,8 +1238,7 @@ public abstract class BaseManager implements Constants {
 
         public EventTask(final int eventType, final String name, final Data dataKey,
                          final Data dataValue) {
-            super(name);
-            this.eventType = eventType;
+            super(name, eventType, null, null);
             this.dataKey = dataKey;
             this.dataValue = dataValue;
         }

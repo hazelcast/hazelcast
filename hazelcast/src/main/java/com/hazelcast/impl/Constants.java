@@ -17,6 +17,8 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.nio.Data;
+
 public interface Constants {
 
     interface Objects {
@@ -26,16 +28,15 @@ public interface Constants {
 
         public static final Object OBJECT_CANCELLED = new Object();
 
-        public static final Object OBJECT_LAST = new Object();
-
         public static final Object OBJECT_REDO = new Object();
 
-        public static final Object OBJECT_TIMEOUT = new Object();
     }
 
     interface IO {
 
         public static final int BYTE_BUFFER_SIZE = 1024;
+
+        public static final Data EMPTY_DATA = new Data();
     }
 
 

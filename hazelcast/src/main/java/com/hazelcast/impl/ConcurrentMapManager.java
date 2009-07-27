@@ -1167,8 +1167,8 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     @Override
-    void handleListenerRegisterations(boolean add, String name, Data key, Address address,
-                                      boolean includeValue) {
+    void handleListenerRegisterations(boolean add, String name, Data key,
+                                      Address address, boolean includeValue) {
         CMap cmap = getMap(name);
         if (add) {
             cmap.addListener(key, address, includeValue);
@@ -1864,6 +1864,9 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public void own(Request req) {
+            if (req.value == null) {
+                req.value = new Data();
+            }
             Record record = toRecord(req);
             record.owner = thisAddress;
         }
@@ -2175,6 +2178,9 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public Data put(Request req) {
+            if (req.value == null) {
+                req.value = new Data();
+            }
             if (req.operation == ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT) {
                 Record record = recordExist(req);
                 if (record != null && record.getValue() != null) {
@@ -3122,12 +3128,12 @@ public final class ConcurrentMapManager extends BaseManager {
             public void remove() {
                 if (getInstanceType(name) == InstanceType.MULTIMAP) {
                     if (operation == ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS) {
-                        ((MultiMap) FactoryImpl.getProxy(name)).remove(entry.getKey(), null);
+                        ((MultiMap) FactoryImpl.getProxyByName(name)).remove(entry.getKey(), null);
                     } else {
-                        ((MultiMap) FactoryImpl.getProxy(name)).remove(entry.getKey(), entry.getValue());
+                        ((MultiMap) FactoryImpl.getProxyByName(name)).remove(entry.getKey(), entry.getValue());
                     }
                 } else {
-                    ((FactoryImpl.IRemoveAwareProxy) FactoryImpl.getProxy(name)).removeKey(entry.getKey());
+                    ((FactoryImpl.IRemoveAwareProxy) FactoryImpl.getProxyByName(name)).removeKey(entry.getKey());
                 }
 
                 it.remove();
@@ -3278,14 +3284,14 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public Object getValue() {
             if (value == null) {
-                value = ((FactoryImpl.MProxy) FactoryImpl.getProxy(name)).get(key);
+                value = ((FactoryImpl.MProxy) FactoryImpl.getProxyByName(name)).get(key);
             }
             return value;
         }
 
         public Object setValue(Object value) {
             Object oldValue = this.value;
-            ((FactoryImpl.MProxy) FactoryImpl.getProxy(name)).put(key, value);
+            ((FactoryImpl.MProxy) FactoryImpl.getProxyByName(name)).put(key, value);
             return oldValue;
         }
 

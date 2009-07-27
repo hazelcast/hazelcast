@@ -512,9 +512,38 @@ public class HazelcastTest {
     }
 
     @Test
+    public void testMapInstanceDestroy() {
+        IMap<String, String> map = Hazelcast.getMap("testMap");
+        Collection<ICommon> instances = Hazelcast.getInstances();
+        boolean found = false;
+        for (ICommon instance : instances) {
+            if (instance.getInstanceType() == ICommon.InstanceType.MAP) {
+                IMap imap = (IMap) instance;
+                if (imap.getName().equals("testMap")) {
+                    found = true;
+                }
+            }
+        }
+        assertTrue(found);
+        map.destroy();
+        found = false;
+        instances = Hazelcast.getInstances();
+        for (ICommon instance : instances) {
+            if (instance.getInstanceType() == ICommon.InstanceType.MAP) {
+                IMap imap = (IMap) instance;
+                System.out.println(imap);
+                if (imap.getName().equals("testMap")) {
+                    found = true;
+                }
+            }
+        }
+        assertFalse(found);
+    }
+
+    @Test
     public void testLockInstance() {
         ILock lock = Hazelcast.getLock("testLock");
-        lock.lock ();
+        lock.lock();
         Collection<ICommon> instances = Hazelcast.getInstances();
         boolean found = false;
         for (ICommon instance : instances) {
@@ -527,6 +556,7 @@ public class HazelcastTest {
         }
         assertTrue(found);
 
+        instances = Hazelcast.getInstances();
         found = false;
         for (ICommon instance : instances) {
             if (instance.getInstanceType() == ICommon.InstanceType.LOCK) {
