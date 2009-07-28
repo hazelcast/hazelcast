@@ -12,7 +12,6 @@
   <name>hazelcast-hibernate</name>
   <artifactId>hazelcast-hibernate</artifactId>
   <packaging>jar</packaging>
-  <version>1.7-RC1</version>
 
   <repositories>
     <repository>
