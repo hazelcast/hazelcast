@@ -17,7 +17,7 @@
 
 package com.hazelcast.core;
 
-public interface ICollection<E> extends ICommon {
+public interface ICollection<E> extends Instance {
     String getName();
 
     void addItemListener(ItemListener<E> listener, boolean includeValue);

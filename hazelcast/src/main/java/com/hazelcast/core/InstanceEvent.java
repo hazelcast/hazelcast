@@ -26,9 +26,9 @@ public class InstanceEvent extends EventObject {
     }
 
     private final InstanceEventType instanceEventType;
-    private final ICommon instance;
+    private final Instance instance;
 
-    public InstanceEvent(InstanceEventType instanceEventType, ICommon instance) {
+    public InstanceEvent(InstanceEventType instanceEventType, Instance instance) {
         super(instance);
         this.instanceEventType = instanceEventType;
         this.instance = instance;
@@ -38,11 +38,11 @@ public class InstanceEvent extends EventObject {
         return instanceEventType;
     }
 
-    public ICommon.InstanceType getInstanceType() {
+    public Instance.InstanceType getInstanceType() {
         return instance.getInstanceType();
     }
 
-    public ICommon getInstance() {
+    public Instance getInstance() {
         return instance;
     }
 }

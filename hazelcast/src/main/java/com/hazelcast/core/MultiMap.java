@@ -26,7 +26,7 @@ import java.util.Set;
  *
  * @author oztalip
  */
-public interface MultiMap<K, V> extends ICommon {
+public interface MultiMap<K, V> extends Instance {
     /**
      * Returns the name of this multimap.
      * @return the name of this multimap

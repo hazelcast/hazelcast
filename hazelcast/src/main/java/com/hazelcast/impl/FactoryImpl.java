@@ -47,9 +47,9 @@ public class FactoryImpl {
 
     private static Logger logger = Logger.getLogger(FactoryImpl.class.getName());
 
-    private static ConcurrentMap<String, ICommon> proxiesByName = new ConcurrentHashMap<String, ICommon>(1000);
+    private static ConcurrentMap<String, Instance> proxiesByName = new ConcurrentHashMap<String, Instance>(1000);
 
-    private static ConcurrentMap<ProxyKey, ICommon> proxies = new ConcurrentHashMap<ProxyKey, ICommon>(1000);
+    private static ConcurrentMap<ProxyKey, Instance> proxies = new ConcurrentHashMap<ProxyKey, Instance>(1000);
 
     private static MProxy locksMapProxy = new MProxyImpl("c:__hz_Locks");
 
@@ -105,16 +105,17 @@ public class FactoryImpl {
                                 logger.log(Level.FINEST, "Instance updated " + event.getKey());
                             }
                         }, false);
+                        if (Hazelcast.getCluster().getMembers().size() > 1) {
+                            Set<ProxyKey> proxyKeys = globalProxies.allKeys();
+                            for (final ProxyKey proxyKey : proxyKeys) {
+                                if (!proxies.containsKey(proxyKey)) {
+                                    ClusterService.get().enqueueAndReturn(new Processable() {
+                                        public void process() {
+                                            createProxy(proxyKey);
+                                        }
 
-                        Set<ProxyKey> proxyKeys = globalProxies.allKeys();
-                        for (final ProxyKey proxyKey : proxyKeys) {
-                            if (!proxies.containsKey(proxyKey)) {
-                                ClusterService.get().enqueueAndReturn(new Processable() {
-                                    public void process() {
-                                        createProxy(proxyKey);
-                                    }
-
-                                });
+                                    });
+                                }
                             }
                         }
                     } catch (Exception e) {
@@ -130,14 +131,14 @@ public class FactoryImpl {
         Node.get().shutdown();
     }
 
-    public static Collection<ICommon> getInstances() {
+    public static Collection<Instance> getInstances() {
         final int totalSize = proxies.size();
-        List<ICommon> lsProxies = new ArrayList<ICommon>(totalSize);
+        List<Instance> lsProxies = new ArrayList<Instance>(totalSize);
         lsProxies.addAll(proxies.values());
         return lsProxies;
     }
 
-    static Collection<ICommon> getProxies() {
+    static Collection<Instance> getProxies() {
         init();
         return proxies.values();
     }
@@ -219,8 +220,8 @@ public class FactoryImpl {
     }
 
     public static void destroyProxy(final ProxyKey proxyKey) {
-        proxiesByName.remove (proxyKey.name);
-        ICommon proxy = proxies.remove(proxyKey);
+        proxiesByName.remove(proxyKey.name);
+        Instance proxy = proxies.remove(proxyKey);
         if (proxy != null) {
             String name = proxyKey.name;
             if (name.startsWith("q:")) {
@@ -241,7 +242,7 @@ public class FactoryImpl {
     // should only be called from service thread!!
     public static Object createProxy(ProxyKey proxyKey) {
         boolean created = false;
-        ICommon proxy = proxies.get(proxyKey);
+        Instance proxy = proxies.get(proxyKey);
         if (proxy == null) {
             created = true;
             String name = proxyKey.name;
@@ -252,7 +253,7 @@ public class FactoryImpl {
             } else if (name.startsWith("c:")) {
                 proxy = new MProxyImpl(name);
             } else if (name.startsWith("m:")) {
-                if (BaseManager.getInstanceType(name) == ICommon.InstanceType.MULTIMAP) {
+                if (BaseManager.getInstanceType(name) == Instance.InstanceType.MULTIMAP) {
                     proxy = new MultiMapProxy(name);
                 } else {
                     proxy = new CollectionProxyImpl(name);
@@ -281,7 +282,7 @@ public class FactoryImpl {
         lsInstanceListeners.remove(instanceListener);
     }
 
-    static void fireInstanceCreateEvent(ICommon instance) {
+    static void fireInstanceCreateEvent(Instance instance) {
         if (lsInstanceListeners.size() > 0) {
             final InstanceEvent instanceEvent = new InstanceEvent(InstanceEvent.InstanceEventType.CREATED, instance);
             for (final InstanceListener instanceListener : lsInstanceListeners) {
@@ -294,7 +295,7 @@ public class FactoryImpl {
         }
     }
 
-    static void fireInstanceDestroyEvent(ICommon instance) {
+    static void fireInstanceDestroyEvent(Instance instance) {
         if (lsInstanceListeners.size() > 0) {
             final InstanceEvent instanceEvent = new InstanceEvent(InstanceEvent.InstanceEventType.DESTROYED, instance);
             for (final InstanceListener instanceListener : lsInstanceListeners) {
@@ -404,6 +405,11 @@ public class FactoryImpl {
             return key;
         }
 
+        public Object getId() {
+            ensure();
+            return base.getId();
+        }
+
         private class LockProxyBase implements ILock {
             public void lock() {
                 locksMapProxy.lock(key);
@@ -438,6 +444,10 @@ public class FactoryImpl {
 
             public Object getLockObject() {
                 return key;
+            }
+
+            public Object getId() {
+                return new ProxyKey("lock", key);
             }
         }
     }
@@ -532,7 +542,7 @@ public class FactoryImpl {
         }
     }
 
-    interface TopicProxy extends ITopic, ICommon {
+    interface TopicProxy extends ITopic, Instance {
 
     }
 
@@ -552,6 +562,11 @@ public class FactoryImpl {
             if (base == null) {
                 base = (TopicProxy) getProxyByName(name);
             }
+        }
+
+        public Object getId() {
+            ensure();
+            return base.getId();
         }
 
         @Override
@@ -599,7 +614,7 @@ public class FactoryImpl {
         }
 
         public void destroy() {
-            ICommon instance = proxies.remove(name);
+            Instance instance = proxies.remove(name);
             if (instance != null) {
                 ensure();
                 base.destroy();
@@ -635,12 +650,16 @@ public class FactoryImpl {
                 destroyInstanceClusterwide(name, null);
             }
 
-            public ICommon.InstanceType getInstanceType() {
-                return ICommon.InstanceType.TOPIC;
+            public Instance.InstanceType getInstanceType() {
+                return Instance.InstanceType.TOPIC;
             }
 
             public String getName() {
                 return name.substring(2);
+            }
+
+            public Object getId() {
+                return name;
             }
         }
     }
@@ -665,6 +684,11 @@ public class FactoryImpl {
             if (base == null) {
                 base = (CollectionProxy) getProxyByName(name);
             }
+        }
+
+        public Object getId() {
+            ensure();
+            return base.getId();
         }
 
         @Override
@@ -766,6 +790,10 @@ public class FactoryImpl {
 
             public CollectionProxyReal() {
                 mapProxy = new MProxyImpl(name);
+            }
+
+            public Object getId() {
+                return name;
             }
 
             @Override
@@ -932,6 +960,11 @@ public class FactoryImpl {
             if (qproxyReal == null) {
                 qproxyReal = (QProxy) getProxyByName(name);
             }
+        }
+
+        public Object getId() {
+            ensure();
+            return qproxyReal.getId();
         }
 
         @Override
@@ -1142,8 +1175,12 @@ public class FactoryImpl {
                 destroyInstanceClusterwide(name, null);
             }
 
-            public ICommon.InstanceType getInstanceType() {
-                return ICommon.InstanceType.QUEUE;
+            public Instance.InstanceType getInstanceType() {
+                return Instance.InstanceType.QUEUE;
+            }
+
+            public Object getId() {
+                return name;
             }
         }
     }
@@ -1166,6 +1203,11 @@ public class FactoryImpl {
             if (base == null) {
                 base = (MultiMapBase) getProxyByName(name);
             }
+        }
+
+        public Object getId() {
+            ensure();
+            return base.getId();
         }
 
         @Override
@@ -1203,7 +1245,7 @@ public class FactoryImpl {
         }
 
         public void destroy() {
-            ICommon instance = proxies.remove(name);
+            Instance instance = proxies.remove(name);
             if (instance != null) {
                 ensure();
                 base.destroy();
@@ -1350,6 +1392,10 @@ public class FactoryImpl {
             public void destroy() {
                 mapProxy.destroy();
             }
+
+            public Object getId() {
+                return name;
+            }
         }
     }
 
@@ -1421,6 +1467,11 @@ public class FactoryImpl {
             }
         }
 
+        public Object getId() {
+            ensure();
+            return mproxyReal.getId();
+        }
+
         @Override
         public String toString() {
             return "Map [" + getName() + "]";
@@ -1447,7 +1498,7 @@ public class FactoryImpl {
             mproxyReal.destroy();
         }
 
-        public ICommon.InstanceType getInstanceType() {
+        public Instance.InstanceType getInstanceType() {
             ensure();
             return mproxyReal.getInstanceType();
         }
@@ -1650,6 +1701,10 @@ public class FactoryImpl {
 
             public InstanceType getInstanceType() {
                 return instanceType;
+            }
+
+            public Object getId() {
+                return name;
             }
 
             @Override
@@ -1908,7 +1963,6 @@ public class FactoryImpl {
 
             public Collection values() {
                 return iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_VALUES);
-
             }
 
             private Collection iterate(ClusterOperation iteratorType) {
@@ -1935,11 +1989,15 @@ public class FactoryImpl {
             base = new IdGeneratorBase();
         }
 
-
         private void ensure() {
             if (base == null) {
                 base = getIdGenerator(name);
             }
+        }
+
+        public Object getId() {
+            ensure();
+            return base.getId();
         }
 
         @Override
@@ -1972,7 +2030,7 @@ public class FactoryImpl {
         }
 
 
-        public ICommon.InstanceType getInstanceType() {
+        public Instance.InstanceType getInstanceType() {
             ensure();
             return base.getInstanceType();
         }
@@ -2051,6 +2109,10 @@ public class FactoryImpl {
 
             public void destroy() {
                 destroyInstanceClusterwide(name, null);
+            }
+
+            public Object getId() {
+                return name;
             }
         }
     }

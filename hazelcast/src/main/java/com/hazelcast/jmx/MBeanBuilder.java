@@ -21,14 +21,8 @@ import java.util.regex.Pattern;
 import javax.management.DynamicMBean;
 import javax.management.ObjectName;
 
-import com.hazelcast.core.ICommon;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.ILock;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.Instance;
+import com.hazelcast.core.*;
 
 public class MBeanBuilder {
 
@@ -116,11 +110,11 @@ public class MBeanBuilder {
 	 * See http://java.sun.com/javase/technologies/core/mntr-mgmt/javamanagement/best-practices.jsp
 	 * 
 	 * @param instance
-	 * @return
+	 * @return dynamicmbean for the hazelcast instance
 	 * @throws Exception
 	 */
 	@SuppressWarnings("unchecked")
-	public static DynamicMBean buildMBean(ICommon instance) throws Exception {
+	public static DynamicMBean buildMBean(Instance instance) throws Exception {
 		if (instance instanceof ITopic) {
 	        // Topic
 			TopicMBean mbean = new TopicMBean((ITopic)instance);

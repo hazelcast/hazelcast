@@ -22,7 +22,7 @@ import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.RemotelyProcessable;
 import com.hazelcast.core.EntryEvent;
-import static com.hazelcast.core.ICommon.InstanceType;
+import static com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.core.Member;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;

@@ -17,7 +17,7 @@
 
 package com.hazelcast.core;
 
-public interface IdGenerator extends ICommon{
+public interface IdGenerator extends Instance {
     String getName();
     
     long newId();

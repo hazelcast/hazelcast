@@ -85,7 +85,7 @@ public final class Hazelcast {
      *
      * @return the collection of instances created by Hazelcast.
      */
-    public static Collection<ICommon> getInstances() {
+    public static Collection<Instance> getInstances() {
         return com.hazelcast.impl.FactoryImpl.getInstances();
     }
 

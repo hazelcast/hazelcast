@@ -201,7 +201,7 @@ public class ManagementService {
     
     /**
      * Create a new collector or return null if statistics are not enabled
-     * @return
+     * @return statisticsCollector
      */
     @SuppressWarnings("unchecked")
 	public static StatisticsCollector newStatisticsCollector() {

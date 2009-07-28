@@ -19,6 +19,6 @@ package com.hazelcast.core;
 
 import java.util.Set;
 
-public interface ISet<E> extends ICollection<E>, Set<E>, ICommon {
+public interface ISet<E> extends ICollection<E>, Set<E>, Instance {
 
 }

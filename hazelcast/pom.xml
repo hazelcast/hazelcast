@@ -5,7 +5,8 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>1.7-RC1</version>
+        <version>1.7-RC2</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <name>hazelcast</name>
@@ -22,6 +23,7 @@
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>set-timestamp</id>
                         <phase>generate-resources</phase>
                         <goals>
                             <goal>run</goal>
@@ -35,6 +37,34 @@
                                 </tstamp>
                                 <echo file="${basedir}/target/filter.properties"
                                       message="timestamp=${timestamp}"/>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-javadoc</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <javadoc destdir="target/javadoc" author="true"
+                                         version="true" use="true" verbose="false"
+                                         windowtitle="Hazelcast API">
+                                    <fileset dir="${basedir}/src/main/java/" defaultexcludes="false">
+                                        <exclude name="com/hazelcast/jmx/package.html"/> 
+                                        <exclude name="**/.svn/**"/> 
+                                    </fileset>
+                                    <doctitle>
+                                        <![CDATA[<h1>Hazelcast</h1>]]>
+                                    </doctitle>
+                                    <bottom>
+                                        <![CDATA[<i>Copyright &#169; 2008-2009 Hazel Ltd. All Rights Reserved.</i>]]></bottom>
+                                    <link offline="false" href="http://java.sun.com/j2se/1.5.0/docs/api/"
+                                          packagelistLoc="C:\tmp"/>
+                                    <link href="http://java.sun.com/j2se/1.5.0/docs/api/"/>
+                                    <link href="http://java.sun.com/products/servlet/2.3/javadoc/"/>
+                                </javadoc>
                             </tasks>
                         </configuration>
                     </execution>

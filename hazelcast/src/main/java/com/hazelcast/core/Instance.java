@@ -17,11 +17,13 @@
 
 package com.hazelcast.core;
 
-public interface ICommon {
+public interface Instance {
 
     enum InstanceType {QUEUE, MAP, SET, LIST, LOCK, TOPIC, MULTIMAP, ID_GENERATOR}
 
     InstanceType getInstanceType ();
 
     void destroy();
+
+    Object getId();
 }

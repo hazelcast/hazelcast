@@ -623,7 +623,6 @@ public class Node {
                         }
                     }
                     Thread.sleep(2000);
-                    logger.log(Level.FINEST, masterAddress.toString());
                     if (masterAddress == null) { // no-one knows the master
                         boolean masterCandidate = true;
                         for (final Address address : lsPossibleAddresses) {

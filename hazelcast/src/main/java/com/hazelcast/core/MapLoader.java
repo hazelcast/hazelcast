@@ -41,7 +41,7 @@ public interface MapLoader {
      * such as an O/R mapping tool, simple SQL or reading a file etc.
      *
      * @param key
-     * @return
+     * @return value of the key
      */
     Object load(Object key);
 

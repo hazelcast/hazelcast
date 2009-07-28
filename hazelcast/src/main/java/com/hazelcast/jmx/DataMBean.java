@@ -26,7 +26,7 @@ import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.ICommon;
+import com.hazelcast.core.Instance;
 import com.hazelcast.core.InstanceEvent;
 import com.hazelcast.core.InstanceListener;
 import com.hazelcast.core.Member;
@@ -107,7 +107,7 @@ public class DataMBean extends AbstractMBean<Member> {
 
 	public void registerInstance(Object instance) {
 		try {
-			DynamicMBean mbean = MBeanBuilder.buildMBean((ICommon)instance);
+			DynamicMBean mbean = MBeanBuilder.buildMBean((Instance)instance);
 	    	
 	    	if (mbean == null) {
 	    		logger.log(Level.FINE, "Unsupported instance type "+  instance.getClass().getName());
@@ -164,7 +164,7 @@ public class DataMBean extends AbstractMBean<Member> {
 	@JMXAttribute("InstanceCount")
 	@JMXDescription("Total data structures registered")
     public int getInstanceCount() {
-    	Collection<ICommon> instances = FactoryImpl.getInstances();
+    	Collection<Instance> instances = FactoryImpl.getInstances();
     	
     	return instances.size();
     }

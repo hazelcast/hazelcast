@@ -18,7 +18,7 @@ public class HazelcastTest {
         Hazelcast.getQueue("A");
         Hazelcast.getSet("A");
         Hazelcast.getTopic("A");
-        Collection<ICommon> caches = Hazelcast.getInstances();
+        Collection<Instance> caches = Hazelcast.getInstances();
         assertEquals(6, caches.size());
     }
 
@@ -344,8 +344,8 @@ public class HazelcastTest {
     public void testMultiMapGetNameAndType() {
         MultiMap<String, String> map = Hazelcast.getMultiMap("testMultiMapGetNameAndType");
         assertEquals("testMultiMapGetNameAndType", map.getName());
-        ICommon.InstanceType type = map.getInstanceType();
-        assertEquals(ICommon.InstanceType.MULTIMAP, type);
+        Instance.InstanceType type = map.getInstanceType();
+        assertEquals(Instance.InstanceType.MULTIMAP, type);
     }
 
     @Test
@@ -514,10 +514,10 @@ public class HazelcastTest {
     @Test
     public void testMapInstanceDestroy() {
         IMap<String, String> map = Hazelcast.getMap("testMap");
-        Collection<ICommon> instances = Hazelcast.getInstances();
+        Collection<Instance> instances = Hazelcast.getInstances();
         boolean found = false;
-        for (ICommon instance : instances) {
-            if (instance.getInstanceType() == ICommon.InstanceType.MAP) {
+        for (Instance instance : instances) {
+            if (instance.getInstanceType() == Instance.InstanceType.MAP) {
                 IMap imap = (IMap) instance;
                 if (imap.getName().equals("testMap")) {
                     found = true;
@@ -528,10 +528,9 @@ public class HazelcastTest {
         map.destroy();
         found = false;
         instances = Hazelcast.getInstances();
-        for (ICommon instance : instances) {
-            if (instance.getInstanceType() == ICommon.InstanceType.MAP) {
+        for (Instance instance : instances) {
+            if (instance.getInstanceType() == Instance.InstanceType.MAP) {
                 IMap imap = (IMap) instance;
-                System.out.println(imap);
                 if (imap.getName().equals("testMap")) {
                     found = true;
                 }
@@ -544,10 +543,10 @@ public class HazelcastTest {
     public void testLockInstance() {
         ILock lock = Hazelcast.getLock("testLock");
         lock.lock();
-        Collection<ICommon> instances = Hazelcast.getInstances();
+        Collection<Instance> instances = Hazelcast.getInstances();
         boolean found = false;
-        for (ICommon instance : instances) {
-            if (instance.getInstanceType() == ICommon.InstanceType.LOCK) {
+        for (Instance instance : instances) {
+            if (instance.getInstanceType() == Instance.InstanceType.LOCK) {
                 ILock lockInstance = (ILock) instance;
                 if (lockInstance.getLockObject().equals("testLock")) {
                     found = true;
@@ -558,8 +557,8 @@ public class HazelcastTest {
 
         instances = Hazelcast.getInstances();
         found = false;
-        for (ICommon instance : instances) {
-            if (instance.getInstanceType() == ICommon.InstanceType.LOCK) {
+        for (Instance instance : instances) {
+            if (instance.getInstanceType() == Instance.InstanceType.LOCK) {
                 ILock lockInstance = (ILock) instance;
                 if (lockInstance.getLockObject().equals("testLock2")) {
                     found = true;
@@ -571,8 +570,8 @@ public class HazelcastTest {
         Hazelcast.getLock("testLock2");
         instances = Hazelcast.getInstances();
         found = false;
-        for (ICommon instance : instances) {
-            if (instance.getInstanceType() == ICommon.InstanceType.LOCK) {
+        for (Instance instance : instances) {
+            if (instance.getInstanceType() == Instance.InstanceType.LOCK) {
                 ILock lockInstance = (ILock) instance;
                 if (lockInstance.getLockObject().equals("testLock2")) {
                     found = true;

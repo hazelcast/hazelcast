@@ -325,8 +325,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
 
     private void handleInstances(String[] args) {
-        Collection<ICommon> instances = Hazelcast.getInstances();
-        for (ICommon instance : instances) {
+        Collection<Instance> instances = Hazelcast.getInstances();
+        for (Instance instance : instances) {
             print (instance);
         }
     }

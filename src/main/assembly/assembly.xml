@@ -33,6 +33,17 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>hazelcast/target/javadoc</directory>
+            <outputDirectory>/javadoc</outputDirectory>
+            <includes>
+                <include>**/core/**</include>
+                <include>**/collection/**</include>
+                <include>**/config/**</include>
+                <include>**/jmx/**</include>
+                <include>**/nio/DataSerializable*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>target/classes/</directory>
             <outputDirectory>/</outputDirectory>
             <includes>
@@ -45,7 +56,7 @@
         <fileSet>
             <directory>src/main/resources/</directory>
             <outputDirectory>/</outputDirectory>
-            <includes> 
+            <includes>
                 <include>hazelcast.xml</include>
                 <include>keystore</include>
             </includes>

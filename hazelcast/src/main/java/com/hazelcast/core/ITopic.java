@@ -17,7 +17,7 @@
 
 package com.hazelcast.core;
 
-public interface ITopic<E> extends ICommon {
+public interface ITopic<E> extends Instance {
 
     String getName();
 

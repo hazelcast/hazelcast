@@ -26,7 +26,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.*;
-import static com.hazelcast.core.ICommon.InstanceType;
+import static com.hazelcast.core.Instance.InstanceType;
 import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_BACKUP_LOCK;
 import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_BLOCKS;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;

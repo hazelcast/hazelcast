@@ -43,17 +43,11 @@ import javax.management.RuntimeOperationsException;
  * Implements the method instrument(), in which add attributes and
  * operation exposed to JMX.
  * 
- * A human readable description of MBean can be set using {@link setDescription}.
- * To expose an attribute or an operation, use {@link registerAttribute} and 
- * {@link registerOperation}.
- * Methods associated to attributes and operations will be searched in the MBean first,
- * then in the managed object.
- * 
  * If the managed object is an immutable state of some other object that requires
- *  a special refresh strategy, override method {@link refresh}
+ *  a special refresh strategy, override method {@link #refresh}
  * 
- * @see http://docs.sun.com/app/docs/doc/816-4178/6madjde4n?a=view
- * 
+ * http://docs.sun.com/app/docs/doc/816-4178/6madjde4n?a=view
+ *
  * @author Marco Ferrante, DISI - University of Genoa
  */
 public abstract class AbstractMBean<E> implements DynamicMBean, MBeanRegistration {
