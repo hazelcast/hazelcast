@@ -1290,7 +1290,7 @@ public final class ConcurrentMapManager extends BaseManager {
     class ValueCountOperationHandler extends TargetAwareOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getMap(request.name);
-            request.longValue = cmap.valueCount(request.key);
+            request.response = cmap.valueCount(request.key);
         }
     }
 
