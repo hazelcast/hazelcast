@@ -232,8 +232,6 @@ public class FactoryImpl {
                 ConcurrentMapManager.get().destroy(name);
             } else if (name.startsWith("t:")) {
                 TopicManager.get().destroy(name);
-            } else {
-                logger.log(Level.SEVERE, "Destroy: Unknown data type=" + name);
             }
             fireInstanceDestroyEvent(proxy);
         }

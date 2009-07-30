@@ -63,6 +63,8 @@ class TransactionImpl implements Transaction {
             if (removed) {
                 if (!newRecord) {
                     ThreadContext.get().getMRemove().remove(name, key, -1, -1);
+                } else {
+                   ThreadContext.get().getMLock().unlock(name, key, -1, -1); 
                 }
             } else {
                 ThreadContext.get().getMPut().put(name, key, value, -1, -1);
@@ -146,7 +148,6 @@ class TransactionImpl implements Transaction {
         Object oldValue = null;
         if (rec == null) {
             rec = new TransactionRecord(name, key, value, newRecord);
-            rec.removed = true;
             transactionRecords.add(rec);
         } else {
             oldValue = rec.value;

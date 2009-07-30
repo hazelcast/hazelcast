@@ -86,29 +86,14 @@ public final class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_BACKUP_REMOVE_MULTI, new BackupPacketProcessor());
         registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_BACKUP_REMOVE, new BackupPacketProcessor());
         registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_BACKUP_LOCK, new BackupPacketProcessor());
+        registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_LOCK, new LockOperationHandler());
+        registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_LOCK_RETURN_OLD, new LockOperationHandler());
+        registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_UNLOCK, new UnlockOperationHandler());
 
         registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_REMOVE_MULTI,
                 new DefaultPacketProcessor(false, true, true, true) {
                     void process(Request request) {
                         doRemoveMulti(request);
-                    }
-                });
-        registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_LOCK,
-                new DefaultPacketProcessor(false, true, true, false) {
-                    void process(Request request) {
-                        doLock(request);
-                    }
-                });
-        registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_LOCK_RETURN_OLD,
-                new DefaultPacketProcessor(false, true, true, false) {
-                    void process(Request request) {
-                        doLock(request);
-                    }
-                });
-        registerPacketProcessor(ClusterOperation.CONCURRENT_MAP_UNLOCK,
-                new DefaultPacketProcessor(false, true, true, false) {
-                    void process(Request request) {
-                        doLock(request);
                     }
                 });
 
@@ -398,12 +383,11 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
-        public void doLocalOp() {
-            doLock(request);
-            oldValue = request.value;
-            if (!request.scheduled) {
-                setResult(request.response);
+        public void afterGettingResult(Request request) {
+            if (request.operation == ClusterOperation.CONCURRENT_MAP_LOCK_RETURN_OLD) {
+                oldValue = doTake(request.value);
             }
+            super.afterGettingResult(request);
         }
 
         @Override
@@ -625,10 +609,9 @@ public final class ConcurrentMapManager extends BaseManager {
             TransactionImpl txn = threadContext.txn;
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 try {
-                    boolean locked;
                     if (!txn.has(name, key)) {
                         MLock mlock = threadContext.getMLock();
-                        locked = mlock
+                        boolean locked = mlock
                                 .lockAndReturnOld(name, key, DEFAULT_TXN_TIMEOUT, txn.getId());
                         if (!locked)
                             throwCME(key);
@@ -764,10 +747,9 @@ public final class ConcurrentMapManager extends BaseManager {
             TransactionImpl txn = threadContext.txn;
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 try {
-                    boolean locked = false;
                     if (!txn.has(name, key)) {
                         MLock mlock = threadContext.getMLock();
-                        locked = mlock
+                        boolean locked = mlock
                                 .lockAndReturnOld(name, key, DEFAULT_TXN_TIMEOUT, txn.getId());
                         if (!locked)
                             throwCME(key);
@@ -1507,6 +1489,7 @@ public final class ConcurrentMapManager extends BaseManager {
             Record rec = ensureRecord(request);
             if (request.operation == ClusterOperation.CONCURRENT_MAP_LOCK_RETURN_OLD) {
                 request.value = doHardCopy(rec.getValue());
+                System.out.println("reqLock value " + request.value);
             }
             rec.lock(request.lockThreadId, request.lockAddress);
             request.lockCount = rec.lockCount;
@@ -1514,28 +1497,28 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class RemoveItemOperationHandler extends LockAwareOperationHandler {
+    class RemoveItemOperationHandler extends StoreAwareOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getMap(request.name);
             request.response = cmap.removeItem(request);
         }
     }
 
-    class RemoveOperationHandler extends LockAwareOperationHandler {
+    class RemoveOperationHandler extends StoreAwareOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getMap(request.name);
             request.response = cmap.remove(request);
         }
     }
 
-    class PutMultiOperationHandler extends LockAwareOperationHandler {
+    class PutMultiOperationHandler extends StoreAwareOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getMap(request.name);
             request.response = cmap.putMulti(request);
         }
     }
 
-    class PutOperationHandler extends LockAwareOperationHandler {
+    class PutOperationHandler extends StoreAwareOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getMap(request.name);
             request.response = cmap.put(request);
@@ -1543,7 +1526,7 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
 
-    class GetOperationHandler extends LockAwareOperationHandler {
+    class GetOperationHandler extends StoreAwareOperationHandler {
         public void handle(Request request) {
             CMap cmap = getMap(request.name);
             Record record = cmap.getRecord(request.key);
@@ -1560,7 +1543,7 @@ public final class ConcurrentMapManager extends BaseManager {
             request.response = cmap.get(request);
         }
 
-        protected void afterLoadStore(Request request) {
+        public void afterLoadStore(Request request) {
             if (request.response == Boolean.FALSE) {
                 request.response = OBJECT_REDO;
             } else {
@@ -1576,8 +1559,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-
-    abstract class LockAwareOperationHandler extends AbstractOperationHandler {
+    abstract class TargetAwareOperationHandler extends AbstractOperationHandler {
 
         public void process(Packet packet) {
             if (isMigrating()) {
@@ -1592,18 +1574,65 @@ public final class ConcurrentMapManager extends BaseManager {
                 handle(remoteReq);
             }
         }
+    }
 
-        protected void executeLoadStore(Request request) {
-            LoadStoreFork loadStoreFork = loadStoreForks[getBlockId(request.key)];
-            int size = loadStoreFork.offer(request);
-            if (size == 1) {
-                executeLocally(loadStoreFork);
-            }
+
+    class UnlockOperationHandler extends SchedulableOperationHandler {
+        protected boolean shouldSchedule(Request request) {
+            return false;
         }
 
+        void doOperation(Request request) {
+            boolean unlocked = true;
+            Record record = recordExist(request);
+            logger.log(Level.FINEST, request.operation + " unlocking " + record);
+            if (record != null) {
+                unlocked = record.unlock(request.lockThreadId, request.lockAddress);
+                if (unlocked) {
+                    request.lockCount = record.lockCount;
+                }
+            }
+            if (request.local) {
+                if (unlocked)
+                    request.response = Boolean.TRUE;
+                else
+                    request.response = Boolean.FALSE;
+            }
+        }
+    }
+
+    class LockOperationHandler extends SchedulableOperationHandler {
+        protected void onNoTimeToSchedule(Request request) {
+            request.value = null;
+            request.response = Boolean.FALSE;
+            returnResponse(request);
+        }
+
+        void doOperation(Request request) {
+            Record rec = ensureRecord(request);
+            if (request.operation == ClusterOperation.CONCURRENT_MAP_LOCK_RETURN_OLD) {
+                request.value = doHardCopy(rec.getValue());
+            }
+            rec.lock(request.lockThreadId, request.lockAddress);
+            request.lockCount = rec.lockCount;
+            request.response = Boolean.TRUE;
+        }
+    }
+
+    abstract class SchedulableOperationHandler extends TargetAwareOperationHandler {
+
+        protected boolean shouldSchedule(Request request) {
+            return (!testLock(request));
+        }
+
+        protected void onNoTimeToSchedule(Request request) {
+            request.response = null;
+            request.value = null;
+            returnResponse(request);
+        }
 
         public void handle(Request request) {
-            if (!testLock(request)) {
+            if (shouldSchedule(request)) {
                 if (request.hasEnoughTimeToSchedule()) {
                     // schedule
                     Record record = ensureRecord(request);
@@ -1615,16 +1644,54 @@ public final class ConcurrentMapManager extends BaseManager {
                             return true;
                         }
                     });
-                    return;
                 } else {
-                    request.response = null;
+                    onNoTimeToSchedule(request);
                 }
+                return;
             } else {
-                CMap cmap = getMap(request.name);
-                if (cmap.writeDelaySeconds == 0) {
-                    executeLoadStore(request);
-                    return;
+                doOperation(request);
+                returnResponse(request);
+            }
+        }
+    }
+
+
+    abstract class StoreAwareOperationHandler extends SchedulableOperationHandler {
+
+        protected void executeLoadStore(Request request) {
+            LoadStoreFork loadStoreFork = loadStoreForks[getBlockId(request.key)];
+            int size = loadStoreFork.offer(request);
+            if (size == 1) {
+                executeLocally(loadStoreFork);
+            }
+        }
+
+        protected boolean shouldExecuteStore(Request request) {
+            CMap cmap = getMap(request.name);
+            return (cmap.writeDelaySeconds == 0);
+        }
+
+        public void handle(Request request) {
+            if (shouldSchedule(request)) {
+                if (request.hasEnoughTimeToSchedule()) {
+                    // schedule
+                    Record record = ensureRecord(request);
+                    request.scheduled = true;
+                    record.addScheduledAction(new ScheduledAction(request) {
+                        @Override
+                        public boolean consume() {
+                            handle(request);
+                            return true;
+                        }
+                    });
+                } else {
+                    onNoTimeToSchedule(request);
                 }
+                return;
+            }
+            if (shouldExecuteStore(request)) {
+                executeLoadStore(request);
+                return;
             }
             doOperation(request);
             returnResponse(request);
@@ -1639,6 +1706,7 @@ public final class ConcurrentMapManager extends BaseManager {
             returnResponse(request);
         }
     }
+
 
     final void doMigrate(Request request) {
         CMap cmap = getMap(request.name);
@@ -1755,7 +1823,7 @@ public final class ConcurrentMapManager extends BaseManager {
             final Request request = qResponses.poll();
             if (request != null) {
                 //store the entry
-                LockAwareOperationHandler lwoh = (LockAwareOperationHandler) getPacketProcessor(request.operation);
+                StoreAwareOperationHandler lwoh = (StoreAwareOperationHandler) getPacketProcessor(request.operation);
                 lwoh.afterLoadStore(request);
             }
         }
@@ -2215,6 +2283,9 @@ public final class ConcurrentMapManager extends BaseManager {
             } else {
                 fireMapEvent(mapListeners, name, EntryEvent.TYPE_UPDATED, record);
             }
+            if (req.txnId != -1) {
+                record.unlock();
+            }
             markRecordDirty(record);
             return oldValue;
         }
@@ -2436,6 +2507,9 @@ public final class ConcurrentMapManager extends BaseManager {
             if (record == null) {
                 return false;
             }
+            if (req.txnId != -1) {
+                record.unlock();
+            }
             boolean removed = false;
             if (record.getCopyCount() > 0) {
                 record.decrementCopyCount();
@@ -2476,6 +2550,9 @@ public final class ConcurrentMapManager extends BaseManager {
             if (record == null) {
                 return null;
             }
+            if (req.txnId != -1) {
+                record.unlock();
+            }
             if (!record.isValid()) {
                 if (record.isEvictable()) {
                     scheduleForEviction(record);
@@ -2514,6 +2591,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 req.key.setNoData();
                 req.key = null;
             }
+
             return oldValue;
         }
 

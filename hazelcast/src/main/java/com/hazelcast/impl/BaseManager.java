@@ -405,6 +405,10 @@ public abstract class BaseManager implements Constants {
                 request.setPacket(packet);
                 packet.operation = ClusterOperation.RESPONSE;
                 packet.responseType = RESPONSE_SUCCESS;
+                System.out.println("request value " +request.value);
+                if (request.value != null) {
+                    doSet(request.value, packet.value);
+                }
                 if (request.response == OBJECT_REDO) {
                     packet.responseType = RESPONSE_REDO;
                 } else if (request.response != null) {
@@ -506,7 +510,7 @@ public abstract class BaseManager implements Constants {
             } catch (final Throwable e) {
                 logger.log(Level.SEVERE, "getResultAsBoolean", e);
             } finally {
-                request.reset();
+                afterGettingResult(request);
             }
             return false;
         }
@@ -529,9 +533,13 @@ public abstract class BaseManager implements Constants {
             } catch (final Throwable e) {
                 logger.log(Level.SEVERE, "getResultAsObject", e);
             } finally {
-                request.reset();
+                afterGettingResult(request);
             }
             return null;
+        }
+
+        protected void afterGettingResult (Request request) {
+            request.reset();
         }
 
         public Object objectCall() {
