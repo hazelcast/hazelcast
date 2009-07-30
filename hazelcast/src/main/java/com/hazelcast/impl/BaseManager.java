@@ -405,7 +405,6 @@ public abstract class BaseManager implements Constants {
                 request.setPacket(packet);
                 packet.operation = ClusterOperation.RESPONSE;
                 packet.responseType = RESPONSE_SUCCESS;
-                System.out.println("request value " +request.value);
                 if (request.value != null) {
                     doSet(request.value, packet.value);
                 }

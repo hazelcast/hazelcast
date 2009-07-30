@@ -1445,57 +1445,6 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    final void doLock(Request request) {
-        boolean lock = (request.operation == ClusterOperation.CONCURRENT_MAP_LOCK || request.operation == ClusterOperation.CONCURRENT_MAP_LOCK_RETURN_OLD);
-        if (!lock) {
-            // unlock
-            boolean unlocked = true;
-            Record record = recordExist(request);
-            if (DEBUG) {
-                log(request.operation + " unlocking " + record);
-            }
-            if (record != null) {
-                unlocked = record.unlock(request.lockThreadId, request.lockAddress);
-                if (unlocked) {
-                    request.lockCount = record.lockCount;
-                }
-            }
-            if (request.local) {
-                if (unlocked)
-                    request.response = Boolean.TRUE;
-                else
-                    request.response = Boolean.FALSE;
-            }
-        } else if (!testLock(request)) {
-            if (request.hasEnoughTimeToSchedule()) {
-                // schedule
-                final Record record = ensureRecord(request);
-                final Request reqScheduled = (request.local) ? request : request.hardCopy();
-                if (request.operation == ClusterOperation.CONCURRENT_MAP_LOCK_RETURN_OLD) {
-                    reqScheduled.value = doHardCopy(record.getValue());
-                }
-                if (DEBUG) {
-                    log("scheduling lock");
-                }
-                record.addScheduledAction(new ScheduledLockAction(reqScheduled, record));
-                request.scheduled = true;
-            } else {
-                request.response = Boolean.FALSE;
-            }
-        } else {
-            if (DEBUG) {
-                log("Locking...");
-            }
-            Record rec = ensureRecord(request);
-            if (request.operation == ClusterOperation.CONCURRENT_MAP_LOCK_RETURN_OLD) {
-                request.value = doHardCopy(rec.getValue());
-                System.out.println("reqLock value " + request.value);
-            }
-            rec.lock(request.lockThreadId, request.lockAddress);
-            request.lockCount = rec.lockCount;
-            request.response = Boolean.TRUE;
-        }
-    }
 
     class RemoveItemOperationHandler extends StoreAwareOperationHandler {
         void doOperation(Request request) {
@@ -1631,19 +1580,27 @@ public final class ConcurrentMapManager extends BaseManager {
             returnResponse(request);
         }
 
+        protected void schedule(Request request) {
+            Record record = ensureRecord(request);
+            request.scheduled = true;
+            record.addScheduledAction(new ScheduledAction(request) {
+                @Override
+                public boolean consume() {
+                    handle(request);
+                    return true;
+                }
+
+                @Override
+                public void onExpire() {
+                    onNoTimeToSchedule(request);
+                }
+            });
+        }
+
         public void handle(Request request) {
             if (shouldSchedule(request)) {
                 if (request.hasEnoughTimeToSchedule()) {
-                    // schedule
-                    Record record = ensureRecord(request);
-                    request.scheduled = true;
-                    record.addScheduledAction(new ScheduledAction(request) {
-                        @Override
-                        public boolean consume() {
-                            handle(request);
-                            return true;
-                        }
-                    });
+                    schedule(request);
                 } else {
                     onNoTimeToSchedule(request);
                 }
@@ -1674,16 +1631,7 @@ public final class ConcurrentMapManager extends BaseManager {
         public void handle(Request request) {
             if (shouldSchedule(request)) {
                 if (request.hasEnoughTimeToSchedule()) {
-                    // schedule
-                    Record record = ensureRecord(request);
-                    request.scheduled = true;
-                    record.addScheduledAction(new ScheduledAction(request) {
-                        @Override
-                        public boolean consume() {
-                            handle(request);
-                            return true;
-                        }
-                    });
+                    schedule(request);
                 } else {
                     onNoTimeToSchedule(request);
                 }
@@ -2930,13 +2878,12 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public void addScheduledAction(ScheduledAction scheduledAction) {
-            if (lsScheduledActions == null)
+            if (lsScheduledActions == null) {
                 lsScheduledActions = new ArrayList<ScheduledAction>(1);
+            }
             lsScheduledActions.add(scheduledAction);
             ClusterManager.get().registerScheduledAction(scheduledAction);
-            if (DEBUG) {
-                log("scheduling " + scheduledAction);
-            }
+            logger.log(Level.FINEST, scheduledAction.request.operation + " scheduling " + scheduledAction);
         }
 
         public boolean isRemovable() {

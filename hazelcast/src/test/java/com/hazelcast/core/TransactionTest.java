@@ -1,7 +1,7 @@
 package com.hazelcast.core;
 
 import org.junit.After;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -77,6 +77,22 @@ public class TransactionTest {
         txnMap2.begin();
         txnMap2.remove("1");
         txnMap2.commit();
+    }
+
+    @Test
+    public void testTryLock() {
+        Hazelcast.getMap("testMap").put("1", "value");
+        TransactionalMap txnMap = newTransactionalMapProxy("testMap");
+        TransactionalMap txnMap2 = newTransactionalMapProxy("testMap");
+        txnMap.lock ("1");
+        long start = System.currentTimeMillis();
+        assertFalse(txnMap2.tryLock ("1", 2, TimeUnit.SECONDS));
+        long end = System.currentTimeMillis();
+        long took = (end - start);
+        assertTrue ((took > 1000) ? (took < 4000) : false);
+        assertFalse(txnMap2.tryLock ("1"));
+        txnMap.unlock ("1");
+        assertTrue(txnMap2.tryLock ("1", 2, TimeUnit.SECONDS));
     }
 
     @Test
@@ -200,7 +216,8 @@ public class TransactionTest {
                 });
             }
 
-            Object result = resultQ.take();
+            Object result = resultQ.poll(5, TimeUnit.SECONDS);
+            if (result == null) throw new RuntimeException("Method [" + name + "] took more than 5 seconds!");
             if (name.equals("destroy")) {
                 es.shutdown();
             }
