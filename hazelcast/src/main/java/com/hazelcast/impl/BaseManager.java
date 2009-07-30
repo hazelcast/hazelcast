@@ -384,8 +384,8 @@ public abstract class BaseManager implements Constants {
             Request request = new Request();
             request.setFromPacket(packet);
             request.local = false;
-            packet.returnToContainer();
             handle(request);
+            packet.returnToContainer();
             request.reset();
         }
 
@@ -405,6 +405,7 @@ public abstract class BaseManager implements Constants {
                 request.setPacket(packet);
                 packet.operation = ClusterOperation.RESPONSE;
                 packet.responseType = RESPONSE_SUCCESS;
+                packet.longValue = request.longValue;
                 if (request.value != null) {
                     doSet(request.value, packet.value);
                 }
@@ -415,6 +416,8 @@ public abstract class BaseManager implements Constants {
                         if (request.response == Boolean.FALSE) {
                             packet.responseType = RESPONSE_FAILURE;
                         }
+                    } else if (request.response instanceof Long) {
+                          packet.longValue = (Long) request.response;
                     } else {
                         Data data = null;
                         if (request.response instanceof Data) {

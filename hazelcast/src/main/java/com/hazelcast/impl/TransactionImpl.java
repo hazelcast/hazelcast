@@ -62,12 +62,12 @@ class TransactionImpl implements Transaction {
         public void commitMap() {
             if (removed) {
                 if (!newRecord) {
-                    ThreadContext.get().getMRemove().remove(name, key, -1, -1);
+                    ThreadContext.get().getMRemove().remove(name, key, -1);
                 } else {
-                   ThreadContext.get().getMLock().unlock(name, key, -1, -1); 
+                   ThreadContext.get().getMLock().unlock(name, key, -1);
                 }
             } else {
-                ThreadContext.get().getMPut().put(name, key, value, -1, -1);
+                ThreadContext.get().getMPut().put(name, key, value, -1);
             }
         }
 

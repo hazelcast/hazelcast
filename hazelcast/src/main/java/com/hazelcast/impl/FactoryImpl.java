@@ -1740,19 +1740,19 @@ public class FactoryImpl {
                 check(key);
                 check(value);
                 MPut mput = ThreadContext.get().getMPut();
-                return mput.put(name, key, value, -1, -1);
+                return mput.put(name, key, value, -1);
             }
 
             public Object get(Object key) {
                 check(key);
                 MGet mget = ThreadContext.get().getMGet();
-                return mget.get(name, key, -1, -1);
+                return mget.get(name, key, -1);
             }
 
             public Object remove(Object key) {
                 check(key);
                 MRemove mremove = ThreadContext.get().getMRemove();
-                return mremove.remove(name, key, -1, -1);
+                return mremove.remove(name, key, -1);
             }
 
             public int size() {
@@ -1770,7 +1770,7 @@ public class FactoryImpl {
             public int valueCount(Object key) {
                 int count;
                 MValueCount mcount = ConcurrentMapManager.get().new MValueCount();
-                count = ((Number) mcount.count(name, key, -1, -1)).intValue();
+                count = ((Number) mcount.count(name, key, -1)).intValue();
                 return count;
             }
 
@@ -1778,7 +1778,7 @@ public class FactoryImpl {
                 check(key);
                 check(value);
                 MPut mput = ThreadContext.get().getMPut();
-                return mput.putIfAbsent(name, key, value, -1, -1);
+                return mput.putIfAbsent(name, key, value, -1);
             }
 
             public boolean removeMulti(Object key, Object value) {
@@ -1792,14 +1792,14 @@ public class FactoryImpl {
                 check(key);
                 check(value);
                 MRemove mremove = ThreadContext.get().getMRemove();
-                return (mremove.removeIfSame(name, key, value, -1, -1) != null);
+                return (mremove.removeIfSame(name, key, value, -1) != null);
             }
 
             public Object replace(Object key, Object value) {
                 check(key);
                 check(value);
                 MPut mput = ThreadContext.get().getMPut();
-                return mput.replace(name, key, value, -1, -1);
+                return mput.replace(name, key, value, -1);
             }
 
             public boolean replace(Object key, Object oldValue, Object newValue) {
@@ -1811,13 +1811,13 @@ public class FactoryImpl {
             public void lock(Object key) {
                 check(key);
                 MLock mlock = ThreadContext.get().getMLock();
-                mlock.lock(name, key, -1, -1);
+                mlock.lock(name, key, -1);
             }
 
             public boolean tryLock(Object key) {
                 check(key);
                 MLock mlock = ThreadContext.get().getMLock();
-                return mlock.lock(name, key, 0, -1);
+                return mlock.lock(name, key, 0);
             }
 
             public boolean tryLock(Object key, long time, TimeUnit timeunit) {
@@ -1825,13 +1825,13 @@ public class FactoryImpl {
                 if (time < 0)
                     throw new IllegalArgumentException("Time cannot be negative. time = " + time);
                 MLock mlock = ThreadContext.get().getMLock();
-                return mlock.lock(name, key, timeunit.toMillis(time), -1);
+                return mlock.lock(name, key, timeunit.toMillis(time));
             }
 
             public void unlock(Object key) {
                 check(key);
                 MLock mlock = ThreadContext.get().getMLock();
-                mlock.unlock(name, key, 0, -1);
+                mlock.unlock(name, key, 0);
             }
 
             public void addGenericListener(Object listener, Object key, boolean includeValue,
@@ -1884,7 +1884,7 @@ public class FactoryImpl {
                     }
                 }
                 MContainsKey mContainsKey = ConcurrentMapManager.get().new MContainsKey();
-                return mContainsKey.containsEntry(name, key, value, -1);
+                return mContainsKey.containsEntry(name, key, value);
             }
 
             public boolean containsKey(Object key) {
@@ -1897,7 +1897,7 @@ public class FactoryImpl {
                     }
                 }
                 MContainsKey mContainsKey = ConcurrentMapManager.get().new MContainsKey();
-                return mContainsKey.containsKey(name, key, -1);
+                return mContainsKey.containsKey(name, key);
             }
 
             public boolean containsValue(Object value) {

@@ -2,7 +2,7 @@
     <id></id>
     <formats>
         <format>zip</format>
-    </formats>
+    </formats> 
     <fileSets>
         <fileSet>
             <directory>hazelcast-ra/target</directory>
