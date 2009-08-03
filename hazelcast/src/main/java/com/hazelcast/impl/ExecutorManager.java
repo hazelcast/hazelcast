@@ -111,13 +111,22 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                     + keepAliveSeconds);
         }
 
-        executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveSeconds,
-                TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new ExecutorThreadFactory());
+        executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveSeconds, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>(),
+                new ExecutorThreadFactory(),
+                new RejectionHandler());
         Node.get().getClusterImpl().addMembershipListener(this);
         for (int i = 0; i < 100; i++) {
             executionIds.add((long) i);
         }
         started = true;
+    }
+
+    class RejectionHandler implements RejectedExecutionHandler {
+        public void rejectedExecution(Runnable runnable, ThreadPoolExecutor threadPoolExecutor) {
+            //ignored
+            logger.log (Level.FINEST, "ExecutorService is rejecting an execution. " + runnable);
+        }
     }
 
     public void stop() {

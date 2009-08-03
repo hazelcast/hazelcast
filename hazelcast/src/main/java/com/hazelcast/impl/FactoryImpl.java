@@ -62,15 +62,25 @@ public class FactoryImpl {
 
     static volatile boolean inited = false;
 
+    static int startCount = 0;
+
     private static CopyOnWriteArrayList<InstanceListener> lsInstanceListeners = new CopyOnWriteArrayList<InstanceListener>();
+
+
 
     private static void init() {
         if (!inited) {
             synchronized (Node.class) {
+                if (startCount > 0) {
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException ignored) {}
+                }
                 if (!inited) {
                     node = Node.get();
                     node.start();
                     inited = true;
+                    startCount++;
                     ManagementService.register(node.getClusterImpl());
                     try {
                         globalProxies.addEntryListener(new EntryListener() {

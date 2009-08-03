@@ -956,7 +956,13 @@ public class BlockingQueueManager extends BaseManager {
         }
 
         public Object poll(String name, long timeout) {
-            return objectCall(ClusterOperation.BLOCKING_QUEUE_POLL, name, null, null, timeout, -1);
+            Object value = objectCall(ClusterOperation.BLOCKING_QUEUE_POLL, name, null, null, timeout, -1);
+            ThreadContext threadContext = ThreadContext.get();
+            TransactionImpl txn = threadContext.txn;
+            if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                txn.attachRemoveOp(name, null, value, false);
+            }
+            return value;
         }
 
         @Override

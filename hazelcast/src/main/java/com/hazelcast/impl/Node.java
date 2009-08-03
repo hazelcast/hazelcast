@@ -275,6 +275,10 @@ public class Node {
 
     public void shutdown() {
         try {
+            // set the joined=false first so that
+            // threads do not process unnecessary
+            // events, such as removeaddress
+            joined = false;
             ConcurrentMapManager.get().reset();
             ClusterService.get().stop();
             MulticastService.get().stop();
@@ -284,7 +288,6 @@ public class Node {
             OutSelector.get().shutdown();
             address = null;
             masterAddress = null;
-            joined = false;
             FactoryImpl.inited = false;
             ClusterManager.get().stop();
         } catch (Throwable e) {

@@ -1050,7 +1050,7 @@ public abstract class BaseManager implements Constants {
         }
     }
 
-    protected final void executeLocally(final Runnable runnable) {
+    public final void executeLocally(final Runnable runnable) {
         ExecutorManager.get().executeLocaly(runnable);
     }
 

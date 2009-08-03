@@ -22,6 +22,7 @@ import com.hazelcast.impl.*;
 import com.hazelcast.impl.BaseManager.PacketProcessor;
 import com.hazelcast.impl.BaseManager.Processable;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.core.Hazelcast;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -156,7 +157,7 @@ public final class ClusterService implements Runnable, Constants {
 
     public void start() {
         totalProcessTime = 0;
-        lastPeriodicCheck = 0;
+        lastPeriodicCheck = System.nanoTime();
         running = true;
     }
 
@@ -173,6 +174,15 @@ public final class ClusterService implements Runnable, Constants {
 
     private void checkPeriodics() {
         final long now = System.nanoTime();
+        if ((now - lastPeriodicCheck) > 3 * PERIODIC_CHECK_INTERVAL) {
+            logger.log (Level.INFO, "Hazelcast ServiceThread is blocked. Restarting Hazelcast!");
+            new Thread(new Runnable () {
+                public void run() {
+                    Hazelcast.shutdown();
+                    Hazelcast.getCluster();
+                }
+            }).start();
+        }
         if ((now - lastPeriodicCheck) > PERIODIC_CHECK_INTERVAL) {
 //            ClusterManager.get().heartBeater();
 //            ClusterManager.get().checkScheduledActions();

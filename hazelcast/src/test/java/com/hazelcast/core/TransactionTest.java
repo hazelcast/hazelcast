@@ -142,6 +142,19 @@ public class TransactionTest {
     }
 
     @Test
+    public void testQueueOfferRollbackSize() {
+        TransactionalQueue txnq = newTransactionalQueueProxy("test");
+        TransactionalQueue txnq2 = newTransactionalQueueProxy("test");
+        txnq.begin();
+        txnq.offer("item");
+        assertEquals(1, txnq.size());
+        assertEquals(0, txnq2.size());
+        txnq.rollback();
+        assertEquals(0, txnq.size());
+        assertEquals(0, txnq2.size());
+    }
+
+    @Test
     public void testQueueOfferCommitIterator() {
         TransactionalQueue txnq = newTransactionalQueueProxy("test");
         TransactionalQueue txnq2 = newTransactionalQueueProxy("test");
@@ -188,7 +201,7 @@ public class TransactionTest {
     public void testQueueOfferCommitIterator2() {
         TransactionalQueue txnq = newTransactionalQueueProxy("test");
         TransactionalQueue txnq2 = newTransactionalQueueProxy("test");
-        txnq.offer ("item0");
+        txnq.offer("item0");
         assertEquals(1, txnq.size());
         assertEquals(1, txnq2.size());
         txnq.begin();
@@ -227,6 +240,97 @@ public class TransactionTest {
         assertEquals(2, txnq.size());
         assertEquals(2, txnq2.size());
     }
+
+
+    @Test
+    public void testQueueOfferRollbackIterator2() {
+        TransactionalQueue txnq = newTransactionalQueueProxy("test");
+        TransactionalQueue txnq2 = newTransactionalQueueProxy("test");
+        txnq.offer("item0");
+        assertEquals(1, txnq.size());
+        assertEquals(1, txnq2.size());
+        txnq.begin();
+        txnq.offer("item");
+        Iterator it = txnq.iterator();
+        int size = 0;
+        while (it.hasNext()) {
+            assertNotNull(it.next());
+            size++;
+        }
+        assertEquals(2, size);
+        it = txnq2.iterator();
+        size = 0;
+        while (it.hasNext()) {
+            assertNotNull(it.next());
+            size++;
+        }
+        assertEquals(1, size);
+
+        txnq.rollback();
+
+        it = txnq.iterator();
+        size = 0;
+        while (it.hasNext()) {
+            assertNotNull(it.next());
+            size++;
+        }
+        assertEquals(1, size);
+
+        it = txnq2.iterator();
+        size = 0;
+        while (it.hasNext()) {
+            assertNotNull(it.next());
+            size++;
+        }
+        assertEquals(1, size);
+        assertEquals(1, txnq.size());
+        assertEquals(1, txnq2.size());
+    }
+
+    @Test
+    public void testQueuePollCommitSize() {
+        TransactionalQueue txnq = newTransactionalQueueProxy("testPoll");
+        TransactionalQueue txnq2 = newTransactionalQueueProxy("testPoll");
+        txnq.offer("item1");
+        txnq.offer("item2");
+
+        assertEquals(2, txnq.size());
+        assertEquals(2, txnq2.size());
+
+        txnq.begin();
+        
+        assertEquals("item1", txnq.poll());
+
+        assertEquals(1, txnq.size());
+        assertEquals(1, txnq2.size());
+
+        txnq.commit();
+        assertEquals(1, txnq.size());
+        assertEquals(1, txnq2.size());
+    }
+
+@Test
+    public void testQueuePollRollbackSize() {
+        TransactionalQueue txnq = newTransactionalQueueProxy("testPoll");
+        TransactionalQueue txnq2 = newTransactionalQueueProxy("testPoll");
+        txnq.offer("item1");
+        txnq.offer("item2");
+
+        assertEquals(2, txnq.size());
+        assertEquals(2, txnq2.size());
+
+        txnq.begin();
+
+        assertEquals("item1", txnq.poll());
+
+        assertEquals(1, txnq.size());
+        assertEquals(1, txnq2.size());
+
+        txnq.rollback();
+        assertEquals(2, txnq.size());
+        assertEquals(2, txnq2.size());
+    }
+
 
     @After
     public void cleanUp() {
