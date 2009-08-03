@@ -111,7 +111,7 @@ class TransactionImpl implements Transaction {
 
         private void offerAgain() {
             final Offer offer = ThreadContext.get().getOffer();
-            offer.offer(name, value, 0, -1);
+            offer.offer(name, value, 0, false);
         }
     }
 
@@ -270,6 +270,25 @@ class TransactionImpl implements Transaction {
             }
         }
         return size;
+    }
+
+    public List newValues(final String name) {
+        List lsValues = null;
+        for (final TransactionRecord transactionRecord : transactionRecords) {
+            if (transactionRecord.name.equals(name)) {
+                if (!transactionRecord.removed) {
+                    if (transactionRecord.value != null) {
+                        if (transactionRecord.newRecord) {
+                            if (lsValues == null) {
+                                lsValues = new ArrayList(2);
+                            }
+                            lsValues.add(transactionRecord.value);
+                        }
+                    }
+                }
+            }
+        }
+        return lsValues;
     }
 
     public List<Map.Entry> newEntries(final String name) {

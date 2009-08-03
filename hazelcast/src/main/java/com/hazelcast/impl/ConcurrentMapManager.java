@@ -818,6 +818,15 @@ public final class ConcurrentMapManager extends BaseManager {
         int size = 0;
         final String name;
 
+        public int getSize() {
+            int size = (Integer) call();
+            TransactionImpl txn = ThreadContext.get().txn;
+            if (txn != null) {
+                size += txn.size(name);
+            }
+            return (size < 0) ? 0 : size;
+        }
+
         public MSize(String name) {
             this.name = name;
         }

@@ -24,7 +24,6 @@ import com.hazelcast.impl.BaseManager.Processable;
 import com.hazelcast.impl.BlockingQueueManager.Offer;
 import com.hazelcast.impl.BlockingQueueManager.Poll;
 import com.hazelcast.impl.BlockingQueueManager.QIterator;
-import com.hazelcast.impl.BlockingQueueManager.Size;
 import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.jmx.ManagementService;
 import static com.hazelcast.nio.BufferUtil.*;
@@ -1087,7 +1086,7 @@ public class FactoryImpl {
 
             public boolean offer(Object obj) {
                 Offer offer = ThreadContext.get().getOffer();
-                return offer.offer(name, obj, 0, ThreadContext.get().getTxnId());
+                return offer.offer(name, obj, 0);
             }
 
             public boolean offer(Object obj, long timeout, TimeUnit unit) throws InterruptedException {
@@ -1095,12 +1094,12 @@ public class FactoryImpl {
                     timeout = 0;
                 }
                 Offer offer = ThreadContext.get().getOffer();
-                return offer.offer(name, obj, unit.toMillis(timeout), ThreadContext.get().getTxnId());
+                return offer.offer(name, obj, unit.toMillis(timeout));
             }
 
             public void put(Object obj) throws InterruptedException {
                 Offer offer = ThreadContext.get().getOffer();
-                offer.offer(name, obj, -1, ThreadContext.get().getTxnId());
+                offer.offer(name, obj, -1);
             }
 
             public Object peek() {
@@ -1139,8 +1138,8 @@ public class FactoryImpl {
 
             @Override
             public int size() {
-                Size size = BlockingQueueManager.get().new Size();
-                return size.getSize(name);
+                BlockingQueueManager.QSize qsize = BlockingQueueManager.get().new QSize(name);
+                return qsize.getSize();
             }
 
             public void addItemListener(ItemListener listener, boolean includeValue) {
@@ -1756,15 +1755,8 @@ public class FactoryImpl {
             }
 
             public int size() {
-                //            MSize msize = ConcurrentMapManager.get().new MSize();
-                //            int size = msize.getSize(name);
                 MSize msize = ConcurrentMapManager.get().new MSize(name);
-                int size = (Integer) msize.call();
-                TransactionImpl txn = ThreadContext.get().txn;
-                if (txn != null) {
-                    size += txn.size(name);
-                }
-                return (size < 0) ? 0 : size;
+                return msize.getSize();
             }
 
             public int valueCount(Object key) {

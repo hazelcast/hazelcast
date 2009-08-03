@@ -23,10 +23,12 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
+import static com.hazelcast.impl.ClusterOperation.*;
 import com.hazelcast.nio.Address;
 import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.Data;
@@ -555,88 +557,63 @@ public class BlockingQueueManager extends BaseManager {
                 }
             }
         }
-    } 
+    }
 
     public void destroy(String name) {
         mapQueues.remove(name);
     }
 
-    public class Size extends AbstractCall {
-        String name = null;
-        int total = 0;
-        int numberOfResponses = 0;
-        int numberOfExpectedResponses = 1;
+    public class QSize extends MultiCall {
+        int size = 0;
+        final String name;
 
-        public int getSize(String name) {
+        public int getSize() {
+            int size = (Integer) call();
+            TransactionImpl txn = ThreadContext.get().txn;
+            if (txn != null) {
+                size += txn.size(name);
+            }
+            return (size < 0) ? 0 : size;
+        }
+
+        public QSize(String name) {
             this.name = name;
-            synchronized (this) {
-                try {
-                    enqueueAndReturn(this);
-                    wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        }
+
+        TargetAwareOp createNewTargetAwareOp(Address target) {
+            return new MGetSize(target);
+        }
+
+        boolean onResponse(Object response) {
+            size += ((Long) response).intValue();
+            return true;
+        }
+
+        void onCall() {
+            size = 0;
+        }
+
+        Object returnResult() {
+            return size;
+        }
+
+        class MGetSize extends MigrationAwareTargettedCall {
+            public MGetSize(Address target) {
+                this.target = target;
+                request.reset();
+                request.name = name;
+                request.operation = BLOCKING_QUEUE_SIZE ;
             }
-            return total;
-        }
 
-        @Override
-        public void onDisconnect(Address dead) {
-            redo();
-        }
-
-        public void reset() {
-            total = 0;
-            numberOfResponses = 0;
-            numberOfExpectedResponses = 0;
-        }
-
-        public void handleResponse(Packet packet) {
-            total += (int) packet.longValue;
-            packet.returnToContainer();
-            numberOfResponses++;
-            if (numberOfResponses >= numberOfExpectedResponses) {
-                removeCall(getId());
-                synchronized (this) {
-                    notify();
-                }
+            @Override
+            void handleNoneRedoResponse(final Packet packet) {
+                handleLongNoneRedoResponse(packet);
             }
-        }
 
-        public void process() {
-            reset();
-            Q q = getQ(name);
-            if (DEBUG) {
-                q.printStack();
+            public void doLocalCall() {
+                Q q = getQ(name);
+                request.response = (long) q.size();
             }
-            total += q.size();
-            numberOfResponses = 1;
-            if (lsMembers.size() > 1) {
-                addCall(this);
-                numberOfExpectedResponses = lsMembers.size();
-                for (MemberImpl member : lsMembers) {
-                    if (!member.localMember()) {
-                        Packet packet = obtainPacket();
-                        packet.name = name;
-                        packet.operation = getOperation();
-                        packet.callId = getId();
-                        packet.timeout = 0;
-                        boolean sent = send(packet, member.getAddress());
-                        if (!sent) {
-                            packet.returnToContainer();
-                            redo();
-                        }
-                    }
-                }
-            } else {
-                synchronized (this) {
-                    this.notify();
-                }
-            }
-        }
-
-        public ClusterOperation getOperation() {
-            return ClusterOperation.BLOCKING_QUEUE_SIZE;
         }
     }
 
@@ -648,8 +625,16 @@ public class BlockingQueueManager extends BaseManager {
         int currentIndex = -1;
         Object next = null;
         boolean hasNextCalled = false;
+        Iterator txnOffers= null;
 
         public void set(String name) {
+            TransactionImpl txn = ThreadContext.get().txn;
+            if (txn != null) {
+                List txnOfferItems = txn.newEntries(name);
+                if (txnOfferItems != null) {
+                    txnOffers = txnOfferItems.iterator();
+                }
+            }
             synchronized (QIterator.this) {
                 this.name = name;
                 enqueueAndReturn(QIterator.this);
@@ -675,6 +660,16 @@ public class BlockingQueueManager extends BaseManager {
 
         public boolean hasNext() {
             next = null;
+            if (txnOffers != null) {
+                boolean hasInTxn = txnOffers.hasNext();
+                hasNextCalled = true;
+                if (hasInTxn) {
+                    next = txnOffers.next();
+                    return true;
+                } else {
+                    txnOffers = null;
+                }
+            }
             while (next == null) {
                 boolean canRead = setNextBlock();
                 // System.out.println(currentBlockId + " Can read " + canRead);
@@ -877,8 +872,19 @@ public class BlockingQueueManager extends BaseManager {
 
         int doCount = 1;
 
-        public boolean offer(String name, Object value, long timeout, long txnId) {
-            return booleanCall(ClusterOperation.BLOCKING_QUEUE_OFFER, name, null, value, timeout, -1);
+        public boolean offer(String name, Object value, long timeout) {
+            return offer(name, value, timeout, true);
+        }
+
+        public boolean offer(String name, Object value, long timeout, boolean transactional) {
+            ThreadContext threadContext = ThreadContext.get();
+            TransactionImpl txn = threadContext.txn;
+            if (transactional && txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                txn.attachPutOp(name, null, value, true);
+            } else {
+                return booleanCall(ClusterOperation.BLOCKING_QUEUE_OFFER, name, null, value, timeout, -1);
+            }
+            return true;
         }
 
         @Override
@@ -911,8 +917,7 @@ public class BlockingQueueManager extends BaseManager {
         }
 
         @Override
-		public
-        void setTarget() {
+        public void setTarget() {
             target = getTargetForOffer(request);
         }
 
@@ -955,8 +960,7 @@ public class BlockingQueueManager extends BaseManager {
         }
 
         @Override
-		public
-        void setTarget() {
+        public void setTarget() {
             Q q = getQ(request.name);
             Block takeBlock = q.getCurrentTakeBlock();
             if (takeBlock == null) {
@@ -969,8 +973,7 @@ public class BlockingQueueManager extends BaseManager {
         }
 
         @Override
-		public
-        void doLocalOp() {
+        public void doLocalOp() {
             Q q = getQ(request.name);
             if (q.rightTakeTarget(request.blockId)) {
                 doPoll(request);
@@ -1403,7 +1406,7 @@ public class BlockingQueueManager extends BaseManager {
                 while (!consumed && lsScheduledPollActions.size() > 0) {
                     ScheduledAction pollAction = lsScheduledPollActions.remove(0);
                     ClusterManager.get().deregisterScheduledAction(pollAction);
-                    if (! pollAction.expired()) {
+                    if (!pollAction.expired()) {
                         consumed = pollAction.consume();
                     }
                 }

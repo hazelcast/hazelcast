@@ -8,8 +8,8 @@ import org.junit.Test;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.List;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.*;
 
 public class TransactionTest {
@@ -38,6 +38,7 @@ public class TransactionTest {
         assertEquals(2, txnMap.size());
         assertEquals(2, imap.size());
     }
+
     @Test
     public void testMapPutRollbackSize() {
         TransactionalMap txnMap = newTransactionalMapProxy("testMap");
@@ -84,15 +85,15 @@ public class TransactionTest {
         Hazelcast.getMap("testMap").put("1", "value");
         TransactionalMap txnMap = newTransactionalMapProxy("testMap");
         TransactionalMap txnMap2 = newTransactionalMapProxy("testMap");
-        txnMap.lock ("1");
+        txnMap.lock("1");
         long start = System.currentTimeMillis();
-        assertFalse(txnMap2.tryLock ("1", 2, TimeUnit.SECONDS));
+        assertFalse(txnMap2.tryLock("1", 2, TimeUnit.SECONDS));
         long end = System.currentTimeMillis();
         long took = (end - start);
-        assertTrue ((took > 1000) ? (took < 4000) : false);
-        assertFalse(txnMap2.tryLock ("1"));
-        txnMap.unlock ("1");
-        assertTrue(txnMap2.tryLock ("1", 2, TimeUnit.SECONDS));
+        assertTrue((took > 1000) ? (took < 4000) : false);
+        assertFalse(txnMap2.tryLock("1"));
+        txnMap.unlock("1");
+        assertTrue(txnMap2.tryLock("1", 2, TimeUnit.SECONDS));
     }
 
     @Test
@@ -127,17 +128,117 @@ public class TransactionTest {
         txnMap2.commit();
     }
 
+    @Test
+    public void testQueueOfferCommitSize() {
+        TransactionalQueue txnq = newTransactionalQueueProxy("test");
+        TransactionalQueue txnq2 = newTransactionalQueueProxy("test");
+        txnq.begin();
+        txnq.offer("item");
+        assertEquals(1, txnq.size());
+        assertEquals(0, txnq2.size());
+        txnq.commit();
+        assertEquals(1, txnq.size());
+        assertEquals(1, txnq2.size());
+    }
+
+    @Test
+    public void testQueueOfferCommitIterator() {
+        TransactionalQueue txnq = newTransactionalQueueProxy("test");
+        TransactionalQueue txnq2 = newTransactionalQueueProxy("test");
+        assertEquals(0, txnq.size());
+        assertEquals(0, txnq2.size());
+        txnq.begin();
+        txnq.offer("item");
+        Iterator it = txnq.iterator();
+        int size = 0;
+        while (it.hasNext()) {
+            assertNotNull(it.next());
+            size++;
+        }
+        assertEquals(1, size);
+        it = txnq2.iterator();
+        size = 0;
+        while (it.hasNext()) {
+            assertNotNull(it.next());
+            size++;
+        }
+        assertEquals(0, size);
+
+        txnq.commit();
+        it = txnq.iterator();
+        size = 0;
+        while (it.hasNext()) {
+            assertNotNull(it.next());
+            size++;
+        }
+        assertEquals(1, size);
+
+        it = txnq2.iterator();
+        size = 0;
+        while (it.hasNext()) {
+            assertNotNull(it.next());
+            size++;
+        }
+        assertEquals(1, size);
+        assertEquals(1, txnq.size());
+        assertEquals(1, txnq2.size());
+    }
+
+    @Test
+    public void testQueueOfferCommitIterator2() {
+        TransactionalQueue txnq = newTransactionalQueueProxy("test");
+        TransactionalQueue txnq2 = newTransactionalQueueProxy("test");
+        txnq.offer ("item0");
+        assertEquals(1, txnq.size());
+        assertEquals(1, txnq2.size());
+        txnq.begin();
+        txnq.offer("item");
+        Iterator it = txnq.iterator();
+        int size = 0;
+        while (it.hasNext()) {
+            assertNotNull(it.next());
+            size++;
+        }
+        assertEquals(2, size);
+        it = txnq2.iterator();
+        size = 0;
+        while (it.hasNext()) {
+            assertNotNull(it.next());
+            size++;
+        }
+        assertEquals(1, size);
+
+        txnq.commit();
+        it = txnq.iterator();
+        size = 0;
+        while (it.hasNext()) {
+            assertNotNull(it.next());
+            size++;
+        }
+        assertEquals(2, size);
+
+        it = txnq2.iterator();
+        size = 0;
+        while (it.hasNext()) {
+            assertNotNull(it.next());
+            size++;
+        }
+        assertEquals(2, size);
+        assertEquals(2, txnq.size());
+        assertEquals(2, txnq2.size());
+    }
+
     @After
     public void cleanUp() {
-        Iterator<IMap> it = mapsUsed.iterator();
+        Iterator<Instance> it = mapsUsed.iterator();
         while (it.hasNext()) {
-            IMap imap = it.next();
-            imap.destroy();
+            Instance instance = it.next();
+            instance.destroy();
         }
         mapsUsed.clear();
     }
 
-    List<IMap> mapsUsed = new CopyOnWriteArrayList<IMap>();
+    List<Instance> mapsUsed = new CopyOnWriteArrayList<Instance>();
 
     TransactionalMap newTransactionalMapProxy(String name) {
         IMap imap = Hazelcast.getMap(name);
@@ -147,6 +248,16 @@ public class TransactionTest {
         TransactionalMap txnalMap = (TransactionalMap) proxy;
         mapsUsed.add(txnalMap);
         return txnalMap;
+    }
+
+    TransactionalQueue newTransactionalQueueProxy(String name) {
+        IQueue q = Hazelcast.getQueue(name);
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        Class[] interfaces = new Class[]{TransactionalQueue.class};
+        Object proxy = Proxy.newProxyInstance(classLoader, interfaces, new ThreadBoundInvocationHandler(q));
+        TransactionalQueue txnalQ = (TransactionalQueue) proxy;
+        mapsUsed.add(txnalQ);
+        return txnalQ;
     }
 
     IMap newMapProxy(String name) {
@@ -159,6 +270,14 @@ public class TransactionTest {
     }
 
     interface TransactionalMap extends IMap {
+        void begin();
+
+        void commit();
+
+        void rollback();
+    }
+
+    interface TransactionalQueue extends IQueue {
         void begin();
 
         void commit();
