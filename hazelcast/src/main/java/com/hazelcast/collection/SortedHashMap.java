@@ -536,12 +536,19 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
         m.get(0);
         m.get(4);
         SortedHashMap.moveToTop(m, 7);
-        Collection values = m.values();
+        Object[] values = m.values().toArray();
 
         for (Object o : values) {
             System.out.println("vv " + o);
         }
 
+        m.clear();
+
+        values = m.values().toArray();
+
+        for (Object o : values) {
+            System.out.println("vv now " + o);
+        }
 
     }
 

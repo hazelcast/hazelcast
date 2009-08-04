@@ -75,6 +75,8 @@ public class XmlConfigBuilder implements ConfigBuilder {
                 handleNetwork(node);
             } else if ("group".equals(nodeName)) {
                 handleGroup(node);
+            } else if ("properties".equals(nodeName)) {
+                handleProperties(node);
             } else if ("executor-service".equals(nodeName)) {
                 handleExecutor(node);
             } else if ("queue".equals(nodeName)) {
@@ -198,6 +200,16 @@ public class XmlConfigBuilder implements ConfigBuilder {
             } else if ("password".equals(nodeName)) {
                 config.setGroupPassword(value);
             }
+        }
+    }
+
+    private void handleProperties(final org.w3c.dom.Node node) {
+        final NodeList nodelist = node.getChildNodes();
+        for (int i = 0; i < nodelist.getLength(); i++) {
+            final org.w3c.dom.Node n = nodelist.item(i);
+            final String value = getTextContent(n).trim();
+            final String name = n.getNodeName().toLowerCase();
+            System.setProperty(name, value);
         }
     }
 

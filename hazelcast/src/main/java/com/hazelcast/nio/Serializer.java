@@ -19,6 +19,7 @@ package com.hazelcast.nio;
 
 import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.config.ConfigProperty;
 import static com.hazelcast.nio.BufferUtil.createNewData;
 import static com.hazelcast.nio.BufferUtil.doHardCopy;
 
@@ -220,18 +221,28 @@ public final class Serializer {
     }
 
     static class ObjectSerializer implements TypeSerializer<Object> {
+        static final boolean shared = Boolean.getBoolean(ConfigProperty.SERIALIZER_SHARED.getName());
+        
         public byte getTypeId() {
             return SERIALIZER_TYPE_OBJECT;
         }
 
         public Object read(BuffersInputStream bbis, Data data) throws Exception {
             ObjectInputStream in = new ObjectInputStream(bbis);
-            return in.readUnshared();
+            if (shared) {
+                return in.readObject() ;
+            } else {
+                return in.readUnshared();
+            }
         }
 
         public void write(BuffersOutputStream bbos, Object obj) throws Exception {
             ObjectOutputStream os = new ObjectOutputStream(bbos);
-            os.writeUnshared(obj);
+            if (shared) {
+                os.writeObject(obj);
+            } else {
+                os.writeUnshared(obj);
+            }
         }
     }
 

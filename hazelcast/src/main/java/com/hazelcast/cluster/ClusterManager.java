@@ -18,6 +18,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.*;
 import com.hazelcast.nio.*;
@@ -27,6 +28,10 @@ import java.util.*;
 import java.util.logging.Level;
 
 public class ClusterManager extends BaseManager implements ConnectionListener {
+
+    private final int WAIT_SECONDS_BEFORE_JOIN = ConfigProperty.WAIT_SECONDS_BEFORE_JOIN.getInteger(5);
+
+    private final int MAX_NO_HEARTBEAT_SECONDS = ConfigProperty.MAX_NO_HEARTBEAT_SECONDS.getInteger(10);
 
     private static final ClusterManager instance = new ClusterManager();
 
@@ -44,7 +49,6 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
 
     private final List<MemberImpl> lsMembersBefore = new ArrayList<MemberImpl>();
 
-    private final long waitTimeBeforeJoin = 5000;
 
     private ClusterManager() {
         ClusterService.get().registerPeriodicRunnable(new Runnable() {
@@ -154,7 +158,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                     try {
                         Connection conn = ConnectionManager.get().getConnection(address);
                         if (conn != null && conn.live()) {
-                            if ((now - memberImpl.getLastRead()) >= 10000) {
+                            if ((now - memberImpl.getLastRead()) >= (MAX_NO_HEARTBEAT_SECONDS * 1000L)) {
                                 conn = null;
                                 if (lsDeadAddresses == null) {
                                     lsDeadAddresses = new ArrayList<Address>();
@@ -187,7 +191,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                 MemberImpl masterMember = getMember(getMasterAddress());
                 boolean removed = false;
                 if (masterMember != null) {
-                    if ((now - masterMember.getLastRead()) >= 10000) {
+                    if ((now - masterMember.getLastRead()) >= (MAX_NO_HEARTBEAT_SECONDS * 1000L)) {
                         doRemoveAddress(getMasterAddress());
                         removed = true;
                     }
@@ -344,7 +348,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
                 if (setJoins.add(newMemberInfo)) {
                     sendProcessableTo(new Master(Node.get().getMasterAddress()), conn);
                     // sendAddRemoveToAllConns(newAddress);
-                    timeToStartJoin = System.currentTimeMillis() + waitTimeBeforeJoin;
+                    timeToStartJoin = System.currentTimeMillis() + (WAIT_SECONDS_BEFORE_JOIN * 1000L);
                 } else {
                     if (System.currentTimeMillis() > timeToStartJoin) {
                         startJoin();
@@ -405,7 +409,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
     void joinReset() {
         joinInProgress = false;
         setJoins.clear();
-        timeToStartJoin = System.currentTimeMillis() + waitTimeBeforeJoin + 1000;
+        timeToStartJoin = System.currentTimeMillis() + WAIT_SECONDS_BEFORE_JOIN + 1000;
     }
 
     public class AsyncRemotelyObjectCallable extends TargetAwareOp {

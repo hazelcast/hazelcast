@@ -66,8 +66,6 @@ public class FactoryImpl {
 
     private static CopyOnWriteArrayList<InstanceListener> lsInstanceListeners = new CopyOnWriteArrayList<InstanceListener>();
 
-
-
     private static void init() {
         if (!inited) {
             synchronized (Node.class) {
