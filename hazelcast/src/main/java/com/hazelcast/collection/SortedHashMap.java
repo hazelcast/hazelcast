@@ -17,7 +17,7 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
     final OrderingType orderingType;
 
     public enum OrderingType {
-        NONE, LRU, LFU
+        NONE, LRU, LFU, HASH
     }
 
     public SortedHashMap() {
@@ -285,7 +285,7 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
             if (!(o instanceof Map.Entry)) {
                 return false;
             }
-            
+
             Map.Entry e = (Map.Entry) o;
             Object k1 = getKey();
             Object k2 = e.getKey();
@@ -330,6 +330,7 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
          * of a pre-existing entry is read by Map.get or modified by Map.set.
          * If the enclosing Map is access-ordered, it moves the entry
          * to the end of the list; otherwise, it does nothing.
+         *
          * @param lm
          */
         void recordAccess(SortedHashMap<K, V> lm) {
@@ -345,6 +346,8 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
                     moveLFU(lm);
                 } else if (orderingType == OrderingType.LRU) {
                     moveLRU(lm);
+                } else if (orderingType == OrderingType.HASH) {
+                    moveHash(lm);
                 } else throw new RuntimeException("Unknown orderingType:" + lm.orderingType);
             }
         }
@@ -358,6 +361,19 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
             Entry<K, V> nextOne = after;
             boolean shouldMove = false;
             while (nextOne != null && accessCount >= nextOne.accessCount && nextOne != lm.header) {
+                shouldMove = true;
+                nextOne = nextOne.after;
+            }
+            if (shouldMove) {
+                remove();
+                addBefore(nextOne);
+            }
+        }
+
+        void moveHash(SortedHashMap lm) {
+            Entry<K, V> nextOne = after;
+            boolean shouldMove = false;
+            while (nextOne != null && nextOne != lm.header && value.hashCode() >= nextOne.value.hashCode()) {
                 shouldMove = true;
                 nextOne = nextOne.after;
             }
@@ -528,28 +544,32 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
     }
 
     public static void main(String[] args) {
-        SortedHashMap m = new SortedHashMap(100, SortedHashMap.OrderingType.LRU);
+        SortedHashMap m = new SortedHashMap(100, SortedHashMap.OrderingType.HASH);
+        List l = new ArrayList();
+        l.add(100);
+        l.add(101);
         for (int i = 0; i < 10; i++) {
-            m.put(i, "value" + i);
+            l.add(i);
+        }
+        l.add(102);
+        l.add(103);
+
+        for (Object o : l) {
+            System.out.println("adding " + o);
+            m.put(o, o);
+            SortedHashMap.touch(m, o, SortedHashMap.OrderingType.HASH);            
         }
 
-        m.get(0);
-        m.get(4);
-        SortedHashMap.moveToTop(m, 7);
+//        for (Object o : l) {
+//            SortedHashMap.touch(m, o, SortedHashMap.OrderingType.HASH);
+//
+//        }
+
         Object[] values = m.values().toArray();
 
         for (Object o : values) {
             System.out.println("vv " + o);
         }
-
-        m.clear();
-
-        values = m.values().toArray();
-
-        for (Object o : values) {
-            System.out.println("vv now " + o);
-        }
-
     }
 
 }

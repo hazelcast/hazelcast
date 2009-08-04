@@ -20,16 +20,16 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ConfigProperty;
+import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
+import static com.hazelcast.impl.ClusterOperation.BLOCKING_QUEUE_SIZE;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
-import static com.hazelcast.impl.ClusterOperation.*;
 import com.hazelcast.nio.Address;
 import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.Data;
@@ -603,7 +603,7 @@ public class BlockingQueueManager extends BaseManager {
                 this.target = target;
                 request.reset();
                 request.name = name;
-                request.operation = BLOCKING_QUEUE_SIZE ;
+                request.operation = BLOCKING_QUEUE_SIZE;
             }
 
             @Override
@@ -611,9 +611,11 @@ public class BlockingQueueManager extends BaseManager {
                 handleLongNoneRedoResponse(packet);
             }
 
-            public void doLocalCall() {
+            @Override
+            public void doLocalOp() {
                 Q q = getQ(name);
                 request.response = (long) q.size();
+                setResult(request.response);
             }
         }
     }
@@ -626,7 +628,7 @@ public class BlockingQueueManager extends BaseManager {
         int currentIndex = -1;
         Object next = null;
         boolean hasNextCalled = false;
-        Iterator txnOffers= null;
+        Iterator txnOffers = null;
 
         public void set(String name) {
             TransactionImpl txn = ThreadContext.get().txn;

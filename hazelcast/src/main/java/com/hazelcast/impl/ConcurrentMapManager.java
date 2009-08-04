@@ -23,9 +23,9 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.collection.SortedHashMap;
 import static com.hazelcast.collection.SortedHashMap.OrderingType;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.core.*;
 import static com.hazelcast.core.Instance.InstanceType;
 import static com.hazelcast.impl.ClusterOperation.*;
@@ -113,7 +113,7 @@ public final class ConcurrentMapManager extends BaseManager {
     public static ConcurrentMapManager get() {
         return instance;
     }
-    
+
     public void syncForDead(Address deadAddress) {
         if (deadAddress.equals(thisAddress)) return;
 //        Collection<Block> blocks = mapBlocks.values();
@@ -248,7 +248,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MLock extends MBackupAwareOp {
+    class MLock extends MBackupAndTargetAwareOp {
         Data oldValue = null;
 
         public boolean unlock(String name, Object key, long timeout) {
@@ -417,7 +417,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MRemoveItem extends MBackupAwareOp {
+    class MRemoveItem extends MBackupAndTargetAwareOp {
 
         public boolean removeItem(String name, Object key) {
             return removeItem(name, key, null);
@@ -464,7 +464,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MRemove extends MBackupAwareOp {
+    class MRemove extends MBackupAndTargetAwareOp {
 
         public Object remove(String name, Object key, long timeout) {
             return txnalRemove(CONCURRENT_MAP_REMOVE, name, key, null, timeout);
@@ -575,7 +575,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MPutMulti extends MBackupAwareOp {
+    class MPutMulti extends MBackupAndTargetAwareOp {
 
         boolean put(String name, Object key, Object value) {
             boolean result = booleanCall(CONCURRENT_MAP_PUT_MULTI, name, key, value, 0, -1);
@@ -591,7 +591,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MPut extends MBackupAwareOp {
+    class MPut extends MBackupAndTargetAwareOp {
 
 
         public Object replace(String name, Object key, Object value, long timeout) {
@@ -658,6 +658,13 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    abstract class MBackupAndTargetAwareOp extends MBackupAwareOp {
+        @Override
+        public boolean isMigrationAware() {
+            return true;
+        }
+    }
+
 
     abstract class MBackupAwareOp extends MTargetAwareOp {
         protected MBackup[] backupOps = new MBackup[3];
@@ -679,7 +686,7 @@ public final class ConcurrentMapManager extends BaseManager {
                         backupOp = new MBackup();
                         backupOps[i] = backupOp;
                     }
-                    backupOp.sendBackup(operation, target, (backupCount > 1), distance, reqBackup);
+                    backupOp.sendBackup(operation, target, true, distance, reqBackup);
                 }
                 for (int i = 0; i < backupCount; i++) {
                     MBackup backupOp = backupOps[i];
@@ -808,11 +815,6 @@ public final class ConcurrentMapManager extends BaseManager {
             void handleNoneRedoResponse(final Packet packet) {
                 handleBooleanNoneRedoResponse(packet);
             }
-
-            public void doLocalCall() {
-                CMap cmap = getMap(request.name);
-                request.response = cmap.contains(request);
-            }
         }
     }
 
@@ -863,11 +865,6 @@ public final class ConcurrentMapManager extends BaseManager {
             void handleNoneRedoResponse(final Packet packet) {
                 handleLongNoneRedoResponse(packet);
             }
-
-            public void doLocalCall() {
-                CMap cmap = getMap(request.name);
-                request.response = (long) cmap.size();
-            }
         }
     }
 
@@ -905,11 +902,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 request.reset();
                 request.name = name;
                 request.operation = operation;
-            }
-
-            public void doLocalCall() {
-                CMap cmap = getMap(request.name);
-                cmap.getEntries(request);
             }
         }
     }
@@ -1130,6 +1122,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
                 executeLocally(new Runnable() {
                     MMigrate mmigrate = new MMigrate();
+
                     public void run() {
                         if (cmap.isMultiMap()) {
                             List<Data> values = rec.lsValues;
@@ -1677,7 +1670,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public boolean backup(Request req) {
             if (req.key == null || req.key.size() == 0) {
-                throw new RuntimeException ("Backup key size cannot be 0: " + req.key);
+                throw new RuntimeException("Backup key size cannot be 0: " + req.key);
             }
             Record record = getRecord(req.key);
             if (record != null) {
@@ -1702,8 +1695,8 @@ public final class ConcurrentMapManager extends BaseManager {
 
 
         public void doBackup(Request req) {
-            if (req.key == null || req.key.size() ==0) {
-                throw new RuntimeException ("Backup key size cannot be zero! " + req.key);
+            if (req.key == null || req.key.size() == 0) {
+                throw new RuntimeException("Backup key size cannot be zero! " + req.key);
             }
             if (req.operation == CONCURRENT_MAP_BACKUP_PUT) {
                 toRecord(req);
@@ -1727,7 +1720,7 @@ public final class ConcurrentMapManager extends BaseManager {
                             throw new RuntimeException("Remove not removing record!");
                         }
                         record.key.setNoData();
-                        record.key = null;                        
+                        record.key = null;
                     }
                 }
             } else if (req.operation == CONCURRENT_MAP_BACKUP_LOCK) {
@@ -2324,7 +2317,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
             if (record.isRemovable()) {
                 if (removeRecord(record.key) == null) {
-                    throw new RuntimeException ("Remove not removeing record");
+                    throw new RuntimeException("Remove not removeing record");
                 }
                 record.key.setNoData();
                 record.key = null;
@@ -2350,7 +2343,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         Record createNewRecord(Data key, Data value) {
             if (key == null || key.size() == 0) {
-                throw new RuntimeException ("Cannot create record from a 0 size key: " + key);
+                throw new RuntimeException("Cannot create record from a 0 size key: " + key);
             }
             int blockId = getBlockId(key);
             Record rec = new Record(name, blockId, key, value, ttl);

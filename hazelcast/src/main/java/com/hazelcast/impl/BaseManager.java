@@ -417,7 +417,7 @@ public abstract class BaseManager implements Constants {
                             packet.responseType = RESPONSE_FAILURE;
                         }
                     } else if (request.response instanceof Long) {
-                          packet.longValue = (Long) request.response;
+                        packet.longValue = (Long) request.response;
                     } else {
                         Data data = null;
                         if (request.response instanceof Data) {
@@ -540,7 +540,7 @@ public abstract class BaseManager implements Constants {
             return null;
         }
 
-        protected void afterGettingResult (Request request) {
+        protected void afterGettingResult(Request request) {
             request.reset();
         }
 
@@ -760,9 +760,13 @@ public abstract class BaseManager implements Constants {
         }
 
         public void doLocalOp() {
-            request.attachment = TargetAwareOp.this;
-            request.local = true;
-            ((RequestHandler) getPacketProcessor(request.operation)).handle(request);
+            if (isMigrationAware() && isMigrating()) {
+                setResult(OBJECT_REDO);
+            } else {
+                request.attachment = TargetAwareOp.this;
+                request.local = true;
+                ((RequestHandler) getPacketProcessor(request.operation)).handle(request);
+            }
         }
 
         void handleNoneRedoResponse(final Packet packet) {
@@ -770,6 +774,10 @@ public abstract class BaseManager implements Constants {
         }
 
         public abstract void setTarget();
+
+        public boolean isMigrationAware() {
+            return false;
+        }
     }
 
 
@@ -863,16 +871,9 @@ public abstract class BaseManager implements Constants {
         }
 
         @Override
-        public void doLocalOp() {
-            if (isMigrating()) {
-                setResult(OBJECT_REDO);
-            } else {
-                doLocalCall();
-                setResult(request.response);
-            }
+        public boolean isMigrationAware() {
+            return true;
         }
-
-        abstract void doLocalCall();
     }
 
     protected boolean isMigrating() {

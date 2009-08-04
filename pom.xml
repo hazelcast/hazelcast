@@ -82,6 +82,8 @@
                     <includes>
                         <include>**/HazelcastTest.java</include>
                         <include>**/TransactionTest.java</include>
+                        <include>**/GeneralTest.java</include>
+                        <include>**/IOTest.java</include>
                     </includes>
                 </configuration>
             </plugin>
