@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public abstract class BaseManager implements Constants {
+public abstract class BaseManager {
 
     protected final static boolean zeroBackup = false;
 
