@@ -31,6 +31,8 @@ public class EntryEvent extends EventObject {
 
     public static final int TYPE_UPDATED = 3;
 
+    public static final int TYPE_EVICTED = 4;
+
     protected EntryEventType entryEventType = EntryEventType.ADDED;
 
     protected Object key;
@@ -42,7 +44,8 @@ public class EntryEvent extends EventObject {
     public enum EntryEventType {
         ADDED,
         REMOVED,
-        UPDATED
+        UPDATED,
+        EVICTED
     }
 
     protected boolean collection;
@@ -61,6 +64,8 @@ public class EntryEvent extends EventObject {
             entryEventType = EntryEventType.REMOVED;
         } else if (eventType == TYPE_UPDATED) {
             entryEventType = EntryEventType.UPDATED;
+        }else if (eventType == TYPE_EVICTED) {
+            entryEventType = EntryEventType.EVICTED;
         }
     }
 

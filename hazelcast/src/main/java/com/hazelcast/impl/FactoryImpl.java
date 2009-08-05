@@ -72,7 +72,8 @@ public class FactoryImpl {
                 if (startCount > 0) {
                     try {
                         Thread.sleep(5000);
-                    } catch (InterruptedException ignored) {}
+                    } catch (InterruptedException ignored) {
+                    }
                 }
                 if (!inited) {
                     node = Node.get();
@@ -111,6 +112,13 @@ public class FactoryImpl {
                             public void entryUpdated(EntryEvent event) {
                                 logger.log(Level.FINEST, "Instance updated " + event.getKey());
                             }
+
+                            public void entryEvicted(EntryEvent event) {
+                                // should not happen!
+                                logger.log(Level.FINEST, "Instance evicted " + event.getKey());
+                            }
+
+
                         }, false);
                         if (Hazelcast.getCluster().getMembers().size() > 1) {
                             Set<ProxyKey> proxyKeys = globalProxies.allKeys();

@@ -111,5 +111,8 @@ public class ChatApplication {
                 System.out.println(event.getValue().toString());
             }
         }
+
+        public void entryEvicted(EntryEvent event) {
+        }
     }
 }

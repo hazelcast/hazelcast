@@ -25,4 +25,6 @@ public interface EntryListener extends EventListener {
     void entryRemoved(EntryEvent event);
 
     void entryUpdated(EntryEvent event);
+
+    void entryEvicted(EntryEvent event);
 }

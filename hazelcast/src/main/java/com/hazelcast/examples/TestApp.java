@@ -327,7 +327,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     private void handleInstances(String[] args) {
         Collection<Instance> instances = Hazelcast.getInstances();
         for (Instance instance : instances) {
-            print (instance);
+            print(instance);
         }
     }
 
@@ -844,6 +844,10 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     public void entryUpdated(EntryEvent event) {
+        System.out.println(event);
+    }
+
+    public void entryEvicted(EntryEvent event) {
         System.out.println(event);
     }
 

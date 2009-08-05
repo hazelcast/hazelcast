@@ -63,8 +63,11 @@ public class MapMBean extends AbstractMBean<IMap> {
 				public void entryUpdated(EntryEvent event) {
 					// Nothing to do
 				}
-				
-			};
+
+                public void entryEvicted(EntryEvent event) {
+                    entryRemoved (event);
+                }
+            };
 			getManagedObject().addEntryListener(listener, false);
 			
 			// Add existing entries

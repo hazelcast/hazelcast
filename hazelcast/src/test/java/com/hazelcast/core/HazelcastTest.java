@@ -142,6 +142,10 @@ public class HazelcastTest {
                 assertEquals("new world", event.getValue());
                 assertEquals("hello", event.getKey());
             }
+
+            public void entryEvicted(EntryEvent event) {
+                entryRemoved (event);
+            }
         }, true);
         map.put("hello", "world");
         map.put("hello", "new world");

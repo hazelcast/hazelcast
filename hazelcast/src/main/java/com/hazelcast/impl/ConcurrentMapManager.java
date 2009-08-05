@@ -1829,6 +1829,9 @@ public final class ConcurrentMapManager extends BaseManager {
             long now = System.currentTimeMillis();
             for (Record record : colRecords) {
                 if (record.isValid(now)) {
+                    if (record.key == null || record.key.size() == 0) {
+                        throw new RuntimeException("Key cannot be null or zero-size: " + record.key);
+                    }
                     Block block = blocks[record.blockId];
                     if (thisAddress.equals(block.owner)) {
                         if (record.value != null || request.operation == CONCURRENT_MAP_ITERATE_KEYS_ALL) {
@@ -2183,6 +2186,7 @@ public final class ConcurrentMapManager extends BaseManager {
             Record record = getRecord(req.key);
             if (record != null && record.isEvictable()) {
                 if (ownerForSure(record)) {
+                    fireMapEvent(mapListeners, name, EntryEvent.TYPE_EVICTED, record.key, record.value, record.mapListeners);                    
                     removeRecord(req.key);
                     return true;
                 }
@@ -2350,7 +2354,6 @@ public final class ConcurrentMapManager extends BaseManager {
             if (evictionPolicy != OrderingType.NONE) {
                 if (maxSize != Integer.MAX_VALUE) {
                     int limitSize = (maxSize / lsMembers.size());
-//                    System.out.println(ownedEntryCount + " createNewRecord " + limitSize);
                     if (ownedEntryCount > limitSize) {
                         startEviction();
                     }
