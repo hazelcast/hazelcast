@@ -703,7 +703,7 @@ public abstract class BaseManager implements Constants {
 
     public abstract class TargetAwareOp extends ResponseQueueCall {
 
-        protected Address target = null;
+        protected volatile Address target = null;
 
         public TargetAwareOp() {
         }

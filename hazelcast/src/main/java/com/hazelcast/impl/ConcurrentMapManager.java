@@ -667,15 +667,9 @@ public final class ConcurrentMapManager extends BaseManager {
 
 
     abstract class MBackupAwareOp extends MTargetAwareOp {
-        protected MBackup[] backupOps = new MBackup[3];
-        protected int backupCount = 0;
-        protected Request reqBackup = new Request();
-
-        public void reset() {
-            super.reset();
-            reqBackup.reset();
-            backupCount = 0;
-        }
+        protected final MBackup[] backupOps = new MBackup[3];
+        protected volatile int backupCount = 0;
+        protected final Request reqBackup = new Request();
 
         protected void backup(ClusterOperation operation) {
             if (backupCount > 0) {
@@ -686,17 +680,18 @@ public final class ConcurrentMapManager extends BaseManager {
                         backupOp = new MBackup();
                         backupOps[i] = backupOp;
                     }
-                    backupOp.sendBackup(operation, target, true, distance, reqBackup);
+                    backupOp.sendBackup(operation, target, (distance < backupCount), distance, reqBackup);
                 }
                 for (int i = 0; i < backupCount; i++) {
                     MBackup backupOp = backupOps[i];
                     backupOp.getResultAsBoolean();
-                    backupOp.reset();
                 }
             }
         }
 
         void prepareForBackup() {
+            reqBackup.reset();
+            backupCount = 0;
             if (lsMembers.size() > 1) {
                 CMap map = getMap(request.name);
                 backupCount = map.getBackupCount();
@@ -706,7 +701,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
             }
         }
-
 
         @Override
         public void process() {
@@ -1118,7 +1112,7 @@ public final class ConcurrentMapManager extends BaseManager {
             for (Object recObj : records) {
                 final Record rec = (Record) recObj;
                 if (rec.key == null || rec.key.size() == 0) {
-                    logger.log(Level.SEVERE, "Record.key is null or empty " + rec.key);
+                    throw new RuntimeException("Record.key is null or empty " + rec.key);
                 }
                 executeLocally(new Runnable() {
                     MMigrate mmigrate = new MMigrate();

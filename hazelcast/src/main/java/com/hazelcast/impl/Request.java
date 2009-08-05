@@ -127,7 +127,12 @@ class Request {
         } else {
             key = req.key;
             value = req.value;
+            req.key = null;
+            req.value = null;
         }
+        attachment = req.attachment;
+        response = req.response;
+        scheduled = req.scheduled;
     }
 
     public void setFromPacket(final Packet packet) {
@@ -141,14 +146,7 @@ class Request {
 
     public Request hardCopy() {
         final Request copy = new Request();
-        Data newKey = doHardCopy(key);
-        Data newValue = doHardCopy(value);
-
-        copy.set(local, operation, name, newKey, newValue, blockId, timeout, txnId, eventId,
-                lockThreadId, lockAddress, lockCount, caller, longValue, recordId, version);
-        copy.attachment = attachment;
-        copy.response = response;
-        copy.scheduled = scheduled;
+        copy.setFromRequest(this, true);
         return copy;
     }
     

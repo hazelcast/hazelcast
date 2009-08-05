@@ -204,14 +204,13 @@ public final class Serializer {
 
         public DataSerializable read(BuffersInputStream bbis, Data data) throws Exception {
             String className = bbis.readUTF();
-            DataSerializable ds = null;
             try {
-                ds = (DataSerializable) Class.forName(className).newInstance();
+                DataSerializable ds = (DataSerializable) Class.forName(className).newInstance();
                 ds.readData(bbis);
+                return ds;
             } catch (Exception e) {
                 throw new IOException("Problem reading DataSerializable class : " + className + ", exception: " + e);
-            }
-            return ds;
+            } 
         }
 
         public void write(BuffersOutputStream bbos, DataSerializable obj) throws Exception {
@@ -221,7 +220,7 @@ public final class Serializer {
     }
 
     static class ObjectSerializer implements TypeSerializer<Object> {
-        static final boolean shared = Boolean.getBoolean(ConfigProperty.SERIALIZER_SHARED.getName());
+        static final boolean shared = ConfigProperty.SERIALIZER_SHARED.getBoolean(false);
         
         public byte getTypeId() {
             return SERIALIZER_TYPE_OBJECT;
