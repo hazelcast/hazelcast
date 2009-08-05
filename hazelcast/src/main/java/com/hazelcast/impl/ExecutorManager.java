@@ -87,15 +87,15 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
 
         public Thread newThread(Runnable r) {
             Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
-            
+
             if (t.isDaemon()) {
                 t.setDaemon(false);
             }
-            
+
             if (t.getPriority() != Thread.NORM_PRIORITY) {
                 t.setPriority(Thread.NORM_PRIORITY);
             }
-            
+
             return t;
         }
     }
@@ -125,7 +125,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
     class RejectionHandler implements RejectedExecutionHandler {
         public void rejectedExecution(Runnable runnable, ThreadPoolExecutor threadPoolExecutor) {
             //ignored
-            logger.log (Level.FINEST, "ExecutorService is rejecting an execution. " + runnable);
+            logger.log(Level.FINEST, "ExecutorService is rejecting an execution. " + runnable);
         }
     }
 
@@ -194,7 +194,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
 
         protected SimpleExecution simpleExecution = null; // for local tasks
 
-        protected Long executionId = null;
+        protected volatile Long executionId = null;
 
         protected final BlockingQueue responseQueue = new LinkedBlockingQueue();
 
@@ -301,6 +301,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
          * !! Called by multiple threads.
          */
         public void handleStreamResponse(Object response) {
+            if (executionId == null) return;
             if (response == null)
                 response = OBJECT_NULL;
             if (response == OBJECT_DONE || response == OBJECT_CANCELLED) {
@@ -343,7 +344,12 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                     final boolean sent = send(packet, target);
                     if (!sent) {
                         packet.returnToContainer();
-                        handleMemberLeft(getMember(target));
+                        final Member m = getMember(target);
+                        executeLocaly(new Runnable() {
+                            public void run() {
+                                handleMemberLeft(m);
+                            }
+                        });
                     }
                 }
             } else {
@@ -360,7 +366,12 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                         final boolean sent = send(packet, ((ClusterMember) member).getAddress());
                         if (!sent) {
                             packet.returnToContainer();
-                            handleMemberLeft(member);
+                            executeLocaly(new Runnable() {
+                                public void run() {
+                                    handleMemberLeft(member);
+                                }
+                            });
+                            return;
                         }
                     }
                 }
@@ -385,13 +396,8 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 }
                 target = getKeyOwner(keyData);
             } else if (innerFutureTask.getMember() != null) {
-                final Object mem = innerFutureTask.getMember();
-                if (mem instanceof ClusterMember) {
-                    final ClusterMember clusterMember = (ClusterMember) mem;
-                    target = clusterMember.getAddress();
-                } else if (mem instanceof MemberImpl) {
-                    target = ((MemberImpl) mem).getAddress();
-                }
+                final MemberImpl mem = (MemberImpl) innerFutureTask.getMember();
+                target = mem.getAddress();
                 if (DEBUG)
                     log(" Target " + target);
             } else {
@@ -400,7 +406,6 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 final int randomIndex = random % members.size();
                 ClusterMember randomClusterMember = (ClusterMember) members.toArray()[randomIndex];
                 target = randomClusterMember.getAddress();
-//                target = lsMembers.get(random % lsMembers.size()).getAddress();
                 randomTarget = target;
             }
             if (target == null)
@@ -409,44 +414,34 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 return target;
         }
 
-        void handleMemberLeft(final Member member) {
+        void handleMemberLeft(final Member dead) {
             boolean found = false;
-            final ClusterMember clusterMember = (ClusterMember) member;
+            final MemberImpl deadMember = (MemberImpl) dead;
             if (innerFutureTask.getKey() != null) {
                 final Data keyData = toData(innerFutureTask.getKey());
                 final Address target = getKeyOwner(keyData);
-                if (clusterMember.getAddress().equals(target)) {
-                    found = true;
-                }
+                found = (deadMember.getAddress().equals(target));
             } else if (innerFutureTask.getMember() != null) {
-                final Member target = innerFutureTask.getMember();
-                if (target instanceof ClusterMember) {
-                    if (target.equals(member)) {
-                        found = true;
-                    }
-                } else {
-                    if (((MemberImpl) target).getAddress().equals(clusterMember.getAddress())) {
-                        found = true;
-                    }
-                }
-
+                final MemberImpl targetMember = (MemberImpl) innerFutureTask.getMember();
+                found = (targetMember.getAddress().equals(deadMember.getAddress()));
             } else if (innerFutureTask.getMembers() != null) {
                 final Set<Member> members = innerFutureTask.getMembers();
-                for (final Member targetMember : members) {
-                    if (member.equals(targetMember)) {
+                for (final Member m : members) {
+                    MemberImpl targetMember = (MemberImpl) m;
+                    if (targetMember.getAddress().equals(deadMember.getAddress())) {
                         found = true;
+                        break;
                     }
                 }
             } else {
-                if (clusterMember.getAddress().equals(randomTarget)) {
-                    found = true;
-                }
+                found = (deadMember.getAddress().equals(randomTarget));
             }
-            if (!found)
-                return;
-            innerFutureTask.innerSetMemberLeft(member);
-            handleStreamResponse(OBJECT_DONE);
-
+            if (found) {
+                logger.log(Level.FINEST, "Terminating task. Member left " + dead);
+                innerFutureTask.innerSetMemberLeft(dead);
+                handleStreamResponse(OBJECT_MEMBER_LEFT);
+                finalizeTask();
+            }
         }
 
         /**

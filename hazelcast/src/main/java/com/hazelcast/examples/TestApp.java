@@ -314,6 +314,10 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             executeOnMember(args);
         } else if (first.equalsIgnoreCase("executeOnMembers")) {
             executeOnMembers(args);
+        } else if (first.equalsIgnoreCase("longOther") || first.equalsIgnoreCase("executeLongOther")) {
+            executeLongTaskOnOtherMember(args);
+        } else if (first.equalsIgnoreCase("long") || first.equalsIgnoreCase("executeLong")) {
+            executeLong(args);
         } else if (first.equalsIgnoreCase("instances")) {
             handleInstances(args);
         } else if (first.equalsIgnoreCase("quit") || first.equalsIgnoreCase("exit")) {
@@ -816,6 +820,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
+
     private void executeOnMembers(String[] args) {
         // executeOnMembers <echo-string>
         try {
@@ -831,6 +836,69 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void executeLong(String[] args) {
+        // executeOnMembers <echo-string>
+        try {
+            ExecutorService executorService = Hazelcast.getExecutorService();
+            MultiTask<String> echoTask = new MultiTask(new LongTask(args[1]), Hazelcast.getCluster()
+                    .getMembers()){
+                @Override
+                public void setMemberLeft (Member member) {
+                    System.out.println("Member Left " + member);
+                }
+
+                @Override
+                public void done() {
+                    System.out.println("Done!");
+                }
+            };
+
+            executorService.execute(echoTask);
+
+            Collection<String> results = echoTask.get();
+            for (String result : results) {
+                System.out.println(result);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void executeLongTaskOnOtherMember(String[] args) {
+        // executeOnMembers <echo-string>
+        try {
+            ExecutorService executorService = Hazelcast.getExecutorService();
+            Member otherMember = null;
+            Set<Member> members = Hazelcast.getCluster().getMembers();
+            for (Member member : members) {
+                if (!member.localMember()) {
+                    otherMember = member;
+                }
+            }
+            if (otherMember == null) {
+                otherMember = Hazelcast.getCluster().getLocalMember();
+            }
+            DistributedTask<String> echoTask = new DistributedTask(new LongTask(args[1]), otherMember) {
+                @Override
+                public void setMemberLeft (Member member) {
+                    System.out.println("Member Left " + member);
+                }
+
+                @Override
+                public void done() {
+                    System.out.println("Done!");
+                }
+            };
+
+            executorService.execute(echoTask);
+
+            Object result = echoTask.get();
+            System.out.println(result);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -861,6 +929,29 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     public void onMessage(Object msg) {
         System.out.println("Topic received = " + msg);
+    }
+
+    public static class LongTask implements Callable<String>, Serializable {
+        String input = null;
+
+        public LongTask() {
+            super();
+        }
+
+        public LongTask(String input) {
+            super();
+            this.input = input;
+        }
+
+        public String call() {
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                System.out.println("Interrupted! Cancelling task!");
+                return "No-result";
+            }
+            return Hazelcast.getCluster().getLocalMember().toString() + ":" + input;
+        }
     }
 
     public static class Echo implements Callable<String>, Serializable {

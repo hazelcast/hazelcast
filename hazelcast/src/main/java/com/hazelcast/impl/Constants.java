@@ -28,6 +28,8 @@ public interface Constants {
 
         public static final Object OBJECT_CANCELLED = new Object();
 
+        public static final Object OBJECT_MEMBER_LEFT = new Object();
+
         public static final Object OBJECT_REDO = new Object();
 
     }

@@ -703,7 +703,7 @@ public abstract class BaseManager {
 
     public abstract class TargetAwareOp extends ResponseQueueCall {
 
-        protected volatile Address target = null;
+        protected Address target = null;
 
         public TargetAwareOp() {
         }

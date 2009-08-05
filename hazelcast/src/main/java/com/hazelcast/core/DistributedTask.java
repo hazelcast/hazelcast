@@ -38,6 +38,8 @@ public class DistributedTask<V> extends FutureTask<V> {
 
     private volatile boolean cancelled = false;
 
+    private volatile boolean memberLeft = false;
+
     private DistributedTask(Callable<V> callable, Member member, Set<Member> members, Object key) {
         super(callable);
         if (callable instanceof DistributedRunnableAdapter) {
@@ -83,23 +85,28 @@ public class DistributedTask<V> extends FutureTask<V> {
     }
 
     @Override
-    public V get() throws InterruptedException, ExecutionException {
+    public V get() throws InterruptedException, ExecutionException, MemberLeftException {
         inner.get();
         if (cancelled)
             throw new CancellationException();
         if (exception != null)
             throw new ExecutionException(exception);
+        if (memberLeft)
+            throw new MemberLeftException();
+
         return result;
     }
 
     @Override
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException,
-            TimeoutException {
+            TimeoutException, MemberLeftException {
         inner.get(timeout, unit);
         if (cancelled)
             throw new CancellationException();
         if (exception != null)
             throw new ExecutionException(exception);
+        if (memberLeft)
+            throw new MemberLeftException();
         return result;
     }
 
@@ -189,6 +196,9 @@ public class DistributedTask<V> extends FutureTask<V> {
                     return null;
                 } else if (r == OBJECT_CANCELLED) {
                     cancelled = true;
+                    return null;
+                } else if (r == OBJECT_MEMBER_LEFT) {
+                    memberLeft = true;
                     return null;
                 } else if (r instanceof Throwable) {
                     innerSetException((Throwable) r);
