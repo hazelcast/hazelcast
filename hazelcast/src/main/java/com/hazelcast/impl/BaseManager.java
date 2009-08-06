@@ -914,7 +914,7 @@ public abstract class BaseManager {
     }
 
     public Address getKeyOwner(final Data key) {
-        return ConcurrentMapManager.get().getKeyOwner(null, key);
+        return ConcurrentMapManager.get().getKeyOwner(key);
     }
 
     public Packet obtainPacket(final String name, final Object key,

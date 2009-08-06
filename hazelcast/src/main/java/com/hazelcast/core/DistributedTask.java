@@ -93,7 +93,6 @@ public class DistributedTask<V> extends FutureTask<V> {
             throw new ExecutionException(exception);
         if (memberLeft)
             throw new MemberLeftException();
-
         return result;
     }
 

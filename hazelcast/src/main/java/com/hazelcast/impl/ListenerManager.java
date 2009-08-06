@@ -135,7 +135,7 @@ public class ListenerManager extends BaseManager {
         public void process() {
             try {
                 if (key != null) {
-                    Address owner = ConcurrentMapManager.get().getKeyOwner(name, key);
+                    Address owner = ConcurrentMapManager.get().getKeyOwner(key);
                     if (owner.equals(thisAddress)) {
                         handleListenerRegisterations(add, name, key, thisAddress, includeValue);
                     } else {

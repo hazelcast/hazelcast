@@ -370,7 +370,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void setTarget() {
-            target = getTarget(request.name, request.key);
+            target = getTarget(request.key);
             if (target == null) {
                 Block block = blocks[(request.blockId)];
                 if (block != null) {
@@ -753,7 +753,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         final void setTargetBasedOnKey() {
             if (target == null) {
-                target = getTarget(request.name, request.key);
+                target = getTarget(request.key);
             }
         }
     }
@@ -763,8 +763,8 @@ public final class ConcurrentMapManager extends BaseManager {
         fireMapEvent(mapListeners, name, eventType, record.key, record.value, record.mapListeners);
     }
 
-    public Address getKeyOwner(String name, Data key) {
-        return getTarget(name, key);
+    public Address getKeyOwner(Data key) {
+        return getTarget(key);
     }
 
 
@@ -901,7 +901,7 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
 
-    Address getTarget(String name, Data key) {
+    Address getTarget(Data key) {
         int blockId = getBlockId(key);
         Block block = blocks[blockId];
         if (block == null) {
@@ -911,38 +911,8 @@ public final class ConcurrentMapManager extends BaseManager {
             } else
                 return null;
         }
-        if (block.isMigrating())
+        if (block.isMigrating()) {
             return null;
-        if (block.owner == null)
-            return null;
-        if (block.owner.equals(thisAddress)) {
-            if (block.isMigrating()) {
-                if (name == null)
-                    return block.migrationAddress;
-                CMap map = getMap(name);
-                Record record = map.getRecord(key);
-                if (record == null)
-                    return block.migrationAddress;
-                else {
-                    Address recordOwner = record.owner;
-                    if (recordOwner == null)
-                        return thisAddress;
-                    if ((!recordOwner.equals(thisAddress))
-                            && (!recordOwner.equals(block.migrationAddress))) {
-                        record.owner = thisAddress;
-                    }
-                    return record.owner;
-                }
-            }
-        } else if (thisAddress.equals(block.migrationAddress)) {
-            if (name == null)
-                return thisAddress;
-            CMap map = getMap(name);
-            Record record = map.getRecord(key);
-            if (record == null)
-                return thisAddress;
-            else
-                return record.owner;
         }
         return block.owner;
     }
@@ -1172,7 +1142,7 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     boolean rightRemoteTarget(Packet packet) {
-        boolean right = thisAddress.equals(getTarget(packet.name, packet.key));
+        boolean right = thisAddress.equals(getTarget(packet.key));
         if (!right) {
             // not the owner (at least not anymore)
             if (isMaster()) {
@@ -1655,7 +1625,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 req.value = new Data();
             }
             Record record = toRecord(req);
-            record.owner = thisAddress;
         }
 
         public boolean isMultiMap() {
@@ -2349,7 +2318,6 @@ public final class ConcurrentMapManager extends BaseManager {
             if (thisAddress.equals(ownerBlock.getRealOwner())) {
                 ownedEntryCount++;
             }
-            rec.owner = ownerBlock.owner;
             mapRecords.put(key, rec);
             if (evictionPolicy != OrderingType.NONE) {
                 if (maxSize != Integer.MAX_VALUE) {
@@ -2433,7 +2401,6 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     class Record {
-        private Address owner;
         private Data key;
         private Data value;
         private long version = 0;

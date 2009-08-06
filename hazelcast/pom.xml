@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>1.7-RC2</version>
+        <version>1.7-RC3</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -51,9 +51,12 @@
                                 <javadoc destdir="target/javadoc" author="true"
                                          version="true" use="true" verbose="false"
                                          windowtitle="Hazelcast API">
-                                    <fileset dir="${basedir}/src/main/java/" defaultexcludes="false">
-                                        <exclude name="com/hazelcast/jmx/package.html"/> 
-                                        <exclude name="**/.svn/**"/> 
+                                    <fileset dir="${basedir}/src/main/java/" defaultexcludes="true">
+                                        <include name="**/nio/DataSerializable*"/>
+                                        <include name="**/core/**"/>
+                                        <include name="**/config/**"/>
+                                        <include name="**/jmx/**"/>
+                                        <exclude name="**/*.html" />
                                     </fileset>
                                     <doctitle>
                                         <![CDATA[<h1>Hazelcast</h1>]]>

@@ -36,11 +36,7 @@
             <directory>hazelcast/target/javadoc</directory>
             <outputDirectory>/javadoc</outputDirectory>
             <includes>
-                <include>**/core/**</include>
-                <include>**/collection/**</include>
-                <include>**/config/**</include>
-                <include>**/jmx/**</include>
-                <include>**/nio/DataSerializable*</include>
+                <include>**/**</include>
             </includes>
         </fileSet>
         <fileSet>
