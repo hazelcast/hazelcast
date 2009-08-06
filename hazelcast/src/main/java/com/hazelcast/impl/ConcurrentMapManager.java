@@ -519,6 +519,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class MAdd extends MBackupAwareOp {
         boolean addToList(String name, Object value) {
+
             Data key = ThreadContext.get().toData(value);
             boolean result = booleanCall(CONCURRENT_MAP_ADD_TO_LIST, name, key, null, 0, -1);
             backup(CONCURRENT_MAP_BACKUP_ADD);
@@ -526,10 +527,26 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         boolean addToSet(String name, Object value) {
-            Data key = ThreadContext.get().toData(value);
-            boolean result = booleanCall(CONCURRENT_MAP_ADD_TO_SET, name, key, null, 0, -1);
-            backup(CONCURRENT_MAP_BACKUP_ADD);
-            return result;
+            ThreadContext threadContext = ThreadContext.get();
+            TransactionImpl txn = threadContext.txn;
+            if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                if (!txn.has(name, value)) {
+                    MContainsKey containsKey = new MContainsKey();
+                    if (!containsKey.containsKey(name, value)) {
+                        txn.attachPutOp(name, value, null, true);
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            } else {
+                Data key = ThreadContext.get().toData(value);
+                boolean result = booleanCall(CONCURRENT_MAP_ADD_TO_SET, name, key, null, 0, -1);
+                backup(CONCURRENT_MAP_BACKUP_ADD);
+                return result;
+            }
         }
 
         @Override
@@ -2155,7 +2172,7 @@ public final class ConcurrentMapManager extends BaseManager {
             Record record = getRecord(req.key);
             if (record != null && record.isEvictable()) {
                 if (ownerForSure(record)) {
-                    fireMapEvent(mapListeners, name, EntryEvent.TYPE_EVICTED, record.key, record.value, record.mapListeners);                    
+                    fireMapEvent(mapListeners, name, EntryEvent.TYPE_EVICTED, record.key, record.value, record.mapListeners);
                     removeRecord(req.key);
                     return true;
                 }

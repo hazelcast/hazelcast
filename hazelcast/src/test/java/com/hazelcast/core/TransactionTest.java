@@ -56,6 +56,32 @@ public class TransactionTest {
     }
 
     @Test
+    public void testSetAddWithTwoTxn() {
+        Hazelcast.getSet("test").add("1");
+        Hazelcast.getSet("test").add("1");
+        TransactionalSet set = newTransactionalSetProxy("test");
+        TransactionalSet set2 = newTransactionalSetProxy("test");
+        assertEquals(1, set.size());
+        assertEquals(1, set2.size());
+        set.begin();
+        set.add("2");
+        assertEquals(2, set.size());
+        assertEquals(1, set2.size());
+        set.commit();
+        assertEquals(2, set.size());
+        assertEquals(2, set2.size());
+        set2.begin();
+        assertEquals(2, set.size());
+        assertEquals(2, set2.size());
+        set2.remove("1");
+        assertEquals(2, set.size());
+        assertEquals(1, set2.size());
+        set2.commit();
+        assertEquals(1, set.size());
+        assertEquals(1, set2.size());
+    }
+
+    @Test
     public void testMapPutWithTwoTxn() {
         TransactionalMap txnMap = newTransactionalMapProxy("testMap");
         TransactionalMap txnMap2 = newTransactionalMapProxy("testMap");
@@ -126,6 +152,32 @@ public class TransactionTest {
         txnMap2.begin();
         txnMap2.remove("1");
         txnMap2.commit();
+    }
+
+    @Test
+    public void testMapRemoveWithTwoTxn3() {
+        TransactionalMap txnMap = newTransactionalMapProxy("testMap");
+        TransactionalMap txnMap2 = newTransactionalMapProxy("testMap");
+        txnMap.put("1", "value1");
+        assertEquals(1, txnMap.size());
+        assertEquals(1, txnMap2.size());
+        txnMap.begin();
+        txnMap.remove("1");
+        assertEquals(0, txnMap.size());
+        assertEquals(1, txnMap2.size());
+        txnMap.commit();
+        assertEquals(0, txnMap.size());
+        assertEquals(0, txnMap2.size());
+        txnMap.put("1", "value1");
+        assertEquals(1, txnMap.size());
+        assertEquals(1, txnMap2.size());
+        txnMap2.begin();
+        txnMap2.remove("1");
+        assertEquals(1, txnMap.size());
+        assertEquals(0, txnMap2.size());
+        txnMap2.commit();
+        assertEquals(0, txnMap.size());
+        assertEquals(0, txnMap2.size());
     }
 
     @Test
@@ -298,7 +350,7 @@ public class TransactionTest {
         assertEquals(2, txnq2.size());
 
         txnq.begin();
-        
+
         assertEquals("item1", txnq.poll());
 
         assertEquals(1, txnq.size());
@@ -309,7 +361,7 @@ public class TransactionTest {
         assertEquals(1, txnq2.size());
     }
 
-@Test
+    @Test
     public void testQueuePollRollbackSize() {
         TransactionalQueue txnq = newTransactionalQueueProxy("testPoll");
         TransactionalQueue txnq2 = newTransactionalQueueProxy("testPoll");
@@ -364,6 +416,16 @@ public class TransactionTest {
         return txnalQ;
     }
 
+    TransactionalSet newTransactionalSetProxy(String name) {
+        ISet s = Hazelcast.getSet(name);
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        Class[] interfaces = new Class[]{TransactionalSet.class};
+        Object proxy = Proxy.newProxyInstance(classLoader, interfaces, new ThreadBoundInvocationHandler(s));
+        TransactionalSet txnSet = (TransactionalSet) proxy;
+        mapsUsed.add(txnSet);
+        return txnSet;
+    }
+
     IMap newMapProxy(String name) {
         IMap imap = Hazelcast.getMap(name);
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
@@ -388,6 +450,15 @@ public class TransactionTest {
 
         void rollback();
     }
+
+    interface TransactionalSet extends ISet {
+        void begin();
+
+        void commit();
+
+        void rollback();
+    }
+
 
     public static class ThreadBoundInvocationHandler implements InvocationHandler {
         final Object target;

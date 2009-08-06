@@ -40,31 +40,34 @@ class TransactionImpl implements Transaction {
 
         public boolean newRecord = false;
 
-        public boolean map = true;
+        public boolean queue = false;
 
         public TransactionRecord(final String name, final Object key, final Object value,
-                         final boolean newRecord) {
+                                 final boolean newRecord) {
             this.name = name;
             this.key = key;
             this.value = value;
             this.newRecord = newRecord;
             if (name.startsWith("q:"))
-                map = false;
+                queue = true;
         }
 
         public void commit() {
-            if (map)
-                commitMap();
-            else
+            if (queue)
                 commitQueue();
+            else
+                commitMap();
         }
 
         public void commitMap() {
             if (removed) {
-                if (!newRecord) {
+                if (name.startsWith("m:s:")) {
+                    ConcurrentMapManager.MRemoveItem mRemoveItem = ConcurrentMapManager.get().new MRemoveItem();
+                    mRemoveItem.removeItem(name, key);
+                } else if (!newRecord) {
                     ThreadContext.get().getMRemove().remove(name, key, -1);
                 } else {
-                   ThreadContext.get().getMLock().unlock(name, key, -1);
+                    ThreadContext.get().getMLock().unlock(name, key, -1);
                 }
             } else {
                 ThreadContext.get().getMPut().put(name, key, value, -1);
@@ -81,10 +84,10 @@ class TransactionImpl implements Transaction {
         }
 
         public void rollback() {
-            if (map)
-                rollbackMap();
-            else
+            if (queue)
                 rollbackQueue();
+            else
+                rollbackMap();
         }
 
         public void rollbackMap() {
@@ -92,8 +95,8 @@ class TransactionImpl implements Transaction {
             final Object proxy = FactoryImpl.getProxyByName(name);
             if (proxy instanceof MProxy) {
                 mapProxy = (MProxy) proxy;
-            } 
-            if(mapProxy!=null) mapProxy.unlock(key);
+            }
+            if (mapProxy != null) mapProxy.unlock(key);
         }
 
         public void rollbackQueue() {
@@ -259,8 +262,10 @@ class TransactionImpl implements Transaction {
         for (final TransactionRecord transactionRecord : transactionRecords) {
             if (transactionRecord.name.equals(name)) {
                 if (transactionRecord.removed) {
-                    if (!transactionRecord.newRecord) {
-                        if (transactionRecord.map) {
+                    if (transactionRecord.name.startsWith("m:s:")) {
+                        size--;
+                    } else if (!transactionRecord.newRecord) {
+                        if (!transactionRecord.queue) {
                             size--;
                         }
                     }
