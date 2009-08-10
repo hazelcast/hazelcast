@@ -253,8 +253,7 @@ public class Node {
     }
 
     public boolean master() {
-        if (address == null) return false;
-        return address.equals(masterAddress);
+        return address != null && address.equals(masterAddress);
     }
 
     public void reJoin() {

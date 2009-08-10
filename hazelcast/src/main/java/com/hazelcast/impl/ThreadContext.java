@@ -54,7 +54,7 @@ public final class ThreadContext {
 
     final ObjectPool<Packet> packetCache;
 
-    final static ConcurrentMap<String, BlockingQueue> mapGlobalQueues = new ConcurrentHashMap();
+    final static ConcurrentMap<String, BlockingQueue> mapGlobalQueues = new ConcurrentHashMap<String, BlockingQueue>();
 
     static {
         mapGlobalQueues.put("BufferCache", new ArrayBlockingQueue(6000));

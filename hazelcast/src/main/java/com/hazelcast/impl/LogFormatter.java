@@ -34,9 +34,8 @@ public class LogFormatter extends Formatter {
         }
         StringBuilder sb = new StringBuilder();
         sb.append(new Date(record.getMillis())).append(" ").append(
-                record.getLevel().getLocalizedName()).append(": ").append(
-                "[" + record.getSourceClassName() + "] ").append(record.getMessage()).append(
-                LINE_SEPARATOR);
+                record.getLevel().getLocalizedName()).append(": ").append("[").append(record.getSourceClassName())
+                .append("] ").append(record.getMessage()).append(LINE_SEPARATOR);
 
         if (record.getThrown() != null) {
             try {

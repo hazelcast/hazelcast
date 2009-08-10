@@ -49,7 +49,7 @@ public class TopicManager extends BaseManager {
     public void syncForDead(Address deadAddress) {
         Collection<TopicInstance> instances = mapTopics.values();
         for (TopicInstance instance : instances) {
-            instance.removeListener(null, deadAddress);
+            instance.removeListener(deadAddress);
         }
     }
 
@@ -61,9 +61,9 @@ public class TopicManager extends BaseManager {
                                       boolean includeValue) {
         TopicInstance instance = getTopicInstance(name);
         if (add) {
-            instance.addListener(key, address, includeValue);
+            instance.addListener(address, includeValue);
         } else {
-            instance.removeListener(key, address);
+            instance.removeListener(address);
         }
     }
 
@@ -109,11 +109,11 @@ public class TopicManager extends BaseManager {
             this.name = name;
         }
 
-        public void addListener(Data key, Address address, boolean includeValue) {
+        public void addListener(Address address, boolean includeValue) {
             mapListeners.put(address, includeValue);
         }
 
-        public void removeListener(Data key, Address address) {
+        public void removeListener(Address address) {
             mapListeners.remove(address);
         }
 

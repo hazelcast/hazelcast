@@ -419,7 +419,7 @@ public abstract class BaseManager {
                     } else if (request.response instanceof Long) {
                         packet.longValue = (Long) request.response;
                     } else {
-                        Data data = null;
+                        Data data;
                         if (request.response instanceof Data) {
                             data = (Data) request.response;
                         } else {

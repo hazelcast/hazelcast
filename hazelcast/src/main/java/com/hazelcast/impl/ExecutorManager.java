@@ -386,7 +386,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         }
 
         protected Address getTarget() {
-            Address target = null;
+            Address target;
             if (innerFutureTask.getKey() != null) {
                 Data keyData = null;
                 try {
