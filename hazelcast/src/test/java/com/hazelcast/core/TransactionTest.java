@@ -10,6 +10,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.*;
 
 public class TransactionTest {
@@ -20,6 +22,70 @@ public class TransactionTest {
         txnMap.begin();
         txnMap.put("1", "value");
         txnMap.commit();
+    }
+
+    @Test
+    public void testMapIterateEntries() {
+        TransactionalMap txnMap = newTransactionalMapProxy("testMap");
+        txnMap.put("1", "value1");
+        assertEquals(1, txnMap.size());
+        txnMap.begin();
+        txnMap.put("2", "value2");
+        assertEquals(2, txnMap.size());
+        Set<Map.Entry> entries = txnMap.entrySet();
+        for (Map.Entry entry : entries) {
+            if ("1".equals(entry.getKey())) {
+                assertEquals("value1", entry.getValue());
+            } else if ("2".equals(entry.getKey())) {
+                assertEquals("value2", entry.getValue());
+            } else throw new RuntimeException ("cannot contain another entry with key " + entry.getKey());
+        }
+        txnMap.commit();
+        assertEquals(2, txnMap.size());
+    }
+
+    @Test
+    public void testMapIterateEntries2() {
+        TransactionalMap txnMap = newTransactionalMapProxy("testMap");
+        assertEquals(0, txnMap.size());
+        txnMap.begin();
+        txnMap.put("1", "value1");
+        txnMap.put("2", "value2");
+        assertEquals(2, txnMap.size());
+        Set<Map.Entry> entries = txnMap.entrySet();
+        for (Map.Entry entry : entries) {
+            if ("1".equals(entry.getKey())) {
+                assertEquals("value1", entry.getValue());
+            } else if ("2".equals(entry.getKey())) {
+                assertEquals("value2", entry.getValue());
+            } else throw new RuntimeException ("cannot contain another entry with key " + entry.getKey());
+        }
+        txnMap.commit();
+        assertEquals(2, txnMap.size());
+    }
+
+    @Test
+    public void testMapIterateEntries3() {
+        TransactionalMap txnMap = newTransactionalMapProxy("testMap");
+        txnMap.put("1", "value1");
+        assertEquals(1, txnMap.size());
+        txnMap.begin();
+        txnMap.put("1", "value2");
+        assertEquals(1, txnMap.size());
+        Set<Map.Entry> entries = txnMap.entrySet();
+        for (Map.Entry entry : entries) {
+            if ("1".equals(entry.getKey())) {
+                assertEquals("value2", entry.getValue());
+            } else throw new RuntimeException ("cannot contain another entry with key " + entry.getKey());
+        }
+        txnMap.rollback();
+        assertEquals(1, txnMap.size());
+        entries = txnMap.entrySet();
+        for (Map.Entry entry : entries) {
+            if ("1".equals(entry.getKey())) {
+                assertEquals("value1", entry.getValue());
+            } else throw new RuntimeException ("cannot contain another entry with key " + entry.getKey());
+        }
     }
 
 

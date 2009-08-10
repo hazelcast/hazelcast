@@ -2829,7 +2829,10 @@ public final class ConcurrentMapManager extends BaseManager {
             this.operation = operation;
             TransactionImpl txn = ThreadContext.get().txn;
             if (txn != null) {
-                lsKeyValues.addAll(txn.newEntries(name));
+                List<Map.Entry> entriesUnderTxn = txn.newEntries(name);
+                if (entriesUnderTxn != null) {
+                    lsKeyValues.addAll(entriesUnderTxn);
+                }
             }
         }
 
@@ -2856,7 +2859,8 @@ public final class ConcurrentMapManager extends BaseManager {
                         if (value != null) {
                             lsKeyValues.add(createSimpleEntry(name, key, value));
                         }
-                    } else {
+                    } else {                     
+                        entry.setName(name);
                         lsKeyValues.add(entry);
                     }
                 } else {

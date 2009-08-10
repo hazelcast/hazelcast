@@ -616,7 +616,6 @@ public abstract class BaseManager {
                     if (request.redoCount > 5) {
                         logger.log(Level.INFO, "Re-doing [" + request.redoCount + "] times! " + ResponseQueueCall.this);
                         logger.log(Level.INFO, "\t key= " + request.key + ", req.operation: " + request.operation);
-
                     }
                     doOp();
                     return getResult();
@@ -674,15 +673,10 @@ public abstract class BaseManager {
         }
 
         protected void setResult(final Object obj) {
-            try {
-                if (obj == null) {
-                    responses.add(OBJECT_NULL);
-                } else {
-                    responses.add(obj);
-                }
-            } catch (Throwable e) {
-                logger.log(Level.FINEST, "Exception when handling " + ResponseQueueCall.this, e);
-                e.printStackTrace();
+            if (obj == null) {
+                responses.add(OBJECT_NULL);
+            } else {
+                responses.add(obj);
             }
         }
     }

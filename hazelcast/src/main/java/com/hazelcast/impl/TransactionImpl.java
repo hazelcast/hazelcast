@@ -270,7 +270,9 @@ class TransactionImpl implements Transaction {
                         }
                     }
                 } else {
-                    size++;
+                    if (transactionRecord.newRecord) {
+                        size++;
+                    }
                 }
             }
         }
