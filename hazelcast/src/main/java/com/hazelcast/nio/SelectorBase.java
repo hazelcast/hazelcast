@@ -62,8 +62,9 @@ public class SelectorBase implements Runnable {
 
     public void shutdown() {
         live = false;
-        selectorQueue.clear();
-
+        if (selectorQueue != null) {
+            selectorQueue.clear();
+        }
     }
 
     public int addTask(final Runnable runnable) {

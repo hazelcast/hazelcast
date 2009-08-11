@@ -62,7 +62,9 @@ public class InSelector extends SelectorBase {
     public void shutdown() {
         try {
             super.shutdown();
-            serverSocketChannel.close();
+            if (serverSocketChannel !=null) {
+                serverSocketChannel.close();
+            }
         } catch (IOException ignored) {
         }
     }

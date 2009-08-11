@@ -51,7 +51,7 @@ import java.util.logging.Level;
 
 public final class ConcurrentMapManager extends BaseManager {
     private static final int BLOCK_COUNT = ConfigProperty.CONCURRENT_MAP_BLOCK_COUNT.getInteger(271);
-    private static ConcurrentMapManager instance = new ConcurrentMapManager();
+    private static final ConcurrentMapManager instance = new ConcurrentMapManager();
     private final Block[] blocks;
     private final Map<String, CMap> maps;
     private final LoadStoreFork[] loadStoreForks;

@@ -41,7 +41,7 @@ import java.util.logging.Logger;
 
 public class ExecutorManager extends BaseManager implements MembershipListener {
 
-    static ExecutorManager instance = new ExecutorManager();
+    private static final ExecutorManager instance = new ExecutorManager();
 
     private ThreadPoolExecutor executor;
 
@@ -132,7 +132,9 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
     public void stop() {
         if (!started) return;
         executionIds.clear();
-        executor.shutdownNow();
+        if (executor != null) {
+            executor.shutdownNow();
+        }
         started = false;
     }
 

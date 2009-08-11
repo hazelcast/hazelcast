@@ -659,9 +659,13 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
     }
 
     public void stop() {
-        setJoins.clear();
+        if (setJoins != null) {
+            setJoins.clear();
+        }
         timeToStartJoin = 0;
-        lsMembers.clear();
+        if (lsMembers != null) {
+            lsMembers.clear();
+        }
     }
 
 }

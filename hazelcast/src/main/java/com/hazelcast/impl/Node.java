@@ -290,7 +290,7 @@ public class Node {
             FactoryImpl.inited = false;
             ClusterManager.get().stop();
         } catch (Throwable e) {
-            logger.log(Level.FINEST, "shutdown exception", e);
+            if (logger != null) logger.log(Level.FINEST, "shutdown exception", e);
         }
     }
 
