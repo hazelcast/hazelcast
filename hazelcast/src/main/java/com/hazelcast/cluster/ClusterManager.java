@@ -395,14 +395,10 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
     public void sendProcessableTo(RemotelyProcessable rp, Connection conn) {
         Data value = ThreadContext.get().toData(rp);
         Packet packet = obtainPacket();
-        try {
-            packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
-            boolean sent = send(packet, conn);
-            if (!sent) {
-                packet.returnToContainer();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
+        boolean sent = send(packet, conn);
+        if (!sent) {
+            packet.returnToContainer();
         }
     }
 

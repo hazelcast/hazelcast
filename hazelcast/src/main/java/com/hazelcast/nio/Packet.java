@@ -252,8 +252,7 @@ public final class Packet {
         ThreadContext.get().getPacketPool().release(this);
     }
 
-    public void set(String name, ClusterOperation operation, Object objKey, Object objValue)
-            throws Exception {
+    public void set(String name, ClusterOperation operation, Object objKey, Object objValue) {
         this.threadId = Thread.currentThread().hashCode();
         this.name = name;
         this.operation = operation;
@@ -263,13 +262,13 @@ public final class Packet {
         if (objValue != null) {
             value = ThreadContext.get().toData(objValue);
         }
-
     }
 
     public void setFromConnection(Connection conn) {
         this.conn = conn;
-        if (lockAddress == null)
+        if (lockAddress == null) {
             lockAddress = conn.getEndPoint();
+        }
     }
 
     public void setNoData() {

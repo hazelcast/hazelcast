@@ -34,7 +34,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ListenerManager extends BaseManager {
     private List<ListenerItem> listeners = new CopyOnWriteArrayList<ListenerItem>();
 
-    public enum Type{ Map, Item, Message; }
+    public enum Type {
+        Map, Item, Message;
+    }
 
     private static final ListenerManager instance = new ListenerManager();
 
@@ -93,11 +95,7 @@ public class ListenerManager extends BaseManager {
         for (ListenerItem listenerItem : listeners) {
             Data dataKey = null;
             if (listenerItem.key != null) {
-                try {
-                    dataKey = ThreadContext.get().toData(listenerItem.key);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                dataKey = ThreadContext.get().toData(listenerItem.key);
             }
             sendAddRemoveListener(newAddress, true, listenerItem.name, dataKey, listenerItem.includeValue);
         }
@@ -106,11 +104,7 @@ public class ListenerManager extends BaseManager {
     private void registerListener(String name, Object key, boolean add, boolean includeValue) {
         Data dataKey = null;
         if (key != null) {
-            try {
-                dataKey = ThreadContext.get().toData(key);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            dataKey = ThreadContext.get().toData(key);
         }
         enqueueAndReturn(new ListenerRegistrationProcess(name, dataKey, add, includeValue));
     }
@@ -133,43 +127,35 @@ public class ListenerManager extends BaseManager {
         }
 
         public void process() {
-            try {
-                if (key != null) {
-                    Address owner = ConcurrentMapManager.get().getKeyOwner(key);
-                    if (owner.equals(thisAddress)) {
-                        handleListenerRegisterations(add, name, key, thisAddress, includeValue);
-                    } else {
-                        Packet packet = obtainPacket();
-                        packet.set(name, packetProcess, key, null);
-                        packet.longValue = (includeValue) ? 1 : 0;
-                        boolean sent = send(packet, owner);
-                        if (!sent) {
-                            packet.returnToContainer();
-                        }
-                    }
+            if (key != null) {
+                Address owner = ConcurrentMapManager.get().getKeyOwner(key);
+                if (owner.equals(thisAddress)) {
+                    handleListenerRegisterations(add, name, key, thisAddress, includeValue);
                 } else {
-                    for (MemberImpl member : lsMembers) {
-                        if (member.localMember()) {
-                            handleListenerRegisterations(add, name, key, thisAddress, includeValue);
-                        } else {
-                            sendAddRemoveListener(member.getAddress(), add, name, key, includeValue);
-                        }
+                    Packet packet = obtainPacket();
+                    packet.set(name, packetProcess, key, null);
+                    packet.longValue = (includeValue) ? 1 : 0;
+                    boolean sent = send(packet, owner);
+                    if (!sent) {
+                        packet.returnToContainer();
                     }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+            } else {
+                for (MemberImpl member : lsMembers) {
+                    if (member.localMember()) {
+                        handleListenerRegisterations(add, name, key, thisAddress, includeValue);
+                    } else {
+                        sendAddRemoveListener(member.getAddress(), add, name, key, includeValue);
+                    }
+                }
             }
         }
     }
 
     void sendAddRemoveListener(Address toAddress, boolean add, String name, Data key,
-                                      boolean includeValue) {
+                               boolean includeValue) {
         Packet packet = obtainPacket();
-        try {
-            packet.set(name, (add) ? ClusterOperation.ADD_LISTENER: ClusterOperation.REMOVE_LISTENER, key, null);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        packet.set(name, (add) ? ClusterOperation.ADD_LISTENER : ClusterOperation.REMOVE_LISTENER, key, null);
         packet.longValue = (includeValue) ? 1 : 0;
         boolean sent = send(packet, toAddress);
         if (!sent) {
@@ -183,7 +169,7 @@ public class ListenerManager extends BaseManager {
     }
 
     synchronized void addListener(String name, Object listener, Object key, boolean includeValue,
-                                         Type listenerType, boolean shouldRemotelyRegister) {
+                                  Type listenerType, boolean shouldRemotelyRegister) {
         /**
          * check if already registered send this address to the key owner as a
          * listener add this listener to the local listeners map

@@ -1112,17 +1112,13 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     public void sendFullMessage(Block block) {
-        try {
-            Packet packet = ThreadContext.get().getPacketPool().obtain();
-            packet.set(block.name, ClusterOperation.BLOCKING_QUEUE_FULL_BLOCK, null, null);
-            packet.blockId = block.blockId;
-            Address master = getMasterAddress();
-            boolean sent = send(packet, master);
-            if (!sent)
-                packet.returnToContainer();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        Packet packet = ThreadContext.get().getPacketPool().obtain();
+        packet.set(block.name, ClusterOperation.BLOCKING_QUEUE_FULL_BLOCK, null, null);
+        packet.blockId = block.blockId;
+        Address master = getMasterAddress();
+        boolean sent = send(packet, master);
+        if (!sent)
+            packet.returnToContainer();
     }
 
     public class Q {
