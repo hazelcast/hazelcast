@@ -913,16 +913,10 @@ public abstract class BaseManager {
 
     public Packet obtainPacket(final String name, final Object key,
                                final Object value, final ClusterOperation operation, final long timeout) {
-        try {
-            final Packet packet = obtainPacket();
-            packet.set(name, operation, key, value);
-            packet.timeout = timeout;
-            return packet;
-
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+        final Packet packet = obtainPacket();
+        packet.set(name, operation, key, value);
+        packet.timeout = timeout;
+        return packet;
     }
 
     public Call removeCall(final Long id) {
@@ -995,12 +989,8 @@ public abstract class BaseManager {
                 } else {
                     final Packet packet = ThreadContext.get().getPacketPool().obtain();
                     packet.reset();
-                    try {
-                        packet.set(name, ClusterOperation.EVENT, key, (includeValue) ? value : null);
-                        packet.longValue = eventType;
-                    } catch (final Exception e) {
-                        e.printStackTrace();
-                    }
+                    packet.set(name, ClusterOperation.EVENT, key, (includeValue) ? value : null);
+                    packet.longValue = eventType;
                     final boolean sent = send(packet, address);
                     if (!sent)
                         packet.returnToContainer();
@@ -1012,14 +1002,10 @@ public abstract class BaseManager {
     public void sendProcessableTo(final RemotelyProcessable rp, final Address address) {
         final Data value = toData(rp);
         final Packet packet = obtainPacket();
-        try {
-            packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
-            final boolean sent = send(packet, address);
-            if (!sent) {
-                packet.returnToContainer();
-            }
-        } catch (final Exception e) {
-            e.printStackTrace();
+        packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
+        final boolean sent = send(packet, address);
+        if (!sent) {
+            packet.returnToContainer();
         }
     }
 
@@ -1031,16 +1017,11 @@ public abstract class BaseManager {
         for (MemberImpl member : lsMembers) {
             if (!member.localMember()) {
                 Packet packet = obtainPacket();
-                try {
-                    packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
-                    boolean sent = send(packet, member.getAddress());
-                    if (!sent) {
-                        packet.returnToContainer();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+                packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
+                boolean sent = send(packet, member.getAddress());
+                if (!sent) {
+                    packet.returnToContainer();
                 }
-
             }
         }
     }
@@ -1142,17 +1123,12 @@ public abstract class BaseManager {
 
     protected final boolean send(final String name, final ClusterOperation operation, final DataSerializable ds,
                                  final Address address) {
-        try {
-            final Packet packet = obtainPacket();
-            packet.set(name, operation, null, ds);
-            final boolean sent = send(packet, address);
-            if (!sent)
-                packet.returnToContainer();
-            return sent;
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
-        return true;
+        final Packet packet = obtainPacket();
+        packet.set(name, operation, null, ds);
+        final boolean sent = send(packet, address);
+        if (!sent)
+            packet.returnToContainer();
+        return sent;
     }
 
     protected void sendRedoResponse(final Packet packet) {
@@ -1334,6 +1310,7 @@ public abstract class BaseManager {
     }
 
     final boolean send(final Packet packet, final Address address) {
+        if (address == null) return false;
         final Connection conn = ConnectionManager.get().getConnection(address);
         return conn != null && conn.live() && writePacket(conn, packet);
     }
