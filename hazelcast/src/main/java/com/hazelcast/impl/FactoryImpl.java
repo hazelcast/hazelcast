@@ -532,9 +532,8 @@ public class FactoryImpl {
             ProxyKey proxyKey = (ProxyKey) o;
 
             if (name != null ? !name.equals(proxyKey.name) : proxyKey.name != null) return false;
-            if (key != null ? !key.equals(proxyKey.key) : proxyKey.key != null) return false;
+            return !(key != null ? !key.equals(proxyKey.key) : proxyKey.key != null);
 
-            return true;
         }
 
         @Override
@@ -2082,7 +2081,7 @@ public class FactoryImpl {
                             idAddition = currentId.incrementAndGet();
                             if (idAddition >= MILLION) {
                                 Long idMillion = getNewMillion();
-                                long newMillion = idMillion.longValue() * MILLION;
+                                long newMillion = idMillion * MILLION;
                                 million.set(newMillion);
                                 currentId.set(0);
                             }
@@ -2094,8 +2093,7 @@ public class FactoryImpl {
                     }
 
                 }
-                long result = millionNow + idAddition;
-                return result;
+                return millionNow + idAddition;
             }
 
             private Long getNewMillion() {
@@ -2141,11 +2139,11 @@ public class FactoryImpl {
             try {
                 Long max = (Long) map.get(name);
                 if (max == null) {
-                    max = Long.valueOf(0l);
-                    map.put(name, Long.valueOf(0));
+                    max = 0l;
+                    map.put(name, 0);
                     return max;
                 } else {
-                    Long newMax = Long.valueOf(max.longValue() + 1);
+                    Long newMax = max + 1;
                     map.put(name, newMax);
                     return newMax;
                 }
