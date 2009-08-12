@@ -114,20 +114,49 @@ public final class ConcurrentMapManager extends BaseManager {
         return instance;
     }
 
+    public void reset() {
+        for (int i = 0; i < BLOCK_COUNT; i++) {
+            blocks[i] = null;
+        }
+        maps.clear();
+    }
+
     public void syncForDead(Address deadAddress) {
         if (deadAddress.equals(thisAddress)) return;
-//        Collection<Block> blocks = mapBlocks.values();
         for (Block block : blocks) {
             if (block != null) {
                 if (deadAddress.equals(block.owner)) {
                     MemberImpl member = getNextMemberBeforeSync(block.owner, true, 1);
-                    block.owner = (member == null) ? thisAddress : member.getAddress();
+                    if (member == null) {
+                        if (!isSuperClient()) {
+                            block.owner = thisAddress;
+                        } else {
+                            block.owner = null;
+                        }
+                    } else {
+                        if (!deadAddress.equals(member.getAddress())) {
+                            block.owner = member.getAddress();
+                        } else {
+                            block.owner = null;
+                        }
+                    }
                 }
                 if (block.migrationAddress != null) {
                     if (deadAddress.equals(block.migrationAddress)) {
                         MemberImpl member = getNextMemberBeforeSync(block.migrationAddress, true, 1);
-                        block.migrationAddress = (member == null) ? thisAddress : member
-                                .getAddress();
+                        if (member == null) {
+                            if (!isSuperClient()) {
+                                block.migrationAddress = thisAddress;
+                            } else {
+                                block.migrationAddress = null;
+                            }
+                        } else {
+                            if (!deadAddress.equals(member.getAddress())) {
+                                block.migrationAddress = member.getAddress();
+                            } else {
+                                block.migrationAddress = null;
+                            }
+                        }
                     }
                 }
             }
@@ -139,14 +168,11 @@ public final class ConcurrentMapManager extends BaseManager {
                 record.onDisconnect(deadAddress);
             }
         }
-        doResetRecords();
-    }
-
-    public void reset() {
-        for (int i = 0; i < BLOCK_COUNT; i++) {
-            blocks[i] = null;
+        if (isMaster() && isSuperClient()) {
+            syncForAdd();
+        } else {
+            doResetRecords();
         }
-        maps.clear();
     }
 
     public void syncForAdd() {
@@ -235,10 +261,59 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
             }
             doResetRecords();
-            if (DEBUG) {
-                printBlocks();
+        }
+    }
+
+    void doResetRecords() {
+        if (isSuperClient())
+            return;
+        Collection<CMap> cmaps = maps.values();
+        for (final CMap cmap : cmaps) {
+            final Object[] records = cmap.mapRecords.values().toArray();
+            cmap.reset();
+            for (Object recObj : records) {
+                final Record rec = (Record) recObj;
+                if (rec.key == null || rec.key.size() == 0) {
+                    throw new RuntimeException("Record.key is null or empty " + rec.key);
+                }
+                executeLocally(new Runnable() {
+                    MMigrate mmigrate = new MMigrate();
+
+                    public void run() {
+                        if (cmap.isMultiMap()) {
+                            List<Data> values = rec.lsValues;
+                            if (values == null || values.size() == 0) {
+                                mmigrate.migrateMulti(rec, null);
+                            } else {
+                                for (Data value : values) {
+                                    mmigrate.migrateMulti(rec, value);
+                                }
+                            }
+                        } else {
+                            boolean migrated = mmigrate.migrate(rec);
+                            if (!migrated) {
+                                logger.log(Level.FINEST, "Migration failed " + rec.key);
+                            }
+                        }
+                    }
+                });
             }
         }
+        executeLocally(new Runnable() {
+            public void run() {
+                Processable processCompletion = new Processable() {
+                    public void process() {
+                        MigrationCompleteOperationHandler h = (MigrationCompleteOperationHandler)
+                                getPacketProcessor(CONCURRENT_MAP_MIGRATION_COMPLETE);
+                        h.doMigrationComplete(thisAddress);
+                        h.sendMigrationCompleteToAll();
+                        logger.log(Level.FINEST, "Migration ended!");
+
+                    }
+                };
+                enqueueAndReturn(processCompletion);
+            }
+        });
     }
 
     abstract class MBooleanOp extends MTargetAwareOp {
@@ -917,7 +992,6 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-
     Address getTarget(Data key) {
         int blockId = getBlockId(key);
         Block block = blocks[blockId];
@@ -988,22 +1062,11 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     void printBlocks() {
-        if (true)
-            return;
-        if (DEBUG)
-            log("=========================================");
+        logger.log(Level.FINEST, "=========================================");
         for (int i = 0; i < BLOCK_COUNT; i++) {
-            if (DEBUG)
-                log(blocks[i]);
+            logger.log(Level.FINEST, String.valueOf(blocks[i]));
         }
-        Collection<CMap> cmaps = maps.values();
-        for (CMap cmap : cmaps) {
-            if (DEBUG)
-                log(cmap);
-        }
-        if (DEBUG)
-            log("=========================================");
-
+        logger.log(Level.FINEST, "=========================================");
     }
 
     class MigrationCompleteOperationHandler implements PacketProcessor {
@@ -1088,59 +1151,6 @@ public final class ConcurrentMapManager extends BaseManager {
             }
         }
     }
-
-    void doResetRecords() {
-        if (isSuperClient())
-            return;
-        Collection<CMap> cmaps = maps.values();
-        for (final CMap cmap : cmaps) {
-            final Object[] records = cmap.mapRecords.values().toArray();
-            cmap.reset();
-            for (Object recObj : records) {
-                final Record rec = (Record) recObj;
-                if (rec.key == null || rec.key.size() == 0) {
-                    throw new RuntimeException("Record.key is null or empty " + rec.key);
-                }
-                executeLocally(new Runnable() {
-                    MMigrate mmigrate = new MMigrate();
-
-                    public void run() {
-                        if (cmap.isMultiMap()) {
-                            List<Data> values = rec.lsValues;
-                            if (values == null || values.size() == 0) {
-                                mmigrate.migrateMulti(rec, null);
-                            } else {
-                                for (Data value : values) {
-                                    mmigrate.migrateMulti(rec, value);
-                                }
-                            }
-                        } else {
-                            boolean migrated = mmigrate.migrate(rec);
-                            if (!migrated) {
-                                logger.log(Level.FINEST, "Migration failed " + rec.key);
-                            }
-                        }
-                    }
-                });
-            }
-        }
-        executeLocally(new Runnable() {
-            public void run() {
-                Processable processCompletion = new Processable() {
-                    public void process() {
-                        MigrationCompleteOperationHandler h = (MigrationCompleteOperationHandler)
-                                getPacketProcessor(CONCURRENT_MAP_MIGRATION_COMPLETE);
-                        h.doMigrationComplete(thisAddress);
-                        h.sendMigrationCompleteToAll();
-                        logger.log(Level.FINEST, "Migration ended!");
-
-                    }
-                };
-                enqueueAndReturn(processCompletion);
-            }
-        });
-    }
-
 
     private void copyRecordToRequest(Record record, Request request, boolean includeKeyValue) {
         request.name = record.name;
@@ -2859,7 +2869,7 @@ public final class ConcurrentMapManager extends BaseManager {
                         if (value != null) {
                             lsKeyValues.add(createSimpleEntry(name, key, value));
                         }
-                    } else {                     
+                    } else {
                         entry.setName(name);
                         lsKeyValues.add(entry);
                     }

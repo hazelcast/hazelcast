@@ -585,24 +585,18 @@ public abstract class BaseManager {
     }
 
     public abstract class ResponseQueueCall extends RequestBasedCall {
-        final protected BlockingQueue responses;
+        final protected BlockingQueue responses = new ArrayBlockingQueue(1);
 
         public ResponseQueueCall() {
-            this(true);
-        }
-
-        public ResponseQueueCall(final boolean limited) {
-            if (limited) {
-                responses = new ArrayBlockingQueue(1);
-            } else {
-                responses = new LinkedBlockingQueue();
-            }
         }
 
         @Override
         public void doOp() {
             responses.clear();
             enqueueAndReturn(ResponseQueueCall.this);
+        }
+
+        public void beforeRedo() {
         }
 
         @Override
@@ -614,9 +608,10 @@ public abstract class BaseManager {
                     request.redoCount++;
                     Thread.sleep(1000 * request.redoCount);
                     if (request.redoCount > 5) {
-                        logger.log(Level.INFO, "Re-doing [" + request.redoCount + "] times! " + ResponseQueueCall.this);
+                        logger.log(Level.INFO, request.name + " Re-doing [" + request.redoCount + "] times! " + this);
                         logger.log(Level.INFO, "\t key= " + request.key + ", req.operation: " + request.operation);
                     }
+                    beforeRedo();
                     doOp();
                     return getResult();
                 }
@@ -724,6 +719,11 @@ public abstract class BaseManager {
             target = null;
         }
 
+        @Override
+        public void beforeRedo() {
+            logger.log (Level.FINEST, "BeforeRedo target " + target);
+            super.beforeRedo();
+        }
 
         public void process() {
             setTarget();
