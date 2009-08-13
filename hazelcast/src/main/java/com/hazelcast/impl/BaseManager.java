@@ -65,9 +65,9 @@ public abstract class BaseManager {
 
     private static long callIdGen = 0;
 
-    protected Address thisAddress;
+    protected volatile Address thisAddress;
 
-    protected MemberImpl thisMember;
+    protected volatile MemberImpl thisMember;
 
     static {
         for (int i = 0; i < EVENT_QUEUE_COUNT; i++) {

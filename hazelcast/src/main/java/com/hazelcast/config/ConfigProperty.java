@@ -19,20 +19,42 @@ package com.hazelcast.config;
 
 
 public enum ConfigProperty {
-    SERIALIZER_SHARED("hazelcast.serializer.shared"),
-    WAIT_SECONDS_BEFORE_JOIN("hazelcast.wait.seconds.before.join"),
-    MAX_NO_HEARTBEAT_SECONDS("hazelcast.max.no.heartbeat.seconds"),
-    CONCURRENT_MAP_BLOCK_COUNT("hazelcast.map.block.count"),
-    BLOCKING_QUEUE_BLOCK_SIZE("hazelcast.queue.block.size");
+    SERIALIZER_SHARED("hazelcast.serializer.shared", "false"),
+    WAIT_SECONDS_BEFORE_JOIN("hazelcast.wait.seconds.before.join", "5"),
+    MAX_NO_HEARTBEAT_SECONDS("hazelcast.max.no.heartbeat.seconds", "30"),
+    CONCURRENT_MAP_BLOCK_COUNT("hazelcast.map.block.count", "271"),
+    BLOCKING_QUEUE_BLOCK_SIZE("hazelcast.queue.block.size", "1000");
 
-    private String name;
+    private final String name;
+    private final String defaultValue;
 
-    ConfigProperty(String name) {
+    ConfigProperty(String name, String defaultValue) {
         this.name = name;
+        this.defaultValue = defaultValue;
     }
 
     public String getName() {
         return this.name;
+    }
+
+    public int getInteger() {
+        return Integer.getInteger(name, Integer.parseInt(this.defaultValue));
+    }
+
+    public boolean getBoolean () {
+        String val = System.getProperty(name);
+        if (val == null) return Boolean.valueOf(this.defaultValue);
+        return ("true".equalsIgnoreCase(val));
+    }
+
+    public String getString() {
+       String val = System.getProperty(name);
+        if (val == null) return this.defaultValue;
+        return val;
+    }
+
+    public long getLong() {
+        return Long.getLong(name, Long.parseLong(this.defaultValue));
     }
 
     public int getInteger(int defaultValue) {

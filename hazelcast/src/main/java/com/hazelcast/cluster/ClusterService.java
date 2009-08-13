@@ -18,11 +18,12 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.collection.SimpleBoundedQueue;
+import com.hazelcast.config.ConfigProperty;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.impl.*;
 import com.hazelcast.impl.BaseManager.PacketProcessor;
 import com.hazelcast.impl.BaseManager.Processable;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.core.Hazelcast;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -35,7 +36,9 @@ public final class ClusterService implements Runnable, Constants {
 
     private static final ClusterService instance = new ClusterService();
 
-    private static final long PERIODIC_CHECK_INTERVAL = TimeUnit.SECONDS.toNanos(1);
+    private static final long PERIODIC_CHECK_INTERVAL_NANOS = TimeUnit.SECONDS.toNanos(1);
+
+    private static final long MAX_IDLE_NANOS = TimeUnit.SECONDS.toNanos(ConfigProperty.MAX_NO_HEARTBEAT_SECONDS.getInteger());
 
     private final BlockingQueue queue = new LinkedBlockingQueue();
 
@@ -48,6 +51,8 @@ public final class ClusterService implements Runnable, Constants {
     private long totalProcessTime = 0;
 
     private long lastPeriodicCheck = 0;
+
+    private long lastCheck = 0;
 
     private final BaseManager.PacketProcessor[] packetProcessors = new BaseManager.PacketProcessor[300];
 
@@ -79,10 +84,10 @@ public final class ClusterService implements Runnable, Constants {
         packetProcessors[operation.getValue()] = packetProcessor;
     }
 
-    public PacketProcessor getPacketProcessor (ClusterOperation operation) {
+    public PacketProcessor getPacketProcessor(ClusterOperation operation) {
         PacketProcessor packetProcessor = packetProcessors[operation.getValue()];
         if (packetProcessor == null) {
-           logger.log(Level.SEVERE, operation + " has no registered processor!");
+            logger.log(Level.SEVERE, operation + " has no registered processor!");
         }
         return packetProcessor;
     }
@@ -158,6 +163,7 @@ public final class ClusterService implements Runnable, Constants {
     public void start() {
         totalProcessTime = 0;
         lastPeriodicCheck = System.nanoTime();
+        lastCheck = System.nanoTime();
         running = true;
     }
 
@@ -174,18 +180,17 @@ public final class ClusterService implements Runnable, Constants {
 
     private void checkPeriodics() {
         final long now = System.nanoTime();
-        if ((now - lastPeriodicCheck) > 3 * PERIODIC_CHECK_INTERVAL) {
-            logger.log (Level.INFO, "Hazelcast ServiceThread is blocked. Restarting Hazelcast!");
-            new Thread(new Runnable () {
+        if ((now - lastCheck) > MAX_IDLE_NANOS) {
+            logger.log(Level.INFO, "Hazelcast ServiceThread is blocked. Restarting Hazelcast!");
+            new Thread(new Runnable() {
                 public void run() {
                     Hazelcast.shutdown();
                     Hazelcast.getCluster();
                 }
             }).start();
         }
-        if ((now - lastPeriodicCheck) > PERIODIC_CHECK_INTERVAL) {
-//            ClusterManager.get().heartBeater();
-//            ClusterManager.get().checkScheduledActions();
+        lastCheck = now;
+        if ((now - lastPeriodicCheck) > PERIODIC_CHECK_INTERVAL_NANOS) {
             for (Runnable runnable : periodicRunnables) {
                 if (runnable != null) {
                     runnable.run();

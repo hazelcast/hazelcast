@@ -54,6 +54,8 @@ public class Node {
 
     private volatile boolean joined = false;
 
+    private volatile boolean active = false;
+
     private volatile boolean completelyShutdown = false;
 
     private ClusterImpl clusterImpl = null;
@@ -274,21 +276,24 @@ public class Node {
 
     public void shutdown() {
         try {
-            // set the joined=false first so that
-            // threads do not process unnecessary
-            // events, such as removeaddress
-            joined = false;
-            ConcurrentMapManager.get().reset();
-            ClusterService.get().stop();
-            MulticastService.get().stop();
-            ConnectionManager.get().shutdown();
-            ExecutorManager.get().stop();
-            InSelector.get().shutdown();
-            OutSelector.get().shutdown();
-            address = null;
-            masterAddress = null;
-            FactoryImpl.inited = false;
-            ClusterManager.get().stop();
+            if (active) {
+                // set the joined=false first so that
+                // threads do not process unnecessary
+                // events, such as removeaddress
+                joined = false;
+                active = false;
+                ConcurrentMapManager.get().reset();
+                ClusterService.get().stop();
+                MulticastService.get().stop();
+                ConnectionManager.get().shutdown();
+                ExecutorManager.get().stop();
+                InSelector.get().shutdown();
+                OutSelector.get().shutdown();
+                address = null;
+                masterAddress = null;
+                FactoryImpl.inited = false;
+                ClusterManager.get().stop();
+            }
         } catch (Throwable e) {
             if (logger != null) logger.log(Level.FINEST, "shutdown exception", e);
         }
@@ -376,6 +381,7 @@ public class Node {
         if (Config.get().getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             startMulticastService();
         }
+        active = true;
         join();
 
 

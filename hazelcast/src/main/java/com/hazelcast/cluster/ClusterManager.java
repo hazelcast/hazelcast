@@ -29,9 +29,9 @@ import java.util.logging.Level;
 
 public class ClusterManager extends BaseManager implements ConnectionListener {
 
-    private final int WAIT_SECONDS_BEFORE_JOIN = ConfigProperty.WAIT_SECONDS_BEFORE_JOIN.getInteger(5);
+    private final int WAIT_SECONDS_BEFORE_JOIN = ConfigProperty.WAIT_SECONDS_BEFORE_JOIN.getInteger();
 
-    private final int MAX_NO_HEARTBEAT_SECONDS = ConfigProperty.MAX_NO_HEARTBEAT_SECONDS.getInteger(10);
+    private final int MAX_NO_HEARTBEAT_SECONDS = ConfigProperty.MAX_NO_HEARTBEAT_SECONDS.getInteger();
 
     private static final ClusterManager instance = new ClusterManager();
 
@@ -673,6 +673,15 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         timeToStartJoin = 0;
         if (lsMembers != null) {
             lsMembers.clear();
+        }
+        if (mapMembers != null) {
+            mapMembers.clear();
+        }
+        if (lsMembersBefore != null) {
+            lsMembersBefore.clear();
+        }
+        if (mapCalls != null) {
+            mapCalls.clear();
         }
     }
 

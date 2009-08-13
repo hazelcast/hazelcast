@@ -278,7 +278,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
                 executeLocally(new Runnable() {
                     MMigrate mmigrate = new MMigrate();
-
                     public void run() {
                         if (cmap.isMultiMap()) {
                             List<Data> values = rec.lsValues;
@@ -1652,6 +1651,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 req.value = new Data();
             }
             Record record = toRecord(req);
+//            System.out.println(name + "  " + record.lockThreadId +  " OWN " + record.lockCount + " , " + record.lockAddress);
         }
 
         public boolean isMultiMap() {
