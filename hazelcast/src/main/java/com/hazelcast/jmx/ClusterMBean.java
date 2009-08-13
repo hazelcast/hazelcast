@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
+import java.io.File;
+import java.net.URL;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -131,10 +133,18 @@ public class ClusterMBean extends AbstractMBean<Cluster> {
 		} 
 	}
 
-	@JMXAttribute("ConfigFileURL")
-	@JMXDescription("The URL of the current config file")
+	@JMXAttribute("ConfigSource")
+	@JMXDescription("The source of the current configuration")
     public String getConfigFileURL() {
-    	return Config.get().getConfigurationUrl().toString();
+		File configurationFile = Config.get().getConfigurationFile();
+		if (configurationFile != null) {
+			return configurationFile.getAbsolutePath();
+		}
+		URL configurationUrl = Config.get().getConfigurationUrl();
+		if (configurationUrl != null) {
+			return configurationUrl.toString();
+		}
+    	return null;
     }
     
 	@JMXAttribute("GroupName")
