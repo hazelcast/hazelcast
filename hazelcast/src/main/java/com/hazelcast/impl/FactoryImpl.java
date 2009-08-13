@@ -154,17 +154,17 @@ public class FactoryImpl {
     }
 
     static Collection<Instance> getProxies() {
-        init();
+        initialChecks();
         return proxies.values();
     }
 
     public static ExecutorService getExecutorService() {
-        init();
+        initialChecks();
         return executorServiceImpl;
     }
 
     public static ClusterImpl getCluster() {
-        init();
+        initialChecks();
         return node.getClusterImpl();
     }
 
@@ -173,8 +173,7 @@ public class FactoryImpl {
     }
 
     public static Transaction getTransaction() {
-        if (!inited)
-            init();
+        initialChecks();
         ThreadContext threadContext = ThreadContext.get();
         Transaction txn = threadContext.txn;
         if (txn == null)
@@ -225,13 +224,18 @@ public class FactoryImpl {
     }
 
     public static Object getProxy(final ProxyKey proxyKey) {
-        if (!inited)
-            init();
+        initialChecks();
         Object proxy = proxies.get(proxyKey);
         if (proxy == null) {
             proxy = createInstanceClusterwide(proxyKey);
         }
         return proxy;
+    }
+
+    public static void initialChecks() {
+       if (!inited) {
+            init();
+       }
     }
 
     public static void destroyProxy(final ProxyKey proxyKey) {
@@ -337,6 +341,7 @@ public class FactoryImpl {
         }
 
         private void ensure() {
+            initialChecks();
             if (base == null) {
                 base = getLock(key);
             }
@@ -571,6 +576,7 @@ public class FactoryImpl {
         }
 
         private void ensure() {
+            initialChecks();
             if (base == null) {
                 base = (TopicProxy) getProxyByName(name);
             }
@@ -693,6 +699,7 @@ public class FactoryImpl {
         }
 
         private void ensure() {
+            initialChecks();
             if (base == null) {
                 base = (CollectionProxy) getProxyByName(name);
             }
@@ -969,6 +976,7 @@ public class FactoryImpl {
         }
 
         private void ensure() {
+            initialChecks();
             if (qproxyReal == null) {
                 qproxyReal = (QProxy) getProxyByName(name);
             }
@@ -1212,6 +1220,7 @@ public class FactoryImpl {
         }
 
         private void ensure() {
+            initialChecks();
             if (base == null) {
                 base = (MultiMapBase) getProxyByName(name);
             }
@@ -1421,7 +1430,7 @@ public class FactoryImpl {
         Object get(Object key);
     }
 
-    private static void check(Object obj) {
+    private static void checkInputObject(Object obj) {
         if (obj == null)
             throw new RuntimeException("Object cannot be null.");
 
@@ -1474,6 +1483,7 @@ public class FactoryImpl {
         }
 
         private void ensure() {
+            initialChecks();
             if (mproxyReal == null) {
                 mproxyReal = (MProxy) getProxyByName(name);
             }
@@ -1738,33 +1748,33 @@ public class FactoryImpl {
             }
 
             public MapEntry getMapEntry(Object key) {
-                check(key);
+                checkInputObject(key);
                 MGetMapEntry mgetMapEntry = ConcurrentMapManager.get().new MGetMapEntry();
                 return mgetMapEntry.get(name, key);
             }
 
             public boolean putMulti(Object key, Object value) {
-                check(key);
-                check(value);
+                checkInputObject(key);
+                checkInputObject(value);
                 MPutMulti mput = ThreadContext.get().getMPutMulti();
                 return mput.put(name, key, value);
             }
 
             public Object put(Object key, Object value) {
-                check(key);
-                check(value);
+                checkInputObject(key);
+                checkInputObject(value);
                 MPut mput = ThreadContext.get().getMPut();
                 return mput.put(name, key, value, -1);
             }
 
             public Object get(Object key) {
-                check(key);
+                checkInputObject(key);
                 MGet mget = ThreadContext.get().getMGet();
                 return mget.get(name, key, -1);
             }
 
             public Object remove(Object key) {
-                check(key);
+                checkInputObject(key);
                 MRemove mremove = ThreadContext.get().getMRemove();
                 return mremove.remove(name, key, -1);
             }
@@ -1782,53 +1792,53 @@ public class FactoryImpl {
             }
 
             public Object putIfAbsent(Object key, Object value) {
-                check(key);
-                check(value);
+                checkInputObject(key);
+                checkInputObject(value);
                 MPut mput = ThreadContext.get().getMPut();
                 return mput.putIfAbsent(name, key, value, -1);
             }
 
             public boolean removeMulti(Object key, Object value) {
-                check(key);
-                check(value);
+                checkInputObject(key);
+                checkInputObject(value);
                 MRemoveMulti mremove = ThreadContext.get().getMRemoveMulti();
                 return mremove.remove(name, key, value);
             }
 
             public boolean remove(Object key, Object value) {
-                check(key);
-                check(value);
+                checkInputObject(key);
+                checkInputObject(value);
                 MRemove mremove = ThreadContext.get().getMRemove();
                 return (mremove.removeIfSame(name, key, value, -1) != null);
             }
 
             public Object replace(Object key, Object value) {
-                check(key);
-                check(value);
+                checkInputObject(key);
+                checkInputObject(value);
                 MPut mput = ThreadContext.get().getMPut();
                 return mput.replace(name, key, value, -1);
             }
 
             public boolean replace(Object key, Object oldValue, Object newValue) {
-                check(key);
-                check(newValue);
+                checkInputObject(key);
+                checkInputObject(newValue);
                 throw new UnsupportedOperationException();
             }
 
             public void lock(Object key) {
-                check(key);
+                checkInputObject(key);
                 MLock mlock = ThreadContext.get().getMLock();
                 mlock.lock(name, key, -1);
             }
 
             public boolean tryLock(Object key) {
-                check(key);
+                checkInputObject(key);
                 MLock mlock = ThreadContext.get().getMLock();
                 return mlock.lock(name, key, 0);
             }
 
             public boolean tryLock(Object key, long time, TimeUnit timeunit) {
-                check(key);
+                checkInputObject(key);
                 if (time < 0)
                     throw new IllegalArgumentException("Time cannot be negative. time = " + time);
                 MLock mlock = ThreadContext.get().getMLock();
@@ -1836,7 +1846,7 @@ public class FactoryImpl {
             }
 
             public void unlock(Object key) {
-                check(key);
+                checkInputObject(key);
                 MLock mlock = ThreadContext.get().getMLock();
                 mlock.unlock(name, key, 0);
             }
@@ -1863,7 +1873,7 @@ public class FactoryImpl {
             public void addEntryListener(EntryListener listener, Object key, boolean includeValue) {
                 if (listener == null)
                     throw new IllegalArgumentException("Listener cannot be null");
-                check(key);
+                checkInputObject(key);
                 addGenericListener(listener, key, includeValue, ListenerManager.Type.Map);
             }
 
@@ -1876,13 +1886,13 @@ public class FactoryImpl {
             public void removeEntryListener(EntryListener listener, Object key) {
                 if (listener == null)
                     throw new IllegalArgumentException("Listener cannot be null");
-                check(key);
+                checkInputObject(key);
                 removeGenericListener(listener, key);
             }
 
             public boolean containsEntry(Object key, Object value) {
-                check(key);
-                check(value);
+                checkInputObject(key);
+                checkInputObject(value);
                 TransactionImpl txn = ThreadContext.get().txn;
                 if (txn != null) {
                     if (txn.has(name, key)) {
@@ -1895,7 +1905,7 @@ public class FactoryImpl {
             }
 
             public boolean containsKey(Object key) {
-                check(key);
+                checkInputObject(key);
                 TransactionImpl txn = ThreadContext.get().txn;
                 if (txn != null) {
                     if (txn.has(name, key)) {
@@ -1908,7 +1918,7 @@ public class FactoryImpl {
             }
 
             public boolean containsValue(Object value) {
-                check(value);
+                checkInputObject(value);
                 TransactionImpl txn = ThreadContext.get().txn;
                 if (txn != null) {
                     if (txn.containsValue(name, value))
@@ -1995,6 +2005,7 @@ public class FactoryImpl {
         }
 
         private void ensure() {
+            initialChecks();
             if (base == null) {
                 base = getIdGenerator(name);
             }
