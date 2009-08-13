@@ -35,7 +35,7 @@ import com.hazelcast.core.Cluster;
  * Enabling JMX monitoring can have a heavy impact on a busy Hazelcast cluster,
  * so the classes are not instrumented by default.
  * To enable the JMX agent, set this system property when you start the JVM or Java application:
- *   -Dcom.hazelcast.jmx=true
+ *   -Dhazelcast.jmx=true
  * for compatibility reason, also -Dcom.sun.management.jmxremote start the agent.
  * 
  * @author Marco Ferrante, DISI - University of Genoa
@@ -44,7 +44,7 @@ public class ManagementService {
 
 	private final static Logger logger = Logger.getLogger(ManagementService.class.getName());
 	
-	public static String ENABLE_JMX = "com.hazelcast.jmx";
+	public static String ENABLE_JMX = "hazelcast.jmx";
 	
 	private static DataMBean dataMonitor = null; 
 	
