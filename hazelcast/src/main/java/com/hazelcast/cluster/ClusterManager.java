@@ -612,6 +612,14 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
     }
 
     public void connectionRemoved(Connection connection) {
+        logger.log (Level.FINEST, "Connection is removed " +connection.getEndPoint());
+        if (!Node.get().joined()) {
+            if (getMasterAddress() != null) {
+                if (getMasterAddress().equals(connection.getEndPoint())) {
+                    Node.get().setMasterAddress(null);
+                }
+            }
+        }
     }
 
     public Member addMember(MemberImpl member) {
