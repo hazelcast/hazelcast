@@ -22,6 +22,8 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.MessageListener;
+import static com.hazelcast.impl.ClusterOperation.ADD_LISTENER;
+import static com.hazelcast.impl.ClusterOperation.REMOVE_LISTENER;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferUtil;
 import com.hazelcast.nio.Data;
@@ -30,6 +32,7 @@ import com.hazelcast.nio.Packet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
 
 public class ListenerManager extends BaseManager {
     private List<ListenerItem> listeners = new CopyOnWriteArrayList<ListenerItem>();
@@ -60,6 +63,8 @@ public class ListenerManager extends BaseManager {
                 handleAddRemoveListener(false, packet);
             }
         });
+//        registerPacketProcessor(ADD_LISTENER, new AddRemoveListenerOperationHandler());
+//        registerPacketProcessor(REMOVE_LISTENER, new AddRemoveListenerOperationHandler());
     }
 
     private void handleEvent(Packet packet) {
@@ -98,6 +103,59 @@ public class ListenerManager extends BaseManager {
                 dataKey = ThreadContext.get().toData(listenerItem.key);
             }
             sendAddRemoveListener(newAddress, true, listenerItem.name, dataKey, listenerItem.includeValue);
+        }
+    }
+
+    class AddRemoveListenerOperationHandler extends TargetAwareOperationHandler {
+        boolean isRightRemoteTarget(Packet packet) {
+            if (packet.key == null) return true;
+            return thisAddress.equals(getKeyOwner(packet.key));
+        }
+
+        void doOperation(Request request) {
+            Address from = request.caller;
+            logger.log(Level.FINEST, "AddListnerOperation from " + from + ", local=" + request.local);
+            if (from == null) throw new RuntimeException("Listener origin is not known!");
+            boolean add = (request.operation == ADD_LISTENER);
+            boolean includeValue = (request.longValue == 1);
+            handleListenerRegisterations(add, request.name, request.key, request.caller, includeValue);
+            request.response = Boolean.TRUE;
+        }
+    }  
+
+    public class AddRemoveListener extends MultiCall {
+        final String name;
+        final boolean includeValue;
+
+        public AddRemoveListener(String name, boolean includeValue) {
+            this.name = name;
+            this.includeValue = includeValue;
+        }
+
+        TargetAwareOp createNewTargetAwareOp(Address target) {
+            return new AddListenerAtTarget(target);
+        }
+
+        boolean onResponse(Object response) {
+            return true;
+        }
+
+        Object returnResult() {
+            return Boolean.TRUE;
+        }
+
+        class AddListenerAtTarget extends MigrationAwareTargettedCall {
+            public AddListenerAtTarget(Address target) {
+                this.target = target;
+                request.reset();
+                setLocal(ADD_LISTENER, name);
+                request.longValue = (includeValue) ? 1 : 0;
+            }
+
+            @Override
+            void handleNoneRedoResponse(final Packet packet) {
+                handleBooleanNoneRedoResponse(packet);
+            }
         }
     }
 

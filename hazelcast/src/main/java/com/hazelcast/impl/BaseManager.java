@@ -378,6 +378,44 @@ public abstract class BaseManager {
         void handle(Request request);
     }
 
+    abstract class MigrationAwareOperationHandler extends AbstractOperationHandler {
+
+        @Override
+        public void process(Packet packet) {
+            if (isMigrating()) {
+                packet.responseType = RESPONSE_REDO;
+                sendResponse(packet);
+            } else {
+                Request remoteReq = new Request();
+                remoteReq.setFromPacket(packet);
+                remoteReq.local = false;
+                handle(remoteReq);
+                packet.returnToContainer();
+            }
+        }
+    }
+
+
+    abstract class TargetAwareOperationHandler extends MigrationAwareOperationHandler {
+
+        abstract boolean isRightRemoteTarget (Packet packet);
+
+        @Override
+        public void process(Packet packet) {
+            if (isMigrating()) {
+                packet.responseType = RESPONSE_REDO;
+                sendResponse(packet);
+            } else if (!isRightRemoteTarget(packet)) {
+            } else {
+                Request remoteReq = new Request();
+                remoteReq.setFromPacket(packet);
+                remoteReq.local = false;
+                handle(remoteReq);
+                packet.returnToContainer();
+            }
+        }
+    }
+
     abstract class AbstractOperationHandler implements PacketProcessor, RequestHandler {
 
         public void process(Packet packet) {
@@ -388,7 +426,7 @@ public abstract class BaseManager {
             packet.returnToContainer();
             request.reset();
         }
-
+        
         abstract void doOperation(Request request);
 
         public void handle(Request request) {
@@ -553,6 +591,10 @@ public abstract class BaseManager {
                                  final Object value, final long timeout, final long recordId) {
             setLocal(operation, name, key, value, timeout, recordId);
             return objectCall();
+        }
+
+        public void setLocal(ClusterOperation operation, String name) {
+            setLocal (operation, name, null, null, -1, -1);
         }
 
         public void setLocal(final ClusterOperation operation, final String name, final Object key,
