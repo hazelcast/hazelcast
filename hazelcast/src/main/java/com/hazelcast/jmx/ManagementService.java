@@ -64,13 +64,13 @@ public class ManagementService {
     	// Scheduler of the statistics collectors
 		if (showDetails()) {
 			if (statCollectors == null) {
-				statCollectors = new ScheduledThreadPoolExecutor(4);
+				statCollectors = new ScheduledThreadPoolExecutor(2);
 			}
 		}
     	
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         
-        // Register the cluster
+        // Register the cluster monitor
 		try {
 			ClusterMBean clusterMBean = new ClusterMBean(cluster);
             mbs.registerMBean(clusterMBean, clusterMBean.getObjectName());    
@@ -98,13 +98,16 @@ public class ManagementService {
 			dataMonitor = null;
 		}
 
-		// Remove all entries
+		// Remove all registered entries
 		MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 		Set<ObjectName> entries;
 		try {
 			entries = mbs.queryNames(new ObjectName(MBeanBuilder.NAME_DOMAIN + "*"), null);
 			for (ObjectName name : entries) {
-				mbs.unregisterMBean(name);
+				// Double check, in case the entry has been removed in the meantime
+				if (mbs.isRegistered(name)) {
+					mbs.unregisterMBean(name);
+				}
 			}
 		}
 		catch (Exception e) {
@@ -113,6 +116,7 @@ public class ManagementService {
 		
     	if (statCollectors != null) {
     		statCollectors.shutdownNow();
+    		statCollectors = null;
     	}
 
     }
