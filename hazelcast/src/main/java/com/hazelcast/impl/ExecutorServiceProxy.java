@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2007-2008, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2007-2009, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
  * limitations under the License.
  *
  */
-
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.ClusterService;
@@ -23,12 +22,40 @@ import com.hazelcast.impl.BaseManager.Processable;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.*;
 
+/**
+ * Implements a distributed @link java.util.concurrent.ExecutorService.
+ * 
+ * Hazelcast to execute your code:
+ * <ul> 
+	<li>on a specific cluster member you choose</li> 
+	<li>on the member owning the key you choose</li>
+	<li>on the member Hazelcast will pick</li>
+	<li>on all or subset of the cluster members</li>
+ * </ul>
+ * see @link com.hazelcast.DistributedTask
+ * 
+ * Note on finalization
+ * 
+ * The Hazelcast ExecutorService is a facade implementing @link java.util.concurrent.ExecutorService
+ * but is not a separate component of the Hazelcast cluster and cannot be
+ * finalized. Shutdown the entire cluster instead.
+ * Methods invoking finalization have no effect, while methods checking
+ * the terminated status return the status of the cluser (isTerminated() return
+ * true after an @link com.hazelcast.Hazelcast#shutdown). 
+ */
 public class ExecutorServiceProxy implements ExecutorService, Constants {
 
+    /**
+     * Hazelcast ExecutorService cannot be really shut down.
+     * The method return always false immeditely.
+     * 
+     * @return always false
+     */
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        throw new UnsupportedOperationException();
+        return false;
     }
 
     public List invokeAll(Collection tasks) throws InterruptedException {
@@ -49,20 +76,44 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Hazelcast ExecutorService cannot be really shut down.
+     * The method returns the status of the current node.
+     * 
+     * @return the status of the current node
+     */
     public boolean isShutdown() {
-        throw new UnsupportedOperationException();
+        return !ExecutorManager.get().isStarted();
     }
 
+    /**
+     * Hazelcast ExecutorService cannot be really shut down.
+     * The method returns the status of the current node.
+     * 
+     * @return the status of the current node
+     */
     public boolean isTerminated() {
-        throw new UnsupportedOperationException();
+        return !ExecutorManager.get().isStarted();
     }
 
+    /**
+     * Hazelcast ExecutorService cannot be really shut down.
+     * The method has no effect.
+     * 
+     * @link com.hazelcast.Hazelcast#shutdown
+     */
     public void shutdown() {
-        throw new UnsupportedOperationException();
+    	return;
     }
 
+    /**
+     * Hazelcast ExecutorService cannot be really shut down.
+     * The method always return an empty list.
+     * 
+     * @return an empty list
+     */
     public List<Runnable> shutdownNow() {
-        throw new UnsupportedOperationException();
+        return new ArrayList<Runnable>();
     }
 
     public <T> Future<T> submit(Callable<T> task) {

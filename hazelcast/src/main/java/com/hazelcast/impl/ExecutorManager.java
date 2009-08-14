@@ -100,15 +100,27 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         }
     }
 
+    /**
+     * Return true if the ExecutorManager is started and can accept task.
+     * 
+     * @return the ExecutorManager running status
+     */
+    public boolean isStarted() {
+    	return started;
+    }
+    
     public void init() {
         super.init();
         if (started) return;
+        if (logger.isLoggable(Level.FINEST)) {
+        	logger.log(Level.FINEST, "Starting ExecutorManager");
+        }
         final int corePoolSize = Config.get().getExecutorConfig().getCorePoolSize();
         final int maxPoolSize = Config.get().getExecutorConfig().getMaxPoolsize();
         final long keepAliveSeconds = Config.get().getExecutorConfig().getKeepAliveSeconds();
-        if (DEBUG) {
-            log("Executor core:" + corePoolSize + ", max:" + maxPoolSize + ", keepAlive:"
-                    + keepAliveSeconds);
+        if (logger.isLoggable(Level.FINEST)) {
+        	logger.log(Level.FINEST, "Executor core:" + corePoolSize + ", max:"
+        			+ maxPoolSize + ", keepAlive:" + keepAliveSeconds);
         }
 
         executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveSeconds, TimeUnit.SECONDS,
@@ -131,6 +143,9 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
 
     public void stop() {
         if (!started) return;
+        if (logger.isLoggable(Level.FINEST)) {
+        	logger.log(Level.FINEST, "Stopping ExecutorManager");
+        }
         executionIds.clear();
         if (executor != null) {
             executor.shutdownNow();
