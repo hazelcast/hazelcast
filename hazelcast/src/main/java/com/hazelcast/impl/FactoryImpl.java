@@ -2150,8 +2150,8 @@ public class FactoryImpl {
             try {
                 Long max = (Long) map.get(name);
                 if (max == null) {
-                    max = 0l;
-                    map.put(name, 0);
+                    max = 0L;
+                    map.put(name, 0L);
                     return max;
                 } else {
                     Long newMax = max + 1;
