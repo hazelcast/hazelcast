@@ -392,10 +392,15 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         return 0;
     }
 
-    public void sendProcessableTo(RemotelyProcessable rp, Connection conn) {
+    public Packet createRemotelyProcessablePacket(RemotelyProcessable rp) {
         Data value = ThreadContext.get().toData(rp);
         Packet packet = obtainPacket();
         packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
+        return packet;
+    }
+
+    public void sendProcessableTo(RemotelyProcessable rp, Connection conn) {
+        Packet packet = createRemotelyProcessablePacket(rp);
         boolean sent = send(packet, conn);
         if (!sent) {
             packet.returnToContainer();
@@ -612,7 +617,7 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
     }
 
     public void connectionRemoved(Connection connection) {
-        logger.log (Level.FINEST, "Connection is removed " +connection.getEndPoint());
+        logger.log(Level.FINEST, "Connection is removed " + connection.getEndPoint());
         if (!Node.get().joined()) {
             if (getMasterAddress() != null) {
                 if (getMasterAddress().equals(connection.getEndPoint())) {

@@ -49,18 +49,18 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         if (asymmetricEncryptionEnabled || symmetricEncryptionEnabled) {
             if (asymmetricEncryptionEnabled && symmetricEncryptionEnabled) {
                 if (true) {
-                    logger.log (Level.INFO, "Incorrect encryption configuration.");
-                    logger.log (Level.INFO, "You can enable either SymmetricEncryption or AsymmetricEncryption.");
-                    throw new RuntimeException ();
+                    logger.log(Level.INFO, "Incorrect encryption configuration.");
+                    logger.log(Level.INFO, "You can enable either SymmetricEncryption or AsymmetricEncryption.");
+                    throw new RuntimeException();
                 }
                 packetWriter = new ComplexCipherPacketWriter();
-                logger.log (Level.INFO,  "Writer started with ComplexEncryption");
+                logger.log(Level.INFO, "Writer started with ComplexEncryption");
             } else if (symmetricEncryptionEnabled) {
                 packetWriter = new SymmetricCipherPacketWriter();
-                logger.log (Level.INFO,  "Writer started with SymmetricEncryption");
+                logger.log(Level.INFO, "Writer started with SymmetricEncryption");
             } else {
                 packetWriter = new AsymmetricCipherPacketWriter();
-                logger.log (Level.INFO,  "Writer started with AsymmetricEncryption");
+                logger.log(Level.INFO, "Writer started with AsymmetricEncryption");
             }
         } else {
             packetWriter = new DefaultPacketWriter();
@@ -70,6 +70,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     long enqueueTime = 0;
 
     public void enqueuePacket(final Packet packet) {
+        packet.write();
         writeQueue.offer(packet);
         if (informSelector.get()) {
             informSelector.set(false);
@@ -162,6 +163,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         SymmetricCipherPacketWriter spw = new SymmetricCipherPacketWriter();
         int joinPartTotalWrites = 0;
         final int maxJoinWrite;
+
         ComplexCipherPacketWriter() {
             maxJoinWrite = 2280;
         }
@@ -209,16 +211,17 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             try {
                 c = CipherHelper.createAsymmetricWriterCipher();
             } catch (Exception e) {
-               logger.log(Level.SEVERE, "Asymmetric Cipher for WriteHandler cannot be initialized.", e);
+                logger.log(Level.SEVERE, "Asymmetric Cipher for WriteHandler cannot be initialized.", e);
             }
             return c;
         }
+
         public boolean writePacket(Packet packet) throws Exception {
             if (!aliasWritten) {
                 String localAlias = CipherHelper.getKeyAlias();
                 byte[] localAliasBytes = localAlias.getBytes();
-                socketBB.putInt (localAliasBytes.length);
-                socketBB.put (localAliasBytes);
+                socketBB.putInt(localAliasBytes.length);
+                socketBB.put(localAliasBytes);
                 aliasWritten = true;
             }
             return encryptAndWrite(packet);
@@ -302,8 +305,8 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             try {
                 c = CipherHelper.createSymmetricWriterCipher();
             } catch (Exception e) {
-               logger.log(Level.SEVERE, "Symmetric Cipher for WriteHandler cannot be initialized.", e);
-               CipherHelper.handleCipherException (e, connection);
+                logger.log(Level.SEVERE, "Symmetric Cipher for WriteHandler cannot be initialized.", e);
+                CipherHelper.handleCipherException(e, connection);
             }
             return c;
         }

@@ -398,7 +398,7 @@ public abstract class BaseManager {
 
     abstract class TargetAwareOperationHandler extends MigrationAwareOperationHandler {
 
-        abstract boolean isRightRemoteTarget (Packet packet);
+        abstract boolean isRightRemoteTarget(Packet packet);
 
         @Override
         public void process(Packet packet) {
@@ -426,7 +426,7 @@ public abstract class BaseManager {
             packet.returnToContainer();
             request.reset();
         }
-        
+
         abstract void doOperation(Request request);
 
         public void handle(Request request) {
@@ -594,7 +594,7 @@ public abstract class BaseManager {
         }
 
         public void setLocal(ClusterOperation operation, String name) {
-            setLocal (operation, name, null, null, -1, -1);
+            setLocal(operation, name, null, null, -1, -1);
         }
 
         public void setLocal(final ClusterOperation operation, final String name, final Object key,
@@ -763,7 +763,7 @@ public abstract class BaseManager {
 
         @Override
         public void beforeRedo() {
-            logger.log (Level.FINEST, "BeforeRedo target " + target);
+            logger.log(Level.FINEST, "BeforeRedo target " + target);
             super.beforeRedo();
         }
 
@@ -1377,7 +1377,6 @@ public abstract class BaseManager {
             memberImpl.didWrite();
         }
         packet.currentCallCount = mapCalls.size();
-        packet.write();
         conn.getWriteHandler().enqueuePacket(packet);
         return true;
     }

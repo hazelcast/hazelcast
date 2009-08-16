@@ -17,6 +17,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.cluster.Bind;
 import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.impl.Node;
 
@@ -69,6 +70,11 @@ public class ConnectionManager {
         }
         if (!endPoint.equals(Node.get().getThisAddress())) {
             acceptTypeConnection = accept;
+            //make sure bind packet is the first packet sent to the end point.
+            ClusterManager clusterManager = ClusterManager.get();
+            Packet bindPacket = clusterManager.createRemotelyProcessablePacket(new Bind(clusterManager.getThisAddress()));
+            connection.writeHandler.enqueuePacket(bindPacket);
+            //now you can send anything...
             mapConnections.put(endPoint, connection);
             setConnectionInProgress.remove(endPoint);
             for (final ConnectionListener listener : setConnectionListeners) {

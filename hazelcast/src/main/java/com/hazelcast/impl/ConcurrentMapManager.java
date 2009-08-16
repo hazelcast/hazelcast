@@ -67,6 +67,7 @@ public final class ConcurrentMapManager extends BaseManager {
             public void run() {
                 Collection<CMap> cmaps = maps.values();
                 for (CMap cmap : cmaps) {
+                    cmap.startRemove();
                     if (cmap.ttl != 0) {
                         cmap.startEviction();
                     }
@@ -272,29 +273,31 @@ public final class ConcurrentMapManager extends BaseManager {
             cmap.reset();
             for (Object recObj : records) {
                 final Record rec = (Record) recObj;
-                if (rec.key == null || rec.key.size() == 0) {
-                    throw new RuntimeException("Record.key is null or empty " + rec.key);
-                }
-                executeLocally(new Runnable() {
-                    public void run() {
-                        MMigrate mmigrate = new MMigrate();
-                        if (cmap.isMultiMap()) {
-                            List<Data> values = rec.lsValues;
-                            if (values == null || values.size() == 0) {
-                                mmigrate.migrateMulti(rec, null);
+                if (rec.active) {
+                    if (rec.key == null || rec.key.size() == 0) {
+                        throw new RuntimeException("Record.key is null or empty " + rec.key);
+                    }
+                    executeLocally(new Runnable() {
+                        public void run() {
+                            MMigrate mmigrate = new MMigrate();
+                            if (cmap.isMultiMap()) {
+                                List<Data> values = rec.lsValues;
+                                if (values == null || values.size() == 0) {
+                                    mmigrate.migrateMulti(rec, null);
+                                } else {
+                                    for (Data value : values) {
+                                        mmigrate.migrateMulti(rec, value);
+                                    }
+                                }
                             } else {
-                                for (Data value : values) {
-                                    mmigrate.migrateMulti(rec, value);
+                                boolean migrated = mmigrate.migrate(rec);
+                                if (!migrated) {
+                                    logger.log(Level.FINEST, "Migration failed " + rec.key);
                                 }
                             }
-                        } else {
-                            boolean migrated = mmigrate.migrate(rec);
-                            if (!migrated) {
-                                logger.log(Level.FINEST, "Migration failed " + rec.key);
-                            }
                         }
-                    }
-                });
+                    });
+                }
             }
         }
         executeLocally(new Runnable() {
@@ -313,7 +316,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MLock extends MBackupAndTargetAwareOp {
+    class MLock extends MBackupAndMigrationAwareOp {
         Data oldValue = null;
 
         public boolean unlock(String name, Object key, long timeout) {
@@ -490,7 +493,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MRemoveItem extends MBackupAndTargetAwareOp {
+    class MRemoveItem extends MBackupAndMigrationAwareOp {
 
         public boolean removeItem(String name, Object key) {
             return removeItem(name, key, null);
@@ -537,7 +540,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MRemove extends MBackupAndTargetAwareOp {
+    class MRemove extends MBackupAndMigrationAwareOp {
 
         public Object remove(String name, Object key, long timeout) {
             return txnalRemove(CONCURRENT_MAP_REMOVE, name, key, null, timeout);
@@ -665,7 +668,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MPutMulti extends MBackupAndTargetAwareOp {
+    class MPutMulti extends MBackupAndMigrationAwareOp {
 
         boolean put(String name, Object key, Object value) {
             boolean result = booleanCall(CONCURRENT_MAP_PUT_MULTI, name, key, value, 0, -1);
@@ -681,7 +684,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MPut extends MBackupAndTargetAwareOp {
+    class MPut extends MBackupAndMigrationAwareOp {
 
 
         public Object replace(String name, Object key, Object value, long timeout) {
@@ -748,7 +751,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    abstract class MBackupAndTargetAwareOp extends MBackupAwareOp {
+    abstract class MBackupAndMigrationAwareOp extends MBackupAwareOp {
         @Override
         public boolean isMigrationAware() {
             return true;
@@ -1553,6 +1556,8 @@ public final class ConcurrentMapManager extends BaseManager {
 
 
     class CMap {
+        final Set<Record> setRemovedRecords = new HashSet<Record>(1000);
+
         final SortedHashMap<Data, Record> mapRecords;
 
         final String name;
@@ -1639,7 +1644,10 @@ public final class ConcurrentMapManager extends BaseManager {
             if (req.value == null) {
                 req.value = new Data();
             }
-            Record record = toRecord(req);
+            Record record = getRecord(req.key);
+            if (record == null) {
+                record = toRecord(req);
+            }
             record.version = req.version;
         }
 
@@ -1698,11 +1706,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     }
                     record.value = null;
                     if (record.isRemovable()) {
-                        if (removeRecord(record.key) == null) {
-                            throw new RuntimeException("Remove not removing record!");
-                        }
-                        record.key.setNoData();
-                        record.key = null;
+                        removeAndPurgeRecord(record);
                     }
                 }
             } else if (req.operation == CONCURRENT_MAP_BACKUP_LOCK) {
@@ -1716,7 +1720,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 Record record = getRecord(req.key);
                 if (record != null) {
                     if (req.value == null) {
-                        removeRecord(req.key);
+                        removeAndPurgeRecord(record);
                     } else {
                         if (record.containsValue(req.value)) {
                             if (record.lsValues != null) {
@@ -1732,7 +1736,7 @@ public final class ConcurrentMapManager extends BaseManager {
                         }
                     }
                     if (record.isRemovable()) {
-                        removeRecord(record.key);
+                        removeAndPurgeRecord(record);
                     }
                 }
             } else {
@@ -1920,7 +1924,7 @@ public final class ConcurrentMapManager extends BaseManager {
             boolean removed = false;
             if (req.value == null) {
                 removed = true;
-                removeRecord(req.key);
+                markAsRemoved(record);
             } else {
                 if (record.containsValue(req.value)) {
                     if (record.lsValues != null) {
@@ -1989,6 +1993,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 record = createNewRecord(req.key, req.value);
                 req.key = null;
             } else {
+                record.markActive();
                 if (!record.isValid()) {
                     record.setExpirationTime(ttl);
                 }
@@ -2089,6 +2094,10 @@ public final class ConcurrentMapManager extends BaseManager {
             mapRecords.clear();
             ownedEntryCount = 0;
             evicting = false;
+            if (setDirtyRecords != null) {
+                setDirtyRecords.clear();
+            }
+            setRemovedRecords.clear();
         }
 
         void scheduleForEviction(Record record) {
@@ -2100,6 +2109,22 @@ public final class ConcurrentMapManager extends BaseManager {
             if (evictionPolicy == OrderingType.NONE) return;
             SortedHashMap.touch(mapRecords, record.key, evictionPolicy);
         }
+
+
+        void startRemove() {
+            long now = System.currentTimeMillis();
+            Iterator<Record> itRemovedRecords = setRemovedRecords.iterator();
+            while (itRemovedRecords.hasNext()) {
+                Record record = itRemovedRecords.next();
+                if (record.active) {
+                    itRemovedRecords.remove();
+                } else if (record.shouldRemove(now)) {
+                    itRemovedRecords.remove();
+                    removeAndPurgeRecord(record);
+                }
+            }
+        }
+
 
         void startEviction() {
             if (evicting) return;
@@ -2179,7 +2204,7 @@ public final class ConcurrentMapManager extends BaseManager {
             if (record != null && record.isEvictable()) {
                 if (ownerForSure(record)) {
                     fireMapEvent(mapListeners, name, EntryEvent.TYPE_EVICTED, record.key, record.value, record.mapListeners);
-                    removeRecord(req.key);
+                    removeAndPurgeRecord(record);
                     return true;
                 }
             }
@@ -2261,9 +2286,7 @@ public final class ConcurrentMapManager extends BaseManager {
             req.longValue = record.copyCount;
 
             if (record.isRemovable()) {
-                removeRecord(record.key);
-                record.key.setNoData();
-                record.key = null;
+                markAsRemoved(record);
             }
             return true;
         }
@@ -2301,34 +2324,48 @@ public final class ConcurrentMapManager extends BaseManager {
                 record.value = null;
                 record.lsValues = null;
             }
-
             req.version = record.version;
             req.longValue = record.copyCount;
 
             if (record.isRemovable()) {
-                if (removeRecord(record.key) == null) {
-                    throw new RuntimeException("Remove not removeing record");
-                }
-                record.key.setNoData();
-                record.key = null;
+                markAsRemoved(record);
             }
             if (oldValue != null) {
                 req.key.setNoData();
                 req.key = null;
             }
-
             return oldValue;
         }
 
-        Record removeRecord(Data key) {
-            Record record = mapRecords.remove(key);
-            if (record != null) {
+        void markAsRemoved(Record record) {
+            if (record.active) {
+                record.markRemoved();
+                setRemovedRecords.add(record);
                 Block ownerBlock = blocks[record.blockId];
                 if (thisAddress.equals(ownerBlock.getRealOwner())) {
                     ownedEntryCount--;
                 }
             }
-            return record;
+        }
+
+        void removeAndPurgeRecord(Record record) {
+            Record removedRecord = mapRecords.remove(record.key);
+            if (removedRecord != record) {
+                throw new RuntimeException(removedRecord + " is removed but should have removed " + record);
+            }
+            Block ownerBlock = blocks[record.blockId];
+            if (thisAddress.equals(ownerBlock.getRealOwner())) {
+                ownedEntryCount--;
+            }
+            record.key.setNoData();
+            if (record.value != null) {
+                record.value.setNoData();
+            }
+            if (record.lsValues != null) {
+                for (Data data : record.lsValues) {
+                    data.setNoData();
+                }
+            }
         }
 
         Record createNewRecord(Data key, Data value) {
@@ -2445,6 +2482,9 @@ public final class ConcurrentMapManager extends BaseManager {
         private SortedSet<VersionedBackupOp> backupOps = null;
         private boolean dirty = false;
         private long writeTime = -1;
+        private boolean active = true;
+        private long removeTime;
+
 
         public Record(String name, int blockId, Data key, Data value, long ttl) {
             super();
@@ -2711,6 +2751,19 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public boolean isValid() {
             return expirationTime > System.currentTimeMillis();
+        }
+
+        public void markRemoved() {
+            active = false;
+            removeTime = System.currentTimeMillis();
+        }
+
+        public void markActive() {
+            active = true;
+        }
+
+        public boolean shouldRemove(long now) {
+            return !active && ((now - removeTime) > 10000L);
         }
 
         @Override

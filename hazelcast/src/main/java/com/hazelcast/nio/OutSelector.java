@@ -17,9 +17,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.cluster.Bind;
-import com.hazelcast.cluster.ClusterManager;
-import com.hazelcast.impl.BaseManager;
 import com.hazelcast.impl.Node;
 
 import java.io.IOException;
@@ -72,12 +69,6 @@ public class OutSelector extends SelectorBase {
                 logger.log(Level.FINEST, "connected to " + address);
                 final Connection connection = initChannel(socketChannel, false);
                 ConnectionManager.get().bind(address, connection, false);
-                final ClusterManager clusterManager = ClusterManager.get();
-                clusterManager.enqueueAndReturn(new BaseManager.Processable() {
-                    public void process() {
-                        clusterManager.sendProcessableTo(new Bind(clusterManager.getThisAddress()), connection);
-                    }
-                });
             } catch (final Exception e) {
                 try {
                     final String msg = "Couldn't connect to " + address + ", cause: "
