@@ -23,7 +23,8 @@ public enum ConfigProperty {
     WAIT_SECONDS_BEFORE_JOIN("hazelcast.wait.seconds.before.join", "5"),
     MAX_NO_HEARTBEAT_SECONDS("hazelcast.max.no.heartbeat.seconds", "30"),
     CONCURRENT_MAP_BLOCK_COUNT("hazelcast.map.block.count", "271"),
-    BLOCKING_QUEUE_BLOCK_SIZE("hazelcast.queue.block.size", "1000");
+    BLOCKING_QUEUE_BLOCK_SIZE("hazelcast.queue.block.size", "1000"),
+    REMOVE_DELAY_SECONDS("hazelcast.map.remove.delay.seconds", "5");
 
     private final String name;
     private final String defaultValue;

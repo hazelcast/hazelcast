@@ -771,12 +771,12 @@ public abstract class BaseManager {
             setTarget();
             if (target == null) {
                 setResult(OBJECT_REDO);
-                return;
-            }
-            if (target.equals(thisAddress)) {
-                doLocalOp();
             } else {
-                invoke();
+                if (target.equals(thisAddress)) {
+                    doLocalOp();
+                } else {
+                    invoke();
+                }
             }
         }
 
@@ -787,9 +787,7 @@ public abstract class BaseManager {
             packet.callId = getId();
             final boolean sent = send(packet, target);
             if (!sent) {
-                if (DEBUG) {
-                    log(TargetAwareOp.this + " Packet cannot be sent to " + target);
-                }
+                logger.log(Level.FINEST, TargetAwareOp.this + " Packet cannot be sent to " + target);
                 packet.returnToContainer();
                 redo();
             }

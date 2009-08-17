@@ -54,7 +54,7 @@ public final class ConcurrentMapManager extends BaseManager {
     private final Block[] blocks;
     private final Map<String, CMap> maps;
     private final LoadStoreFork[] loadStoreForks;
-
+    private static long REMOVE_DELAY_MILLIS = ConfigProperty.REMOVE_DELAY_SECONDS.getLong() * 1000L;
 
     private ConcurrentMapManager() {
         blocks = new Block[BLOCK_COUNT];
@@ -926,6 +926,14 @@ public final class ConcurrentMapManager extends BaseManager {
             }
 
             public void setTarget() {
+            }
+
+            @Override
+            public void onDisconnect(final Address dead) {
+                if (dead.equals(target)) {
+                    removeCall(getId());
+                    setResult(Boolean.TRUE);                    
+                }
             }
 
             @Override
@@ -2337,7 +2345,7 @@ public final class ConcurrentMapManager extends BaseManager {
         void markAsActive(Record record) {
             if (!record.active) {
                 record.setActive();
-                setRemovedRecords.remove (record);
+                setRemovedRecords.remove(record);
             }
         }
 
@@ -2488,7 +2496,6 @@ public final class ConcurrentMapManager extends BaseManager {
         private long writeTime = -1;
         private boolean active = true;
         private long removeTime;
-
 
         public Record(String name, int blockId, Data key, Data value, long ttl) {
             super();
@@ -2767,7 +2774,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public boolean shouldRemove(long now) {
-            return !active && ((now - removeTime) > 10000L);
+            return !active && ((now - removeTime) > REMOVE_DELAY_MILLIS);
         }
 
         @Override

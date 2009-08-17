@@ -447,6 +447,27 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
             doOp(ClusterOperation.REMOTELY_CALLABLE_BOOLEAN, "call", null, arp, 0, -1);
         }
 
+        public Address getTarget() {
+            return target;
+        }
+
+        @Override
+        public void onDisconnect(final Address dead) {
+            if (dead.equals(target)) {
+                removeCall(getId());
+                setResult(Boolean.FALSE);
+            }
+        }
+
+        @Override
+        public void process() {
+            if (!thisAddress.equals(target) && ConnectionManager.get().getConnection(target) == null) {
+                setResult(Boolean.FALSE);
+            } else {
+                super.process();
+            }
+        }
+
         @Override
         public void doLocalOp() {
             Boolean result;
@@ -509,35 +530,46 @@ public class ClusterManager extends BaseManager implements ConnectionListener {
         executeLocally(new Runnable() {
             public void run() {
                 List<MemberInfo> lsMemberInfos = membersUpdate.lsMemberInfos;
-                List<AsyncRemotelyBooleanCallable> calls = new ArrayList<AsyncRemotelyBooleanCallable>();
+                List<Address> newMemberList = new ArrayList<Address>(lsMemberInfos.size());
                 for (final MemberInfo memberInfo : lsMemberInfos) {
+                    newMemberList.add(memberInfo.address);
+                }
+                List<AsyncRemotelyBooleanCallable> calls = new ArrayList<AsyncRemotelyBooleanCallable>(lsMemberInfos.size());
+
+                for (final Address target : newMemberList) {
                     AsyncRemotelyBooleanCallable rrp = new AsyncRemotelyBooleanCallable();
-                    rrp.executeProcess(memberInfo.address, membersUpdate);
+                    rrp.executeProcess(target, membersUpdate);
                     calls.add(rrp);
                 }
                 for (AsyncRemotelyBooleanCallable call : calls) {
-                    call.getResultAsBoolean();
+                    if (call.getResultAsBoolean() == Boolean.FALSE) {
+                        newMemberList.remove(call.getTarget());
+                    }
                 }
 
                 calls.clear();
-                for (final MemberInfo memberInfo : lsMemberInfos) {
+                for (final Address target : newMemberList) {
                     AsyncRemotelyBooleanCallable call = new AsyncRemotelyBooleanCallable();
-                    call.executeProcess(memberInfo.address, new SyncProcess());
+                    call.executeProcess(target, new SyncProcess());
                     calls.add(call);
                 }
                 for (AsyncRemotelyBooleanCallable call : calls) {
-                    call.getResultAsBoolean();
+                    if (call.getResultAsBoolean() == Boolean.FALSE) {
+                        newMemberList.remove(call.getTarget());
+                    }
                 }
 
                 calls.clear();
                 AbstractRemotelyCallable<Boolean> connCheckcallable = new ConnectionCheckCall();
-                for (final MemberInfo memberInfo : lsMemberInfos) {
+                for (final Address target : newMemberList) {
                     AsyncRemotelyBooleanCallable call = new AsyncRemotelyBooleanCallable();
-                    call.executeProcess(memberInfo.address, connCheckcallable);
+                    call.executeProcess(target, connCheckcallable);
                     calls.add(call);
                 }
                 for (AsyncRemotelyBooleanCallable call : calls) {
-                    call.getResultAsBoolean();
+                    if (call.getResultAsBoolean() == Boolean.FALSE) {
+                        newMemberList.remove(call.getTarget());
+                    }
                 }
             }
         });

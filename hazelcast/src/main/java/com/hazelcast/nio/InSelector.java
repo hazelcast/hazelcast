@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 
 public class InSelector extends SelectorBase {
 
-    protected static Logger logger = Logger.getLogger(InSelector.class.getName());
+    protected static final Logger logger = Logger.getLogger(InSelector.class.getName());
 
     private static final InSelector instance = new InSelector();
 

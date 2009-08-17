@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 
 public class OutSelector extends SelectorBase {
 
-    protected static Logger logger = Logger.getLogger(OutSelector.class.getName());
+    protected static final Logger logger = Logger.getLogger(OutSelector.class.getName());
 
     private static final OutSelector instance = new OutSelector();
 
@@ -48,14 +48,13 @@ public class OutSelector extends SelectorBase {
     }
 
     private class Connector implements Runnable, SelectionHandler {
-        Address address;
+        final Address address;
 
         SocketChannel socketChannel = null;
 
         int numberOfConnectionError = 0;
 
-        public Connector(final Address address) {
-            super();
+        public Connector(Address address) {
             this.address = address;
         }
 

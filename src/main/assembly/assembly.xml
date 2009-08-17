@@ -46,15 +46,16 @@
                 <include>*.bat</include>
                 <include>*.sh</include>
                 <include>hazelcast.xml</include>
-                <include>keystore</include>
+                <include>keystore</include> 
             </includes>
-        </fileSet>
+        </fileSet>              
         <fileSet>
             <directory>src/main/resources/</directory>
             <outputDirectory>/</outputDirectory>
             <includes>
                 <include>hazelcast.xml</include>
                 <include>keystore</include>
+                <include>license.txt</include> 
             </includes>
         </fileSet>
     </fileSets>
