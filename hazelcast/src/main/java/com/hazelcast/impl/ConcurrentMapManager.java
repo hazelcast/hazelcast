@@ -1993,7 +1993,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 record = createNewRecord(req.key, req.value);
                 req.key = null;
             } else {
-                record.markActive();
+                markAsActive(record);
                 if (!record.isValid()) {
                     record.setExpirationTime(ttl);
                 }
@@ -2014,18 +2014,8 @@ public final class ConcurrentMapManager extends BaseManager {
             if (req.txnId != -1) {
                 record.unlock();
             }
-            markRecordDirty(record);
+            markAsDirty(record);
             return oldValue;
-        }
-
-        void markRecordDirty(Record record) {
-            if (!record.dirty) {
-                record.dirty = true;
-                if (writeDelaySeconds > 0) {
-                    record.writeTime = System.currentTimeMillis() + (writeDelaySeconds * 1000L);
-                    setDirtyRecords.add(record);
-                }
-            }
         }
 
         void startAsyncStoreWrite() {
@@ -2087,29 +2077,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     }
                 });
             }
-
         }
-
-        void reset() {
-            mapRecords.clear();
-            ownedEntryCount = 0;
-            evicting = false;
-            if (setDirtyRecords != null) {
-                setDirtyRecords.clear();
-            }
-            setRemovedRecords.clear();
-        }
-
-        void scheduleForEviction(Record record) {
-            SortedHashMap.moveToTop(mapRecords, record.key);
-        }
-
-        void touch(Record record) {
-            record.lastTouchTime = System.currentTimeMillis();
-            if (evictionPolicy == OrderingType.NONE) return;
-            SortedHashMap.touch(mapRecords, record.key, evictionPolicy);
-        }
-
 
         void startRemove() {
             long now = System.currentTimeMillis();
@@ -2124,7 +2092,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
             }
         }
-
 
         void startEviction() {
             if (evicting) return;
@@ -2335,6 +2302,43 @@ public final class ConcurrentMapManager extends BaseManager {
                 req.key = null;
             }
             return oldValue;
+        }
+
+        void reset() {
+            mapRecords.clear();
+            ownedEntryCount = 0;
+            evicting = false;
+            if (setDirtyRecords != null) {
+                setDirtyRecords.clear();
+            }
+            setRemovedRecords.clear();
+        }
+
+        void scheduleForEviction(Record record) {
+            SortedHashMap.moveToTop(mapRecords, record.key);
+        }
+
+        void touch(Record record) {
+            record.lastTouchTime = System.currentTimeMillis();
+            if (evictionPolicy == OrderingType.NONE) return;
+            SortedHashMap.touch(mapRecords, record.key, evictionPolicy);
+        }
+
+        void markAsDirty(Record record) {
+            if (!record.dirty) {
+                record.dirty = true;
+                if (writeDelaySeconds > 0) {
+                    record.writeTime = System.currentTimeMillis() + (writeDelaySeconds * 1000L);
+                    setDirtyRecords.add(record);
+                }
+            }
+        }
+
+        void markAsActive(Record record) {
+            if (!record.active) {
+                record.setActive();
+                setRemovedRecords.remove (record);
+            }
         }
 
         void markAsRemoved(Record record) {
@@ -2758,7 +2762,7 @@ public final class ConcurrentMapManager extends BaseManager {
             removeTime = System.currentTimeMillis();
         }
 
-        public void markActive() {
+        public void setActive() {
             active = true;
         }
 
