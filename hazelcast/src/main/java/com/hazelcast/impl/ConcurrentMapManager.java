@@ -54,7 +54,7 @@ public final class ConcurrentMapManager extends BaseManager {
     private final Block[] blocks;
     private final Map<String, CMap> maps;
     private final LoadStoreFork[] loadStoreForks;
-    private static long REMOVE_DELAY_MILLIS = ConfigProperty.REMOVE_DELAY_SECONDS.getLong() * 1000L;
+    private static long GLOBAL_REMOVE_DELAY_MILLIS = ConfigProperty.REMOVE_DELAY_SECONDS.getLong() * 1000L;
 
     private ConcurrentMapManager() {
         blocks = new Block[BLOCK_COUNT];
@@ -1596,6 +1596,8 @@ public final class ConcurrentMapManager extends BaseManager {
 
         private Set<Record> setDirtyRecords = null;
 
+        private final long removeDelayMillis;
+
         public CMap(String name) {
             super();
             this.name = name;
@@ -1637,6 +1639,11 @@ public final class ConcurrentMapManager extends BaseManager {
                         e.printStackTrace();
                     }
                 }
+            }
+            if (writeDelaySeconds > 0) {
+                removeDelayMillis = GLOBAL_REMOVE_DELAY_MILLIS + (writeDelaySeconds * 1000L);
+            } else {
+                removeDelayMillis = GLOBAL_REMOVE_DELAY_MILLIS;
             }
         }
 
@@ -2094,7 +2101,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 Record record = itRemovedRecords.next();
                 if (record.active) {
                     itRemovedRecords.remove();
-                } else if (record.shouldRemove(now)) {
+                } else if (shouldRemove(record, now)) {
                     itRemovedRecords.remove();
                     removeAndPurgeRecord(record);
                 }
@@ -2347,6 +2354,10 @@ public final class ConcurrentMapManager extends BaseManager {
                 record.setActive();
                 setRemovedRecords.remove(record);
             }
+        }
+
+        boolean shouldRemove(Record record, long now) {
+            return !record.active && ((now - record.removeTime) > removeDelayMillis);
         }
 
         void markAsRemoved(Record record) {
@@ -2773,19 +2784,12 @@ public final class ConcurrentMapManager extends BaseManager {
             active = true;
         }
 
-        public boolean shouldRemove(long now) {
-            return !active && ((now - removeTime) > REMOVE_DELAY_MILLIS);
-        }
-
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-
             Record record = (Record) o;
-
             return !(key != null ? !key.equals(record.key) : record.key != null);
-
         }
 
         @Override
