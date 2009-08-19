@@ -164,7 +164,7 @@ public class DataMBean extends AbstractMBean<Member> {
 	@JMXAttribute("InstanceCount")
 	@JMXDescription("Total data structures registered")
     public int getInstanceCount() {
-    	Collection<Instance> instances = FactoryImpl.getInstances();
+    	Collection<Instance> instances = FactoryImpl.getFactory("default").getInstances();
     	
     	return instances.size();
     }

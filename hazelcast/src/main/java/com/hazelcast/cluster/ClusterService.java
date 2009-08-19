@@ -32,9 +32,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public final class ClusterService implements Runnable, Constants {
-    protected final static Logger logger = Logger.getLogger(ClusterService.class.getName());
-
-    private static final ClusterService instance = new ClusterService();
+    protected final Logger logger = Logger.getLogger(ClusterService.class.getName());
 
     private static final long PERIODIC_CHECK_INTERVAL_NANOS = TimeUnit.SECONDS.toNanos(1);
 
@@ -57,12 +55,11 @@ public final class ClusterService implements Runnable, Constants {
     private final BaseManager.PacketProcessor[] packetProcessors = new BaseManager.PacketProcessor[300];
 
     private final Runnable[] periodicRunnables = new Runnable[3];
+    
+    private final Node node;
 
-    private ClusterService() {
-    }
-
-    public static ClusterService get() {
-        return instance;
+    public ClusterService(Node node) {
+        this.node = node;
     }
 
     public void registerPeriodicRunnable(Runnable runnable) {
@@ -96,7 +93,7 @@ public final class ClusterService implements Runnable, Constants {
         try {
             queue.put(message);
         } catch (final InterruptedException e) {
-            Node.get().handleInterruptedException(Thread.currentThread(), e);
+            node.handleInterruptedException(Thread.currentThread(), e);
         }
     }
 
@@ -105,7 +102,7 @@ public final class ClusterService implements Runnable, Constants {
         final long processStart = System.nanoTime();
         if (obj instanceof Packet) {
             final Packet packet = (Packet) obj;
-            final MemberImpl memberFrom = ClusterManager.get().getMember(packet.conn.getEndPoint());
+            final MemberImpl memberFrom = node.clusterManager.getMember(packet.conn.getEndPoint());
             if (memberFrom != null) {
                 memberFrom.didRead();
             }
@@ -149,7 +146,7 @@ public final class ClusterService implements Runnable, Constants {
                     }
                 }
             } catch (final InterruptedException e) {
-                Node.get().handleInterruptedException(Thread.currentThread(), e);
+                node.handleInterruptedException(Thread.currentThread(), e);
             } catch (final Throwable e) {
                 logger.log(Level.FINEST, e + ",  message: " + e + ", obj=" + obj, e);
                 e.printStackTrace();
@@ -174,8 +171,8 @@ public final class ClusterService implements Runnable, Constants {
 
     @Override
     public String toString() {
-        return "ClusterService queueSize=" + queue.size() + " master= " + Node.get().master()
-                + " master= " + Node.get().getMasterAddress();
+        return "ClusterService queueSize=" + queue.size() + " master= " + node.master()
+                + " master= " + node.getMasterAddress();
     }
 
     private void checkPeriodics() {

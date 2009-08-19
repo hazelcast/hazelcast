@@ -21,7 +21,7 @@ public class Bind extends Master {
     }
 
     public void process() {
-        ConnectionManager.get().bind(address, getConnection(), true);
+        node.connectionManager.bind(address, getConnection(), true);
     }
     
 }

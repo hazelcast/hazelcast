@@ -71,7 +71,7 @@ public class EntryEvent extends EventObject {
 
     @Override
     public Object getSource() {
-        return FactoryImpl.getProxyByName(name);
+        return name;
     }
 
     public Object getKey() {

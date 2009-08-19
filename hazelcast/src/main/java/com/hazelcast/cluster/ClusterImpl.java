@@ -39,13 +39,15 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class ClusterImpl implements Cluster {
 
-    AtomicReference<Set<MembershipListener>> listeners = new AtomicReference<Set<MembershipListener>>();
-    AtomicReference<Set<Member>> members = new AtomicReference<Set<Member>>();
-    AtomicReference<Member> localMember = new AtomicReference<Member>();
-    Map<Member, Member> clusterMembers = new ConcurrentHashMap<Member, Member>();
+    final AtomicReference<Set<MembershipListener>> listeners = new AtomicReference<Set<MembershipListener>>();
+    final AtomicReference<Set<Member>> members = new AtomicReference<Set<Member>>();
+    final AtomicReference<Member> localMember = new AtomicReference<Member>();
+    final Map<Member, Member> clusterMembers = new ConcurrentHashMap<Member, Member>();
     long clusterTimeDiff = 0;
+    final Node node;
 
-    public ClusterImpl() {
+    public ClusterImpl(Node node) {
+        this.node = node;
     }
 
     public void setMembers(List<MemberImpl> lsMembers) {
@@ -57,7 +59,7 @@ public class ClusterImpl implements Cluster {
             if (clusterMember == null) {
                 clusterMember = dummy; 
                 if (listenerSet != null && listenerSet.size() > 0) {
-                    ExecutorManager.get().executeLocaly(new Runnable() {
+                    node.executorManager.executeLocaly(new Runnable() {
                         public void run() {
                             MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
                                     dummy, MembershipEvent.MEMBER_ADDED);
@@ -77,7 +79,7 @@ public class ClusterImpl implements Cluster {
             Set<Member> it = clusterMembers.keySet();
             for (final Member cm : it) {
                 if (!setNew.contains(cm)) {
-                    ExecutorManager.get().executeLocaly(new Runnable() {
+                    node.executorManager.executeLocaly(new Runnable() {
                         public void run() {
                             MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
                                     cm, MembershipEvent.MEMBER_REMOVED);
@@ -150,7 +152,7 @@ public class ClusterImpl implements Cluster {
         return sb.toString();
     }
 
-    public static class ClusterMember extends MemberImpl implements Member, DataSerializable {
+    public class ClusterMember extends MemberImpl implements Member, DataSerializable {
 
 
         public ClusterMember() {
@@ -163,7 +165,7 @@ public class ClusterImpl implements Cluster {
         public void readData(DataInput in) throws IOException {
             address = new Address();
             address.readData(in);
-            localMember = Node.get().getThisAddress().equals(address);
+            localMember = node.getThisAddress().equals(address);
             nodeType = Node.Type.create(in.readInt());
         }
 

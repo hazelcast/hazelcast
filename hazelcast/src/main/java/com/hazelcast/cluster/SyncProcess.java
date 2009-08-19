@@ -38,10 +38,10 @@ public class SyncProcess extends AbstractRemotelyCallable<Boolean> implements
     }
 
     public void process() {
-        ConcurrentMapManager.get().syncForAdd();
-        BlockingQueueManager.get().syncForAdd();
-        ListenerManager.get().syncForAdd();
-        TopicManager.get().syncForAdd();
-        ClusterManager.get().joinReset();
+        getNode().concurrentMapManager.syncForAdd();
+        getNode().blockingQueueManager.syncForAdd();
+        getNode().listenerManager.syncForAdd();
+        getNode().topicManager.syncForAdd();
+        getNode().clusterManager.joinReset();
     }
 }

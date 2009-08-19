@@ -18,7 +18,6 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.ClusterImpl;
-import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.RemotelyProcessable;
 import com.hazelcast.core.EntryEvent;
@@ -35,7 +34,10 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -44,40 +46,39 @@ public abstract class BaseManager {
 
     protected final static boolean zeroBackup = false;
 
-    private final static int EVENT_QUEUE_COUNT = 100;
+    public static final int EVENT_QUEUE_COUNT = 100;
 
-    protected static final Logger logger = Logger.getLogger(BaseManager.class.getName());
+    protected final Logger logger = Logger.getLogger(BaseManager.class.getName());
 
-    protected final static LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
+    protected final LinkedList<MemberImpl> lsMembers;
 
-    protected final static Map<Address, MemberImpl> mapMembers = new HashMap<Address, MemberImpl>(
-            100);
+    protected final Map<Address, MemberImpl> mapMembers;
 
-    protected final static boolean DEBUG = false;
+    protected final Map<Long, Call> mapCalls;
 
-    protected final static Map<Long, Call> mapCalls = new HashMap<Long, Call>();
+    protected final EventQueue[] eventQueues;
 
-    protected final static EventQueue[] eventQueues = new EventQueue[EVENT_QUEUE_COUNT];
-
-    protected final static Map<Long, StreamResponseHandler> mapStreams = new ConcurrentHashMap<Long, StreamResponseHandler>();
+    protected final Map<Long, StreamResponseHandler> mapStreams;
 
     private static long scheduledActionIdIndex = 0;
 
     private static long callIdGen = 0;
 
-    protected volatile Address thisAddress;
+    protected final Address thisAddress;
 
-    protected volatile MemberImpl thisMember;
+    protected final MemberImpl thisMember;
 
-    static {
-        for (int i = 0; i < EVENT_QUEUE_COUNT; i++) {
-            eventQueues[i] = new EventQueue();
-        }
-    }
+    protected final Node node;
 
-    protected void init() {
-        thisAddress = Node.get().address;
-        thisMember = Node.get().localMember;
+    protected BaseManager(Node node) {
+        this.node = node;
+        lsMembers = node.baseVariables.lsMembers;
+        mapMembers = node.baseVariables.mapMembers;
+        mapCalls = node.baseVariables.mapCalls;
+        eventQueues = node.baseVariables.eventQueues;
+        mapStreams = node.baseVariables.mapStreams;
+        thisAddress = node.baseVariables.thisAddress;
+        thisMember = node.baseVariables.thisMember;
     }
 
     public LinkedList<MemberImpl> getMembers() {
@@ -211,7 +212,7 @@ public abstract class BaseManager {
 
     }
 
-    public static Map.Entry createSimpleEntry(final String name, final Object key, final Object value) {
+    public static Map.Entry createSimpleEntry(final FactoryImpl factory, final String name, final Object key, final Object value) {
         return new Map.Entry() {
             public Object getKey() {
                 return key;
@@ -222,7 +223,7 @@ public abstract class BaseManager {
             }
 
             public Object setValue(Object newValue) {
-                return ((FactoryImpl.MProxy) FactoryImpl.getProxyByName(name)).put(key, newValue);
+                return ((FactoryImpl.MProxy) factory.getProxyByName(name)).put(key, newValue);
             }
 
             @Override
@@ -265,6 +266,7 @@ public abstract class BaseManager {
         Object objKey = null;
         Object objValue = null;
         String name = null;
+        String factoryName = null;
 
         public KeyValue() {
         }
@@ -307,7 +309,8 @@ public abstract class BaseManager {
                 if (value != null) {
                     objValue = toObject(value);
                 } else {
-                    objValue = ((FactoryImpl.IGetAwareProxy) FactoryImpl.getProxyByName(name)).get((key == null) ? getKey() : key);
+                    FactoryImpl factory = FactoryImpl.getFactory(factoryName);
+                    objValue = ((FactoryImpl.IGetAwareProxy) factory.getProxyByName(name)).get((key == null) ? getKey() : key);
                 }
             }
             return objValue;
@@ -316,10 +319,12 @@ public abstract class BaseManager {
         public Object setValue(Object newValue) {
             if (name == null) throw new UnsupportedOperationException();
             this.objValue = value;
-            return ((FactoryImpl.MProxy) FactoryImpl.getProxyByName(name)).put(getKey(), newValue);
+            FactoryImpl factory = FactoryImpl.getFactory(factoryName);
+            return ((FactoryImpl.MProxy) factory.getProxyByName(name)).put(getKey(), newValue);
         }
 
-        public void setName(String name) {
+        public void setName(String factoryName, String name) {
+            this.factoryName = factoryName;
             this.name = name;
         }
 
@@ -852,7 +857,7 @@ public abstract class BaseManager {
                     return call();
                 }
                 if (onResponse(result)) {
-                    Set<Member> members = Node.get().getClusterImpl().getMembers();
+                    Set<Member> members = node.getClusterImpl().getMembers();
                     List<TargetAwareOp> lsCalls = new ArrayList<TargetAwareOp>();
                     for (Member member : members) {
                         if (!member.localMember()) { // now other members
@@ -944,11 +949,11 @@ public abstract class BaseManager {
     }
 
     public void enqueueAndReturn(final Object obj) {
-        ClusterService.get().enqueueAndReturn(obj);
+       node.clusterService.enqueueAndReturn(obj);
     }
 
     public Address getKeyOwner(final Data key) {
-        return ConcurrentMapManager.get().getKeyOwner(key);
+        return node.concurrentMapManager.getKeyOwner(key);
     }
 
     public Packet obtainPacket(final String name, final Object key,
@@ -964,11 +969,11 @@ public abstract class BaseManager {
     }
 
     public void registerPacketProcessor(ClusterOperation operation, PacketProcessor packetProcessor) {
-        ClusterService.get().registerPacketProcessor(operation, packetProcessor);
+        node.clusterService.registerPacketProcessor(operation, packetProcessor);
     }
 
     public PacketProcessor getPacketProcessor(ClusterOperation operation) {
-        return ClusterService.get().getPacketProcessor(operation);
+        return node.clusterService.getPacketProcessor(operation);
     }
 
     public void returnScheduledAsBoolean(final Request request) {
@@ -980,9 +985,7 @@ public abstract class BaseManager {
             request.setPacket(packet);
             if (request.response == Boolean.TRUE) {
                 final boolean sent = sendResponse(packet, request.caller);
-                if (DEBUG) {
-                    log(request.local + " returning scheduled response " + sent);
-                }
+                log(request.local + " returning scheduled response " + sent);
             } else {
                 sendResponseFailure(packet, request.caller);
             }
@@ -1067,11 +1070,11 @@ public abstract class BaseManager {
     }
 
     public final void executeLocally(final Runnable runnable) {
-        ExecutorManager.get().executeLocaly(runnable);
+        node.executorManager.executeLocaly(runnable);
     }
 
     protected Address getMasterAddress() {
-        return Node.get().getMasterAddress();
+        return node.getMasterAddress();
     }
 
     protected final MemberImpl getNextMemberAfter(final Address address,
@@ -1108,7 +1111,7 @@ public abstract class BaseManager {
 
     protected final MemberImpl getNextMemberBeforeSync(final Address address,
                                                        final boolean skipSuperClient, final int distance) {
-        return getNextMemberAfter(ClusterManager.get().getMembersBeforeSync(), address,
+        return getNextMemberAfter(node.clusterManager.getMembersBeforeSync(), address,
                 skipSuperClient, distance);
     }
 
@@ -1145,16 +1148,15 @@ public abstract class BaseManager {
     }
 
     protected final boolean isMaster() {
-        return Node.get().master();
+        return node.master();
     }
 
     protected final boolean isSuperClient() {
-        return Node.get().isSuperClient();
+        return node.isSuperClient();
     }
 
     protected void log(final Object obj) {
-        if (DEBUG)
-            logger.log(Level.FINEST, obj.toString());
+        logger.log(Level.FINEST, obj.toString());
     }
 
     protected Packet obtainPacket() {
@@ -1190,7 +1192,7 @@ public abstract class BaseManager {
     }
 
     protected boolean sendResponse(final Packet packet, final Address address) {
-        packet.conn = ConnectionManager.get().getConnection(address);
+        packet.conn = node.connectionManager.getConnection(address);
         return sendResponse(packet);
     }
 
@@ -1206,7 +1208,7 @@ public abstract class BaseManager {
     }
 
     protected boolean sendResponseFailure(final Packet packet, final Address address) {
-        packet.conn = ConnectionManager.get().getConnection(address);
+        packet.conn = node.connectionManager.getConnection(address);
         return sendResponseFailure(packet);
     }
 
@@ -1230,7 +1232,7 @@ public abstract class BaseManager {
         if (size == 1) executeLocally(eventQueue);
     }
 
-    static class EventQueue extends ConcurrentLinkedQueue<Runnable> implements Runnable {
+    public static class EventQueue extends ConcurrentLinkedQueue<Runnable> implements Runnable {
         private AtomicInteger size = new AtomicInteger();
 
         public int offerRunnable(Runnable runnable) {
@@ -1252,7 +1254,7 @@ public abstract class BaseManager {
     }
 
 
-    static class EventTask extends EntryEvent implements Runnable {
+    class EventTask extends EntryEvent implements Runnable {
         protected final Data dataKey;
 
         protected final Data dataValue;
@@ -1274,7 +1276,7 @@ public abstract class BaseManager {
                 } else if (collection) {
                     value = key;
                 }
-                ListenerManager.get().callListeners(this);
+                node.listenerManager.callListeners(this);
             } catch (final Exception e) {
                 e.printStackTrace();
             }
@@ -1322,19 +1324,19 @@ public abstract class BaseManager {
     }
 
     MemberImpl getMember(final Address address) {
-        return ClusterManager.get().getMember(address);
+        return node.clusterManager.getMember(address);
     }
 
 
     void handleListenerRegisterations(final boolean add, final String name, final Data key,
                                       final Address address, final boolean includeValue) {
         if (name.startsWith("q:")) {
-            BlockingQueueManager.get().handleListenerRegisterations(add, name, key, address,
+            node.blockingQueueManager.handleListenerRegisterations(add, name, key, address,
                     includeValue);
         } else if (name.startsWith("t:")) {
-            TopicManager.get().handleListenerRegisterations(add, name, key, address, includeValue);
+            node.topicManager.handleListenerRegisterations(add, name, key, address, includeValue);
         } else {
-            ConcurrentMapManager.get().handleListenerRegisterations(add, name, key, address,
+            node.concurrentMapManager.handleListenerRegisterations(add, name, key, address,
                     includeValue);
         }
     }
@@ -1351,7 +1353,7 @@ public abstract class BaseManager {
 
     final boolean send(final Packet packet, final Address address) {
         if (address == null) return false;
-        final Connection conn = ConnectionManager.get().getConnection(address);
+        final Connection conn = node.connectionManager.getConnection(address);
         return conn != null && conn.live() && writePacket(conn, packet);
     }
 

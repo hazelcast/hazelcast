@@ -100,7 +100,6 @@ public class ExecutorServiceTest {
         // Shutting down the cluster should act as the ExecutorService shutdown
         Hazelcast.shutdown();
         assertNotNull(executor);
-        assertNotNull(ExecutorManager.get());
         assertTrue(executor.isShutdown());
         assertTrue(executor.isTerminated());
         

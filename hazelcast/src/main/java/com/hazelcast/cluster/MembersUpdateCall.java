@@ -28,7 +28,7 @@ public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
     }
 
     public Boolean call() {
-        ClusterManager.get().updateMembers(lsMemberInfos);
+        node.clusterManager.updateMembers(lsMemberInfos);
         return Boolean.TRUE;
     }
 

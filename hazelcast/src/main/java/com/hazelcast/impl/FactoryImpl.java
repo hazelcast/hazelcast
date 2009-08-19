@@ -18,7 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.ClusterImpl;
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.BaseManager.Processable;
 import com.hazelcast.impl.BlockingQueueManager.Offer;
@@ -44,173 +44,189 @@ import java.util.logging.Logger;
 
 public class FactoryImpl {
 
-    private static Logger logger = Logger.getLogger(FactoryImpl.class.getName());
+    private final Logger logger = Logger.getLogger(FactoryImpl.class.getName());
 
-    private static ConcurrentMap<String, Instance> proxiesByName = new ConcurrentHashMap<String, Instance>(1000);
+    private final ConcurrentMap<String, Instance> proxiesByName = new ConcurrentHashMap<String, Instance>(1000);
 
-    private static ConcurrentMap<ProxyKey, Instance> proxies = new ConcurrentHashMap<ProxyKey, Instance>(1000);
+    private final ConcurrentMap<ProxyKey, Instance> proxies = new ConcurrentHashMap<ProxyKey, Instance>(1000);
 
-    private static MProxy locksMapProxy = new MProxyImpl("c:__hz_Locks");
+    private final MProxy locksMapProxy;
 
-    private static MProxy idGeneratorMapProxy = new MProxyImpl("c:__hz_IdGenerator");
+    private final MProxy idGeneratorMapProxy;
 
-    private static MProxy globalProxies = new MProxyImpl("c:__hz_Proxies");
+    private final MProxy globalProxies;
 
-    static final ExecutorServiceProxy executorServiceImpl = new ExecutorServiceProxy();
+    private final ExecutorServiceProxy executorServiceImpl;
 
-    private static Node node = null;
+    final Node node;
 
-    static volatile boolean inited = false;
+    volatile boolean inited = false;
 
-    static int startCount = 0;
+    int startCount = 0;
 
-    private static CopyOnWriteArrayList<InstanceListener> lsInstanceListeners = new CopyOnWriteArrayList<InstanceListener>();
+    private CopyOnWriteArrayList<InstanceListener> lsInstanceListeners = new CopyOnWriteArrayList<InstanceListener>();
 
-    private static void init() {
-        if (!inited) {
-            synchronized (Node.class) {
-                if (startCount > 0) {
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException ignored) {
-                    }
+    private final static ConcurrentMap<String, FactoryImpl> factories = new ConcurrentHashMap<String, FactoryImpl>(5);
+
+    private final String name;
+
+    private final TransactionFactory transactionFactory;
+
+    public static FactoryImpl getFactory(String name) {
+        FactoryImpl factory = factories.get(name);
+        if (factory == null) {
+            synchronized (FactoryImpl.class) {
+                factory = factories.get(name);
+                if (factory == null) {
+                    factory = new FactoryImpl(name, Config.get());
+                    factories.put(name, factory);
                 }
-                if (!inited) {
-                    node = Node.get();
-                    node.start();
-                    inited = true;
-                    startCount++;
-                    ManagementService.register(node.getClusterImpl());
-                    try {
-                        globalProxies.addEntryListener(new EntryListener() {
-                            public void entryAdded(EntryEvent event) {
-                                final ProxyKey proxyKey = (ProxyKey) event.getKey();
-                                if (!proxies.containsKey(proxyKey)) {
-                                    logger.log(Level.FINEST, "Instance created " + proxyKey);
-                                    ClusterService.get().enqueueAndReturn(new Processable() {
-                                        public void process() {
-                                            createProxy(proxyKey);
-                                        }
-                                    });
-                                }
-                            }
+            }
+        }
+        return factory;
+    }
 
-                            public void entryRemoved(EntryEvent event) {
-                                final ProxyKey proxyKey = (ProxyKey) event.getKey();
-                                if (proxies.containsKey(proxyKey)) {
-                                    logger.log(Level.FINEST, "Instance removed " + proxyKey);
-                                    ClusterService.get().enqueueAndReturn(new Processable() {
-                                        public void process() {
-                                            destroyProxy(proxyKey);
-                                        }
-                                    });
-                                }
-                            }
-
-                            public void entryUpdated(EntryEvent event) {
-                                logger.log(Level.FINEST, "Instance updated " + event.getKey());
-                            }
-
-                            public void entryEvicted(EntryEvent event) {
-                                // should not happen!
-                                logger.log(Level.FINEST, "Instance evicted " + event.getKey());
-                            }
-                        }, false);
-                        if (node.getClusterImpl().getMembers().size() > 1) {
-                            Set<ProxyKey> proxyKeys = globalProxies.allKeys();
-                            for (final ProxyKey proxyKey : proxyKeys) {
-                                if (!proxies.containsKey(proxyKey)) {
-                                    ClusterService.get().enqueueAndReturn(new Processable() {
-                                        public void process() {
-                                            createProxy(proxyKey);
-                                        }
-                                    });
-                                }
-                            }
+    public FactoryImpl(String name, Config config) {
+        this.name = name;
+        node = new Node(this, config);
+        executorServiceImpl = new ExecutorServiceProxy(node);
+        transactionFactory = new TransactionFactory(this);
+        node.start();
+        locksMapProxy = new MProxyImpl("c:__hz_Locks", this);
+        idGeneratorMapProxy = new MProxyImpl("c:__hz_IdGenerator", this);
+        globalProxies = new MProxyImpl("c:__hz_Proxies", this);
+        inited = true;
+        startCount++;
+        ManagementService.register(node.getClusterImpl());
+        globalProxies.addEntryListener(new EntryListener() {
+            public void entryAdded(EntryEvent event) {
+                final ProxyKey proxyKey = (ProxyKey) event.getKey();
+                if (!proxies.containsKey(proxyKey)) {
+                    logger.log(Level.FINEST, "Instance created " + proxyKey);
+                    node.clusterService.enqueueAndReturn(new Processable() {
+                        public void process() {
+                            createProxy(proxyKey);
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    });
+                }
+            }
+
+            public void entryRemoved(EntryEvent event) {
+                final ProxyKey proxyKey = (ProxyKey) event.getKey();
+                if (proxies.containsKey(proxyKey)) {
+                    logger.log(Level.FINEST, "Instance removed " + proxyKey);
+                    node.clusterService.enqueueAndReturn(new Processable() {
+                        public void process() {
+                            destroyProxy(proxyKey);
+                        }
+                    });
+                }
+            }
+
+            public void entryUpdated(EntryEvent event) {
+                logger.log(Level.FINEST, "Instance updated " + event.getKey());
+            }
+
+            public void entryEvicted(EntryEvent event) {
+                // should not happen!
+                logger.log(Level.FINEST, "Instance evicted " + event.getKey());
+            }
+        }, false);
+        if (node.getClusterImpl().getMembers().size() > 1) {
+            Set<ProxyKey> proxyKeys = globalProxies.allKeys();
+            for (final ProxyKey proxyKey : proxyKeys) {
+                if (!proxies.containsKey(proxyKey)) {
+                    node.clusterService.enqueueAndReturn(new Processable() {
+                        public void process() {
+                            createProxy(proxyKey);
+                        }
+                    });
                 }
             }
         }
     }
 
-    public static void shutdown() {
-        ManagementService.shutdown();
-        Node.get().shutdown();
+    public String getName() {
+        return name;
     }
 
-    public static Collection<Instance> getInstances() {
+    public void shutdown() {
+        ManagementService.shutdown();
+        node.shutdown();
+    }
+
+    public Collection<Instance> getInstances() {
         final int totalSize = proxies.size();
         List<Instance> lsProxies = new ArrayList<Instance>(totalSize);
         lsProxies.addAll(proxies.values());
         return lsProxies;
     }
 
-    static Collection<Instance> getProxies() {
+    public Collection<Instance> getProxies() {
         initialChecks();
         return proxies.values();
     }
 
-    public static ExecutorService getExecutorService() {
+    public ExecutorService getExecutorService() {
         initialChecks();
         return executorServiceImpl;
     }
 
-    public static ClusterImpl getCluster() {
+    public ClusterImpl getCluster() {
         initialChecks();
         return node.getClusterImpl();
     }
 
-    public static IdGenerator getIdGenerator(String name) {
+    public IdGenerator getIdGenerator(String name) {
         return (IdGenerator) getProxyByName("i:" + name);
     }
 
-    public static Transaction getTransaction() {
+    public Transaction getTransaction() {
         initialChecks();
         ThreadContext threadContext = ThreadContext.get();
-        Transaction txn = threadContext.txn;
-        if (txn == null)
-            txn = threadContext.getTransaction();
+        TransactionImpl txn = threadContext.txn;
+        if (txn == null) {
+            txn = transactionFactory.newTransaction();
+            threadContext.setTransaction(txn);
+        }
         return txn;
     }
 
-    public static <K, V> IMap<K, V> getMap(String name) {
+    public <K, V> IMap<K, V> getMap(String name) {
         name = "c:" + name;
         return (IMap<K, V>) getProxyByName(name);
     }
 
-    public static <E> IQueue<E> getQueue(String name) {
+    public <E> IQueue<E> getQueue(String name) {
         name = "q:" + name;
         return (IQueue) getProxyByName(name);
     }
 
-    public static <E> ITopic<E> getTopic(String name) {
+    public <E> ITopic<E> getTopic(String name) {
         name = "t:" + name;
         return (ITopic) getProxyByName(name);
     }
 
-    public static <E> ISet<E> getSet(String name) {
+    public <E> ISet<E> getSet(String name) {
         name = "m:s:" + name;
         return (ISet) getProxyByName(name);
     }
 
-    public static <E> IList<E> getList(String name) {
+    public <E> IList<E> getList(String name) {
         name = "m:l:" + name;
         return (IList) getProxyByName(name);
     }
 
-    public static <K, V> MultiMap<K, V> getMultiMap(String name) {
+    public <K, V> MultiMap<K, V> getMultiMap(String name) {
         name = "m:u:" + name;
         return (MultiMap<K, V>) getProxyByName(name);
     }
 
-    public static ILock getLock(Object key) {
+    public ILock getLock(Object key) {
         return (ILock) getProxy(new ProxyKey("lock", key));
     }
 
-    public static Object getProxyByName(final String name) {
+    public Object getProxyByName(final String name) {
         Object proxy = proxiesByName.get(name);
         if (proxy == null) {
             proxy = getProxy(new ProxyKey(name, null));
@@ -218,7 +234,7 @@ public class FactoryImpl {
         return proxy;
     }
 
-    public static Object getProxy(final ProxyKey proxyKey) {
+    public Object getProxy(final ProxyKey proxyKey) {
         initialChecks();
         Object proxy = proxies.get(proxyKey);
         if (proxy == null) {
@@ -228,52 +244,50 @@ public class FactoryImpl {
     }
 
     public static void initialChecks() {
-       if (!inited) {
-            init();
-       }
+
     }
 
-    public static void destroyProxy(final ProxyKey proxyKey) {
+    public void destroyProxy(final ProxyKey proxyKey) {
         proxiesByName.remove(proxyKey.name);
         Instance proxy = proxies.remove(proxyKey);
         if (proxy != null) {
             String name = proxyKey.name;
             if (name.startsWith("q:")) {
-                BlockingQueueManager.get().destroy(name);
+                node.blockingQueueManager.destroy(name);
             } else if (name.startsWith("c:")) {
-                ConcurrentMapManager.get().destroy(name);
+                node.concurrentMapManager.destroy(name);
             } else if (name.startsWith("m:")) {
-                ConcurrentMapManager.get().destroy(name);
+                node.concurrentMapManager.destroy(name);
             } else if (name.startsWith("t:")) {
-                TopicManager.get().destroy(name);
+                node.topicManager.destroy(name);
             }
             fireInstanceDestroyEvent(proxy);
         }
     }
 
     // should only be called from service thread!!
-    public static Object createProxy(ProxyKey proxyKey) {
+    public Object createProxy(ProxyKey proxyKey) {
         boolean created = false;
         Instance proxy = proxies.get(proxyKey);
         if (proxy == null) {
             created = true;
             String name = proxyKey.name;
             if (name.startsWith("q:")) {
-                proxy = new QProxyImpl(name);
+                proxy = new QProxyImpl(name, this);
             } else if (name.startsWith("t:")) {
-                proxy = new TopicProxyImpl(name);
+                proxy = new TopicProxyImpl(name, this);
             } else if (name.startsWith("c:")) {
-                proxy = new MProxyImpl(name);
+                proxy = new MProxyImpl(name, this);
             } else if (name.startsWith("m:")) {
                 if (BaseManager.getInstanceType(name) == Instance.InstanceType.MULTIMAP) {
-                    proxy = new MultiMapProxy(name);
+                    proxy = new MultiMapProxy(name, this);
                 } else {
-                    proxy = new CollectionProxyImpl(name);
+                    proxy = new CollectionProxyImpl(name, this);
                 }
             } else if (name.startsWith("i:")) {
-                proxy = new IdGeneratorProxy(name);
+                proxy = new IdGeneratorProxy(name, this);
             } else if (name.equals("lock")) {
-                proxy = new LockProxy(proxyKey.key);
+                proxy = new LockProxy(this, proxyKey.key);
             }
             proxies.put(proxyKey, proxy);
             if (proxyKey.key == null) {
@@ -286,19 +300,19 @@ public class FactoryImpl {
         return proxy;
     }
 
-    public static void addInstanceListener(InstanceListener instanceListener) {
+    public void addInstanceListener(InstanceListener instanceListener) {
         lsInstanceListeners.add(instanceListener);
     }
 
-    public static void removeInstanceListener(InstanceListener instanceListener) {
+    public void removeInstanceListener(InstanceListener instanceListener) {
         lsInstanceListeners.remove(instanceListener);
     }
 
-    static void fireInstanceCreateEvent(Instance instance) {
+    void fireInstanceCreateEvent(Instance instance) {
         if (lsInstanceListeners.size() > 0) {
             final InstanceEvent instanceEvent = new InstanceEvent(InstanceEvent.InstanceEventType.CREATED, instance);
             for (final InstanceListener instanceListener : lsInstanceListeners) {
-                ExecutorManager.get().executeLocaly(new Runnable() {
+                node.executorManager.executeLocaly(new Runnable() {
                     public void run() {
                         instanceListener.instanceCreated(instanceEvent);
                     }
@@ -307,11 +321,11 @@ public class FactoryImpl {
         }
     }
 
-    static void fireInstanceDestroyEvent(Instance instance) {
+    void fireInstanceDestroyEvent(Instance instance) {
         if (lsInstanceListeners.size() > 0) {
             final InstanceEvent instanceEvent = new InstanceEvent(InstanceEvent.InstanceEventType.DESTROYED, instance);
             for (final InstanceListener instanceListener : lsInstanceListeners) {
-                ExecutorManager.get().executeLocaly(new Runnable() {
+                node.executorManager.executeLocaly(new Runnable() {
                     public void run() {
                         instanceListener.instanceDestroyed(instanceEvent);
                     }
@@ -325,20 +339,22 @@ public class FactoryImpl {
 
         private Object key = null;
         private transient ILock base = null;
+        private transient FactoryImpl factory = null;
 
         public LockProxy() {
         }
 
-        public LockProxy(Object key) {
+        public LockProxy(FactoryImpl factory, Object key) {
             super();
             this.key = key;
             base = new LockProxyBase();
+            this.factory = factory;
         }
 
         private void ensure() {
             initialChecks();
             if (base == null) {
-                base = getLock(key);
+                base = factory.getLock(key);
             }
         }
 
@@ -364,6 +380,7 @@ public class FactoryImpl {
         }
 
         public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(factory.getName());
             Data data = doHardCopy(toData(key));
             data.writeData(out);
         }
@@ -425,7 +442,7 @@ public class FactoryImpl {
 
         private class LockProxyBase implements ILock {
             public void lock() {
-                locksMapProxy.lock(key);
+                factory.locksMapProxy.lock(key);
             }
 
             public void lockInterruptibly() throws InterruptedException {
@@ -436,19 +453,19 @@ public class FactoryImpl {
             }
 
             public boolean tryLock() {
-                return locksMapProxy.tryLock(key);
+                return factory.locksMapProxy.tryLock(key);
             }
 
             public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-                return locksMapProxy.tryLock(key, time, unit);
+                return factory.locksMapProxy.tryLock(key, time, unit);
             }
 
             public void unlock() {
-                locksMapProxy.unlock(key);
+                factory.locksMapProxy.unlock(key);
             }
 
             public void destroy() {
-                destroyInstanceClusterwide("lock", key);
+                factory.destroyInstanceClusterwide("lock", key);
             }
 
             public InstanceType getInstanceType() {
@@ -465,9 +482,9 @@ public class FactoryImpl {
         }
     }
 
-    static Object createInstanceClusterwide(final ProxyKey proxyKey) {
+    Object createInstanceClusterwide(final ProxyKey proxyKey) {
         final BlockingQueue result = new ArrayBlockingQueue(1);
-        ClusterService.get().enqueueAndReturn(new Processable() {
+        node.clusterService.enqueueAndReturn(new Processable() {
             public void process() {
                 try {
                     result.put(createProxy(proxyKey));
@@ -484,7 +501,7 @@ public class FactoryImpl {
         return proxy;
     }
 
-    static void destroyInstanceClusterwide(String name, Object key) {
+    void destroyInstanceClusterwide(String name, Object key) {
         final ProxyKey proxyKey = new ProxyKey(name, key);
         if (proxies.containsKey(proxyKey)) {
             if (name.equals("lock")) {
@@ -495,7 +512,7 @@ public class FactoryImpl {
             globalProxies.remove(proxyKey);
 
             final BlockingQueue result = new ArrayBlockingQueue(1);
-            ClusterService.get().enqueueAndReturn(new Processable() {
+            node.clusterService.enqueueAndReturn(new Processable() {
                 public void process() {
                     try {
                         destroyProxy(proxyKey);
@@ -558,23 +575,31 @@ public class FactoryImpl {
 
     }
 
-    public static class TopicProxyImpl implements TopicProxy, DataSerializable {
+    public static class TopicProxyImpl extends FactoryAwareNamedProxy implements TopicProxy, DataSerializable {
         private transient TopicProxy base = null;
-        private String name = null;
+        private TopicManager topicManager = null;
+        private ListenerManager listenerManager = null;
 
         public TopicProxyImpl() {
         }
 
-        public TopicProxyImpl(String name) {
+        public TopicProxyImpl(String name, FactoryImpl factory) {
             this.name = name;
             base = new TopicProxyReal();
+            setFactory(factory);
         }
 
         private void ensure() {
             initialChecks();
             if (base == null) {
-                base = (TopicProxy) getProxyByName(name);
+                base = (TopicProxy) factory.getProxyByName(name);
             }
+        }
+
+        public void setFactory(FactoryImpl factory) {
+            this.factory = factory;
+            topicManager = factory.node.topicManager;
+            listenerManager = factory.node.listenerManager;
         }
 
         public Object getId() {
@@ -603,14 +628,6 @@ public class FactoryImpl {
             return name != null ? name.hashCode() : 0;
         }
 
-        public void writeData(DataOutput out) throws IOException {
-            out.writeUTF(name);
-        }
-
-        public void readData(DataInput in) throws IOException {
-            name = in.readUTF();
-        }
-
         public void publish(Object msg) {
             ensure();
             base.publish(msg);
@@ -627,7 +644,7 @@ public class FactoryImpl {
         }
 
         public void destroy() {
-            Instance instance = proxies.remove(name);
+            Instance instance = factory.proxies.remove(name);
             if (instance != null) {
                 ensure();
                 base.destroy();
@@ -647,20 +664,20 @@ public class FactoryImpl {
         class TopicProxyReal implements TopicProxy {
 
             public void publish(Object msg) {
-                TopicManager.get().doPublish(name, msg);
+                topicManager.doPublish(name, msg);
             }
 
             public void addMessageListener(MessageListener listener) {
-                ListenerManager.get().addListener(name, listener, null, true,
+                listenerManager.addListener(name, listener, null, true,
                         ListenerManager.Type.Message);
             }
 
             public void removeMessageListener(MessageListener listener) {
-                ListenerManager.get().removeListener(name, listener, null);
+                listenerManager.removeListener(name, listener, null);
             }
 
             public void destroy() {
-                destroyInstanceClusterwide(name, null);
+                factory.destroyInstanceClusterwide(name, null);
             }
 
             public Instance.InstanceType getInstanceType() {
@@ -684,19 +701,21 @@ public class FactoryImpl {
     public static class CollectionProxyImpl extends BaseCollection implements CollectionProxy, DataSerializable {
         String name = null;
         private transient CollectionProxy base = null;
+        private transient FactoryImpl factory = null;
 
         public CollectionProxyImpl() {
         }
 
-        public CollectionProxyImpl(String name) {
+        public CollectionProxyImpl(String name, FactoryImpl factory) {
             this.name = name;
+            this.factory = factory;
             this.base = new CollectionProxyReal();
         }
 
         private void ensure() {
             initialChecks();
             if (base == null) {
-                base = (CollectionProxy) getProxyByName(name);
+                base = (CollectionProxy) factory.getProxyByName(name);
             }
         }
 
@@ -767,14 +786,16 @@ public class FactoryImpl {
         }
 
         public void destroy() {
-            destroyInstanceClusterwide(name, null);
+            factory.destroyInstanceClusterwide(name, null);
         }
 
         public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(factory.getName());
             out.writeUTF(name);
         }
 
         public void readData(DataInput in) throws IOException {
+            factory = getFactory(in.readUTF());
             name = in.readUTF();
         }
 
@@ -803,7 +824,7 @@ public class FactoryImpl {
             final MProxy mapProxy;
 
             public CollectionProxyReal() {
-                mapProxy = new MProxyImpl(name);
+                mapProxy = new MProxyImpl(name, factory);
             }
 
             public Object getId() {
@@ -871,7 +892,7 @@ public class FactoryImpl {
             }
 
             public void destroy() {
-                destroyInstanceClusterwide(name, null);
+                factory.destroyInstanceClusterwide(name, null);
             }
         }
     }
@@ -960,20 +981,30 @@ public class FactoryImpl {
 
     public static class QProxyImpl extends AbstractQueue implements QProxy, DataSerializable {
         private transient QProxy qproxyReal = null;
+        private transient FactoryImpl factory = null;
         private String name = null;
+        private BlockingQueueManager blockingQueueManager = null;
+        private ListenerManager listenerManager = null;
 
         public QProxyImpl() {
         }
 
-        private QProxyImpl(String name) {
+        private QProxyImpl(String name, FactoryImpl factory) {
             this.name = name;
             qproxyReal = new QProxyReal();
+            setFactory(factory);
+        }
+
+        void setFactory(FactoryImpl factory) {
+            this.factory = factory;
+            this.blockingQueueManager = factory.node.blockingQueueManager;
+            this.listenerManager = factory.node.listenerManager;
         }
 
         private void ensure() {
             initialChecks();
             if (qproxyReal == null) {
-                qproxyReal = (QProxy) getProxyByName(name);
+                qproxyReal = (QProxy) factory.getProxyByName(name);
             }
         }
 
@@ -1004,10 +1035,12 @@ public class FactoryImpl {
         }
 
         public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(factory.getName());
             out.writeUTF(name);
         }
 
         public void readData(DataInput in) throws IOException {
+            setFactory(getFactory(in.readUTF()));
             name = in.readUTF();
         }
 
@@ -1103,7 +1136,7 @@ public class FactoryImpl {
             }
 
             public boolean offer(Object obj) {
-                Offer offer = ThreadContext.get().getOffer();
+                Offer offer = blockingQueueManager.new Offer();
                 return offer.offer(name, obj, 0);
             }
 
@@ -1111,22 +1144,22 @@ public class FactoryImpl {
                 if (timeout < 0) {
                     timeout = 0;
                 }
-                Offer offer = ThreadContext.get().getOffer();
+                Offer offer = blockingQueueManager.new Offer();
                 return offer.offer(name, obj, unit.toMillis(timeout));
             }
 
             public void put(Object obj) throws InterruptedException {
-                Offer offer = ThreadContext.get().getOffer();
+                Offer offer = blockingQueueManager.new Offer();
                 offer.offer(name, obj, -1);
             }
 
             public Object peek() {
-                Poll poll = BlockingQueueManager.get().new Poll();
+                Poll poll = blockingQueueManager.new Poll();
                 return poll.peek(name);
             }
 
             public Object poll() {
-                Poll poll = BlockingQueueManager.get().new Poll();
+                Poll poll = blockingQueueManager.new Poll();
                 return poll.poll(name, 0);
             }
 
@@ -1134,12 +1167,12 @@ public class FactoryImpl {
                 if (timeout < 0) {
                     timeout = 0;
                 }
-                Poll poll = BlockingQueueManager.get().new Poll();
+                Poll poll = blockingQueueManager.new Poll();
                 return poll.poll(name, unit.toMillis(timeout));
             }
 
             public Object take() throws InterruptedException {
-                Poll poll = BlockingQueueManager.get().new Poll();
+                Poll poll = blockingQueueManager.new Poll();
                 return poll.poll(name, -1);
             }
 
@@ -1149,24 +1182,24 @@ public class FactoryImpl {
 
             @Override
             public Iterator iterator() {
-                QIterator iterator = BlockingQueueManager.get().new QIterator();
+                QIterator iterator = blockingQueueManager.new QIterator();
                 iterator.set(name);
                 return iterator;
             }
 
             @Override
             public int size() {
-                BlockingQueueManager.QSize qsize = BlockingQueueManager.get().new QSize(name);
+                BlockingQueueManager.QSize qsize = blockingQueueManager.new QSize(name);
                 return qsize.getSize();
             }
 
             public void addItemListener(ItemListener listener, boolean includeValue) {
-                ListenerManager.get().addListener(name, listener, null, includeValue,
+                listenerManager.addListener(name, listener, null, includeValue,
                         ListenerManager.Type.Item);
             }
 
             public void removeItemListener(ItemListener listener) {
-                ListenerManager.get().removeListener(name, listener, null);
+                listenerManager.removeListener(name, listener, null);
             }
 
             public String getName() {
@@ -1187,7 +1220,7 @@ public class FactoryImpl {
             }
 
             public void destroy() {
-                destroyInstanceClusterwide(name, null);
+                factory.destroyInstanceClusterwide(name, null);
             }
 
             public Instance.InstanceType getInstanceType() {
@@ -1200,24 +1233,23 @@ public class FactoryImpl {
         }
     }
 
-    public static class MultiMapProxy implements MultiMap, DataSerializable, IGetAwareProxy {
-
-        private String name = null;
+    public static class MultiMapProxy extends FactoryAwareNamedProxy implements MultiMap, DataSerializable, IGetAwareProxy {
 
         private transient MultiMapBase base = null;
 
         public MultiMapProxy() {
         }
 
-        public MultiMapProxy(String name) {
+        public MultiMapProxy(String name, FactoryImpl factory) {
             this.name = name;
+            setFactory(factory);
             this.base = new MultiMapBase();
         }
 
         private void ensure() {
             initialChecks();
             if (base == null) {
-                base = (MultiMapBase) getProxyByName(name);
+                base = (MultiMapBase) factory.getProxyByName(name);
             }
         }
 
@@ -1247,21 +1279,13 @@ public class FactoryImpl {
             return name != null ? name.hashCode() : 0;
         }
 
-        public void writeData(DataOutput out) throws IOException {
-            out.writeUTF(name);
-        }
-
-        public void readData(DataInput in) throws IOException {
-            name = in.readUTF();
-        }
-
         public InstanceType getInstanceType() {
             ensure();
             return base.getInstanceType();
         }
 
         public void destroy() {
-            Instance instance = proxies.remove(name);
+            Instance instance = factory.proxies.remove(name);
             if (instance != null) {
                 ensure();
                 base.destroy();
@@ -1342,7 +1366,7 @@ public class FactoryImpl {
             final MProxy mapProxy;
 
             private MultiMapBase() {
-                mapProxy = new MProxyImpl(name);
+                mapProxy = new MProxyImpl(name, factory);
             }
 
             public String getName() {
@@ -1455,32 +1479,33 @@ public class FactoryImpl {
     }
 
 
-    public static class MProxyImpl implements MProxy, DataSerializable {
-
-        private String name = null;
+    public static class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSerializable {
 
         private transient MProxy mproxyReal = null;
+
+        private ConcurrentMapManager concurrentMapManager = null;
+
+        private ListenerManager listenerManager = null;
 
         public MProxyImpl() {
         }
 
-        private MProxyImpl(String name) {
+        private MProxyImpl(String name, FactoryImpl factory) {
             this.name = name;
             mproxyReal = new MProxyReal();
+            setFactory(factory);
         }
 
-        public void writeData(DataOutput out) throws IOException {
-            out.writeUTF(name);
-        }
-
-        public void readData(DataInput in) throws IOException {
-            name = in.readUTF();
+        public void setFactory(FactoryImpl factory) {
+            super.setFactory(factory);
+            this.concurrentMapManager = factory.node.concurrentMapManager;
+            this.listenerManager = factory.node.listenerManager;
         }
 
         private void ensure() {
             initialChecks();
             if (mproxyReal == null) {
-                mproxyReal = (MProxy) getProxyByName(name);
+                mproxyReal = (MProxy) factory.getProxyByName(name);
             }
         }
 
@@ -1744,44 +1769,44 @@ public class FactoryImpl {
 
             public MapEntry getMapEntry(Object key) {
                 check(key);
-                MGetMapEntry mgetMapEntry = ConcurrentMapManager.get().new MGetMapEntry();
+                MGetMapEntry mgetMapEntry = concurrentMapManager.new MGetMapEntry();
                 return mgetMapEntry.get(name, key);
             }
 
             public boolean putMulti(Object key, Object value) {
                 check(key);
                 check(value);
-                MPutMulti mput = ThreadContext.get().getMPutMulti();
+                MPutMulti mput = concurrentMapManager.new MPutMulti();
                 return mput.put(name, key, value);
             }
 
             public Object put(Object key, Object value) {
                 check(key);
                 check(value);
-                MPut mput = ThreadContext.get().getMPut();
+                MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
                 return mput.put(name, key, value, -1);
             }
 
             public Object get(Object key) {
                 check(key);
-                MGet mget = ThreadContext.get().getMGet();
+                MGet mget = ThreadContext.get().getCallCache(factory).getMGet();
                 return mget.get(name, key, -1);
             }
 
             public Object remove(Object key) {
                 check(key);
-                MRemove mremove = ThreadContext.get().getMRemove();
+                MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
                 return mremove.remove(name, key, -1);
             }
 
             public int size() {
-                MSize msize = ConcurrentMapManager.get().new MSize(name);
+                MSize msize = concurrentMapManager.new MSize(name);
                 return msize.getSize();
             }
 
             public int valueCount(Object key) {
                 int count;
-                MValueCount mcount = ConcurrentMapManager.get().new MValueCount();
+                MValueCount mcount = concurrentMapManager.new MValueCount();
                 count = ((Number) mcount.count(name, key, -1)).intValue();
                 return count;
             }
@@ -1789,28 +1814,28 @@ public class FactoryImpl {
             public Object putIfAbsent(Object key, Object value) {
                 check(key);
                 check(value);
-                MPut mput = ThreadContext.get().getMPut();
+                MPut mput = concurrentMapManager.new MPut();
                 return mput.putIfAbsent(name, key, value, -1);
             }
 
             public boolean removeMulti(Object key, Object value) {
                 check(key);
                 check(value);
-                MRemoveMulti mremove = ThreadContext.get().getMRemoveMulti();
+                MRemoveMulti mremove = concurrentMapManager.new MRemoveMulti();
                 return mremove.remove(name, key, value);
             }
 
             public boolean remove(Object key, Object value) {
                 check(key);
                 check(value);
-                MRemove mremove = ThreadContext.get().getMRemove();
+                MRemove mremove = concurrentMapManager.new MRemove();
                 return (mremove.removeIfSame(name, key, value, -1) != null);
             }
 
             public Object replace(Object key, Object value) {
                 check(key);
                 check(value);
-                MPut mput = ThreadContext.get().getMPut();
+                MPut mput = concurrentMapManager.new MPut();
                 return mput.replace(name, key, value, -1);
             }
 
@@ -1822,13 +1847,13 @@ public class FactoryImpl {
 
             public void lock(Object key) {
                 check(key);
-                MLock mlock = ThreadContext.get().getMLock();
+                MLock mlock = concurrentMapManager.new MLock();
                 mlock.lock(name, key, -1);
             }
 
             public boolean tryLock(Object key) {
                 check(key);
-                MLock mlock = ThreadContext.get().getMLock();
+                MLock mlock = concurrentMapManager.new MLock();
                 return mlock.lock(name, key, 0);
             }
 
@@ -1836,13 +1861,13 @@ public class FactoryImpl {
                 check(key);
                 if (time < 0)
                     throw new IllegalArgumentException("Time cannot be negative. time = " + time);
-                MLock mlock = ThreadContext.get().getMLock();
+                MLock mlock = concurrentMapManager.new MLock();
                 return mlock.lock(name, key, timeunit.toMillis(time));
             }
 
             public void unlock(Object key) {
                 check(key);
-                MLock mlock = ThreadContext.get().getMLock();
+                MLock mlock = concurrentMapManager.new MLock();
                 boolean unlocked = mlock.unlock(name, key, 0);
 //                if (! unlocked) throw new IllegalMonitorStateException();
             }
@@ -1851,13 +1876,13 @@ public class FactoryImpl {
                                            ListenerManager.Type listenerType) {
                 if (listener == null)
                     throw new IllegalArgumentException("Listener cannot be null");
-                ListenerManager.get().addListener(name, listener, key, includeValue, listenerType);
+                listenerManager.addListener(name, listener, key, includeValue, listenerType);
             }
 
             public void removeGenericListener(Object listener, Object key) {
                 if (listener == null)
                     throw new IllegalArgumentException("Listener cannot be null");
-                ListenerManager.get().removeListener(name, listener, key);
+                listenerManager.removeListener(name, listener, key);
             }
 
             public void addEntryListener(EntryListener listener, boolean includeValue) {
@@ -1896,7 +1921,7 @@ public class FactoryImpl {
                         return v != null;
                     }
                 }
-                MContainsKey mContainsKey = ConcurrentMapManager.get().new MContainsKey();
+                MContainsKey mContainsKey = concurrentMapManager.new MContainsKey();
                 return mContainsKey.containsEntry(name, key, value);
             }
 
@@ -1909,7 +1934,7 @@ public class FactoryImpl {
                         return value != null;
                     }
                 }
-                MContainsKey mContainsKey = ConcurrentMapManager.get().new MContainsKey();
+                MContainsKey mContainsKey = concurrentMapManager.new MContainsKey();
                 return mContainsKey.containsKey(name, key);
             }
 
@@ -1920,7 +1945,7 @@ public class FactoryImpl {
                     if (txn.containsValue(name, value))
                         return true;
                 }
-                MContainsValue mContainsValue = ConcurrentMapManager.get().new MContainsValue(name, value);
+                MContainsValue mContainsValue = concurrentMapManager.new MContainsValue(name, value);
                 return (Boolean) mContainsValue.call();
             }
 
@@ -1938,7 +1963,7 @@ public class FactoryImpl {
             public boolean add(Object value) {
                 if (value == null)
                     throw new NullPointerException();
-                MAdd madd = ThreadContext.get().getMAdd();
+                MAdd madd = concurrentMapManager.new MAdd();
                 if (instanceType == InstanceType.LIST) {
                     return madd.addToList(name, value);
                 } else {
@@ -1949,7 +1974,7 @@ public class FactoryImpl {
             public boolean removeKey(Object key) {
                 if (key == null)
                     throw new NullPointerException();
-                MRemoveItem mRemoveItem = ConcurrentMapManager.get().new MRemoveItem();
+                MRemoveItem mRemoveItem = concurrentMapManager.new MRemoveItem();
                 return mRemoveItem.removeItem(name, key);
             }
 
@@ -1977,33 +2002,52 @@ public class FactoryImpl {
             }
 
             private Collection iterate(ClusterOperation iteratorType) {
-                MIterate miterate = ConcurrentMapManager.get().new MIterate(name, iteratorType);
+                MIterate miterate = concurrentMapManager.new MIterate(name, iteratorType);
                 return (Collection) miterate.call();
             }
 
             public void destroy() {
-                destroyInstanceClusterwide(name, null);
+                factory.destroyInstanceClusterwide(name, null);
             }
         }
     }
 
-    public static class IdGeneratorProxy implements IdGenerator, DataSerializable {
+    static class FactoryAwareNamedProxy implements DataSerializable {
+        protected FactoryImpl factory = null;
+        protected String name = null;
 
-        private String name = null;
+        public void setFactory(FactoryImpl factory) {
+            this.factory = factory;
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(factory.getName());
+            out.writeUTF(name);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            setFactory(getFactory(in.readUTF()));
+            name = in.readUTF();
+        }
+    }
+
+    public static class IdGeneratorProxy extends FactoryAwareNamedProxy implements IdGenerator, DataSerializable {
+
         private transient IdGenerator base = null;
 
         public IdGeneratorProxy() {
         }
 
-        public IdGeneratorProxy(String name) {
+        public IdGeneratorProxy(String name, FactoryImpl factory) {
             this.name = name;
             base = new IdGeneratorBase();
+            setFactory(factory);
         }
 
         private void ensure() {
             initialChecks();
             if (base == null) {
-                base = getIdGenerator(name);
+                base = factory.getIdGenerator(name);
             }
         }
 
@@ -2032,15 +2076,6 @@ public class FactoryImpl {
         public int hashCode() {
             return name != null ? name.hashCode() : 0;
         }
-
-        public void writeData(DataOutput out) throws IOException {
-            out.writeUTF(name);
-        }
-
-        public void readData(DataInput in) throws IOException {
-            name = in.readUTF();
-        }
-
 
         public Instance.InstanceType getInstanceType() {
             ensure();
@@ -2105,8 +2140,8 @@ public class FactoryImpl {
 
             private Long getNewMillion() {
                 try {
-                    DistributedTask<Long> task = new DistributedTask<Long>(new IncrementTask(name));
-                    FactoryImpl.executorServiceImpl.execute(task);
+                    DistributedTask<Long> task = new DistributedTask<Long>(new IncrementTask(name, factory.getName()));
+                    factory.executorServiceImpl.execute(task);
                     return task.get();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -2119,7 +2154,7 @@ public class FactoryImpl {
             }
 
             public void destroy() {
-                destroyInstanceClusterwide(name, null);
+                factory.destroyInstanceClusterwide(name, null);
             }
 
             public Object getId() {
@@ -2130,18 +2165,21 @@ public class FactoryImpl {
 
     public static class IncrementTask implements Callable<Long>, Serializable {
         String name = null;
+        String factoryName = null;
 
         public IncrementTask() {
             super();
         }
 
-        public IncrementTask(String uuidName) {
+        public IncrementTask(String uuidName, String factoryName) {
             super();
             this.name = uuidName;
+            this.factoryName = factoryName;
         }
 
         public Long call() {
-            MProxy map = FactoryImpl.idGeneratorMapProxy;
+            FactoryImpl factory = getFactory(factoryName);
+            MProxy map = factory.idGeneratorMapProxy;
             map.lock(name);
             try {
                 Long max = (Long) map.get(name);

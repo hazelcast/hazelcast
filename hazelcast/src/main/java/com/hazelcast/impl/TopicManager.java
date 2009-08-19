@@ -26,13 +26,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TopicManager extends BaseManager {
-    private static final TopicManager instance = new TopicManager();
-
-    public static TopicManager get() {
-        return instance;
-    }
-
-    private TopicManager() {
+    
+    TopicManager(Node node) {
+        super (node);
     }
 
     Map<String, TopicInstance> mapTopics = new HashMap<String, TopicInstance>();

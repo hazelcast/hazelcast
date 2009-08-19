@@ -10,7 +10,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class MemberRemover implements RemotelyProcessable {
+public class MemberRemover extends AbstractRemotelyProcessable {
     private Address deadAddress = null;
 
     public MemberRemover() {
@@ -22,7 +22,7 @@ public class MemberRemover implements RemotelyProcessable {
     }
 
     public void process() {
-        ClusterManager.get().doRemoveAddress(deadAddress);
+        getNode().clusterManager.doRemoveAddress(deadAddress);
     }
 
     public void setConnection(Connection conn) {

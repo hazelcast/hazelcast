@@ -11,7 +11,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-public abstract class AbstractRemotelyCallable<T> implements DataSerializable,
+public abstract class AbstractRemotelyCallable<T> extends AbstractNodeAware implements DataSerializable,
         Callable<T> {
     Connection conn;
 

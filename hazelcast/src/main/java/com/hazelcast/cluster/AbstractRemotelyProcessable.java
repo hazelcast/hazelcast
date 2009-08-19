@@ -9,7 +9,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public abstract class AbstractRemotelyProcessable implements RemotelyProcessable {
+public abstract class AbstractRemotelyProcessable extends AbstractNodeAware implements RemotelyProcessable {
     Connection conn;
 
     public Connection getConnection() {

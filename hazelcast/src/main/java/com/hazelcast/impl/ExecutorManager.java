@@ -20,6 +20,8 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.ClusterImpl.ClusterMember;
 import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.cluster.AbstractNodeAware;
+import com.hazelcast.cluster.NodeAware;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import static com.hazelcast.impl.Constants.Objects.*;
@@ -41,8 +43,6 @@ import java.util.logging.Logger;
 
 public class ExecutorManager extends BaseManager implements MembershipListener {
 
-    private static final ExecutorManager instance = new ExecutorManager();
-
     private ThreadPoolExecutor executor;
 
     private final Map<RemoteExecutionId, SimpleExecution> mapRemoteExecutions = new ConcurrentHashMap<RemoteExecutionId, SimpleExecution>(
@@ -55,22 +55,41 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
 
     private boolean started = false;
 
-    private ExecutorManager() {
-        ClusterService.get().registerPacketProcessor(ClusterOperation.REMOTELY_EXECUTE,
+    ExecutorManager(Node node) {
+        super(node);
+        registerPacketProcessor(ClusterOperation.REMOTELY_EXECUTE,
                 new PacketProcessor() {
                     public void process(Packet packet) {
                         handleRemoteExecution(packet);
                     }
                 });
-        ClusterService.get().registerPacketProcessor(ClusterOperation.STREAM, new PacketProcessor() {
+        registerPacketProcessor(ClusterOperation.STREAM, new PacketProcessor() {
             public void process(Packet packet) {
                 handleStream(packet);
             }
         });
-    }
 
-    public static ExecutorManager get() {
-        return instance;
+        if (started) return;
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.log(Level.FINEST, "Starting ExecutorManager");
+        }
+        final int corePoolSize = Config.get().getExecutorConfig().getCorePoolSize();
+        final int maxPoolSize = Config.get().getExecutorConfig().getMaxPoolsize();
+        final long keepAliveSeconds = Config.get().getExecutorConfig().getKeepAliveSeconds();
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.log(Level.FINEST, "Executor core:" + corePoolSize + ", max:"
+                    + maxPoolSize + ", keepAlive:" + keepAliveSeconds);
+        }
+
+        executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveSeconds, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>(),
+                new ExecutorThreadFactory(),
+                new RejectionHandler());
+        node.getClusterImpl().addMembershipListener(this);
+        for (int i = 0; i < 100; i++) {
+            executionIds.add((long) i);
+        }
+        started = true;
     }
 
     static class ExecutorThreadFactory implements ThreadFactory {
@@ -87,7 +106,6 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
 
         public Thread newThread(Runnable r) {
             Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
-
             if (t.isDaemon()) {
                 t.setDaemon(false);
             }
@@ -95,43 +113,17 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
             if (t.getPriority() != Thread.NORM_PRIORITY) {
                 t.setPriority(Thread.NORM_PRIORITY);
             }
-
             return t;
         }
     }
 
     /**
      * Return true if the ExecutorManager is started and can accept task.
-     * 
+     *
      * @return the ExecutorManager running status
      */
     public boolean isStarted() {
-    	return started;
-    }
-    
-    public void init() {
-        super.init();
-        if (started) return;
-        if (logger.isLoggable(Level.FINEST)) {
-        	logger.log(Level.FINEST, "Starting ExecutorManager");
-        }
-        final int corePoolSize = Config.get().getExecutorConfig().getCorePoolSize();
-        final int maxPoolSize = Config.get().getExecutorConfig().getMaxPoolsize();
-        final long keepAliveSeconds = Config.get().getExecutorConfig().getKeepAliveSeconds();
-        if (logger.isLoggable(Level.FINEST)) {
-        	logger.log(Level.FINEST, "Executor core:" + corePoolSize + ", max:"
-        			+ maxPoolSize + ", keepAlive:" + keepAliveSeconds);
-        }
-
-        executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveSeconds, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>(),
-                new ExecutorThreadFactory(),
-                new RejectionHandler());
-        Node.get().getClusterImpl().addMembershipListener(this);
-        for (int i = 0; i < 100; i++) {
-            executionIds.add((long) i);
-        }
-        started = true;
+        return started;
     }
 
     class RejectionHandler implements RejectedExecutionHandler {
@@ -144,7 +136,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
     public void stop() {
         if (!started) return;
         if (logger.isLoggable(Level.FINEST)) {
-        	logger.log(Level.FINEST, "Stopping ExecutorManager");
+            logger.log(Level.FINEST, "Stopping ExecutorManager");
         }
         executionIds.clear();
         if (executor != null) {
@@ -153,7 +145,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         started = false;
     }
 
-    public static class CancelationTask implements Callable<Boolean>, DataSerializable {
+    public static class CancelationTask extends AbstractNodeAware implements Callable<Boolean>, DataSerializable, NodeAware {
         long executionId = -1;
 
         Address address = null;
@@ -172,8 +164,10 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
             this.mayInterruptIfRunning = mayInterruptIfRunning;
         }
 
+
+
         public Boolean call() {
-            final SimpleExecution simpleExecution = ExecutorManager.get().mapRemoteExecutions
+            final SimpleExecution simpleExecution = getNode().executorManager.mapRemoteExecutions
                     .remove(executionId);
             return simpleExecution != null && simpleExecution.cancel(mayInterruptIfRunning);
         }
@@ -415,10 +409,9 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
             } else if (innerFutureTask.getMember() != null) {
                 final MemberImpl mem = (MemberImpl) innerFutureTask.getMember();
                 target = mem.getAddress();
-                if (DEBUG)
-                    log(" Target " + target);
+                log(" Target " + target);
             } else {
-                Set<Member> members = Node.get().getClusterImpl().getMembers();
+                Set<Member> members = node.getClusterImpl().getMembers();
                 final int random = (int) (Math.random() * 1000);
                 final int randomIndex = random % members.size();
                 ClusterMember randomClusterMember = (ClusterMember) members.toArray()[randomIndex];
@@ -523,9 +516,9 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         }
     }
 
-    private static class SimpleExecution implements Runnable {
+    private class SimpleExecution implements Runnable {
 
-        protected static Logger logger = Logger.getLogger(SimpleExecution.class.getName());
+        protected Logger logger = Logger.getLogger(SimpleExecution.class.getName());
 
         Data value = null;
 
@@ -559,7 +552,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
             this.remoteExecutionId = remoteExecutionId;
         }
 
-        public static Object call(final RemoteExecutionId remoteExecutionId, final boolean local,
+        public Object call(final RemoteExecutionId remoteExecutionId, final boolean local,
                                   final Object callable) throws InterruptedException {
             Object executionResult = null;
             try {
@@ -575,16 +568,13 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 executionResult = e;
             } finally {
                 if (!local) {
-                    ExecutorManager.get().mapRemoteExecutions.remove(remoteExecutionId);
+                    mapRemoteExecutions.remove(remoteExecutionId);
                 }
             }
             return executionResult;
         }
 
         public boolean cancel(final boolean mayInterruptIfRunning) {
-            if (DEBUG) {
-                logger.log(Level.INFO, "SimpleExecution is cancelling..");
-            }
             if (done || cancelled)
                 return false;
             if (running && mayInterruptIfRunning)
@@ -599,6 +589,10 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
             Object executionResult = null;
             if (callable == null) {
                 callable = toObject(value);
+                if (callable instanceof NodeAware) {
+                    NodeAware nodeAware = (NodeAware) callable;
+                    nodeAware.setNode(node);
+                }
                 executor.execute(this);
             } else {
                 runningThread = Thread.currentThread();
@@ -614,7 +608,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 done = true; // should not be able to interrupt after this.
                 if (!local) {
                     try {
-                        ExecutorManager.get().sendStreamItem(remoteExecutionId.address,
+                        sendStreamItem(remoteExecutionId.address,
                                 executionResult, remoteExecutionId.executionId);
                     } catch (final Exception e) {
                         e.printStackTrace();
@@ -629,10 +623,10 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
 
     public void sendStreamItem(final Address address, final Object value, final long streamId) {
         try {
-            final Packet packet = ClusterManager.get().obtainPacket("exe", null, value,
+            final Packet packet = obtainPacket("exe", null, value,
                     ClusterOperation.STREAM, DEFAULT_TIMEOUT);
             packet.longValue = streamId;
-            ClusterService.get().enqueueAndReturn(new Processable() {
+            enqueueAndReturn(new Processable() {
                 public void process() {
                     send(packet, address);
                 }
@@ -679,8 +673,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
     }
 
     public void handleRemoteExecution(final Packet packet) {
-        if (DEBUG)
-            log("Remote handling packet " + packet);
+        log("Remote handling packet " + packet);
         final Data callableData = BufferUtil.doTake(packet.value);
         final RemoteExecutionId remoteExecutionId = new RemoteExecutionId(packet.conn.getEndPoint(),
                 packet.longValue);

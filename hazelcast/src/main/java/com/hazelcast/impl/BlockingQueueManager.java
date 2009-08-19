@@ -17,7 +17,6 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigProperty;
@@ -43,13 +42,13 @@ import java.util.*;
 
 public class BlockingQueueManager extends BaseManager {
     private static final int BLOCK_SIZE = ConfigProperty.BLOCKING_QUEUE_BLOCK_SIZE.getInteger(1000);
-    private final static BlockingQueueManager instance = new BlockingQueueManager();
     private final Map<String, Q> mapQueues = new HashMap<String, Q>(10);
     private final Map<Long, List<Data>> mapTxnPolledElements = new HashMap<Long, List<Data>>(10);
     private int nextIndex = 0;
 
-    private BlockingQueueManager() {
-        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_POLL, new PacketProcessor() {
+    BlockingQueueManager(Node node) {
+        super(node);
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_POLL, new PacketProcessor() {
             public void process(Packet packet) {
                 try {
                     handlePoll(packet);
@@ -61,71 +60,67 @@ public class BlockingQueueManager extends BaseManager {
                 }
             }
         });
-        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_OFFER, new PacketProcessor() {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_OFFER, new PacketProcessor() {
             public void process(Packet packet) {
                 handleOffer(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_BACKUP_ADD, new PacketProcessor() {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_BACKUP_ADD, new PacketProcessor() {
             public void process(Packet packet) {
                 handleBackup(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_BACKUP_REMOVE, new PacketProcessor() {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_BACKUP_REMOVE, new PacketProcessor() {
             public void process(Packet packet) {
                 handleBackup(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_SIZE, new PacketProcessor() {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_SIZE, new PacketProcessor() {
             public void process(Packet packet) {
                 handleSize(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_PEEK, new PacketProcessor() {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_PEEK, new PacketProcessor() {
             public void process(Packet packet) {
                 handlePoll(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_READ, new PacketProcessor() {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_READ, new PacketProcessor() {
             public void process(Packet packet) {
                 handleRead(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_REMOVE, new PacketProcessor() {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_REMOVE, new PacketProcessor() {
             public void process(Packet packet) {
                 handleRemove(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_TXN_BACKUP_POLL, new PacketProcessor() {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_TXN_BACKUP_POLL, new PacketProcessor() {
             public void process(Packet packet) {
                 handleTxnBackupPoll(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_TXN_COMMIT, new PacketProcessor() {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_TXN_COMMIT, new PacketProcessor() {
             public void process(Packet packet) {
                 handleTxnCommit(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_ADD_BLOCK, new PacketProcessor() {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_ADD_BLOCK, new PacketProcessor() {
             public void process(Packet packet) {
                 handleAddBlock(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_REMOVE_BLOCK, new PacketProcessor() {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_REMOVE_BLOCK, new PacketProcessor() {
             public void process(Packet packet) {
                 handleRemoveBlock(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_FULL_BLOCK, new PacketProcessor() {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_FULL_BLOCK, new PacketProcessor() {
             public void process(Packet packet) {
                 handleFullBlock(packet);
             }
         });
 
-    }
-
-    public static BlockingQueueManager get() {
-        return instance;
     }
 
     class BlockBackupSyncRunner implements Runnable {
@@ -198,9 +193,6 @@ public class BlockingQueueManager extends BaseManager {
     public void syncForDead(Address deadAddress) {
         if (deadAddress.equals(thisAddress)) return;
         MemberImpl member = getNextMemberBeforeSync(deadAddress, true, 1);
-        if (DEBUG) {
-            log(deadAddress + " is dead and its backup was " + member);
-        }
         Address addressNewOwner = (member == null) ? thisAddress : member.getAddress();
 
         Collection<Q> queues = mapQueues.values();
@@ -215,9 +207,6 @@ public class BlockingQueueManager extends BaseManager {
                         if (addressNewOwner.equals(thisAddress)) {
                             // I am the new owner so backup to next member
                             int indexUpto = block.size() - 1;
-                            if (DEBUG) {
-                                log("IndexUpto " + indexUpto);
-                            }
                             if (indexUpto > -1) {
                                 executeLocally(new BlockBackupSyncRunner(new BlockBackupSync(q, block,
                                         indexUpto)));
@@ -246,14 +235,14 @@ public class BlockingQueueManager extends BaseManager {
             for (ScheduledPollAction scheduledAction : scheduledPollActions) {
                 if (deadAddress.equals(scheduledAction.request.caller)) {
                     scheduledAction.setValid(false);
-                    ClusterManager.get().deregisterScheduledAction(scheduledAction);
+                    node.clusterManager.deregisterScheduledAction(scheduledAction);
                 }
             }
             List<ScheduledOfferAction> scheduledOfferActions = q.lsScheduledOfferActions;
             for (ScheduledOfferAction scheduledAction : scheduledOfferActions) {
                 if (deadAddress.equals(scheduledAction.request.caller)) {
                     scheduledAction.setValid(false);
-                    ClusterManager.get().deregisterScheduledAction(scheduledAction);
+                    node.clusterManager.deregisterScheduledAction(scheduledAction);
                 }
             }
         }
@@ -286,9 +275,6 @@ public class BlockingQueueManager extends BaseManager {
                         MemberImpl memberBackupWas = getNextMemberBeforeSync(thisAddress, true, 1);
                         MemberImpl memberBackupIs = getNextMemberAfter(thisAddress, true, 1);
                         if (memberBackupWas == null || !memberBackupWas.equals(memberBackupIs)) {
-                            if (DEBUG) {
-                                log("Backup changed!!! so backing up to " + memberBackupIs);
-                            }
                             int indexUpto = block.size() - 1;
                             if (indexUpto > -1) {
                                 executeLocally(new BlockBackupSyncRunner(new BlockBackupSync(q, block,
@@ -1183,14 +1169,14 @@ public class BlockingQueueManager extends BaseManager {
         public void scheduleOffer(Request request) {
             ScheduledOfferAction action = new ScheduledOfferAction(request);
             lsScheduledOfferActions.add(action);
-            ClusterManager.get().registerScheduledAction(action);
+            node.clusterManager.registerScheduledAction(action);
 
         }
 
         public void schedulePoll(Request request) {
             ScheduledPollAction action = new ScheduledPollAction(request);
             lsScheduledPollActions.add(action);
-            ClusterManager.get().registerScheduledAction(action);
+            node.clusterManager.registerScheduledAction(action);
         }
 
         public class ScheduledPollAction extends ScheduledAction {
@@ -1410,7 +1396,7 @@ public class BlockingQueueManager extends BaseManager {
                 boolean consumed = false;
                 while (!consumed && lsScheduledPollActions.size() > 0) {
                     ScheduledAction pollAction = lsScheduledPollActions.remove(0);
-                    ClusterManager.get().deregisterScheduledAction(pollAction);
+                    node.clusterManager.deregisterScheduledAction(pollAction);
                     if (!pollAction.expired()) {
                         consumed = pollAction.consume();
                     }
@@ -1450,7 +1436,7 @@ public class BlockingQueueManager extends BaseManager {
                 boolean consumed = false;
                 while (!consumed && lsScheduledOfferActions.size() > 0) {
                     ScheduledOfferAction offerAction = lsScheduledOfferActions.remove(0);
-                    ClusterManager.get().deregisterScheduledAction(offerAction);
+                    node.clusterManager.deregisterScheduledAction(offerAction);
                     if (!offerAction.expired()) {
                         consumed = offerAction.consume();
                     }

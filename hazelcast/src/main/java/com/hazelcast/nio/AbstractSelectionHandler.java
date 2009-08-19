@@ -18,6 +18,8 @@
 package com.hazelcast.nio;
 
 import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
+import com.hazelcast.impl.Node;
+import com.hazelcast.cluster.ClusterService;
 
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -33,22 +35,30 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 
     public static final int SEND_SOCKET_BUFFER_SIZE = 32 * BYTE_BUFFER_SIZE;
 
-    protected SocketChannel socketChannel;
+    protected final SocketChannel socketChannel;
 
-    protected InSelector inSelector;
+    protected final Connection connection;
 
-    protected OutSelector outSelector;
+    protected final InSelector inSelector;
 
-    protected Connection connection;
+    protected final OutSelector outSelector;
+
+    protected final ClusterService clusterService;
+
+    protected final Node node;
 
     protected SelectionKey sk = null;
+
+
 
     public AbstractSelectionHandler(final Connection connection) {
         super();
         this.connection = connection;
         this.socketChannel = connection.getSocketChannel();
-        this.inSelector = InSelector.get();
-        this.outSelector = OutSelector.get();
+        this.node = connection.connectionManager.node;
+        this.inSelector = node.inSelector;
+        this.outSelector = node.outSelector;
+        this.clusterService = node.clusterService;
     }
 
     protected void shutdown() {

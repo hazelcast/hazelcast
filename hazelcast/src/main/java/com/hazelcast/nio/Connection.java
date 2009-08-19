@@ -29,12 +29,14 @@ public class Connection {
 
     final WriteHandler writeHandler;
 
+    final ConnectionManager connectionManager;
+
     private volatile boolean live = true;
 
     Address endPoint = null;
 
-    public Connection(SocketChannel socketChannel) {
-        super();
+    public Connection(ConnectionManager connectionManager, SocketChannel socketChannel) {
+        this.connectionManager = connectionManager;
         this.socketChannel = socketChannel;
         this.writeHandler = new WriteHandler(this);
         this.readHandler = new ReadHandler(this);
@@ -105,8 +107,10 @@ public class Connection {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        ConnectionManager.get().remove(this);
-        ClusterService.get().enqueueAndReturn(new AddOrRemoveConnection(endPoint, false));
+        connectionManager.remove(this);
+        AddOrRemoveConnection addOrRemoveConnection = new AddOrRemoveConnection(endPoint, false);
+        addOrRemoveConnection.setNode(connectionManager.node);
+        connectionManager.node.clusterManager.enqueueAndReturn(addOrRemoveConnection);
     }
 
     @Override

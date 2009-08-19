@@ -105,7 +105,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
         p.flipBuffers();
         p.read();
         p.setFromConnection(connection);
-        ClusterService.get().enqueueAndReturn(p);
+        clusterService.enqueueAndReturn(p);
     }
 
     interface PacketReader {

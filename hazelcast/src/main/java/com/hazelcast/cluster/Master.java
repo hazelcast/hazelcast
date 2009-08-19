@@ -64,7 +64,7 @@ public class Master extends AbstractRemotelyProcessable {
      * @see com.hazelcast.impl.BaseManager.Processable#process()
      */
     public void process() {
-        ClusterManager.get().handleMaster(this);
+        node.clusterManager.handleMaster(this);
     }
 
 	/**

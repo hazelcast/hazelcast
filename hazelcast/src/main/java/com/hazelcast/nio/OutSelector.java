@@ -28,17 +28,11 @@ import java.util.logging.Logger;
 
 public class OutSelector extends SelectorBase {
 
-    protected static final Logger logger = Logger.getLogger(OutSelector.class.getName());
+    protected final Logger logger = Logger.getLogger(OutSelector.class.getName());
 
-    private static final OutSelector instance = new OutSelector();
-
-    private OutSelector() {
-        super();
+    public OutSelector(Node node) {
+        super(node);
         super.waitTime = 1;
-    }
-
-    public static OutSelector get() {
-        return instance;
     }
 
     public void connect(final Address address) {
@@ -67,7 +61,7 @@ public class OutSelector extends SelectorBase {
                 }
                 logger.log(Level.FINEST, "connected to " + address);
                 final Connection connection = initChannel(socketChannel, false);
-                ConnectionManager.get().bind(address, connection, false);
+                node.connectionManager.bind(address, connection, false);
             } catch (final Exception e) {
                 try {
                     final String msg = "Couldn't connect to " + address + ", cause: "
@@ -78,7 +72,7 @@ public class OutSelector extends SelectorBase {
                         logger.log(Level.FINEST, "Couldn't finish connecting, will try again. cause: "
                                 + e.getMessage());
                     } else {
-                        ConnectionManager.get().failedConnection(address);
+                        node.connectionManager.failedConnection(address);
                     }
                 } catch (final Exception ignored) {
                 }
@@ -88,7 +82,7 @@ public class OutSelector extends SelectorBase {
         public void run() {
             try {
                 socketChannel = SocketChannel.open();
-                final Address thisAddress = Node.get().getThisAddress();
+                final Address thisAddress = node.getThisAddress();
                 try {
 
                     socketChannel.socket().bind(
@@ -120,12 +114,9 @@ public class OutSelector extends SelectorBase {
                                     + e.getMessage(), e);
                     run();
                 } else {
-                    ConnectionManager.get().failedConnection(address);
+                    node.connectionManager.failedConnection(address);
                 }
             }
         }
-
     }
-
-
 }

@@ -50,20 +50,20 @@ import java.util.logging.Level;
 
 public final class ConcurrentMapManager extends BaseManager {
     private static final int BLOCK_COUNT = ConfigProperty.CONCURRENT_MAP_BLOCK_COUNT.getInteger(271);
-    private static final ConcurrentMapManager instance = new ConcurrentMapManager();
     private final Block[] blocks;
     private final Map<String, CMap> maps;
     private final LoadStoreFork[] loadStoreForks;
     private static long GLOBAL_REMOVE_DELAY_MILLIS = ConfigProperty.REMOVE_DELAY_SECONDS.getLong() * 1000L;
 
-    private ConcurrentMapManager() {
+    ConcurrentMapManager(Node node) {
+        super (node);
         blocks = new Block[BLOCK_COUNT];
         maps = new ConcurrentHashMap<String, CMap>(10);
         loadStoreForks = new LoadStoreFork[BLOCK_COUNT];
         for (int i = 0; i < BLOCK_COUNT; i++) {
             loadStoreForks[i] = new LoadStoreFork();
         }
-        ClusterService.get().registerPeriodicRunnable(new Runnable() {
+        node.clusterService.registerPeriodicRunnable(new Runnable() {
             public void run() {
                 Collection<CMap> cmaps = maps.values();
                 for (CMap cmap : cmaps) {
@@ -108,10 +108,6 @@ public final class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_BLOCKS, new BlocksOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_MIGRATION_COMPLETE, new MigrationCompleteOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_VALUE_COUNT, new ValueCountOperationHandler());
-    }
-
-    public static ConcurrentMapManager get() {
-        return instance;
     }
 
     public void reset() {
@@ -451,7 +447,7 @@ public final class ConcurrentMapManager extends BaseManager {
     class MGetMapEntry extends MTargetAwareOp {
         public MapEntry get(String name, Object key) {
             CMapEntry mapEntry = (CMapEntry) objectCall(CONCURRENT_MAP_GET_MAP_ENTRY, name, key, null, 0, -1);
-            mapEntry.set(name, key);
+            mapEntry.set(node.factory.getName(), name, key);
             return mapEntry;
         }
     }
@@ -506,7 +502,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 try {
                     boolean locked;
                     if (!txn.has(name, key)) {
-                        MLock mlock = threadContext.getMLock();
+                        MLock mlock = new MLock();
                         locked = mlock
                                 .lockAndReturnOld(name, key, DEFAULT_TXN_TIMEOUT, txn.getId());
                         if (!locked)
@@ -557,7 +553,7 @@ public final class ConcurrentMapManager extends BaseManager {
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 try {
                     if (!txn.has(name, key)) {
-                        MLock mlock = threadContext.getMLock();
+                        MLock mlock = new MLock();
                         boolean locked = mlock
                                 .lockAndReturnOld(name, key, DEFAULT_TXN_TIMEOUT, txn.getId());
                         if (!locked)
@@ -705,7 +701,7 @@ public final class ConcurrentMapManager extends BaseManager {
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 try {
                     if (!txn.has(name, key)) {
-                        MLock mlock = threadContext.getMLock();
+                        MLock mlock = new MLock();
                         boolean locked = mlock
                                 .lockAndReturnOld(name, key, DEFAULT_TXN_TIMEOUT, txn.getId());
                         if (!locked)
@@ -2631,7 +2627,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     while (it.hasNext()) {
                         ScheduledAction sa = it.next();
                         if (sa.request.caller.equals(deadAddress)) {
-                            ClusterManager.get().deregisterScheduledAction(sa);
+                            node.clusterManager.deregisterScheduledAction(sa);
                             sa.setValid(false);
                             it.remove();
                         }
@@ -2674,7 +2670,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 if (lsScheduledActions != null) {
                     while (lsScheduledActions.size() > 0) {
                         ScheduledAction sa = lsScheduledActions.remove(0);
-                        ClusterManager.get().deregisterScheduledAction(sa);
+                        node.clusterManager.deregisterScheduledAction(sa);
                         if (!sa.expired()) {
                             sa.consume();
                             return;
@@ -2708,7 +2704,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 lsScheduledActions = new ArrayList<ScheduledAction>(1);
             }
             lsScheduledActions.add(scheduledAction);
-            ClusterManager.get().registerScheduledAction(scheduledAction);
+            node.clusterManager.registerScheduledAction(scheduledAction);
             logger.log(Level.FINEST, scheduledAction.request.operation + " scheduling " + scheduledAction);
         }
 
@@ -2883,12 +2879,12 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public void process() {
             BlocksOperationHandler h = (BlocksOperationHandler)
-                    ClusterService.get().getPacketProcessor(CONCURRENT_MAP_BLOCKS);
+                    getNode().clusterService.getPacketProcessor(CONCURRENT_MAP_BLOCKS);
             h.handleBlocks(Blocks.this);
         }
     }
 
-    public static class Entries implements Set {
+    public class Entries implements Set {
         final String name;
         final List<Map.Entry> lsKeyValues = new ArrayList<Map.Entry>();
         final ClusterOperation operation;
@@ -2926,14 +2922,14 @@ public final class ConcurrentMapManager extends BaseManager {
                     if (txn.has(name, key)) {
                         Object value = txn.get(name, key);
                         if (value != null) {
-                            lsKeyValues.add(createSimpleEntry(name, key, value));
+                            lsKeyValues.add(createSimpleEntry(node.factory, name, key, value));
                         }
                     } else {
-                        entry.setName(name);
+                        entry.setName(node.factory.getName(), name);
                         lsKeyValues.add(entry);
                     }
                 } else {
-                    entry.setName(name);
+                    entry.setName(node.factory.getName(), name);
                     lsKeyValues.add(entry);
                 }
             }
@@ -2967,12 +2963,12 @@ public final class ConcurrentMapManager extends BaseManager {
             public void remove() {
                 if (getInstanceType(name) == InstanceType.MULTIMAP) {
                     if (operation == CONCURRENT_MAP_ITERATE_KEYS) {
-                        ((MultiMap) FactoryImpl.getProxyByName(name)).remove(entry.getKey(), null);
+                        ((MultiMap) node.factory.getProxyByName(name)).remove(entry.getKey(), null);
                     } else {
-                        ((MultiMap) FactoryImpl.getProxyByName(name)).remove(entry.getKey(), entry.getValue());
+                        ((MultiMap) node.factory.getProxyByName(name)).remove(entry.getKey(), entry.getValue());
                     }
                 } else {
-                    ((FactoryImpl.IRemoveAwareProxy) FactoryImpl.getProxyByName(name)).removeKey(entry.getKey());
+                    ((FactoryImpl.IRemoveAwareProxy) node.factory.getProxyByName(name)).removeKey(entry.getKey());
                 }
 
                 it.remove();
@@ -3036,6 +3032,7 @@ public final class ConcurrentMapManager extends BaseManager {
         private long version = 0;
         private int hits = 0;
         private boolean valid = true;
+        private String factoryName = null;
         private String name = null;
         private Object key = null;
         private Object value = null;
@@ -3076,7 +3073,8 @@ public final class ConcurrentMapManager extends BaseManager {
             valid = in.readBoolean();
         }
 
-        public void set(String name, Object key) {
+        public void set(String factoryName, String name, Object key) {
+            this.factoryName = factoryName;
             this.name = name;
             this.key = key;
         }
@@ -3119,14 +3117,16 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public Object getValue() {
             if (value == null) {
-                value = ((FactoryImpl.MProxy) FactoryImpl.getProxyByName(name)).get(key);
+                FactoryImpl factory = FactoryImpl.getFactory(factoryName);
+                value = ((FactoryImpl.MProxy) factory.getProxyByName(name)).get(key);
             }
             return value;
         }
 
         public Object setValue(Object value) {
             Object oldValue = this.value;
-            ((FactoryImpl.MProxy) FactoryImpl.getProxyByName(name)).put(key, value);
+            FactoryImpl factory = FactoryImpl.getFactory(factoryName);
+            ((FactoryImpl.MProxy) factory.getProxyByName(name)).put(key, value);
             return oldValue;
         }
 

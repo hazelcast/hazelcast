@@ -62,15 +62,15 @@ class TransactionImpl implements Transaction {
         public void commitMap() {
             if (removed) {
                 if (name.startsWith("m:s:")) {
-                    ConcurrentMapManager.MRemoveItem mRemoveItem = ConcurrentMapManager.get().new MRemoveItem();
+                    ConcurrentMapManager.MRemoveItem mRemoveItem = factory.node.concurrentMapManager.new MRemoveItem();
                     mRemoveItem.removeItem(name, key);
                 } else if (!newRecord) {
-                    ThreadContext.get().getMRemove().remove(name, key, -1);
+                    factory.node.concurrentMapManager.new MRemove().remove(name, key, -1);
                 } else {
-                    ThreadContext.get().getMLock().unlock(name, key, -1);
+                    factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
                 }
             } else {
-                ThreadContext.get().getMPut().put(name, key, value, -1);
+                factory.node.concurrentMapManager.new MPut().put(name, key, value, -1);
             }
         }
 
@@ -92,7 +92,7 @@ class TransactionImpl implements Transaction {
 
         public void rollbackMap() {
             MProxy mapProxy = null;
-            final Object proxy = FactoryImpl.getProxyByName(name);
+            final Object proxy = factory.getProxyByName(name);
             if (proxy instanceof MProxy) {
                 mapProxy = (MProxy) proxy;
             }
@@ -108,12 +108,12 @@ class TransactionImpl implements Transaction {
         }
 
         private void commitPoll() {
-            final CommitPoll commitPoll = BlockingQueueManager.get().new CommitPoll();
+            final CommitPoll commitPoll = factory.node.blockingQueueManager.new CommitPoll();
             commitPoll.commitPoll(name);
         }
 
         private void offerAgain() {
-            final Offer offer = ThreadContext.get().getOffer();
+            final Offer offer = factory.node.blockingQueueManager.new Offer();
             offer.offer(name, value, 0, false);
         }
     }
@@ -121,13 +121,15 @@ class TransactionImpl implements Transaction {
     protected static Logger logger = Logger.getLogger(TransactionImpl.class.getName());
 
     private final long id;
+    private final FactoryImpl factory;
 
     List<TransactionRecord> transactionRecords = new ArrayList<TransactionRecord>(1);
 
     private int status = TXN_STATUS_NO_TXN;
 
-    public TransactionImpl(final long txnId) {
+    public TransactionImpl(FactoryImpl factory, final long txnId) {
         this.id = txnId;
+        this.factory = factory;
     }
 
     public Object attachPutOp(final String name, final Object key, final Object value,
@@ -308,7 +310,7 @@ class TransactionImpl implements Transaction {
                             if (lsEntries == null) {
                                 lsEntries = new ArrayList<Map.Entry>(2);
                             }
-                            lsEntries.add(BaseManager.createSimpleEntry(name, transactionRecord.key, transactionRecord.value));
+                            lsEntries.add(BaseManager.createSimpleEntry(factory, name, transactionRecord.key, transactionRecord.value));
                         }
                     }
                 }

@@ -41,24 +41,19 @@ public class ListenerManager extends BaseManager {
         Map, Item, Message;
     }
 
-    private static final ListenerManager instance = new ListenerManager();
-
-    public static ListenerManager get() {
-        return instance;
-    }
-
-    private ListenerManager() {
-        ClusterService.get().registerPacketProcessor(ClusterOperation.EVENT, new PacketProcessor() {
+    ListenerManager(Node node) {
+        super (node);
+        registerPacketProcessor(ClusterOperation.EVENT, new PacketProcessor() {
             public void process(Packet packet) {
                 handleEvent(packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(ClusterOperation.ADD_LISTENER, new PacketProcessor() {
+        registerPacketProcessor(ClusterOperation.ADD_LISTENER, new PacketProcessor() {
             public void process(Packet packet) {
                 handleAddRemoveListener(true, packet);
             }
         });
-        ClusterService.get().registerPacketProcessor(ClusterOperation.REMOVE_LISTENER, new PacketProcessor() {
+        registerPacketProcessor(ClusterOperation.REMOVE_LISTENER, new PacketProcessor() {
             public void process(Packet packet) {
                 handleAddRemoveListener(false, packet);
             }
@@ -186,7 +181,7 @@ public class ListenerManager extends BaseManager {
 
         public void process() {
             if (key != null) {
-                Address owner = ConcurrentMapManager.get().getKeyOwner(key);
+                Address owner = node.concurrentMapManager.getKeyOwner(key);
                 if (owner.equals(thisAddress)) {
                     handleListenerRegisterations(add, name, key, thisAddress, includeValue);
                 } else {

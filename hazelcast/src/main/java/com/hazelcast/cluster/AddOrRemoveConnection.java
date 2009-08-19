@@ -43,6 +43,6 @@ public class AddOrRemoveConnection extends AbstractRemotelyProcessable {
     }
 
     public void process() {
-        ClusterManager.get().handleAddRemoveConnection(this);
+        node.clusterManager.handleAddRemoveConnection(this);
     }
 }

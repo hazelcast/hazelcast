@@ -47,6 +47,13 @@ import java.util.concurrent.*;
  * true after an @link com.hazelcast.Hazelcast#shutdown). 
  */
 public class ExecutorServiceProxy implements ExecutorService, Constants {
+    
+    
+    final Node node;
+
+    public ExecutorServiceProxy(Node node) {
+        this.node = node;
+    }
 
     /**
      * Hazelcast ExecutorService cannot be really shut down.
@@ -83,7 +90,7 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
      * @return the status of the current node
      */
     public boolean isShutdown() {
-        return !ExecutorManager.get().isStarted();
+        return !node.executorManager.isStarted();
     }
 
     /**
@@ -93,7 +100,7 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
      * @return the status of the current node
      */
     public boolean isTerminated() {
-        return !ExecutorManager.get().isStarted();
+        return !node.executorManager.isStarted();
     }
 
     /**
@@ -118,8 +125,8 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
 
     public <T> Future<T> submit(Callable<T> task) {
         DistributedTask dtask = new DistributedTask(task);
-        Processable action = ExecutorManager.get().createNewExecutionAction(dtask);
-        ClusterService clusterService = ClusterService.get();
+        Processable action = node.executorManager.createNewExecutionAction(dtask);
+        ClusterService clusterService = node.clusterService;
         clusterService.enqueueAndReturn(action);
         return dtask;
     }
@@ -131,8 +138,8 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
         } else {
             dtask = new DistributedTask(task, null);
         }
-        Processable action = ExecutorManager.get().createNewExecutionAction(dtask);
-        ClusterService clusterService = ClusterService.get();
+        Processable action = node.executorManager.createNewExecutionAction(dtask);
+        ClusterService clusterService = node.clusterService;
         clusterService.enqueueAndReturn(action);
         return dtask;
     }
@@ -144,8 +151,8 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
         } else {
             dtask = new DistributedTask(task, result);
         }
-        Processable action = ExecutorManager.get().createNewExecutionAction(dtask);
-        ClusterService clusterService = ClusterService.get();
+        Processable action = node.executorManager.createNewExecutionAction(dtask);
+        ClusterService clusterService = node.clusterService;
         clusterService.enqueueAndReturn(action);
         return dtask;
     }
@@ -157,7 +164,7 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
         } else {
             dtask = new DistributedTask(command, null);
         }
-        Processable action = ExecutorManager.get().createNewExecutionAction(dtask);
-        ClusterService.get().enqueueAndReturn(action);
+        Processable action = node.executorManager.createNewExecutionAction(dtask);
+        node.clusterService.enqueueAndReturn(action);
     }
 }

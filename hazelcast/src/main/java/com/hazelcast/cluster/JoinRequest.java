@@ -72,6 +72,6 @@ public class JoinRequest extends AbstractRemotelyProcessable {
     }
 
     public void process() {
-        ClusterManager.get().handleJoinRequest(this);
+        getNode().clusterManager.handleJoinRequest(this);
     }
 }

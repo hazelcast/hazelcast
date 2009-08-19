@@ -29,30 +29,23 @@ import java.util.logging.Logger;
 
 public class InSelector extends SelectorBase {
 
-    protected static final Logger logger = Logger.getLogger(InSelector.class.getName());
+    final Logger logger = Logger.getLogger(InSelector.class.getName());
 
-    private static final InSelector instance = new InSelector();
+    final ServerSocketChannel serverSocketChannel;
 
-    private ServerSocketChannel serverSocketChannel;
+    final SelectionKey key;
 
-    SelectionKey key = null;
-
-    public InSelector() {
-        super();
+    public InSelector(Node node, ServerSocketChannel serverSocketChannel) {
+        super(node);
         this.waitTime = 64;
-    }
-
-    public static InSelector get() {
-        return instance;
-    }
-
-    public void setServerSocketChannel(final ServerSocketChannel serverSocketChannel) {
         this.serverSocketChannel = serverSocketChannel;
+        SelectionKey sKey = null;
         try {
-            key = serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, new Acceptor());
+            sKey = serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, new Acceptor());
         } catch (final ClosedChannelException e) {
             e.printStackTrace();
         }
+        key = sKey;
         logger.log(Level.FINEST, "Started Selector at "
                 + serverSocketChannel.socket().getLocalPort());
         selector.wakeup();
@@ -88,7 +81,7 @@ public class InSelector extends SelectorBase {
                     serverSocketChannel.close();
                 } catch (final Exception e1) {
                 }
-                Node.get().shutdown();
+                node.shutdown();
             }
         }
     }

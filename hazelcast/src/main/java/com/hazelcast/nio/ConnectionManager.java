@@ -31,9 +31,7 @@ import java.util.logging.Logger;
 
 public class ConnectionManager {
 
-    protected static Logger logger = Logger.getLogger(ConnectionManager.class.getName());
-
-    private static final ConnectionManager instance = new ConnectionManager();
+    protected Logger logger = Logger.getLogger(ConnectionManager.class.getName());
 
     private final Map<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(
             100);
@@ -46,12 +44,12 @@ public class ConnectionManager {
 
     private boolean acceptTypeConnection = false;
 
-    private ConnectionManager() {
+    final Node node;
+
+    public ConnectionManager(Node node) {
+        this.node = node;
     }
 
-    public static ConnectionManager get() {
-        return instance;
-    }
 
     public void addConnectionListener(final ConnectionListener listener) {
         setConnectionListeners.add(listener);
@@ -68,11 +66,11 @@ public class ConnectionManager {
             logger.log(Level.FINEST, msg);
             return true;
         }
-        if (!endPoint.equals(Node.get().getThisAddress())) {
+        if (!endPoint.equals(node.getThisAddress())) {
             acceptTypeConnection = accept;
             if (!accept) {
                 //make sure bind packet is the first packet sent to the end point.
-                ClusterManager clusterManager = ClusterManager.get();
+                ClusterManager clusterManager = node.clusterManager;
                 Packet bindPacket = clusterManager.createRemotelyProcessablePacket(new Bind(clusterManager.getThisAddress()));
                 connection.writeHandler.enqueuePacket(bindPacket);
                 //now you can send anything...
@@ -91,14 +89,14 @@ public class ConnectionManager {
 
     public synchronized Connection createConnection(final SocketChannel socketChannel,
                                                     final boolean acceptor) {
-        final Connection connection = new Connection(socketChannel);
+        final Connection connection = new Connection(this, socketChannel);
         try {
             if (acceptor) {
                 // do nothing. you will be registering for the
                 // write operation when you have something to
                 // write already in the outSelector thread.
             } else {
-                InSelector.get().addTask(connection.getReadHandler());
+                node.inSelector.addTask(connection.getReadHandler());
                 // socketChannel.register(inSelector.selector,
                 // SelectionKey.OP_READ, readHandler);
             }
@@ -110,8 +108,8 @@ public class ConnectionManager {
 
     public synchronized void failedConnection(final Address address) {
         setConnectionInProgress.remove(address);
-        if (!Node.get().joined()) {
-            Node.get().failedConnection(address);
+        if (!node.joined()) {
+            node.failedConnection(address);
         }
     }
 
@@ -129,15 +127,15 @@ public class ConnectionManager {
     }
 
     public synchronized Connection getOrConnect(final Address address) {
-        if (address.equals(Node.get().getThisAddress()))
+        if (address.equals(node.getThisAddress()))
             throw new RuntimeException("Connecting to self! " + address);
         final Connection connection = mapConnections.get(address);
         if (connection == null) {
             if (setConnectionInProgress.add(address)) {
-                if (!ClusterManager.get().shouldConnectTo(address))
+                if (! node.clusterManager.shouldConnectTo(address))
                     throw new RuntimeException("Should not connect to " + address);
 
-                OutSelector.get().connect(address);
+                node.outSelector.connect(address);
             }
         }
         return connection;

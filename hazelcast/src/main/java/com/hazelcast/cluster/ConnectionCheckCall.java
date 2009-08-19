@@ -8,9 +8,9 @@ import com.hazelcast.nio.ConnectionManager;
 
 public class ConnectionCheckCall extends AbstractRemotelyCallable<Boolean> {
     public Boolean call() throws Exception {
-        for (MemberImpl member : ClusterManager.get().getMembers()) {
+        for (MemberImpl member : node.clusterManager.getMembers()) {
             if (!member.localMember()) {
-                if (ConnectionManager.get().getConnection(member.getAddress()) == null) {
+                if (node.connectionManager.getConnection(member.getAddress()) == null) {
                     return Boolean.FALSE;
                 }
             }

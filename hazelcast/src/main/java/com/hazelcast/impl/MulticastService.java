@@ -27,25 +27,18 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketTimeoutException;
 
-class MulticastService implements Runnable {
+public class MulticastService implements Runnable {
 
     private MulticastSocket multicastSocket;
     private DatagramPacket datagramPacketSend;
     private DatagramPacket datagramPacketReceive;
     private int bufferSize = 1024;
     private volatile boolean running = true;
-
-    private static final MulticastService instance = new MulticastService();
-
-    private MulticastService() {
-    }
-
-    public static MulticastService get() {
-        return instance;
-    }
-
-    public void init(MulticastSocket multicastSocket) throws Exception {
-        Config config = Config.get();
+    final Node node;
+    
+    public MulticastService(Node node, MulticastSocket multicastSocket) throws Exception {
+        this.node = node;
+        Config config = node.config;
         this.multicastSocket = multicastSocket;
         this.datagramPacketReceive = new DatagramPacket(new byte[bufferSize], bufferSize);
         this.datagramPacketSend = new DatagramPacket(new byte[bufferSize], bufferSize, InetAddress
@@ -64,17 +57,17 @@ class MulticastService implements Runnable {
             try {
                 final JoinInfo joinInfo = receive();
                 if (joinInfo != null) {
-                    if (Node.get().address != null && !Node.get().address.equals(joinInfo.address)) {
+                    if (node.address != null && !node.address.equals(joinInfo.address)) {
                         if (Config.get().getGroupName().equals(joinInfo.groupName)) {
                             if (Config.get().getGroupPassword().equals(joinInfo.groupPassword)) {
-                                if (Node.get().master()) {
+                                if (node.master()) {
                                     if (joinInfo.request) {
-                                        send(joinInfo.copy(false, Node.get().address));
+                                        send(joinInfo.copy(false, node.address));
                                     }
                                 } else {
-                                    if (!Node.get().joined() && !joinInfo.request) {
-                                        if (Node.get().masterAddress == null) {
-                                            Node.get().masterAddress = new Address(joinInfo.address);
+                                    if (!node.joined() && !joinInfo.request) {
+                                        if (node.masterAddress == null) {
+                                            node.masterAddress = new Address(joinInfo.address);
                                         }
                                     }
                                 }

@@ -45,11 +45,10 @@ public class SelectorBase implements Runnable {
 
     AtomicInteger size = new AtomicInteger();
 
-    public SelectorBase() {
+    final Node node;
 
-    }
-
-    public void start() {
+    public SelectorBase(Node node) {
+        this.node = node;
         selectorQueue.clear();
         size.set(0);
         try {
@@ -72,7 +71,7 @@ public class SelectorBase implements Runnable {
             selectorQueue.put(runnable);
             return size.incrementAndGet();
         } catch (final InterruptedException e) {
-            Node.get().handleInterruptedException(Thread.currentThread(), e);
+            node.handleInterruptedException(Thread.currentThread(), e);
             return 0;
         }
     }
@@ -96,7 +95,7 @@ public class SelectorBase implements Runnable {
             try {
                 selectedKeys = selector.select(waitTime);
                 if (Thread.interrupted()) {
-                    Node.get().handleInterruptedException(Thread.currentThread(),
+                    node.handleInterruptedException(Thread.currentThread(),
                             new RuntimeException());
                 }
             } catch (final Throwable exp) {
@@ -141,7 +140,7 @@ public class SelectorBase implements Runnable {
 //        socketChannel.socket().setTcpNoDelay(true);
 
         socketChannel.configureBlocking(false);
-        return ConnectionManager.get().createConnection(socketChannel,
+        return node.connectionManager.createConnection(socketChannel,
                 acceptor);
     }
 }

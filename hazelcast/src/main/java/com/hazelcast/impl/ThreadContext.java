@@ -19,9 +19,6 @@ package com.hazelcast.impl;
 
 import com.hazelcast.collection.SimpleBoundedQueue;
 import com.hazelcast.core.Transaction;
-import com.hazelcast.impl.BlockingQueueManager.Offer;
-import com.hazelcast.impl.BlockingQueueManager.Poll;
-import com.hazelcast.impl.ConcurrentMapManager.*;
 import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 import com.hazelcast.nio.BufferUtil;
 import com.hazelcast.nio.Data;
@@ -55,6 +52,8 @@ public final class ThreadContext {
     final ObjectPool<Packet> packetCache;
 
     final static ConcurrentMap<String, BlockingQueue> mapGlobalQueues = new ConcurrentHashMap<String, BlockingQueue>();
+
+    final ConcurrentMap<String, CallCache> mapNodeCallCaches = new ConcurrentHashMap<String, CallCache>();
 
     static {
         mapGlobalQueues.put("BufferCache", new ArrayBlockingQueue(6000));
@@ -117,7 +116,7 @@ public final class ThreadContext {
             threadLocal.set(threadContext);
         }
         return threadContext;
-    } 
+    }
 
     public ObjectPool<Packet> getPacketPool() {
         return packetCache;
@@ -132,57 +131,13 @@ public final class ThreadContext {
         txnId = -1;
     }
 
-    public MAdd getMAdd() {
-        return ConcurrentMapManager.get().new MAdd();
-    }
-
-    MGet mget = ConcurrentMapManager.get().new MGet();
-
-    public MGet getMGet() {
-        mget.reset();
-        return mget;
-    }
-
-    public MLock getMLock() {
-        return ConcurrentMapManager.get().new MLock();
-    }
-
-    MPut mput = ConcurrentMapManager.get().new MPut();
-
-    public MPut getMPut() {
-        mput.reset();
-        return mput;
-    }
-
-    public MPutMulti getMPutMulti() {
-        return ConcurrentMapManager.get().new MPutMulti();
-    }
-
-    MRemove mremove = ConcurrentMapManager.get().new MRemove();
-
-    public MRemove getMRemove() {
-        mremove.reset();
-        return mremove;
-    }
-
-    public MRemoveMulti getMRemoveMulti() {
-        return ConcurrentMapManager.get().new MRemoveMulti();
-    }
-
-    public Offer getOffer() {
-        return BlockingQueueManager.get().new Offer();
-    }
-
-    public Poll getPoll() {
-        return BlockingQueueManager.get().new Poll();
-    }
-
     public Transaction getTransaction() {
-        if (txn == null) {
-            txn = TransactionFactory.get().newTransaction();
-            txnId = txn.getId();
-        }
         return txn;
+    }
+
+    public void setTransaction(TransactionImpl txn) {
+        this.txn = txn;
+        this.txnId = txn.getId();
     }
 
     public long getTxnId() {
@@ -213,6 +168,43 @@ public final class ThreadContext {
 
     public Object toObject(final Data data, boolean purgeData) {
         return serializer.readObject(data, purgeData);
+    }
+
+    public CallCache getCallCache (FactoryImpl factory) {
+        CallCache callCache = mapNodeCallCaches.get (factory.getName());
+        if (callCache ==null) {
+            callCache = new CallCache(factory);
+            mapNodeCallCaches.put (factory.getName(), callCache);
+        }
+        return callCache;
+    }
+
+    class CallCache {
+        final FactoryImpl factory;
+        final ConcurrentMapManager.MPut mput;
+        final ConcurrentMapManager.MGet mget;
+        final ConcurrentMapManager.MRemove mremove;
+        CallCache(FactoryImpl factory) {
+            this.factory = factory;
+            mput = factory.node.concurrentMapManager.new MPut();
+            mget = factory.node.concurrentMapManager.new MGet();
+            mremove = factory.node.concurrentMapManager.new MRemove();
+        }
+
+        public ConcurrentMapManager.MPut getMPut() {
+            mput.reset();
+            return mput;
+        }
+
+        public ConcurrentMapManager.MGet getMGet() {
+            mget.reset();
+            return mget;
+        }
+
+        public ConcurrentMapManager.MRemove getMRemove() {
+            mremove.reset();
+            return mremove;
+        }
     }
 
     public abstract class ObjectPool<E> {
@@ -265,13 +257,13 @@ public final class ThreadContext {
                 if (value == null) {
                     int totalDrained = objectQueue.drainTo(localPool, maxSize);
                     if (totalDrained == 0) {
-						if (++zero % 10000 == 0) {
-							logger.log(Level.FINEST, "ObjectPool [" + name + "] : "
+                        if (++zero % 10000 == 0) {
+                            logger.log(Level.FINEST, "ObjectPool [" + name + "] : "
                                     + Thread.currentThread().getName()
-									+ " DRAINED " + totalDrained + "  size:" + objectQueue.size()
-									+ ", zeroCount:" + zero);
+                                    + " DRAINED " + totalDrained + "  size:" + objectQueue.size()
+                                    + ", zeroCount:" + zero);
                             zero = 0;
-						}
+                        }
                         for (int i = 0; i < 4; i++) {
                             localPool.add(createNew());
                         }
@@ -286,5 +278,4 @@ public final class ThreadContext {
             return value;
         }
     }
-
 }

@@ -160,7 +160,7 @@ public class AddressPicker {
         return true;
     }
 
-    public static Address pickAddress(final ServerSocketChannel serverSocketChannel)
+    public static Address pickAddress(Node node, final ServerSocketChannel serverSocketChannel)
             throws Exception {
         String currentAddress = null;
         try {
@@ -199,7 +199,7 @@ public class AddressPicker {
                     String msg = "Hazelcast CANNOT start on this node. No matching network interface found. ";
                     msg += "\nInterface matching must be either disabled or updated in the hazelcast.xml config file.";
                     logger.log(Level.SEVERE, msg);
-                    Node.get().dumpCore(null);
+                    node.dumpCore(null);
                     return null;
                 }
             }
@@ -227,7 +227,7 @@ public class AddressPicker {
             return new Address(currentAddress, port);
         } catch (
                 final Exception e) {
-            Node.get().dumpCore(e);
+            node.dumpCore(e);
             e.printStackTrace();
             throw e;
         }

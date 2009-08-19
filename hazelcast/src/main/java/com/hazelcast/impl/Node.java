@@ -32,11 +32,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -50,15 +48,13 @@ public class Node {
 
     volatile Address masterAddress = null;
 
-    private final static Node instance = new Node();
-
     private volatile boolean joined = false;
 
     private volatile boolean active = false;
 
     private volatile boolean completelyShutdown = false;
 
-    private ClusterImpl clusterImpl = null;
+    final ClusterImpl clusterImpl;
 
     private final CoreDump coreDump = new CoreDump();
 
@@ -75,6 +71,24 @@ public class Node {
     private final String version;
 
     private final String build;
+
+    final BaseVariables baseVariables;
+
+
+    public final ConcurrentMapManager concurrentMapManager;
+    public final BlockingQueueManager blockingQueueManager;
+    public final ClusterManager clusterManager;
+    public final TopicManager topicManager;
+    public final ListenerManager listenerManager;
+    public final ClusterService clusterService;
+    public final ExecutorManager executorManager;
+
+    public final InSelector inSelector;
+    public final OutSelector outSelector;
+    public final MulticastService multicastService;
+    public final ConnectionManager connectionManager;
+
+    public final Config config;
 
 
     public enum Type {
@@ -109,7 +123,43 @@ public class Node {
         }
     }
 
-    private Node() {
+
+    class BaseVariables {
+        final LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
+
+        final Map<Address, MemberImpl> mapMembers = new HashMap<Address, MemberImpl>(
+                100);
+
+        final Map<Long, BaseManager.Call> mapCalls = new HashMap<Long, BaseManager.Call>();
+
+        final BaseManager.EventQueue[] eventQueues = new BaseManager.EventQueue[BaseManager.EVENT_QUEUE_COUNT];
+
+        final Map<Long, StreamResponseHandler> mapStreams = new ConcurrentHashMap<Long, StreamResponseHandler>();
+
+        long scheduledActionIdIndex = 0;
+
+        long callIdGen = 0;
+
+        final Address thisAddress;
+
+        final MemberImpl thisMember;
+
+
+        BaseVariables(Address thisAddress, MemberImpl thisMember) {
+            this.thisAddress = thisAddress;
+            this.thisMember = thisMember;
+
+            for (int i = 0; i < BaseManager.EVENT_QUEUE_COUNT; i++) {
+                eventQueues[i] = new BaseManager.EventQueue();
+            }
+        }
+    }
+
+    final FactoryImpl factory;
+
+    public Node(FactoryImpl factory, Config config) {
+        this.factory = factory;
+        this.config = config;
         boolean sClient = false;
         final String superClientProp = System.getProperty("hazelcast.super.client");
         if (superClientProp != null) {
@@ -133,10 +183,69 @@ public class Node {
         }
         version = versionTemp;
         build = buildTemp;
-    }
+        ServerSocketChannel serverSocketChannel = null;
+        try {
+            final String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
+            final String preferIPv6Address = System.getProperty("java.net.preferIPv6Addresses");
+            if (preferIPv6Address == null && preferIPv4Stack == null) {
+                System.setProperty("java.net.preferIPv4Stack", "true");
+            }
+            serverSocketChannel = ServerSocketChannel.open();
+            address = AddressPicker.pickAddress(this, serverSocketChannel);
+            address.setThisAddress(true);
+            localMember = new MemberImpl(address, true, localNodeType);
 
-    public static Node get() {
-        return instance;
+        } catch (final Exception e) {
+            dumpCore(e);
+            e.printStackTrace();
+        }
+        clusterImpl = new ClusterImpl(this);
+        baseVariables = new BaseVariables(address, localMember);
+        //initialize managers..
+        clusterService = new ClusterService(this);
+        clusterService.start();
+
+        inSelector = new InSelector (this, serverSocketChannel);
+        outSelector = new OutSelector (this);
+        connectionManager = new ConnectionManager(this);
+        
+        clusterManager = new ClusterManager(this);
+        concurrentMapManager = new ConcurrentMapManager(this);
+        blockingQueueManager = new BlockingQueueManager(this);
+        executorManager = new ExecutorManager(this);
+        listenerManager = new ListenerManager(this);
+        topicManager = new TopicManager(this);
+
+        clusterManager.addMember(localMember);
+
+        Logger systemLogger = Logger.getLogger("com.hazelcast.system");
+        systemLogger.log(Level.INFO, "Hazelcast " + version + " ("
+                + build + ") starting at " + address);
+        systemLogger.log(Level.INFO, "Copyright (C) 2009 Hazelcast.com");
+        Join join = config.getNetworkConfig().getJoin();
+        MulticastService mcService = null;
+        try {
+            if (join.getMulticastConfig().isEnabled()) {
+                MulticastSocket multicastSocket = new MulticastSocket(null);
+                multicastSocket.setReuseAddress(true);
+                // bind to receive interface
+                multicastSocket.bind(new InetSocketAddress(
+                        join.getMulticastConfig().getMulticastPort()));
+                multicastSocket.setTimeToLive(32);
+                // set the send interface
+                multicastSocket.setInterface(address.getInetAddress());
+                multicastSocket.setReceiveBufferSize(1024);
+                multicastSocket.setSendBufferSize(1024);
+                multicastSocket.joinGroup(InetAddress
+                        .getByName(join.getMulticastConfig().getMulticastGroup()));
+                multicastSocket.setSoTimeout(1000);
+                mcService = new MulticastService (this, multicastSocket);
+            }
+        } catch (Exception e) {
+            dumpCore(e);
+            e.printStackTrace();
+        }
+        this.multicastService = mcService;      
     }
 
     public void dumpCore(final Throwable ex) {
@@ -282,98 +391,38 @@ public class Node {
                 // events, such as removeaddress
                 joined = false;
                 active = false;
-                ConcurrentMapManager.get().reset();
-                ClusterService.get().stop();
-                MulticastService.get().stop();
-                ConnectionManager.get().shutdown();
-                ExecutorManager.get().stop();
-                InSelector.get().shutdown();
-                OutSelector.get().shutdown();
+                concurrentMapManager.reset();
+                clusterService.stop();
+                multicastService.stop();
+                connectionManager.shutdown();
+                executorManager.stop();
+                inSelector.shutdown();
+                outSelector.shutdown();
                 address = null;
                 masterAddress = null;
-                FactoryImpl.inited = false;
-                ClusterManager.get().stop();
+                factory.inited = false;
+                clusterManager.stop();
             }
         } catch (Throwable e) {
             if (logger != null) logger.log(Level.FINEST, "shutdown exception", e);
         }
     }
 
-    private boolean init() {
-        try {
-            final String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
-            final String preferIPv6Address = System.getProperty("java.net.preferIPv6Addresses");
-            if (preferIPv6Address == null && preferIPv4Stack == null) {
-                System.setProperty("java.net.preferIPv4Stack", "true");
-            }
-            final Config config = Config.get();
-            final ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
-            address = AddressPicker.pickAddress(serverSocketChannel);
-            address.setThisAddress(true);
-            localMember = new MemberImpl(address, true, localNodeType);
-            //initialize managers..
-            ClusterService.get().start();
-            ClusterManager.get().init();
-            ConcurrentMapManager.get().init();
-            BlockingQueueManager.get().init();
-            ExecutorManager.get().init();
-            ListenerManager.get().init();
-            TopicManager.get().init();
-
-            ClusterManager.get().addMember(localMember);
-            InSelector.get().start();
-            OutSelector.get().start();
-            InSelector.get().setServerSocketChannel(serverSocketChannel);
-            if (address == null)
-                return false;
-            Logger systemLogger = Logger.getLogger("com.hazelcast.system");
-            systemLogger.log(Level.INFO, "Hazelcast " + version + " ("
-                    + build + ") starting at " + address);
-            systemLogger.log(Level.INFO, "Copyright (C) 2009 Hazelcast.com");
-            Join join = config.getNetworkConfig().getJoin();
-            if (join.getMulticastConfig().isEnabled()) {
-                final MulticastSocket multicastSocket = new MulticastSocket(null);
-                multicastSocket.setReuseAddress(true);
-                // bind to receive interface
-                multicastSocket.bind(new InetSocketAddress(
-                        join.getMulticastConfig().getMulticastPort()));
-                multicastSocket.setTimeToLive(32);
-                // set the send interface
-                multicastSocket.setInterface(address.getInetAddress());
-                multicastSocket.setReceiveBufferSize(1024);
-                multicastSocket.setSendBufferSize(1024);
-                multicastSocket.joinGroup(InetAddress
-                        .getByName(join.getMulticastConfig().getMulticastGroup()));
-                multicastSocket.setSoTimeout(1000);
-                MulticastService.get().init(multicastSocket);
-            }
-
-        } catch (final Exception e) {
-            dumpCore(e);
-            e.printStackTrace();
-            return false;
-        }
-        return true;
-    }
 
     public void start() {
         if (completelyShutdown) return;
         firstMainThread = Thread.currentThread();
-        clusterImpl = new ClusterImpl();
-        final boolean inited = init();
-        if (!inited)
-            return;
-        final Thread inThread = new Thread(InSelector.get(), "hz.InThread");
+        final Thread inThread = new Thread(inSelector, "hz.InThread");
         inThread.start();
         inThread.setPriority(8);
         threads.add(inThread);
 
-        final Thread outThread = new Thread(OutSelector.get(), "hz.OutThread");
+        final Thread outThread = new Thread (outSelector, "hz.OutThread");
         outThread.start();
         outThread.setPriority(8);
         threads.add(outThread);
 
-        final Thread clusterServiceThread = new Thread(ClusterService.get(), "hz.ServiceThread");
+        final Thread clusterServiceThread = new Thread(clusterService, "hz.ServiceThread");
         clusterServiceThread.start();
         clusterServiceThread.setPriority(7);
         threads.add(clusterServiceThread);
@@ -407,7 +456,7 @@ public class Node {
     }
 
     public void startMulticastService() {
-        final Thread multicastServiceThread = new Thread(MulticastService.get(), "hz.MulticastThread");
+        final Thread multicastServiceThread = new Thread(multicastService, "hz.MulticastThread");
         multicastServiceThread.start();
         multicastServiceThread.setPriority(6);
     }
@@ -419,9 +468,9 @@ public class Node {
     void setAsMaster() {
         masterAddress = address;
         logger.log(Level.FINEST, "adding member myself");
-        ClusterManager.get().addMember(address, getLocalNodeType()); // add
+        clusterManager.addMember(address, getLocalNodeType()); // add
         // myself
-        clusterImpl.setMembers(BaseManager.lsMembers);
+        clusterImpl.setMembers(baseVariables.lsMembers);
         unlock();
     }
 
@@ -434,7 +483,7 @@ public class Node {
                         config.getGroupPassword(), getLocalNodeType());
 
                 for (int i = 0; i < 200; i++) {
-                    MulticastService.get().send(joinInfo);
+                    multicastService.send(joinInfo);
                     if (masterAddress == null) {
                         Thread.sleep(10);
                     } else {
@@ -537,11 +586,11 @@ public class Node {
             joinWithMulticast();
         }
         logger.log(Level.FINEST, "Join DONE");
-        ClusterManager.get().finalizeJoin();
-        if (BaseManager.lsMembers.size() == 1) {
+        clusterManager.finalizeJoin();
+        if (baseVariables.lsMembers.size() == 1) {
             final StringBuilder sb = new StringBuilder();
             sb.append("\n");
-            sb.append(ClusterManager.get());
+            sb.append(clusterManager);
             logger.log(Level.INFO, sb.toString());
         }
     }
@@ -550,10 +599,10 @@ public class Node {
         masterAddress = findMaster();
         logger.log(Level.FINEST, address + " master: " + masterAddress);
         if (masterAddress == null || masterAddress.equals(address)) {
-            ClusterManager.get().addMember(address, getLocalNodeType()); // add
+            clusterManager.addMember(address, getLocalNodeType()); // add
             // myself
             masterAddress = address;
-            clusterImpl.setMembers(BaseManager.lsMembers);
+            clusterImpl.setMembers(baseVariables.lsMembers);
             unlock();
         } else {
             while (!joined) {
@@ -576,13 +625,13 @@ public class Node {
     private void joinExisting(final Address masterAddress) throws Exception {
         if (masterAddress == null) return;
         if (masterAddress.equals(getThisAddress())) return;
-        Connection conn = ConnectionManager.get().getOrConnect(masterAddress);
+        Connection conn = connectionManager.getOrConnect(masterAddress);
         if (conn == null)
             Thread.sleep(1000);
-        conn = ConnectionManager.get().getConnection(masterAddress);
+        conn = connectionManager.getConnection(masterAddress);
         logger.log(Level.FINEST, "Master connnection " + conn);
         if (conn != null)
-            ClusterManager.get().sendJoinRequest(masterAddress);
+            clusterManager.sendJoinRequest(masterAddress);
     }
 
     private void joinViaPossibleMembers() {
@@ -592,7 +641,7 @@ public class Node {
             lsPossibleAddresses.remove(address);
             for (final Address adrs : lsPossibleAddresses) {
                 logger.log(Level.FINEST, "connecting to " + adrs);
-                ConnectionManager.get().getOrConnect(adrs);
+                connectionManager.getOrConnect(adrs);
             }
             boolean found = false;
             int numberOfSeconds = 0;
@@ -608,11 +657,11 @@ public class Node {
                 numberOfSeconds++;
                 int numberOfJoinReq = 0;
                 for (final Address adrs : lsPossibleAddresses) {
-                    final Connection conn = ConnectionManager.get().getOrConnect(adrs);
+                    final Connection conn = connectionManager.getOrConnect(adrs);
                     logger.log(Level.FINEST, "conn " + conn);
                     if (conn != null && numberOfJoinReq < 5) {
                         found = true;
-                        ClusterManager.get().sendJoinRequest(adrs);
+                        clusterManager.sendJoinRequest(adrs);
                         numberOfJoinReq++;
                     }
                 }
@@ -624,9 +673,9 @@ public class Node {
                 while (!joined) {
                     int numberOfJoinReq = 0;
                     for (final Address adrs : lsPossibleAddresses) {
-                        final Connection conn = ConnectionManager.get().getOrConnect(adrs);
+                        final Connection conn = connectionManager.getOrConnect(adrs);
                         if (conn != null && numberOfJoinReq < 5) {
-                            ClusterManager.get().sendJoinRequest(adrs);
+                            clusterManager.sendJoinRequest(adrs);
                             numberOfJoinReq++;
                         }
                     }
@@ -665,18 +714,18 @@ public class Node {
                 setAsMaster();
                 return;
             }
-            ConnectionManager.get().getOrConnect(requiredAddress);
+            connectionManager.getOrConnect(requiredAddress);
             Connection conn = null;
             while (conn == null) {
-                conn = ConnectionManager.get().getOrConnect(requiredAddress);
+                conn = connectionManager.getOrConnect(requiredAddress);
                 Thread.sleep(1000);
             }
             while (!joined) {
-                final Connection connection = ConnectionManager.get().getOrConnect(requiredAddress);
+                final Connection connection = connectionManager.getOrConnect(requiredAddress);
                 if (connection == null)
                     joinViaRequiredMember();
                 logger.log(Level.FINEST, "Sending joinRequest " + requiredAddress);
-                ClusterManager.get().sendJoinRequest(requiredAddress);
+                clusterManager.sendJoinRequest(requiredAddress);
 
                 Thread.sleep(2000);
             }

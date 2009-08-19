@@ -27,47 +27,47 @@ public final class Hazelcast {
     }
 
     public static <E> IQueue<E> getQueue(String name) {
-        return com.hazelcast.impl.FactoryImpl.getQueue(name);
+        return com.hazelcast.impl.FactoryImpl.getFactory("default").getQueue(name);
     }
 
     public static <E> ITopic<E> getTopic(String name) {
-        return com.hazelcast.impl.FactoryImpl.getTopic(name);
+        return com.hazelcast.impl.FactoryImpl.getFactory("default").getTopic(name);
     }
 
     public static <E> ISet<E> getSet(String name) {
-        return com.hazelcast.impl.FactoryImpl.getSet(name);
+        return com.hazelcast.impl.FactoryImpl.getFactory("default").getSet(name);
     }
 
     public static <E> IList<E> getList(String name) {
-        return com.hazelcast.impl.FactoryImpl.getList(name);
+        return com.hazelcast.impl.FactoryImpl.getFactory("default").getList(name);
     }
 
     public static <K, V> IMap<K, V> getMap(String name) {
-        return com.hazelcast.impl.FactoryImpl.getMap(name);
+        return com.hazelcast.impl.FactoryImpl.getFactory("default").getMap(name);
     }
 
     public static <K, V> MultiMap<K, V> getMultiMap(String name) {
-        return com.hazelcast.impl.FactoryImpl.getMultiMap(name);
+        return com.hazelcast.impl.FactoryImpl.getFactory("default").getMultiMap(name);
     }
 
     public static ILock getLock(Object obj) {
-        return com.hazelcast.impl.FactoryImpl.getLock(obj);
+        return com.hazelcast.impl.FactoryImpl.getFactory("default").getLock(obj);
     }
 
     public static Cluster getCluster() {
-        return com.hazelcast.impl.FactoryImpl.getCluster();
+        return com.hazelcast.impl.FactoryImpl.getFactory("default").getCluster();
     }
 
     public static ExecutorService getExecutorService() {
-        return com.hazelcast.impl.FactoryImpl.getExecutorService();
+        return com.hazelcast.impl.FactoryImpl.getFactory("default").getExecutorService();
     }
 
     public static Transaction getTransaction() {
-        return com.hazelcast.impl.FactoryImpl.getTransaction();
+        return com.hazelcast.impl.FactoryImpl.getFactory("default").getTransaction();
     }
 
     public static IdGenerator getIdGenerator(String name) {
-        return com.hazelcast.impl.FactoryImpl.getIdGenerator(name);
+        return com.hazelcast.impl.FactoryImpl.getFactory("default").getIdGenerator(name);
     }
 
     /**
@@ -76,7 +76,7 @@ public final class Hazelcast {
      * this local member only.
      */
     public static void shutdown() {
-        com.hazelcast.impl.FactoryImpl.shutdown();
+        com.hazelcast.impl.FactoryImpl.getFactory("default").shutdown();
     }
 
     /**
@@ -86,15 +86,15 @@ public final class Hazelcast {
      * @return the collection of instances created by Hazelcast.
      */
     public static Collection<Instance> getInstances() {
-        return com.hazelcast.impl.FactoryImpl.getInstances();
+        return com.hazelcast.impl.FactoryImpl.getFactory("default").getInstances();
     }
 
 
     public static void addInstanceListener (InstanceListener instanceListener) {
-        com.hazelcast.impl.FactoryImpl.addInstanceListener (instanceListener);
+        com.hazelcast.impl.FactoryImpl.getFactory("default").addInstanceListener (instanceListener);
     }
 
     public static void removeInstanceListener (InstanceListener instanceListener) {
-        com.hazelcast.impl.FactoryImpl.removeInstanceListener (instanceListener);
+        com.hazelcast.impl.FactoryImpl.getFactory("default").removeInstanceListener (instanceListener);
     }
 }
