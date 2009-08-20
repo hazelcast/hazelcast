@@ -42,7 +42,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class FactoryImpl {
+public class FactoryImpl implements HazelcastInstance {
 
     private final Logger logger = Logger.getLogger(FactoryImpl.class.getName());
 
@@ -58,19 +58,19 @@ public class FactoryImpl {
 
     private final ExecutorServiceProxy executorServiceImpl;
 
-    final Node node;
-
-    volatile boolean inited = false;
-
-    int startCount = 0;
-
-    private CopyOnWriteArrayList<InstanceListener> lsInstanceListeners = new CopyOnWriteArrayList<InstanceListener>();
+    private final CopyOnWriteArrayList<InstanceListener> lsInstanceListeners = new CopyOnWriteArrayList<InstanceListener>();
 
     private final static ConcurrentMap<String, FactoryImpl> factories = new ConcurrentHashMap<String, FactoryImpl>(5);
 
     private final String name;
 
     private final TransactionFactory transactionFactory;
+
+    private int startCount = 0;
+
+    public final Node node;
+
+    volatile boolean inited = false;
 
     public static FactoryImpl getFactory(String name) {
         FactoryImpl factory = factories.get(name);

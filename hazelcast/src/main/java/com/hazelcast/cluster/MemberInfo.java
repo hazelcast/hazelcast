@@ -13,7 +13,7 @@ import java.io.IOException;
 
 public class MemberInfo implements DataSerializable {
     Address address = null;
-    Node.Type nodeType = Node.Type.MEMBER;
+    Node.NodeType nodeType = Node.NodeType.MEMBER;
 
     public MemberInfo() {
     }
@@ -23,7 +23,7 @@ public class MemberInfo implements DataSerializable {
         this.address = address;
     }
 
-    public MemberInfo(Address address, Node.Type nodeType) {
+    public MemberInfo(Address address, Node.NodeType nodeType) {
         super();
         this.address = address;
         this.nodeType = nodeType;
@@ -32,7 +32,7 @@ public class MemberInfo implements DataSerializable {
     public void readData(DataInput in) throws IOException {
         address = new Address();
         address.readData(in);
-        nodeType = Node.Type.create(in.readInt());
+        nodeType = Node.NodeType.create(in.readInt());
     }
 
     public void writeData(DataOutput out) throws IOException {

@@ -40,13 +40,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Node {
-    final Logger logger = Logger.getLogger(Node.class.getName());
-
-    volatile Address address = null;
-
-    volatile MemberImpl localMember = null;
-
-    volatile Address masterAddress = null;
+    private final Logger logger = Logger.getLogger(Node.class.getName());
 
     private volatile boolean joined = false;
 
@@ -54,11 +48,9 @@ public class Node {
 
     private volatile boolean completelyShutdown = false;
 
-    final ClusterImpl clusterImpl;
+    private final ClusterImpl clusterImpl;
 
     private final CoreDump coreDump = new CoreDump();
-
-    private Thread firstMainThread = null;
 
     private final List<Thread> threads = new ArrayList<Thread>(3);
 
@@ -66,7 +58,7 @@ public class Node {
 
     private final boolean superClient;
 
-    private final Type localNodeType;
+    private final NodeType localNodeType;
 
     private final String version;
 
@@ -74,30 +66,43 @@ public class Node {
 
     final BaseVariables baseVariables;
 
-
     public final ConcurrentMapManager concurrentMapManager;
+
     public final BlockingQueueManager blockingQueueManager;
+
     public final ClusterManager clusterManager;
+
     public final TopicManager topicManager;
+
     public final ListenerManager listenerManager;
+
     public final ClusterService clusterService;
+
     public final ExecutorManager executorManager;
 
     public final InSelector inSelector;
+
     public final OutSelector outSelector;
+
     public final MulticastService multicastService;
+
     public final ConnectionManager connectionManager;
 
     public final Config config;
 
+    volatile Address address = null;
 
-    public enum Type {
+    volatile MemberImpl localMember = null;
+
+    volatile Address masterAddress = null;
+
+    public enum NodeType {
         MEMBER(1),
         SUPER_CLIENT(2),
         JAVA_CLIENT(3),
         CSHARP_CLIENT(4);
 
-        Type(int type) {
+        NodeType(int type) {
             this.value = type;
         }
 
@@ -107,7 +112,7 @@ public class Node {
             return value;
         }
 
-        public static Type create(int value) {
+        public static NodeType create(int value) {
             switch (value) {
                 case 1:
                     return MEMBER;
@@ -155,7 +160,7 @@ public class Node {
         }
     }
 
-    final FactoryImpl factory;
+    public final FactoryImpl factory;
 
     public Node(FactoryImpl factory, Config config) {
         this.factory = factory;
@@ -168,7 +173,7 @@ public class Node {
             }
         }
         superClient = sClient;
-        localNodeType = (superClient) ? Type.SUPER_CLIENT : Type.MEMBER;
+        localNodeType = (superClient) ? NodeType.SUPER_CLIENT : NodeType.MEMBER;
         String versionTemp = "unknown";
         String buildTemp = "unknown";
         try {
@@ -205,10 +210,10 @@ public class Node {
         clusterService = new ClusterService(this);
         clusterService.start();
 
-        inSelector = new InSelector (this, serverSocketChannel);
-        outSelector = new OutSelector (this);
+        inSelector = new InSelector(this, serverSocketChannel);
+        outSelector = new OutSelector(this);
         connectionManager = new ConnectionManager(this);
-        
+
         clusterManager = new ClusterManager(this);
         concurrentMapManager = new ConcurrentMapManager(this);
         blockingQueueManager = new BlockingQueueManager(this);
@@ -239,13 +244,13 @@ public class Node {
                 multicastSocket.joinGroup(InetAddress
                         .getByName(join.getMulticastConfig().getMulticastGroup()));
                 multicastSocket.setSoTimeout(1000);
-                mcService = new MulticastService (this, multicastSocket);
+                mcService = new MulticastService(this, multicastSocket);
             }
         } catch (Exception e) {
             dumpCore(e);
             e.printStackTrace();
         }
-        this.multicastService = mcService;      
+        this.multicastService = mcService;
     }
 
     public void dumpCore(final Throwable ex) {
@@ -265,14 +270,6 @@ public class Node {
             coreDump.getPrintWriter().write("\n");
             for (final Thread thread : threads) {
                 thread.interrupt();
-            }
-            if (!joined) {
-                if (firstMainThread != null) {
-                    try {
-                        firstMainThread.interrupt();
-                    } catch (final Exception ignore) {
-                    }
-                }
             }
             String fileName = "hz-core";
             if (address != null)
@@ -304,7 +301,7 @@ public class Node {
         return localMember;
     }
 
-    public final Node.Type getLocalNodeType() {
+    public final NodeType getLocalNodeType() {
         return localNodeType;
     }
 
@@ -411,13 +408,12 @@ public class Node {
 
     public void start() {
         if (completelyShutdown) return;
-        firstMainThread = Thread.currentThread();
         final Thread inThread = new Thread(inSelector, "hz.InThread");
         inThread.start();
         inThread.setPriority(8);
         threads.add(inThread);
 
-        final Thread outThread = new Thread (outSelector, "hz.OutThread");
+        final Thread outThread = new Thread(outSelector, "hz.OutThread");
         outThread.start();
         outThread.setPriority(8);
         threads.add(outThread);
@@ -431,10 +427,9 @@ public class Node {
             startMulticastService();
         }
         active = true;
+
         join();
 
-
-        firstMainThread = null;
         if (!completelyShutdown) {
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 @Override

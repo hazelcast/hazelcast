@@ -27,14 +27,14 @@ public class MemberImpl implements Member {
 
     protected boolean localMember;
     protected Address address;
-    protected Node.Type nodeType;
+    protected Node.NodeType nodeType;
     protected long lastRead = 0;
     protected long lastWrite = 0;
 
     public MemberImpl () {
     }
 
-    public MemberImpl(Address address, boolean localMember, Node.Type nodeType) {
+    public MemberImpl(Address address, boolean localMember, Node.NodeType nodeType) {
         super();
         this.nodeType = nodeType;
         this.localMember = localMember;
@@ -50,7 +50,7 @@ public class MemberImpl implements Member {
         return address.getPort();
     }
 
-    public Node.Type getNodeType() {
+    public Node.NodeType getNodeType() {
         return nodeType;
     }
 
@@ -84,7 +84,7 @@ public class MemberImpl implements Member {
     }
 
     public boolean isSuperClient() {
-        return (nodeType == Node.Type.SUPER_CLIENT);
+        return (nodeType == Node.NodeType.SUPER_CLIENT);
     }
 
     @Override

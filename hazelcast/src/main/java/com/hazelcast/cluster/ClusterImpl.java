@@ -21,9 +21,9 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.impl.ExecutorManager;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
 
@@ -54,7 +54,7 @@ public class ClusterImpl implements Cluster {
         final Set<MembershipListener> listenerSet = listeners.get();
         Set<Member> setNew = new LinkedHashSet<Member>(lsMembers.size());
         for (MemberImpl member : lsMembers) {
-            final ClusterMember dummy = new ClusterMember(member.getAddress(), member.localMember(), member.getNodeType());
+            final ClusterMember dummy = new ClusterMember(node.factory.getName(), member.getAddress(), member.localMember(), member.getNodeType());
             Member clusterMember = clusterMembers.get(dummy);
             if (clusterMember == null) {
                 clusterMember = dummy; 
@@ -143,45 +143,36 @@ public class ClusterImpl implements Cluster {
             sb.append("] {");
             for (Member member : members) {
                 sb.append("\n\t").append(member);
-                if (member.localMember()) {
-                    sb.append(" local");
-                }
             }
         }
         sb.append("\n}\n");
         return sb.toString();
     }
 
-    public class ClusterMember extends MemberImpl implements Member, DataSerializable {
-
+    public static class ClusterMember extends MemberImpl implements Member, DataSerializable {
+        String factoryName;
 
         public ClusterMember() {
         }
 
-        public ClusterMember(Address address, boolean localMember, Node.Type nodeType) {
+        public ClusterMember(String factoryName, Address address, boolean localMember, Node.NodeType nodeType) {
             super(address, localMember, nodeType);
+            this.factoryName = factoryName;
         }
 
         public void readData(DataInput in) throws IOException {
             address = new Address();
             address.readData(in);
+            nodeType = Node.NodeType.create(in.readInt());
+            factoryName = in.readUTF();
+            Node node = FactoryImpl.getFactory(factoryName).node;
             localMember = node.getThisAddress().equals(address);
-            nodeType = Node.Type.create(in.readInt());
         }
 
         public void writeData(DataOutput out) throws IOException {
             address.writeData(out);
             out.writeInt(nodeType.getValue());
-        }
 
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder("Member [");
-            sb.append(address.getHost());
-            sb.append(":");
-            sb.append(address.getPort());
-            sb.append("] ").append(localMember);
-            return sb.toString();
         }
 
         @Override

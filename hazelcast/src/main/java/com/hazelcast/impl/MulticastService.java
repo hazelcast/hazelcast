@@ -114,7 +114,7 @@ public class MulticastService implements Runnable {
         }
 
         public JoinInfo(boolean request, Address address, String groupName, String groupPassword,
-                        Node.Type type) {
+                        Node.NodeType type) {
             super(address, groupName, groupPassword, type);
             this.request = request;
         }

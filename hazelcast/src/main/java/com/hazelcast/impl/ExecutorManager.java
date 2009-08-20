@@ -43,7 +43,7 @@ import java.util.logging.Logger;
 
 public class ExecutorManager extends BaseManager implements MembershipListener {
 
-    private ThreadPoolExecutor executor;
+    private final ThreadPoolExecutor executor;
 
     private final Map<RemoteExecutionId, SimpleExecution> mapRemoteExecutions = new ConcurrentHashMap<RemoteExecutionId, SimpleExecution>(
             1000);
@@ -68,8 +68,6 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 handleStream(packet);
             }
         });
-
-        if (started) return;
         if (logger.isLoggable(Level.FINEST)) {
             logger.log(Level.FINEST, "Starting ExecutorManager");
         }

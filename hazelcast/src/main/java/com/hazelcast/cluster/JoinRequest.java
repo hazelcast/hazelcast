@@ -12,7 +12,7 @@ import java.io.IOException;
 
 public class JoinRequest extends AbstractRemotelyProcessable {
 
-    protected Node.Type nodeType = Node.Type.MEMBER;
+    protected Node.NodeType nodeType = Node.NodeType.MEMBER;
     public Address address;
     public Address to;
     public String groupName;
@@ -21,11 +21,11 @@ public class JoinRequest extends AbstractRemotelyProcessable {
     public JoinRequest() {
     }
 
-    public JoinRequest(Address address, String groupName, String groupPassword, Node.Type type) {
+    public JoinRequest(Address address, String groupName, String groupPassword, Node.NodeType type) {
         this(null, address, groupName, groupPassword, type);
     }
 
-    public JoinRequest(Address to, Address address, String groupName, String groupPassword, Node.Type type) {
+    public JoinRequest(Address to, Address address, String groupName, String groupPassword, Node.NodeType type) {
         super();
         this.to = to;
         this.address = address;
@@ -43,7 +43,7 @@ public class JoinRequest extends AbstractRemotelyProcessable {
         }
         address = new Address();
         address.readData(in);
-        nodeType = Node.Type.create(in.readInt());
+        nodeType = Node.NodeType.create(in.readInt());
         groupName = in.readUTF();
         groupPassword = in.readUTF();
     }

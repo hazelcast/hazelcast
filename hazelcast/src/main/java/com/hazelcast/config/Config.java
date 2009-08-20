@@ -35,7 +35,7 @@ public class Config {
 
 	public static final String DEFAULT_GROUP_NAME = "group-dev";
 
-	private final static Logger logger = Logger.getLogger(Config.class.getName());
+	private static Logger logger = Logger.getLogger(Config.class.getName());
 
     private static Config instance = new Config();
 

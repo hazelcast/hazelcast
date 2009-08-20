@@ -97,4 +97,8 @@ public final class Hazelcast {
     public static void removeInstanceListener (InstanceListener instanceListener) {
         com.hazelcast.impl.FactoryImpl.getFactory("default").removeInstanceListener (instanceListener);
     }
+
+    public static HazelcastInstance getHazelcastInstance(String instanceName) {
+         return com.hazelcast.impl.FactoryImpl.getFactory(instanceName);
+    }
 }
