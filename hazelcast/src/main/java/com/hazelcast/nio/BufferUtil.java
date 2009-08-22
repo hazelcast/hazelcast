@@ -75,23 +75,19 @@ public final class BufferUtil {
             return null;
         Data newData = BufferUtil.createNewData();
         BufferUtil.doHardCopy(from, newData);
+        newData.hash = from.hash;
         return newData;
     }
 
     public static void doHardCopy(Data from, Data to) {
         to.setNoData();
         copyHard(from, to);
-    }
-
-    public static void doSoftCopy(Data from, Data to) {
-        to.setNoData();
-        moveContent(from, to);
-        from.setNoData();
-    }
+    } 
 
     public static void doSet(Data from, Data to) {
         to.setNoData();
         moveContent(from, to);
+        to.hash = from.hash;
         from.setNoData();
     }
 
@@ -100,6 +96,7 @@ public final class BufferUtil {
             return null;
         Data newData = createNewData();
         moveContent(target, newData);
+        newData.hash = target.hash;
         target.setNoData();
         return newData;
     }

@@ -18,8 +18,6 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
-import com.hazelcast.cluster.ClusterManager;
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.collection.SortedHashMap;
 import static com.hazelcast.collection.SortedHashMap.OrderingType;
 import com.hazelcast.config.Config;
@@ -36,32 +34,36 @@ import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.query.Predicate;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public final class ConcurrentMapManager extends BaseManager {
     private static final int BLOCK_COUNT = ConfigProperty.CONCURRENT_MAP_BLOCK_COUNT.getInteger(271);
     private final Block[] blocks;
     private final Map<String, CMap> maps;
-    private final LoadStoreFork[] loadStoreForks;
+    private final OrderedExecutionTask[] orderedExecutionTasks;
     private static long GLOBAL_REMOVE_DELAY_MILLIS = ConfigProperty.REMOVE_DELAY_SECONDS.getLong() * 1000L;
 
     ConcurrentMapManager(Node node) {
-        super (node);
+        super(node);
         blocks = new Block[BLOCK_COUNT];
         maps = new ConcurrentHashMap<String, CMap>(10);
-        loadStoreForks = new LoadStoreFork[BLOCK_COUNT];
+        orderedExecutionTasks = new OrderedExecutionTask[BLOCK_COUNT];
         for (int i = 0; i < BLOCK_COUNT; i++) {
-            loadStoreForks[i] = new LoadStoreFork();
+            orderedExecutionTasks[i] = new OrderedExecutionTask();
         }
         node.clusterService.registerPeriodicRunnable(new Runnable() {
             public void run() {
@@ -94,10 +96,10 @@ public final class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_LOCK, new LockOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_LOCK_RETURN_OLD, new LockOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_UNLOCK, new UnlockOperationHandler());
-        registerPacketProcessor(CONCURRENT_MAP_ITERATE_ENTRIES, new GetMapEntriesOperationHandler());
-        registerPacketProcessor(CONCURRENT_MAP_ITERATE_VALUES, new GetMapEntriesOperationHandler());
-        registerPacketProcessor(CONCURRENT_MAP_ITERATE_KEYS, new GetMapEntriesOperationHandler());
-        registerPacketProcessor(CONCURRENT_MAP_ITERATE_KEYS_ALL, new GetMapEntriesOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_ITERATE_ENTRIES, new QueryOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_ITERATE_VALUES, new QueryOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_ITERATE_KEYS, new QueryOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_ITERATE_KEYS_ALL, new QueryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_MIGRATE_RECORD, new MigrationOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REMOVE_MULTI, new RemoveMultiOperationHander());
         registerPacketProcessor(CONCURRENT_MAP_ADD_TO_LIST, new AddOperationHandler());
@@ -111,9 +113,6 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     public void reset() {
-        for (int i = 0; i < BLOCK_COUNT; i++) {
-            blocks[i] = null;
-        }
         maps.clear();
     }
 
@@ -161,7 +160,7 @@ public final class ConcurrentMapManager extends BaseManager {
         for (CMap map : cmaps) {
             Collection<Record> records = map.mapRecords.values();
             for (Record record : records) {
-                record.onDisconnect(deadAddress);
+                onDisconnect(record, deadAddress);
             }
         }
         if (isMaster() && isSuperClient()) {
@@ -270,8 +269,8 @@ public final class ConcurrentMapManager extends BaseManager {
             for (Object recObj : records) {
                 final Record rec = (Record) recObj;
                 if (rec.active) {
-                    if (rec.key == null || rec.key.size() == 0) {
-                        throw new RuntimeException("Record.key is null or empty " + rec.key);
+                    if (rec.getKey() == null || rec.getKey().size() == 0) {
+                        throw new RuntimeException("Record.key is null or empty " + rec.getKey());
                     }
                     executeLocally(new Runnable() {
                         public void run() {
@@ -288,7 +287,7 @@ public final class ConcurrentMapManager extends BaseManager {
                             } else {
                                 boolean migrated = mmigrate.migrate(rec);
                                 if (!migrated) {
-                                    logger.log(Level.FINEST, "Migration failed " + rec.key);
+                                    logger.log(Level.FINEST, "Migration failed " + rec.getKey());
                                 }
                             }
                         }
@@ -849,7 +848,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
                       final int eventType, final Record record) {
-        fireMapEvent(mapListeners, name, eventType, record.key, record.value, record.mapListeners);
+        fireMapEvent(mapListeners, name, eventType, record.getKey(), record.getValue(), record.mapListeners);
     }
 
     public Address getKeyOwner(Data key) {
@@ -928,7 +927,7 @@ public final class ConcurrentMapManager extends BaseManager {
             public void onDisconnect(final Address dead) {
                 if (dead.equals(target)) {
                     removeCall(getId());
-                    setResult(Boolean.TRUE);                    
+                    setResult(Boolean.TRUE);
                 }
             }
 
@@ -1020,8 +1019,14 @@ public final class ConcurrentMapManager extends BaseManager {
             public MGetEntries(Address target) {
                 this.target = target;
                 request.reset();
-                setLocal(operation, name);
+                setLocal(operation, name, null, new TypePredicate(), -1, -1);
             }
+        }
+    }
+
+    public static class TypePredicate implements Predicate, Serializable {
+        public boolean apply(MapEntry mapEntry) {
+            return (mapEntry.getValue() instanceof String);
         }
     }
 
@@ -1176,7 +1181,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     private void copyRecordToRequest(Record record, Request request, boolean includeKeyValue) {
         request.name = record.name;
-        request.version = record.version;
+        request.version = record.getVersion();
         request.blockId = record.blockId;
         request.lockThreadId = record.lockThreadId;
         request.lockAddress = record.lockAddress;
@@ -1280,7 +1285,7 @@ public final class ConcurrentMapManager extends BaseManager {
             CMap cmap = getMap(request.name);
             Record record = cmap.getRecord(request.key);
             if (record == null && cmap.loader != null) {
-                executeLoadStore(request);
+                executeAsync(request);
             } else {
                 doOperation(request);
                 returnResponse(request);
@@ -1292,16 +1297,16 @@ public final class ConcurrentMapManager extends BaseManager {
             request.response = cmap.get(request);
         }
 
-        public void afterLoadStore(Request request) {
+        public void afterExecute(Request request) {
             if (request.response == Boolean.FALSE) {
                 request.response = OBJECT_REDO;
             } else {
                 if (request.value != null) {
                     Record record = ensureRecord(request);
-                    if (record.value == null) {
-                        record.value = request.value;
+                    if (record.getValue() == null) {
+                        record.setValue(request.value);
                     }
-                    request.response = doHardCopy(record.value);
+                    request.response = doHardCopy(record.getValue());
                 }
             }
             returnResponse(request);
@@ -1315,19 +1320,10 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-
     class ContainsOperationHandler extends MigrationAwareOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getMap(request.name);
             request.response = cmap.contains(request);
-        }
-    }
-
-
-    class GetMapEntriesOperationHandler extends MigrationAwareOperationHandler {
-        void doOperation(Request request) {
-            CMap cmap = getMap(request.name);
-            cmap.getEntries(request);
         }
     }
 
@@ -1338,7 +1334,6 @@ public final class ConcurrentMapManager extends BaseManager {
             request.response = Boolean.TRUE;
         }
     }
-
 
     class UnlockOperationHandler extends SchedulableOperationHandler {
         protected boolean shouldSchedule(Request request) {
@@ -1352,10 +1347,10 @@ public final class ConcurrentMapManager extends BaseManager {
             if (record != null) {
                 unlocked = record.unlock(request.lockThreadId, request.lockAddress);
                 if (unlocked) {
-                    record.version++;
-                    request.version = record.version;
+                    record.setVersion(record.getVersion() + 1);
+                    request.version = record.getVersion();
                     request.lockCount = record.lockCount;
-                    record.fireScheduledActions();
+                    fireScheduledActions(record);
                 }
             }
             if (unlocked) {
@@ -1379,8 +1374,8 @@ public final class ConcurrentMapManager extends BaseManager {
                 request.value = doHardCopy(rec.getValue());
             }
             rec.lock(request.lockThreadId, request.lockAddress);
-            rec.version++;
-            request.version = rec.version;
+            rec.setVersion(rec.getVersion() + 1);
+            request.version = rec.getVersion();
             request.lockCount = rec.lockCount;
             request.response = Boolean.TRUE;
         }
@@ -1401,7 +1396,7 @@ public final class ConcurrentMapManager extends BaseManager {
         protected void schedule(Request request) {
             Record record = ensureRecord(request);
             request.scheduled = true;
-            record.addScheduledAction(new ScheduledAction(request) {
+            ScheduledAction scheduledAction = new ScheduledAction(request) {
                 @Override
                 public boolean consume() {
                     handle(request);
@@ -1412,7 +1407,9 @@ public final class ConcurrentMapManager extends BaseManager {
                 public void onExpire() {
                     onNoTimeToSchedule(request);
                 }
-            });
+            };
+            record.addScheduledAction(scheduledAction);
+            node.clusterManager.registerScheduledAction(scheduledAction);
         }
 
         public void handle(Request request) {
@@ -1429,18 +1426,50 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    interface AsynchronousExecution {
+        /**
+         * @param request
+         * @executorThread
+         */
+        void execute(Request request);
 
-    abstract class StoreAwareOperationHandler extends SchedulableOperationHandler {
+        /**
+         * @param request
+         * @serviceThread
+         */
+        void afterExecute(Request request);
+    }
 
-        protected void executeLoadStore(Request request) {
-            LoadStoreFork loadStoreFork = loadStoreForks[getBlockId(request.key)];
-            int size = loadStoreFork.offer(request);
-            if (size == 1) {
-                executeLocally(loadStoreFork);
+    void executeAsync(Request request) {
+        OrderedExecutionTask orderedExecutionTask = orderedExecutionTasks[getBlockId(request.key)];
+        int size = orderedExecutionTask.offer(request);
+        if (size == 1) {
+            executeLocally(orderedExecutionTask);
+        }
+    }
+
+
+    abstract class StoreAwareOperationHandler extends SchedulableOperationHandler implements AsynchronousExecution {
+
+        // executor thread
+        public void execute(Request request) {
+            CMap cmap = maps.get(request.name);
+            if (request.operation == CONCURRENT_MAP_GET) {
+                // load the entry
+                Object value = cmap.loader.load(toObject(request.key, false));
+                if (value != null) {
+                    request.value = toData(value);
+                }
+            } else if (request.operation == CONCURRENT_MAP_PUT || request.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
+                //store the entry
+                cmap.store.store(toObject(request.key, false), toObject(request.value, false));
+            } else if (request.operation == CONCURRENT_MAP_REMOVE) {
+                // remove the entry
+                cmap.store.delete(toObject(request.key, false));
             }
         }
 
-        protected boolean shouldExecuteStore(Request request) {
+        protected boolean shouldExecuteAsync(Request request) {
             CMap cmap = getMap(request.name);
             return (cmap.writeDelaySeconds == 0);
         }
@@ -1454,21 +1483,139 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
                 return;
             }
-            if (shouldExecuteStore(request)) {
-                executeLoadStore(request);
+            if (shouldExecuteAsync(request)) {
+                executeAsync(request);
                 return;
             }
             doOperation(request);
             returnResponse(request);
         }
 
-        protected void afterLoadStore(Request request) {
+        //serviceThread
+        public void afterExecute(Request request) {
             if (request.response == null) {
                 doOperation(request);
             } else {
                 request.value = (Data) request.response;
             }
             returnResponse(request);
+        }
+    }
+
+
+    class QueryOperationHandler extends AsyncMigrationAwareOperationHandler {
+
+        void doOperation(Request request) {
+            CMap cmap = getMap(request.name);
+            cmap.getEntries(request);
+        }
+
+        boolean shouldExecuteAsync(Request request) {
+            return request.value != null;
+        }
+
+        void handleAsync(final Request request) {
+            CMap cmap = getMap(request.name);
+            final List<Record> lsRecords = cmap.getOwnedRecords();
+            executeLocally(new Runnable() {
+                public void run() {
+                    final List<Record> lsResults = query(request, lsRecords);
+                    enqueueAndReturn(new Processable() {
+                        public void process() {
+                            createEntries(request, lsResults);
+                            returnResponse(request);
+                        }
+                    });
+                }
+            });
+        }
+
+        public List<Record> query(Request request, List<Record> lsRecords) {
+            Predicate predicate = (Predicate) toObject(request.value);
+            List<Record> lsResults = new ArrayList<Record>(10);
+            for (Record record : lsRecords) {
+                if (record.isValid()) {
+                    MapEntry entry = record.getRecordEntry();
+                    if (entry.isValid()) {
+                        try {
+                            Object key = entry.getKey();
+                            Object value = entry.getValue();
+                            if (key != null && value != null) {
+                                if (predicate.apply(entry)) {
+                                    lsResults.add(record);
+                                }
+                            }
+                        } catch (Throwable t) {
+                        }
+                    }
+                }
+            }
+            return lsResults;
+        }
+
+        public void getEntries(Request request) {
+            CMap cmap = getMap(request.name);
+            Collection<Record> colRecords = cmap.mapRecords.values();
+            createEntries(request, colRecords);
+        }
+
+        void createEntries(Request request, Collection<Record> colRecords) {
+            CMap cmap = getMap(request.name);
+            Pairs pairs = new Pairs();
+            long now = System.currentTimeMillis();
+            for (Record record : colRecords) {
+                if (record.isValid(now)) {
+                    if (record.getKey() == null || record.getKey().size() == 0) {
+                        throw new RuntimeException("Key cannot be null or zero-size: " + record.getKey());
+                    }
+                    Block block = blocks[record.blockId];
+                    if (thisAddress.equals(block.owner)) {
+                        if (record.getValue() != null || request.operation == CONCURRENT_MAP_ITERATE_KEYS_ALL) {
+                            pairs.addKeyValue(new KeyValue(record.getKey(), null));
+                        } else if (record.copyCount > 0) {
+                            for (int i = 0; i < record.copyCount; i++) {
+                                pairs.addKeyValue(new KeyValue(record.getKey(), null));
+                            }
+                        } else if (record.lsValues != null) {
+                            int size = record.lsValues.size();
+                            if (size > 0) {
+                                if (request.operation == CONCURRENT_MAP_ITERATE_KEYS) {
+                                    pairs.addKeyValue(new KeyValue(record.getKey(), null));
+                                } else {
+                                    for (int i = 0; i < size; i++) {
+                                        Data value = record.lsValues.get(i);
+                                        pairs.addKeyValue(new KeyValue(record.getKey(), value));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    if (!record.isEvictable()) {
+                        cmap.scheduleForEviction(record);
+                    }
+                }
+            }
+            Data dataEntries = toData(pairs);
+            request.longValue = pairs.size();
+            request.response = dataEntries;
+        }
+    }
+
+    abstract class AsyncMigrationAwareOperationHandler extends MigrationAwareOperationHandler {
+
+
+        abstract void handleAsync(Request request);
+
+        abstract boolean shouldExecuteAsync(Request request);
+
+        @Override
+        public void handle(Request request) {
+            if (shouldExecuteAsync(request)) {
+                handleAsync(request);
+            } else {
+                super.handle(request);
+            }
         }
     }
 
@@ -1501,7 +1648,7 @@ public final class ConcurrentMapManager extends BaseManager {
         return record == null || record.testLock(req.lockThreadId, req.lockAddress);
     }
 
-    class LoadStoreFork implements Runnable, Processable {
+    class OrderedExecutionTask implements Runnable, Processable {
         Queue<Request> qResponses = new ConcurrentLinkedQueue();
         Queue<Request> qRequests = new ConcurrentLinkedQueue();
         AtomicInteger offerSize = new AtomicInteger();
@@ -1516,14 +1663,15 @@ public final class ConcurrentMapManager extends BaseManager {
                 final Request request = qRequests.poll();
                 if (request != null) {
                     try {
-                        execute(request);
+                        AsynchronousExecution ae = (AsynchronousExecution) getPacketProcessor(request.operation);
+                        ae.execute(request);
                     } catch (Exception e) {
                         logger.log(Level.FINEST, "Store throwed exception for " + request.operation, e);
                         request.response = toData(new AddressAwareException(e, thisAddress));
                     }
                     offerSize.decrementAndGet();
                     qResponses.offer(request);
-                    enqueueAndReturn(LoadStoreFork.this);
+                    enqueueAndReturn(OrderedExecutionTask.this);
                 } else {
                     return;
                 }
@@ -1534,26 +1682,8 @@ public final class ConcurrentMapManager extends BaseManager {
             final Request request = qResponses.poll();
             if (request != null) {
                 //store the entry
-                StoreAwareOperationHandler oh = (StoreAwareOperationHandler) getPacketProcessor(request.operation);
-                oh.afterLoadStore(request);
-            }
-        }
-
-        // executor thread
-        public void execute(Request request) {
-            CMap cmap = maps.get(request.name);
-            if (request.operation == CONCURRENT_MAP_GET) {
-                // load the entry
-                Object value = cmap.loader.load(toObject(request.key, false));
-                if (value != null) {
-                    request.value = toData(value);
-                }
-            } else if (request.operation == CONCURRENT_MAP_PUT || request.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
-                //store the entry
-                cmap.store.store(toObject(request.key, false), toObject(request.value, false));
-            } else if (request.operation == CONCURRENT_MAP_REMOVE) {
-                // remove the entry
-                cmap.store.delete(toObject(request.key, false));
+                AsynchronousExecution ae = (AsynchronousExecution) getPacketProcessor(request.operation);
+                ae.afterExecute(request);
             }
         }
     }
@@ -1580,9 +1710,9 @@ public final class ConcurrentMapManager extends BaseManager {
 
         final InstanceType instanceType;
 
-        MapLoader loader = null;
+        final MapLoader loader;
 
-        MapStore store = null;
+        final MapStore store;
 
         int writeDelaySeconds = -1;
 
@@ -1593,6 +1723,8 @@ public final class ConcurrentMapManager extends BaseManager {
         private Set<Record> setDirtyRecords = null;
 
         private final long removeDelayMillis;
+
+        private Map<Integer, Set<Record>> mapValueIndex = new HashMap(1000);
 
         public CMap(String name) {
             super();
@@ -1616,16 +1748,18 @@ public final class ConcurrentMapManager extends BaseManager {
             evictionRate = mapConfig.getEvictionPercentage() / 100f;
             instanceType = getInstanceType(name);
             MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
+            MapStore storeTemp = null;
+            MapLoader loaderTemp = null;
             if (mapStoreConfig != null) {
                 if (mapStoreConfig.isEnabled()) {
                     String mapStoreClassName = mapStoreConfig.getClassName();
                     try {
                         Object storeInstance = Class.forName(mapStoreClassName, true, Thread.currentThread().getContextClassLoader()).newInstance();
                         if (storeInstance instanceof MapLoader) {
-                            loader = (MapLoader) storeInstance;
+                            loaderTemp = (MapLoader) storeInstance;
                         }
                         if (storeInstance instanceof MapStore) {
-                            store = (MapStore) storeInstance;
+                            storeTemp = (MapStore) storeInstance;
                         }
                         writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
                         if (writeDelaySeconds > 0) {
@@ -1636,6 +1770,8 @@ public final class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
+            loader = loaderTemp;
+            store = storeTemp;
             if (writeDelaySeconds > 0) {
                 removeDelayMillis = GLOBAL_REMOVE_DELAY_MILLIS + (writeDelaySeconds * 1000L);
             } else {
@@ -1659,7 +1795,7 @@ public final class ConcurrentMapManager extends BaseManager {
             if (record == null) {
                 record = toRecord(req);
             }
-            record.version = req.version;
+            record.setVersion(req.version);
         }
 
         public boolean isMultiMap() {
@@ -1672,20 +1808,20 @@ public final class ConcurrentMapManager extends BaseManager {
             }
             Record record = getRecord(req.key);
             if (record != null) {
-                if (req.version > record.version + 1) {
+                if (req.version > record.getVersion() + 1) {
                     Request reqCopy = new Request();
                     reqCopy.setFromRequest(req, true);
                     req.key = null;
                     req.value = null;
                     record.addBackupOp(new VersionedBackupOp(reqCopy));
                     return true;
-                } else if (req.version <= record.version) {
+                } else if (req.version <= record.getVersion()) {
                     return false;
                 }
             }
             doBackup(req);
             if (record != null) {
-                record.version = req.version;
+                record.setVersion(req.version);
                 record.runBackupOps();
             }
             return true;
@@ -1698,14 +1834,14 @@ public final class ConcurrentMapManager extends BaseManager {
             }
             if (req.operation == CONCURRENT_MAP_BACKUP_PUT) {
                 Record rec = toRecord(req);
-                if (rec.version == 0) {
-                    rec.version = req.version;
+                if (rec.getVersion() == 0) {
+                    rec.setVersion(req.version);
                 }
             } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE) {
                 Record record = getRecord(req.key);
                 if (record != null) {
-                    if (record.value != null) {
-                        record.value.setNoData();
+                    if (record.getValue() != null) {
+                        record.getValue().setNoData();
                     }
                     if (record.lsValues != null) {
                         for (Data value : record.lsValues) {
@@ -1715,15 +1851,15 @@ public final class ConcurrentMapManager extends BaseManager {
                     if (record.copyCount > 0) {
                         record.decrementCopyCount();
                     }
-                    record.value = null;
+                    record.setValue(null);
                     if (record.isRemovable()) {
                         removeAndPurgeRecord(record);
                     }
                 }
             } else if (req.operation == CONCURRENT_MAP_BACKUP_LOCK) {
                 Record rec = toRecord(req);
-                if (rec.version == 0) {
-                    rec.version = req.version;
+                if (rec.getVersion() == 0) {
+                    rec.setVersion(req.version);
                 }
             } else if (req.operation == CONCURRENT_MAP_BACKUP_ADD) {
                 add(req);
@@ -1780,12 +1916,58 @@ public final class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
+//            query();
 //            for (int i = 0; i < BLOCK_COUNT; i++) {
 //                System.out.println(blocks[i]);
 //            }
 //            System.out.println(size + " is size.. backup.size " + backupSize() + " ownedEntryCount:" + ownedEntryCount);
 //            System.out.println("map size " + mapRecords.size());
             return size;
+        }
+
+        private List<Record> getOwnedRecords() {
+            long now = System.currentTimeMillis();
+            int size = 0;
+            final List<Record> localRecords = new ArrayList<Record>(mapRecords.size() / 2);
+            Collection<Record> records = mapRecords.values();
+            for (Record record : records) {
+                if (record.isValid(now)) {
+                    Block block = blocks[record.blockId];
+                    if (thisAddress.equals(block.owner)) {
+                        localRecords.add(record);
+                    }
+                }
+            }
+            return localRecords;
+        }
+
+        private void query() {
+            long now = System.currentTimeMillis();
+            int size = 0;
+            final List<MapEntry> localRecords = new ArrayList<MapEntry>(mapRecords.size() / 2);
+            Collection<Record> records = mapRecords.values();
+            for (Record record : records) {
+                if (record.isValid(now)) {
+                    Block block = blocks[record.blockId];
+                    if (thisAddress.equals(block.owner)) {
+                        localRecords.add(record.getRecordEntry());
+                    }
+                }
+            }
+            executeLocally(new Runnable() {
+                public void run() {
+                    int query = 0;
+                    for (MapEntry entry : localRecords) {
+                        if (entry.isValid()) {
+                            Object key = entry.getKey();
+                            Object value = entry.getValue();
+                            if (key == null) throw new RuntimeException();
+                            if (value == null) throw new RuntimeException();
+                            query++;
+                        }
+                    }
+                }
+            });
         }
 
         public int valueCount(Data key) {
@@ -1817,12 +1999,16 @@ public final class ConcurrentMapManager extends BaseManager {
                     }
                 }
             } else {
-                Collection<Record> records = mapRecords.values();
-                for (Record record : records) {
-                    Block block = blocks[record.blockId];
-                    if (thisAddress.equals(block.owner)) {
-                        if (record.containsValue(value)) {
-                            return true;
+                if (!isMultiMap()) {
+                    return searchValueIndex(value);
+                } else {
+                    Collection<Record> records = mapRecords.values();
+                    for (Record record : records) {
+                        Block block = blocks[record.blockId];
+                        if (thisAddress.equals(block.owner)) {
+                            if (record.containsValue(value)) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -1836,26 +2022,26 @@ public final class ConcurrentMapManager extends BaseManager {
             long now = System.currentTimeMillis();
             for (Record record : colRecords) {
                 if (record.isValid(now)) {
-                    if (record.key == null || record.key.size() == 0) {
-                        throw new RuntimeException("Key cannot be null or zero-size: " + record.key);
+                    if (record.getKey() == null || record.getKey().size() == 0) {
+                        throw new RuntimeException("Key cannot be null or zero-size: " + record.getKey());
                     }
                     Block block = blocks[record.blockId];
                     if (thisAddress.equals(block.owner)) {
-                        if (record.value != null || request.operation == CONCURRENT_MAP_ITERATE_KEYS_ALL) {
-                            pairs.addKeyValue(new KeyValue(record.key, null));
+                        if (record.getValue() != null || request.operation == CONCURRENT_MAP_ITERATE_KEYS_ALL) {
+                            pairs.addKeyValue(new KeyValue(record.getKey(), null));
                         } else if (record.copyCount > 0) {
                             for (int i = 0; i < record.copyCount; i++) {
-                                pairs.addKeyValue(new KeyValue(record.key, null));
+                                pairs.addKeyValue(new KeyValue(record.getKey(), null));
                             }
                         } else if (record.lsValues != null) {
                             int size = record.lsValues.size();
                             if (size > 0) {
                                 if (request.operation == CONCURRENT_MAP_ITERATE_KEYS) {
-                                    pairs.addKeyValue(new KeyValue(record.key, null));
+                                    pairs.addKeyValue(new KeyValue(record.getKey(), null));
                                 } else {
                                     for (int i = 0; i < size; i++) {
                                         Data value = record.lsValues.get(i);
-                                        pairs.addKeyValue(new KeyValue(record.key, value));
+                                        pairs.addKeyValue(new KeyValue(record.getKey(), value));
                                     }
                                 }
                             }
@@ -1879,8 +2065,8 @@ public final class ConcurrentMapManager extends BaseManager {
             if (!record.isValid()) {
                 return null;
             }
-            return new CMapEntry(record.getCost(), record.expirationTime, record.lastAccessTime, record.lastUpdateTime,
-                    record.createTime, record.version, record.hits, true);
+            return new CMapEntry(record.getCost(), record.expirationTime, record.getLastAccessTime(), record.getLastUpdateTime(),
+                    record.getCreationTime(), record.getVersion(), record.getHits(), true);
         }
 
         public Data get(Request req) {
@@ -1923,7 +2109,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     return false;
                 }
             }
-            record.version++;
+            record.setVersion(record.getVersion() + 1);
             record.incrementCopyCount();
             fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, record);
             return true;
@@ -1952,11 +2138,11 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
             }
             if (removed) {
-                record.version++;
-                fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record.key, req.value, record.mapListeners);
-                logger.log(Level.FINEST, record.value + " RemoveMulti " + record.lsValues);
+                record.setVersion(record.getVersion() + 1);
+                fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record.getKey(), req.value, record.mapListeners);
+                logger.log(Level.FINEST, record.getValue() + " RemoveMulti " + record.lsValues);
             }
-            req.version = record.version;
+            req.version = record.getVersion();
             return removed;
         }
 
@@ -1974,12 +2160,12 @@ public final class ConcurrentMapManager extends BaseManager {
             if (added) {
                 record.addValue(req.value);
                 req.value = null;
-                record.version++;
+                record.setVersion(record.getVersion() + 1);
                 touch(record);
-                fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, record.key, req.value, record.mapListeners);
+                fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, record.getKey(), req.value, record.mapListeners);
             }
-            logger.log(Level.FINEST, record.value + " PutMulti " + record.lsValues);
-            req.version = record.version;
+            logger.log(Level.FINEST, record.getValue() + " PutMulti " + record.lsValues);
+            req.version = record.getVersion();
             return added;
         }
 
@@ -2010,11 +2196,14 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
                 oldValue = record.getValue();
                 record.setValue(req.value);
-                record.version++;
+                record.setVersion(record.getVersion() + 1);
                 touch(record);
                 record.setLastUpdated();
+                if (oldValue != null && oldValue.size() > 0) {
+                    updateValueIndex(oldValue, record);
+                }
             }
-            req.version = record.version;
+            req.version = record.getVersion();
             req.longValue = record.copyCount;
             req.value = null;
             if (oldValue == null) {
@@ -2023,10 +2212,57 @@ public final class ConcurrentMapManager extends BaseManager {
                 fireMapEvent(mapListeners, name, EntryEvent.TYPE_UPDATED, record);
             }
             if (req.txnId != -1) {
-                record.unlock();
+                unlock(record);
             }
             markAsDirty(record);
             return oldValue;
+        }
+
+        void addNewValueIndex(Record record) {
+            Integer hash = record.getValue().hashCode();
+            Set<Record> lsRecords = mapValueIndex.get(hash);
+            if (lsRecords == null) {
+                lsRecords = new LinkedHashSet<Record>();
+                mapValueIndex.put(hash, lsRecords);
+            }
+            lsRecords.add(record);
+        }
+
+        void updateValueIndex(Data oldValue, Record record) {
+            if (oldValue.hashCode() != record.getValue().hashCode()) {
+                removeValueIndex(oldValue, record);
+                addNewValueIndex(record);
+            }
+        }
+
+        void removeValueIndex(Data oldValue, Record record) {
+            Integer hash = oldValue.hashCode();
+            Set<Record> lsRecords = mapValueIndex.get(hash);
+            if (lsRecords != null && lsRecords.size() > 0) {
+                lsRecords.remove(record);
+                if (lsRecords.size() == 0) {
+                    mapValueIndex.remove(hash);
+                }
+            }
+        }
+
+        boolean searchValueIndex(Data value) {
+            Set<Record> lsRecords = mapValueIndex.get(value.hashCode());
+            if (lsRecords == null || lsRecords.size() == 0) {
+                return false;
+            } else {
+                int looped = 0;
+                for (Record rec : lsRecords) {
+                    if (rec.isValid()) {
+                        if (value.equals(rec.getValue())) {
+                            return true;
+                        }
+                        looped++;
+                    }
+                }
+                System.out.println("looped " + looped);
+            }
+            return false;
         }
 
         void startAsyncStoreWrite() {
@@ -2039,10 +2275,10 @@ public final class ConcurrentMapManager extends BaseManager {
             while (itDirtyRecords.hasNext()) {
                 Record dirtyRecord = itDirtyRecords.next();
                 if (dirtyRecord.writeTime > now) {
-                    if (dirtyRecord.value != null) {
-                        entriesToStore.put(doHardCopy(dirtyRecord.key), doHardCopy(dirtyRecord.value));
+                    if (dirtyRecord.getValue() != null) {
+                        entriesToStore.put(doHardCopy(dirtyRecord.getKey()), doHardCopy(dirtyRecord.getValue()));
                     } else {
-                        keysToDelete.add(doHardCopy(dirtyRecord.key));
+                        keysToDelete.add(doHardCopy(dirtyRecord.getKey()));
                     }
                     dirtyRecord.dirty = false;
                     itDirtyRecords.remove();
@@ -2117,7 +2353,7 @@ public final class ConcurrentMapManager extends BaseManager {
                                 if (lsKeysToEvict == null) {
                                     lsKeysToEvict = new ArrayList<Data>(100);
                                 }
-                                lsKeysToEvict.add(doHardCopy(record.key));
+                                lsKeysToEvict.add(doHardCopy(record.getKey()));
                             }
                         } else {
                             break;
@@ -2133,7 +2369,7 @@ public final class ConcurrentMapManager extends BaseManager {
                         if (lsKeysToEvict == null) {
                             lsKeysToEvict = new ArrayList<Data>(numberOfRecordsToEvict);
                         }
-                        lsKeysToEvict.add(doHardCopy(record.key));
+                        lsKeysToEvict.add(doHardCopy(record.getKey()));
                         if (++evictedCount >= numberOfRecordsToEvict) {
                             break;
                         }
@@ -2181,7 +2417,7 @@ public final class ConcurrentMapManager extends BaseManager {
             Record record = getRecord(req.key);
             if (record != null && record.isEvictable()) {
                 if (ownerForSure(record)) {
-                    fireMapEvent(mapListeners, name, EntryEvent.TYPE_EVICTED, record.key, record.value, record.mapListeners);
+                    fireMapEvent(mapListeners, name, EntryEvent.TYPE_EVICTED, record.getKey(), record.getValue(), record.mapListeners);
                     removeAndPurgeRecord(record);
                     return true;
                 }
@@ -2206,8 +2442,8 @@ public final class ConcurrentMapManager extends BaseManager {
                 req.key = null;
             } else {
                 if (req.value != null) {
-                    if (record.value != null) {
-                        record.value.setNoData();
+                    if (record.getValue() != null) {
+                        record.getValue().setNoData();
                     }
                     if (isMultiMap()) {
                         record.addValue(req.value);
@@ -2234,13 +2470,13 @@ public final class ConcurrentMapManager extends BaseManager {
                 return false;
             }
             if (req.txnId != -1) {
-                record.unlock();
+                unlock(record);
             }
             boolean removed = false;
             if (record.getCopyCount() > 0) {
                 record.decrementCopyCount();
                 removed = true;
-            } else if (record.value != null) {
+            } else if (record.getValue() != null) {
                 removed = true;
             } else if (record.lsValues != null) {
                 removed = true;
@@ -2248,10 +2484,10 @@ public final class ConcurrentMapManager extends BaseManager {
 
             if (removed) {
                 fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record);
-                record.version++;
-                if (record.value != null) {
-                    record.value.setNoData();
-                    record.value = null;
+                record.setVersion(record.getVersion() + 1);
+                if (record.getValue() != null) {
+                    record.getValue().setNoData();
+                    record.setValue(null);
                 } else if (record.lsValues != null) {
                     for (Data v : record.lsValues) {
                         v.setNoData();
@@ -2260,7 +2496,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
             }
 
-            req.version = record.version;
+            req.version = record.getVersion();
             req.longValue = record.copyCount;
 
             if (record.isRemovable()) {
@@ -2275,7 +2511,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 return null;
             }
             if (req.txnId != -1) {
-                record.unlock();
+                unlock(record);
             }
             if (!record.isValid()) {
                 if (record.isEvictable()) {
@@ -2284,8 +2520,8 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
             }
             if (req.value != null) {
-                if (record.value != null) {
-                    if (!record.value.equals(req.value)) {
+                if (record.getValue() != null) {
+                    if (!record.getValue().equals(req.value)) {
                         return null;
                     }
                 }
@@ -2297,12 +2533,13 @@ public final class ConcurrentMapManager extends BaseManager {
                 record.lsValues = null;
             }
             if (oldValue != null) {
-                fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record.key, oldValue, record.mapListeners);
-                record.version++;
-                record.value = null;
+                removeValueIndex(oldValue, record);
+                fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record.getKey(), oldValue, record.mapListeners);
+                record.setVersion(record.getVersion() + 1);
+                record.setValue(null);
                 record.lsValues = null;
             }
-            req.version = record.version;
+            req.version = record.getVersion();
             req.longValue = record.copyCount;
 
             if (record.isRemovable()) {
@@ -2326,13 +2563,13 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         void scheduleForEviction(Record record) {
-            SortedHashMap.moveToTop(mapRecords, record.key);
+            SortedHashMap.moveToTop(mapRecords, record.getKey());
         }
 
         void touch(Record record) {
             record.lastTouchTime = System.currentTimeMillis();
             if (evictionPolicy == OrderingType.NONE) return;
-            SortedHashMap.touch(mapRecords, record.key, evictionPolicy);
+            SortedHashMap.touch(mapRecords, record.getKey(), evictionPolicy);
         }
 
         void markAsDirty(Record record) {
@@ -2358,6 +2595,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         void markAsRemoved(Record record) {
             if (record.active) {
+
                 record.markRemoved();
                 setRemovedRecords.add(record);
                 Block ownerBlock = blocks[record.blockId];
@@ -2368,7 +2606,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         void removeAndPurgeRecord(Record record) {
-            Record removedRecord = mapRecords.remove(record.key);
+            Record removedRecord = mapRecords.remove(record.getKey());
             if (removedRecord != record) {
                 throw new RuntimeException(removedRecord + " is removed but should have removed " + record);
             }
@@ -2376,9 +2614,9 @@ public final class ConcurrentMapManager extends BaseManager {
             if (thisAddress.equals(ownerBlock.getRealOwner())) {
                 ownedEntryCount--;
             }
-            record.key.setNoData();
-            if (record.value != null) {
-                record.value.setNoData();
+            record.getKey().setNoData();
+            if (record.getValue() != null) {
+                record.getValue().setNoData();
             }
             if (record.lsValues != null) {
                 for (Data data : record.lsValues) {
@@ -2387,14 +2625,17 @@ public final class ConcurrentMapManager extends BaseManager {
             }
         }
 
+        long newId = 0;
+
         Record createNewRecord(Data key, Data value) {
             if (key == null || key.size() == 0) {
                 throw new RuntimeException("Cannot create record from a 0 size key: " + key);
             }
             int blockId = getBlockId(key);
-            Record rec = new Record(name, blockId, key, value, ttl);
+            Record rec = new Record(node.factory, name, blockId, key, value, ttl, newId++);
             Block ownerBlock = getOrCreateBlock(blockId);
             if (thisAddress.equals(ownerBlock.getRealOwner())) {
+                addNewValueIndex(rec);
                 ownedEntryCount++;
             }
             mapRecords.put(key, rec);
@@ -2479,16 +2720,65 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class Record {
-        private Data key;
-        private Data value;
+    public void fireScheduledActions(Record record) {
+        if (record.lockCount == 0) {
+            record.lockThreadId = -1;
+            record.lockAddress = null;
+            if (record.lsScheduledActions != null) {
+                while (record.lsScheduledActions.size() > 0) {
+                    ScheduledAction sa = record.lsScheduledActions.remove(0);
+                    node.clusterManager.deregisterScheduledAction(sa);
+                    if (!sa.expired()) {
+                        sa.consume();
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    public void onDisconnect(Record record, Address deadAddress) {
+        List<ScheduledAction> lsScheduledActions = record.lsScheduledActions;
+        if (lsScheduledActions != null) {
+            if (lsScheduledActions.size() > 0) {
+                Iterator<ScheduledAction> it = lsScheduledActions.iterator();
+                while (it.hasNext()) {
+                    ScheduledAction sa = it.next();
+                    if (sa.request.caller.equals(deadAddress)) {
+                        node.clusterManager.deregisterScheduledAction(sa);
+                        sa.setValid(false);
+                        it.remove();
+                    }
+                }
+            }
+        }
+        if (record.lockCount > 0) {
+            if (deadAddress.equals(record.lockAddress)) {
+                unlock(record);
+            }
+        }
+    }
+
+    public void unlock(Record record) {
+        record.lockThreadId = -1;
+        record.lockCount = 0;
+        record.lockAddress = null;
+        fireScheduledActions(record);
+    }
+
+    static class Record {
+        private static final Logger logger = Logger.getLogger(Record.class.getName());
+
+        private AtomicReference<Data> key = new AtomicReference<Data>();
+        private AtomicReference<Data> value = new AtomicReference<Data>();
         private long version = 0;
-        private final long createTime;
+        private final long creationTime;
         private long lastTouchTime = 0;
         private long expirationTime = Long.MAX_VALUE;
         private long lastAccessTime = 0;
         private long lastUpdateTime = 0;
         private int hits = 0;
+        private final FactoryImpl factory;
         private final String name;
         private final int blockId;
         private int lockThreadId = -1;
@@ -2504,16 +2794,26 @@ public final class ConcurrentMapManager extends BaseManager {
         private boolean active = true;
         private long removeTime;
 
-        public Record(String name, int blockId, Data key, Data value, long ttl) {
+        private final RecordEntry recordEntry;
+        private final long id;
+
+        public Record(FactoryImpl factory, String name, int blockId, Data key, Data value, long ttl, long id) {
             super();
+            this.factory = factory;
             this.name = name;
             this.blockId = blockId;
-            this.key = key;
-            this.value = value;
-            this.createTime = System.currentTimeMillis();
+            this.setKey(key);
+            this.setValue(value);
+            this.creationTime = System.currentTimeMillis();
             setExpirationTime(ttl);
-            this.lastTouchTime = createTime;
-            this.version = 0;
+            this.lastTouchTime = getCreationTime();
+            this.setVersion(0);
+            recordEntry = new RecordEntry(this);
+            this.id = id;
+        }
+
+        public RecordEntry getRecordEntry() {
+            return recordEntry;
         }
 
         public void runBackupOps() {
@@ -2522,11 +2822,11 @@ public final class ConcurrentMapManager extends BaseManager {
                     Iterator<VersionedBackupOp> it = backupOps.iterator();
                     while (it.hasNext()) {
                         VersionedBackupOp bo = it.next();
-                        if (bo.getVersion() < version + 1) {
+                        if (bo.getVersion() < getVersion() + 1) {
                             it.remove();
-                        } else if (bo.getVersion() == version + 1) {
+                        } else if (bo.getVersion() == getVersion() + 1) {
                             bo.run();
-                            version = bo.getVersion();
+                            setVersion(bo.getVersion());
                             bo.request.reset();
                             it.remove();
                         } else {
@@ -2543,7 +2843,7 @@ public final class ConcurrentMapManager extends BaseManager {
             }
             backupOps.add(bo);
             if (backupOps.size() > 4) {
-                logger.log(Level.FINEST, " Forcing backup.run version " + version);
+                logger.log(Level.FINEST, " Forcing backup.run version " + getVersion());
                 forceBackupOps();
             }
         }
@@ -2554,27 +2854,31 @@ public final class ConcurrentMapManager extends BaseManager {
             while (it.hasNext()) {
                 VersionedBackupOp v = it.next();
                 v.run();
-                version = v.getVersion();
+                setVersion(v.getVersion());
                 v.request.reset();
                 it.remove();
             }
         }
 
         public Data getKey() {
-            return key;
+            return key.get();
+        }
+
+        public void setKey(Data key) {
+            this.key.set(key);
         }
 
         public Data getValue() {
-            return value;
+            return value.get();
         }
 
         public void setValue(Data value) {
-            this.value = value;
+            this.value.set(value);
         }
 
         public int valueCount() {
             int count = 0;
-            if (value != null) {
+            if (getValue() != null) {
                 count = 1;
             } else if (lsValues != null) {
                 count = lsValues.size();
@@ -2586,8 +2890,8 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public long getCost() {
             long cost = 0;
-            if (value != null) {
-                cost = value.size();
+            if (getValue() != null) {
+                cost = getValue().size();
                 if (copyCount > 0) {
                     cost *= copyCount;
                 }
@@ -2596,12 +2900,12 @@ public final class ConcurrentMapManager extends BaseManager {
                     cost += data.size();
                 }
             }
-            return cost + key.size();
+            return cost + getKey().size();
         }
 
         public boolean containsValue(Data value) {
-            if (this.value != null) {
-                return this.value.equals(value);
+            if (this.getValue() != null) {
+                return this.getValue().equals(value);
             } else if (lsValues != null) {
                 int count = lsValues.size();
                 for (int i = 0; i < count; i++) {
@@ -2620,33 +2924,6 @@ public final class ConcurrentMapManager extends BaseManager {
             lsValues.add(value);
         }
 
-        public void onDisconnect(Address deadAddress) {
-            if (lsScheduledActions != null) {
-                if (lsScheduledActions.size() > 0) {
-                    Iterator<ScheduledAction> it = lsScheduledActions.iterator();
-                    while (it.hasNext()) {
-                        ScheduledAction sa = it.next();
-                        if (sa.request.caller.equals(deadAddress)) {
-                            node.clusterManager.deregisterScheduledAction(sa);
-                            sa.setValid(false);
-                            it.remove();
-                        }
-                    }
-                }
-            }
-            if (lockCount > 0) {
-                if (deadAddress.equals(lockAddress)) {
-                    unlock();
-                }
-            }
-        }
-
-        public void unlock() {
-            lockThreadId = -1;
-            lockCount = 0;
-            lockAddress = null;
-            fireScheduledActions();
-        }
 
         public boolean unlock(int threadId, Address address) {
             if (threadId == -1 || address == null)
@@ -2662,24 +2939,6 @@ public final class ConcurrentMapManager extends BaseManager {
 
             return true;
         }
-
-        public void fireScheduledActions() {
-            if (lockCount == 0) {
-                lockThreadId = -1;
-                lockAddress = null;
-                if (lsScheduledActions != null) {
-                    while (lsScheduledActions.size() > 0) {
-                        ScheduledAction sa = lsScheduledActions.remove(0);
-                        node.clusterManager.deregisterScheduledAction(sa);
-                        if (!sa.expired()) {
-                            sa.consume();
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-
 
         public boolean testLock(int threadId, Address address) {
             return lockCount == 0 || lockThreadId == threadId && lockAddress.equals(address);
@@ -2704,7 +2963,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 lsScheduledActions = new ArrayList<ScheduledAction>(1);
             }
             lsScheduledActions.add(scheduledAction);
-            node.clusterManager.registerScheduledAction(scheduledAction);
             logger.log(Level.FINEST, scheduledAction.request.operation + " scheduling " + scheduledAction);
         }
 
@@ -2747,19 +3005,23 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public void setLastUpdated() {
-            lastUpdateTime = System.currentTimeMillis();
+            setLastUpdateTime(System.currentTimeMillis());
         }
 
         public void setLastAccessed() {
-            lastAccessTime = System.currentTimeMillis();
-            hits++;
+            setLastAccessTime(System.currentTimeMillis());
+            setHits(getHits() + 1);
+        }
+
+        public long getExpirationTime() {
+            return expirationTime;
         }
 
         public void setExpirationTime(long ttl) {
             if (ttl == 0) {
                 expirationTime = Long.MAX_VALUE;
             } else {
-                expirationTime = createTime + ttl;
+                expirationTime = getCreationTime() + ttl;
             }
         }
 
@@ -2785,16 +3047,108 @@ public final class ConcurrentMapManager extends BaseManager {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Record record = (Record) o;
-            return !(key != null ? !key.equals(record.key) : record.key != null);
+            return (record.id == id);
+//            return !(getKey() != null ? !getKey().equals(record.getKey()) : record.getKey() != null);
         }
 
         @Override
         public int hashCode() {
-            return key != null ? key.hashCode() : 0;
+            return getKey() != null ? getKey().hashCode() : 0;
         }
 
         public String toString() {
-            return "Record key=" + key + ", removable=" + isRemovable();
+            return "Record key=" + getKey() + ", removable=" + isRemovable();
+        }
+
+
+        public long getVersion() {
+            return version;
+        }
+
+        public void setVersion(long version) {
+            this.version = version;
+        }
+
+        public long getCreationTime() {
+            return creationTime;
+        }
+
+        public long getLastAccessTime() {
+            return lastAccessTime;
+        }
+
+        public void setLastAccessTime(long lastAccessTime) {
+            this.lastAccessTime = lastAccessTime;
+        }
+
+        public long getLastUpdateTime() {
+            return lastUpdateTime;
+        }
+
+        public void setLastUpdateTime(long lastUpdateTime) {
+            this.lastUpdateTime = lastUpdateTime;
+        }
+
+        public int getHits() {
+            return hits;
+        }
+
+        public void setHits(int hits) {
+            this.hits = hits;
+        }
+
+        static class RecordEntry implements MapEntry {
+
+            private final Record record;
+
+            RecordEntry(Record record) {
+                this.record = record;
+            }
+
+            public boolean isValid() {
+                return record.active;
+            }
+
+            public Object getKey() {
+                return toObject(record.getKey(), false);
+            }
+
+            public Object getValue() {
+                return toObject(record.getValue(), false);
+            }
+
+            public Object setValue(Object value) {
+                FactoryImpl.MProxy proxy = (FactoryImpl.MProxy) record.factory.getProxyByName(record.name);
+                return proxy.put(getKey(), value);
+            }
+
+            public long getCost() {
+                return record.getCost();
+            }
+
+            public long getExpirationTime() {
+                return record.getExpirationTime();
+            }
+
+            public long getVersion() {
+                return record.getVersion();
+            }
+
+            public long getCreationTime() {
+                return record.getCreationTime();
+            }
+
+            public long getLastAccessTime() {
+                return record.getLastAccessTime();
+            }
+
+            public long getLastUpdateTime() {
+                return record.getLastUpdateTime();
+            }
+
+            public int getHits() {
+                return record.getHits();
+            }
         }
     }
 

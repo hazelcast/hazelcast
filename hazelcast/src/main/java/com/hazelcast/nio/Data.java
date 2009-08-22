@@ -58,7 +58,9 @@ public final class Data implements DataSerializable {
     }
 
     public void digest(MessageDigest md) {
-        for (ByteBuffer bb : lsData) {
+        int len = lsData.size();
+        for (int i = 0; i < len; i++) {
+            ByteBuffer bb = lsData.get(i);
             md.update(bb.array(), 0, bb.limit());
         }
     }
