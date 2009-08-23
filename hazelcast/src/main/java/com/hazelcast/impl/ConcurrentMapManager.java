@@ -41,12 +41,13 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -54,6 +55,7 @@ public final class ConcurrentMapManager extends BaseManager {
     private static final int BLOCK_COUNT = ConfigProperty.CONCURRENT_MAP_BLOCK_COUNT.getInteger(271);
     private final Block[] blocks;
     private final Map<String, CMap> maps;
+    private final ConcurrentMap<String, LocallyOwnedMap> mapLocallyOwnedMaps;
     private final OrderedExecutionTask[] orderedExecutionTasks;
     private static long GLOBAL_REMOVE_DELAY_MILLIS = ConfigProperty.REMOVE_DELAY_SECONDS.getLong() * 1000L;
 
@@ -61,6 +63,7 @@ public final class ConcurrentMapManager extends BaseManager {
         super(node);
         blocks = new Block[BLOCK_COUNT];
         maps = new ConcurrentHashMap<String, CMap>(10);
+        mapLocallyOwnedMaps = new ConcurrentHashMap<String, LocallyOwnedMap>(10);
         orderedExecutionTasks = new OrderedExecutionTask[BLOCK_COUNT];
         for (int i = 0; i < BLOCK_COUNT; i++) {
             orderedExecutionTasks[i] = new OrderedExecutionTask();
@@ -268,7 +271,7 @@ public final class ConcurrentMapManager extends BaseManager {
             cmap.reset();
             for (Object recObj : records) {
                 final Record rec = (Record) recObj;
-                if (rec.active) {
+                if (rec.isActive()) {
                     if (rec.getKey() == null || rec.getKey().size() == 0) {
                         throw new RuntimeException("Record.key is null or empty " + rec.getKey());
                     }
@@ -467,6 +470,13 @@ public final class ConcurrentMapManager extends BaseManager {
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 if (txn.has(name, key)) {
                     return txn.get(name, key);
+                }
+            }
+            LocallyOwnedMap locallyOwnedMap = getLocallyOwnedMap(name);
+            if (locallyOwnedMap != null) {
+                Object result = locallyOwnedMap.get(key);
+                if (result != OBJECT_REDO) {
+                    return result;
                 }
             }
             Object value = objectCall(CONCURRENT_MAP_GET, name, key, null, timeout, -1);
@@ -1074,6 +1084,10 @@ public final class ConcurrentMapManager extends BaseManager {
         return block;
     }
 
+    LocallyOwnedMap getLocallyOwnedMap(String name) {
+        return mapLocallyOwnedMaps.get(name);
+    }
+
     CMap getMap(String name) {
         CMap map = maps.get(name);
         if (map == null) {
@@ -1293,8 +1307,10 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         void doOperation(Request request) {
+
             CMap cmap = getMap(request.name);
             request.response = cmap.get(request);
+
         }
 
         public void afterExecute(Request request) {
@@ -1542,7 +1558,9 @@ public final class ConcurrentMapManager extends BaseManager {
                             Object value = entry.getValue();
                             if (key != null && value != null) {
                                 if (predicate.apply(entry)) {
-                                    lsResults.add(record);
+                                    if (entry.isValid()) {
+                                        lsResults.add(record);
+                                    }
                                 }
                             }
                         } catch (Throwable t) {
@@ -1688,6 +1706,59 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    class LocallyOwnedMap {
+        final ConcurrentMap<Object, Record> mapCache = new ConcurrentHashMap<Object, Record>(1000);
+        private Queue<Record> localRecords = new ConcurrentLinkedQueue<Record>();
+
+        public Object get(Object key) {
+            processLocalRecords();
+            Record record = mapCache.get(key);
+            if (record == null) return OBJECT_REDO;
+            else {
+                if (record.isActive()) {
+                    try {
+                        Object value = toObject(record.getValue(), false);
+                        if (record.isActive()) {
+                            record.setLastAccessed();
+                            return value;
+                        }
+                    } catch (Throwable t) {
+                        return OBJECT_REDO;
+                    }
+                } else {
+                    //record is removed!
+                    mapCache.remove (key);
+                    return null;
+                }
+            }
+            return OBJECT_REDO;
+        }
+
+        public void reset() {
+            localRecords.clear();
+            mapCache.clear();            
+        }
+
+        private void processLocalRecords() {
+            Record record = localRecords.poll();
+            while (record != null) {
+                if (record.isActive()) {
+                    doPut(record);
+                }
+                record = localRecords.poll();
+            }
+        }
+
+        public void doPut(Record record) {
+            Object key = toObject(record.getKey(), false);
+            mapCache.put(key, record);
+        }
+
+        public void offerToCache(Record record) {
+            localRecords.offer(record);
+        }
+    }
+
 
     class CMap {
         final Set<Record> setRemovedRecords = new HashSet<Record>(1000);
@@ -1725,6 +1796,8 @@ public final class ConcurrentMapManager extends BaseManager {
         private final long removeDelayMillis;
 
         private Map<Integer, Set<Record>> mapValueIndex = new HashMap(1000);
+
+        final LocallyOwnedMap locallyOwnedMap;
 
         public CMap(String name) {
             super();
@@ -1776,6 +1849,12 @@ public final class ConcurrentMapManager extends BaseManager {
                 removeDelayMillis = GLOBAL_REMOVE_DELAY_MILLIS + (writeDelaySeconds * 1000L);
             } else {
                 removeDelayMillis = GLOBAL_REMOVE_DELAY_MILLIS;
+            }
+            if (evictionPolicy == OrderingType.NONE) {
+                locallyOwnedMap = new LocallyOwnedMap();
+                mapLocallyOwnedMaps.put(name, locallyOwnedMap);
+            } else {
+                locallyOwnedMap = null;
             }
         }
 
@@ -1941,35 +2020,6 @@ public final class ConcurrentMapManager extends BaseManager {
             return localRecords;
         }
 
-        private void query() {
-            long now = System.currentTimeMillis();
-            int size = 0;
-            final List<MapEntry> localRecords = new ArrayList<MapEntry>(mapRecords.size() / 2);
-            Collection<Record> records = mapRecords.values();
-            for (Record record : records) {
-                if (record.isValid(now)) {
-                    Block block = blocks[record.blockId];
-                    if (thisAddress.equals(block.owner)) {
-                        localRecords.add(record.getRecordEntry());
-                    }
-                }
-            }
-            executeLocally(new Runnable() {
-                public void run() {
-                    int query = 0;
-                    for (MapEntry entry : localRecords) {
-                        if (entry.isValid()) {
-                            Object key = entry.getKey();
-                            Object value = entry.getValue();
-                            if (key == null) throw new RuntimeException();
-                            if (value == null) throw new RuntimeException();
-                            query++;
-                        }
-                    }
-                }
-            });
-        }
-
         public int valueCount(Data key) {
             long now = System.currentTimeMillis();
             int count = 0;
@@ -2079,6 +2129,9 @@ public final class ConcurrentMapManager extends BaseManager {
                     return null;
                 }
             }
+            if (req.local && locallyOwnedMap != null) {
+                locallyOwnedMap.offerToCache(record);
+            }
             record.setLastAccessed();
             touch(record);
             Data data = record.getValue();
@@ -2095,7 +2148,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 req.key.setNoData();
                 req.key = null;
             }
-
             return returnValue;
         }
 
@@ -2196,7 +2248,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
                 oldValue = record.getValue();
                 record.setValue(req.value);
-                record.setVersion(record.getVersion() + 1);
+                record.incrementVersion();
                 touch(record);
                 record.setLastUpdated();
                 if (oldValue != null && oldValue.size() > 0) {
@@ -2218,52 +2270,6 @@ public final class ConcurrentMapManager extends BaseManager {
             return oldValue;
         }
 
-        void addNewValueIndex(Record record) {
-            Integer hash = record.getValue().hashCode();
-            Set<Record> lsRecords = mapValueIndex.get(hash);
-            if (lsRecords == null) {
-                lsRecords = new LinkedHashSet<Record>();
-                mapValueIndex.put(hash, lsRecords);
-            }
-            lsRecords.add(record);
-        }
-
-        void updateValueIndex(Data oldValue, Record record) {
-            if (oldValue.hashCode() != record.getValue().hashCode()) {
-                removeValueIndex(oldValue, record);
-                addNewValueIndex(record);
-            }
-        }
-
-        void removeValueIndex(Data oldValue, Record record) {
-            Integer hash = oldValue.hashCode();
-            Set<Record> lsRecords = mapValueIndex.get(hash);
-            if (lsRecords != null && lsRecords.size() > 0) {
-                lsRecords.remove(record);
-                if (lsRecords.size() == 0) {
-                    mapValueIndex.remove(hash);
-                }
-            }
-        }
-
-        boolean searchValueIndex(Data value) {
-            Set<Record> lsRecords = mapValueIndex.get(value.hashCode());
-            if (lsRecords == null || lsRecords.size() == 0) {
-                return false;
-            } else {
-                int looped = 0;
-                for (Record rec : lsRecords) {
-                    if (rec.isValid()) {
-                        if (value.equals(rec.getValue())) {
-                            return true;
-                        }
-                        looped++;
-                    }
-                }
-                System.out.println("looped " + looped);
-            }
-            return false;
-        }
 
         void startAsyncStoreWrite() {
             logger.log(Level.FINEST, "startAsyncStoreWrite " + setDirtyRecords.size());
@@ -2331,7 +2337,7 @@ public final class ConcurrentMapManager extends BaseManager {
             Iterator<Record> itRemovedRecords = setRemovedRecords.iterator();
             while (itRemovedRecords.hasNext()) {
                 Record record = itRemovedRecords.next();
-                if (record.active) {
+                if (record.isActive()) {
                     itRemovedRecords.remove();
                 } else if (shouldRemove(record, now)) {
                     itRemovedRecords.remove();
@@ -2535,7 +2541,7 @@ public final class ConcurrentMapManager extends BaseManager {
             if (oldValue != null) {
                 removeValueIndex(oldValue, record);
                 fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record.getKey(), oldValue, record.mapListeners);
-                record.setVersion(record.getVersion() + 1);
+                record.incrementVersion();
                 record.setValue(null);
                 record.lsValues = null;
             }
@@ -2553,6 +2559,9 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         void reset() {
+            if (locallyOwnedMap != null) {
+                locallyOwnedMap.reset();
+            }
             mapRecords.clear();
             ownedEntryCount = 0;
             evicting = false;
@@ -2583,19 +2592,18 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         void markAsActive(Record record) {
-            if (!record.active) {
+            if (!record.isActive()) {
                 record.setActive();
                 setRemovedRecords.remove(record);
             }
         }
 
         boolean shouldRemove(Record record, long now) {
-            return !record.active && ((now - record.removeTime) > removeDelayMillis);
+            return !record.isActive() && ((now - record.removeTime) > removeDelayMillis);
         }
 
         void markAsRemoved(Record record) {
-            if (record.active) {
-
+            if (record.isActive()) {
                 record.markRemoved();
                 setRemovedRecords.add(record);
                 Block ownerBlock = blocks[record.blockId];
@@ -2610,10 +2618,7 @@ public final class ConcurrentMapManager extends BaseManager {
             if (removedRecord != record) {
                 throw new RuntimeException(removedRecord + " is removed but should have removed " + record);
             }
-            Block ownerBlock = blocks[record.blockId];
-            if (thisAddress.equals(ownerBlock.getRealOwner())) {
-                ownedEntryCount--;
-            }
+            System.out.println("purging...");
             record.getKey().setNoData();
             if (record.getValue() != null) {
                 record.getValue().setNoData();
@@ -2623,6 +2628,52 @@ public final class ConcurrentMapManager extends BaseManager {
                     data.setNoData();
                 }
             }
+        }
+
+        void addNewValueIndex(Record record) {
+            Integer hash = record.getValue().hashCode();
+            Set<Record> lsRecords = mapValueIndex.get(hash);
+            if (lsRecords == null) {
+                lsRecords = new LinkedHashSet<Record>();
+                mapValueIndex.put(hash, lsRecords);
+            }
+            lsRecords.add(record);
+        }
+
+        void updateValueIndex(Data oldValue, Record record) {
+            if (oldValue.hashCode() != record.getValue().hashCode()) {
+                removeValueIndex(oldValue, record);
+                addNewValueIndex(record);
+            }
+        }
+
+        void removeValueIndex(Data oldValue, Record record) {
+            Integer hash = oldValue.hashCode();
+            Set<Record> lsRecords = mapValueIndex.get(hash);
+            if (lsRecords != null && lsRecords.size() > 0) {
+                lsRecords.remove(record);
+                if (lsRecords.size() == 0) {
+                    mapValueIndex.remove(hash);
+                }
+            }
+        }
+
+        boolean searchValueIndex(Data value) {
+            Set<Record> lsRecords = mapValueIndex.get(value.hashCode());
+            if (lsRecords == null || lsRecords.size() == 0) {
+                return false;
+            } else {
+                int looped = 0;
+                for (Record rec : lsRecords) {
+                    if (rec.isValid()) {
+                        if (value.equals(rec.getValue())) {
+                            return true;
+                        }
+                        looped++;
+                    }
+                }
+            }
+            return false;
         }
 
         long newId = 0;
@@ -2771,13 +2822,13 @@ public final class ConcurrentMapManager extends BaseManager {
 
         private AtomicReference<Data> key = new AtomicReference<Data>();
         private AtomicReference<Data> value = new AtomicReference<Data>();
-        private long version = 0;
+        private AtomicLong version = new AtomicLong();
         private final long creationTime;
         private long lastTouchTime = 0;
         private long expirationTime = Long.MAX_VALUE;
-        private long lastAccessTime = 0;
+        private AtomicLong lastAccessTime = new AtomicLong(0);
         private long lastUpdateTime = 0;
-        private int hits = 0;
+        private final AtomicInteger hits = new AtomicInteger(0);
         private final FactoryImpl factory;
         private final String name;
         private final int blockId;
@@ -2791,7 +2842,7 @@ public final class ConcurrentMapManager extends BaseManager {
         private SortedSet<VersionedBackupOp> backupOps = null;
         private boolean dirty = false;
         private long writeTime = -1;
-        private boolean active = true;
+        private final AtomicBoolean active = new AtomicBoolean(true);
         private long removeTime;
 
         private final RecordEntry recordEntry;
@@ -3010,7 +3061,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public void setLastAccessed() {
             setLastAccessTime(System.currentTimeMillis());
-            setHits(getHits() + 1);
+            incrementHits();
         }
 
         public long getExpirationTime() {
@@ -3034,12 +3085,12 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public void markRemoved() {
-            active = false;
+            setActive(false);
             removeTime = System.currentTimeMillis();
         }
 
         public void setActive() {
-            active = true;
+            setActive(true);
         }
 
         @Override
@@ -3048,12 +3099,11 @@ public final class ConcurrentMapManager extends BaseManager {
             if (o == null || getClass() != o.getClass()) return false;
             Record record = (Record) o;
             return (record.id == id);
-//            return !(getKey() != null ? !getKey().equals(record.getKey()) : record.getKey() != null);
         }
 
         @Override
         public int hashCode() {
-            return getKey() != null ? getKey().hashCode() : 0;
+            return (int) (id ^ (id >>> 32));
         }
 
         public String toString() {
@@ -3062,11 +3112,15 @@ public final class ConcurrentMapManager extends BaseManager {
 
 
         public long getVersion() {
-            return version;
+            return version.get();
         }
 
         public void setVersion(long version) {
-            this.version = version;
+            this.version.set(version) ;
+        }
+
+        public void incrementVersion() {
+            this.version.incrementAndGet();
         }
 
         public long getCreationTime() {
@@ -3074,11 +3128,11 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public long getLastAccessTime() {
-            return lastAccessTime;
+            return lastAccessTime.get();
         }
 
         public void setLastAccessTime(long lastAccessTime) {
-            this.lastAccessTime = lastAccessTime;
+            this.lastAccessTime.set(lastAccessTime);
         }
 
         public long getLastUpdateTime() {
@@ -3090,11 +3144,19 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public int getHits() {
-            return hits;
+            return hits.get();
         }
 
-        public void setHits(int hits) {
-            this.hits = hits;
+        public void incrementHits() {
+            this.hits.incrementAndGet();
+        }
+
+        public boolean isActive() {
+            return active.get();
+        }
+
+        public void setActive(boolean active) {
+            this.active.set(active);
         }
 
         static class RecordEntry implements MapEntry {
@@ -3106,7 +3168,7 @@ public final class ConcurrentMapManager extends BaseManager {
             }
 
             public boolean isValid() {
-                return record.active;
+                return record.isActive();
             }
 
             public Object getKey() {

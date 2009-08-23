@@ -74,15 +74,25 @@ public final class BufferUtil {
         if (from == null || from.size == 0)
             return null;
         Data newData = BufferUtil.createNewData();
-        BufferUtil.doHardCopy(from, newData);
+        doHardCopy(from, newData);
         newData.hash = from.hash;
         return newData;
     }
 
     public static void doHardCopy(Data from, Data to) {
-        to.setNoData();
-        copyHard(from, to);
-    } 
+        to.setNoData(); 
+        int len = from.lsData.size();
+        for (int i = 0; i < len; i++) {
+            ByteBuffer bb = from.lsData.get(i);
+            ByteBuffer bbTo = obtainEmptyBuffer();
+            bbTo.put(bb.array(), 0, bb.limit());
+            to.add(bbTo);
+            bbTo.flip();
+        }
+        to.hash = from.hash;
+        if (from.size != to.size)
+            throw new RuntimeException("size doesn't match: src " + from.size + " dest: " + to.size);
+    }
 
     public static void doSet(Data from, Data to) {
         to.setNoData();
@@ -111,19 +121,7 @@ public final class BufferUtil {
         from.lsData.clear();
     }
 
-    public static void copyHard(Data from, Data to) {
-        to.setNoData();
-        int len = from.lsData.size();
-        for (int i = 0; i < len; i++) {
-            ByteBuffer bb = from.lsData.get(i);
-            ByteBuffer bbTo = obtainEmptyBuffer();
-            bbTo.put(bb.array(), 0, bb.limit());
-            to.add(bbTo);
-            bbTo.flip();
-        }
-        if (from.size != to.size)
-            throw new RuntimeException("size doesn't match: src " + from.size + " dest: " + to.size);
-    }
+
 
     public static ByteBuffer obtainEmptyBuffer() {
         return ThreadContext.get().getBufferPool().obtain();
