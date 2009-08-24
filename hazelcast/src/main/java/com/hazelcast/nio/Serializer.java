@@ -114,7 +114,7 @@ public final class Serializer {
             result = typeSerizalizers[typeId].read(bbis, data);
             if (purgeData) data.setNoData();
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         return result;
     }

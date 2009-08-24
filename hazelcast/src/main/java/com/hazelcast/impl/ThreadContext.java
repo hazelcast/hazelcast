@@ -158,8 +158,8 @@ public final class ThreadContext {
             return serializer.writeObject(obj);
         } catch (final Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
-        }
-        return null;
+            throw new RuntimeException(e);
+        } 
     }
 
     public Object toObject(final Data data) {

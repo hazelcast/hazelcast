@@ -46,8 +46,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -1708,7 +1706,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class LocallyOwnedMap {
         final ConcurrentMap<Object, Record> mapCache = new ConcurrentHashMap<Object, Record>(1000);
-        private Queue<Record> localRecords = new ConcurrentLinkedQueue<Record>();
+        final private Queue<Record> localRecords = new ConcurrentLinkedQueue<Record>();
 
         public Object get(Object key) {
             processLocalRecords();
@@ -1717,17 +1715,19 @@ public final class ConcurrentMapManager extends BaseManager {
             else {
                 if (record.isActive()) {
                     try {
+                        long version = record.getVersion();
                         Object value = toObject(record.getValue(), false);
-                        if (record.isActive()) {
+                        if (record.isActive() && version == record.getVersion()) {
                             record.setLastAccessed();
                             return value;
                         }
                     } catch (Throwable t) {
+                        logger.log(Level.FINEST, "Exception when reading object ", t);
                         return OBJECT_REDO;
                     }
                 } else {
                     //record is removed!
-                    mapCache.remove (key);
+                    mapCache.remove(key);
                     return null;
                 }
             }
@@ -1736,7 +1736,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public void reset() {
             localRecords.clear();
-            mapCache.clear();            
+            mapCache.clear();
         }
 
         private void processLocalRecords() {
@@ -2247,13 +2247,16 @@ public final class ConcurrentMapManager extends BaseManager {
                     record.setExpirationTime(ttl);
                 }
                 oldValue = record.getValue();
+//                if (oldValue != null) {
+//                    Data realOldValue = oldValue;
+//                    oldValue = doHardCopy(oldValue);
+//                    garbage(realOldValue);
+//                }
                 record.setValue(req.value);
                 record.incrementVersion();
                 touch(record);
                 record.setLastUpdated();
-                if (oldValue != null && oldValue.size() > 0) {
-                    updateValueIndex(oldValue, record);
-                }
+                updateValueIndex(oldValue, record);
             }
             req.version = record.getVersion();
             req.longValue = record.copyCount;
@@ -2270,6 +2273,9 @@ public final class ConcurrentMapManager extends BaseManager {
             return oldValue;
         }
 
+        void garbage(Data data) {
+            data.setNoData();
+        }
 
         void startAsyncStoreWrite() {
             logger.log(Level.FINEST, "startAsyncStoreWrite " + setDirtyRecords.size());
@@ -2533,6 +2539,11 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
             }
             Data oldValue = record.getValue();
+//            if (oldValue != null) {
+//                Data realOldValue = oldValue;
+//                oldValue = doHardCopy(oldValue);
+//                garbage(realOldValue);
+//            }
             if (oldValue == null && record.lsValues != null && record.lsValues.size() > 0) {
                 Values values = new Values(record.lsValues);
                 oldValue = toData(values);
@@ -2618,14 +2629,13 @@ public final class ConcurrentMapManager extends BaseManager {
             if (removedRecord != record) {
                 throw new RuntimeException(removedRecord + " is removed but should have removed " + record);
             }
-            System.out.println("purging...");
-            record.getKey().setNoData();
+            garbage(record.getKey());
             if (record.getValue() != null) {
-                record.getValue().setNoData();
+                garbage(record.getValue());
             }
             if (record.lsValues != null) {
                 for (Data data : record.lsValues) {
-                    data.setNoData();
+                    garbage(data);
                 }
             }
         }
@@ -2641,9 +2651,13 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         void updateValueIndex(Data oldValue, Record record) {
-            if (oldValue.hashCode() != record.getValue().hashCode()) {
-                removeValueIndex(oldValue, record);
+            if (oldValue == null || oldValue.size() == 0) {
                 addNewValueIndex(record);
+            } else {
+                if (oldValue.hashCode() != record.getValue().hashCode()) {
+                    removeValueIndex(oldValue, record);
+                    addNewValueIndex(record);
+                }
             }
         }
 
@@ -2686,7 +2700,9 @@ public final class ConcurrentMapManager extends BaseManager {
             Record rec = new Record(node.factory, name, blockId, key, value, ttl, newId++);
             Block ownerBlock = getOrCreateBlock(blockId);
             if (thisAddress.equals(ownerBlock.getRealOwner())) {
-                addNewValueIndex(rec);
+                if (value != null && value.size() > 0) {
+                    addNewValueIndex(rec);
+                }
                 ownedEntryCount++;
             }
             mapRecords.put(key, rec);
@@ -3116,7 +3132,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public void setVersion(long version) {
-            this.version.set(version) ;
+            this.version.set(version);
         }
 
         public void incrementVersion() {
