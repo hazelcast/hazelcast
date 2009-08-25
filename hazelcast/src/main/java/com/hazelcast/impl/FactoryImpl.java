@@ -1726,6 +1726,12 @@ public class FactoryImpl implements HazelcastInstance {
             ensure();
             return mproxyReal.add(value);
         }
+        
+		@Override
+		public boolean evict(Object key) {
+			ensure();
+            return mproxyReal.evict(key);
+		}
 
         private class MProxyReal implements MProxy {
 
@@ -2009,6 +2015,12 @@ public class FactoryImpl implements HazelcastInstance {
             public void destroy() {
                 factory.destroyInstanceClusterwide(name, null);
             }
+
+			@Override
+			public boolean evict(Object key) {
+				MEvict mevict = ThreadContext.get().getCallCache(factory).getMEvict();
+				return mevict.evict(name, key);
+			}
         }
     }
 

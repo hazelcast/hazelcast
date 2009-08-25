@@ -20,6 +20,8 @@ package com.hazelcast.impl;
 import com.hazelcast.collection.SimpleBoundedQueue;
 import com.hazelcast.core.Transaction;
 import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
+
+import com.hazelcast.impl.ConcurrentMapManager.MEvict;
 import com.hazelcast.nio.BufferUtil;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
@@ -184,11 +186,13 @@ public final class ThreadContext {
         final ConcurrentMapManager.MPut mput;
         final ConcurrentMapManager.MGet mget;
         final ConcurrentMapManager.MRemove mremove;
+        final ConcurrentMapManager.MEvict mevict;
         CallCache(FactoryImpl factory) {
             this.factory = factory;
             mput = factory.node.concurrentMapManager.new MPut();
             mget = factory.node.concurrentMapManager.new MGet();
             mremove = factory.node.concurrentMapManager.new MRemove();
+            mevict = factory.node.concurrentMapManager.new MEvict();
         }
 
         public ConcurrentMapManager.MPut getMPut() {
@@ -205,6 +209,11 @@ public final class ThreadContext {
             mremove.reset();
             return mremove;
         }
+
+		public MEvict getMEvict() {
+			mevict.reset();
+			return mevict;
+		}
     }
 
     public abstract class ObjectPool<E> {

@@ -152,6 +152,14 @@ public class HazelcastTest {
         map.remove("hello");
     }
 
+    @Test
+    public void testMapEvict(){
+    	IMap<String, String> map = Hazelcast.getMap("testMapEviction");
+    	map.put("key", "value");
+    	assertEquals(true, map.containsKey("key"));
+    	map.evict("key");
+    	assertEquals(false, map.containsKey("key"));
+    }
 
     @Test
     public void testListAdd() {

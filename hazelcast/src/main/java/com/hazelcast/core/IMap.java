@@ -41,5 +41,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
     void removeEntryListener(EntryListener listener, Object key);
 
     MapEntry getMapEntry(Object key);
+    
+    boolean evict(K key);
 
 }
