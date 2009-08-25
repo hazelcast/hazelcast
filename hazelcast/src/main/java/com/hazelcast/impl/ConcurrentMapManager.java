@@ -56,6 +56,7 @@ public final class ConcurrentMapManager extends BaseManager {
     private final ConcurrentMap<String, LocallyOwnedMap> mapLocallyOwnedMaps;
     private final OrderedExecutionTask[] orderedExecutionTasks;
     private static long GLOBAL_REMOVE_DELAY_MILLIS = ConfigProperty.REMOVE_DELAY_SECONDS.getLong() * 1000L;
+    private long newId = 0;
 
     ConcurrentMapManager(Node node) {
         super(node);
@@ -1548,10 +1549,11 @@ public final class ConcurrentMapManager extends BaseManager {
             Predicate predicate = (Predicate) toObject(request.value);
             List<Record> lsResults = new ArrayList<Record>(10);
             for (Record record : lsRecords) {
-                if (record.isValid()) {
+                if (record.isActive() && record.isValid()) {
                     MapEntry entry = record.getRecordEntry();
-                    if (entry.isValid()) {
+                    if (record.isActive() && entry.isValid()) {
                         try {
+                            long version = entry.getVersion();
                             Object key = entry.getKey();
                             Object value = entry.getValue();
                             if (key != null && value != null) {
@@ -1995,7 +1997,6 @@ public final class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
-//            query();
 //            for (int i = 0; i < BLOCK_COUNT; i++) {
 //                System.out.println(blocks[i]);
 //            }
@@ -2006,7 +2007,6 @@ public final class ConcurrentMapManager extends BaseManager {
 
         private List<Record> getOwnedRecords() {
             long now = System.currentTimeMillis();
-            int size = 0;
             final List<Record> localRecords = new ArrayList<Record>(mapRecords.size() / 2);
             Collection<Record> records = mapRecords.values();
             for (Record record : records) {
@@ -2123,6 +2123,7 @@ public final class ConcurrentMapManager extends BaseManager {
             Record record = getRecord(req.key);
             if (record == null)
                 return null;
+            if (!record.isActive()) return null;
             if (!record.isValid()) {
                 if (record.isEvictable()) {
                     scheduleForEviction(record);
@@ -2227,12 +2228,12 @@ public final class ConcurrentMapManager extends BaseManager {
             }
             if (req.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
                 Record record = recordExist(req);
-                if (record != null && record.getValue() != null) {
+                if (record != null && record.isActive() && record.getValue() != null) {
                     return doHardCopy(record.getValue());
                 }
             } else if (req.operation == CONCURRENT_MAP_REPLACE_IF_NOT_NULL) {
                 Record record = recordExist(req);
-                if (record == null || record.getValue() == null) {
+                if (record == null || !record.isActive() || record.getValue() == null) {
                     return null;
                 }
             }
@@ -2247,11 +2248,6 @@ public final class ConcurrentMapManager extends BaseManager {
                     record.setExpirationTime(ttl);
                 }
                 oldValue = record.getValue();
-//                if (oldValue != null) {
-//                    Data realOldValue = oldValue;
-//                    oldValue = doHardCopy(oldValue);
-//                    garbage(realOldValue);
-//                }
                 record.setValue(req.value);
                 record.incrementVersion();
                 touch(record);
@@ -2539,11 +2535,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
             }
             Data oldValue = record.getValue();
-//            if (oldValue != null) {
-//                Data realOldValue = oldValue;
-//                oldValue = doHardCopy(oldValue);
-//                garbage(realOldValue);
-//            }
             if (oldValue == null && record.lsValues != null && record.lsValues.size() > 0) {
                 Values values = new Values(record.lsValues);
                 oldValue = toData(values);
@@ -2677,20 +2668,16 @@ public final class ConcurrentMapManager extends BaseManager {
             if (lsRecords == null || lsRecords.size() == 0) {
                 return false;
             } else {
-                int looped = 0;
                 for (Record rec : lsRecords) {
                     if (rec.isValid()) {
                         if (value.equals(rec.getValue())) {
                             return true;
                         }
-                        looped++;
                     }
                 }
             }
             return false;
         }
-
-        long newId = 0;
 
         Record createNewRecord(Data key, Data value) {
             if (key == null || key.size() == 0) {
@@ -2836,15 +2823,16 @@ public final class ConcurrentMapManager extends BaseManager {
     static class Record {
         private static final Logger logger = Logger.getLogger(Record.class.getName());
 
-        private AtomicReference<Data> key = new AtomicReference<Data>();
-        private AtomicReference<Data> value = new AtomicReference<Data>();
-        private AtomicLong version = new AtomicLong();
+        private final AtomicReference<Data> key = new AtomicReference<Data>();
+        private final AtomicReference<Data> value = new AtomicReference<Data>();
+        private final AtomicLong version = new AtomicLong();
+        private final AtomicInteger hits = new AtomicInteger(0);
+        private final AtomicBoolean active = new AtomicBoolean(true);
+        private final AtomicLong lastAccessTime = new AtomicLong(0);
         private final long creationTime;
         private long lastTouchTime = 0;
         private long expirationTime = Long.MAX_VALUE;
-        private AtomicLong lastAccessTime = new AtomicLong(0);
         private long lastUpdateTime = 0;
-        private final AtomicInteger hits = new AtomicInteger(0);
         private final FactoryImpl factory;
         private final String name;
         private final int blockId;
@@ -2858,7 +2846,6 @@ public final class ConcurrentMapManager extends BaseManager {
         private SortedSet<VersionedBackupOp> backupOps = null;
         private boolean dirty = false;
         private long writeTime = -1;
-        private final AtomicBoolean active = new AtomicBoolean(true);
         private long removeTime;
 
         private final RecordEntry recordEntry;
