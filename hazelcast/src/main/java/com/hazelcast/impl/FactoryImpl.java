@@ -1727,7 +1727,7 @@ public class FactoryImpl implements HazelcastInstance {
             return mproxyReal.add(value);
         }
         
-		@Override
+	
 		public boolean evict(Object key) {
 			ensure();
             return mproxyReal.evict(key);
@@ -2016,7 +2016,6 @@ public class FactoryImpl implements HazelcastInstance {
                 factory.destroyInstanceClusterwide(name, null);
             }
 
-			@Override
 			public boolean evict(Object key) {
 				MEvict mevict = ThreadContext.get().getCallCache(factory).getMEvict();
 				return mevict.evict(name, key);
