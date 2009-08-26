@@ -22,6 +22,7 @@ import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.Join;
+import com.hazelcast.config.Interfaces;
 import com.hazelcast.impl.MulticastService.JoinInfo;
 import com.hazelcast.nio.*;
 
@@ -49,8 +50,6 @@ public class Node {
     private volatile boolean completelyShutdown = false;
 
     private final ClusterImpl clusterImpl;
-
-    private final CoreDump coreDump = new CoreDump();
 
     private final List<Thread> threads = new ArrayList<Thread>(3);
 
@@ -165,14 +164,7 @@ public class Node {
     public Node(FactoryImpl factory, Config config) {
         this.factory = factory;
         this.config = config;
-        boolean sClient = false;
-        final String superClientProp = System.getProperty("hazelcast.super.client");
-        if (superClientProp != null) {
-            if ("true".equalsIgnoreCase(superClientProp)) {
-                sClient = true;
-            }
-        }
-        superClient = sClient;
+        superClient = config.isSuperClient();
         localNodeType = (superClient) ? NodeType.SUPER_CLIENT : NodeType.MEMBER;
         String versionTemp = "unknown";
         String buildTemp = "unknown";
@@ -195,13 +187,13 @@ public class Node {
             if (preferIPv6Address == null && preferIPv4Stack == null) {
                 System.setProperty("java.net.preferIPv4Stack", "true");
             }
+            AddressPicker addressPicker = new AddressPicker(this);
             serverSocketChannel = ServerSocketChannel.open();
-            address = AddressPicker.pickAddress(this, serverSocketChannel);
+            address = addressPicker.pickAddress(this, serverSocketChannel);
             address.setThisAddress(true);
             localMember = new MemberImpl(address, true, localNodeType);
 
         } catch (final Exception e) {
-            dumpCore(e);
             e.printStackTrace();
         }
         clusterImpl = new ClusterImpl(this);
@@ -247,43 +239,10 @@ public class Node {
                 mcService = new MulticastService(this, multicastSocket);
             }
         } catch (Exception e) {
-            dumpCore(e);
             e.printStackTrace();
         }
         this.multicastService = mcService;
     }
-
-    public void dumpCore(final Throwable ex) {
-        try {
-            final StringBuffer sb = new StringBuffer();
-            if (ex != null) {
-                sb.append(BufferUtil.exceptionToString(ex, address));
-            }
-
-            sb.append("Hazelcast.version : ").append(version).append("\n");
-            sb.append("Hazelcast.build   : ").append(build).append("\n");
-            sb.append("Hazelcast.address   : ").append(address).append("\n");
-            sb.append("joined : ").append(joined).append("\n");
-            sb.append(AddressPicker.createCoreDump());
-            coreDump.getPrintWriter().write(sb.toString());
-            coreDump.getPrintWriter().write("\n");
-            coreDump.getPrintWriter().write("\n");
-            for (final Thread thread : threads) {
-                thread.interrupt();
-            }
-            String fileName = "hz-core";
-            if (address != null)
-                fileName += "-" + address.getHost() + "_" + address.getPort();
-            fileName += ".txt";
-            final FileOutputStream fos = new FileOutputStream(fileName);
-            Util.writeText(coreDump.toString(), fos);
-            fos.flush();
-            fos.close();
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
-    }
-
 
     public void failedConnection(final Address address) {
         failedConnections.offer(address);
@@ -291,10 +250,6 @@ public class Node {
 
     public ClusterImpl getClusterImpl() {
         return clusterImpl;
-    }
-
-    public CoreDump getCoreDump() {
-        return coreDump;
     }
 
     public MemberImpl getLocalMember() {
@@ -313,18 +268,8 @@ public class Node {
         return address;
     }
 
-    public synchronized void handleInterruptedException(final Thread thread, final Exception e) {
-        final PrintWriter pw = coreDump.getPrintWriter();
-        pw.write(thread.toString());
-        pw.write("\n");
-        final StackTraceElement[] stEls = e.getStackTrace();
-        for (final StackTraceElement stackTraceElement : stEls) {
-            pw.write("\tat " + stackTraceElement + "\n");
-        }
-        final Throwable cause = e.getCause();
-        if (cause != null) {
-            pw.write("\tcaused by " + cause);
-        }
+    public void handleInterruptedException(final Thread thread, final Exception e) {
+        logger.log(Level.FINEST, thread.getName() + " is interrupted ", e);
     }
 
     public static boolean isIP(final String address) {
@@ -423,7 +368,7 @@ public class Node {
         clusterServiceThread.setPriority(7);
         threads.add(clusterServiceThread);
 
-        if (Config.get().getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
+        if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             startMulticastService();
         }
         active = true;
@@ -470,7 +415,6 @@ public class Node {
     }
 
     private Address findMaster() {
-        final Config config = Config.get();
         try {
             final String ip = System.getProperty("join.ip");
             if (ip == null) {
@@ -498,7 +442,6 @@ public class Node {
     }
 
     private Address getAddressFor(final String host) {
-        final Config config = Config.get();
         int port = config.getPort();
         final int indexColon = host.indexOf(':');
         if (indexColon != -1) {
@@ -513,9 +456,10 @@ public class Node {
                 for (final InetAddress inetAddress : allAddresses) {
                     boolean shouldCheck = true;
                     Address address;
-                    if (config.getNetworkConfig().getInterfaces().isEnabled()) {
+                    Interfaces interfaces = config.getNetworkConfig().getInterfaces();
+                    if (interfaces.isEnabled()) {
                         address = new Address(inetAddress.getAddress(), config.getPort());
-                        shouldCheck = AddressPicker.matchAddress(address.getHost());
+                        shouldCheck = AddressPicker.matchAddress(address.getHost(), interfaces.getLsInterfaces());
                     }
                     if (shouldCheck) {
                         return new Address(inetAddress.getAddress(), port);
@@ -529,7 +473,6 @@ public class Node {
     }
 
     private List<Address> getPossibleMembers() {
-        final Config config = Config.get();
         Join join = config.getNetworkConfig().getJoin();
         final List<String> lsJoinMembers = join.getJoinMembers().getMembers();
         final List<Address> lsPossibleAddresses = new ArrayList<Address>();
@@ -549,9 +492,10 @@ public class Node {
                     for (final InetAddress inetAddress : allAddresses) {
                         boolean shouldCheck = true;
                         Address addrs;
-                        if (config.getNetworkConfig().getInterfaces().isEnabled()) {
+                        Interfaces interfaces = config.getNetworkConfig().getInterfaces();
+                        if (interfaces.isEnabled()) {
                             addrs = new Address(inetAddress.getAddress(), config.getPort());
-                            shouldCheck = AddressPicker.matchAddress(addrs.getHost());
+                            shouldCheck = AddressPicker.matchAddress(addrs.getHost(), interfaces.getLsInterfaces());
                         }
                         if (shouldCheck) {
                             for (int i = 0; i < 3; i++) {
@@ -574,7 +518,6 @@ public class Node {
 
 
     private void join() {
-        final Config config = Config.get();
         if (!config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             joinWithTCP();
         } else {
@@ -630,7 +573,6 @@ public class Node {
     }
 
     private void joinViaPossibleMembers() {
-        final Config config = Config.get();
         try {
             final List<Address> lsPossibleAddresses = getPossibleMembers();
             lsPossibleAddresses.remove(address);
@@ -696,9 +638,7 @@ public class Node {
     }
 
     private void joinViaRequiredMember() {
-
         try {
-            final Config config = Config.get();
             final Address requiredAddress = getAddressFor(config.getNetworkConfig().getJoin().getJoinMembers().getRequiredMember());
             logger.log(Level.FINEST, "Joining over required member " + requiredAddress);
             if (requiredAddress == null) {
@@ -730,11 +670,14 @@ public class Node {
     }
 
     private void joinWithTCP() {
-        final Config config = Config.get();
         if (config.getNetworkConfig().getJoin().getJoinMembers().getRequiredMember() != null) {
             joinViaRequiredMember();
         } else {
             joinViaPossibleMembers();
         }
+    }
+
+    public Config getConfig() {
+        return config;
     }
 }

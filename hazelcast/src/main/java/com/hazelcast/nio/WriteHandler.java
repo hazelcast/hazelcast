@@ -43,8 +43,8 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     WriteHandler(final Connection connection) {
         super(connection);
-        boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled();
-        boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled();
+        boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(node);
+        boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled(node);
 
         if (asymmetricEncryptionEnabled || symmetricEncryptionEnabled) {
             if (asymmetricEncryptionEnabled && symmetricEncryptionEnabled) {
@@ -209,7 +209,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         Cipher init() {
             Cipher c = null;
             try {
-                c = CipherHelper.createAsymmetricWriterCipher();
+                c = CipherHelper.createAsymmetricWriterCipher(node);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Asymmetric Cipher for WriteHandler cannot be initialized.", e);
             }
@@ -218,7 +218,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
         public boolean writePacket(Packet packet) throws Exception {
             if (!aliasWritten) {
-                String localAlias = CipherHelper.getKeyAlias();
+                String localAlias = CipherHelper.getKeyAlias(node);
                 byte[] localAliasBytes = localAlias.getBytes();
                 socketBB.putInt(localAliasBytes.length);
                 socketBB.put(localAliasBytes);
@@ -303,7 +303,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         Cipher init() {
             Cipher c = null;
             try {
-                c = CipherHelper.createSymmetricWriterCipher();
+                c = CipherHelper.createSymmetricWriterCipher(node);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Symmetric Cipher for WriteHandler cannot be initialized.", e);
                 CipherHelper.handleCipherException(e, connection);

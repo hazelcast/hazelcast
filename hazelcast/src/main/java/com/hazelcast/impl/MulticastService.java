@@ -38,7 +38,7 @@ public class MulticastService implements Runnable {
     
     public MulticastService(Node node, MulticastSocket multicastSocket) throws Exception {
         this.node = node;
-        Config config = node.config;
+        Config config = node.getConfig();
         this.multicastSocket = multicastSocket;
         this.datagramPacketReceive = new DatagramPacket(new byte[bufferSize], bufferSize);
         this.datagramPacketSend = new DatagramPacket(new byte[bufferSize], bufferSize, InetAddress
@@ -53,13 +53,14 @@ public class MulticastService implements Runnable {
     }
 
     public void run() {
+        Config config = node.getConfig();
         while (running) {
             try {
                 final JoinInfo joinInfo = receive();
                 if (joinInfo != null) {
                     if (node.address != null && !node.address.equals(joinInfo.address)) {
-                        if (Config.get().getGroupName().equals(joinInfo.groupName)) {
-                            if (Config.get().getGroupPassword().equals(joinInfo.groupPassword)) {
+                        if (config.getGroupName().equals(joinInfo.groupName)) {
+                            if (config.getGroupPassword().equals(joinInfo.groupPassword)) {
                                 if (node.master()) {
                                     if (joinInfo.request) {
                                         send(joinInfo.copy(false, node.address));

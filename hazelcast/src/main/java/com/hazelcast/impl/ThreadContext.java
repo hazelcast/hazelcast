@@ -55,7 +55,7 @@ public final class ThreadContext {
 
     final static ConcurrentMap<String, BlockingQueue> mapGlobalQueues = new ConcurrentHashMap<String, BlockingQueue>();
 
-    final ConcurrentMap<String, CallCache> mapNodeCallCaches = new ConcurrentHashMap<String, CallCache>();
+    final ConcurrentMap<FactoryImpl, CallCache> mapNodeCallCaches = new ConcurrentHashMap<FactoryImpl, CallCache>();
 
     static {
         mapGlobalQueues.put("BufferCache", new ArrayBlockingQueue(6000));
@@ -173,10 +173,10 @@ public final class ThreadContext {
     }
 
     public CallCache getCallCache (FactoryImpl factory) {
-        CallCache callCache = mapNodeCallCaches.get (factory.getName());
+        CallCache callCache = mapNodeCallCaches.get (factory);
         if (callCache ==null) {
             callCache = new CallCache(factory);
-            mapNodeCallCaches.put (factory.getName(), callCache);
+            mapNodeCallCaches.put (factory, callCache);
         }
         return callCache;
     }

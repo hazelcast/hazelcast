@@ -7,12 +7,10 @@ package com.hazelcast.config;
 public interface ConfigBuilder {
 
 	/**
-	 * Parses the configuration and stores the values in passed Config object.
+	 * Builds Config object.
 	 * 
-	 * @param config the Config object to be filled by ConfigBuilder
-	 * 
-	 * @throws Exception the exception
+	 * @returns Config object
 	 */
-	public abstract void parse(final Config config) throws Exception;
+	 Config build();
 
 }

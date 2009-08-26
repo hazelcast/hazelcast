@@ -626,9 +626,9 @@ public abstract class BaseManager {
 
         public String toString() {
             return RequestBasedCall.this.getClass().getSimpleName()
-                    + " operation= " + ((request != null) ? request.operation : " unknown");
+                    + " operation= " + ((request != null) ? request.operation : " unknown")
+                    + " name= " + ((request != null) ? request.name : " unknown");
         }
-
     }
 
     public abstract class ResponseQueueCall extends RequestBasedCall {

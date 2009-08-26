@@ -32,6 +32,7 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.impl.Node;
 
 /**
  * The instrumentation MBean for the cluster.
@@ -43,9 +44,11 @@ public class ClusterMBean extends AbstractMBean<Cluster> {
 
 	private ObjectName name;
 	private MembershipListener membershipListener;
+    private final Node node;
 	
-	public ClusterMBean(Cluster managedObject) {
-		super(managedObject);
+	public ClusterMBean(Node node) {
+		super(node.getClusterImpl());
+        this.node = node;
 	}
 
    public ObjectName getObjectName() throws Exception {
@@ -136,11 +139,11 @@ public class ClusterMBean extends AbstractMBean<Cluster> {
 	@JMXAttribute("ConfigSource")
 	@JMXDescription("The source of the current configuration")
     public String getConfigFileURL() {
-		File configurationFile = Config.get().getConfigurationFile();
+		File configurationFile = node.getConfig().getConfigurationFile();
 		if (configurationFile != null) {
 			return configurationFile.getAbsolutePath();
 		}
-		URL configurationUrl = Config.get().getConfigurationUrl();
+		URL configurationUrl = node.getConfig().getConfigurationUrl();
 		if (configurationUrl != null) {
 			return configurationUrl.toString();
 		}
@@ -150,19 +153,19 @@ public class ClusterMBean extends AbstractMBean<Cluster> {
 	@JMXAttribute("GroupName")
 	@JMXDescription("The current group name")
 	public String getGroupName() {
-		return Config.get().getGroupName();
+		return node.getConfig().getGroupName();
 	}
 	
 	@JMXAttribute("Port")
 	@JMXDescription("The network port used by multicast")
 	public int getPort() {
-		return Config.get().getPort();
+		return node.getConfig().getPort();
 	}
 	
 	@JMXAttribute("PortAutoIncrement")
 	@JMXDescription("The network port is autoincremented if already in use")
 	public boolean isPortAutoIncrement() {
-		return Config.get().isPortAutoIncrement();
+		return node.getConfig().isPortAutoIncrement();
 	}
 
 	@JMXAttribute("ClusterTime")

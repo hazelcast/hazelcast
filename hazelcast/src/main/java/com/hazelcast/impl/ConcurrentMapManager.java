@@ -1028,7 +1028,8 @@ public final class ConcurrentMapManager extends BaseManager {
             public MGetEntries(Address target) {
                 this.target = target;
                 request.reset();
-                setLocal(operation, name, null, new TypePredicate(), -1, -1);
+                setLocal(operation, name, null, null, -1, -1);
+//                setLocal(operation, name, null, new TypePredicate(), -1, -1);
             }
         }
     }
@@ -1805,7 +1806,7 @@ public final class ConcurrentMapManager extends BaseManager {
             super();
             this.name = name;
             mapRecords = new SortedHashMap<Data, Record>(10000);
-            MapConfig mapConfig = Config.get().getMapConfig(name.substring(2));
+            MapConfig mapConfig = node.getConfig().getMapConfig(name.substring(2));
             this.backupCount = mapConfig.getBackupCount();
             ttl = mapConfig.getTimeToLiveSeconds() * 1000L;
             if ("LFU".equalsIgnoreCase(mapConfig.getEvictionPolicy())) {

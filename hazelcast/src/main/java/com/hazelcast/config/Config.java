@@ -37,8 +37,6 @@ public class Config {
 
 	private static Logger logger = Logger.getLogger(Config.class.getName());
 
-    private static Config instance = new Config();
-
     private String xmlConfig = null;
 
     private String groupName = DEFAULT_GROUP_NAME;
@@ -56,82 +54,22 @@ public class Config {
     private Map<String, QueueConfig> mapQueueConfigs = new HashMap<String, QueueConfig>();
 
     private Map<String, MapConfig> mapMapConfigs = new HashMap<String, MapConfig>();
-
-    private boolean usingSystemConfig = false;
     
     private URL configurationUrl;
     
     private File configurationFile;
     
-    private ConfigBuilder configBuilder;
-
     private NetworkConfig networkConfig = new NetworkConfig();
+
+    private boolean superClient = false;
     
-    private Config() {
-        String configFile = System.getProperty("hazelcast.config");
-        InputStream in = null;
-        try {
-            if (configFile != null) {
-            	configurationFile = new File(configFile);
-                if (!configurationFile.exists()) {
-                    String msg = "Config file at '" + configFile + "' doesn't exist.";
-                    msg += "\nHazelcast will try to use the hazelcast.xml config file in the classpath.";
-                    logger.log(Level.WARNING, msg);
-                    configurationFile = null;
-                }
+    public Config() {
+        final String superClientProp = System.getProperty("hazelcast.super.client");
+        if (superClientProp != null) {
+            if ("true".equalsIgnoreCase(superClientProp)) {
+                superClient = true;
             }
-
-            if (configurationFile == null) {
-                configFile = "hazelcast.xml";
-                configurationFile = new File("hazelcast.xml");
-                if (!configurationFile.exists()) {
-                	configurationFile = null;
-                }
-            }
-
-            if (configurationFile != null) {
-                logger.log (Level.INFO, "Using configuration file at " + configurationFile.getAbsolutePath());
-                try {
-                    in = new FileInputStream(configurationFile);
-                    configurationUrl = configurationFile.toURI().toURL();
-                    usingSystemConfig = true;
-                } catch (final Exception e) {
-                    String msg = "Having problem reading config file at '" + configFile + "'.";
-                    msg += "\nException message: " + e.getMessage();
-                    msg += "\nHazelcast will try to use the hazelcast.xml config file in the jar.";
-                    logger.log(Level.WARNING, msg);
-                    in = null;
-                }
-            }
-
-            if (in == null) {
-            	configurationUrl = Config.class.getClassLoader().getResource("hazelcast.xml");
-                if (configurationUrl == null)
-                    return;
-                in = Config.class.getClassLoader().getResourceAsStream("hazelcast.xml");
-                if (in == null) {
-                    String msg = "Having problem reading config file hazelcast.xml in the classpath.";
-                    msg += "\nHazelcast will start with default configuration.";
-                    logger.log(Level.WARNING, msg);
-                }
-            }
-            
-            if (in == null) {
-                return;
-            }
-
-            // TODO: make ConfigBuilder configurable
-            configBuilder = new XmlConfigBuilder(in);
-            configBuilder.parse(this);
-            
-        } catch (final Exception e) {
-        	logger.log(Level.SEVERE, "Error while creating configuration", e);
-        	e.printStackTrace();
         }
-    }
-
-    public static Config get() {
-        return instance;
     }
 
     public QueueConfig getQueueConfig(final String name) {
@@ -331,21 +269,7 @@ public class Config {
 		this.mapMapConfigs = mapMapConfigs;
 	}
 
-	/**
-	 * @return the usingSystemConfig
-	 */
-	public boolean isUsingSystemConfig() {
-		return usingSystemConfig;
-	}
-
-	/**
-	 * @param usingSystemConfig the usingSystemConfig to set
-	 */
-	public void setUsingSystemConfig(boolean usingSystemConfig) {
-		this.usingSystemConfig = usingSystemConfig;
-	}
-
-	/**
+    /**
 	 * @return the configurationUrl
 	 */
 	public URL getConfigurationUrl() {
@@ -373,4 +297,11 @@ public class Config {
 		this.configurationFile = configurationFile;
 	}
 
+    public boolean isSuperClient() {
+        return superClient;
+    }
+
+    public void setSuperClient(boolean superClient) {
+        this.superClient = superClient;
+    }
 }

@@ -17,57 +17,85 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.config.Config;
+
 import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 
 public final class Hazelcast {
+    private static volatile HazelcastInstance defaultInstance = null;
+    private static Object initLock = new Object();
 
     private Hazelcast() {
 
     }
 
+    public static void init(Config config) {
+        if (defaultInstance != null) {
+            throw new IllegalStateException("Default Hazelcast instance is already initilized.");
+        }
+        synchronized (initLock) {
+            if (defaultInstance != null) {
+                throw new IllegalStateException("Default Hazelcast instance is already initilized.");
+            }
+            defaultInstance = com.hazelcast.impl.FactoryImpl.newFactory(config); 
+        }
+
+    }
+
+    private static HazelcastInstance getDefaultInstance() {
+        if (defaultInstance == null) {
+            synchronized (initLock) {
+                if (defaultInstance == null) {
+                    defaultInstance = com.hazelcast.impl.FactoryImpl.newFactory(null);
+                }
+            }
+        }
+        return defaultInstance;
+    }
+
     public static <E> IQueue<E> getQueue(String name) {
-        return com.hazelcast.impl.FactoryImpl.getFactory("default").getQueue(name);
+        return getDefaultInstance().getQueue(name);
     }
 
     public static <E> ITopic<E> getTopic(String name) {
-        return com.hazelcast.impl.FactoryImpl.getFactory("default").getTopic(name);
+        return getDefaultInstance().getTopic(name);
     }
 
     public static <E> ISet<E> getSet(String name) {
-        return com.hazelcast.impl.FactoryImpl.getFactory("default").getSet(name);
+        return getDefaultInstance().getSet(name);
     }
 
     public static <E> IList<E> getList(String name) {
-        return com.hazelcast.impl.FactoryImpl.getFactory("default").getList(name);
+        return getDefaultInstance().getList(name);
     }
 
     public static <K, V> IMap<K, V> getMap(String name) {
-        return com.hazelcast.impl.FactoryImpl.getFactory("default").getMap(name);
+        return getDefaultInstance().getMap(name);
     }
 
     public static <K, V> MultiMap<K, V> getMultiMap(String name) {
-        return com.hazelcast.impl.FactoryImpl.getFactory("default").getMultiMap(name);
+        return getDefaultInstance().getMultiMap(name);
     }
 
     public static ILock getLock(Object obj) {
-        return com.hazelcast.impl.FactoryImpl.getFactory("default").getLock(obj);
+        return getDefaultInstance().getLock(obj);
     }
 
     public static Cluster getCluster() {
-        return com.hazelcast.impl.FactoryImpl.getFactory("default").getCluster();
+        return getDefaultInstance().getCluster();
     }
 
     public static ExecutorService getExecutorService() {
-        return com.hazelcast.impl.FactoryImpl.getFactory("default").getExecutorService();
+        return getDefaultInstance().getExecutorService();
     }
 
     public static Transaction getTransaction() {
-        return com.hazelcast.impl.FactoryImpl.getFactory("default").getTransaction();
+        return getDefaultInstance().getTransaction();
     }
 
     public static IdGenerator getIdGenerator(String name) {
-        return com.hazelcast.impl.FactoryImpl.getFactory("default").getIdGenerator(name);
+        return getDefaultInstance().getIdGenerator(name);
     }
 
     /**
@@ -76,7 +104,7 @@ public final class Hazelcast {
      * this local member only.
      */
     public static void shutdown() {
-        com.hazelcast.impl.FactoryImpl.getFactory("default").shutdown();
+        getDefaultInstance().shutdown();
     }
 
     /**
@@ -86,19 +114,20 @@ public final class Hazelcast {
      * @return the collection of instances created by Hazelcast.
      */
     public static Collection<Instance> getInstances() {
-        return com.hazelcast.impl.FactoryImpl.getFactory("default").getInstances();
+        return getDefaultInstance().getInstances();
     }
 
 
-    public static void addInstanceListener (InstanceListener instanceListener) {
-        com.hazelcast.impl.FactoryImpl.getFactory("default").addInstanceListener (instanceListener);
+    public static void addInstanceListener(InstanceListener instanceListener) {
+        getDefaultInstance().addInstanceListener(instanceListener);
     }
 
-    public static void removeInstanceListener (InstanceListener instanceListener) {
-        com.hazelcast.impl.FactoryImpl.getFactory("default").removeInstanceListener (instanceListener);
+    public static void removeInstanceListener(InstanceListener instanceListener) {
+        getDefaultInstance().removeInstanceListener(instanceListener);
     }
 
-    public static HazelcastInstance getHazelcastInstance(String instanceName) {
-         return com.hazelcast.impl.FactoryImpl.getFactory(instanceName);
+    public static HazelcastInstance newHazelcastInstance(Config config) {
+        return com.hazelcast.impl.FactoryImpl.newFactory(config);
     }
+
 }

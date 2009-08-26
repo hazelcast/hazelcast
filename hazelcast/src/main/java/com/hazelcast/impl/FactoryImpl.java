@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.BaseManager.Processable;
 import com.hazelcast.impl.BlockingQueueManager.Offer;
@@ -54,13 +55,11 @@ public class FactoryImpl implements HazelcastInstance {
 
     private final MProxy idGeneratorMapProxy;
 
-    private final MProxy globalProxies;
+    private final MProxyImpl globalProxies;
 
     private final ExecutorServiceProxy executorServiceImpl;
 
     private final CopyOnWriteArrayList<InstanceListener> lsInstanceListeners = new CopyOnWriteArrayList<InstanceListener>();
-
-    private final static ConcurrentMap<String, FactoryImpl> factories = new ConcurrentHashMap<String, FactoryImpl>(5);
 
     private final String name;
 
@@ -72,18 +71,36 @@ public class FactoryImpl implements HazelcastInstance {
 
     volatile boolean inited = false;
 
+    private final static ConcurrentMap<String, FactoryImpl> factories = new ConcurrentHashMap<String, FactoryImpl>(5);
+
+    private final static Object factoryLock = new Object();
+
+    private static int nextFactoryId = 0;
+
     public static FactoryImpl getFactory(String name) {
-        FactoryImpl factory = factories.get(name);
-        if (factory == null) {
-            synchronized (FactoryImpl.class) {
-                factory = factories.get(name);
-                if (factory == null) {
-                    factory = new FactoryImpl(name, Config.get());
-                    factories.put(name, factory);
-                }
+        return factories.get(name);
+    }
+
+    public static FactoryImpl newFactory(Config config) {
+        synchronized (factoryLock) {
+            String name = "_hzInstance_" + nextFactoryId++;
+            if (config == null) {
+                config = new XmlConfigBuilder().build();
             }
+            FactoryImpl factory = new FactoryImpl(name, config);
+            FactoryImpl old = factories.put(name, factory);
+            if (old != null) throw new RuntimeException();
+            return factory;
         }
-        return factory;
+    }
+
+    public static void shutdown(FactoryImpl factory) {
+        synchronized (factoryLock) {
+            ManagementService.shutdown();
+            factory.node.shutdown();
+            factory.proxies.clear();
+            factories.remove(factory.getName());
+        }
     }
 
     public FactoryImpl(String name, Config config) {
@@ -97,7 +114,7 @@ public class FactoryImpl implements HazelcastInstance {
         globalProxies = new MProxyImpl("c:__hz_Proxies", this);
         inited = true;
         startCount++;
-        ManagementService.register(node.getClusterImpl());
+        ManagementService.register(node);
         globalProxies.addEntryListener(new EntryListener() {
             public void entryAdded(EntryEvent event) {
                 final ProxyKey proxyKey = (ProxyKey) event.getKey();
@@ -146,13 +163,40 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        FactoryImpl factory = (FactoryImpl) o;
+
+        if (!name.equals(factory.name)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer();
+        sb.append("FactoryImpl");
+        sb.append("{name='").append(name).append('\'');
+        sb.append('}');
+        return sb.toString();
+    }
+
     public String getName() {
         return name;
     }
 
+
     public void shutdown() {
-        ManagementService.shutdown();
-        node.shutdown();
+        shutdown(FactoryImpl.this);
     }
 
     public Collection<Instance> getInstances() {
@@ -584,9 +628,8 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public TopicProxyImpl(String name, FactoryImpl factory) {
-            this.name = name;
+            set(name, factory);
             base = new TopicProxyReal();
-            setFactory(factory);
         }
 
         private void ensure() {
@@ -596,8 +639,8 @@ public class FactoryImpl implements HazelcastInstance {
             }
         }
 
-        public void setFactory(FactoryImpl factory) {
-            this.factory = factory;
+        public void set(String name, FactoryImpl factory) {
+            super.set(name, factory);
             topicManager = factory.node.topicManager;
             listenerManager = factory.node.listenerManager;
         }
@@ -1241,8 +1284,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public MultiMapProxy(String name, FactoryImpl factory) {
-            this.name = name;
-            setFactory(factory);
+            set(name, factory);
             this.base = new MultiMapBase();
         }
 
@@ -1491,13 +1533,13 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         private MProxyImpl(String name, FactoryImpl factory) {
-            this.name = name;
+            set(name, factory);
             mproxyReal = new MProxyReal();
-            setFactory(factory);
         }
 
-        public void setFactory(FactoryImpl factory) {
-            super.setFactory(factory);
+        @Override
+        public void set(String name, FactoryImpl factory) {
+            super.set(name, factory);
             this.concurrentMapManager = factory.node.concurrentMapManager;
             this.listenerManager = factory.node.listenerManager;
         }
@@ -1516,7 +1558,7 @@ public class FactoryImpl implements HazelcastInstance {
 
         @Override
         public String toString() {
-            return "Map [" + getName() + "]";
+            return "Map [" + getName() + "] " + factory;
         }
 
         @Override
@@ -1526,7 +1568,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             MProxyImpl mProxy = (MProxyImpl) o;
 
-            return !(name != null ? !name.equals(mProxy.name) : mProxy.name != null);
+            return name.equals(mProxy.name);
 
         }
 
@@ -2023,22 +2065,25 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    static class FactoryAwareNamedProxy implements DataSerializable {
+    static abstract class FactoryAwareNamedProxy implements DataSerializable {
         protected FactoryImpl factory = null;
         protected String name = null;
 
-        public void setFactory(FactoryImpl factory) {
+        protected FactoryAwareNamedProxy() {
+        }
+
+        protected void set(String name, FactoryImpl factory) {
+            this.name = name;
             this.factory = factory;
         }
 
         public void writeData(DataOutput out) throws IOException {
-            out.writeUTF(factory.getName());
             out.writeUTF(name);
+            out.writeUTF(factory.getName());
         }
 
         public void readData(DataInput in) throws IOException {
-            setFactory(getFactory(in.readUTF()));
-            name = in.readUTF();
+            set(in.readUTF(), getFactory(in.readUTF()));
         }
     }
 
@@ -2050,9 +2095,8 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public IdGeneratorProxy(String name, FactoryImpl factory) {
-            this.name = name;
+            set(name, factory);
             base = new IdGeneratorBase();
-            setFactory(factory);
         }
 
         private void ensure() {

@@ -27,6 +27,7 @@ import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
 import com.hazelcast.core.Cluster;
+import com.hazelcast.impl.Node;
 
 /**
  * The management service instruments Hazelcast with MBeans required to
@@ -53,7 +54,7 @@ public class ManagementService {
     /**
      * Register all the MBeans.
      */
-    public static void register(Cluster cluster) {
+    public static void register(Node node) {
     	if (!("TRUE".equalsIgnoreCase(System.getProperty(ENABLE_JMX))
     			|| System.getProperties().containsKey("com.sun.management.jmxremote"))) {
     		// JMX disabled
@@ -72,7 +73,7 @@ public class ManagementService {
         
         // Register the cluster monitor
 		try {
-			ClusterMBean clusterMBean = new ClusterMBean(cluster);
+			ClusterMBean clusterMBean = new ClusterMBean(node);
             mbs.registerMBean(clusterMBean, clusterMBean.getObjectName());    
 		}
 		catch (Exception e) {

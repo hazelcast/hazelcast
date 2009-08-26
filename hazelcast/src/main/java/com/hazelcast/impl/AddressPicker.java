@@ -25,7 +25,6 @@ import java.net.*;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,79 +32,15 @@ import java.util.logging.Logger;
 public class AddressPicker {
     protected static Logger logger = Logger.getLogger(AddressPicker.class.getName());
 
-    static double jvmVersion = 1.5;
+    final double jvmVersion;
+    final Node node;
 
-    static {
+    public AddressPicker(Node node) {
+        this.node = node;
         jvmVersion = Double.parseDouble(System.getProperty("java.version").substring(0, 3));
     }
 
-    public static void addLine(final int tabCount, final StringBuilder sb, final String str) {
-        for (int i = 0; i < tabCount; i++) {
-            sb.append("\t");
-        }
-        sb.append(str);
-        sb.append("\n");
-    }
-
-    public static void addLine(final StringBuilder sb, final String str) {
-        addLine(0, sb, str);
-    }
-
-    public static String createCoreDump() {
-        final StringBuilder sb = new StringBuilder();
-        addLine(sb, "== Config ==");
-        addLine(sb, "config url: " + Config.get().getConfigurationUrl());
-        addLine(sb, Config.get().getXmlConfig());
-        final Set<Object> propKeys = System.getProperties().keySet();
-        addLine(sb, "== System Properies ==");
-        for (final Object key : propKeys) {
-            addLine(sb, key + " : " + System.getProperty((String) key));
-        }
-        try {
-            final Enumeration<NetworkInterface> enums = NetworkInterface.getNetworkInterfaces();
-            while (enums.hasMoreElements()) {
-                final NetworkInterface ni = enums.nextElement();
-                sb.append("\n");
-                addLine(sb, "== Interface [" + ni.getName() + "] ==");
-                final boolean isUp = invoke(true, 1.6, ni, "isUp");
-                final boolean supportsMulticast = invoke(true, 1.6, ni, "supportsMulticast");
-                addLine(sb, "displayName : " + ni.getDisplayName());
-                addLine(sb, "isUp : " + isUp);
-                addLine(sb, "supportsMulticast : " + supportsMulticast);
-                final Enumeration<InetAddress> e = ni.getInetAddresses();
-                while (e.hasMoreElements()) {
-                    try {
-                        final InetAddress inetAddress = e.nextElement();
-                        addLine(1, sb, "-----IP-----");
-                        final boolean ipv4 = (inetAddress instanceof Inet4Address);
-                        final String address = inetAddress.getHostAddress();
-                        addLine(1, sb, "InetAddress : " + inetAddress);
-                        addLine(1, sb, "IP : " + address);
-                        addLine(1, sb, "IPv4 : " + ipv4);
-                        if (ipv4) {
-                            addLine(1, sb, "Address : " + new Address(address, -1, true));
-                        }
-                        addLine(1, sb, "multicast : " + inetAddress.isMulticastAddress());
-                        addLine(1, sb, "loopback : " + inetAddress.isLoopbackAddress());
-                        if (Config.get().getNetworkConfig().getInterfaces().isEnabled()) {
-                            addLine(1, sb, "has match : " + matchAddress(address));
-                        }
-                    } catch (final Exception ex) {
-                        addLine(1, sb, "Got Exception: " + ex.getMessage());
-                    }
-                }
-            }
-        } catch (final Exception e1) {
-            e1.printStackTrace();
-        }
-        return sb.toString();
-    }
-
-    public static double getJVMVersion() {
-        return jvmVersion;
-    }
-
-    public static boolean invoke(final boolean defaultValue, final double minJVMVersion,
+    public boolean invoke(final boolean defaultValue, final double minJVMVersion,
                                  final NetworkInterface ni, final String methodName) {
         boolean result = defaultValue;
         if (jvmVersion >= minJVMVersion) {
@@ -118,14 +53,13 @@ public class AddressPicker {
         return result;
     }
 
-    public static boolean matchAddress(final String address) {
+    public static boolean matchAddress(final String address, final List<String> interfaces) {
         final int[] ip = new int[4];
         int i = 0;
         final StringTokenizer st = new StringTokenizer(address, ".");
         while (st.hasMoreTokens()) {
             ip[i++] = Integer.parseInt(st.nextToken());
         }
-        final List<String> interfaces = Config.get().getNetworkConfig().getInterfaces().getLsInterfaces();
         for (final String ipmask : interfaces) {
             if (matchAddress(ipmask, ip)) {
                 return true;
@@ -160,11 +94,11 @@ public class AddressPicker {
         return true;
     }
 
-    public static Address pickAddress(Node node, final ServerSocketChannel serverSocketChannel)
+    public Address pickAddress(Node node, final ServerSocketChannel serverSocketChannel)
             throws Exception {
         String currentAddress = null;
         try {
-            final Config config = Config.get();
+            final Config config = node.getConfig();
             final String localAddress = System.getProperty("hazelcast.local.address");
             if (localAddress != null) {
                 currentAddress = InetAddress.getByName(localAddress.trim()).getHostAddress();
@@ -181,8 +115,9 @@ public class AddressPicker {
                         final InetAddress inetAddress = e.nextElement();
                         if (inetAddress instanceof Inet4Address) {
                             final String address = inetAddress.getHostAddress();
+                            final List<String> interfaces = config.getNetworkConfig().getInterfaces().getLsInterfaces();
                             if (config.getNetworkConfig().getInterfaces().isEnabled()) {
-                                if (matchAddress(address)) {
+                                if (matchAddress(address, interfaces)) {
                                     currentAddress = address;
                                     break interfaces;
                                 }
@@ -199,7 +134,6 @@ public class AddressPicker {
                     String msg = "Hazelcast CANNOT start on this node. No matching network interface found. ";
                     msg += "\nInterface matching must be either disabled or updated in the hazelcast.xml config file.";
                     logger.log(Level.SEVERE, msg);
-                    node.dumpCore(null);
                     return null;
                 }
             }
@@ -234,9 +168,7 @@ public class AddressPicker {
             }
             serverSocketChannel.configureBlocking(false);
             return new Address(currentAddress, port);
-        } catch (
-                final Exception e) {
-            node.dumpCore(e);
+        } catch (Exception e) {
             e.printStackTrace();
             throw e;
         }

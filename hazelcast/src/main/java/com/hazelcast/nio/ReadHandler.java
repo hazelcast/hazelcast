@@ -38,8 +38,8 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     public ReadHandler(final Connection connection) {
         super(connection);
-        boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled();
-        boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled();
+        boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(node);
+        boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled(node);
 
         if (asymmetricEncryptionEnabled || symmetricEncryptionEnabled) {
             if (asymmetricEncryptionEnabled && symmetricEncryptionEnabled) {
@@ -188,7 +188,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
                 if (!bbAlias.hasRemaining()) {
                     bbAlias.flip();
                     String remoteAlias = new String(bbAlias.array(), 0, bbAlias.limit());
-                    cipher = CipherHelper.createAsymmetricReaderCipher(remoteAlias);
+                    cipher = CipherHelper.createAsymmetricReaderCipher(node, remoteAlias);
                 }
             }
             while (inBuffer.remaining() >= 128) {
@@ -227,7 +227,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
         Cipher init() {
             Cipher c = null;
             try {
-                c = CipherHelper.createSymmetricReaderCipher();
+                c = CipherHelper.createSymmetricReaderCipher(node);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Symmetric Cipher for ReadHandler cannot be initialized.", e);
             }

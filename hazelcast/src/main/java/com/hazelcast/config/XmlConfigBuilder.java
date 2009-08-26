@@ -6,10 +6,9 @@ import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,23 +18,97 @@ public class XmlConfigBuilder implements ConfigBuilder {
     private final static Logger logger = Logger.getLogger(XmlConfigBuilder.class.getName());
     private boolean domLevel3 = true;
     private Config config;
-    private InputStream inputStream;
+    private InputStream in;
+    private File configurationFile;
+    private URL configurationUrl;
+    boolean usingSystemConfig = false;
+            
+
+    public XmlConfigBuilder(String xmlFileName) throws FileNotFoundException {
+        this(new FileInputStream(xmlFileName));
+    }
 
     public XmlConfigBuilder(InputStream inputStream) {
-        this.inputStream = inputStream;
+        this.in = inputStream;
+    }
+
+    public XmlConfigBuilder() {
+        String configFile = System.getProperty("hazelcast.config");
+        try {
+            if (configFile != null) {
+                configurationFile = new File(configFile);
+                if (!configurationFile.exists()) {
+                    String msg = "Config file at '" + configFile + "' doesn't exist.";
+                    msg += "\nHazelcast will try to use the hazelcast.xml config file in the classpath.";
+                    logger.log(Level.WARNING, msg);
+                    configurationFile = null;
+                }
+            }
+
+            if (configurationFile == null) {
+                configFile = "hazelcast.xml";
+                configurationFile = new File("hazelcast.xml");
+                if (!configurationFile.exists()) {
+                    configurationFile = null;
+                }
+            }
+
+            if (configurationFile != null) {
+                logger.log(Level.INFO, "Using configuration file at " + configurationFile.getAbsolutePath());
+                try {
+                    in = new FileInputStream(configurationFile);
+                    configurationUrl = configurationFile.toURI().toURL();
+                    usingSystemConfig = true;
+                } catch (final Exception e) {
+                    String msg = "Having problem reading config file at '" + configFile + "'.";
+                    msg += "\nException message: " + e.getMessage();
+                    msg += "\nHazelcast will try to use the hazelcast.xml config file in the jar.";
+                    logger.log(Level.WARNING, msg);
+                    in = null;
+                }
+            }
+            if (in == null) {
+                configurationUrl = Config.class.getClassLoader().getResource("hazelcast.xml");
+                if (configurationUrl == null)
+                    return;
+                in = Config.class.getClassLoader().getResourceAsStream("hazelcast.xml");
+                if (in == null) {
+                    String msg = "Having problem reading config file hazelcast.xml in the classpath.";
+                    msg += "\nHazelcast will start with default configuration.";
+                    logger.log(Level.WARNING, msg);
+                }
+            }
+
+        } catch (final Exception e) {
+            logger.log(Level.SEVERE, "Error while creating configuration", e);
+            e.printStackTrace();
+        }
+    }
+
+    public Config build() {
+        Config config = new Config();
+        try {
+            parse(config);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        config.setConfigurationFile(configurationFile);
+        config.setConfigurationUrl(configurationUrl);
+        return config;
     }
 
     /* (non-Javadoc)
       * @see com.hazelcast.config.ConfigBuilder#parse(com.hazelcast.config.Config)
       */
     public void parse(final Config config) throws Exception {
+
         this.config = config;
 
         final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 
         Document doc = null;
         try {
-            doc = builder.parse(inputStream);
+            doc = builder.parse(in);
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Util.streamXML(doc, baos);
             final byte[] bytes = baos.toByteArray();
@@ -50,7 +123,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
             }
         } catch (final Exception e) {
             String msgPart = "config file '" + config.getConfigurationFile() + "' set as a system property.";
-            if (!config.isUsingSystemConfig()) {
+            if (!usingSystemConfig) {
                 msgPart = "hazelcast.xml config file in the classpath.";
             }
             String msg = "Having problem parsing the " + msgPart;
@@ -105,7 +178,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
         return false;
     }
 
-    private void handleNetwork(final org.w3c.dom.Node node)  throws Exception{
+    private void handleNetwork(final org.w3c.dom.Node node) throws Exception {
         final NodeList nodelist = node.getChildNodes();
 
         for (int i = 0; i < nodelist.getLength(); i++) {
@@ -253,9 +326,9 @@ public class XmlConfigBuilder implements ConfigBuilder {
             invoke(target, method, value);
         }
 
-        String mName ="set" + target.getClass().getSimpleName();
-        Method method = getMethod (parent, mName);
-        method.invoke(parent, new Object [] {target});
+        String mName = "set" + target.getClass().getSimpleName();
+        Method method = getMethod(parent, mName);
+        method.invoke(parent, new Object[]{target});
     }
 
     private void invoke(Object target, Method method, String value) {
