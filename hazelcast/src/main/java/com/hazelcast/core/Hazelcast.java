@@ -24,10 +24,9 @@ import java.util.concurrent.ExecutorService;
 
 public final class Hazelcast {
     private static volatile HazelcastInstance defaultInstance = null;
-    private static Object initLock = new Object();
+    private final static Object initLock = new Object();
 
     private Hazelcast() {
-
     }
 
     public static void init(Config config) {
@@ -40,7 +39,6 @@ public final class Hazelcast {
             }
             defaultInstance = com.hazelcast.impl.FactoryImpl.newFactory(config); 
         }
-
     }
 
     private static HazelcastInstance getDefaultInstance() {

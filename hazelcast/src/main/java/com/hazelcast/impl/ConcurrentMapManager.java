@@ -1853,7 +1853,7 @@ public final class ConcurrentMapManager extends BaseManager {
             } else {
                 removeDelayMillis = GLOBAL_REMOVE_DELAY_MILLIS;
             }
-            if (evictionPolicy == OrderingType.NONE) {
+            if (evictionPolicy == OrderingType.NONE && instanceType == InstanceType.MAP) {
                 locallyOwnedMap = new LocallyOwnedMap();
                 mapLocallyOwnedMaps.put(name, locallyOwnedMap);
             } else {
