@@ -20,7 +20,6 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.collection.SortedHashMap;
 import static com.hazelcast.collection.SortedHashMap.OrderingType;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
@@ -3184,7 +3183,7 @@ public final class ConcurrentMapManager extends BaseManager {
             }
 
             public Object setValue(Object value) {
-                FactoryImpl.MProxy proxy = (FactoryImpl.MProxy) record.factory.getProxyByName(record.name);
+                FactoryImpl.MProxy proxy = (FactoryImpl.MProxy) record.factory.getOrCreateProxyByName(record.name);
                 return proxy.put(getKey(), value);
             }
 
@@ -3383,12 +3382,12 @@ public final class ConcurrentMapManager extends BaseManager {
             public void remove() {
                 if (getInstanceType(name) == InstanceType.MULTIMAP) {
                     if (operation == CONCURRENT_MAP_ITERATE_KEYS) {
-                        ((MultiMap) node.factory.getProxyByName(name)).remove(entry.getKey(), null);
+                        ((MultiMap) node.factory.getOrCreateProxyByName(name)).remove(entry.getKey(), null);
                     } else {
-                        ((MultiMap) node.factory.getProxyByName(name)).remove(entry.getKey(), entry.getValue());
+                        ((MultiMap) node.factory.getOrCreateProxyByName(name)).remove(entry.getKey(), entry.getValue());
                     }
                 } else {
-                    ((FactoryImpl.IRemoveAwareProxy) node.factory.getProxyByName(name)).removeKey(entry.getKey());
+                    ((FactoryImpl.IRemoveAwareProxy) node.factory.getOrCreateProxyByName(name)).removeKey(entry.getKey());
                 }
 
                 it.remove();
@@ -3537,16 +3536,16 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public Object getValue() {
             if (value == null) {
-                FactoryImpl factory = FactoryImpl.getFactory(factoryName);
-                value = ((FactoryImpl.MProxy) factory.getProxyByName(name)).get(key);
+                FactoryImpl factory = FactoryImpl.getFactoryImpl(factoryName);
+                value = ((FactoryImpl.MProxy) factory.getOrCreateProxyByName(name)).get(key);
             }
             return value;
         }
 
         public Object setValue(Object value) {
             Object oldValue = this.value;
-            FactoryImpl factory = FactoryImpl.getFactory(factoryName);
-            ((FactoryImpl.MProxy) factory.getProxyByName(name)).put(key, value);
+            FactoryImpl factory = FactoryImpl.getFactoryImpl(factoryName);
+            ((FactoryImpl.MProxy) factory.getOrCreateProxyByName(name)).put(key, value);
             return oldValue;
         }
 

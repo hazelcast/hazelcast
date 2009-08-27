@@ -326,6 +326,7 @@ public class Node {
     }
 
     public void shutdown() {
+        System.out.println("shutting down " + active);
         try {
             if (active) {
                 // set the joined=false first so that

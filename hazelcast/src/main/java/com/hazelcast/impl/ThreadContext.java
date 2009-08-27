@@ -45,17 +45,17 @@ public final class ThreadContext {
 
     private final Serializer serializer = new Serializer();
 
-    long txnId = -1;
+    private long txnId = -1;
 
     TransactionImpl txn = null;
 
-    final ObjectPool<ByteBuffer> bufferCache;
+    private final ObjectPool<ByteBuffer> bufferCache;
 
-    final ObjectPool<Packet> packetCache;
+    private final ObjectPool<Packet> packetCache;
 
-    final static ConcurrentMap<String, BlockingQueue> mapGlobalQueues = new ConcurrentHashMap<String, BlockingQueue>();
+    private final static ConcurrentMap<String, BlockingQueue> mapGlobalQueues = new ConcurrentHashMap<String, BlockingQueue>();
 
-    final ConcurrentMap<FactoryImpl, CallCache> mapNodeCallCaches = new ConcurrentHashMap<FactoryImpl, CallCache>();
+    private final ConcurrentMap<FactoryImpl, CallCache> mapNodeCallCaches = new ConcurrentHashMap<FactoryImpl, CallCache>();
 
     static {
         mapGlobalQueues.put("BufferCache", new ArrayBlockingQueue(6000));

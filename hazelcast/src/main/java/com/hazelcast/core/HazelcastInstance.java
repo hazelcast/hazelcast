@@ -47,11 +47,17 @@ public interface HazelcastInstance {
     public IdGenerator getIdGenerator(String name);
 
     /**
-     * Detaches currently running JVM from the cluster.
+     * Detaches this member from the cluster.
      * It doesn't shutdown the entire cluster, it shuts down
      * this local member only.
      */
     public void shutdown();
+
+    /**
+     * Detaches this member from the cluster first and then restarts it
+     * as a new member.
+     */
+    public void restart();
 
     /**
      * Returns all queue, map, set, list, topic, lock, multimap
@@ -60,7 +66,6 @@ public interface HazelcastInstance {
      * @return the collection of instances created by Hazelcast.
      */
     public Collection<Instance> getInstances();
-
 
     public void addInstanceListener(InstanceListener instanceListener);
 

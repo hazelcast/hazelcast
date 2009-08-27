@@ -18,7 +18,6 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.ClusterImpl;
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.RemotelyProcessable;
 import com.hazelcast.core.EntryEvent;
 import static com.hazelcast.core.Instance.InstanceType;
@@ -223,7 +222,7 @@ public abstract class BaseManager {
             }
 
             public Object setValue(Object newValue) {
-                return ((FactoryImpl.MProxy) factory.getProxyByName(name)).put(key, newValue);
+                return ((FactoryImpl.MProxy) factory.getOrCreateProxyByName(name)).put(key, newValue);
             }
 
             @Override
@@ -309,8 +308,8 @@ public abstract class BaseManager {
                 if (value != null) {
                     objValue = toObject(value);
                 } else {
-                    FactoryImpl factory = FactoryImpl.getFactory(factoryName);
-                    objValue = ((FactoryImpl.IGetAwareProxy) factory.getProxyByName(name)).get((key == null) ? getKey() : key);
+                    FactoryImpl factory = FactoryImpl.getFactoryImpl(factoryName);
+                    objValue = ((FactoryImpl.IGetAwareProxy) factory.getOrCreateProxyByName(name)).get((key == null) ? getKey() : key);
                 }
             }
             return objValue;
@@ -319,8 +318,8 @@ public abstract class BaseManager {
         public Object setValue(Object newValue) {
             if (name == null) throw new UnsupportedOperationException();
             this.objValue = value;
-            FactoryImpl factory = FactoryImpl.getFactory(factoryName);
-            return ((FactoryImpl.MProxy) factory.getProxyByName(name)).put(getKey(), newValue);
+            FactoryImpl factory = FactoryImpl.getFactoryImpl(factoryName);
+            return ((FactoryImpl.MProxy) factory.getOrCreateProxyByName(name)).put(getKey(), newValue);
         }
 
         public void setName(String factoryName, String name) {

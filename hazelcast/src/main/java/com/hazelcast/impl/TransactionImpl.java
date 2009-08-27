@@ -92,7 +92,7 @@ class TransactionImpl implements Transaction {
 
         public void rollbackMap() {
             MProxy mapProxy = null;
-            final Object proxy = factory.getProxyByName(name);
+            final Object proxy = factory.getOrCreateProxyByName(name);
             if (proxy instanceof MProxy) {
                 mapProxy = (MProxy) proxy;
             }

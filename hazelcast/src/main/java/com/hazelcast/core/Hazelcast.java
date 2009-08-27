@@ -37,7 +37,7 @@ public final class Hazelcast {
             if (defaultInstance != null) {
                 throw new IllegalStateException("Default Hazelcast instance is already initilized.");
             }
-            defaultInstance = com.hazelcast.impl.FactoryImpl.newFactory(config); 
+            defaultInstance = com.hazelcast.impl.FactoryImpl.newFactory(config);
         }
     }
 
@@ -97,12 +97,31 @@ public final class Hazelcast {
     }
 
     /**
-     * Detaches currently running JVM from the cluster.
+     * Detaches this member from the cluster.
      * It doesn't shutdown the entire cluster, it shuts down
      * this local member only.
      */
     public static void shutdown() {
-        getDefaultInstance().shutdown();
+        synchronized (initLock) {
+            if (defaultInstance != null) {
+                getDefaultInstance().shutdown();
+                defaultInstance = null;
+            }
+        }
+    }
+
+    /**
+     * Detaches this member from the cluster first and then restarts it
+     * as a new member.
+     */
+    public static void restart() {
+        synchronized (initLock) {
+            if (defaultInstance != null) {
+                defaultInstance = com.hazelcast.impl.FactoryImpl.restart(defaultInstance);
+            } else {
+                getDefaultInstance();
+            }
+        }
     }
 
     /**

@@ -165,7 +165,7 @@ public class ClusterImpl implements Cluster {
             address.readData(in);
             nodeType = Node.NodeType.create(in.readInt());
             factoryName = in.readUTF();
-            Node node = FactoryImpl.getFactory(factoryName).node;
+            Node node = FactoryImpl.getFactoryImpl(factoryName).node;
             localMember = node.getThisAddress().equals(address);
         }
 
