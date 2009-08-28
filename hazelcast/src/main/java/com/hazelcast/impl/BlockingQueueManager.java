@@ -523,7 +523,8 @@ public class BlockingQueueManager extends BaseManager {
 
         public void commitPoll(String name) {
             this.name = name;
-            this.txnId = ThreadContext.get().getTxnId();
+            TransactionImpl txn = ThreadContext.get().txn;
+            this.txnId = txn.getId();
             enqueueAndReturn(this);
         }
 

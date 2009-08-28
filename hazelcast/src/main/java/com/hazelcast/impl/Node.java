@@ -51,17 +51,11 @@ public class Node {
 
     private final ClusterImpl clusterImpl;
 
-    private final List<Thread> threads = new ArrayList<Thread>(3);
-
     private final BlockingQueue<Address> failedConnections = new LinkedBlockingQueue<Address>();
 
     private final boolean superClient;
 
     private final NodeType localNodeType;
-
-    private final String version;
-
-    private final String build;
 
     final BaseVariables baseVariables;
 
@@ -166,20 +160,18 @@ public class Node {
         this.config = config;
         superClient = config.isSuperClient();
         localNodeType = (superClient) ? NodeType.SUPER_CLIENT : NodeType.MEMBER;
-        String versionTemp = "unknown";
-        String buildTemp = "unknown";
+        String version = "unknown";
+        String build = "unknown";
         try {
             InputStream inRuntimeProperties = Node.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
             if (inRuntimeProperties != null) {
                 Properties runtimeProperties = new Properties();
                 runtimeProperties.load(inRuntimeProperties);
-                versionTemp = runtimeProperties.getProperty("hazelcast.version");
-                buildTemp = runtimeProperties.getProperty("hazelcast.build");
+                version = runtimeProperties.getProperty("hazelcast.version");
+                build = runtimeProperties.getProperty("hazelcast.build");
             }
         } catch (Exception ignored) {
         }
-        version = versionTemp;
-        build = buildTemp;
         ServerSocketChannel serverSocketChannel = null;
         try {
             final String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
@@ -355,17 +347,14 @@ public class Node {
         final Thread inThread = new Thread(inSelector, "hz.InThread");
         inThread.start();
         inThread.setPriority(8);
-        threads.add(inThread);
 
         final Thread outThread = new Thread(outSelector, "hz.OutThread");
         outThread.start();
         outThread.setPriority(8);
-        threads.add(outThread);
 
         final Thread clusterServiceThread = new Thread(clusterService, "hz.ServiceThread");
         clusterServiceThread.start();
         clusterServiceThread.setPriority(7);
-        threads.add(clusterServiceThread);
 
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             startMulticastService();

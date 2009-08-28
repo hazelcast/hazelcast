@@ -651,7 +651,7 @@ public abstract class BaseManager {
                         throw new InterruptedCallException();
                     } else if (!node.factory.active) {
                         throw new RuntimeException();
-                    } 
+                    }
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }

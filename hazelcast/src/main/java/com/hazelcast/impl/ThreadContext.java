@@ -19,9 +19,8 @@ package com.hazelcast.impl;
 
 import com.hazelcast.collection.SimpleBoundedQueue;
 import com.hazelcast.core.Transaction;
-import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
-
 import com.hazelcast.impl.ConcurrentMapManager.MEvict;
+import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 import com.hazelcast.nio.BufferUtil;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
@@ -29,8 +28,10 @@ import com.hazelcast.nio.Serializer;
 
 import java.nio.ByteBuffer;
 import java.util.Queue;
-import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,8 +44,6 @@ public final class ThreadContext {
 
     private final Serializer serializer = new Serializer();
 
-    private long txnId = -1;
-
     TransactionImpl txn = null;
 
     private final ObjectPool<ByteBuffer> bufferCache;
@@ -55,9 +54,7 @@ public final class ThreadContext {
 
     private final static ConcurrentMap<String, BlockingQueue> mapGlobalQueues = new ConcurrentHashMap<String, BlockingQueue>();
 
-    private final ConcurrentMap<FactoryImpl, CallCache> mapNodeCallCaches = new ConcurrentHashMap<FactoryImpl, CallCache>();
-
-    private static List<ThreadContext> lsThreadContexts = new CopyOnWriteArrayList<ThreadContext>();
+    private final ConcurrentMap<FactoryImpl, CallCache> mapCallCacheForFactories = new ConcurrentHashMap<FactoryImpl, CallCache>();
 
     static {
         mapGlobalQueues.put("BufferCache", new ArrayBlockingQueue(6000));
@@ -119,13 +116,8 @@ public final class ThreadContext {
         if (threadContext == null) {
             threadContext = new ThreadContext();
             threadLocal.set(threadContext);
-            lsThreadContexts.add (threadContext);
         }
         return threadContext;
-    }
-
-    public static List<ThreadContext> getThreadContexts() {
-        return lsThreadContexts;
     }
 
     public Thread getThread() {
@@ -142,7 +134,6 @@ public final class ThreadContext {
 
     public void finalizeTxn() {
         txn = null;
-        txnId = -1;
     }
 
     public Transaction getTransaction() {
@@ -151,11 +142,10 @@ public final class ThreadContext {
 
     public void setTransaction(TransactionImpl txn) {
         this.txn = txn;
-        this.txnId = txn.getId();
     }
 
     public long getTxnId() {
-        return txnId;
+        return (txn == null) ? -1L : txn.getId();
     }
 
     public Data hardCopy(final Data data) {
@@ -173,7 +163,7 @@ public final class ThreadContext {
         } catch (final Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new RuntimeException(e);
-        } 
+        }
     }
 
     public Object toObject(final Data data) {
@@ -184,11 +174,11 @@ public final class ThreadContext {
         return serializer.readObject(data, purgeData);
     }
 
-    public CallCache getCallCache (FactoryImpl factory) {
-        CallCache callCache = mapNodeCallCaches.get (factory);
-        if (callCache ==null) {
+    public CallCache getCallCache(FactoryImpl factory) {
+        CallCache callCache = mapCallCacheForFactories.get(factory);
+        if (callCache == null) {
             callCache = new CallCache(factory);
-            mapNodeCallCaches.put (factory, callCache);
+            mapCallCacheForFactories.put(factory, callCache);
         }
         return callCache;
     }
@@ -199,6 +189,7 @@ public final class ThreadContext {
         final ConcurrentMapManager.MGet mget;
         final ConcurrentMapManager.MRemove mremove;
         final ConcurrentMapManager.MEvict mevict;
+
         CallCache(FactoryImpl factory) {
             this.factory = factory;
             mput = factory.node.concurrentMapManager.new MPut();
@@ -222,10 +213,10 @@ public final class ThreadContext {
             return mremove;
         }
 
-		public MEvict getMEvict() {
-			mevict.reset();
-			return mevict;
-		}
+        public MEvict getMEvict() {
+            mevict.reset();
+            return mevict;
+        }
     }
 
     public abstract class ObjectPool<E> {
