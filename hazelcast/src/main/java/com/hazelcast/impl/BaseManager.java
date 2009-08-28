@@ -33,10 +33,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -551,12 +548,9 @@ public abstract class BaseManager {
             try {
                 final Object result = getResult();
                 return !(result == OBJECT_NULL || result == null) && result == Boolean.TRUE;
-            } catch (final Throwable e) {
-                logger.log(Level.SEVERE, "getResultAsBoolean", e);
             } finally {
                 afterGettingResult(request);
             }
-            return false;
         }
 
 
@@ -574,12 +568,9 @@ public abstract class BaseManager {
                     return toObject(data);
                 }
                 return result;
-            } catch (final Throwable e) {
-                logger.log(Level.SEVERE, "getResultAsObject", e);
             } finally {
                 afterGettingResult(request);
             }
-            return null;
         }
 
         protected void afterGettingResult(Request request) {
@@ -631,7 +622,7 @@ public abstract class BaseManager {
     }
 
     public abstract class ResponseQueueCall extends RequestBasedCall {
-        final protected BlockingQueue responses = new ArrayBlockingQueue(1);
+        private final BlockingQueue responses = new ArrayBlockingQueue(1);
 
         public ResponseQueueCall() {
         }
@@ -643,26 +634,47 @@ public abstract class BaseManager {
         }
 
         public void beforeRedo() {
+            if (node.factory.restarted) {
+                throw new InterruptedCallException();
+            } else if (!node.factory.active) {
+                throw new RuntimeException();
+            }
+        }
+
+        public Object waitAndGetResult() {
+            while (true) {
+                try {
+                    Object obj = responses.poll(10, TimeUnit.SECONDS);
+                    if (obj != null) {
+                        return obj;
+                    } else if (node.factory.restarted) {
+                        throw new InterruptedCallException();
+                    } else if (!node.factory.active) {
+                        throw new RuntimeException();
+                    } 
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
 
         @Override
         public Object getResult() {
-            Object result = null;
-            try {
-                result = responses.take();
-                if (result == OBJECT_REDO) {
-                    request.redoCount++;
+            Object result = waitAndGetResult();
+            if (result == OBJECT_REDO) {
+                request.redoCount++;
+                try {
                     Thread.sleep(1000 * request.redoCount);
-                    if (request.redoCount > 5) {
-                        logger.log(Level.INFO, request.name + " Re-doing [" + request.redoCount + "] times! " + this);
-                        logger.log(Level.INFO, "\t key= " + request.key + ", req.operation: " + request.operation);
-                    }
-                    beforeRedo();
-                    doOp();
-                    return getResult();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
-            } catch (final Throwable e) {
-                logger.log(Level.FINEST, "ResponseQueueCall.getResult()", e);
+                if (request.redoCount > 5) {
+                    logger.log(Level.INFO, request.name + " Re-doing [" + request.redoCount + "] times! " + this);
+                    logger.log(Level.INFO, "\t key= " + request.key + ", req.operation: " + request.operation);
+                }
+                beforeRedo();
+                doOp();
+                return getResult();
             }
             return result;
         }
@@ -880,8 +892,8 @@ public abstract class BaseManager {
                     }
                     onComplete();
                 }
-            } catch (Throwable t) {
-                t.printStackTrace();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
             return returnResult();
         }
@@ -899,13 +911,7 @@ public abstract class BaseManager {
 
         @Override
         public Object getResult() {
-            Object result = null;
-            try {
-                result = responses.take();
-            } catch (final Throwable e) {
-                logger.log(Level.FINEST, "getResult()", e);
-            }
-            return result;
+            return waitAndGetResult();
         }
 
         @Override
@@ -948,7 +954,7 @@ public abstract class BaseManager {
     }
 
     public void enqueueAndReturn(final Object obj) {
-       node.clusterService.enqueueAndReturn(obj);
+        node.clusterService.enqueueAndReturn(obj);
     }
 
     public Address getKeyOwner(final Data key) {

@@ -30,11 +30,15 @@ import com.hazelcast.jmx.ManagementService;
 import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.query.Predicate;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -65,11 +69,7 @@ public class FactoryImpl implements HazelcastInstance {
 
     private final TransactionFactory transactionFactory;
 
-    private int startCount = 0;
-
     public final Node node;
-
-    volatile boolean inited = false;
 
     private final static ConcurrentMap<String, FactoryImpl> factories = new ConcurrentHashMap<String, FactoryImpl>(5);
 
@@ -78,6 +78,8 @@ public class FactoryImpl implements HazelcastInstance {
     private static int nextFactoryId = 0;
 
     volatile boolean active = true;
+
+    volatile boolean restarted = false;
 
     public static FactoryImpl getFactoryImpl(String name) {
         return factories.get(name);
@@ -96,6 +98,16 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
+    public static void shutdownAll() {
+        synchronized (factoryLock) {
+            Collection<FactoryImpl> colFactories = factories.values();
+            for (FactoryImpl factory : colFactories) {
+                factory.shutdown();
+            }
+            factories.clear();
+        }
+    }
+
     public static void shutdown(FactoryImpl factory) {
         synchronized (factoryLock) {
             ManagementService.shutdown();
@@ -107,6 +119,7 @@ public class FactoryImpl implements HazelcastInstance {
     public static HazelcastInstance restart(HazelcastInstance hazelcastInstance) {
         synchronized (factoryLock) {
             FactoryImpl factory = (FactoryImpl) hazelcastInstance;
+            factory.restarted = true;
             shutdown(factory);
             FactoryImpl newFactory = newFactory(factory.node.config);
             Collection<FactoryAwareProxy> proxies = factory.proxies.values();
@@ -139,8 +152,6 @@ public class FactoryImpl implements HazelcastInstance {
         locksMapProxy = new MProxyImpl("c:__hz_Locks", this);
         idGeneratorMapProxy = new MProxyImpl("c:__hz_IdGenerator", this);
         globalProxies = new MProxyImpl("c:__hz_Proxies", this);
-        inited = true;
-        startCount++;
         ManagementService.register(node);
         globalProxies.addEntryListener(new EntryListener() {
             public void entryAdded(EntryEvent event) {
@@ -666,7 +677,13 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public void set(String name, FactoryImpl factory) {
-            super.set(name, factory);
+            setName(name);
+            setFactory(factory);
+        }
+
+        @Override
+        public void setFactory(FactoryImpl factory) {
+            super.setFactory(factory);
             topicManager = factory.node.topicManager;
             listenerManager = factory.node.listenerManager;
         }
@@ -1321,7 +1338,8 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public MultiMapProxy(String name, FactoryImpl factory) {
-            set(name, factory);
+            setName(name);
+            setFactory(factory);
             this.base = new MultiMapBase();
         }
 
@@ -1560,39 +1578,117 @@ public class FactoryImpl implements HazelcastInstance {
 
     public static class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSerializable {
 
-        private transient MProxy mproxyReal = null;
+        private volatile transient MProxy mproxyReal = null;
 
-        private ConcurrentMapManager concurrentMapManager = null;
+        private volatile ConcurrentMapManager concurrentMapManager = null;
 
-        private ListenerManager listenerManager = null;
+        private volatile ListenerManager listenerManager = null;
+
+        private final transient MProxy dynamicProxy;
 
         public MProxyImpl() {
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            dynamicProxy = (MProxy) Proxy.newProxyInstance(cl, new Class[]{MProxy.class}, new Invoker());
+        }
+
+        class Invoker implements InvocationHandler {
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                beforeCall();
+                try {
+                    return method.invoke(mproxyReal, args);
+                } catch (Throwable e) {
+                    if (e instanceof InterruptedCallException && factory.restarted) {
+                        return invoke(proxy, method, args);
+                    } else if (e instanceof RuntimeException) {
+                        return e;
+                    } else {
+                        throw new RuntimeException(e);
+                    }
+                } finally {
+                    afterCall();
+                }
+            }
         }
 
         private MProxyImpl(String name, FactoryImpl factory) {
-            set(name, factory);
+            this();
+            setName(name);
+            setFactory(factory);
             mproxyReal = new MProxyReal();
         }
 
         @Override
-        public void set(String name, FactoryImpl factory) {
-            super.set(name, factory);
+        public void setFactory(FactoryImpl factory) {
+            super.setFactory(factory);
             this.concurrentMapManager = factory.node.concurrentMapManager;
             this.listenerManager = factory.node.listenerManager;
         }
 
-        private void ensure() {
+        private void beforeCall() {
             initialChecks();
             if (mproxyReal == null) {
                 mproxyReal = (MProxy) factory.getOrCreateProxyByName(name);
             }
         }
 
-        public Object getId() {
-            ensure();
-            return mproxyReal.getId();
+
+        private void afterCall() {
         }
 
+        public Object get(Object key) {
+            beforeCall();
+            try {
+                return mproxyReal.get(key);
+            } catch (Throwable e) {
+                if (e instanceof InterruptedCallException && factory.restarted) {
+                    return get(key);
+                } else if (e instanceof RuntimeException) {
+                    return e;
+                } else {
+                    throw new RuntimeException(e);
+                }
+            } finally {
+                afterCall();
+            }
+        }
+
+        public Object put(Object key, Object value) {
+            beforeCall();
+            try {
+                return mproxyReal.put(key, value);
+            } catch (Throwable e) {
+                if (e instanceof InterruptedCallException && factory.restarted) {
+                    return put(key, value);
+                } else if (e instanceof RuntimeException) {
+                    return e;
+                } else {
+                    throw new RuntimeException(e);
+                }
+            } finally {
+                afterCall();
+            }
+        }
+
+        public Object remove(Object key) {
+            try {
+                return mproxyReal.remove(key);
+            } catch (Throwable e) {
+                if (e instanceof InterruptedCallException && factory.restarted) {
+                    return remove(key);
+                } else if (e instanceof RuntimeException) {
+                    return e;
+                } else {
+                    throw new RuntimeException(e);
+                }
+            } finally {
+                afterCall();
+            }
+        }
+
+        public Object getId() {
+            return dynamicProxy.getId();
+        }
+        
         @Override
         public String toString() {
             return "Map [" + getName() + "] " + factory;
@@ -1602,11 +1698,8 @@ public class FactoryImpl implements HazelcastInstance {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-
             MProxyImpl mProxy = (MProxyImpl) o;
-
             return name.equals(mProxy.name);
-
         }
 
         @Override
@@ -1615,201 +1708,161 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public void destroy() {
-            ensure();
-            mproxyReal.destroy();
+            dynamicProxy.destroy();
         }
 
         public Instance.InstanceType getInstanceType() {
-            ensure();
-            return mproxyReal.getInstanceType();
+            return dynamicProxy.getInstanceType();
         }
 
         public boolean removeKey(Object key) {
-            ensure();
-            return mproxyReal.removeKey(key);
+            return dynamicProxy.removeKey(key);
         }
 
         public int size() {
-            ensure();
-            return mproxyReal.size();
+            return dynamicProxy.size();
         }
 
         public boolean isEmpty() {
-            ensure();
-            return mproxyReal.isEmpty();
+            return dynamicProxy.isEmpty();
         }
 
         public boolean containsKey(Object key) {
-            ensure();
-            return mproxyReal.containsKey(key);
+            return dynamicProxy.containsKey(key);
         }
 
         public boolean containsValue(Object value) {
-            ensure();
-            return mproxyReal.containsValue(value);
+            return dynamicProxy.containsValue(value);
         }
 
         public MapEntry getMapEntry(Object key) {
-            ensure();
-            return mproxyReal.getMapEntry(key);
+            return dynamicProxy.getMapEntry(key);
         }
 
-        public Object get(Object key) {
-            ensure();
-            return mproxyReal.get(key);
-        }
-
-        public Object put(Object key, Object value) {
-            ensure();
-            return mproxyReal.put(key, value);
-        }
-
-        public Object remove(Object key) {
-            ensure();
-            return mproxyReal.remove(key);
-        }
 
         public void putAll(Map t) {
-            ensure();
-            mproxyReal.putAll(t);
+            dynamicProxy.putAll(t);
         }
 
         public void clear() {
-            ensure();
-            mproxyReal.clear();
+            dynamicProxy.clear();
         }
 
         public int valueCount(Object key) {
-            ensure();
-            return mproxyReal.valueCount(key);
+            return dynamicProxy.valueCount(key);
         }
 
-
         public Set allKeys() {
-            ensure();
-            return mproxyReal.allKeys();
+            return dynamicProxy.allKeys();
         }
 
         public Set keySet() {
-            ensure();
-            return mproxyReal.keySet();
+            return dynamicProxy.keySet();
         }
 
         public Collection values() {
-            ensure();
-            return mproxyReal.values();
+            return dynamicProxy.values();
         }
 
         public Set entrySet() {
-            ensure();
-            return mproxyReal.entrySet();
+            return dynamicProxy.entrySet();
+        }
+
+        public Set keySet(Predicate predicate) {
+            return dynamicProxy.keySet(predicate);
+        }
+
+        public Collection values(Predicate predicate) {
+            return dynamicProxy.values(predicate);
+        }
+
+        public Set entrySet(Predicate predicate) {
+            return dynamicProxy.entrySet(predicate);
         }
 
         public Object putIfAbsent(Object key, Object value) {
-            ensure();
-            return mproxyReal.putIfAbsent(key, value);
+            return dynamicProxy.putIfAbsent(key, value);
         }
 
         public boolean remove(Object key, Object value) {
-            ensure();
-            return mproxyReal.remove(key, value);
+            return dynamicProxy.remove(key, value);
         }
 
         public boolean replace(Object key, Object oldValue, Object newValue) {
-            ensure();
-            return mproxyReal.replace(key, oldValue, newValue);
+            return dynamicProxy.replace(key, oldValue, newValue);
         }
 
         public Object replace(Object key, Object value) {
-            ensure();
-            return mproxyReal.replace(key, value);
+            return dynamicProxy.replace(key, value);
         }
 
         public String getName() {
-            ensure();
-            return mproxyReal.getName();
+            return dynamicProxy.getName();
         }
 
         public void lock(Object key) {
-            ensure();
-            mproxyReal.lock(key);
+            dynamicProxy.lock(key);
         }
 
         public boolean tryLock(Object key) {
-            ensure();
-            return mproxyReal.tryLock(key);
+            return dynamicProxy.tryLock(key);
         }
 
         public boolean tryLock(Object key, long time, TimeUnit timeunit) {
-            ensure();
-            return mproxyReal.tryLock(key, time, timeunit);
+            return dynamicProxy.tryLock(key, time, timeunit);
         }
 
         public void unlock(Object key) {
-            ensure();
-            mproxyReal.unlock(key);
+            dynamicProxy.unlock(key);
         }
 
         public String getLongName() {
-            ensure();
-            return mproxyReal.getLongName();
+            return dynamicProxy.getLongName();
         }
 
         public void addGenericListener(Object listener, Object key, boolean includeValue,
                                        ListenerManager.Type listenerType) {
-            ensure();
-            mproxyReal.addGenericListener(listener, key, includeValue, listenerType);
+            dynamicProxy.addGenericListener(listener, key, includeValue, listenerType);
         }
 
         public void removeGenericListener(Object listener, Object key) {
-            ensure();
-            mproxyReal.removeGenericListener(listener, key);
+            dynamicProxy.removeGenericListener(listener, key);
         }
 
         public void addEntryListener(EntryListener listener, boolean includeValue) {
-            ensure();
-            mproxyReal.addEntryListener(listener, includeValue);
+            dynamicProxy.addEntryListener(listener, includeValue);
         }
 
         public void addEntryListener(EntryListener listener, Object key, boolean includeValue) {
-            ensure();
-            mproxyReal.addEntryListener(listener, key, includeValue);
+            dynamicProxy.addEntryListener(listener, key, includeValue);
         }
 
         public void removeEntryListener(EntryListener listener) {
-            ensure();
-            mproxyReal.removeEntryListener(listener);
+            dynamicProxy.removeEntryListener(listener);
         }
 
         public void removeEntryListener(EntryListener listener, Object key) {
-            ensure();
-            mproxyReal.removeEntryListener(listener, key);
+            dynamicProxy.removeEntryListener(listener, key);
         }
 
         public boolean containsEntry(Object key, Object value) {
-            ensure();
-            return mproxyReal.containsEntry(key, value);
+            return dynamicProxy.containsEntry(key, value);
         }
 
         public boolean putMulti(Object key, Object value) {
-            ensure();
-            return mproxyReal.putMulti(key, value);
+            return dynamicProxy.putMulti(key, value);
         }
 
         public boolean removeMulti(Object key, Object value) {
-            ensure();
-            return mproxyReal.removeMulti(key, value);
+            return dynamicProxy.removeMulti(key, value);
         }
 
         public boolean add(Object value) {
-            ensure();
-            return mproxyReal.add(value);
+            return dynamicProxy.add(value);
         }
 
-
         public boolean evict(Object key) {
-            ensure();
-            return mproxyReal.evict(key);
+            return dynamicProxy.evict(key);
         }
 
         private class MProxyReal implements MProxy {
@@ -2070,24 +2123,36 @@ public class FactoryImpl implements HazelcastInstance {
                 }
             }
 
+            public Set entrySet(Predicate predicate) {
+                return (Set) iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES, predicate);
+            }
+
+            public Set keySet(Predicate predicate) {
+                return (Set) iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS, predicate);
+            }
+
+            public Collection values(Predicate predicate) {
+                return iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_VALUES, predicate);
+            }
+
             public Set entrySet() {
-                return (Set) iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES);
+                return (Set) iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES, null);
             }
 
             public Set keySet() {
-                return (Set) iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS);
+                return (Set) iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS, null);
             }
 
             public Set allKeys() {
-                return (Set) iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS_ALL);
+                return (Set) iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS_ALL, null);
             }
 
             public Collection values() {
-                return iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_VALUES);
+                return iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_VALUES, null);
             }
 
-            private Collection iterate(ClusterOperation iteratorType) {
-                MIterate miterate = concurrentMapManager.new MIterate(name, iteratorType);
+            private Collection iterate(ClusterOperation iteratorType, Predicate predicate) {
+                MIterate miterate = concurrentMapManager.new MIterate(name, predicate, iteratorType);
                 return (Collection) miterate.call();
             }
 
@@ -2115,9 +2180,12 @@ public class FactoryImpl implements HazelcastInstance {
         protected FactoryAwareNamedProxy() {
         }
 
-        protected void set(String name, FactoryImpl factory) {
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
             this.name = name;
-            this.factory = factory;
         }
 
         public FactoryImpl getFactory() {
@@ -2134,7 +2202,8 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public void readData(DataInput in) throws IOException {
-            set(in.readUTF(), getFactoryImpl(in.readUTF()));
+            setName(in.readUTF());
+            setFactory(getFactoryImpl(in.readUTF()));
         }
     }
 
@@ -2146,7 +2215,8 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public IdGeneratorProxy(String name, FactoryImpl factory) {
-            set(name, factory);
+            setName(name);
+            setFactory(factory);
             base = new IdGeneratorBase();
         }
 

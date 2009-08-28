@@ -17,31 +17,42 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.query.Predicate;
+
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.Set;
+import java.util.Map;
+import java.util.Collection;
 
 public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
 
     String getName();
 
-    void lock(Object key);
+    void lock(K key);
 
-    boolean tryLock(Object key);
+    boolean tryLock(K key);
 
-    boolean tryLock(Object key, long time, TimeUnit timeunit);
+    boolean tryLock(K key, long time, TimeUnit timeunit);
 
-    void unlock(Object key);
+    void unlock(K key);
 
     void addEntryListener(EntryListener listener, boolean includeValue);
 
     void removeEntryListener(EntryListener listener);
 
-    void addEntryListener(EntryListener listener, Object key, boolean includeValue);
+    void addEntryListener(EntryListener listener, K key, boolean includeValue);
 
-    void removeEntryListener(EntryListener listener, Object key);
+    void removeEntryListener(EntryListener listener, K key);
 
-    MapEntry getMapEntry(Object key);
+    MapEntry getMapEntry(K key);
     
     boolean evict(K key);
+
+    Set<K> keySet(Predicate predicate);
+
+    Set<Map.Entry<K, V>> entrySet(Predicate predicate);
+
+    Collection<V> values (Predicate predicate);
 
 }

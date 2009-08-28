@@ -29,10 +29,8 @@ import com.hazelcast.nio.Serializer;
 
 import java.nio.ByteBuffer;
 import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.List;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,9 +51,13 @@ public final class ThreadContext {
 
     private final ObjectPool<Packet> packetCache;
 
+    private final Thread thread;
+
     private final static ConcurrentMap<String, BlockingQueue> mapGlobalQueues = new ConcurrentHashMap<String, BlockingQueue>();
 
     private final ConcurrentMap<FactoryImpl, CallCache> mapNodeCallCaches = new ConcurrentHashMap<FactoryImpl, CallCache>();
+
+    private static List<ThreadContext> lsThreadContexts = new CopyOnWriteArrayList<ThreadContext>();
 
     static {
         mapGlobalQueues.put("BufferCache", new ArrayBlockingQueue(6000));
@@ -63,6 +65,7 @@ public final class ThreadContext {
     }
 
     private ThreadContext() {
+        thread = Thread.currentThread();
         int bufferCacheSize = 12;
         int packetCacheSize = 0;
         String threadName = Thread.currentThread().getName();
@@ -116,8 +119,17 @@ public final class ThreadContext {
         if (threadContext == null) {
             threadContext = new ThreadContext();
             threadLocal.set(threadContext);
+            lsThreadContexts.add (threadContext);
         }
         return threadContext;
+    }
+
+    public static List<ThreadContext> getThreadContexts() {
+        return lsThreadContexts;
+    }
+
+    public Thread getThread() {
+        return thread;
     }
 
     public ObjectPool<Packet> getPacketPool() {

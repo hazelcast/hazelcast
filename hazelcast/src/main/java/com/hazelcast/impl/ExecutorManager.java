@@ -321,8 +321,9 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 final int resultCountNow = resultCount.incrementAndGet();
                 if (resultCountNow >= expectedResultCount) {
                     try {
-                        if (response != null)
+                        if (response != null) {
                             responseQueue.add(response);
+                        }
                         responseQueue.add(OBJECT_DONE);
                     } catch (final Exception e) {
                         e.printStackTrace();

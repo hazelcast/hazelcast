@@ -689,7 +689,6 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class MPut extends MBackupAndMigrationAwareOp {
 
-
         public Object replace(String name, Object key, Object value, long timeout) {
             return txnalPut(CONCURRENT_MAP_REPLACE_IF_NOT_NULL, name, key, value, timeout);
         }
@@ -1000,10 +999,12 @@ public final class ConcurrentMapManager extends BaseManager {
 
         final String name;
         final ClusterOperation operation;
+        final Predicate predicate;
 
-        public MIterate(String name, ClusterOperation operation) {
+        public MIterate(String name, Predicate predicate, ClusterOperation operation) {
             this.name = name;
             this.operation = operation;
+            this.predicate = predicate;
         }
 
         TargetAwareOp createNewTargetAwareOp(Address target) {
@@ -1027,17 +1028,11 @@ public final class ConcurrentMapManager extends BaseManager {
             public MGetEntries(Address target) {
                 this.target = target;
                 request.reset();
-                setLocal(operation, name, null, null, -1, -1);
-//                setLocal(operation, name, null, new TypePredicate(), -1, -1);
+                setLocal(operation, name, null, predicate, -1, -1);
             }
         }
     }
 
-    public static class TypePredicate implements Predicate, Serializable {
-        public boolean apply(MapEntry mapEntry) {
-            return (mapEntry.getValue() instanceof String);
-        }
-    }
 
     Address getTarget(Data key) {
         int blockId = getBlockId(key);
@@ -1989,7 +1984,6 @@ public final class ConcurrentMapManager extends BaseManager {
             int size = 0;
             Collection<Record> records = mapRecords.values();
             for (Record record : records) {
-//                System.out.println("size record " + record.lockThreadId + ", " + record.lockCount + " version : " + record.version + ", " + record.lockAddress);
                 if (record.isValid(now)) {
                     Block block = blocks[record.blockId];
                     if (thisAddress.equals(block.owner)) {
