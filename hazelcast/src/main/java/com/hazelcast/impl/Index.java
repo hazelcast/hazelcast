@@ -3,7 +3,6 @@ package com.hazelcast.impl;
 import com.hazelcast.query.Expression;
 
 import java.util.*;
-import java.lang.reflect.Method;
 
 public class Index<T> {
     final Map<Long, Set<T>> mapIndex;
@@ -15,7 +14,7 @@ public class Index<T> {
         this.indexName = indexName;
         this.ordered = ordered;
         this.expression = expression;
-        this.mapIndex = (ordered) ? new TreeMap<Long, Set<T>>() : new HashMap(1000);
+        this.mapIndex = (ordered) ? new TreeMap<Long, Set<T>>() : new HashMap<Long, Set<T>>(1000);
     }
 
     public long extractLongValue(Object value) {
@@ -57,7 +56,7 @@ public class Index<T> {
     }
 
     Set<T> getSubRecords(boolean equal, boolean lessThan, long value) {
-        TreeMap<Long, Set<T>> treeMap = (TreeMap) mapIndex;
+        TreeMap<Long, Set<T>> treeMap = (TreeMap<Long, Set<T>>) mapIndex;
         Set<T> results = new HashSet<T>();
         Map<Long, Set<T>> sub = (lessThan) ? treeMap.headMap(value) : treeMap.tailMap(value);
         Set<Map.Entry<Long, Set<T>>> entries = sub.entrySet();
@@ -71,7 +70,7 @@ public class Index<T> {
     }
 
     Set<T> getSubRecords(long from, long to) {
-        TreeMap<Long, Set<T>> treeMap = (TreeMap) mapIndex;
+        TreeMap<Long, Set<T>> treeMap = (TreeMap<Long, Set<T>>) mapIndex;
         Set<T> results = new HashSet<T>();
         Collection<Set<T>> sub = treeMap.subMap(from, to).values();
         for (Set<T> records : sub) {
