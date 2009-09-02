@@ -265,7 +265,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public void createAndAddMapState(CMap cmap) {
             MapState mapState = new MapState(cmap.name);
-            Collection<Index> indexes = cmap.mapNamedIndexes.values();
+            Collection<Index<Record>> indexes = cmap.mapNamedIndexes.values();
             for (Index index : indexes){
                 AddMapIndex mi = new AddMapIndex(cmap.name, index.indexName, index.expression,  index.ordered);
                 mapState.addMapIndex(mi);
@@ -2013,7 +2013,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         private Map<Integer, Set<Record>> mapValueIndex = new HashMap(1000);
 
-        private final Map<String, Index> mapNamedIndexes = new HashMap(6);
+        private final Map<String, Index<Record>> mapNamedIndexes = new HashMap(6);
 
         private final Index[] indexes = new Index[6];
 

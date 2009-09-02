@@ -51,6 +51,8 @@ public class Node {
 
     private final BlockingQueue<Address> failedConnections = new LinkedBlockingQueue<Address>();
 
+    private final ShutdownHookThread shutdownHookThread = new ShutdownHookThread();
+
     private final boolean superClient;
 
     private final NodeType localNodeType;
@@ -336,6 +338,7 @@ public class Node {
                 address = null;
                 masterAddress = null;
                 clusterManager.stop();
+                Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             }
         } catch (Throwable e) {
             if (logger != null) logger.log(Level.FINEST, "shutdown exception", e);
@@ -369,22 +372,26 @@ public class Node {
         join();
 
         if (!completelyShutdown) {
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        completelyShutdown = true;
-                        if (logger != null) {
-                            logger.log(Level.INFO, "Hazelcast ShutdownHook is shutting down!");
-                        }
-                        shutdown();
-                    } catch (Exception e) {
-                        if (logger != null) {
-                            logger.log(Level.WARNING, "Hazelcast shutdownhook exception:", e);
-                        }
+            Runtime.getRuntime().addShutdownHook(shutdownHookThread);
+        }
+    }
+
+    class ShutdownHookThread extends Thread {
+        @Override
+        public void run() {
+            if (active && !completelyShutdown) {
+                try {
+                    completelyShutdown = true;
+                    if (logger != null) {
+                        logger.log(Level.INFO, "Hazelcast ShutdownHook is shutting down!");
+                    }
+                    shutdown();
+                } catch (Exception e) {
+                    if (logger != null) {
+                        logger.log(Level.WARNING, "Hazelcast shutdownhook exception:", e);
                     }
                 }
-            });
+            }
         }
     }
 
