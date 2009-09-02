@@ -18,14 +18,10 @@
 package com.hazelcast.config;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Config {
 
@@ -34,8 +30,6 @@ public class Config {
 	public static final String DEFAULT_GROUP_PASSWORD = "group-pass";
 
 	public static final String DEFAULT_GROUP_NAME = "group-dev";
-
-	private static Logger logger = Logger.getLogger(Config.class.getName());
 
     private String xmlConfig = null;
 
@@ -140,11 +134,8 @@ public class Config {
 
             final String secondPart = pattern.substring(index + 1);
             final int indextSecondPart = name.indexOf(secondPart, index + 1);
-            if (indextSecondPart == -1) {
-                return false;
-            }
-            
-            return true;
+            return indextSecondPart != -1;
+
         }
     }
 
