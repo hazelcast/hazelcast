@@ -150,9 +150,7 @@ class Request {
                 packet.lockAddress, packet.lockCount, packet.conn.getEndPoint(), packet.longValue,
                 packet.recordId, packet.version);
         indexCount = packet.indexCount;
-        for (int i=0; i < indexCount ; i++) {
-            indexes[i] = packet.indexes[i];
-        }
+        System.arraycopy(packet.indexes, 0, indexes, 0, indexCount);
 
     }
 
@@ -181,9 +179,7 @@ class Request {
         packet.recordId = recordId;
         packet.version = version;
         packet.indexCount = indexCount;
-        for (int i=0; i < indexCount ; i++) {
-            packet.indexes[i] = indexes[i];
-        }
+        System.arraycopy(indexes, 0, packet.indexes, 0, indexCount);
     }
 
 }
