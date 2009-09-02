@@ -20,7 +20,7 @@ public class QueryService implements Runnable {
     final Node node;
     private volatile boolean running = true;
 
-    final BlockingQueue<Runnable> queryQ = new LinkedBlockingQueue();
+    final BlockingQueue<Runnable> queryQ = new LinkedBlockingQueue<Runnable>();
 
     public QueryService(Node node) {
         this.node = node;
@@ -28,7 +28,7 @@ public class QueryService implements Runnable {
 
     public void run() {
         while (running) {
-            Runnable run = null;
+            Runnable run;
             try {
                 run = queryQ.take();
                 run.run();
@@ -39,36 +39,36 @@ public class QueryService implements Runnable {
     }
 
 
-    public void addNewIndex(final Index index, final long value, final Record record) {
+    public void addNewIndex(final Index<Record> index, final long value, final Record record) {
         try {
             queryQ.put(new Runnable() {
                 public void run() {
                     index.addNewIndex(value, record);
                 }
             });
-        } catch (InterruptedException e) {
+        } catch (InterruptedException ignore) {
         }
     }
 
-    public void updateIndex(final Index index, final long oldValue, final long newValue, final Record record) {
+    public void updateIndex(final Index<Record> index, final long oldValue, final long newValue, final Record record) {
         try {
             queryQ.put(new Runnable() {
                 public void run() {
                     index.updateIndex(oldValue, newValue, record);
                 }
             });
-        } catch (InterruptedException e) {
+        } catch (InterruptedException ignore) {
         }
     }
 
-    public void removeIndex(final Index index, final long value, final Record record) {
+    public void removeIndex(final Index<Record> index, final long value, final Record record) {
         try {
             queryQ.put(new Runnable() {
                 public void run() {
                     index.removeIndex(value, record);
                 }
             });
-        } catch (InterruptedException e) {
+        } catch (InterruptedException ignore) {
         }
     }
 
@@ -82,30 +82,30 @@ public class QueryService implements Runnable {
         }
     }
 
-    public Collection<Record> query(final Collection<Record> allRecords, final Map<String, Index> namedIndexes, final Predicate predicate) {
+    public Collection<Record> query(final Collection<Record> allRecords, final Map<String, Index<Record>> namedIndexes, final Predicate predicate) {
         try {
-            final BlockingQueue<Collection<Record>> resultQ = new ArrayBlockingQueue(1);
+            final BlockingQueue<Collection<Record>> resultQ = new ArrayBlockingQueue<Collection<Record>>(1);
             queryQ.put(new Runnable() {
                 public void run() {
                     resultQ.offer(doQuery(allRecords, namedIndexes, predicate));
                 }
             });
             return resultQ.take();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException ignore) {
         }
-        return new ArrayList();
+        return new ArrayList<Record>();
     }
 
-    public Collection<Record> doQuery(Collection<Record> allRecords, Map<String, Index> namedIndexes, Predicate predicate) {
+    public Collection<Record> doQuery(Collection<Record> allRecords, Map<String, Index<Record>> namedIndexes, Predicate predicate) {
         Collection<Record> records = null;
         if (predicate != null && predicate instanceof IndexAwarePredicate) {
-            List<IndexedPredicate> lsIndexPredicates = new ArrayList();
+            List<IndexedPredicate> lsIndexPredicates = new ArrayList<IndexedPredicate>();
             IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
             iap.collectIndexedPredicates(lsIndexPredicates);
             for (IndexedPredicate indexedPredicate : lsIndexPredicates) {
-                Index index = namedIndexes.get(indexedPredicate.getIndexName());
+                Index<Record> index = namedIndexes.get(indexedPredicate.getIndexName());
                 if (index != null) {
-                    Collection<Record> sub = null;
+                    Collection<Record> sub;
                     if (!(indexedPredicate instanceof RangedPredicate)) {
                         sub = index.getRecords(getLongValue(indexedPredicate.getValue()));
                     } else {
