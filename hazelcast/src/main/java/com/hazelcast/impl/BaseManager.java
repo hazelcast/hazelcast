@@ -1062,6 +1062,7 @@ public abstract class BaseManager {
     }
 
     public void sendProcessableToAll(RemotelyProcessable rp, boolean processLocally) {
+        rp.setNode(node);
         if (processLocally) {
             rp.process();
         }

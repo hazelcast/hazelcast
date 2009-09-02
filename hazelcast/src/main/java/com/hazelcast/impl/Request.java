@@ -82,9 +82,10 @@ class Request {
         this.recordId = -1;
         this.version = -1;
         this.redoCount = 0;
+        this.indexCount = 0;
     }
 
-    public void addIndex(int index, long value) {
+    public void setIndex(int index, long value) {
         indexes[index] = value;
         indexCount = (byte) (index+1);
     }
@@ -148,6 +149,10 @@ class Request {
                 packet.blockId, packet.timeout, packet.txnId, packet.callId, packet.threadId,
                 packet.lockAddress, packet.lockCount, packet.conn.getEndPoint(), packet.longValue,
                 packet.recordId, packet.version);
+        indexCount = packet.indexCount;
+        for (int i=0; i < indexCount ; i++) {
+            indexes[i] = packet.indexes[i];
+        }
 
     }
 
@@ -175,6 +180,10 @@ class Request {
         packet.longValue = longValue;
         packet.recordId = recordId;
         packet.version = version;
+        packet.indexCount = indexCount;
+        for (int i=0; i < indexCount ; i++) {
+            packet.indexes[i] = indexes[i];
+        }
     }
 
 }

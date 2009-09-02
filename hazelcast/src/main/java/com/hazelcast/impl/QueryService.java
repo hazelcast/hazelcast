@@ -8,14 +8,17 @@ import com.hazelcast.query.RangedPredicate;
 import static com.hazelcast.query.RangedPredicate.RangeType.*;
 
 import java.util.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class QueryService implements Runnable {
 
+    private final Logger logger = Logger.getLogger(QueryService.class.getName());    
     final Node node;
-    volatile boolean running = true;
+    private volatile boolean running = true;
 
     final BlockingQueue<Runnable> queryQ = new LinkedBlockingQueue();
 
@@ -119,6 +122,7 @@ public class QueryService implements Runnable {
                             }
                         }
                     }
+                    logger.log(Level.FINEST, node.factory.getName() + " index sub.size " + sub.size());
                     if (records == null) {
                         records = sub;
                     } else {

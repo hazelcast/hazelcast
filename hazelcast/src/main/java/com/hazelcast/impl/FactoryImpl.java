@@ -1952,8 +1952,8 @@ public class FactoryImpl implements HazelcastInstance {
             public void addIndex(final String indexName, final Expression expression, final boolean ordered) {
                 concurrentMapManager.enqueueAndReturn(new Processable() {
                     public void process() {
-                        CMap cmap = concurrentMapManager.getMap(name);
-                        cmap.addIndex(indexName, expression, ordered);
+                        AddMapIndex addMapIndexProcess = new AddMapIndex(name, indexName, expression, ordered);
+                        concurrentMapManager.sendProcessableToAll(addMapIndexProcess, true);
                     }
                 });
             }

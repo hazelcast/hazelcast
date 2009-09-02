@@ -28,11 +28,8 @@ import static com.hazelcast.core.Instance.InstanceType;
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
-import com.hazelcast.nio.Address;
+import com.hazelcast.nio.*;
 import static com.hazelcast.nio.BufferUtil.*;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 
@@ -261,29 +258,28 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     public static class InitialState extends AbstractRemotelyProcessable {
-        String factoryName;
         List<MapState> lsMapStates = new ArrayList();
 
         public InitialState() {
         }
 
-        public InitialState(String factoryName) {
-            this.factoryName = factoryName;
-        }
-
         public void createAndAddMapState(CMap cmap) {
             MapState mapState = new MapState(cmap.name);
-
+            Collection<Index> indexes = cmap.mapNamedIndexes.values();
+            for (Index index : indexes){
+                AddMapIndex mi = new AddMapIndex(cmap.name, index.indexName, index.expression,  index.ordered);
+                mapState.addMapIndex(mi);
+            }
+            lsMapStates.add (mapState);
         }
 
 
         public void process() {
-            System.out.println("INITIAL STATE PROCESSSS " + factoryName);
-            FactoryImpl factory = FactoryImpl.getFactoryImpl(factoryName);
-            if (factory != null) {
+            FactoryImpl factory = getNode().factory;
+            if (factory.active) {
                 for (MapState mapState : lsMapStates) {
                     CMap cmap = factory.node.concurrentMapManager.getMap(mapState.name);
-                    for (MapIndex mapIndex : mapState.lsMapIndexes) {
+                    for (AddMapIndex mapIndex : mapState.lsMapIndexes) {
                         cmap.addIndex(mapIndex.indexName, mapIndex.expression, mapIndex.ordered);
                     }
                 }
@@ -291,7 +287,6 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public void writeData(DataOutput out) throws IOException {
-            out.writeUTF(factoryName);
             out.writeInt(lsMapStates.size());
             for (MapState mapState : lsMapStates) {
                 mapState.writeData(out);
@@ -299,20 +294,17 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public void readData(DataInput in) throws IOException {
-            factoryName = in.readUTF();
             int size = in.readInt();
             for (int i = 0; i < size; i++) {
                 MapState mapState = new MapState();
                 mapState.readData(in);
                 lsMapStates.add(mapState);
             }
-
         }
-
 
         class MapState implements DataSerializable {
             String name;
-            List<MapIndex> lsMapIndexes = new ArrayList();
+            List<AddMapIndex> lsMapIndexes = new ArrayList();
 
             MapState() {
             }
@@ -321,14 +313,14 @@ public final class ConcurrentMapManager extends BaseManager {
                 this.name = name;
             }
 
-            void addMapIndex(MapIndex mapIndex) {
+            void addMapIndex(AddMapIndex mapIndex) {
                 lsMapIndexes.add(mapIndex);
             }
 
             public void writeData(DataOutput out) throws IOException {
                 out.writeUTF(name);
                 out.writeInt(lsMapIndexes.size());
-                for (MapIndex mapIndex : lsMapIndexes) {
+                for (AddMapIndex mapIndex : lsMapIndexes) {
                     mapIndex.writeData(out);
                 }
             }
@@ -337,42 +329,53 @@ public final class ConcurrentMapManager extends BaseManager {
                 name = in.readUTF();
                 int size = in.readInt();
                 for (int i = 0; i < size; i++) {
-                    MapIndex mapIndex = new MapIndex();
+                    AddMapIndex mapIndex = new AddMapIndex();
                     mapIndex.readData(in);
                     lsMapIndexes.add(mapIndex);
                 }
 
             }
         }
+    }
 
-        class MapIndex implements DataSerializable {
-            String indexName;
-            Expression expression;
-            boolean ordered;
+    public static class AddMapIndex extends AbstractRemotelyProcessable {
+        String mapName;
+        String indexName;
+        Expression expression;
+        boolean ordered;
 
-            MapIndex() {
-            }
+        public AddMapIndex() {
+        }
 
-            MapIndex(String indexName, Expression expression, boolean ordered) {
-                this.indexName = indexName;
-                this.expression = expression;
-                this.ordered = ordered;
-            }
+        public AddMapIndex(String mapName, String indexName, Expression expression, boolean ordered) {
+            this.mapName = mapName;
+            this.indexName = indexName;
+            this.expression = expression;
+            this.ordered = ordered;
+        }
 
-            public void writeData(DataOutput out) throws IOException {
-                out.writeUTF(indexName);
-                out.writeBoolean(ordered);
-            }
+        public void process() {
+            CMap cmap = getNode().concurrentMapManager.getMap(mapName);
+            cmap.addIndex(indexName, expression, ordered);
+        }
 
-            public void readData(DataInput in) throws IOException {
-                indexName = in.readUTF();
-                ordered = in.readBoolean();
-            }
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(mapName);
+            out.writeUTF(indexName);
+            BufferUtil.writeDataSerializable((DataSerializable) expression, out);
+            out.writeBoolean(ordered);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            mapName = in.readUTF();
+            indexName = in.readUTF();
+            expression = (Expression) BufferUtil.readDataSerializable(in);
+            ordered = in.readBoolean();
         }
     }
 
     void doResetRecords() {
-        InitialState initialState = new InitialState(node.factory.getName());
+        InitialState initialState = new InitialState();
         Collection<CMap> cmaps = maps.values();
         for (final CMap cmap : cmaps) {
             initialState.createAndAddMapState(cmap);
@@ -810,7 +813,7 @@ public final class ConcurrentMapManager extends BaseManager {
         for (int i = 0; i < indexes.length; i++) {
             Index index = indexes[i];
             if (index != null) {
-                request.addIndex(i, index.extractLongValue(value));
+                request.setIndex(i, index.extractLongValue(value));
             }
         }
     }
@@ -2494,6 +2497,9 @@ public final class ConcurrentMapManager extends BaseManager {
 
         void updateIndexes(Request request, Record record) {
             int indexCount = request.indexCount;
+            if (mapNamedIndexes.size() > indexCount) {
+                 throw new RuntimeException(indexCount + " but expected " + mapNamedIndexes.size());
+            }
             for (int i = 0; i < indexCount; i++) {
                 Index index = indexes[i];
                 long newValue = request.indexes[i];

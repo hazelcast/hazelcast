@@ -37,6 +37,10 @@ public final class Packet {
 
     public Data value = new Data();
 
+    public byte indexCount = 0;
+
+    public long[] indexes = new long[6];
+
     public long txnId = -1;
 
     public int threadId = -1;
@@ -118,7 +122,10 @@ public final class Packet {
         if (!lockAddressNull) {
             lockAddress.writeObject(bbHeader);
         }
-
+        bbHeader.put(indexCount);
+        for (int i=0; i < indexCount; i++){
+            bbHeader.putLong(indexes[i]);
+        } 
         bbHeader.flip();
         bbSizes.putInt(bbHeader.limit());
         bbSizes.putInt(key.size);
@@ -150,6 +157,10 @@ public final class Packet {
             lockAddress = new Address();
             lockAddress.readObject(bbHeader);
         }
+        indexCount = bbHeader.get();
+        for (int i=0; i<indexCount ; i++) {
+            indexes[i] = bbHeader.getLong();
+        }
     }
 
     public void reset() {
@@ -176,6 +187,7 @@ public final class Packet {
         totalSize = 0;
         totalWritten = 0;
         sizeRead = false;
+        indexCount =0;
     }
 
     @Override

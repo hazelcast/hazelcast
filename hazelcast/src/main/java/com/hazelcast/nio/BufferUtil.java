@@ -20,8 +20,30 @@ package com.hazelcast.nio;
 import com.hazelcast.impl.ThreadContext;
 
 import java.nio.ByteBuffer;
+import java.io.DataOutput;
+import java.io.DataInput;
+import java.io.IOException;
 
 public final class BufferUtil {
+
+    public static void writeDataSerializable (DataSerializable ds, DataOutput out) {
+        try {
+            out.writeUTF (ds.getClass().getName());
+            ds.writeData(out);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static DataSerializable readDataSerializable(DataInput in) {
+        try {
+            String className = in.readUTF();
+            return (DataSerializable) Class.forName(className).newInstance();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
     public static int copyToHeapBuffer(ByteBuffer src, ByteBuffer dest) {
         int n = Math.min(src.remaining(), dest.remaining());
