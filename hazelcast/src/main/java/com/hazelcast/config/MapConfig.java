@@ -124,5 +124,5 @@ public class MapConfig {
      */
     public void setMapStoreConfig(MapStoreConfig mapStoreConfig) {
         this.mapStoreConfig = mapStoreConfig;
-    }
+    } 
 }

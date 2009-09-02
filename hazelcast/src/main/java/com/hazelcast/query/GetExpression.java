@@ -17,10 +17,13 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.core.MapEntry;
+import java.lang.reflect.Method;
 
-import java.io.Serializable;
+public interface GetExpression<T> extends Expression {
+    GetExpression get(String methodName);
 
-public interface Predicate extends Serializable{
-    boolean apply(MapEntry mapEntry);
+    GetExpression get(Method method);
+
+    String getMethodName();
+
 }

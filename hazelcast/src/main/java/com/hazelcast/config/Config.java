@@ -62,6 +62,8 @@ public class Config {
     private NetworkConfig networkConfig = new NetworkConfig();
 
     private boolean superClient = false;
+
+    private ClassLoader classLoader = null;
     
     public Config() {
         final String superClientProp = System.getProperty("hazelcast.super.client");
@@ -70,6 +72,17 @@ public class Config {
                 superClient = true;
             }
         }
+    }
+
+    public ClassLoader getClassLoader() {
+        if (classLoader == null) {
+            return Thread.currentThread().getContextClassLoader();
+        }
+        return classLoader;
+    }
+
+    public void setClassLoader(ClassLoader classLoader) {
+        this.classLoader = classLoader;
     }
 
     public QueueConfig getQueueConfig(final String name) {

@@ -417,23 +417,7 @@ public abstract class BaseManager {
         }
     }
 
-    abstract class AbstractOperationHandler implements PacketProcessor, RequestHandler {
-
-        public void process(Packet packet) {
-            Request request = new Request();
-            request.setFromPacket(packet);
-            request.local = false;
-            handle(request);
-            packet.returnToContainer();
-            request.reset();
-        }
-
-        abstract void doOperation(Request request);
-
-        public void handle(Request request) {
-            doOperation(request);
-            returnResponse(request);
-        }
+    abstract class ResponsiveOperationHandler implements PacketProcessor, RequestHandler {
 
         public void returnResponse(Request request) {
             if (request.local) {
@@ -474,6 +458,26 @@ public abstract class BaseManager {
             }
         }
 
+    }
+
+
+    abstract class AbstractOperationHandler extends ResponsiveOperationHandler {
+
+        public void process(Packet packet) {
+            Request request = new Request();
+            request.setFromPacket(packet);
+            request.local = false;
+            handle(request);
+            packet.returnToContainer();
+            request.reset();
+        }
+
+        abstract void doOperation(Request request);
+
+        public void handle(Request request) {
+            doOperation(request);
+            returnResponse(request);
+        }
     }
 
     abstract class QueueBasedCall extends AbstractCall {

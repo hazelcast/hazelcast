@@ -22,7 +22,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
     private File configurationFile;
     private URL configurationUrl;
     boolean usingSystemConfig = false;
-            
+
 
     public XmlConfigBuilder(String xmlFileName) throws FileNotFoundException {
         this(new FileInputStream(xmlFileName));
@@ -328,6 +328,10 @@ public class XmlConfigBuilder implements ConfigBuilder {
 
         String mName = "set" + target.getClass().getSimpleName();
         Method method = getMethod(parent, mName);
+        if (method == null) {
+            mName = "add" + target.getClass().getSimpleName();
+            method = getMethod(parent, mName);
+        }
         method.invoke(parent, new Object[]{target});
     }
 
@@ -482,7 +486,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
             } else if ("map-store".equals(nodeName)) {
                 MapStoreConfig mapStoreConfig = createMapStoreConfig(n);
                 config.setMapStoreConfig(mapStoreConfig);
-            }
+            } 
         }
         this.config.getMapMapConfigs().put(name, config);
     }

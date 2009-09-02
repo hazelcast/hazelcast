@@ -18,6 +18,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Expression;
 
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -49,10 +50,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
     
     boolean evict(K key);
 
-    Set<K> keySet(Predicate predicate);
+    <K> Set<K> keySet(Predicate predicate);
 
-    Set<Map.Entry<K, V>> entrySet(Predicate predicate);
+    <K,V> Set<Map.Entry<K, V>> entrySet(Predicate predicate);
 
-    Collection<V> values (Predicate predicate);
+    <V> Collection<V> values (Predicate predicate);
+
+    void addIndex(String indexName, Expression expression, boolean ordered);
 
 }

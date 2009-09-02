@@ -21,14 +21,12 @@ import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.Join;
 import com.hazelcast.config.Interfaces;
+import com.hazelcast.config.Join;
 import com.hazelcast.impl.MulticastService.JoinInfo;
 import com.hazelcast.nio.*;
 
-import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
@@ -80,6 +78,8 @@ public class Node {
     public final MulticastService multicastService;
 
     public final ConnectionManager connectionManager;
+
+    public final QueryService queryService;
 
     public final Config config;
 
@@ -198,6 +198,7 @@ public class Node {
         outSelector = new OutSelector(this);
         connectionManager = new ConnectionManager(this);
 
+        queryService = new QueryService(this);
         clusterManager = new ClusterManager(this);
         concurrentMapManager = new ConcurrentMapManager(this);
         blockingQueueManager = new BlockingQueueManager(this);
@@ -355,6 +356,10 @@ public class Node {
         final Thread clusterServiceThread = new Thread(clusterService, "hz.ServiceThread");
         clusterServiceThread.start();
         clusterServiceThread.setPriority(7);
+
+        final Thread queryThread = new Thread(queryService, "hz.QueryThread");
+        queryThread.start();
+        queryThread.setPriority(6);
 
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             startMulticastService();

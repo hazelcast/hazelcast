@@ -30,6 +30,7 @@ import com.hazelcast.jmx.ManagementService;
 import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 
 import java.io.DataInput;
@@ -149,10 +150,10 @@ public class FactoryImpl implements HazelcastInstance {
         executorServiceImpl = new ExecutorServiceProxy(node);
         transactionFactory = new TransactionFactory(this);
         node.start();
+        ManagementService.register(node);
         locksMapProxy = new MProxyImpl("c:__hz_Locks", this);
         idGeneratorMapProxy = new MProxyImpl("c:__hz_IdGenerator", this);
         globalProxies = new MProxyImpl("c:__hz_Proxies", this);
-        ManagementService.register(node);
         globalProxies.addEntryListener(new EntryListener() {
             public void entryAdded(EntryEvent event) {
                 final ProxyKey proxyKey = (ProxyKey) event.getKey();
@@ -1573,6 +1574,35 @@ public class FactoryImpl implements HazelcastInstance {
         int valueCount(Object key);
 
         Set allKeys();
+
+        void doAddIndex(String indexName, Expression expression, boolean ordered);
+    }
+
+    public static class AddIndexRunnable implements Runnable, Serializable {
+        private String factoryName;
+        private String mapName;
+        private String indexName;
+        private Expression expression;
+        private boolean ordered;
+
+        public AddIndexRunnable() {
+        }
+
+        public AddIndexRunnable(String factoryName, String mapName, String indexName, Expression expression, boolean ordered) {
+            this.factoryName = factoryName;
+            this.mapName = mapName;
+            this.indexName = indexName;
+            this.expression = expression;
+            this.ordered = ordered;
+        }
+
+        public void run() {
+            FactoryImpl factory = getFactoryImpl(factoryName);
+            if (factory != null) {
+                MProxy mproxy = (MProxy) factory.getOrCreateProxyByName(mapName);
+                mproxy.doAddIndex(indexName, expression, ordered);
+            }
+        }
     }
 
 
@@ -1598,12 +1628,13 @@ public class FactoryImpl implements HazelcastInstance {
                 try {
                     return method.invoke(mproxyReal, args);
                 } catch (Throwable e) {
-                    logger.log(Level.FINEST, "Call failed", e);                    
+                    logger.log(Level.FINEST, "Call failed", e);
                     if (e instanceof InterruptedCallException && factory.restarted) {
                         return invoke(proxy, method, args);
                     } else if (e instanceof RuntimeException) {
                         return e;
                     } else {
+                        e.printStackTrace();
                         throw new RuntimeException(e);
                     }
                 } finally {
@@ -1690,10 +1721,18 @@ public class FactoryImpl implements HazelcastInstance {
             }
         }
 
+        public void addIndex(String indexName, Expression expression, boolean ordered) {
+            dynamicProxy.addIndex(indexName, expression, ordered);
+        }
+
+        public void doAddIndex(String indexName, Expression expression, boolean ordered) {
+            mproxyReal.doAddIndex(indexName, expression, ordered);
+        }
+
         public Object getId() {
             return dynamicProxy.getId();
         }
-        
+
         @Override
         public String toString() {
             return "Map [" + getName() + "] " + factory;
@@ -1910,6 +1949,18 @@ public class FactoryImpl implements HazelcastInstance {
                 return name.substring(2);
             }
 
+            public void addIndex(final String indexName, final Expression expression, final boolean ordered) {
+                concurrentMapManager.enqueueAndReturn(new Processable() {
+                    public void process() {
+                        CMap cmap = concurrentMapManager.getMap(name);
+                        cmap.addIndex(indexName, expression, ordered);
+                    }
+                });
+            }
+
+            public void doAddIndex(String indexName, Expression expression, boolean ordered) {
+            }
+
             public MapEntry getMapEntry(Object key) {
                 check(key);
                 MGetMapEntry mgetMapEntry = concurrentMapManager.new MGetMapEntry();
@@ -1929,6 +1980,7 @@ public class FactoryImpl implements HazelcastInstance {
                 MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
                 return mput.put(name, key, value, -1);
             }
+
 
             public Object get(Object key) {
                 check(key);

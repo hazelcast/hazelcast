@@ -45,6 +45,8 @@ class Request {
     long recordId = -1;
     long version = -1;
     long txnId = -1;
+    byte indexCount = 0;
+    long[] indexes = new long[6];
     Object attachment = null;
     Object response = null;
 
@@ -80,6 +82,11 @@ class Request {
         this.recordId = -1;
         this.version = -1;
         this.redoCount = 0;
+    }
+
+    public void addIndex(int index, long value) {
+        indexes[index] = value;
+        indexCount = (byte) (index+1);
     }
 
     public void set(final boolean local, final ClusterOperation operation, final String name,

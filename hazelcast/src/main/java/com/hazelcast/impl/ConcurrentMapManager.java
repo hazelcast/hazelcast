@@ -33,6 +33,7 @@ import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 
 import java.io.DataInput;
@@ -96,7 +97,7 @@ public final class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_LOCK, new LockOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_LOCK_RETURN_OLD, new LockOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_UNLOCK, new UnlockOperationHandler());
-        registerPacketProcessor(CONCURRENT_MAP_ITERATE_ENTRIES, new QueryOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_ITERATE_ENTRIES, new QOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_ITERATE_VALUES, new QueryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_ITERATE_KEYS, new QueryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_ITERATE_KEYS_ALL, new QueryOperationHandler());
@@ -259,10 +260,127 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    public static class InitialState extends AbstractRemotelyProcessable {
+        String factoryName;
+        List<MapState> lsMapStates = new ArrayList();
+
+        public InitialState() {
+        }
+
+        public InitialState(String factoryName) {
+            this.factoryName = factoryName;
+        }
+
+        public void createAndAddMapState(CMap cmap) {
+            MapState mapState = new MapState(cmap.name);
+
+        }
+
+
+        public void process() {
+            System.out.println("INITIAL STATE PROCESSSS " + factoryName);
+            FactoryImpl factory = FactoryImpl.getFactoryImpl(factoryName);
+            if (factory != null) {
+                for (MapState mapState : lsMapStates) {
+                    CMap cmap = factory.node.concurrentMapManager.getMap(mapState.name);
+                    for (MapIndex mapIndex : mapState.lsMapIndexes) {
+                        cmap.addIndex(mapIndex.indexName, mapIndex.expression, mapIndex.ordered);
+                    }
+                }
+            }
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(factoryName);
+            out.writeInt(lsMapStates.size());
+            for (MapState mapState : lsMapStates) {
+                mapState.writeData(out);
+            }
+        }
+
+        public void readData(DataInput in) throws IOException {
+            factoryName = in.readUTF();
+            int size = in.readInt();
+            for (int i = 0; i < size; i++) {
+                MapState mapState = new MapState();
+                mapState.readData(in);
+                lsMapStates.add(mapState);
+            }
+
+        }
+
+
+        class MapState implements DataSerializable {
+            String name;
+            List<MapIndex> lsMapIndexes = new ArrayList();
+
+            MapState() {
+            }
+
+            MapState(String name) {
+                this.name = name;
+            }
+
+            void addMapIndex(MapIndex mapIndex) {
+                lsMapIndexes.add(mapIndex);
+            }
+
+            public void writeData(DataOutput out) throws IOException {
+                out.writeUTF(name);
+                out.writeInt(lsMapIndexes.size());
+                for (MapIndex mapIndex : lsMapIndexes) {
+                    mapIndex.writeData(out);
+                }
+            }
+
+            public void readData(DataInput in) throws IOException {
+                name = in.readUTF();
+                int size = in.readInt();
+                for (int i = 0; i < size; i++) {
+                    MapIndex mapIndex = new MapIndex();
+                    mapIndex.readData(in);
+                    lsMapIndexes.add(mapIndex);
+                }
+
+            }
+        }
+
+        class MapIndex implements DataSerializable {
+            String indexName;
+            Expression expression;
+            boolean ordered;
+
+            MapIndex() {
+            }
+
+            MapIndex(String indexName, Expression expression, boolean ordered) {
+                this.indexName = indexName;
+                this.expression = expression;
+                this.ordered = ordered;
+            }
+
+            public void writeData(DataOutput out) throws IOException {
+                out.writeUTF(indexName);
+                out.writeBoolean(ordered);
+            }
+
+            public void readData(DataInput in) throws IOException {
+                indexName = in.readUTF();
+                ordered = in.readBoolean();
+            }
+        }
+    }
+
     void doResetRecords() {
+        InitialState initialState = new InitialState(node.factory.getName());
+        Collection<CMap> cmaps = maps.values();
+        for (final CMap cmap : cmaps) {
+            initialState.createAndAddMapState(cmap);
+        }
+        sendProcessableToAll(initialState, false);
         if (isSuperClient())
             return;
-        Collection<CMap> cmaps = maps.values();
+        cmaps = maps.values();
         for (final CMap cmap : cmaps) {
             final Object[] records = cmap.mapRecords.values().toArray();
             cmap.reset();
@@ -686,6 +804,17 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    void setIndexValues(Request request, Object value) {
+        CMap cmap = getMap(request.name);
+        Index[] indexes = cmap.indexes;
+        for (int i = 0; i < indexes.length; i++) {
+            Index index = indexes[i];
+            if (index != null) {
+                request.addIndex(i, index.extractLongValue(value));
+            }
+        }
+    }
+
     class MPut extends MBackupAndMigrationAwareOp {
 
         public Object replace(String name, Object key, Object value, long timeout) {
@@ -726,7 +855,10 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
                 return null;
             } else {
-                Object oldValue = objectCall(operation, name, key, value, timeout, -1);
+                setLocal(operation, name, key, value, timeout, -1);
+                setIndexValues(request, value);
+                doOp();
+                Object oldValue = getResultAsObject();
                 if (oldValue instanceof AddressAwareException) {
                     rethrowException(operation, (AddressAwareException) oldValue);
                 }
@@ -1511,6 +1643,90 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    class QOperationHandler extends ResponsiveOperationHandler {
+        public void process(Packet packet) {
+            Request request = new Request();
+            request.setFromPacket(packet);
+            request.local = false;
+            handle(request);
+        }
+
+        public void handle(Request request) {
+            final CMap cmap = getMap(request.name);
+            QueryTask queryTask = new QueryTask(cmap, request);
+            executeLocally(queryTask);
+        }
+
+        class QueryTask implements Runnable {
+            final CMap cmap;
+            final Request request;
+
+            QueryTask(CMap cmap, Request request) {
+                this.cmap = cmap;
+                this.request = request;
+            }
+
+            public void run() {
+                Predicate predicate = (Predicate) toObject(request.value);
+                Collection<Record> lsResults = new ArrayList();
+                Collection<Record> records = node.queryService.query(cmap.mapRecords.values(), cmap.mapNamedIndexes, predicate);
+                for (Record record : records) {
+                    if (predicate == null || predicate.apply(record.getRecordEntry())) {
+                        lsResults.add(record);
+                    }
+                }
+                createEntries(request, lsResults);
+                enqueueAndReturn(new Processable() {
+                    public void process() {
+                        returnResponse(request);
+                    }
+                });
+            }
+        }
+
+        void createEntries(Request request, Collection<Record> colRecords) {
+            CMap cmap = getMap(request.name);
+            Pairs pairs = new Pairs();
+            long now = System.currentTimeMillis();
+            for (Record record : colRecords) {
+                if (record.isValid(now)) {
+                    if (record.getKey() == null || record.getKey().size() == 0) {
+                        throw new RuntimeException("Key cannot be null or zero-size: " + record.getKey());
+                    }
+                    Block block = blocks[record.blockId];
+                    if (thisAddress.equals(block.owner)) {
+                        if (record.getValue() != null || request.operation == CONCURRENT_MAP_ITERATE_KEYS_ALL) {
+                            pairs.addKeyValue(new KeyValue(record.getKey(), null));
+                        } else if (record.copyCount > 0) {
+                            for (int i = 0; i < record.copyCount; i++) {
+                                pairs.addKeyValue(new KeyValue(record.getKey(), null));
+                            }
+                        } else if (record.lsValues != null) {
+                            int size = record.lsValues.size();
+                            if (size > 0) {
+                                if (request.operation == CONCURRENT_MAP_ITERATE_KEYS) {
+                                    pairs.addKeyValue(new KeyValue(record.getKey(), null));
+                                } else {
+                                    for (int i = 0; i < size; i++) {
+                                        Data value = record.lsValues.get(i);
+                                        pairs.addKeyValue(new KeyValue(record.getKey(), value));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    if (!record.isEvictable()) {
+                        cmap.scheduleForEviction(record);
+                    }
+                }
+            }
+            Data dataEntries = toData(pairs);
+            request.longValue = pairs.size();
+            request.response = dataEntries;
+        }
+    }
+
 
     class QueryOperationHandler extends AsyncMigrationAwareOperationHandler {
 
@@ -1538,6 +1754,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
             });
         }
+
 
         public List<Record> query(Request request, List<Record> lsRecords) {
             Predicate predicate = (Predicate) toObject(request.value);
@@ -1793,6 +2010,10 @@ public final class ConcurrentMapManager extends BaseManager {
 
         private Map<Integer, Set<Record>> mapValueIndex = new HashMap(1000);
 
+        private final Map<String, Index> mapNamedIndexes = new HashMap(6);
+
+        private final Index[] indexes = new Index[6];
+
         final LocallyOwnedMap locallyOwnedMap;
 
         public CMap(String name) {
@@ -1823,7 +2044,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 if (mapStoreConfig.isEnabled()) {
                     String mapStoreClassName = mapStoreConfig.getClassName();
                     try {
-                        Object storeInstance = Class.forName(mapStoreClassName, true, Thread.currentThread().getContextClassLoader()).newInstance();
+                        Object storeInstance = Class.forName(mapStoreClassName, true, node.getConfig().getClassLoader()).newInstance();
                         if (storeInstance instanceof MapLoader) {
                             loaderTemp = (MapLoader) storeInstance;
                         }
@@ -1851,6 +2072,14 @@ public final class ConcurrentMapManager extends BaseManager {
                 mapLocallyOwnedMaps.put(name, locallyOwnedMap);
             } else {
                 locallyOwnedMap = null;
+            }
+        }
+
+        public void addIndex(String indexName, Expression expression, boolean ordered) {
+            if (!mapNamedIndexes.containsKey(indexName)) {
+                Index index = new Index(indexName, expression, ordered);
+                mapNamedIndexes.put(indexName, index);
+                indexes[mapNamedIndexes.size() - 1] = index;
             }
         }
 
@@ -2258,9 +2487,27 @@ public final class ConcurrentMapManager extends BaseManager {
             if (req.txnId != -1) {
                 unlock(record);
             }
+            updateIndexes(req, record);
             markAsDirty(record);
             return oldValue;
         }
+
+        void updateIndexes(Request request, Record record) {
+            int indexCount = request.indexCount;
+            for (int i = 0; i < indexCount; i++) {
+                Index index = indexes[i];
+                long newValue = request.indexes[i];
+                long oldValue = record.getAndSetIndex(i, newValue);
+                if (oldValue == Long.MIN_VALUE) {
+                    node.queryService.addNewIndex(index, newValue, record);
+                } else {
+                    if (oldValue != newValue) {
+                        node.queryService.updateIndex(index, oldValue, newValue, record);
+                    }
+                }
+            }
+        }
+
 
         void garbage(Data data) {
             data.setNoData();
@@ -2624,6 +2871,7 @@ public final class ConcurrentMapManager extends BaseManager {
             }
         }
 
+
         void addNewValueIndex(Record record) {
             Integer hash = record.getValue().hashCode();
             Set<Record> lsRecords = mapValueIndex.get(hash);
@@ -2813,7 +3061,7 @@ public final class ConcurrentMapManager extends BaseManager {
         fireScheduledActions(record);
     }
 
-    static class Record {
+    public static class Record {
         private static final Logger logger = Logger.getLogger(Record.class.getName());
 
         private final AtomicReference<Data> key = new AtomicReference<Data>();
@@ -2843,6 +3091,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         private final RecordEntry recordEntry;
         private final long id;
+        private final long[] oldIndexes = new long[6];
 
         public Record(FactoryImpl factory, String name, int blockId, Data key, Data value, long ttl, long id) {
             super();
@@ -2857,6 +3106,10 @@ public final class ConcurrentMapManager extends BaseManager {
             this.setVersion(0);
             recordEntry = new RecordEntry(this);
             this.id = id;
+            int len = oldIndexes.length;
+            for (int i = 0; i < len; i++) {
+                oldIndexes[i] = Long.MIN_VALUE;
+            }
         }
 
         public RecordEntry getRecordEntry() {
@@ -3083,6 +3336,10 @@ public final class ConcurrentMapManager extends BaseManager {
         public void markRemoved() {
             setActive(false);
             removeTime = System.currentTimeMillis();
+            int len = oldIndexes.length;
+            for (int i = 0; i < len; i++) {
+                oldIndexes[i] = Long.MIN_VALUE;
+            }
         }
 
         public void setActive() {
@@ -3154,6 +3411,13 @@ public final class ConcurrentMapManager extends BaseManager {
         public void setActive(boolean active) {
             this.active.set(active);
         }
+
+        public long getAndSetIndex(int i, long newValue) {
+            long oldValue = oldIndexes[i];
+            oldIndexes[i] = newValue;
+            return oldValue;
+        }
+
 
         static class RecordEntry implements MapEntry {
 
