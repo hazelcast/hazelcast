@@ -750,10 +750,12 @@ public class FactoryImpl implements HazelcastInstance {
         class TopicProxyReal implements TopicProxy {
 
             public void publish(Object msg) {
+                check(msg);
                 topicManager.doPublish(name, msg);
             }
 
             public void addMessageListener(MessageListener listener) {
+                check(listener);
                 listenerManager.addListener(name, listener, null, true,
                         ListenerManager.Type.Message);
             }
@@ -979,10 +981,6 @@ public class FactoryImpl implements HazelcastInstance {
             @Override
             public int size() {
                 return mapProxy.size();
-            }
-
-            public MProxy getCProxy() {
-                return mapProxy;
             }
 
             public void destroy() {
@@ -1234,11 +1232,13 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public boolean offer(Object obj) {
+                check(obj);
                 Offer offer = blockingQueueManager.new Offer();
                 return offer.offer(name, obj, 0);
             }
 
             public boolean offer(Object obj, long timeout, TimeUnit unit) throws InterruptedException {
+                check(obj);
                 if (timeout < 0) {
                     timeout = 0;
                 }
@@ -1247,6 +1247,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public void put(Object obj) throws InterruptedException {
+                check(obj);
                 Offer offer = blockingQueueManager.new Offer();
                 offer.offer(name, obj, -1);
             }
@@ -1548,9 +1549,9 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     private static void check(Object obj) {
-        if (obj == null)
-            throw new RuntimeException("Object cannot be null.");
-
+        if (obj == null) {
+            throw new NullPointerException("Object cannot be null.");
+        } 
         if (!(obj instanceof Serializable)) {
             throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
         }
@@ -2156,8 +2157,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public boolean add(Object value) {
-                if (value == null)
-                    throw new NullPointerException();
+                check(value);
                 MAdd madd = concurrentMapManager.new MAdd();
                 if (instanceType == InstanceType.LIST) {
                     return madd.addToList(name, value);
@@ -2167,8 +2167,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public boolean removeKey(Object key) {
-                if (key == null)
-                    throw new NullPointerException();
+                check(key);
                 MRemoveItem mRemoveItem = concurrentMapManager.new MRemoveItem();
                 return mRemoveItem.removeItem(name, key);
             }

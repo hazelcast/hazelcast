@@ -106,17 +106,17 @@ public final class Serializer {
     public Object readObject(Data data, boolean purgeData) {
         if (data == null || data.size() == 0)
             return null;
-        Object result = null;
         try {
             bbis.reset();
             bufferProvider.setData(data);
             byte typeId = bbis.readByte();
-            result = typeSerizalizers[typeId].read(bbis, data);
+            Object result = typeSerizalizers[typeId].read(bbis);
             if (purgeData) data.setNoData();
+            return result;
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
-        return result;
     }
 
     private static void registerTypeSerializer(TypeSerializer ts) {
@@ -128,7 +128,7 @@ public final class Serializer {
             return SERIALIZER_TYPE_LONG;
         }
 
-        public Long read(BuffersInputStream bbis, Data data) throws Exception {
+        public Long read(BuffersInputStream bbis) throws Exception {
             return bbis.readLong();
         }
 
@@ -142,7 +142,7 @@ public final class Serializer {
             return SERIALIZER_TYPE_INTEGER;
         }
 
-        public Integer read(BuffersInputStream bbis, Data data) throws Exception {
+        public Integer read(BuffersInputStream bbis) throws Exception {
             return bbis.readInt();
         }
 
@@ -156,7 +156,7 @@ public final class Serializer {
             return SERIALIZER_TYPE_CLASS;
         }
 
-        public Class read(BuffersInputStream bbis, Data data) throws Exception {
+        public Class read(BuffersInputStream bbis) throws Exception {
             return Class.forName(bbis.readUTF());
         }
 
@@ -170,7 +170,7 @@ public final class Serializer {
             return SERIALIZER_TYPE_STRING;
         }
 
-        public String read(BuffersInputStream bbis, Data data) throws Exception {
+        public String read(BuffersInputStream bbis) throws Exception {
             return bbis.readUTF();
         }
 
@@ -184,7 +184,7 @@ public final class Serializer {
             return SERIALIZER_TYPE_BYTE_ARRAY;
         }
 
-        public byte[] read(BuffersInputStream bbis, Data data) throws Exception {
+        public byte[] read(BuffersInputStream bbis) throws Exception {
             int size = bbis.readInt();
             byte[] bytes = new byte[size];
             bbis.read(bytes);
@@ -202,13 +202,14 @@ public final class Serializer {
             return SERIALIZER_TYPE_DATA;
         }
 
-        public DataSerializable read(BuffersInputStream bbis, Data data) throws Exception {
+        public DataSerializable read(BuffersInputStream bbis) throws Exception {
             String className = bbis.readUTF();
             try {
                 DataSerializable ds = (DataSerializable) Class.forName(className).newInstance();
                 ds.readData(bbis);
                 return ds;
             } catch (Exception e) {
+                e.printStackTrace();
                 throw new IOException("Problem reading DataSerializable class : " + className + ", exception: " + e);
             } 
         }
@@ -226,7 +227,7 @@ public final class Serializer {
             return SERIALIZER_TYPE_OBJECT;
         }
 
-        public Object read(BuffersInputStream bbis, Data data) throws Exception {
+        public Object read(BuffersInputStream bbis) throws Exception {
             ObjectInputStream in = new ObjectInputStream(bbis);
             if (shared) {
                 return in.readObject() ;
@@ -250,7 +251,7 @@ public final class Serializer {
 
         void write(BuffersOutputStream bbos, T obj) throws Exception;
 
-        T read(BuffersInputStream bbis, Data data) throws Exception;
+        T read(BuffersInputStream bbis) throws Exception;
     }
 
     public class DataBufferProvider implements BufferProvider {

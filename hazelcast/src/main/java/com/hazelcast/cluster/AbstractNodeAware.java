@@ -18,8 +18,9 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.impl.Node;
+import com.hazelcast.nio.SerializationHelper;
 
-public class AbstractNodeAware {
+public class AbstractNodeAware extends SerializationHelper {
     volatile Node node;
 
     public Node getNode() {

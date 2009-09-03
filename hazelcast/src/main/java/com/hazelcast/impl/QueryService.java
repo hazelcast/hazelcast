@@ -8,15 +8,15 @@ import com.hazelcast.query.RangedPredicate;
 import static com.hazelcast.query.RangedPredicate.RangeType.*;
 
 import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class QueryService implements Runnable {
 
-    private final Logger logger = Logger.getLogger(QueryService.class.getName());    
+    private final Logger logger = Logger.getLogger(QueryService.class.getName());
     final Node node;
     private volatile boolean running = true;
 
@@ -98,6 +98,7 @@ public class QueryService implements Runnable {
 
     public Collection<Record> doQuery(Collection<Record> allRecords, Map<String, Index<Record>> namedIndexes, Predicate predicate) {
         Collection<Record> records = null;
+        boolean strong = false;
         if (predicate != null && predicate instanceof IndexAwarePredicate) {
             List<IndexedPredicate> lsIndexPredicates = new ArrayList<IndexedPredicate>();
             IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
@@ -122,7 +123,10 @@ public class QueryService implements Runnable {
                             }
                         }
                     }
-                    logger.log(Level.FINEST, node.factory.getName() + " index sub.size " + sub.size());
+                    if (sub != null) {
+                        logger.log(Level.FINEST, node.getName() + " index sub.size " + sub.size());
+                        System.out.println(node.getName() + " index sub.size " + sub.size());
+                    }
                     if (records == null) {
                         records = sub;
                     } else {
@@ -132,6 +136,7 @@ public class QueryService implements Runnable {
                                 itCurrentEntries.remove();
                             }
                         }
+                        System.out.println(node.getName() + " after join " + records.size());
                     }
                 }
             }

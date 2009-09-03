@@ -263,6 +263,10 @@ public class Node {
         return address;
     }
 
+    public String getName() {
+        return factory.getName();
+    }
+
     public void handleInterruptedException(final Thread thread, final Exception e) {
         logger.log(Level.FINEST, thread.getName() + " is interrupted ", e);
     }
@@ -349,21 +353,21 @@ public class Node {
     public void start() {
         if (completelyShutdown) return;
         final Thread inThread = new Thread(inSelector, "hz.InThread");
+        inThread.setPriority(7);
         inThread.start();
-        inThread.setPriority(8);
 
         final Thread outThread = new Thread(outSelector, "hz.OutThread");
+        outThread.setPriority(7);
         outThread.start();
-        outThread.setPriority(8);
 
         final Thread clusterServiceThread = new Thread(clusterService, "hz.ServiceThread");
+        clusterServiceThread.setPriority(8);
         clusterServiceThread.start();
-        clusterServiceThread.setPriority(7);
 
         final Thread queryThread = new Thread(queryService, "hz.QueryThread");
-        queryThread.start();
         queryThread.setPriority(6);
-
+        queryThread.start();
+                
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             startMulticastService();
         }

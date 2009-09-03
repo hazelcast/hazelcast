@@ -17,8 +17,6 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.ClusterService;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.EntryEvent;
@@ -1012,6 +1010,12 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     void doOffer(Request req) {
+        if (req.value == null) {
+            throw new RuntimeException("Offer request value cannot be null. Local:" + req.local);
+        }
+        if (req.value.size() == 0) {
+            throw new RuntimeException("Offer request value size cannot be zero. Local:" + req.local);
+        }
         Q q = getQ(req.name);
         if (q.blCurrentPut == null) {
             q.setCurrentPut();
@@ -1380,6 +1384,12 @@ public class BlockingQueueManager extends BaseManager {
         }
 
         int offer(Request req) {
+            if (req.value == null) {
+                throw new RuntimeException("Offer request value cannot be null. Local:" + req.local);
+            }
+            if (req.value.size() == 0) {
+                throw new RuntimeException("Offer request value size cannot be zero. Local:" + req.local);
+            }
             try {
                 int addIndex = blCurrentPut.add(req.value);
                 long recordId = getRecordId(blCurrentPut.blockId, addIndex);

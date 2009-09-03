@@ -28,8 +28,11 @@ import static com.hazelcast.core.Instance.InstanceType;
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
 import static com.hazelcast.nio.BufferUtil.*;
+import com.hazelcast.nio.Data;
+import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 
@@ -265,12 +268,13 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public void createAndAddMapState(CMap cmap) {
             MapState mapState = new MapState(cmap.name);
-            Collection<Index<Record>> indexes = cmap.mapNamedIndexes.values();
-            for (Index index : indexes){
-                AddMapIndex mi = new AddMapIndex(cmap.name, index.indexName, index.expression,  index.ordered);
+            int indexCount = cmap.mapNamedIndexes.size();
+            for (int i = 0; i < indexCount; i++) {
+                Index index = cmap.indexes[i];
+                AddMapIndex mi = new AddMapIndex(cmap.name, index.indexName, index.expression, index.ordered);
                 mapState.addMapIndex(mi);
             }
-            lsMapStates.add (mapState);
+            lsMapStates.add(mapState);
         }
 
 
@@ -362,15 +366,15 @@ public final class ConcurrentMapManager extends BaseManager {
         public void writeData(DataOutput out) throws IOException {
             out.writeUTF(mapName);
             out.writeUTF(indexName);
-            BufferUtil.writeDataSerializable((DataSerializable) expression, out);
             out.writeBoolean(ordered);
+            writeObject(out, expression);
         }
 
         public void readData(DataInput in) throws IOException {
             mapName = in.readUTF();
             indexName = in.readUTF();
-            expression = (Expression) BufferUtil.readDataSerializable(in);
             ordered = in.readBoolean();
+            expression = (Expression) readObject(in);
         }
     }
 
@@ -1673,10 +1677,16 @@ public final class ConcurrentMapManager extends BaseManager {
                 Predicate predicate = (Predicate) toObject(request.value);
                 Collection<Record> lsResults = new ArrayList();
                 Collection<Record> records = node.queryService.query(cmap.mapRecords.values(), cmap.mapNamedIndexes, predicate);
-                for (Record record : records) {
-                    if (predicate == null || predicate.apply(record.getRecordEntry())) {
-                        lsResults.add(record);
+                System.out.println(node.getName() + " after index REcords size " + records.size());
+                if (true) {//isStronglyIndexed(predicate)
+                    for (Record record : records) {
+                        if (predicate == null || predicate.apply(record.getRecordEntry())) {
+                            System.out.println(node.getName() + " FOUND " + record.getRecordEntry().getValue());
+                            lsResults.add(record);
+                        }
                     }
+                } else {
+                    lsResults.addAll(records);
                 }
                 createEntries(request, lsResults);
                 enqueueAndReturn(new Processable() {
@@ -2498,7 +2508,7 @@ public final class ConcurrentMapManager extends BaseManager {
         void updateIndexes(Request request, Record record) {
             int indexCount = request.indexCount;
             if (mapNamedIndexes.size() > indexCount) {
-                 throw new RuntimeException(indexCount + " but expected " + mapNamedIndexes.size());
+                throw new RuntimeException(indexCount + " but expected " + mapNamedIndexes.size());
             }
             for (int i = 0; i < indexCount; i++) {
                 Index index = indexes[i];

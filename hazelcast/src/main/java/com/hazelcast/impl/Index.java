@@ -80,4 +80,15 @@ public class Index<T> {
     }
 
 
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer();
+        sb.append("Index");
+        sb.append("{indexName='").append(indexName).append('\'');
+        sb.append(", size=").append(mapIndex.size());
+        sb.append(", ordered=").append(ordered);
+        sb.append(", expression=").append(expression.getClass());
+        sb.append('}');
+        return sb.toString();
+    }
 }
