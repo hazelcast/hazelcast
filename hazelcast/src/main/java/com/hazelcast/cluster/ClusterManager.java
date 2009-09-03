@@ -17,7 +17,6 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.*;

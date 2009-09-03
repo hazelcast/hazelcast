@@ -4,7 +4,6 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ConnectionManager;
 
 public class Bind extends Master {
 
