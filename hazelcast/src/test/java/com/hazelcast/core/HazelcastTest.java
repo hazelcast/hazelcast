@@ -6,6 +6,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
+import java.io.Serializable;
 
 public class HazelcastTest {
     @Test
@@ -284,16 +285,17 @@ public class HazelcastTest {
         assertEquals("testTopicGetName", topic.getName());
     }
 
+    public static class TopicListener implements MessageListener<String>, Serializable {
+        public void onMessage(String msg) {
+            /**@todo failure of this test does not propagate correctly */
+            assertEquals("Hello World", msg);
+        }
+    }
+
     @Test
     public void testTopicPublish() {
         ITopic<String> topic = Hazelcast.getTopic("testTopicPublish");
-        topic.addMessageListener(new MessageListener<String>() {
-            public void onMessage(String msg) {
-                /*@todo Exceptions on failure are not correctly propagated and test is marked as passing, despite
-                * reporting the Exception*/
-                assertEquals("Hello World", msg);
-            }
-        });
+        topic.addMessageListener(new TopicListener());
         topic.publish("Hello World");
     }
 
