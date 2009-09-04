@@ -1681,16 +1681,19 @@ public final class ConcurrentMapManager extends BaseManager {
 
             public void run() {
                 Predicate predicate = (Predicate) toObject(request.value);
-                Set<MapEntry> results = new HashSet<MapEntry>();
-                boolean strong = node.queryService.query(results, cmap.mapNamedIndexes, predicate);
-//                Collection<Record> records = node.queryService.query(cmap.mapRecords.values(), cmap.mapNamedIndexes, predicate);
-                System.out.println(node.getName() + " after index REcords size " + results.size());
-                if (!strong) {//isStronglyIndexed(predicate)
-                    for (MapEntry entry : results) {
-                        Record record = (Record) entry;
-                        if (predicate == null || predicate.apply(record.getRecordEntry())) {
-                            System.out.println(node.getName() + " FOUND " + entry.getValue());
-                            results.add(entry);
+                AtomicBoolean strongRef = new AtomicBoolean(false);
+                Set<MapEntry> results = node.queryService.query(strongRef, cmap.mapNamedIndexes, predicate);
+//                System.out.println(node.getName() + " after index REcords size " + results.size() + " strong: " + strongRef.get());
+                if (predicate != null) {
+                    if (!strongRef.get()) {
+                        Iterator<MapEntry> it = results.iterator();
+                        while (it.hasNext()) {
+                            Record record = (Record) it.next();
+                            if (!predicate.apply(record.getRecordEntry())) {
+                                it.remove();
+                            } else {
+//                                System.out.println(node.getName() + " FOUND " + record.getValue());
+                            }
                         }
                     }
                 }

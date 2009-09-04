@@ -1,8 +1,5 @@
 package com.hazelcast.query;
 
-import com.hazelcast.query.Expression;
-import com.hazelcast.query.QueryService;
-
 import java.util.*;
 
 public class Index<T> {
@@ -43,14 +40,16 @@ public class Index<T> {
     public void setStrong(boolean strong) {
         this.strong = strong;
     }
-    
+
     public long extractLongValue(Object value) {
         Object extractedValue = expression.getValue(value);
         if (extractedValue == null) {
             return Long.MAX_VALUE;
         } else {
             if (!checkedStregth) {
-                if (extractedValue instanceof Number) {
+                if (extractedValue instanceof Boolean) {
+                    strong = true;
+                } else if (extractedValue instanceof Number) {
                     strong = !(extractedValue instanceof Double || extractedValue instanceof Float);
                 }
                 checkedStregth = true;
@@ -119,6 +118,23 @@ public class Index<T> {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Index index = (Index) o;
+
+        if (!indexName.equals(index.indexName)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return indexName.hashCode();
+    }
+
+    @Override
     public String toString() {
         final StringBuffer sb = new StringBuffer();
         sb.append("Index");
@@ -130,7 +146,6 @@ public class Index<T> {
         sb.append('}');
         return sb.toString();
     }
-
 
 
 }

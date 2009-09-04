@@ -8,7 +8,10 @@ import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
+
+import org.omg.CORBA.OBJECT_NOT_EXIST;
 
 public class QueryService implements Runnable {
 
@@ -44,10 +47,10 @@ public class QueryService implements Runnable {
                     if (indexCount != newValues.length) {
                         throw new RuntimeException(indexCount + " is expected but newValues " + newValues.length);
                     }
-                    for (int i=0; i < indexCount; i++) {
+                    for (int i = 0; i < indexCount; i++) {
                         Index index = indexes[i];
                         long oldValue = (oldValues == null) ? Long.MIN_VALUE : oldValues[i];
-                        if (oldValue == Long.MIN_VALUE){
+                        if (oldValue == Long.MIN_VALUE) {
                             index.addNewIndex(newValues[i], record);
                             ownedRecords.add(record);
                         } else {
@@ -83,89 +86,89 @@ public class QueryService implements Runnable {
         }
     }
 
-    public boolean query(final Set<MapEntry> results, final Map<String, Index<MapEntry>> namedIndexes, final Predicate predicate) {
+    public Set<MapEntry> query(final AtomicBoolean strongRef, final Map<String, Index<MapEntry>> namedIndexes, final Predicate predicate) {
         try {
-            final BlockingQueue<Boolean> resultQ = new ArrayBlockingQueue<Boolean>(1);
+            final BlockingQueue<Set<MapEntry>> resultQ = new ArrayBlockingQueue<Set<MapEntry>>(1);
             queryQ.put(new Runnable() {
                 public void run() {
-                    resultQ.offer(doQuery(results, namedIndexes, predicate));
+                    Set<MapEntry> results = doQuery(strongRef, namedIndexes, predicate);
+                    if (results == null) {
+                        results = new HashSet(0);
+                    }
+                    resultQ.offer(results);
                 }
             });
             return resultQ.take();
         } catch (InterruptedException ignore) {
         }
-        return false;
+        return null;
     }
 
-    public boolean doQuery(Set<MapEntry> results, Map<String, Index<MapEntry>> namedIndexes, Predicate predicate) {
+    public Set<MapEntry> doQuery(AtomicBoolean strongRef, Map<String, Index<MapEntry>> namedIndexes, Predicate predicate) {
         boolean strong = false;
-        if (predicate != null && predicate instanceof IndexAwarePredicate) {
-            List<IndexAwarePredicate> lsIndexAwarePredicates = new ArrayList<IndexAwarePredicate>();
-            IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
-            strong = iap.collectIndexedPredicates(lsIndexAwarePredicates);
-            for (IndexAwarePredicate indexAwarePredicate : lsIndexAwarePredicates) {
-                boolean stillStrong = indexAwarePredicate.filter(results, namedIndexes);
+        Set<MapEntry> results = null;
+        try {
+            if (predicate != null && predicate instanceof IndexAwarePredicate) {
+                List<IndexAwarePredicate> lsIndexAwarePredicates = new ArrayList<IndexAwarePredicate>();
+                IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
+                strong = iap.collectIndexAwarePredicates(lsIndexAwarePredicates, namedIndexes);
                 if (strong) {
-                    strong = stillStrong;
+                    Set<Index> setAppliedIndexes = new HashSet<Index>(1);
+                    iap.collectAppliedIndexes(setAppliedIndexes, namedIndexes);
+                    if (setAppliedIndexes.size() > 0) {
+                        for (Index index : setAppliedIndexes) {
+                            if (strong) {
+                                strong = index.isStrong();
+                            }
+                        }
+                    }
                 }
+                if (lsIndexAwarePredicates.size() == 1) {
+                    IndexAwarePredicate indexAwarePredicate = lsIndexAwarePredicates.get(0);
+                    return indexAwarePredicate.filter(namedIndexes);
+                } else if (lsIndexAwarePredicates.size() > 0) {
+                    Set<MapEntry> smallestSet = null;
+                    List<Set<MapEntry>> lsSubResults = new ArrayList<Set<MapEntry>>(lsIndexAwarePredicates.size());
+                    for (IndexAwarePredicate indexAwarePredicate : lsIndexAwarePredicates) {
+                        Set<MapEntry> sub = indexAwarePredicate.filter(namedIndexes);
+                        if (sub == null || sub.size() == 0) {
+                            return null;
+                        } else {
+                            if (smallestSet == null) {
+                                smallestSet = sub;
+                            } else {
+                                if (sub.size() < smallestSet.size()) {
+                                    smallestSet = sub;
+                                }
+                            }
+                            lsSubResults.add(sub);
+                        }
+                    }
+                    System.out.println("smallest set size " + smallestSet.size());
+                    results = new HashSet<MapEntry>();
+                    results.addAll(smallestSet);
+                    Iterator<MapEntry> it = results.iterator();
+                    smallestLoop:
+                    while (it.hasNext()) {
+                        MapEntry entry = it.next();
+                        for (Set<MapEntry> sub : lsSubResults) {
+                            if (!sub.contains(entry)) {
+                                it.remove();
+                                continue smallestLoop;
+                            }
+                        }
+                    }
+                } else {
+                    results = new HashSet<MapEntry>();
+                    results.addAll(ownedRecords);
+                }
+            } else {
+                results = new HashSet<MapEntry>();
+                results.addAll(ownedRecords);
             }
+        } finally {
+            strongRef.set(strong);
         }
-        return strong;
+        return results;
     }
-
-//    public Collection<Record> doQuery2(Collection<Record> allRecords, Map<String, Index<Record>> namedIndexes, Predicate predicate) {
-//        Collection<Record> records = null;
-//        boolean strong = false;
-//        if (predicate != null && predicate instanceof IndexAwarePredicate) {
-//            List<IndexedPredicate> lsIndexPredicates = new ArrayList<IndexedPredicate>();
-//            IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
-////            strong = iap.collectIndexedPredicates(lsIndexPredicates);
-//            for (IndexedPredicate indexedPredicate : lsIndexPredicates) {
-//                Index<Record> index = namedIndexes.get(indexedPredicate.getIndexName());
-//                if (index != null) {
-//                    if (strong) {
-//                        strong = index.strong;
-//                    }
-//                    Collection<Record> sub;
-//                    if (!(indexedPredicate instanceof RangedPredicate)) {
-//                        sub = index.getRecords(getLongValue(indexedPredicate.getValue()));
-//                    } else {
-//                        RangedPredicate rangedPredicate = (RangedPredicate) indexedPredicate;
-//                        RangedPredicate.RangeType type = rangedPredicate.getRangeType();
-//                        if (rangedPredicate.getRangeType() == RangedPredicate.RangeType.BETWEEN) {
-//                            sub = index.getSubRecords(getLongValue(rangedPredicate.getFrom()), getLongValue(rangedPredicate.getTo()));
-//                        } else {
-//                            boolean equal = (type == LESS_EQUAL || type == GREATER_EQUAL);
-//                            if (type == LESS || type == LESS_EQUAL) {
-//                                sub = index.getSubRecords(equal, true, getLongValue(indexedPredicate.getValue()));
-//                            } else {
-//                                sub = index.getSubRecords(equal, false, getLongValue(indexedPredicate.getValue()));
-//                            }
-//                        }
-//                    }
-//                    if (sub != null) {
-//                        logger.log(Level.FINEST, node.getName() + " index sub.size " + sub.size());
-//                        System.out.println(node.getName() + " index sub.size " + sub.size());
-//                    }
-//                    if (records == null) {
-//                        records = sub;
-//                    } else {
-//                        Iterator itCurrentEntries = records.iterator();
-//                        while (itCurrentEntries.hasNext()) {
-//                            if (!sub.contains(itCurrentEntries.next())) {
-//                                itCurrentEntries.remove();
-//                            }
-//                        }
-//                        System.out.println(node.getName() + " after join " + records.size());
-//                    }
-//                }
-//            }
-//        }
-//        if (records == null) {
-//            records = allRecords;
-//        }
-//        return records;
-//    }
-
-
 }

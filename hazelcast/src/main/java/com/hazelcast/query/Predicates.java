@@ -18,7 +18,6 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.query.Index;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.SerializationHelper;
 
@@ -26,14 +25,17 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class Predicates {
     public static Predicate eq(final Expression first, final Expression second) {
         return new EqualPredicate(first, second);
     }
 
-    public static class GreaterLessPredicate extends EqualPredicate implements RangedPredicate {
+    public static class GreaterLessPredicate extends EqualPredicate {
         boolean equal = false;
         boolean less = false;
 
@@ -62,36 +64,25 @@ public class Predicates {
             }
         }
 
-        public RangeType getRangeType() {
-            if (less) {
-                return (equal) ? RangeType.LESS_EQUAL : RangeType.LESS;
-            } else {
-                return (equal) ? RangeType.GREATER_EQUAL : RangeType.GREATER;
-            }
-        }
-
-        public Object getFrom() {
-            return null;
-        }
-
-        public Object getTo() {
-            return null;
+        public Set<MapEntry> filter(Map<String, Index<MapEntry>> namedIndexes) {
+            Index index = namedIndexes.get(((GetExpression) first).getMethodName());
+            return index.getSubRecords(equal, less, getLongValue(second));
         }
     }
 
-    public static class BetweenPredicate extends EqualPredicate implements RangedPredicate {
+    public static class BetweenPredicate extends EqualPredicate {
         Object to;
 
         public BetweenPredicate() {
         }
 
-        public BetweenPredicate(Expression first, Expression second, Object to) {
-            super(first, second);
+        public BetweenPredicate(Expression first, Expression from, Object to) {
+            super(first, from);
             this.to = to;
         }
 
-        public BetweenPredicate(Expression first, Object second, Object to) {
-            super(first, second);
+        public BetweenPredicate(Expression first, Object from, Object to) {
+            super(first, from);
             this.to = to;
         }
 
@@ -104,16 +95,9 @@ public class Predicates {
             return firstValue.compareTo(fromValue) >= 0 && firstValue.compareTo(toValue) <= 0;
         }
 
-        public RangeType getRangeType() {
-            return RangeType.BETWEEN;
-        }
-
-        public Object getFrom() {
-            return second;
-        }
-
-        public Object getTo() {
-            return to;
+        public Set<MapEntry> filter(Map<String, Index<MapEntry>> namedIndexes) {
+            Index index = namedIndexes.get(((GetExpression) first).getMethodName());
+            return index.getSubRecords(getLongValue(second), getLongValue(to));
         }
 
         public void writeData(DataOutput out) throws IOException {
@@ -155,22 +139,32 @@ public class Predicates {
             }
         }
 
-        public boolean collectIndexedPredicates(List<IndexAwarePredicate> lsIndexPredicates) {
+        public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<String, Index<MapEntry>> namedIndexes) {
             if (!secondIsExpression && first instanceof GetExpression) {
-                lsIndexPredicates.add(this);
+                Index index = namedIndexes.get(((GetExpression) first).getMethodName());
+                if (index != null) {
+                    lsIndexPredicates.add(this);
+                } else {
+                    return false;
+                }
             }
             return true;
         }
 
-        public boolean filter(Set<MapEntry> results, Map<String, Index<MapEntry>> namedIndexes) {
-            Index<MapEntry> index = namedIndexes.get(((GetExpression) first).getMethodName());
-            Collection<MapEntry> sub = index.getRecords(getLongValue(getValue()));
-            if (results.size() == 0) {
-                results.addAll(sub);
-            } else {
-                //union
+        public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<String, Index<MapEntry>> namedIndexes) {
+            Index index = namedIndexes.get(((GetExpression) first).getMethodName());
+            if (index != null) {
+                setAppliedIndexes.add(index);
             }
-            return index.isStrong();
+        }
+
+        public Set<MapEntry> filter(Map<String, Index<MapEntry>> namedIndexes) {
+            Index index = namedIndexes.get(((GetExpression) first).getMethodName());
+            if (index != null) {
+                return index.getRecords(getLongValue(second));
+            } else {
+                return null;
+            }
         }
 
         public String getIndexName() {
@@ -249,13 +243,13 @@ public class Predicates {
             return and;
         }
 
-        public boolean collectIndexedPredicates(List<IndexAwarePredicate> lsIndexPredicates) {
+        public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<String, Index<MapEntry>> namedIndexes) {
             boolean strong = and;
             if (and) {
                 for (Predicate predicate : predicates) {
                     if (predicate instanceof IndexAwarePredicate) {
                         IndexAwarePredicate p = (IndexAwarePredicate) predicate;
-                        if (!p.collectIndexedPredicates(lsIndexPredicates)) {
+                        if (!p.collectIndexAwarePredicates(lsIndexPredicates, namedIndexes)) {
                             strong = false;
                         }
                     } else {
@@ -266,8 +260,19 @@ public class Predicates {
             return strong;
         }
 
-        public boolean filter(Set<MapEntry> results, Map<String, Index<MapEntry>> namedIndexes) {
-            return true;
+        public Set<MapEntry> filter(Map<String, Index<MapEntry>> namedIndexes) {
+            return null;
+        }
+
+        public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<String, Index<MapEntry>> namedIndexes) {
+           if (and) {
+                for (Predicate predicate : predicates) {
+                    if (predicate instanceof IndexAwarePredicate) {
+                        IndexAwarePredicate p = (IndexAwarePredicate) predicate;
+                        p.collectAppliedIndexes(setAppliedIndexes, namedIndexes);
+                    }
+                }
+            }
         }
 
         public void writeData(DataOutput out) throws IOException {
