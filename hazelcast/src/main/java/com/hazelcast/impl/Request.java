@@ -45,8 +45,7 @@ class Request {
     long recordId = -1;
     long version = -1;
     long txnId = -1;
-    byte indexCount = 0;
-    long[] indexes = new long[6];
+    long[] indexes;
     Object attachment = null;
     Object response = null;
 
@@ -82,12 +81,10 @@ class Request {
         this.recordId = -1;
         this.version = -1;
         this.redoCount = 0;
-        this.indexCount = 0;
     }
 
-    public void setIndex(int index, long value) {
-        indexes[index] = value;
-        indexCount = (byte) (index+1);
+    public void setIndexes(long[] newIndexes) {
+        indexes = newIndexes;
     }
 
     public void set(final boolean local, final ClusterOperation operation, final String name,
@@ -149,8 +146,10 @@ class Request {
                 packet.blockId, packet.timeout, packet.txnId, packet.callId, packet.threadId,
                 packet.lockAddress, packet.lockCount, packet.conn.getEndPoint(), packet.longValue,
                 packet.recordId, packet.version);
-        indexCount = packet.indexCount;
-        System.arraycopy(packet.indexes, 0, indexes, 0, indexCount);
+        if (packet.indexCount > 0) {
+            indexes = new long[packet.indexCount];
+            System.arraycopy(packet.indexes, 0, indexes, 0, indexes.length);
+        }
 
     }
 
@@ -178,8 +177,11 @@ class Request {
         packet.longValue = longValue;
         packet.recordId = recordId;
         packet.version = version;
+        byte indexCount = (indexes == null) ? 0 : (byte) indexes.length;
         packet.indexCount = indexCount;
-        System.arraycopy(indexes, 0, packet.indexes, 0, indexCount);
+        if (indexCount > 0) {
+            System.arraycopy(indexes, 0, packet.indexes, 0, indexes.length);
+        }
     }
 
 }

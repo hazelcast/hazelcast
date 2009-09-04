@@ -1,6 +1,7 @@
-package com.hazelcast.impl;
+package com.hazelcast.query;
 
 import com.hazelcast.query.Expression;
+import com.hazelcast.query.QueryService;
 
 import java.util.*;
 
@@ -9,6 +10,8 @@ public class Index<T> {
     final String indexName;
     final Expression expression;
     final boolean ordered;
+    volatile boolean strong = false;
+    volatile boolean checkedStregth = false;
 
     public Index(String indexName, Expression expression, boolean ordered) {
         this.indexName = indexName;
@@ -17,8 +20,44 @@ public class Index<T> {
         this.mapIndex = (ordered) ? new TreeMap<Long, Set<T>>() : new HashMap<Long, Set<T>>(1000);
     }
 
+    public Map<Long, Set<T>> getMapIndex() {
+        return mapIndex;
+    }
+
+    public String getIndexName() {
+        return indexName;
+    }
+
+    public Expression getExpression() {
+        return expression;
+    }
+
+    public boolean isOrdered() {
+        return ordered;
+    }
+
+    public boolean isStrong() {
+        return strong;
+    }
+
+    public void setStrong(boolean strong) {
+        this.strong = strong;
+    }
+    
     public long extractLongValue(Object value) {
-        return QueryService.getLongValue(expression.getValue(value));
+        Object extractedValue = expression.getValue(value);
+        if (extractedValue == null) {
+            return Long.MAX_VALUE;
+        } else {
+            if (!checkedStregth) {
+                if (extractedValue instanceof Number) {
+                    strong = !(extractedValue instanceof Double || extractedValue instanceof Float);
+                }
+                checkedStregth = true;
+            }
+            return QueryService.getLongValue(extractedValue);
+        }
+
     }
 
     void addNewIndex(long value, T record) {
@@ -79,7 +118,6 @@ public class Index<T> {
         return results;
     }
 
-
     @Override
     public String toString() {
         final StringBuffer sb = new StringBuffer();
@@ -87,8 +125,12 @@ public class Index<T> {
         sb.append("{indexName='").append(indexName).append('\'');
         sb.append(", size=").append(mapIndex.size());
         sb.append(", ordered=").append(ordered);
+        sb.append(", strong=").append(strong);
         sb.append(", expression=").append(expression.getClass());
         sb.append('}');
         return sb.toString();
     }
+
+
+
 }

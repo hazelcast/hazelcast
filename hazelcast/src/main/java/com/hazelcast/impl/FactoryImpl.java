@@ -1951,12 +1951,18 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public void addIndex(final String indexName, final Expression expression, final boolean ordered) {
+                final CountDownLatch latch = new CountDownLatch(1);
                 concurrentMapManager.enqueueAndReturn(new Processable() {
                     public void process() {
                         AddMapIndex addMapIndexProcess = new AddMapIndex(name, indexName, expression, ordered);
                         concurrentMapManager.sendProcessableToAll(addMapIndexProcess, true);
+                        latch.countDown();
                     }
                 });
+                try {
+                    latch.await();
+                } catch (InterruptedException ignored) {
+                }
             }
 
             public void doAddIndex(String indexName, Expression expression, boolean ordered) {

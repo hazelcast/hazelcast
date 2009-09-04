@@ -25,6 +25,7 @@ import com.hazelcast.config.Interfaces;
 import com.hazelcast.config.Join;
 import com.hazelcast.impl.MulticastService.JoinInfo;
 import com.hazelcast.nio.*;
+import com.hazelcast.query.QueryService;
 
 import java.io.InputStream;
 import java.net.InetAddress;

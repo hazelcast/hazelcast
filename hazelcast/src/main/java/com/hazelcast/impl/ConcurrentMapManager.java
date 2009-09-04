@@ -34,6 +34,7 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.query.Expression;
+import com.hazelcast.query.Index;
 import com.hazelcast.query.Predicate;
 
 import java.io.DataInput;
@@ -271,7 +272,7 @@ public final class ConcurrentMapManager extends BaseManager {
             int indexCount = cmap.mapNamedIndexes.size();
             for (int i = 0; i < indexCount; i++) {
                 Index index = cmap.indexes[i];
-                AddMapIndex mi = new AddMapIndex(cmap.name, index.indexName, index.expression, index.ordered);
+                AddMapIndex mi = new AddMapIndex(cmap.name, index.getIndexName(), index.getExpression(), index.isOrdered());
                 mapState.addMapIndex(mi);
             }
             lsMapStates.add(mapState);
@@ -813,12 +814,17 @@ public final class ConcurrentMapManager extends BaseManager {
 
     void setIndexValues(Request request, Object value) {
         CMap cmap = getMap(request.name);
-        Index[] indexes = cmap.indexes;
-        for (int i = 0; i < indexes.length; i++) {
-            Index index = indexes[i];
-            if (index != null) {
-                request.setIndex(i, index.extractLongValue(value));
+        int indexCount = cmap.mapNamedIndexes.size();
+        if (indexCount > 0) {
+            Index[] indexes = cmap.indexes;
+            long[] newIndexes = new long[indexCount];
+            for (int i = 0; i < indexes.length; i++) {
+                Index index = indexes[i];
+                if (index != null) {
+                    newIndexes[i] = index.extractLongValue(value);
+                }
             }
+            request.setIndexes(newIndexes);
         }
     }
 
@@ -1675,20 +1681,20 @@ public final class ConcurrentMapManager extends BaseManager {
 
             public void run() {
                 Predicate predicate = (Predicate) toObject(request.value);
-                Collection<Record> lsResults = new ArrayList();
-                Collection<Record> records = node.queryService.query(cmap.mapRecords.values(), cmap.mapNamedIndexes, predicate);
-                System.out.println(node.getName() + " after index REcords size " + records.size());
-                if (true) {//isStronglyIndexed(predicate)
-                    for (Record record : records) {
+                Set<MapEntry> results = new HashSet<MapEntry>();
+                boolean strong = node.queryService.query(results, cmap.mapNamedIndexes, predicate);
+//                Collection<Record> records = node.queryService.query(cmap.mapRecords.values(), cmap.mapNamedIndexes, predicate);
+                System.out.println(node.getName() + " after index REcords size " + results.size());
+                if (!strong) {//isStronglyIndexed(predicate)
+                    for (MapEntry entry : results) {
+                        Record record = (Record) entry;
                         if (predicate == null || predicate.apply(record.getRecordEntry())) {
-                            System.out.println(node.getName() + " FOUND " + record.getRecordEntry().getValue());
-                            lsResults.add(record);
+                            System.out.println(node.getName() + " FOUND " + entry.getValue());
+                            results.add(entry);
                         }
                     }
-                } else {
-                    lsResults.addAll(records);
                 }
-                createEntries(request, lsResults);
+                createEntries(request, results);
                 enqueueAndReturn(new Processable() {
                     public void process() {
                         returnResponse(request);
@@ -1697,11 +1703,12 @@ public final class ConcurrentMapManager extends BaseManager {
             }
         }
 
-        void createEntries(Request request, Collection<Record> colRecords) {
+        void createEntries(Request request, Collection<MapEntry> colRecords) {
             CMap cmap = getMap(request.name);
             Pairs pairs = new Pairs();
             long now = System.currentTimeMillis();
-            for (Record record : colRecords) {
+            for (MapEntry mapEntry : colRecords) {
+                Record record = (Record) mapEntry;
                 if (record.isValid(now)) {
                     if (record.getKey() == null || record.getKey().size() == 0) {
                         throw new RuntimeException("Key cannot be null or zero-size: " + record.getKey());
@@ -2023,9 +2030,9 @@ public final class ConcurrentMapManager extends BaseManager {
 
         private Map<Integer, Set<Record>> mapValueIndex = new HashMap(1000);
 
-        private final Map<String, Index<Record>> mapNamedIndexes = new HashMap(6);
+        private final Map<String, Index<MapEntry>> mapNamedIndexes = new ConcurrentHashMap(6);
 
-        private final Index[] indexes = new Index[6];
+        private Index<MapEntry>[] indexes = null;
 
         final LocallyOwnedMap locallyOwnedMap;
 
@@ -2092,6 +2099,11 @@ public final class ConcurrentMapManager extends BaseManager {
             if (!mapNamedIndexes.containsKey(indexName)) {
                 Index index = new Index(indexName, expression, ordered);
                 mapNamedIndexes.put(indexName, index);
+                Index[] newIndexes = new Index[mapNamedIndexes.size()];
+                if (indexes != null) {
+                    System.arraycopy(indexes, 0, newIndexes, 0, indexes.length);
+                }
+                indexes = newIndexes;
                 indexes[mapNamedIndexes.size() - 1] = index;
             }
         }
@@ -2506,21 +2518,16 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         void updateIndexes(Request request, Record record) {
-            int indexCount = request.indexCount;
-            if (mapNamedIndexes.size() > indexCount) {
-                throw new RuntimeException(indexCount + " but expected " + mapNamedIndexes.size());
-            }
-            for (int i = 0; i < indexCount; i++) {
-                Index index = indexes[i];
-                long newValue = request.indexes[i];
-                long oldValue = record.getAndSetIndex(i, newValue);
-                if (oldValue == Long.MIN_VALUE) {
-                    node.queryService.addNewIndex(index, newValue, record);
-                } else {
-                    if (oldValue != newValue) {
-                        node.queryService.updateIndex(index, oldValue, newValue, record);
-                    }
+            if (request.indexes != null) {
+                int indexCount = request.indexes.length;
+                if (indexCount == 0)
+                    throw new RuntimeException(node.getName() + " request countains no index " + request.indexes);
+                if (mapNamedIndexes.size() > indexCount) {
+                    throw new RuntimeException(node.getName() + ": indexCount=" + indexCount + " but expected " + mapNamedIndexes.size());
                 }
+                long[] newIndexes = request.indexes;
+                request.indexes = null;
+                node.queryService.updateIndex(indexes, newIndexes, record);
             }
         }
 
@@ -3077,7 +3084,7 @@ public final class ConcurrentMapManager extends BaseManager {
         fireScheduledActions(record);
     }
 
-    public static class Record {
+    public static class Record implements MapEntry {
         private static final Logger logger = Logger.getLogger(Record.class.getName());
 
         private final AtomicReference<Data> key = new AtomicReference<Data>();
@@ -3107,7 +3114,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         private final RecordEntry recordEntry;
         private final long id;
-        private final long[] oldIndexes = new long[6];
+        private long[] indexes; // only used by QueryThread
 
         public Record(FactoryImpl factory, String name, int blockId, Data key, Data value, long ttl, long id) {
             super();
@@ -3122,10 +3129,6 @@ public final class ConcurrentMapManager extends BaseManager {
             this.setVersion(0);
             recordEntry = new RecordEntry(this);
             this.id = id;
-            int len = oldIndexes.length;
-            for (int i = 0; i < len; i++) {
-                oldIndexes[i] = Long.MIN_VALUE;
-            }
         }
 
         public RecordEntry getRecordEntry() {
@@ -3188,8 +3191,20 @@ public final class ConcurrentMapManager extends BaseManager {
             return value.get();
         }
 
+        public Object setValue(Object value) {
+            return getRecordEntry().setValue(value);
+        }
+
         public void setValue(Data value) {
             this.value.set(value);
+        }
+
+        public long[] getIndexes() {
+            return indexes;
+        }
+
+        public void setIndexes(long[] indexes) {
+            this.indexes = indexes;
         }
 
         public int valueCount() {
@@ -3352,15 +3367,12 @@ public final class ConcurrentMapManager extends BaseManager {
         public void markRemoved() {
             setActive(false);
             removeTime = System.currentTimeMillis();
-            int len = oldIndexes.length;
-            for (int i = 0; i < len; i++) {
-                oldIndexes[i] = Long.MIN_VALUE;
-            }
         }
 
         public void setActive() {
             setActive(true);
         }
+
 
         @Override
         public boolean equals(Object o) {
@@ -3427,13 +3439,6 @@ public final class ConcurrentMapManager extends BaseManager {
         public void setActive(boolean active) {
             this.active.set(active);
         }
-
-        public long getAndSetIndex(int i, long newValue) {
-            long oldValue = oldIndexes[i];
-            oldIndexes[i] = newValue;
-            return oldValue;
-        }
-
 
         static class RecordEntry implements MapEntry {
 

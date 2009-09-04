@@ -18,13 +18,15 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.query.Index;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.SerializationHelper;
 
-import java.io.*;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Predicates {
     public static Predicate eq(final Expression first, final Expression second) {
@@ -99,7 +101,6 @@ public class Predicates {
             Comparable fromValue = (Comparable) second;
             Comparable toValue = (Comparable) to;
             if (firstValue == null || fromValue == null || toValue == null) return false;
-            System.out.println(firstValue.getClass().getName() + " firstValeu " + fromValue.getClass().getName());
             return firstValue.compareTo(fromValue) >= 0 && firstValue.compareTo(toValue) <= 0;
         }
 
@@ -127,7 +128,7 @@ public class Predicates {
     }
 
 
-    public static class EqualPredicate extends AbstractPredicate implements IndexAwarePredicate, IndexedPredicate {
+    public static class EqualPredicate extends AbstractPredicate implements IndexAwarePredicate {
         Expression first;
         Object second;
         protected boolean secondIsExpression = true;
@@ -154,11 +155,22 @@ public class Predicates {
             }
         }
 
-        public boolean collectIndexedPredicates(List<IndexedPredicate> lsIndexPredicates) {
+        public boolean collectIndexedPredicates(List<IndexAwarePredicate> lsIndexPredicates) {
             if (!secondIsExpression && first instanceof GetExpression) {
                 lsIndexPredicates.add(this);
             }
             return true;
+        }
+
+        public boolean filter(Set<MapEntry> results, Map<String, Index<MapEntry>> namedIndexes) {
+            Index<MapEntry> index = namedIndexes.get(((GetExpression) first).getMethodName());
+            Collection<MapEntry> sub = index.getRecords(getLongValue(getValue()));
+            if (results.size() == 0) {
+                results.addAll(sub);
+            } else {
+                //union
+            }
+            return index.isStrong();
         }
 
         public String getIndexName() {
@@ -174,9 +186,9 @@ public class Predicates {
         }
 
         public void writeData(DataOutput out) throws IOException {
-            writeObject (out, first);
+            writeObject(out, first);
             out.writeBoolean(secondIsExpression);
-            writeObject (out, second);
+            writeObject(out, second);
         }
 
         public void readData(DataInput in) throws IOException {
@@ -199,7 +211,15 @@ public class Predicates {
     }
 
     public static abstract class AbstractPredicate extends SerializationHelper implements Predicate, DataSerializable {
-
+        public static long getLongValue(Object value) {
+            if (value instanceof Number) {
+                return ((Number) value).longValue();
+            } else if (value instanceof Boolean) {
+                return (Boolean.TRUE.equals(value)) ? 1 : -1;
+            } else {
+                return value.hashCode();
+            }
+        }
     }
 
     public static class AndOrPredicate extends AbstractPredicate implements IndexAwarePredicate {
@@ -229,14 +249,14 @@ public class Predicates {
             return and;
         }
 
-        public boolean collectIndexedPredicates(List<IndexedPredicate> lsIndexPredicates) {
+        public boolean collectIndexedPredicates(List<IndexAwarePredicate> lsIndexPredicates) {
             boolean strong = and;
             if (and) {
                 for (Predicate predicate : predicates) {
                     if (predicate instanceof IndexAwarePredicate) {
                         IndexAwarePredicate p = (IndexAwarePredicate) predicate;
                         if (!p.collectIndexedPredicates(lsIndexPredicates)) {
-                            strong= false;
+                            strong = false;
                         }
                     } else {
                         strong = false;
@@ -246,11 +266,15 @@ public class Predicates {
             return strong;
         }
 
+        public boolean filter(Set<MapEntry> results, Map<String, Index<MapEntry>> namedIndexes) {
+            return true;
+        }
+
         public void writeData(DataOutput out) throws IOException {
             out.writeBoolean(and);
             out.writeInt(predicates.length);
             for (Predicate predicate : predicates) {
-                writeObject(out,predicate);
+                writeObject(out, predicate);
             }
         }
 
