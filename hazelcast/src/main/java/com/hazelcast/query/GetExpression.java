@@ -23,7 +23,4 @@ public interface GetExpression<T> extends Expression {
     GetExpression get(String methodName);
 
     GetExpression get(Method method);
-
-    String getMethodName();
-
 }

@@ -269,10 +269,10 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public void createAndAddMapState(CMap cmap) {
             MapState mapState = new MapState(cmap.name);
-            int indexCount = cmap.mapNamedIndexes.size();
+            int indexCount = cmap.mapIndexes.size();
             for (int i = 0; i < indexCount; i++) {
                 Index index = cmap.indexes[i];
-                AddMapIndex mi = new AddMapIndex(cmap.name, index.getIndexName(), index.getExpression(), index.isOrdered());
+                AddMapIndex mi = new AddMapIndex(cmap.name, index.getExpression(), index.isOrdered());
                 mapState.addMapIndex(mi);
             }
             lsMapStates.add(mapState);
@@ -285,7 +285,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 for (MapState mapState : lsMapStates) {
                     CMap cmap = factory.node.concurrentMapManager.getMap(mapState.name);
                     for (AddMapIndex mapIndex : mapState.lsMapIndexes) {
-                        cmap.addIndex(mapIndex.indexName, mapIndex.expression, mapIndex.ordered);
+                        cmap.addIndex(mapIndex.expression, mapIndex.ordered);
                     }
                 }
             }
@@ -345,35 +345,31 @@ public final class ConcurrentMapManager extends BaseManager {
 
     public static class AddMapIndex extends AbstractRemotelyProcessable {
         String mapName;
-        String indexName;
         Expression expression;
         boolean ordered;
 
         public AddMapIndex() {
         }
 
-        public AddMapIndex(String mapName, String indexName, Expression expression, boolean ordered) {
+        public AddMapIndex(String mapName, Expression expression, boolean ordered) {
             this.mapName = mapName;
-            this.indexName = indexName;
             this.expression = expression;
             this.ordered = ordered;
         }
 
         public void process() {
             CMap cmap = getNode().concurrentMapManager.getMap(mapName);
-            cmap.addIndex(indexName, expression, ordered);
+            cmap.addIndex(expression, ordered);
         }
 
         public void writeData(DataOutput out) throws IOException {
             out.writeUTF(mapName);
-            out.writeUTF(indexName);
             out.writeBoolean(ordered);
             writeObject(out, expression);
         }
 
         public void readData(DataInput in) throws IOException {
             mapName = in.readUTF();
-            indexName = in.readUTF();
             ordered = in.readBoolean();
             expression = (Expression) readObject(in);
         }
@@ -814,7 +810,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     void setIndexValues(Request request, Object value) {
         CMap cmap = getMap(request.name);
-        int indexCount = cmap.mapNamedIndexes.size();
+        int indexCount = cmap.mapIndexes.size();
         if (indexCount > 0) {
             Index[] indexes = cmap.indexes;
             long[] newIndexes = new long[indexCount];
@@ -1682,7 +1678,7 @@ public final class ConcurrentMapManager extends BaseManager {
             public void run() {
                 Predicate predicate = (Predicate) toObject(request.value);
                 AtomicBoolean strongRef = new AtomicBoolean(false);
-                Set<MapEntry> results = node.queryService.query(strongRef, cmap.mapNamedIndexes, predicate);
+                Set<MapEntry> results = node.queryService.query(strongRef, cmap.mapIndexes, predicate);
 //                System.out.println(node.getName() + " after index REcords size " + results.size() + " strong: " + strongRef.get());
                 if (predicate != null) {
                     if (!strongRef.get()) {
@@ -2033,7 +2029,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         private Map<Integer, Set<Record>> mapValueIndex = new HashMap(1000);
 
-        private final Map<String, Index<MapEntry>> mapNamedIndexes = new ConcurrentHashMap(6);
+        private final Map<Expression, Index<MapEntry>> mapIndexes = new ConcurrentHashMap(6);
 
         private Index<MapEntry>[] indexes = null;
 
@@ -2098,16 +2094,16 @@ public final class ConcurrentMapManager extends BaseManager {
             }
         }
 
-        public void addIndex(String indexName, Expression expression, boolean ordered) {
-            if (!mapNamedIndexes.containsKey(indexName)) {
-                Index index = new Index(indexName, expression, ordered);
-                mapNamedIndexes.put(indexName, index);
-                Index[] newIndexes = new Index[mapNamedIndexes.size()];
+        public void addIndex(Expression expression, boolean ordered) {
+            if (!mapIndexes.containsKey(expression)) {
+                Index index = new Index(expression, ordered);
+                mapIndexes.put(expression, index);
+                Index[] newIndexes = new Index[mapIndexes.size()];
                 if (indexes != null) {
                     System.arraycopy(indexes, 0, newIndexes, 0, indexes.length);
                 }
                 indexes = newIndexes;
-                indexes[mapNamedIndexes.size() - 1] = index;
+                indexes[mapIndexes.size() - 1] = index;
             }
         }
 
@@ -2525,8 +2521,8 @@ public final class ConcurrentMapManager extends BaseManager {
                 int indexCount = request.indexes.length;
                 if (indexCount == 0)
                     throw new RuntimeException(node.getName() + " request countains no index " + request.indexes);
-                if (mapNamedIndexes.size() > indexCount) {
-                    throw new RuntimeException(node.getName() + ": indexCount=" + indexCount + " but expected " + mapNamedIndexes.size());
+                if (mapIndexes.size() > indexCount) {
+                    throw new RuntimeException(node.getName() + ": indexCount=" + indexCount + " but expected " + mapIndexes.size());
                 }
                 long[] newIndexes = request.indexes;
                 request.indexes = null;

@@ -1,3 +1,20 @@
+/*
+ * Copyright (c) 2007-2008, Hazel Ltd. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
@@ -86,12 +103,12 @@ public class QueryService implements Runnable {
         }
     }
 
-    public Set<MapEntry> query(final AtomicBoolean strongRef, final Map<String, Index<MapEntry>> namedIndexes, final Predicate predicate) {
+    public Set<MapEntry> query(final AtomicBoolean strongRef, final Map<Expression, Index<MapEntry>> mapIndexes, final Predicate predicate) {
         try {
             final BlockingQueue<Set<MapEntry>> resultQ = new ArrayBlockingQueue<Set<MapEntry>>(1);
             queryQ.put(new Runnable() {
                 public void run() {
-                    Set<MapEntry> results = doQuery(strongRef, namedIndexes, predicate);
+                    Set<MapEntry> results = doQuery(strongRef, mapIndexes, predicate);
                     if (results == null) {
                         results = new HashSet(0);
                     }
@@ -104,17 +121,17 @@ public class QueryService implements Runnable {
         return null;
     }
 
-    public Set<MapEntry> doQuery(AtomicBoolean strongRef, Map<String, Index<MapEntry>> namedIndexes, Predicate predicate) {
+    public Set<MapEntry> doQuery(AtomicBoolean strongRef, Map<Expression, Index<MapEntry>> mapIndexes, Predicate predicate) {
         boolean strong = false;
         Set<MapEntry> results = null;
         try {
             if (predicate != null && predicate instanceof IndexAwarePredicate) {
                 List<IndexAwarePredicate> lsIndexAwarePredicates = new ArrayList<IndexAwarePredicate>();
                 IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
-                strong = iap.collectIndexAwarePredicates(lsIndexAwarePredicates, namedIndexes);
+                strong = iap.collectIndexAwarePredicates(lsIndexAwarePredicates, mapIndexes);
                 if (strong) {
                     Set<Index> setAppliedIndexes = new HashSet<Index>(1);
-                    iap.collectAppliedIndexes(setAppliedIndexes, namedIndexes);
+                    iap.collectAppliedIndexes(setAppliedIndexes, mapIndexes);
                     if (setAppliedIndexes.size() > 0) {
                         for (Index index : setAppliedIndexes) {
                             if (strong) {
@@ -125,12 +142,12 @@ public class QueryService implements Runnable {
                 }
                 if (lsIndexAwarePredicates.size() == 1) {
                     IndexAwarePredicate indexAwarePredicate = lsIndexAwarePredicates.get(0);
-                    return indexAwarePredicate.filter(namedIndexes);
+                    return indexAwarePredicate.filter(mapIndexes);
                 } else if (lsIndexAwarePredicates.size() > 0) {
                     Set<MapEntry> smallestSet = null;
                     List<Set<MapEntry>> lsSubResults = new ArrayList<Set<MapEntry>>(lsIndexAwarePredicates.size());
                     for (IndexAwarePredicate indexAwarePredicate : lsIndexAwarePredicates) {
-                        Set<MapEntry> sub = indexAwarePredicate.filter(namedIndexes);
+                        Set<MapEntry> sub = indexAwarePredicate.filter(mapIndexes);
                         if (sub == null || sub.size() == 0) {
                             return null;
                         } else {

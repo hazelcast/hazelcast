@@ -1722,8 +1722,8 @@ public class FactoryImpl implements HazelcastInstance {
             }
         }
 
-        public void addIndex(String indexName, Expression expression, boolean ordered) {
-            dynamicProxy.addIndex(indexName, expression, ordered);
+        public void addIndex(Expression expression, boolean ordered) {
+            dynamicProxy.addIndex(expression, ordered);
         }
 
         public void doAddIndex(String indexName, Expression expression, boolean ordered) {
@@ -1950,11 +1950,11 @@ public class FactoryImpl implements HazelcastInstance {
                 return name.substring(2);
             }
 
-            public void addIndex(final String indexName, final Expression expression, final boolean ordered) {
+            public void addIndex(final Expression expression, final boolean ordered) {
                 final CountDownLatch latch = new CountDownLatch(1);
                 concurrentMapManager.enqueueAndReturn(new Processable() {
                     public void process() {
-                        AddMapIndex addMapIndexProcess = new AddMapIndex(name, indexName, expression, ordered);
+                        AddMapIndex addMapIndexProcess = new AddMapIndex(name, expression, ordered);
                         concurrentMapManager.sendProcessableToAll(addMapIndexProcess, true);
                         latch.countDown();
                     }

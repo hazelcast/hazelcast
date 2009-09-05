@@ -64,8 +64,8 @@ public class Predicates {
             }
         }
 
-        public Set<MapEntry> filter(Map<String, Index<MapEntry>> namedIndexes) {
-            Index index = namedIndexes.get(((GetExpression) first).getMethodName());
+        public Set<MapEntry> filter(Map<Expression, Index<MapEntry>> namedIndexes) {
+            Index index = namedIndexes.get(first);
             return index.getSubRecords(equal, less, getLongValue(second));
         }
     }
@@ -95,8 +95,8 @@ public class Predicates {
             return firstValue.compareTo(fromValue) >= 0 && firstValue.compareTo(toValue) <= 0;
         }
 
-        public Set<MapEntry> filter(Map<String, Index<MapEntry>> namedIndexes) {
-            Index index = namedIndexes.get(((GetExpression) first).getMethodName());
+        public Set<MapEntry> filter(Map<Expression, Index<MapEntry>> namedIndexes) {
+            Index index = namedIndexes.get(first);
             return index.getSubRecords(getLongValue(second), getLongValue(to));
         }
 
@@ -139,9 +139,9 @@ public class Predicates {
             }
         }
 
-        public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<String, Index<MapEntry>> namedIndexes) {
+        public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index<MapEntry>> mapIndexes) {
             if (!secondIsExpression && first instanceof GetExpression) {
-                Index index = namedIndexes.get(((GetExpression) first).getMethodName());
+                Index index = mapIndexes.get(first);
                 if (index != null) {
                     lsIndexPredicates.add(this);
                 } else {
@@ -151,24 +151,20 @@ public class Predicates {
             return true;
         }
 
-        public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<String, Index<MapEntry>> namedIndexes) {
-            Index index = namedIndexes.get(((GetExpression) first).getMethodName());
+        public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index<MapEntry>> mapIndexes) {
+            Index index = mapIndexes.get(first);
             if (index != null) {
                 setAppliedIndexes.add(index);
             }
         }
 
-        public Set<MapEntry> filter(Map<String, Index<MapEntry>> namedIndexes) {
-            Index index = namedIndexes.get(((GetExpression) first).getMethodName());
+        public Set<MapEntry> filter(Map<Expression, Index<MapEntry>> mapIndexes) {
+            Index index = mapIndexes.get(first);
             if (index != null) {
                 return index.getRecords(getLongValue(second));
             } else {
                 return null;
             }
-        }
-
-        public String getIndexName() {
-            return ((GetExpression) first).getMethodName();
         }
 
         public boolean isRanged() {
@@ -243,13 +239,13 @@ public class Predicates {
             return and;
         }
 
-        public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<String, Index<MapEntry>> namedIndexes) {
+        public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index<MapEntry>> mapIndexes) {
             boolean strong = and;
             if (and) {
                 for (Predicate predicate : predicates) {
                     if (predicate instanceof IndexAwarePredicate) {
                         IndexAwarePredicate p = (IndexAwarePredicate) predicate;
-                        if (!p.collectIndexAwarePredicates(lsIndexPredicates, namedIndexes)) {
+                        if (!p.collectIndexAwarePredicates(lsIndexPredicates, mapIndexes)) {
                             strong = false;
                         }
                     } else {
@@ -260,16 +256,16 @@ public class Predicates {
             return strong;
         }
 
-        public Set<MapEntry> filter(Map<String, Index<MapEntry>> namedIndexes) {
+        public Set<MapEntry> filter(Map<Expression, Index<MapEntry>> mapIndexes) {
             return null;
         }
 
-        public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<String, Index<MapEntry>> namedIndexes) {
-           if (and) {
+        public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index<MapEntry>> mapIndexes) {
+            if (and) {
                 for (Predicate predicate : predicates) {
                     if (predicate instanceof IndexAwarePredicate) {
                         IndexAwarePredicate p = (IndexAwarePredicate) predicate;
-                        p.collectAppliedIndexes(setAppliedIndexes, namedIndexes);
+                        p.collectAppliedIndexes(setAppliedIndexes, mapIndexes);
                     }
                 }
             }
@@ -320,8 +316,16 @@ public class Predicates {
         return new GreaterLessPredicate(x, y, false, false);
     }
 
+    public static <T extends Comparable<T>> Predicate greaterEqual(Expression<? extends T> x, T y) {
+        return new GreaterLessPredicate(x, y, true, false);
+    }
+
     public static <T extends Comparable<T>> Predicate lt(Expression<? extends T> x, T y) {
         return new GreaterLessPredicate(x, y, false, true);
+    }
+
+    public static <T extends Comparable<T>> Predicate lessEqual(Expression<? extends T> x, T y) {
+        return new GreaterLessPredicate(x, y, true, true);
     }
 
     public static <T extends Comparable<T>> Predicate between(Expression<? extends T> expression, T from, T to) {
@@ -386,14 +390,6 @@ public class Predicates {
             return this;
         }
 
-        public String getMethodName() {
-            if (input instanceof Method) {
-                return ((Method) input).getName();
-            } else {
-                return (String) input;
-            }
-        }
-
         public Object getValue(Object obj) {
             if (ls != null) {
                 Object result = doGetValue(input, obj);
@@ -428,6 +424,23 @@ public class Predicates {
 
         public void readData(DataInput in) throws IOException {
             input = readObject(in);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            GetExpressionImpl that = (GetExpressionImpl) o;
+
+            if (!input.equals(that.input)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return input.hashCode();
         }
     }
 
