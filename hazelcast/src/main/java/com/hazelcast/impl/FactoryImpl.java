@@ -1575,37 +1575,7 @@ public class FactoryImpl implements HazelcastInstance {
         int valueCount(Object key);
 
         Set allKeys();
-
-        void doAddIndex(String indexName, Expression expression, boolean ordered);
     }
-
-    public static class AddIndexRunnable implements Runnable, Serializable {
-        private String factoryName;
-        private String mapName;
-        private String indexName;
-        private Expression expression;
-        private boolean ordered;
-
-        public AddIndexRunnable() {
-        }
-
-        public AddIndexRunnable(String factoryName, String mapName, String indexName, Expression expression, boolean ordered) {
-            this.factoryName = factoryName;
-            this.mapName = mapName;
-            this.indexName = indexName;
-            this.expression = expression;
-            this.ordered = ordered;
-        }
-
-        public void run() {
-            FactoryImpl factory = getFactoryImpl(factoryName);
-            if (factory != null) {
-                MProxy mproxy = (MProxy) factory.getOrCreateProxyByName(mapName);
-                mproxy.doAddIndex(indexName, expression, ordered);
-            }
-        }
-    }
-
 
     public static class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSerializable {
         static final Logger logger = Logger.getLogger(MProxyImpl.class.getName());
@@ -1724,10 +1694,6 @@ public class FactoryImpl implements HazelcastInstance {
 
         public void addIndex(Expression expression, boolean ordered) {
             dynamicProxy.addIndex(expression, ordered);
-        }
-
-        public void doAddIndex(String indexName, Expression expression, boolean ordered) {
-            mproxyReal.doAddIndex(indexName, expression, ordered);
         }
 
         public Object getId() {
@@ -1963,9 +1929,6 @@ public class FactoryImpl implements HazelcastInstance {
                     latch.await();
                 } catch (InterruptedException ignored) {
                 }
-            }
-
-            public void doAddIndex(String indexName, Expression expression, boolean ordered) {
             }
 
             public MapEntry getMapEntry(Object key) {

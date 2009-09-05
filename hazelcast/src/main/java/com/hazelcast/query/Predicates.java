@@ -414,6 +414,7 @@ public class Predicates {
                     return m.invoke(obj);
                 }
             } catch (Throwable e) {
+                e.printStackTrace();
                 throw new RuntimeException(e);
             }
         }
