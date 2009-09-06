@@ -187,9 +187,8 @@ public class Node {
             address = addressPicker.pickAddress(this, serverSocketChannel);
             address.setThisAddress(true);
             localMember = new MemberImpl(address, true, localNodeType);
-
-        } catch (final Exception e) {
-            e.printStackTrace();
+        } catch (final Throwable e) {
+            throw new RuntimeException(e);
         }
         clusterImpl = new ClusterImpl(this);
         baseVariables = new BaseVariables(address, localMember);

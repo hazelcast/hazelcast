@@ -1,3 +1,20 @@
+/*
+ * Copyright (c) 2007-2008, Hazel Ltd. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.hazelcast.impl;
 
 import com.hazelcast.core.MapEntry;
@@ -35,7 +52,7 @@ public class Record implements MapEntry {
         private List<BaseManager.ScheduledAction> lsScheduledActions = null;
         private Map<Address, Boolean> mapListeners = null;
         private int copyCount = 0;
-        private List<Data> lsValues = null; // multimap values
+        private List<Data> lsMultiValues = null; // multimap values
         private SortedSet<VersionedBackupOp> backupOps = null;
         private boolean dirty = false;
         private long writeTime = -1;
@@ -46,7 +63,7 @@ public class Record implements MapEntry {
         private long[] indexes; // indexes of the current value; only used by QueryThread
         private volatile int valueHash = Integer.MIN_VALUE; // hash of the current value; read by ServiceThread, updated by QueryThread
 
-        public Record(FactoryImpl factory, String name, int blockId, Data key, Data value, long ttl, long id) {
+    public Record(FactoryImpl factory, String name, int blockId, Data key, Data value, long ttl, long id) {
             super();
             this.factory = factory;
             this.name = name;
@@ -149,8 +166,8 @@ public class Record implements MapEntry {
             int count = 0;
             if (getValue() != null) {
                 count = 1;
-            } else if (getLsValues() != null) {
-                count = getLsValues().size();
+            } else if (getMultiValues() != null) {
+                count = getMultiValues().size();
             } else if (getCopyCount() > 0) {
                 count += getCopyCount();
             }
@@ -164,8 +181,8 @@ public class Record implements MapEntry {
                 if (getCopyCount() > 0) {
                     cost *= getCopyCount();
                 }
-            } else if (getLsValues() != null) {
-                for (Data data : getLsValues()) {
+            } else if (getMultiValues() != null) {
+                for (Data data : getMultiValues()) {
                     cost += data.size();
                 }
             }
@@ -175,10 +192,10 @@ public class Record implements MapEntry {
         public boolean containsValue(Data value) {
             if (this.getValue() != null) {
                 return this.getValue().equals(value);
-            } else if (getLsValues() != null) {
-                int count = getLsValues().size();
+            } else if (getMultiValues() != null) {
+                int count = getMultiValues().size();
                 for (int i = 0; i < count; i++) {
-                    if (value.equals(getLsValues().get(i))) {
+                    if (value.equals(getMultiValues().get(i))) {
                         return true;
                     }
                 }
@@ -187,10 +204,10 @@ public class Record implements MapEntry {
         }
 
         public void addValue(Data value) {
-            if (getLsValues() == null) {
-                setLsValues(new ArrayList<Data>(2));
+            if (getMultiValues() == null) {
+                setMultiValues(new ArrayList<Data>(2));
             }
-            getLsValues().add(value);
+            getMultiValues().add(value);
         }
 
 
@@ -410,12 +427,12 @@ public class Record implements MapEntry {
         this.lockAddress = lockAddress;
     }
 
-    public List<Data> getLsValues() {
-        return lsValues;
+    public List<Data> getMultiValues() {
+        return lsMultiValues;
     }
 
-    public void setLsValues(List<Data> lsValues) {
-        this.lsValues = lsValues;
+    public void setMultiValues(List<Data> lsValues) {
+        this.lsMultiValues = lsValues;
     }
 
     public SortedSet<VersionedBackupOp> getBackupOps() {

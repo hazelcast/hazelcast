@@ -17,7 +17,9 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.core.Instance;
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.impl.BaseManager;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Data;
@@ -26,7 +28,6 @@ import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
@@ -62,9 +63,11 @@ public class QueryService implements Runnable {
         final Map<Integer, Set<Record>> mapValueIndex = new HashMap(1000);
         private Map<Expression, Index<MapEntry>> mapIndexes = null;
         private Index<MapEntry>[] indexes = null;
+        final Instance.InstanceType instanceType;
 
         IndexRegion(String name) {
             this.name = name;
+            this.instanceType = BaseManager.getInstanceType(name);
         }
 
         void reset() {
@@ -73,6 +76,7 @@ public class QueryService implements Runnable {
         }
 
         void addNewValueIndex(int newValueHash, Record record) {
+            if (instanceType != Instance.InstanceType.MAP) return;
             Set<Record> lsRecords = mapValueIndex.get(newValueHash);
             if (lsRecords == null) {
                 lsRecords = new LinkedHashSet<Record>();
@@ -82,6 +86,7 @@ public class QueryService implements Runnable {
         }
 
         void updateValueIndex(int newValueHash, Record record) {
+            if (instanceType != Instance.InstanceType.MAP) return;
             int oldHash = record.getValueHash();
             if (oldHash == Integer.MIN_VALUE) {
                 addNewValueIndex(newValueHash, record);
@@ -95,6 +100,7 @@ public class QueryService implements Runnable {
         }
 
         void removeValueIndex(Record record) {
+            if (instanceType != Instance.InstanceType.MAP) return;
             int oldHash = record.getValueHash();
             Set<Record> lsRecords = mapValueIndex.get(oldHash);
             if (lsRecords != null && lsRecords.size() > 0) {
@@ -107,14 +113,23 @@ public class QueryService implements Runnable {
         }
 
         boolean searchValueIndex(Data value) {
-            Set<Record> lsRecords = mapValueIndex.get(value.hashCode());
-            if (lsRecords == null || lsRecords.size() == 0) {
-                return false;
+            if (instanceType == Instance.InstanceType.MULTIMAP) {
+                for (Record record : ownedRecords) {
+                    List<Data> multiValues = record.getMultiValues();
+                    for (Data v : multiValues) {
+                        if (v.equals(value)) return true;
+                    }
+                }
             } else {
-                for (Record rec : lsRecords) {
-                    if (rec.isValid()) {
-                        if (value.equals(rec.getValue())) {
-                            return true;
+                Set<Record> lsRecords = mapValueIndex.get(value.hashCode());
+                if (lsRecords == null || lsRecords.size() == 0) {
+                    return false;
+                } else {
+                    for (Record rec : lsRecords) {
+                        if (rec.isValid()) {
+                            if (value.equals(rec.getValue())) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -125,10 +140,7 @@ public class QueryService implements Runnable {
         public void doUpdateIndex(final long[] newValues, final Record record, final int valueHash) {
             if (record.isActive()) {
                 updateValueIndex(valueHash, record);
-                boolean added = ownedRecords.add(record);
-                if (added && ownedRecords.size() % 1000 == 900) {
-                System.out.println ("size is " + ownedRecords.size());
-                }
+                ownedRecords.add(record); 
             } else {
                 removeValueIndex(record);
                 ownedRecords.remove(record);
@@ -156,7 +168,7 @@ public class QueryService implements Runnable {
             boolean strong = false;
             Set<MapEntry> results = null;
             try {
-                if (predicate != null && predicate instanceof IndexAwarePredicate) {
+                if (predicate != null && mapIndexes != null && predicate instanceof IndexAwarePredicate) {
                     List<IndexAwarePredicate> lsIndexAwarePredicates = new ArrayList<IndexAwarePredicate>();
                     IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
                     strong = iap.collectIndexAwarePredicates(lsIndexAwarePredicates, mapIndexes);

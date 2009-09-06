@@ -755,7 +755,6 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public void addMessageListener(MessageListener listener) {
-                check(listener);
                 listenerManager.addListener(name, listener, null, true,
                         ListenerManager.Type.Message);
             }

@@ -464,9 +464,12 @@ public class HazelcastTest {
         map.put("Hello", "Australia");
         Set<Map.Entry<String, String>> entries = map.entrySet();
         assertEquals(7, entries.size());
+        int itCount =0;
         for (Map.Entry<String, String> entry : entries) {
             assertEquals("Hello", entry.getKey());
+            itCount++;
         }
+        assertEquals(7, itCount);        
     }
 
     @Test

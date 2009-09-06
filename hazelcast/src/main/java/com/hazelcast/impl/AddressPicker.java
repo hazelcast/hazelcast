@@ -41,7 +41,7 @@ public class AddressPicker {
     }
 
     public boolean invoke(final boolean defaultValue, final double minJVMVersion,
-                                 final NetworkInterface ni, final String methodName) {
+                          final NetworkInterface ni, final String methodName) {
         boolean result = defaultValue;
         if (jvmVersion >= minJVMVersion) {
             try {
@@ -161,9 +161,16 @@ public class AddressPicker {
                     serverSocket.bind(isa, 100);
                     break;
                 } catch (final Exception e) {
-                    serverSocket = serverSocketChannel.socket();
-                    serverSocket.setReuseAddress(true);
-                    port++;
+                    if (config.isPortAutoIncrement()) {
+                        serverSocket = serverSocketChannel.socket();
+                        serverSocket.setReuseAddress(true);
+                        port++;
+                    } else {
+                        String msg = "Port [" + port + "] is already use and auto-increment is " +
+                                "disabled. Hazelcast cannot start.";
+                        logger.log (Level.SEVERE, msg);
+                        throw e;
+                    }
                 }
             }
             serverSocketChannel.configureBlocking(false);

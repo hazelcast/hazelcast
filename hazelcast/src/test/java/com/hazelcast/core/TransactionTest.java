@@ -66,7 +66,7 @@ public class TransactionTest {
 
     @Test
     public void testMapIterateEntries3() {
-        TransactionalMap txnMap = newTransactionalMapProxy("testMap");
+        TransactionalMap txnMap = newTransactionalMapProxy("testMap3");
         txnMap.put("1", "value1");
         assertEquals(1, txnMap.size());
         txnMap.begin();
