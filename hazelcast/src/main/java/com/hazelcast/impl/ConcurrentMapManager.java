@@ -2824,7 +2824,7 @@ public final class ConcurrentMapManager extends BaseManager {
         void removeAndPurgeRecord(Record record) {
             Block ownerBlock = blocks[record.getBlockId()];
             if (thisAddress.equals(ownerBlock.getRealOwner())) {
-                node.queryService.updateIndex(name, null, record, record.getValue().hashCode());
+                node.queryService.updateIndex(name, null, record, Integer.MIN_VALUE);
             }
             Record removedRecord = mapRecords.remove(record.getKey());
             if (removedRecord != record) {
