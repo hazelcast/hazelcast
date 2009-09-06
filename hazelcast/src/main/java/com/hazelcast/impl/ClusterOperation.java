@@ -61,6 +61,7 @@ public enum ClusterOperation {
     CONCURRENT_MAP_UNLOCK(214),
     CONCURRENT_MAP_BLOCKS(215),
     CONCURRENT_MAP_MIGRATION_COMPLETE(216),
+    CONCURRENT_MAP_CONTAINS_VALUE(217),
     CONCURRENT_MAP_PUT_IF_ABSENT(219),
     CONCURRENT_MAP_REMOVE_IF_SAME(220),
     CONCURRENT_MAP_REPLACE_IF_NOT_NULL(221),
@@ -178,6 +179,8 @@ public enum ClusterOperation {
                 return CONCURRENT_MAP_BLOCKS;
             case 216:
                 return CONCURRENT_MAP_MIGRATION_COMPLETE;
+            case 217:
+                return CONCURRENT_MAP_CONTAINS_VALUE;
             case 219:
                 return CONCURRENT_MAP_PUT_IF_ABSENT;
             case 220:

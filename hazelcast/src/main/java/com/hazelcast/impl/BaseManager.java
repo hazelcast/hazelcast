@@ -380,19 +380,9 @@ public abstract class BaseManager {
     }
 
     abstract class MigrationAwareOperationHandler extends AbstractOperationHandler {
-
         @Override
         public void process(Packet packet) {
-            if (isMigrating()) {
-                packet.responseType = RESPONSE_REDO;
-                sendResponse(packet);
-            } else {
-                Request remoteReq = new Request();
-                remoteReq.setFromPacket(packet);
-                remoteReq.local = false;
-                handle(remoteReq);
-                packet.returnToContainer();
-            }
+            super.processMigrationAware(packet);
         }
     }
 
@@ -418,6 +408,26 @@ public abstract class BaseManager {
     }
 
     abstract class ResponsiveOperationHandler implements PacketProcessor, RequestHandler {
+
+        public void processSimple(Packet packet) {
+            Request request = new Request();
+            request.setFromPacket(packet);
+            request.local = false;
+            handle(request);
+        }
+
+        public void processMigrationAware(Packet packet) {
+            if (isMigrating()) {
+                packet.responseType = RESPONSE_REDO;
+                sendResponse(packet);
+            } else {
+                Request remoteReq = new Request();
+                remoteReq.setFromPacket(packet);
+                remoteReq.local = false;
+                handle(remoteReq);
+                packet.returnToContainer();
+            }
+        }
 
         public void returnResponse(Request request) {
             if (request.local) {
@@ -464,12 +474,7 @@ public abstract class BaseManager {
     abstract class AbstractOperationHandler extends ResponsiveOperationHandler {
 
         public void process(Packet packet) {
-            Request request = new Request();
-            request.setFromPacket(packet);
-            request.local = false;
-            handle(request);
-            packet.returnToContainer();
-            request.reset();
+            processSimple(packet);
         }
 
         abstract void doOperation(Request request);

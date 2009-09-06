@@ -135,7 +135,9 @@ public class Predicates {
             if (secondIsExpression) {
                 return first.getValue(entry).equals(((Expression) second).getValue(entry));
             } else {
-                return first.getValue(entry).equals(second);
+                Object firstVal = first.getValue(entry);
+                if (firstVal == null) return (second == null);
+                else return firstVal.equals(second);
             }
         }
 
@@ -406,6 +408,7 @@ public class Predicates {
             if (obj instanceof MapEntry) {
                 obj = ((MapEntry) obj).getValue();
             }
+            if (obj == null) return null;
             try {
                 if (input instanceof Method) {
                     return ((Method) input).invoke(obj);

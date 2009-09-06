@@ -18,14 +18,15 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
-import static com.hazelcast.impl.ConcurrentMapManager.Record;
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Data;
 
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
@@ -49,7 +50,7 @@ public class QueryService implements Runnable {
             try {
                 run = queryQ.take();
                 run.run();
-            } catch (InterruptedException e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
         }
@@ -57,12 +58,18 @@ public class QueryService implements Runnable {
 
     class IndexRegion {
         final String name;
-        final Set<Record> ownedRecords = new HashSet<Record>(1000);
+        final Set<Record> ownedRecords = new HashSet<Record>(10000);
         final Map<Integer, Set<Record>> mapValueIndex = new HashMap(1000);
-
+        private Map<Expression, Index<MapEntry>> mapIndexes = null;
+        private Index<MapEntry>[] indexes = null;
 
         IndexRegion(String name) {
             this.name = name;
+        }
+
+        void reset() {
+            ownedRecords.clear();
+            mapValueIndex.clear();
         }
 
         void addNewValueIndex(int newValueHash, Record record) {
@@ -115,10 +122,13 @@ public class QueryService implements Runnable {
             return false;
         }
 
-        public void doUpdateIndex(final Index[] indexes, final long[] newValues, final Record record, final int valueHash) {
+        public void doUpdateIndex(final long[] newValues, final Record record, final int valueHash) {
             if (record.isActive()) {
                 updateValueIndex(valueHash, record);
-                ownedRecords.add(record);
+                boolean added = ownedRecords.add(record);
+                if (added && ownedRecords.size() % 1000 == 900) {
+                System.out.println ("size is " + ownedRecords.size());
+                }
             } else {
                 removeValueIndex(record);
                 ownedRecords.remove(record);
@@ -142,7 +152,7 @@ public class QueryService implements Runnable {
             }
         }
 
-        public Set<MapEntry> doQuery(AtomicBoolean strongRef, Map<Expression, Index<MapEntry>> mapIndexes, Predicate predicate) {
+        public Set<MapEntry> doQuery(AtomicBoolean strongRef, Predicate predicate) {
             boolean strong = false;
             Set<MapEntry> results = null;
             try {
@@ -161,10 +171,20 @@ public class QueryService implements Runnable {
                             }
                         }
                     }
-                    System.out.println("indexare " + lsIndexAwarePredicates);
                     if (lsIndexAwarePredicates.size() == 1) {
                         IndexAwarePredicate indexAwarePredicate = lsIndexAwarePredicates.get(0);
-                        return indexAwarePredicate.filter(mapIndexes);
+                        Set<MapEntry> sub = indexAwarePredicate.filter(mapIndexes);
+                        if (sub == null || sub.size() == 0) {
+                            return null;
+                        } else {
+                            results = new HashSet<MapEntry>(sub.size());
+                            for (MapEntry entry : sub) {
+                                Record record = (Record) entry;
+                                if (record.isActive()) {
+                                    results.add(record);
+                                }
+                            }
+                        }
                     } else if (lsIndexAwarePredicates.size() > 0) {
                         Set<MapEntry> smallestSet = null;
                         List<Set<MapEntry>> lsSubResults = new ArrayList<Set<MapEntry>>(lsIndexAwarePredicates.size());
@@ -183,9 +203,13 @@ public class QueryService implements Runnable {
                                 lsSubResults.add(sub);
                             }
                         }
-                        System.out.println("smallest set size " + smallestSet.size());
-                        results = new HashSet<MapEntry>();
-                        results.addAll(smallestSet);
+                        results = new HashSet<MapEntry>(smallestSet.size());
+                        for (MapEntry entry : smallestSet) {
+                            Record record = (Record) entry;
+                            if (record.isActive()) {
+                                results.add(record);
+                            }
+                        }
                         Iterator<MapEntry> it = results.iterator();
                         smallestLoop:
                         while (it.hasNext()) {
@@ -198,14 +222,22 @@ public class QueryService implements Runnable {
                             }
                         }
                     } else {
-                        System.out.println("adding all " + ownedRecords.size());
-                        results = new HashSet<MapEntry>();
-                        results.addAll(ownedRecords);
-                        System.out.println("result cont " + results.size());
+                        results = new HashSet<MapEntry>(ownedRecords.size());
+                        for (MapEntry entry : ownedRecords) {
+                            Record record = (Record) entry;
+                            if (record.isActive()) {
+                                results.add(record);
+                            }
+                        }
                     }
                 } else {
-                    results = new HashSet<MapEntry>();
-                    results.addAll(ownedRecords);
+                    results = new HashSet<MapEntry>(ownedRecords.size());
+                    for (MapEntry entry : ownedRecords) {
+                        Record record = (Record) entry;
+                        if (record.isActive()) {
+                            results.add(record);
+                        }
+                    }
                 }
             } finally {
                 strongRef.set(strong);
@@ -226,13 +258,28 @@ public class QueryService implements Runnable {
         }
     }
 
-    public Set<MapEntry> query(final String name, final AtomicBoolean strongRef, final Map<Expression, Index<MapEntry>> mapIndexes, final Predicate predicate) {
+    public boolean containsValue(final String name, final Data value) {
+        try {
+            final BlockingQueue<Boolean> resultQ = new ArrayBlockingQueue<Boolean>(1);
+            queryQ.put(new Runnable() {
+                public void run() {
+                    IndexRegion indexRegion = getIndexRegion(name);
+                    resultQ.offer(indexRegion.searchValueIndex(value));
+                }
+            });
+            return resultQ.take();
+        } catch (InterruptedException ignore) {
+        }
+        return false;
+    }
+
+    public Set<MapEntry> query(final String name, final AtomicBoolean strongRef, final Predicate predicate) {
         try {
             final BlockingQueue<Set<MapEntry>> resultQ = new ArrayBlockingQueue<Set<MapEntry>>(1);
             queryQ.put(new Runnable() {
                 public void run() {
                     IndexRegion indexRegion = getIndexRegion(name);
-                    Set<MapEntry> results = indexRegion.doQuery(strongRef, mapIndexes, predicate);
+                    Set<MapEntry> results = indexRegion.doQuery(strongRef, predicate);
                     if (results == null) {
                         results = new HashSet(0);
                     }
@@ -245,12 +292,37 @@ public class QueryService implements Runnable {
         return null;
     }
 
-    public void updateIndex(final String name, final Index[] indexes, final long[] newValues, final Record record, final int valueHash) {
+    public void updateIndex(final String name, final long[] newValues, final Record record, final int valueHash) {
         try {
             queryQ.put(new Runnable() {
                 public void run() {
                     IndexRegion indexRegion = getIndexRegion(name);
-                    indexRegion.doUpdateIndex(indexes, newValues, record, valueHash);
+                    indexRegion.doUpdateIndex(newValues, record, valueHash);
+                }
+            });
+        } catch (InterruptedException ignore) {
+        }
+    }
+
+    public void setIndexes(final String name, final Index[] indexes, final Map<Expression, Index<MapEntry>> mapIndexes) {
+        try {
+            queryQ.put(new Runnable() {
+                public void run() {
+                    IndexRegion indexRegion = getIndexRegion(name);
+                    indexRegion.indexes = indexes;
+                    indexRegion.mapIndexes = mapIndexes;
+                }
+            });
+        } catch (InterruptedException ignore) {
+        }
+    }
+
+    public void reset(final String name) {
+        try {
+            queryQ.put(new Runnable() {
+                public void run() {
+                    IndexRegion indexRegion = getIndexRegion(name);
+                    indexRegion.reset();
                 }
             });
         } catch (InterruptedException ignore) {
