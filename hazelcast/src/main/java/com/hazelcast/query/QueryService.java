@@ -34,12 +34,14 @@ import java.util.logging.Logger;
 public class QueryService implements Runnable {
 
     private final Logger logger = Logger.getLogger(QueryService.class.getName());
-    final Node node;
+
     private volatile boolean running = true;
 
-    final BlockingQueue<Runnable> queryQ = new LinkedBlockingQueue<Runnable>();
+    private final Node node;
 
-    final Map<String, IndexRegion> regions = new HashMap<String, IndexRegion>(10);
+    private final BlockingQueue<Runnable> queryQ = new LinkedBlockingQueue<Runnable>();
+
+    private final Map<String, IndexRegion> regions = new HashMap<String, IndexRegion>(10);
 
     public QueryService(Node node) {
         this.node = node;
@@ -55,6 +57,15 @@ public class QueryService implements Runnable {
                 e.printStackTrace();
             }
         }
+    }
+
+    public void stop() {
+        running = false;
+        queryQ.offer(new Runnable() {
+            public void run() {
+                running = false;
+            }
+        });
     }
 
     class IndexRegion {
@@ -140,7 +151,7 @@ public class QueryService implements Runnable {
         public void doUpdateIndex(final long[] newValues, final Record record, final int valueHash) {
             if (record.isActive()) {
                 updateValueIndex(valueHash, record);
-                ownedRecords.add(record); 
+                ownedRecords.add(record);
             } else {
                 removeValueIndex(record);
                 ownedRecords.remove(record);

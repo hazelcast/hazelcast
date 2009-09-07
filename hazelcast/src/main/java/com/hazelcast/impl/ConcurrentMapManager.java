@@ -2247,48 +2247,6 @@ public final class ConcurrentMapManager extends BaseManager {
             return false;
         }
 
-        public void getEntries(Request request) {
-            Collection<Record> colRecords = mapRecords.values();
-            Pairs pairs = new Pairs();
-            long now = System.currentTimeMillis();
-            for (Record record : colRecords) {
-                if (record.isValid(now)) {
-                    if (record.getKey() == null || record.getKey().size() == 0) {
-                        throw new RuntimeException("Key cannot be null or zero-size: " + record.getKey());
-                    }
-                    Block block = blocks[record.getBlockId()];
-                    if (thisAddress.equals(block.getOwner())) {
-                        if (record.getValue() != null || request.operation == CONCURRENT_MAP_ITERATE_KEYS_ALL) {
-                            pairs.addKeyValue(new KeyValue(record.getKey(), null));
-                        } else if (record.getCopyCount() > 0) {
-                            for (int i = 0; i < record.getCopyCount(); i++) {
-                                pairs.addKeyValue(new KeyValue(record.getKey(), null));
-                            }
-                        } else if (record.getMultiValues() != null) {
-                            int size = record.getMultiValues().size();
-                            if (size > 0) {
-                                if (request.operation == CONCURRENT_MAP_ITERATE_KEYS) {
-                                    pairs.addKeyValue(new KeyValue(record.getKey(), null));
-                                } else {
-                                    for (int i = 0; i < size; i++) {
-                                        Data value = record.getMultiValues().get(i);
-                                        pairs.addKeyValue(new KeyValue(record.getKey(), value));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    if (!record.isEvictable()) {
-                        scheduleForEviction(record);
-                    }
-                }
-            }
-            Data dataEntries = toData(pairs);
-            request.longValue = pairs.size();
-            request.response = dataEntries;
-        }
-
         public CMapEntry getMapEntry(Request req) {
             Record record = getRecord(req.key);
             if (record == null)
@@ -2343,7 +2301,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     return false;
                 }
             }
-            node.queryService.updateIndex(name, null, record, Integer.MIN_VALUE);                            
+            node.queryService.updateIndex(name, null, record, Integer.MIN_VALUE);
             record.setVersion(record.getVersion() + 1);
             record.incrementCopyCount();
             fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, record);
@@ -2393,7 +2351,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
             }
             if (added) {
-                node.queryService.updateIndex(name, null, record, Integer.MIN_VALUE);                
+                node.queryService.updateIndex(name, null, record, Integer.MIN_VALUE);
                 record.addValue(req.value);
                 req.value = null;
                 record.setVersion(record.getVersion() + 1);
@@ -2992,10 +2950,14 @@ public final class ConcurrentMapManager extends BaseManager {
         final String name;
         final List<Map.Entry> lsKeyValues = new ArrayList<Map.Entry>();
         final ClusterOperation operation;
+        final boolean checkValue;
 
         public Entries(String name, ClusterOperation operation) {
             this.name = name;
             this.operation = operation;
+            this.checkValue = (InstanceType.MAP == getInstanceType(name)) &&
+                    (operation == CONCURRENT_MAP_ITERATE_VALUES
+                            || operation == CONCURRENT_MAP_ITERATE_ENTRIES);
             TransactionImpl txn = ThreadContext.get().txn;
             if (txn != null) {
                 List<Map.Entry> entriesUnderTxn = txn.newEntries(name);
@@ -3042,6 +3004,7 @@ public final class ConcurrentMapManager extends BaseManager {
         class EntryIterator implements Iterator {
             final Iterator<Map.Entry> it;
             Map.Entry entry = null;
+            boolean calledHasNext = false;
 
             public EntryIterator(Iterator<Map.Entry> it) {
                 super();
@@ -3049,11 +3012,22 @@ public final class ConcurrentMapManager extends BaseManager {
             }
 
             public boolean hasNext() {
-                return it.hasNext();
+                calledHasNext = true;
+                if (!it.hasNext()) {
+                    return false;
+                }
+                entry = it.next();
+                if (checkValue && entry.getValue() == null) {
+                    return hasNext();
+                }
+                return true;
             }
 
             public Object next() {
-                entry = it.next();
+                if (!calledHasNext) {
+                    hasNext();
+                }
+                calledHasNext = false;
                 if (operation == CONCURRENT_MAP_ITERATE_KEYS
                         || operation == CONCURRENT_MAP_ITERATE_KEYS_ALL) {
                     return entry.getKey();

@@ -36,6 +36,7 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -137,9 +138,7 @@ public class Node {
 
         final Map<Long, StreamResponseHandler> mapStreams = new ConcurrentHashMap<Long, StreamResponseHandler>();
 
-        long scheduledActionIdIndex = 0;
-
-        long callIdGen = 0;
+        final AtomicLong localIdGen = new AtomicLong(0);
 
         final Address thisAddress;
 
@@ -334,6 +333,7 @@ public class Node {
                 active = false;
                 concurrentMapManager.reset();
                 clusterService.stop();
+                queryService.stop();
                 multicastService.stop();
                 connectionManager.shutdown();
                 executorManager.stop();

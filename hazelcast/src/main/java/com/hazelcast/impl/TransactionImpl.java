@@ -127,7 +127,7 @@ class TransactionImpl implements Transaction {
 
     private int status = TXN_STATUS_NO_TXN;
 
-    public TransactionImpl(FactoryImpl factory, final long txnId) {
+    public TransactionImpl(FactoryImpl factory, long txnId) {
         this.id = txnId;
         this.factory = factory;
     }

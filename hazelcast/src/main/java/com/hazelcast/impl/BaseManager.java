@@ -35,6 +35,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -56,9 +57,7 @@ public abstract class BaseManager {
 
     protected final Map<Long, StreamResponseHandler> mapStreams;
 
-    private static long scheduledActionIdIndex = 0;
-
-    private static long callIdGen = 0;
+    protected final AtomicLong localIdGen;
 
     protected final Address thisAddress;
 
@@ -75,6 +74,7 @@ public abstract class BaseManager {
         mapStreams = node.baseVariables.mapStreams;
         thisAddress = node.baseVariables.thisAddress;
         thisMember = node.baseVariables.thisMember;
+        this.localIdGen = node.baseVariables.localIdGen;
     }
 
     public LinkedList<MemberImpl> getMembers() {
@@ -99,7 +99,7 @@ public abstract class BaseManager {
         public ScheduledAction(final Request request) {
             this.request = request;
             setTimeout(request.timeout);
-            id = scheduledActionIdIndex++;
+            id = localIdGen.incrementAndGet();
         }
 
         public abstract boolean consume();
@@ -956,7 +956,7 @@ public abstract class BaseManager {
     }
 
     public long addCall(final Call call) {
-        final long id = callIdGen++;
+        final long id = localIdGen.incrementAndGet();
         call.setId(id);
         mapCalls.put(id, call);
         return id;

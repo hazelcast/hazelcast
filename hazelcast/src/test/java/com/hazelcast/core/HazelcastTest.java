@@ -126,6 +126,17 @@ public class HazelcastTest {
     }
 
     @Test
+    public void testMapEntrySetWhenRemoved() {
+        IMap<String, String> map = Hazelcast.getMap("testMapEntrySetWhenRemoved");
+        map.put("Hello", "World");
+        Set<IMap.Entry<String, String>> set = map.entrySet();
+        map.remove ("Hello");
+        for (IMap.Entry<String, String> e : set) {
+            fail("Iterator should not contain removed entry");
+        }
+    }
+
+    @Test
     public void testMapEntryListener() {
         IMap<String, String> map = Hazelcast.getMap("testMapEntrySet");
         map.addEntryListener(new EntryListener() {
