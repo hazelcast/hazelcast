@@ -572,15 +572,19 @@ public abstract class BaseManager {
                 }
                 if (result instanceof Data) {
                     final Data data = (Data) result;
-                    if (data.size() == 0)
-                        return null;
-                    return toObject(data);
+                    if (ThreadContext.get().isClient()) {
+                        return data;
+                    } else {
+                        if (data.size() == 0)
+                            return null;
+                        return toObject(data);
+                    }
                 }
                 return result;
             } finally {
                 afterGettingResult(request);
             }
-        }
+        } 
 
         protected void afterGettingResult(Request request) {
             request.reset();

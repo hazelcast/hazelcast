@@ -197,6 +197,15 @@ public class Predicates {
         public Object getSecond() {
             return second;
         }
+
+        @Override
+        public String toString() {
+            final StringBuffer sb = new StringBuffer();
+            sb.append(first);
+            sb.append(" = ");
+            sb.append(second);
+            return sb.toString();
+        }
     }
 
     public static abstract class AbstractPredicate extends SerializationHelper implements Predicate, DataSerializable {
@@ -286,6 +295,22 @@ public class Predicates {
                 predicates[i] = (Predicate) readObject(in);
             }
         }
+
+        @Override
+        public String toString() {
+            final StringBuffer sb = new StringBuffer();
+            sb.append("(");
+            String andOr = (and) ? " AND " : " OR ";
+            int size = predicates.length;
+            for (int i = 0; i < size; i++) {
+                sb.append(predicates[i]);
+                if (i < size - 1) {
+                    sb.append(andOr);
+                }
+            }
+            sb.append(")");
+            return sb.toString();
+        }
     }
 
     public static Predicate instanceOf(final Class klass) {
@@ -359,6 +384,12 @@ public class Predicates {
 
     public static abstract class AbstractExpression extends SerializationHelper implements Expression {
 
+    }
+
+    interface GetExpression<T> extends Expression {
+        GetExpression get(String methodName);
+
+        GetExpression get(Method method);
     }
 
     public static class GetExpressionImpl<T> extends AbstractExpression implements GetExpression, DataSerializable {
@@ -447,6 +478,13 @@ public class Predicates {
         @Override
         public int hashCode() {
             return input.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            final StringBuffer sb = new StringBuffer();
+            sb.append("get('" + input + "')");
+            return sb.toString();
         }
     }
 

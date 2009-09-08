@@ -850,7 +850,7 @@ public final class ConcurrentMapManager extends BaseManager {
                         Object oldObject = null;
                         Data oldValue = mlock.oldValue;
                         if (oldValue != null) {
-                            oldObject = threadContext.toObject(oldValue);
+                            oldObject = toObject(oldValue);
                         }
                         txn.attachPutOp(name, key, value, (oldObject == null));
                         return oldObject;

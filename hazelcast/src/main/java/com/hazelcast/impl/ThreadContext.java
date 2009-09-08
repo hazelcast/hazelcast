@@ -183,6 +183,15 @@ public final class ThreadContext {
         return callCache;
     }
 
+    /**
+     * Is this thread remote Java or CSharp Client thread?
+     *
+     * @return true if the thread is for Java or CSharp Client, false otherwise
+     */
+    public boolean isClient() {
+        return false;
+    }
+
     class CallCache {
         final FactoryImpl factory;
         final ConcurrentMapManager.MPut mput;
