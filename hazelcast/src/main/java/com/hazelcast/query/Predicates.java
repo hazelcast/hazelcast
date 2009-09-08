@@ -31,9 +31,6 @@ import java.util.Map;
 import java.util.Set;
 
 public class Predicates {
-    public static Predicate eq(final Expression first, final Expression second) {
-        return new EqualPredicate(first, second);
-    }
 
     public static class GreaterLessPredicate extends EqualPredicate {
         boolean equal = false;
@@ -314,7 +311,7 @@ public class Predicates {
         return new EqualPredicate(x, y);
     }
 
-    public static <T extends Comparable<T>> Predicate gt(Expression<? extends T> x, T y) {
+    public static <T extends Comparable<T>> Predicate greaterThan(Expression<? extends T> x, T y) {
         return new GreaterLessPredicate(x, y, false, false);
     }
 
@@ -322,7 +319,7 @@ public class Predicates {
         return new GreaterLessPredicate(x, y, true, false);
     }
 
-    public static <T extends Comparable<T>> Predicate lt(Expression<? extends T> x, T y) {
+    public static <T extends Comparable<T>> Predicate lessThan(Expression<? extends T> x, T y) {
         return new GreaterLessPredicate(x, y, false, true);
     }
 
@@ -365,7 +362,7 @@ public class Predicates {
     }
 
     public static class GetExpressionImpl<T> extends AbstractExpression implements GetExpression, DataSerializable {
-
+        volatile Method method;
         Object input;
         List<GetExpressionImpl<T>> ls = null;
 
@@ -374,6 +371,9 @@ public class Predicates {
 
         public GetExpressionImpl(Object input) {
             this.input = input;
+            if (input instanceof Method) {
+                method = (Method) input;
+            }
         }
 
         public GetExpression get(String methodName) {
@@ -394,28 +394,30 @@ public class Predicates {
 
         public Object getValue(Object obj) {
             if (ls != null) {
-                Object result = doGetValue(input, obj);
+                Object result = doGetValue(obj);
                 for (GetExpressionImpl<T> e : ls) {
-                    result = e.doGetValue(e.input, result);
+                    result = e.doGetValue(result);
                 }
                 return result;
             } else {
-                return doGetValue(input, obj);
+                return doGetValue(obj);
             }
         }
 
-        private static Object doGetValue(Object input, Object obj) {
+        private Object doGetValue(Object obj) {
             if (obj instanceof MapEntry) {
                 obj = ((MapEntry) obj).getValue();
             }
             if (obj == null) return null;
             try {
-                if (input instanceof Method) {
-                    return ((Method) input).invoke(obj);
-                } else {
-                    Method m = obj.getClass().getMethod((String) input, null);
-                    return m.invoke(obj);
+                if (method == null) {
+                    if (input instanceof Method) {
+                        this.method = (Method) input;
+                    } else {
+                        this.method = obj.getClass().getMethod((String) input, null);
+                    }
                 }
+                return method.invoke(obj);
             } catch (Throwable e) {
                 e.printStackTrace();
                 throw new RuntimeException(e);
