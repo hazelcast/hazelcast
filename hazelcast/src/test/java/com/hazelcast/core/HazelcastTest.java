@@ -541,13 +541,13 @@ public class HazelcastTest {
 
     @Test
     public void testMapInstanceDestroy() {
-        IMap<String, String> map = Hazelcast.getMap("testMap");
+        IMap<String, String> map = Hazelcast.getMap("testMapDestroy");
         Collection<Instance> instances = Hazelcast.getInstances();
         boolean found = false;
         for (Instance instance : instances) {
             if (instance.getInstanceType() == Instance.InstanceType.MAP) {
                 IMap imap = (IMap) instance;
-                if (imap.getName().equals("testMap")) {
+                if (imap.getName().equals("testMapDestroy")) {
                     found = true;
                 }
             }
@@ -559,7 +559,7 @@ public class HazelcastTest {
         for (Instance instance : instances) {
             if (instance.getInstanceType() == Instance.InstanceType.MAP) {
                 IMap imap = (IMap) instance;
-                if (imap.getName().equals("testMap")) {
+                if (imap.getName().equals("testMapDestroy")) {
                     found = true;
                 }
             }

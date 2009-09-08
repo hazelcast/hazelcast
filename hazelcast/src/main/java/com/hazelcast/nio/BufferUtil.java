@@ -99,6 +99,7 @@ public final class BufferUtil {
 
     public static void doSet(Data from, Data to) {
         to.setNoData();
+        if (from == null) return;
         moveContent(from, to);
         to.hash = from.hash;
         from.setNoData();

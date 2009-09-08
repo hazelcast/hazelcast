@@ -1585,11 +1585,9 @@ public class FactoryImpl implements HazelcastInstance {
 
         private ListenerManager listenerManager = null;
 
-        private final transient MProxy dynamicProxy;
+        private volatile transient MProxy dynamicProxy;
 
-        public MProxyImpl() {
-            ClassLoader cl = Thread.currentThread().getContextClassLoader();
-            dynamicProxy = (MProxy) Proxy.newProxyInstance(cl, new Class[]{MProxy.class}, new Invoker());
+        public MProxyImpl() { 
         }
 
         class Invoker implements InvocationHandler {
@@ -1614,7 +1612,6 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         private MProxyImpl(String name, FactoryImpl factory) {
-            this();
             setName(name);
             setFactory(factory);
             mproxyReal = new MProxyReal();
@@ -1625,6 +1622,8 @@ public class FactoryImpl implements HazelcastInstance {
             super.setFactory(factory);
             this.concurrentMapManager = factory.node.concurrentMapManager;
             this.listenerManager = factory.node.listenerManager;
+            ClassLoader cl = getFactory().node.config.getClassLoader();
+            dynamicProxy = (MProxy) Proxy.newProxyInstance(cl, new Class[]{MProxy.class}, new Invoker());
         }
 
         private void beforeCall() {
