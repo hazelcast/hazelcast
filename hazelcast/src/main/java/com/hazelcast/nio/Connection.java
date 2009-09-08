@@ -18,7 +18,6 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.cluster.AddOrRemoveConnection;
-import com.hazelcast.cluster.ClusterService;
 
 import java.nio.channels.SocketChannel;
 

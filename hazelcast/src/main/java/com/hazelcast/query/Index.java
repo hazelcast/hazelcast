@@ -135,9 +135,8 @@ public class Index<T> {
 
         Index index = (Index) o;
 
-        if (!expression.equals(index.expression)) return false;
+        return expression.equals(index.expression);
 
-        return true;
     }
 
     @Override

@@ -20,9 +20,6 @@ package com.hazelcast.nio;
 import com.hazelcast.impl.ThreadContext;
 
 import java.nio.ByteBuffer;
-import java.io.DataOutput;
-import java.io.DataInput;
-import java.io.IOException;
 
 public final class BufferUtil {
 
@@ -135,7 +132,7 @@ public final class BufferUtil {
         return new Data();
     }
 
-    public static final String exceptionToString(final Throwable e, Address address) {
+    public static String exceptionToString(final Throwable e, Address address) {
         StringBuilder sb = new StringBuilder(e.getMessage() +" at " + address + "\n");
         final StackTraceElement[] stEls = e.getStackTrace();
         for (final StackTraceElement stackTraceElement : stEls) {

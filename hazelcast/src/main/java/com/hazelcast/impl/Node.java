@@ -174,7 +174,7 @@ public class Node {
             }
         } catch (Exception ignored) {
         }
-        ServerSocketChannel serverSocketChannel = null;
+        ServerSocketChannel serverSocketChannel;
         try {
             final String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
             final String preferIPv6Address = System.getProperty("java.net.preferIPv6Addresses");

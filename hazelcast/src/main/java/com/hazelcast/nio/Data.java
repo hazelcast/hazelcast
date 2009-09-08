@@ -209,7 +209,7 @@ public final class Data implements DataSerializable {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null)
+        if ((obj == null) || !(obj instanceof Data))
             return false;
         if (this == obj)
             return true;
