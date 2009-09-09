@@ -44,13 +44,19 @@ public class SortedHashMapTest {
     @Test
     public void testTouch() {
         map.put("hello","world");
+        long updateTime = System.currentTimeMillis();
         SortedHashMap.touch(map,"hello", SortedHashMap.OrderingType.LFU);
+        assertEquals(updateTime,map.getEntry("hello").lastAccess);
     }
 
     @Test
     public void testMoveToTop() {
-        map.put("hello","world");
-        SortedHashMap.moveToTop(map,"hello");
+        for(int i=0;i<10;++i){
+            map.put("hello"+i,"world");
+        }
+        SortedHashMap.moveToTop(map,"hello9");
+        Set<String> keys = map.keySet();
+        assertEquals("hello9",keys.iterator().next());
     }
 
     @Test
