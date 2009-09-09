@@ -559,34 +559,4 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
             SortedHashMap.this.clear();
         }
     }
-
-    public static void main(String[] args) {
-        SortedHashMap m = new SortedHashMap(100, SortedHashMap.OrderingType.HASH);
-        List l = new ArrayList();
-        l.add(100);
-        l.add(101);
-        for (int i = 0; i < 10; i++) {
-            l.add(i);
-        }
-        l.add(102);
-        l.add(103);
-
-        for (Object o : l) {
-            System.out.println("adding " + o);
-            m.put(o, o);
-            SortedHashMap.touch(m, o, SortedHashMap.OrderingType.HASH);            
-        }
-
-//        for (Object o : l) {
-//            SortedHashMap.touch(m, o, SortedHashMap.OrderingType.HASH);
-//
-//        }
-
-        Object[] values = m.values().toArray();
-
-        for (Object o : values) {
-            System.out.println("vv " + o);
-        }
-    }
-
 }
