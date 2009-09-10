@@ -24,6 +24,7 @@ import com.hazelcast.nio.SerializationHelper;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,16 +55,29 @@ public class Predicates {
         public boolean apply(MapEntry entry) {
             int expectedResult = (less) ? -1 : 1;
             Expression<Comparable> cFirst = (Expression<Comparable>) first;
+            int result;
             if (secondIsExpression) {
-                return cFirst.getValue(entry).compareTo(((Expression) second).getValue(entry)) == expectedResult;
+                result = cFirst.getValue(entry).compareTo(((Expression) second).getValue(entry));
             } else {
-                return cFirst.getValue(entry).compareTo(second) == expectedResult;
+                result = cFirst.getValue(entry).compareTo(second);
             }
+            if (equal && result ==0) return true;
+            return (expectedResult == result);
         }
 
         public Set<MapEntry> filter(Map<Expression, Index<MapEntry>> namedIndexes) {
             Index index = namedIndexes.get(first);
             return index.getSubRecords(equal, less, getLongValue(second));
+        }
+
+        @Override
+        public String toString() {
+            final StringBuffer sb = new StringBuffer();
+            sb.append(first);
+            sb.append(less ? "<" : ">");
+            sb.append(equal ? "=" : "");
+            sb.append(second);
+            return sb.toString();
         }
     }
 
@@ -373,10 +387,6 @@ public class Predicates {
         };
     }
 
-    public static GetExpression get(final Method method) {
-        return new GetExpressionImpl(method);
-    }
-
     public static GetExpression get(final String methodName) {
         return new GetExpressionImpl(methodName);
     }
@@ -387,24 +397,19 @@ public class Predicates {
     }
 
     interface GetExpression<T> extends Expression {
-        GetExpression get(String methodName);
-
-        GetExpression get(Method method);
+        GetExpression get(String fieldName);
     }
 
     public static class GetExpressionImpl<T> extends AbstractExpression implements GetExpression, DataSerializable {
-        volatile Method method;
-        Object input;
+        Getter getter = null;
+        String input;
         List<GetExpressionImpl<T>> ls = null;
 
         public GetExpressionImpl() {
         }
 
-        public GetExpressionImpl(Object input) {
+        public GetExpressionImpl(String input) {
             this.input = input;
-            if (input instanceof Method) {
-                method = (Method) input;
-            }
         }
 
         public GetExpression get(String methodName) {
@@ -412,14 +417,6 @@ public class Predicates {
                 ls = new ArrayList();
             }
             ls.add(new GetExpressionImpl(methodName));
-            return this;
-        }
-
-        public GetExpression get(Method method) {
-            if (ls == null) {
-                ls = new ArrayList();
-            }
-            ls.add(new GetExpressionImpl(method));
             return this;
         }
 
@@ -441,26 +438,72 @@ public class Predicates {
             }
             if (obj == null) return null;
             try {
-                if (method == null) {
-                    if (input instanceof Method) {
-                        this.method = (Method) input;
-                    } else {
-                        this.method = obj.getClass().getMethod((String) input, null);
+                if (getter == null) {
+                    List<String> possibleMethodNames = new ArrayList<String>(3);
+                    possibleMethodNames.add(input);
+                    possibleMethodNames.add("get" + input.substring(0, 1).toUpperCase() + input.substring(1));
+                    possibleMethodNames.add("is" + input.substring(0, 1).toUpperCase() + input.substring(1));
+                    getter:
+                    for (String methodName : possibleMethodNames) {
+                        try {
+                            getter = new MethodGetter(obj.getClass().getMethod(methodName, null));
+                            break getter;
+                        } catch (NoSuchMethodException ignored) {
+                        }
+                    }
+                    if (getter == null) {
+                        try {
+                            getter = new FieldGetter(obj.getClass().getField(input));
+                        } catch (NoSuchFieldException ignored) {
+                        }
+                    }
+
+                    if (getter == null) {
+                        throw new RuntimeException("There is no method of field matching " + input);
                     }
                 }
-                return method.invoke(obj);
+                return getter.getValue(obj);
             } catch (Throwable e) {
                 e.printStackTrace();
                 throw new RuntimeException(e);
             }
         }
 
+        abstract class Getter {
+            abstract Object getValue(Object obj) throws Exception;
+        }
+
+        class MethodGetter extends Getter {
+            Method method;
+
+            MethodGetter(Method method) {
+                this.method = method;
+            }
+
+            Object getValue(Object obj) throws Exception {
+                return method.invoke(obj);
+            }
+        }
+
+        class FieldGetter extends Getter {
+            Field field;
+
+            FieldGetter(Field field) {
+                this.field = field;
+            }
+
+            Object getValue(Object obj) throws Exception {
+                return field.get(obj);
+            }
+        }
+
+
         public void writeData(DataOutput out) throws IOException {
-            writeObject(out, input);
+            out.writeUTF(input);
         }
 
         public void readData(DataInput in) throws IOException {
-            input = readObject(in);
+            input = in.readUTF();
         }
 
         @Override
