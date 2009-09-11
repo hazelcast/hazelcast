@@ -127,7 +127,7 @@ public class ManagementService {
 		MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 		Set<ObjectName> entries;
 		try {
-			entries = mbs.queryNames(new ObjectName(MBeanBuilder.NAME_DOMAIN + "*"), null);
+			entries = mbs.queryNames(new ObjectName(ObjectNameSpec.NAME_DOMAIN + "*"), null);
 			for (ObjectName name : entries) {
 				// Double check, in case the entry has been removed in the meantime
 				if (mbs.isRegistered(name)) {

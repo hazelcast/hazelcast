@@ -55,28 +55,13 @@ public class ClusterMBean extends AbstractMBean<HazelcastInstance> {
 	private final Config config;
 	private final Cluster cluster;
 	
-	private MBeanBuilder mbeanBuilder = null;
-	
 	public ClusterMBean(HazelcastInstance instance, Config config) {
 		super(instance);
 		this.config = config;
 		this.cluster = instance.getCluster();
-		mbeanBuilder = new MBeanBuilder();
-		mbeanBuilder.setClusterName(instance.getName());
 		clusterObjectNames = new ObjectNameSpec(getManagedObject().getName());
 	}
 
-//	public ObjectName getObjectName() throws Exception {
-//		// A JVM can host only one cluster, so names are can be hardcoded.
-//		// Multiple clusters for JVM (see Hazelcast issue 78) need a
-//		// different naming schema
-//		if (name == null) {
-//			name = new ObjectNameSpec().buildObjectName("Cluster", getManagedObject().getName());
-//			
-//		}
-//		return name;
-//	}
-	
 	@Override
 	public ObjectNameSpec getNameSpec() {
 		return new ObjectNameSpec("Cluster", getManagedObject().getName());
