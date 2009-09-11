@@ -165,16 +165,32 @@ public final class Serializer {
     }
 
     static class StringSerializer implements TypeSerializer<String> {
-        public byte getTypeId() {
+        private static final int STRING_CHUNK_SIZE = 16*1024;
+
+		public byte getTypeId() {
             return SERIALIZER_TYPE_STRING;
         }
 
         public String read(BuffersInputStream bbis) throws Exception {
-            return bbis.readUTF();
+        	StringBuilder result = new StringBuilder();
+			while(bbis.available()>0){
+				result.append(bbis.readShortUTF());
+			}
+			
+			return result.toString();
+//        	return bbis.readUTF();
         }
 
         public void write(BuffersOutputStream bbos, String obj) throws Exception {
-            bbos.writeUTF(obj);
+        	String string = (String) obj;
+        	int length = string.length();
+			int chunkSize = length/STRING_CHUNK_SIZE+1;
+			for(int i=0;i<chunkSize;i++){
+				int beginIndex = Math.max(0,i*STRING_CHUNK_SIZE-1);
+				int endIndex = Math.min((i+1)*STRING_CHUNK_SIZE-1, length);
+				bbos.writeShortUTF(string.substring(beginIndex, endIndex));
+			}
+//            bbos.writeUTF(obj);
         }
     }
 
@@ -202,7 +218,7 @@ public final class Serializer {
         }
 
         public DataSerializable read(BuffersInputStream bbis) throws Exception {
-            String className = bbis.readUTF();
+            String className = bbis.readShortUTF();
             try {
                 DataSerializable ds = (DataSerializable) Class.forName(className).newInstance();
                 ds.readData(bbis);
@@ -214,7 +230,7 @@ public final class Serializer {
         }
 
         public void write(BuffersOutputStream bbos, DataSerializable obj) throws Exception {
-            bbos.writeUTF(obj.getClass().getName());
+            bbos.writeShortUTF(obj.getClass().getName());
             obj.writeData(bbos);
         }
     }

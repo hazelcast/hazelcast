@@ -79,7 +79,10 @@ public enum ClusterOperation {
     CONCURRENT_MAP_BACKUP_REMOVE_MULTI(234),
     CONCURRENT_MAP_BACKUP_LOCK(235),
     CONCURRENT_MAP_BACKUP_ADD(236),
-    CONCURRENT_MAP_EVICT(237),;
+    CONCURRENT_MAP_EVICT(237),
+    TRANSACTION_BEGIN(238),
+    TRANSACTION_COMMIT(239),
+    TRANSACTION_ROLLBACK(240),;
 
     private int value;
 
@@ -217,6 +220,12 @@ public enum ClusterOperation {
                 return CONCURRENT_MAP_BACKUP_ADD;
             case 237:
                 return CONCURRENT_MAP_EVICT;
+            case 238:
+                return TRANSACTION_BEGIN;
+            case 239:
+                return TRANSACTION_COMMIT;
+            case 240:
+                return TRANSACTION_ROLLBACK;
             default:
                 return null;
         }

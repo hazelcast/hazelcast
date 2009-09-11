@@ -44,9 +44,11 @@ public final class ThreadContext {
 
     private final Serializer serializer = new Serializer();
 
-    TransactionImpl txn = null;
+//    TransactionImpl txn = null;
+    
+    CallContext callContext = new CallContext();
 
-    private final ObjectPool<ByteBuffer> bufferCache;
+	private final ObjectPool<ByteBuffer> bufferCache;
 
     private final ObjectPool<Packet> packetCache;
 
@@ -56,7 +58,11 @@ public final class ThreadContext {
 
     private final ConcurrentMap<FactoryImpl, CallCache> mapCallCacheForFactories = new ConcurrentHashMap<FactoryImpl, CallCache>();
 
-    static {
+	private boolean client = false;
+
+
+
+	static {
         mapGlobalQueues.put("BufferCache", new ArrayBlockingQueue(6000));
         mapGlobalQueues.put("PacketCache", new ArrayBlockingQueue(2000));
     }
@@ -133,20 +139,28 @@ public final class ThreadContext {
     }
 
     public void finalizeTxn() {
-        txn = null;
+    	callContext.finalizeTxn();
     }
 
-    public Transaction getTransaction() {
-        return txn;
-    }
-
-    public void setTransaction(TransactionImpl txn) {
-        this.txn = txn;
-    }
+//    public Transaction getTransaction() {
+//        return txn;
+//    }
+//
+//    public void setTransaction(TransactionImpl txn) {
+//        this.txn = txn;
+//    }
 
     public long getTxnId() {
-        return (txn == null) ? -1L : txn.getId();
+        return callContext.getTxnId();
     }
+    
+    public CallContext getExecutionContext() {
+		return callContext;
+	}
+
+	public void setExecutionContext(CallContext executionContext) {
+		this.callContext = executionContext;
+	}
 
     public Data hardCopy(final Data data) {
         return BufferUtil.doHardCopy(data);
@@ -189,7 +203,7 @@ public final class ThreadContext {
      * @return true if the thread is for Java or CSharp Client, false otherwise
      */
     public boolean isClient() {
-        return false;
+        return client;
     }
 
     class CallCache {
@@ -299,4 +313,17 @@ public final class ThreadContext {
             return value;
         }
     }
+
+	public int getThreadId() {
+		// TODO Auto-generated method stub
+		return callContext.getThreadId();
+	}
+	
+    public void setClient(boolean client) {
+		this.client = client;
+	}
+
+	public void setCallContext(CallContext callContext) {
+		this.callContext = callContext;
+	}
 }

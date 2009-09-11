@@ -18,8 +18,12 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.cluster.AddOrRemoveConnection;
+import com.hazelcast.impl.CallContext;
+
 
 import java.nio.channels.SocketChannel;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Connection {
     final SocketChannel socketChannel;
@@ -33,6 +37,8 @@ public class Connection {
     private volatile boolean live = true;
 
     Address endPoint = null;
+    
+    private Map<Integer, CallContext> mapOfCallContexts  = new HashMap<Integer, CallContext>();
 
     public Connection(ConnectionManager connectionManager, SocketChannel socketChannel) {
         this.connectionManager = connectionManager;
@@ -116,4 +122,13 @@ public class Connection {
     public String toString() {
         return "Connection [" + this.endPoint + "] live=" + live;
     }
+
+	public CallContext getCallContext(int threadId) {
+		CallContext context = mapOfCallContexts.get(threadId);
+		if(context == null){
+			context = new CallContext();
+			mapOfCallContexts.put(threadId, context);
+		}
+		return context;
+	}
 }

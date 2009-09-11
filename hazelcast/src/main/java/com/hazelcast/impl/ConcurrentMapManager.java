@@ -41,6 +41,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -583,7 +584,7 @@ public final class ConcurrentMapManager extends BaseManager {
     class MGet extends MTargetAwareOp {
         public Object get(String name, Object key, long timeout) {
             final ThreadContext tc = ThreadContext.get();
-            TransactionImpl txn = tc.txn;
+            TransactionImpl txn = tc.callContext.txn;
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 if (txn.has(name, key)) {
                     return txn.get(name, key);
@@ -623,7 +624,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public boolean removeItem(String name, Object key, Object value) {
             ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.txn;
+            TransactionImpl txn = threadContext.callContext.txn;
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 try {
                     boolean locked;
@@ -675,7 +676,7 @@ public final class ConcurrentMapManager extends BaseManager {
         private Object txnalRemove(ClusterOperation operation, String name, Object key, Object value,
                                    long timeout) {
             ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.txn;
+            TransactionImpl txn = threadContext.callContext.txn;
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 try {
                     if (!txn.has(name, key)) {
@@ -726,7 +727,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         boolean addToSet(String name, Object value) {
             ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.txn;
+            TransactionImpl txn = threadContext.callContext.txn;
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 if (!txn.has(name, value)) {
                     MContainsKey containsKey = new MContainsKey();
@@ -838,7 +839,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         private Object txnalPut(ClusterOperation operation, String name, Object key, Object value, long timeout) {
             ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.txn;
+            TransactionImpl txn = threadContext.callContext.txn;
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 try {
                     if (!txn.has(name, key)) {
@@ -853,7 +854,7 @@ public final class ConcurrentMapManager extends BaseManager {
                             oldObject = toObject(oldValue);
                         }
                         txn.attachPutOp(name, key, value, (oldObject == null));
-                        return oldObject;
+                        return threadContext.isClient()?oldValue:oldObject;
                     } else {
                         return txn.attachPutOp(name, key, value, false);
                     }
@@ -1090,7 +1091,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public int getSize() {
             int size = (Integer) call();
-            TransactionImpl txn = ThreadContext.get().txn;
+            TransactionImpl txn = ThreadContext.get().callContext.txn;
             if (txn != null) {
                 size += txn.size(name);
             }
@@ -1154,7 +1155,17 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         boolean onResponse(Object response) {
-            entries.addEntries((Pairs) response);
+        	//If Caller Thread is client, then the response is in form of Data
+        	//We need to deserialize it here
+        	Pairs pairs = null;
+        	if(response instanceof Data){
+        		pairs = (Pairs) toObject((Data)response);
+        	}
+        	else{
+        		pairs = (Pairs)response;
+        	}
+        	
+            entries.addEntries(pairs);
             return true;
         }
 
@@ -2955,10 +2966,11 @@ public final class ConcurrentMapManager extends BaseManager {
         public Entries(String name, ClusterOperation operation) {
             this.name = name;
             this.operation = operation;
+
+            TransactionImpl txn = ThreadContext.get().callContext.txn;
             this.checkValue = (InstanceType.MAP == getInstanceType(name)) &&
                     (operation == CONCURRENT_MAP_ITERATE_VALUES
                             || operation == CONCURRENT_MAP_ITERATE_ENTRIES);
-            TransactionImpl txn = ThreadContext.get().txn;
             if (txn != null) {
                 List<Map.Entry> entriesUnderTxn = txn.newEntries(name);
                 if (entriesUnderTxn != null) {
@@ -2981,7 +2993,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public void addEntries(Pairs pairs) {
             if (pairs.lsKeyValues == null) return;
-            TransactionImpl txn = ThreadContext.get().txn;
+            TransactionImpl txn = ThreadContext.get().callContext.txn;
             for (KeyValue entry : pairs.lsKeyValues) {
                 if (txn != null) {
                     Object key = entry.getKey();
@@ -2998,7 +3010,10 @@ public final class ConcurrentMapManager extends BaseManager {
                     entry.setName(node.factory.getName(), name);
                     lsKeyValues.add(entry);
                 }
-            }
+        }
+        }
+        public List<Map.Entry> getLsKeyValues(){
+        	return lsKeyValues;
         }
 
         class EntryIterator implements Iterator {

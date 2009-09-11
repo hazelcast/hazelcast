@@ -258,10 +258,11 @@ public class FactoryImpl implements HazelcastInstance {
     public Transaction getTransaction() {
         initialChecks();
         ThreadContext threadContext = ThreadContext.get();
-        TransactionImpl txn = threadContext.txn;
+//        TransactionImpl txn = threadContext.txn;
+        TransactionImpl txn = threadContext.callContext.txn;
         if (txn == null) {
             txn = transactionFactory.newTransaction();
-            threadContext.setTransaction(txn);
+            threadContext.callContext.setTransaction(txn);
         }
         return txn;
     }
@@ -2077,7 +2078,7 @@ public class FactoryImpl implements HazelcastInstance {
             public boolean containsEntry(Object key, Object value) {
                 check(key);
                 check(value);
-                TransactionImpl txn = ThreadContext.get().txn;
+                TransactionImpl txn = ThreadContext.get().callContext.txn;
                 if (txn != null) {
                     if (txn.has(name, key)) {
                         Object v = txn.get(name, key);
@@ -2090,7 +2091,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public boolean containsKey(Object key) {
                 check(key);
-                TransactionImpl txn = ThreadContext.get().txn;
+                TransactionImpl txn = ThreadContext.get().callContext.txn;
                 if (txn != null) {
                     if (txn.has(name, key)) {
                         Object value = txn.get(name, key);
@@ -2103,7 +2104,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public boolean containsValue(Object value) {
                 check(value);
-                TransactionImpl txn = ThreadContext.get().txn;
+                TransactionImpl txn = ThreadContext.get().callContext.txn;
                 if (txn != null) {
                     if (txn.containsValue(name, value))
                         return true;

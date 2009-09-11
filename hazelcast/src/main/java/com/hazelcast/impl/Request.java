@@ -117,7 +117,7 @@ class Request {
         set(true, operation, name, key, value, blockId, timeout, -1, -1, -1, thisAddress, 0,
                 thisAddress, -1, recordId, -1);
         this.txnId = ThreadContext.get().getTxnId();
-        this.lockThreadId = Thread.currentThread().hashCode();
+        this.lockThreadId = ThreadContext.get().getThreadId();
         this.caller = thisAddress;
     }
 

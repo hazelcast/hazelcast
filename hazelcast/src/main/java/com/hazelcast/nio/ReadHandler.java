@@ -17,6 +17,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.ClientRequestHandler;
 import com.hazelcast.impl.ThreadContext;
 import static com.hazelcast.nio.BufferUtil.copyToHeapBuffer;
 
@@ -104,7 +105,10 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
         p.flipBuffers();
         p.read();
         p.setFromConnection(connection);
-        clusterService.enqueueAndReturn(p);
+        if(p.client){
+        	node.executorManager.executeLocally(new ClientRequestHandler(p));
+        }else
+        	clusterService.enqueueAndReturn(p);
     }
 
     interface PacketReader {

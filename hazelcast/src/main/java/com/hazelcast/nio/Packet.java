@@ -76,6 +76,8 @@ public final class Packet {
     boolean sizeRead = false;
 
     int totalWritten = 0;
+    
+    public boolean client = false;
 
     public Packet() {
     }
@@ -115,6 +117,7 @@ public final class Packet {
         bbHeader.putLong(recordId);
         bbHeader.putLong(version);
         bbHeader.putLong(callId);
+        bbHeader.putInt(client?1:0);
         bbHeader.put(responseType);
         putString(bbHeader, name);
         boolean lockAddressNull = (lockAddress == null);
@@ -150,6 +153,7 @@ public final class Packet {
         recordId = bbHeader.getLong();
         version = bbHeader.getLong();
         callId = bbHeader.getLong();
+        client = (bbHeader.getInt()==1);
         responseType = bbHeader.get();
         name = getString(bbHeader);
         boolean lockAddressNull = readBoolean(bbHeader);
@@ -179,6 +183,7 @@ public final class Packet {
         recordId = -1;
         version = -1;
         callId = -1;
+        client = false;
         bbSizes.clear();
         bbHeader.clear();
         key.setNoData();
@@ -193,7 +198,7 @@ public final class Packet {
     @Override
     public String toString() {
         return "Packet " + operation + " name=" + name + "  local=" + local + "  blockId="
-                + blockId + " data=" + value;
+                + blockId + " data=" + value + " client="+client;
     }
 
     public void flipBuffers() {
@@ -265,7 +270,7 @@ public final class Packet {
     }
 
     public void set(String name, ClusterOperation operation, Object objKey, Object objValue) {
-        this.threadId = Thread.currentThread().hashCode();
+        this.threadId = ThreadContext.get().getThreadId();
         this.name = name;
         this.operation = operation;
         if (objKey != null) {
