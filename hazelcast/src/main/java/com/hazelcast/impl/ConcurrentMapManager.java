@@ -603,6 +603,11 @@ public final class ConcurrentMapManager extends BaseManager {
             }
             return value;
         }
+
+        @Override
+        public boolean isMigrationAware() {
+            return true;
+        }
     }
 
     class MValueCount extends MTargetAwareOp {
