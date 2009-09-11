@@ -15,6 +15,7 @@
         <module>hazelcast-hibernate</module>
         <module>hazelcast-wm</module>
         <module>hazelcast-ra</module>
+        <module>hazelcast-client</module>
     </modules>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

@@ -2,7 +2,7 @@
     <id></id>
     <formats>
         <format>zip</format>
-    </formats> 
+    </formats>
     <fileSets>
         <fileSet>
             <directory>hazelcast-ra/target</directory>
@@ -26,6 +26,13 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>hazelcast-client/target</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>hazelcast-client-${project.version}.jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>hazelcast/target/</directory>
             <outputDirectory>/</outputDirectory>
             <includes>
@@ -46,16 +53,16 @@
                 <include>*.bat</include>
                 <include>*.sh</include>
                 <include>hazelcast.xml</include>
-                <include>keystore</include> 
+                <include>keystore</include>
             </includes>
-        </fileSet>              
+        </fileSet>
         <fileSet>
             <directory>src/main/resources/</directory>
             <outputDirectory>/</outputDirectory>
             <includes>
                 <include>hazelcast.xml</include>
                 <include>keystore</include>
-                <include>license.txt</include> 
+                <include>license.txt</include>
             </includes>
         </fileSet>
     </fileSets>
