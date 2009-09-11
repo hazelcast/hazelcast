@@ -35,7 +35,7 @@ public class ClientService {
     public void handle(Packet packet) {
         ClientEndpoint clientEndpoint = mapClientEndpoints.get(packet.conn);
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
-        node.executorManager.executeLocaly(new ClientRequestHandler(packet, callContext));
+        node.executorManager.executeLocally(new ClientRequestHandler(packet, callContext));
     }
 
     class ClientEndpoint {

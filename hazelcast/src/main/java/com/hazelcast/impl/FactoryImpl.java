@@ -388,7 +388,7 @@ public class FactoryImpl implements HazelcastInstance {
         if (lsInstanceListeners.size() > 0) {
             final InstanceEvent instanceEvent = new InstanceEvent(InstanceEvent.InstanceEventType.CREATED, instance);
             for (final InstanceListener instanceListener : lsInstanceListeners) {
-                node.executorManager.executeLocaly(new Runnable() {
+                node.executorManager.executeLocally(new Runnable() {
                     public void run() {
                         instanceListener.instanceCreated(instanceEvent);
                     }
@@ -401,7 +401,7 @@ public class FactoryImpl implements HazelcastInstance {
         if (lsInstanceListeners.size() > 0) {
             final InstanceEvent instanceEvent = new InstanceEvent(InstanceEvent.InstanceEventType.DESTROYED, instance);
             for (final InstanceListener instanceListener : lsInstanceListeners) {
-                node.executorManager.executeLocaly(new Runnable() {
+                node.executorManager.executeLocally(new Runnable() {
                     public void run() {
                         instanceListener.instanceDestroyed(instanceEvent);
                     }

@@ -18,8 +18,6 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.ClusterImpl.ClusterMember;
-import com.hazelcast.cluster.ClusterManager;
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.AbstractNodeAware;
 import com.hazelcast.cluster.NodeAware;
 import com.hazelcast.config.Config;
@@ -358,7 +356,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                     if (!sent) {
                         packet.returnToContainer();
                         final Member m = getMember(target);
-                        executeLocaly(new Runnable() {
+                        executeLocally(new Runnable() {
                             public void run() {
                                 handleMemberLeft(m);
                             }
@@ -379,7 +377,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                         final boolean sent = send(packet, ((ClusterMember) member).getAddress());
                         if (!sent) {
                             packet.returnToContainer();
-                            executeLocaly(new Runnable() {
+                            executeLocally(new Runnable() {
                                 public void run() {
                                     handleMemberLeft(member);
                                 }
@@ -657,7 +655,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         return null;
     }
 
-    public void executeLocaly(final Runnable runnable) {
+    public void executeLocally(final Runnable runnable) {
         executor.execute(runnable);
     }
 
