@@ -487,10 +487,15 @@ public final class ConcurrentMapManager extends BaseManager {
         public boolean containsKey(String name, Object key) {
             return booleanCall(CONCURRENT_MAP_CONTAINS, name, key, null, 0, -1);
         }
+
+        @Override
+        public boolean isMigrationAware() {
+            return true;
+        }
     }
 
 
-    class MEvict extends MBackupAwareOp {
+    class MEvict extends MBackupAndMigrationAwareOp {
         public boolean evict(String name, Object key) {
             Data k = (key instanceof Data) ? (Data) key : toData(key);
             request.setLocal(CONCURRENT_MAP_EVICT, name, k, null, 0, -1, -1, thisAddress);
@@ -619,6 +624,11 @@ public final class ConcurrentMapManager extends BaseManager {
         void handleNoneRedoResponse(Packet packet) {
             super.handleLongNoneRedoResponse(packet);
         }
+
+        @Override
+        public boolean isMigrationAware() {
+            return true;
+        }
     }
 
     class MRemoveItem extends MBackupAndMigrationAwareOp {
@@ -721,7 +731,7 @@ public final class ConcurrentMapManager extends BaseManager {
         maps.remove(name);
     }
 
-    class MAdd extends MBackupAwareOp {
+    class MAdd extends MBackupAndMigrationAwareOp {
         boolean addToList(String name, Object value) {
 
             Data key = ThreadContext.get().toData(value);
@@ -881,7 +891,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MRemoveMulti extends MBackupAwareOp {
+    class MRemoveMulti extends MBackupAndMigrationAwareOp {
 
         boolean remove(String name, Object key, Object value) {
             boolean result = booleanCall(CONCURRENT_MAP_REMOVE_MULTI, name, key, value, 0, -1);
