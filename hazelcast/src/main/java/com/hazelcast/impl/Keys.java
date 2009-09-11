@@ -27,14 +27,12 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 
 public class Keys implements DataSerializable{
-	/**
-	 * 
-	 */
+
 	private Set<Data> keys = new HashSet<Data>();
 	
 	public Keys() {
-	
 	}
+
 	public void readData(DataInput in) throws IOException {
 		int size = in.readInt();
 		keys = new HashSet<Data>();
@@ -55,15 +53,14 @@ public class Keys implements DataSerializable{
 		}
 	}
 	
-	public Set getKeys(){
+	public Set<Data> getKeys(){
 		return keys;
 	}
-	public void setKeys(Set keys){
+	public void setKeys(Set<Data> keys){
 		this.keys = keys;
 	}
 	public void addKey(Data obj) {
 		this.keys.add(obj);
 		
 	}
-	
 }
