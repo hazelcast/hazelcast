@@ -22,7 +22,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.StringTokenizer;
 
@@ -113,16 +112,6 @@ public class Address implements DataSerializable {
         // setHost();
     }
 
-    public void readObject(ByteBuffer buffer) {
-        buffer.get(ip);
-        port = buffer.getInt();
-
-    }
-
-    public void writeObject(ByteBuffer buffer) {
-        buffer.put(ip);
-        buffer.putInt(port);
-    }
 
     public String getHost() {
         if (host == null)
@@ -130,7 +119,6 @@ public class Address implements DataSerializable {
         return host;
     }
 
-    @Override
     public String toString() {
         if (host == null)
             setHost();
