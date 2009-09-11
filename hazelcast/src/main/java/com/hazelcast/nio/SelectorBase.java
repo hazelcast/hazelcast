@@ -27,17 +27,18 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class SelectorBase implements Runnable {
 
-    protected Logger logger = Logger.getLogger(this.getClass().getName());
+    protected final Logger logger = Logger.getLogger(this.getClass().getName());
 
-    protected Selector selector = null;
+    protected final Selector selector;
 
-    protected BlockingQueue<Runnable> selectorQueue = new LinkedBlockingQueue<Runnable>();
+    protected final BlockingQueue<Runnable> selectorQueue = new LinkedBlockingQueue<Runnable>();
 
     protected volatile boolean live = true;
 
@@ -51,19 +52,32 @@ public class SelectorBase implements Runnable {
         this.node = node;
         selectorQueue.clear();
         size.set(0);
+        Selector selectorTemp = null;
         try {
-            selector = Selector.open();
+            selectorTemp = Selector.open();
         } catch (final IOException e) {
             handleSelectorException(e);
         }
+        this.selector = selectorTemp;
         live = true;
     }
 
     public void shutdown() {
-        live = false;
         if (selectorQueue != null) {
             selectorQueue.clear();
         }
+        try {
+            final CountDownLatch l = new CountDownLatch(1);
+            addTask(new Runnable() {
+                public void run() {
+                    live = false;
+                    l.countDown();
+                }
+            });
+            l.await();
+        } catch (InterruptedException ignored) {
+        }
+
     }
 
     public int addTask(final Runnable runnable) {
@@ -91,6 +105,7 @@ public class SelectorBase implements Runnable {
             if (size.get() > 0) {
                 processSelectionQueue();
             }
+            if (!live) return;
             int selectedKeys;
             try {
                 selectedKeys = selector.select(waitTime);

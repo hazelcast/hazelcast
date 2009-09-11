@@ -27,6 +27,7 @@ import com.hazelcast.nio.Data;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
@@ -60,12 +61,18 @@ public class QueryService implements Runnable {
     }
 
     public void stop() {
-        running = false;
-        queryQ.offer(new Runnable() {
-            public void run() {
-                running = false;
-            }
-        });
+        try {
+            final CountDownLatch l = new CountDownLatch(1);
+            queryQ.put(new Runnable() {
+                public void run() {
+                    running = false;
+                    regions.clear();
+                    l.countDown();
+                }
+            });
+            l.await();
+        } catch (InterruptedException ignored) {
+        }
     }
 
     class IndexRegion {

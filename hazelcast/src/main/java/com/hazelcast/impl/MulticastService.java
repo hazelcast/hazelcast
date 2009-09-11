@@ -26,6 +26,9 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketTimeoutException;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class MulticastService implements Runnable {
 
@@ -35,7 +38,8 @@ public class MulticastService implements Runnable {
     private int bufferSize = 1024;
     private volatile boolean running = true;
     final Node node;
-    
+    private final BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
+
     public MulticastService(Node node, MulticastSocket multicastSocket) throws Exception {
         this.node = node;
         Config config = node.getConfig();
@@ -49,13 +53,28 @@ public class MulticastService implements Runnable {
     }
 
     public void stop() {
-        this.running = false;
+        try {
+            final CountDownLatch l = new CountDownLatch(1);
+            queue.put(new Runnable() {
+                public void run() {
+                    running = false;
+                    l.countDown();
+                }
+            });
+            l.await();
+        } catch (InterruptedException ignored) {
+        }
     }
 
     public void run() {
         Config config = node.getConfig();
         while (running) {
             try {
+                Runnable runnable = queue.poll();
+                if (runnable != null) {
+                    runnable.run();
+                    return;
+                }
                 final JoinInfo joinInfo = receive();
                 if (joinInfo != null) {
                     if (node.address != null && !node.address.equals(joinInfo.address)) {
@@ -85,13 +104,16 @@ public class MulticastService implements Runnable {
     public JoinInfo receive() {
         synchronized (datagramPacketReceive) {
             try {
-                    try{
-                        multicastSocket.receive(datagramPacketReceive);
-                        JoinInfo joinInfo = new JoinInfo();
-                        joinInfo.readFromPacket(datagramPacketReceive);
-                        return joinInfo;
-                    } catch (SocketTimeoutException ignore) {}
-            } catch(Exception e){e.printStackTrace();}
+                try {
+                    multicastSocket.receive(datagramPacketReceive);
+                    JoinInfo joinInfo = new JoinInfo();
+                    joinInfo.readFromPacket(datagramPacketReceive);
+                    return joinInfo;
+                } catch (SocketTimeoutException ignore) {
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             return null;
         }
     }

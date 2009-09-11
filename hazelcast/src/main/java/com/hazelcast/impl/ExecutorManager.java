@@ -82,7 +82,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
 
         executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveSeconds, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(),
-                new ExecutorThreadFactory(),
+                new ExecutorThreadFactory(node.threadGroup),
                 new RejectionHandler());
         node.getClusterImpl().addMembershipListener(this);
         for (int i = 0; i < 100; i++) {
@@ -97,9 +97,10 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         final AtomicInteger threadNumber = new AtomicInteger(1);
         final String namePrefix;
 
-        ExecutorThreadFactory() {
-            SecurityManager s = System.getSecurityManager();
-            group = (s != null) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
+        ExecutorThreadFactory(ThreadGroup group) {
+            this.group = group;
+//            SecurityManager s = System.getSecurityManager();
+//            group = (s != null) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
             namePrefix = "hz.pool-" + poolNumber.getAndIncrement() + "-thread-";
         }
 
@@ -134,12 +135,13 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
 
     public void stop() {
         if (!started) return;
-        if (logger.isLoggable(Level.FINEST)) {
-            logger.log(Level.FINEST, "Stopping ExecutorManager");
-        }
         executionIds.clear();
         if (executor != null) {
-            executor.shutdownNow();
+            try {
+                executor.shutdown();
+                executor.awaitTermination(5, TimeUnit.SECONDS);
+            } catch (InterruptedException ignored) {
+            }
         }
         started = false;
     }

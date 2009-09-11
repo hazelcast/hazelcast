@@ -87,6 +87,8 @@ public class Node {
 
     public final Config config;
 
+    public final ThreadGroup threadGroup;
+
     volatile Address address = null;
 
     volatile MemberImpl localMember = null;
@@ -158,6 +160,7 @@ public class Node {
     public final FactoryImpl factory;
 
     public Node(FactoryImpl factory, Config config) {
+        this.threadGroup = new ThreadGroup(factory.getName());
         this.factory = factory;
         this.config = config;
         superClient = config.isSuperClient();
@@ -331,76 +334,76 @@ public class Node {
                 // events, such as removeaddress
                 joined = false;
                 active = false;
-                concurrentMapManager.reset();
+                inSelector.shutdown();
+                outSelector.shutdown();
                 clusterService.stop();
                 queryService.stop();
                 multicastService.stop();
                 connectionManager.shutdown();
+                concurrentMapManager.reset();
                 executorManager.stop();
-                inSelector.shutdown();
-                outSelector.shutdown();
                 address = null;
                 masterAddress = null;
                 clusterManager.stop();
-                Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
+                int numThreads = threadGroup.activeCount();
+                Thread[] threads = new Thread[numThreads * 2];
+                numThreads = threadGroup.enumerate(threads, false);
+                for (int i = 0; i < numThreads; i++) {
+                    Thread thread = threads[i];
+                    System.out.println("Is this thread still live? : " + thread);
+                } 
             }
         } catch (Throwable e) {
-            if (logger != null) logger.log(Level.FINEST, "shutdown exception", e);
+            e.printStackTrace();
         }
     }
 
-
     public void start() {
         if (completelyShutdown) return;
-        final Thread inThread = new Thread(inSelector, "hz.InThread");
+        final Thread inThread = new Thread(threadGroup, inSelector, "hz.InThread");
         inThread.setPriority(7);
         inThread.start();
 
-        final Thread outThread = new Thread(outSelector, "hz.OutThread");
+        final Thread outThread = new Thread(threadGroup, outSelector, "hz.OutThread");
         outThread.setPriority(7);
         outThread.start();
 
-        final Thread clusterServiceThread = new Thread(clusterService, "hz.ServiceThread");
+        final Thread clusterServiceThread = new Thread(threadGroup, clusterService, "hz.ServiceThread");
         clusterServiceThread.setPriority(8);
         clusterServiceThread.start();
 
-        final Thread queryThread = new Thread(queryService, "hz.QueryThread");
+        final Thread queryThread = new Thread(threadGroup, queryService, "hz.QueryThread");
         queryThread.setPriority(6);
         queryThread.start();
-                
+
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             startMulticastService();
         }
         active = true;
-
-        join();
-
         if (!completelyShutdown) {
+            logger.log(Level.FINEST, "Adding ShutdownHook");
             Runtime.getRuntime().addShutdownHook(shutdownHookThread);
         }
+        join();
     }
 
     class ShutdownHookThread extends Thread {
+
         @Override
         public void run() {
-            if (active && !completelyShutdown) {
-                try {
+            try {
+                if (active && !completelyShutdown) {
                     completelyShutdown = true;
-                    if (logger != null) {
-                        logger.log(Level.INFO, "Hazelcast ShutdownHook is shutting down!");
-                    }
                     shutdown();
-                } catch (Exception e) {
-                    if (logger != null) {
-                        logger.log(Level.WARNING, "Hazelcast shutdownhook exception:", e);
-                    }
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
 
     public void startMulticastService() {
-        final Thread multicastServiceThread = new Thread(multicastService, "hz.MulticastThread");
+        final Thread multicastServiceThread = new Thread(threadGroup, multicastService, "hz.MulticastThread");
         multicastServiceThread.start();
         multicastServiceThread.setPriority(6);
     }

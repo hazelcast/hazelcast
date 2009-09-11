@@ -27,6 +27,7 @@ import com.hazelcast.nio.Packet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -165,7 +166,17 @@ public final class ClusterService implements Runnable, Constants {
 
     public void stop() {
         queue.clear();
-        running = false;
+        try {
+            final CountDownLatch l = new CountDownLatch(1);
+            queue.put(new Processable() {
+                public void process() {
+                    running = false;
+                    l.countDown();
+                }
+            });
+            l.await();
+        } catch (InterruptedException ignored) {
+        }
     }
 
     @Override
