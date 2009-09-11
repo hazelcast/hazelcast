@@ -142,9 +142,9 @@ public final class ThreadContext {
     	callContext.finalizeTxn();
     }
 
-//    public Transaction getTransaction() {
-//        return txn;
-//    }
+    public Transaction getTransaction() {
+        return callContext.getTxn();
+    }
 //
 //    public void setTransaction(TransactionImpl txn) {
 //        this.txn = txn;

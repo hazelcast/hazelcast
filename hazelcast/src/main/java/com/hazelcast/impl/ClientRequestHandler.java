@@ -27,7 +27,7 @@ public class ClientRequestHandler implements Runnable{
 	public ClientRequestHandler(Packet request) {
 		this.packet = request;
 	}
-	@Override
+
 	public void run() {
 		CallContext callContext = packet.conn.getCallContext(packet.threadId);
 		ThreadContext.get().setCallContext(callContext);
@@ -35,7 +35,6 @@ public class ClientRequestHandler implements Runnable{
 		if(packet.operation.equals(ClusterOperation.CONCURRENT_MAP_PUT)){
 			IMap<Object, Object> map = Hazelcast.getMap(packet.name.substring(2));
 			Object oldValue = map.put(doHardCopy(packet.key), doHardCopy(packet.value));
-//			doSet(toData(oldValue), packet.value);
 			doSet((Data)oldValue, packet.value);
 			sendResponse(packet);
 		}
