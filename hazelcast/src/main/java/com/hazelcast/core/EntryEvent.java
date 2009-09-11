@@ -17,7 +17,6 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.impl.FactoryImpl;
 
 import java.util.EventObject;
 
