@@ -30,6 +30,11 @@ public class MultiMapMBean extends AbstractMBean<MultiMap> {
 	public MultiMapMBean(MultiMap managedObject) {
 		super(managedObject);
 	}
+	
+	@Override
+	public ObjectNameSpec getNameSpec() {
+    	return getParentName().getNested("MultiMap", getName());
+	}
 
 	@JMXAttribute("Name")
 	@JMXDescription("Registration name of the list")

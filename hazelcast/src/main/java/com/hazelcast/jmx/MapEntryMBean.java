@@ -77,7 +77,22 @@ public class MapEntryMBean extends AbstractMBean<MapEntry> {
 	@JMXAttribute("ValueClass")
 	@JMXDescription("Class of the value")
     public Class<?> getValueClass() {
-    	return map.get(key).getClass();
+		try {
+			if (!map.containsKey(key)) {
+				// Unregister removed entries
+				if (mbeanServer.isRegistered(getObjectName())) {
+					mbeanServer.unregisterMBean(getObjectName());
+					return null;
+		    	}
+			}
+			return map.get(key).getClass();
+		}
+		catch (Exception cnfe) {
+			return String.class;
+		}
+		catch (Throwable t) {
+			return null;
+		}
     }
 	
 	@JMXAttribute("Cost")

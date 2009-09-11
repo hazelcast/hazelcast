@@ -25,71 +25,91 @@ import javax.management.DynamicMBean;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.Instance;
-import com.hazelcast.core.InstanceEvent;
-import com.hazelcast.core.InstanceListener;
-import com.hazelcast.core.Member;
-import com.hazelcast.impl.FactoryImpl;
+import com.hazelcast.core.*;
 
 /**
  * Manager of data instances and collects general statistics.
  * 
  * @author Marco Ferrante, DISI - University of Genova
  */
-@JMXDescription("Data summary and statistics")
-public class DataMBean extends AbstractMBean<Member> {
+@JMXDescription("Cluster statistics")
+public class DataMBean extends AbstractMBean<HazelcastInstance> implements InstanceListener {
 
 	private final static Logger logger = Logger.getLogger(DataMBean.class.getName());
 
-	private InstanceListener instanceListener;
-	
 	private StatisticsCollector creationStats = null;
 	private StatisticsCollector destructionStats = null;
 	
-    protected DataMBean() {
-    	super(Hazelcast.getCluster().getLocalMember());
+	/**
+	 * Return the instrumentation wrapper to a instance.
+	 * See http://java.sun.com/javase/technologies/core/mntr-mgmt/javamanagement/best-practices.jsp
+	 * 
+	 * @param instance
+	 * @return dynamicmbean for the hazelcast instance
+	 * @throws Exception
+	 */
+	@SuppressWarnings("unchecked")
+	private AbstractMBean buildMBean(Instance instance) throws Exception {
+		if (instance instanceof ITopic) {
+	        // Topic
+			TopicMBean mbean = new TopicMBean((ITopic)instance);
+			return mbean;
+		}
+		if (instance instanceof IQueue) {
+			// Queue
+			QueueMBean mbean = new QueueMBean((IQueue)instance);
+	    	return mbean;
+		}
+		if (instance instanceof IList) {
+			// List
+			ListMBean mbean = new ListMBean((IList)instance);
+	    	return mbean;
+		}
+		if (instance instanceof ISet) {
+			// Set
+			SetMBean mbean = new SetMBean((ISet)instance);
+	    	return mbean;
+		}
+		if (instance instanceof MultiMap) {
+			// Map
+			MultiMapMBean mbean = new MultiMapMBean((MultiMap)instance);
+			return mbean;
+		}
+		if (instance instanceof IMap) {
+			// Map
+			MapMBean mbean = new MapMBean((IMap)instance);
+			return mbean;
+		}
+		if (instance instanceof ILock) {
+			// Lock
+			LockMBean mbean = new LockMBean((ILock)instance);
+			return mbean;
+		}
+		
+		return null;
+	}
+	
+    protected DataMBean(HazelcastInstance instance) {
+    	super(instance);
     }
 
-	public ObjectName getObjectName() throws Exception {
-		return MBeanBuilder.buildObjectName("type", "Data");
+	@Override
+	public ObjectNameSpec getNameSpec() {
+    	return getParentName().getNested("Statistics");
 	}
-
+	
 	public void postRegister(Boolean registrationDone) {
 		if (registrationDone) {
 
 			creationStats = ManagementService.newStatisticsCollector();
 			destructionStats = ManagementService.newStatisticsCollector();
 			
-			instanceListener = new InstanceListener() {
-
-				public void instanceCreated(InstanceEvent event) {
-					if (logger.isLoggable(Level.FINE)) {
-						logger.log(Level.FINE, "Received created notification {0} {1}",
-								new String[] {event.getInstance().getInstanceType().toString(), event.getInstance().toString()});
-					}
-					creationStats.addEvent();
-					registerInstance(event.getInstance());
-				}
-
-				public void instanceDestroyed(InstanceEvent event) {
-					if (logger.isLoggable(Level.FINE)) {
-						logger.log(Level.FINE, "Received destroyed notification " + event.getInstance().toString());
-					}
-					destructionStats.addEvent();
-					unregisterInstance(event.getInstance());
-				}
-				
-			};
-			Hazelcast.addInstanceListener(instanceListener);
+			getManagedObject().addInstanceListener(this);
 		}
 	}
 
 	public void preDeregister() throws Exception {
-		if (instanceListener != null) {
-			Hazelcast.removeInstanceListener(instanceListener);
-			instanceListener = null;
-		}
+		getManagedObject().removeInstanceListener(this);
 		if (creationStats != null) {
 			creationStats.destroy();
 			creationStats = null;
@@ -105,15 +125,33 @@ public class DataMBean extends AbstractMBean<Member> {
 		;
 	}
 
+	public void instanceCreated(InstanceEvent event) {
+		if (logger.isLoggable(Level.FINE)) {
+			logger.log(Level.FINE, "Received created notification {0} {1}",
+					new String[] {event.getInstance().getInstanceType().toString(), event.getInstance().toString()});
+		}
+		creationStats.addEvent();
+		registerInstance(event.getInstance());
+	}
+
+	public void instanceDestroyed(InstanceEvent event) {
+		if (logger.isLoggable(Level.FINE)) {
+			logger.log(Level.FINE, "Received destroyed notification " + event.getInstance().toString());
+		}
+		destructionStats.addEvent();
+		unregisterInstance(event.getInstance());
+	}
+	
 	public void registerInstance(Object instance) {
 		try {
-			DynamicMBean mbean = MBeanBuilder.buildMBean((Instance)instance);
-	    	
+			AbstractMBean mbean = buildMBean((Instance)instance);
+			mbean.setParentName(getParentName());
+			
 	    	if (mbean == null) {
 	    		logger.log(Level.FINE, "Unsupported instance type "+  instance.getClass().getName());
 	    	}
 	    	else {
-	            ObjectName name = MBeanBuilder.buildName(instance);
+	            ObjectName name = mbean.getObjectName();
 	    		logger.log(Level.FINEST, "Register MBean {0}", name);
 	            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 		    	synchronized(this) {
@@ -130,12 +168,14 @@ public class DataMBean extends AbstractMBean<Member> {
 	
 	public void unregisterInstance(Object instance) {
 		try {
-            ObjectName name = MBeanBuilder.buildName(instance);
-	    	
-	    	if (name == null) {
+			AbstractMBean mbean = buildMBean((Instance)instance);
+			mbean.setParentName(getParentName());
+			
+	    	if (mbean == null) {
 	    		logger.log(Level.FINE, "Unsupported instance type "+  instance.getClass().getName());
 	    	}
 	    	else {
+	    		ObjectName name = mbean.getObjectName();
 	    		logger.log(Level.FINEST, "Unregister MBean {0}", name);
 	            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 		    	synchronized(this) {
@@ -164,7 +204,7 @@ public class DataMBean extends AbstractMBean<Member> {
 	@JMXAttribute("InstanceCount")
 	@JMXDescription("Total data structures registered")
     public int getInstanceCount() {
-    	Collection<Instance> instances = FactoryImpl.getFactoryImpl("default").getInstances();
+    	Collection<Instance> instances = getManagedObject().getInstances();
     	
     	return instances.size();
     }

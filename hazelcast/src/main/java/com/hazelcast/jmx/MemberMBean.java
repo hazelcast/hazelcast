@@ -36,23 +36,29 @@ public class MemberMBean extends AbstractMBean<Member> {
 		super(managedObject);
 	}
 
-	public ObjectName getObjectName() throws Exception {
-		// A JVM can host only one cluster, so names are can be hardcoded.
-		// Multiple clusters for JVM (see Hazelcast issue 78) need a
-		// different naming schema
-		if (name == null) {
-			String memberName = "Local";
-	    	if (!getManagedObject().localMember()) {
-	    		// String concatenation is not a performance issue,
-	    		// used only during registration
-	    		memberName =  '"' + getManagedObject().getInetAddress().getHostAddress()
-	    				+ ":" + getManagedObject().getPort() + '"';
-	    	}
-			name = MBeanBuilder.buildObjectName("type", "Cluster", "name", memberName); 
-		}
-		return name;
-	}
+//	public ObjectName getObjectName() throws Exception {
+//		String memberName = "Local";
+//    	if (!getManagedObject().localMember()) {
+//    		// String concatenation is not a performance issue,
+//    		// used only during registration
+//    		memberName =  '"' + getManagedObject().getInetAddress().getHostAddress()
+//    				+ ":" + getManagedObject().getPort() + '"';
+//    	}
+//    	return getParentName().getNested("Member", memberName).buildObjectName();
+//	}
 
+	@Override
+	public ObjectNameSpec getNameSpec() {
+		String memberName = "Local";
+    	if (!getManagedObject().localMember()) {
+    		// String concatenation is not a performance issue,
+    		// used only during registration
+    		memberName =  '"' + getManagedObject().getInetAddress().getHostAddress()
+    				+ ":" + getManagedObject().getPort() + '"';
+    	}
+    	return getParentName().getNested("Member", memberName);
+	}
+	
 	@JMXDescription("The network address")
 	@JMXAttribute("Port")
 	public int getPort() {

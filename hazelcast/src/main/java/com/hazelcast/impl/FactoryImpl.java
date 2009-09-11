@@ -100,6 +100,7 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public static void shutdownAll() {
+    	ManagementService.shutdown();
         synchronized (factoryLock) {
             Collection<FactoryImpl> colFactories = factories.values();
             for (FactoryImpl factory : colFactories) {
@@ -111,7 +112,7 @@ public class FactoryImpl implements HazelcastInstance {
 
     public static void shutdown(FactoryImpl factory) {
         synchronized (factoryLock) {
-            ManagementService.shutdown();
+            ManagementService.unregister(factory);
             factory.node.shutdown();
             factories.remove(factory.getName());
         }
@@ -150,7 +151,7 @@ public class FactoryImpl implements HazelcastInstance {
         executorServiceImpl = new ExecutorServiceProxy(node);
         transactionFactory = new TransactionFactory(this);
         node.start();
-        ManagementService.register(node);
+        ManagementService.register(this, config);
         locksMapProxy = new MProxyImpl("c:__hz_Locks", this);
         idGeneratorMapProxy = new MProxyImpl("c:__hz_IdGenerator", this);
         globalProxies = new MProxyImpl("c:__hz_Proxies", this);

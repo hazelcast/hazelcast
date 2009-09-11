@@ -30,10 +30,26 @@ public class LockMBean extends AbstractMBean<ILock> {
     	super(lock);
     }
 
+	@Override
+	public ObjectNameSpec getNameSpec() {
+    	return getParentName().getNested("Lock", getName());
+	}
+	
 	@JMXAttribute("String")
-	@JMXDescription("String description")
+	@JMXDescription("toString() result")
 	public String getName() {
 		return getManagedObject().toString();
 	}
+
+	@JMXAttribute("LockObject")
+	@JMXDescription("The object locked")
+	public String getLockObject() {
+		Object obj = getManagedObject().getLockObject();
+		if (obj != null) {
+			return obj.toString();
+		}
+		return null;
+	}
+	
 	
 }

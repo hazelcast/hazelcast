@@ -56,7 +56,9 @@ public abstract class AbstractMBean<E> implements DynamicMBean, MBeanRegistratio
 
 	protected transient MBeanServer mbeanServer;
 
+	private volatile ObjectNameSpec parentName = new ObjectNameSpec();
 	private volatile ObjectName objectName;
+	
 	// Use a weak reference? http://weblogs.java.net/blog/emcmanus/archive/2005/07/cleaning_up_an_1.html
 	private E managedObject;
 
@@ -263,7 +265,7 @@ public abstract class AbstractMBean<E> implements DynamicMBean, MBeanRegistratio
 	}	
 
 	private Object getValue(String attribute, boolean refresh)
-	throws AttributeNotFoundException, MBeanException, ReflectionException {
+			throws AttributeNotFoundException, MBeanException, ReflectionException {
 		if (attribute == null || attribute.length() == 0)
 			throw new NullPointerException("Invalid null attribute requested");
 
@@ -294,7 +296,7 @@ public abstract class AbstractMBean<E> implements DynamicMBean, MBeanRegistratio
 			}
 		}
 		catch (Exception e) {
-			logger.log(Level.WARNING, "Error accessing attribute " + attribute, e);
+			logger.log(Level.FINE, "Error accessing attribute " + attribute, e);
 			throw new ReflectionException(e);
 		}
 
@@ -367,7 +369,7 @@ public abstract class AbstractMBean<E> implements DynamicMBean, MBeanRegistratio
 			}
 		}
 		catch (Exception e) {
-			logger.log(Level.WARNING, "Error invoking operation " + actionName, e);
+			logger.log(Level.FINE, "Error invoking operation " + actionName, e);
 			throw new ReflectionException(e);
 		}
 
@@ -420,6 +422,21 @@ public abstract class AbstractMBean<E> implements DynamicMBean, MBeanRegistratio
 		return result;
 	}
 
+	public void setParentName(ObjectNameSpec spec) {
+		parentName = spec;
+	}
+	
+	public ObjectNameSpec getParentName() {
+		return parentName;
+	}
+	
+	/**
+	 * Override to provide a JMX name
+	 */
+	protected ObjectNameSpec getNameSpec() {
+		return parentName.getNested("unknown", "@" + hashCode());
+	}
+	
 	/**
 	 * The current objectName.
 	 * To provide a default, override this method and pass null as name 
@@ -427,9 +444,22 @@ public abstract class AbstractMBean<E> implements DynamicMBean, MBeanRegistratio
 	 * 
 	 * @return The current objectName
 	 */
-	public ObjectName getObjectName() throws Exception {
+	public final ObjectName getObjectName() throws Exception {
+		if (objectName == null) {
+			objectName = getNameSpec().buildObjectName();
+		}
 		return objectName;
 	}
+
+	/**
+	 * Build the current objectName from the spec.
+	 * 
+	 * @return The new objectName
+	 */
+//	public ObjectName getObjectName(ObjectNameSpec spec) throws Exception {
+//		objectName = spec.buildObjectName();
+//		return objectName;
+//	}
 
 	/**
 	 * From interface {@link javax.management.MBeanRegistration}

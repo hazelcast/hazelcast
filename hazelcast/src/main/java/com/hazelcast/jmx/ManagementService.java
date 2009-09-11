@@ -27,6 +27,8 @@ import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
 import com.hazelcast.core.Cluster;
+import com.hazelcast.config.Config;
+import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.Node;
 
 /**
@@ -47,18 +49,18 @@ public class ManagementService {
 	
 	public static String ENABLE_JMX = "hazelcast.jmx";
 	
-	private static DataMBean dataMonitor = null; 
-	
 	private static ScheduledThreadPoolExecutor statCollectors;
 	
-    /**
-     * Register all the MBeans.
-     */
-    public static void register(Node node) {
+	private static boolean started = false;
+	
+	public static synchronized boolean init() {
+		if (started) {
+			return true;
+		}
     	if (!("TRUE".equalsIgnoreCase(System.getProperty(ENABLE_JMX))
     			|| System.getProperties().containsKey("com.sun.management.jmxremote"))) {
     		// JMX disabled
-    		return;
+    		return false;
     	}
     	logger.log(Level.INFO, "JMX agent enabled");
 
@@ -68,37 +70,59 @@ public class ManagementService {
 				statCollectors = new ScheduledThreadPoolExecutor(2);
 			}
 		}
+		started = true;
+		return true;
+	}
+	
+    /**
+     * Register all the MBeans.
+     */
+    public static void register(FactoryImpl instance, Config config) {
+    	if (!init()) {
+    		return;
+    	}
     	
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         
         // Register the cluster monitor
 		try {
-			ClusterMBean clusterMBean = new ClusterMBean(node);
-            mbs.registerMBean(clusterMBean, clusterMBean.getObjectName());    
+			ClusterMBean clusterMBean = new ClusterMBean(instance, config);
+            mbs.registerMBean(clusterMBean, clusterMBean.getObjectName()); 
+            DataMBean dataMBean = new DataMBean(instance);
+            dataMBean.setParentName(clusterMBean.getRootName());
+            mbs.registerMBean(dataMBean, dataMBean.getObjectName()); 
 		}
 		catch (Exception e) {
 			logger.log(Level.WARNING, "Unable to start JMX service", e);
 			return;
 		}
-		
-		// Register the data monitor
+    }
+
+    /**
+     * Unregister a cluster instance.
+     */
+    public static void unregister(FactoryImpl instance) {
+		// Remove all entries register for the cluster
+		MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+		Set<ObjectName> entries;
 		try {
-			if (dataMonitor == null) {
-				dataMonitor = new DataMBean();
+			entries = mbs.queryNames(ObjectNameSpec.getClusterNameFilter(instance.getName()), null);
+			for (ObjectName name : entries) {
+				// Double check, in case the entry has been removed whiletime
+				if (mbs.isRegistered(name)) {
+					mbs.unregisterMBean(name);
+				}
 			}
-    		mbs.registerMBean(dataMonitor, null);
 		}
 		catch (Exception e) {
-			logger.log(Level.WARNING, "Unable to start JMX data instance service", e);
-		} 
-		
+			logger.log(Level.FINE, "Error unregistering MBeans", e);
+		}
     }
     
+    /**
+     * Stop the management service
+     */
     public static void shutdown() {
-		if (dataMonitor != null) {
-			dataMonitor = null;
-		}
-
 		// Remove all registered entries
 		MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 		Set<ObjectName> entries;
@@ -129,10 +153,6 @@ public class ManagementService {
      */
     protected static boolean showDetails() {
     	return true;
-    }
-    
-    protected static DataMBean getDataMonitor() {
-    	return dataMonitor;
     }
     
     protected static class ScheduledCollector implements Runnable, StatisticsCollector {

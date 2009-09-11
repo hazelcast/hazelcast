@@ -17,6 +17,7 @@
 package com.hazelcast.jmx;
 
 import java.lang.management.ManagementFactory;
+import java.util.Collection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -26,12 +27,17 @@ import java.net.URL;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
+import javax.management.DynamicMBean;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.core.Instance;
+import com.hazelcast.core.InstanceEvent;
+import com.hazelcast.core.InstanceListener;
 import com.hazelcast.impl.Node;
 
 /**
@@ -39,28 +45,47 @@ import com.hazelcast.impl.Node;
  * 
  * @author Marco Ferrante, DISI - University of Genoa
  */
-@JMXDescription("The Hazelcast cluster")
-public class ClusterMBean extends AbstractMBean<Cluster> {
+@JMXDescription("Hazelcast cluster")
+public class ClusterMBean extends AbstractMBean<HazelcastInstance> {
 
 	private ObjectName name;
+	private ObjectNameSpec clusterObjectNames;
 	private MembershipListener membershipListener;
-    private final Node node;
 	
-	public ClusterMBean(Node node) {
-		super(node.getClusterImpl());
-        this.node = node;
+	private final Config config;
+	private final Cluster cluster;
+	
+	private MBeanBuilder mbeanBuilder = null;
+	
+	public ClusterMBean(HazelcastInstance instance, Config config) {
+		super(instance);
+		this.config = config;
+		this.cluster = instance.getCluster();
+		mbeanBuilder = new MBeanBuilder();
+		mbeanBuilder.setClusterName(instance.getName());
+		clusterObjectNames = new ObjectNameSpec(getManagedObject().getName());
 	}
 
-   public ObjectName getObjectName() throws Exception {
-		// A JVM can host only one cluster, so names are can be hardcoded.
-		// Multiple clusters for JVM (see Hazelcast issue 78) need a
-		// different naming schema
-	   if (name == null) {
-		   name = MBeanBuilder.buildObjectName("type", "Cluster");
-	   }
-	   return name;
-   }
-	   
+//	public ObjectName getObjectName() throws Exception {
+//		// A JVM can host only one cluster, so names are can be hardcoded.
+//		// Multiple clusters for JVM (see Hazelcast issue 78) need a
+//		// different naming schema
+//		if (name == null) {
+//			name = new ObjectNameSpec().buildObjectName("Cluster", getManagedObject().getName());
+//			
+//		}
+//		return name;
+//	}
+	
+	@Override
+	public ObjectNameSpec getNameSpec() {
+		return new ObjectNameSpec("Cluster", getManagedObject().getName());
+	}
+
+	public ObjectNameSpec getRootName() {
+		return clusterObjectNames;
+	}
+   
 	@Override
 	public void postRegister(Boolean registrationDone) {
 		super.postRegister(registrationDone);
@@ -81,10 +106,10 @@ public class ClusterMBean extends AbstractMBean<Cluster> {
 					unregisterMember(event.getMember());
 				}
 			};
-			getManagedObject().addMembershipListener(membershipListener);
+			cluster.addMembershipListener(membershipListener);
 
 			// Init current member list
-			for (Member m : getManagedObject().getMembers()) {
+			for (Member m : cluster.getMembers()) {
 				registerMember(m);
 			}
 		}
@@ -95,7 +120,7 @@ public class ClusterMBean extends AbstractMBean<Cluster> {
 
 	@Override
 	public void preDeregister() throws Exception {
-		getManagedObject().removeMembershipListener(membershipListener);
+		cluster.removeMembershipListener(membershipListener);
 		super.preDeregister();
 	}
 
@@ -109,6 +134,7 @@ public class ClusterMBean extends AbstractMBean<Cluster> {
 			MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 			
 			MemberMBean mbean = new MemberMBean(member);
+			mbean.setParentName(clusterObjectNames);
 			if (!mbs.isRegistered(mbean.getObjectName())) {
 				mbs.registerMBean(mbean, mbean.getObjectName());
 			}
@@ -127,6 +153,7 @@ public class ClusterMBean extends AbstractMBean<Cluster> {
 		try {
 			MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 			MemberMBean mbean = new MemberMBean(member);
+			mbean.setParentName(clusterObjectNames);
 			if (mbs.isRegistered(mbean.getObjectName())) {
 				mbs.unregisterMBean(mbean.getObjectName());
 			}
@@ -137,13 +164,13 @@ public class ClusterMBean extends AbstractMBean<Cluster> {
 	}
 
 	@JMXAttribute("ConfigSource")
-	@JMXDescription("The source of the current configuration")
+	@JMXDescription("The source of the cluster instance configuration")
     public String getConfigFileURL() {
-		File configurationFile = node.getConfig().getConfigurationFile();
+		File configurationFile = config.getConfigurationFile();
 		if (configurationFile != null) {
 			return configurationFile.getAbsolutePath();
 		}
-		URL configurationUrl = node.getConfig().getConfigurationUrl();
+		URL configurationUrl = config.getConfigurationUrl();
 		if (configurationUrl != null) {
 			return configurationUrl.toString();
 		}
@@ -153,31 +180,31 @@ public class ClusterMBean extends AbstractMBean<Cluster> {
 	@JMXAttribute("GroupName")
 	@JMXDescription("The current group name")
 	public String getGroupName() {
-		return node.getConfig().getGroupName();
+		return config.getGroupName();
 	}
 	
 	@JMXAttribute("Port")
 	@JMXDescription("The network port used by multicast")
 	public int getPort() {
-		return node.getConfig().getPort();
+		return config.getPort();
 	}
 	
 	@JMXAttribute("PortAutoIncrement")
 	@JMXDescription("The network port is autoincremented if already in use")
 	public boolean isPortAutoIncrement() {
-		return node.getConfig().isPortAutoIncrement();
+		return config.isPortAutoIncrement();
 	}
 
 	@JMXAttribute("ClusterTime")
 	@JMXDescription("Current cluster time")
 	public long getClusterTime() {
-		return getManagedObject().getClusterTime();
+		return cluster.getClusterTime();
 	}
 	
 	@JMXAttribute("MemberCount")
 	@JMXDescription("Current size of the cluster")
 	public int getMemberCount() {
-		Set<Member> members = getManagedObject().getMembers();
+		Set<Member> members = cluster.getMembers();
 		
 		return members.size();
 	}
@@ -185,7 +212,7 @@ public class ClusterMBean extends AbstractMBean<Cluster> {
 	@JMXAttribute("Members")
 	@JMXDescription("List of member currently in the cluster")
 	public List<String> getMembers() {
-		Set<Member> members = getManagedObject().getMembers();
+		Set<Member> members = cluster.getMembers();
 		
 		ArrayList<String> result = new ArrayList<String>();
 		for (Member m : members) {

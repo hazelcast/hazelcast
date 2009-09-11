@@ -43,6 +43,11 @@ public class MapMBean extends AbstractMBean<IMap> {
 	}
 
 	@Override
+	public ObjectNameSpec getNameSpec() {
+    	return getParentName().getNested("Map", getName());
+	}
+	
+	@Override
 	public void postRegister(Boolean registrationDone) {
 		super.postRegister(registrationDone);
 		if (!registrationDone) {

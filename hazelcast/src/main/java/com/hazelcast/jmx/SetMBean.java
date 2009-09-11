@@ -39,6 +39,11 @@ public class SetMBean extends AbstractMBean<ISet<?>> {
 		super(managedObject);
 	}
 
+	@Override
+	public ObjectNameSpec getNameSpec() {
+    	return getParentName().getNested("Set", getName());
+	}
+	
 	@SuppressWarnings("unchecked")
 	@Override
 	public void postRegister(Boolean registrationDone) {

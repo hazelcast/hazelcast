@@ -36,6 +36,11 @@ public class TopicMBean extends AbstractMBean<ITopic<?>> {
     	super(topic);
     }
 
+	@Override
+	public ObjectNameSpec getNameSpec() {
+    	return getParentName().getNested("Topic", getName());
+	}
+   
 	@SuppressWarnings("unchecked")
 	@Override
 	public void postRegister(Boolean registrationDone) {

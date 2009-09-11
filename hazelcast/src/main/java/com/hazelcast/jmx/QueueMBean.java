@@ -37,6 +37,11 @@ public class QueueMBean extends AbstractMBean<IQueue<?>> {
     	super(queue);
     }
 
+	@Override
+	public ObjectNameSpec getNameSpec() {
+		return getParentName().getNested("Queue", getName());
+	}
+	
 	@SuppressWarnings("unchecked")
 	@Override
 	public void postRegister(Boolean registrationDone) {

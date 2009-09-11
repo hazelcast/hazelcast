@@ -18,6 +18,7 @@ package com.hazelcast.jmx;
 
 import java.util.ArrayList;
 import java.util.List;
+import javax.management.ObjectName;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
@@ -40,6 +41,11 @@ public class ListMBean extends AbstractMBean<IList<?>> {
 		super(managedObject);
 	}
 
+	@Override
+	public ObjectNameSpec getNameSpec() {
+    	return getParentName().getNested("List", getName());
+	}
+	
 	@SuppressWarnings("unchecked")
 	@Override
 	public void postRegister(Boolean registrationDone) {
