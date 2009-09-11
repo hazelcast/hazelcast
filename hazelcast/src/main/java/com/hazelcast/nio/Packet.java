@@ -117,7 +117,7 @@ public final class Packet {
         bbHeader.putLong(recordId);
         bbHeader.putLong(version);
         bbHeader.putLong(callId);
-        bbHeader.putInt(client?1:0);
+        bbHeader.put((byte)(client?1:0));
         bbHeader.put(responseType);
         putString(bbHeader, name);
         boolean lockAddressNull = (lockAddress == null);
@@ -153,7 +153,7 @@ public final class Packet {
         recordId = bbHeader.getLong();
         version = bbHeader.getLong();
         callId = bbHeader.getLong();
-        client = (bbHeader.getInt()==1);
+        client = (bbHeader.get()==1);
         responseType = bbHeader.get();
         name = getString(bbHeader);
         boolean lockAddressNull = readBoolean(bbHeader);
