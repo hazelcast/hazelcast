@@ -32,6 +32,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,31 +45,25 @@ public final class ThreadContext {
 
     private final Serializer serializer = new Serializer();
 
-//    TransactionImpl txn = null;
-    
-    CallContext callContext = new CallContext();
+    CallContext callContext = null;
 
-	private final ObjectPool<ByteBuffer> bufferCache;
+    private final ObjectPool<ByteBuffer> bufferCache;
 
     private final ObjectPool<Packet> packetCache;
-
-    private final Thread thread;
 
     private final static ConcurrentMap<String, BlockingQueue> mapGlobalQueues = new ConcurrentHashMap<String, BlockingQueue>();
 
     private final ConcurrentMap<FactoryImpl, CallCache> mapCallCacheForFactories = new ConcurrentHashMap<FactoryImpl, CallCache>();
 
-	private boolean client = false;
+    private final static AtomicInteger newThreadId = new AtomicInteger();
 
-
-
-	static {
+    static {
         mapGlobalQueues.put("BufferCache", new ArrayBlockingQueue(6000));
         mapGlobalQueues.put("PacketCache", new ArrayBlockingQueue(2000));
     }
 
     private ThreadContext() {
-        thread = Thread.currentThread();
+        callContext = new CallContext(createNewThreadId(), false);
         int bufferCacheSize = 12;
         int packetCacheSize = 0;
         String threadName = Thread.currentThread().getName();
@@ -126,10 +121,6 @@ public final class ThreadContext {
         return threadContext;
     }
 
-    public Thread getThread() {
-        return thread;
-    }
-
     public ObjectPool<Packet> getPacketPool() {
         return packetCache;
     }
@@ -139,28 +130,24 @@ public final class ThreadContext {
     }
 
     public void finalizeTxn() {
-    	callContext.finalizeTxn();
+        callContext.finalizeTxn();
     }
 
     public Transaction getTransaction() {
         return callContext.getTxn();
     }
-//
-//    public void setTransaction(TransactionImpl txn) {
-//        this.txn = txn;
-//    }
 
     public long getTxnId() {
         return callContext.getTxnId();
     }
-    
-    public CallContext getExecutionContext() {
-		return callContext;
-	}
 
-	public void setExecutionContext(CallContext executionContext) {
-		this.callContext = executionContext;
-	}
+    public CallContext getExecutionContext() {
+        return callContext;
+    }
+
+    public void setExecutionContext(CallContext executionContext) {
+        this.callContext = executionContext;
+    }
 
     public Data hardCopy(final Data data) {
         return BufferUtil.doHardCopy(data);
@@ -203,7 +190,11 @@ public final class ThreadContext {
      * @return true if the thread is for Java or CSharp Client, false otherwise
      */
     public boolean isClient() {
-        return client;
+        return callContext.isClient();
+    }
+
+    public int createNewThreadId() {
+        return newThreadId.incrementAndGet();
     }
 
     class CallCache {
@@ -314,16 +305,11 @@ public final class ThreadContext {
         }
     }
 
-	public int getThreadId() {
-		// TODO Auto-generated method stub
-		return callContext.getThreadId();
-	}
-	
-    public void setClient(boolean client) {
-		this.client = client;
-	}
+    public int getThreadId() {
+        return callContext.getThreadId();
+    }
 
-	public void setCallContext(CallContext callContext) {
-		this.callContext = callContext;
-	}
+    public void setCallContext(CallContext callContext) {
+        this.callContext = callContext;
+    }
 }

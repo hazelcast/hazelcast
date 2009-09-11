@@ -85,6 +85,8 @@ public class Node {
 
     public final QueryService queryService;
 
+    public final ClientService clientService;
+
     public final Config config;
 
     public final ThreadGroup threadGroup;
@@ -202,6 +204,7 @@ public class Node {
         outSelector = new OutSelector(this);
         connectionManager = new ConnectionManager(this);
 
+        clientService = new ClientService(this);
         queryService = new QueryService(this);
         clusterManager = new ClusterManager(this);
         concurrentMapManager = new ConcurrentMapManager(this);
@@ -341,6 +344,7 @@ public class Node {
                 multicastService.stop();
                 connectionManager.shutdown();
                 concurrentMapManager.reset();
+                clientService.reset();
                 executorManager.stop();
                 address = null;
                 masterAddress = null;

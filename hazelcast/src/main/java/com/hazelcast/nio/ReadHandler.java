@@ -17,7 +17,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.ClientRequestHandler;
 import com.hazelcast.impl.ThreadContext;
 import static com.hazelcast.nio.BufferUtil.copyToHeapBuffer;
 
@@ -44,18 +43,18 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
         if (asymmetricEncryptionEnabled || symmetricEncryptionEnabled) {
             if (asymmetricEncryptionEnabled && symmetricEncryptionEnabled) {
                 if (true) {
-                    logger.log (Level.INFO, "Incorrect encryption configuration.");
-                    logger.log (Level.INFO, "You can enable either SymmetricEncryption or AsymmetricEncryption.");
-                    throw new RuntimeException ();
-                }                
+                    logger.log(Level.INFO, "Incorrect encryption configuration.");
+                    logger.log(Level.INFO, "You can enable either SymmetricEncryption or AsymmetricEncryption.");
+                    throw new RuntimeException();
+                }
                 packetReader = new ComplexCipherPacketReader();
-                logger.log (Level.INFO,  "Reader started with ComplexEncryption");
+                logger.log(Level.INFO, "Reader started with ComplexEncryption");
             } else if (symmetricEncryptionEnabled) {
                 packetReader = new SymmetricCipherPacketReader();
-                logger.log (Level.INFO,  "Reader started with SymmetricEncryption");
+                logger.log(Level.INFO, "Reader started with SymmetricEncryption");
             } else {
                 packetReader = new AsymmetricCipherPacketReader();
-                logger.log (Level.INFO,  "Reader started with AsymmetricEncryption");
+                logger.log(Level.INFO, "Reader started with AsymmetricEncryption");
             }
         } else {
             packetReader = new DefaultPacketReader();
@@ -105,10 +104,11 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
         p.flipBuffers();
         p.read();
         p.setFromConnection(connection);
-        if(p.client){
-        	node.executorManager.executeLocally(new ClientRequestHandler(p));
-        }else
-        	clusterService.enqueueAndReturn(p);
+        if (p.client) {
+            node.clientService.handle(p);
+        } else {
+            clusterService.enqueueAndReturn(p);
+        }
     }
 
     interface PacketReader {
@@ -136,6 +136,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
         boolean joinPartReadDone = false;
         int totalJoinRead = 0;
         int maxJoinRead = 2280;
+
         ComplexCipherPacketReader() {
         }
 
@@ -163,7 +164,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
                 }
                 totalJoinRead += (inBuffer.position() - current);
                 joinPartReadDone = (totalJoinRead >= maxJoinRead);
-                System.out.println(totalJoinRead  + " total read " + maxJoinRead);
+                System.out.println(totalJoinRead + " total read " + maxJoinRead);
                 if (joinPartReadDone) {
                     readPacket();
                 }
