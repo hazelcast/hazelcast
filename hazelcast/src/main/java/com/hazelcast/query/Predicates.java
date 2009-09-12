@@ -126,6 +126,7 @@ public class Predicates {
     public static class EqualPredicate extends AbstractPredicate implements IndexAwarePredicate {
         Expression first;
         Object second;
+        Object convertedSecondValue = null;
         protected boolean secondIsExpression = true;
 
         public EqualPredicate() {
@@ -147,8 +148,37 @@ public class Predicates {
                 return first.getValue(entry).equals(((Expression) second).getValue(entry));
             } else {
                 Object firstVal = first.getValue(entry);
-                if (firstVal == null) return (second == null);
-                else return firstVal.equals(second);
+                if (firstVal == null) {
+                    return (second == null);
+                } else if (second == null) {
+                    return false;
+                } else {
+                    if (convertedSecondValue != null) {
+                        return firstVal.equals(convertedSecondValue);
+                    } else {
+                        if (firstVal.getClass() == second.getClass()) {
+                           convertedSecondValue = second;
+                        } else if (second instanceof String){
+                           String str = (String) second;
+                           if (firstVal instanceof Boolean) {
+                               convertedSecondValue = "true".equalsIgnoreCase(str) ? true : false;
+                           } else if (firstVal instanceof Integer) {
+                               convertedSecondValue = Integer.valueOf(str);
+                           } else if (firstVal instanceof Double) {
+                               convertedSecondValue = Double.valueOf(str);
+                           } else if (firstVal instanceof Float) {
+                               convertedSecondValue = Float.valueOf(str);
+                           }  else if (firstVal instanceof Byte) {
+                               convertedSecondValue = Byte.valueOf(str);
+                           }  else if (firstVal instanceof Long) {
+                               convertedSecondValue = Long.valueOf(str);
+                           } else {
+                               throw new RuntimeException("Unknown type " + firstVal.getClass() + " value=" + str);
+                           }
+                        }
+                    }
+                    return firstVal.equals(convertedSecondValue);
+                }
             }
         }
 

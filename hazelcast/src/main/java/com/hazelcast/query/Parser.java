@@ -17,21 +17,16 @@
 
 package com.hazelcast.query;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 
 class Parser {
 	private static final String SPLIT_EXPRESSION = " ";
 	List<String> stack = new ArrayList<String>();
 	Queue<String> output = new ArrayBlockingQueue<String>(100);
-	Map<String,Integer> precedence = new HashMap<String,Integer>();
-	public Parser() {
-		precedence.put("(", 15);
+	private static final Map<String,Integer> precedence = new HashMap<String,Integer>();
+    static {
+        precedence.put("(", 15);
 		precedence.put(")", 15);
 		precedence.put("not", 11);
 		precedence.put("=", 10);
@@ -42,7 +37,15 @@ class Parser {
 		precedence.put("==", 10);
 		precedence.put("and", 9);
 		precedence.put("or", 8);
+    }
+
+    public Parser() {
+
 	}
+
+    public static boolean isPrecedence(String str) {
+        return precedence.containsKey(str);
+    }
 	
 	public List<Object> toPrefix(String in){
 //		String[] tokens = in.split(SPLIT_EXPRESSION);
