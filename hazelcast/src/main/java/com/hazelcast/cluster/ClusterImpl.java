@@ -59,7 +59,7 @@ public class ClusterImpl implements Cluster {
             if (clusterMember == null) {
                 clusterMember = dummy; 
                 if (listenerSet != null && listenerSet.size() > 0) {
-                    node.executorManager.executeLocaly(new Runnable() {
+                    node.executorManager.executeLocally(new Runnable() {
                         public void run() {
                             MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
                                     dummy, MembershipEvent.MEMBER_ADDED);
@@ -79,7 +79,7 @@ public class ClusterImpl implements Cluster {
             Set<Member> it = clusterMembers.keySet();
             for (final Member cm : it) {
                 if (!setNew.contains(cm)) {
-                    node.executorManager.executeLocaly(new Runnable() {
+                    node.executorManager.executeLocally(new Runnable() {
                         public void run() {
                             MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
                                     cm, MembershipEvent.MEMBER_REMOVED);
