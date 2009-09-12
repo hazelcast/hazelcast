@@ -67,7 +67,7 @@ public class Predicates {
 
         public Set<MapEntry> filter(Map<Expression, Index<MapEntry>> namedIndexes) {
             Index index = namedIndexes.get(first);
-            return index.getSubRecords(equal, less, getLongValue(second));
+            return index.getSubRecords(equal, less, index.getLongValue(second));
         }
 
         @Override
@@ -108,7 +108,7 @@ public class Predicates {
 
         public Set<MapEntry> filter(Map<Expression, Index<MapEntry>> namedIndexes) {
             Index index = namedIndexes.get(first);
-            return index.getSubRecords(getLongValue(second), getLongValue(to));
+            return index.getSubRecords(index.getLongValue(second), index.getLongValue(to));
         }
 
         public void writeData(DataOutput out) throws IOException {
@@ -204,7 +204,7 @@ public class Predicates {
         public Set<MapEntry> filter(Map<Expression, Index<MapEntry>> mapIndexes) {
             Index index = mapIndexes.get(first);
             if (index != null) {
-                return index.getRecords(getLongValue(second));
+                return index.getRecords (index.getLongValue(second));
             } else {
                 return null;
             }
@@ -253,15 +253,7 @@ public class Predicates {
     }
 
     public static abstract class AbstractPredicate extends SerializationHelper implements Predicate, DataSerializable {
-        public static long getLongValue(Object value) {
-            if (value instanceof Number) {
-                return ((Number) value).longValue();
-            } else if (value instanceof Boolean) {
-                return (Boolean.TRUE.equals(value)) ? 1 : -1;
-            } else {
-                return value.hashCode();
-            }
-        }
+
     }
 
     public static class AndOrPredicate extends AbstractPredicate implements IndexAwarePredicate {
@@ -501,10 +493,12 @@ public class Predicates {
 
         abstract class Getter {
             abstract Object getValue(Object obj) throws Exception;
+
+            abstract Class getReturnType();
         }
 
         class MethodGetter extends Getter {
-            Method method;
+            final Method method;
 
             MethodGetter(Method method) {
                 this.method = method;
@@ -513,10 +507,14 @@ public class Predicates {
             Object getValue(Object obj) throws Exception {
                 return method.invoke(obj);
             }
+
+            Class getReturnType() {
+                return this.method.getReturnType();
+            }
         }
 
         class FieldGetter extends Getter {
-            Field field;
+            final Field field;
 
             FieldGetter(Field field) {
                 this.field = field;
@@ -524,6 +522,10 @@ public class Predicates {
 
             Object getValue(Object obj) throws Exception {
                 return field.get(obj);
+            }
+
+            Class getReturnType() {
+                return this.field.getType();
             }
         }
 

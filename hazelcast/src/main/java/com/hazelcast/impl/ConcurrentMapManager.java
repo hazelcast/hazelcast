@@ -41,7 +41,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -827,14 +826,19 @@ public final class ConcurrentMapManager extends BaseManager {
         int indexCount = cmap.mapIndexes.size();
         if (indexCount > 0) {
             Index[] indexes = cmap.indexes;
+            byte[] indexTypes = cmap.indexTypes;
             long[] newIndexes = new long[indexCount];
+            if (indexTypes == null) {
+                indexTypes = new byte[indexCount];
+            }
             for (int i = 0; i < indexes.length; i++) {
                 Index index = indexes[i];
                 if (index != null) {
                     newIndexes[i] = index.extractLongValue(value);
+                    indexTypes[i] = index.getIndexType();
                 }
             }
-            request.setIndexes(newIndexes);
+            request.setIndexes(newIndexes, indexTypes);
         }
     }
 
@@ -869,7 +873,7 @@ public final class ConcurrentMapManager extends BaseManager {
                             oldObject = toObject(oldValue);
                         }
                         txn.attachPutOp(name, key, value, (oldObject == null));
-                        return threadContext.isClient()?oldValue:oldObject;
+                        return threadContext.isClient() ? oldValue : oldObject;
                     } else {
                         return txn.attachPutOp(name, key, value, false);
                     }
@@ -1170,16 +1174,15 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         boolean onResponse(Object response) {
-        	//If Caller Thread is client, then the response is in form of Data
-        	//We need to deserialize it here
-        	Pairs pairs = null;
-        	if(response instanceof Data){
-        		pairs = (Pairs) toObject((Data)response);
-        	}
-        	else{
-        		pairs = (Pairs)response;
-        	}
-        	
+            //If Caller Thread is client, then the response is in form of Data
+            //We need to deserialize it here
+            Pairs pairs = null;
+            if (response instanceof Data) {
+                pairs = (Pairs) toObject((Data) response);
+            } else {
+                pairs = (Pairs) response;
+            }
+
             entries.addEntries(pairs);
             return true;
         }
@@ -1991,7 +1994,9 @@ public final class ConcurrentMapManager extends BaseManager {
 
         private final Map<Expression, Index<MapEntry>> mapIndexes = new ConcurrentHashMap(6);
 
-        private Index<MapEntry>[] indexes = null;
+        private volatile Index<MapEntry>[] indexes = null;
+
+        private volatile byte[] indexTypes = null;
 
         final LocallyOwnedMap locallyOwnedMap;
 
@@ -2256,16 +2261,12 @@ public final class ConcurrentMapManager extends BaseManager {
                     }
                 }
             } else {
-                if (!isMultiMap()) {
-                    return searchValueIndex(value);
-                } else {
-                    Collection<Record> records = mapRecords.values();
-                    for (Record record : records) {
-                        Block block = blocks[record.getBlockId()];
-                        if (thisAddress.equals(block.getOwner())) {
-                            if (record.containsValue(value)) {
-                                return true;
-                            }
+                Collection<Record> records = mapRecords.values();
+                for (Record record : records) {
+                    Block block = blocks[record.getBlockId()];
+                    if (thisAddress.equals(block.getOwner())) {
+                        if (record.containsValue(value)) {
+                            return true;
                         }
                     }
                 }
@@ -2327,7 +2328,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     return false;
                 }
             }
-            node.queryService.updateIndex(name, null, record, Integer.MIN_VALUE);
+            node.queryService.updateIndex(name, null, null, record, Integer.MIN_VALUE);
             record.setVersion(record.getVersion() + 1);
             record.incrementCopyCount();
             fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, record);
@@ -2377,7 +2378,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
             }
             if (added) {
-                node.queryService.updateIndex(name, null, record, Integer.MIN_VALUE);
+                node.queryService.updateIndex(name, null, null, record, Integer.MIN_VALUE);
                 record.addValue(req.value);
                 req.value = null;
                 record.setVersion(record.getVersion() + 1);
@@ -2448,10 +2449,12 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
                 long[] newIndexes = request.indexes;
                 request.indexes = null;
-                node.queryService.updateIndex(name, newIndexes, record, record.getValue().hashCode());
+                byte[] indexTypes = request.indexTypes;
+                request.indexTypes = null;
+                node.queryService.updateIndex(name, newIndexes, indexTypes, record, record.getValue().hashCode());
             } else {
                 if (created || record.getValueHash() != record.getValue().hashCode()) {
-                    node.queryService.updateIndex(name, null, record, record.getValue().hashCode());
+                    node.queryService.updateIndex(name, null, null, record, record.getValue().hashCode());
                 }
             }
         }
@@ -2808,7 +2811,7 @@ public final class ConcurrentMapManager extends BaseManager {
         void removeAndPurgeRecord(Record record) {
             Block ownerBlock = blocks[record.getBlockId()];
             if (thisAddress.equals(ownerBlock.getRealOwner())) {
-                node.queryService.updateIndex(name, null, record, Integer.MIN_VALUE);
+                node.queryService.updateIndex(name, null, null, record, Integer.MIN_VALUE);
             }
             Record removedRecord = mapRecords.remove(record.getKey());
             if (removedRecord != record) {
@@ -2823,24 +2826,6 @@ public final class ConcurrentMapManager extends BaseManager {
                     garbage(data);
                 }
             }
-        }
-
-
-        boolean searchValueIndex(Data value) {
-            //TODO value search should be in query thread
-//            Set<Record> lsRecords = mapValueIndex.get(value.hashCode());
-//            if (lsRecords == null || lsRecords.size() == 0) {
-//                return false;
-//            } else {
-//                for (Record rec : lsRecords) {
-//                    if (rec.isValid()) {
-//                        if (value.equals(rec.getValue())) {
-//                            return true;
-//                        }
-//                    }
-//                }
-//            }
-            return false;
         }
 
         Record createNewRecord(Data key, Data value) {
@@ -3025,10 +3010,11 @@ public final class ConcurrentMapManager extends BaseManager {
                     entry.setName(node.factory.getName(), name);
                     lsKeyValues.add(entry);
                 }
+            }
         }
-        }
-        public List<Map.Entry> getLsKeyValues(){
-        	return lsKeyValues;
+
+        public List<Map.Entry> getLsKeyValues() {
+            return lsKeyValues;
         }
 
         class EntryIterator implements Iterator {

@@ -155,7 +155,7 @@ public class QueryService implements Runnable {
             return false;
         }
 
-        public void doUpdateIndex(final long[] newValues, final Record record, final int valueHash) {
+        public void doUpdateIndex(final long[] newValues, final byte[] types, final Record record, final int valueHash) {
             if (record.isActive()) {
                 updateValueIndex(valueHash, record);
                 ownedRecords.add(record);
@@ -173,9 +173,9 @@ public class QueryService implements Runnable {
                     Index index = indexes[i];
                     long oldValue = (oldValues == null) ? Long.MIN_VALUE : oldValues[i];
                     if (oldValue == Long.MIN_VALUE) {
-                        index.addNewIndex(newValues[i], record);
+                        index.addNewIndex(newValues[i], types[i],  record);
                     } else {
-                        index.updateIndex(oldValue, newValues[i], record);
+                        index.updateIndex(oldValue, newValues[i], types[i], record);
                     }
                 }
                 record.setIndexes(newValues);
@@ -322,12 +322,12 @@ public class QueryService implements Runnable {
         return null;
     }
 
-    public void updateIndex(final String name, final long[] newValues, final Record record, final int valueHash) {
+    public void updateIndex(final String name, final long[] newValues, final byte[] types, final Record record, final int valueHash) {
         try {
             queryQ.put(new Runnable() {
                 public void run() {
                     IndexRegion indexRegion = getIndexRegion(name);
-                    indexRegion.doUpdateIndex(newValues, record, valueHash);
+                    indexRegion.doUpdateIndex(newValues, types, record, valueHash);
                 }
             });
         } catch (InterruptedException ignore) {

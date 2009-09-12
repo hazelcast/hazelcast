@@ -25,6 +25,7 @@ public class Index<T> {
     final boolean ordered;
     volatile boolean strong = false;
     volatile boolean checkedStregth = false;
+    volatile byte returnType = -1;
 
     public Index(Expression expression, boolean ordered) {
         this.ordered = ordered;
@@ -52,6 +53,71 @@ public class Index<T> {
         this.strong = strong;
     }
 
+    void addNewIndex(long value, byte type, T record) {
+        if (returnType == -1) {
+            returnType = type;
+        } else if (returnType != type) {
+            throw new RuntimeException("Index types are not the same. Found:" + returnType + " New:" + type);
+        }
+        Set<T> lsRecords = mapIndex.get(value);
+        if (lsRecords == null) {
+            lsRecords = new LinkedHashSet<T>();
+            mapIndex.put(value, lsRecords);
+        }
+        lsRecords.add(record);
+    }
+
+    void updateIndex(long oldValue, long newValue, byte type, T record) {
+        if (oldValue == Long.MIN_VALUE) {
+            addNewIndex(newValue, type, record);
+        } else {
+            if (oldValue != newValue) {
+                removeIndex(oldValue, record);
+                addNewIndex(newValue, type, record);
+            }
+        }
+    }
+
+    void removeIndex(long value, T record) {
+        Set<T> lsRecords = mapIndex.get(value);
+        if (lsRecords != null && lsRecords.size() > 0) {
+            lsRecords.remove(record);
+            if (lsRecords.size() == 0) {
+                mapIndex.remove(value);
+            }
+        }
+    }
+
+    public byte getIndexType() {
+        if (returnType == -1) {
+            Predicates.GetExpressionImpl ex = (Predicates.GetExpressionImpl) expression;
+            returnType = getIndexType(ex.getter.getReturnType());
+        }
+        return returnType;
+    }
+
+    public byte getIndexType(Class klass) {
+        if (klass == String.class) {
+            return 1;
+        } else if (klass == int.class || klass == Integer.class) {
+            return 2;
+        } else if (klass == long.class || klass == Long.class) {
+            return 3;
+        } else if (klass == boolean.class || klass == Boolean.class) {
+            return 4;
+        } else if (klass == double.class || klass == Double.class) {
+            return 5;
+        } else if (klass == float.class || klass == Float.class) {
+            return 6;
+        } else if (klass == byte.class || klass == Byte.class) {
+            return 7;
+        } else if (klass == char.class || klass == Character.class) {
+            return 8;
+        } else {
+            return 9;
+        }
+    }
+
     public long extractLongValue(Object value) {
         Object extractedValue = expression.getValue(value);
         if (extractedValue == null) {
@@ -70,33 +136,35 @@ public class Index<T> {
 
     }
 
-    void addNewIndex(long value, T record) {
-        Set<T> lsRecords = mapIndex.get(value);
-        if (lsRecords == null) {
-            lsRecords = new LinkedHashSet<T>();
-            mapIndex.put(value, lsRecords);
+    long getLongValue(Object value) {
+        if (value == null) return Long.MIN_VALUE;
+        int valueType = getIndexType(value.getClass());
+        if (valueType != returnType) {
+            if (value instanceof String) {
+                String str = (String) value;
+                if (returnType == 2) {
+                    value = Integer.valueOf(str);
+                } else if (returnType == 3) {
+                    value = Long.valueOf(str);
+                } else if (returnType == 4) {
+                    value = Boolean.valueOf(str);
+                } else if (returnType == 5) {
+                    value = Double.valueOf(str);
+                } else if (returnType == 6) {
+                    value = Float.valueOf(str);
+                }else if (returnType == 7) {
+                    value = Byte.valueOf(str);
+                }else if (returnType == 8) {
+                    value = Character.valueOf(str.charAt(0));
+                }
+            }
         }
-        lsRecords.add(record);
-    }
-
-    void updateIndex(long oldValue, long newValue, T record) {
-        if (oldValue == Long.MIN_VALUE) {
-            addNewIndex(newValue, record);
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        } else if (value instanceof Boolean) {
+            return (Boolean.TRUE.equals(value)) ? 1 : -1;
         } else {
-            if (oldValue != newValue) {
-                removeIndex(oldValue, record);
-                addNewIndex(newValue, record);
-            }
-        }
-    }
-
-    void removeIndex(long value, T record) {
-        Set<T> lsRecords = mapIndex.get(value);
-        if (lsRecords != null && lsRecords.size() > 0) {
-            lsRecords.remove(record);
-            if (lsRecords.size() == 0) {
-                mapIndex.remove(value);
-            }
+            return value.hashCode();
         }
     }
 
@@ -155,4 +223,6 @@ public class Index<T> {
         sb.append('}');
         return sb.toString();
     }
+
+
 }

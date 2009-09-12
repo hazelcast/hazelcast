@@ -72,7 +72,6 @@ public class QueryTest {
     }
 
     @Test
-    @Ignore
     public void testOneMemberSQLWithoutIndex() {
         HazelcastInstance h1 = newInstance();
         IMap imap = h1.getMap("employees");
@@ -80,7 +79,6 @@ public class QueryTest {
     }
 
     @Test
-    @Ignore
     public void testOneMemberSQLWithIndex() {
         HazelcastInstance h1 = newInstance();
         IMap imap = h1.getMap("employees");
@@ -89,6 +87,53 @@ public class QueryTest {
         imap.addIndex(Predicates.get("active"), false);
         doFunctionalSQLQueryTest(imap);
     }
+
+@Test
+    public void testIndexSQLPerformance() {
+        HazelcastInstance h1 = newInstance();
+        IMap imap = h1.getMap("employees");
+        for (int i = 0; i < 5000; i++) {
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+        }
+
+        EntryObject e = new PredicateBuilder().getRoot();
+        Predicate predicate = e.is("active").and(e.get("age").equal(23));
+
+        long start = System.currentTimeMillis();
+        Set<Map.Entry> entries = imap.entrySet(predicate);
+        long tookWithout = (System.currentTimeMillis() - start);
+
+        assertEquals(83, entries.size());
+        for (Map.Entry entry : entries) {
+            Employee c = (Employee) entry.getValue();
+            assertEquals(c.getAge(), 23);
+            assertTrue(c.isActive());
+        }
+        imap.clear();
+        imap = h1.getMap("employees2");
+        imap.addIndex(Predicates.get("name"), false);
+        imap.addIndex(Predicates.get("age"), true);
+        imap.addIndex(Predicates.get("active"), false);
+
+        for (int i = 0; i < 5000; i++) {
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+        }
+
+        predicate = new PredicateBuilder().createPredicate("active=true and age=23");
+
+        start = System.currentTimeMillis();
+        entries = imap.entrySet(predicate);
+        long tookWithIndex = (System.currentTimeMillis() - start);
+        assertEquals(83, entries.size());
+        for (Map.Entry entry : entries) {
+            Employee c = (Employee) entry.getValue();
+            assertEquals(c.getAge(), 23);
+            assertTrue(c.isActive());
+        }
+    System.out.println(tookWithIndex + " " + tookWithout);
+        assertTrue(tookWithIndex < (tookWithout / 2));
+    }
+
 
     @Test
     public void testIndexPerformance() {
@@ -133,11 +178,8 @@ public class QueryTest {
             assertEquals(c.getAge(), 23);
             assertTrue(c.isActive());
         }
-
         assertTrue(tookWithIndex < (tookWithout / 2));
     }
-
-
 
     @Test
     public void testTwoMembers() {

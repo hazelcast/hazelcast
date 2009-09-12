@@ -41,6 +41,8 @@ public final class Packet {
 
     public long[] indexes = new long[6];
 
+    public byte[] indexTypes = new byte[6];
+
     public long txnId = -1;
 
     public int threadId = -1;
@@ -128,6 +130,7 @@ public final class Packet {
         bbHeader.put(indexCount);
         for (int i=0; i < indexCount; i++){
             bbHeader.putLong(indexes[i]);
+            bbHeader.put(indexTypes[i]);
         } 
         bbHeader.flip();
         bbSizes.putInt(bbHeader.limit());
@@ -164,6 +167,7 @@ public final class Packet {
         indexCount = bbHeader.get();
         for (int i=0; i<indexCount ; i++) {
             indexes[i] = bbHeader.getLong();
+            indexTypes[i] = bbHeader.get();
         }
     }
 

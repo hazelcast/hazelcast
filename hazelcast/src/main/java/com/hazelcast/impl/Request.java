@@ -46,6 +46,7 @@ class Request {
     long version = -1;
     long txnId = -1;
     long[] indexes;
+    byte[] indexTypes;
     Object attachment = null;
     Object response = null;
 
@@ -81,10 +82,17 @@ class Request {
         this.recordId = -1;
         this.version = -1;
         this.redoCount = 0;
+        this.indexes = null;
+        this.indexTypes = null;
     }
 
-    public void setIndexes(long[] newIndexes) {
-        indexes = newIndexes;
+    public void setIndexes(long[] newIndexes, byte[] indexTypes) {
+        this.indexes = newIndexes;
+        this.indexTypes = indexTypes;
+        if (indexes.length != indexTypes.length) {
+            throw new RuntimeException("Indexes length and indexTypes length has to be the same."
+                    + indexes.length + " vs. " + indexTypes.length);
+        }
     }
 
     public void set(final boolean local, final ClusterOperation operation, final String name,
@@ -149,6 +157,8 @@ class Request {
         if (packet.indexCount > 0) {
             indexes = new long[packet.indexCount];
             System.arraycopy(packet.indexes, 0, indexes, 0, indexes.length);
+            indexTypes = new byte[packet.indexCount];
+            System.arraycopy(packet.indexTypes, 0, indexTypes, 0, indexes.length);
         }
 
     }
@@ -181,6 +191,7 @@ class Request {
         packet.indexCount = indexCount;
         if (indexCount > 0) {
             System.arraycopy(indexes, 0, packet.indexes, 0, indexes.length);
+            System.arraycopy(indexTypes, 0, packet.indexTypes, 0, indexes.length);
         }
     }
 
