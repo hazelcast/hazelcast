@@ -18,12 +18,10 @@
 package com.hazelcast.query;
 
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
 
 class Parser {
 	private static final String SPLIT_EXPRESSION = " ";
-	List<String> stack = new ArrayList<String>();
-	Queue<String> output = new ArrayBlockingQueue<String>(100);
+
 	private static final Map<String,Integer> precedence = new HashMap<String,Integer>();
     static {
         precedence.put("(", 15);
@@ -40,28 +38,26 @@ class Parser {
     }
 
     public Parser() {
-
 	}
 
     public static boolean isPrecedence(String str) {
         return precedence.containsKey(str);
     }
 	
-	public List<Object> toPrefix(String in){
-//		String[] tokens = in.split(SPLIT_EXPRESSION);
-		Object[] tokens = split(in).toArray();
-		for (int i = 0; i < tokens.length; i++) {
-			String token = (String)tokens[i];
-			
+	public List<String> toPrefix(String in){
+	    List<String> stack = new ArrayList<String>();
+        List<String> output = new ArrayList<String>();
+        List<String> tokens = split(in);
+		for (String token: tokens) {
 			if(isOperand(token)){
 				if(token.equals(")")){
-					while(openParanthesesFound()){
-						popStackToOutput();
+					while(openParanthesesFound(stack)){
+						output.add(stack.remove(stack.size()-1));
 					}
 					stack.remove(stack.size()-1);
 				}else{
-					while(openParanthesesFound() &&!hasHigherPrecedence(token, stack.get(stack.size()-1))){
-						popStackToOutput();
+					while(openParanthesesFound(stack) &&!hasHigherPrecedence(token, stack.get(stack.size()-1))){
+						output.add(stack.remove(stack.size()-1));
 					}
 					stack.add(token);
 				}
@@ -72,9 +68,9 @@ class Parser {
 		}
 
 		while(stack.size()>0 ){
-			popStackToOutput();
+			output.add(stack.remove(stack.size()-1));
 		}
-		return Arrays.asList(output.toArray());
+		return output;
 	}
 
 	public List<String> split(String in) {
@@ -112,14 +108,6 @@ class Parser {
 		return list;
 	}
 
-	private boolean openParanthesesFound() {
-		return stack.size() > 0 && !stack.get(stack.size()-1).equals("(");
-	}
-
-	private void popStackToOutput() {
-		output.add(stack.remove(stack.size()-1));
-	}
-
 	public boolean hasHigherPrecedence(String operator1, String operator2) {
 		return precedence.get(operator1.toLowerCase()) > precedence.get(operator2.toLowerCase());
 	}
@@ -127,4 +115,8 @@ class Parser {
 	private boolean isOperand(String string) {
 		return precedence.containsKey(string.toLowerCase());
 	}
+
+    private boolean openParanthesesFound(List<String> stack) {
+		return stack.size() > 0 && !stack.get(stack.size()-1).equals("(");
+}
 }
