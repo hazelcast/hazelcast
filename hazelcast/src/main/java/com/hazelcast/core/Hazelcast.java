@@ -111,6 +111,17 @@ public final class Hazelcast {
     }
 
     /**
+     * Shuts down all running Hazelcast Instances on this JVM, including the
+     * default one if it is running. It doesn't shutdown all members of the
+     * cluster but just the ones running on this JVM.
+     *
+     * @see #newHazelcastInstance(Config)
+     */
+    public static void shutdownAll() {
+        com.hazelcast.impl.FactoryImpl.shutdownAll();
+    }
+
+    /**
      * Detaches this member from the cluster first and then restarts it
      * as a new member.
      */
@@ -143,6 +154,18 @@ public final class Hazelcast {
         getDefaultInstance().removeInstanceListener(instanceListener);
     }
 
+    /**
+     * Creates a new Hazelcast instance (a new node in a cluster).
+     * This method allows you to create and run multiple instances
+     * of Hazelcast cluster members on the same JVM.
+     *
+     * To shutdown all running hazelcast instances (all members on this JVM)
+     * call {@link #shutdownAll()}. 
+     *
+     * @see #shutdownAll()
+     * @param config Configuration for the new hazelcast instance (member)
+     * @return new hazelcast instance
+     */
     public static HazelcastInstance newHazelcastInstance(Config config) {
         return com.hazelcast.impl.FactoryImpl.newFactory(config);
     }

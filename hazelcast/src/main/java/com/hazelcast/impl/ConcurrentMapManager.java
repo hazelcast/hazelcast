@@ -373,7 +373,12 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    volatile boolean migrating = false;
     void doResetRecords() {
+        if (migrating) {
+            throw new RuntimeException("Migration is already in progress");
+        }
+        migrating = true;
         InitialState initialState = new InitialState();
         Collection<CMap> cmaps = maps.values();
         for (final CMap cmap : cmaps) {
@@ -383,6 +388,7 @@ public final class ConcurrentMapManager extends BaseManager {
         if (isSuperClient())
             return;
         cmaps = maps.values();
+        final AtomicInteger count = new AtomicInteger(0);
         for (final CMap cmap : cmaps) {
             final Object[] records = cmap.mapRecords.values().toArray();
             cmap.reset();
@@ -392,23 +398,28 @@ public final class ConcurrentMapManager extends BaseManager {
                     if (rec.getKey() == null || rec.getKey().size() == 0) {
                         throw new RuntimeException("Record.key is null or empty " + rec.getKey());
                     }
+                    count.incrementAndGet();
                     executeLocally(new Runnable() {
                         public void run() {
-                            MMigrate mmigrate = new MMigrate();
-                            if (cmap.isMultiMap()) {
-                                List<Data> values = rec.getMultiValues();
-                                if (values == null || values.size() == 0) {
-                                    mmigrate.migrateMulti(rec, null);
+                            try {
+                                MMigrate mmigrate = new MMigrate();
+                                if (cmap.isMultiMap()) {
+                                    List<Data> values = rec.getMultiValues();
+                                    if (values == null || values.size() == 0) {
+                                        mmigrate.migrateMulti(rec, null);
+                                    } else {
+                                        for (Data value : values) {
+                                            mmigrate.migrateMulti(rec, value);
+                                        }
+                                    }
                                 } else {
-                                    for (Data value : values) {
-                                        mmigrate.migrateMulti(rec, value);
+                                    boolean migrated = mmigrate.migrate(rec);
+                                    if (!migrated) {
+                                        logger.log(Level.FINEST, "Migration failed " + rec.getKey());
                                     }
                                 }
-                            } else {
-                                boolean migrated = mmigrate.migrate(rec);
-                                if (!migrated) {
-                                    logger.log(Level.FINEST, "Migration failed " + rec.getKey());
-                                }
+                            } finally {
+                                count.decrementAndGet();
                             }
                         }
                     });
@@ -417,9 +428,17 @@ public final class ConcurrentMapManager extends BaseManager {
         }
         executeLocally(new Runnable() {
             public void run() {
+                while (count.get() != 0) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ignored) {
+                        return;
+                    }
+                }
                 MultiMigrationComplete mmc = new MultiMigrationComplete();
                 mmc.call();
                 logger.log(Level.FINEST, "Migration ended!");
+                migrating = false;
             }
         });
     }
@@ -1219,12 +1238,13 @@ public final class ConcurrentMapManager extends BaseManager {
 
     @Override
     public boolean isMigrating() {
-        for (Block block : blocks) {
-            if (block != null && block.isMigrating()) {
-                return true;
-            }
-        }
-        return false;
+//        for (Block block : blocks) {
+//            if (block != null && block.isMigrating()) {
+//                return true;
+//            }
+//        }
+//        return false;
+        return migrating;
     }
 
     private int getBlockId(Data key) {

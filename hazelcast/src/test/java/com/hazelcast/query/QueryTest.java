@@ -96,11 +96,9 @@ public class QueryTest {
             imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
         }
 
-        EntryObject e = new PredicateBuilder().getRoot();
-        Predicate predicate = e.is("active").and(e.get("age").equal(23));
 
         long start = System.currentTimeMillis();
-        Set<Map.Entry> entries = imap.entrySet(predicate);
+        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active=true and age=23"));
         long tookWithout = (System.currentTimeMillis() - start);
 
         assertEquals(83, entries.size());
@@ -119,10 +117,8 @@ public class QueryTest {
             imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
         }
 
-        predicate = new PredicateBuilder().createPredicate("active=true and age=23");
-
         start = System.currentTimeMillis();
-        entries = imap.entrySet(predicate);
+        entries = imap.entrySet(new SqlPredicate("active=true and age=23"));
         long tookWithIndex = (System.currentTimeMillis() - start);
         assertEquals(83, entries.size());
         for (Map.Entry entry : entries) {
@@ -227,10 +223,7 @@ public class QueryTest {
         }
         assertEquals(102, itCount);
 
-        EntryObject e = new PredicateBuilder().getRoot();
-        Predicate predicate = new PredicateBuilder().createPredicate("active=true and age=23");
-
-        entries = imap.entrySet(predicate);
+        entries = imap.entrySet(new SqlPredicate("active=true and age=23"));
         assertEquals(3, entries.size());
         for (Map.Entry entry : entries) {
             Employee c = (Employee) entry.getValue();
@@ -240,7 +233,7 @@ public class QueryTest {
 
         imap.remove("2");
 
-        entries = imap.entrySet(predicate);
+        entries = imap.entrySet(new SqlPredicate("active=true and age=23"));
         assertEquals(2, entries.size());
         for (Map.Entry entry : entries) {
             Employee c = (Employee) entry.getValue();

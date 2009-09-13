@@ -1,3 +1,20 @@
+/*
+ * Copyright (c) 2007-2008, Hazel Ltd. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
@@ -15,79 +32,6 @@ public class PredicateBuilder implements Predicate, IndexAwarePredicate {
 
     public boolean apply(MapEntry mapEntry) {
         return lsPredicates.get(0).apply(mapEntry);
-    }
-
-    public static void main(String[] args) {
-//        EntryObject e = new PredicateBuilder().getRoot();
-//        Predicate p =
-//                e.is("live")
-//                        .and(e.get("salary").greaterThan(30).or(e.get("name").greaterThan(40)))
-//                        .and(e.get("price").lessThan(50));
-//        System.out.println(p);
-        new PredicateBuilder().createPredicate("active=true and (age>20 or age <40)");
-//        new PredicateBuilder().createPredicate("a and b AND(((a>=c AND b> d) OR (x <> y )) ) OR t>u");
-    }
-
-    public Predicate createPredicate(String sql) {
-        Parser parser = new Parser();
-        List<Object> tokens = new ArrayList<Object>(parser.toPrefix(sql));
-        System.out.println(sql);
-        root:
-        while (tokens.size() > 1) {
-//            System.out.println("token: " + tokens);
-            for (int i = 0; i < tokens.size(); i++) {
-                Object tokenObj = tokens.get(i);
-                if (tokenObj instanceof String && Parser.isPrecedence((String) tokenObj)) {
-                    String token = (String) tokenObj;
-                    if ("=".equals(token) || "==".equals(token)) {
-                        Object first = tokens.get(i - 2);
-                        Object second = tokens.get(i - 1);
-                        Predicate p = equal(get((String) first), second);
-                        removeThreeAddOne(tokens, i, p);
-                    } else if (">".equals(token)) {
-                        Object first = tokens.get(i - 2);
-                        Object second = tokens.get(i - 1);
-                        Predicate p = greaterThan(get((String) first), (Comparable) second);
-                        removeThreeAddOne(tokens, i, p);
-                    } else if (">=".equals(token)) {
-                        Object first = tokens.get(i - 2);
-                        Object second = tokens.get(i - 1);
-                        Predicate p = greaterEqual(get((String) first), (Comparable) second);
-                        removeThreeAddOne(tokens, i, p);
-                    } else if ("<=".equals(token)) {
-                        Object first = tokens.get(i - 2);
-                        Object second = tokens.get(i - 1);
-                        Predicate p = lessEqual(get((String) first), (Comparable) second);
-                        removeThreeAddOne(tokens, i, p);
-                    } else if ("<".equals(token)) {
-                        Object first = tokens.get(i - 2);
-                        Object second = tokens.get(i - 1);
-                        Predicate p = lessThan(get((String) first), (Comparable) second);
-                        removeThreeAddOne(tokens, i, p);
-                    } else if ("AND".equalsIgnoreCase(token)) {
-                        Object first = tokens.get(i - 2);
-                        Object second = tokens.get(i - 1);
-                        Predicate p = Predicates.and((Predicate) first, (Predicate) second);
-                        removeThreeAddOne(tokens, i, p);
-                    } else if ("OR".equalsIgnoreCase(token)) {
-                        Object first = tokens.get(i - 2);
-                        Object second = tokens.get(i - 1);
-                        Predicate p = Predicates.or((Predicate) first, (Predicate) second);
-                        removeThreeAddOne(tokens, i, p);
-                    }
-                    continue root;
-                }
-            }
-        }
-        System.out.println(tokens.get(0));
-        return (Predicate) tokens.get(0);
-    }
-
-    private void removeThreeAddOne(List<Object> tokens, int i, Object added) {
-        tokens.remove(i - 2);
-        tokens.remove(i - 2);
-        tokens.remove(i - 2);
-        tokens.add(i - 2, added);
     }
 
     public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index<MapEntry>> mapIndexes) {

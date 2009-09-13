@@ -120,8 +120,35 @@ public class Predicates {
             super.readData(in);
             to = readObject(in);
         }
+
+        @Override
+        public String toString() {
+            final StringBuffer sb = new StringBuffer();
+            sb.append(first);
+            sb.append(" BETWEEN ");
+            sb.append(second);
+            sb.append(" AND ");
+            sb.append(to);
+            return sb.toString();
+        }
     }
 
+    public static class NotEqualPredicate extends EqualPredicate {
+        public NotEqualPredicate() {
+        }
+
+        public NotEqualPredicate(Expression first, Expression second) {
+            super(first, second);
+        }
+
+        public NotEqualPredicate(Expression first, Object second) {
+            super(first, second);
+        }
+
+        public boolean apply(MapEntry entry) {
+              return ! super.apply(entry);
+          }
+    }
 
     public static class EqualPredicate extends AbstractPredicate implements IndexAwarePredicate {
         Expression first;
@@ -366,6 +393,10 @@ public class Predicates {
 
     public static Predicate or(Predicate x, Predicate y) {
         return new AndOrPredicate(false, x, y);
+    }
+
+    public static Predicate notEqual(final Expression x, final Object y) {
+        return new NotEqualPredicate(x, y);
     }
 
     public static Predicate equal(final Expression x, final Object y) {

@@ -32,9 +32,11 @@ class Parser {
 		precedence.put("<", 10);
 		precedence.put(">=", 10);
 		precedence.put("<=", 10);
-		precedence.put("==", 10);
-		precedence.put("and", 9);
-		precedence.put("or", 8);
+        precedence.put("==", 10);
+        precedence.put("!=", 10);
+        precedence.put("between", 10);
+        precedence.put("and", 9);
+        precedence.put("or", 8);
     }
 
     public Parser() {
