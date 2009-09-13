@@ -18,12 +18,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.cluster.AddOrRemoveConnection;
-import com.hazelcast.impl.CallContext;
-
-
 import java.nio.channels.SocketChannel;
-import java.util.HashMap;
-import java.util.Map;
 
 public class Connection {
     final SocketChannel socketChannel;
