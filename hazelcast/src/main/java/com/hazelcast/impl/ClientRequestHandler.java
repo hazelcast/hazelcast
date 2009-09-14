@@ -34,10 +34,12 @@ import java.util.List;
 public class ClientRequestHandler implements Runnable {
     private final Packet packet;
     private final CallContext callContext;
+    private final Node node;
 
-    public ClientRequestHandler(Packet packet, CallContext callContext) {
+    public ClientRequestHandler(Node node, Packet packet, CallContext callContext) {
         this.packet = packet;
         this.callContext = callContext;
+        this.node = node;
     }
 
     public void run() {
@@ -79,6 +81,9 @@ public class ClientRequestHandler implements Runnable {
             }
             doSet(toData(keys), packet.value);
             sendResponse(packet);
+        }
+        else if (packet.operation.equals(ClusterOperation.REMOTELY_PROCESS)){
+        	node.clusterService.enqueueAndReturn(packet);
         }
 
 

@@ -34,8 +34,13 @@ public class ClientService {
     // always called by InThread
     public void handle(Packet packet) {
         ClientEndpoint clientEndpoint = mapClientEndpoints.get(packet.conn);
+        System.out.println("Address  " +packet.conn.getEndPoint());
+        if(clientEndpoint == null){
+        	clientEndpoint = new ClientEndpoint(packet.conn);
+        	mapClientEndpoints.put(packet.conn, clientEndpoint);
+        }
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
-        node.executorManager.executeLocally(new ClientRequestHandler(packet, callContext));
+        node.executorManager.executeLocally(new ClientRequestHandler(node, packet, callContext));
     }
 
     class ClientEndpoint {
@@ -51,7 +56,7 @@ public class ClientService {
             if (context == null) {
                 int locallyMappedThreadId = ThreadContext.get().createNewThreadId();
                 context = new CallContext(locallyMappedThreadId, true);
-                mapOfCallContexts.put(locallyMappedThreadId, context);
+                mapOfCallContexts.put(threadId, context);
             }
             return context;
         }
