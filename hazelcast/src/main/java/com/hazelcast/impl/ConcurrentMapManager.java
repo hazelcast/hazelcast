@@ -279,7 +279,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public void process() {
             FactoryImpl factory = getNode().factory;
-            if (factory.active) {
+            if (factory.node.active) {
                 for (MapState mapState : lsMapStates) {
                     CMap cmap = factory.node.concurrentMapManager.getMap(mapState.name);
                     for (AddMapIndex mapIndex : mapState.lsMapIndexes) {
@@ -374,7 +374,9 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     volatile boolean migrating = false;
+
     void doResetRecords() {
+        if (!node.active || node.factory.restarted) return;
         if (migrating) {
             throw new RuntimeException("Migration is already in progress");
         }
@@ -399,9 +401,10 @@ public final class ConcurrentMapManager extends BaseManager {
                         throw new RuntimeException("Record.key is null or empty " + rec.getKey());
                     }
                     count.incrementAndGet();
-                    executeLocally(new Runnable() {
-                        public void run() {
+                    executeLocally(new FallThroughRunnable() {
+                        public void doRun() {
                             try {
+                                if (!node.active || node.factory.restarted) return;
                                 MMigrate mmigrate = new MMigrate();
                                 if (cmap.isMultiMap()) {
                                     List<Data> values = rec.getMultiValues();
@@ -426,9 +429,9 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
             }
         }
-        executeLocally(new Runnable() {
-            public void run() {
-                while (count.get() != 0) {
+        executeLocally(new FallThroughRunnable() {
+            public void doRun() {
+                while (count.get() != 0 && node.active) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException ignored) {
@@ -442,6 +445,7 @@ public final class ConcurrentMapManager extends BaseManager {
             }
         });
     }
+
 
     abstract class MBooleanOp extends MTargetAwareOp {
         @Override
@@ -550,6 +554,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
 
     class MMigrate extends MBackupAwareOp {
+        volatile int keysize = 0;
 
         public boolean migrateMulti(Record record, Data value) {
             copyRecordToRequest(record, request, true);
@@ -562,6 +567,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public boolean migrate(Record record) {
+            keysize = record.getKey().size();
             copyRecordToRequest(record, request, true);
             if (request.key == null) throw new RuntimeException("req.key is null " + request.redoCount);
             request.operation = CONCURRENT_MAP_MIGRATE_RECORD;

@@ -150,7 +150,7 @@ public final class ClusterService implements Runnable, Constants {
             } catch (final Throwable e) {
                 logger.log(Level.FINEST, e + ",  message: " + e + ", obj=" + obj, e);
                 e.printStackTrace();
-                System.out.println("Exception when handling " + obj);
+                System.out.println(node + ". Exception when handling " + obj);
             }
         }
         bulk.clear();

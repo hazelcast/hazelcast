@@ -62,7 +62,7 @@ public class FactoryImpl implements HazelcastInstance {
 
     private final MProxyImpl globalProxies;
 
-    private final ExecutorServiceProxy executorServiceImpl;   
+    private final ExecutorServiceProxy executorServiceImpl;
 
     private final CopyOnWriteArrayList<InstanceListener> lsInstanceListeners = new CopyOnWriteArrayList<InstanceListener>();
 
@@ -77,8 +77,6 @@ public class FactoryImpl implements HazelcastInstance {
     private final static Object factoryLock = new Object();
 
     private static int nextFactoryId = 0;
-
-    volatile boolean active = true;
 
     volatile boolean restarted = false;
 
@@ -100,7 +98,7 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public static void shutdownAll() {
-    	ManagementService.shutdown();
+        ManagementService.shutdown();
         synchronized (factoryLock) {
             Collection<FactoryImpl> colFactories = factories.values();
             for (FactoryImpl factory : colFactories) {
@@ -224,7 +222,7 @@ public class FactoryImpl implements HazelcastInstance {
     @Override
     public String toString() {
         final StringBuffer sb = new StringBuffer();
-        sb.append("FactoryImpl");
+        sb.append("HazelcastInstance");
         sb.append("{name='").append(name).append('\'');
         sb.append('}');
         return sb.toString();
@@ -1552,7 +1550,7 @@ public class FactoryImpl implements HazelcastInstance {
     private static void check(Object obj) {
         if (obj == null) {
             throw new NullPointerException("Object cannot be null.");
-        } 
+        }
         if (!(obj instanceof Serializable)) {
             throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
         }
@@ -1589,7 +1587,7 @@ public class FactoryImpl implements HazelcastInstance {
 
         private volatile transient MProxy dynamicProxy;
 
-        public MProxyImpl() { 
+        public MProxyImpl() {
         }
 
         class Invoker implements InvocationHandler {

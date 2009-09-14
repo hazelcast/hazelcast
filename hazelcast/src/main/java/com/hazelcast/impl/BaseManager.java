@@ -554,38 +554,34 @@ public abstract class BaseManager {
 
 
         public boolean getResultAsBoolean() {
-            try {
-                final Object result = getResult();
-                return !(result == OBJECT_NULL || result == null) && result == Boolean.TRUE;
-            } finally {
-                afterGettingResult(request);
-            }
+            Object resultObj = getResult();
+            boolean result = !(resultObj == OBJECT_NULL || resultObj == null) && resultObj == Boolean.TRUE;
+            afterGettingResult(request);
+            return result;
         }
 
 
         public Object getResultAsObject() {
-            try {
-                final Object result = getResult();
-
-                if (result == OBJECT_NULL || result == null) {
-                    return null;
-                }
+            Object result = getResult();
+            if (result == OBJECT_NULL || result == null) {
+                result = null;
+            } else {
                 if (result instanceof Data) {
                     final Data data = (Data) result;
-                    if(ThreadContext.get().isClient()){
-                    	return data;
-                    }
-                    else{
-                    	if (data.size() == 0)
-                    		return null;
-                    	return toObject(data);
+                    if (ThreadContext.get().isClient()) {
+                        result = data;
+                    } else {
+                        if (data.size() == 0) {
+                            result = null;
+                        } else {
+                            result = toObject(data);
+                        }
                     }
                 }
-                return result;
-            } finally {
-                afterGettingResult(request);
             }
-        } 
+            afterGettingResult(request);
+            return result;
+        }
 
         protected void afterGettingResult(Request request) {
             request.reset();
@@ -650,21 +646,22 @@ public abstract class BaseManager {
         public void beforeRedo() {
             if (node.factory.restarted) {
                 throw new InterruptedCallException();
-            } else if (!node.factory.active) {
+            } else if (!node.active) {
                 throw new RuntimeException();
             }
         }
 
         public Object waitAndGetResult() {
             while (true) {
+                if (!node.active) {
+                    throw new RuntimeException();
+                }
                 try {
                     Object obj = responses.poll(10, TimeUnit.SECONDS);
                     if (obj != null) {
                         return obj;
                     } else if (node.factory.restarted) {
                         throw new InterruptedCallException();
-                    } else if (!node.factory.active) {
-                        throw new RuntimeException();
                     }
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
@@ -844,7 +841,6 @@ public abstract class BaseManager {
         }
     }
 
-
     abstract class MultiCall {
         abstract TargetAwareOp createNewTargetAwareOp(Address target);
 
@@ -871,6 +867,9 @@ public abstract class BaseManager {
 
         Object call() {
             try {
+                if (!node.active) {
+                    throw new RuntimeException();
+                }
                 onCall();
                 //local call first
                 TargetAwareOp localCall = createNewTargetAwareOp(thisAddress);

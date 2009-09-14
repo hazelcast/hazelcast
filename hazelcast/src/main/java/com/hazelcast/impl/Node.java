@@ -45,7 +45,7 @@ public class Node {
 
     private volatile boolean joined = false;
 
-    private volatile boolean active = false;
+    volatile boolean active = false;
 
     private volatile boolean completelyShutdown = false;
 
@@ -354,8 +354,8 @@ public class Node {
                 numThreads = threadGroup.enumerate(threads, false);
                 for (int i = 0; i < numThreads; i++) {
                     Thread thread = threads[i];
-                    System.out.println("Is this thread still live? : " + thread);
-                } 
+                    thread.interrupt();
+                }  
             }
         } catch (Throwable e) {
             e.printStackTrace();

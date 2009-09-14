@@ -17,8 +17,8 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.ClusterImpl.ClusterMember;
 import com.hazelcast.cluster.AbstractNodeAware;
+import com.hazelcast.cluster.ClusterImpl.ClusterMember;
 import com.hazelcast.cluster.NodeAware;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
@@ -162,7 +162,6 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
             this.address = address;
             this.mayInterruptIfRunning = mayInterruptIfRunning;
         }
-
 
 
         public Boolean call() {
@@ -553,7 +552,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         }
 
         public Object call(final RemoteExecutionId remoteExecutionId, final boolean local,
-                                  final Object callable) throws InterruptedException {
+                           final Object callable) throws InterruptedException {
             Object executionResult = null;
             try {
                 if (callable instanceof Callable) {
