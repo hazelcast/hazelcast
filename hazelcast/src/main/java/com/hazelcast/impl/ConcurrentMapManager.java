@@ -378,7 +378,6 @@ public final class ConcurrentMapManager extends BaseManager {
         if (migrating) {
             throw new RuntimeException("Migration is already in progress");
         }
-        migrating = true;
         InitialState initialState = new InitialState();
         Collection<CMap> cmaps = maps.values();
         for (final CMap cmap : cmaps) {
@@ -387,6 +386,7 @@ public final class ConcurrentMapManager extends BaseManager {
         sendProcessableToAll(initialState, false);
         if (isSuperClient())
             return;
+        migrating = true;
         cmaps = maps.values();
         final AtomicInteger count = new AtomicInteger(0);
         for (final CMap cmap : cmaps) {
