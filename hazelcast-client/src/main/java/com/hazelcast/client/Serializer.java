@@ -52,7 +52,7 @@ public class Serializer {
 		try {
 			if(object instanceof DataSerializable){
 				dos.writeByte(SERIALIZER_TYPE_DATA);
-				dos.writeUTF(object.getClass().getName());
+				dos.writeUTF(object.getClass().getName().replaceFirst("com.hazelcast.client", "com.hazelcast"));
 				((DataSerializable) object).writeData(dos);			
 			}
 			else if(object instanceof String){
@@ -103,7 +103,7 @@ public class Serializer {
 		try {
 			if(type == SERIALIZER_TYPE_DATA){
 				String className = dis.readUTF();
-				DataSerializable data = (DataSerializable)Class.forName(className).newInstance();
+				DataSerializable data = (DataSerializable)Class.forName(className.replaceFirst("com.hazelcast", "com.hazelcast.client")).newInstance();
 				data.readData(dis);
 				return data;
 			}
