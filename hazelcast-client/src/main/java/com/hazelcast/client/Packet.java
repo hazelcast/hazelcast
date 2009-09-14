@@ -41,21 +41,130 @@ public class Packet {
 	private byte[] value ;
 	
 	private String name;
+	
 	private ClusterOperation operation;
+	
 	private int blockId = 0;
+	
 	private int threadId;
+	
 	private int lockCount = 0;
+	
 	private long timeout = -1;
+	
 	private long txnId = -1;
+	
 	private long longValue;
+	
 	private long recordId = -1;
+	
     private long version = -1;
+    
     private byte responseType = Constants.ResponseTypes.RESPONSE_NONE;
+    
     private boolean lockAddressIsNull = true;
+    
 	private long callId;
+	
 	private boolean client = true;
 	
+	private byte indexCount = 0;
+
+    private long[] indexes = new long[6];
+
+    private byte[] indexTypes = new byte[6];
 	
+	
+	public void writeTo(DataOutputStream outputStream) throws IOException {
+		headerInBytes = getHeader();
+		headerSize = headerInBytes.length;
+		outputStream.writeInt(headerSize);
+		outputStream.writeInt(keySize);
+		outputStream.writeInt(valueSize);
+		outputStream.write(headerInBytes);
+		if(key!=null)
+			outputStream.write(key);
+			
+		if(value!=null)
+			outputStream.write(value);
+		
+	}
+	public void readFrom(DataInputStream dis) throws IOException {
+		headerSize = dis.readInt();
+		keySize = dis.readInt();
+		valueSize = dis.readInt();
+		headerInBytes = new byte[headerSize];
+		dis.read(headerInBytes);
+		
+		
+		ByteArrayInputStream bis = new ByteArrayInputStream(headerInBytes);
+		DataInputStream dis2 = new DataInputStream(bis);
+		this.operation = ClusterOperation.create(dis2.readInt());
+		this.blockId = dis2.readInt();
+		this.threadId = dis2.readInt();
+		this.lockCount = dis2.readInt();
+		this.timeout = dis2.readLong();
+		this.txnId = dis2.readLong();
+		this.longValue = dis2.readLong();
+		this.recordId = dis2.readLong();
+		this.version = dis2.readLong();
+		this.callId = (int) dis2.readLong();
+		this.client = dis2.readByte()==1;
+		this.responseType = dis2.readByte();
+		int nameLength = dis2.readInt();
+		byte[] b = new byte[nameLength];
+		dis2.read(b);
+		this.name = new String(b);
+		this.lockAddressIsNull = dis2.readBoolean();
+	    indexCount = dis2.readByte();
+        for (int i=0; i<indexCount ; i++) {
+            indexes[i] = dis2.readLong();
+            indexTypes[i] = dis2.readByte();
+        }
+		
+		
+		key = new byte[keySize];
+		dis.read(key);
+		value = new byte[valueSize];
+		dis.read(value);
+	}
+	
+	private byte[] getHeader() throws IOException {
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		DataOutputStream dos = new DataOutputStream(bos);
+		dos.writeInt(operation.getValue());
+		dos.writeInt(blockId);
+		dos.writeInt(threadId);
+		dos.writeInt(lockCount);
+		dos.writeLong(timeout);
+		dos.writeLong(txnId);
+		dos.writeLong(longValue);
+		dos.writeLong(recordId);
+		dos.writeLong(version);
+		dos.writeLong(callId);
+		dos.writeByte(client?1:0);
+		dos.writeByte(responseType);
+		byte[] nameInBytes = name.getBytes();
+		dos.writeInt(nameInBytes.length);
+		dos.write(nameInBytes);
+		dos.writeBoolean(lockAddressIsNull);
+		dos.writeByte(indexCount);
+        for (int i=0; i < indexCount; i++){
+        	dos.writeLong(indexes[i]);
+        	dos.writeByte(indexTypes[i]);
+        }
+		return bos.toByteArray();
+	}
+	public void set(String name, ClusterOperation operation,
+			byte[] key, byte[] value) {
+		this.name = name;
+		this.operation  = operation;
+		this.setKey(key);
+		this.setValue(value);
+		
+	}
+    
+    
 	
 	public int getHeaderSize() {
 		return headerSize;
@@ -173,92 +282,31 @@ public class Packet {
 	}
 	public void setLockAddressIsNull(boolean lockAddressIsNull) {
 		this.lockAddressIsNull = lockAddressIsNull;
-	}
-	
-	public void writeTo(DataOutputStream outputStream) throws IOException {
-		headerInBytes = getHeader();
-		headerSize = headerInBytes.length;
-		outputStream.writeInt(headerSize);
-		outputStream.writeInt(keySize);
-		outputStream.writeInt(valueSize);
-		outputStream.write(headerInBytes);
-		if(key!=null)
-			outputStream.write(key);
-			
-		if(value!=null)
-			outputStream.write(value);
-		
-	}
-	public void readFrom(DataInputStream dis) throws IOException {
-		System.out.println("Available:" + dis.available());
-		headerSize = dis.readInt();
-		keySize = dis.readInt();
-		valueSize = dis.readInt();
-		headerInBytes = new byte[headerSize];
-		dis.read(headerInBytes);
-		
-		
-		ByteArrayInputStream bis = new ByteArrayInputStream(headerInBytes);
-		DataInputStream dis2 = new DataInputStream(bis);
-		this.operation = ClusterOperation.create(dis2.readInt());
-		this.blockId = dis2.readInt();
-		this.threadId = dis2.readInt();
-		this.lockCount = dis2.readInt();
-		this.timeout = dis2.readLong();
-		this.txnId = dis2.readLong();
-		this.longValue = dis2.readLong();
-		this.recordId = dis2.readLong();
-		this.version = dis2.readLong();
-		this.callId = (int) dis2.readLong();
-		this.client = dis2.readByte()==1;
-		this.responseType = dis2.readByte();
-		int nameLength = dis2.readInt();
-		byte[] b = new byte[nameLength];
-		dis2.read(b);
-		this.name = new String(b);
-		this.lockAddressIsNull = dis2.readBoolean();
-		key = new byte[keySize];
-		dis.read(key);
-		value = new byte[valueSize];
-		dis.read(value);
-	}
-	
-	private byte[] getHeader() throws IOException {
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		DataOutputStream dos = new DataOutputStream(bos);
-		dos.writeInt(operation.getValue());
-		dos.writeInt(blockId);
-		dos.writeInt(threadId);
-		dos.writeInt(lockCount);
-		dos.writeLong(timeout);
-		dos.writeLong(txnId);
-		dos.writeLong(longValue);
-		dos.writeLong(recordId);
-		dos.writeLong(version);
-		dos.writeLong(callId);
-		dos.writeByte(client?1:0);
-		dos.writeByte(responseType);
-		byte[] nameInBytes = name.getBytes();
-		dos.writeInt(nameInBytes.length);
-		dos.write(nameInBytes);
-		dos.writeBoolean(lockAddressIsNull);
-		return bos.toByteArray();
-	}
-	public void set(String name, ClusterOperation operation,
-			byte[] key, byte[] value) {
-		this.name = name;
-		this.operation  = operation;
-		this.setKey(key);
-		this.setValue(value);
-		
-	}
+	}	
 	public void setClient(boolean client) {
 		this.client = client;
 	}
 	public boolean isClient() {
 		return client;
 	}
-	
+    public byte getIndexCount() {
+		return indexCount;
+	}
+	public void setIndexCount(byte indexCount) {
+		this.indexCount = indexCount;
+	}
+	public long[] getIndexes() {
+		return indexes;
+	}
+	public void setIndexes(long[] indexes) {
+		this.indexes = indexes;
+	}
+	public byte[] getIndexTypes() {
+		return indexTypes;
+	}
+	public void setIndexTypes(byte[] indexTypes) {
+		this.indexTypes = indexTypes;
+	}
 	
 		
 }
