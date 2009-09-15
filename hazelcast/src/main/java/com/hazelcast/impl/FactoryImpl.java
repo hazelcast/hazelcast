@@ -110,7 +110,17 @@ public class FactoryImpl implements HazelcastInstance {
 
     public static void shutdown(FactoryImpl factory) {
         synchronized (factoryLock) {
-            ManagementService.unregister(factory);
+            try {
+                /**
+                 * if JMX service cannot unregister
+                 * just printStackTrace and continue
+                 * shutting down.
+                 * 
+                 */
+                ManagementService.unregister(factory);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
             factory.node.shutdown();
             factories.remove(factory.getName());
         }
