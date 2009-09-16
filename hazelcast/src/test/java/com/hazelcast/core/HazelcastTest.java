@@ -5,8 +5,8 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.*;
 import java.io.Serializable;
+import java.util.*;
 
 public class HazelcastTest {
     @Test
@@ -98,8 +98,14 @@ public class HazelcastTest {
     public void testMapRemove() {
         IMap<String, String> map = Hazelcast.getMap("testMapRemove");
         map.put("Hello", "World");
+        assertEquals(1, map.size());
+        assertEquals(1, map.keySet().size());
         map.remove("Hello");
         assertEquals(0, map.size());
+        assertEquals(0, map.keySet().size());
+        map.put("Hello", "World");
+        assertEquals(1, map.size());
+        assertEquals(1, map.keySet().size());
     }
 
     @Test
@@ -130,7 +136,7 @@ public class HazelcastTest {
         IMap<String, String> map = Hazelcast.getMap("testMapEntrySetWhenRemoved");
         map.put("Hello", "World");
         Set<IMap.Entry<String, String>> set = map.entrySet();
-        map.remove ("Hello");
+        map.remove("Hello");
         for (IMap.Entry<String, String> e : set) {
             fail("Iterator should not contain removed entry");
         }
@@ -156,7 +162,7 @@ public class HazelcastTest {
             }
 
             public void entryEvicted(EntryEvent event) {
-                entryRemoved (event);
+                entryRemoved(event);
             }
         }, true);
         map.put("hello", "world");
@@ -165,12 +171,12 @@ public class HazelcastTest {
     }
 
     @Test
-    public void testMapEvict(){
-    	IMap<String, String> map = Hazelcast.getMap("testMapEviction");
-    	map.put("key", "value");
-    	assertEquals(true, map.containsKey("key"));
-    	map.evict("key");
-    	assertEquals(false, map.containsKey("key"));
+    public void testMapEvict() {
+        IMap<String, String> map = Hazelcast.getMap("testMapEviction");
+        map.put("key", "value");
+        assertEquals(true, map.containsKey("key"));
+        map.evict("key");
+        assertEquals(false, map.containsKey("key"));
     }
 
     @Test
@@ -443,9 +449,15 @@ public class HazelcastTest {
         map.put("Hello", "Africa");
         map.put("Hello", "Antartica");
         map.put("Hello", "Australia");
+        assertEquals(7, map.size());
+        assertEquals(1, map.keySet().size());
         Collection<String> values = map.remove("Hello");
         assertEquals(7, values.size());
         assertEquals(0, map.size());
+        assertEquals(0, map.keySet().size());
+        map.put("Hello", "World");
+        assertEquals(1, map.size());
+        assertEquals(1, map.keySet().size());
     }
 
     @Test
@@ -475,12 +487,12 @@ public class HazelcastTest {
         map.put("Hello", "Australia");
         Set<Map.Entry<String, String>> entries = map.entrySet();
         assertEquals(7, entries.size());
-        int itCount =0;
+        int itCount = 0;
         for (Map.Entry<String, String> entry : entries) {
             assertEquals("Hello", entry.getKey());
             itCount++;
         }
-        assertEquals(7, itCount);        
+        assertEquals(7, itCount);
     }
 
     @Test
