@@ -155,6 +155,8 @@ public class AddressPicker {
              * this will cause problem on windows
              * see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6421091
              * http://www.hsc.fr/ressources/articles/win_net_srv/multiple_bindings.html
+             * 
+             * By default if the OS is Windows then reuseaddress will be false.
              */
             serverSocket.setReuseAddress(reuseAddress);
             InetSocketAddress isa;
@@ -163,6 +165,7 @@ public class AddressPicker {
             for (int i = 0; i < 100; i++) {
                 try {
                     isa = new InetSocketAddress(inetAddress, port);
+                    System.out.println(isa);
                     serverSocket.bind(isa, 100);
                     break;
                 } catch (final Exception e) {
