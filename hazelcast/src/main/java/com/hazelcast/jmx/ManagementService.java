@@ -26,10 +26,8 @@ import java.util.logging.Logger;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
-import com.hazelcast.core.Cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.impl.FactoryImpl;
-import com.hazelcast.impl.Node;
 
 /**
  * The management service instruments Hazelcast with MBeans required to
@@ -47,9 +45,9 @@ public class ManagementService {
 
 	private final static Logger logger = Logger.getLogger(ManagementService.class.getName());
 	
-	public static String ENABLE_JMX = "hazelcast.jmx";
+	public final static String ENABLE_JMX = "hazelcast.jmx";
 	
-	private static ScheduledThreadPoolExecutor statCollectors;
+	private volatile static ScheduledThreadPoolExecutor statCollectors;
 	
 	private static boolean started = false;
 	

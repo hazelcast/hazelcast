@@ -145,12 +145,12 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Insta
 	public void registerInstance(Object instance) {
 		try {
 			AbstractMBean mbean = buildMBean((Instance)instance);
-			mbean.setParentName(getParentName());
 			
 	    	if (mbean == null) {
 	    		logger.log(Level.FINE, "Unsupported instance type "+  instance.getClass().getName());
 	    	}
 	    	else {
+				mbean.setParentName(getParentName());
 	            ObjectName name = mbean.getObjectName();
 	    		logger.log(Level.FINEST, "Register MBean {0}", name);
 	            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
@@ -169,12 +169,12 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Insta
 	public void unregisterInstance(Object instance) {
 		try {
 			AbstractMBean mbean = buildMBean((Instance)instance);
-			mbean.setParentName(getParentName());
 			
 	    	if (mbean == null) {
 	    		logger.log(Level.FINE, "Unsupported instance type "+  instance.getClass().getName());
 	    	}
 	    	else {
+				mbean.setParentName(getParentName());
 	    		ObjectName name = mbean.getObjectName();
 	    		logger.log(Level.FINEST, "Unregister MBean {0}", name);
 	            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
