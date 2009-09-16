@@ -2399,6 +2399,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 record = createNewRecord(req.key, null);
                 req.key = null;
             } else {
+                record.setActive();
                 if (record.containsValue(req.value)) {
                     added = false;
                 }
