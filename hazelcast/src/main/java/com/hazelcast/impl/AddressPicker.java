@@ -141,6 +141,7 @@ public class AddressPicker {
                 currentAddress = "127.0.0.1";
             }
             final InetAddress inetAddress = InetAddress.getByName(currentAddress);
+            final boolean reuseAddress = config.isReuseAddress();
             ServerSocket serverSocket = serverSocketChannel.socket();
             /**
              * why setReuseAddress(true)?
@@ -150,8 +151,12 @@ public class AddressPicker {
              * you may not able able to bind to the same port because it is in TIME_WAIT
              * state. if you set reuseaddress=true then TIME_WAIT will be ignored and
              * you will be able to bind to the same port again.
+             *
+             * this will cause problem on windows
+             * see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6421091
+             * http://www.hsc.fr/ressources/articles/win_net_srv/multiple_bindings.html
              */
-            serverSocket.setReuseAddress(true);
+            serverSocket.setReuseAddress(reuseAddress);
             InetSocketAddress isa;
 
             int port = config.getPort();
@@ -163,7 +168,7 @@ public class AddressPicker {
                 } catch (final Exception e) {
                     if (config.isPortAutoIncrement()) {
                         serverSocket = serverSocketChannel.socket();
-                        serverSocket.setReuseAddress(true);
+                        serverSocket.setReuseAddress(reuseAddress);
                         port++;
                     } else {
                         String msg = "Port [" + port + "] is already use and auto-increment is " +

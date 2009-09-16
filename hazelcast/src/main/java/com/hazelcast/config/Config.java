@@ -39,6 +39,8 @@ public class Config {
 
     private int port = DEFAULT_PORT;
 
+    private boolean reuseAddress = false;
+
     private boolean portAutoIncrement = true;
 
     private ExecutorConfig executorConfig = new ExecutorConfig();
@@ -66,6 +68,8 @@ public class Config {
                 superClient = true;
             }
         }
+        String os = System.getProperty("os.name").toLowerCase();
+		reuseAddress = (os.indexOf( "win" ) == -1);
     }
 
     public ClassLoader getClassLoader() {
@@ -217,7 +221,16 @@ public class Config {
 		this.portAutoIncrement = portAutoIncrement;
 	}
 
-	/**
+
+    public boolean isReuseAddress() {
+        return reuseAddress;
+    }
+
+    public void setReuseAddress(boolean reuseAddress) {
+        this.reuseAddress = reuseAddress;
+    }
+
+    /**
 	 * @return the executorConfig
 	 */
 	public ExecutorConfig getExecutorConfig() {

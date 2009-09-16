@@ -41,7 +41,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -2010,8 +2012,6 @@ public final class ConcurrentMapManager extends BaseManager {
 
         int writeDelaySeconds = -1;
 
-        boolean evicting = false;
-
         int ownedEntryCount = 0;
 
         private Set<Record> setDirtyRecords = null;
@@ -2228,7 +2228,7 @@ public final class ConcurrentMapManager extends BaseManager {
             int size = 0;
             Collection<Record> records = mapRecords.values();
             for (Record record : records) {
-                if (record.isValid(now)) {
+                if (record.isActive() && record.isValid(now)) {
                     Block block = blocks[record.getBlockId()];
                     if (thisAddress.equals(block.getOwner())) {
                         size += record.valueCount();
@@ -2399,7 +2399,10 @@ public final class ConcurrentMapManager extends BaseManager {
                 record = createNewRecord(req.key, null);
                 req.key = null;
             } else {
-                record.setActive();
+                if (!record.isActive()) {
+                    markAsActive(record);
+                    ownedEntryCount++;
+                }
                 if (record.containsValue(req.value)) {
                     added = false;
                 }
@@ -2418,6 +2421,9 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public Data put(Request req) {
+            if (ownedEntryCount >= maxSize) {
+                startEviction();
+            }
             if (req.value == null) {
                 req.value = new Data();
             }
@@ -2440,6 +2446,9 @@ public final class ConcurrentMapManager extends BaseManager {
                 req.key = null;
             } else {
                 created = !record.isActive();
+                if (created) {
+                    ownedEntryCount++;
+                }
                 markAsActive(record);
                 if (!record.isValid()) {
                     record.setExpirationTime(ttl);
@@ -2569,18 +2578,18 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         void startEviction() {
-            if (evicting) return;
             List<Data> lsKeysToEvict = null;
             if (evictionPolicy == OrderingType.NONE) {
                 if (ttl != 0) {
                     long now = System.currentTimeMillis();
                     Collection<Record> values = mapRecords.values();
                     for (Record record : values) {
-                        if (!record.isValid(now)) {
+                        if (record.isActive() && !record.isValid(now)) {
                             if (record.isEvictable()) {
                                 if (lsKeysToEvict == null) {
                                     lsKeysToEvict = new ArrayList<Data>(100);
                                 }
+                                markAsRemoved(record);
                                 lsKeysToEvict.add(doHardCopy(record.getKey()));
                             }
                         } else {
@@ -2593,10 +2602,11 @@ public final class ConcurrentMapManager extends BaseManager {
                 int numberOfRecordsToEvict = (int) (ownedEntryCount * evictionRate);
                 int evictedCount = 0;
                 for (Record record : values) {
-                    if (record.isEvictable()) {
+                    if (record.isActive() && record.isEvictable()) {
                         if (lsKeysToEvict == null) {
                             lsKeysToEvict = new ArrayList<Data>(numberOfRecordsToEvict);
                         }
+                        markAsRemoved(record);
                         lsKeysToEvict.add(doHardCopy(record.getKey()));
                         if (++evictedCount >= numberOfRecordsToEvict) {
                             break;
@@ -2604,35 +2614,13 @@ public final class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
-            if (lsKeysToEvict != null && lsKeysToEvict.size() > 1) {
-//                System.out.println(ownedEntryCount + " stating eviction..." + lsKeysToEvict.size());
-                evicting = true;
-                int latchCount = lsKeysToEvict.size();
-                final CountDownLatch countDownLatchEvictionStart = new CountDownLatch(1);
-                final CountDownLatch countDownLatchEvictionEnd = new CountDownLatch(latchCount);
-
-                executeLocally(new Runnable() {
-                    public void run() {
-                        try {
-                            countDownLatchEvictionStart.countDown();
-                            countDownLatchEvictionEnd.await(60, TimeUnit.SECONDS);
-                            enqueueAndReturn(new Processable() {
-                                public void process() {
-                                    evicting = false;
-                                }
-                            });
-                        } catch (Exception ignored) {
-                        }
-                    }
-                });
+            if (lsKeysToEvict != null && lsKeysToEvict.size() > 0) {
                 for (final Data key : lsKeysToEvict) {
                     executeLocally(new Runnable() {
                         public void run() {
                             try {
-                                countDownLatchEvictionStart.await();
                                 MEvict mEvict = new MEvict();
                                 mEvict.evict(name, key);
-                                countDownLatchEvictionEnd.countDown();
                             } catch (Exception ignored) {
                             }
                         }
@@ -2785,7 +2773,6 @@ public final class ConcurrentMapManager extends BaseManager {
             }
             mapRecords.clear();
             ownedEntryCount = 0;
-            evicting = false;
             if (setDirtyRecords != null) {
                 setDirtyRecords.clear();
             }

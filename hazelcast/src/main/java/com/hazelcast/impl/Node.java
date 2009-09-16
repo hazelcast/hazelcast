@@ -330,35 +330,33 @@ public class Node {
     }
 
     public void shutdown() {
-        try {
-            if (active) {
-                // set the joined=false first so that
-                // threads do not process unnecessary
-                // events, such as removeaddress
-                joined = false;
-                active = false;
-                inSelector.shutdown();
-                outSelector.shutdown();
-                clusterService.stop();
-                queryService.stop();
+        if (active) {
+            // set the joined=false first so that
+            // threads do not process unnecessary
+            // events, such as removeaddress
+            joined = false;
+            active = false;
+            inSelector.shutdown();
+            outSelector.shutdown();
+            clusterService.stop();
+            queryService.stop();
+            if (multicastService != null) {
                 multicastService.stop();
-                connectionManager.shutdown();
-                concurrentMapManager.reset();
-                clientService.reset();
-                executorManager.stop();
-                address = null;
-                masterAddress = null;
-                clusterManager.stop();
-                int numThreads = threadGroup.activeCount();
-                Thread[] threads = new Thread[numThreads * 2];
-                numThreads = threadGroup.enumerate(threads, false);
-                for (int i = 0; i < numThreads; i++) {
-                    Thread thread = threads[i];
-                    thread.interrupt();
-                }  
             }
-        } catch (Throwable e) {
-            e.printStackTrace();
+            connectionManager.shutdown();
+            concurrentMapManager.reset();
+            clientService.reset();
+            executorManager.stop();
+            address = null;
+            masterAddress = null;
+            clusterManager.stop();
+            int numThreads = threadGroup.activeCount();
+            Thread[] threads = new Thread[numThreads * 2];
+            numThreads = threadGroup.enumerate(threads, false);
+            for (int i = 0; i < numThreads; i++) {
+                Thread thread = threads[i];
+                thread.interrupt();
+            }
         }
     }
 
@@ -381,8 +379,11 @@ public class Node {
         queryThread.start();
 
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
-            startMulticastService();
+            final Thread multicastServiceThread = new Thread(threadGroup, multicastService, "hz.MulticastThread");
+            multicastServiceThread.start();
+            multicastServiceThread.setPriority(6);
         }
+        
         active = true;
         if (!completelyShutdown) {
             logger.log(Level.FINEST, "Adding ShutdownHook");
@@ -404,12 +405,6 @@ public class Node {
                 e.printStackTrace();
             }
         }
-    }
-
-    public void startMulticastService() {
-        final Thread multicastServiceThread = new Thread(threadGroup, multicastService, "hz.MulticastThread");
-        multicastServiceThread.start();
-        multicastServiceThread.setPriority(6);
     }
 
     public void unlock() {

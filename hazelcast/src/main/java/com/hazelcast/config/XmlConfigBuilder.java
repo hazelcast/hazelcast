@@ -97,15 +97,9 @@ public class XmlConfigBuilder implements ConfigBuilder {
         return config;
     }
 
-    /* (non-Javadoc)
-      * @see com.hazelcast.config.ConfigBuilder#parse(com.hazelcast.config.Config)
-      */
-    public void parse(final Config config) throws Exception {
-
+    private void parse(final Config config) throws Exception {
         this.config = config;
-
         final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-
         Document doc = null;
         try {
             doc = builder.parse(in);
