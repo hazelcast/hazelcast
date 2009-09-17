@@ -15,9 +15,7 @@ public class EntryObject {
     }
 
     public PredicateBuilder is(String property) {
-        qb.lsPredicates.add(Predicates.equal(Predicates.get(property), true));
-        qb.exp = null;
-        return qb;
+        return addPredicate(Predicates.equal(Predicates.get(property), true));
     }
 
     public EntryObject key() {
@@ -33,19 +31,35 @@ public class EntryObject {
     }
 
     public PredicateBuilder equal(Object value) {
-        qb.lsPredicates.add(Predicates.equal(qb.exp, value));
-        qb.exp = null;
-        return qb;
+        return addPredicate(Predicates.equal(qb.exp, value));
     }
 
     public PredicateBuilder greaterThan(Comparable value) {
-        qb.lsPredicates.add(Predicates.greaterThan(qb.exp, value));
-        qb.exp = null;
-        return qb;
+        return addPredicate(Predicates.greaterThan(qb.exp, value));
+    }
+
+    public PredicateBuilder greaterEqual(Comparable value) {
+        return addPredicate(Predicates.greaterEqual(qb.exp, value));
     }
 
     public PredicateBuilder lessThan(Comparable value) {
-        qb.lsPredicates.add(Predicates.lessThan(qb.exp, value));
+        return addPredicate(Predicates.lessThan(qb.exp, value));
+    }
+
+    public PredicateBuilder lessEqual(Comparable value) {
+        return addPredicate(Predicates.lessEqual(qb.exp, value));
+    }
+
+    public PredicateBuilder between(Comparable from, Comparable to) {
+        return addPredicate(Predicates.between(qb.exp, from, to));
+    }
+
+    public PredicateBuilder in(Comparable... values) {
+        return addPredicate(Predicates.in(qb.exp, values));
+    }
+
+    private PredicateBuilder addPredicate(Predicate predicate) {
+        qb.lsPredicates.add(predicate);
         qb.exp = null;
         return qb;
     }

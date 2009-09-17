@@ -56,6 +56,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
 
     <V> Collection<V> values (Predicate predicate);
 
-    void addIndex(Expression expression, boolean ordered);
+    void addIndex(String attribute, boolean ordered);
 
 }

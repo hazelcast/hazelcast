@@ -165,7 +165,6 @@ public class AddressPicker {
             for (int i = 0; i < 100; i++) {
                 try {
                     isa = new InetSocketAddress(inetAddress, port);
-                    System.out.println(isa);
                     serverSocket.bind(isa, 100);
                     break;
                 } catch (final Exception e) {

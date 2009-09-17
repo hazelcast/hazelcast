@@ -20,105 +20,132 @@ package com.hazelcast.query;
 import java.util.*;
 
 class Parser {
-	private static final String SPLIT_EXPRESSION = " ";
+    private static final String SPLIT_EXPRESSION = " ";
 
-	private static final Map<String,Integer> precedence = new HashMap<String,Integer>();
+    private static final Map<String, Integer> precedence = new HashMap<String, Integer>();
+
     static {
         precedence.put("(", 15);
-		precedence.put(")", 15);
-		precedence.put("not", 11);
-		precedence.put("=", 10);
-		precedence.put(">", 10);
-		precedence.put("<", 10);
-		precedence.put(">=", 10);
-		precedence.put("<=", 10);
+        precedence.put(")", 15);
+        precedence.put("not", 8);
+        precedence.put("=", 10);
+        precedence.put(">", 10);
+        precedence.put("<", 10);
+        precedence.put(">=", 10);
+        precedence.put("<=", 10);
         precedence.put("==", 10);
         precedence.put("!=", 10);
         precedence.put("between", 10);
-        precedence.put("and", 9);
-        precedence.put("or", 8);
+        precedence.put("in", 10);
+        precedence.put("and", 5);
+        precedence.put("or", 3);
     }
 
     public Parser() {
-	}
-
-    public static boolean isPrecedence(String str) {
-        return precedence.containsKey(str);
     }
-	
-	public List<String> toPrefix(String in){
-	    List<String> stack = new ArrayList<String>();
+
+    public List<String> toPrefix(String in) {
+        int indexIn = in.indexOf("in");
+        if (indexIn == -1) {
+            indexIn = in.indexOf("IN");
+        }
+        if ( indexIn != -1) {
+            int indexOpen = in.indexOf("(", indexIn);
+            int indexClose = in.indexOf(")", indexOpen);
+            String sub = in.substring(indexOpen, indexClose+1);
+            sub = sub.replaceAll(" ", "");
+            in = in.substring(0, indexOpen) + sub + in.substring(indexClose+1);
+        }
+
+        List<String> stack = new ArrayList<String>();
         List<String> output = new ArrayList<String>();
         List<String> tokens = split(in);
-		for (String token: tokens) {
-			if(isOperand(token)){
-				if(token.equals(")")){
-					while(openParanthesesFound(stack)){
-						output.add(stack.remove(stack.size()-1));
-					}
-					stack.remove(stack.size()-1);
-				}else{
-					while(openParanthesesFound(stack) &&!hasHigherPrecedence(token, stack.get(stack.size()-1))){
-						output.add(stack.remove(stack.size()-1));
-					}
-					stack.add(token);
-				}
-			}
-			else{
-				output.add(token);
-			}
-		}
 
-		while(stack.size()>0 ){
-			output.add(stack.remove(stack.size()-1));
-		}
-		return output;
-	}
+        if (tokens.contains("between") || tokens.contains("BETWEEN")) {
+            boolean found = true;
+            boolean dirty = false;
+            betweens:
+            while (found) {
+                for (int i = 0; i < tokens.size(); i++) {
+                    if ("between".equalsIgnoreCase(tokens.get(i))) {
+                        tokens.set(i, "betweenAnd");
+                        tokens.remove(i + 2);
+                        dirty = true;
+                        continue betweens;
+                    }
+                }
+                found = false;
+            }
+            if (dirty) {
+                for (int i = 0; i < tokens.size(); i++) {
+                    if ("betweenAnd".equals(tokens.get(i))) {
+                        tokens.set(i, "between");
+                    }
+                }
+            }
+        }
+        for (String token : tokens) {
+            if (isOperand(token)) {
+                if (token.equals(")")) {
+                    while (openParanthesesFound(stack)) {
+                        output.add(stack.remove(stack.size() - 1));
+                    }
+                    stack.remove(stack.size() - 1);
+                } else {
+                    while (openParanthesesFound(stack) && !hasHigherPrecedence(token, stack.get(stack.size() - 1))) {
+                        output.add(stack.remove(stack.size() - 1));
+                    }
+                    stack.add(token);
+                }
+            } else {
+                output.add(token);
+            }
+        }
 
-	public List<String> split(String in) {
-		StringBuilder result = new StringBuilder();
-		List<String> charOperators = Arrays.asList("(",")","+","-","=","<",">","*","/");
-		in.replaceAll("<=", " <= ");
-		in.replaceAll(">=", " >= ");
-		in.replaceAll(">=", " >= ");
-		in.replaceAll("<>", " <> ");
-		char[] chars = in.toCharArray();
-		for (int i = 0; i < chars.length; i++) {
-			char c = chars[i];
-			if(charOperators.contains(String.valueOf(c))){
-				if(i<chars.length - 2 && charOperators.contains(String.valueOf(chars[i+1])) && !("(".equals(String.valueOf(chars[i+1])) || ")".equals(String.valueOf(chars[i+1]))) ){
-					result.append(" ").append(c).append(chars[i+1]).append(" ");
-					i++;
-				}
-				else{
-					result.append(" ").append(c).append(" ");					
-				}
-			}
-			else{
-				result.append(c);
-			}
-		}
-		
-		String[] tokens = result.toString().split(SPLIT_EXPRESSION);
-		List<String> list = new ArrayList<String>();
-		for (int i = 0; i < tokens.length; i++) {
-			tokens[i] = tokens[i].trim();
-			if(!tokens[i].equals("")){
-				list.add(tokens[i]);
-			}
-		}
-		return list;
-	}
+        while (stack.size() > 0) {
+            output.add(stack.remove(stack.size() - 1));
+        }
+        return output;
+    }
 
-	public boolean hasHigherPrecedence(String operator1, String operator2) {
-		return precedence.get(operator1.toLowerCase()) > precedence.get(operator2.toLowerCase());
-	}
+    public List<String> split(String in) {
+        StringBuilder result = new StringBuilder();
+        List<String> charOperators = Arrays.asList("(", ")", "+", "-", "=", "<", ">", "*", "/");
+        char[] chars = in.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
+            if (charOperators.contains(String.valueOf(c))) {
+                if (i < chars.length - 2 && charOperators.contains(String.valueOf(chars[i + 1])) && !("(".equals(String.valueOf(chars[i + 1])) || ")".equals(String.valueOf(chars[i + 1])))) {
+                    result.append(" ").append(c).append(chars[i + 1]).append(" ");
+                    i++;
+                } else {
+                    result.append(" ").append(c).append(" ");
+                }
+            } else {
+                result.append(c);
+            }
+        }
 
-	private boolean isOperand(String string) {
-		return precedence.containsKey(string.toLowerCase());
-	}
+        String[] tokens = result.toString().split(SPLIT_EXPRESSION);
+        List<String> list = new ArrayList<String>();
+        for (int i = 0; i < tokens.length; i++) {
+            tokens[i] = tokens[i].trim();
+            if (!tokens[i].equals("")) {
+                list.add(tokens[i]);
+            }
+        }
+        return list;
+    }
+
+    boolean hasHigherPrecedence(String operator1, String operator2) {
+        return precedence.get(operator1.toLowerCase()) > precedence.get(operator2.toLowerCase());
+    }
+
+    boolean isOperand(String string) {
+        return precedence.containsKey(string.toLowerCase());
+    }
 
     private boolean openParanthesesFound(List<String> stack) {
-		return stack.size() > 0 && !stack.get(stack.size()-1).equals("(");
-}
+        return stack.size() > 0 && !stack.get(stack.size() - 1).equals("(");
+    }
 }

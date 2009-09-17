@@ -172,6 +172,17 @@ public class Index<T> {
         return mapIndex.get(value);
     }
 
+    Set<T> getRecords(long[] values) {
+        Set<T> results = new HashSet<T>();
+        for (long value : values) {
+            Set<T> records = mapIndex.get(value);
+            if (records != null) {
+                results.addAll(records);
+            }
+        }
+        return results;
+    }
+
     Set<T> getSubRecords(boolean equal, boolean lessThan, long value) {
         TreeMap<Long, Set<T>> treeMap = (TreeMap<Long, Set<T>>) mapIndex;
         Set<T> results = new HashSet<T>();

@@ -61,7 +61,7 @@ public class Predicates {
             } else {
                 result = cFirst.getValue(entry).compareTo(second);
             }
-            if (equal && result ==0) return true;
+            if (equal && result == 0) return true;
             return (expectedResult == result);
         }
 
@@ -146,15 +146,171 @@ public class Predicates {
         }
 
         public boolean apply(MapEntry entry) {
-              return ! super.apply(entry);
-          }
+            return !super.apply(entry);
+        }
+
+        @Override
+        public String toString() {
+            final StringBuffer sb = new StringBuffer();
+            sb.append(first);
+            sb.append("!=");
+            sb.append(second); 
+            return sb.toString();
+        }
     }
+
+
+    public static class NotPredicate extends AbstractPredicate {
+        Predicate predicate;
+
+        public NotPredicate(Predicate predicate) {
+            this.predicate = predicate;
+        }
+
+        public NotPredicate() {
+        }
+
+        public boolean apply(MapEntry mapEntry) {
+            return !predicate.apply(mapEntry);
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            writeObject(out, predicate);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            predicate = (Predicate) readObject(in);
+        }
+
+        @Override
+        public String toString() {
+            final StringBuffer sb = new StringBuffer();
+            sb.append("NOT(");
+            sb.append(predicate.toString());
+            sb.append(")");
+            return sb.toString();
+        }
+    }
+
+
+    public static class InPredicate extends AbstractPredicate implements IndexAwarePredicate {
+        Expression first;
+        Object[] values = null;
+        Object[] convertedValues = null;
+
+        public InPredicate() {
+        }
+
+        public InPredicate(Expression first, Object... second) {
+            this.first = first;
+            this.values = second;
+        }
+
+        public boolean apply(MapEntry entry) {
+            Object firstVal = first.getValue(entry);
+            if (firstVal == null) return false;
+            if (convertedValues != null) {
+                return in(firstVal, convertedValues);
+            } else {
+                if (firstVal.getClass() == values[0].getClass()) {
+                    return in(firstVal, values);
+                } else if (values[0] instanceof String) {
+                    convertedValues = new Object[values.length];
+                    for (int i = 0; i < values.length; i++) {
+                        convertedValues[i] = getRealObject(firstVal.getClass(), (String) values[i]);
+                    }
+                    return in(firstVal, convertedValues);
+                }
+            }
+            return in(firstVal, values);
+        }
+
+        private boolean in(Object firstVal, Object[] values) {
+            for (Object o : values) {
+                if (firstVal.equals(o)) return true;
+            }
+            return false;
+        }
+
+        public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index<MapEntry>> mapIndexes) {
+            if (first instanceof GetExpression) {
+                Index index = mapIndexes.get(first);
+                if (index != null) {
+                    lsIndexPredicates.add(this);
+                } else {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index<MapEntry>> mapIndexes) {
+            Index index = mapIndexes.get(first);
+            if (index != null) {
+                setAppliedIndexes.add(index);
+            }
+        }
+
+        public Set<MapEntry> filter(Map<Expression, Index<MapEntry>> mapIndexes) {
+            Index index = mapIndexes.get(first);
+            if (index != null) {
+                long[] longValues = new long[values.length];
+                for (int i = 0; i < values.length; i++) {
+                    longValues[i] = index.getLongValue(values[i]);
+                }
+                return index.getRecords(longValues);
+            } else {
+                return null;
+            }
+        }
+
+        public Object getValue() {
+            return values;
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            writeObject(out, first);
+            out.writeInt(values.length);
+            for (int i = 0; i < values.length; i++) {
+                writeObject(out, values[i]);
+            }
+        }
+
+        public void readData(DataInput in) throws IOException {
+            try {
+                first = (Expression) readObject(in);
+                int len = in.readInt();
+                values = new Object[len];
+                for (int i = 0; i < values.length; i++) {
+                    values[i] = readObject(in);
+                }
+            } catch (Exception e) {
+                throw new IOException(e.getMessage());
+            }
+        }
+
+        @Override
+        public String toString() {
+            final StringBuffer sb = new StringBuffer();
+            sb.append(first);
+            sb.append(" IN (");
+            for (int i=0; i<values.length; i++) {
+                sb.append(values[i]);
+                if (i < (values.length -1)) {
+                    sb.append(",");
+                }
+            }
+            sb.append(")");
+            return sb.toString();
+        }
+    }
+
 
     public static class EqualPredicate extends AbstractPredicate implements IndexAwarePredicate {
         Expression first;
         Object second;
         Object convertedSecondValue = null;
-        protected boolean secondIsExpression = true;
+        protected boolean secondIsExpression = false;
 
         public EqualPredicate() {
         }
@@ -162,12 +318,12 @@ public class Predicates {
         public EqualPredicate(Expression first, Expression second) {
             this.first = first;
             this.second = second;
+            this.secondIsExpression = true;
         }
 
         public EqualPredicate(Expression first, Object second) {
             this.first = first;
             this.second = second;
-            this.secondIsExpression = false;
         }
 
         public boolean apply(MapEntry entry) {
@@ -184,24 +340,10 @@ public class Predicates {
                         return firstVal.equals(convertedSecondValue);
                     } else {
                         if (firstVal.getClass() == second.getClass()) {
-                           convertedSecondValue = second;
-                        } else if (second instanceof String){
-                           String str = (String) second;
-                           if (firstVal instanceof Boolean) {
-                               convertedSecondValue = "true".equalsIgnoreCase(str) ? true : false;
-                           } else if (firstVal instanceof Integer) {
-                               convertedSecondValue = Integer.valueOf(str);
-                           } else if (firstVal instanceof Double) {
-                               convertedSecondValue = Double.valueOf(str);
-                           } else if (firstVal instanceof Float) {
-                               convertedSecondValue = Float.valueOf(str);
-                           }  else if (firstVal instanceof Byte) {
-                               convertedSecondValue = Byte.valueOf(str);
-                           }  else if (firstVal instanceof Long) {
-                               convertedSecondValue = Long.valueOf(str);
-                           } else {
-                               throw new RuntimeException("Unknown type " + firstVal.getClass() + " value=" + str);
-                           }
+                            convertedSecondValue = second;
+                        } else if (second instanceof String) {
+                            String str = (String) second;
+                            convertedSecondValue = getRealObject(firstVal, str);
                         }
                     }
                     return firstVal.equals(convertedSecondValue);
@@ -231,14 +373,10 @@ public class Predicates {
         public Set<MapEntry> filter(Map<Expression, Index<MapEntry>> mapIndexes) {
             Index index = mapIndexes.get(first);
             if (index != null) {
-                return index.getRecords (index.getLongValue(second));
+                return index.getRecords(index.getLongValue(second));
             } else {
                 return null;
             }
-        }
-
-        public boolean isRanged() {
-            return false;
         }
 
         public Object getValue() {
@@ -261,26 +399,36 @@ public class Predicates {
             }
         }
 
-        public Expression getFirst() {
-            return first;
-        }
-
-        public Object getSecond() {
-            return second;
-        }
-
         @Override
         public String toString() {
             final StringBuffer sb = new StringBuffer();
             sb.append(first);
-            sb.append(" = ");
+            sb.append("=");
             sb.append(second);
             return sb.toString();
         }
     }
 
     public static abstract class AbstractPredicate extends SerializationHelper implements Predicate, DataSerializable {
-
+        public Object getRealObject(Object type, String value) {
+            Object result = null;
+            if (type instanceof Boolean) {
+                result = "true".equalsIgnoreCase(value) ? true : false;
+            } else if (type instanceof Integer) {
+                result = Integer.valueOf(value);
+            } else if (type instanceof Double) {
+                result = Double.valueOf(value);
+            } else if (type instanceof Float) {
+                result = Float.valueOf(value);
+            } else if (type instanceof Byte) {
+                result = Byte.valueOf(value);
+            } else if (type instanceof Long) {
+                result = Long.valueOf(value);
+            } else {
+                throw new RuntimeException("Unknown type " + type.getClass() + " value=" + value);
+            }
+            return result;
+        }
     }
 
     public static class AndOrPredicate extends AbstractPredicate implements IndexAwarePredicate {
@@ -383,11 +531,25 @@ public class Predicates {
                 if (value == null) return false;
                 return klass.isAssignableFrom(value.getClass());
             }
+
+            @Override
+            public String toString() {
+                final StringBuffer sb = new StringBuffer();
+                sb.append(" instanceOf (");
+                sb.append(klass.getName());
+                sb.append(")");
+                return sb.toString();
+            }
         };
+
     }
 
     public static Predicate and(Predicate x, Predicate y) {
         return new AndOrPredicate(true, x, y);
+    }
+
+    public static Predicate not(Predicate predicate) {
+        return new NotPredicate(predicate);
     }
 
 
@@ -423,18 +585,14 @@ public class Predicates {
         return new BetweenPredicate(expression, from, to);
     }
 
-    public static Predicate not(final Expression<Boolean> x) {
+    public static <T extends Comparable<T>> Predicate in(Expression<? extends T> expression, T... values) {
+        return new InPredicate(expression, values);
+    }
+
+    public static Predicate isNot(final Expression<Boolean> x) {
         return new Predicate() {
             public boolean apply(MapEntry entry) {
                 Boolean value = x.getValue(entry);
-                return Boolean.FALSE.equals(value);
-            }
-        };
-    }
-
-    public static Predicate not(final boolean value) {
-        return new Predicate() {
-            public boolean apply(MapEntry entry) {
                 return Boolean.FALSE.equals(value);
             }
         };
@@ -588,9 +746,7 @@ public class Predicates {
 
         @Override
         public String toString() {
-            final StringBuffer sb = new StringBuffer();
-            sb.append("get('" + input + "')");
-            return sb.toString();
+            return input;
         }
     }
 

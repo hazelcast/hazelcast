@@ -18,8 +18,7 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import org.junit.Test;
 
 public class PredicatesTest {
@@ -46,7 +45,37 @@ public class PredicatesTest {
         assertTrue(Predicates.between(new DummyExpression(5), 4, 6).apply(null));
         assertTrue(Predicates.between(new DummyExpression(5), 5, 6).apply(null));
         assertFalse(Predicates.between(new DummyExpression(5), 6, 7).apply(null));
+        assertTrue(Predicates.in(new DummyExpression(5), 4, 7, 8, 5).apply(null));
+        assertTrue(Predicates.in(new DummyExpression(5), 5, 7, 8).apply(null));
+        assertFalse(Predicates.in(new DummyExpression(5), 6, 7, 8).apply(null));
+        assertFalse(Predicates.in(new DummyExpression(9), 6, 7, 8).apply(null));
+    }
 
+    @Test
+    public void testSqlPredicate() {
+        assertEquals("active=true", new SqlPredicate("active").toString());
+        assertEquals("(active=true AND age>4)", new SqlPredicate("active and age > 4").toString());
+        assertEquals("(active=true AND age>4)", new SqlPredicate("active and age>4").toString());
+        assertEquals("(active=false AND age<=4)", new SqlPredicate("active=false AND age<=4").toString());
+        assertEquals("(active=false AND age<=4)", new SqlPredicate("active= false and age <= 4").toString());
+        assertEquals("(active=false AND age>=4)", new SqlPredicate("active=false AND (age>=4)").toString());
+        assertEquals("(active=false OR age>=4)", new SqlPredicate("active =false or (age>= 4)").toString());
+
+        assertEquals("age IN (10,15)", new SqlPredicate("age in (10, 15)").toString());
+        assertEquals("NOT(age IN (10,15))", new SqlPredicate("age not in ( 10 , 15 )").toString());
+        assertEquals("(active=true AND age BETWEEN 10 AND 15)", new SqlPredicate("active and age between 10 and 15").toString());
+        assertEquals("(age IN (10,15) AND active=true)", new SqlPredicate("age IN (10, 15) and active").toString());
+        assertEquals("(active=true OR age IN (10,15))", new SqlPredicate("active or (age in ( 10,15))").toString());
+        assertEquals("(age>10 AND (active=true OR age IN (10,15)))", new SqlPredicate("age>10 AND (active or (age IN (10, 15 )))").toString());
+        assertEquals("(age<=10 AND (active=true OR NOT(age IN (10,15))))", new SqlPredicate("age<=10 AND (active or (age not in (10 , 15)))").toString());
+
+        assertEquals("age BETWEEN 10 AND 15", new SqlPredicate("age between 10 and 15").toString());
+        assertEquals("NOT(age BETWEEN 10 AND 15)", new SqlPredicate("age not between 10 and 15").toString());
+        assertEquals("(active=true AND age BETWEEN 10 AND 15)", new SqlPredicate("active and age between 10 and 15").toString());
+        assertEquals("(age BETWEEN 10 AND 15 AND active=true)", new SqlPredicate("age between 10 and 15 and active").toString());
+        assertEquals("(active=true OR age BETWEEN 10 AND 15)", new SqlPredicate("active or (age between 10 and 15)").toString());
+        assertEquals("(age>10 AND (active=true OR age BETWEEN 10 AND 15))", new SqlPredicate("age>10 AND (active or (age between 10 and 15))").toString());
+        assertEquals("(age<=10 AND (active=true OR NOT(age BETWEEN 10 AND 15)))", new SqlPredicate("age<=10 AND (active or (age not between 10 and 15))").toString());
     }
 
     class DummyExpression implements Expression {

@@ -73,67 +73,89 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
     private Predicate createPredicate(String sql) {
         Parser parser = new Parser();
         List<Object> tokens = new ArrayList<Object>(parser.toPrefix(sql));
-        System.out.println(sql);
+//        System.out.println(sql);
+//        System.out.println("token " + tokens);
+        if (tokens.size() == 0) throw new RuntimeException("Invalid SQL :" + sql);
+        if (tokens.size() == 1) {
+            return eval(tokens.get(0));
+        }
         root:
         while (tokens.size() > 1) {
+//            System.out.println(tokens);
             for (int i = 0; i < tokens.size(); i++) {
                 Object tokenObj = tokens.get(i);
-                if (tokenObj instanceof String && Parser.isPrecedence((String) tokenObj)) {
+//                System.out.println(tokenObj + " ... " + tokenObj.getClass());
+                if (tokenObj instanceof String && parser.isOperand((String) tokenObj)) {
                     String token = (String) tokenObj;
                     if ("=".equals(token) || "==".equals(token)) {
-                        Object first = tokens.get(i - 2);
-                        Object second = tokens.get(i - 1);
-                        Predicate p = equal(get((String) first), second);
-                        removeThreeAddOne(tokens, i, p);
+                        int position = (i - 2);
+                        Object first = tokens.remove(position);
+                        Object second = tokens.remove(position);
+                        setOrAdd(tokens, position, equal(get((String) first), second));
                     } else if ("!=".equals(token)) {
-                        Object first = tokens.get(i - 2);
-                        Object second = tokens.get(i - 1);
-                        Predicate p = notEqual(get((String) first), second);
-                        removeThreeAddOne(tokens, i, p);
+                        int position = (i - 2);
+                        Object first = tokens.remove(position);
+                        Object second = tokens.remove(position);
+                        setOrAdd(tokens, position, notEqual(get((String) first), second));
                     } else if (">".equals(token)) {
-                        Object first = tokens.get(i - 2);
-                        Object second = tokens.get(i - 1);
-                        Predicate p = greaterThan(get((String) first), (Comparable) second);
-                        removeThreeAddOne(tokens, i, p);
+                        int position = (i - 2);
+                        Object first = tokens.remove(position);
+                        Object second = tokens.remove(position);
+                        setOrAdd(tokens, position, greaterThan(get((String) first), (Comparable) second));
                     } else if (">=".equals(token)) {
-                        Object first = tokens.get(i - 2);
-                        Object second = tokens.get(i - 1);
-                        Predicate p = greaterEqual(get((String) first), (Comparable) second);
-                        removeThreeAddOne(tokens, i, p);
+                        int position = (i - 2);
+                        Object first = tokens.remove(position);
+                        Object second = tokens.remove(position);
+                        setOrAdd(tokens, position, greaterEqual(get((String) first), (Comparable) second));
                     } else if ("<=".equals(token)) {
-                        Object first = tokens.get(i - 2);
-                        Object second = tokens.get(i - 1);
-                        Predicate p = lessEqual(get((String) first), (Comparable) second);
-                        removeThreeAddOne(tokens, i, p);
+                        int position = (i - 2);
+                        Object first = tokens.remove(position);
+                        Object second = tokens.remove(position);
+                        setOrAdd(tokens, position, lessEqual(get((String) first), (Comparable) second));
                     } else if ("<".equals(token)) {
-                        Object first = tokens.get(i - 2);
-                        Object second = tokens.get(i - 1);
-                        Predicate p = lessThan(get((String) first), (Comparable) second);
-                        removeThreeAddOne(tokens, i, p);
+                        int position = (i - 2);
+                        Object first = tokens.remove(position);
+                        Object second = tokens.remove(position);
+                        setOrAdd(tokens, position, lessThan(get((String) first), (Comparable) second));
+                    } else if ("IN".equalsIgnoreCase(token)) {
+                        int position = i - 2;
+                        Object exp = tokens.remove(position);
+                        String[] values = ((String) tokens.remove(position)).split(",");
+                        setOrAdd(tokens, position, Predicates.in(get((String) exp), values));
+                    } else if ("NOT".equalsIgnoreCase(token)) {
+                        int position = i - 1;
+                        Object exp = tokens.remove(position);
+                        setOrAdd(tokens, position, Predicates.not(eval(exp)));
                     } else if ("BETWEEN".equalsIgnoreCase(token)) {
-                        Object expression = tokens.remove(i - 2);
-                        Object from = tokens.remove(i - 2);
-                        Object between = tokens.remove(i - 2);
-                        Object and = tokens.remove(i - 2);
-                        Object to = tokens.remove(i - 2);
-                        tokens.add((i - 2), between(get((String) expression), (Comparable) from, (Comparable) to));
+                        int position = i - 3;
+                        Object expression = tokens.remove(position);
+                        Object from = tokens.remove(position);
+                        Object to = tokens.remove(position);
+                        setOrAdd(tokens, position, between(get((String) expression), (Comparable) from, (Comparable) to));
                     } else if ("AND".equalsIgnoreCase(token)) {
-                        Object first = tokens.get(i - 2);
-                        Object second = tokens.get(i - 1);
-                        Predicate p = Predicates.and(eval(first), eval(second));
-                        removeThreeAddOne(tokens, i, p);
+                        int position = i - 2;
+                        Object first = tokens.remove(position);
+                        Object second = tokens.remove(position);
+                        setOrAdd(tokens, position, and(eval(first), eval(second)));
                     } else if ("OR".equalsIgnoreCase(token)) {
-                        Object first = tokens.get(i - 2);
-                        Object second = tokens.get(i - 1);
-                        Predicate p = Predicates.or(eval(first), eval(second));
-                        removeThreeAddOne(tokens, i, p);
+                        int position = i - 2;
+                        Object first = tokens.remove(position);
+                        Object second = tokens.remove(position);
+                        setOrAdd(tokens, position, or(eval(first), eval(second)));
                     } else throw new RuntimeException("Unknown token " + token);
                     continue root;
                 }
             }
         }
-        System.out.println(tokens.get(0));
         return (Predicate) tokens.get(0);
+    }
+
+    private void setOrAdd(List tokens, int position, Predicate predicate) {
+        if (tokens.size() == 0) {
+            tokens.add(predicate);
+        } else {
+            tokens.set(position, predicate);
+        }
     }
 
     private Predicate eval(Object statement) {
@@ -149,5 +171,10 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         tokens.remove(i - 2);
         tokens.remove(i - 2);
         tokens.add(i - 2, added);
+    }
+
+    @Override
+    public String toString() {
+        return predicate.toString();
     }
 }

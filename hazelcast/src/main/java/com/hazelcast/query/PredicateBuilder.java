@@ -63,7 +63,7 @@ public class PredicateBuilder implements Predicate, IndexAwarePredicate {
         }
     }
 
-    public EntryObject getRoot() {
+    public EntryObject getEntryObject() {
         return new EntryObject(this);
     }
 
