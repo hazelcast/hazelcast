@@ -286,14 +286,9 @@ public class ListenerManager extends BaseManager {
     }
 
     void callListeners(EventTask event) {
-        String name = event.getName();
         for (ListenerItem listenerItem : listeners) {
-            if (listenerItem.name.equals(name)) {
-                if (listenerItem.key == null) {
-                    callListener(listenerItem, event);
-                } else if (event.getKey().equals(listenerItem.key)) {
-                    callListener(listenerItem, event);
-                }
+            if (listenerItem.listens(event)) {
+                callListener(listenerItem, event);
             }
         }
     }
@@ -335,6 +330,10 @@ public class ListenerManager extends BaseManager {
             this.name = name;
             this.includeValue = includeValue;
             this.type = listenerType;
+        }
+        public boolean listens(EventTask event){
+        	 String name = event.getName();
+        	 return this.name.equals(name) && (this.key == null || event.getKey().equals(this.key));
         }
 
     }
