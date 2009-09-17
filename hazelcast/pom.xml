@@ -56,6 +56,7 @@
                                         <include name="**/core/**"/>
                                         <include name="**/config/**"/>
                                         <include name="**/jmx/**"/>
+                                        <include name="**/query/**"/>
                                         <exclude name="**/*.html" />
                                     </fileset>
                                     <doctitle>

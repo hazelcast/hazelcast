@@ -52,7 +52,6 @@
             <includes>
                 <include>*.bat</include>
                 <include>*.sh</include>
-                <include>hazelcast.xml</include>
                 <include>keystore</include>
             </includes>
         </fileSet>
@@ -60,9 +59,15 @@
             <directory>src/main/resources/</directory>
             <outputDirectory>/</outputDirectory>
             <includes>
-                <include>hazelcast.xml</include>
                 <include>keystore</include>
                 <include>license.txt</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>hazelcast/src/main/resources/</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>hazelcast.xml</include> 
             </includes>
         </fileSet>
     </fileSets>

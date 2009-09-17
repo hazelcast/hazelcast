@@ -37,6 +37,7 @@
                     <include>**/*.bat</include>
                     <include>**/*.sh</include>
                     <include>**/*.properties</include>
+                    <include>**/*.xml</include>
                 </includes>
             </resource>
         </resources>
@@ -59,6 +60,9 @@
                     <archive>
                         <index>true</index>
                         <compress>true</compress>
+                        <manifest>
+                            <mainClass>com.hazelcast.examples.SimpleMapTest</mainClass>                            
+                        </manifest>
                     </archive>
                 </configuration>
             </plugin>
@@ -85,6 +89,8 @@
                         <include>**/TransactionTest.java</include>
                         <include>**/GeneralTest.java</include>
                         <include>**/IOTest.java</include>
+                        <include>**/ParserTest.java</include>
+                        <include>**/PredicatesTest.java</include>
                     </includes>
                 </configuration>
             </plugin>

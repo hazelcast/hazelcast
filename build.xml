@@ -91,7 +91,7 @@
 
 	<target name="jar">
 		<delete file="${hazelcast.jar.name}" failonerror="false" />
-		<copy file="src/main/resources/hazelcast.xml" todir="${classes.dir}" />
+		<copy file="hazelcast/src/main/resources/hazelcast.xml" todir="${classes.dir}" />
 		<jar jarfile="${hazelcast.jar.name}">
 			<fileset dir="${classes.dir}"> 
 				<exclude name="**/jca/**" /> 
