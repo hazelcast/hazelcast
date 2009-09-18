@@ -23,6 +23,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.Transaction;
 import static com.hazelcast.core.Transaction.TXN_STATUS_ACTIVE;
 import com.hazelcast.impl.BaseManager.KeyValue;
+import com.hazelcast.impl.ClientService.ClientEndpoint;
 import com.hazelcast.impl.ConcurrentMapManager.Entries;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_SUCCESS;
 import static com.hazelcast.nio.BufferUtil.*;
@@ -84,6 +85,19 @@ public class ClientRequestHandler implements Runnable {
         }
         else if (packet.operation.equals(ClusterOperation.REMOTELY_PROCESS)){
         	node.clusterService.enqueueAndReturn(packet);
+        }
+        else if (packet.operation.equals(ClusterOperation.ADD_LISTENER)) {
+        	ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
+            IMap<Object, Object> map = Hazelcast.getMap(packet.name.substring(2));
+            Object key = toObject(packet.key);
+            boolean includeValue = (int)packet.longValue==1;
+            if(key==null){
+            	map.addEntryListener(clientEndpoint, includeValue);
+            }
+            else{
+            	map.addEntryListener(clientEndpoint, key, includeValue);
+            }
+            sendResponse(packet);
         }
 
 

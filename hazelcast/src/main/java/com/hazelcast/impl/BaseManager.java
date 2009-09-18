@@ -1280,27 +1280,62 @@ public abstract class BaseManager {
 
         protected final Data dataValue;
 
-        public EventTask(final int eventType, final String name, final Data dataKey,
+
+		public EventTask(final int eventType, final String name, final Data dataKey,
                          final Data dataValue) {
             super(name, eventType, null, null);
             this.dataKey = dataKey;
             this.dataValue = dataValue;
         }
+		
+		public Data getDataKey() {
+			return dataKey;
+		}
+		
+		public Data getDataValue() {
+			return dataValue;
+		}
 
         public void run() {
             try {
+            	
+            	node.listenerManager.callListeners(this);
                 if (dataKey != null) {
-                    key = toObject(dataKey);
+//                    key = toObject(dataKey, false);
+                    dataKey.setNoData();
                 }
                 if (dataValue != null) {
-                    value = toObject(dataValue);
-                } else if (collection) {
-                    value = key;
-                }
-                node.listenerManager.callListeners(this);
+                	dataValue.setNoData();
+//                    value = toObject(dataValue, false);
+                } 
+//                else if (collection) {
+//                    value = key;
+//              }
+                
             } catch (final Exception e) {
                 e.printStackTrace();
             }
+        }
+        
+        public Object getKey() {
+//        	throw new RuntimeException("Serialized the key object");
+        	System.out.println(name + " Serialized the key object"  + toObject(dataKey, false));
+        	if(key==null && dataKey!=null){
+        		key = toObject(dataKey, false);
+        	}
+            return key;
+        }
+
+        public Object getValue() {
+            if(value==null){
+            	if(dataValue!=null){
+            		System.out.println(name + " Serialized the value object " + toObject(dataValue, false));
+            		value = toObject(dataValue,false);
+            	} else if(collection){
+            		value = key;
+            	}
+            }
+            return value;
         }
     }
 

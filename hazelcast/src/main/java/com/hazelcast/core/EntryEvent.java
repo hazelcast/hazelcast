@@ -41,10 +41,18 @@ public class EntryEvent extends EventObject {
     protected final String name;
 
     public enum EntryEventType {
-        ADDED,
-        REMOVED,
-        UPDATED,
-        EVICTED
+        ADDED(1),
+        REMOVED(2),
+        UPDATED(3),
+        EVICTED(4);
+        private int type;
+
+		EntryEventType(int type) {
+        	this.type = type;
+        }
+		public int getType(){
+			return type;
+		}
     }
 
     protected boolean collection;
@@ -92,7 +100,7 @@ public class EntryEvent extends EventObject {
     @Override
     public String toString() {
         return "EntryEvent {" + getSource() + "} key="
-                + key + ", value=" + value + ", event="
+                + getKey() + ", value=" + getValue() + ", event="
                 + entryEventType;
     }
 }

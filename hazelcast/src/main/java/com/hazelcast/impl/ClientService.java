@@ -17,6 +17,9 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.impl.BaseManager.EventTask;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 
@@ -33,17 +36,20 @@ public class ClientService {
 
     // always called by InThread
     public void handle(Packet packet) {
-        ClientEndpoint clientEndpoint = mapClientEndpoints.get(packet.conn);
-        System.out.println("Address  " +packet.conn.getEndPoint());
-        if(clientEndpoint == null){
-        	clientEndpoint = new ClientEndpoint(packet.conn);
-        	mapClientEndpoints.put(packet.conn, clientEndpoint);
-        }
+        ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
         node.executorManager.executeLocally(new ClientRequestHandler(node, packet, callContext));
     }
+    public ClientEndpoint getClientEndpoint(Connection conn){
+    	ClientEndpoint clientEndpoint = mapClientEndpoints.get(conn);
+        if(clientEndpoint == null){
+        	clientEndpoint = new ClientEndpoint(conn);
+        	mapClientEndpoints.put(conn, clientEndpoint);
+        }
+        return clientEndpoint;
+    }
 
-    class ClientEndpoint {
+    class ClientEndpoint implements EntryListener{
         final Connection conn;
         private Map<Integer, CallContext> mapOfCallContexts = new HashMap<Integer, CallContext>();
 
@@ -60,6 +66,45 @@ public class ClientService {
             }
             return context;
         }
+
+		@Override
+		public void entryAdded(EntryEvent event) {
+			processEvent(event);
+		}
+
+		@Override
+		public void entryEvicted(EntryEvent event) {
+			processEvent(event);
+		}
+
+		@Override
+		public void entryRemoved(EntryEvent event) {
+			processEvent(event);
+		}
+
+		@Override
+		public void entryUpdated(EntryEvent event) {
+			processEvent(event);			
+		}
+
+		private void processEvent(EntryEvent event) {
+			Packet packet = createEventPacket(event);
+			sendPacket(packet);
+		}
+
+		private void sendPacket(Packet packet) {
+			if(conn != null && conn.live()) {
+				conn.getWriteHandler().enqueuePacket(packet);
+			}
+		}
+
+		private Packet createEventPacket(EntryEvent event) {
+			Packet packet = new Packet();
+			EventTask eventTask = (EventTask)event;
+			packet.set(event.getName(), ClusterOperation.EVENT, eventTask.getDataKey(), eventTask.getDataValue());
+			packet.longValue = event.getEventType().getType();
+			return packet;
+		}
     }
 
     public void reset() {
