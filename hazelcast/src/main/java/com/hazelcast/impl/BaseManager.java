@@ -653,18 +653,19 @@ public abstract class BaseManager {
 
         public Object waitAndGetResult() {
             while (true) {
-                if (!node.active) {
-                    throw new RuntimeException();
-                }
                 try {
                     Object obj = responses.poll(10, TimeUnit.SECONDS);
                     if (obj != null) {
                         return obj;
                     } else if (node.factory.restarted) {
+                        reset();
                         throw new InterruptedCallException();
                     }
                 } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                    if (node.factory.restarted) {
+                        reset();
+                        throw new InterruptedCallException();
+                    }
                 }
             }
         }
@@ -698,6 +699,7 @@ public abstract class BaseManager {
         }
 
         public void reset() {
+            removeCall(getId());
             super.reset();
             responses.clear();
         }
