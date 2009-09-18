@@ -7,6 +7,8 @@ import org.junit.Test;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class HazelcastTest {
     @Test
@@ -145,20 +147,26 @@ public class HazelcastTest {
     @Test
     public void testMapEntryListener() {
         IMap<String, String> map = Hazelcast.getMap("testMapEntrySet");
+        final CountDownLatch latchAdded = new CountDownLatch(1);
+        final CountDownLatch latchRemoved = new CountDownLatch(1);
+        final CountDownLatch latchUpdated = new CountDownLatch(1);
         map.addEntryListener(new EntryListener() {
             public void entryAdded(EntryEvent event) {
                 assertEquals("world", event.getValue());
                 assertEquals("hello", event.getKey());
+                latchAdded.countDown();
             }
 
             public void entryRemoved(EntryEvent event) {
                 assertEquals("hello", event.getKey());
                 assertEquals("new world", event.getValue());
+                latchRemoved.countDown();
             }
 
             public void entryUpdated(EntryEvent event) {
                 assertEquals("new world", event.getValue());
                 assertEquals("hello", event.getKey());
+                latchUpdated.countDown();
             }
 
             public void entryEvicted(EntryEvent event) {
@@ -168,6 +176,14 @@ public class HazelcastTest {
         map.put("hello", "world");
         map.put("hello", "new world");
         map.remove("hello");
+        try {
+			assertTrue(latchAdded.await(50000, TimeUnit.MILLISECONDS));
+			assertTrue(latchUpdated.await(10, TimeUnit.MILLISECONDS));
+			assertTrue(latchRemoved.await(10, TimeUnit.MILLISECONDS));
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+			assertFalse(e.getMessage(), true);
+		}
     }
 
     @Test
