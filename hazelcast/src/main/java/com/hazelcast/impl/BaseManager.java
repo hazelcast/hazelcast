@@ -1318,8 +1318,6 @@ public abstract class BaseManager {
         }
         
         public Object getKey() {
-//        	throw new RuntimeException("Serialized the key object");
-        	System.out.println(name + " Serialized the key object"  + toObject(dataKey, false));
         	if(key==null && dataKey!=null){
         		key = toObject(dataKey, false);
         	}
@@ -1329,7 +1327,6 @@ public abstract class BaseManager {
         public Object getValue() {
             if(value==null){
             	if(dataValue!=null){
-            		System.out.println(name + " Serialized the value object " + toObject(dataValue, false));
             		value = toObject(dataValue,false);
             	} else if(collection){
             		value = key;
