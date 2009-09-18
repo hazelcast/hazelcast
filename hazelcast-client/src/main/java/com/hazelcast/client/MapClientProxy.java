@@ -32,19 +32,27 @@ import com.hazelcast.client.query.Predicate;
 
 public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	
-	public MapClientProxy(String name) {
+	final private HazelcastClient client;
+
+	public MapClientProxy(HazelcastClient client, String name) {
 		this.name = "c:" + name;
+		this.client = client;
 	}
 
 	public void addEntryListener(EntryListener listener, boolean includeValue) {
-		// TODO Auto-generated method stub
-		
+
+		addEntryListener(listener, null, includeValue);
 	}
 
 	public void addEntryListener(EntryListener listener, K key,
 			boolean includeValue) {
-		// TODO Auto-generated method stub
-		
+		Packet request = createRequestPacket();
+	    
+	    request.setOperation(ClusterOperation.ADD_LISTENER);
+	    request.setLongValue(includeValue?1:0);
+	    request.setKey(Serializer.toByte(key));
+	    callAndGetResult(request);
+	    client.listenerManager.registerEntryListener(name, key, listener);
 	}
 
 	public Set<java.util.Map.Entry<K, V>> entrySet(Predicate predicate) {
@@ -151,11 +159,10 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 //		MapGetCall mGet = new MapGetCall();
 		Packet request = createRequestPacket();
 	    
-//	    request.setTxnId(0);
 	    request.setOperation(ClusterOperation.CONCURRENT_MAP_GET);
 	    request.setKey(Serializer.toByte(key));
 	    
-	    Packet response = call(request);
+	    Packet response = callAndGetResult(request);
 	    if(response.getValue()!=null){
 	    	return (V)Serializer.toObject(response.getValue());
 	    }
@@ -170,11 +177,10 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	public Set<K> keySet() {
 		Packet request = createRequestPacket();
 	    
-	    request.setTxnId(0);
 	    request.setOperation(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS);
 	    
 	    
-	    Packet response = call(request);
+	    Packet response = callAndGetResult(request);
 	    if(response.getValue()!=null){
 	    	System.out.println("Response:" + response.getValue().length);
 	    	Set set = ((Keys)Serializer.toObject(response.getValue())).getKeys(); 
@@ -184,6 +190,12 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	    
 	}
 	public class ClientSet<E> implements Set{
+		
+		private String name;
+
+		public ClientSet(String name) {
+			this.name = name;
+		}
 
 		private Set set;
 
@@ -222,7 +234,7 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 
 		public Iterator iterator() {
 			
-			return new ClientIterator<E>(set.iterator());
+			return new ClientIterator<E>(name, set.iterator());
 		}
 
 		public boolean remove(Object o) {
@@ -258,8 +270,10 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 	public class ClientIterator<E> implements Iterator<E>{
 		private Iterator<?> it;
+		private String name;
 
-		public ClientIterator(Iterator<?> it) {
+		public ClientIterator(String name, Iterator<?> it) {
+			this.name = name;
 			this.it = it;
 		}
 
@@ -268,8 +282,8 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 		}
 
 		public E next() {
-			byte[] d = (byte[])it.next();
-			
+			byte[] key = (byte[])it.next();
+			get(key);
 			return null;
 		}
 
@@ -289,7 +303,7 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	    request.setValue(Serializer.toByte(value));
 	    
 	    
-	    Packet response = call(request);
+	    Packet response = callAndGetResult(request);
 	    if(response.getValue()!=null){
 	    	return (V)Serializer.toObject(response.getValue());
 	    }
@@ -357,9 +371,7 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 		public void process(){
 			Packet request = createRequestPacket();
 			fillCallSpecificValues(request);
-			Packet response = call(request);
+			Packet response = callAndGetResult(request);
 		}
 	}
-
-
 }

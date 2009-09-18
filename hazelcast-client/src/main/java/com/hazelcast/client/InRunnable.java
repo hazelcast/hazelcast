@@ -19,37 +19,39 @@ package com.hazelcast.client;
 
 import java.io.IOException;
 
+import com.hazelcast.client.impl.ClusterOperation;
+
 
 public class InRunnable extends NetworkRunnable implements Runnable{
-	PacketReader reader;
+	final PacketReader reader;
+	final HazelcastClient hazelcastClient;
+	public InRunnable(HazelcastClient hazelcastClient, PacketReader reader) {
+		this.reader = reader;
+		this.hazelcastClient = hazelcastClient;
+	}
 
 	public void run() {
 		int counter=0;
 		while(true){
 			counter++;
-			System.out.println("Counter:" + counter);
-			Packet response=null;
+			Packet packet=null;
 			try {
-				response = reader.readPacket();
+				packet = reader.readPacket();
 			} catch (IOException e) {
 				e.printStackTrace();
 				return;
 			}
-			if(response!=null)
-				System.out.println("Packet > " + response.getOperation());
-			Call c = callMap.get(response.getCallId());
+			Call c = callMap.remove(packet.getCallId());
 			if(c!=null){
 				synchronized (c) {
-					c.setResponse(response);
+					c.setResponse(packet);
 					c.notify();
+				}
+			} else {
+				if(packet.getOperation().equals(ClusterOperation.EVENT)){
+					hazelcastClient.listenerManager.enqueue(packet);
 				}
 			}
 		}
 	}
-
-	public void setPacketReader(PacketReader reader) {
-		this.reader = reader;
-		
-	}
-
 }

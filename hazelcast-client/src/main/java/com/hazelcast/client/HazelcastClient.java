@@ -25,10 +25,12 @@ import com.hazelcast.client.cluster.Bind;
 import com.hazelcast.client.core.IMap;
 import com.hazelcast.client.core.Transaction;
 import com.hazelcast.client.impl.ClusterOperation;
+import com.hazelcast.client.impl.ListenerManager;
 import com.hazelcast.client.nio.Address;
 
 public class HazelcastClient {
 	Map<Long,Call> calls  = new HashMap<Long, Call>();
+	ListenerManager listenerManager = new ListenerManager();
 	OutRunnable out;
 	InRunnable in;
 	private HazelcastClient(ClusterConfig config) {
@@ -41,12 +43,12 @@ public class HazelcastClient {
 		out.setPacketWriter(writer);
 		new Thread(out).start();
 		
-		in = new InRunnable();
-		in.setCallMap(calls);
 		PacketReader reader = new PacketReader();
 		reader.setConnection(connection);
-		in.setPacketReader(reader);
+		in = new InRunnable(this, reader);
+		in.setCallMap(calls);
 		new Thread(in).start();
+		
 		Bind b = null;
 		try {
 			b = new Bind(new Address(config.getHost(),connection.getSocket().getLocalPort()));
@@ -57,10 +59,10 @@ public class HazelcastClient {
 		bind.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, Serializer.toByte(null), Serializer.toByte(b));
 		Call cBind = new Call();
 		cBind.setRequest(bind);
-		cBind.setId(-1l);
+		cBind.setId(Call.callIdGen.incrementAndGet());
 		out.enQueue(cBind);
 		
-		
+		new Thread(listenerManager).start();
 		
 	}
 	
@@ -69,7 +71,7 @@ public class HazelcastClient {
 		return new HazelcastClient(config);
 	}
 	public <K, V> IMap<K,V> getMap(String name){
-		MapClientProxy<K, V> proxy = new MapClientProxy<K, V>(name);
+		MapClientProxy<K, V> proxy = new MapClientProxy<K, V>(this,name);
 		proxy.setOutRunnable(out);
 		return proxy;
 	}

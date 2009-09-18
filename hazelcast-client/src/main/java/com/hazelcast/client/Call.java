@@ -17,6 +17,8 @@
 
 package com.hazelcast.client;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public class Call {
 	
 	private Packet request;
@@ -25,7 +27,7 @@ public class Call {
 	
 	private Packet response;
 	
-	public static long callIdGen = 0;
+	public static AtomicLong callIdGen = new AtomicLong(0);
 	
 	public Packet getRequest() {
 		return request;

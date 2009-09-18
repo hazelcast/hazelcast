@@ -25,7 +25,7 @@ public class ClientProxy {
 		this.out = out;
 	}
 
-	protected Packet call(Packet request) {
+	protected Packet callAndGetResult(Packet request) {
 		Call c = createCall(request);
 	    synchronized (c) {
 			try {
@@ -39,10 +39,16 @@ public class ClientProxy {
 	    Packet response = c.getResponse();
 		return response;
 	}
+	
+	protected void call(Packet request) {
+		Call c = createCall(request);
+		out.enQueue(c);
+	}
+	
 
 	private Call createCall(Packet request) {
 		Call c = new Call();
-	    c.setId(++Call.callIdGen);
+	    c.setId(Call.callIdGen.incrementAndGet());
 	    c.setRequest(request);
 		return c;
 	}

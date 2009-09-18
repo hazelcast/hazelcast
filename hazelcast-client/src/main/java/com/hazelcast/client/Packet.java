@@ -64,7 +64,7 @@ public class Packet {
     
     private boolean lockAddressIsNull = true;
     
-	private long callId;
+	private long callId = -1;
 	
 	private boolean client = true;
 	

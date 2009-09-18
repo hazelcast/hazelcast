@@ -27,7 +27,7 @@ public class TransactionClientProxy extends ClientProxy implements Transaction{
 	    
 	    request.setOperation(ClusterOperation.TRANSACTION_BEGIN);
 	    
-	    Packet response = call(request);
+	    Packet response = callAndGetResult(request);
 	}
 
 	public void commit() throws IllegalStateException {
@@ -35,7 +35,7 @@ public class TransactionClientProxy extends ClientProxy implements Transaction{
 	    
 	    request.setOperation(ClusterOperation.TRANSACTION_COMMIT);
 	    
-	    Packet response = call(request);
+	    Packet response = callAndGetResult(request);
 		
 	}
 
@@ -48,7 +48,7 @@ public class TransactionClientProxy extends ClientProxy implements Transaction{
 	    
 	    request.setOperation(ClusterOperation.TRANSACTION_ROLLBACK);
 	    
-	    Packet response = call(request);		
+	    Packet response = callAndGetResult(request);		
 	}
 
 }

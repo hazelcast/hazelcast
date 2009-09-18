@@ -27,7 +27,6 @@ public class OutRunnable extends NetworkRunnable implements Runnable{
 		while(true){
 			 try {
 				Call c = queue.take();
-				System.out.println("Sending op: " + c.getRequest().getOperation());
 				writer.write(c.getRequest());
 				callMap.put(c.getId(), c);
 			} catch (InterruptedException e) {
