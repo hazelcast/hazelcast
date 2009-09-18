@@ -50,13 +50,10 @@ public class ClusterTest {
     public void testRestart2() throws Exception {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        System.out.println(h);
-        System.out.println(h2);
         IMap map = h2.getMap("default");
         map.put("1", "value1");
         assertEquals(2, h.getCluster().getMembers().size());
         h2.restart();
-        System.out.println(h2);
         Thread.sleep(400);
         assertEquals("value1", map.get("1"));
         map.put("1", "value2");

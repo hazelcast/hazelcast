@@ -568,8 +568,9 @@ public class HazelcastTest {
     }
 
     @Test
-    public void testMapInstanceDestroy() {
+    public void testMapInstanceDestroy() throws Exception {
         IMap<String, String> map = Hazelcast.getMap("testMapDestroy");
+        Thread.sleep(1000);
         Collection<Instance> instances = Hazelcast.getInstances();
         boolean found = false;
         for (Instance instance : instances) {
@@ -582,6 +583,7 @@ public class HazelcastTest {
         }
         assertTrue(found);
         map.destroy();
+        Thread.sleep(1000);
         found = false;
         instances = Hazelcast.getInstances();
         for (Instance instance : instances) {

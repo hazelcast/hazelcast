@@ -39,9 +39,9 @@ public final class Packet {
 
     public byte indexCount = 0;
 
-    public long[] indexes = new long[6];
+    public long[] indexes = new long[10];
 
-    public byte[] indexTypes = new byte[6];
+    public byte[] indexTypes = new byte[10];
 
     public long txnId = -1;
 

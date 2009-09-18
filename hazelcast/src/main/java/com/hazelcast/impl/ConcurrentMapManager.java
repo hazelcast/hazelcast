@@ -51,11 +51,11 @@ import java.util.logging.Level;
 public final class ConcurrentMapManager extends BaseManager {
     private static final int BLOCK_COUNT = ConfigProperty.CONCURRENT_MAP_BLOCK_COUNT.getInteger(271);
     private final Block[] blocks;
-    private final Map<String, CMap> maps;
+    private final ConcurrentMap<String, CMap> maps;
     private final ConcurrentMap<String, LocallyOwnedMap> mapLocallyOwnedMaps;
     private final OrderedExecutionTask[] orderedExecutionTasks;
     private static long GLOBAL_REMOVE_DELAY_MILLIS = ConfigProperty.REMOVE_DELAY_SECONDS.getLong() * 1000L;
-    private long newId = 0;
+    private long newRecordId = 0;
 
     ConcurrentMapManager(Node node) {
         super(node);
@@ -283,7 +283,7 @@ public final class ConcurrentMapManager extends BaseManager {
             FactoryImpl factory = getNode().factory;
             if (factory.node.active) {
                 for (MapState mapState : lsMapStates) {
-                    CMap cmap = factory.node.concurrentMapManager.getMap(mapState.name);
+                    CMap cmap = factory.node.concurrentMapManager.getOrCreateMap(mapState.name);
                     for (AddMapIndex mapIndex : mapState.lsMapIndexes) {
                         cmap.addIndex(mapIndex.expression, mapIndex.ordered);
                     }
@@ -358,7 +358,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public void process() {
-            CMap cmap = getNode().concurrentMapManager.getMap(mapName);
+            CMap cmap = getNode().concurrentMapManager.getOrCreateMap(mapName);
             cmap.addIndex(expression, ordered);
         }
 
@@ -548,7 +548,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void doLocalOp() {
-            CMap cmap = getMap(request.name);
+            CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.evict(request);
             setResult(request.response);
         }
@@ -850,22 +850,24 @@ public final class ConcurrentMapManager extends BaseManager {
 
     void setIndexValues(Request request, Object value) {
         CMap cmap = getMap(request.name);
-        int indexCount = cmap.mapIndexes.size();
-        if (indexCount > 0) {
-            Index[] indexes = cmap.indexes;
-            byte[] indexTypes = cmap.indexTypes;
-            long[] newIndexes = new long[indexCount];
-            if (indexTypes == null) {
-                indexTypes = new byte[indexCount];
-            }
-            for (int i = 0; i < indexes.length; i++) {
-                Index index = indexes[i];
-                if (index != null) {
-                    newIndexes[i] = index.extractLongValue(value);
-                    indexTypes[i] = index.getIndexType();
+        if (cmap != null) {
+            int indexCount = cmap.mapIndexes.size();
+            if (indexCount > 0) {
+                Index[] indexes = cmap.indexes;
+                byte[] indexTypes = cmap.indexTypes;
+                long[] newIndexes = new long[indexCount];
+                if (indexTypes == null) {
+                    indexTypes = new byte[indexCount];
                 }
+                for (int i = 0; i < indexes.length; i++) {
+                    Index index = indexes[i];
+                    if (index != null) {
+                        newIndexes[i] = index.extractLongValue(value);
+                        indexTypes[i] = index.getIndexType();
+                    }
+                }
+                request.setIndexes(newIndexes, indexTypes);
             }
-            request.setIndexes(newIndexes, indexTypes);
         }
     }
 
@@ -973,7 +975,7 @@ public final class ConcurrentMapManager extends BaseManager {
             reqBackup.reset();
             backupCount = 0;
             if (lsMembers.size() > 1) {
-                CMap map = getMap(request.name);
+                CMap map = getOrCreateMap(request.name);
                 backupCount = map.getBackupCount();
                 backupCount = Math.min(backupCount, lsMembers.size());
                 if (backupCount > 0) {
@@ -1040,6 +1042,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
                       final int eventType, final Record record) {
+        checkServiceThread();
         fireMapEvent(mapListeners, name, eventType, record.getKey(), record.getValue(), record.getMapListeners());
     }
 
@@ -1229,6 +1232,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
 
     Address getTarget(Data key) {
+        checkServiceThread();
         int blockId = getBlockId(key);
         Block block = blocks[blockId];
         if (block == null) {
@@ -1246,12 +1250,6 @@ public final class ConcurrentMapManager extends BaseManager {
 
     @Override
     public boolean isMigrating() {
-//        for (Block block : blocks) {
-//            if (block != null && block.isMigrating()) {
-//                return true;
-//            }
-//        }
-//        return false;
         return migrating;
     }
 
@@ -1265,6 +1263,7 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     Block getOrCreateBlock(int blockId) {
+        checkServiceThread();
         Block block = blocks[blockId];
         if (block == null) {
             block = new Block(blockId, null);
@@ -1277,7 +1276,13 @@ public final class ConcurrentMapManager extends BaseManager {
         return mapLocallyOwnedMaps.get(name);
     }
 
+
     CMap getMap(String name) {
+        return maps.get(name);
+    }
+
+    CMap getOrCreateMap(String name) {
+        checkServiceThread();
         CMap map = maps.get(name);
         if (map == null) {
             map = new CMap(name);
@@ -1286,10 +1291,16 @@ public final class ConcurrentMapManager extends BaseManager {
         return map;
     }
 
+    void checkServiceThread() {
+        if (Thread.currentThread() != node.serviceThread) {
+            throw new Error("Only ServiceThread can access this method. " + Thread.currentThread());
+        }
+    }
+
     @Override
     void handleListenerRegisterations(boolean add, String name, Data key,
                                       Address address, boolean includeValue) {
-        CMap cmap = getMap(name);
+        CMap cmap = getOrCreateMap(name);
         if (add) {
             cmap.addListener(key, address, includeValue);
         } else {
@@ -1414,14 +1425,14 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class SizeOperationHandler extends MigrationAwareOperationHandler {
         void doOperation(Request request) {
-            CMap cmap = getMap(request.name);
+            CMap cmap = getOrCreateMap(request.name);
             request.response = (long) cmap.size();
         }
     }
 
     class BackupPacketProcessor extends AbstractOperationHandler {
         void doOperation(Request request) {
-            CMap cmap = getMap(request.name);
+            CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.backup(request);
         }
     }
@@ -1434,14 +1445,14 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class RemoveItemOperationHandler extends StoreAwareOperationHandler {
         void doOperation(Request request) {
-            CMap cmap = getMap(request.name);
+            CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.removeItem(request);
         }
     }
 
     class RemoveOperationHandler extends StoreAwareOperationHandler {
         void doOperation(Request request) {
-            CMap cmap = getMap(request.name);
+            CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.remove(request);
         }
     }
@@ -1449,35 +1460,35 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class RemoveMultiOperationHander extends SchedulableOperationHandler {
         void doOperation(Request request) {
-            CMap cmap = getMap(request.name);
+            CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.removeMulti(request);
         }
     }
 
     class PutMultiOperationHandler extends SchedulableOperationHandler {
         void doOperation(Request request) {
-            CMap cmap = getMap(request.name);
+            CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.putMulti(request);
         }
     }
 
     class PutOperationHandler extends StoreAwareOperationHandler {
         void doOperation(Request request) {
-            CMap cmap = getMap(request.name);
+            CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.put(request);
         }
     }
 
     class AddOperationHandler extends MTargetAwareOperationHandler {
         void doOperation(Request request) {
-            CMap cmap = getMap(request.name);
+            CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.add(request);
         }
     }
 
     class GetMapEnryOperationHandler extends MTargetAwareOperationHandler {
         void doOperation(Request request) {
-            CMap cmap = getMap(request.name);
+            CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.getMapEntry(request);
         }
     }
@@ -1485,7 +1496,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class GetOperationHandler extends StoreAwareOperationHandler {
         public void handle(Request request) {
-            CMap cmap = getMap(request.name);
+            CMap cmap = getOrCreateMap(request.name);
             Record record = cmap.getRecord(request.key);
             if (record == null && cmap.loader != null) {
                 executeAsync(request);
@@ -1497,7 +1508,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         void doOperation(Request request) {
 
-            CMap cmap = getMap(request.name);
+            CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.get(request);
 
         }
@@ -1520,21 +1531,21 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class ValueCountOperationHandler extends MTargetAwareOperationHandler {
         void doOperation(Request request) {
-            CMap cmap = getMap(request.name);
+            CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.valueCount(request.key);
         }
     }
 
     class ContainsOperationHandler extends MigrationAwareOperationHandler {
         void doOperation(Request request) {
-            CMap cmap = getMap(request.name);
+            CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.contains(request);
         }
     }
 
     class MigrationOperationHandler extends AbstractOperationHandler {
         void doOperation(Request request) {
-            CMap cmap = getMap(request.name);
+            CMap cmap = getOrCreateMap(request.name);
             cmap.own(request);
             request.response = Boolean.TRUE;
         }
@@ -1675,7 +1686,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         protected boolean shouldExecuteAsync(Request request) {
-            CMap cmap = getMap(request.name);
+            CMap cmap = getOrCreateMap(request.name);
             return (cmap.writeDelaySeconds == 0);
         }
 
@@ -1715,7 +1726,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         Runnable createRunnable(final Request request) {
-            final CMap cmap = getMap(request.name);
+            final CMap cmap = getOrCreateMap(request.name);
             return new Runnable() {
                 public void run() {
                     request.response = node.queryService.containsValue(cmap.name, request.value);
@@ -1747,7 +1758,7 @@ public final class ConcurrentMapManager extends BaseManager {
     class QueryOperationHandler extends ExecutorServiceOperationHandler {
 
         Runnable createRunnable(Request request) {
-            final CMap cmap = getMap(request.name);
+            final CMap cmap = getOrCreateMap(request.name);
             return new QueryTask(cmap, request);
         }
 
@@ -1800,7 +1811,6 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         void createEntries(Request request, Collection<MapEntry> colRecords) {
-            CMap cmap = getMap(request.name);
             Pairs pairs = new Pairs();
             long now = System.currentTimeMillis();
             for (MapEntry mapEntry : colRecords) {
@@ -1831,10 +1841,6 @@ public final class ConcurrentMapManager extends BaseManager {
                             }
                         }
                     }
-                } else {
-                    if (!record.isEvictable()) {
-                        cmap.scheduleForEviction(record);
-                    }
                 }
             }
             Data dataEntries = toData(pairs);
@@ -1862,7 +1868,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
 
     final void doContains(Request request) {
-        CMap cmap = getMap(request.name);
+        CMap cmap = getOrCreateMap(request.name);
         request.response = cmap.contains(request);
     }
 
@@ -1874,7 +1880,8 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     Record ensureRecord(Request req) {
-        CMap cmap = getMap(req.name);
+        checkServiceThread();
+        CMap cmap = getOrCreateMap(req.name);
         Record record = cmap.getRecord(req.key);
         if (record == null) {
             record = cmap.createNewRecord(req.key, req.value);
@@ -2018,7 +2025,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         private final long removeDelayMillis;
 
-        private final Map<Expression, Index<MapEntry>> mapIndexes = new ConcurrentHashMap(6);
+        private final Map<Expression, Index<MapEntry>> mapIndexes = new ConcurrentHashMap(10);
 
         private volatile Index<MapEntry>[] indexes = null;
 
@@ -2847,7 +2854,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 throw new RuntimeException("Cannot create record from a 0 size key: " + key);
             }
             int blockId = getBlockId(key);
-            Record rec = new Record(node.factory, name, blockId, key, value, ttl, newId++);
+            Record rec = new Record(node.factory, name, blockId, key, value, ttl, newRecordId++);
             Block ownerBlock = getOrCreateBlock(blockId);
             if (thisAddress.equals(ownerBlock.getRealOwner())) {
                 ownedEntryCount++;
@@ -2894,6 +2901,7 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     public void fireScheduledActions(Record record) {
+        checkServiceThread();
         if (record.getLockCount() == 0) {
             record.setLockThreadId(-1);
             record.setLockAddress(null);

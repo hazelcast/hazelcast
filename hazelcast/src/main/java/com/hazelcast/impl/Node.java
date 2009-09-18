@@ -97,6 +97,10 @@ public class Node {
 
     volatile Address masterAddress = null;
 
+    volatile Thread serviceThread = null;
+
+    volatile Thread queryThread = null;
+
     public enum NodeType {
         MEMBER(1),
         SUPER_CLIENT(2),
@@ -319,12 +323,7 @@ public class Node {
         masterAddress = null;
         join();
     }
-
-    public void restart() {
-        shutdown();
-        start();
-    }
-
+    
     public void setMasterAddress(final Address master) {
         masterAddress = master;
     }
@@ -362,19 +361,19 @@ public class Node {
 
     public void start() {
         if (completelyShutdown) return;
-        final Thread inThread = new Thread(threadGroup, inSelector, "hz.InThread");
+        Thread inThread = new Thread(threadGroup, inSelector, "hz.InThread");
         inThread.setPriority(7);
         inThread.start();
 
-        final Thread outThread = new Thread(threadGroup, outSelector, "hz.OutThread");
+        Thread outThread = new Thread(threadGroup, outSelector, "hz.OutThread");
         outThread.setPriority(7);
         outThread.start();
 
-        final Thread clusterServiceThread = new Thread(threadGroup, clusterService, "hz.ServiceThread");
-        clusterServiceThread.setPriority(8);
-        clusterServiceThread.start();
+        serviceThread = new Thread(threadGroup, clusterService, "hz.ServiceThread");
+        serviceThread.setPriority(8);
+        serviceThread.start();
 
-        final Thread queryThread = new Thread(threadGroup, queryService, "hz.QueryThread");
+        queryThread = new Thread(threadGroup, queryService, "hz.QueryThread");
         queryThread.setPriority(6);
         queryThread.start();
 
