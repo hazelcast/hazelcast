@@ -53,29 +53,33 @@ public class PredicatesTest {
 
     @Test
     public void testSqlPredicate() {
-        assertEquals("active=true", new SqlPredicate("active").toString());
-        assertEquals("(active=true AND age>4)", new SqlPredicate("active and age > 4").toString());
-        assertEquals("(active=true AND age>4)", new SqlPredicate("active and age>4").toString());
-        assertEquals("(active=false AND age<=4)", new SqlPredicate("active=false AND age<=4").toString());
-        assertEquals("(active=false AND age<=4)", new SqlPredicate("active= false and age <= 4").toString());
-        assertEquals("(active=false AND age>=4)", new SqlPredicate("active=false AND (age>=4)").toString());
-        assertEquals("(active=false OR age>=4)", new SqlPredicate("active =false or (age>= 4)").toString());
+        assertEquals("active=true", sql("active"));
+        assertEquals("(active=true AND age>4)", sql("active and age > 4"));
+        assertEquals("(active=true AND age>4)", sql("active and age>4"));
+        assertEquals("(active=false AND age<=4)", sql("active=false AND age<=4"));
+        assertEquals("(active=false AND age<=4)", sql("active= false and age <= 4"));
+        assertEquals("(active=false AND age>=4)", sql("active=false AND (age>=4)"));
+        assertEquals("(active=false OR age>=4)", sql("active =false or (age>= 4)"));
 
-        assertEquals("age IN (10,15)", new SqlPredicate("age in (10, 15)").toString());
-        assertEquals("NOT(age IN (10,15))", new SqlPredicate("age not in ( 10 , 15 )").toString());
-        assertEquals("(active=true AND age BETWEEN 10 AND 15)", new SqlPredicate("active and age between 10 and 15").toString());
-        assertEquals("(age IN (10,15) AND active=true)", new SqlPredicate("age IN (10, 15) and active").toString());
-        assertEquals("(active=true OR age IN (10,15))", new SqlPredicate("active or (age in ( 10,15))").toString());
-        assertEquals("(age>10 AND (active=true OR age IN (10,15)))", new SqlPredicate("age>10 AND (active or (age IN (10, 15 )))").toString());
-        assertEquals("(age<=10 AND (active=true OR NOT(age IN (10,15))))", new SqlPredicate("age<=10 AND (active or (age not in (10 , 15)))").toString());
+        assertEquals("age IN (10,15)", sql("age in (10, 15)"));
+        assertEquals("NOT(age IN (10,15))", sql("age not in ( 10 , 15 )"));
+        assertEquals("(active=true AND age BETWEEN 10 AND 15)", sql("active and age between 10 and 15"));
+        assertEquals("(age IN (10,15) AND active=true)", sql("age IN (10, 15) and active"));
+        assertEquals("(active=true OR age IN (10,15))", sql("active or (age in ( 10,15))"));
+        assertEquals("(age>10 AND (active=true OR age IN (10,15)))", sql("age>10 AND (active or (age IN (10, 15 )))"));
+        assertEquals("(age<=10 AND (active=true OR NOT(age IN (10,15))))", sql("age<=10 AND (active or (age not in (10 , 15)))"));
 
-        assertEquals("age BETWEEN 10 AND 15", new SqlPredicate("age between 10 and 15").toString());
-        assertEquals("NOT(age BETWEEN 10 AND 15)", new SqlPredicate("age not between 10 and 15").toString());
-        assertEquals("(active=true AND age BETWEEN 10 AND 15)", new SqlPredicate("active and age between 10 and 15").toString());
-        assertEquals("(age BETWEEN 10 AND 15 AND active=true)", new SqlPredicate("age between 10 and 15 and active").toString());
-        assertEquals("(active=true OR age BETWEEN 10 AND 15)", new SqlPredicate("active or (age between 10 and 15)").toString());
-        assertEquals("(age>10 AND (active=true OR age BETWEEN 10 AND 15))", new SqlPredicate("age>10 AND (active or (age between 10 and 15))").toString());
-        assertEquals("(age<=10 AND (active=true OR NOT(age BETWEEN 10 AND 15)))", new SqlPredicate("age<=10 AND (active or (age not between 10 and 15))").toString());
+        assertEquals("age BETWEEN 10 AND 15", sql("age between 10 and 15"));
+        assertEquals("NOT(age BETWEEN 10 AND 15)", sql("age not between 10 and 15"));
+        assertEquals("(active=true AND age BETWEEN 10 AND 15)", sql("active and age between 10 and 15"));
+        assertEquals("(age BETWEEN 10 AND 15 AND active=true)", sql("age between 10 and 15 and active"));
+        assertEquals("(active=true OR age BETWEEN 10 AND 15)", sql("active or (age between 10 and 15)"));
+        assertEquals("(age>10 AND (active=true OR age BETWEEN 10 AND 15))", sql("age>10 AND (active or (age between 10 and 15))"));
+        assertEquals("(age<=10 AND (active=true OR NOT(age BETWEEN 10 AND 15)))", sql("age<=10 AND (active or (age not between 10 and 15))"));
+    }
+
+    private String sql(String sql) {
+        return new SqlPredicate(sql).toString();
     }
 
     class DummyExpression implements Expression {
