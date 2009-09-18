@@ -18,42 +18,51 @@
 package com.hazelcast.client;
 import static org.junit.Assert.*;
 
-import java.util.Iterator;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-import org.junit.After;
+import javax.xml.stream.events.StartDocument;
+
 import org.junit.Before;
 import org.junit.Test;
 
-//import com.hazelcast.core.Hazelcast;
-//import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.ILock;
+import com.hazelcast.client.core.EntryEvent;
+import com.hazelcast.client.core.EntryListener;
+import com.hazelcast.client.core.IMap;
 import com.hazelcast.client.core.Transaction;
 
 
 
 
 public class HazelcastClientTest {
-//	Map<String, String> realMap = Hazelcast.getMap("default");
+	com.hazelcast.core.IMap<Object, Object> realMap = Hazelcast.getMap("default");
 	private HazelcastClient hClient;
+	
 	@Before public void init(){
 		ClusterConfig config = new ClusterConfig();
-		config.setHost("192.168.70.1");
+		config.setHost("192.168.1.2");
 		config.setPort(5701);
 		hClient = HazelcastClient.getHazelcastClient(config);
-//		realMap.clear();
+		realMap.clear();
 	}
 	
 	@Test
 	public void shouldBeAbleToPutToTheMap() throws InterruptedException{
 		Map<String, String> clientMap = hClient.getMap("default");
-//		assertEquals(0, realMap.size());
+		assertEquals(0, realMap.size());
 		String result = clientMap.put("1", "CBDEF");
 		System.out.println("Result" + result);
 		assertNull(result);
-//		Object oldValue = realMap.get("1");
-//		assertEquals("C", oldValue);
-//		assertEquals(1, realMap.size());
+		Object oldValue = realMap.get("1");
+		assertEquals("CBDEF", oldValue);
+		assertEquals(1, realMap.size());
 		result = clientMap.put("1","B");
 		System.out.println("DONE" + result);
 		assertEquals("CBDEF", result);
@@ -62,26 +71,14 @@ public class HazelcastClientTest {
 	@Test
 	public void shouldGetPuttedValueFromTheMap(){
 		Map<String, String> clientMap = hClient.getMap("default");
-//		int size = realMap.size();
+		int size = realMap.size();
 		clientMap.put("1", "Z");
 		String value = clientMap.get("1");
 		assertEquals("Z", value);
-//		assertEquals(size+1, realMap.size());
+		assertEquals(size+1, realMap.size());
 		
 	}
 	
-	public void shouldGetPuttedValueFromTheMapWhenThreeClusterMemberIsUp(){
-//		HazelcastInstance i1 = Hazelcast.newHazelcastInstance(null);
-//		i1.getMap("default");
-//		HazelcastInstance i2 = Hazelcast.newHazelcastInstance(null);
-//		i2.getMap("default");
-		Map<String, String> clientMap = hClient.getMap("default");
-//		int size = realMap.size();
-		clientMap.put("1", "Z");
-		String value = clientMap.get("1");
-		assertEquals("Z", value);
-//		assertEquals(size+1, realMap.size());
-	}
 	
 	@Test
 	public void shouldBeAbleToRollbackTransaction(){
@@ -107,10 +104,84 @@ public class HazelcastClientTest {
 	public void shouldItertateOverMapEntries(){
 		Map<String, String> map = hClient.getMap("default");
 		map.put("1", "A");
+		map.put("2", "B");
+		map.put("3", "C");
 		Set<String> keySet = map.keySet();
-		assertEquals(1,keySet.size());
+		assertEquals(3,keySet.size());
+		Set<String> s = new HashSet<String>();
 		for (String string : keySet) {
-			assertEquals("1", string);
+			s.add(string);
+			assertTrue(Arrays.asList("1","2","3").contains(string));
 		}
+		assertEquals(3, s.size());
 	}  
+	
+	@Test
+	public void shouldBeAbleToAddListener() throws InterruptedException{
+		IMap<String, String> map = hClient.getMap("default");
+		final Map<String, Boolean> m = new HashMap<String, Boolean>();
+		final CountDownLatch entryAddLatch = new CountDownLatch(1);
+		final CountDownLatch entryUpdatedLatch = new CountDownLatch(1);
+		final CountDownLatch entryRemovedLatch = new CountDownLatch(1);
+		map.addEntryListener(new EntryListener() {
+            public void entryAdded(EntryEvent event) {
+            	m.put("entryAdded", true);
+                assertEquals("hello", event.getKey());
+                entryAddLatch.countDown();
+            }
+
+            public void entryRemoved(EntryEvent event) {
+            	entryRemovedLatch.countDown();
+                assertEquals("hello", event.getKey());
+                assertEquals("new world", event.getValue());
+            }
+
+            public void entryUpdated(EntryEvent event) {
+                assertEquals("new world", event.getValue());
+                assertEquals("hello", event.getKey());
+                entryUpdatedLatch.countDown();
+            }
+
+            public void entryEvicted(EntryEvent event) {
+            	m.put("entryEvicted", true);
+                entryRemoved (event);
+            }
+        }, true);
+        map.put("hello", "world");
+        System.out.println("PUT");
+        map.put("hello", "new world");
+        map.remove("hello");
+        assertTrue(entryAddLatch.await(10, TimeUnit.MILLISECONDS));
+        assertTrue(entryUpdatedLatch.await(10, TimeUnit.MILLISECONDS));
+//        assertTrue(entryRemovedLatch.await(10, TimeUnit.MILLISECONDS));
+		
+	}
+	@Test
+	public void shouldBteAbleToAddListenerFromRemote() throws InterruptedException{
+		IMap<String, String> map = hClient.getMap("default");
+		final Map<String, Boolean> m = new HashMap<String, Boolean>();
+		final CountDownLatch entryAddLatch = new CountDownLatch(1);
+		final CountDownLatch entryUpdatedLatch = new CountDownLatch(1);
+		final CountDownLatch entryRemovedLatch = new CountDownLatch(1);
+		map.addEntryListener(new EntryListener() {
+            public void entryAdded(EntryEvent event) {
+            	System.out.println("Added" + event);
+            }
+
+            public void entryRemoved(EntryEvent event) {
+              	System.out.println("Removed" + event);
+            }
+
+            public void entryUpdated(EntryEvent event) {
+              	System.out.println("Updated" + event);
+            }
+
+            public void entryEvicted(EntryEvent event) {
+              	System.out.println("Evicted" + event);
+            }
+        }, true);
+		Thread.sleep(100000000);
+	}
+	
+	
 }
