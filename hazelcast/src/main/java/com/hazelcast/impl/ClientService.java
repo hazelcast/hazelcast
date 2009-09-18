@@ -67,22 +67,18 @@ public class ClientService {
             return context;
         }
 
-		@Override
 		public void entryAdded(EntryEvent event) {
 			processEvent(event);
 		}
 
-		@Override
 		public void entryEvicted(EntryEvent event) {
 			processEvent(event);
 		}
 
-		@Override
 		public void entryRemoved(EntryEvent event) {
 			processEvent(event);
 		}
 
-		@Override
 		public void entryUpdated(EntryEvent event) {
 			processEvent(event);			
 		}
