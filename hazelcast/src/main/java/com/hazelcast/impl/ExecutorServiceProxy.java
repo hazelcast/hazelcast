@@ -46,7 +46,7 @@ import java.util.concurrent.*;
  * the terminated status return the status of the cluser (isTerminated() return
  * true after an @link com.hazelcast.Hazelcast#shutdown). 
  */
-public class ExecutorServiceProxy implements ExecutorService, Constants {
+public class ExecutorServiceProxy implements ExecutorService {
     
     
     final Node node;
@@ -110,7 +110,6 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
      * @link com.hazelcast.Hazelcast#shutdown
      */
     public void shutdown() {
-    	return;
     }
 
     /**
@@ -132,7 +131,7 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
     }
 
     public Future<?> submit(Runnable task) {
-        DistributedTask dtask = null;
+        DistributedTask dtask;
         if (task instanceof DistributedTask) {
             dtask = (DistributedTask) task;
         } else {
@@ -145,7 +144,7 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
     }
 
     public <T> Future<T> submit(Runnable task, T result) {
-        DistributedTask dtask = null;
+        DistributedTask dtask;
         if (task instanceof DistributedTask) {
             dtask = (DistributedTask) task;
         } else {
@@ -158,7 +157,7 @@ public class ExecutorServiceProxy implements ExecutorService, Constants {
     }
 
     public void execute(Runnable command) {
-        DistributedTask dtask = null;
+        DistributedTask dtask;
         if (command instanceof DistributedTask) {
             dtask = (DistributedTask) command;
         } else {
