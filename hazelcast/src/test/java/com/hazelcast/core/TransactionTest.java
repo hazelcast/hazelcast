@@ -18,7 +18,7 @@ public class TransactionTest {
     @Test
     @Ignore
     public void testMapPutSimple() {
-        TransactionalMap txnMap = newTransactionalMapProxy("testMap");
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapPutSimple");
         txnMap.begin();
         txnMap.put("1", "value");
         txnMap.commit();
@@ -26,7 +26,7 @@ public class TransactionTest {
 
     @Test
     public void testMapIterateEntries() {
-        TransactionalMap txnMap = newTransactionalMapProxy("testMap");
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapIterateEntries");
         txnMap.put("1", "value1");
         assertEquals(1, txnMap.size());
         txnMap.begin();
@@ -46,7 +46,7 @@ public class TransactionTest {
 
     @Test
     public void testMapIterateEntries2() {
-        TransactionalMap txnMap = newTransactionalMapProxy("testMap");
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapIterateEntries2");
         assertEquals(0, txnMap.size());
         txnMap.begin();
         txnMap.put("1", "value1");
@@ -66,7 +66,7 @@ public class TransactionTest {
 
     @Test
     public void testMapIterateEntries3() {
-        TransactionalMap txnMap = newTransactionalMapProxy("testMap3");
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapIterateEntries3");
         txnMap.put("1", "value1");
         assertEquals(1, txnMap.size());
         txnMap.begin();
@@ -91,8 +91,8 @@ public class TransactionTest {
 
     @Test
     public void testMapPutCommitSize() {
-        TransactionalMap txnMap = newTransactionalMapProxy("testMap");
-        IMap imap = newMapProxy("testMap");
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapPutCommitSize");
+        IMap imap = newMapProxy("testMapPutCommitSize");
         txnMap.put("1", "item");
         assertEquals(1, txnMap.size());
         assertEquals(1, imap.size());
@@ -107,8 +107,8 @@ public class TransactionTest {
 
     @Test
     public void testMapPutRollbackSize() {
-        TransactionalMap txnMap = newTransactionalMapProxy("testMap");
-        IMap imap = newMapProxy("testMap");
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapPutRollbackSize");
+        IMap imap = newMapProxy("testMapPutRollbackSize");
         txnMap.put("1", "item");
         assertEquals(1, txnMap.size());
         assertEquals(1, imap.size());
@@ -161,9 +161,9 @@ public class TransactionTest {
 
     @Test
     public void testMapRemoveWithTwoTxn() {
-        Hazelcast.getMap("testMap").put("1", "value");
-        TransactionalMap txnMap = newTransactionalMapProxy("testMap");
-        TransactionalMap txnMap2 = newTransactionalMapProxy("testMap");
+        Hazelcast.getMap("testMapRemoveWithTwoTxn").put("1", "value");
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapRemoveWithTwoTxn");
+        TransactionalMap txnMap2 = newTransactionalMapProxy("testMapRemoveWithTwoTxn");
         txnMap.begin();
         txnMap.remove("1");
         txnMap.commit();
@@ -174,9 +174,9 @@ public class TransactionTest {
 
     @Test
     public void testTryLock() {
-        Hazelcast.getMap("testMap").put("1", "value");
-        TransactionalMap txnMap = newTransactionalMapProxy("testMap");
-        TransactionalMap txnMap2 = newTransactionalMapProxy("testMap");
+        Hazelcast.getMap("testTryLock").put("1", "value");
+        TransactionalMap txnMap = newTransactionalMapProxy("testTryLock");
+        TransactionalMap txnMap2 = newTransactionalMapProxy("testTryLock");
         txnMap.lock("1");
         long start = System.currentTimeMillis();
         assertFalse(txnMap2.tryLock("1", 2, TimeUnit.SECONDS));
@@ -190,9 +190,9 @@ public class TransactionTest {
 
     @Test
     public void testMapRemoveRollback() {
-        Hazelcast.getMap("testMap").put("1", "value");
-        TransactionalMap txnMap = newTransactionalMapProxy("testMap");
-        TransactionalMap txnMap2 = newTransactionalMapProxy("testMap");
+        Hazelcast.getMap("testMapRemoveRollback").put("1", "value");
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapRemoveRollback");
+        TransactionalMap txnMap2 = newTransactionalMapProxy("testMapRemoveRollback");
         txnMap.begin();
         assertEquals(1, txnMap.size());
         txnMap.remove("1");
@@ -210,8 +210,8 @@ public class TransactionTest {
 
     @Test
     public void testMapRemoveWithTwoTxn2() {
-        TransactionalMap txnMap = newTransactionalMapProxy("testMap");
-        TransactionalMap txnMap2 = newTransactionalMapProxy("testMap");
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapRemoveWithTwoTxn2");
+        TransactionalMap txnMap2 = newTransactionalMapProxy("testMapRemoveWithTwoTxn2");
         txnMap.begin();
         txnMap.remove("1");
         txnMap.commit();
@@ -222,8 +222,8 @@ public class TransactionTest {
 
     @Test
     public void testMapRemoveWithTwoTxn3() {
-        TransactionalMap txnMap = newTransactionalMapProxy("testMap");
-        TransactionalMap txnMap2 = newTransactionalMapProxy("testMap");
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapRemoveWithTwoTxn3");
+        TransactionalMap txnMap2 = newTransactionalMapProxy("testMapRemoveWithTwoTxn3");
         txnMap.put("1", "value1");
         assertEquals(1, txnMap.size());
         assertEquals(1, txnMap2.size());
@@ -248,8 +248,8 @@ public class TransactionTest {
 
     @Test
     public void testQueueOfferCommitSize() {
-        TransactionalQueue txnq = newTransactionalQueueProxy("test");
-        TransactionalQueue txnq2 = newTransactionalQueueProxy("test");
+        TransactionalQueue txnq = newTransactionalQueueProxy("testQueueOfferCommitSize");
+        TransactionalQueue txnq2 = newTransactionalQueueProxy("testQueueOfferCommitSize");
         txnq.begin();
         txnq.offer("item");
         assertEquals(1, txnq.size());
@@ -261,8 +261,8 @@ public class TransactionTest {
 
     @Test
     public void testQueueOfferRollbackSize() {
-        TransactionalQueue txnq = newTransactionalQueueProxy("test");
-        TransactionalQueue txnq2 = newTransactionalQueueProxy("test");
+        TransactionalQueue txnq = newTransactionalQueueProxy("testQueueOfferRollbackSize");
+        TransactionalQueue txnq2 = newTransactionalQueueProxy("testQueueOfferRollbackSize");
         txnq.begin();
         txnq.offer("item");
         assertEquals(1, txnq.size());
@@ -274,8 +274,8 @@ public class TransactionTest {
 
     @Test
     public void testQueueOfferCommitIterator() {
-        TransactionalQueue txnq = newTransactionalQueueProxy("test");
-        TransactionalQueue txnq2 = newTransactionalQueueProxy("test");
+        TransactionalQueue txnq = newTransactionalQueueProxy("testQueueOfferCommitIterator");
+        TransactionalQueue txnq2 = newTransactionalQueueProxy("testQueueOfferCommitIterator");
         assertEquals(0, txnq.size());
         assertEquals(0, txnq2.size());
         txnq.begin();
@@ -317,8 +317,8 @@ public class TransactionTest {
 
     @Test
     public void testQueueOfferCommitIterator2() {
-        TransactionalQueue txnq = newTransactionalQueueProxy("test");
-        TransactionalQueue txnq2 = newTransactionalQueueProxy("test");
+        TransactionalQueue txnq = newTransactionalQueueProxy("testQueueOfferCommitIterator2");
+        TransactionalQueue txnq2 = newTransactionalQueueProxy("testQueueOfferCommitIterator2");
         txnq.offer("item0");
         assertEquals(1, txnq.size());
         assertEquals(1, txnq2.size());
@@ -362,8 +362,8 @@ public class TransactionTest {
 
     @Test
     public void testQueueOfferRollbackIterator2() {
-        TransactionalQueue txnq = newTransactionalQueueProxy("test");
-        TransactionalQueue txnq2 = newTransactionalQueueProxy("test");
+        TransactionalQueue txnq = newTransactionalQueueProxy("testQueueOfferRollbackIterator2");
+        TransactionalQueue txnq2 = newTransactionalQueueProxy("testQueueOfferRollbackIterator2");
         txnq.offer("item0");
         assertEquals(1, txnq.size());
         assertEquals(1, txnq2.size());
@@ -407,8 +407,8 @@ public class TransactionTest {
 
     @Test
     public void testQueuePollCommitSize() {
-        TransactionalQueue txnq = newTransactionalQueueProxy("testPoll");
-        TransactionalQueue txnq2 = newTransactionalQueueProxy("testPoll");
+        TransactionalQueue txnq = newTransactionalQueueProxy("testQueuePollCommitSize");
+        TransactionalQueue txnq2 = newTransactionalQueueProxy("testQueuePollCommitSize");
         txnq.offer("item1");
         txnq.offer("item2");
 
@@ -429,8 +429,8 @@ public class TransactionTest {
 
     @Test
     public void testQueuePollRollbackSize() {
-        TransactionalQueue txnq = newTransactionalQueueProxy("testPoll");
-        TransactionalQueue txnq2 = newTransactionalQueueProxy("testPoll");
+        TransactionalQueue txnq = newTransactionalQueueProxy("testQueuePollRollbackSize");
+        TransactionalQueue txnq2 = newTransactionalQueueProxy("testQueuePollRollbackSize");
         txnq.offer("item1");
         txnq.offer("item2");
 
