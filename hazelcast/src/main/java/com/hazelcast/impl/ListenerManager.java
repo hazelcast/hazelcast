@@ -17,13 +17,11 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.MessageListener;
 import static com.hazelcast.impl.ClusterOperation.ADD_LISTENER;
-import static com.hazelcast.impl.ClusterOperation.REMOVE_LISTENER;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferUtil;
 import com.hazelcast.nio.Data;
@@ -37,9 +35,7 @@ import java.util.logging.Level;
 public class ListenerManager extends BaseManager {
     private List<ListenerItem> listeners = new CopyOnWriteArrayList<ListenerItem>();
 
-    public enum Type {
-        Map, Item, Message;
-    }
+    public enum Type {Map, Item, Message}
 
     ListenerManager(Node node) {
         super (node);
@@ -58,8 +54,6 @@ public class ListenerManager extends BaseManager {
                 handleAddRemoveListener(false, packet);
             }
         });
-//        registerPacketProcessor(ADD_LISTENER, new AddRemoveListenerOperationHandler());
-//        registerPacketProcessor(REMOVE_LISTENER, new AddRemoveListenerOperationHandler());
     }
 
     private void handleEvent(Packet packet) {
@@ -103,8 +97,7 @@ public class ListenerManager extends BaseManager {
 
     class AddRemoveListenerOperationHandler extends TargetAwareOperationHandler {
         boolean isRightRemoteTarget(Packet packet) {
-            if (packet.key == null) return true;
-            return thisAddress.equals(getKeyOwner(packet.key));
+            return (null == packet.key) || thisAddress.equals(getKeyOwner(packet.key));
         }
 
         void doOperation(Request request) {
