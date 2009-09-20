@@ -38,9 +38,9 @@ public final class Data implements DataSerializable {
 
     int size = 0;
 
-    ByteBuffer bbCurrentlyRead = null;
+    private ByteBuffer bbCurrentlyRead = null;
 
-    int readSize = 0;
+    private int readSize = 0;
 
     int hash = Integer.MIN_VALUE;
 
@@ -49,37 +49,12 @@ public final class Data implements DataSerializable {
     public Data() {
     }
 
-    public void reset() {
-        lsData.clear();
-        size = 0;
-        readSize = 0;
-        hash = Integer.MIN_VALUE;
-        createDate = -1;
-    }
-
     public void digest(MessageDigest md) {
         int len = lsData.size();
         for (int i = 0; i < len; i++) {
             ByteBuffer bb = lsData.get(i);
             md.update(bb.array(), 0, bb.limit());
         }
-    }
-
-    public int copyToBuffer(ByteBuffer to) {
-        int written = 0;
-        int len = lsData.size();
-        for (int i = 0; i < len; i++) {
-            ByteBuffer bb = lsData.get(i);
-            int limit = bb.limit();
-            if (limit == 0)
-                throw new RuntimeException("limit cannot be zero");
-            to.put(bb.array(), 0, limit);
-            written += limit;
-        }
-        if (written != size)
-            throw new RuntimeException("copyToBuffer didn't write all data. Written: " + written
-                    + " size: " + size);
-        return written;
     }
 
     public boolean shouldRead() {
@@ -105,7 +80,7 @@ public final class Data implements DataSerializable {
         prepareForRead();
     }
 
-    public void prepareForRead() {
+    void prepareForRead() {
         if (lsData.size() > 0)
             throw new RuntimeException("prepareForRead has data " + this);
         size = 0;
@@ -160,10 +135,6 @@ public final class Data implements DataSerializable {
             throw new RuntimeException(totalRead + " but size should be " + size);
         bbCurrentlyRead = null;
         readSize = 0;
-    }
-
-    public boolean isEmpty() {
-        return size == 0 && lsData.size() == 0;
     }
 
     public int size() {
