@@ -20,7 +20,6 @@ package com.hazelcast.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.nio.Address;
 
-import java.lang.reflect.Method;
 import java.net.*;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Enumeration;
@@ -32,25 +31,8 @@ import java.util.logging.Logger;
 public class AddressPicker {
     protected static Logger logger = Logger.getLogger(AddressPicker.class.getName());
 
-    final double jvmVersion;
-    final Node node;
 
-    public AddressPicker(Node node) {
-        this.node = node;
-        jvmVersion = Double.parseDouble(System.getProperty("java.version").substring(0, 3));
-    }
-
-    public boolean invoke(final boolean defaultValue, final double minJVMVersion,
-                          final NetworkInterface ni, final String methodName) {
-        boolean result = defaultValue;
-        if (jvmVersion >= minJVMVersion) {
-            try {
-                final Method method = ni.getClass().getMethod(methodName);
-                result = (Boolean) method.invoke(ni);
-            } catch (final Exception ignored) {
-            }
-        }
-        return result;
+    public AddressPicker() {
     }
 
     public static boolean matchAddress(final String address, final List<String> interfaces) {
@@ -68,7 +50,7 @@ public class AddressPicker {
         return false;
     }
 
-    public static boolean matchAddress(final String ipmask, final int[] ip) {
+    private static boolean matchAddress(final String ipmask, final int[] ip) {
         final String[] ips = new String[4];
         final StringTokenizer st = new StringTokenizer(ipmask, ".");
         int i = 0;

@@ -190,7 +190,7 @@ public class Node {
             if (preferIPv6Address == null && preferIPv4Stack == null) {
                 System.setProperty("java.net.preferIPv4Stack", "true");
             }
-            AddressPicker addressPicker = new AddressPicker(this);
+            AddressPicker addressPicker = new AddressPicker();
             serverSocketChannel = ServerSocketChannel.open();
             address = addressPicker.pickAddress(this, serverSocketChannel);
             address.setThisAddress(true);

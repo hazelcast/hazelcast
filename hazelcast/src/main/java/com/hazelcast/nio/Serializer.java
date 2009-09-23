@@ -178,19 +178,16 @@ public final class Serializer {
 			}
 			
 			return result.toString();
-//        	return bbis.readUTF();
         }
 
         public void write(BuffersOutputStream bbos, String obj) throws Exception {
-        	String string = (String) obj;
-        	int length = string.length();
+        	int length = obj.length();
 			int chunkSize = length/STRING_CHUNK_SIZE+1;
 			for(int i=0;i<chunkSize;i++){
 				int beginIndex = Math.max(0,i*STRING_CHUNK_SIZE-1);
 				int endIndex = Math.min((i+1)*STRING_CHUNK_SIZE-1, length);
-				bbos.writeShortUTF(string.substring(beginIndex, endIndex));
+				bbos.writeShortUTF(obj.substring(beginIndex, endIndex));
 			}
-//            bbos.writeUTF(obj);
         }
     }
 
