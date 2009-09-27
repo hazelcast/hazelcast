@@ -49,6 +49,19 @@ public class PredicatesTest {
         assertTrue(Predicates.in(new DummyExpression(5), 5, 7, 8).apply(null));
         assertFalse(Predicates.in(new DummyExpression(5), 6, 7, 8).apply(null));
         assertFalse(Predicates.in(new DummyExpression(9), 6, 7, 8).apply(null));
+        assertTrue(Predicates.like(new DummyExpression<String>("Java"), "J%").apply(null));
+        assertTrue(Predicates.like(new DummyExpression<String>("Java"), "Ja%").apply(null));
+        assertTrue(Predicates.like(new DummyExpression<String>("Java"), "J_v_").apply(null));
+        assertTrue(Predicates.like(new DummyExpression<String>("Java"), "_av_").apply(null));
+        assertTrue(Predicates.like(new DummyExpression<String>("Java"), "_a__").apply(null));
+        assertTrue(Predicates.like(new DummyExpression<String>("Java"), "J%v_").apply(null));
+        assertTrue(Predicates.like(new DummyExpression<String>("Java"), "J%_").apply(null));
+        assertFalse(Predicates.like(new DummyExpression<String>("Java"), "j%").apply(null));
+        assertFalse(Predicates.like(new DummyExpression<String>("Java"), "J_a").apply(null));
+        assertFalse(Predicates.like(new DummyExpression<String>("Java"), "J_ava").apply(null));
+        assertFalse(Predicates.like(new DummyExpression<String>("Java"), "J_a_a").apply(null));
+        assertFalse(Predicates.like(new DummyExpression<String>("Java"), "J_av__").apply(null));
+        assertFalse(Predicates.like(new DummyExpression<String>("Java"), "J_Va").apply(null));
     }
 
     @Test
@@ -60,6 +73,8 @@ public class PredicatesTest {
         assertEquals("(active=false AND age<=4)", sql("active= false and age <= 4"));
         assertEquals("(active=false AND age>=4)", sql("active=false AND (age>=4)"));
         assertEquals("(active=false OR age>=4)", sql("active =false or (age>= 4)"));
+
+        assertEquals("(active=false OR name LIKE 'J%')", sql("active =false or name like 'J%'"));
 
         assertEquals("age IN (10,15)", sql("age in (10, 15)"));
         assertEquals("NOT(age IN (10,15))", sql("age not in ( 10 , 15 )"));
@@ -82,14 +97,14 @@ public class PredicatesTest {
         return new SqlPredicate(sql).toString();
     }
 
-    class DummyExpression implements Expression {
-        Object value;
+    class DummyExpression<T> implements Expression<T> {
+        T value;
 
-        DummyExpression(Object value) {
+        DummyExpression(T value) {
             this.value = value;
         }
 
-        public Object getValue(Object obj) {
+        public T getValue(Object obj) {
             return value;
         }
     }

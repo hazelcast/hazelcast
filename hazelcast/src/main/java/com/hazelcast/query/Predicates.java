@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Predicates {
 
@@ -154,7 +156,7 @@ public class Predicates {
             final StringBuffer sb = new StringBuffer();
             sb.append(first);
             sb.append("!=");
-            sb.append(second); 
+            sb.append(second);
             return sb.toString();
         }
     }
@@ -294,9 +296,9 @@ public class Predicates {
             final StringBuffer sb = new StringBuffer();
             sb.append(first);
             sb.append(" IN (");
-            for (int i=0; i<values.length; i++) {
+            for (int i = 0; i < values.length; i++) {
                 sb.append(values[i]);
-                if (i < (values.length -1)) {
+                if (i < (values.length - 1)) {
                     sb.append(",");
                 }
             }
@@ -305,6 +307,56 @@ public class Predicates {
         }
     }
 
+    public static class LikePredicate extends AbstractPredicate {
+        Expression<String> first;
+        String second;
+        Pattern pattern = null;
+
+        public LikePredicate() {
+        }
+
+        public LikePredicate(Expression<String> first, String second) {
+            this.first = first;
+            this.second = second;
+            second = second.replaceAll("%", ".*").replaceAll("_", ".");
+            pattern = Pattern.compile(second);
+        }
+
+        public boolean apply(MapEntry entry) {
+            String firstVal = first.getValue(entry);
+            if (firstVal == null) {
+                return (second == null);
+            } else if (second == null) {
+                return false;
+            } else {
+                Matcher m = pattern.matcher(firstVal);
+                return m.matches();
+            }
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            writeObject(out, first);
+            out.writeUTF(second);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            try {
+                first = (Expression) readObject(in);
+                second = in.readUTF();
+            } catch (Exception e) {
+                throw new IOException(e.getMessage());
+            }
+        }
+
+        @Override
+        public String toString() {
+            final StringBuffer sb = new StringBuffer();
+            sb.append(first);
+            sb.append(" LIKE ");
+            sb.append(second);
+            return sb.toString();
+        }
+    }
 
     public static class EqualPredicate extends AbstractPredicate implements IndexAwarePredicate {
         Expression first;
@@ -563,6 +615,10 @@ public class Predicates {
 
     public static Predicate equal(final Expression x, final Object y) {
         return new EqualPredicate(x, y);
+    }
+
+    public static Predicate like(final Expression<String> x, String pattern) {
+        return new LikePredicate(x, pattern);
     }
 
     public static <T extends Comparable<T>> Predicate greaterThan(Expression<? extends T> x, T y) {

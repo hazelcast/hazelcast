@@ -117,6 +117,11 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
                         Object first = tokens.remove(position);
                         Object second = tokens.remove(position);
                         setOrAdd(tokens, position, lessThan(get((String) first), (Comparable) second));
+                    } else if ("LIKE".equalsIgnoreCase(token)) {
+                        int position = (i - 2);
+                        Object first = tokens.remove(position);
+                        Object second = tokens.remove(position);
+                        setOrAdd(tokens, position, like(get((String) first), (String) second));
                     } else if ("IN".equalsIgnoreCase(token)) {
                         int position = i - 2;
                         Object exp = tokens.remove(position);
