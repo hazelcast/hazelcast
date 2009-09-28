@@ -81,6 +81,8 @@ public class FactoryImpl implements HazelcastInstance {
 
     volatile boolean restarted = false;
 
+    private static boolean jmxRegistered = false;
+
     public static FactoryImpl getFactoryImpl(String name) {
         return factories.get(name);
     }
@@ -94,6 +96,10 @@ public class FactoryImpl implements HazelcastInstance {
             FactoryImpl factory = new FactoryImpl(name, config);
             FactoryImpl old = factories.put(name, factory);
             if (old != null) throw new RuntimeException();
+            if (!jmxRegistered) {
+                ManagementService.register(factory, config);
+                jmxRegistered = true;
+            }
             return factory;
         }
     }
@@ -160,7 +166,6 @@ public class FactoryImpl implements HazelcastInstance {
         executorServiceImpl = new ExecutorServiceProxy(node);
         transactionFactory = new TransactionFactory(this);
         node.start();
-        ManagementService.register(this, config);
         locksMapProxy = new MProxyImpl("c:__hz_Locks", this);
         idGeneratorMapProxy = new MProxyImpl("c:__hz_IdGenerator", this);
         globalProxies = new MProxyImpl("c:__hz_Proxies", this);

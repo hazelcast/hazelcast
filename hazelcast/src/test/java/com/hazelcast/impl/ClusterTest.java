@@ -6,6 +6,7 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.nio.Address;
 import org.junit.After;
 import static org.junit.Assert.*;
@@ -21,7 +22,7 @@ public class ClusterTest {
     @After
     public void cleanup() throws Exception {
         Hazelcast.shutdownAll();
-        Thread.sleep(2000);
+        Thread.sleep(500);
     }
 
     @Test(timeout = 60000)
@@ -66,12 +67,10 @@ public class ClusterTest {
         Config c1 = new XmlConfigBuilder().build();
         c1.setPortAutoIncrement(false);
         c1.setPort(5709);
-
         Config c2 = new XmlConfigBuilder().build();
         c2.setPortAutoIncrement(false);
         c2.setPort(5710);
         c2.setSuperClient(true);
-
         HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(c1);
         HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(c2);
         hNormal.getMap("default").put("1", "first");
@@ -85,30 +84,22 @@ public class ClusterTest {
         Config configNormal = new XmlConfigBuilder().build();
         Config configSuper = new XmlConfigBuilder().build();
         configSuper.setSuperClient(true);
-
         HazelcastInstance h = Hazelcast.newHazelcastInstance(configNormal);
         HazelcastInstance s = Hazelcast.newHazelcastInstance(configSuper);
-
         assertEquals(2, h.getCluster().getMembers().size());
         assertEquals(2, s.getCluster().getMembers().size());
         assertFalse(h.getCluster().getLocalMember().isSuperClient());
         assertTrue(s.getCluster().getLocalMember().isSuperClient());
-
         IMap map = h.getMap("default");
         final IMap maps = s.getMap("default");
-
         assertNull(map.put("1", "value1"));
         assertEquals("value1", map.get("1"));
         assertEquals("value1", maps.get("1"));
         assertEquals(1, map.size());
         assertEquals(1, maps.size());
-
         h.shutdown();
         Thread.sleep(500);
-
         assertEquals(1, s.getCluster().getMembers().size());
-
-
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread(new Runnable() {
             public void run() {
@@ -117,18 +108,13 @@ public class ClusterTest {
                 latch.countDown();
             }
         }).start();
-
         h = Hazelcast.newHazelcastInstance(configNormal);
-
         latch.await();
-
         assertEquals(2, h.getCluster().getMembers().size());
         assertEquals(2, s.getCluster().getMembers().size());
         assertFalse(h.getCluster().getLocalMember().isSuperClient());
         assertTrue(s.getCluster().getLocalMember().isSuperClient());
-
         map = h.getMap("default");
-
         assertEquals("value3", map.put("1", "value2"));
         assertEquals("value2", map.get("1"));
         assertEquals(1, map.size());
@@ -227,7 +213,36 @@ public class ClusterTest {
             }
             map.put(r.nextInt(200000), i);
         }
-
         h.shutdown();
+    }
+
+    @Test(timeout = 60000)
+    public void testMapKeySet() throws Exception {
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        IMap mm = h.getMap("default");
+        mm.put("1", "value");
+        assertEquals(1, mm.size());
+        assertEquals(1, mm.keySet().size());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        assertEquals(1, mm.size());
+        assertEquals(1, mm.keySet().size());
+        IMap mm2 = h2.getMap("default");
+        assertEquals(1, mm2.size());
+        assertEquals(1, mm2.keySet().size());
+    }
+
+    @Test(timeout = 60000)
+    public void testMultiMapKeySet() throws Exception {
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        MultiMap mm = h.getMultiMap("default");
+        mm.put("1", "value");
+        assertEquals(1, mm.size());
+        assertEquals(1, mm.keySet().size());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        assertEquals(1, mm.size());
+        assertEquals(1, mm.keySet().size());
+        MultiMap mm2 = h2.getMultiMap("default");
+        assertEquals(1, mm2.size());
+        assertEquals(1, mm2.keySet().size());
     }
 }

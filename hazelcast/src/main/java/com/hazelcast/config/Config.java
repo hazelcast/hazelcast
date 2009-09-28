@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Config {
 
@@ -45,11 +46,11 @@ public class Config {
 
     private ExecutorConfig executorConfig = new ExecutorConfig();
 
-    private Map<String, TopicConfig> mapTopicConfigs = new HashMap<String, TopicConfig>();
+    private Map<String, TopicConfig> mapTopicConfigs = new ConcurrentHashMap<String, TopicConfig>();
 
-    private Map<String, QueueConfig> mapQueueConfigs = new HashMap<String, QueueConfig>();
+    private Map<String, QueueConfig> mapQueueConfigs = new ConcurrentHashMap<String, QueueConfig>();
 
-    private Map<String, MapConfig> mapMapConfigs = new HashMap<String, MapConfig>();
+    private Map<String, MapConfig> mapMapConfigs = new ConcurrentHashMap<String, MapConfig>();
     
     private URL configurationUrl;
     

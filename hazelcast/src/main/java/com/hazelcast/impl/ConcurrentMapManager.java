@@ -2118,6 +2118,7 @@ public final class ConcurrentMapManager extends BaseManager {
             Record record = getRecord(req.key);
             if (record == null) {
                 record = toRecord(req);
+                updateIndexes(true, req, record);                            
             }
             record.setVersion(req.version);
         }
@@ -2434,7 +2435,7 @@ public final class ConcurrentMapManager extends BaseManager {
             if (req.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
                 Record record = recordExist(req);
                 if (record != null && record.isActive() && record.getValue() != null) {
-                    return doHardCopy(record.getValue());
+                    return record.getValue();
                 }
             } else if (req.operation == CONCURRENT_MAP_REPLACE_IF_NOT_NULL) {
                 Record record = recordExist(req);
@@ -2480,6 +2481,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         void updateIndexes(boolean created, Request request, Record record) {
+            int newValueHash = (record.getValue() != null) ? record.getValue().hashCode() : Integer.MIN_VALUE;
             if (request.indexes != null) {
                 int indexCount = request.indexes.length;
                 if (indexCount == 0)
@@ -2491,10 +2493,10 @@ public final class ConcurrentMapManager extends BaseManager {
                 request.indexes = null;
                 byte[] indexTypes = request.indexTypes;
                 request.indexTypes = null;
-                node.queryService.updateIndex(name, newIndexes, indexTypes, record, record.getValue().hashCode());
+                node.queryService.updateIndex(name, newIndexes, indexTypes, record, newValueHash);
             } else {
-                if (created || record.getValueHash() != record.getValue().hashCode()) {
-                    node.queryService.updateIndex(name, null, null, record, record.getValue().hashCode());
+                if (created || record.getValueHash() != newValueHash) {
+                    node.queryService.updateIndex(name, null, null, record, newValueHash);
                 }
             }
         }
