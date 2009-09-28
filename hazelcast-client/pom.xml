@@ -25,6 +25,12 @@
   </build>
 
   <dependencies>
-  </dependencies>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>${parent.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
 
 </project>
