@@ -256,10 +256,6 @@ public class Node {
         return clusterImpl;
     }
 
-    public MemberImpl getLocalMember() {
-        return localMember;
-    }
-
     public final NodeType getLocalNodeType() {
         return localNodeType;
     }
@@ -301,10 +297,6 @@ public class Node {
         return true;
     }
 
-    public boolean isMaster(final Address address) {
-        return (address.equals(masterAddress));
-    }
-
     public final boolean isSuperClient() {
         return superClient;
     }
@@ -315,13 +307,6 @@ public class Node {
 
     public boolean master() {
         return address != null && address.equals(masterAddress);
-    }
-
-    public void reJoin() {
-        logger.log(Level.FINEST, "REJOINING...");
-        joined = false;
-        masterAddress = null;
-        join();
     }
     
     public void setMasterAddress(final Address master) {

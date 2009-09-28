@@ -35,14 +35,13 @@ public class Keys implements DataSerializable{
 
 	public void readData(DataInput in) throws IOException {
 		int size = in.readInt();
-		keys = new HashSet<Data>();
 		for(int i=0;i<size;i++){
 			Data data = new Data();
 			data.readData(in);
 			keys.add(data);
 		}
 	}
-	
+
 	public void writeData(DataOutput out) throws IOException {
 		int size = (keys==null)?0:keys.size();
 		out.writeInt(size);
@@ -53,14 +52,12 @@ public class Keys implements DataSerializable{
 		}
 	}
 	
-	public Set<Data> getKeys(){
-		return keys;
-	}
-	public void setKeys(Set<Data> keys){
-		this.keys = keys;
-	}
 	public void addKey(Data obj) {
 		this.keys.add(obj);
 		
 	}
+
+    public Set<Data> getKeys(){
+        return keys;
+    }
 }
