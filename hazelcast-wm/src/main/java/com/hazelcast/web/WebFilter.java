@@ -900,10 +900,10 @@ public class WebFilter implements Filter {
             if (data == null)
                 return null;
             md.reset();
-            data.digest(md);
+            md.digest(data.buffer.array());
             return md.digest();
         }
-
+ 
         public void invalidate() {
             checkState();
             context.destroySession(this);

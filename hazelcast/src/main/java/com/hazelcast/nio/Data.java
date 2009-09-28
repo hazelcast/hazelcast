@@ -17,30 +17,21 @@
 
 package com.hazelcast.nio;
 
-import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
-import com.hazelcast.impl.ThreadContext;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 
 public final class Data implements DataSerializable {
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = 5382795596398809726L;
+     *
+     */
+    private static final long serialVersionUID = 5382795596398809726L;
 
-	final List<ByteBuffer> lsData = new ArrayList<ByteBuffer>(6);
+    public ByteBuffer buffer = null;
 
-    int size = 0;
-
-    private ByteBuffer bbCurrentlyRead = null;
-
-    private int readSize = 0;
+    public int size = 0;
 
     int hash = Integer.MIN_VALUE;
 
@@ -49,92 +40,50 @@ public final class Data implements DataSerializable {
     public Data() {
     }
 
-    public void digest(MessageDigest md) {
-        int len = lsData.size();
-        for (int i = 0; i < len; i++) {
-            ByteBuffer bb = lsData.get(i);
-            md.update(bb.array(), 0, bb.limit());
+    public Data(int size) {
+        this.size = size;
+        if (size > 0) {
+            this.buffer = ByteBuffer.allocate(size);
         }
+    }
+
+    public Data(byte[] bytes, int size) {
+        this.size = size;
+        if (size > 0) {
+            this.buffer = ByteBuffer.allocate(size);
+            System.arraycopy(bytes, 0, buffer.array(), 0, size);
+        }
+    }
+
+    public Data (ByteBuffer bb) {
+        this.size = bb.array().length;
+        this.buffer = bb;
+    }
+
+
+    public void setNoData() {
+    }
+
+    public Data(Data data) {
+        this.size = data.size();
+        this.buffer = ByteBuffer.allocate(size);
+        System.arraycopy(data.buffer.array(), 0, buffer.array(), 0, size);
+        this.hash = data.hash;
     }
 
     public boolean shouldRead() {
-        return (readSize < size);
-    }
-
-    public boolean add(ByteBuffer bb) {
-        if (bb.position() == 0)
-            throw new RuntimeException("Position cannot be 0");
-        lsData.add(bb);
-        size += bb.position();
-        return true;
-    }
-
-    public void setNoData() {
-        int len = lsData.size();
-        for (int i = 0; i < len; i++) {
-            ByteBuffer bb = lsData.get(i);
-            bb.clear();
-            ThreadContext.get().getBufferPool().release(bb);
-        }
-        lsData.clear();
-        prepareForRead();
-    }
-
-    void prepareForRead() {
-        if (lsData.size() > 0)
-            throw new RuntimeException("prepareForRead has data " + this);
-        size = 0;
-        readSize = 0;
-        bbCurrentlyRead = null;
-        hash = Integer.MIN_VALUE;
+        return (size > 0 && buffer != null && buffer.hasRemaining());
     }
 
     public void read(ByteBuffer src) {
-        while (true) {
-            int remaining = size - readSize;
-            if (bbCurrentlyRead == null) {
-                bbCurrentlyRead = ThreadContext.get().getBufferPool().obtain();
-                bbCurrentlyRead.limit((remaining > BYTE_BUFFER_SIZE) ? BYTE_BUFFER_SIZE : remaining);
-            }
-            readSize += BufferUtil.copyToHeapBuffer(src, bbCurrentlyRead);
-            if (readSize >= size) {
-                if (bbCurrentlyRead.position() == 0)
-                    throw new RuntimeException("Position cannot be 0");
-                lsData.add(bbCurrentlyRead);
-                bbCurrentlyRead = null;
-                return;
-            }
-            if (bbCurrentlyRead.remaining() == 0) {
-                if (bbCurrentlyRead.position() == 0)
-                    throw new RuntimeException("Position cannot be 0");
-                lsData.add(bbCurrentlyRead);
-                bbCurrentlyRead = null;
-            }
-            if (src.remaining() == 0)
-                return;
-        }
+        BufferUtil.copyToHeapBuffer(src, buffer);
     }
 
 
     public void postRead() {
-        int totalRead = 0;
-        int len = lsData.size();
-        for (int i = 0; i < len; i++) {
-            ByteBuffer bb = lsData.get(i);
-            totalRead += bb.position();
-            if (i < (len - 1) && bb.position() != BYTE_BUFFER_SIZE) {
-                throw new RuntimeException(len + " This buffer size has to be " + BYTE_BUFFER_SIZE + ". "
-                        + bb.position() + "  index: " + i);
-            }
-            if (i == (len - 1) && bb.position() == 0) {
-                throw new RuntimeException("Last buffer cannot be zero. " + bb.position());
-            }
-            bb.flip();
+        if (buffer != null) {
+            buffer.flip();
         }
-        if (totalRead != size)
-            throw new RuntimeException(totalRead + " but size should be " + size);
-        bbCurrentlyRead = null;
-        readSize = 0;
     }
 
     public int size() {
@@ -142,36 +91,28 @@ public final class Data implements DataSerializable {
     }
 
     public void readData(DataInput in) throws IOException {
-        int remaining = in.readInt();
-        while (remaining > 0) {
-            ByteBuffer bb = ThreadContext.get().getBufferPool().obtain();
-            int sizeToRead = (remaining > BYTE_BUFFER_SIZE) ? BYTE_BUFFER_SIZE : remaining;
-            byte[] bytes = new byte[sizeToRead];
+        this.size = in.readInt();
+        if (size > 0) {
+            byte[] bytes = new byte[size];
             in.readFully(bytes);
-            bb.put(bytes);
-            add(bb);
-            remaining -= sizeToRead;
+            this.buffer = ByteBuffer.wrap(bytes);
+            postRead();
         }
-        postRead();
     }
 
     public void writeData(DataOutput out) throws IOException {
         out.writeInt(size);
-        for (ByteBuffer bb : lsData) {
-            out.write(bb.array(), 0, bb.limit());
-        }
+        out.write(buffer.array());
     }
 
     @Override
     public int hashCode() {
+        if (buffer == null) return Integer.MIN_VALUE;
         if (hash == Integer.MIN_VALUE) {
             int h = 1;
-            for (ByteBuffer bb : lsData) {
-                int limit = bb.limit();
-                byte[] buffer = bb.array();
-                for (int i = 0; i < limit; i++) {
-                    h = 31 * h + buffer[i];
-                }
+            byte[] b = buffer.array();
+            for (int i = 0; i < b.length; i++) {
+                h = 31 * h + b[i];
             }
             hash = h;
         }
@@ -187,24 +128,14 @@ public final class Data implements DataSerializable {
         Data data = (Data) obj;
         if (data.size != size)
             return false;
-        int bufferCount = lsData.size();
-        if (bufferCount != data.lsData.size())
-            return false;
-        for (int i = 0; i < bufferCount; i++) {
-            ByteBuffer thisBB = lsData.get(i);
-            byte[] thisBuffer = thisBB.array();
-            byte[] dataBuffer = data.lsData.get(i).array();
-            int limit = thisBB.limit();
-            for (int b = 0; b < limit; b++) {
-                if (thisBuffer[b] != dataBuffer[b])
-                    return false;
-            }
-        }
-        return true;
+        if (size == 0) return (data.buffer == null);
+        return Arrays.equals(data.buffer.array(), buffer.array());
     }
 
     @Override
     public String toString() {
-        return "Data ls.size=" + lsData.size() + " size = " + size;
+        return "Data size = " + size;
     }
+
+
 }

@@ -48,7 +48,7 @@ public class ClientRequestHandler implements Runnable {
         if (packet.operation.equals(ClusterOperation.CONCURRENT_MAP_PUT)) {
             IMap<Object, Object> map = Hazelcast.getMap(packet.name.substring(2));
             Object oldValue = map.put(doHardCopy(packet.key), doHardCopy(packet.value));
-            doSet((Data) oldValue, packet.value);
+            packet.value = (Data) oldValue;
             sendResponse(packet);
         } else if (packet.operation.equals(ClusterOperation.CONCURRENT_MAP_GET)) {
             IMap<Object, Object> map = Hazelcast.getMap(packet.name.substring(2));
@@ -57,7 +57,7 @@ public class ClientRequestHandler implements Runnable {
             if (callContext.txn != null && callContext.txn.getStatus() == TXN_STATUS_ACTIVE) {
                 data = doHardCopy(data);
             }
-            doSet(data, packet.value);
+            packet.value = data;
             sendResponse(packet);
         } else if (packet.operation.equals(ClusterOperation.TRANSACTION_BEGIN)) {
             Transaction transaction = Hazelcast.getTransaction();
@@ -80,7 +80,7 @@ public class ClientRequestHandler implements Runnable {
                 KeyValue entry = (KeyValue) obj;
                 keys.addKey(entry.key);
             }
-            doSet(toData(keys), packet.value);
+            packet.value = toData(keys);
             sendResponse(packet);
         }
         else if (packet.operation.equals(ClusterOperation.REMOTELY_PROCESS)){

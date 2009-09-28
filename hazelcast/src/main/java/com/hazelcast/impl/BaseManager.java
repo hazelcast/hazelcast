@@ -440,7 +440,7 @@ public abstract class BaseManager {
                 packet.responseType = RESPONSE_SUCCESS;
                 packet.longValue = request.longValue;
                 if (request.value != null) {
-                    doSet(request.value, packet.value);
+                    packet.value = request.value;
                 }
                 if (request.response == OBJECT_REDO) {
                     packet.responseType = RESPONSE_REDO;
@@ -459,7 +459,7 @@ public abstract class BaseManager {
                             data = toData(request.response);
                         }
                         if (data != null && data.size() > 0) {
-                            doSet(data, packet.value);
+                            packet.value = data;
                         }
                     }
                 }
@@ -615,7 +615,7 @@ public abstract class BaseManager {
             if (value != null) {
                 valueData = toData(value);
             }
-            request.setLocal(operation, name, keyData, valueData, -1, timeout, recordId, thisAddress);
+            request.setLocal(operation, name, keyData, valueData, -1, timeout, thisAddress);
             request.attachment = this;
         }
 
@@ -1024,7 +1024,7 @@ public abstract class BaseManager {
                 if (result instanceof Data) {
                     final Data data = (Data) result;
                     if (data.size() > 0) {
-                        doSet(data, packet.value);
+                        packet.value = data;
                     }
                 }
             }
@@ -1298,20 +1298,7 @@ public abstract class BaseManager {
 
         public void run() {
             try {
-            	
-            	node.listenerManager.callListeners(this);
-                if (dataKey != null) {
-//                    key = toObject(dataKey, false);
-                    dataKey.setNoData();
-                }
-                if (dataValue != null) {
-                	dataValue.setNoData();
-//                    value = toObject(dataValue, false);
-                } 
-//                else if (collection) {
-//                    value = key;
-//              }
-                
+            	node.listenerManager.callListeners(this);                
             } catch (final Exception e) {
                 e.printStackTrace();
             }

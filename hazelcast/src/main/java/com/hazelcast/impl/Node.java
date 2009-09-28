@@ -685,4 +685,8 @@ public class Node {
     public Config getConfig() {
         return config;
     }
+
+    public String toString() {
+        return "Node[" + getName() + "]";
+    }
 }

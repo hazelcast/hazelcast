@@ -73,64 +73,11 @@ public final class BufferUtil {
     public static Data doHardCopy(Data from) {
         if (from == null || from.size == 0)
             return null;
-        Data newData = BufferUtil.createNewData();
-        doHardCopy(from, newData);
-        newData.hash = from.hash;
-        return newData;
+        return new Data(from);
     }
-
-    public static void doHardCopy(Data from, Data to) {
-        to.setNoData(); 
-        int len = from.lsData.size();
-        for (int i = 0; i < len; i++) {
-            ByteBuffer bb = from.lsData.get(i);
-            ByteBuffer bbTo = obtainEmptyBuffer();
-            bbTo.put(bb.array(), 0, bb.limit());
-            to.add(bbTo);
-            bbTo.flip();
-        }
-        to.hash = from.hash;
-        if (from.size != to.size)
-            throw new RuntimeException("size doesn't match: src " + from.size + " dest: " + to.size);
-    }
-
-    public static void doSet(Data from, Data to) {
-        to.setNoData();
-        if(from==null)
-        	return;
-        moveContent(from, to);
-        to.hash = from.hash;
-        from.setNoData();
-    }
-
+    
     public static Data doTake(Data target) {
-        if (target == null || target.size == 0)
-            return null;
-        Data newData = createNewData();
-        moveContent(target, newData);
-        newData.hash = target.hash;
-        target.setNoData();
-        return newData;
-    }
-
-    public static void moveContent(Data from, Data to) {
-        int len = from.lsData.size();
-        for (int i = 0; i < len; i++) {
-            ByteBuffer bb = from.lsData.get(i);
-            to.lsData.add(bb);
-            to.size += bb.limit();
-        }
-        from.lsData.clear();
-    }
-
-
-
-    public static ByteBuffer obtainEmptyBuffer() {
-        return ThreadContext.get().getBufferPool().obtain();
-    }
-
-    public static Data createNewData() {
-        return new Data();
+        return target;
     }
 
     public static String exceptionToString(final Throwable e, Address address) {
@@ -145,6 +92,7 @@ public final class BufferUtil {
         }
         return sb.toString();
     }
+
 
 
 }

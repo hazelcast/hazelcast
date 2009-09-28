@@ -131,44 +131,11 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
     }
 
     class ComplexCipherPacketReader implements PacketReader {
-        AsymmetricCipherPacketReader apr = new AsymmetricCipherPacketReader();
-        SymmetricCipherPacketReader spr = new SymmetricCipherPacketReader();
-        boolean joinPartReadDone = false;
-        int totalJoinRead = 0;
-        int maxJoinRead = 2280;
 
         ComplexCipherPacketReader() {
         }
 
         public void readPacket() throws Exception {
-            if (joinPartReadDone) {
-                spr.readPacket();
-            } else {
-                int left = maxJoinRead - totalJoinRead;
-                int current = inBuffer.position();
-                System.out.println(left + " left " + inBuffer.remaining());
-                System.out.println("CURRENT " + current);
-                if (inBuffer.remaining() < 128) return;
-                if (inBuffer.remaining() >= left) {
-                    int oldLimit = inBuffer.limit();
-                    inBuffer.limit(inBuffer.position() + left);
-                    apr.readPacket();
-                    System.out.println(inBuffer.limit() + " AFTER2 " + inBuffer.position());
-
-                    inBuffer.limit(oldLimit);
-
-                } else {
-                    System.out.println(inBuffer.remaining() + " NOw " + inBuffer.position());
-                    apr.readPacket();
-                    System.out.println("AFTER " + inBuffer.position());
-                }
-                totalJoinRead += (inBuffer.position() - current);
-                joinPartReadDone = (totalJoinRead >= maxJoinRead);
-                System.out.println(totalJoinRead + " total read " + maxJoinRead);
-                if (joinPartReadDone) {
-                    readPacket();
-                }
-            }
         }
     }
 

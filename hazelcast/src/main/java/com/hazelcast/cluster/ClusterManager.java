@@ -81,9 +81,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         registerPacketProcessor(ClusterOperation.REMOTELY_PROCESS,
                 new PacketProcessor() {
                     public void process(Packet packet) {
-                        Data data = BufferUtil.doTake(packet.value);
-                        RemotelyProcessable rp = (RemotelyProcessable) ThreadContext.get()
-                                .toObject(data);
+                        Data data = packet.value;
+                        RemotelyProcessable rp = (RemotelyProcessable) toObject(data);
                         rp.setConnection(packet.conn);
                         rp.setNode(node);
                         rp.process();
@@ -97,7 +96,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                         Boolean result;
                         AbstractRemotelyCallable<Boolean> callable = null;
                         try {
-                            Data data = BufferUtil.doTake(packet.value);
+                            Data data = packet.value;
                             callable = (AbstractRemotelyCallable<Boolean>) toObject(data);
                             callable.setConnection(packet.conn);
                             callable.setNode(node);
@@ -120,7 +119,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                         Object result;
                         AbstractRemotelyCallable<Boolean> callable = null;
                         try {
-                            Data data = BufferUtil.doTake(packet.value);
+                            Data data = packet.value;
                             callable = (AbstractRemotelyCallable) toObject(data);
                             callable.setConnection(packet.conn);
                             callable.setNode(node);
@@ -136,7 +135,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                             } else {
                                 value = toData(result);
                             }
-                            doSet(value, packet.value);
+                            packet.value = value;
                         }
 
                         sendResponse(packet);

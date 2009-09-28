@@ -25,9 +25,9 @@ import com.hazelcast.impl.BaseManager.Processable;
 import com.hazelcast.nio.Packet;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -55,7 +55,7 @@ public final class ClusterService implements Runnable, Constants {
     private final BaseManager.PacketProcessor[] packetProcessors = new BaseManager.PacketProcessor[300];
 
     private final Runnable[] periodicRunnables = new Runnable[3];
-    
+
     private final Node node;
 
     public ClusterService(Node node) {
@@ -125,7 +125,7 @@ public final class ClusterService implements Runnable, Constants {
         final long elipsedTime = processEnd - processStart;
         totalProcessTime += elipsedTime;
     }
-
+    
     public void run() {
         while (running) {
             Object obj = null;

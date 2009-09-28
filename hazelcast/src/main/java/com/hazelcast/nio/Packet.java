@@ -21,7 +21,9 @@ import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Constants;
 import com.hazelcast.impl.ThreadContext;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 
 public final class Packet {
 
@@ -63,8 +65,6 @@ public final class Packet {
 
     public long longValue = Long.MIN_VALUE;
 
-    public long recordId = -1;
-
     public long version = -1;
 
     public long callId = -1;
@@ -78,7 +78,7 @@ public final class Packet {
     boolean sizeRead = false;
 
     int totalWritten = 0;
-    
+
     public boolean client = false;
 
     public Packet() {
@@ -108,7 +108,12 @@ public final class Packet {
     public void write() {
         bbSizes.clear();
         bbHeader.clear();
-
+        if (key != null && key.size > 0) {
+            key = new Data(ByteBuffer.wrap(key.buffer.array()));
+        }
+        if (value != null && value.size > 0) {
+            value = new Data(ByteBuffer.wrap(value.buffer.array()));
+        }
         bbHeader.putInt(operation.getValue());
         bbHeader.putInt(blockId);
         bbHeader.putInt(threadId);
@@ -116,10 +121,9 @@ public final class Packet {
         bbHeader.putLong(timeout);
         bbHeader.putLong(txnId);
         bbHeader.putLong(longValue);
-        bbHeader.putLong(recordId);
         bbHeader.putLong(version);
         bbHeader.putLong(callId);
-        bbHeader.put((byte)(client?1:0));
+        bbHeader.put((byte) (client ? 1 : 0));
         bbHeader.put(responseType);
         putString(bbHeader, name);
         boolean lockAddressNull = (lockAddress == null);
@@ -128,20 +132,20 @@ public final class Packet {
             lockAddress.writeObject(bbHeader);
         }
         bbHeader.put(indexCount);
-        for (int i=0; i < indexCount; i++){
+        for (int i = 0; i < indexCount; i++) {
             bbHeader.putLong(indexes[i]);
             bbHeader.put(indexTypes[i]);
-        } 
+        }
         bbHeader.flip();
         bbSizes.putInt(bbHeader.limit());
-        bbSizes.putInt(key.size);
-        bbSizes.putInt(value.size);
+        bbSizes.putInt(key == null ? 0 : key.size);
+        bbSizes.putInt(value == null ? 0 : value.size);
         bbSizes.flip();
         totalSize = 0;
         totalSize += bbSizes.limit();
         totalSize += bbHeader.limit();
-        totalSize += key.size;
-        totalSize += value.size;
+        totalSize += key == null ? 0 : key.size;
+        totalSize += value == null ? 0 : value.size;
 
     }
 
@@ -153,10 +157,9 @@ public final class Packet {
         timeout = bbHeader.getLong();
         txnId = bbHeader.getLong();
         longValue = bbHeader.getLong();
-        recordId = bbHeader.getLong();
         version = bbHeader.getLong();
         callId = bbHeader.getLong();
-        client = (bbHeader.get()==1);
+        client = (bbHeader.get() == 1);
         responseType = bbHeader.get();
         name = getString(bbHeader);
         boolean lockAddressNull = readBoolean(bbHeader);
@@ -165,7 +168,7 @@ public final class Packet {
             lockAddress.readObject(bbHeader);
         }
         indexCount = bbHeader.get();
-        for (int i=0; i<indexCount ; i++) {
+        for (int i = 0; i < indexCount; i++) {
             indexes[i] = bbHeader.getLong();
             indexTypes[i] = bbHeader.get();
         }
@@ -184,25 +187,24 @@ public final class Packet {
         currentCallCount = 0;
         blockId = -1;
         longValue = Long.MIN_VALUE;
-        recordId = -1;
         version = -1;
         callId = -1;
         client = false;
         bbSizes.clear();
         bbHeader.clear();
-        key.setNoData();
-        value.setNoData();
+        key = null;
+        value = null;
         conn = null;
         totalSize = 0;
         totalWritten = 0;
         sizeRead = false;
-        indexCount =0;
+        indexCount = 0;
     }
 
     @Override
     public String toString() {
         return "Packet " + operation + " name=" + name + "  local=" + local + "  blockId="
-                + blockId + " data=" + value + " client="+client;
+                + blockId + " data=" + value + " client=" + client;
     }
 
     public void flipBuffers() {
@@ -214,23 +216,16 @@ public final class Packet {
     public final boolean writeToSocketBuffer(ByteBuffer dest) {
         totalWritten += BufferUtil.copyToDirectBuffer(bbSizes, dest);
         totalWritten += BufferUtil.copyToDirectBuffer(bbHeader, dest);
-        if (key.size() > 0) {
-            int len = key.lsData.size();
-            for (int i = 0; i < len & dest.hasRemaining(); i++) {
-                ByteBuffer bb = key.lsData.get(i);
-                totalWritten += BufferUtil.copyToDirectBuffer(bb, dest);
-            }
+        if (key != null && key.size() > 0) {
+            totalWritten += BufferUtil.copyToDirectBuffer(key.buffer, dest);
         }
 
-        if (value.size() > 0) {
-            int len = value.lsData.size();
-            for (int i = 0; i < len & dest.hasRemaining(); i++) {
-                ByteBuffer bb = value.lsData.get(i);
-                totalWritten += BufferUtil.copyToDirectBuffer(bb, dest);
-            }
+        if (value != null && value.size() > 0) {
+            totalWritten += BufferUtil.copyToDirectBuffer(value.buffer, dest);
         }
         return totalWritten >= totalSize;
     }
+
 
     public final boolean read(ByteBuffer bb) {
         while (!sizeRead && bb.hasRemaining() && bbSizes.hasRemaining()) {
@@ -240,8 +235,8 @@ public final class Packet {
             sizeRead = true;
             bbSizes.flip();
             bbHeader.limit(bbSizes.getInt());
-            key.size = bbSizes.getInt();
-            value.size = bbSizes.getInt();
+            key = new Data(bbSizes.getInt());
+            value = new Data(bbSizes.getInt());
             if (bbHeader.limit() == 0) {
                 throw new RuntimeException("read.bbHeader size cannot be 0");
             }

@@ -37,6 +37,6 @@ public class IOTest {
         assertTrue(hardCopy.size() > 0);
 
         assertEquals("value", toObject(hardCopy, true));
-        assertEquals(0, hardCopy.size());
+        assertTrue(hardCopy.size() > 0);
     }
 }

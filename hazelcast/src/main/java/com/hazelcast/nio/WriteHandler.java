@@ -239,20 +239,11 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             }
             packet.totalWritten += encryptAndWriteToSocket(packet.bbSizes);
             packet.totalWritten += encryptAndWriteToSocket(packet.bbHeader);
-            if (packet.key.size() > 0) {
-                int len = packet.key.lsData.size();
-                for (int i = 0; i < len && socketBB.hasRemaining(); i++) {
-                    ByteBuffer bb = packet.key.lsData.get(i);
-                    packet.totalWritten += encryptAndWriteToSocket(bb);
-                }
+            if (packet.key.size() > 0 && socketBB.hasRemaining()) {
+                packet.totalWritten += encryptAndWriteToSocket(packet.key.buffer);
             }
-
-            if (packet.value.size() > 0) {
-                int len = packet.value.lsData.size();
-                for (int i = 0; i < len && socketBB.hasRemaining(); i++) {
-                    ByteBuffer bb = packet.value.lsData.get(i);
-                    packet.totalWritten += encryptAndWriteToSocket(bb);
-                }
+            if (packet.value.size() > 0 && socketBB.hasRemaining()) {
+                packet.totalWritten += encryptAndWriteToSocket(packet.value.buffer);
             }
             return packet.totalWritten >= packet.totalSize;
         }
@@ -331,21 +322,11 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                 sizeWritten = true;
             }
             packet.totalWritten += encryptAndWriteToSocket(packet.bbSizes);
-            packet.totalWritten += encryptAndWriteToSocket(packet.bbHeader);
-            if (packet.key.size() > 0) {
-                int len = packet.key.lsData.size();
-                for (int i = 0; i < len && socketBB.hasRemaining(); i++) {
-                    ByteBuffer bb = packet.key.lsData.get(i);
-                    packet.totalWritten += encryptAndWriteToSocket(bb);
-                }
+            if (packet.key.size() > 0 && socketBB.hasRemaining()) {
+                packet.totalWritten += encryptAndWriteToSocket(packet.key.buffer);
             }
-
-            if (packet.value.size() > 0) {
-                int len = packet.value.lsData.size();
-                for (int i = 0; i < len && socketBB.hasRemaining(); i++) {
-                    ByteBuffer bb = packet.value.lsData.get(i);
-                    packet.totalWritten += encryptAndWriteToSocket(bb);
-                }
+            if (packet.value.size() > 0 && socketBB.hasRemaining()) {
+                packet.totalWritten += encryptAndWriteToSocket(packet.value.buffer);
             }
             boolean complete = packet.totalWritten >= packet.totalSize;
             if (complete) {

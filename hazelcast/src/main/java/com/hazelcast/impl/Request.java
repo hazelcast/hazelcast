@@ -18,8 +18,6 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.nio.Address;
-import static com.hazelcast.nio.BufferUtil.doHardCopy;
-import static com.hazelcast.nio.BufferUtil.doTake;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
 
@@ -42,7 +40,6 @@ class Request {
     int blockId = -1;
     long eventId = -1;
     long longValue = -1;
-    long recordId = -1;
     long version = -1;
     long txnId = -1;
     long[] indexes;
@@ -56,12 +53,6 @@ class Request {
     }
 
     public void reset() {
-        if (this.key != null) {
-            this.key.setNoData();
-        }
-        if (this.value != null) {
-            this.value.setNoData();
-        }
         this.local = true;
         this.operation = ClusterOperation.NONE;
         this.name = null;
@@ -79,7 +70,6 @@ class Request {
         this.response = null;
         this.scheduled = false;
         this.attachment = null;
-        this.recordId = -1;
         this.version = -1;
         this.redoCount = 0;
         this.indexes = null;
@@ -99,7 +89,7 @@ class Request {
                     final Data key, final Data value, final int blockId, final long timeout,
                     final long txnId, final long eventId, final int lockThreadId,
                     final Address lockAddress, final int lockCount, final Address caller,
-                    final long longValue, final long recordId, final long version) {
+                    final long longValue, final long version) {
         this.local = local;
         this.operation = operation;
         this.name = name;
@@ -114,16 +104,15 @@ class Request {
         this.lockCount = lockCount;
         this.caller = caller;
         this.longValue = longValue;
-        this.recordId = recordId;
         this.version = version;
     }
 
     public void setLocal(final ClusterOperation operation, final String name, final Data key,
-                         final Data value, final int blockId, final long timeout, final long recordId,
+                         final Data value, final int blockId, final long timeout,
                          final Address thisAddress) {
         reset();
         set(true, operation, name, key, value, blockId, timeout, -1, -1, -1, thisAddress, 0,
-                thisAddress, -1, recordId, -1);
+                thisAddress, -1, -1);
         this.txnId = ThreadContext.get().getTxnId();
         this.lockThreadId = ThreadContext.get().getThreadId();
         this.caller = thisAddress;
@@ -133,10 +122,10 @@ class Request {
         reset();
         set(req.local, req.operation, req.name, null, null, req.blockId, req.timeout,
                 req.txnId, req.eventId, req.lockThreadId, req.lockAddress, req.lockCount,
-                req.caller, req.longValue, req.recordId, req.version);
+                req.caller, req.longValue, req.version);
         if (hardCopy) {
-            key = doHardCopy(req.key);
-            value = doHardCopy(req.value);
+            key = req.key;
+            value = req.value;
         } else {
             key = req.key;
             value = req.value;
@@ -150,10 +139,10 @@ class Request {
 
     public void setFromPacket(final Packet packet) {
         reset();
-        set(false, packet.operation, packet.name, doTake(packet.key), doTake(packet.value),
+        set(false, packet.operation, packet.name, packet.key, packet.value,
                 packet.blockId, packet.timeout, packet.txnId, packet.callId, packet.threadId,
                 packet.lockAddress, packet.lockCount, packet.conn.getEndPoint(), packet.longValue,
-                packet.recordId, packet.version);
+                packet.version);
         if (packet.indexCount > 0) {
             indexes = new long[packet.indexCount];
             System.arraycopy(packet.indexes, 0, indexes, 0, indexes.length);
@@ -173,10 +162,8 @@ class Request {
         packet.local = false;
         packet.operation = operation;
         packet.name = name;
-        if (key != null)
-            doHardCopy(key, packet.key);
-        if (value != null)
-            doHardCopy(value, packet.value);
+        packet.key = key;
+        packet.value = value;
         packet.blockId = blockId;
         packet.timeout = timeout;
         packet.txnId = txnId;
@@ -185,7 +172,6 @@ class Request {
         packet.lockAddress = lockAddress;
         packet.lockCount = lockCount;
         packet.longValue = longValue;
-        packet.recordId = recordId;
         packet.version = version;
         byte indexCount = (indexes == null) ? 0 : (byte) indexes.length;
         packet.indexCount = indexCount;

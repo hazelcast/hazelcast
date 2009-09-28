@@ -522,7 +522,7 @@ public final class ConcurrentMapManager extends BaseManager {
     class MEvict extends MBackupAndMigrationAwareOp {
         public boolean evict(String name, Object key) {
             Data k = (key instanceof Data) ? (Data) key : toData(key);
-            request.setLocal(CONCURRENT_MAP_EVICT, name, k, null, 0, -1, -1, thisAddress);
+            request.setLocal(CONCURRENT_MAP_EVICT, name, k, null, 0, -1, thisAddress);
             doOp();
             boolean result = getResultAsBoolean();
             if (result) {
@@ -1402,9 +1402,9 @@ public final class ConcurrentMapManager extends BaseManager {
         request.lockCount = record.getLockCount();
         request.longValue = record.getCopyCount();
         if (includeKeyValue) {
-            request.key = doHardCopy(record.getKey());
+            request.key = record.getKey();
             if (record.getValue() != null) {
-                request.value = doHardCopy(record.getValue());
+                request.value = record.getValue();
             }
         }
     }
@@ -1522,7 +1522,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     if (record.getValue() == null) {
                         record.setValue(request.value);
                     }
-                    request.response = doHardCopy(record.getValue());
+                    request.response = record.getValue();
                 }
             }
             returnResponse(request);
@@ -1943,16 +1943,14 @@ public final class ConcurrentMapManager extends BaseManager {
         public Object get(Object key) {
             processLocalRecords();
             Record record = mapCache.get(key);
-            if (record == null) return OBJECT_REDO;
-            else {
+            if (record == null) {
+                return OBJECT_REDO;
+            } else {
                 if (record.isActive()) {
                     try {
-                        long version = record.getVersion();
                         Object value = toObject(record.getValue(), false);
-                        if (record.isActive() && version == record.getVersion()) {
-                            record.setLastAccessed();
-                            return value;
-                        }
+                        record.setLastAccessed();
+                        return value;
                     } catch (Throwable t) {
                         logger.log(Level.FINEST, "Exception when reading object ", t);
                         return OBJECT_REDO;
@@ -1963,7 +1961,6 @@ public final class ConcurrentMapManager extends BaseManager {
                     return null;
                 }
             }
-            return OBJECT_REDO;
         }
 
         public void reset() {
@@ -2337,7 +2334,7 @@ public final class ConcurrentMapManager extends BaseManager {
             Data data = record.getValue();
             Data returnValue = null;
             if (data != null) {
-                returnValue = doHardCopy(data);
+                returnValue = data;
             } else {
                 if (record.getMultiValues() != null) {
                     Values values = new Values(record.getMultiValues());
@@ -3373,7 +3370,7 @@ public final class ConcurrentMapManager extends BaseManager {
             int size = in.readInt();
             lsValues = new ArrayList<Data>(size);
             for (int i = 0; i < size; i++) {
-                Data data = createNewData();
+                Data data = new Data();
                 data.readData(in);
                 lsValues.add(data);
             }

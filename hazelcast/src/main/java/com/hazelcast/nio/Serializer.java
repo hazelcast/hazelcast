@@ -17,16 +17,11 @@
 
 package com.hazelcast.nio;
 
-import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
-import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.config.ConfigProperty;
-import static com.hazelcast.nio.BufferUtil.createNewData;
-import static com.hazelcast.nio.BufferUtil.doHardCopy;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.nio.ByteBuffer;
 
 
 public final class Serializer {
@@ -57,26 +52,20 @@ public final class Serializer {
         registerTypeSerializer(new DataSerializer());
     }
 
-    final BuffersOutputStream bbos;
+    final FastByteArrayOutputStream bbos;
 
-    final BuffersInputStream bbis;
+    final FastByteArrayInputStream bbis;
 
-    final DataBufferProvider bufferProvider;
 
     public Serializer() {
-        bbos = new BuffersOutputStream();
-        bbis = new BuffersInputStream();
-        bufferProvider = new DataBufferProvider();
-        bbos.setBufferProvider(bufferProvider);
-        bbis.setBufferProvider(bufferProvider);
+        bbos = new FastByteArrayOutputStream(100 * 1024);
+        bbis = new FastByteArrayInputStream(new byte[10]);
     }
 
     public Data writeObject(Object obj) throws Exception {
         if (obj instanceof Data) {
-            return doHardCopy((Data) obj);
+            return (Data) obj;
         }
-        Data data = createNewData();
-        bufferProvider.setData(data);
         bbos.reset();
         byte typeId = SERIALIZER_TYPE_OBJECT;
         if (obj instanceof DataSerializable) {
@@ -95,6 +84,7 @@ public final class Serializer {
         bbos.writeByte(typeId);
         typeSerizalizers[typeId].write(bbos, obj);
         bbos.flush();
+        Data data = new Data(bbos.getBytes(), bbos.size());
         data.postRead();
         return data;
     }
@@ -107,13 +97,11 @@ public final class Serializer {
         if (data == null || data.size() == 0)
             return null;
         try {
-            bbis.reset();
-            bufferProvider.setData(data);
+            bbis.set(data.buffer.array(), data.size());
             byte typeId = bbis.readByte();
-            Object result = typeSerizalizers[typeId].read(bbis);
-            if (purgeData) data.setNoData();
-            return result;
+            return typeSerizalizers[typeId].read(bbis);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
@@ -127,11 +115,11 @@ public final class Serializer {
             return SERIALIZER_TYPE_LONG;
         }
 
-        public Long read(BuffersInputStream bbis) throws Exception {
+        public Long read(FastByteArrayInputStream bbis) throws Exception {
             return bbis.readLong();
         }
 
-        public void write(BuffersOutputStream bbos, Long obj) throws Exception {
+        public void write(FastByteArrayOutputStream bbos, Long obj) throws Exception {
             bbos.writeLong(obj.longValue());
         }
     }
@@ -141,11 +129,11 @@ public final class Serializer {
             return SERIALIZER_TYPE_INTEGER;
         }
 
-        public Integer read(BuffersInputStream bbis) throws Exception {
+        public Integer read(FastByteArrayInputStream bbis) throws Exception {
             return bbis.readInt();
         }
 
-        public void write(BuffersOutputStream bbos, Integer obj) throws Exception {
+        public void write(FastByteArrayOutputStream bbos, Integer obj) throws Exception {
             bbos.writeInt(obj.intValue());
         }
     }
@@ -155,11 +143,11 @@ public final class Serializer {
             return SERIALIZER_TYPE_CLASS;
         }
 
-        public Class read(BuffersInputStream bbis) throws Exception {
+        public Class read(FastByteArrayInputStream bbis) throws Exception {
             return Class.forName(bbis.readUTF());
         }
 
-        public void write(BuffersOutputStream bbos, Class obj) throws Exception {
+        public void write(FastByteArrayOutputStream bbos, Class obj) throws Exception {
             bbos.writeUTF(obj.getName());
         }
     }
@@ -171,7 +159,7 @@ public final class Serializer {
             return SERIALIZER_TYPE_STRING;
         }
 
-        public String read(BuffersInputStream bbis) throws Exception {
+        public String read(FastByteArrayInputStream bbis) throws Exception {
         	StringBuilder result = new StringBuilder();
 			while(bbis.available()>0){
 				result.append(bbis.readShortUTF());
@@ -180,7 +168,7 @@ public final class Serializer {
 			return result.toString();
         }
 
-        public void write(BuffersOutputStream bbos, String obj) throws Exception {
+        public void write(FastByteArrayOutputStream bbos, String obj) throws Exception {
         	int length = obj.length();
 			int chunkSize = length/STRING_CHUNK_SIZE+1;
 			for(int i=0;i<chunkSize;i++){
@@ -196,14 +184,14 @@ public final class Serializer {
             return SERIALIZER_TYPE_BYTE_ARRAY;
         }
 
-        public byte[] read(BuffersInputStream bbis) throws Exception {
+        public byte[] read(FastByteArrayInputStream bbis) throws Exception {
             int size = bbis.readInt();
             byte[] bytes = new byte[size];
             bbis.read(bytes);
             return bytes;
         }
 
-        public void write(BuffersOutputStream bbos, byte[] obj) throws Exception {
+        public void write(FastByteArrayOutputStream bbos, byte[] obj) throws Exception {
             bbos.writeInt(obj.length);
             bbos.write(obj);
         }
@@ -214,7 +202,7 @@ public final class Serializer {
             return SERIALIZER_TYPE_DATA;
         }
 
-        public DataSerializable read(BuffersInputStream bbis) throws Exception {
+        public DataSerializable read(FastByteArrayInputStream bbis) throws Exception {
             String className = bbis.readShortUTF();
             try {
                 DataSerializable ds = (DataSerializable) Class.forName(className).newInstance();
@@ -226,7 +214,7 @@ public final class Serializer {
             } 
         }
 
-        public void write(BuffersOutputStream bbos, DataSerializable obj) throws Exception {
+        public void write(FastByteArrayOutputStream bbos, DataSerializable obj) throws Exception {
             bbos.writeShortUTF(obj.getClass().getName());
             obj.writeData(bbos);
         }
@@ -239,7 +227,7 @@ public final class Serializer {
             return SERIALIZER_TYPE_OBJECT;
         }
 
-        public Object read(BuffersInputStream bbis) throws Exception {
+        public Object read(FastByteArrayInputStream bbis) throws Exception {
             ObjectInputStream in = new ObjectInputStream(bbis);
             if (shared) {
                 return in.readObject() ;
@@ -248,7 +236,7 @@ public final class Serializer {
             }
         }
 
-        public void write(BuffersOutputStream bbos, Object obj) throws Exception {
+        public void write(FastByteArrayOutputStream bbos, Object obj) throws Exception {
             ObjectOutputStream os = new ObjectOutputStream(bbos);
             if (shared) {
                 os.writeObject(obj);
@@ -261,45 +249,9 @@ public final class Serializer {
     interface TypeSerializer<T> {
         byte getTypeId();
 
-        void write(BuffersOutputStream bbos, T obj) throws Exception;
+        void write(FastByteArrayOutputStream bbos, T obj) throws Exception;
 
-        T read(BuffersInputStream bbis) throws Exception;
+        T read(FastByteArrayInputStream bbis) throws Exception;
     }
 
-    public class DataBufferProvider implements BufferProvider {
-        Data theData = null;
-
-        public DataBufferProvider() {
-            super();
-        }
-
-        public void setData(Data theData) {
-            this.theData = theData;
-        }
-
-        public Data getData() {
-            return theData;
-        }
-
-        public void addBuffer(ByteBuffer bb) {
-            theData.add(bb);
-        }
-
-        public ByteBuffer getBuffer(int index) {
-            if (index >= theData.lsData.size())
-                return null;
-            return theData.lsData.get(index);
-        }
-
-        public int size() {
-            return theData.size;
-        }
-
-        public ByteBuffer takeEmptyBuffer() {
-            ByteBuffer empty = ThreadContext.get().getBufferPool().obtain();
-            if (empty.position() != 0 || empty.limit() != BYTE_BUFFER_SIZE)
-                throw new RuntimeException("" + empty);
-            return empty;
-        }
-    }
 }

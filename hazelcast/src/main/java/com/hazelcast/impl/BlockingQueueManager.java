@@ -28,7 +28,8 @@ import static com.hazelcast.impl.ClusterOperation.BLOCKING_QUEUE_SIZE;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import com.hazelcast.nio.Address;
-import static com.hazelcast.nio.BufferUtil.*;
+import static com.hazelcast.nio.BufferUtil.doHardCopy;
+import static com.hazelcast.nio.BufferUtil.doTake;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.Packet;
@@ -471,7 +472,7 @@ public class BlockingQueueManager extends BaseManager {
             if (!request.scheduled) {
                 Data oldValue = (Data) request.response;
                 if (oldValue != null && oldValue.size() > 0) {
-                    doSet(oldValue, packet.value);
+                    packet.value = oldValue;
                 }
                 sendResponse(packet);
             } else {
@@ -1342,7 +1343,7 @@ public class BlockingQueueManager extends BaseManager {
             for (int i = read.index; i < BLOCK_SIZE; i++) {
                 Data data = block.get(i);
                 if (data != null) {
-                    Data value = ThreadContext.get().hardCopy(data);
+                    Data value = doHardCopy(data);
                     read.setResponse(value, i);
                     return;
                 }
@@ -1360,7 +1361,7 @@ public class BlockingQueueManager extends BaseManager {
                 for (int i = index; i < BLOCK_SIZE; i++) {
                     Data data = block.get(i);
                     if (data != null) {
-                        doHardCopy(data, packet.value);
+                        packet.value = data;
                         packet.longValue = i;
                         break blockLoop;
                     }
@@ -1379,10 +1380,6 @@ public class BlockingQueueManager extends BaseManager {
             }
         }
 
-        long getRecordId(int blockId, int addIndex) {
-            return (blockId * BLOCK_SIZE) + addIndex;
-        }
-
         int offer(Request req) {
             if (req.value == null) {
                 throw new RuntimeException("Offer request value cannot be null. Local:" + req.local);
@@ -1392,8 +1389,6 @@ public class BlockingQueueManager extends BaseManager {
             }
             try {
                 int addIndex = blCurrentPut.add(req.value);
-                long recordId = getRecordId(blCurrentPut.blockId, addIndex);
-                req.recordId = recordId;
                 doFireEntryEvent(true, req.value);
                 sendBackup(true, req.caller, req.value, blCurrentPut.blockId, addIndex);
                 req.longValue = addIndex;
@@ -1434,7 +1429,6 @@ public class BlockingQueueManager extends BaseManager {
                         }
                     }
                 }
-                request.recordId = getRecordId(blCurrentTake.blockId, blCurrentTake.removeIndex);
                 doFireEntryEvent(false, value);
 
                 sendBackup(false, request.caller, null, blCurrentTake.blockId, 0);

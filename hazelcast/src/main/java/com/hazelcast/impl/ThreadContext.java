@@ -20,13 +20,10 @@ package com.hazelcast.impl;
 import com.hazelcast.collection.SimpleBoundedQueue;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.ConcurrentMapManager.MEvict;
-import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
-import com.hazelcast.nio.BufferUtil;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.Serializer;
 
-import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -47,8 +44,6 @@ public final class ThreadContext {
 
     CallContext callContext = null;
 
-    private final ObjectPool<ByteBuffer> bufferCache;
-
     private final ObjectPool<Packet> packetCache;
 
     private final static ConcurrentMap<String, BlockingQueue> mapGlobalQueues = new ConcurrentHashMap<String, BlockingQueue>();
@@ -58,43 +53,22 @@ public final class ThreadContext {
     private final static AtomicInteger newThreadId = new AtomicInteger();
 
     static {
-        mapGlobalQueues.put("BufferCache", new ArrayBlockingQueue(6000));
         mapGlobalQueues.put("PacketCache", new ArrayBlockingQueue(2000));
     }
 
     private ThreadContext() {
         callContext = new CallContext(createNewThreadId(), false);
-        int bufferCacheSize = 12;
         int packetCacheSize = 0;
         String threadName = Thread.currentThread().getName();
         if (threadName.startsWith("hz.")) {
             if ("hz.InThread".equals(threadName)) {
-                bufferCacheSize = 100;
                 packetCacheSize = 100;
             } else if ("hz.OutThread".equals(threadName)) {
-                bufferCacheSize = 0;
                 packetCacheSize = 0;
             } else if ("hz.ServiceThread".equals(threadName)) {
-                bufferCacheSize = 100;
                 packetCacheSize = 100;
             }
         }
-        logger.log(Level.FINEST, threadName + " is starting with cacheSize " + bufferCacheSize);
-
-        bufferCache = new ObjectPool<ByteBuffer>("BufferCache", bufferCacheSize) {
-            public ByteBuffer createNew() {
-                return ByteBuffer.allocate(BYTE_BUFFER_SIZE);
-            }
-
-            public void onRelease(ByteBuffer byteBuffer) {
-                byteBuffer.clear();
-            }
-
-            public void onObtain(ByteBuffer byteBuffer) {
-                byteBuffer.clear();
-            }
-        };
-
         packetCache = new ObjectPool<Packet>("PacketCache", packetCacheSize) {
             public Packet createNew() {
                 return new Packet();
@@ -125,10 +99,6 @@ public final class ThreadContext {
         return packetCache;
     }
 
-    public ObjectPool<ByteBuffer> getBufferPool() {
-        return bufferCache;
-    }
-
     public void finalizeTxn() {
         callContext.finalizeTxn();
     }
@@ -149,16 +119,13 @@ public final class ThreadContext {
         this.callContext = executionContext;
     }
 
-    public Data hardCopy(final Data data) {
-        return BufferUtil.doHardCopy(data);
-    }
-
     public void reset() {
         finalizeTxn();
     }
 
     public Data toData(final Object obj) {
         if (obj == null) return null;
+        if (obj instanceof Data) return (Data) obj;
         try {
             return serializer.writeObject(obj);
         } catch (final Exception e) {
