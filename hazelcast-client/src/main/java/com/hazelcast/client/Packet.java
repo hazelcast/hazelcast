@@ -56,8 +56,6 @@ public class Packet {
 	
 	private long longValue;
 	
-	private long recordId = -1;
-	
     private long version = -1;
     
     private byte responseType = Constants.ResponseTypes.RESPONSE_NONE;
@@ -106,7 +104,6 @@ public class Packet {
 		this.timeout = dis2.readLong();
 		this.txnId = dis2.readLong();
 		this.longValue = dis2.readLong();
-		this.recordId = dis2.readLong();
 		this.version = dis2.readLong();
 		this.callId = (int) dis2.readLong();
 		this.client = dis2.readByte()==1;
@@ -139,7 +136,6 @@ public class Packet {
 		dos.writeLong(timeout);
 		dos.writeLong(txnId);
 		dos.writeLong(longValue);
-		dos.writeLong(recordId);
 		dos.writeLong(version);
 		dos.writeLong(callId);
 		dos.writeByte(client?1:0);
@@ -258,12 +254,6 @@ public class Packet {
 	}
 	public void setLongValue(long longValue) {
 		this.longValue = longValue;
-	}
-	public long getRecordId() {
-		return recordId;
-	}
-	public void setRecordId(long recordId) {
-		this.recordId = recordId;
 	}
 	public long getVersion() {
 		return version;

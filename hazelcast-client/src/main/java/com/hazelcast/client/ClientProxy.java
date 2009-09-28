@@ -27,7 +27,11 @@ public class ClientProxy {
 
 	protected Packet callAndGetResult(Packet request) {
 		Call c = createCall(request);
-	    synchronized (c) {
+	    return doCall(c);
+	}
+
+	private Packet doCall(Call c) {
+		synchronized (c) {
 			try {
 				out.enQueue(c);
 				c.wait();
@@ -37,6 +41,9 @@ public class ClientProxy {
 		}
 	    
 	    Packet response = c.getResponse();
+	    if(response==null){
+	    	doCall(c);
+	    }
 		return response;
 	}
 	

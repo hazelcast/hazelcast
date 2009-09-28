@@ -22,10 +22,15 @@ import com.hazelcast.client.core.EntryListener;
 import com.hazelcast.client.core.IMap;
 import com.hazelcast.client.core.Transaction;
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+
 import static org.junit.Assert.*;
+
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -35,15 +40,16 @@ public class HazelcastClientTest {
     com.hazelcast.core.IMap<Object, Object> realMap = Hazelcast.getMap("default");
     private HazelcastClient hClient;
 
-    @Before
-    public void init() {
-        ClusterConfig config = new ClusterConfig();
-        config.setHost("192.168.1.2");
-        config.setPort(5701);
-        hClient = HazelcastClient.getHazelcastClient(config);
-        realMap.clear();
-    }
+//    @Before
+//    public void init() {
+//        hClient = HazelcastClient.getHazelcastClient(new InetSocketAddress("192.168.70.1",5701));
+//        realMap.clear();
+//    }
 
+    @After
+    public void after(){
+    	Hazelcast.shutdownAll();
+    }
     @Test
     public void shouldBeAbleToPutToTheMap() throws InterruptedException {
         Map<String, String> clientMap = hClient.getMap("default");
@@ -159,14 +165,17 @@ public class HazelcastClientTest {
         final CountDownLatch entryRemovedLatch = new CountDownLatch(1);
         map.addEntryListener(new EntryListener() {
             public void entryAdded(EntryEvent event) {
+            	entryAddLatch.countDown();
                 System.out.println("Added" + event);
             }
 
             public void entryRemoved(EntryEvent event) {
+            	entryRemovedLatch.countDown();
                 System.out.println("Removed" + event);
             }
 
             public void entryUpdated(EntryEvent event) {
+            	entryUpdatedLatch.countDown();
                 System.out.println("Updated" + event);
             }
 
@@ -174,8 +183,44 @@ public class HazelcastClientTest {
                 System.out.println("Evicted" + event);
             }
         }, true);
-        Thread.sleep(100000000);
     }
+    
+    @Test
+    public void shouldPut1MRecordsWith1ClusterMember(){
+    	HazelcastClient client = HazelcastClient.getHazelcastClient(new InetSocketAddress("192.168.70.1",5701));
+    	Map map = client.getMap("default");
+    	long ms = System.currentTimeMillis();
+    	int counter= 0;
+    	for (int i = 0; i < 10000; i++) {
+			map.put("a", "b");
+//			System.out.println(counter++);
+		}
+    	System.out.println(System.currentTimeMillis()-ms);
+    	assertTrue(true);
+    }
+    
+	@Test
+	public void shouldBeAbleToSwitchToAnotherMemberIfOneFails() throws InterruptedException{
+		HazelcastInstance i1 = Hazelcast.newHazelcastInstance(null);
+		HazelcastInstance i2 = Hazelcast.newHazelcastInstance(null);
+		HazelcastInstance i3 = Hazelcast.newHazelcastInstance(null);
+		List<HazelcastInstance> members = new ArrayList<HazelcastInstance>();
+		members.add(i1);
+		members.add(i2);
+		members.add(i3);
+		
+		HazelcastClient client = HazelcastClient.getHazelcastClient(new InetSocketAddress("192.168.70.1",5704),new InetSocketAddress("192.168.70.1",5702),new InetSocketAddress("192.168.70.1",5703));
+		Map map = client.getMap("default");
+		int counter = 0;
+		while(counter<3){
+			System.out.println("putting...." + counter++);
+			map.put("key",counter);
+			assertEquals(counter, realMap.get("key"));
+			int id = client.getCurrentConnection().getAddress().getPort() - 5702;
+			members.get(id).shutdown();
+			Thread.sleep(2000);
+		}
+	}
 
 
 }

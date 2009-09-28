@@ -39,7 +39,8 @@ public class InRunnable extends NetworkRunnable implements Runnable{
 				packet = reader.readPacket();
 			} catch (IOException e) {
 				e.printStackTrace();
-				return;
+				hazelcastClient.attachedClusterMemeberConnectionLost();
+				continue;
 			}
 			Call c = callMap.remove(packet.getCallId());
 			if(c!=null){

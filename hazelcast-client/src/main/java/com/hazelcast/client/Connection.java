@@ -18,6 +18,7 @@
 package com.hazelcast.client;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -32,6 +33,7 @@ import javax.net.SocketFactory;
  */
 public class Connection {
 	private Socket socket;
+	private InetSocketAddress address;
 
 	/**
 	 * Creates the Socket to the given host and port
@@ -52,8 +54,9 @@ public class Connection {
 		}	
 	}
 
-	public Connection(ClusterConfig config) {
-		this(config.getHost(), config.getPort());
+	public Connection(InetSocketAddress address) {
+		this(address.getAddress().getHostAddress(), address.getPort());
+		this.address = address;
 	}
 
 	public void setSocket(Socket socket) {
@@ -63,5 +66,8 @@ public class Connection {
 	public Socket getSocket() {
 		return socket;
 	}
-
+	
+	public InetSocketAddress getAddress() {
+		return address;
+	}
 }
