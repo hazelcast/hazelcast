@@ -3,10 +3,7 @@ package com.hazelcast.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.*;
 import com.hazelcast.nio.Address;
 import org.junit.After;
 import static org.junit.Assert.*;
@@ -15,6 +12,7 @@ import org.junit.Test;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ClusterTest {
@@ -244,5 +242,44 @@ public class ClusterTest {
         MultiMap mm2 = h2.getMultiMap("default");
         assertEquals(1, mm2.size());
         assertEquals(1, mm2.keySet().size());
+    }
+
+
+    /**
+     * Test case for the issue 144
+     * The backup copies were not releasing the locks
+     *
+     * Fix: on backup(request)
+     * make sure you don't ignore the lock-backup operations where
+     * req.backupCount == 0 which is actually an unlock
+     *
+     */
+    @Test(timeout = 60000)
+    public void testLockForeverOnBackups() throws Exception {
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        ILock lock = h.getLock("FOO");
+        lock.lock();
+        lock.unlock();
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        final ILock lock2 = h2.getLock("FOO");
+        lock2.lock();
+        final CountDownLatch latch = new CountDownLatch(2);
+        h2.getCluster().addMembershipListener(new
+                MembershipListener() {
+                    public void memberAdded(MembershipEvent membershipEvent) {
+                    }
+
+                    public void memberRemoved(MembershipEvent membershipEvent) {
+                        lock2.lock();
+                        latch.countDown();
+                        lock2.unlock();
+                        latch.countDown();
+                    }
+                }
+        );
+        lock2.unlock();
+        Thread.sleep(1000);
+        h.shutdown();
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
 }

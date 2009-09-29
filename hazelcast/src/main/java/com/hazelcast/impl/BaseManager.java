@@ -142,7 +142,6 @@ public abstract class BaseManager {
         }
 
         public void onExpire() {
-
         }
 
         public void setTimeout(long timeout) {
@@ -205,7 +204,6 @@ public abstract class BaseManager {
         public long size() {
             return (lsKeyValues == null) ? 0 : lsKeyValues.size();
         }
-
     }
 
     public static Map.Entry createSimpleEntry(final FactoryImpl factory, final String name, final Object key, final Object value) {
@@ -279,7 +277,6 @@ public abstract class BaseManager {
             if (gotValue) {
                 value.writeData(out);
             }
-
         }
 
         public void readData(DataInput in) throws IOException {
@@ -330,7 +327,6 @@ public abstract class BaseManager {
         }
     }
 
-
     abstract class AbstractCall implements Call {
         private long id = -1;
 
@@ -370,7 +366,6 @@ public abstract class BaseManager {
         void setId(long id);
     }
 
-
     public interface Processable {
         void process();
     }
@@ -386,21 +381,20 @@ public abstract class BaseManager {
         }
     }
 
-
     abstract class TargetAwareOperationHandler extends MigrationAwareOperationHandler {
 
         abstract boolean isRightRemoteTarget(Packet packet);
 
         @Override
         public void process(Packet packet) {
-            if (isMigrating()) {
+            Request remoteReq = new Request();
+            remoteReq.setFromPacket(packet);
+            remoteReq.local = false;
+            if (isMigrating(remoteReq)) {
                 packet.responseType = RESPONSE_REDO;
                 sendResponse(packet);
             } else if (!isRightRemoteTarget(packet)) {
             } else {
-                Request remoteReq = new Request();
-                remoteReq.setFromPacket(packet);
-                remoteReq.local = false;
                 handle(remoteReq);
                 packet.returnToContainer();
             }
@@ -417,13 +411,13 @@ public abstract class BaseManager {
         }
 
         public void processMigrationAware(Packet packet) {
-            if (isMigrating()) {
+            Request remoteReq = new Request();
+            remoteReq.setFromPacket(packet);
+            remoteReq.local = false;
+            if (isMigrating(remoteReq)) {
                 packet.responseType = RESPONSE_REDO;
                 sendResponse(packet);
             } else {
-                Request remoteReq = new Request();
-                remoteReq.setFromPacket(packet);
-                remoteReq.local = false;
                 handle(remoteReq);
                 packet.returnToContainer();
             }
@@ -467,9 +461,7 @@ public abstract class BaseManager {
                 request.reset();
             }
         }
-
     }
-
 
     abstract class AbstractOperationHandler extends ResponsiveOperationHandler {
 
@@ -531,7 +523,6 @@ public abstract class BaseManager {
         }
     }
 
-
     abstract class RequestBasedCall extends AbstractCall {
         final protected Request request = new Request();
 
@@ -552,14 +543,12 @@ public abstract class BaseManager {
             request.reset();
         }
 
-
         public boolean getResultAsBoolean() {
             Object resultObj = getResult();
             boolean result = !(resultObj == OBJECT_NULL || resultObj == null) && resultObj == Boolean.TRUE;
             afterGettingResult(request);
             return result;
         }
-
 
         public Object getResultAsObject() {
             Object result = getResult();
@@ -622,7 +611,6 @@ public abstract class BaseManager {
         abstract void doOp();
 
         abstract Object getResult();
-
 
         public String toString() {
             return RequestBasedCall.this.getClass().getSimpleName()
@@ -823,7 +811,7 @@ public abstract class BaseManager {
         }
 
         public void doLocalOp() {
-            if (isMigrationAware() && isMigrating()) {
+            if (isMigrationAware() && isMigrating(request)) {
                 setResult(OBJECT_REDO);
             } else {
                 request.attachment = TargetAwareOp.this;
@@ -935,7 +923,7 @@ public abstract class BaseManager {
         }
     }
 
-    protected boolean isMigrating() {
+    protected boolean isMigrating(Request req) {
         return false;
     }
 
@@ -1036,7 +1024,6 @@ public abstract class BaseManager {
                            final Data value, final Map<Address, Boolean> mapListeners) {
         if (mapListeners != null) {
             final Set<Map.Entry<Address, Boolean>> listeners = mapListeners.entrySet();
-
             for (final Map.Entry<Address, Boolean> listener : listeners) {
                 final Address address = listener.getKey();
                 final boolean includeValue = listener.getValue();
@@ -1241,7 +1228,6 @@ public abstract class BaseManager {
     void enqueueEvent(final int eventType, final String name, final Data eventKey,
                       final Data eventValue, final Address from) {
         final EventTask eventTask = new EventTask(eventType, name, eventKey, eventValue);
-
         int eventQueueIndex;
         if (eventKey != null) {
             eventQueueIndex = Math.abs(eventKey.hashCode()) % EVENT_QUEUE_COUNT;
@@ -1274,60 +1260,56 @@ public abstract class BaseManager {
         }
     }
 
-
     class EventTask extends EntryEvent implements Runnable {
         protected final Data dataKey;
 
         protected final Data dataValue;
 
-
-		public EventTask(final int eventType, final String name, final Data dataKey,
+        public EventTask(final int eventType, final String name, final Data dataKey,
                          final Data dataValue) {
             super(name, eventType, null, null);
             this.dataKey = dataKey;
             this.dataValue = dataValue;
         }
-		
-		public Data getDataKey() {
-			return dataKey;
-		}
-		
-		public Data getDataValue() {
-			return dataValue;
-		}
+
+        public Data getDataKey() {
+            return dataKey;
+        }
+
+        public Data getDataValue() {
+            return dataValue;
+        }
 
         public void run() {
             try {
-            	node.listenerManager.callListeners(this);                
+                node.listenerManager.callListeners(this);
             } catch (final Exception e) {
                 e.printStackTrace();
             }
         }
-        
+
         public Object getKey() {
-        	if(key==null && dataKey!=null){
-        		key = toObject(dataKey, false);
-        	}
+            if (key == null && dataKey != null) {
+                key = toObject(dataKey, false);
+            }
             return key;
         }
 
         public Object getValue() {
-            if(value==null){
-            	if(dataValue!=null){
-            		value = toObject(dataValue,false);
-            	} else if(collection){
-            		value = key;
-            	}
+            if (value == null) {
+                if (dataValue != null) {
+                    value = toObject(dataValue, false);
+                } else if (collection) {
+                    value = key;
+                }
             }
             return value;
         }
     }
 
-
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
                       final int eventType, final Data value) {
         fireMapEvent(mapListeners, name, eventType, null, value, null);
-
     }
 
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
@@ -1338,7 +1320,6 @@ public abstract class BaseManager {
             if (keyListeners != null) {
                 mapTargetListeners = new HashMap<Address, Boolean>(keyListeners);
             }
-
             if (mapListeners != null && mapListeners.size() > 0) {
                 if (mapTargetListeners == null) {
                     mapTargetListeners = new HashMap<Address, Boolean>(mapListeners);
@@ -1366,7 +1347,6 @@ public abstract class BaseManager {
     MemberImpl getMember(final Address address) {
         return node.clusterManager.getMember(address);
     }
-
 
     void handleListenerRegisterations(final boolean add, final String name, final Data key,
                                       final Address address, final boolean includeValue) {

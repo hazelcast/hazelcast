@@ -181,7 +181,6 @@ public final class ConcurrentMapManager extends BaseManager {
                     getOrCreateBlock(i);
                 }
             }
-
             List<Block> lsBlocksToRedistribute = new ArrayList<Block>();
             Map<Address, Integer> addressBlocks = new HashMap<Address, Integer>();
             int storageEnabledMemberCount = 0;
@@ -193,8 +192,6 @@ public final class ConcurrentMapManager extends BaseManager {
             }
             if (storageEnabledMemberCount == 0)
                 return;
-
-
             int aveBlockOwnCount = BLOCK_COUNT / (storageEnabledMemberCount);
             for (Block block : blocks) {
                 if (block.getOwner() == null) {
@@ -212,7 +209,6 @@ public final class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
-
             Set<Address> allAddress = addressBlocks.keySet();
             setNewMembers:
             for (Address address : allAddress) {
@@ -243,7 +239,6 @@ public final class ConcurrentMapManager extends BaseManager {
                     block.setOwner((Address) addressBlocks.keySet().toArray()[index]);
                 }
             }
-
             Data dataAllBlocks = null;
             for (MemberImpl member : lsMembers) {
                 if (!member.localMember()) {
@@ -277,7 +272,6 @@ public final class ConcurrentMapManager extends BaseManager {
             }
             lsMapStates.add(mapState);
         }
-
 
         public void process() {
             FactoryImpl factory = getNode().factory;
@@ -338,7 +332,6 @@ public final class ConcurrentMapManager extends BaseManager {
                     mapIndex.readData(in);
                     lsMapIndexes.add(mapIndex);
                 }
-
             }
         }
     }
@@ -448,7 +441,6 @@ public final class ConcurrentMapManager extends BaseManager {
         });
     }
 
-
     abstract class MBooleanOp extends MTargetAwareOp {
         @Override
         void handleNoneRedoResponse(Packet packet) {
@@ -518,7 +510,6 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-
     class MEvict extends MBackupAndMigrationAwareOp {
         public boolean evict(String name, Object key) {
             Data k = (key instanceof Data) ? (Data) key : toData(key);
@@ -553,7 +544,6 @@ public final class ConcurrentMapManager extends BaseManager {
             setResult(request.response);
         }
     }
-
 
     class MMigrate extends MBackupAwareOp {
         volatile int keysize = 0;
@@ -603,14 +593,12 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-
     class MAddRemoveKeyListener extends MBooleanOp {
         public boolean addRemoveListener(boolean add, String name, Object key) {
             ClusterOperation operation = (add) ? ClusterOperation.ADD_LISTENER : ClusterOperation.REMOVE_LISTENER;
             return booleanCall(operation, name, key, null, -1, -1);
         }
     }
-
 
     class MGet extends MTargetAwareOp {
         public Object get(String name, Object key, long timeout) {
@@ -759,7 +747,6 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class MAdd extends MBackupAndMigrationAwareOp {
         boolean addToList(String name, Object value) {
-
             Data key = ThreadContext.get().toData(value);
             boolean result = booleanCall(CONCURRENT_MAP_ADD_TO_LIST, name, key, null, 0, -1);
             backup(CONCURRENT_MAP_BACKUP_ADD);
@@ -947,7 +934,6 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-
     abstract class MBackupAwareOp extends MTargetAwareOp {
         protected final MBackup[] backupOps = new MBackup[3];
         protected volatile int backupCount = 0;
@@ -1050,7 +1036,6 @@ public final class ConcurrentMapManager extends BaseManager {
         return getTarget(key);
     }
 
-
     public class MContainsValue extends MultiCall {
         boolean contains = false;
         final String name;
@@ -1133,7 +1118,6 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-
     public class MSize extends MultiCall {
         int size = 0;
         final String name;
@@ -1212,7 +1196,6 @@ public final class ConcurrentMapManager extends BaseManager {
             } else {
                 pairs = (Pairs) response;
             }
-
             entries.addEntries(pairs);
             return true;
         }
@@ -1229,7 +1212,6 @@ public final class ConcurrentMapManager extends BaseManager {
             }
         }
     }
-
 
     Address getTarget(Data key) {
         checkServiceThread();
@@ -1249,7 +1231,13 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     @Override
-    public boolean isMigrating() {
+    public boolean isMigrating(Request req) {
+        if (migrating && req.key != null) {
+            CMap cmap = getMap(req.name);
+            if (cmap != null && cmap.getRecord(req.key) != null) {
+                return false;
+            }
+        }
         return migrating;
     }
 
@@ -1275,7 +1263,6 @@ public final class ConcurrentMapManager extends BaseManager {
     LocallyOwnedMap getLocallyOwnedMap(String name) {
         return mapLocallyOwnedMaps.get(name);
     }
-
 
     CMap getMap(String name) {
         return maps.get(name);
@@ -1457,7 +1444,6 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-
     class RemoveMultiOperationHander extends SchedulableOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
@@ -1493,7 +1479,6 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-
     class GetOperationHandler extends StoreAwareOperationHandler {
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
@@ -1507,10 +1492,8 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         void doOperation(Request request) {
-
             CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.get(request);
-
         }
 
         public void afterExecute(Request request) {
@@ -1568,7 +1551,9 @@ public final class ConcurrentMapManager extends BaseManager {
                     request.lockCount = record.getLockCount();
                     fireScheduledActions(record);
                 }
+                logger.log(Level.FINEST, unlocked + " now lock count " + record.getLockCount() + " lockthreadId " +record.getLockThreadId());
             }
+
             if (unlocked) {
                 request.response = Boolean.TRUE;
             } else {
@@ -1663,7 +1648,6 @@ public final class ConcurrentMapManager extends BaseManager {
             executeLocally(orderedExecutionTask);
         }
     }
-
 
     abstract class StoreAwareOperationHandler extends SchedulableOperationHandler implements AsynchronousExecution {
 
@@ -1851,7 +1835,6 @@ public final class ConcurrentMapManager extends BaseManager {
 
     abstract class AsyncMigrationAwareOperationHandler extends MigrationAwareOperationHandler {
 
-
         abstract void handleAsync(Request request);
 
         abstract boolean shouldExecuteAsync(Request request);
@@ -1865,7 +1848,6 @@ public final class ConcurrentMapManager extends BaseManager {
             }
         }
     }
-
 
     final void doContains(Request request) {
         CMap cmap = getOrCreateMap(request.name);
@@ -1987,7 +1969,6 @@ public final class ConcurrentMapManager extends BaseManager {
             localRecords.offer(record);
         }
     }
-
 
     public class CMap {
         final Set<Record> setRemovedRecords = new HashSet<Record>(10000);
@@ -2118,9 +2099,10 @@ public final class ConcurrentMapManager extends BaseManager {
             Record record = getRecord(req.key);
             if (record == null) {
                 record = toRecord(req);
-                updateIndexes(true, req, record);                            
+                updateIndexes(true, req, record);
             }
             record.setVersion(req.version);
+            logger.log(Level.FINEST, req.name + " own lockCount:" + record.getLockCount() + ", threadId:" + record.getLockThreadId());
         }
 
         public boolean isMultiMap() {
@@ -2151,7 +2133,6 @@ public final class ConcurrentMapManager extends BaseManager {
             }
             return true;
         }
-
 
         public void doBackup(Request req) {
             if (req.key == null || req.key.size() == 0) {
@@ -2481,7 +2462,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         void updateIndexes(boolean created, Request request, Record record) {
-            int newValueHash = (record.getValue() != null) ? record.getValue().hashCode() : Integer.MIN_VALUE;
+            int valueHash = (record.getValue() != null) ? record.getValue().hashCode() : Integer.MIN_VALUE;
             if (request.indexes != null) {
                 int indexCount = request.indexes.length;
                 if (indexCount == 0)
@@ -2493,14 +2474,13 @@ public final class ConcurrentMapManager extends BaseManager {
                 request.indexes = null;
                 byte[] indexTypes = request.indexTypes;
                 request.indexTypes = null;
-                node.queryService.updateIndex(name, newIndexes, indexTypes, record, newValueHash);
+                node.queryService.updateIndex(name, newIndexes, indexTypes, record, valueHash);
             } else {
-                if (created || record.getValueHash() != newValueHash) {
-                    node.queryService.updateIndex(name, null, null, record, newValueHash);
+                if (created || record.getValueHash() != valueHash) {
+                    node.queryService.updateIndex(name, null, null, record, valueHash);
                 }
             }
         }
-
 
         void garbage(Data data) {
             data.setNoData();
@@ -2512,7 +2492,6 @@ public final class ConcurrentMapManager extends BaseManager {
             Iterator<Record> itDirtyRecords = setDirtyRecords.iterator();
             final Map<Data, Data> entriesToStore = new HashMap<Data, Data>();
             final Collection<Data> keysToDelete = new HashSet<Data>();
-
             while (itDirtyRecords.hasNext()) {
                 Record dirtyRecord = itDirtyRecords.next();
                 if (dirtyRecord.getWriteTime() > now) {
@@ -2676,7 +2655,7 @@ public final class ConcurrentMapManager extends BaseManager {
             }
             req.value = null;
             record.setCopyCount((int) req.longValue);
-            if (req.lockCount > 0) {
+            if (req.lockCount >= 0) {
                 record.setLockAddress(req.lockAddress);
                 record.setLockThreadId(req.lockThreadId);
                 record.setLockCount(req.lockCount);
@@ -2703,7 +2682,6 @@ public final class ConcurrentMapManager extends BaseManager {
             } else if (record.getMultiValues() != null) {
                 removed = true;
             }
-
             if (removed) {
                 fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record);
                 record.setVersion(record.getVersion() + 1);
@@ -2717,10 +2695,8 @@ public final class ConcurrentMapManager extends BaseManager {
                     record.setMultiValues(null);
                 }
             }
-
             req.version = record.getVersion();
             req.longValue = record.getCopyCount();
-
             if (record.isRemovable()) {
                 markAsRemoved(record);
             }
@@ -2762,7 +2738,6 @@ public final class ConcurrentMapManager extends BaseManager {
             }
             req.version = record.getVersion();
             req.longValue = record.getCopyCount();
-
             if (record.isRemovable()) {
                 markAsRemoved(record);
             }
@@ -2946,7 +2921,6 @@ public final class ConcurrentMapManager extends BaseManager {
         fireScheduledActions(record);
     }
 
-
     public static class Blocks extends AbstractRemotelyProcessable {
         List<Block> lsBlocks = new ArrayList<Block>(BLOCK_COUNT);
 
@@ -2987,7 +2961,6 @@ public final class ConcurrentMapManager extends BaseManager {
         public Entries(String name, ClusterOperation operation) {
             this.name = name;
             this.operation = operation;
-
             TransactionImpl txn = ThreadContext.get().callContext.txn;
             this.checkValue = (InstanceType.MAP == getInstanceType(name)) &&
                     (operation == CONCURRENT_MAP_ITERATE_VALUES
@@ -3085,7 +3058,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 } else {
                     ((FactoryImpl.IRemoveAwareProxy) node.factory.getOrCreateProxyByName(name)).removeKey(entry.getKey());
                 }
-
                 it.remove();
             }
         }
@@ -3114,7 +3086,6 @@ public final class ConcurrentMapManager extends BaseManager {
             throw new UnsupportedOperationException();
         }
 
-
         public boolean remove(Object o) {
             throw new UnsupportedOperationException();
         }
@@ -3134,9 +3105,7 @@ public final class ConcurrentMapManager extends BaseManager {
         public Object[] toArray(Object[] a) {
             throw new UnsupportedOperationException();
         }
-
     }
-
 
     public static class CMapEntry implements MapEntry, DataSerializable {
         private long cost = 0;
@@ -3249,12 +3218,9 @@ public final class ConcurrentMapManager extends BaseManager {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-
             CMapEntry cMapEntry = (CMapEntry) o;
-
             return !(key != null ? !key.equals(cMapEntry.key) : cMapEntry.key != null) &&
                     !(name != null ? !name.equals(cMapEntry.name) : cMapEntry.name != null);
-
         }
 
         @Override
@@ -3281,7 +3247,6 @@ public final class ConcurrentMapManager extends BaseManager {
             return sb.toString();
         }
     }
-
 
     public static class Values implements Collection, DataSerializable {
         List<Data> lsValues = null;
