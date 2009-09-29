@@ -90,10 +90,6 @@ public final class Serializer {
     }
 
     public Object readObject(Data data) {
-        return readObject(data, true);
-    }
-
-    public Object readObject(Data data, boolean purgeData) {
         if (data == null || data.size() == 0)
             return null;
         try {

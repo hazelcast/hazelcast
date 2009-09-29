@@ -91,6 +91,9 @@ public class QueryService implements Runnable {
         void reset() {
             ownedRecords.clear();
             mapValueIndex.clear();
+            if(mapIndexes != null) {
+                mapIndexes.clear();
+            }
         }
 
         void addNewValueIndex(int newValueHash, Record record) {

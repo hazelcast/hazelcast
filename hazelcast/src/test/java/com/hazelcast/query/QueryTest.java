@@ -26,11 +26,8 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 
 public class QueryTest {
 
@@ -84,11 +81,9 @@ public class QueryTest {
         for (int i = 0; i < 5000; i++) {
             imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
         }
-
         long start = System.currentTimeMillis();
         Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active=true and age=23"));
         long tookWithout = (System.currentTimeMillis() - start);
-
         assertEquals(83, entries.size());
         for (Map.Entry entry : entries) {
             Employee c = (Employee) entry.getValue();
@@ -100,13 +95,10 @@ public class QueryTest {
         imap.addIndex("name", false);
         imap.addIndex("age", true);
         imap.addIndex("active", false);
-
         for (int i = 0; i < 5000; i++) {
             imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
         }
-
         start = System.currentTimeMillis();
-
         entries = imap.entrySet(new SqlPredicate("active and age=23"));
         long tookWithIndex = (System.currentTimeMillis() - start);
         assertEquals(83, entries.size());
@@ -118,7 +110,6 @@ public class QueryTest {
         assertTrue(tookWithIndex < (tookWithout / 2));
     }
 
-
     @Test
     public void testIndexPerformance() {
         HazelcastInstance h1 = newInstance();
@@ -126,14 +117,11 @@ public class QueryTest {
         for (int i = 0; i < 5000; i++) {
             imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
         }
-
         EntryObject e = new PredicateBuilder().getEntryObject();
         Predicate predicate = e.is("active").and(e.get("age").equal(23));
-
         long start = System.currentTimeMillis();
         Set<Map.Entry> entries = imap.entrySet(predicate);
         long tookWithout = (System.currentTimeMillis() - start);
-
         assertEquals(83, entries.size());
         for (Map.Entry entry : entries) {
             Employee c = (Employee) entry.getValue();
@@ -145,14 +133,11 @@ public class QueryTest {
         imap.addIndex("name", false);
         imap.addIndex("age", true);
         imap.addIndex("active", false);
-
         for (int i = 0; i < 5000; i++) {
             imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
         }
-
         e = new PredicateBuilder().getEntryObject();
         predicate = e.is("active").and(e.get("age").equal(23));
-
         start = System.currentTimeMillis();
         entries = imap.entrySet(predicate);
         long tookWithIndex = (System.currentTimeMillis() - start);
@@ -185,6 +170,72 @@ public class QueryTest {
     }
 
     @Test
+    public void testTwoMembersWithIndexesAndShutdown() {
+        HazelcastInstance h1 = newInstance();
+        HazelcastInstance h2 = newInstance();
+        IMap imap = h1.getMap("employees");
+        imap.addIndex("name", false);
+        imap.addIndex("age", true);
+        imap.addIndex("active", false);
+        doFunctionalQueryTest(imap);
+        assertEquals(101, imap.size());
+        h2.shutdown();
+        assertEquals(101, imap.size());
+        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and age=23"));
+        assertEquals(2, entries.size());
+        for (Map.Entry entry : entries) {
+            Employee c = (Employee) entry.getValue();
+            assertEquals(c.getAge(), 23);
+            assertTrue(c.isActive());
+        }
+    }
+
+    @Test
+    public void testTwoMembersWithIndexesAndShutdown2() {
+        HazelcastInstance h1 = newInstance();
+        HazelcastInstance h2 = newInstance();
+        IMap imap = h1.getMap("employees");
+        imap.addIndex("name", false);
+        imap.addIndex("age", true);
+        imap.addIndex("active", false);
+        doFunctionalQueryTest(imap);
+        assertEquals(101, imap.size());
+        h1.shutdown();
+        imap = h2.getMap("employees");        
+        assertEquals(101, imap.size());
+        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and age=23"));
+        assertEquals(2, entries.size());
+        for (Map.Entry entry : entries) {
+            Employee c = (Employee) entry.getValue();
+            assertEquals(c.getAge(), 23);
+            assertTrue(c.isActive());
+        }
+    }
+
+    @Test
+    public void testTwoMembersWithIndexesAndShutdown3() {
+        HazelcastInstance h1 = newInstance();
+        IMap imap = h1.getMap("employees");
+        imap.addIndex("name", false);
+        imap.addIndex("age", true);
+        imap.addIndex("active", false);
+        doFunctionalQueryTest(imap);
+        assertEquals(101, imap.size());
+        HazelcastInstance h2 = newInstance();
+        assertEquals(101, imap.size());
+        h1.shutdown();
+        imap = h2.getMap("employees");
+        assertEquals(101, imap.size());
+        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and age=23"));
+        assertEquals(2, entries.size());
+        for (Map.Entry entry : entries) {
+            Employee c = (Employee) entry.getValue();
+            assertEquals(c.getAge(), 23);
+            assertTrue(c.isActive());
+        }
+    }
+
+    @Test
     public void testSecondMemberAfterAddingIndexes() {
         HazelcastInstance h1 = newInstance();
         IMap imap = h1.getMap("employees");
@@ -201,7 +252,6 @@ public class QueryTest {
         for (int i = 3; i < 103; i++) {
             imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
         }
-
         Set<Map.Entry> entries = imap.entrySet();
         assertEquals(102, entries.size());
         int itCount = 0;
@@ -210,7 +260,6 @@ public class QueryTest {
             itCount++;
         }
         assertEquals(102, itCount);
-
         entries = imap.entrySet(new SqlPredicate("active=true and age=23"));
         assertEquals(3, entries.size());
         for (Map.Entry entry : entries) {
@@ -218,9 +267,7 @@ public class QueryTest {
             assertEquals(c.getAge(), 23);
             assertTrue(c.isActive());
         }
-
         imap.remove("2");
-
         entries = imap.entrySet(new SqlPredicate("active=true and age=23"));
         assertEquals(2, entries.size());
         for (Map.Entry entry : entries) {
@@ -230,14 +277,12 @@ public class QueryTest {
         }
     }
 
-
     public void doFunctionalQueryTest(IMap imap) {
         imap.put("1", new Employee("joe", 33, false, 14.56));
         imap.put("2", new Employee("ali", 23, true, 15.00));
         for (int i = 3; i < 103; i++) {
             imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
         }
-
         Set<Map.Entry> entries = imap.entrySet();
         assertEquals(102, entries.size());
         int itCount = 0;
@@ -246,10 +291,8 @@ public class QueryTest {
             itCount++;
         }
         assertEquals(102, itCount);
-
         EntryObject e = new PredicateBuilder().getEntryObject();
         Predicate predicate = e.is("active").and(e.get("age").equal(23));
-
         entries = imap.entrySet(predicate);
         assertEquals(3, entries.size());
         for (Map.Entry entry : entries) {
@@ -257,9 +300,7 @@ public class QueryTest {
             assertEquals(c.getAge(), 23);
             assertTrue(c.isActive());
         }
-
         imap.remove("2");
-
         entries = imap.entrySet(predicate);
         assertEquals(2, entries.size());
         for (Map.Entry entry : entries) {

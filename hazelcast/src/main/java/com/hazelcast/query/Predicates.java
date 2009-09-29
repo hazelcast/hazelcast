@@ -161,7 +161,6 @@ public class Predicates {
         }
     }
 
-
     public static class NotPredicate extends AbstractPredicate {
         Predicate predicate;
 
@@ -193,7 +192,6 @@ public class Predicates {
             return sb.toString();
         }
     }
-
 
     public static class InPredicate extends AbstractPredicate implements IndexAwarePredicate {
         Expression first;
@@ -495,7 +493,6 @@ public class Predicates {
             predicates = new Predicate[]{first, second};
         }
 
-
         public AndOrPredicate(boolean and, Predicate... predicates) {
             this.and = and;
             this.predicates = predicates;
@@ -593,7 +590,6 @@ public class Predicates {
                 return sb.toString();
             }
         };
-
     }
 
     public static Predicate and(Predicate x, Predicate y) {
@@ -603,7 +599,6 @@ public class Predicates {
     public static Predicate not(Predicate predicate) {
         return new NotPredicate(predicate);
     }
-
 
     public static Predicate or(Predicate x, Predicate y) {
         return new AndOrPredicate(false, x, y);
@@ -658,7 +653,6 @@ public class Predicates {
         return new GetExpressionImpl(methodName);
     }
 
-
     public static abstract class AbstractExpression extends SerializationHelper implements Expression {
 
     }
@@ -668,7 +662,7 @@ public class Predicates {
     }
 
     public static class GetExpressionImpl<T> extends AbstractExpression implements GetExpression, DataSerializable {
-        Getter getter = null;
+        transient Getter getter = null;
         String input;
         List<GetExpressionImpl<T>> ls = null;
 
@@ -724,7 +718,6 @@ public class Predicates {
                         } catch (NoSuchFieldException ignored) {
                         }
                     }
-
                     if (getter == null) {
                         throw new RuntimeException("There is no method of field matching " + input);
                     }
@@ -774,7 +767,6 @@ public class Predicates {
             }
         }
 
-
         public void writeData(DataOutput out) throws IOException {
             out.writeUTF(input);
         }
@@ -787,11 +779,8 @@ public class Predicates {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-
             GetExpressionImpl that = (GetExpressionImpl) o;
-
             if (!input.equals(that.input)) return false;
-
             return true;
         }
 
@@ -805,5 +794,4 @@ public class Predicates {
             return input;
         }
     }
-
 }

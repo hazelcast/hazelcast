@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 public final class ThreadContext {
 
     private final static Logger logger = Logger.getLogger(ThreadContext.class.getName());
@@ -135,11 +134,7 @@ public final class ThreadContext {
     }
 
     public Object toObject(final Data data) {
-        return serializer.readObject(data, true);
-    }
-
-    public Object toObject(final Data data, boolean purgeData) {
-        return serializer.readObject(data, purgeData);
+        return serializer.readObject(data);
     }
 
     public CallCache getCallCache(FactoryImpl factory) {

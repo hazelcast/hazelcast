@@ -42,7 +42,7 @@ public class GeneralTest {
         assertEquals(request.value, hardCopy.value);
         assertTrue(hardCopy.key.size() > 0);
         assertTrue(hardCopy.value.size() > 0);
-        assertEquals("value", toObject(hardCopy.value, false));
+        assertEquals("value", toObject(hardCopy.value));
 
         hardCopy = new Request();
         hardCopy.setFromRequest(request, true);
@@ -51,7 +51,7 @@ public class GeneralTest {
         assertEquals(request.value, hardCopy.value);
         assertTrue(hardCopy.key.size() > 0);
         assertTrue(hardCopy.value.size() > 0);
-        assertEquals("value", toObject(hardCopy.value, false));
+        assertEquals("value", toObject(hardCopy.value));
 
     }
 }

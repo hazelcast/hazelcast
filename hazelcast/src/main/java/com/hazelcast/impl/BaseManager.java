@@ -1290,7 +1290,7 @@ public abstract class BaseManager {
 
         public Object getKey() {
             if (key == null && dataKey != null) {
-                key = toObject(dataKey, false);
+                key = toObject(dataKey);
             }
             return key;
         }
@@ -1298,7 +1298,7 @@ public abstract class BaseManager {
         public Object getValue() {
             if (value == null) {
                 if (dataValue != null) {
-                    value = toObject(dataValue, false);
+                    value = toObject(dataValue);
                 } else if (collection) {
                     value = key;
                 }

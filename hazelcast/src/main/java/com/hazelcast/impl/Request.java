@@ -135,6 +135,8 @@ class Request {
         attachment = req.attachment;
         response = req.response;
         scheduled = req.scheduled;
+        indexes = req.indexes;
+        indexTypes = req.indexTypes;
     }
 
     public void setFromPacket(final Packet packet) {

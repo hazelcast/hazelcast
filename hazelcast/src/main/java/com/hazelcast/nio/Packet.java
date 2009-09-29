@@ -21,9 +21,7 @@ import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Constants;
 import com.hazelcast.impl.ThreadContext;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 
 public final class Packet {
 
@@ -146,7 +144,6 @@ public final class Packet {
         totalSize += bbHeader.limit();
         totalSize += key == null ? 0 : key.size;
         totalSize += value == null ? 0 : value.size;
-
     }
 
     public void read() {
@@ -212,20 +209,17 @@ public final class Packet {
         bbHeader.flip();
     }
 
-
     public final boolean writeToSocketBuffer(ByteBuffer dest) {
         totalWritten += BufferUtil.copyToDirectBuffer(bbSizes, dest);
         totalWritten += BufferUtil.copyToDirectBuffer(bbHeader, dest);
         if (key != null && key.size() > 0) {
             totalWritten += BufferUtil.copyToDirectBuffer(key.buffer, dest);
         }
-
         if (value != null && value.size() > 0) {
             totalWritten += BufferUtil.copyToDirectBuffer(value.buffer, dest);
         }
         return totalWritten >= totalSize;
     }
-
 
     public final boolean read(ByteBuffer bb) {
         while (!sizeRead && bb.hasRemaining() && bbSizes.hasRemaining()) {
@@ -245,16 +239,13 @@ public final class Packet {
             while (bb.hasRemaining() && bbHeader.hasRemaining()) {
                 BufferUtil.copyToHeapBuffer(bb, bbHeader);
             }
-
             while (bb.hasRemaining() && key.shouldRead()) {
                 key.read(bb);
             }
-
             while (bb.hasRemaining() && value.shouldRead()) {
                 value.read(bb);
             }
         }
-
         if (sizeRead && !bbHeader.hasRemaining() && !key.shouldRead() && !value.shouldRead()) {
             sizeRead = false;
             key.postRead();
@@ -285,10 +276,5 @@ public final class Packet {
         if (lockAddress == null) {
             lockAddress = conn.getEndPoint();
         }
-    }
-
-    public void setNoData() {
-        key.setNoData();
-        value.setNoData();
     }
 }

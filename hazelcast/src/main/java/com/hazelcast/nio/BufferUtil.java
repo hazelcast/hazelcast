@@ -64,12 +64,7 @@ public final class BufferUtil {
     public static Object toObject(Data data) {
         return ThreadContext.get().toObject(data);
     }
-
-    public static Object toObject(Data data, boolean purgeData) {
-        return ThreadContext.get().toObject(data, purgeData);
-    }
-
-
+    
     public static Data doHardCopy(Data from) {
         if (from == null || from.size == 0)
             return null;

@@ -24,9 +24,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public final class Data implements DataSerializable {
-    /**
-     *
-     */
+
     private static final long serialVersionUID = 5382795596398809726L;
 
     public ByteBuffer buffer = null;
@@ -55,13 +53,9 @@ public final class Data implements DataSerializable {
         }
     }
 
-    public Data (ByteBuffer bb) {
+    public Data(ByteBuffer bb) {
         this.size = bb.array().length;
         this.buffer = bb;
-    }
-
-
-    public void setNoData() {
     }
 
     public Data(Data data) {
@@ -78,7 +72,6 @@ public final class Data implements DataSerializable {
     public void read(ByteBuffer src) {
         BufferUtil.copyToHeapBuffer(src, buffer);
     }
-
 
     public void postRead() {
         if (buffer != null) {
@@ -136,6 +129,4 @@ public final class Data implements DataSerializable {
     public String toString() {
         return "Data size = " + size;
     }
-
-
 }

@@ -499,7 +499,7 @@ public class Record implements MapEntry {
         this.copyCount = copyCount;
     }
 
-    static class RecordEntry implements MapEntry {
+    public static class RecordEntry implements MapEntry {
 
             private final Record record;
 
@@ -512,11 +512,11 @@ public class Record implements MapEntry {
             }
 
             public Object getKey() {
-                return toObject(record.getKey(), false);
+                return toObject(record.getKey());
             }
 
             public Object getValue() {
-                return toObject(record.getValue(), false);
+                return toObject(record.getValue());
             }
 
             public Object setValue(Object value) {

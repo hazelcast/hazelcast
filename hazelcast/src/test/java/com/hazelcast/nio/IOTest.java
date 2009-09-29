@@ -31,12 +31,12 @@ public class IOTest {
         Data hardCopy = doHardCopy(data);
 
         assertEquals(data, hardCopy);
-        assertEquals("value", toObject(hardCopy, false));
+        assertEquals("value", toObject(hardCopy));
         assertEquals(data, hardCopy);
         assertEquals(data.size(), hardCopy.size());
         assertTrue(hardCopy.size() > 0);
 
-        assertEquals("value", toObject(hardCopy, true));
+        assertEquals("value", toObject(hardCopy));
         assertTrue(hardCopy.size() > 0);
     }
 }

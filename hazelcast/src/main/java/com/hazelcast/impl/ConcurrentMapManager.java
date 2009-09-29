@@ -843,15 +843,22 @@ public final class ConcurrentMapManager extends BaseManager {
                 Index[] indexes = cmap.indexes;
                 byte[] indexTypes = cmap.indexTypes;
                 long[] newIndexes = new long[indexCount];
+                boolean typesNew = false;
                 if (indexTypes == null) {
                     indexTypes = new byte[indexCount];
+                    typesNew = true;
                 }
                 for (int i = 0; i < indexes.length; i++) {
                     Index index = indexes[i];
                     if (index != null) {
                         newIndexes[i] = index.extractLongValue(value);
-                        indexTypes[i] = index.getIndexType();
+                        if (typesNew) {
+                            indexTypes[i] = index.getIndexType();
+                        }
                     }
+                }
+                if (typesNew) {
+                    cmap.indexTypes = indexTypes;
                 }
                 request.setIndexes(newIndexes, indexTypes);
             }
@@ -1394,6 +1401,10 @@ public final class ConcurrentMapManager extends BaseManager {
                 request.value = record.getValue();
             }
         }
+        if (record.getIndexes() != null) {
+            CMap cmap = getMap(record.getName());
+            request.setIndexes(record.getIndexes(), cmap.indexTypes);
+        }
     }
 
     boolean rightRemoteTarget(Packet packet) {
@@ -1404,7 +1415,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 Block block = getOrCreateBlock(packet.key);
                 sendBlockInfo(block, packet.conn.getEndPoint());
             }
-            packet.setNoData();
             sendRedoResponse(packet);
         }
         return right;
@@ -1551,9 +1561,8 @@ public final class ConcurrentMapManager extends BaseManager {
                     request.lockCount = record.getLockCount();
                     fireScheduledActions(record);
                 }
-                logger.log(Level.FINEST, unlocked + " now lock count " + record.getLockCount() + " lockthreadId " +record.getLockThreadId());
+                logger.log(Level.FINEST, unlocked + " now lock count " + record.getLockCount() + " lockthreadId " + record.getLockThreadId());
             }
-
             if (unlocked) {
                 request.response = Boolean.TRUE;
             } else {
@@ -1656,16 +1665,16 @@ public final class ConcurrentMapManager extends BaseManager {
             CMap cmap = maps.get(request.name);
             if (request.operation == CONCURRENT_MAP_GET) {
                 // load the entry
-                Object value = cmap.loader.load(toObject(request.key, false));
+                Object value = cmap.loader.load(toObject(request.key));
                 if (value != null) {
                     request.value = toData(value);
                 }
             } else if (request.operation == CONCURRENT_MAP_PUT || request.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
                 //store the entry
-                cmap.store.store(toObject(request.key, false), toObject(request.value, false));
+                cmap.store.store(toObject(request.key), toObject(request.value));
             } else if (request.operation == CONCURRENT_MAP_REMOVE) {
                 // remove the entry
-                cmap.store.delete(toObject(request.key, false));
+                cmap.store.delete(toObject(request.key));
             }
         }
 
@@ -1930,7 +1939,7 @@ public final class ConcurrentMapManager extends BaseManager {
             } else {
                 if (record.isActive()) {
                     try {
-                        Object value = toObject(record.getValue(), false);
+                        Object value = toObject(record.getValue());
                         record.setLastAccessed();
                         return value;
                     } catch (Throwable t) {
@@ -1961,7 +1970,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public void doPut(Record record) {
-            Object key = toObject(record.getKey(), false);
+            Object key = toObject(record.getKey());
             mapCache.put(key, record);
         }
 
@@ -2093,16 +2102,20 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public void own(Request req) {
+            if (req.key == null || req.key.size() == 0) {
+                throw new RuntimeException("Key cannot be null " + req.key);
+            }
             if (req.value == null) {
                 req.value = new Data();
             }
             Record record = getRecord(req.key);
+            boolean created = false;
             if (record == null) {
                 record = toRecord(req);
-                updateIndexes(true, req, record);
+                created = true;
             }
+            updateIndexes(created, req, record);
             record.setVersion(req.version);
-            logger.log(Level.FINEST, req.name + " own lockCount:" + record.getLockCount() + ", threadId:" + record.getLockThreadId());
         }
 
         public boolean isMultiMap() {
@@ -2143,17 +2156,25 @@ public final class ConcurrentMapManager extends BaseManager {
                 if (rec.getVersion() == 0) {
                     rec.setVersion(req.version);
                 }
+                if (req.indexes != null) {
+                    if (req.indexTypes == null) {
+                        throw new RuntimeException("index types cannot be null!");
+                    }
+                    if (req.indexes.length != req.indexTypes.length) {
+                        throw new RuntimeException("index and type lenghts do not match");
+                    }
+                    rec.setIndexes(req.indexes);
+                    if (indexTypes == null) {
+                        indexTypes = req.indexTypes;
+                    } else {
+                        if (indexTypes.length != req.indexTypes.length) {
+                            throw new RuntimeException("Index types do not match.");
+                        }
+                    }
+                }
             } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE) {
                 Record record = getRecord(req.key);
                 if (record != null) {
-                    if (record.getValue() != null) {
-                        record.getValue().setNoData();
-                    }
-                    if (record.getMultiValues() != null) {
-                        for (Data value : record.getMultiValues()) {
-                            value.setNoData();
-                        }
-                    }
                     if (record.getCopyCount() > 0) {
                         record.decrementCopyCount();
                     }
@@ -2182,7 +2203,6 @@ public final class ConcurrentMapManager extends BaseManager {
                                     Data value = itValues.next();
                                     if (req.value.equals(value)) {
                                         itValues.remove();
-                                        value.setNoData();
                                     }
                                 }
                             }
@@ -2324,7 +2344,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
             }
             if (returnValue != null) {
-                req.key.setNoData();
                 req.key = null;
             }
             return returnValue;
@@ -2362,7 +2381,6 @@ public final class ConcurrentMapManager extends BaseManager {
                             Data value = itValues.next();
                             if (req.value.equals(value)) {
                                 itValues.remove();
-                                value.setNoData();
                                 removed = true;
                             }
                         }
@@ -2474,16 +2492,13 @@ public final class ConcurrentMapManager extends BaseManager {
                 request.indexes = null;
                 byte[] indexTypes = request.indexTypes;
                 request.indexTypes = null;
-                node.queryService.updateIndex(name, newIndexes, indexTypes, record, valueHash);
-            } else {
-                if (created || record.getValueHash() != valueHash) {
-                    node.queryService.updateIndex(name, null, null, record, valueHash);
+                if (newIndexes.length != indexTypes.length) {
+                    throw new RuntimeException();
                 }
+                node.queryService.updateIndex(name, newIndexes, indexTypes, record, valueHash);
+            } else if (created || record.getValueHash() != valueHash) {
+                node.queryService.updateIndex(name, null, null, record, valueHash);
             }
-        }
-
-        void garbage(Data data) {
-            data.setNoData();
         }
 
         void startAsyncStoreWrite() {
@@ -2643,9 +2658,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 req.key = null;
             } else {
                 if (req.value != null) {
-                    if (record.getValue() != null) {
-                        record.getValue().setNoData();
-                    }
                     if (isMultiMap()) {
                         record.addValue(req.value);
                     } else {
@@ -2665,7 +2677,6 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public boolean removeItem(Request req) {
             Record record = mapRecords.get(req.key);
-            req.key.setNoData();
             req.key = null;
             if (record == null) {
                 return false;
@@ -2686,12 +2697,8 @@ public final class ConcurrentMapManager extends BaseManager {
                 fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record);
                 record.setVersion(record.getVersion() + 1);
                 if (record.getValue() != null) {
-                    record.getValue().setNoData();
                     record.setValue(null);
                 } else if (record.getMultiValues() != null) {
-                    for (Data v : record.getMultiValues()) {
-                        v.setNoData();
-                    }
                     record.setMultiValues(null);
                 }
             }
@@ -2742,7 +2749,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 markAsRemoved(record);
             }
             if (oldValue != null) {
-                req.key.setNoData();
                 req.key = null;
             }
             return oldValue;
@@ -2811,15 +2817,6 @@ public final class ConcurrentMapManager extends BaseManager {
             Record removedRecord = mapRecords.remove(record.getKey());
             if (removedRecord != record) {
                 throw new RuntimeException(removedRecord + " is removed but should have removed " + record);
-            }
-            garbage(record.getKey());
-            if (record.getValue() != null) {
-                garbage(record.getValue());
-            }
-            if (record.getMultiValues() != null) {
-                for (Data data : record.getMultiValues()) {
-                    garbage(data);
-                }
             }
         }
 
