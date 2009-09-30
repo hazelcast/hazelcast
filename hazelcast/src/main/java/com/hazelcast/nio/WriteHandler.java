@@ -239,10 +239,10 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             }
             packet.totalWritten += encryptAndWriteToSocket(packet.bbSizes);
             packet.totalWritten += encryptAndWriteToSocket(packet.bbHeader);
-            if (packet.key.size() > 0 && socketBB.hasRemaining()) {
+            if (packet.key != null && packet.key.size() > 0 && socketBB.hasRemaining()) {
                 packet.totalWritten += encryptAndWriteToSocket(packet.key.buffer);
             }
-            if (packet.value.size() > 0 && socketBB.hasRemaining()) {
+            if (packet.value != null && packet.value.size() > 0 && socketBB.hasRemaining()) {
                 packet.totalWritten += encryptAndWriteToSocket(packet.value.buffer);
             }
             return packet.totalWritten >= packet.totalSize;
@@ -322,10 +322,11 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                 sizeWritten = true;
             }
             packet.totalWritten += encryptAndWriteToSocket(packet.bbSizes);
-            if (packet.key.size() > 0 && socketBB.hasRemaining()) {
+            packet.totalWritten += encryptAndWriteToSocket(packet.bbHeader);
+            if (packet.key != null && packet.key.size() > 0 && socketBB.hasRemaining()) {
                 packet.totalWritten += encryptAndWriteToSocket(packet.key.buffer);
             }
-            if (packet.value.size() > 0 && socketBB.hasRemaining()) {
+            if (packet.value != null && packet.value.size() > 0 && socketBB.hasRemaining()) {
                 packet.totalWritten += encryptAndWriteToSocket(packet.value.buffer);
             }
             boolean complete = packet.totalWritten >= packet.totalSize;

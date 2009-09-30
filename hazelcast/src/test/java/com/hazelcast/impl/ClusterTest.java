@@ -2,6 +2,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.nio.Address;
@@ -244,15 +245,13 @@ public class ClusterTest {
         assertEquals(1, mm2.keySet().size());
     }
 
-
     /**
      * Test case for the issue 144
      * The backup copies were not releasing the locks
-     *
+     * <p/>
      * Fix: on backup(request)
      * make sure you don't ignore the lock-backup operations where
      * req.backupCount == 0 which is actually an unlock
-     *
      */
     @Test(timeout = 60000)
     public void testLockForeverOnBackups() throws Exception {
@@ -281,5 +280,31 @@ public class ClusterTest {
         Thread.sleep(1000);
         h.shutdown();
         assertTrue(latch.await(5, TimeUnit.SECONDS));
+    }
+
+    /**
+     * Simple symmetric encryption test.
+     * 
+     */
+    @Test(timeout = 60000)
+    public void testSymmetricEncryption() throws Exception {
+        Config c = new XmlConfigBuilder().build();
+        SymmetricEncryptionConfig encryptionConfig = new SymmetricEncryptionConfig();
+        encryptionConfig.setEnabled(true);
+        c.getNetworkConfig().setSymmetricEncryptionConfig(encryptionConfig);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
+        IMap map1 = h1.getMap("default");
+        IMap map2 = h2.getMap("default");
+        for (int i = 0; i < 3; i++) {
+            map1.put(i, i);
+        }
+        assertEquals(3, map1.size());
+        assertEquals(3, map2.size());
+        for (int i = 0; i < 3; i++) {
+            map2.put(i, i);
+        }
+        assertEquals(3, map1.size());
+        assertEquals(3, map2.size());
     }
 }
