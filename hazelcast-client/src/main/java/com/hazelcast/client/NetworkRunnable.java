@@ -19,12 +19,19 @@ package com.hazelcast.client;
 
 import java.util.Map;
 
+import com.hazelcast.client.ConnectionManager;
+
 public class NetworkRunnable {
 
 	protected Map<Long, Call> callMap;
+	protected ConnectionManager connectionManager;
 
 	public void setCallMap(Map<Long, Call> calls) {
 		this.callMap = calls;
+	}
+	public void setConnectionManager(ConnectionManager connectionManager) {
+		this.connectionManager = connectionManager;
+		
 	}
 
 }

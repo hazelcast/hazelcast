@@ -39,23 +39,18 @@ public class ClientProxy {
 				e.printStackTrace();
 			}
 		}
+	    Exception e = c.getException();
+	    if(e!=null){
+	    	throw new RuntimeException(e);
+	    }
 	    
 	    Packet response = c.getResponse();
-	    if(response==null){
-	    	doCall(c);
-	    }
+	    
 		return response;
-	}
-	
-	protected void call(Packet request) {
-		Call c = createCall(request);
-		out.enQueue(c);
-	}
-	
+	}	
 
 	private Call createCall(Packet request) {
 		Call c = new Call();
-	    c.setId(Call.callIdGen.incrementAndGet());
 	    c.setRequest(request);
 		return c;
 	}

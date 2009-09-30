@@ -24,18 +24,14 @@ import java.net.Socket;
 
 public class PacketWriter extends PacketHandler{
 
-	public void write(Packet request) {
-		try {
-			Socket socket = getConnection().getSocket();
-			DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-			request.writeTo(dos);
-			dos.flush();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		
+	public void write(Packet request) throws IOException {
+		write(getConnection(),request);
+	}
+	public void write(Connection connection, Packet request) throws IOException {
+		Socket socket = connection.getSocket();
+		DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+		request.writeTo(dos);
+		dos.flush();
 	}
 
 }

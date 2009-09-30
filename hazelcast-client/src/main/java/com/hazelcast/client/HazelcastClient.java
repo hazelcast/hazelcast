@@ -18,54 +18,36 @@
 package com.hazelcast.client;
 
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
-import com.hazelcast.client.cluster.Bind;
 import com.hazelcast.client.core.IMap;
 import com.hazelcast.client.core.Transaction;
-import com.hazelcast.client.impl.ClusterOperation;
 import com.hazelcast.client.impl.ListenerManager;
-import com.hazelcast.client.nio.Address;
 
 public class HazelcastClient {
-	Map<Long,Call> calls  = new HashMap<Long, Call>();
+	final Map<Long,Call> calls  = new HashMap<Long, Call>();
 	ListenerManager listenerManager = new ListenerManager();
 	OutRunnable out;
 	InRunnable in;
-	PacketWriter writer;
-	PacketReader reader;
-	Connection connection;
-	private List<InetSocketAddress> clusterMembers = new ArrayList<InetSocketAddress>();
+	private ConnectionManager connectionManager;
 	
 	private HazelcastClient(InetSocketAddress[] clusterMembers) {
-		this.clusterMembers.addAll(Arrays.asList(clusterMembers));
-		Collections.shuffle(this.clusterMembers);
-		writer = new PacketWriter();
-		reader = new PacketReader();
+		connectionManager = new ConnectionManager(clusterMembers);
 		
-		connection = searchForAvailableConnection();
-		writer.setConnection(connection);
-		reader.setConnection(connection);
-
-		out = new OutRunnable();
+		
+		out = new OutRunnable(new PacketWriter());
 		out.setCallMap(calls);
-		out.setPacketWriter(writer);
+		out.setConnectionManager(connectionManager);
 		new Thread(out).start();
 		
-		in = new InRunnable(this, reader);
+		in = new InRunnable(listenerManager, new PacketReader());
 		in.setCallMap(calls);
+		in.setConnectionManager(connectionManager);
 		new Thread(in).start();
 		
-		sendBindRequest(connection.getAddress(), connection);
-				
+		connectionManager.setOutRunnable(out);
+
 		new Thread(listenerManager).start();
 	}
 
@@ -73,21 +55,6 @@ public class HazelcastClient {
 		return new HazelcastClient(clusterMembers);
 	}
 	
-	private void sendBindRequest(InetSocketAddress address,
-			Connection connection) {
-		Bind b = null;
-		try {
-			b = new Bind(new Address(address.getHostName(),connection.getSocket().getLocalPort()));
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
-		Packet bind = new Packet();
-		bind.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, Serializer.toByte(null), Serializer.toByte(b));
-		Call cBind = new Call();
-		cBind.setRequest(bind);
-		cBind.setId(Call.callIdGen.incrementAndGet());
-		out.enQueue(cBind);
-	}
 	
 	
 
@@ -104,63 +71,11 @@ public class HazelcastClient {
 		return proxy;
 	}
 
-	public void attachedClusterMemeberConnectionLost() {
-		System.out.println("The connection to member : "+ clusterMembers.get(0) + " is lost");
-		popAndPush(clusterMembers);
-		
-		connection = searchForAvailableConnection();
-		sendBindRequest(connection.getAddress(), connection);
-		reader.setConnection(connection);
-		writer.setConnection(connection);
-		notifyWaitingCalls();
+	public void setConnectionManager(ConnectionManager connectionManager) {
+		this.connectionManager = connectionManager;
 	}
 
-	private void popAndPush(List<InetSocketAddress> clusterMembers) {
-		InetSocketAddress address =clusterMembers.remove(0); 
-		clusterMembers.add(address);
+	public ConnectionManager getConnectionManager() {
+		return connectionManager;
 	}
-
-	private Connection searchForAvailableConnection() {
-		Connection connection =null;
-		int counter = clusterMembers.size();
-		while(counter>0){
-			try{
-				connection = getNextConnection();
-				break;
-			}catch(Exception e){
-				popAndPush(clusterMembers);
-				counter--;
-			}
-		}
-		if(counter == 0){
-			throw new RuntimeException("No cluster member available to connect");
-		}
-		System.out.println("Returning connection: " + connection.getAddress());
-		return connection;
-	}
-
-	private Connection getNextConnection(){
-		InetSocketAddress address = clusterMembers.get(0);
-		Connection connection  = new Connection(address);
-		return connection;
-	}
-
-	private void notifyWaitingCalls() {
-		Collection<Call> cc = calls.values();
-		List<Call> removed = new ArrayList<Call>();
-		removed.addAll(cc);
-		for (Iterator<Call> iterator = removed.iterator(); iterator.hasNext();) {
-			Call call =  iterator.next();
-			calls.remove(call.getId());
-			synchronized (call) {
-				call.notify();
-			}
-//			out.enQueue(call);
-		}
-	}
-	
-	public Connection getCurrentConnection(){
-		return connection;
-	}
-
 }

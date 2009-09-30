@@ -19,13 +19,20 @@ package com.hazelcast.client;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+
 public class Call {
+	
+	public Call() {
+		this.id = Call.callIdGen.incrementAndGet();
+	}
 	
 	private Packet request;
 	
 	private long id;
 	
 	private Packet response;
+
+	private Exception exception;
 	
 	public static AtomicLong callIdGen = new AtomicLong(0);
 	
@@ -49,6 +56,12 @@ public class Call {
 	}
 	public void setResponse(Packet response) {
 		this.response = response;
+	}
+	public void setException(Exception exception) {
+		this.exception = exception;
+	}
+	public Exception getException() {
+		return exception;
 	}
 	
 

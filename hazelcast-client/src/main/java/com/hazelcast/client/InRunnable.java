@@ -18,40 +18,60 @@
 package com.hazelcast.client;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 
 import com.hazelcast.client.impl.ClusterOperation;
+import com.hazelcast.client.impl.ListenerManager;
 
 
 public class InRunnable extends NetworkRunnable implements Runnable{
 	final PacketReader reader;
-	final HazelcastClient hazelcastClient;
-	public InRunnable(HazelcastClient hazelcastClient, PacketReader reader) {
+	ListenerManager listenerManager;
+	public InRunnable(ListenerManager listenerManager, PacketReader reader) {
 		this.reader = reader;
-		this.hazelcastClient = hazelcastClient;
+		this.listenerManager = listenerManager;
+	}
+	public void notifyWaitingCalls() {
+		Collection<Call> cc = callMap.values();
+		List<Call> waitingCalls = new ArrayList<Call>();
+		waitingCalls.addAll(cc);
+		for (Iterator<Call> iterator = waitingCalls.iterator(); iterator.hasNext();) {
+			Call call =  iterator.next();
+			synchronized (call) {
+				call.setException(new RuntimeException("No cluster member available to connect"));
+				call.notify();
+			}
+		}
 	}
 
 	public void run() {
-		int counter=0;
 		while(true){
-			counter++;
-			Packet packet=null;
-			try {
-				packet = reader.readPacket();
-			} catch (IOException e) {
-				e.printStackTrace();
-				hazelcastClient.attachedClusterMemeberConnectionLost();
+			Connection connection = connectionManager.getConnection();
+			if(connection == null){
+				notifyWaitingCalls();
 				continue;
 			}
-			Call c = callMap.remove(packet.getCallId());
-			if(c!=null){
-				synchronized (c) {
-					c.setResponse(packet);
-					c.notify();
+			Packet packet=null;
+			try {
+				packet = reader.readPacket(connection);
+				Call c = callMap.remove(packet.getCallId());
+				if(c!=null){
+					synchronized (c) {
+						c.setResponse(packet);
+						c.notify();
+					}
+				} else {
+					if(packet.getOperation().equals(ClusterOperation.EVENT)){
+						listenerManager.enqueue(packet);
+					}
 				}
-			} else {
-				if(packet.getOperation().equals(ClusterOperation.EVENT)){
-					hazelcastClient.listenerManager.enqueue(packet);
-				}
+			
+			} catch (IOException e) {
+				connectionManager.destroyConnection(connection);
+				continue;
 			}
 		}
 	}

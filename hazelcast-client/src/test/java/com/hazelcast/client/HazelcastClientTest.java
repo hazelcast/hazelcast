@@ -40,16 +40,16 @@ public class HazelcastClientTest {
     com.hazelcast.core.IMap<Object, Object> realMap = Hazelcast.getMap("default");
     private HazelcastClient hClient;
 
-//    @Before
-//    public void init() {
-//        hClient = HazelcastClient.getHazelcastClient(new InetSocketAddress("192.168.70.1",5701));
-//        realMap.clear();
-//    }
-
-    @After
-    public void after(){
-    	Hazelcast.shutdownAll();
+    @Before
+    public void init() {
+        hClient = HazelcastClient.getHazelcastClient(new InetSocketAddress("192.168.70.1",5701));
+        realMap.clear();
     }
+
+//    @After
+//    public void after(){
+//    	Hazelcast.shutdownAll();
+//    }
     @Test
     public void shouldBeAbleToPutToTheMap() throws InterruptedException {
         Map<String, String> clientMap = hClient.getMap("default");
@@ -186,7 +186,7 @@ public class HazelcastClientTest {
     }
     
     @Test
-    public void shouldPut1MRecordsWith1ClusterMember(){
+    public void shouldPut10000RecordsWith1ClusterMember(){
     	HazelcastClient client = HazelcastClient.getHazelcastClient(new InetSocketAddress("192.168.70.1",5701));
     	Map map = client.getMap("default");
     	long ms = System.currentTimeMillis();
@@ -199,7 +199,7 @@ public class HazelcastClientTest {
     	assertTrue(true);
     }
     
-	@Test
+	@Test(expected = RuntimeException.class)
 	public void shouldBeAbleToSwitchToAnotherMemberIfOneFails() throws InterruptedException{
 		HazelcastInstance i1 = Hazelcast.newHazelcastInstance(null);
 		HazelcastInstance i2 = Hazelcast.newHazelcastInstance(null);
@@ -212,13 +212,13 @@ public class HazelcastClientTest {
 		HazelcastClient client = HazelcastClient.getHazelcastClient(new InetSocketAddress("192.168.70.1",5704),new InetSocketAddress("192.168.70.1",5702),new InetSocketAddress("192.168.70.1",5703));
 		Map map = client.getMap("default");
 		int counter = 0;
-		while(counter<3){
-			System.out.println("putting...." + counter++);
+		while(counter<4){
 			map.put("key",counter);
 			assertEquals(counter, realMap.get("key"));
-			int id = client.getCurrentConnection().getAddress().getPort() - 5702;
+			int id = client.getConnectionManager().getConnection().getAddress().getPort() - 5702;
 			members.get(id).shutdown();
 			Thread.sleep(2000);
+			counter++;
 		}
 	}
 

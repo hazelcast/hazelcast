@@ -17,29 +17,49 @@
 
 package com.hazelcast.client;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+
 
 public class OutRunnable extends NetworkRunnable implements Runnable{
 	PacketWriter writer = new PacketWriter();
 	BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
+	
+	public OutRunnable(final PacketWriter writer) {
+		this.writer = writer;
+	}
+	
 	public void run() {
 		while(true){
-			 try {
-				Call c = queue.take();
-				callMap.put(c.getId(), c);
-				writer.write(c.getRequest());
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+			Connection connection = null;
+			Call c = null;
+			try{
+				try {
+					c = queue.take();
+					callMap.put(c.getId(), c);
+					connection = connectionManager.getConnection();
+					writer.write(connection,c.getRequest());
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			} catch (IOException io) {
+				io.printStackTrace();
+				connectionManager.destroyConnection(connection);
+				continue;
 			}
 			
 		}
 		
 	}
 	
-	public void enQueue(Call packet){
+	public void enQueue(Call call){
 		try {
-			queue.put(packet);
+			queue.put(call);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -49,5 +69,20 @@ public class OutRunnable extends NetworkRunnable implements Runnable{
 		this.writer = writer;
 		
 	}
+	public void redoWaitingCalls() {
+		Collection<Call> cc = callMap.values();
+		List<Call> waitingCalls = new ArrayList<Call>();
+		waitingCalls.addAll(cc);
+		for (Iterator<Call> iterator = waitingCalls.iterator(); iterator.hasNext();) {
+			Call call =  iterator.next();
+			redo(call);
+		}
+	}
+
+	private void redo(Call call) {
+		callMap.remove(call.getId());
+		enQueue(call);
+	}
+
 
 }

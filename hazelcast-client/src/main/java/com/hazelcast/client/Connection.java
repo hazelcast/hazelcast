@@ -34,6 +34,7 @@ import javax.net.SocketFactory;
 public class Connection {
 	private Socket socket;
 	private InetSocketAddress address;
+	private int id = -1;
 
 	/**
 	 * Creates the Socket to the given host and port
@@ -43,10 +44,11 @@ public class Connection {
 	 * @throws UnknownHostException
 	 * @throws IOException
 	 */
-	public Connection(String host, int port){
+	public Connection(String host, int port,int id){
 		try {
 			setSocket(SocketFactory.getDefault().createSocket(host, port));
 			socket.setKeepAlive(true);
+			this.id = id;
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -54,8 +56,8 @@ public class Connection {
 		}	
 	}
 
-	public Connection(InetSocketAddress address) {
-		this(address.getAddress().getHostAddress(), address.getPort());
+	public Connection(InetSocketAddress address,int version) {
+		this(address.getAddress().getHostAddress(), address.getPort(),version);
 		this.address = address;
 	}
 
@@ -69,5 +71,18 @@ public class Connection {
 	
 	public InetSocketAddress getAddress() {
 		return address;
+	}
+
+	public void setVersion(int version) {
+		this.id = version;
+	}
+
+	public int getVersion() {
+		return id;
+	}
+	@Override
+	public String toString() {
+		
+		return "Connection ["+id+"]" + " ["+address+"]"; 
 	}
 }

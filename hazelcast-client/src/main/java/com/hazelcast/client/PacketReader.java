@@ -18,16 +18,18 @@
 package com.hazelcast.client;
 
 import java.io.DataInputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
 
 public class PacketReader extends PacketHandler{
 
 	public Packet readPacket() throws IOException {
-		Packet response = new Packet();
-		
-		Socket s = getConnection().getSocket();
+		Connection connection = getConnection();
+		return readPacket(connection);
+	}
+	public Packet readPacket(Connection connection) throws IOException {
+		Socket s = connection.getSocket();
+		Packet response = new Packet();		
 		DataInputStream dis = new DataInputStream(s.getInputStream());
 		response.readFrom(dis);
 		return response;
