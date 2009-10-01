@@ -72,6 +72,8 @@ public class Packet {
 
     private byte[] indexTypes = new byte[6];
 	
+	private boolean redoOnDisConnect;
+	
 	
 	public void writeTo(DataOutputStream outputStream) throws IOException {
 		headerInBytes = getHeader();
@@ -296,6 +298,12 @@ public class Packet {
 	}
 	public void setIndexTypes(byte[] indexTypes) {
 		this.indexTypes = indexTypes;
+	}
+	public void setRedoOnDisConnect(boolean redoOnDisConnect) {
+		this.redoOnDisConnect = redoOnDisConnect;
+	}
+	public boolean isRedoOnDisConnect() {
+		return redoOnDisConnect;
 	}
 	
 		

@@ -43,7 +43,9 @@ public class OutRunnable extends NetworkRunnable implements Runnable{
 					c = queue.take();
 					callMap.put(c.getId(), c);
 					connection = connectionManager.getConnection();
-					writer.write(connection,c.getRequest());
+					if(connection!=null){
+						writer.write(connection,c.getRequest());
+					}
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -75,11 +77,14 @@ public class OutRunnable extends NetworkRunnable implements Runnable{
 		waitingCalls.addAll(cc);
 		for (Iterator<Call> iterator = waitingCalls.iterator(); iterator.hasNext();) {
 			Call call =  iterator.next();
-			redo(call);
+			if(call.getRequest().isRedoOnDisConnect()){
+				redo(call);
+			}
 		}
 	}
 
 	private void redo(Call call) {
+		System.out.println("Redo " + call );
 		callMap.remove(call.getId());
 		enQueue(call);
 	}

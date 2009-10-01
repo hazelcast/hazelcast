@@ -49,15 +49,22 @@ public class InRunnable extends NetworkRunnable implements Runnable{
 
 	public void run() {
 		while(true){
-			Connection connection = connectionManager.getConnection();
-			if(connection == null){
-				notifyWaitingCalls();
-				continue;
-			}
+			Connection connection = null;
 			Packet packet=null;
 			try {
+				connection = connectionManager.getConnection();
+				if(connection == null){
+					notifyWaitingCalls();
+					continue;
+				}
 				packet = reader.readPacket(connection);
-				Call c = callMap.remove(packet.getCallId());
+				Call c = null;
+				if(packet.isRedoOnDisConnect()){
+					c = callMap.get(packet.getCallId());
+				}
+				else{
+					c = callMap.remove(packet.getCallId());
+				}
 				if(c!=null){
 					synchronized (c) {
 						c.setResponse(packet);

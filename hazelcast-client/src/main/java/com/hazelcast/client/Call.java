@@ -64,5 +64,8 @@ public class Call {
 		return exception;
 	}
 	
-
+	@Override
+	public String toString() {
+		return "Call " + "["+id+"]";
+	}
 }

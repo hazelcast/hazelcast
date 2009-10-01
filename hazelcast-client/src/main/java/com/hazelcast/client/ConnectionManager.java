@@ -1,5 +1,6 @@
 package com.hazelcast.client;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -30,20 +31,21 @@ public class ConnectionManager{
 		this.out = out;
 	}
 	
-	public Connection getConnection(){
+	public Connection getConnection() throws IOException{
+		Connection connection = null;
 		if(currentConnection == null){
 			synchronized (ConnectionManager.class) {
 				if(currentConnection == null){
-					currentConnection = searchForAvailableConnection();
-					if(currentConnection!=null){
-						logger.info("Connection to " + currentConnection);
-						bind(currentConnection);
+					connection = searchForAvailableConnection();
+					if(connection!=null){
+						logger.info("Client is connecting to " + connection);
+						bind(connection);
+						currentConnection = connection;
 						out.redoWaitingCalls();
 					}
 				}
 			}
 		}
-		
 		return currentConnection;
 	}
 	public synchronized void destroyConnection(Connection connection){
@@ -52,7 +54,7 @@ public class ConnectionManager{
 			currentConnection = null;
 		}
 	}	
-	private void bind(Connection connection) {
+	private void bind(Connection connection) throws IOException {
 		Bind b = null;
 		try {
 			b = new Bind(new Address(connection.getAddress().getHostName(),connection.getSocket().getLocalPort()));
@@ -63,7 +65,13 @@ public class ConnectionManager{
 		bind.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, Serializer.toByte(null), Serializer.toByte(b));
 		Call cBind = new Call();
 		cBind.setRequest(bind);
-		out.enQueue(cBind);
+		out.writer.write(connection, bind);
+		try {
+			Thread.sleep(10);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private void popAndPush(List<InetSocketAddress> clusterMembers) {

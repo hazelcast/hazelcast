@@ -51,6 +51,7 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	    request.setOperation(ClusterOperation.ADD_LISTENER);
 	    request.setLongValue(includeValue?1:0);
 	    request.setKey(Serializer.toByte(key));
+	    request.setRedoOnDisConnect(true);
 	    callAndGetResult(request);
 	    client.listenerManager.registerEntryListener(name, key, listener);
 	}
