@@ -1,10 +1,9 @@
 /**
- * 
+ *
  */
 package com.hazelcast.cluster;
 
 import com.hazelcast.impl.MemberImpl;
-import com.hazelcast.nio.ConnectionManager;
 
 public class ConnectionCheckCall extends AbstractRemotelyCallable<Boolean> {
     public Boolean call() throws Exception {

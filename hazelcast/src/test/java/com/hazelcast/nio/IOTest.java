@@ -17,7 +17,7 @@
 
 package com.hazelcast.nio;
 
-import static com.hazelcast.nio.BufferUtil.*;
+import static com.hazelcast.nio.IOUtil.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;

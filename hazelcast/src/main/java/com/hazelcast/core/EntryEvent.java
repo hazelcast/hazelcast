@@ -17,14 +17,13 @@
 
 package com.hazelcast.core;
 
-
 import java.util.EventObject;
 
 public class EntryEvent extends EventObject {
 
     private static final long serialVersionUID = -2296203982913729851L;
 
-	public static final int TYPE_ADDED = 1;
+    public static final int TYPE_ADDED = 1;
 
     public static final int TYPE_REMOVED = 2;
 
@@ -47,12 +46,13 @@ public class EntryEvent extends EventObject {
         EVICTED(4);
         private int type;
 
-		EntryEventType(int type) {
-        	this.type = type;
+        EntryEventType(int type) {
+            this.type = type;
         }
-		public int getType(){
-			return type;
-		}
+
+        public int getType() {
+            return type;
+        }
     }
 
     protected boolean collection;
@@ -71,7 +71,7 @@ public class EntryEvent extends EventObject {
             entryEventType = EntryEventType.REMOVED;
         } else if (eventType == TYPE_UPDATED) {
             entryEventType = EntryEventType.UPDATED;
-        }else if (eventType == TYPE_EVICTED) {
+        } else if (eventType == TYPE_EVICTED) {
             entryEventType = EntryEventType.EVICTED;
         }
     }

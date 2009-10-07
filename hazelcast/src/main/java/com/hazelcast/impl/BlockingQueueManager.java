@@ -28,10 +28,10 @@ import static com.hazelcast.impl.ClusterOperation.BLOCKING_QUEUE_SIZE;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import com.hazelcast.nio.Address;
-import static com.hazelcast.nio.BufferUtil.doHardCopy;
-import static com.hazelcast.nio.BufferUtil.doTake;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
+import static com.hazelcast.nio.IOUtil.doHardCopy;
+import static com.hazelcast.nio.IOUtil.doTake;
 import com.hazelcast.nio.Packet;
 
 import java.io.DataInput;
@@ -119,7 +119,6 @@ public class BlockingQueueManager extends BaseManager {
                 handleFullBlock(packet);
             }
         });
-
     }
 
     class BlockBackupSyncRunner implements Runnable {
@@ -193,7 +192,6 @@ public class BlockingQueueManager extends BaseManager {
         if (deadAddress.equals(thisAddress)) return;
         MemberImpl member = getNextMemberBeforeSync(deadAddress, true, 1);
         Address addressNewOwner = (member == null) ? thisAddress : member.getAddress();
-
         Collection<Q> queues = mapQueues.values();
         for (Q q : queues) {
             List<Block> lsBlocks = q.lsBlocks;
@@ -371,7 +369,6 @@ public class BlockingQueueManager extends BaseManager {
         if (isMaster()) {
             sendAddBlockMessageToOthers(q.name, null, blockId, -1, originalRemover, false);
         }
-
     }
 
     final void handleFullBlock(Packet packet) {
@@ -400,7 +397,6 @@ public class BlockingQueueManager extends BaseManager {
             Address addressOwner = addRemove.addAddress;
             Q q = getQ(name);
             setFullAndCreateNewBlock(q, addRemove.fullBlockId, addressOwner, blockId);
-
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -522,7 +518,7 @@ public class BlockingQueueManager extends BaseManager {
 
         public void commitPoll(String name) {
             this.name = name;
-            TransactionImpl txn = ThreadContext.get().callContext.txn;
+            TransactionImpl txn = ThreadContext.get().getCallContext().getCurrentTxn();
             this.txnId = txn.getId();
             enqueueAndReturn(this);
         }
@@ -556,7 +552,7 @@ public class BlockingQueueManager extends BaseManager {
 
         public int getSize() {
             int size = (Integer) call();
-            TransactionImpl txn = ThreadContext.get().callContext.txn;
+            TransactionImpl txn = ThreadContext.get().getCallContext().getCurrentTxn();
             if (txn != null) {
                 size += txn.size(name);
             }
@@ -617,7 +613,7 @@ public class BlockingQueueManager extends BaseManager {
         Iterator txnOffers = null;
 
         public void set(String name) {
-            TransactionImpl txn = ThreadContext.get().callContext.txn;
+            TransactionImpl txn = ThreadContext.get().getCallContext().getCurrentTxn();
             if (txn != null) {
                 List txnOfferItems = txn.newEntries(name);
                 if (txnOfferItems != null) {
@@ -706,7 +702,6 @@ public class BlockingQueueManager extends BaseManager {
 
         public void remove() {
         }
-
     }
 
     public class Remove extends QueueBasedCall {
@@ -750,7 +745,6 @@ public class BlockingQueueManager extends BaseManager {
         public void process() {
             addCall(this);
             Q q = getQ(name);
-
             Address target = q.getBlockOwner(blockId);
             if (target == null) {
                 responses.add(OBJECT_NULL);
@@ -778,7 +772,6 @@ public class BlockingQueueManager extends BaseManager {
         public ClusterOperation getOperation() {
             return ClusterOperation.BLOCKING_QUEUE_REMOVE;
         }
-
     }
 
     public class Read extends QueueBasedCall {
@@ -854,7 +847,6 @@ public class BlockingQueueManager extends BaseManager {
         public ClusterOperation getOperation() {
             return ClusterOperation.BLOCKING_QUEUE_READ;
         }
-
     }
 
     class Offer extends BooleanOp {
@@ -867,7 +859,7 @@ public class BlockingQueueManager extends BaseManager {
 
         public boolean offer(String name, Object value, long timeout, boolean transactional) {
             ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.callContext.txn;
+            TransactionImpl txn = threadContext.getCallContext().getCurrentTxn();
             if (transactional && txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 txn.attachPutOp(name, null, value, true);
             } else {
@@ -947,7 +939,7 @@ public class BlockingQueueManager extends BaseManager {
         public Object poll(String name, long timeout) {
             Object value = objectCall(ClusterOperation.BLOCKING_QUEUE_POLL, name, null, null, timeout, -1);
             ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.callContext.txn;
+            TransactionImpl txn = threadContext.getCallContext().getCurrentTxn();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 txn.attachRemoveOp(name, null, value, false);
             }
@@ -1135,7 +1127,6 @@ public class BlockingQueueManager extends BaseManager {
             maxAge = (qconfig.getTimeToLiveSeconds() == 0) ? QueueConfig.DEFAULT_TTL_SECONDS : qconfig.getTimeToLiveSeconds() * 1000l;
             log(name + ".maxSizePerJVM=" + maxSizePerJVM);
             log(name + ".maxAge=" + maxAge);
-
             this.name = name;
             Address master = getMasterAddress();
             if (master.isThisAddress()) {
@@ -1176,7 +1167,6 @@ public class BlockingQueueManager extends BaseManager {
             ScheduledOfferAction action = new ScheduledOfferAction(request);
             lsScheduledOfferActions.add(action);
             node.clusterManager.registerScheduledAction(action);
-
         }
 
         public void schedulePoll(Request request) {
@@ -1284,7 +1274,6 @@ public class BlockingQueueManager extends BaseManager {
                 if (blCurrentPut != null && blCurrentPut.blockId == blockId) {
                     blCurrentPut = null;
                 }
-
                 if (blCurrentTake != null && blCurrentTake.blockId == blockId) {
                     blCurrentTake = null;
                 }
@@ -1430,7 +1419,6 @@ public class BlockingQueueManager extends BaseManager {
                     }
                 }
                 doFireEntryEvent(false, value);
-
                 sendBackup(false, request.caller, null, blCurrentTake.blockId, 0);
                 if (!blCurrentTake.containsValidItem() && blCurrentTake.isFull()) {
                     fireBlockRemoveEvent(blCurrentTake);
@@ -1616,11 +1604,8 @@ public class BlockingQueueManager extends BaseManager {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-
             Q q = (Q) o;
-
             if (name != null ? !name.equals(q.name) : q.name != null) return false;
-
             return true;
         }
 
@@ -1780,12 +1765,9 @@ public class BlockingQueueManager extends BaseManager {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-
             Block block = (Block) o;
-
             if (blockId != block.blockId) return false;
             if (name != null ? !name.equals(block.name) : block.name != null) return false;
-
             return true;
         }
 

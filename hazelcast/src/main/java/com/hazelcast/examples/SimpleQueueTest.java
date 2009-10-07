@@ -49,7 +49,6 @@ public class SimpleQueueTest {
                 }
             });
         }
-
         Executors.newSingleThreadExecutor().submit(new Runnable() {
             public void run() {
                 while (true) {
@@ -76,12 +75,9 @@ public class SimpleQueueTest {
         public Stats getAndReset() {
             long offersNow = offers.getAndSet(0);
             long pollsNow = polls.getAndSet(0);
-
             Stats newOne = new Stats();
-
             newOne.offers.set(offersNow);
             newOne.polls.set(pollsNow);
-
             return newOne;
         }
 

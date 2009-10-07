@@ -133,7 +133,6 @@ public class Index<T> {
             }
             return QueryService.getLongValue(extractedValue);
         }
-
     }
 
     long getLongValue(Object value) {
@@ -152,9 +151,9 @@ public class Index<T> {
                     value = Double.valueOf(str);
                 } else if (returnType == 6) {
                     value = Float.valueOf(str);
-                }else if (returnType == 7) {
+                } else if (returnType == 7) {
                     value = Byte.valueOf(str);
-                }else if (returnType == 8) {
+                } else if (returnType == 8) {
                     value = Character.valueOf(str.charAt(0));
                 }
             }
@@ -191,7 +190,6 @@ public class Index<T> {
         for (Map.Entry<Long, Set<T>> entry : entries) {
             if (equal || entry.getKey() != value) {
                 results.addAll(entry.getValue());
-
             }
         }
         return results;
@@ -211,11 +209,8 @@ public class Index<T> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         Index index = (Index) o;
-
         return expression.equals(index.expression);
-
     }
 
     @Override
@@ -234,6 +229,4 @@ public class Index<T> {
         sb.append('}');
         return sb.toString();
     }
-
-
 }

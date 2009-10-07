@@ -16,7 +16,6 @@ public class FastByteArrayInputStream extends ByteArrayInputStream implements Da
         super(buf, offset, length);
     }
 
-
     @Override
     public int read() {
         return (pos < count) ? (buf[pos++] & 0xff) : -1;
@@ -59,11 +58,9 @@ public class FastByteArrayInputStream extends ByteArrayInputStream implements Da
     public final int skipBytes(final int n) throws IOException {
         int total = 0;
         int cur = 0;
-
         while ((total < n) && ((cur = (int) skip(n - total)) > 0)) {
             total += cur;
         }
-
         return total;
     }
 
@@ -88,7 +85,6 @@ public class FastByteArrayInputStream extends ByteArrayInputStream implements Da
         this.count = size;
         this.mark = 0;
     }
-
 
     public final boolean readBoolean() throws IOException {
         final int ch = read();
@@ -226,43 +222,38 @@ public class FastByteArrayInputStream extends ByteArrayInputStream implements Da
      *             form: <blockquote>
      *             <p/>
      *             <pre>
-     *                                                             DataInputStream d = new DataInputStream(in);
-     *                                                             </pre>
+     *                                                                                     DataInputStream d = new DataInputStream(in);
+     *                                                                                     </pre>
      *             <p/>
      *             </blockquote> with: <blockquote>
      *             <p/>
      *             <pre>
-     *                                                             BufferedReader d = new BufferedReader(new InputStreamReader(in));
-     *                                                             </pre>
+     *                                                                                     BufferedReader d = new BufferedReader(new InputStreamReader(in));
+     *                                                                                     </pre>
      *             <p/>
      *             </blockquote>
      */
     @Deprecated
     public final String readLine() throws IOException {
         char buf[] = lineBuffer;
-
         if (buf == null) {
             buf = lineBuffer = new char[128];
         }
-
         int room = buf.length;
         int offset = 0;
         int c;
-
         loop:
         while (true) {
             switch (c = read()) {
                 case -1:
                 case '\n':
                     break loop;
-
                 case '\r':
                     final int c2 = read();
                     if ((c2 != '\n') && (c2 != -1)) {
                         new PushbackInputStream(this).unread(c2);
                     }
                     break loop;
-
                 default:
                     if (--room < 0) {
                         buf = new char[offset + 128];
@@ -380,16 +371,12 @@ public class FastByteArrayInputStream extends ByteArrayInputStream implements Da
         final int utflen = readInt();
         byte[] bytearr = null;
         char[] chararr = null;
-
         bytearr = new byte[utflen];
         chararr = new char[utflen];
-
         int c, char2, char3;
         int count = 0;
         int chararr_count = 0;
-
         readFully(bytearr, 0, utflen);
-
         while (count < utflen) {
             c = bytearr[count] & 0xff;
             if (c > 127)
@@ -397,7 +384,6 @@ public class FastByteArrayInputStream extends ByteArrayInputStream implements Da
             count++;
             chararr[chararr_count++] = (char) c;
         }
-
         while (count < utflen) {
             c = bytearr[count] & 0xff;
             switch (c >> 4) {
@@ -448,16 +434,12 @@ public class FastByteArrayInputStream extends ByteArrayInputStream implements Da
         final int utflen = readShort();
         byte[] bytearr = null;
         char[] chararr = null;
-
         bytearr = new byte[utflen];
         chararr = new char[utflen];
-
         int c, char2, char3;
         int count = 0;
         int chararr_count = 0;
-
         readFully(bytearr, 0, utflen);
-
         while (count < utflen) {
             c = bytearr[count] & 0xff;
             if (c > 127)
@@ -465,7 +447,6 @@ public class FastByteArrayInputStream extends ByteArrayInputStream implements Da
             count++;
             chararr[chararr_count++] = (char) c;
         }
-
         while (count < utflen) {
             c = bytearr[count] & 0xff;
             switch (c >> 4) {
@@ -511,5 +492,4 @@ public class FastByteArrayInputStream extends ByteArrayInputStream implements Da
         // The number of chars produced may be less than utflen
         return new String(chararr, 0, chararr_count);
     }
-
 }

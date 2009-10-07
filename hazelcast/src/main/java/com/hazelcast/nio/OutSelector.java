@@ -84,7 +84,6 @@ public class OutSelector extends SelectorBase {
                 socketChannel = SocketChannel.open();
                 final Address thisAddress = node.getThisAddress();
                 try {
-
                     socketChannel.socket().bind(
                             new InetSocketAddress(thisAddress.getInetAddress(), 0));
                     socketChannel.configureBlocking(false);

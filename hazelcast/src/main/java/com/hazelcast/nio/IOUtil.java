@@ -21,17 +21,15 @@ import com.hazelcast.impl.ThreadContext;
 
 import java.nio.ByteBuffer;
 
-public final class BufferUtil {
+public final class IOUtil {
 
     public static int copyToHeapBuffer(ByteBuffer src, ByteBuffer dest) {
         int n = Math.min(src.remaining(), dest.remaining());
         if (n > 0) {
             int srcPosition = src.position();
             int destPosition = dest.position();
-
             int ixSrc = srcPosition + src.arrayOffset();
             int ixDest = destPosition + dest.arrayOffset();
-
             System.arraycopy(src.array(), ixSrc, dest.array(), ixDest, n);
             src.position(srcPosition + n);
             dest.position(destPosition + n);
@@ -56,7 +54,6 @@ public final class BufferUtil {
         return bb.get() == 1;
     }
 
-
     public static Data toData(Object obj) {
         return ThreadContext.get().toData(obj);
     }
@@ -64,30 +61,14 @@ public final class BufferUtil {
     public static Object toObject(Data data) {
         return ThreadContext.get().toObject(data);
     }
-    
+
     public static Data doHardCopy(Data from) {
         if (from == null || from.size == 0)
             return null;
         return new Data(from);
     }
-    
+
     public static Data doTake(Data target) {
         return target;
     }
-
-    public static String exceptionToString(final Throwable e, Address address) {
-        StringBuilder sb = new StringBuilder(e.getMessage() +" at " + address + "\n");
-        final StackTraceElement[] stEls = e.getStackTrace();
-        for (final StackTraceElement stackTraceElement : stEls) {
-            sb.append("\tat ").append(stackTraceElement).append("\n");
-        }
-        final Throwable cause = e.getCause();
-        if (cause != null) {
-            sb.append("\tcaused by ").append(cause);
-        }
-        return sb.toString();
-    }
-
-
-
 }

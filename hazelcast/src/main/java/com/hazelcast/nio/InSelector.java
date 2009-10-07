@@ -55,7 +55,7 @@ public class InSelector extends SelectorBase {
     public void shutdown() {
         try {
             super.shutdown();
-            if (serverSocketChannel !=null) {
+            if (serverSocketChannel != null) {
                 serverSocketChannel.close();
             }
         } catch (IOException ignored) {
@@ -66,15 +66,15 @@ public class InSelector extends SelectorBase {
         public void handle() {
             try {
                 final SocketChannel channel = serverSocketChannel.accept();
-                    logger.log(Level.FINEST, channel.socket().getLocalPort()
-                            + " this socket is connected to "
-                            + channel.socket().getRemoteSocketAddress());
+                logger.log(Level.FINEST, channel.socket().getLocalPort()
+                        + " this socket is connected to "
+                        + channel.socket().getRemoteSocketAddress());
                 final Connection connection = initChannel(channel, true);
                 channel.register(selector, SelectionKey.OP_READ, connection.getReadHandler());
                 serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, Acceptor.this);
                 selector.wakeup();
             } catch (final Exception e) {
-                logger.log(Level.FINEST, e.getMessage(), e); 
+                logger.log(Level.FINEST, e.getMessage(), e);
                 try {
                     serverSocketChannel.close();
                 } catch (final Exception ignore) {

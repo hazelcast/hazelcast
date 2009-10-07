@@ -17,7 +17,7 @@
 
 package com.hazelcast.nio;
 
-import static com.hazelcast.nio.BufferUtil.copyToDirectBuffer;
+import static com.hazelcast.nio.IOUtil.copyToDirectBuffer;
 
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
@@ -45,7 +45,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         super(connection);
         boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(node);
         boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled(node);
-
         if (asymmetricEncryptionEnabled || symmetricEncryptionEnabled) {
             if (asymmetricEncryptionEnabled && symmetricEncryptionEnabled) {
                 if (true) {
@@ -126,7 +125,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             } else {
                 socketBB.clear();
             }
-
         } catch (final Throwable t) {
             logger.log(Level.SEVERE, "Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
             t.printStackTrace();
@@ -266,16 +264,13 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
         private void doCipherUpdate(ByteBuffer src) throws Exception {
             while (src.hasRemaining()) {
-
                 int remaining = src.remaining();
                 if (remaining > writeBlockSize) {
                     int oldLimit = src.limit();
                     src.limit(src.position() + writeBlockSize);
                     int outputAppendSize = cipher.doFinal(src, cipherBuffer);
                     src.limit(oldLimit);
-
                 } else {
-
                     int outputAppendSize = cipher.doFinal(src, cipherBuffer);
                 }
             }

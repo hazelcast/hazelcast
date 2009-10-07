@@ -28,7 +28,7 @@ class TransactionFactory {
     TransactionFactory(FactoryImpl factory) {
         this.factory = factory;
     }
-    
+
     public TransactionImpl newTransaction() {
         return new TransactionImpl(factory, newTransactionId());
     }

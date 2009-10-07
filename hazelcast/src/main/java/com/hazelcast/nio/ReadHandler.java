@@ -18,14 +18,13 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.impl.ThreadContext;
-import static com.hazelcast.nio.BufferUtil.copyToHeapBuffer;
+import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
 
 import javax.crypto.Cipher;
 import javax.crypto.ShortBufferException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.logging.Level;
-
 
 class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
@@ -39,7 +38,6 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
         super(connection);
         boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(node);
         boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled(node);
-
         if (asymmetricEncryptionEnabled || symmetricEncryptionEnabled) {
             if (asymmetricEncryptionEnabled && symmetricEncryptionEnabled) {
                 if (true) {
@@ -91,7 +89,6 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
             } else {
                 inBuffer.clear();
             }
-
         } catch (final Throwable t) {
             logger.log(Level.SEVERE, "Fatal Error at ReadHandler for endPoint: "
                     + connection.getEndPoint(), t);
@@ -168,7 +165,6 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
                 inBuffer.limit(inBuffer.position() + 128);
                 int cipherReadSize = cipher.doFinal(inBuffer, cipherBuffer);
                 inBuffer.limit(oldLimit);
-
                 cipherBuffer.flip();
                 while (cipherBuffer.hasRemaining()) {
                     if (packet == null) {
@@ -260,5 +256,4 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
         packet.local = false;
         return packet;
     }
-
 }

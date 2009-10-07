@@ -16,130 +16,123 @@
  */
 package com.hazelcast.jmx;
 
-import java.lang.management.ManagementFactory;
-import java.util.Set;
-import java.util.logging.Level;
-
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
 
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+import java.lang.management.ManagementFactory;
+import java.util.Set;
+import java.util.logging.Level;
+
 /**
  * MBean for Map
- * 
+ *
  * @author Marco Ferrante, DISI - University of Genova
  */
 @SuppressWarnings("unchecked")
 @JMXDescription("A distributed Map")
 public class MapMBean extends AbstractMBean<IMap> {
 
-	protected EntryListener listener;
-	
-	public MapMBean(IMap managedObject) {
-		super(managedObject);
-	}
+    protected EntryListener listener;
 
-	@Override
-	public ObjectNameSpec getNameSpec() {
-    	return getParentName().getNested("Map", getName());
-	}
-	
-	@Override
-	public void postRegister(Boolean registrationDone) {
-		super.postRegister(registrationDone);
-		if (!registrationDone) {
-			return;
-		}
-		
-		if (ManagementService.showDetails()) {
-			listener = new EntryListener() {
+    public MapMBean(IMap managedObject) {
+        super(managedObject);
+    }
 
-				public void entryAdded(EntryEvent event) {
-					addEntry(event.getKey());
-				}
+    @Override
+    public ObjectNameSpec getNameSpec() {
+        return getParentName().getNested("Map", getName());
+    }
 
-				public void entryRemoved(EntryEvent event) {
-					removeEntry(event.getKey());
-				}
+    @Override
+    public void postRegister(Boolean registrationDone) {
+        super.postRegister(registrationDone);
+        if (!registrationDone) {
+            return;
+        }
+        if (ManagementService.showDetails()) {
+            listener = new EntryListener() {
 
-				public void entryUpdated(EntryEvent event) {
-					// Nothing to do
-				}
+                public void entryAdded(EntryEvent event) {
+                    addEntry(event.getKey());
+                }
+
+                public void entryRemoved(EntryEvent event) {
+                    removeEntry(event.getKey());
+                }
+
+                public void entryUpdated(EntryEvent event) {
+                    // Nothing to do
+                }
 
                 public void entryEvicted(EntryEvent event) {
-                    entryRemoved (event);
+                    entryRemoved(event);
                 }
             };
-			getManagedObject().addEntryListener(listener, false);
-			
-			// Add existing entries
-			for (Object key : getManagedObject().keySet()) {
-				addEntry(key);
-			}
-		}
-	}
+            getManagedObject().addEntryListener(listener, false);
+            // Add existing entries
+            for (Object key : getManagedObject().keySet()) {
+                addEntry(key);
+            }
+        }
+    }
 
-	@Override
-	public void preDeregister() throws Exception {
-		if (listener != null) {
-			getManagedObject().removeEntryListener(listener);
-			listener = null;
-			
-			// Remove all entries
-			MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-			Set<ObjectName> entries = mbs.queryNames(MapEntryMBean.buildObjectNameFilter(getObjectName()), null);
-			for (ObjectName name : entries) {
-				if (getObjectName().equals(name)) {
-					// Do not deregister itself
-					continue;
-				}
-				mbs.unregisterMBean(name);
-			}
-		}
-	}
-	
-	protected void addEntry(Object key) {
-		try {
-			ObjectName entryName = MapEntryMBean.buildObjectName(getObjectName(), key);
-			
-	        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-	    	if (!mbs.isRegistered(entryName)) {
-	    		MapEntryMBean mbean = new MapEntryMBean(getManagedObject(), key);
-	    		mbs.registerMBean(mbean, entryName);
-	    	}
-		}
-		catch (Exception e) {
-			logger.log(Level.FINE, "Unable to register MapEntry MBeans", e);
-		} 
-	}
+    @Override
+    public void preDeregister() throws Exception {
+        if (listener != null) {
+            getManagedObject().removeEntryListener(listener);
+            listener = null;
+            // Remove all entries
+            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+            Set<ObjectName> entries = mbs.queryNames(MapEntryMBean.buildObjectNameFilter(getObjectName()), null);
+            for (ObjectName name : entries) {
+                if (getObjectName().equals(name)) {
+                    // Do not deregister itself
+                    continue;
+                }
+                mbs.unregisterMBean(name);
+            }
+        }
+    }
 
-	protected void removeEntry(Object key) {
-		try {
-			ObjectName entryName = MapEntryMBean.buildObjectName(getObjectName(), key);
-			
-	        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-	    	if (mbs.isRegistered(entryName)) {
-	    		mbs.unregisterMBean(entryName);
-	    	}
-		}
-		catch (Exception e) {
-			logger.log(Level.FINE, "Unable to unregister MapEntry MBeans", e);
-		} 
-	}
+    protected void addEntry(Object key) {
+        try {
+            ObjectName entryName = MapEntryMBean.buildObjectName(getObjectName(), key);
+            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+            if (!mbs.isRegistered(entryName)) {
+                MapEntryMBean mbean = new MapEntryMBean(getManagedObject(), key);
+                mbs.registerMBean(mbean, entryName);
+            }
+        }
+        catch (Exception e) {
+            logger.log(Level.FINE, "Unable to register MapEntry MBeans", e);
+        }
+    }
 
-	@JMXAttribute("Name")
-	@JMXDescription("Registration name of the list")
-	public String getName() {
-		return getManagedObject().getName();
-	}
-	
-	@JMXAttribute("Size")
-	@JMXDescription("Current size")
-	public int getSize() {
-		return getManagedObject().size();
-	}	
-	
+    protected void removeEntry(Object key) {
+        try {
+            ObjectName entryName = MapEntryMBean.buildObjectName(getObjectName(), key);
+            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+            if (mbs.isRegistered(entryName)) {
+                mbs.unregisterMBean(entryName);
+            }
+        }
+        catch (Exception e) {
+            logger.log(Level.FINE, "Unable to unregister MapEntry MBeans", e);
+        }
+    }
+
+    @JMXAttribute("Name")
+    @JMXDescription("Registration name of the list")
+    public String getName() {
+        return getManagedObject().getName();
+    }
+
+    @JMXAttribute("Size")
+    @JMXDescription("Current size")
+    public int getSize() {
+        return getManagedObject().size();
+    }
 }

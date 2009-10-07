@@ -1,14 +1,13 @@
 package com.hazelcast.nio;
 
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.DataOutput;
 
 public final class FastByteArrayOutputStream extends ByteArrayOutputStream implements DataOutput {
 
     private final byte writeBuffer[] = new byte[8];
-
 
     public FastByteArrayOutputStream() {
         this(32);
@@ -138,7 +137,6 @@ public final class FastByteArrayOutputStream extends ByteArrayOutputStream imple
         final int strlen = str.length();
         int utflen = 0;
         int c, count = 0;
-
         /* use charAt instead of copying String to char array */
         for (int i = 0; i < strlen; i++) {
             c = str.charAt(i);
@@ -150,17 +148,13 @@ public final class FastByteArrayOutputStream extends ByteArrayOutputStream imple
                 utflen += 2;
             }
         }
-
 //        if (utflen > 65535)
 //            throw new UTFDataFormatException("encoded string too long: " + utflen + " bytes");
-
         final byte[] bytearr = new byte[utflen + 4];
-
         bytearr[count++] = (byte) ((utflen >>> 24) & 0xFF);
         bytearr[count++] = (byte) ((utflen >>> 16) & 0xFF);
         bytearr[count++] = (byte) ((utflen >>> 8) & 0xFF);
         bytearr[count++] = (byte) ((utflen) & 0xFF);
-
         int i;
         for (i = 0; i < strlen; i++) {
             c = str.charAt(i);
@@ -168,12 +162,10 @@ public final class FastByteArrayOutputStream extends ByteArrayOutputStream imple
                 break;
             bytearr[count++] = (byte) c;
         }
-
         for (; i < strlen; i++) {
             c = str.charAt(i);
             if ((c >= 0x0001) && (c <= 0x007F)) {
                 bytearr[count++] = (byte) c;
-
             } else if (c > 0x07FF) {
                 bytearr[count++] = (byte) (0xE0 | ((c >> 12) & 0x0F));
                 bytearr[count++] = (byte) (0x80 | ((c >> 6) & 0x3F));
@@ -190,7 +182,6 @@ public final class FastByteArrayOutputStream extends ByteArrayOutputStream imple
         final int strlen = str.length();
         int utflen = 0;
         int c, count = 0;
-
         /* use charAt instead of copying String to char array */
         for (int i = 0; i < strlen; i++) {
             c = str.charAt(i);
@@ -202,15 +193,11 @@ public final class FastByteArrayOutputStream extends ByteArrayOutputStream imple
                 utflen += 2;
             }
         }
-
 //        if (utflen > 65535)
 //            throw new UTFDataFormatException("encoded string too long: " + utflen + " bytes");
-
         final byte[] bytearr = new byte[utflen + 2];
-
         bytearr[count++] = (byte) ((utflen >>> 8) & 0xFF);
         bytearr[count++] = (byte) ((utflen) & 0xFF);
-
         int i;
         for (i = 0; i < strlen; i++) {
             c = str.charAt(i);
@@ -218,12 +205,10 @@ public final class FastByteArrayOutputStream extends ByteArrayOutputStream imple
                 break;
             bytearr[count++] = (byte) c;
         }
-
         for (; i < strlen; i++) {
             c = str.charAt(i);
             if ((c >= 0x0001) && (c <= 0x007F)) {
                 bytearr[count++] = (byte) c;
-
             } else if (c > 0x07FF) {
                 bytearr[count++] = (byte) (0xE0 | ((c >> 12) & 0x0F));
                 bytearr[count++] = (byte) (0x80 | ((c >> 6) & 0x3F));

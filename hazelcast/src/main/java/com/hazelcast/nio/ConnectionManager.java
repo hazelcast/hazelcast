@@ -50,7 +50,6 @@ public class ConnectionManager {
         this.node = node;
     }
 
-
     public void addConnectionListener(final ConnectionListener listener) {
         setConnectionListeners.add(listener);
     }
@@ -132,9 +131,8 @@ public class ConnectionManager {
         final Connection connection = mapConnections.get(address);
         if (connection == null) {
             if (setConnectionInProgress.add(address)) {
-                if (! node.clusterManager.shouldConnectTo(address))
+                if (!node.clusterManager.shouldConnectTo(address))
                     throw new RuntimeException("Should not connect to " + address);
-
                 node.outSelector.connect(address);
             }
         }

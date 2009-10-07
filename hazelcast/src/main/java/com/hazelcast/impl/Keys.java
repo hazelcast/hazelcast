@@ -17,47 +17,46 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.nio.Data;
+import com.hazelcast.nio.DataSerializable;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
+public class Keys implements DataSerializable {
 
-public class Keys implements DataSerializable{
+    private Set<Data> keys = new HashSet<Data>();
 
-	private Set<Data> keys = new HashSet<Data>();
-	
-	public Keys() {
-	}
+    public Keys() {
+    }
 
-	public void readData(DataInput in) throws IOException {
-		int size = in.readInt();
-		for(int i=0;i<size;i++){
-			Data data = new Data();
-			data.readData(in);
-			keys.add(data);
-		}
-	}
+    public void readData(DataInput in) throws IOException {
+        int size = in.readInt();
+        for (int i = 0; i < size; i++) {
+            Data data = new Data();
+            data.readData(in);
+            keys.add(data);
+        }
+    }
 
-	public void writeData(DataOutput out) throws IOException {
-		int size = (keys==null)?0:keys.size();
-		out.writeInt(size);
-		if(size>0){
-			for (Data key : keys) {
-				key.writeData(out);
-			}
-		}
-	}
-	
-	public void addKey(Data obj) {
-		this.keys.add(obj);
-		
-	}
+    public void writeData(DataOutput out) throws IOException {
+        int size = (keys == null) ? 0 : keys.size();
+        out.writeInt(size);
+        if (size > 0) {
+            for (Data key : keys) {
+                key.writeData(out);
+            }
+        }
+    }
 
-    public Set<Data> getKeys(){
+    public void addKey(Data obj) {
+        this.keys.add(obj);
+    }
+
+    public Set<Data> getKeys() {
         return keys;
     }
 }

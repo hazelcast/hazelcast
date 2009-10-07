@@ -24,5 +24,4 @@ public interface MembershipListener extends EventListener {
     void memberAdded(MembershipEvent membersipEvent);
 
     void memberRemoved(MembershipEvent membersipEvent);
-
 }

@@ -63,20 +63,16 @@ public class Util {
         try {// Use a Transformer for output
             final TransformerFactory tFactory = TransformerFactory.newInstance();
             final Transformer transformer = tFactory.newTransformer();
-
             if (doc.getDoctype() != null) {
                 final String systemId = doc.getDoctype().getSystemId();
                 final String publicId = doc.getDoctype().getPublicId();
                 transformer.setOutputProperty(OutputKeys.DOCTYPE_PUBLIC, publicId);
                 transformer.setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, systemId);
             }
-
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-
             final DOMSource source = new DOMSource(doc);
             final StreamResult result = new StreamResult(out);
             transformer.transform(source, result);
-
         } catch (final Exception e) {
             e.printStackTrace();
         }

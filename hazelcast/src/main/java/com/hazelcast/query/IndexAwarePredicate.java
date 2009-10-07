@@ -29,5 +29,4 @@ public interface IndexAwarePredicate extends Predicate {
     void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index<MapEntry>> mapIndexes);
 
     Set<MapEntry> filter(Map<Expression, Index<MapEntry>> namedIndexes);
-
 }

@@ -47,6 +47,40 @@ public class ClusterTest {
     }
 
     @Test(timeout = 60000)
+    public void testDataRecovery() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        IMap map1 = h1.getMap("default");
+        for (int i = 0; i < 1000; i++) {
+            map1.put(i, "value" + i);
+        }
+        assertEquals(1000, map1.size());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        IMap map2 = h2.getMap("default");
+        assertEquals(1000, map1.size());
+        assertEquals(1000, map2.size());
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
+        IMap map3 = h3.getMap("default");
+        assertEquals(1000, map1.size());
+        assertEquals(1000, map2.size());
+        assertEquals(1000, map3.size());
+        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
+        IMap map4 = h4.getMap("default");
+        assertEquals(1000, map1.size());
+        assertEquals(1000, map2.size());
+        assertEquals(1000, map3.size());
+        assertEquals(1000, map4.size());
+        h4.shutdown();
+        assertEquals(1000, map1.size());
+        assertEquals(1000, map2.size());
+        assertEquals(1000, map3.size());
+        h1.shutdown();
+        assertEquals(1000, map2.size());
+        assertEquals(1000, map3.size());
+        h2.shutdown();
+        assertEquals(1000, map3.size());
+    }
+
+    @Test(timeout = 60000)
     public void testRestart2() throws Exception {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
@@ -102,6 +136,7 @@ public class ClusterTest {
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread(new Runnable() {
             public void run() {
+                maps.size();
                 assertNull(maps.get("1"));
                 maps.put("1", "value3");
                 latch.countDown();
@@ -284,7 +319,6 @@ public class ClusterTest {
 
     /**
      * Simple symmetric encryption test.
-     * 
      */
     @Test(timeout = 60000)
     public void testSymmetricEncryption() throws Exception {

@@ -18,15 +18,14 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.AbstractNodeAware;
-import com.hazelcast.cluster.ClusterImpl.ClusterMember;
 import com.hazelcast.cluster.NodeAware;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import static com.hazelcast.impl.Constants.Objects.*;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TIMEOUT;
 import com.hazelcast.nio.*;
-import static com.hazelcast.nio.BufferUtil.toData;
-import static com.hazelcast.nio.BufferUtil.toObject;
+import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -77,7 +76,6 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
             logger.log(Level.FINEST, "Executor core:" + corePoolSize + ", max:"
                     + maxPoolSize + ", keepAlive:" + keepAliveSeconds);
         }
-
         executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveSeconds, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(),
                 new ExecutorThreadFactory(node.threadGroup),
@@ -107,7 +105,6 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
             if (t.isDaemon()) {
                 t.setDaemon(false);
             }
-
             if (t.getPriority() != Thread.NORM_PRIORITY) {
                 t.setPriority(Thread.NORM_PRIORITY);
             }
@@ -163,7 +160,6 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
             this.mayInterruptIfRunning = mayInterruptIfRunning;
         }
 
-
         public Boolean call() {
             final SimpleExecution simpleExecution = getNode().executorManager.mapRemoteExecutions
                     .remove(executionId);
@@ -182,7 +178,6 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
             address.writeData(out);
             out.writeBoolean(mayInterruptIfRunning);
         }
-
     }
 
     public class DistributedExecutorAction<T> implements Processable, ExecutionManagerCallback,
@@ -373,7 +368,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                                 ClusterOperation.REMOTELY_EXECUTE, DEFAULT_TIMEOUT);
                         packet.timeout = DEFAULT_TIMEOUT;
                         packet.longValue = executionId;
-                        final boolean sent = send(packet, ((ClusterMember) member).getAddress());
+                        final boolean sent = send(packet, ((MemberImpl) member).getAddress());
                         if (!sent) {
                             packet.returnToContainer();
                             executeLocally(new Runnable() {
@@ -386,7 +381,6 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                     }
                 }
             }
-
         }
 
         @Override
@@ -413,7 +407,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 Set<Member> members = node.getClusterImpl().getMembers();
                 final int random = (int) (Math.random() * 1000);
                 final int randomIndex = random % members.size();
-                ClusterMember randomClusterMember = (ClusterMember) members.toArray()[randomIndex];
+                MemberImpl randomClusterMember = (MemberImpl) members.toArray()[randomIndex];
                 target = randomClusterMember.getAddress();
                 randomTarget = target;
             }
@@ -638,7 +632,6 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
     public Processable createNewExecutionAction(final DistributedTask task) {
         if (task == null)
             throw new RuntimeException("task cannot be null");
-
         try {
             final Long executionId = executionIds.take();
             final InnerFutureTask inner = (InnerFutureTask) task.getInner();
@@ -661,7 +654,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
     public void handleStream(final Packet packet) {
         final StreamResponseHandler streamResponseHandler = mapStreams.get(packet.longValue);
         if (streamResponseHandler != null) {
-            final Data value = BufferUtil.doTake(packet.value);
+            final Data value = IOUtil.doTake(packet.value);
             executor.execute(new Runnable() {
                 public void run() {
                     streamResponseHandler.handleStreamResponse(value);
@@ -673,7 +666,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
 
     public void handleRemoteExecution(final Packet packet) {
         log("Remote handling packet " + packet);
-        final Data callableData = BufferUtil.doTake(packet.value);
+        final Data callableData = IOUtil.doTake(packet.value);
         final RemoteExecutionId remoteExecutionId = new RemoteExecutionId(packet.conn.getEndPoint(),
                 packet.longValue);
         final SimpleExecution se = new SimpleExecution(remoteExecutionId, executor, null,

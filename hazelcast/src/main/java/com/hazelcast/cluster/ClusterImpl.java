@@ -23,13 +23,7 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.Node;
-import com.hazelcast.impl.FactoryImpl;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -54,10 +48,10 @@ public class ClusterImpl implements Cluster {
         final Set<MembershipListener> listenerSet = listeners.get();
         Set<Member> setNew = new LinkedHashSet<Member>(lsMembers.size());
         for (MemberImpl member : lsMembers) {
-            final ClusterMember dummy = new ClusterMember(node.factory.getName(), member.getAddress(), member.localMember(), member.getNodeType());
+            final MemberImpl dummy = new MemberImpl(node.factory.getName(), member.getAddress(), member.localMember(), member.getNodeType());
             Member clusterMember = clusterMembers.get(dummy);
             if (clusterMember == null) {
-                clusterMember = dummy; 
+                clusterMember = dummy;
                 if (listenerSet != null && listenerSet.size() > 0) {
                     node.executorManager.executeLocally(new Runnable() {
                         public void run() {
@@ -91,7 +85,6 @@ public class ClusterImpl implements Cluster {
                 }
             }
         }
-
         clusterMembers.clear();
         for (Member cm : setNew) {
             clusterMembers.put(cm, cm);
@@ -149,59 +142,6 @@ public class ClusterImpl implements Cluster {
         return sb.toString();
     }
 
-    public static class ClusterMember extends MemberImpl implements Member, DataSerializable {
-        String factoryName;
-
-        public ClusterMember() {
-        }
-
-        public ClusterMember(String factoryName, Address address, boolean localMember, Node.NodeType nodeType) {
-            super(address, localMember, nodeType);
-            this.factoryName = factoryName;
-        }
-
-        public void readData(DataInput in) throws IOException {
-            address = new Address();
-            address.readData(in);
-            nodeType = Node.NodeType.create(in.readInt());
-            factoryName = in.readUTF();
-            Node node = FactoryImpl.getFactoryImpl(factoryName).node;
-            localMember = node.getThisAddress().equals(address);
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            address.writeData(out);
-            out.writeInt(nodeType.getValue());
-
-        }
-
-        @Override
-        public int hashCode() {
-            final int PRIME = 31;
-            int result = 1;
-            result = PRIME * result + ((address == null) ? 0 : address.hashCode());
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (obj == null)
-                return false;
-            if (getClass() != obj.getClass())
-                return false;
-            final ClusterMember other = (ClusterMember) obj;
-            if (address == null) {
-                if (other.address != null)
-                    return false;
-            } else if (!address.equals(other.address))
-                return false;
-            return true;
-        }
-
-    }
-
     public void setClusterTimeDiff(long clusterTimeDiff) {
         this.clusterTimeDiff = clusterTimeDiff;
     }
@@ -209,5 +149,4 @@ public class ClusterImpl implements Cluster {
     public long getClusterTime() {
         return System.currentTimeMillis() + clusterTimeDiff;
     }
-
 }

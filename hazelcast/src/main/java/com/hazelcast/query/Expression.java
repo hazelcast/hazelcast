@@ -19,6 +19,6 @@ package com.hazelcast.query;
 
 import java.io.Serializable;
 
-public interface Expression<T>  extends Serializable {
+public interface Expression<T> extends Serializable {
     T getValue(Object obj);
 }

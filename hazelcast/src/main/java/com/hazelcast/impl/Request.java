@@ -47,7 +47,6 @@ class Request {
     Object attachment = null;
     Object response = null;
 
-
     public boolean hasEnoughTimeToSchedule() {
         return timeout == -1 || timeout > 100;
     }
@@ -151,7 +150,6 @@ class Request {
             indexTypes = new byte[packet.indexCount];
             System.arraycopy(packet.indexTypes, 0, indexTypes, 0, indexes.length);
         }
-
     }
 
     public Request hardCopy() {
@@ -159,7 +157,7 @@ class Request {
         copy.setFromRequest(this, true);
         return copy;
     }
-    
+
     public void setPacket(Packet packet) {
         packet.local = false;
         packet.operation = operation;
@@ -182,5 +180,4 @@ class Request {
             System.arraycopy(indexTypes, 0, packet.indexTypes, 0, indexes.length);
         }
     }
-
 }

@@ -21,16 +21,14 @@ import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
-import com.hazelcast.impl.BaseManager.Processable;
 import com.hazelcast.impl.BlockingQueueManager.Offer;
 import com.hazelcast.impl.BlockingQueueManager.Poll;
 import com.hazelcast.impl.BlockingQueueManager.QIterator;
 import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.jmx.ManagementService;
-import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.query.Expression;
+import static com.hazelcast.nio.IOUtil.*;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 
@@ -122,7 +120,7 @@ public class FactoryImpl implements HazelcastInstance {
                  * if JMX service cannot unregister
                  * just printStackTrace and continue
                  * shutting down.
-                 * 
+                 *
                  */
                 ManagementService.unregister(factory);
             } catch (Throwable e) {
@@ -150,7 +148,6 @@ public class FactoryImpl implements HazelcastInstance {
     public String getName() {
         return name;
     }
-
 
     public void shutdown() {
         shutdown(FactoryImpl.this);
@@ -217,16 +214,12 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         FactoryImpl factory = (FactoryImpl) o;
-
         if (!name.equals(factory.name)) return false;
-
         return true;
     }
 
@@ -242,6 +235,10 @@ public class FactoryImpl implements HazelcastInstance {
         sb.append("{name='").append(name).append('\'');
         sb.append('}');
         return sb.toString();
+    }
+
+    public Config getConfig() {
+        return node.getConfig();
     }
 
     public Collection<Instance> getInstances() {
@@ -273,11 +270,10 @@ public class FactoryImpl implements HazelcastInstance {
     public Transaction getTransaction() {
         initialChecks();
         ThreadContext threadContext = ThreadContext.get();
-//        TransactionImpl txn = threadContext.txn;
-        TransactionImpl txn = threadContext.callContext.txn;
+        TransactionImpl txn = threadContext.getCallContext().getCurrentTxn();
         if (txn == null) {
             txn = transactionFactory.newTransaction();
-            threadContext.callContext.setTransaction(txn);
+            threadContext.getCallContext().setTransaction(txn);
         }
         return txn;
     }
@@ -334,7 +330,6 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public static void initialChecks() {
-
     }
 
     public void destroyProxy(final ProxyKey proxyKey) {
@@ -424,7 +419,6 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-
     public static class LockProxy implements FactoryAwareProxy, ILock, DataSerializable {
 
         private Object key = null;
@@ -465,11 +459,8 @@ public class FactoryImpl implements HazelcastInstance {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-
             LockProxy lockProxy = (LockProxy) o;
-
             return !(key != null ? !key.equals(lockProxy.key) : lockProxy.key != null);
-
         }
 
         @Override
@@ -608,7 +599,6 @@ public class FactoryImpl implements HazelcastInstance {
                 idGeneratorMapProxy.remove(name);
             }
             globalProxies.remove(proxyKey);
-
             final BlockingQueue result = new ArrayBlockingQueue(1);
             node.clusterService.enqueueAndReturn(new Processable() {
                 public void process() {
@@ -626,7 +616,6 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-
     public static class ProxyKey implements Serializable {
         String name;
         Object key;
@@ -643,12 +632,9 @@ public class FactoryImpl implements HazelcastInstance {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-
             ProxyKey proxyKey = (ProxyKey) o;
-
             if (name != null ? !name.equals(proxyKey.name) : proxyKey.name != null) return false;
             return !(key != null ? !key.equals(proxyKey.key) : proxyKey.key != null);
-
         }
 
         @Override
@@ -719,9 +705,7 @@ public class FactoryImpl implements HazelcastInstance {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-
             TopicProxyImpl that = (TopicProxyImpl) o;
-
             return !(name != null ? !name.equals(that.name) : that.name != null);
         }
 
@@ -849,11 +833,8 @@ public class FactoryImpl implements HazelcastInstance {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-
             CollectionProxyImpl that = (CollectionProxyImpl) o;
-
             return !(name != null ? !name.equals(that.name) : that.name != null);
-
         }
 
         @Override
@@ -1133,11 +1114,8 @@ public class FactoryImpl implements HazelcastInstance {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-
             QProxyImpl qProxy = (QProxyImpl) o;
-
             return !(name != null ? !name.equals(qProxy.name) : qProxy.name != null);
-
         }
 
         @Override
@@ -1241,7 +1219,6 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         private class QProxyReal extends AbstractQueue implements QProxy {
-
 
             public QProxyReal() {
             }
@@ -1381,11 +1358,8 @@ public class FactoryImpl implements HazelcastInstance {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-
             MultiMapProxy that = (MultiMapProxy) o;
-
             return !(name != null ? !name.equals(that.name) : that.name != null);
-
         }
 
         @Override
@@ -1638,7 +1612,7 @@ public class FactoryImpl implements HazelcastInstance {
             super.setFactory(factory);
             this.concurrentMapManager = factory.node.concurrentMapManager;
             this.listenerManager = factory.node.listenerManager;
-            ClassLoader cl = getFactory().node.config.getClassLoader();
+            ClassLoader cl = MProxy.class.getClassLoader();
             dynamicProxy = (MProxy) Proxy.newProxyInstance(cl, new Class[]{MProxy.class}, new Invoker());
         }
 
@@ -1648,7 +1622,6 @@ public class FactoryImpl implements HazelcastInstance {
                 mproxyReal = (MProxy) factory.getOrCreateProxyByName(name);
             }
         }
-
 
         private void afterCall() {
         }
@@ -1763,7 +1736,6 @@ public class FactoryImpl implements HazelcastInstance {
         public MapEntry getMapEntry(Object key) {
             return dynamicProxy.getMapEntry(key);
         }
-
 
         public void putAll(Map t) {
             dynamicProxy.putAll(t);
@@ -1965,7 +1937,6 @@ public class FactoryImpl implements HazelcastInstance {
                 return mput.put(name, key, value, -1);
             }
 
-
             public Object get(Object key) {
                 check(key);
                 MGet mget = ThreadContext.get().getCallCache(factory).getMGet();
@@ -2093,7 +2064,7 @@ public class FactoryImpl implements HazelcastInstance {
             public boolean containsEntry(Object key, Object value) {
                 check(key);
                 check(value);
-                TransactionImpl txn = ThreadContext.get().callContext.txn;
+                TransactionImpl txn = ThreadContext.get().getCallContext().getCurrentTxn();
                 if (txn != null) {
                     if (txn.has(name, key)) {
                         Object v = txn.get(name, key);
@@ -2106,7 +2077,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public boolean containsKey(Object key) {
                 check(key);
-                TransactionImpl txn = ThreadContext.get().callContext.txn;
+                TransactionImpl txn = ThreadContext.get().getCallContext().getCurrentTxn();
                 if (txn != null) {
                     if (txn.has(name, key)) {
                         Object value = txn.get(name, key);
@@ -2119,7 +2090,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public boolean containsValue(Object value) {
                 check(value);
-                TransactionImpl txn = ThreadContext.get().callContext.txn;
+                TransactionImpl txn = ThreadContext.get().getCallContext().getCurrentTxn();
                 if (txn != null) {
                     if (txn.containsValue(name, value))
                         return true;
@@ -2280,11 +2251,8 @@ public class FactoryImpl implements HazelcastInstance {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-
             IdGeneratorProxy that = (IdGeneratorProxy) o;
-
             return !(name != null ? !name.equals(that.name) : that.name != null);
-
         }
 
         @Override
@@ -2312,7 +2280,6 @@ public class FactoryImpl implements HazelcastInstance {
             return base.newId();
         }
 
-
         private class IdGeneratorBase implements IdGenerator {
 
             private static final long MILLION = 1000000;
@@ -2322,7 +2289,6 @@ public class FactoryImpl implements HazelcastInstance {
             AtomicLong currentId = new AtomicLong(2 * MILLION);
 
             AtomicBoolean fetching = new AtomicBoolean(false);
-
 
             public String getName() {
                 return name.substring(2);
@@ -2348,7 +2314,6 @@ public class FactoryImpl implements HazelcastInstance {
                             t.printStackTrace();
                         }
                     }
-
                 }
                 return millionNow + idAddition;
             }
@@ -2412,5 +2377,4 @@ public class FactoryImpl implements HazelcastInstance {
             }
         }
     }
-
 }

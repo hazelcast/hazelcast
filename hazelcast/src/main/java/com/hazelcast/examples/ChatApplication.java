@@ -28,7 +28,7 @@ import java.io.Serializable;
 public class ChatApplication {
 
     private String username;
-    private final IMap<String,ChatMessage> map = Hazelcast.getMap("chat-application");
+    private final IMap<String, ChatMessage> map = Hazelcast.getMap("chat-application");
 
     public static void main(String[] args) {
         ChatApplication application = new ChatApplication();
@@ -36,38 +36,42 @@ public class ChatApplication {
         int input;
         StringBuilder u = new StringBuilder();
         try {
-            while ((input = System.in.read ()) != '\n')
-             u.append((char) input);
-        } catch (IOException e) { e.printStackTrace(); }
+            while ((input = System.in.read()) != '\n')
+                u.append((char) input);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         System.out.println("hello " + u.toString());
         application.setUsername(u.toString());
         application.run();
     }
 
-    public void setUsername(String name){
+    public void setUsername(String name) {
         this.username = name;
         new ChatMessage(username, "has joined").send(map);
     }
 
-    public void run(){
+    public void run() {
         boolean chatting = true;
         showConnected(map);
         map.addEntryListener(new ChatCallback(), true);
-        while(chatting){
+        while (chatting) {
             int input;
             StringBuilder message = new StringBuilder();
             ChatMessage chat;
             try {
-                while ((input = System.in.read ()) != '\n')
-                 message.append((char) input);
-            } catch (IOException e) { e.printStackTrace(); }
-            chat = new ChatMessage(username,message.toString());
+                while ((input = System.in.read()) != '\n')
+                    message.append((char) input);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            chat = new ChatMessage(username, message.toString());
             chat.send(map);
         }
     }
 
-    private void showConnected(IMap<String,ChatMessage> map){
-        for(String user: map.keySet()){
+    private void showConnected(IMap<String, ChatMessage> map) {
+        for (String user : map.keySet()) {
             System.out.println(user + " is online");
         }
     }
@@ -76,38 +80,38 @@ public class ChatApplication {
         private String username;
         private String message;
 
-        public ChatMessage(String username, String message){
+        public ChatMessage(String username, String message) {
             this.username = username;
             this.message = message;
         }
 
-        public String toString(){
+        public String toString() {
             return username + ": " + message;
         }
 
-        public void send(IMap<String,ChatMessage> map){
-            map.put(username,this);
+        public void send(IMap<String, ChatMessage> map) {
+            map.put(username, this);
         }
     }
 
-    private  class ChatCallback implements EntryListener{
-        public ChatCallback(){
+    private class ChatCallback implements EntryListener {
+        public ChatCallback() {
         }
 
         public void entryAdded(EntryEvent event) {
-            if(!username.equals(event.getKey())) {
+            if (!username.equals(event.getKey())) {
                 System.out.println(event.getValue());
             }
         }
 
         public void entryRemoved(EntryEvent event) {
-            if(!username.equals(event.getKey())) {
+            if (!username.equals(event.getKey())) {
                 System.out.println(event.getKey() + " left");
             }
         }
 
         public void entryUpdated(EntryEvent event) {
-            if(!username.equals(event.getKey())) {
+            if (!username.equals(event.getKey())) {
                 System.out.println(event.getValue().toString());
             }
         }

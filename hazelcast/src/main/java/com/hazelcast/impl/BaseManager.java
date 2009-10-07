@@ -17,7 +17,6 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.cluster.RemotelyProcessable;
 import com.hazelcast.core.EntryEvent;
 import static com.hazelcast.core.Instance.InstanceType;
@@ -26,7 +25,7 @@ import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.ResponseTypes.*;
 import com.hazelcast.nio.*;
-import static com.hazelcast.nio.BufferUtil.*;
+import static com.hazelcast.nio.IOUtil.*;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -364,10 +363,6 @@ public abstract class BaseManager {
         void onDisconnect(Address dead);
 
         void setId(long id);
-    }
-
-    public interface Processable {
-        void process();
     }
 
     interface RequestHandler {
@@ -875,7 +870,7 @@ public abstract class BaseManager {
                     List<TargetAwareOp> lsCalls = new ArrayList<TargetAwareOp>();
                     for (Member member : members) {
                         if (!member.localMember()) { // now other members
-                            ClusterImpl.ClusterMember cMember = (ClusterImpl.ClusterMember) member;
+                            MemberImpl cMember = (MemberImpl) member;
                             TargetAwareOp targetAwareOp = createNewTargetAwareOp(cMember.getAddress());
                             targetAwareOp.doOp();
                             lsCalls.add(targetAwareOp);

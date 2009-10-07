@@ -145,7 +145,6 @@ public final class Hazelcast {
         return getDefaultInstance().getInstances();
     }
 
-
     public static void addInstanceListener(InstanceListener instanceListener) {
         getDefaultInstance().addInstanceListener(instanceListener);
     }
@@ -158,16 +157,15 @@ public final class Hazelcast {
      * Creates a new Hazelcast instance (a new node in a cluster).
      * This method allows you to create and run multiple instances
      * of Hazelcast cluster members on the same JVM.
-     *
+     * <p/>
      * To shutdown all running hazelcast instances (all members on this JVM)
-     * call {@link #shutdownAll()}. 
+     * call {@link #shutdownAll()}.
      *
-     * @see #shutdownAll()
      * @param config Configuration for the new hazelcast instance (member)
      * @return new hazelcast instance
+     * @see #shutdownAll()
      */
     public static HazelcastInstance newHazelcastInstance(Config config) {
         return com.hazelcast.impl.FactoryImpl.newFactory(config);
     }
-
 }

@@ -25,7 +25,6 @@ public class EntryObject {
                 return entry.getKey();
             }
         };
-
         qb.exp = expression;
         return this;
     }

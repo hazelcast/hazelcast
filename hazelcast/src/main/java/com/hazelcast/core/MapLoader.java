@@ -20,7 +20,6 @@ package com.hazelcast.core;
 import java.util.Collection;
 import java.util.Map;
 
-
 /**
  * Hazelcast distributed map implementation is an in-memory data store but
  * it can be backed by any type of data store such as RDBMS, OODBMS, or simply

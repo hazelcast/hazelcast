@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.hazelcast.cluster;
 
@@ -15,7 +15,6 @@ public class AddOrRemoveConnection extends AbstractRemotelyProcessable {
     public boolean add = true;
 
     public AddOrRemoveConnection() {
-
     }
 
     public AddOrRemoveConnection(Address address, boolean add) {

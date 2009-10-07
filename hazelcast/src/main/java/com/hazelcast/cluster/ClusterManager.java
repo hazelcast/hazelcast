@@ -21,7 +21,8 @@ import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.*;
 import com.hazelcast.nio.*;
-import static com.hazelcast.nio.BufferUtil.*;
+import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -41,7 +42,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     private long timeToStartJoin = 0;
 
     private final List<MemberImpl> lsMembersBefore = new ArrayList<MemberImpl>();
-
 
     public ClusterManager(final Node node) {
         super(node);
@@ -69,7 +69,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         registerPacketProcessor(ClusterOperation.REMOTELY_PROCESS_AND_RESPOND,
                 new PacketProcessor() {
                     public void process(Packet packet) {
-                        Data data = BufferUtil.doTake(packet.value);
+                        Data data = IOUtil.doTake(packet.value);
                         RemotelyProcessable rp = (RemotelyProcessable) ThreadContext.get()
                                 .toObject(data);
                         rp.setConnection(packet.conn);
@@ -89,7 +89,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                         packet.returnToContainer();
                     }
                 });
-
         registerPacketProcessor(ClusterOperation.REMOTELY_CALLABLE_BOOLEAN,
                 new PacketProcessor() {
                     public void process(Packet packet) {
@@ -112,7 +111,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                         }
                     }
                 });
-
         registerPacketProcessor(ClusterOperation.REMOTELY_CALLABLE_OBJECT,
                 new PacketProcessor() {
                     public void process(Packet packet) {
@@ -137,7 +135,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                             }
                             packet.value = value;
                         }
-
                         sendResponse(packet);
                     }
                 });
@@ -281,11 +278,9 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             }
             log("Now Master " + node.getMasterAddress());
         }
-
         if (isMaster()) {
             setJoins.remove(new MemberInfo(deadAddress));
         }
-
         lsMembersBefore.clear();
         for (MemberImpl member : lsMembers) {
             lsMembersBefore.add(member);
@@ -302,9 +297,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         node.concurrentMapManager.syncForDead(deadAddress);
         node.listenerManager.syncForDead(deadAddress);
         node.topicManager.syncForDead(deadAddress);
-
         node.getClusterImpl().setMembers(lsMembers);
-
         // toArray will avoid CME as onDisconnect does remove the calls
         Object[] calls = mapCalls.values().toArray();
         for (Object call : calls) {
@@ -315,6 +308,16 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     public List<MemberImpl> getMembersBeforeSync() {
         return lsMembersBefore;
+    }
+
+    public boolean isNextChanged() {
+        Member nextMemberBefore = getNextMemberBeforeSync(thisAddress, true, 1);
+        Member nextMemberNow = getNextMemberAfter(thisAddress, true, 1);
+        if (nextMemberBefore == null) {
+            return (nextMemberNow != null);
+        } else {
+            return (!nextMemberBefore.equals(nextMemberNow));
+        }
     }
 
     void handleJoinRequest(JoinRequest joinRequest) {
@@ -402,6 +405,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         setJoins.clear();
         timeToStartJoin = System.currentTimeMillis() + WAIT_MILLIS_BEFORE_JOIN;
     }
+
+
 
     public class AsyncRemotelyObjectCallable extends TargetAwareOp {
         AbstractRemotelyCallable arp = null;
@@ -518,7 +523,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 membersUpdate.addMemberInfo(memberJoined);
             }
         }
-
         executeLocally(new Runnable() {
             public void run() {
                 List<MemberInfo> lsMemberInfos = membersUpdate.lsMemberInfos;
@@ -527,7 +531,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                     newMemberList.add(memberInfo.address);
                 }
                 List<AsyncRemotelyBooleanCallable> calls = new ArrayList<AsyncRemotelyBooleanCallable>(lsMemberInfos.size());
-
                 for (final Address target : newMemberList) {
                     AsyncRemotelyBooleanCallable rrp = new AsyncRemotelyBooleanCallable();
                     rrp.executeProcess(target, membersUpdate);
@@ -538,7 +541,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                         newMemberList.remove(call.getTarget());
                     }
                 }
-
                 calls.clear();
                 for (final Address target : newMemberList) {
                     AsyncRemotelyBooleanCallable call = new AsyncRemotelyBooleanCallable();
@@ -550,7 +552,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                         newMemberList.remove(call.getTarget());
                     }
                 }
-
                 calls.clear();
                 AbstractRemotelyCallable<Boolean> connCheckcallable = new ConnectionCheckCall();
                 for (final Address target : newMemberList) {
@@ -569,7 +570,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     void updateMembers(List<MemberInfo> lsMemberInfos) {
         logger.log(Level.FINEST, "MEMBERS UPDATE!!");
-
         lsMembersBefore.clear();
         Map<Address, MemberImpl> mapOldMembers = new HashMap<Address, MemberImpl>();
         for (MemberImpl member : lsMembers) {
@@ -676,7 +676,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     protected MemberImpl createMember(Address address, Node.NodeType nodeType) {
-        return new MemberImpl(address, thisAddress.equals(address), nodeType);
+        return new MemberImpl(node.getName(), address, thisAddress.equals(address), nodeType);
     }
 
     public MemberImpl getMember(Address address) {
@@ -713,5 +713,4 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             mapCalls.clear();
         }
     }
-
 }

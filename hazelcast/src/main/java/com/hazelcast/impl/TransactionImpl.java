@@ -240,7 +240,6 @@ class TransactionImpl implements Transaction {
         return (rec != null && rec.removed);
     }
 
-
     public void rollback() throws IllegalStateException {
         if (status == TXN_STATUS_NO_TXN || status == TXN_STATUS_UNKNOWN
                 || status == TXN_STATUS_COMMITTED || status == TXN_STATUS_ROLLED_BACK)

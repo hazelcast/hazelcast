@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-
 public final class Serializer {
 
     private static final byte SERIALIZER_TYPE_DATA = 0;
@@ -55,7 +54,6 @@ public final class Serializer {
     final FastByteArrayOutputStream bbos;
 
     final FastByteArrayInputStream bbis;
-
 
     public Serializer() {
         bbos = new FastByteArrayOutputStream(100 * 1024);
@@ -149,29 +147,28 @@ public final class Serializer {
     }
 
     static class StringSerializer implements TypeSerializer<String> {
-        private static final int STRING_CHUNK_SIZE = 16*1024;
+        private static final int STRING_CHUNK_SIZE = 16 * 1024;
 
-		public byte getTypeId() {
+        public byte getTypeId() {
             return SERIALIZER_TYPE_STRING;
         }
 
         public String read(FastByteArrayInputStream bbis) throws Exception {
-        	StringBuilder result = new StringBuilder();
-			while(bbis.available()>0){
-				result.append(bbis.readShortUTF());
-			}
-			
-			return result.toString();
+            StringBuilder result = new StringBuilder();
+            while (bbis.available() > 0) {
+                result.append(bbis.readShortUTF());
+            }
+            return result.toString();
         }
 
         public void write(FastByteArrayOutputStream bbos, String obj) throws Exception {
-        	int length = obj.length();
-			int chunkSize = length/STRING_CHUNK_SIZE+1;
-			for(int i=0;i<chunkSize;i++){
-				int beginIndex = Math.max(0,i*STRING_CHUNK_SIZE-1);
-				int endIndex = Math.min((i+1)*STRING_CHUNK_SIZE-1, length);
-				bbos.writeShortUTF(obj.substring(beginIndex, endIndex));
-			}
+            int length = obj.length();
+            int chunkSize = length / STRING_CHUNK_SIZE + 1;
+            for (int i = 0; i < chunkSize; i++) {
+                int beginIndex = Math.max(0, i * STRING_CHUNK_SIZE - 1);
+                int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
+                bbos.writeShortUTF(obj.substring(beginIndex, endIndex));
+            }
         }
     }
 
@@ -207,7 +204,7 @@ public final class Serializer {
             } catch (Exception e) {
                 e.printStackTrace();
                 throw new IOException("Problem reading DataSerializable class : " + className + ", exception: " + e);
-            } 
+            }
         }
 
         public void write(FastByteArrayOutputStream bbos, DataSerializable obj) throws Exception {
@@ -218,7 +215,7 @@ public final class Serializer {
 
     static class ObjectSerializer implements TypeSerializer<Object> {
         static final boolean shared = ConfigProperty.SERIALIZER_SHARED.getBoolean(false);
-        
+
         public byte getTypeId() {
             return SERIALIZER_TYPE_OBJECT;
         }
@@ -226,7 +223,7 @@ public final class Serializer {
         public Object read(FastByteArrayInputStream bbis) throws Exception {
             ObjectInputStream in = new ObjectInputStream(bbis);
             if (shared) {
-                return in.readObject() ;
+                return in.readObject();
             } else {
                 return in.readUnshared();
             }
@@ -249,5 +246,4 @@ public final class Serializer {
 
         T read(FastByteArrayInputStream bbis) throws Exception;
     }
-
 }

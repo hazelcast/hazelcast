@@ -32,6 +32,12 @@ public class Block implements DataSerializable {
     public Block() {
     }
 
+    public Block(Block block) {
+        blockId = block.blockId;
+        owner = block.owner;
+        migrationAddress = block.migrationAddress;
+    }
+
     public Block(int blockId, Address owner) {
         this.blockId = blockId;
         this.setOwner(owner);

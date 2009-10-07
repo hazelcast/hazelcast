@@ -16,26 +16,24 @@
  */
 package com.hazelcast.jmx;
 
-import java.net.InetAddress;
+import com.hazelcast.core.Member;
 
 import javax.management.ObjectName;
-
-import com.hazelcast.core.Member;
+import java.net.InetAddress;
 
 /**
  * The instrumentation MBean for a member.
- * 
+ *
  * @author Marco Ferrante, DISI - University of Genoa
  */
 @JMXDescription("A member of the cluster")
 public class MemberMBean extends AbstractMBean<Member> {
 
-	private ObjectName name;
-	
-	public MemberMBean(Member managedObject) {
-		super(managedObject);
-	}
+    private ObjectName name;
 
+    public MemberMBean(Member managedObject) {
+        super(managedObject);
+    }
 //	public ObjectName getObjectName() throws Exception {
 //		String memberName = "Local";
 //    	if (!getManagedObject().localMember()) {
@@ -47,34 +45,33 @@ public class MemberMBean extends AbstractMBean<Member> {
 //    	return getParentName().getNested("Member", memberName).buildObjectName();
 //	}
 
-	@Override
-	public ObjectNameSpec getNameSpec() {
-		String memberName = "Local";
-    	if (!getManagedObject().localMember()) {
-    		// String concatenation is not a performance issue,
-    		// used only during registration
-    		memberName =  '"' + getManagedObject().getInetAddress().getHostAddress()
-    				+ ":" + getManagedObject().getPort() + '"';
-    	}
-    	return getParentName().getNested("Member", memberName);
-	}
-	
-	@JMXDescription("The network address")
-	@JMXAttribute("Port")
-	public int getPort() {
-		return getManagedObject().getPort();
-	}
+    @Override
+    public ObjectNameSpec getNameSpec() {
+        String memberName = "Local";
+        if (!getManagedObject().localMember()) {
+            // String concatenation is not a performance issue,
+            // used only during registration
+            memberName = '"' + getManagedObject().getInetAddress().getHostAddress()
+                    + ":" + getManagedObject().getPort() + '"';
+        }
+        return getParentName().getNested("Member", memberName);
+    }
 
-	@JMXAttribute("InetAddress")
-	@JMXDescription("The network port")
-	public InetAddress getInetAddress() {
-		return getManagedObject().getInetAddress();
-	}
+    @JMXDescription("The network address")
+    @JMXAttribute("Port")
+    public int getPort() {
+        return getManagedObject().getPort();
+    }
 
-	@JMXAttribute("SuperClient")
-	@JMXDescription("The member is a superclient")
-	public boolean isSuperClient() {
-		return getManagedObject().isSuperClient();
-	}
+    @JMXAttribute("InetAddress")
+    @JMXDescription("The network port")
+    public InetAddress getInetAddress() {
+        return getManagedObject().getInetAddress();
+    }
 
+    @JMXAttribute("SuperClient")
+    @JMXDescription("The member is a superclient")
+    public boolean isSuperClient() {
+        return getManagedObject().isSuperClient();
+    }
 }

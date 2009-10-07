@@ -41,7 +41,7 @@ public final class ThreadContext {
 
     private final Serializer serializer = new Serializer();
 
-    CallContext callContext = null;
+    private CallContext callContext = null;
 
     private final ObjectPool<Packet> packetCache;
 
@@ -56,7 +56,7 @@ public final class ThreadContext {
     }
 
     private ThreadContext() {
-        callContext = new CallContext(createNewThreadId(), false);
+        setCallContext(new CallContext(createNewThreadId(), false));
         int packetCacheSize = 0;
         String threadName = Thread.currentThread().getName();
         if (threadName.startsWith("hz.")) {
@@ -99,23 +99,23 @@ public final class ThreadContext {
     }
 
     public void finalizeTxn() {
-        callContext.finalizeTxn();
+        getCallContext().finalizeTxn();
     }
 
     public Transaction getTransaction() {
-        return callContext.getTxn();
+        return getCallContext().getCurrentTxn();
     }
 
     public long getTxnId() {
-        return callContext.getTxnId();
+        return getCallContext().getTxnId();
     }
 
     public CallContext getExecutionContext() {
-        return callContext;
+        return getCallContext();
     }
 
     public void setExecutionContext(CallContext executionContext) {
-        this.callContext = executionContext;
+        this.setCallContext(executionContext);
     }
 
     public void reset() {
@@ -152,11 +152,15 @@ public final class ThreadContext {
      * @return true if the thread is for Java or CSharp Client, false otherwise
      */
     public boolean isClient() {
-        return callContext.isClient();
+        return getCallContext().isClient();
     }
 
     public int createNewThreadId() {
         return newThreadId.incrementAndGet();
+    }
+
+    public CallContext getCallContext() {
+        return callContext;
     }
 
     class CallCache {
@@ -268,7 +272,7 @@ public final class ThreadContext {
     }
 
     public int getThreadId() {
-        return callContext.getThreadId();
+        return getCallContext().getThreadId();
     }
 
     public void setCallContext(CallContext callContext) {

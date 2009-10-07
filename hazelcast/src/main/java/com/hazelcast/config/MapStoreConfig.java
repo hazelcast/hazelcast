@@ -19,7 +19,6 @@ package com.hazelcast.config;
 
 /**
  * MapStore configuration
- *
  */
 public final class MapStoreConfig {
     private boolean enabled = true;
@@ -30,6 +29,7 @@ public final class MapStoreConfig {
 
     /**
      * Returns the name of the MapStore implementation class
+     *
      * @return the name of the class
      */
     public String getClassName() {
@@ -38,6 +38,7 @@ public final class MapStoreConfig {
 
     /**
      * Sets the name fo the MapStore implementation class
+     *
      * @param className the name of the MapStore implementation class to set
      */
     public void setClassName(String className) {
@@ -46,6 +47,7 @@ public final class MapStoreConfig {
 
     /**
      * Returns the number of seconds to delay the store writes.
+     *
      * @return the number of delay seconds
      */
     public int getWriteDelaySeconds() {
@@ -63,6 +65,7 @@ public final class MapStoreConfig {
 
     /**
      * Returns if this configuration is enabled
+     *
      * @return true if enabled, false otherwise
      */
     public boolean isEnabled() {
@@ -71,7 +74,8 @@ public final class MapStoreConfig {
 
     /**
      * Enables and disables this configuration
-     * @param enabled 
+     *
+     * @param enabled
      */
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;

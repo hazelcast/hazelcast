@@ -70,7 +70,7 @@ public final class Data implements DataSerializable {
     }
 
     public void read(ByteBuffer src) {
-        BufferUtil.copyToHeapBuffer(src, buffer);
+        IOUtil.copyToHeapBuffer(src, buffer);
     }
 
     public void postRead() {

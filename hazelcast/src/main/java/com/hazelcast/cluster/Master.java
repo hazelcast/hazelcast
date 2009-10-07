@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.hazelcast.cluster;
 
@@ -13,23 +13,23 @@ import java.io.IOException;
  * The Class Master.
  */
 public class Master extends AbstractRemotelyProcessable {
-	
-    /** The address. */
+
+    /**
+     * The address.
+     */
     protected Address address = null;
 
     /**
-	 * Instantiates a new master.
-	 */
+     * Instantiates a new master.
+     */
     public Master() {
-
     }
 
     /**
-	 * Instantiates a new master.
-	 * 
-	 * @param originAddress
-	 *            the origin address
-	 */
+     * Instantiates a new master.
+     *
+     * @param originAddress the origin address
+     */
     public Master(final Address originAddress) {
         super();
         this.address = originAddress;
@@ -67,23 +67,21 @@ public class Master extends AbstractRemotelyProcessable {
         node.clusterManager.handleMaster(this);
     }
 
-	/**
-	 * Gets the address.
-	 * 
-	 * @return the address
-	 */
-	public Address getAddress() {
-		return address;
-	}
+    /**
+     * Gets the address.
+     *
+     * @return the address
+     */
+    public Address getAddress() {
+        return address;
+    }
 
-	/**
-	 * Sets the address.
-	 * 
-	 * @param address
-	 *            the address to set
-	 */
-	public void setAddress(final Address address) {
-		this.address = address;
-	}
-    
+    /**
+     * Sets the address.
+     *
+     * @param address the address to set
+     */
+    public void setAddress(final Address address) {
+        this.address = address;
+    }
 }

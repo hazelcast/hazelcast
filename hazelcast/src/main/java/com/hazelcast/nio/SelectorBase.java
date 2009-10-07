@@ -26,8 +26,8 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -77,7 +77,6 @@ public class SelectorBase implements Runnable {
             l.await();
         } catch (InterruptedException ignored) {
         }
-
     }
 
     public int addTask(final Runnable runnable) {
@@ -140,7 +139,6 @@ public class SelectorBase implements Runnable {
         }
     }
 
-
     protected void handleSelectorException(final Exception e) {
         String msg = "Selector exception at  " + Thread.currentThread().getName();
         msg += ", cause= " + e.toString();
@@ -153,7 +151,6 @@ public class SelectorBase implements Runnable {
         socketChannel.socket().setSendBufferSize(AbstractSelectionHandler.SEND_SOCKET_BUFFER_SIZE);
         socketChannel.socket().setKeepAlive(true);
 //        socketChannel.socket().setTcpNoDelay(true);
-
         socketChannel.configureBlocking(false);
         return node.connectionManager.createConnection(socketChannel,
                 acceptor);

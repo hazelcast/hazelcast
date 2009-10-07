@@ -50,18 +50,16 @@ class Parser {
         if (indexIn == -1) {
             indexIn = in.indexOf("IN");
         }
-        if ( indexIn != -1) {
+        if (indexIn != -1) {
             int indexOpen = in.indexOf("(", indexIn);
             int indexClose = in.indexOf(")", indexOpen);
-            String sub = in.substring(indexOpen, indexClose+1);
+            String sub = in.substring(indexOpen, indexClose + 1);
             sub = sub.replaceAll(" ", "");
-            in = in.substring(0, indexOpen) + sub + in.substring(indexClose+1);
+            in = in.substring(0, indexOpen) + sub + in.substring(indexClose + 1);
         }
-
         List<String> stack = new ArrayList<String>();
         List<String> output = new ArrayList<String>();
         List<String> tokens = split(in);
-
         if (tokens.contains("between") || tokens.contains("BETWEEN")) {
             boolean found = true;
             boolean dirty = false;
@@ -102,7 +100,6 @@ class Parser {
                 output.add(token);
             }
         }
-
         while (stack.size() > 0) {
             output.add(stack.remove(stack.size() - 1));
         }
@@ -126,7 +123,6 @@ class Parser {
                 result.append(c);
             }
         }
-
         String[] tokens = result.toString().split(SPLIT_EXPRESSION);
         List<String> list = new ArrayList<String>();
         for (int i = 0; i < tokens.length; i++) {

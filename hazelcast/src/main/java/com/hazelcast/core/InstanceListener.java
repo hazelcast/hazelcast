@@ -19,11 +19,9 @@ package com.hazelcast.core;
 
 import java.util.EventListener;
 
-
 public interface InstanceListener extends EventListener {
 
     void instanceCreated(InstanceEvent event);
 
     void instanceDestroyed(InstanceEvent event);
-
 }

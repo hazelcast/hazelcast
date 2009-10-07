@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.hazelcast.cluster;
 
@@ -8,7 +8,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
-
 
 public class MultiRemotelyProcessable extends AbstractRemotelyProcessable {
     List<RemotelyProcessable> lsProcessables = new LinkedList<RemotelyProcessable>();

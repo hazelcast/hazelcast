@@ -210,20 +210,20 @@ public final class Packet {
     }
 
     public final boolean writeToSocketBuffer(ByteBuffer dest) {
-        totalWritten += BufferUtil.copyToDirectBuffer(bbSizes, dest);
-        totalWritten += BufferUtil.copyToDirectBuffer(bbHeader, dest);
+        totalWritten += IOUtil.copyToDirectBuffer(bbSizes, dest);
+        totalWritten += IOUtil.copyToDirectBuffer(bbHeader, dest);
         if (key != null && key.size() > 0) {
-            totalWritten += BufferUtil.copyToDirectBuffer(key.buffer, dest);
+            totalWritten += IOUtil.copyToDirectBuffer(key.buffer, dest);
         }
         if (value != null && value.size() > 0) {
-            totalWritten += BufferUtil.copyToDirectBuffer(value.buffer, dest);
+            totalWritten += IOUtil.copyToDirectBuffer(value.buffer, dest);
         }
         return totalWritten >= totalSize;
     }
 
     public final boolean read(ByteBuffer bb) {
         while (!sizeRead && bb.hasRemaining() && bbSizes.hasRemaining()) {
-            BufferUtil.copyToHeapBuffer(bb, bbSizes);
+            IOUtil.copyToHeapBuffer(bb, bbSizes);
         }
         if (!sizeRead && !bbSizes.hasRemaining()) {
             sizeRead = true;
@@ -237,7 +237,7 @@ public final class Packet {
         }
         if (sizeRead) {
             while (bb.hasRemaining() && bbHeader.hasRemaining()) {
-                BufferUtil.copyToHeapBuffer(bb, bbHeader);
+                IOUtil.copyToHeapBuffer(bb, bbHeader);
             }
             while (bb.hasRemaining() && key.shouldRead()) {
                 key.read(bb);

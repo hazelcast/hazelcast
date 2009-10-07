@@ -31,7 +31,6 @@ import java.util.logging.Logger;
 public class AddressPicker {
     protected static Logger logger = Logger.getLogger(AddressPicker.class.getName());
 
-
     public AddressPicker() {
     }
 
@@ -137,12 +136,11 @@ public class AddressPicker {
              * this will cause problem on windows
              * see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6421091
              * http://www.hsc.fr/ressources/articles/win_net_srv/multiple_bindings.html
-             * 
+             *
              * By default if the OS is Windows then reuseaddress will be false.
              */
             serverSocket.setReuseAddress(reuseAddress);
             InetSocketAddress isa;
-
             int port = config.getPort();
             for (int i = 0; i < 100; i++) {
                 try {
@@ -157,7 +155,7 @@ public class AddressPicker {
                     } else {
                         String msg = "Port [" + port + "] is already use and auto-increment is " +
                                 "disabled. Hazelcast cannot start.";
-                        logger.log (Level.SEVERE, msg);
+                        logger.log(Level.SEVERE, msg);
                         throw e;
                     }
                 }

@@ -19,23 +19,27 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.DataSerializable;
 
+import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-public class MemberImpl implements Member {
+public final class MemberImpl implements Member, DataSerializable {
 
+    protected String factoryName;
     protected boolean localMember;
     protected Address address;
     protected Node.NodeType nodeType;
-    protected long lastRead = 0;
-    protected long lastWrite = 0;
+    protected transient long lastRead = 0;
+    protected transient long lastWrite = 0;
 
-    public MemberImpl () {
+    public MemberImpl() {
     }
 
-    public MemberImpl(Address address, boolean localMember, Node.NodeType nodeType) {
+    public MemberImpl(String factoryName, Address address, boolean localMember, Node.NodeType nodeType) {
         super();
+        this.factoryName = factoryName;
         this.nodeType = nodeType;
         this.localMember = localMember;
         this.address = address;
@@ -87,6 +91,29 @@ public class MemberImpl implements Member {
         return (nodeType == Node.NodeType.SUPER_CLIENT);
     }
 
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        writeData(out);
+    }
+
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        readData(in);
+    }
+
+    public void readData(DataInput in) throws IOException {
+        address = new Address();
+        address.readData(in);
+        nodeType = Node.NodeType.create(in.readInt());
+        factoryName = in.readUTF();
+        Node node = FactoryImpl.getFactoryImpl(factoryName).node;
+        localMember = node.getThisAddress().equals(address);
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        address.writeData(out);
+        out.writeInt(nodeType.getValue());
+        out.writeUTF(factoryName);
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("Member [");
@@ -96,7 +123,7 @@ public class MemberImpl implements Member {
         sb.append("] ");
         if (localMember) {
             sb.append("this ");
-        } 
+        }
         return sb.toString();
     }
 
@@ -124,5 +151,4 @@ public class MemberImpl implements Member {
             return false;
         return true;
     }
-
 }

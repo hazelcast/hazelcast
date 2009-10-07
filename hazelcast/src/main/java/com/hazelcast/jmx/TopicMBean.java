@@ -21,94 +21,89 @@ import com.hazelcast.core.MessageListener;
 
 /**
  * Management bean for Hazelcst Topic
- * 
+ *
  * @author Marco Ferrante, DISI - University of Genoa
  */
 @JMXDescription("A distributed queue")
 public class TopicMBean extends AbstractMBean<ITopic<?>> {
 
-	@SuppressWarnings("unchecked")
-	protected MessageListener listener;
-	
-	private StatisticsCollector servedStats = null;
-	
+    @SuppressWarnings("unchecked")
+    protected MessageListener listener;
+
+    private StatisticsCollector servedStats = null;
+
     public TopicMBean(ITopic<?> topic) {
-    	super(topic);
+        super(topic);
     }
 
-	@Override
-	public ObjectNameSpec getNameSpec() {
-    	return getParentName().getNested("Topic", getName());
-	}
-   
-	@SuppressWarnings("unchecked")
-	@Override
-	public void postRegister(Boolean registrationDone) {
-		super.postRegister(registrationDone);
-		if (!registrationDone) {
-			return;
-		}
-		
-		if (ManagementService.showDetails()) {
-			servedStats = ManagementService.newStatisticsCollector(); 
-			
-			listener = new MessageListener() {
+    @Override
+    public ObjectNameSpec getNameSpec() {
+        return getParentName().getNested("Topic", getName());
+    }
 
-				public void onMessage(Object msg) {
-					servedStats.addEvent();
-				}
-				
-			};
-			getManagedObject().addMessageListener(listener);
-			
-		}
-	}
+    @SuppressWarnings("unchecked")
+    @Override
+    public void postRegister(Boolean registrationDone) {
+        super.postRegister(registrationDone);
+        if (!registrationDone) {
+            return;
+        }
+        if (ManagementService.showDetails()) {
+            servedStats = ManagementService.newStatisticsCollector();
+            listener = new MessageListener() {
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public void preDeregister() throws Exception {
-		if (listener != null) {
-			getManagedObject().removeMessageListener(listener);
-			listener = null;
-		}
-		if (servedStats != null) {
-			servedStats.destroy();
-			servedStats = null;
-		}
-		super.preDeregister();
-	}
+                public void onMessage(Object msg) {
+                    servedStats.addEvent();
+                }
+            };
+            getManagedObject().addMessageListener(listener);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void preDeregister() throws Exception {
+        if (listener != null) {
+            getManagedObject().removeMessageListener(listener);
+            listener = null;
+        }
+        if (servedStats != null) {
+            servedStats.destroy();
+            servedStats = null;
+        }
+        super.preDeregister();
+    }
 
     /**
      * Resets statistics
      */
-	@JMXOperation("resetStats")
+    @JMXOperation("resetStats")
     public void resetStats() {
-    	if (servedStats != null)
-    		servedStats.reset();
+        if (servedStats != null)
+            servedStats.reset();
     }
-    
-	@JMXAttribute("Name")
-	@JMXDescription("Registration name of the queue")
-	public String getName() {
-		return getManagedObject().getName();
-	}
-	
-	@JMXAttribute("MessagesDispatched")
-	@JMXDescription("Total messages dispatched since creation")
-	public long getItemsReceived() {
-		return servedStats.getTotal();
-	}
 
-	@JMXAttribute("MessagesDispatchedLast")
-	@JMXDescription("Messages dispatched in the last second")
-	public double getItemsReceivedAvg() {
-		return servedStats.getAverage();
-	}
+    @JMXAttribute("Name")
+    @JMXDescription("Registration name of the queue")
+    public String getName() {
+        return getManagedObject().getName();
+    }
 
-	@JMXAttribute("MessagesDispatchedPeak")
-	@JMXDescription("Max messages dispatched  per second")
-	public double getItemsReceivedMax() {
-		return servedStats.getMax();
-	}
-	
+    @JMXAttribute("MessagesDispatched")
+    @JMXDescription("Total messages dispatched since creation")
+    public long getItemsReceived() {
+        return servedStats.getTotal();
+    }
+
+    @JMXAttribute("MessagesDispatchedLast")
+    @JMXDescription("Messages dispatched in the last second")
+    public double getItemsReceivedAvg() {
+        return servedStats.getAverage();
+    }
+
+    @JMXAttribute("MessagesDispatchedPeak")
+    @JMXDescription("Max messages dispatched  per second")
+    public double getItemsReceivedMax() {
+        return servedStats.getMax();
+    }
 }

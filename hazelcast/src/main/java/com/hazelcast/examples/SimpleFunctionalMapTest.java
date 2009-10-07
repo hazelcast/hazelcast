@@ -88,7 +88,6 @@ public class SimpleFunctionalMapTest {
                 }
             });
         }
-
         Executors.newSingleThreadExecutor().submit(new Runnable() {
             public void run() {
                 while (true) {
@@ -131,13 +130,11 @@ public class SimpleFunctionalMapTest {
         public Stats getAndReset() {
             Stats newOne = new Stats();
             Set<Map.Entry<String, AtomicLong>> entries = newOne.mapStats.entrySet();
-
             for (Map.Entry<String, AtomicLong> entry : entries) {
                 String key = entry.getKey();
                 AtomicLong value = entry.getValue();
                 value.set(mapStats.get(key).getAndSet(0));
             }
-
             return newOne;
         }
 
@@ -154,7 +151,6 @@ public class SimpleFunctionalMapTest {
                 total += value.get();
             }
             sb.append("Operations per Second : " + total / STATS_SECONDS + " \n");
-
             return sb.toString();
         }
 

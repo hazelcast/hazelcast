@@ -29,6 +29,7 @@ import java.util.Set;
 public interface MultiMap<K, V> extends Instance {
     /**
      * Returns the name of this multimap.
+     *
      * @return the name of this multimap
      */
     String getName();
@@ -129,11 +130,12 @@ public interface MultiMap<K, V> extends Instance {
      * Clears the multimap. Removes all key-value pairs.
      */
     void clear();
-    
+
     /**
      * Returns number of values matching to given key in the multimap.
-     * @param key  the key whose values count are to be returned
-     * @return number of values matching to given key in the multimap. 
+     *
+     * @param key the key whose values count are to be returned
+     * @return number of values matching to given key in the multimap.
      */
     int valueCount(K key);
 }

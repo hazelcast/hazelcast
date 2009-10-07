@@ -91,7 +91,7 @@ public class QueryService implements Runnable {
         void reset() {
             ownedRecords.clear();
             mapValueIndex.clear();
-            if(mapIndexes != null) {
+            if (mapIndexes != null) {
                 mapIndexes.clear();
             }
         }
@@ -176,7 +176,7 @@ public class QueryService implements Runnable {
                     Index index = indexes[i];
                     long oldValue = (oldValues == null) ? Long.MIN_VALUE : oldValues[i];
                     if (oldValue == Long.MIN_VALUE) {
-                        index.addNewIndex(newValues[i], types[i],  record);
+                        index.addNewIndex(newValues[i], types[i], record);
                     } else {
                         index.updateIndex(oldValue, newValues[i], types[i], record);
                     }
@@ -277,7 +277,6 @@ public class QueryService implements Runnable {
             }
             return results;
         }
-
     }
 
     public static long getLongValue(Object value) {
@@ -370,6 +369,4 @@ public class QueryService implements Runnable {
         }
         return indexRegion;
     }
-
-
 }

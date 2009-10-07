@@ -23,8 +23,8 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.MessageListener;
 import static com.hazelcast.impl.ClusterOperation.ADD_LISTENER;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.BufferUtil;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Packet;
 
 import java.util.Iterator;
@@ -35,10 +35,12 @@ import java.util.logging.Level;
 public class ListenerManager extends BaseManager {
     private List<ListenerItem> listeners = new CopyOnWriteArrayList<ListenerItem>();
 
-    public enum Type {Map, Item, Message}
+    public enum Type {
+        Map, Item, Message
+    }
 
     ListenerManager(Node node) {
-        super (node);
+        super(node);
         registerPacketProcessor(ClusterOperation.EVENT, new PacketProcessor() {
             public void process(Packet packet) {
                 handleEvent(packet);
@@ -58,8 +60,8 @@ public class ListenerManager extends BaseManager {
 
     private void handleEvent(Packet packet) {
         int eventType = (int) packet.longValue;
-        Data key = BufferUtil.doTake(packet.key);
-        Data value = BufferUtil.doTake(packet.value);
+        Data key = IOUtil.doTake(packet.key);
+        Data value = IOUtil.doTake(packet.value);
         String name = packet.name;
         Address from = packet.conn.getEndPoint();
         packet.returnToContainer();
@@ -67,7 +69,7 @@ public class ListenerManager extends BaseManager {
     }
 
     private void handleAddRemoveListener(boolean add, Packet packet) {
-        Data key = (packet.key != null) ? BufferUtil.doTake(packet.key) : null;
+        Data key = (packet.key != null) ? IOUtil.doTake(packet.key) : null;
         boolean returnValue = (packet.longValue == 1);
         String name = packet.name;
         Address address = packet.conn.getEndPoint();
@@ -109,7 +111,7 @@ public class ListenerManager extends BaseManager {
             handleListenerRegisterations(add, request.name, request.key, request.caller, includeValue);
             request.response = Boolean.TRUE;
         }
-    }  
+    }
 
     public class AddRemoveListener extends MultiCall {
         final String name;
@@ -260,7 +262,6 @@ public class ListenerManager extends BaseManager {
          * send this address to the key owner as a listener add this listener to
          * the local listeners map
          */
-
         Iterator<ListenerItem> it = listeners.iterator();
         for (; it.hasNext();) {
             ListenerItem listenerItem = it.next();
@@ -290,11 +291,11 @@ public class ListenerManager extends BaseManager {
         Object listener = listenerItem.listener;
         if (listenerItem.type == Type.Map) {
             EntryListener l = (EntryListener) listener;
-            if (event.getEventType() == EntryEvent.EntryEventType.ADDED){
+            if (event.getEventType() == EntryEvent.EntryEventType.ADDED) {
                 l.entryAdded(event);
-            }else if (event.getEventType() == EntryEvent.EntryEventType.REMOVED){
+            } else if (event.getEventType() == EntryEvent.EntryEventType.REMOVED) {
                 l.entryRemoved(event);
-            }else if (event.getEventType() == EntryEvent.EntryEventType.UPDATED){
+            } else if (event.getEventType() == EntryEvent.EntryEventType.UPDATED) {
                 l.entryUpdated(event);
             }
         } else if (listenerItem.type == Type.Item) {
@@ -325,11 +326,10 @@ public class ListenerManager extends BaseManager {
             this.includeValue = includeValue;
             this.type = listenerType;
         }
-        public boolean listens(EventTask event){
-        	 String name = event.getName();
-        	 return this.name.equals(name) && (this.key == null || event.getKey().equals(this.key));
+
+        public boolean listens(EventTask event) {
+            String name = event.getName();
+            return this.name.equals(name) && (this.key == null || event.getKey().equals(this.key));
         }
-
     }
-
 }

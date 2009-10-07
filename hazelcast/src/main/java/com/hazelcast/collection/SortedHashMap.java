@@ -58,12 +58,10 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
         if (loadFactor <= 0 || Float.isNaN(loadFactor))
             throw new IllegalArgumentException("Illegal load factor: " +
                     loadFactor);
-
         // Find a power of 2 >= initialCapacity
         int capacity = 1;
         while (capacity < initialCapacity)
             capacity <<= 1;
-
         this.orderingType = orderingType;
         this.loadFactor = loadFactor;
         threshold = (int) (capacity * loadFactor);
@@ -71,7 +69,6 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
         header = new Entry<K, V>(-1, null, null, null);
         header.before = header.after = header;
     }
-
 
     public V put(K key, V value) {
         int hash = hash(key.hashCode());
@@ -144,7 +141,6 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
         int i = indexFor(hash, table.length);
         Entry<K, V> prev = table[i];
         Entry<K, V> e = prev;
-
         while (e != null) {
             Entry<K, V> next = e.next;
             if ((e.hash == hash) && (k == e.key || k.equals(e.key))) {
@@ -160,21 +156,18 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
             prev = e;
             e = next;
         }
-
         return e;
     }
 
     Entry<K, V> removeMapping(Object o) {
         if (!(o instanceof Map.Entry))
             return null;
-
         Map.Entry<K, V> entry = (Map.Entry<K, V>) o;
         Object k = entry.getKey();
         int hash = hash(k.hashCode());
         int i = indexFor(hash, table.length);
         Entry<K, V> prev = table[i];
         Entry<K, V> e = prev;
-
         while (e != null) {
             Entry<K, V> next = e.next;
             if (e.hash == hash && e.equals(entry)) {
@@ -190,7 +183,6 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
             prev = e;
             e = next;
         }
-
         return e;
     }
 
@@ -209,7 +201,6 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
         return false;
     }
 
-
     void createEntry(int hash, K key, V value, int bucketIndex) {
         Entry<K, V> old = table[bucketIndex];
         Entry<K, V> e = new Entry<K, V>(hash, key, value, old);
@@ -225,7 +216,6 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
             threshold = Integer.MAX_VALUE;
             return;
         }
-
         Entry[] newTable = new Entry[newCapacity];
         transfer(newTable);
         table = newTable;
@@ -250,7 +240,6 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
         return h & (length - 1);
     }
 
-
     public boolean containsValue(Object value) {
         // Overridden to take advantage of faster iterator
         if (value == null) {
@@ -264,7 +253,6 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
         }
         return false;
     }
-
 
     static class Entry<K, V> implements Map.Entry<K, V> {
         K key;
@@ -284,7 +272,6 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
             lastAccess = System.currentTimeMillis();
         }
 
-
         public K getKey() {
             return key;
         }
@@ -302,7 +289,6 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
             if (!(o instanceof Map.Entry)) {
                 return false;
             }
-
             Map.Entry e = (Map.Entry) o;
             Object k1 = getKey();
             Object k2 = e.getKey();
@@ -324,7 +310,6 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
             return "Entry key=" + getKey() + ", value=" + getValue();
         }
 
-
         private void remove() {
             before.after = after;
             after.before = before;
@@ -340,7 +325,6 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
         private void addAfter(Entry<K, V> existingEntry) {
             addBefore(existingEntry.after);
         }
-
 
         /**
          * This method is invoked by the superclass whenever the value
@@ -425,7 +409,6 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
                 throw new IllegalStateException();
             if (modCount != expectedModCount)
                 throw new ConcurrentModificationException();
-
             SortedHashMap.this.remove(lastReturned.key);
             lastReturned = null;
             expectedModCount = modCount;
@@ -436,7 +419,6 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
                 throw new ConcurrentModificationException();
             if (nextEntry == header)
                 throw new NoSuchElementException();
-
             Entry<K, V> e = lastReturned = nextEntry;
             nextEntry = e.after;
             return e;
@@ -473,7 +455,6 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
     Iterator<Map.Entry<K, V>> newEntryIterator() {
         return new EntryIterator();
     }
-
 
     private transient Set<Map.Entry<K, V>> entrySet = null;
     transient volatile Set<K> keySet = null;

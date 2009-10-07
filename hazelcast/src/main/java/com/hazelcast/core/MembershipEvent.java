@@ -54,5 +54,4 @@ public class MembershipEvent extends EventObject {
         return "MembershipEvent {" + member + "} "
                 + ((eventType == MEMBER_ADDED) ? "added" : "removed");
     }
-
 }

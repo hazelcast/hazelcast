@@ -19,18 +19,17 @@ package com.hazelcast.config;
 
 import java.io.File;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Config {
 
-	public static final int DEFAULT_PORT = 5701;
+    public static final int DEFAULT_PORT = 5701;
 
-	public static final String DEFAULT_GROUP_PASSWORD = "group-pass";
+    public static final String DEFAULT_GROUP_PASSWORD = "group-pass";
 
-	public static final String DEFAULT_GROUP_NAME = "group-dev";
+    public static final String DEFAULT_GROUP_NAME = "group-dev";
 
     private String xmlConfig = null;
 
@@ -51,17 +50,17 @@ public class Config {
     private Map<String, QueueConfig> mapQueueConfigs = new ConcurrentHashMap<String, QueueConfig>();
 
     private Map<String, MapConfig> mapMapConfigs = new ConcurrentHashMap<String, MapConfig>();
-    
+
     private URL configurationUrl;
-    
+
     private File configurationFile;
-    
+
     private NetworkConfig networkConfig = new NetworkConfig();
 
     private boolean superClient = false;
 
     private ClassLoader classLoader = null;
-    
+
     public Config() {
         final String superClientProp = System.getProperty("hazelcast.super.client");
         if (superClientProp != null) {
@@ -70,13 +69,10 @@ public class Config {
             }
         }
         String os = System.getProperty("os.name").toLowerCase();
-		reuseAddress = (os.indexOf( "win" ) == -1);
+        reuseAddress = (os.indexOf("win") == -1);
     }
 
     public ClassLoader getClassLoader() {
-        if (classLoader == null) {
-            return Thread.currentThread().getContextClassLoader();
-        }
         return classLoader;
     }
 
@@ -136,11 +132,9 @@ public class Config {
             if (indexFirstPart == -1) {
                 return false;
             }
-
             final String secondPart = pattern.substring(index + 1);
             final int indextSecondPart = name.indexOf(secondPart, index + 1);
             return indextSecondPart != -1;
-
         }
     }
 
@@ -153,75 +147,74 @@ public class Config {
     }
 
     /**
-	 * @return the xmlConfig
-	 */
-	public String getXmlConfig() {
-		return xmlConfig;
-	}
+     * @return the xmlConfig
+     */
+    public String getXmlConfig() {
+        return xmlConfig;
+    }
 
-	/**
-	 * @param xmlConfig the xmlConfig to set
-	 */
-	public void setXmlConfig(String xmlConfig) {
-		this.xmlConfig = xmlConfig;
-	}
+    /**
+     * @param xmlConfig the xmlConfig to set
+     */
+    public void setXmlConfig(String xmlConfig) {
+        this.xmlConfig = xmlConfig;
+    }
 
-	/**
-	 * @return the groupName
-	 */
-	public String getGroupName() {
-		return groupName;
-	}
+    /**
+     * @return the groupName
+     */
+    public String getGroupName() {
+        return groupName;
+    }
 
-	/**
-	 * @param groupName the groupName to set
-	 */
-	public void setGroupName(String groupName) {
-		this.groupName = groupName;
-	}
+    /**
+     * @param groupName the groupName to set
+     */
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
 
-	/**
-	 * @return the groupPassword
-	 */
-	public String getGroupPassword() {
-		return groupPassword;
-	}
+    /**
+     * @return the groupPassword
+     */
+    public String getGroupPassword() {
+        return groupPassword;
+    }
 
-	/**
-	 * @param groupPassword the groupPassword to set
-	 */
-	public void setGroupPassword(String groupPassword) {
-		this.groupPassword = groupPassword;
-	}
+    /**
+     * @param groupPassword the groupPassword to set
+     */
+    public void setGroupPassword(String groupPassword) {
+        this.groupPassword = groupPassword;
+    }
 
-	/**
-	 * @return the port
-	 */
-	public int getPort() {
-		return port;
-	}
+    /**
+     * @return the port
+     */
+    public int getPort() {
+        return port;
+    }
 
-	/**
-	 * @param port the port to set
-	 */
-	public void setPort(int port) {
-		this.port = port;
-	}
+    /**
+     * @param port the port to set
+     */
+    public void setPort(int port) {
+        this.port = port;
+    }
 
-	/**
-	 * @return the portAutoIncrement
-	 */
-	public boolean isPortAutoIncrement() {
-		return portAutoIncrement;
-	}
+    /**
+     * @return the portAutoIncrement
+     */
+    public boolean isPortAutoIncrement() {
+        return portAutoIncrement;
+    }
 
-	/**
-	 * @param portAutoIncrement the portAutoIncrement to set
-	 */
-	public void setPortAutoIncrement(boolean portAutoIncrement) {
-		this.portAutoIncrement = portAutoIncrement;
-	}
-
+    /**
+     * @param portAutoIncrement the portAutoIncrement to set
+     */
+    public void setPortAutoIncrement(boolean portAutoIncrement) {
+        this.portAutoIncrement = portAutoIncrement;
+    }
 
     public boolean isReuseAddress() {
         return reuseAddress;
@@ -232,88 +225,88 @@ public class Config {
     }
 
     /**
-	 * @return the executorConfig
-	 */
-	public ExecutorConfig getExecutorConfig() {
-		return executorConfig;
-	}
-
-	/**
-	 * @param executorConfig the executorConfig to set
-	 */
-	public void setExecutorConfig(ExecutorConfig executorConfig) {
-		this.executorConfig = executorConfig;
-	}
-
-	/**
-	 * @return the mapTopicConfigs
-	 */
-	public Map<String, TopicConfig> getMapTopicConfigs() {
-		return mapTopicConfigs;
-	}
-
-	/**
-	 * @param mapTopicConfigs the mapTopicConfigs to set
-	 */
-	public void setMapTopicConfigs(Map<String, TopicConfig> mapTopicConfigs) {
-		this.mapTopicConfigs = mapTopicConfigs;
-	}
-
-	/**
-	 * @return the mapQConfigs
-	 */
-	public Map<String, QueueConfig> getMapQConfigs() {
-		return mapQueueConfigs;
-	}
-
-	/**
-	 * @param mapQConfigs the mapQConfigs to set
-	 */
-	public void setMapQConfigs(Map<String, QueueConfig> mapQConfigs) {
-		this.mapQueueConfigs = mapQConfigs;
-	}
-
-	/**
-	 * @return the mapMapConfigs
-	 */
-	public Map<String, MapConfig> getMapMapConfigs() {
-		return mapMapConfigs;
-	}
-
-	/**
-	 * @param mapMapConfigs the mapMapConfigs to set
-	 */
-	public void setMapMapConfigs(Map<String, MapConfig> mapMapConfigs) {
-		this.mapMapConfigs = mapMapConfigs;
-	}
+     * @return the executorConfig
+     */
+    public ExecutorConfig getExecutorConfig() {
+        return executorConfig;
+    }
 
     /**
-	 * @return the configurationUrl
-	 */
-	public URL getConfigurationUrl() {
-		return configurationUrl;
-	}
+     * @param executorConfig the executorConfig to set
+     */
+    public void setExecutorConfig(ExecutorConfig executorConfig) {
+        this.executorConfig = executorConfig;
+    }
 
-	/**
-	 * @param configurationUrl the configurationUrl to set
-	 */
-	public void setConfigurationUrl(URL configurationUrl) {
-		this.configurationUrl = configurationUrl;
-	}
+    /**
+     * @return the mapTopicConfigs
+     */
+    public Map<String, TopicConfig> getMapTopicConfigs() {
+        return mapTopicConfigs;
+    }
 
-	/**
-	 * @return the configurationFile
-	 */
-	public File getConfigurationFile() {
-		return configurationFile;
-	}
+    /**
+     * @param mapTopicConfigs the mapTopicConfigs to set
+     */
+    public void setMapTopicConfigs(Map<String, TopicConfig> mapTopicConfigs) {
+        this.mapTopicConfigs = mapTopicConfigs;
+    }
 
-	/**
-	 * @param configurationFile the configurationFile to set
-	 */
-	public void setConfigurationFile(File configurationFile) {
-		this.configurationFile = configurationFile;
-	}
+    /**
+     * @return the mapQConfigs
+     */
+    public Map<String, QueueConfig> getMapQConfigs() {
+        return mapQueueConfigs;
+    }
+
+    /**
+     * @param mapQConfigs the mapQConfigs to set
+     */
+    public void setMapQConfigs(Map<String, QueueConfig> mapQConfigs) {
+        this.mapQueueConfigs = mapQConfigs;
+    }
+
+    /**
+     * @return the mapMapConfigs
+     */
+    public Map<String, MapConfig> getMapMapConfigs() {
+        return mapMapConfigs;
+    }
+
+    /**
+     * @param mapMapConfigs the mapMapConfigs to set
+     */
+    public void setMapMapConfigs(Map<String, MapConfig> mapMapConfigs) {
+        this.mapMapConfigs = mapMapConfigs;
+    }
+
+    /**
+     * @return the configurationUrl
+     */
+    public URL getConfigurationUrl() {
+        return configurationUrl;
+    }
+
+    /**
+     * @param configurationUrl the configurationUrl to set
+     */
+    public void setConfigurationUrl(URL configurationUrl) {
+        this.configurationUrl = configurationUrl;
+    }
+
+    /**
+     * @return the configurationFile
+     */
+    public File getConfigurationFile() {
+        return configurationFile;
+    }
+
+    /**
+     * @param configurationFile the configurationFile to set
+     */
+    public void setConfigurationFile(File configurationFile) {
+        this.configurationFile = configurationFile;
+    }
 
     public boolean isSuperClient() {
         return superClient;

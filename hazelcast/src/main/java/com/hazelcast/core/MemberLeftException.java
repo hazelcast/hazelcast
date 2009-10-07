@@ -18,5 +18,5 @@
 package com.hazelcast.core;
 
 public class MemberLeftException extends IllegalStateException {
-    
+
 }

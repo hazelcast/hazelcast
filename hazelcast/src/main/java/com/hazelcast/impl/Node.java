@@ -133,7 +133,6 @@ public class Node {
         }
     }
 
-
     class BaseVariables {
         final LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
 
@@ -152,11 +151,9 @@ public class Node {
 
         final MemberImpl thisMember;
 
-
         BaseVariables(Address thisAddress, MemberImpl thisMember) {
             this.thisAddress = thisAddress;
             this.thisMember = thisMember;
-
             for (int i = 0; i < BaseManager.EVENT_QUEUE_COUNT; i++) {
                 eventQueues[i] = new BaseManager.EventQueue();
             }
@@ -194,7 +191,7 @@ public class Node {
             serverSocketChannel = ServerSocketChannel.open();
             address = addressPicker.pickAddress(this, serverSocketChannel);
             address.setThisAddress(true);
-            localMember = new MemberImpl(address, true, localNodeType);
+            localMember = new MemberImpl(getName(), address, true, localNodeType);
         } catch (final Throwable e) {
             throw new RuntimeException(e);
         }
@@ -203,11 +200,9 @@ public class Node {
         //initialize managers..
         clusterService = new ClusterService(this);
         clusterService.start();
-
         inSelector = new InSelector(this, serverSocketChannel);
         outSelector = new OutSelector(this);
         connectionManager = new ConnectionManager(this);
-
         clientService = new ClientService(this);
         queryService = new QueryService(this);
         clusterManager = new ClusterManager(this);
@@ -216,9 +211,7 @@ public class Node {
         executorManager = new ExecutorManager(this);
         listenerManager = new ListenerManager(this);
         topicManager = new TopicManager(this);
-
         clusterManager.addMember(localMember);
-
         Logger systemLogger = Logger.getLogger("com.hazelcast.system");
         systemLogger.log(Level.INFO, "Hazelcast " + version + " ("
                 + build + ") starting at " + address);
@@ -308,7 +301,7 @@ public class Node {
     public boolean master() {
         return address != null && address.equals(masterAddress);
     }
-    
+
     public void setMasterAddress(final Address master) {
         masterAddress = master;
     }
@@ -349,25 +342,20 @@ public class Node {
         Thread inThread = new Thread(threadGroup, inSelector, "hz.InThread");
         inThread.setPriority(7);
         inThread.start();
-
         Thread outThread = new Thread(threadGroup, outSelector, "hz.OutThread");
         outThread.setPriority(7);
         outThread.start();
-
         serviceThread = new Thread(threadGroup, clusterService, "hz.ServiceThread");
         serviceThread.setPriority(8);
         serviceThread.start();
-
         queryThread = new Thread(threadGroup, queryService, "hz.QueryThread");
         queryThread.setPriority(6);
         queryThread.start();
-
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(threadGroup, multicastService, "hz.MulticastThread");
             multicastServiceThread.start();
             multicastServiceThread.setPriority(6);
         }
-        
         active = true;
         if (!completelyShutdown) {
             logger.log(Level.FINEST, "Adding ShutdownHook");
@@ -410,7 +398,6 @@ public class Node {
             if (ip == null) {
                 JoinInfo joinInfo = new JoinInfo(true, address, config.getGroupName(),
                         config.getGroupPassword(), getLocalNodeType());
-
                 for (int i = 0; i < 200; i++) {
                     multicastService.send(joinInfo);
                     if (masterAddress == null) {
@@ -419,12 +406,10 @@ public class Node {
                         return masterAddress;
                     }
                 }
-
             } else {
                 logger.log(Level.FINEST, "RETURNING join.ip");
                 return new Address(ip, config.getPort());
             }
-
         } catch (final Exception e) {
             e.printStackTrace();
         }
@@ -505,7 +490,6 @@ public class Node {
         lsPossibleAddresses.addAll(config.getNetworkConfig().getJoin().getJoinMembers().getAddresses());
         return lsPossibleAddresses;
     }
-
 
     private void join() {
         if (!config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
@@ -618,7 +602,6 @@ public class Node {
                         }
                     }
                 }
-
             }
             lsPossibleAddresses.clear();
             failedConnections.clear();
@@ -651,7 +634,6 @@ public class Node {
                     joinViaRequiredMember();
                 logger.log(Level.FINEST, "Sending joinRequest " + requiredAddress);
                 clusterManager.sendJoinRequest(requiredAddress);
-
                 Thread.sleep(2000);
             }
         } catch (final Exception e) {

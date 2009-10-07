@@ -29,11 +29,11 @@ import java.util.StringTokenizer;
 public class Address implements DataSerializable {
 
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = -7626390274220424603L;
+     *
+     */
+    private static final long serialVersionUID = -7626390274220424603L;
 
-	private String host = null;
+    private String host = null;
 
     private byte[] ip;
 
@@ -116,7 +116,6 @@ public class Address implements DataSerializable {
     public void readObject(ByteBuffer buffer) {
         buffer.get(ip);
         port = buffer.getInt();
-
     }
 
     public void writeObject(ByteBuffer buffer) {
@@ -164,7 +163,6 @@ public class Address implements DataSerializable {
             return false;
         if (!(o instanceof Address))
             return false;
-
         final Address address = (Address) o;
         return port == address.port && Arrays.equals(ip, address.ip);
     }
@@ -195,5 +193,4 @@ public class Address implements DataSerializable {
     public byte[] getIP() {
         return ip;
     }
-
 }

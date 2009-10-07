@@ -17,9 +17,9 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.cluster.ClusterService;
 import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 import com.hazelcast.impl.Node;
-import com.hazelcast.cluster.ClusterService;
 
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -49,8 +49,6 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 
     protected SelectionKey sk = null;
 
-
-
     public AbstractSelectionHandler(final Connection connection) {
         super();
         this.connection = connection;
@@ -62,7 +60,6 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
     }
 
     protected void shutdown() {
-
     }
 
     final void handleSocketException(final Exception e) {

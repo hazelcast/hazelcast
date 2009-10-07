@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.hazelcast.cluster;
 

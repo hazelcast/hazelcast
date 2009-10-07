@@ -20,32 +20,31 @@ import com.hazelcast.core.MultiMap;
 
 /**
  * MBean for MultiMap
- * 
+ *
  * @author Marco Ferrante, DISI - University of Genova
  */
 @SuppressWarnings("unchecked")
 @JMXDescription("A distributed MultiMap")
 public class MultiMapMBean extends AbstractMBean<MultiMap> {
 
-	public MultiMapMBean(MultiMap managedObject) {
-		super(managedObject);
-	}
-	
-	@Override
-	public ObjectNameSpec getNameSpec() {
-    	return getParentName().getNested("MultiMap", getName());
-	}
+    public MultiMapMBean(MultiMap managedObject) {
+        super(managedObject);
+    }
 
-	@JMXAttribute("Name")
-	@JMXDescription("Registration name of the list")
-	public String getName() {
-		return getManagedObject().getName();
-	}
-	
-	@JMXAttribute("Size")
-	@JMXDescription("Current size")
-	public int getSize() {
-		return getManagedObject().size();
-	}
-	
+    @Override
+    public ObjectNameSpec getNameSpec() {
+        return getParentName().getNested("MultiMap", getName());
+    }
+
+    @JMXAttribute("Name")
+    @JMXDescription("Registration name of the list")
+    public String getName() {
+        return getManagedObject().getName();
+    }
+
+    @JMXAttribute("Size")
+    @JMXDescription("Current size")
+    public int getSize() {
+        return getManagedObject().size();
+    }
 }

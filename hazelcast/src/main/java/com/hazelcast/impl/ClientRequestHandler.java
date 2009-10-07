@@ -17,7 +17,6 @@
 
 package com.hazelcast.impl;
 
-
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Transaction;
@@ -26,8 +25,8 @@ import com.hazelcast.impl.BaseManager.KeyValue;
 import com.hazelcast.impl.ClientService.ClientEndpoint;
 import com.hazelcast.impl.ConcurrentMapManager.Entries;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_SUCCESS;
-import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.Data;
+import static com.hazelcast.nio.IOUtil.*;
 import com.hazelcast.nio.Packet;
 
 import java.util.List;
@@ -54,7 +53,7 @@ public class ClientRequestHandler implements Runnable {
             IMap<Object, Object> map = Hazelcast.getMap(packet.name.substring(2));
             Object value = map.get(doHardCopy(packet.key));
             Data data = (Data) value;
-            if (callContext.txn != null && callContext.txn.getStatus() == TXN_STATUS_ACTIVE) {
+            if (callContext.getCurrentTxn() != null && callContext.getCurrentTxn().getStatus() == TXN_STATUS_ACTIVE) {
                 data = doHardCopy(data);
             }
             packet.value = data;
@@ -82,25 +81,20 @@ public class ClientRequestHandler implements Runnable {
             }
             packet.value = toData(keys);
             sendResponse(packet);
-        }
-        else if (packet.operation.equals(ClusterOperation.REMOTELY_PROCESS)){
-        	node.clusterService.enqueueAndReturn(packet);
-        }
-        else if (packet.operation.equals(ClusterOperation.ADD_LISTENER)) {
-        	ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
+        } else if (packet.operation.equals(ClusterOperation.REMOTELY_PROCESS)) {
+            node.clusterService.enqueueAndReturn(packet);
+        } else if (packet.operation.equals(ClusterOperation.ADD_LISTENER)) {
+            ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
             IMap<Object, Object> map = Hazelcast.getMap(packet.name.substring(2));
             Object key = toObject(packet.key);
-            boolean includeValue = (int)packet.longValue==1;
-            if(key==null){
-            	map.addEntryListener(clientEndpoint, includeValue);
-            }
-            else{
-            	map.addEntryListener(clientEndpoint, key, includeValue);
+            boolean includeValue = (int) packet.longValue == 1;
+            if (key == null) {
+                map.addEntryListener(clientEndpoint, includeValue);
+            } else {
+                map.addEntryListener(clientEndpoint, key, includeValue);
             }
             sendResponse(packet);
         }
-
-
     }
 
     private void sendResponse(Packet request) {
@@ -110,6 +104,4 @@ public class ClientRequestHandler implements Runnable {
             request.conn.getWriteHandler().enqueuePacket(request);
         }
     }
-
-
 }

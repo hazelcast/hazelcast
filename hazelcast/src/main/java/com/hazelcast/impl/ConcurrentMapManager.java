@@ -18,20 +18,18 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
-import com.hazelcast.collection.SortedHashMap;
-import static com.hazelcast.collection.SortedHashMap.OrderingType;
 import com.hazelcast.config.ConfigProperty;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.*;
 import static com.hazelcast.core.Instance.InstanceType;
+import com.hazelcast.core.MapEntry;
+import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.Transaction;
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
 import com.hazelcast.nio.Address;
-import static com.hazelcast.nio.BufferUtil.*;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
+import static com.hazelcast.nio.IOUtil.*;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Index;
@@ -49,13 +47,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public final class ConcurrentMapManager extends BaseManager {
-    private static final int BLOCK_COUNT = ConfigProperty.CONCURRENT_MAP_BLOCK_COUNT.getInteger(271);
-    private final Block[] blocks;
-    private final ConcurrentMap<String, CMap> maps;
-    private final ConcurrentMap<String, LocallyOwnedMap> mapLocallyOwnedMaps;
-    private final OrderedExecutionTask[] orderedExecutionTasks;
-    private static long GLOBAL_REMOVE_DELAY_MILLIS = ConfigProperty.REMOVE_DELAY_SECONDS.getLong() * 1000L;
-    private long newRecordId = 0;
+    static final int BLOCK_COUNT = ConfigProperty.CONCURRENT_MAP_BLOCK_COUNT.getInteger(271);
+    static long GLOBAL_REMOVE_DELAY_MILLIS = ConfigProperty.REMOVE_DELAY_SECONDS.getLong() * 1000L;
+    final Block[] blocks;
+    final ConcurrentMap<String, CMap> maps;
+    final ConcurrentMap<String, LocallyOwnedMap> mapLocallyOwnedMaps;
+    final OrderedExecutionTask[] orderedExecutionTasks;
+    final MapMigrator mapMigrator;
+    long newRecordId = 0;
 
     ConcurrentMapManager(Node node) {
         super(node);
@@ -63,6 +62,7 @@ public final class ConcurrentMapManager extends BaseManager {
         maps = new ConcurrentHashMap<String, CMap>(10);
         mapLocallyOwnedMaps = new ConcurrentHashMap<String, LocallyOwnedMap>(10);
         orderedExecutionTasks = new OrderedExecutionTask[BLOCK_COUNT];
+        mapMigrator = new MapMigrator(this);
         for (int i = 0; i < BLOCK_COUNT; i++) {
             orderedExecutionTasks[i] = new OrderedExecutionTask();
         }
@@ -80,6 +80,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
             }
         });
+        node.clusterService.registerPeriodicRunnable(mapMigrator);
         registerPacketProcessor(CONCURRENT_MAP_GET_MAP_ENTRY, new GetMapEnryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_GET, new GetOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT, new PutOperationHandler());
@@ -119,141 +120,11 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     public void syncForDead(Address deadAddress) {
-        if (deadAddress.equals(thisAddress)) return;
-        for (Block block : blocks) {
-            if (block != null) {
-                if (deadAddress.equals(block.getOwner())) {
-                    MemberImpl member = getNextMemberBeforeSync(block.getOwner(), true, 1);
-                    if (member == null) {
-                        if (!isSuperClient()) {
-                            block.setOwner(thisAddress);
-                        } else {
-                            block.setOwner(null);
-                        }
-                    } else {
-                        if (!deadAddress.equals(member.getAddress())) {
-                            block.setOwner(member.getAddress());
-                        } else {
-                            block.setOwner(null);
-                        }
-                    }
-                }
-                if (block.getMigrationAddress() != null) {
-                    if (deadAddress.equals(block.getMigrationAddress())) {
-                        MemberImpl member = getNextMemberBeforeSync(block.getMigrationAddress(), true, 1);
-                        if (member == null) {
-                            if (!isSuperClient()) {
-                                block.setMigrationAddress(thisAddress);
-                            } else {
-                                block.setMigrationAddress(null);
-                            }
-                        } else {
-                            if (!deadAddress.equals(member.getAddress())) {
-                                block.setMigrationAddress(member.getAddress());
-                            } else {
-                                block.setMigrationAddress(null);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        Collection<CMap> cmaps = maps.values();
-        for (CMap map : cmaps) {
-            Collection<Record> records = map.mapRecords.values();
-            for (Record record : records) {
-                onDisconnect(record, deadAddress);
-            }
-        }
-        if (isMaster() && isSuperClient()) {
-            syncForAdd();
-        } else {
-            doResetRecords();
-        }
+        mapMigrator.syncForDead(deadAddress);
     }
 
     public void syncForAdd() {
-        if (isMaster()) {
-            // make sue that all blocks are actually created
-            for (int i = 0; i < BLOCK_COUNT; i++) {
-                Block block = blocks[i];
-                if (block == null) {
-                    getOrCreateBlock(i);
-                }
-            }
-            List<Block> lsBlocksToRedistribute = new ArrayList<Block>();
-            Map<Address, Integer> addressBlocks = new HashMap<Address, Integer>();
-            int storageEnabledMemberCount = 0;
-            for (MemberImpl member : lsMembers) {
-                if (!member.isSuperClient()) {
-                    addressBlocks.put(member.getAddress(), 0);
-                    storageEnabledMemberCount++;
-                }
-            }
-            if (storageEnabledMemberCount == 0)
-                return;
-            int aveBlockOwnCount = BLOCK_COUNT / (storageEnabledMemberCount);
-            for (Block block : blocks) {
-                if (block.getOwner() == null) {
-                    lsBlocksToRedistribute.add(block);
-                } else {
-                    if (!block.isMigrating()) {
-                        Integer countInt = addressBlocks.get(block.getOwner());
-                        int count = (countInt == null) ? 0 : countInt;
-                        if (count >= aveBlockOwnCount) {
-                            lsBlocksToRedistribute.add(block);
-                        } else {
-                            count++;
-                            addressBlocks.put(block.getOwner(), count);
-                        }
-                    }
-                }
-            }
-            Set<Address> allAddress = addressBlocks.keySet();
-            setNewMembers:
-            for (Address address : allAddress) {
-                Integer countInt = addressBlocks.get(address);
-                int count = (countInt == null) ? 0 : countInt;
-                while (count < aveBlockOwnCount) {
-                    if (lsBlocksToRedistribute.size() > 0) {
-                        Block blockToMigrate = lsBlocksToRedistribute.remove(0);
-                        if (blockToMigrate.getOwner() == null) {
-                            blockToMigrate.setOwner(address);
-                        } else {
-                            blockToMigrate.setMigrationAddress(address);
-                            if (blockToMigrate.getOwner().equals(blockToMigrate.getMigrationAddress())) {
-                                blockToMigrate.setMigrationAddress(null);
-                            }
-                        }
-                        count++;
-                    } else {
-                        break setNewMembers;
-                    }
-                }
-            }
-            int addressIndex = 0;
-            for (int i = 0; i < BLOCK_COUNT; i++) {
-                Block block = blocks[i];
-                if (block.getOwner() == null) {
-                    int index = addressIndex++ % addressBlocks.size();
-                    block.setOwner((Address) addressBlocks.keySet().toArray()[index]);
-                }
-            }
-            Data dataAllBlocks = null;
-            for (MemberImpl member : lsMembers) {
-                if (!member.localMember()) {
-                    if (dataAllBlocks == null) {
-                        Blocks allBlocks = new Blocks();
-                        for (Block block : blocks) {
-                            allBlocks.addBlock(block);
-                        }
-                        dataAllBlocks = ThreadContext.get().toData(allBlocks);
-                    }
-                    send("blocks", CONCURRENT_MAP_BLOCKS, dataAllBlocks, member.getAddress());
-                }
-            }
-            doResetRecords();
-        }
+            mapMigrator.syncForAdd();
     }
 
     public static class InitialState extends AbstractRemotelyProcessable {
@@ -368,77 +239,29 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    volatile boolean migrating = false;
+    void backupRecord (final Record rec) {
+        MBackupOp backupOp = new MBackupOp();
+        backupOp.backup(rec);
+    }
 
-    void doResetRecords() {
+    void migrateRecord(final CMap cmap, final Record rec) {
         if (!node.active || node.factory.restarted) return;
-        if (migrating) {
-            throw new RuntimeException("Migration is already in progress");
-        }
-        InitialState initialState = new InitialState();
-        Collection<CMap> cmaps = maps.values();
-        for (final CMap cmap : cmaps) {
-            initialState.createAndAddMapState(cmap);
-        }
-        sendProcessableToAll(initialState, false);
-        if (isSuperClient())
-            return;
-        migrating = true;
-        cmaps = maps.values();
-        final AtomicInteger count = new AtomicInteger(0);
-        for (final CMap cmap : cmaps) {
-            final Object[] records = cmap.mapRecords.values().toArray();
-            cmap.reset();
-            for (Object recObj : records) {
-                final Record rec = (Record) recObj;
-                if (rec.isActive()) {
-                    if (rec.getKey() == null || rec.getKey().size() == 0) {
-                        throw new RuntimeException("Record.key is null or empty " + rec.getKey());
-                    }
-                    count.incrementAndGet();
-                    executeLocally(new FallThroughRunnable() {
-                        public void doRun() {
-                            try {
-                                if (!node.active || node.factory.restarted) return;
-                                MMigrate mmigrate = new MMigrate();
-                                if (cmap.isMultiMap()) {
-                                    List<Data> values = rec.getMultiValues();
-                                    if (values == null || values.size() == 0) {
-                                        mmigrate.migrateMulti(rec, null);
-                                    } else {
-                                        for (Data value : values) {
-                                            mmigrate.migrateMulti(rec, value);
-                                        }
-                                    }
-                                } else {
-                                    boolean migrated = mmigrate.migrate(rec);
-                                    if (!migrated) {
-                                        logger.log(Level.FINEST, "Migration failed " + rec.getKey());
-                                    }
-                                }
-                            } finally {
-                                count.decrementAndGet();
-                            }
-                        }
-                    });
+        MMigrate mmigrate = new MMigrate();
+        if (cmap.isMultiMap()) {
+            List<Data> values = rec.getMultiValues();
+            if (values == null || values.size() == 0) {
+                mmigrate.migrateMulti(rec, null);
+            } else {
+                for (Data value : values) {
+                    mmigrate.migrateMulti(rec, value);
                 }
             }
-        }
-        executeLocally(new FallThroughRunnable() {
-            public void doRun() {
-                while (count.get() != 0 && node.active) {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException ignored) {
-                        return;
-                    }
-                }
-                MultiMigrationComplete mmc = new MultiMigrationComplete();
-                mmc.call();
-                logger.log(Level.FINEST, "Migration ended!");
-                migrating = false;
+        } else {
+            boolean migrated = mmigrate.migrate(rec);
+            if (!migrated) {
+                logger.log(Level.FINEST, "Migration failed " + rec.getKey());
             }
-        });
+        }
     }
 
     abstract class MBooleanOp extends MTargetAwareOp {
@@ -587,7 +410,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class MGetMapEntry extends MTargetAwareOp {
         public MapEntry get(String name, Object key) {
-            CMapEntry mapEntry = (CMapEntry) objectCall(CONCURRENT_MAP_GET_MAP_ENTRY, name, key, null, 0, -1);
+            CMap.CMapEntry mapEntry = (CMap.CMapEntry) objectCall(CONCURRENT_MAP_GET_MAP_ENTRY, name, key, null, 0, -1);
             mapEntry.set(node.factory.getName(), name, key);
             return mapEntry;
         }
@@ -603,7 +426,7 @@ public final class ConcurrentMapManager extends BaseManager {
     class MGet extends MTargetAwareOp {
         public Object get(String name, Object key, long timeout) {
             final ThreadContext tc = ThreadContext.get();
-            TransactionImpl txn = tc.callContext.txn;
+            TransactionImpl txn = tc.getCallContext().getCurrentTxn();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 if (txn.has(name, key)) {
                     return txn.get(name, key);
@@ -653,7 +476,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public boolean removeItem(String name, Object key, Object value) {
             ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.callContext.txn;
+            TransactionImpl txn = threadContext.getCallContext().getCurrentTxn();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 try {
                     boolean locked;
@@ -705,7 +528,7 @@ public final class ConcurrentMapManager extends BaseManager {
         private Object txnalRemove(ClusterOperation operation, String name, Object key, Object value,
                                    long timeout) {
             ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.callContext.txn;
+            TransactionImpl txn = threadContext.getCallContext().getCurrentTxn();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 try {
                     if (!txn.has(name, key)) {
@@ -755,7 +578,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         boolean addToSet(String name, Object value) {
             ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.callContext.txn;
+            TransactionImpl txn = threadContext.getCallContext().getCurrentTxn();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 if (!txn.has(name, value)) {
                     MContainsKey containsKey = new MContainsKey();
@@ -881,7 +704,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         private Object txnalPut(ClusterOperation operation, String name, Object key, Object value, long timeout) {
             ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.callContext.txn;
+            TransactionImpl txn = threadContext.getCallContext().getCurrentTxn();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 try {
                     if (!txn.has(name, key)) {
@@ -938,6 +761,22 @@ public final class ConcurrentMapManager extends BaseManager {
         @Override
         public boolean isMigrationAware() {
             return true;
+        }
+    }
+
+    class MBackupOp extends MBackupAwareOp {
+        public void backup(Record record) {
+            copyRecordToRequest(record, request, true);
+            doOp();
+            getResultAsBoolean();
+            target = thisAddress;
+            backup(CONCURRENT_MAP_BACKUP_PUT);
+        }
+
+        @Override
+        public void process() {
+            prepareForBackup();
+            setResult(Boolean.TRUE);
         }
     }
 
@@ -1131,7 +970,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public int getSize() {
             int size = (Integer) call();
-            TransactionImpl txn = ThreadContext.get().callContext.txn;
+            TransactionImpl txn = ThreadContext.get().getCallContext().getCurrentTxn();
             if (txn != null) {
                 size += txn.size(name);
             }
@@ -1239,22 +1078,39 @@ public final class ConcurrentMapManager extends BaseManager {
 
     @Override
     public boolean isMigrating(Request req) {
-        if (migrating && req.key != null) {
-            CMap cmap = getMap(req.name);
-            if (cmap != null && cmap.getRecord(req.key) != null) {
-                return false;
-            }
-        }
-        return migrating;
+//        if (migrating && req.key != null) {
+//            CMap cmap = getMap(req.name);
+//            if (cmap != null && cmap.getRecord(req.key) != null) {
+//                return false;
+//            }
+//        }
+//        return migrating;
+        return mapMigrator.isMigrating(req);
     }
 
-    private int getBlockId(Data key) {
+    int getBlockId(Data key) {
         int hash = key.hashCode();
         return Math.abs(hash) % BLOCK_COUNT;
     }
 
+    public long newRecordId() {
+        return newRecordId++;
+    }
+
     Block getOrCreateBlock(Data key) {
         return getOrCreateBlock(getBlockId(key));
+    }
+
+    void evictAsync(final String name, final Data key) {
+        executeLocally(new Runnable() {
+            public void run() {
+                try {
+                    MEvict mEvict = new MEvict();
+                    mEvict.evict(name, key);
+                } catch (Exception ignored) {
+                }
+            }
+        });
     }
 
     Block getOrCreateBlock(int blockId) {
@@ -1279,7 +1135,7 @@ public final class ConcurrentMapManager extends BaseManager {
         checkServiceThread();
         CMap map = maps.get(name);
         if (map == null) {
-            map = new CMap(name);
+            map = new CMap(this, name);
             maps.put(name, map);
         }
         return map;
@@ -1303,8 +1159,8 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     // master should call this method
-    void sendBlockInfo(Block block, Address address) {
-        send("mapblock", CONCURRENT_MAP_BLOCK_INFO, block, address);
+    boolean sendBlockInfo(Block block, Address address) {
+        return send("mapblock", CONCURRENT_MAP_BLOCK_INFO, block, address);
     }
 
     void printBlocks() {
@@ -1339,7 +1195,6 @@ public final class ConcurrentMapManager extends BaseManager {
             Blocks blocks = (Blocks) toObject(packet.value);
             handleBlocks(blocks);
             packet.returnToContainer();
-            doResetRecords();
         }
 
         void handleBlocks(Blocks blocks) {
@@ -1355,6 +1210,9 @@ public final class ConcurrentMapManager extends BaseManager {
         public void process(Packet packet) {
             Block blockInfo = (Block) toObject(packet.value);
             doBlockInfo(blockInfo);
+            if (thisAddress.equals(blockInfo.getOwner()) && blockInfo.isMigrating()) {
+                mapMigrator.migrateBlock(blockInfo);
+            }
             packet.returnToContainer();
         }
 
@@ -1771,7 +1629,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
                 AtomicBoolean strongRef = new AtomicBoolean(false);
                 Set<MapEntry> results = node.queryService.query(cmap.name, strongRef, predicate);
-//                System.out.println(node.getName() + " after index REcords size " + results.size() + " strong: " + strongRef.get());
                 if (predicate != null) {
                     if (!strongRef.get()) {
                         Iterator<MapEntry> it = results.iterator();
@@ -1781,8 +1638,6 @@ public final class ConcurrentMapManager extends BaseManager {
                                 try {
                                     if (!predicate.apply(record.getRecordEntry())) {
                                         it.remove();
-                                    } else {
-//                                      System.out.println(node.getName() + " FOUND " + record.getValue());
                                     }
                                 } catch (Exception e) {
                                     e.printStackTrace();
@@ -1927,948 +1782,11 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class LocallyOwnedMap {
-        final ConcurrentMap<Object, Record> mapCache = new ConcurrentHashMap<Object, Record>(1000);
-        final private Queue<Record> localRecords = new ConcurrentLinkedQueue<Record>();
-
-        public Object get(Object key) {
-            processLocalRecords();
-            Record record = mapCache.get(key);
-            if (record == null) {
-                return OBJECT_REDO;
-            } else {
-                if (record.isActive()) {
-                    try {
-                        Object value = toObject(record.getValue());
-                        record.setLastAccessed();
-                        return value;
-                    } catch (Throwable t) {
-                        logger.log(Level.FINEST, "Exception when reading object ", t);
-                        return OBJECT_REDO;
-                    }
-                } else {
-                    //record is removed!
-                    mapCache.remove(key);
-                    return null;
-                }
-            }
-        }
-
-        public void reset() {
-            localRecords.clear();
-            mapCache.clear();
-        }
-
-        private void processLocalRecords() {
-            Record record = localRecords.poll();
-            while (record != null) {
-                if (record.isActive()) {
-                    doPut(record);
-                }
-                record = localRecords.poll();
-            }
-        }
-
-        public void doPut(Record record) {
-            Object key = toObject(record.getKey());
-            mapCache.put(key, record);
-        }
-
-        public void offerToCache(Record record) {
-            localRecords.offer(record);
-        }
-    }
-
-    public class CMap {
-        final Set<Record> setRemovedRecords = new HashSet<Record>(10000);
-
-        final SortedHashMap<Data, Record> mapRecords;
-
-        final String name;
-
-        final Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
-
-        final int backupCount;
-
-        final OrderingType evictionPolicy;
-
-        final int maxSize;
-
-        final float evictionRate;
-
-        final long ttl; //ttl for entries
-
-        final InstanceType instanceType;
-
-        final MapLoader loader;
-
-        final MapStore store;
-
-        int writeDelaySeconds = -1;
-
-        int ownedEntryCount = 0;
-
-        private Set<Record> setDirtyRecords = null;
-
-        private final long removeDelayMillis;
-
-        private final Map<Expression, Index<MapEntry>> mapIndexes = new ConcurrentHashMap(10);
-
-        private volatile Index<MapEntry>[] indexes = null;
-
-        private volatile byte[] indexTypes = null;
-
-        final LocallyOwnedMap locallyOwnedMap;
-
-        public CMap(String name) {
-            super();
-            this.name = name;
-            mapRecords = new SortedHashMap<Data, Record>(10000);
-            MapConfig mapConfig = node.getConfig().getMapConfig(name.substring(2));
-            this.backupCount = mapConfig.getBackupCount();
-            ttl = mapConfig.getTimeToLiveSeconds() * 1000L;
-            if ("LFU".equalsIgnoreCase(mapConfig.getEvictionPolicy())) {
-                evictionPolicy = OrderingType.LFU;
-            } else if ("LRU".equalsIgnoreCase(mapConfig.getEvictionPolicy())) {
-                evictionPolicy = OrderingType.LRU;
-            } else {
-                evictionPolicy = OrderingType.NONE;
-            }
-            if (evictionPolicy == OrderingType.NONE) {
-                maxSize = Integer.MAX_VALUE;
-            } else {
-                maxSize = (mapConfig.getMaxSize() == 0) ? MapConfig.DEFAULT_MAX_SIZE : mapConfig.getMaxSize();
-            }
-            evictionRate = mapConfig.getEvictionPercentage() / 100f;
-            instanceType = getInstanceType(name);
-            MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
-            MapStore storeTemp = null;
-            MapLoader loaderTemp = null;
-            if (mapStoreConfig != null) {
-                if (mapStoreConfig.isEnabled()) {
-                    String mapStoreClassName = mapStoreConfig.getClassName();
-                    try {
-                        Object storeInstance = Class.forName(mapStoreClassName, true, node.getConfig().getClassLoader()).newInstance();
-                        if (storeInstance instanceof MapLoader) {
-                            loaderTemp = (MapLoader) storeInstance;
-                        }
-                        if (storeInstance instanceof MapStore) {
-                            storeTemp = (MapStore) storeInstance;
-                        }
-                        writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
-                        if (writeDelaySeconds > 0) {
-                            setDirtyRecords = new HashSet<Record>(5000);
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-            loader = loaderTemp;
-            store = storeTemp;
-            if (writeDelaySeconds > 0) {
-                removeDelayMillis = GLOBAL_REMOVE_DELAY_MILLIS + (writeDelaySeconds * 1000L);
-            } else {
-                removeDelayMillis = GLOBAL_REMOVE_DELAY_MILLIS;
-            }
-            if (evictionPolicy == OrderingType.NONE && instanceType == InstanceType.MAP) {
-                locallyOwnedMap = new LocallyOwnedMap();
-                mapLocallyOwnedMaps.put(name, locallyOwnedMap);
-            } else {
-                locallyOwnedMap = null;
-            }
-        }
-
-        public void addIndex(Expression expression, boolean ordered) {
-            if (!mapIndexes.containsKey(expression)) {
-                Index index = new Index(expression, ordered);
-                mapIndexes.put(expression, index);
-                Index[] newIndexes = new Index[mapIndexes.size()];
-                if (indexes != null) {
-                    System.arraycopy(indexes, 0, newIndexes, 0, indexes.length);
-                }
-                indexes = newIndexes;
-                indexes[mapIndexes.size() - 1] = index;
-                node.queryService.setIndexes(name, indexes, mapIndexes);
-            }
-        }
-
-        public Record getRecord(Data key) {
-            return mapRecords.get(key);
-        }
-
-        public int getBackupCount() {
-            return backupCount;
-        }
-
-        public void own(Request req) {
-            if (req.key == null || req.key.size() == 0) {
-                throw new RuntimeException("Key cannot be null " + req.key);
-            }
-            if (req.value == null) {
-                req.value = new Data();
-            }
-            Record record = getRecord(req.key);
-            boolean created = false;
-            if (record == null) {
-                record = toRecord(req);
-                created = true;
-            }
-            updateIndexes(created, req, record);
-            record.setVersion(req.version);
-        }
-
-        public boolean isMultiMap() {
-            return (instanceType == InstanceType.MULTIMAP);
-        }
-
-        public boolean backup(Request req) {
-            if (req.key == null || req.key.size() == 0) {
-                throw new RuntimeException("Backup key size cannot be 0: " + req.key);
-            }
-            Record record = getRecord(req.key);
-            if (record != null) {
-                if (req.version > record.getVersion() + 1) {
-                    Request reqCopy = new Request();
-                    reqCopy.setFromRequest(req, true);
-                    req.key = null;
-                    req.value = null;
-                    record.addBackupOp(new VersionedBackupOp(CMap.this, reqCopy));
-                    return true;
-                } else if (req.version <= record.getVersion()) {
-                    return false;
-                }
-            }
-            doBackup(req);
-            if (record != null) {
-                record.setVersion(req.version);
-                record.runBackupOps();
-            }
-            return true;
-        }
-
-        public void doBackup(Request req) {
-            if (req.key == null || req.key.size() == 0) {
-                throw new RuntimeException("Backup key size cannot be zero! " + req.key);
-            }
-            if (req.operation == CONCURRENT_MAP_BACKUP_PUT) {
-                Record rec = toRecord(req);
-                if (rec.getVersion() == 0) {
-                    rec.setVersion(req.version);
-                }
-                if (req.indexes != null) {
-                    if (req.indexTypes == null) {
-                        throw new RuntimeException("index types cannot be null!");
-                    }
-                    if (req.indexes.length != req.indexTypes.length) {
-                        throw new RuntimeException("index and type lenghts do not match");
-                    }
-                    rec.setIndexes(req.indexes);
-                    if (indexTypes == null) {
-                        indexTypes = req.indexTypes;
-                    } else {
-                        if (indexTypes.length != req.indexTypes.length) {
-                            throw new RuntimeException("Index types do not match.");
-                        }
-                    }
-                }
-            } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE) {
-                Record record = getRecord(req.key);
-                if (record != null) {
-                    if (record.getCopyCount() > 0) {
-                        record.decrementCopyCount();
-                    }
-                    record.setValue(null);
-                    if (record.isRemovable()) {
-                        removeAndPurgeRecord(record);
-                    }
-                }
-            } else if (req.operation == CONCURRENT_MAP_BACKUP_LOCK) {
-                Record rec = toRecord(req);
-                if (rec.getVersion() == 0) {
-                    rec.setVersion(req.version);
-                }
-            } else if (req.operation == CONCURRENT_MAP_BACKUP_ADD) {
-                add(req);
-            } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE_MULTI) {
-                Record record = getRecord(req.key);
-                if (record != null) {
-                    if (req.value == null) {
-                        removeAndPurgeRecord(record);
-                    } else {
-                        if (record.containsValue(req.value)) {
-                            if (record.getMultiValues() != null) {
-                                Iterator<Data> itValues = record.getMultiValues().iterator();
-                                while (itValues.hasNext()) {
-                                    Data value = itValues.next();
-                                    if (req.value.equals(value)) {
-                                        itValues.remove();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if (record.isRemovable()) {
-                        removeAndPurgeRecord(record);
-                    }
-                }
-            } else {
-                logger.log(Level.SEVERE, "Unknown backup operation " + req.operation);
-            }
-        }
-
-        public int backupSize() {
-            int size = 0;
-            Collection<Record> records = mapRecords.values();
-            for (Record record : records) {
-                Block block = blocks[record.getBlockId()];
-                if (!thisAddress.equals(block.getOwner())) {
-                    size += record.valueCount();
-                }
-            }
-            return size;
-        }
-
-        public int size() {
-            long now = System.currentTimeMillis();
-            int size = 0;
-            Collection<Record> records = mapRecords.values();
-            for (Record record : records) {
-                if (record.isActive() && record.isValid(now)) {
-                    Block block = blocks[record.getBlockId()];
-                    if (thisAddress.equals(block.getOwner())) {
-                        size += record.valueCount();
-                    }
-                }
-            }
-//            for (int i = 0; i < BLOCK_COUNT; i++) {
-//                System.out.println(blocks[i]);
-//            }
-//            System.out.println(size + " is size.. backup.size " + backupSize() + " ownedEntryCount:" + ownedEntryCount);
-//            System.out.println("map size " + mapRecords.size());
-            return size;
-        }
-
-        private List<Record> getOwnedRecords() {
-            long now = System.currentTimeMillis();
-            final List<Record> localRecords = new ArrayList<Record>(mapRecords.size() / 2);
-            Collection<Record> records = mapRecords.values();
-            for (Record record : records) {
-                if (record.isValid(now)) {
-                    Block block = blocks[record.getBlockId()];
-                    if (thisAddress.equals(block.getOwner())) {
-                        localRecords.add(record);
-                    }
-                }
-            }
-            return localRecords;
-        }
-
-        public int valueCount(Data key) {
-            long now = System.currentTimeMillis();
-            int count = 0;
-            Record record = mapRecords.get(key);
-            if (record != null && record.isValid(now)) {
-                count = record.valueCount();
-            }
-            return count;
-        }
-
-        public boolean contains(Request req) {
-            Data key = req.key;
-            Data value = req.value;
-            if (key != null) {
-                Record record = getRecord(req.key);
-                if (record == null) {
-                    return false;
-                } else {
-                    Block block = blocks[record.getBlockId()];
-                    if (thisAddress.equals(block.getOwner())) {
-                        touch(record);
-                        if (value == null) {
-                            return record.valueCount() > 0;
-                        } else {
-                            return record.containsValue(value);
-                        }
-                    }
-                }
-            } else {
-                Collection<Record> records = mapRecords.values();
-                for (Record record : records) {
-                    Block block = blocks[record.getBlockId()];
-                    if (thisAddress.equals(block.getOwner())) {
-                        if (record.containsValue(value)) {
-                            return true;
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-
-        public CMapEntry getMapEntry(Request req) {
-            Record record = getRecord(req.key);
-            if (record == null)
-                return null;
-            if (!record.isValid()) {
-                return null;
-            }
-            return new CMapEntry(record.getCost(), record.getExpirationTime(), record.getLastAccessTime(), record.getLastUpdateTime(),
-                    record.getCreationTime(), record.getVersion(), record.getHits(), true);
-        }
-
-        public Data get(Request req) {
-            Record record = getRecord(req.key);
-            if (record == null)
-                return null;
-            if (!record.isActive()) return null;
-            if (!record.isValid()) {
-                if (record.isEvictable()) {
-                    scheduleForEviction(record);
-                    return null;
-                }
-            }
-            if (req.local && locallyOwnedMap != null) {
-                locallyOwnedMap.offerToCache(record);
-            }
-            record.setLastAccessed();
-            touch(record);
-            Data data = record.getValue();
-            Data returnValue = null;
-            if (data != null) {
-                returnValue = data;
-            } else {
-                if (record.getMultiValues() != null) {
-                    Values values = new Values(record.getMultiValues());
-                    returnValue = toData(values);
-                }
-            }
-            if (returnValue != null) {
-                req.key = null;
-            }
-            return returnValue;
-        }
-
-        public boolean add(Request req) {
-            Record record = getRecord(req.key);
-            if (record == null) {
-                record = createNewRecord(req.key, null);
-                req.key = null;
-            } else {
-                if (req.operation == CONCURRENT_MAP_ADD_TO_SET) {
-                    return false;
-                }
-            }
-            node.queryService.updateIndex(name, null, null, record, Integer.MIN_VALUE);
-            record.setVersion(record.getVersion() + 1);
-            record.incrementCopyCount();
-            fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, record);
-            return true;
-        }
-
-        public boolean removeMulti(Request req) {
-            Record record = getRecord(req.key);
-            if (record == null) return false;
-            boolean removed = false;
-            if (req.value == null) {
-                removed = true;
-                markAsRemoved(record);
-            } else {
-                if (record.containsValue(req.value)) {
-                    if (record.getMultiValues() != null) {
-                        Iterator<Data> itValues = record.getMultiValues().iterator();
-                        while (itValues.hasNext()) {
-                            Data value = itValues.next();
-                            if (req.value.equals(value)) {
-                                itValues.remove();
-                                removed = true;
-                            }
-                        }
-                    }
-                }
-            }
-            if (removed) {
-                record.setVersion(record.getVersion() + 1);
-                fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record.getKey(), req.value, record.getMapListeners());
-                logger.log(Level.FINEST, record.getValue() + " RemoveMulti " + record.getMultiValues());
-            }
-            req.version = record.getVersion();
-            return removed;
-        }
-
-        public boolean putMulti(Request req) {
-            Record record = getRecord(req.key);
-            boolean added = true;
-            if (record == null) {
-                record = createNewRecord(req.key, null);
-                req.key = null;
-            } else {
-                if (!record.isActive()) {
-                    markAsActive(record);
-                    ownedEntryCount++;
-                }
-                if (record.containsValue(req.value)) {
-                    added = false;
-                }
-            }
-            if (added) {
-                node.queryService.updateIndex(name, null, null, record, Integer.MIN_VALUE);
-                record.addValue(req.value);
-                req.value = null;
-                record.setVersion(record.getVersion() + 1);
-                touch(record);
-                fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, record.getKey(), req.value, record.getMapListeners());
-            }
-            logger.log(Level.FINEST, record.getValue() + " PutMulti " + record.getMultiValues());
-            req.version = record.getVersion();
-            return added;
-        }
-
-        public Data put(Request req) {
-            if (ownedEntryCount >= maxSize) {
-                startEviction();
-            }
-            if (req.value == null) {
-                req.value = new Data();
-            }
-            if (req.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
-                Record record = recordExist(req);
-                if (record != null && record.isActive() && record.getValue() != null) {
-                    return record.getValue();
-                }
-            } else if (req.operation == CONCURRENT_MAP_REPLACE_IF_NOT_NULL) {
-                Record record = recordExist(req);
-                if (record == null || !record.isActive() || record.getValue() == null) {
-                    return null;
-                }
-            }
-            Record record = getRecord(req.key);
-            Data oldValue = null;
-            boolean created = true;
-            if (record == null) {
-                record = createNewRecord(req.key, req.value);
-                req.key = null;
-            } else {
-                created = !record.isActive();
-                if (created) {
-                    ownedEntryCount++;
-                }
-                markAsActive(record);
-                if (!record.isValid()) {
-                    record.setExpirationTime(ttl);
-                }
-                oldValue = record.getValue();
-                record.setValue(req.value);
-                record.incrementVersion();
-                touch(record);
-                record.setLastUpdated();
-            }
-            req.version = record.getVersion();
-            req.longValue = record.getCopyCount();
-            req.value = null;
-            if (oldValue == null) {
-                fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, record);
-            } else {
-                fireMapEvent(mapListeners, name, EntryEvent.TYPE_UPDATED, record);
-            }
-            if (req.txnId != -1) {
-                unlock(record);
-            }
-            updateIndexes(created, req, record);
-            markAsDirty(record);
-            return oldValue;
-        }
-
-        void updateIndexes(boolean created, Request request, Record record) {
-            int valueHash = (record.getValue() != null) ? record.getValue().hashCode() : Integer.MIN_VALUE;
-            if (request.indexes != null) {
-                int indexCount = request.indexes.length;
-                if (indexCount == 0)
-                    throw new RuntimeException(node.getName() + " request countains no index " + request.indexes);
-                if (mapIndexes.size() > indexCount) {
-                    throw new RuntimeException(node.getName() + ": indexCount=" + indexCount + " but expected " + mapIndexes.size());
-                }
-                long[] newIndexes = request.indexes;
-                request.indexes = null;
-                byte[] indexTypes = request.indexTypes;
-                request.indexTypes = null;
-                if (newIndexes.length != indexTypes.length) {
-                    throw new RuntimeException();
-                }
-                node.queryService.updateIndex(name, newIndexes, indexTypes, record, valueHash);
-            } else if (created || record.getValueHash() != valueHash) {
-                node.queryService.updateIndex(name, null, null, record, valueHash);
-            }
-        }
-
-        void startAsyncStoreWrite() {
-            logger.log(Level.FINEST, "startAsyncStoreWrite " + setDirtyRecords.size());
-            long now = System.currentTimeMillis();
-            Iterator<Record> itDirtyRecords = setDirtyRecords.iterator();
-            final Map<Data, Data> entriesToStore = new HashMap<Data, Data>();
-            final Collection<Data> keysToDelete = new HashSet<Data>();
-            while (itDirtyRecords.hasNext()) {
-                Record dirtyRecord = itDirtyRecords.next();
-                if (dirtyRecord.getWriteTime() > now) {
-                    if (dirtyRecord.getValue() != null) {
-                        entriesToStore.put(doHardCopy(dirtyRecord.getKey()), doHardCopy(dirtyRecord.getValue()));
-                    } else {
-                        keysToDelete.add(doHardCopy(dirtyRecord.getKey()));
-                    }
-                    dirtyRecord.setDirty(false);
-                    itDirtyRecords.remove();
-                }
-            }
-            final int entriesToStoreSize = entriesToStore.size();
-            final int keysToDeleteSize = keysToDelete.size();
-            if (entriesToStoreSize > 0 || keysToDeleteSize > 0) {
-                executeLocally(new Runnable() {
-                    public void run() {
-                        if (keysToDeleteSize > 0) {
-                            if (keysToDeleteSize == 1) {
-                                Data key = keysToDelete.iterator().next();
-                                store.delete(toObject(key));
-                            } else {
-                                Collection realKeys = new HashSet();
-                                for (Data key : keysToDelete) {
-                                    realKeys.add(toObject(key));
-                                }
-                                store.deleteAll(realKeys);
-                            }
-                        }
-                        if (entriesToStoreSize > 0) {
-                            Object keyFirst = null;
-                            Object valueFirst = null;
-                            Set<Map.Entry<Data, Data>> entries = entriesToStore.entrySet();
-                            Map realEntries = new HashMap();
-                            for (Map.Entry<Data, Data> entry : entries) {
-                                Object key = toObject(entry.getKey());
-                                Object value = toObject(entry.getValue());
-                                realEntries.put(key, value);
-                                if (keyFirst == null) {
-                                    keyFirst = key;
-                                    valueFirst = value;
-                                }
-                            }
-                            if (entriesToStoreSize == 1) {
-                                store.store(keyFirst, valueFirst);
-                            } else {
-                                store.storeAll(realEntries);
-                            }
-                        }
-                    }
-                });
-            }
-        }
-
-        void startRemove() {
-            long now = System.currentTimeMillis();
-            if (setRemovedRecords.size() > 10) {
-                Iterator<Record> itRemovedRecords = setRemovedRecords.iterator();
-                while (itRemovedRecords.hasNext()) {
-                    Record record = itRemovedRecords.next();
-                    if (record.isActive()) {
-                        itRemovedRecords.remove();
-                    } else if (shouldRemove(record, now)) {
-                        itRemovedRecords.remove();
-                        removeAndPurgeRecord(record);
-                    }
-                }
-            }
-        }
-
-        void startEviction() {
-            List<Data> lsKeysToEvict = null;
-            if (evictionPolicy == OrderingType.NONE) {
-                if (ttl != 0) {
-                    long now = System.currentTimeMillis();
-                    Collection<Record> values = mapRecords.values();
-                    for (Record record : values) {
-                        if (record.isActive() && !record.isValid(now)) {
-                            if (record.isEvictable()) {
-                                if (lsKeysToEvict == null) {
-                                    lsKeysToEvict = new ArrayList<Data>(100);
-                                }
-                                markAsRemoved(record);
-                                lsKeysToEvict.add(doHardCopy(record.getKey()));
-                            }
-                        } else {
-                            break;
-                        }
-                    }
-                }
-            } else {
-                Collection<Record> values = mapRecords.values();
-                int numberOfRecordsToEvict = (int) (ownedEntryCount * evictionRate);
-                int evictedCount = 0;
-                for (Record record : values) {
-                    if (record.isActive() && record.isEvictable()) {
-                        if (lsKeysToEvict == null) {
-                            lsKeysToEvict = new ArrayList<Data>(numberOfRecordsToEvict);
-                        }
-                        markAsRemoved(record);
-                        lsKeysToEvict.add(doHardCopy(record.getKey()));
-                        if (++evictedCount >= numberOfRecordsToEvict) {
-                            break;
-                        }
-                    }
-                }
-            }
-            if (lsKeysToEvict != null && lsKeysToEvict.size() > 0) {
-                for (final Data key : lsKeysToEvict) {
-                    executeLocally(new Runnable() {
-                        public void run() {
-                            try {
-                                MEvict mEvict = new MEvict();
-                                mEvict.evict(name, key);
-                            } catch (Exception ignored) {
-                            }
-                        }
-                    });
-                }
-            }
-        }
-
-        final boolean evict(Request req) {
-            Record record = getRecord(req.key);
-            if (record != null && record.isEvictable()) {
-                if (ownerForSure(record)) {
-                    fireMapEvent(mapListeners, name, EntryEvent.TYPE_EVICTED, record.getKey(), record.getValue(), record.getMapListeners());
-                    removeAndPurgeRecord(record);
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        final boolean ownerForSure(Record record) {
-            Block block = blocks[record.getBlockId()];
-            return block != null && !block.isMigrating() && thisAddress.equals(block.getOwner());
-        }
-
-        public Record toRecord(Request req) {
-            Record record = getRecord(req.key);
-            if (record == null) {
-                if (isMultiMap()) {
-                    record = createNewRecord(req.key, null);
-                    record.addValue(req.value);
-                } else {
-                    record = createNewRecord(req.key, req.value);
-                }
-                req.key = null;
-            } else {
-                if (req.value != null) {
-                    if (isMultiMap()) {
-                        record.addValue(req.value);
-                    } else {
-                        record.setValue(req.value);
-                    }
-                }
-            }
-            req.value = null;
-            record.setCopyCount((int) req.longValue);
-            if (req.lockCount >= 0) {
-                record.setLockAddress(req.lockAddress);
-                record.setLockThreadId(req.lockThreadId);
-                record.setLockCount(req.lockCount);
-            }
-            return record;
-        }
-
-        public boolean removeItem(Request req) {
-            Record record = mapRecords.get(req.key);
-            req.key = null;
-            if (record == null) {
-                return false;
-            }
-            if (req.txnId != -1) {
-                unlock(record);
-            }
-            boolean removed = false;
-            if (record.getCopyCount() > 0) {
-                record.decrementCopyCount();
-                removed = true;
-            } else if (record.getValue() != null) {
-                removed = true;
-            } else if (record.getMultiValues() != null) {
-                removed = true;
-            }
-            if (removed) {
-                fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record);
-                record.setVersion(record.getVersion() + 1);
-                if (record.getValue() != null) {
-                    record.setValue(null);
-                } else if (record.getMultiValues() != null) {
-                    record.setMultiValues(null);
-                }
-            }
-            req.version = record.getVersion();
-            req.longValue = record.getCopyCount();
-            if (record.isRemovable()) {
-                markAsRemoved(record);
-            }
-            return true;
-        }
-
-        public Data remove(Request req) {
-            Record record = mapRecords.get(req.key);
-            if (record == null) {
-                return null;
-            }
-            if (req.txnId != -1) {
-                unlock(record);
-            }
-            if (!record.isValid()) {
-                if (record.isEvictable()) {
-                    scheduleForEviction(record);
-                    return null;
-                }
-            }
-            if (req.value != null) {
-                if (record.getValue() != null) {
-                    if (!record.getValue().equals(req.value)) {
-                        return null;
-                    }
-                }
-            }
-            Data oldValue = record.getValue();
-            if (oldValue == null && record.getMultiValues() != null && record.getMultiValues().size() > 0) {
-                Values values = new Values(record.getMultiValues());
-                oldValue = toData(values);
-                record.setMultiValues(null);
-            }
-            if (oldValue != null) {
-                fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record.getKey(), oldValue, record.getMapListeners());
-                record.incrementVersion();
-                record.setValue(null);
-                record.setMultiValues(null);
-            }
-            req.version = record.getVersion();
-            req.longValue = record.getCopyCount();
-            if (record.isRemovable()) {
-                markAsRemoved(record);
-            }
-            if (oldValue != null) {
-                req.key = null;
-            }
-            return oldValue;
-        }
-
-        void reset() {
-            if (locallyOwnedMap != null) {
-                locallyOwnedMap.reset();
-            }
-            mapRecords.clear();
-            ownedEntryCount = 0;
-            if (setDirtyRecords != null) {
-                setDirtyRecords.clear();
-            }
-            setRemovedRecords.clear();
-            node.queryService.reset(name);
-        }
-
-        void scheduleForEviction(Record record) {
-            SortedHashMap.moveToTop(mapRecords, record.getKey());
-        }
-
-        void touch(Record record) {
-            record.setLastTouchTime(System.currentTimeMillis());
-            if (evictionPolicy == OrderingType.NONE) return;
-            SortedHashMap.touch(mapRecords, record.getKey(), evictionPolicy);
-        }
-
-        void markAsDirty(Record record) {
-            if (!record.isDirty()) {
-                record.setDirty(true);
-                if (writeDelaySeconds > 0) {
-                    record.setWriteTime(System.currentTimeMillis() + (writeDelaySeconds * 1000L));
-                    setDirtyRecords.add(record);
-                }
-            }
-        }
-
-        void markAsActive(Record record) {
-            if (!record.isActive()) {
-                record.setActive();
-                setRemovedRecords.remove(record);
-            }
-        }
-
-        boolean shouldRemove(Record record, long now) {
-            return !record.isActive() && ((now - record.getRemoveTime()) > removeDelayMillis);
-        }
-
-        void markAsRemoved(Record record) {
-            if (record.isActive()) {
-                record.markRemoved();
-                setRemovedRecords.add(record);
-                Block ownerBlock = blocks[record.getBlockId()];
-                if (thisAddress.equals(ownerBlock.getRealOwner())) {
-                    ownedEntryCount--;
-                }
-            }
-        }
-
-        void removeAndPurgeRecord(Record record) {
-            Block ownerBlock = blocks[record.getBlockId()];
-            if (thisAddress.equals(ownerBlock.getRealOwner())) {
-                node.queryService.updateIndex(name, null, null, record, Integer.MIN_VALUE);
-            }
-            Record removedRecord = mapRecords.remove(record.getKey());
-            if (removedRecord != record) {
-                throw new RuntimeException(removedRecord + " is removed but should have removed " + record);
-            }
-        }
-
-        Record createNewRecord(Data key, Data value) {
-            if (key == null || key.size() == 0) {
-                throw new RuntimeException("Cannot create record from a 0 size key: " + key);
-            }
-            int blockId = getBlockId(key);
-            Record rec = new Record(node.factory, name, blockId, key, value, ttl, newRecordId++);
-            Block ownerBlock = getOrCreateBlock(blockId);
-            if (thisAddress.equals(ownerBlock.getRealOwner())) {
-                ownedEntryCount++;
-            }
-            mapRecords.put(key, rec);
-            if (evictionPolicy != OrderingType.NONE) {
-                if (maxSize != Integer.MAX_VALUE) {
-                    int limitSize = (maxSize / lsMembers.size());
-                    if (ownedEntryCount > limitSize) {
-                        startEviction();
-                    }
-                }
-            }
-            return rec;
-        }
-
-        public void addListener(Data key, Address address, boolean includeValue) {
-            if (key == null || key.size() == 0) {
-                mapListeners.put(address, includeValue);
-            } else {
-                Record rec = getRecord(key);
-                if (rec == null) {
-                    rec = createNewRecord(key, null);
-                }
-                rec.addListener(address, includeValue);
-            }
-        }
-
-        public void removeListener(Data key, Address address) {
-            if (key == null || key.size() == 0) {
-                mapListeners.remove(address);
-            } else {
-                Record rec = getRecord(key);
-                if (rec != null) {
-                    rec.removeListener(address);
-                }
-            }
-        }
-
-        @Override
-        public String toString() {
-            return "CMap [" + name + "] size=" + size() + ", backup-size=" + backupSize();
-        }
+    public void unlock(Record record) {
+        record.setLockThreadId(-1);
+        record.setLockCount(0);
+        record.setLockAddress(null);
+        fireScheduledActions(record);
     }
 
     public void fireScheduledActions(Record record) {
@@ -2911,13 +1829,6 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    public void unlock(Record record) {
-        record.setLockThreadId(-1);
-        record.setLockCount(0);
-        record.setLockAddress(null);
-        fireScheduledActions(record);
-    }
-
     public static class Blocks extends AbstractRemotelyProcessable {
         List<Block> lsBlocks = new ArrayList<Block>(BLOCK_COUNT);
 
@@ -2958,7 +1869,7 @@ public final class ConcurrentMapManager extends BaseManager {
         public Entries(String name, ClusterOperation operation) {
             this.name = name;
             this.operation = operation;
-            TransactionImpl txn = ThreadContext.get().callContext.txn;
+            TransactionImpl txn = ThreadContext.get().getCallContext().getCurrentTxn();
             this.checkValue = (InstanceType.MAP == getInstanceType(name)) &&
                     (operation == CONCURRENT_MAP_ITERATE_VALUES
                             || operation == CONCURRENT_MAP_ITERATE_ENTRIES);
@@ -2984,7 +1895,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public void addEntries(Pairs pairs) {
             if (pairs.lsKeyValues == null) return;
-            TransactionImpl txn = ThreadContext.get().callContext.txn;
+            TransactionImpl txn = ThreadContext.get().getCallContext().getCurrentTxn();
             for (KeyValue entry : pairs.lsKeyValues) {
                 if (txn != null) {
                     Object key = entry.getKey();
@@ -3101,250 +2012,6 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public Object[] toArray(Object[] a) {
             throw new UnsupportedOperationException();
-        }
-    }
-
-    public static class CMapEntry implements MapEntry, DataSerializable {
-        private long cost = 0;
-        private long expirationTime = 0;
-        private long lastAccessTime = 0;
-        private long lastUpdateTime = 0;
-        private long creationTime = 0;
-        private long version = 0;
-        private int hits = 0;
-        private boolean valid = true;
-        private String factoryName = null;
-        private String name = null;
-        private Object key = null;
-        private Object value = null;
-
-        public CMapEntry() {
-        }
-
-        public CMapEntry(long cost, long expirationTime, long lastAccessTime, long lastUpdateTime, long creationTime, long version, int hits, boolean valid) {
-            this.cost = cost;
-            this.expirationTime = expirationTime;
-            this.lastAccessTime = lastAccessTime;
-            this.lastUpdateTime = lastUpdateTime;
-            this.creationTime = creationTime;
-            this.version = version;
-            this.hits = hits;
-            this.valid = valid;
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            out.writeLong(cost);
-            out.writeLong(expirationTime);
-            out.writeLong(lastAccessTime);
-            out.writeLong(lastUpdateTime);
-            out.writeLong(creationTime);
-            out.writeLong(version);
-            out.writeInt(hits);
-            out.writeBoolean(valid);
-        }
-
-        public void readData(DataInput in) throws IOException {
-            cost = in.readLong();
-            expirationTime = in.readLong();
-            lastAccessTime = in.readLong();
-            lastUpdateTime = in.readLong();
-            creationTime = in.readLong();
-            version = in.readLong();
-            hits = in.readInt();
-            valid = in.readBoolean();
-        }
-
-        public void set(String factoryName, String name, Object key) {
-            this.factoryName = factoryName;
-            this.name = name;
-            this.key = key;
-        }
-
-        public long getCost() {
-            return cost;
-        }
-
-        public long getCreationTime() {
-            return creationTime;
-        }
-
-        public long getExpirationTime() {
-            return expirationTime;
-        }
-
-        public long getLastUpdateTime() {
-            return lastUpdateTime;
-        }
-
-        public int getHits() {
-            return hits;
-        }
-
-        public long getLastAccessTime() {
-            return lastAccessTime;
-        }
-
-        public long getVersion() {
-            return version;
-        }
-
-        public boolean isValid() {
-            return valid;
-        }
-
-        public Object getKey() {
-            return key;
-        }
-
-        public Object getValue() {
-            if (value == null) {
-                FactoryImpl factory = FactoryImpl.getFactoryImpl(factoryName);
-                value = ((FactoryImpl.MProxy) factory.getOrCreateProxyByName(name)).get(key);
-            }
-            return value;
-        }
-
-        public Object setValue(Object value) {
-            Object oldValue = this.value;
-            FactoryImpl factory = FactoryImpl.getFactoryImpl(factoryName);
-            ((FactoryImpl.MProxy) factory.getOrCreateProxyByName(name)).put(key, value);
-            return oldValue;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            CMapEntry cMapEntry = (CMapEntry) o;
-            return !(key != null ? !key.equals(cMapEntry.key) : cMapEntry.key != null) &&
-                    !(name != null ? !name.equals(cMapEntry.name) : cMapEntry.name != null);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = name != null ? name.hashCode() : 0;
-            result = 31 * result + (key != null ? key.hashCode() : 0);
-            return result;
-        }
-
-        @Override
-        public String toString() {
-            final StringBuffer sb = new StringBuffer();
-            sb.append("MapEntry");
-            sb.append("{key=").append(key);
-            sb.append(", valid=").append(valid);
-            sb.append(", hits=").append(hits);
-            sb.append(", version=").append(version);
-            sb.append(", creationTime=").append(creationTime);
-            sb.append(", lastUpdateTime=").append(lastUpdateTime);
-            sb.append(", lastAccessTime=").append(lastAccessTime);
-            sb.append(", expirationTime=").append(expirationTime);
-            sb.append(", cost=").append(cost);
-            sb.append('}');
-            return sb.toString();
-        }
-    }
-
-    public static class Values implements Collection, DataSerializable {
-        List<Data> lsValues = null;
-
-        public Values() {
-        }
-
-        public Values(List<Data> lsValues) {
-            super();
-            this.lsValues = lsValues;
-        }
-
-        public boolean add(Object o) {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean addAll(Collection c) {
-            throw new UnsupportedOperationException();
-        }
-
-        public void clear() {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean contains(Object o) {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean containsAll(Collection c) {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean isEmpty() {
-            return (size() == 0);
-        }
-
-        public Iterator iterator() {
-            return new ValueIterator(lsValues.iterator());
-        }
-
-        class ValueIterator implements Iterator {
-            final Iterator<Data> it;
-
-            public ValueIterator(Iterator<Data> it) {
-                super();
-                this.it = it;
-            }
-
-            public boolean hasNext() {
-                return it.hasNext();
-            }
-
-            public Object next() {
-                Data value = it.next();
-                return ThreadContext.get().toObject(value);
-            }
-
-            public void remove() {
-                it.remove();
-            }
-        }
-
-        public boolean remove(Object o) {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean removeAll(Collection c) {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean retainAll(Collection c) {
-            throw new UnsupportedOperationException();
-        }
-
-        public int size() {
-            return lsValues.size();
-        }
-
-        public Object[] toArray() {
-            throw new UnsupportedOperationException();
-        }
-
-        public Object[] toArray(Object[] a) {
-            throw new UnsupportedOperationException();
-        }
-
-        public void readData(DataInput in) throws IOException {
-            int size = in.readInt();
-            lsValues = new ArrayList<Data>(size);
-            for (int i = 0; i < size; i++) {
-                Data data = new Data();
-                data.readData(in);
-                lsValues.add(data);
-            }
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            out.writeInt(lsValues.size());
-            for (Data data : lsValues) {
-                data.writeData(out);
-            }
         }
     }
 }

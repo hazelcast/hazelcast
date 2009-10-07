@@ -36,7 +36,6 @@ public class LogFormatter extends Formatter {
         sb.append(new Date(record.getMillis())).append(" ").append(
                 record.getLevel().getLocalizedName()).append(": ").append("[").append(record.getSourceClassName())
                 .append("] ").append(record.getMessage()).append(LINE_SEPARATOR);
-
         if (record.getThrown() != null) {
             try {
                 StringWriter sw = new StringWriter();
@@ -47,7 +46,6 @@ public class LogFormatter extends Formatter {
             } catch (Exception ignored) {
             }
         }
-
         return sb.toString();
     }
 }

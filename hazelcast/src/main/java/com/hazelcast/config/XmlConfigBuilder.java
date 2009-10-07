@@ -23,7 +23,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
     private URL configurationUrl;
     boolean usingSystemConfig = false;
 
-
     public XmlConfigBuilder(String xmlFileName) throws FileNotFoundException {
         this(new FileInputStream(xmlFileName));
     }
@@ -44,7 +43,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
                     configurationFile = null;
                 }
             }
-
             if (configurationFile == null) {
                 configFile = "hazelcast.xml";
                 configurationFile = new File("hazelcast.xml");
@@ -52,7 +50,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
                     configurationFile = null;
                 }
             }
-
             if (configurationFile != null) {
                 logger.log(Level.INFO, "Using configuration file at " + configurationFile.getAbsolutePath());
                 try {
@@ -78,7 +75,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
                     logger.log(Level.WARNING, msg);
                 }
             }
-
         } catch (final Exception e) {
             logger.log(Level.SEVERE, "Error while creating configuration", e);
             e.printStackTrace();
@@ -132,12 +128,10 @@ public class XmlConfigBuilder implements ConfigBuilder {
         } catch (final Throwable e) {
             domLevel3 = false;
         }
-
         final NodeList nodelist = docElement.getChildNodes();
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node node = nodelist.item(i);
             final String nodeName = node.getNodeName();
-
             if ("network".equals(nodeName)) {
                 handleNetwork(node);
             } else if ("group".equals(nodeName)) {
@@ -160,21 +154,17 @@ public class XmlConfigBuilder implements ConfigBuilder {
         if ("true".equalsIgnoreCase(value)) {
             return true;
         }
-
         if ("yes".equalsIgnoreCase(value)) {
             return true;
         }
-
         if ("on".equalsIgnoreCase(value)) {
             return true;
         }
-
         return false;
     }
 
     private void handleNetwork(final org.w3c.dom.Node node) throws Exception {
         final NodeList nodelist = node.getChildNodes();
-
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node child = nodelist.item(i);
             final String nodeName = child.getNodeName();
@@ -240,12 +230,10 @@ public class XmlConfigBuilder implements ConfigBuilder {
     private void handleExecutor(final org.w3c.dom.Node node) {
         final NodeList nodelist = node.getChildNodes();
         final ExecutorConfig executorConfig = config.getExecutorConfig();
-
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String name = n.getNodeName().toLowerCase();
             final String value = getTextContent(n).trim();
-
             if ("core-pool-size".equals(name)) {
                 executorConfig.setCorePoolSize(getIntegerValue("core-pool-size", value, ExecutorConfig.DEFAULT_CORE_POOL_SIZE));
             } else if ("max-pool-size".equals(name)) {
@@ -283,7 +271,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
     private void handleInterfaces(final org.w3c.dom.Node node) {
         final NamedNodeMap atts = node.getAttributes();
         final Interfaces interfaces = config.getNetworkConfig().getInterfaces();
-
         for (int a = 0; a < atts.getLength(); a++) {
             final org.w3c.dom.Node att = atts.item(a);
             final String value = att.getNodeValue();
@@ -309,7 +296,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
             Method method = getMethod(target, methodName);
             final String value = att.getNodeValue();
             invoke(target, method, value);
-
         }
         final NodeList nodelist = node.getChildNodes();
         for (int i = 0; i < nodelist.getLength(); i++) {
@@ -319,7 +305,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
             Method method = getMethod(target, methodName);
             invoke(target, method, value);
         }
-
         String mName = "set" + target.getClass().getSimpleName();
         Method method = getMethod(parent, mName);
         if (method == null) {
@@ -347,7 +332,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     private Method getMethod(Object target, String methodName) {
@@ -380,13 +364,11 @@ public class XmlConfigBuilder implements ConfigBuilder {
         return sb.toString();
     }
 
-
     private void handleJoin(final org.w3c.dom.Node node) {
         final NodeList nodelist = node.getChildNodes();
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node child = nodelist.item(i);
             final String name = child.getNodeName().toLowerCase();
-
             if ("multicast".equals(name)) {
                 handleMulticast(child);
             } else if ("tcp-ip".equals(name)) {
@@ -398,7 +380,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
     private void handleMulticast(final org.w3c.dom.Node node) {
         final NamedNodeMap atts = node.getAttributes();
         final Join join = config.getNetworkConfig().getJoin();
-
         for (int a = 0; a < atts.getLength(); a++) {
             final org.w3c.dom.Node att = atts.item(a);
             final String value = getTextContent(att).trim();
@@ -443,7 +424,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String nodeName = n.getNodeName().toLowerCase();
             final String value = getTextContent(n).trim();
-
             if ("max-size-per-jvm".equals(nodeName)) {
                 qConfig.setMaxSizePerJVM(getIntegerValue("max-size-per-jvm", value, QueueConfig.DEFAULT_MAX_SIZE_PER_JVM));
             } else if ("time-to-live-seconds".equals(nodeName)) {
@@ -463,7 +443,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String nodeName = n.getNodeName().toLowerCase();
             final String value = getTextContent(n).trim();
-
             if ("backup-count".equals(nodeName)) {
                 config.setBackupCount(getIntegerValue("backup-count", value, MapConfig.DEFAULT_BACKUP_COUNT));
             } else if ("eviction-policy".equals(nodeName)) {
@@ -480,14 +459,13 @@ public class XmlConfigBuilder implements ConfigBuilder {
             } else if ("map-store".equals(nodeName)) {
                 MapStoreConfig mapStoreConfig = createMapStoreConfig(n);
                 config.setMapStoreConfig(mapStoreConfig);
-            } 
+            }
         }
         this.config.getMapMapConfigs().put(name, config);
     }
 
     private MapStoreConfig createMapStoreConfig(final org.w3c.dom.Node node) {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
-
         final NamedNodeMap atts = node.getAttributes();
         for (int a = 0; a < atts.getLength(); a++) {
             final org.w3c.dom.Node att = atts.item(a);
@@ -513,7 +491,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
     private void handleTcpIp(final org.w3c.dom.Node node) {
         final NamedNodeMap atts = node.getAttributes();
         final Join join = config.getNetworkConfig().getJoin();
-
         for (int a = 0; a < atts.getLength(); a++) {
             final org.w3c.dom.Node att = atts.item(a);
             final String value = getTextContent(att).trim();
@@ -523,13 +500,11 @@ public class XmlConfigBuilder implements ConfigBuilder {
                 join.getJoinMembers().setConnectionTimeoutSeconds(getIntegerValue("conn-timeout-seconds", value, 5));
             }
         }
-
         final NodeList nodelist = node.getChildNodes();
         members:
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String value = getTextContent(n).trim();
-
             if (n.getNodeName().equalsIgnoreCase("required-member")) {
                 join.getJoinMembers().setRequiredMember(value);
             } else if (n.getNodeName().equalsIgnoreCase("hostname")) {
@@ -550,7 +525,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
             } else if (n.getNodeName().equalsIgnoreCase("interface")) {
                 final int indexStar = value.indexOf('*');
                 final int indexDash = value.indexOf('-');
-
                 if (indexStar == -1 && indexDash == -1) {
                     join.getJoinMembers().addMember(value);
                 } else {
@@ -576,7 +550,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
                         }
                     }
                 }
-
             }
         }
     }
@@ -602,5 +575,4 @@ public class XmlConfigBuilder implements ConfigBuilder {
                 && child.getNodeType() != Node.PROCESSING_INSTRUCTION_NODE;
         return result;
     }
-
 }

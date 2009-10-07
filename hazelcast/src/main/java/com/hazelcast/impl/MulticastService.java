@@ -49,7 +49,6 @@ public class MulticastService implements Runnable {
                 .getByName(config.getNetworkConfig().getJoin().getMulticastConfig().getMulticastGroup()),
                 config.getNetworkConfig().getJoin().getMulticastConfig().getMulticastPort());
         running = true;
-
     }
 
     public void stop() {
@@ -127,7 +126,6 @@ public class MulticastService implements Runnable {
                 e.printStackTrace();
             }
         }
-
     }
 
     public static class JoinInfo extends JoinRequest {
@@ -176,7 +174,6 @@ public class MulticastService implements Runnable {
             }
         }
 
-
         @Override
         public String toString() {
             return "JoinInfo{" +
@@ -184,5 +181,4 @@ public class MulticastService implements Runnable {
                     '}';
         }
     }
-
 }

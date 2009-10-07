@@ -42,7 +42,7 @@ final class CipherHelper {
             }
         } catch (Exception e) {
             e.printStackTrace();
-        } 
+        }
     }
 
     public static synchronized Cipher createAsymmetricReaderCipher(Node node, String remoteAlias) throws Exception {
@@ -88,34 +88,30 @@ final class CipherHelper {
         return aec.getKeyAlias();
     }
 
-
     interface CipherBuilder {
         Cipher getWriterCipher() throws Exception;
 
         Cipher getReaderCipher(String param) throws Exception;
 
         boolean isAsymmetric();
-
     }
 
     static class AsymmetricCipherBuilder implements CipherBuilder {
         String algorithm = "RSA/NONE/PKCS1PADDING";
         KeyStore keyStore;
         final Node node;
+
         AsymmetricCipherBuilder(Node node) {
             this.node = node;
             try {
                 AsymmetricEncryptionConfig aec = node.getConfig().getNetworkConfig().getAsymmetricEncryptionConfig();
-
                 algorithm = aec.getAlgorithm();
                 keyStore = KeyStore.getInstance(aec.getStoreType());
-
                 // get user password and file input stream
                 char[] password = aec.getStorePassword().toCharArray();
                 java.io.FileInputStream fis =
                         new java.io.FileInputStream(aec.getStorePath());
                 keyStore.load(fis, password);
-
                 fis.close();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -137,10 +133,8 @@ final class CipherHelper {
                     keyStore.getEntry(aec.getKeyAlias(), new KeyStore.PasswordProtection(aec.getKeyPassword().toCharArray()));
             PrivateKey privateKey = pkEntry.getPrivateKey();
             cipher.init(Cipher.ENCRYPT_MODE, privateKey);
-
             return cipher;
         }
-
 
         public boolean isAsymmetric() {
             return true;
@@ -186,7 +180,6 @@ final class CipherHelper {
             try {
                 int mode = (encryptMode) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
                 Cipher cipher = Cipher.getInstance(algorithm);
-
                 String keyAlgorithm = algorithm;
                 if (algorithm.indexOf('/') != -1) {
                     keyAlgorithm = algorithm.substring(0, algorithm.indexOf('/'));
@@ -198,9 +191,7 @@ final class CipherHelper {
                 md.reset();
                 byte[] saltDigest = md.digest(salt);
                 bbPass.put(saltDigest);
-
                 boolean isCBC = algorithm.indexOf("/CBC/") != -1;
-
                 SecretKey key = null;
                 //CBC mode requires IvParameter with 8 byte input
                 int ivLength = 8;
@@ -230,7 +221,6 @@ final class CipherHelper {
                     paramSpec = new IvParameterSpec(iv);
                 }
                 cipher.init(mode, key, paramSpec);
-
                 return cipher;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -250,7 +240,6 @@ final class CipherHelper {
         public boolean isAsymmetric() {
             return false;
         }
-
     }
 
     public static void handleCipherException(Exception e, Connection connection) {

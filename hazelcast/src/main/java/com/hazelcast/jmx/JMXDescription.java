@@ -23,13 +23,12 @@ import java.lang.annotation.Target;
 
 /**
  * Add a description
- * 
+ *
  * @author Marco Ferrante, DISI - University of Genoa
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})
 public @interface JMXDescription {
 
-	String value() default "";
-
+    String value() default "";
 }

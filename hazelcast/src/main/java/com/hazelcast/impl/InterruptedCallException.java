@@ -17,7 +17,7 @@
 
 package com.hazelcast.impl;
 
-public class InterruptedCallException extends RuntimeException{
+public class InterruptedCallException extends RuntimeException {
     public InterruptedCallException() {
     }
 

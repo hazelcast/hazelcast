@@ -44,14 +44,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         map = Hazelcast.getMap(namespace);
         set = Hazelcast.getSet(namespace);
         list = Hazelcast.getList(namespace);
-
         LineReader lineReader = new DefaultLineReader();
         while (true) {
             System.out.print("hazelcast[" + namespace + "] > ");
             try {
                 final String command = lineReader.readLine();
                 handleCommand(command);
-
             } catch (Throwable e) {
                 e.printStackTrace();
             }
@@ -70,7 +68,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-
     class HistoricLineReader implements LineReader {
         InputStream in = System.in;
 
@@ -83,7 +80,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 //                }
                 System.in.read();
                 System.out.println("char " + System.in.read());
-
             }
         }
 
@@ -105,7 +101,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         if (command == null || command.length() == 0) {
             return;
         }
-
         String first = command;
         int spaceIndex = command.indexOf(' ');
         String[] argsSplit = command.split(" ");
@@ -323,7 +318,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             print("type 'help' for help");
         }
     }
-
 
     private void handleInstances(String[] args) {
         Collection<Instance> instances = Hazelcast.getInstances();
@@ -613,7 +607,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             String removeStr = args[1];
             remove = removeStr.equals("remove");
         }
-
         int count = 1;
         while (it.hasNext()) {
             System.out.print(count++ + " " + it.next());
@@ -634,7 +627,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         } else if (iteratorStr.toLowerCase().endsWith("value")) {
             value = true;
         }
-
         String data = args[1];
         boolean result = false;
         if (iteratorStr.startsWith("s.")) {
@@ -676,7 +668,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             list.clear();
         }
         print("Cleared all.");
-
     }
 
     private void handleDestroy(String[] args) {
@@ -693,9 +684,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             topic.destroy();
         }
         print("Destroyed!");
-
     }
-
 
     private void handleQOffer(String[] args) {
         long timeout = 0;
@@ -817,7 +806,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-
     private void executeOnMembers(String[] args) {
         // executeOnMembers <echo-string>
         try {
@@ -825,7 +813,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             MultiTask<String> echoTask = new MultiTask(new Echo(args[1]), Hazelcast.getCluster()
                     .getMembers());
             executorService.execute(echoTask);
-
             Collection<String> results = echoTask.get();
             for (String result : results) {
                 System.out.println(result);
@@ -842,9 +829,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         try {
             ExecutorService executorService = Hazelcast.getExecutorService();
             MultiTask<String> echoTask = new MultiTask(new LongTask(args[1]), Hazelcast.getCluster()
-                    .getMembers()){
+                    .getMembers()) {
                 @Override
-                public void setMemberLeft (Member member) {
+                public void setMemberLeft(Member member) {
                     System.out.println("Member Left " + member);
                 }
 
@@ -853,9 +840,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                     System.out.println("Done!");
                 }
             };
-
             executorService.execute(echoTask);
-
             Collection<String> results = echoTask.get();
             for (String result : results) {
                 System.out.println(result);
@@ -881,7 +866,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             }
             DistributedTask<String> echoTask = new DistributedTask(new LongTask(args[1]), otherMember) {
                 @Override
-                public void setMemberLeft (Member member) {
+                public void setMemberLeft(Member member) {
                     System.out.println("Member Left " + member);
                 }
 
@@ -890,9 +875,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                     System.out.println("Done!");
                 }
             };
-
             executorService.execute(echoTask);
-
             Object result = echoTask.get();
             System.out.println(result);
         } catch (Exception e) {
@@ -1040,7 +1023,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         print("execute0nMembers <echo-input> 		//executes an echo task on all of the members");
         print("");
         silent = silentBefore;
-
     }
 
     void print(Object obj) {

@@ -21,129 +21,125 @@ import com.hazelcast.core.ItemListener;
 
 /**
  * Management bean for Hazelcst Queue
- * 
+ *
  * @author Marco Ferrante, DISI - University of Genoa
  */
 @JMXDescription("A distributed queue")
 public class QueueMBean extends AbstractMBean<IQueue<?>> {
 
-	@SuppressWarnings("unchecked")
-	protected ItemListener listener;
-	
-	private StatisticsCollector receivedStats = null;
-	private StatisticsCollector servedStats = null;
-	
-	public QueueMBean(IQueue<?> queue) {
-    	super(queue);
+    @SuppressWarnings("unchecked")
+    protected ItemListener listener;
+
+    private StatisticsCollector receivedStats = null;
+    private StatisticsCollector servedStats = null;
+
+    public QueueMBean(IQueue<?> queue) {
+        super(queue);
     }
 
-	@Override
-	public ObjectNameSpec getNameSpec() {
-		return getParentName().getNested("Queue", getName());
-	}
-	
-	@SuppressWarnings("unchecked")
-	@Override
-	public void postRegister(Boolean registrationDone) {
-		super.postRegister(registrationDone);
-		if (!registrationDone) {
-			return;
-		}
-		
-		if (ManagementService.showDetails()) {
-			receivedStats = ManagementService.newStatisticsCollector(); 
-			servedStats = ManagementService.newStatisticsCollector(); 
-			
-			listener = new ItemListener() {
+    @Override
+    public ObjectNameSpec getNameSpec() {
+        return getParentName().getNested("Queue", getName());
+    }
 
-				public void itemAdded(Object item) {
-					receivedStats.addEvent();
-				}
+    @SuppressWarnings("unchecked")
+    @Override
+    public void postRegister(Boolean registrationDone) {
+        super.postRegister(registrationDone);
+        if (!registrationDone) {
+            return;
+        }
+        if (ManagementService.showDetails()) {
+            receivedStats = ManagementService.newStatisticsCollector();
+            servedStats = ManagementService.newStatisticsCollector();
+            listener = new ItemListener() {
 
-				public void itemRemoved(Object item) {
-					servedStats.addEvent();
-				}
-			};
-			getManagedObject().addItemListener(listener, false);
-			
-		}
-	}
+                public void itemAdded(Object item) {
+                    receivedStats.addEvent();
+                }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public void preDeregister() throws Exception {
-		if (listener != null) {
-			getManagedObject().removeItemListener(listener);
-			listener = null;
-		}
-		if (receivedStats != null) {
-			receivedStats.destroy();
-			receivedStats = null;
-		}
-		if (servedStats != null) {
-			servedStats.destroy();
-			servedStats = null;
-		}
-		super.preDeregister();
-	}
+                public void itemRemoved(Object item) {
+                    servedStats.addEvent();
+                }
+            };
+            getManagedObject().addItemListener(listener, false);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void preDeregister() throws Exception {
+        if (listener != null) {
+            getManagedObject().removeItemListener(listener);
+            listener = null;
+        }
+        if (receivedStats != null) {
+            receivedStats.destroy();
+            receivedStats = null;
+        }
+        if (servedStats != null) {
+            servedStats.destroy();
+            servedStats = null;
+        }
+        super.preDeregister();
+    }
 
     /**
      * Resets statistics
      */
-	@JMXOperation("resetStats")
+    @JMXOperation("resetStats")
     public void resetStats() {
-    	if (receivedStats != null)
-    		receivedStats.reset();
-    	if (servedStats != null)
-    		servedStats.reset();
+        if (receivedStats != null)
+            receivedStats.reset();
+        if (servedStats != null)
+            servedStats.reset();
     }
-    
-	@JMXAttribute("Name")
-	@JMXDescription("Registration name of the queue")
-	public String getName() {
-		return getManagedObject().getName();
-	}
-	
-	@JMXAttribute("Size")
-	@JMXDescription("Current queue size")
-	public int size() {
-		return getManagedObject().size();
-	}
-	
-	@JMXAttribute("ItemsReceived")
-	@JMXDescription("Total items pushed in the queue since creation")
-	public long getItemsReceived() {
-		return receivedStats.getTotal();
-	}
 
-	@JMXAttribute("ItemsReceivedLast")
-	@JMXDescription("Items pushed in the queue in the last second")
-	public double getItemsReceivedAvg() {
-		return receivedStats.getAverage();
-	}
+    @JMXAttribute("Name")
+    @JMXDescription("Registration name of the queue")
+    public String getName() {
+        return getManagedObject().getName();
+    }
 
-	@JMXAttribute("ItemsReceivedPeak")
-	@JMXDescription("Max items pushed in the queue per second")
-	public double getItemsReceivedMax() {
-		return receivedStats.getMax();
-	}
+    @JMXAttribute("Size")
+    @JMXDescription("Current queue size")
+    public int size() {
+        return getManagedObject().size();
+    }
 
-	@JMXAttribute("ItemsServed")
-	@JMXDescription("Total items pulled from the queue since creation")
-	public long getItemsServed() {
-		return servedStats.getTotal();
-	}
+    @JMXAttribute("ItemsReceived")
+    @JMXDescription("Total items pushed in the queue since creation")
+    public long getItemsReceived() {
+        return receivedStats.getTotal();
+    }
 
-	@JMXAttribute("ItemsServedLast")
-	@JMXDescription("Items pulled from the queue in the last second")
-	public double getItemsServedAvg() {
-		return servedStats.getAverage();
-	}
+    @JMXAttribute("ItemsReceivedLast")
+    @JMXDescription("Items pushed in the queue in the last second")
+    public double getItemsReceivedAvg() {
+        return receivedStats.getAverage();
+    }
 
-	@JMXAttribute("ItemsServedPeak")
-	@JMXDescription("Max pulled from the queue per second")
-	public double getItemsServedMax() {
-		return servedStats.getMax();
-	}
+    @JMXAttribute("ItemsReceivedPeak")
+    @JMXDescription("Max items pushed in the queue per second")
+    public double getItemsReceivedMax() {
+        return receivedStats.getMax();
+    }
 
+    @JMXAttribute("ItemsServed")
+    @JMXDescription("Total items pulled from the queue since creation")
+    public long getItemsServed() {
+        return servedStats.getTotal();
+    }
+
+    @JMXAttribute("ItemsServedLast")
+    @JMXDescription("Items pulled from the queue in the last second")
+    public double getItemsServedAvg() {
+        return servedStats.getAverage();
+    }
+
+    @JMXAttribute("ItemsServedPeak")
+    @JMXDescription("Max pulled from the queue per second")
+    public double getItemsServedMax() {
+        return servedStats.getMax();
+    }
 }

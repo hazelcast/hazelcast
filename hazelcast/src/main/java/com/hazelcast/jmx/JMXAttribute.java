@@ -16,23 +16,22 @@
  */
 package com.hazelcast.jmx;
 
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.annotation.ElementType;
 
 /**
  * Mark a method as an attribute accessor
- * 
+ *
  * @author Marco Ferrante, DISI - University of Genoa
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface JMXAttribute {
-	
-	/**
-	 * JMX attribute name.
-	 */
-	String value() default "";
-	
+
+    /**
+     * JMX attribute name.
+     */
+    String value() default "";
 }

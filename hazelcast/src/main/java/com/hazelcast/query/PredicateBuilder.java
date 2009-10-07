@@ -18,7 +18,6 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
-import static com.hazelcast.query.Predicates.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +27,6 @@ import java.util.Set;
 public class PredicateBuilder implements Predicate, IndexAwarePredicate {
     Expression exp = null;
     List<Predicate> lsPredicates = new ArrayList<Predicate>();
-
 
     public boolean apply(MapEntry mapEntry) {
         return lsPredicates.get(0).apply(mapEntry);
@@ -44,7 +42,6 @@ public class PredicateBuilder implements Predicate, IndexAwarePredicate {
             }
         } else {
             strong = false;
-
         }
         return strong;
     }
@@ -82,7 +79,6 @@ public class PredicateBuilder implements Predicate, IndexAwarePredicate {
         lsPredicates.add(Predicates.or(first, second));
         return this;
     }
-
 
     @Override
     public String toString() {

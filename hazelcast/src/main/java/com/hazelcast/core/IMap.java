@@ -18,13 +18,12 @@
 package com.hazelcast.core;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.Expression;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import java.util.Set;
-import java.util.Map;
-import java.util.Collection;
 
 public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
 
@@ -47,15 +46,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
     void removeEntryListener(EntryListener listener, K key);
 
     MapEntry getMapEntry(K key);
-    
+
     boolean evict(K key);
 
     <K> Set<K> keySet(Predicate predicate);
 
-    <K,V> Set<Map.Entry<K, V>> entrySet(Predicate predicate);
+    <K, V> Set<Map.Entry<K, V>> entrySet(Predicate predicate);
 
-    <V> Collection<V> values (Predicate predicate);
+    <V> Collection<V> values(Predicate predicate);
 
     void addIndex(String attribute, boolean ordered);
-
 }

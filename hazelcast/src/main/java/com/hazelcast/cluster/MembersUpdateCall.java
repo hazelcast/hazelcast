@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.hazelcast.cluster;
 
@@ -68,5 +68,4 @@ public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
         sb.append("\n}");
         return sb.toString();
     }
-
 }

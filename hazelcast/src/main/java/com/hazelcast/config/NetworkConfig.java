@@ -27,32 +27,32 @@ public class NetworkConfig {
     private AsymmetricEncryptionConfig asymmetricEncryptionConfig = null;
 
     /**
-	 * @return the interfaces
-	 */
-	public Interfaces getInterfaces() {
-		return interfaces;
-	}
+     * @return the interfaces
+     */
+    public Interfaces getInterfaces() {
+        return interfaces;
+    }
 
-	/**
-	 * @param interfaces the interfaces to set
-	 */
-	public void setInterfaces(Interfaces interfaces) {
-		this.interfaces = interfaces;
-	}
+    /**
+     * @param interfaces the interfaces to set
+     */
+    public void setInterfaces(Interfaces interfaces) {
+        this.interfaces = interfaces;
+    }
 
-	/**
-	 * @return the join
-	 */
-	public Join getJoin() {
-		return join;
-	}
+    /**
+     * @return the join
+     */
+    public Join getJoin() {
+        return join;
+    }
 
-	/**
-	 * @param join the join to set
-	 */
-	public void setJoin(Join join) {
-		this.join = join;
-	}
+    /**
+     * @param join the join to set
+     */
+    public void setJoin(Join join) {
+        this.join = join;
+    }
 
     public SymmetricEncryptionConfig getSymmetricEncryptionConfig() {
         return symmetricEncryptionConfig;

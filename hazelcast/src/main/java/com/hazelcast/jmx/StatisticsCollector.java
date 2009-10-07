@@ -18,22 +18,21 @@ package com.hazelcast.jmx;
 
 interface StatisticsCollector {
 
-	public void destroy();
-	
-	public abstract void addEvent();
+    public void destroy();
 
-	public abstract void reset();
+    public abstract void addEvent();
 
-	public abstract long getEvents();
+    public abstract void reset();
 
-	public abstract long getTotal();
+    public abstract long getEvents();
 
-	public abstract double getMin();
+    public abstract long getTotal();
 
-	public abstract double getMax();
+    public abstract double getMin();
 
-	public abstract double getAverage();
+    public abstract double getMax();
 
-	public abstract long getInterval();
+    public abstract double getAverage();
 
+    public abstract long getInterval();
 }

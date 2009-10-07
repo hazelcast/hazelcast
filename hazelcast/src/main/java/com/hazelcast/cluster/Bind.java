@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.hazelcast.cluster;
 
@@ -22,5 +22,4 @@ public class Bind extends Master {
     public void process() {
         getNode().connectionManager.bind(address, getConnection(), true);
     }
-    
 }

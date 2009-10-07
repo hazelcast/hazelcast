@@ -23,13 +23,12 @@ import java.lang.annotation.Target;
 
 /**
  * Mark a method as a JMX operation
- * 
+ *
  * @author Marco Ferrante, DISI - University of Genoa
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})
 public @interface JMXOperation {
 
-	String value() default "";
-	
+    String value() default "";
 }

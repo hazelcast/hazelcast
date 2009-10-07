@@ -40,16 +40,17 @@ public class ClientService {
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
         node.executorManager.executeLocally(new ClientRequestHandler(node, packet, callContext));
     }
-    public ClientEndpoint getClientEndpoint(Connection conn){
-    	ClientEndpoint clientEndpoint = mapClientEndpoints.get(conn);
-        if(clientEndpoint == null){
-        	clientEndpoint = new ClientEndpoint(conn);
-        	mapClientEndpoints.put(conn, clientEndpoint);
+
+    public ClientEndpoint getClientEndpoint(Connection conn) {
+        ClientEndpoint clientEndpoint = mapClientEndpoints.get(conn);
+        if (clientEndpoint == null) {
+            clientEndpoint = new ClientEndpoint(conn);
+            mapClientEndpoints.put(conn, clientEndpoint);
         }
         return clientEndpoint;
     }
 
-    class ClientEndpoint implements EntryListener{
+    class ClientEndpoint implements EntryListener {
         final Connection conn;
         private Map<Integer, CallContext> mapOfCallContexts = new HashMap<Integer, CallContext>();
 
@@ -67,40 +68,40 @@ public class ClientService {
             return context;
         }
 
-		public void entryAdded(EntryEvent event) {
-			processEvent(event);
-		}
+        public void entryAdded(EntryEvent event) {
+            processEvent(event);
+        }
 
-		public void entryEvicted(EntryEvent event) {
-			processEvent(event);
-		}
+        public void entryEvicted(EntryEvent event) {
+            processEvent(event);
+        }
 
-		public void entryRemoved(EntryEvent event) {
-			processEvent(event);
-		}
+        public void entryRemoved(EntryEvent event) {
+            processEvent(event);
+        }
 
-		public void entryUpdated(EntryEvent event) {
-			processEvent(event);			
-		}
+        public void entryUpdated(EntryEvent event) {
+            processEvent(event);
+        }
 
-		private void processEvent(EntryEvent event) {
-			Packet packet = createEventPacket(event);
-			sendPacket(packet);
-		}
+        private void processEvent(EntryEvent event) {
+            Packet packet = createEventPacket(event);
+            sendPacket(packet);
+        }
 
-		private void sendPacket(Packet packet) {
-			if(conn != null && conn.live()) {
-				conn.getWriteHandler().enqueuePacket(packet);
-			}
-		}
+        private void sendPacket(Packet packet) {
+            if (conn != null && conn.live()) {
+                conn.getWriteHandler().enqueuePacket(packet);
+            }
+        }
 
-		private Packet createEventPacket(EntryEvent event) {
-			Packet packet = new Packet();
-			EventTask eventTask = (EventTask)event;
-			packet.set(event.getName(), ClusterOperation.EVENT, eventTask.getDataKey(), eventTask.getDataValue());
-			packet.longValue = event.getEventType().getType();
-			return packet;
-		}
+        private Packet createEventPacket(EntryEvent event) {
+            Packet packet = new Packet();
+            EventTask eventTask = (EventTask) event;
+            packet.set(event.getName(), ClusterOperation.EVENT, eventTask.getDataKey(), eventTask.getDataValue());
+            packet.longValue = event.getEventType().getType();
+            return packet;
+        }
     }
 
     public void reset() {

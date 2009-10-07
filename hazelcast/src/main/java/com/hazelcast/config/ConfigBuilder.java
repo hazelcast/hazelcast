@@ -6,11 +6,10 @@ package com.hazelcast.config;
 
 public interface ConfigBuilder {
 
-	/**
-	 * Builds Config object.
-	 * 
-	 * @returns Config object
-	 */
-	 Config build();
-
+    /**
+     * Builds Config object.
+     *
+     * @returns Config object
+     */
+    Config build();
 }

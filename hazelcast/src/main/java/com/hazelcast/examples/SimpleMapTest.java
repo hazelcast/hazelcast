@@ -44,12 +44,10 @@ public class SimpleMapTest {
                         if (operation < 4) {
                             map.put(String.valueOf(key), new byte[VALUE_SIZE]);
                             stats.mapPuts.incrementAndGet();
-                        }
-                        else if (operation < 8) {
+                        } else if (operation < 8) {
                             map.get(String.valueOf(key));
                             stats.mapGets.incrementAndGet();
-                        }
-                        else {
+                        } else {
                             map.remove(String.valueOf(key));
                             stats.mapRemoves.incrementAndGet();
                         }
@@ -57,7 +55,6 @@ public class SimpleMapTest {
                 }
             });
         }
-
         Executors.newSingleThreadExecutor().submit(new Runnable() {
             public void run() {
                 while (true) {
@@ -86,13 +83,10 @@ public class SimpleMapTest {
             long mapPutsNow = mapPuts.getAndSet(0);
             long mapGetsNow = mapGets.getAndSet(0);
             long mapRemovesNow = mapRemoves.getAndSet(0);
-
             Stats newOne = new Stats();
-
             newOne.mapPuts.set(mapPutsNow);
             newOne.mapGets.set(mapGetsNow);
             newOne.mapRemoves.set(mapRemovesNow);
-
             return newOne;
         }
 

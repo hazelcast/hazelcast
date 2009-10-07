@@ -26,9 +26,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TopicManager extends BaseManager {
-    
+
     TopicManager(Node node) {
-        super (node);
+        super(node);
     }
 
     Map<String, TopicInstance> mapTopics = new HashMap<String, TopicInstance>();
@@ -116,6 +116,5 @@ public class TopicManager extends BaseManager {
         public void publish(Data msg) {
             fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, msg);
         }
-
     }
 }

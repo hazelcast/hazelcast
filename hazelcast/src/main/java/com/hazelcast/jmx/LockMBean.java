@@ -20,36 +20,34 @@ import com.hazelcast.core.ILock;
 
 /**
  * MBean for Locks
- *  
+ *
  * @author Marco Ferrante, DISI - University of Genoa
  */
 @JMXDescription("A distributed Lock")
 public class LockMBean extends AbstractMBean<ILock> {
 
     public LockMBean(ILock lock) {
-    	super(lock);
+        super(lock);
     }
 
-	@Override
-	public ObjectNameSpec getNameSpec() {
-    	return getParentName().getNested("Lock", getName());
-	}
-	
-	@JMXAttribute("String")
-	@JMXDescription("toString() result")
-	public String getName() {
-		return getManagedObject().toString();
-	}
+    @Override
+    public ObjectNameSpec getNameSpec() {
+        return getParentName().getNested("Lock", getName());
+    }
 
-	@JMXAttribute("LockObject")
-	@JMXDescription("The object locked")
-	public String getLockObject() {
-		Object obj = getManagedObject().getLockObject();
-		if (obj != null) {
-			return obj.toString();
-		}
-		return null;
-	}
-	
-	
+    @JMXAttribute("String")
+    @JMXDescription("toString() result")
+    public String getName() {
+        return getManagedObject().toString();
+    }
+
+    @JMXAttribute("LockObject")
+    @JMXDescription("The object locked")
+    public String getLockObject() {
+        Object obj = getManagedObject().getLockObject();
+        if (obj != null) {
+            return obj.toString();
+        }
+        return null;
+    }
 }

@@ -16,133 +16,126 @@
  */
 package com.hazelcast.jmx;
 
-import java.util.regex.Pattern;
-
-import javax.management.DynamicMBean;
-import javax.management.ObjectName;
 import javax.management.MalformedObjectNameException;
-
-import com.hazelcast.core.Instance;
-import com.hazelcast.core.*;
+import javax.management.ObjectName;
+import java.util.regex.Pattern;
 
 /**
  * Handle JMX objectName
- * 
+ *
  * @author Marco Ferrante, DISI - University of Genoa
  */
 public class ObjectNameSpec {
 
-	/**
-	 * MBean name domain
-	 */
-	static String NAME_DOMAIN = "com.hazelcast:";
-	
-	private String type = null;
-	private String cluster = null;
-	private String name = null;
+    /**
+     * MBean name domain
+     */
+    static String NAME_DOMAIN = "com.hazelcast:";
 
-	public static ObjectName getClusterNameFilter(String clusterName) throws MalformedObjectNameException{
-		return new ObjectName(NAME_DOMAIN + "Cluster=" + clusterName);
-	}
-	
-	public ObjectNameSpec() {
-	}
-	
-	public ObjectNameSpec(String type, String name) {
-		this.type = clean(type);
-		this.name = clean(name);
-	}
-	
-	public ObjectNameSpec(String name) {
-		cluster = clean(name);
-	}
-	
-	/**
-	 * Escape with quote if required
-	 */
-	private String clean(String name) {
-		if (name == null) {
-			return null;
-		}
-		if (Pattern.matches(":\",=\\*\\?", name)) {
-			return ObjectName.quote(name);
-		}
-		else {
-			return name;
-		}
-	}
-	
-	/**
-	 * Return a nested name, for clustered object
-	 */
-	public ObjectNameSpec getNested(String type) {
-		if (cluster == null) {
-			throw new IllegalStateException("Not clustered object");
-		}
-		ObjectNameSpec result = new ObjectNameSpec(cluster);
-		result.type = clean(type);
-		return result;
-	}
-	
-	/**
-	 * Return a nested name, for clustered object
-	 */
-	public ObjectNameSpec getNested(String type, String name) {
-		if (cluster == null) {
-			throw new IllegalStateException("Not clustered object");
-		}
-		ObjectNameSpec result = new ObjectNameSpec(cluster);
-		result.type = clean(type);
-		result.name = clean(name);
-		return result;
-	}
-	
-	public ObjectName buildObjectName() throws Exception {
-		StringBuffer sb = new StringBuffer(NAME_DOMAIN);
-		if (type != null) {
-			sb.append("type=").append(type);
-		}
-		if (cluster != null) {
-			if (type != null) {
-				sb.append(',');
-			}	
-			sb.append("Cluster=").append(cluster);
-		}
-		if (name != null) {
-			if (type != null || cluster != null) {
-				sb.append(',');
-			}	
-			sb.append("name=").append(name);
-		}
-		return new ObjectName(sb.toString());
-	}
-	
-	/**
-	 * Builde the name, overwriting the defaults
-	 */
-	public ObjectName buildObjectName(String type, String name) throws Exception {
-		StringBuffer sb = new StringBuffer(NAME_DOMAIN);
-		if (type != null) {
-			sb.append("type=").append(clean(type));
-		}
+    private String type = null;
+    private String cluster = null;
+    private String name = null;
+
+    public static ObjectName getClusterNameFilter(String clusterName) throws MalformedObjectNameException {
+        return new ObjectName(NAME_DOMAIN + "Cluster=" + clusterName);
+    }
+
+    public ObjectNameSpec() {
+    }
+
+    public ObjectNameSpec(String type, String name) {
+        this.type = clean(type);
+        this.name = clean(name);
+    }
+
+    public ObjectNameSpec(String name) {
+        cluster = clean(name);
+    }
+
+    /**
+     * Escape with quote if required
+     */
+    private String clean(String name) {
+        if (name == null) {
+            return null;
+        }
+        if (Pattern.matches(":\",=\\*\\?", name)) {
+            return ObjectName.quote(name);
+        } else {
+            return name;
+        }
+    }
+
+    /**
+     * Return a nested name, for clustered object
+     */
+    public ObjectNameSpec getNested(String type) {
+        if (cluster == null) {
+            throw new IllegalStateException("Not clustered object");
+        }
+        ObjectNameSpec result = new ObjectNameSpec(cluster);
+        result.type = clean(type);
+        return result;
+    }
+
+    /**
+     * Return a nested name, for clustered object
+     */
+    public ObjectNameSpec getNested(String type, String name) {
+        if (cluster == null) {
+            throw new IllegalStateException("Not clustered object");
+        }
+        ObjectNameSpec result = new ObjectNameSpec(cluster);
+        result.type = clean(type);
+        result.name = clean(name);
+        return result;
+    }
+
+    public ObjectName buildObjectName() throws Exception {
+        StringBuffer sb = new StringBuffer(NAME_DOMAIN);
+        if (type != null) {
+            sb.append("type=").append(type);
+        }
+        if (cluster != null) {
+            if (type != null) {
+                sb.append(',');
+            }
+            sb.append("Cluster=").append(cluster);
+        }
+        if (name != null) {
+            if (type != null || cluster != null) {
+                sb.append(',');
+            }
+            sb.append("name=").append(name);
+        }
+        return new ObjectName(sb.toString());
+    }
+
+    /**
+     * Builde the name, overwriting the defaults
+     */
+    public ObjectName buildObjectName(String type, String name) throws Exception {
+        StringBuffer sb = new StringBuffer(NAME_DOMAIN);
+        if (type != null) {
+            sb.append("type=").append(clean(type));
+        }
 //		if (cluster != null) {
 //			if (type != null) {
 //				sb.append(',');
 //			}	
 //			sb.append("Cluster=").append(cluster);
 //		}
-		if (name != null) {
-			if (type != null || cluster != null) {
-				sb.append(',');
-			}	
-			sb.append("name=").append(clean(name));
-		}
-		return new ObjectName(sb.toString());
-	}
-	
-	/**
-	 * @deprecated
-	 */
+        if (name != null) {
+            if (type != null || cluster != null) {
+                sb.append(',');
+            }
+            sb.append("name=").append(clean(name));
+        }
+        return new ObjectName(sb.toString());
+    }
+    /**
+     * @deprecated
+     */
 //	@SuppressWarnings("unchecked")
 //	public static ObjectName buildName(Object object) throws Exception {
 //		if (object instanceof ITopic) {
@@ -197,5 +190,4 @@ public class ObjectNameSpec {
 //		
 //		return null;
 //	}
-	
 }

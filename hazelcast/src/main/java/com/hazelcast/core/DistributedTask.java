@@ -172,7 +172,6 @@ public class DistributedTask<V> extends FutureTask<V> {
         private ExecutionManagerCallback executionManagerCallback;
 
         private ExecutionCallback<V> executionCallback = null; // user
-
         // executioncallback
 
         public Inner(Callable<V> callable, Member member, Set<Member> members, Object key) {

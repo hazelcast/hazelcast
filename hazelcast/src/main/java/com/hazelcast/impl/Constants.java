@@ -31,7 +31,6 @@ public interface Constants {
         public static final Object OBJECT_MEMBER_LEFT = new Object();
 
         public static final Object OBJECT_REDO = new Object();
-
     }
 
     interface IO {
@@ -40,7 +39,6 @@ public interface Constants {
 
         public static final Data EMPTY_DATA = new Data();
     }
-
 
     interface Timeouts {
 
@@ -58,6 +56,5 @@ public interface Constants {
         public static final byte RESPONSE_FAILURE = 4;
 
         public static final byte RESPONSE_REDO = 5;
-
     }
 }

@@ -17,7 +17,6 @@
 
 package com.hazelcast.config;
 
-
 public enum ConfigProperty {
     SERIALIZER_SHARED("hazelcast.serializer.shared", "false"),
     WAIT_SECONDS_BEFORE_JOIN("hazelcast.wait.seconds.before.join", "5"),
@@ -42,14 +41,14 @@ public enum ConfigProperty {
         return Integer.getInteger(name, Integer.parseInt(this.defaultValue));
     }
 
-    public boolean getBoolean () {
+    public boolean getBoolean() {
         String val = System.getProperty(name);
         if (val == null) return Boolean.valueOf(this.defaultValue);
         return ("true".equalsIgnoreCase(val));
     }
 
     public String getString() {
-       String val = System.getProperty(name);
+        String val = System.getProperty(name);
         if (val == null) return this.defaultValue;
         return val;
     }
