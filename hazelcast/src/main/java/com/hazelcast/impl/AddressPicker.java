@@ -115,7 +115,7 @@ public class AddressPicker {
                     String msg = "Hazelcast CANNOT start on this node. No matching network interface found. ";
                     msg += "\nInterface matching must be either disabled or updated in the hazelcast.xml config file.";
                     logger.log(Level.SEVERE, msg);
-                    return null;
+                    throw new RuntimeException(msg);
                 }
             }
             if (currentAddress == null) {
@@ -153,7 +153,7 @@ public class AddressPicker {
                         serverSocket.setReuseAddress(reuseAddress);
                         port++;
                     } else {
-                        String msg = "Port [" + port + "] is already use and auto-increment is " +
+                        String msg = "Port [" + port + "] is already in use and auto-increment is " +
                                 "disabled. Hazelcast cannot start.";
                         logger.log(Level.SEVERE, msg);
                         throw e;

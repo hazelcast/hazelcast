@@ -6,6 +6,7 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.nio.Address;
+import static junit.framework.Assert.assertTrue;
 import org.junit.After;
 import static org.junit.Assert.*;
 import org.junit.Test;
@@ -44,40 +45,6 @@ public class ClusterTest {
         interrupter.start();
         map.put("1", "value");
         latch.await();
-    }
-
-    @Test(timeout = 60000)
-    public void testDataRecovery() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        IMap map1 = h1.getMap("default");
-        for (int i = 0; i < 1000; i++) {
-            map1.put(i, "value" + i);
-        }
-        assertEquals(1000, map1.size());
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        IMap map2 = h2.getMap("default");
-        assertEquals(1000, map1.size());
-        assertEquals(1000, map2.size());
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
-        IMap map3 = h3.getMap("default");
-        assertEquals(1000, map1.size());
-        assertEquals(1000, map2.size());
-        assertEquals(1000, map3.size());
-        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
-        IMap map4 = h4.getMap("default");
-        assertEquals(1000, map1.size());
-        assertEquals(1000, map2.size());
-        assertEquals(1000, map3.size());
-        assertEquals(1000, map4.size());
-        h4.shutdown();
-        assertEquals(1000, map1.size());
-        assertEquals(1000, map2.size());
-        assertEquals(1000, map3.size());
-        h1.shutdown();
-        assertEquals(1000, map2.size());
-        assertEquals(1000, map3.size());
-        h2.shutdown();
-        assertEquals(1000, map3.size());
     }
 
     @Test(timeout = 60000)
@@ -340,5 +307,26 @@ public class ClusterTest {
         }
         assertEquals(3, map1.size());
         assertEquals(3, map2.size());
+    }
+
+    @Test
+    public void testTopic() {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        String topicName = "TestMessages";
+        ITopic<String> topic1 = h1.getTopic(topicName);
+        ITopic<String> topic2 = h2.getTopic(topicName);
+        final CountDownLatch latch = new CountDownLatch(1);
+        topic2.addMessageListener(new MessageListener() {
+            public void onMessage(Object msg) {
+                assertEquals("Test1", msg);
+                latch.countDown();
+            }
+        });
+        topic1.publish("Test1");
+        try {
+            assertTrue(latch.await(5, TimeUnit.SECONDS));
+        } catch (InterruptedException ignored) {
+        }
     }
 }

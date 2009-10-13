@@ -229,8 +229,10 @@ public final class Packet {
             sizeRead = true;
             bbSizes.flip();
             bbHeader.limit(bbSizes.getInt());
-            key = new Data(bbSizes.getInt());
-            value = new Data(bbSizes.getInt());
+            int keySize = bbSizes.getInt();
+            int valueSize = bbSizes.getInt();
+            if (keySize > 0) key = new Data(keySize);
+            if (valueSize > 0) value = new Data(valueSize);
             if (bbHeader.limit() == 0) {
                 throw new RuntimeException("read.bbHeader size cannot be 0");
             }
@@ -239,17 +241,17 @@ public final class Packet {
             while (bb.hasRemaining() && bbHeader.hasRemaining()) {
                 IOUtil.copyToHeapBuffer(bb, bbHeader);
             }
-            while (bb.hasRemaining() && key.shouldRead()) {
+            while (key != null && bb.hasRemaining() && key.shouldRead()) {
                 key.read(bb);
             }
-            while (bb.hasRemaining() && value.shouldRead()) {
+            while (value != null && bb.hasRemaining() && value.shouldRead()) {
                 value.read(bb);
             }
         }
-        if (sizeRead && !bbHeader.hasRemaining() && !key.shouldRead() && !value.shouldRead()) {
+        if (sizeRead && !bbHeader.hasRemaining() && (key == null || !key.shouldRead()) && (value == null || !value.shouldRead())) {
             sizeRead = false;
-            key.postRead();
-            value.postRead();
+            if (key != null) key.postRead();
+            if (value != null) value.postRead();
             return true;
         }
         return false;

@@ -318,18 +318,21 @@ public class HazelcastTest {
         assertEquals("testTopicGetName", topic.getName());
     }
 
-    public static class TopicListener implements MessageListener<String>, Serializable {
-        public void onMessage(String msg) {
-            /**@todo failure of this test does not propagate correctly */
-            assertEquals("Hello World", msg);
-        }
-    }
-
     @Test
     public void testTopicPublish() {
         ITopic<String> topic = Hazelcast.getTopic("testTopicPublish");
-        topic.addMessageListener(new TopicListener());
+        final CountDownLatch latch = new CountDownLatch(1);
+        topic.addMessageListener(new MessageListener() {
+            public void onMessage(Object msg) {
+                assertEquals("Hello World", msg);
+                latch.countDown();
+            }
+        });
         topic.publish("Hello World");
+        try {
+            assertTrue(latch.await(5, TimeUnit.SECONDS));
+        } catch (InterruptedException ignored) {
+        }
     }
 
     @Test

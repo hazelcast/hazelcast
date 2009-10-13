@@ -1225,9 +1225,9 @@ public abstract class BaseManager {
         final EventTask eventTask = new EventTask(eventType, name, eventKey, eventValue);
         int eventQueueIndex;
         if (eventKey != null) {
-            eventQueueIndex = Math.abs(eventKey.hashCode()) % EVENT_QUEUE_COUNT;
+            eventQueueIndex = Math.abs(eventKey.hashCode() % EVENT_QUEUE_COUNT);
         } else {
-            eventQueueIndex = Math.abs(from.hashCode()) % EVENT_QUEUE_COUNT;
+            eventQueueIndex = Math.abs(from.hashCode() % EVENT_QUEUE_COUNT);
         }
         final EventQueue eventQueue = eventQueues[eventQueueIndex];
         final int size = eventQueue.offerRunnable(eventTask);
