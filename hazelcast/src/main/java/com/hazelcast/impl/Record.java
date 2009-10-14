@@ -78,6 +78,10 @@ public class Record implements MapEntry {
         this.id = id;
     }
 
+    public Record copy () {
+        return new Record (factory, name, blockId, key.get(), value.get(), 0, id);
+    }
+
     public RecordEntry getRecordEntry() {
         return recordEntry;
     }

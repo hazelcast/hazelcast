@@ -124,7 +124,16 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     public void syncForAdd() {
-            mapMigrator.syncForAdd();
+        mapMigrator.syncForAdd();
+    }
+
+    public int hashBlocks() {
+        int hash = 1;
+        for (int i = 0; i < BLOCK_COUNT; i++) {
+            Block block = blocks[i];
+            hash = (hash * 31) + ((block == null) ? 0 : block.hashCode());
+        }
+        return hash;
     }
 
     public static class InitialState extends AbstractRemotelyProcessable {
@@ -239,9 +248,23 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    void backupRecord (final Record rec) {
-        MBackupOp backupOp = new MBackupOp();
-        backupOp.backup(rec);
+    void backupRecord(final Record rec) {
+        if (rec.getMultiValues() != null) {
+            List<Data> values = rec.getMultiValues();
+            int initialVersion = ((int) rec.getVersion() - values.size());
+            int version = (initialVersion < 0) ? 0 : initialVersion;
+            for (int i=0; i < values.size(); i++) {
+                Data value = values.get(i);
+                Record record = rec.copy();
+                record.setValue(value);
+                record.setVersion(version++);
+                MBackupOp backupOp = new MBackupOp();
+                backupOp.backup(record);
+            }
+        } else {
+            MBackupOp backupOp = new MBackupOp();
+            backupOp.backup(rec);
+        }
     }
 
     void migrateRecord(final CMap cmap, final Record rec) {
@@ -1003,6 +1026,12 @@ public final class ConcurrentMapManager extends BaseManager {
                 this.target = target;
                 request.reset();
                 setLocal(CONCURRENT_MAP_SIZE, name);
+            }
+
+            @Override
+            public void process() {
+                request.blockId = hashBlocks();
+                super.process();
             }
 
             @Override

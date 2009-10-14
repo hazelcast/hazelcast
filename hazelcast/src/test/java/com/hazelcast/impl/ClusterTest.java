@@ -11,6 +11,8 @@ import org.junit.After;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
@@ -218,7 +220,7 @@ public class ClusterTest {
     }
 
     @Test(timeout = 60000)
-    public void testMapKeySet() throws Exception {
+    public void testMapRecorvery() throws Exception {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
         IMap mm = h.getMap("default");
         mm.put("1", "value");
@@ -230,21 +232,47 @@ public class ClusterTest {
         IMap mm2 = h2.getMap("default");
         assertEquals(1, mm2.size());
         assertEquals(1, mm2.keySet().size());
+        h.shutdown();
+        assertEquals(1, mm2.size());
+        assertEquals(1, mm2.keySet().size());
     }
 
     @Test(timeout = 60000)
-    public void testMultiMapKeySet() throws Exception {
+    public void testMultiMapRecovery() throws Exception {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
         MultiMap mm = h.getMultiMap("default");
-        mm.put("1", "value");
-        assertEquals(1, mm.size());
+        Collection<String> expectedValues = new HashSet<String>();
+        expectedValues.add("value1");
+        expectedValues.add("value2");
+        mm.put("1", "value1");
+        mm.put("1", "value2");
+        assertEquals(2, mm.size());
         assertEquals(1, mm.keySet().size());
+        Collection values = mm.get("1");
+        for (Object value : values) {
+            assertTrue(expectedValues.contains(value));
+        }
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        assertEquals(1, mm.size());
+        assertEquals(2, mm.size());
         assertEquals(1, mm.keySet().size());
+        values = mm.get("1");
+        for (Object value : values) {
+            assertTrue(expectedValues.contains(value));
+        }
         MultiMap mm2 = h2.getMultiMap("default");
-        assertEquals(1, mm2.size());
+        assertEquals(2, mm2.size());
         assertEquals(1, mm2.keySet().size());
+        values = mm2.get("1");
+        for (Object value : values) {
+            assertTrue(expectedValues.contains(value));
+        }
+        h.shutdown();
+        assertEquals(2, mm2.size());
+        assertEquals(1, mm2.keySet().size());
+        values = mm2.get("1");
+        for (Object value : values) {
+            assertTrue(expectedValues.contains(value));
+        }
     }
 
     /**

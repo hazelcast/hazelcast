@@ -123,6 +123,7 @@ public class FactoryImpl implements HazelcastInstance {
                  *
                  */
                 ManagementService.unregister(factory);
+                Thread.sleep(5000);
             } catch (Throwable e) {
                 e.printStackTrace();
             }

@@ -156,6 +156,7 @@ public class MapMigrator implements Runnable {
     }
 
     public boolean isMigrating(Request req) {
+//        System.out.println(concurrentMapManager.hashBlocks() + " BLOCK HASH vs.  " + req.blockId);
         if (blockMigrating != null) {
             if (!blocks[blockMigrating.getBlockId()].isMigrating()) {
                 completeMigration();
@@ -204,7 +205,6 @@ public class MapMigrator implements Runnable {
                         Block block = blocks[i];
                         if (block == null) {
                             block = concurrentMapManager.getOrCreateBlock(i);
-
                         }
                         if (block.getOwner() == null) {
                             block.setOwner(nonSuperMember.getAddress());
@@ -250,6 +250,7 @@ public class MapMigrator implements Runnable {
 
     public void syncForDead(Address deadAddress) {
         if (deadAddress.equals(thisAddress)) return;
+        Set<Integer> blocksOwnedAfterDead = new HashSet<Integer>();
         for (Block block : blocks) {
             if (block != null) {
                 if (deadAddress.equals(block.getOwner())) {
@@ -266,6 +267,9 @@ public class MapMigrator implements Runnable {
                         } else {
                             block.setOwner(null);
                         }
+                    }
+                    if (thisAddress.equals(block.getOwner())) {
+                        blocksOwnedAfterDead.add(block.getBlockId());
                     }
                 }
                 if (block.getMigrationAddress() != null) {
@@ -293,6 +297,11 @@ public class MapMigrator implements Runnable {
             Collection<Record> records = map.mapRecords.values();
             for (Record record : records) {
                 concurrentMapManager.onDisconnect(record, deadAddress);
+                if (record.isActive()) {
+                    if (blocksOwnedAfterDead.contains(record.getBlockId())) {
+                        node.queryService.updateIndex(map.name, null, null, record, record.getValueHash());
+                    }
+                }
             }
         }
         onMembershipChange();

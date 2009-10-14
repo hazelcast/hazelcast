@@ -99,6 +99,23 @@ public class Block implements DataSerializable {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Block block = (Block) o;
+        if (blockId != block.blockId) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = blockId;
+        result = 31 * result + (owner != null ? owner.hashCode() : 0);
+        result = 31 * result + (migrationAddress != null ? migrationAddress.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "Block [" + getBlockId() + "] owner=" + getOwner() + " migrationAddress="
                 + getMigrationAddress();
