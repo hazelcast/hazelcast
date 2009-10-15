@@ -31,7 +31,7 @@ public final class Data implements DataSerializable {
 
     public int size = 0;
 
-    int hash = Integer.MIN_VALUE;
+    public int hash = Integer.MIN_VALUE;
 
     public long createDate = -1;
 

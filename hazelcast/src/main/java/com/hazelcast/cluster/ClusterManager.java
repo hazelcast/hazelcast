@@ -238,7 +238,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     public void handleMaster(Master master) {
-        if (!node.joined()) {
+        if (!node.joined() && !thisAddress.equals(master.address)) {
             node.setMasterAddress(master.address);
             Connection connMaster = node.connectionManager.getOrConnect(master.address);
             if (connMaster != null) {

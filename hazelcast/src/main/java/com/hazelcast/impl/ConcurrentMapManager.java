@@ -752,6 +752,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 return null;
             } else {
                 setLocal(operation, name, key, value, timeout, -1);
+                request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
                 setIndexValues(request, value);
                 doOp();
                 Object oldValue = getResultAsObject();

@@ -26,7 +26,7 @@ public class ClusterTest {
         Hazelcast.shutdownAll();
         Thread.sleep(500);
     }
-    
+
     @Test(timeout = 60000)
     public void testRestart() throws Exception {
         final HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
@@ -325,12 +325,12 @@ public class ClusterTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
         IMap map1 = h1.getMap("default");
         IMap map2 = h2.getMap("default");
-        for (int i = 0; i < 3; i++) {
-            map1.put(i, i);
-        }
+        map1.put(1, "value");
+        map1.put(2, new byte[3000]);
+        map1.put(3, new byte[1200000]);
         assertEquals(3, map1.size());
         assertEquals(3, map2.size());
-        for (int i = 0; i < 3; i++) {
+        for (int i = 1; i < 4; i++) {
             map2.put(i, i);
         }
         assertEquals(3, map1.size());
@@ -340,7 +340,6 @@ public class ClusterTest {
     /**
      * Testing if topic can properly listen messages
      * and if topic has any issue after a shutdown.
-     * 
      */
     @Test
     public void testTopic() {
@@ -371,18 +370,16 @@ public class ClusterTest {
             assertTrue(latch2.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException ignored) {
         }
-        
     }
 
     /**
      * Testing if we are losing any data when we start a node
      * or when we shutdown a node.
-     *
+     * <p/>
      * If this test ever fails, it might be because of the fact
      * that we are not waiting enough between the shutdowns.
-     * We might have to add Thread.sleep(2000) so that we will give 
+     * We might have to add Thread.sleep(2000) so that we will give
      * remaining members some time to backup their data.
-     *
      */
     @Test(timeout = 60000)
     public void testDataRecovery() throws Exception {
@@ -420,7 +417,7 @@ public class ClusterTest {
 
     /**
      * Testing correctness of the sizes during migration.
-     *
+     * <p/>
      * Migration happens block by block and after completion of
      * each block, next block will start migrating after a fixed
      * time interval. While a block migrating, for the multicall
@@ -430,10 +427,8 @@ public class ClusterTest {
      * (which is holding requester's block-owners hash value) is not same
      * as the target's block-owners hash value, then request will
      * be re-done.
-     * 
-     *
      */
-    @Test (timeout = 240000)
+    @Test(timeout = 240000)
     public void testDataRecoveryAndCorrectness() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         IMap map1 = h1.getMap("default");
@@ -447,7 +442,7 @@ public class ClusterTest {
         IMap map3 = h3.getMap("default");
         HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
         IMap map4 = h4.getMap("default");
-        for (int i=0; i < 20000; i++) {
+        for (int i = 0; i < 20000; i++) {
             assertEquals(1000, map1.size());
             assertEquals(1000, map2.size());
             assertEquals(1000, map3.size());

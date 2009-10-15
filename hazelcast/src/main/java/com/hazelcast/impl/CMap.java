@@ -487,6 +487,7 @@ public class CMap {
         if (req.value == null) {
             req.value = new Data();
         }
+        req.value.hash = (int) req.longValue;
         if (req.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
             Record record = getRecord(req.key);
             if (record != null && record.isActive() && record.getValue() != null) {
@@ -500,10 +501,11 @@ public class CMap {
         }
         Record record = getRecord(req.key);
         Data oldValue = null;
-        boolean created = true;
+        boolean created = false;
         if (record == null) {
             record = createNewRecord(req.key, req.value);
             req.key = null;
+            created = true;
         } else {
             markAsActive(record);
             if (!record.isValid()) {
@@ -530,28 +532,6 @@ public class CMap {
         updateIndexes(created, req, record);
         markAsDirty(record);
         return oldValue;
-    }
-
-    void updateIndexes(boolean created, Request request, Record record) {
-        int valueHash = (record.getValue() != null) ? record.getValue().hashCode() : Integer.MIN_VALUE;
-        if (request.indexes != null) {
-            int indexCount = request.indexes.length;
-            if (indexCount == 0)
-                throw new RuntimeException(node.getName() + " request countains no index " + request.indexes);
-            if (mapIndexes.size() > indexCount) {
-                throw new RuntimeException(node.getName() + ": indexCount=" + indexCount + " but expected " + mapIndexes.size());
-            }
-            long[] newIndexes = request.indexes;
-            request.indexes = null;
-            byte[] indexTypes = request.indexTypes;
-            request.indexTypes = null;
-            if (newIndexes.length != indexTypes.length) {
-                throw new RuntimeException();
-            }
-            node.queryService.updateIndex(name, newIndexes, indexTypes, record, valueHash);
-        } else if (created || record.getValueHash() != valueHash) {
-            node.queryService.updateIndex(name, null, null, record, valueHash);
-        }
     }
 
     void startAsyncStoreWrite() {
@@ -862,6 +842,32 @@ public class CMap {
 
     void markAsOwned(Record record) {
         ownedRecords.add(record);
+    }
+
+    void updateIndexes(boolean created, Request request, Record record) {
+        int valueHash = (record.getValue() != null) ? record.getValue().hashCode() : Integer.MIN_VALUE;
+//        if (true) return;
+        if (request.indexes != null) {
+            int indexCount = request.indexes.length;
+            if (indexCount == 0)
+                throw new RuntimeException(node.getName() + " request countains no index " + request.indexes);
+            if (mapIndexes.size() > indexCount) {
+                throw new RuntimeException(node.getName() + ": indexCount=" + indexCount + " but expected " + mapIndexes.size());
+            }
+            long[] newIndexes = request.indexes;
+            request.indexes = null;
+            byte[] indexTypes = request.indexTypes;
+            request.indexTypes = null;
+            if (newIndexes.length != indexTypes.length) {
+                throw new RuntimeException();
+            }
+            node.queryService.updateIndex(name, newIndexes, indexTypes, record, valueHash);
+        } else if (created || record.getValueHash() != valueHash) {
+            if (! created) {
+//                System.out.println( record.getValueHash() + " ... " + valueHash);
+            }
+            node.queryService.updateIndex(name, null, null, record, valueHash);
+        }
     }
 
     Record createNewRecord(Data key, Data value) {

@@ -279,7 +279,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     class SymmetricCipherPacketWriter implements PacketWriter {
         boolean sizeWritten = false;
-        final ByteBuffer cipherBuffer = ByteBuffer.allocate(2 * SEND_SOCKET_BUFFER_SIZE);
+        final ByteBuffer cipherBuffer = ByteBuffer.allocate(SEND_SOCKET_BUFFER_SIZE);
         final Cipher cipher;
 
         SymmetricCipherPacketWriter() {
@@ -338,8 +338,22 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
         private final int encryptAndWriteToSocket(ByteBuffer src) throws Exception {
             int remaining = src.remaining();
-            if (src.hasRemaining()) {
-                cipher.update(src, cipherBuffer);
+            if (src.hasRemaining() && cipherBuffer.hasRemaining()) {
+                int outputSize = cipher.getOutputSize(src.remaining());
+                if (outputSize <= cipherBuffer.remaining()) {
+                    cipher.update(src, cipherBuffer);
+                } else {
+                    int min = Math.min (src.remaining(), cipherBuffer.remaining());
+                    int len = min / 2;
+                    if (len > 0) {
+                        int limitOld = src.limit();
+                        src.limit(src.position() + len);
+                        cipher.update(src, cipherBuffer);
+                        src.limit(limitOld);
+                    } else {
+                        return 0;
+                    }
+                }
                 cipherBuffer.flip();
                 copyToDirectBuffer(cipherBuffer, socketBB);
                 if (cipherBuffer.hasRemaining()) {
@@ -351,10 +365,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             }
             return 0;
         }
-    }
-
-    void log(String str) {
-//        System.out.println(str);
     }
 
     private void registerWrite() {
