@@ -317,7 +317,7 @@ public class CMap {
 //            System.out.println(blocks[i]);
 //        }
 //        System.out.println(size + " is size.. backup.size " + backupSize() + " ownedEntryCount:" + ownedRecords.size());
-//        System.out.println("map size " + mapRecords.size());
+//        System.out.println(size + " map size " + mapRecords.size() +  " @ " + node.getThisAddress());
         return size;
     }
 

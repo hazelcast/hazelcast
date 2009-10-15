@@ -253,7 +253,7 @@ public final class ConcurrentMapManager extends BaseManager {
             List<Data> values = rec.getMultiValues();
             int initialVersion = ((int) rec.getVersion() - values.size());
             int version = (initialVersion < 0) ? 0 : initialVersion;
-            for (int i=0; i < values.size(); i++) {
+            for (int i = 0; i < values.size(); i++) {
                 Data value = values.get(i);
                 Record record = rec.copy();
                 record.setValue(value);
@@ -875,6 +875,15 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    abstract class MMigrationAwareTargettedCall extends MigrationAwareTargettedCall {
+
+        @Override
+        public void process() {
+            request.blockId = hashBlocks();
+            super.process();
+        }
+    }
+
     abstract class MTargetAwareOp extends TargetAwareOp {
 
         @Override
@@ -935,7 +944,7 @@ public final class ConcurrentMapManager extends BaseManager {
             return contains;
         }
 
-        class MGetContainsValue extends MigrationAwareTargettedCall {
+        class MGetContainsValue extends MMigrationAwareTargettedCall {
             public MGetContainsValue(Address target) {
                 this.target = target;
                 request.reset();
@@ -1021,17 +1030,11 @@ public final class ConcurrentMapManager extends BaseManager {
             return size;
         }
 
-        class MGetSize extends MigrationAwareTargettedCall {
+        class MGetSize extends MMigrationAwareTargettedCall {
             public MGetSize(Address target) {
                 this.target = target;
                 request.reset();
                 setLocal(CONCURRENT_MAP_SIZE, name);
-            }
-
-            @Override
-            public void process() {
-                request.blockId = hashBlocks();
-                super.process();
             }
 
             @Override
@@ -1079,7 +1082,7 @@ public final class ConcurrentMapManager extends BaseManager {
             return entries;
         }
 
-        class MGetEntries extends MigrationAwareTargettedCall {
+        class MGetEntries extends MMigrationAwareTargettedCall {
             public MGetEntries(Address target) {
                 this.target = target;
                 request.reset();

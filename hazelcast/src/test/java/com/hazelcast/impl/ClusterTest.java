@@ -26,7 +26,7 @@ public class ClusterTest {
         Hazelcast.shutdownAll();
         Thread.sleep(500);
     }
-
+    
     @Test(timeout = 60000)
     public void testRestart() throws Exception {
         final HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
@@ -337,24 +337,121 @@ public class ClusterTest {
         assertEquals(3, map2.size());
     }
 
+    /**
+     * Testing if topic can properly listen messages
+     * and if topic has any issue after a shutdown.
+     * 
+     */
     @Test
     public void testTopic() {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         String topicName = "TestMessages";
         ITopic<String> topic1 = h1.getTopic(topicName);
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        topic1.addMessageListener(new MessageListener() {
+            public void onMessage(Object msg) {
+                assertEquals("Test1", msg);
+                latch1.countDown();
+            }
+        });
         ITopic<String> topic2 = h2.getTopic(topicName);
-        final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(2);
         topic2.addMessageListener(new MessageListener() {
             public void onMessage(Object msg) {
                 assertEquals("Test1", msg);
-                latch.countDown();
+                latch2.countDown();
             }
         });
         topic1.publish("Test1");
+        h1.shutdown();
+        topic2.publish("Test1");
         try {
-            assertTrue(latch.await(5, TimeUnit.SECONDS));
+            assertTrue(latch1.await(5, TimeUnit.SECONDS));
+            assertTrue(latch2.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException ignored) {
+        }
+        
+    }
+
+    /**
+     * Testing if we are losing any data when we start a node
+     * or when we shutdown a node.
+     *
+     * If this test ever fails, it might be because of the fact
+     * that we are not waiting enough between the shutdowns.
+     * We might have to add Thread.sleep(2000) so that we will give 
+     * remaining members some time to backup their data.
+     *
+     */
+    @Test(timeout = 60000)
+    public void testDataRecovery() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        IMap map1 = h1.getMap("default");
+        for (int i = 0; i < 1000; i++) {
+            map1.put(i, "value" + i);
+        }
+        assertEquals(1000, map1.size());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        IMap map2 = h2.getMap("default");
+        assertEquals(1000, map1.size());
+        assertEquals(1000, map2.size());
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
+        IMap map3 = h3.getMap("default");
+        assertEquals(1000, map1.size());
+        assertEquals(1000, map2.size());
+        assertEquals(1000, map3.size());
+        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
+        IMap map4 = h4.getMap("default");
+        assertEquals(1000, map1.size());
+        assertEquals(1000, map2.size());
+        assertEquals(1000, map3.size());
+        assertEquals(1000, map4.size());
+        h4.shutdown();
+        assertEquals(1000, map1.size());
+        assertEquals(1000, map2.size());
+        assertEquals(1000, map3.size());
+        h1.shutdown();
+        assertEquals(1000, map2.size());
+        assertEquals(1000, map3.size());
+        h2.shutdown();
+        assertEquals(1000, map3.size());
+    }
+
+    /**
+     * Testing correctness of the sizes during migration.
+     *
+     * Migration happens block by block and after completion of
+     * each block, next block will start migrating after a fixed
+     * time interval. While a block migrating, for the multicall
+     * operations, such as size() and queries, there might be a case
+     * where data is migrated but not counted/queried. To avoid this
+     * hazelcast will compare the block-owners hash. If req.blockId
+     * (which is holding requester's block-owners hash value) is not same
+     * as the target's block-owners hash value, then request will
+     * be re-done.
+     * 
+     *
+     */
+    @Test (timeout = 240000)
+    public void testDataRecoveryAndCorrectness() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        IMap map1 = h1.getMap("default");
+        for (int i = 0; i < 1000; i++) {
+            map1.put(i, "value" + i);
+        }
+        assertEquals(1000, map1.size());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        IMap map2 = h2.getMap("default");
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
+        IMap map3 = h3.getMap("default");
+        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
+        IMap map4 = h4.getMap("default");
+        for (int i=0; i < 20000; i++) {
+            assertEquals(1000, map1.size());
+            assertEquals(1000, map2.size());
+            assertEquals(1000, map3.size());
+            assertEquals(1000, map4.size());
         }
     }
 }

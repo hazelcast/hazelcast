@@ -320,6 +320,22 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
     }
 
+    public boolean isPreviousChanged() {
+        int indexBefore = (lsMembersBefore.indexOf(thisMember));
+        int indexNow = (lsMembers.indexOf(thisMember));
+        MemberImpl previousMemberBefore = getMemberAt(lsMembersBefore, (indexBefore -1));
+        MemberImpl previousMemberNow = getMemberAt(lsMembers, (indexNow -1));
+        if (previousMemberBefore == null) {
+            return (previousMemberNow != null);
+        } else {
+            return (!previousMemberBefore.equals(previousMemberNow));
+        }
+    }
+
+    public MemberImpl getMemberAt(List<MemberImpl> members, int index) {
+        return members.get((index + members.size()) % members.size());
+    }
+
     void handleJoinRequest(JoinRequest joinRequest) {
         logger.log(Level.FINEST, joinInProgress + " Handling " + joinRequest);
         if (getMember(joinRequest.address) != null)
@@ -405,8 +421,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         setJoins.clear();
         timeToStartJoin = System.currentTimeMillis() + WAIT_MILLIS_BEFORE_JOIN;
     }
-
-
 
     public class AsyncRemotelyObjectCallable extends TargetAwareOp {
         AbstractRemotelyCallable arp = null;
