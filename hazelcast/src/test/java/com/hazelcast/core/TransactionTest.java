@@ -447,6 +447,8 @@ public class TransactionTest {
         txnq.rollback();
         assertEquals(2, txnq.size());
         assertEquals(2, txnq2.size());
+        assertEquals("item2", txnq2.poll());
+        assertEquals("item1", txnq2.poll());
     }
 
 
