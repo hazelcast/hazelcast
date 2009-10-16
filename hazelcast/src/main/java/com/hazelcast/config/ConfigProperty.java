@@ -19,6 +19,7 @@ package com.hazelcast.config;
 
 public enum ConfigProperty {
     SERIALIZER_SHARED("hazelcast.serializer.shared", "false"),
+    SHUTDOWNHOOK_ENABLED("hazelcast.shutdownhook.enabled", "true"),
     WAIT_SECONDS_BEFORE_JOIN("hazelcast.wait.seconds.before.join", "5"),
     MAX_NO_HEARTBEAT_SECONDS("hazelcast.max.no.heartbeat.seconds", "30"),
     CONCURRENT_MAP_BLOCK_COUNT("hazelcast.map.block.count", "271"),

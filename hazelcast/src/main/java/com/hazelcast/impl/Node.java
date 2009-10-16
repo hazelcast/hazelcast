@@ -21,6 +21,7 @@ import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.config.Interfaces;
 import com.hazelcast.config.Join;
 import com.hazelcast.impl.MulticastService.JoinInfo;
@@ -371,7 +372,9 @@ public class Node {
             try {
                 if (active && !completelyShutdown) {
                     completelyShutdown = true;
-                    shutdown();
+                    if (ConfigProperty.SHUTDOWNHOOK_ENABLED.getBoolean()) {
+                        shutdown();
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
