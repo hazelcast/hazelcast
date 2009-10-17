@@ -18,53 +18,32 @@
 package com.hazelcast.client;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.Map;
 
 import com.hazelcast.client.impl.ClusterOperation;
-import com.hazelcast.client.impl.ListenerManager;
 
 
 public class InRunnable extends NetworkRunnable implements Runnable{
 	final PacketReader reader;
-	ListenerManager listenerManager;
-	public InRunnable(ListenerManager listenerManager, PacketReader reader) {
+	public InRunnable(HazelcastClient client, Map<Long,Call> calls, PacketReader reader) {
+		super(client,calls);
 		this.reader = reader;
-		this.listenerManager = listenerManager;
 	}
-	public void notifyWaitingCalls() {
-		Collection<Call> cc = callMap.values();
-		List<Call> waitingCalls = new ArrayList<Call>();
-		waitingCalls.addAll(cc);
-		for (Iterator<Call> iterator = waitingCalls.iterator(); iterator.hasNext();) {
-			Call call =  iterator.next();
-			synchronized (call) {
-				call.setException(new RuntimeException("No cluster member available to connect"));
-				call.notify();
-			}
-		}
-	}
+
 
 	public void run() {
 		while(true){
 			Connection connection = null;
 			Packet packet=null;
 			try {
-				connection = connectionManager.getConnection();
+				connection = client.connectionManager.getConnection();
 				if(connection == null){
-					notifyWaitingCalls();
+					interruptWaitingCalls();
 					continue;
 				}
 				packet = reader.readPacket(connection);
 				Call c = null;
-				if(packet.isRedoOnDisConnect()){
-					c = callMap.get(packet.getCallId());
-				}
-				else{
-					c = callMap.remove(packet.getCallId());
-				}
+				c = callMap.remove(packet.getCallId());
 				if(c!=null){
 					synchronized (c) {
 						c.setResponse(packet);
@@ -72,12 +51,15 @@ public class InRunnable extends NetworkRunnable implements Runnable{
 					}
 				} else {
 					if(packet.getOperation().equals(ClusterOperation.EVENT)){
-						listenerManager.enqueue(packet);
+						client.listenerManager.enqueue(packet);
+					}
+					else{
+						throw new RuntimeException("In Thread can not handle: "+packet.getOperation() + " : " +packet.getCallId() );
 					}
 				}
 			
 			} catch (IOException e) {
-				connectionManager.destroyConnection(connection);
+				client.connectionManager.destroyConnection(connection);
 				continue;
 			}
 		}

@@ -30,7 +30,7 @@ public class ClientProxy {
 	    return doCall(c);
 	}
 
-	private Packet doCall(Call c) {
+	protected Packet doCall(Call c) {
 		synchronized (c) {
 			try {
 				out.enQueue(c);
@@ -49,7 +49,7 @@ public class ClientProxy {
 		return response;
 	}	
 
-	private Call createCall(Packet request) {
+	protected Call createCall(Packet request) {
 		Call c = new Call();
 	    c.setRequest(request);
 		return c;

@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import com.hazelcast.client.Call;
 import com.hazelcast.client.Packet;
 import com.hazelcast.client.Serializer;
 import com.hazelcast.client.core.EntryEvent;
@@ -17,6 +18,7 @@ import com.hazelcast.client.core.EntryEvent.EntryEventType;
 
 public class ListenerManager implements Runnable{
 	final Map<String, Map<Object, List<EntryListener>>> mapOfListeners = new HashMap<String, Map<Object,List<EntryListener>>>();
+	final private BlockingQueue<Call> listenerCalls = new LinkedBlockingQueue<Call>();
 	final BlockingQueue<Packet> queue = new LinkedBlockingQueue<Packet>();
 	
 	public void registerEntryListener(String name, Object key, EntryListener entryListener){
@@ -78,6 +80,11 @@ public class ListenerManager implements Runnable{
 				e.printStackTrace();
 			}
 		}
-		
+	}
+	public void addListenerCall(Call call){
+		listenerCalls.add(call);
+	}
+	public BlockingQueue<Call> getListenerCalls(){
+		return listenerCalls;
 	}
 }

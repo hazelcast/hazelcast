@@ -28,7 +28,10 @@ import static org.junit.Assert.*;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
+
+import sun.security.krb5.Realm;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -117,9 +120,12 @@ public class HazelcastClientTest {
     }
 
     @Test
-    public void addListener() throws InterruptedException {
-        IMap<String, String> map = hClient.getMap("default");
+    public void addListener() throws InterruptedException, IOException {
+    	HazelcastClient client = HazelcastClient.getHazelcastClient(new InetSocketAddress(Hazelcast.getCluster().getLocalMember().getInetAddress(),Hazelcast.getCluster().getLocalMember().getPort()));
+        final IMap<String, String> map = client.getMap("default");
+        System.out.println("size "+realMap.size());
         realMap.clear();
+        assertEquals(0, realMap.size());
         final CountDownLatch entryAddLatch = new CountDownLatch(1);
         final CountDownLatch entryUpdatedLatch = new CountDownLatch(1);
         final CountDownLatch entryRemovedLatch = new CountDownLatch(1);
@@ -145,9 +151,12 @@ public class HazelcastClientTest {
                 entryRemoved(event);
             }
         }, true);
+        System.out.println(realMap.get("hello"));
+        assertNull(realMap.get("hello"));
         map.put("hello", "world");
         System.out.println("PUT");
         map.put("hello", "new world");
+        assertEquals("new world", map.get("hello"));
         map.remove("hello");
         assertTrue(entryAddLatch.await(10, TimeUnit.MILLISECONDS));
         assertTrue(entryUpdatedLatch.await(10, TimeUnit.MILLISECONDS));
@@ -155,121 +164,15 @@ public class HazelcastClientTest {
 
     }
     
-    @Test
-    public void addListenerWithTwoMemberClusterAndKillOne() throws InterruptedException, IOException {
-    	HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-    	HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-    	
-    	Map<Integer, HazelcastInstance> memberMap = new HashMap<Integer, HazelcastInstance>();
-    	memberMap.put(h1.getCluster().getLocalMember().getPort(), h1);
-    	memberMap.put(h2.getCluster().getLocalMember().getPort(), h2);
-
-    	HazelcastClient client = HazelcastClient.getHazelcastClient(new InetSocketAddress(h1.getCluster().getLocalMember().getInetAddress(),h1.getCluster().getLocalMember().getPort()),
-    																new InetSocketAddress(h2.getCluster().getLocalMember().getInetAddress(),h2.getCluster().getLocalMember().getPort()));
-        IMap<String, String> map = client.getMap("default");
-        final Map<String, Boolean> m = new HashMap<String, Boolean>();
-        final CountDownLatch entryAddLatch = new CountDownLatch(2);
-        final CountDownLatch entryUpdatedLatch = new CountDownLatch(2);
-        final CountDownLatch entryRemovedLatch = new CountDownLatch(2);
-        map.addEntryListener(new EntryListener() {
-            public void entryAdded(EntryEvent event) {
-                m.put("entryAdded", true);
-                assertEquals("hello", event.getKey());
-                entryAddLatch.countDown();
-            }
-
-            public void entryRemoved(EntryEvent event) {
-                entryRemovedLatch.countDown();
-                assertEquals("hello", event.getKey());
-                assertEquals("new world", event.getValue());
-            }
-
-            public void entryUpdated(EntryEvent event) {
-                assertEquals("new world", event.getValue());
-                assertEquals("hello", event.getKey());
-                entryUpdatedLatch.countDown();
-            }
-
-            public void entryEvicted(EntryEvent event) {
-                m.put("entryEvicted", true);
-                entryRemoved(event);
-            }
-        }, true);
-        map.put("hello", "world");
-        System.out.println("PUT");
-        map.put("hello", "new world");
-        map.remove("hello");
-        memberMap.remove(client.getConnectionManager().getConnection().getAddress().getPort()).shutdown();
-		map.put("hello", "world");
-        System.out.println("PUT");
-        map.put("hello", "new world");
-        map.remove("hello");
-        assertTrue(entryAddLatch.await(10, TimeUnit.MILLISECONDS));
-        assertTrue(entryUpdatedLatch.await(10, TimeUnit.MILLISECONDS));
-//        assertTrue(entryRemovedLatch.await(10, TimeUnit.MILLISECONDS));
-        for (Iterator<Integer> iterator = memberMap.keySet().iterator(); iterator.hasNext();) {
-			 memberMap.get(iterator.next()).shutdown();
-			
-		}
-    }
+   
     
     @Test
-    public void put10000RecordsWith1ClusterMember(){
+    public void put1000RecordsWith1ClusterMember(){
     	HazelcastClient client = HazelcastClient.getHazelcastClient(new InetSocketAddress(Hazelcast.getCluster().getLocalMember().getInetAddress(),Hazelcast.getCluster().getLocalMember().getPort()));
     	Map<String, String> map = client.getMap("default");
-    	for (int i = 0; i < 10000; i++) {
+    	for (int i = 0; i < 1000; i++) {
 			map.put("a", "b");
 		}
     	assertTrue(true);
     }
-    
-	@Test
-	public void continuePutAndGetIfOneOfConnectedClusterMemberFails() throws InterruptedException, IOException{
-		HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-		HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-		HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
-		
-		Map<Integer, HazelcastInstance> memberMap = new HashMap<Integer, HazelcastInstance>();
-    	memberMap.put(h1.getCluster().getLocalMember().getPort(), h1);
-    	memberMap.put(h2.getCluster().getLocalMember().getPort(), h2);
-    	memberMap.put(h3.getCluster().getLocalMember().getPort(), h3);
-		
-		HazelcastClient client = HazelcastClient.getHazelcastClient(
-				new InetSocketAddress(h1.getCluster().getLocalMember().getInetAddress(),h1.getCluster().getLocalMember().getPort()),
-				new InetSocketAddress(h2.getCluster().getLocalMember().getInetAddress(),h2.getCluster().getLocalMember().getPort()),
-				new InetSocketAddress(h3.getCluster().getLocalMember().getInetAddress(),h3.getCluster().getLocalMember().getPort()));
-		
-		Map<String, Integer> map = client.getMap("default");
-		int counter = 0;
-		while(counter<3){
-			map.put("key",counter);
-			assertEquals(counter, realMap.get("key"));
-			assertEquals(counter, map.get("key"));
-			memberMap.get(client.getConnectionManager().getConnection().getAddress().getPort()).shutdown();
-			counter++;
-		}
-	}
-	
-	@Test(expected = RuntimeException.class)
-	public void throwsRuntimeExceptionWhenNoMemberToConnect() throws InterruptedException, IOException{
-		HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-		HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-		
-		Map<Integer, HazelcastInstance> memberMap = new HashMap<Integer, HazelcastInstance>();
-    	memberMap.put(h1.getCluster().getLocalMember().getPort(), h1);
-    	memberMap.put(h2.getCluster().getLocalMember().getPort(), h2);
-		
-		HazelcastClient client = HazelcastClient.getHazelcastClient(
-				new InetSocketAddress(h1.getCluster().getLocalMember().getInetAddress(),h1.getCluster().getLocalMember().getPort()),
-				new InetSocketAddress(h2.getCluster().getLocalMember().getInetAddress(),h2.getCluster().getLocalMember().getPort()));
-		Map<String, Integer> map = client.getMap("default");
-		int counter = 0;
-		while(counter<3){
-			map.put("key",counter);
-			assertEquals(counter, realMap.get("key"));
-			assertEquals(counter, map.get("key"));
-			memberMap.get(client.getConnectionManager().getConnection().getAddress().getPort()).shutdown();
-			counter++;
-		}
-	}
 }

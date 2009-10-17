@@ -6,6 +6,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -16,32 +17,29 @@ import com.hazelcast.client.nio.Address;
 
 public class ConnectionManager{
 	private volatile Connection currentConnection;
-	private volatile AtomicInteger connectionIdGenerator = new AtomicInteger(-1);
-	private OutRunnable out;
-	private List<InetSocketAddress> clusterMembers = new ArrayList<InetSocketAddress>();
-	Logger logger = Logger.getLogger(getClass().toString());
+	private final AtomicInteger connectionIdGenerator = new AtomicInteger(-1);
+//	private OutRunnable out;
+	private final List<InetSocketAddress> clusterMembers = new ArrayList<InetSocketAddress>();
+	private Logger logger = Logger.getLogger(getClass().toString());
+	private final HazelcastClient client;
 	
 
-	public ConnectionManager(InetSocketAddress[] clusterMembers) {
+	public ConnectionManager(HazelcastClient client, InetSocketAddress[] clusterMembers) {
+		this.client = client;
 		this.clusterMembers.addAll(Arrays.asList(clusterMembers));
 		Collections.shuffle(this.clusterMembers);
-	}
-	
-	public void setOutRunnable(OutRunnable out){
-		this.out = out;
 	}
 	
 	public Connection getConnection() throws IOException{
 		Connection connection = null;
 		if(currentConnection == null){
-			synchronized (ConnectionManager.class) {
+			synchronized (this) {
 				if(currentConnection == null){
 					connection = searchForAvailableConnection();
 					if(connection!=null){
 						logger.info("Client is connecting to " + connection);
 						bind(connection);
 						currentConnection = connection;
-						out.redoWaitingCalls();
 					}
 				}
 			}
@@ -50,6 +48,7 @@ public class ConnectionManager{
 	}
 	public synchronized void destroyConnection(Connection connection){
 		if(currentConnection!=null && currentConnection.getVersion()== connection.getVersion()){
+			System.out.println("Someone called destroy Connection");
 			logger.warning("Connection to " + currentConnection +" is lost");
 			currentConnection = null;
 		}
@@ -65,7 +64,7 @@ public class ConnectionManager{
 		bind.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, Serializer.toByte(null), Serializer.toByte(b));
 		Call cBind = new Call();
 		cBind.setRequest(bind);
-		out.writer.write(connection, bind);
+		client.out.writer.write(connection, bind);
 		try {
 			Thread.sleep(10);
 		} catch (InterruptedException e) {
@@ -92,9 +91,6 @@ public class ConnectionManager{
 				counter--;
 			}
 		}
-//		if(counter == 0){
-//			throw new RuntimeException("No cluster member available to connect");
-//		}
 		return connection;
 	}
 

@@ -18,35 +18,28 @@
 package com.hazelcast.client;
 
 import java.net.InetSocketAddress;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.hazelcast.client.core.IMap;
 import com.hazelcast.client.core.Transaction;
 import com.hazelcast.client.impl.ListenerManager;
 
 public class HazelcastClient {
-	final Map<Long,Call> calls  = new HashMap<Long, Call>();
-	ListenerManager listenerManager = new ListenerManager();
-	OutRunnable out;
-	InRunnable in;
-	private ConnectionManager connectionManager;
+	final Map<Long,Call> calls  = new ConcurrentHashMap<Long, Call>();
+	final ListenerManager listenerManager = new ListenerManager();
+	final OutRunnable out;
+	final InRunnable in;
+	final ConnectionManager connectionManager;
 	
 	private HazelcastClient(InetSocketAddress[] clusterMembers) {
-		connectionManager = new ConnectionManager(clusterMembers);
+		connectionManager = new ConnectionManager(this, clusterMembers);
 		
-		
-		out = new OutRunnable(new PacketWriter());
-		out.setCallMap(calls);
-		out.setConnectionManager(connectionManager);
+		out = new OutRunnable(this, calls, new PacketWriter());
 		new Thread(out).start();
 		
-		in = new InRunnable(listenerManager, new PacketReader());
-		in.setCallMap(calls);
-		in.setConnectionManager(connectionManager);
+		in = new InRunnable(this, calls, new PacketReader());
 		new Thread(in).start();
-		
-		connectionManager.setOutRunnable(out);
 
 		new Thread(listenerManager).start();
 	}
@@ -66,13 +59,10 @@ public class HazelcastClient {
 
 
 	public Transaction getTransaction() {
-		TransactionClientProxy proxy = new TransactionClientProxy();
+		ThreadContext trc = ThreadContext.get();
+		TransactionClientProxy proxy = (TransactionClientProxy)trc.getTransaction();
 		proxy.setOutRunnable(out);
 		return proxy;
-	}
-
-	public void setConnectionManager(ConnectionManager connectionManager) {
-		this.connectionManager = connectionManager;
 	}
 
 	public ConnectionManager getConnectionManager() {

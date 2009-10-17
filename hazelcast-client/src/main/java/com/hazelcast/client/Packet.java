@@ -302,7 +302,7 @@ public class Packet {
 	public void setRedoOnDisConnect(boolean redoOnDisConnect) {
 		this.redoOnDisConnect = redoOnDisConnect;
 	}
-	public boolean isRedoOnDisConnect() {
+	public boolean isRedoOnDisconnect() {
 		return redoOnDisConnect;
 	}
 	

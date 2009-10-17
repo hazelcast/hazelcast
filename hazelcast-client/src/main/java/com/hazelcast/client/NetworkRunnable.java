@@ -17,6 +17,10 @@
 
 package com.hazelcast.client;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import com.hazelcast.client.ConnectionManager;
@@ -24,14 +28,26 @@ import com.hazelcast.client.ConnectionManager;
 public class NetworkRunnable {
 
 	protected Map<Long, Call> callMap;
-	protected ConnectionManager connectionManager;
+	protected HazelcastClient client;
 
+	public NetworkRunnable(HazelcastClient client, Map<Long,Call> calls) {
+		this.client = client;
+		this.callMap = calls;
+	}
 	public void setCallMap(Map<Long, Call> calls) {
 		this.callMap = calls;
 	}
-	public void setConnectionManager(ConnectionManager connectionManager) {
-		this.connectionManager = connectionManager;
-		
+	public void interruptWaitingCalls() {
+		Collection<Call> cc = callMap.values();
+		List<Call> waitingCalls = new ArrayList<Call>();
+		waitingCalls.addAll(cc);
+		for (Iterator<Call> iterator = waitingCalls.iterator(); iterator.hasNext();) {
+			Call call =  iterator.next();
+			synchronized (call) {
+				call.setException(new RuntimeException("No cluster member available to connect"));
+				call.notify();
+			}
+		}
 	}
 
 }

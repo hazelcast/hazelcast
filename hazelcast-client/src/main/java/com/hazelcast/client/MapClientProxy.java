@@ -52,8 +52,11 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	    request.setLongValue(includeValue?1:0);
 	    request.setKey(Serializer.toByte(key));
 	    request.setRedoOnDisConnect(true);
-	    callAndGetResult(request);
+	    Call c = createCall(request);
+	    client.listenerManager.addListenerCall(c);
+	    doCall(c);
 	    client.listenerManager.registerEntryListener(name, key, listener);
+	    
 	}
 
 	public Set<java.util.Map.Entry<K, V>> entrySet(Predicate predicate) {

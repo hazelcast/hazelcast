@@ -17,48 +17,70 @@
 
 package com.hazelcast.client;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Logger;
 
 
 public class OutRunnable extends NetworkRunnable implements Runnable{
-	PacketWriter writer = new PacketWriter();
-	BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
+	final PacketWriter writer;
+	final BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
+	final BlockingQueue<Call> temp = new LinkedBlockingQueue<Call>();
+	Logger logger = Logger.getLogger(this.getClass().toString());
 	
-	public OutRunnable(final PacketWriter writer) {
+	public OutRunnable(final HazelcastClient client, final Map<Long,Call> calls, final PacketWriter writer) {
+		super(client,calls);
 		this.writer = writer;
 	}
 	
+	Connection connection = null;
 	public void run() {
 		while(true){
-			Connection connection = null;
 			Call c = null;
 			try{
-				try {
-					c = queue.take();
-					callMap.put(c.getId(), c);
-					connection = connectionManager.getConnection();
-					if(connection!=null){
-						writer.write(connection,c.getRequest());
-					}
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+				c = queue.take();
+				callMap.put(c.getId(), c);
+//				System.out.println("Old Connection: "+connection);
+				
+				boolean oldConnectionIsNotNull = (connection!=null);
+				long oldConnectionId = -1;
+				if(oldConnectionIsNotNull){
+					oldConnectionId = connection.getVersion();
 				}
-			} catch (IOException io) {
+				connection = client.connectionManager.getConnection();
+//				System.out.println("New Connection: "+connection);
+				if(oldConnectionIsNotNull && connection.getVersion()!=oldConnectionId){
+					System.out.println("Connection changed");
+					temp.add(c);
+					queue.drainTo(temp);
+					client.listenerManager.getListenerCalls().drainTo(queue);
+					temp.drainTo(queue);
+					continue;
+				}
+				
+				if(connection!=null){
+					writer.write(connection,c.getRequest());
+					System.out.println("Sending " +c + " "+ c.getRequest().getOperation());
+				}
+				else{
+					interruptWaitingCalls();
+				}
+			} catch (InterruptedException e) {
+				return;
+			} catch (Throwable io) {
 				io.printStackTrace();
-				connectionManager.destroyConnection(connection);
-				continue;
+				enQueue(c);
+				client.connectionManager.destroyConnection(connection);
 			}
-			
 		}
 		
 	}
-	
+
 	public void enQueue(Call call){
 		try {
 			queue.put(call);
@@ -67,27 +89,22 @@ public class OutRunnable extends NetworkRunnable implements Runnable{
 		}
 	}
 
-	public void setPacketWriter(PacketWriter writer) {
-		this.writer = writer;
-		
-	}
 	public void redoWaitingCalls() {
+		BlockingQueue<Call> remainingCalls = new LinkedBlockingQueue<Call>();
+		queue.drainTo(remainingCalls);
 		Collection<Call> cc = callMap.values();
 		List<Call> waitingCalls = new ArrayList<Call>();
 		waitingCalls.addAll(cc);
 		for (Iterator<Call> iterator = waitingCalls.iterator(); iterator.hasNext();) {
 			Call call =  iterator.next();
-			if(call.getRequest().isRedoOnDisConnect()){
-				redo(call);
-			}
+			redo(call);
 		}
+		remainingCalls.drainTo(queue);
 	}
 
 	private void redo(Call call) {
-		System.out.println("Redo " + call );
+		logger.info("Redo " + call + " operation:" + call.getRequest().getOperation());
 		callMap.remove(call.getId());
 		enQueue(call);
 	}
-
-
 }
