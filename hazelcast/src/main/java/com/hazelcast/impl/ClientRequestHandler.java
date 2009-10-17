@@ -45,12 +45,14 @@ public class ClientRequestHandler implements Runnable {
     public void run() {
         ThreadContext.get().setCallContext(callContext);
         if (packet.operation.equals(ClusterOperation.CONCURRENT_MAP_PUT)) {
-            IMap<Object, Object> map = Hazelcast.getMap(packet.name.substring(2));
+        	IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
+//            IMap<Object, Object> map = Hazelcast.getMap(packet.name.substring(2));
             Object oldValue = map.put(doHardCopy(packet.key), doHardCopy(packet.value));
+            System.out.println("Value:  " + toObject(doHardCopy(packet.value)));
             packet.value = (Data) oldValue;
             sendResponse(packet);
         } else if (packet.operation.equals(ClusterOperation.CONCURRENT_MAP_GET)) {
-            IMap<Object, Object> map = Hazelcast.getMap(packet.name.substring(2));
+            IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
             Object value = map.get(doHardCopy(packet.key));
             Data data = (Data) value;
             if (callContext.getCurrentTxn() != null && callContext.getCurrentTxn().getStatus() == TXN_STATUS_ACTIVE) {
@@ -59,19 +61,19 @@ public class ClientRequestHandler implements Runnable {
             packet.value = data;
             sendResponse(packet);
         } else if (packet.operation.equals(ClusterOperation.TRANSACTION_BEGIN)) {
-            Transaction transaction = Hazelcast.getTransaction();
+            Transaction transaction = node.factory.getTransaction();
             transaction.begin();
             sendResponse(packet);
         } else if (packet.operation.equals(ClusterOperation.TRANSACTION_COMMIT)) {
-            Transaction transaction = Hazelcast.getTransaction();
+            Transaction transaction = node.factory.getTransaction();
             transaction.commit();
             sendResponse(packet);
         } else if (packet.operation.equals(ClusterOperation.TRANSACTION_ROLLBACK)) {
-            Transaction transaction = Hazelcast.getTransaction();
+            Transaction transaction = node.factory.getTransaction();
             transaction.rollback();
             sendResponse(packet);
         } else if (packet.operation.equals(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS)) {
-            IMap<Object, Object> map = Hazelcast.getMap(packet.name.substring(2));
+            IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
             ConcurrentMapManager.Entries entries = (Entries) map.keySet();
             List list = entries.getLsKeyValues();
             Keys keys = new Keys();
@@ -85,7 +87,7 @@ public class ClientRequestHandler implements Runnable {
             node.clusterService.enqueueAndReturn(packet);
         } else if (packet.operation.equals(ClusterOperation.ADD_LISTENER)) {
             ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
-            IMap<Object, Object> map = Hazelcast.getMap(packet.name.substring(2));
+            IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
             Object key = toObject(packet.key);
             boolean includeValue = (int) packet.longValue == 1;
             if (key == null) {
