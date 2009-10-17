@@ -292,6 +292,9 @@ public class HazelcastTest {
         assertTrue(added);
         set.remove("HelloWorld");
         assertEquals(0, set.size());
+        assertTrue(set.add("HelloWorld"));
+        assertFalse(set.add("HelloWorld"));
+        assertEquals(1, set.size());
     }
 
     @Test

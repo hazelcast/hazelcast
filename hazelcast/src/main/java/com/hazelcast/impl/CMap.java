@@ -412,10 +412,11 @@ public class CMap {
             record = createNewRecord(req.key, null);
             req.key = null;
         } else {
-            if (req.operation == CONCURRENT_MAP_ADD_TO_SET) {
+            if (record.isActive() && req.operation == CONCURRENT_MAP_ADD_TO_SET) {
                 return false;
             }
         }
+        record.setActive(true);
         node.queryService.updateIndex(name, null, null, record, Integer.MIN_VALUE);
         record.setVersion(record.getVersion() + 1);
         record.incrementCopyCount();
