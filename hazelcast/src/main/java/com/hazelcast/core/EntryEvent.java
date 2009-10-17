@@ -19,7 +19,7 @@ package com.hazelcast.core;
 
 import java.util.EventObject;
 
-public class EntryEvent extends EventObject {
+public class EntryEvent<K, V> extends EventObject {
 
     private static final long serialVersionUID = -2296203982913729851L;
 
@@ -33,9 +33,9 @@ public class EntryEvent extends EventObject {
 
     protected EntryEventType entryEventType = EntryEventType.ADDED;
 
-    protected Object key;
+    protected K key;
 
-    protected Object value;
+    protected V value;
 
     protected final String name;
 
@@ -63,7 +63,7 @@ public class EntryEvent extends EventObject {
         collection = (name.charAt(0) == 't') || (name.charAt(0) == 'q') || (name.charAt(3) == ':');
     }
 
-    public EntryEvent(Object source, int eventType, Object key, Object value) {
+    public EntryEvent(Object source, int eventType, K key, V value) {
         this(source);
         this.key = key;
         this.value = value;
@@ -81,11 +81,11 @@ public class EntryEvent extends EventObject {
         return name;
     }
 
-    public Object getKey() {
+    public K getKey() {
         return key;
     }
 
-    public Object getValue() {
+    public V getValue() {
         return value;
     }
 

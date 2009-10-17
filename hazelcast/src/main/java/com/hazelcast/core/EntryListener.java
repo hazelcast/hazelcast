@@ -19,12 +19,13 @@ package com.hazelcast.core;
 
 import java.util.EventListener;
 
-public interface EntryListener extends EventListener {
-    void entryAdded(EntryEvent event);
+public interface EntryListener<K, V> extends EventListener {
+    
+    void entryAdded(EntryEvent<K, V> event);
 
-    void entryRemoved(EntryEvent event);
+    void entryRemoved(EntryEvent<K, V> event);
 
-    void entryUpdated(EntryEvent event);
+    void entryUpdated(EntryEvent<K, V> event);
 
-    void entryEvicted(EntryEvent event);
+    void entryEvicted(EntryEvent<K, V> event);
 }

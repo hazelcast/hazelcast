@@ -37,13 +37,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
 
     void unlock(K key);
 
-    void addEntryListener(EntryListener listener, boolean includeValue);
+    void addEntryListener(EntryListener<K, V> listener, boolean includeValue);
 
-    void removeEntryListener(EntryListener listener);
+    void removeEntryListener(EntryListener<K, V> listener);
 
-    void addEntryListener(EntryListener listener, K key, boolean includeValue);
+    void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue);
 
-    void removeEntryListener(EntryListener listener, K key);
+    void removeEntryListener(EntryListener<K, V> listener, K key);
 
     MapEntry getMapEntry(K key);
 

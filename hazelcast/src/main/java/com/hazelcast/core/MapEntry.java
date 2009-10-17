@@ -19,7 +19,7 @@ package com.hazelcast.core;
 
 import java.util.Map;
 
-public interface MapEntry extends Map.Entry {
+public interface MapEntry<K, V> extends Map.Entry<K, V> {
 
     long getCost();
 
