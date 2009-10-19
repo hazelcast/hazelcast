@@ -91,7 +91,7 @@ public abstract class BaseManager {
 
         protected boolean valid = true;
 
-        protected Request request = null;
+        protected final Request request;
 
         protected final long id;
 

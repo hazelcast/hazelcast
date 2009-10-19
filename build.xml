@@ -2,7 +2,7 @@
 
     <property name="src.dir" value="hazelcast/src/main/java"/>
     <property name="classes.dir" value="hazelcast/target/classes"/>
-    <property name="version" value="1.7.1-SNAPSHOT"/>
+    <property name="version" value="1.8-SNAPSHOT"/>
     <property name="hazelcast.jar.name" value="hazelcast-${version}.jar"/>
 
 

@@ -1827,9 +1827,9 @@ public final class ConcurrentMapManager extends BaseManager {
         if (record.getLockCount() == 0) {
             record.setLockThreadId(-1);
             record.setLockAddress(null);
-            if (record.getLsScheduledActions() != null) {
-                while (record.getLsScheduledActions().size() > 0) {
-                    ScheduledAction sa = record.getLsScheduledActions().remove(0);
+            if (record.getScheduledActions() != null) {
+                while (record.getScheduledActions().size() > 0) {
+                    ScheduledAction sa = record.getScheduledActions().remove(0);
                     node.clusterManager.deregisterScheduledAction(sa);
                     if (!sa.expired()) {
                         sa.consume();
@@ -1841,13 +1841,14 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     public void onDisconnect(Record record, Address deadAddress) {
-        List<ScheduledAction> lsScheduledActions = record.getLsScheduledActions();
+        if (record == null || deadAddress == null) return;
+        List<ScheduledAction> lsScheduledActions = record.getScheduledActions();
         if (lsScheduledActions != null) {
             if (lsScheduledActions.size() > 0) {
                 Iterator<ScheduledAction> it = lsScheduledActions.iterator();
                 while (it.hasNext()) {
                     ScheduledAction sa = it.next();
-                    if (sa.request.caller.equals(deadAddress)) {
+                    if (deadAddress.equals(sa.request.caller)) {
                         node.clusterManager.deregisterScheduledAction(sa);
                         sa.setValid(false);
                         it.remove();

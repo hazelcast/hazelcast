@@ -255,7 +255,7 @@ public class MapMigrator implements Runnable {
     }
 
     public void syncForDead(Address deadAddress) {
-        if (deadAddress.equals(thisAddress)) return;
+        if (deadAddress == null || deadAddress.equals(thisAddress)) return;
         Set<Integer> blocksOwnedAfterDead = new HashSet<Integer>();
         for (Block block : blocks) {
             if (block != null) {
@@ -302,11 +302,13 @@ public class MapMigrator implements Runnable {
         for (CMap map : cmaps) {
             Collection<Record> records = map.mapRecords.values();
             for (Record record : records) {
-                concurrentMapManager.onDisconnect(record, deadAddress);
-                if (record.isActive()) {
-                    if (blocksOwnedAfterDead.contains(record.getBlockId())) {
-                        map.markAsOwned(record);
-                        node.queryService.updateIndex(map.name, null, null, record, record.getValueHash());
+                if (record != null) {
+                    concurrentMapManager.onDisconnect(record, deadAddress);
+                    if (record.isActive()) {
+                        if (blocksOwnedAfterDead.contains(record.getBlockId())) {
+                            map.markAsOwned(record);
+                            node.queryService.updateIndex(map.name, null, null, record, record.getValueHash());
+                        }
                     }
                 }
             }

@@ -247,19 +247,19 @@ public class Record implements MapEntry {
     }
 
     public void addScheduledAction(BaseManager.ScheduledAction scheduledAction) {
-        if (getLsScheduledActions() == null) {
-            setLsScheduledActions(new ArrayList<BaseManager.ScheduledAction>(1));
+        if (getScheduledActions() == null) {
+            setScheduledActions(new ArrayList<BaseManager.ScheduledAction>(1));
         }
-        getLsScheduledActions().add(scheduledAction);
+        getScheduledActions().add(scheduledAction);
         logger.log(Level.FINEST, scheduledAction.request.operation + " scheduling " + scheduledAction);
     }
 
     public boolean isRemovable() {
-        return (valueCount() <= 0 && !hasListener() && (getLsScheduledActions() == null || getLsScheduledActions().size() == 0) && (getBackupOps() == null || getBackupOps().size() == 0));
+        return (valueCount() <= 0 && !hasListener() && (getScheduledActions() == null || getScheduledActions().size() == 0) && (getBackupOps() == null || getBackupOps().size() == 0));
     }
 
     public boolean isEvictable() {
-        return (lockCount == 0 && !hasListener() && (getLsScheduledActions() == null || getLsScheduledActions().size() == 0));
+        return (lockCount == 0 && !hasListener() && (getScheduledActions() == null || getScheduledActions().size() == 0));
     }
 
     public boolean hasListener() {
@@ -479,11 +479,11 @@ public class Record implements MapEntry {
         this.lastTouchTime = lastTouchTime;
     }
 
-    public List<BaseManager.ScheduledAction> getLsScheduledActions() {
+    public List<BaseManager.ScheduledAction> getScheduledActions() {
         return lsScheduledActions;
     }
 
-    public void setLsScheduledActions(List<BaseManager.ScheduledAction> lsScheduledActions) {
+    public void setScheduledActions(List<BaseManager.ScheduledAction> lsScheduledActions) {
         this.lsScheduledActions = lsScheduledActions;
     }
 
