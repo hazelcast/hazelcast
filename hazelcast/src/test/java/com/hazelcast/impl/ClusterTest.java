@@ -220,7 +220,7 @@ public class ClusterTest {
     }
 
     @Test(timeout = 60000)
-    public void testMapRecorvery() throws Exception {
+    public void testMapRecovery() throws Exception {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
         IMap mm = h.getMap("default");
         mm.put("1", "value");
