@@ -30,6 +30,10 @@ public class Keys implements DataSerializable{
 	/**
 	 * 
 	 */
+	private static final long serialVersionUID = -3983785771408545165L;
+	/**
+	 * 
+	 */
 	private Set<Object> keys = new HashSet<Object>();
 	
 	public Keys() {

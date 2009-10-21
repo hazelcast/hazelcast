@@ -11,6 +11,10 @@ import com.hazelcast.client.nio.Address;
 import com.hazelcast.client.nio.DataSerializable;
 
 public class Bind implements DataSerializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -4416340802339479954L;
 	Address address;
 	
     public Bind() {
