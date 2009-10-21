@@ -37,7 +37,7 @@ public class ConnectionManager{
 				if(currentConnection == null){
 					connection = searchForAvailableConnection();
 					if(connection!=null){
-						logger.info("Client is connecting to " + connection);
+						logger.info("Client is connecting to " + connection + " " + Thread.currentThread().getName() + " " + Thread.currentThread().hashCode());
 						bind(connection);
 						currentConnection = connection;
 					}
@@ -48,7 +48,6 @@ public class ConnectionManager{
 	}
 	public synchronized void destroyConnection(Connection connection){
 		if(currentConnection!=null && currentConnection.getVersion()== connection.getVersion()){
-			System.out.println("Someone called destroy Connection");
 			logger.warning("Connection to " + currentConnection +" is lost");
 			currentConnection = null;
 		}

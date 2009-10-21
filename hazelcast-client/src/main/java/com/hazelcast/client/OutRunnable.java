@@ -24,10 +24,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 
-public class OutRunnable extends NetworkRunnable implements Runnable{
+public class OutRunnable extends IORunnable{
 	final PacketWriter writer;
 	final BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
 	final BlockingQueue<Call> temp = new LinkedBlockingQueue<Call>();
@@ -39,46 +40,43 @@ public class OutRunnable extends NetworkRunnable implements Runnable{
 	}
 	
 	Connection connection = null;
-	public void run() {
-		while(true){
-			Call c = null;
-			try{
-				c = queue.take();
-				callMap.put(c.getId(), c);
-//				System.out.println("Old Connection: "+connection);
-				
-				boolean oldConnectionIsNotNull = (connection!=null);
-				long oldConnectionId = -1;
-				if(oldConnectionIsNotNull){
-					oldConnectionId = connection.getVersion();
-				}
-				connection = client.connectionManager.getConnection();
-//				System.out.println("New Connection: "+connection);
-				if(oldConnectionIsNotNull && connection.getVersion()!=oldConnectionId){
-					System.out.println("Connection changed");
-					temp.add(c);
-					queue.drainTo(temp);
-					client.listenerManager.getListenerCalls().drainTo(queue);
-					temp.drainTo(queue);
-					continue;
-				}
-				
+
+
+	protected void customRun() throws InterruptedException {
+		Call c = null;
+		try{
+			c = queue.poll(100, TimeUnit.MILLISECONDS);
+//			c = queue.take();
+			if(c==null){
+				return;
+			}
+			callMap.put(c.getId(), c);
+			
+			boolean oldConnectionIsNotNull = (connection!=null);
+			long oldConnectionId = -1;
+			if(oldConnectionIsNotNull){
+				oldConnectionId = connection.getVersion();
+			}
+			connection = client.connectionManager.getConnection();
+			if(oldConnectionIsNotNull && connection.getVersion()!=oldConnectionId){
+				temp.add(c);
+				queue.drainTo(temp);
+				client.listenerManager.getListenerCalls().drainTo(queue);
+				temp.drainTo(queue);
+			}else{
 				if(connection!=null){
 					writer.write(connection,c.getRequest());
-					System.out.println("Sending " +c + " "+ c.getRequest().getOperation());
 				}
 				else{
 					interruptWaitingCalls();
 				}
-			} catch (InterruptedException e) {
-				return;
-			} catch (Throwable io) {
-				io.printStackTrace();
-				enQueue(c);
-				client.connectionManager.destroyConnection(connection);
 			}
+		} catch (InterruptedException e) {
+			throw e;
+		} catch (Throwable io) {
+			enQueue(c);
+			client.connectionManager.destroyConnection(connection);
 		}
-		
 	}
 
 	public void enQueue(Call call){

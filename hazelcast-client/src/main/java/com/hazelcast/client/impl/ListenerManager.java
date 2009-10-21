@@ -8,15 +8,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import com.hazelcast.client.Call;
+import com.hazelcast.client.ClientRunnable;
 import com.hazelcast.client.Packet;
 import com.hazelcast.client.Serializer;
 import com.hazelcast.client.core.EntryEvent;
 import com.hazelcast.client.core.EntryListener;
 import com.hazelcast.client.core.EntryEvent.EntryEventType;
 
-public class ListenerManager implements Runnable{
+public class ListenerManager extends ClientRunnable{
 	final Map<String, Map<Object, List<EntryListener>>> mapOfListeners = new HashMap<String, Map<Object,List<EntryListener>>>();
 	final private BlockingQueue<Call> listenerCalls = new LinkedBlockingQueue<Call>();
 	final BlockingQueue<Packet> queue = new LinkedBlockingQueue<Packet>();
@@ -69,22 +71,32 @@ public class ListenerManager implements Runnable{
 		}
 	}
 
-	public void run() {
-		while(true){
-			Packet packet = null;
-			try {
-				packet = queue.take();
-				EntryEvent event = new EntryEvent(packet.getName(),(int)packet.getLongValue(),Serializer.toObject(packet.getKey()),Serializer.toObject(packet.getValue()));
-				fireEvent(event);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
+//	public void run() {
+//		while(true){
+//			Packet packet = null;
+//			try {
+//				packet = queue.take();
+//				EntryEvent event = new EntryEvent(packet.getName(),(int)packet.getLongValue(),Serializer.toObject(packet.getKey()),Serializer.toObject(packet.getValue()));
+//				fireEvent(event);
+//			} catch (InterruptedException e) {
+//				return;
+//			}
+//		}
+//	}
 	public void addListenerCall(Call call){
 		listenerCalls.add(call);
 	}
 	public BlockingQueue<Call> getListenerCalls(){
 		return listenerCalls;
+	}
+
+	protected void customRun() throws InterruptedException {
+		Packet packet = queue.poll(100, TimeUnit.MILLISECONDS);
+		if(packet==null){
+			return;
+		}
+		EntryEvent event = new EntryEvent(packet.getName(),(int)packet.getLongValue(),Serializer.toObject(packet.getKey()),Serializer.toObject(packet.getValue()));
+		fireEvent(event);
+		
 	}
 }

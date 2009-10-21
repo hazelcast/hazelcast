@@ -23,14 +23,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.hazelcast.client.ConnectionManager;
-
-public class NetworkRunnable {
+public abstract class IORunnable extends ClientRunnable{
 
 	protected Map<Long, Call> callMap;
 	protected HazelcastClient client;
+	
 
-	public NetworkRunnable(HazelcastClient client, Map<Long,Call> calls) {
+	public IORunnable(HazelcastClient client, Map<Long,Call> calls) {
 		this.client = client;
 		this.callMap = calls;
 	}
@@ -48,6 +47,17 @@ public class NetworkRunnable {
 				call.notify();
 			}
 		}
+	}
+	
+	public void run() {
+		while(running){
+			try {
+				customRun();
+			} catch (InterruptedException e) {
+				return;
+			}
+		}
+		notifyMonitor();
 	}
 
 }

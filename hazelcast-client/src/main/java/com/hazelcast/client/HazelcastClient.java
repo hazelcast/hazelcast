@@ -17,6 +17,7 @@
 
 package com.hazelcast.client;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,21 +28,28 @@ import com.hazelcast.client.impl.ListenerManager;
 
 public class HazelcastClient {
 	final Map<Long,Call> calls  = new ConcurrentHashMap<Long, Call>();
-	final ListenerManager listenerManager = new ListenerManager();
+	final ListenerManager listenerManager;
 	final OutRunnable out;
 	final InRunnable in;
 	final ConnectionManager connectionManager;
 	
 	private HazelcastClient(InetSocketAddress[] clusterMembers) {
 		connectionManager = new ConnectionManager(this, clusterMembers);
-		
+
 		out = new OutRunnable(this, calls, new PacketWriter());
-		new Thread(out).start();
+		new Thread(out,"hz.client.OutThread").start();
 		
 		in = new InRunnable(this, calls, new PacketReader());
-		new Thread(in).start();
+		new Thread(in,"hz.client.InThread").start();
 
-		new Thread(listenerManager).start();
+		listenerManager = new ListenerManager();
+		new Thread(listenerManager,"hz.client.Listener").start();
+		
+		
+		try {
+			connectionManager.getConnection();
+		} catch (IOException ignored) {
+		}
 	}
 
 	public static HazelcastClient getHazelcastClient(InetSocketAddress... clusterMembers){
@@ -67,5 +75,12 @@ public class HazelcastClient {
 
 	public ConnectionManager getConnectionManager() {
 		return connectionManager;
+	}
+	
+	public void shutdown() throws InterruptedException{
+		out.shutdown();
+		listenerManager.shutdown();
+		in.shutdown();
+		
 	}
 }

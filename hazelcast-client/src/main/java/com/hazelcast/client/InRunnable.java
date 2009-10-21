@@ -19,28 +19,27 @@ package com.hazelcast.client;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import com.hazelcast.client.impl.ClusterOperation;
 
 
-public class InRunnable extends NetworkRunnable implements Runnable{
+public class InRunnable extends IORunnable implements Runnable{
 	final PacketReader reader;
+	Logger logger = Logger.getLogger(this.getClass().getName());
 	public InRunnable(HazelcastClient client, Map<Long,Call> calls, PacketReader reader) {
 		super(client,calls);
 		this.reader = reader;
 	}
 
-
-	public void run() {
-		while(true){
-			Connection connection = null;
-			Packet packet=null;
-			try {
-				connection = client.connectionManager.getConnection();
-				if(connection == null){
-					interruptWaitingCalls();
-					continue;
-				}
+	protected void customRun() {
+		Connection connection = null;
+		Packet packet=null;
+		try {
+			connection = client.connectionManager.getConnection();
+			if(connection == null){
+				interruptWaitingCalls();
+			}else{
 				packet = reader.readPacket(connection);
 				Call c = null;
 				c = callMap.remove(packet.getCallId());
@@ -57,10 +56,24 @@ public class InRunnable extends NetworkRunnable implements Runnable{
 						throw new RuntimeException("In Thread can not handle: "+packet.getOperation() + " : " +packet.getCallId() );
 					}
 				}
-			
-			} catch (IOException e) {
-				client.connectionManager.destroyConnection(connection);
-				continue;
+			}
+		
+		} catch (IOException e) {
+			client.connectionManager.destroyConnection(connection);
+		}
+	}
+	public void shutdown() throws InterruptedException{
+		synchronized (monitor) {
+			if(running){
+				this.running = false;
+				try {
+					Connection connection = client.connectionManager.getConnection();
+					if(connection!=null){
+						connection.getSocket().close();
+					}
+				} catch (IOException ignored) {}
+		
+				monitor.wait();
 			}
 		}
 	}
