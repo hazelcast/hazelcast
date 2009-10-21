@@ -1223,16 +1223,20 @@ public abstract class BaseManager {
     void enqueueEvent(final int eventType, final String name, final Data eventKey,
                       final Data eventValue, final Address from) {
         final EventTask eventTask = new EventTask(eventType, name, eventKey, eventValue);
-        int eventQueueIndex;
+        int hash;
         if (eventKey != null) {
-            eventQueueIndex = Math.abs(eventKey.hashCode() % EVENT_QUEUE_COUNT);
+        	hash = eventKey.hashCode();
         } else {
-            eventQueueIndex = Math.abs(from.hashCode() % EVENT_QUEUE_COUNT);
+        	hash = from.hashCode();
         }
-        final EventQueue eventQueue = eventQueues[eventQueueIndex];
-        final int size = eventQueue.offerRunnable(eventTask);
-        if (size == 1) executeLocally(eventQueue);
+        enqueueEvent(hash, eventTask);
     }
+    public void enqueueEvent(int hash, Runnable runnable){
+    	int index = Math.abs(hash %EVENT_QUEUE_COUNT);
+    	final EventQueue eventQueue = eventQueues[index];
+        final int size = eventQueue.offerRunnable(runnable);
+        if (size == 1) executeLocally(eventQueue);
+    } 
 
     public static class EventQueue extends ConcurrentLinkedQueue<Runnable> implements Runnable {
         private AtomicInteger size = new AtomicInteger();

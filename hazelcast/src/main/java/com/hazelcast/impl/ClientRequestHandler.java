@@ -17,7 +17,6 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Transaction;
 import static com.hazelcast.core.Transaction.TXN_STATUS_ACTIVE;
@@ -30,11 +29,13 @@ import static com.hazelcast.nio.IOUtil.*;
 import com.hazelcast.nio.Packet;
 
 import java.util.List;
+import java.util.logging.Logger;
 
 public class ClientRequestHandler implements Runnable {
     private final Packet packet;
     private final CallContext callContext;
     private final Node node;
+    Logger logger = Logger.getLogger(this.getClass().getName());
 
     public ClientRequestHandler(Node node, Packet packet, CallContext callContext) {
         this.packet = packet;
@@ -45,18 +46,19 @@ public class ClientRequestHandler implements Runnable {
     public void run() {
         ThreadContext.get().setCallContext(callContext);
         if (packet.operation.equals(ClusterOperation.CONCURRENT_MAP_PUT)) {
+//        	logger.info("PUT" + System.currentTimeMillis());
         	IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
-//            IMap<Object, Object> map = Hazelcast.getMap(packet.name.substring(2));
-            Object oldValue = map.put(doHardCopy(packet.key), doHardCopy(packet.value));
-            System.out.println("Value:  " + toObject(doHardCopy(packet.value)));
+            Object oldValue = map.put(packet.key, packet.value);
+//            System.out.println("Value:  " + toObject(doHardCopy(packet.value)));
             packet.value = (Data) oldValue;
+            
             sendResponse(packet);
         } else if (packet.operation.equals(ClusterOperation.CONCURRENT_MAP_GET)) {
             IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
-            Object value = map.get(doHardCopy(packet.key));
+            Object value = map.get(packet.key);
             Data data = (Data) value;
             if (callContext.getCurrentTxn() != null && callContext.getCurrentTxn().getStatus() == TXN_STATUS_ACTIVE) {
-                data = doHardCopy(data);
+                data = data;
             }
             packet.value = data;
             sendResponse(packet);
@@ -97,6 +99,8 @@ public class ClientRequestHandler implements Runnable {
             }
             sendResponse(packet);
         }
+        
+        
     }
 
     private void sendResponse(Packet request) {

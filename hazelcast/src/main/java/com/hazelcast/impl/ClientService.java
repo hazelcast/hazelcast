@@ -26,9 +26,10 @@ import com.hazelcast.nio.Packet;
 import java.util.HashMap;
 import java.util.Map;
 
+
 public class ClientService {
     private final Node node;
-    private final Map<Connection, ClientEndpoint> mapClientEndpoints = new HashMap<Connection, ClientEndpoint>(100);
+    private final Map<Connection, ClientEndpoint> mapClientEndpoints = new HashMap<Connection, ClientEndpoint>();
 
     public ClientService(Node node) {
         this.node = node;
@@ -38,7 +39,8 @@ public class ClientService {
     public void handle(Packet packet) {
         ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
-        node.executorManager.executeLocally(new ClientRequestHandler(node, packet, callContext));
+        ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext); 
+        node.clusterManager.enqueueEvent(clientEndpoint.hashCode(), clientRequestHandler);
     }
 
     public ClientEndpoint getClientEndpoint(Connection conn) {
@@ -66,6 +68,11 @@ public class ClientService {
                 mapOfCallContexts.put(threadId, context);
             }
             return context;
+        }
+        
+        @Override
+        public int hashCode() {
+            return this.conn.hashCode();
         }
 
         public void entryAdded(EntryEvent event) {
@@ -102,6 +109,7 @@ public class ClientService {
             packet.longValue = event.getEventType().getType();
             return packet;
         }
+        
     }
 
     public void reset() {
