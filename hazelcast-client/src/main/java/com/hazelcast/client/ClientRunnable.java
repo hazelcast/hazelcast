@@ -24,7 +24,7 @@ public abstract class ClientRunnable implements Runnable{
 				this.running = false;
 				try {
 					monitor.wait();
-				} catch (InterruptedException e) {
+				} catch (InterruptedException ignored) {
 				}
 			}
 		}
