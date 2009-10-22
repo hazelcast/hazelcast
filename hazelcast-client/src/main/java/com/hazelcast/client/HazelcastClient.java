@@ -77,10 +77,9 @@ public class HazelcastClient {
 		return connectionManager;
 	}
 	
-	public void shutdown() throws InterruptedException{
+	public void shutdown(){
 		out.shutdown();
 		listenerManager.shutdown();
 		in.shutdown();
-		
 	}
 }

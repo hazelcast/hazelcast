@@ -62,7 +62,7 @@ public class InRunnable extends IORunnable implements Runnable{
 			client.connectionManager.destroyConnection(connection);
 		}
 	}
-	public void shutdown() throws InterruptedException{
+	public void shutdown(){
 		synchronized (monitor) {
 			if(running){
 				this.running = false;
@@ -73,7 +73,10 @@ public class InRunnable extends IORunnable implements Runnable{
 					}
 				} catch (IOException ignored) {}
 		
-				monitor.wait();
+				try {
+					monitor.wait();
+				} catch (InterruptedException ignored) {
+				}
 			}
 		}
 	}

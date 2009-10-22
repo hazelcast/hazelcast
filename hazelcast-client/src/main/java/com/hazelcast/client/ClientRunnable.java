@@ -18,11 +18,14 @@ public abstract class ClientRunnable implements Runnable{
 		notifyMonitor();
 	}
 
-	public void shutdown() throws InterruptedException{
+	public void shutdown(){
 		synchronized (monitor) {
 			if(running){
 				this.running = false;
-				monitor.wait();
+				try {
+					monitor.wait();
+				} catch (InterruptedException e) {
+				}
 			}
 		}
 	}
