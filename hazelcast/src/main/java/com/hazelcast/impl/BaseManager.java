@@ -1032,7 +1032,7 @@ public abstract class BaseManager {
                         e.printStackTrace();
                     }
                 } else {
-                    final Packet packet = ThreadContext.get().getPacketPool().obtain();
+                    final Packet packet = obtainPacket();
                     packet.reset();
                     packet.set(name, ClusterOperation.EVENT, key, (includeValue) ? value : null);
                     packet.longValue = eventType;

@@ -1096,7 +1096,7 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     public void sendFullMessage(Block block) {
-        Packet packet = ThreadContext.get().getPacketPool().obtain();
+        Packet packet = obtainPacket();
         packet.set(block.name, ClusterOperation.BLOCKING_QUEUE_FULL_BLOCK, null, null);
         packet.blockId = block.blockId;
         Address master = getMasterAddress();
