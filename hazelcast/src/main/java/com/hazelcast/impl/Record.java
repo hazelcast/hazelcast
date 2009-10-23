@@ -39,7 +39,7 @@ public class Record implements MapEntry {
     private final AtomicInteger hits = new AtomicInteger(0);
     private final AtomicBoolean active = new AtomicBoolean(true);
     private final AtomicLong lastAccessTime = new AtomicLong(0);
-    private final long creationTime;
+    private final AtomicLong creationTime = new AtomicLong();
     private long lastTouchTime = 0;
     private long expirationTime = Long.MAX_VALUE;
     private long lastUpdateTime = 0;
@@ -57,6 +57,7 @@ public class Record implements MapEntry {
     private boolean dirty = false;
     private long writeTime = -1;
     private long removeTime;
+    private final long ttl;
 
     private final RecordEntry recordEntry;
     private final long id;
@@ -70,8 +71,8 @@ public class Record implements MapEntry {
         this.blockId = blockId;
         this.setKey(key);
         this.setValue(value);
-        this.creationTime = System.currentTimeMillis();
-        setExpirationTime(ttl);
+        this.ttl= ttl;
+        setCreationTime(System.currentTimeMillis());
         this.setLastTouchTime(getCreationTime());
         this.setVersion(0);
         recordEntry = new RecordEntry(this);
@@ -360,7 +361,11 @@ public class Record implements MapEntry {
     }
 
     public long getCreationTime() {
-        return creationTime;
+        return creationTime.get();
+    }
+    public void setCreationTime(long newValue){
+    	creationTime.set(newValue);
+    	setExpirationTime(this.ttl);
     }
 
     public long getLastAccessTime() {

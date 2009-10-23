@@ -509,9 +509,6 @@ public class CMap {
             created = true;
         } else {
             markAsActive(record);
-            if (!record.isValid()) {
-                record.setExpirationTime(ttl);
-            }
             oldValue = record.getValue();
             record.setValue(req.value);
             record.incrementVersion();
@@ -817,6 +814,7 @@ public class CMap {
         if (!record.isActive()) {
             record.setActive();
             setRemovedRecords.remove(record);
+            record.setCreationTime(System.currentTimeMillis());
         }
         markAsOwned(record);
     }
