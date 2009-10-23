@@ -2,8 +2,14 @@ package com.hazelcast.core;
 
 import static junit.framework.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Ignore;
 import org.junit.Test;
+
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 
 import java.io.Serializable;
 import java.util.*;
@@ -643,5 +649,57 @@ public class HazelcastTest {
             }
         }
         assertTrue(found);
+    }
+    @Test
+    public void testPutIfAbsentWhenThereIsTTLAndRemovedBeforeTTL() throws InterruptedException
+
+    {
+          Config myConfig = new Config();
+          Map<String, MapConfig> myHazelcastMapConfigs = myConfig.getMapMapConfigs();
+
+          MapConfig myMapConfig =  myHazelcastMapConfigs.get("busyCorIds");
+          if (myMapConfig == null)
+          {
+              myMapConfig = new MapConfig();
+              myMapConfig.setName("busyCorIds");
+              myMapConfig.setTimeToLiveSeconds(2);
+              myHazelcastMapConfigs.put("busyCorIds", myMapConfig);
+          }
+          else
+          {
+              myMapConfig.setTimeToLiveSeconds(2);
+          }   
+          Hazelcast.init(myConfig);
+          IMap<String, String> myMap = Hazelcast.getMap("busyCorIds");
+          String one = "1";
+          myMap.put(one, one);           
+          String myValue = myMap.get(one);
+          assertTrue(myMap.containsKey(one));
+          myMap.remove(one);
+          System.out.println("contains key:"  + myMap.containsKey(one));
+          Thread.sleep(3*1000);
+          myValue = myMap.get(one);
+          assertNull(myValue);
+          if(myValue == null)
+          {
+                System.out.println("Can not get value from map "  + myMap.containsKey(one));
+          }
+          else
+          {
+                System.out.println("Get the value for key 1:" + myValue  + myMap.containsKey(one));
+          }
+          String oneone = "11";
+          String existValue = myMap.putIfAbsent(one, oneone);
+          assertNull(existValue);
+          myValue = myMap.get(one);
+          assertEquals(oneone, myValue);
+          if(myValue == null)
+          {
+                System.out.println("Can not get value from map " +existValue+ " "+ myMap.containsKey(one));
+          }
+          else
+          {
+                System.out.println("Get the value for key 1 :" + myValue +" "+ existValue);
+          }
     }
 }
