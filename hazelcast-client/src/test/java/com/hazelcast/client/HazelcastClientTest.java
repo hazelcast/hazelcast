@@ -45,7 +45,7 @@ public class HazelcastClientTest{
     private HazelcastClient hClient;
 
     @After
-    public void after() throws InterruptedException{
+    public void shutdownAll() throws InterruptedException{
     	Hazelcast.shutdownAll();
     	if(hClient!=null){	hClient.shutdown(); }
     	Thread.sleep(500);
@@ -174,16 +174,31 @@ public class HazelcastClientTest{
    
     
     @Test
-    public void put1000RecordsWith1ClusterMember(){
+    public void putAndget100000RecordsWith1ClusterMember(){
       	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
     	hClient = getHazelcastClient(h);
     	Map<String, String> map = hClient.getMap("default");
-    	long time = System.currentTimeMillis();
-    	for (int i = 0; i < 1000; i++) {
-			map.put("a", "b");
+    	long beginTime = System.currentTimeMillis();
+    	int counter = 100000;
+    	
+    	System.out.println("PUT");
+    	for (int i = 0; i < counter; i++) {
+    		if(i%1000 == 0){
+    			System.out.println(i+": "+(System.currentTimeMillis()-beginTime)+" ms");
+    		}
+			map.put("key_"+i, String.valueOf(i));
 		}
-    	assertTrue(true);
-    	System.out.println(System.currentTimeMillis()-time);
+    	beginTime = System.currentTimeMillis();
+    	System.out.println("GET");
+    	for (int i = 0; i < counter; i++) {
+    		if(i%1000 == 0){
+    			System.out.println(i+": "+(System.currentTimeMillis()-beginTime)+" ms");
+    		}
+    		assertEquals(String.valueOf(i), map.get("key_"+i));
+		}
+    	
+//    	assertEquals(String.valueOf(i), map.get("key_"+i));
+    	System.out.println(System.currentTimeMillis()-beginTime);
     }
     
     @Test
@@ -236,7 +251,7 @@ public class HazelcastClientTest{
 	        threads = new Thread[ nAlloc ];
 	        n = root.enumerate( threads, true );
 	    } while ( n == nAlloc );
-	    return java.util.Arrays.copyOf( threads, n );
+	    return threads;
 	}
 	
 	public static HazelcastClient getHazelcastClient(HazelcastInstance ... h) {
@@ -247,4 +262,5 @@ public class HazelcastClientTest{
 		HazelcastClient client = HazelcastClient.getHazelcastClient(addresses);
 		return client;
 	}
+	
 }
