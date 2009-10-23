@@ -23,6 +23,7 @@
 
     <target name="jar" depends="compile">
         <jar jarfile="${hazelcast.jar.name}">
+            <fileset dir="${src.dir}" />
             <fileset dir="${classes.dir}" />
             <manifest>
                 <attribute name="Built-By" value="Hazelcast.com"/>

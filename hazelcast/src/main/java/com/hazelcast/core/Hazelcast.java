@@ -119,6 +119,7 @@ public final class Hazelcast {
      */
     public static void shutdownAll() {
         com.hazelcast.impl.FactoryImpl.shutdownAll();
+        defaultInstance = null;
     }
 
     /**
