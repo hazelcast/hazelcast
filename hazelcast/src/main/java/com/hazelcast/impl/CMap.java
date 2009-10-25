@@ -481,26 +481,43 @@ public class CMap {
         return added;
     }
 
-    public Data put(Request req) {
+    public void put(Request req) {
         if (ownedRecords.size() >= maxSize) {
             startEviction();
         }
         if (req.value == null) {
             req.value = new Data();
         }
-        req.value.hash = (int) req.longValue;
+        Record record = getRecord(req.key);
         if (req.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
-            Record record = getRecord(req.key);
             if (record != null && record.isActive() && record.getValue() != null) {
-                return record.getValue();
+                req.response = record.getValue();
+                return;
             }
         } else if (req.operation == CONCURRENT_MAP_REPLACE_IF_NOT_NULL) {
-            Record record = getRecord(req.key);
             if (record == null || !record.isActive() || record.getValue() == null) {
-                return null;
+                return;
+            }
+        } else if (req.operation == CONCURRENT_MAP_REPLACE_IF_SAME) {
+            if (record == null || !record.isActive() || !record.isValid()) {
+                req.response = Boolean.FALSE;
+                req.value = null;
+                req.key = null;
+                return;
+            }
+            ConcurrentMapManager.MultiData multiData = (ConcurrentMapManager.MultiData) toObject(req.value);
+            if (multiData == null || multiData.size() != 2) {
+                throw new RuntimeException("Illegal replaceIfSame argument: " + multiData);
+            }
+            Data expectedOldValue = multiData.getData(0);
+            Data newValue = multiData.getData(1);
+            req.value = newValue;
+            if (!record.getValue().equals(expectedOldValue)) {
+                req.response = Boolean.FALSE;
+                return;
             }
         }
-        Record record = getRecord(req.key);
+        req.value.hash = (int) req.longValue;
         Data oldValue = null;
         boolean created = false;
         if (record == null) {
@@ -529,7 +546,11 @@ public class CMap {
         }
         updateIndexes(created, req, record);
         markAsDirty(record);
-        return oldValue;
+        if (req.operation == CONCURRENT_MAP_REPLACE_IF_SAME) {
+            req.response = Boolean.TRUE;
+        } else {
+            req.response = oldValue;
+        }
     }
 
     void startAsyncStoreWrite() {
@@ -862,7 +883,7 @@ public class CMap {
             }
             node.queryService.updateIndex(name, newIndexes, indexTypes, record, valueHash);
         } else if (created || record.getValueHash() != valueHash) {
-            if (! created) {
+            if (!created) {
 //                System.out.println( record.getValueHash() + " ... " + valueHash);
             }
             node.queryService.updateIndex(name, null, null, record, valueHash);

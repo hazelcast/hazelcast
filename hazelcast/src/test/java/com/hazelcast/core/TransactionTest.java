@@ -10,8 +10,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.*;
 
 public class TransactionTest {
@@ -38,7 +38,7 @@ public class TransactionTest {
                 assertEquals("value1", entry.getValue());
             } else if ("2".equals(entry.getKey())) {
                 assertEquals("value2", entry.getValue());
-            } else throw new RuntimeException ("cannot contain another entry with key " + entry.getKey());
+            } else throw new RuntimeException("cannot contain another entry with key " + entry.getKey());
         }
         txnMap.commit();
         assertEquals(2, txnMap.size());
@@ -58,7 +58,7 @@ public class TransactionTest {
                 assertEquals("value1", entry.getValue());
             } else if ("2".equals(entry.getKey())) {
                 assertEquals("value2", entry.getValue());
-            } else throw new RuntimeException ("cannot contain another entry with key " + entry.getKey());
+            } else throw new RuntimeException("cannot contain another entry with key " + entry.getKey());
         }
         txnMap.commit();
         assertEquals(2, txnMap.size());
@@ -76,7 +76,7 @@ public class TransactionTest {
         for (Map.Entry entry : entries) {
             if ("1".equals(entry.getKey())) {
                 assertEquals("value2", entry.getValue());
-            } else throw new RuntimeException ("cannot contain another entry with key " + entry.getKey());
+            } else throw new RuntimeException("cannot contain another entry with key " + entry.getKey());
         }
         txnMap.rollback();
         assertEquals(1, txnMap.size());
@@ -84,10 +84,9 @@ public class TransactionTest {
         for (Map.Entry entry : entries) {
             if ("1".equals(entry.getKey())) {
                 assertEquals("value1", entry.getValue());
-            } else throw new RuntimeException ("cannot contain another entry with key " + entry.getKey());
+            } else throw new RuntimeException("cannot contain another entry with key " + entry.getKey());
         }
     }
-
 
     @Test
     public void testMapPutCommitSize() {
@@ -294,7 +293,6 @@ public class TransactionTest {
             size++;
         }
         assertEquals(0, size);
-
         txnq.commit();
         it = txnq.iterator();
         size = 0;
@@ -303,7 +301,6 @@ public class TransactionTest {
             size++;
         }
         assertEquals(1, size);
-
         it = txnq2.iterator();
         size = 0;
         while (it.hasNext()) {
@@ -338,7 +335,6 @@ public class TransactionTest {
             size++;
         }
         assertEquals(1, size);
-
         txnq.commit();
         it = txnq.iterator();
         size = 0;
@@ -347,7 +343,6 @@ public class TransactionTest {
             size++;
         }
         assertEquals(2, size);
-
         it = txnq2.iterator();
         size = 0;
         while (it.hasNext()) {
@@ -358,7 +353,6 @@ public class TransactionTest {
         assertEquals(2, txnq.size());
         assertEquals(2, txnq2.size());
     }
-
 
     @Test
     public void testQueueOfferRollbackIterator2() {
@@ -383,9 +377,7 @@ public class TransactionTest {
             size++;
         }
         assertEquals(1, size);
-
         txnq.rollback();
-
         it = txnq.iterator();
         size = 0;
         while (it.hasNext()) {
@@ -393,7 +385,6 @@ public class TransactionTest {
             size++;
         }
         assertEquals(1, size);
-
         it = txnq2.iterator();
         size = 0;
         while (it.hasNext()) {
@@ -411,17 +402,12 @@ public class TransactionTest {
         TransactionalQueue txnq2 = newTransactionalQueueProxy("testQueuePollCommitSize");
         txnq.offer("item1");
         txnq.offer("item2");
-
         assertEquals(2, txnq.size());
         assertEquals(2, txnq2.size());
-
         txnq.begin();
-
         assertEquals("item1", txnq.poll());
-
         assertEquals(1, txnq.size());
         assertEquals(1, txnq2.size());
-
         txnq.commit();
         assertEquals(1, txnq.size());
         assertEquals(1, txnq2.size());
@@ -433,17 +419,12 @@ public class TransactionTest {
         TransactionalQueue txnq2 = newTransactionalQueueProxy("testQueuePollRollbackSize");
         txnq.offer("item1");
         txnq.offer("item2");
-
         assertEquals(2, txnq.size());
         assertEquals(2, txnq2.size());
-
         txnq.begin();
-
         assertEquals("item1", txnq.poll());
-
         assertEquals(1, txnq.size());
         assertEquals(1, txnq2.size());
-
         txnq.rollback();
         assertEquals(2, txnq.size());
         assertEquals(2, txnq2.size());
@@ -451,6 +432,20 @@ public class TransactionTest {
         assertEquals("item1", txnq2.poll());
     }
 
+    @Test
+    @Ignore
+    public void testMapEntryLastAccessTime() {
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapEntryLastAccessTime");
+        TransactionalMap txnMap2 = newTransactionalMapProxy("testMapEntryLastAccessTime");
+        txnMap.put ("1", "value1");
+        MapEntry mapEntry = txnMap.getMapEntry("1");
+        System.out.println("txn test time " + mapEntry.getLastAccessTime());
+        txnMap.begin();
+        txnMap.get("1");
+        mapEntry = txnMap.getMapEntry("1");
+        System.out.println("txn test time2 " + mapEntry.getLastAccessTime());
+        txnMap.commit();
+    }
 
     @After
     public void cleanUp() {
@@ -527,7 +522,6 @@ public class TransactionTest {
         void rollback();
     }
 
-
     public static class ThreadBoundInvocationHandler implements InvocationHandler {
         final Object target;
         final ExecutorService es = Executors.newSingleThreadExecutor();
@@ -573,11 +567,9 @@ public class TransactionTest {
                             } catch (InterruptedException ignored) {
                             }
                         }
-
                     }
                 });
             }
-
             Object result = resultQ.poll(5, TimeUnit.SECONDS);
             if (result == null) throw new RuntimeException("Method [" + name + "] took more than 5 seconds!");
             if (name.equals("destroy")) {
@@ -587,9 +579,6 @@ public class TransactionTest {
                 throw ((Throwable) result);
             }
             return (result == NULL_OBJECT) ? null : result;
-
         }
     }
-
-
 }

@@ -86,6 +86,7 @@ public final class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_PUT, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT_IF_ABSENT, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REPLACE_IF_NOT_NULL, new PutOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_REPLACE_IF_SAME, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT_MULTI, new PutMultiOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REMOVE, new RemoveOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REMOVE_IF_SAME, new RemoveOperationHandler());
@@ -434,7 +435,9 @@ public final class ConcurrentMapManager extends BaseManager {
     class MGetMapEntry extends MTargetAwareOp {
         public MapEntry get(String name, Object key) {
             CMap.CMapEntry mapEntry = (CMap.CMapEntry) objectCall(CONCURRENT_MAP_GET_MAP_ENTRY, name, key, null, 0, -1);
-            mapEntry.set(node.factory.getName(), name, key);
+            if (mapEntry != null) {
+                mapEntry.set(node.factory.getName(), name, key);
+            }
             return mapEntry;
         }
     }
@@ -711,7 +714,65 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    public static class MultiData implements DataSerializable {
+        List<Data> lsData = null;
+
+        public MultiData() {
+        }
+
+        public MultiData(Data d1, Data d2) {
+            lsData = new ArrayList<Data>(2);
+            lsData.add(d1);
+            lsData.add(d2);
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            int size = lsData.size();
+            out.writeInt(size);
+            for (int i = 0; i < size; i++) {
+                Data d = lsData.get(i);
+                d.writeData(out);
+            }
+        }
+
+        public void readData(DataInput in) throws IOException {
+            int size = in.readInt();
+            lsData = new ArrayList<Data>(size);
+            for (int i = 0; i < size; i++) {
+                Data data = new Data();
+                data.readData(in);
+                lsData.add(data);
+            }
+        }
+
+        public int size() {
+            return (lsData == null) ? 0 : lsData.size();
+        }
+
+        public List<Data> getAllData() {
+            return lsData;
+        }
+
+        public Data getData(int index) {
+            return (lsData == null) ? null : lsData.get(index);
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("MultiData");
+            sb.append("{size=").append(size());
+            sb.append('}');
+            return sb.toString();
+        }
+    }
+
     class MPut extends MBackupAndMigrationAwareOp {
+
+        public boolean replace(String name, Object key, Object oldValue, Object newValue, long timeout) {
+            Object result = txnalReplaceIfSame(CONCURRENT_MAP_REPLACE_IF_SAME, name, key, newValue, oldValue, timeout);
+            return (result == Boolean.TRUE);
+        }
 
         public Object replace(String name, Object key, Object value, long timeout) {
             return txnalPut(CONCURRENT_MAP_REPLACE_IF_NOT_NULL, name, key, value, timeout);
@@ -725,42 +786,88 @@ public final class ConcurrentMapManager extends BaseManager {
             return txnalPut(CONCURRENT_MAP_PUT, name, key, value, timeout);
         }
 
+        private Object txnalReplaceIfSame(ClusterOperation operation, String name, Object key, Object value, Object expectedValue, long timeout) {
+            ThreadContext threadContext = ThreadContext.get();
+            TransactionImpl txn = threadContext.getCallContext().getCurrentTxn();
+            if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                if (!txn.has(name, key)) {
+                    MLock mlock = new MLock();
+                    boolean locked = mlock
+                            .lockAndReturnOld(name, key, DEFAULT_TXN_TIMEOUT, txn.getId());
+                    if (!locked)
+                        throwCME(key);
+                    Object oldObject = null;
+                    Data oldValue = mlock.oldValue;
+                    if (oldValue != null) {
+                        oldObject = toObject(oldValue);
+                    }
+                    if (oldObject == null) {
+                        return Boolean.FALSE;
+                    } else {
+                        if (expectedValue.equals(oldValue)) {
+                            txn.attachPutOp(name, key, value, false);
+                            return Boolean.TRUE;
+                        } else {
+                            return Boolean.FALSE;
+                        }
+                    }
+                } else {
+                    if (expectedValue.equals(txn.get(name, key))) {
+                        txn.attachPutOp(name, key, value, false);
+                        return Boolean.TRUE;
+                    } else {
+                        return Boolean.FALSE;
+                    }
+                }
+            } else {
+                Data dataExpected = toData(expectedValue);
+                Data dataNew = toData(value);
+                setLocal(operation, name, key, new MultiData(dataExpected, dataNew), timeout, -1);
+                request.longValue = (request.value == null) ? Integer.MIN_VALUE : dataNew.hashCode();
+                setIndexValues(request, value);
+                doOp();
+                Object returnObject = getResultAsBoolean();
+                if (returnObject instanceof AddressAwareException) {
+                    rethrowException(operation, (AddressAwareException) returnObject);
+                }
+                if (returnObject != Boolean.FALSE) {
+                    backup(CONCURRENT_MAP_BACKUP_PUT);
+                }
+                return returnObject;
+            }
+        }
+
         private Object txnalPut(ClusterOperation operation, String name, Object key, Object value, long timeout) {
             ThreadContext threadContext = ThreadContext.get();
             TransactionImpl txn = threadContext.getCallContext().getCurrentTxn();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-                try {
-                    if (!txn.has(name, key)) {
-                        MLock mlock = new MLock();
-                        boolean locked = mlock
-                                .lockAndReturnOld(name, key, DEFAULT_TXN_TIMEOUT, txn.getId());
-                        if (!locked)
-                            throwCME(key);
-                        Object oldObject = null;
-                        Data oldValue = mlock.oldValue;
-                        if (oldValue != null) {
-                            oldObject = toObject(oldValue);
-                        }
-                        txn.attachPutOp(name, key, value, (oldObject == null));
-                        return threadContext.isClient() ? oldValue : oldObject;
-                    } else {
-                        return txn.attachPutOp(name, key, value, false);
+                if (!txn.has(name, key)) {
+                    MLock mlock = new MLock();
+                    boolean locked = mlock
+                            .lockAndReturnOld(name, key, DEFAULT_TXN_TIMEOUT, txn.getId());
+                    if (!locked)
+                        throwCME(key);
+                    Object oldObject = null;
+                    Data oldValue = mlock.oldValue;
+                    if (oldValue != null) {
+                        oldObject = toObject(oldValue);
                     }
-                } catch (Exception e1) {
-                    e1.printStackTrace();
+                    txn.attachPutOp(name, key, value, (oldObject == null));
+                    return threadContext.isClient() ? oldValue : oldObject;
+                } else {
+                    return txn.attachPutOp(name, key, value, false);
                 }
-                return null;
             } else {
                 setLocal(operation, name, key, value, timeout, -1);
                 request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
                 setIndexValues(request, value);
                 doOp();
-                Object oldValue = getResultAsObject();
-                if (oldValue instanceof AddressAwareException) {
-                    rethrowException(operation, (AddressAwareException) oldValue);
+                Object returnObject = getResultAsObject();
+                if (returnObject instanceof AddressAwareException) {
+                    rethrowException(operation, (AddressAwareException) returnObject);
                 }
                 backup(CONCURRENT_MAP_BACKUP_PUT);
-                return oldValue;
+                return returnObject;
             }
         }
     }
@@ -1362,7 +1469,7 @@ public final class ConcurrentMapManager extends BaseManager {
     class PutOperationHandler extends StoreAwareOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            request.response = cmap.put(request);
+            cmap.put(request);
         }
     }
 

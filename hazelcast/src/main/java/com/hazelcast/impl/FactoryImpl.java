@@ -2009,8 +2009,10 @@ public class FactoryImpl implements HazelcastInstance {
 
             public boolean replace(Object key, Object oldValue, Object newValue) {
                 check(key);
+                check(oldValue);
                 check(newValue);
-                throw new UnsupportedOperationException();
+                MPut mput = concurrentMapManager.new MPut();
+                return mput.replace(name, key, oldValue, newValue, -1);
             }
 
             public void lock(Object key) {

@@ -6,8 +6,10 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.nio.Address;
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import org.junit.After;
+import org.junit.Assert;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
@@ -62,6 +64,105 @@ public class ClusterTest {
         map.put("1", "value2");
         assertEquals("value2", map.get("1"));
         assertEquals("value2", h.getMap("default").get("1"));
+    }
+
+    @Test
+    public void testLockInstance() {
+        ILock lock = Hazelcast.getLock("testLock");
+        lock.lock();
+        Collection<Instance> instances = Hazelcast.getInstances();
+        boolean found = false;
+        for (Instance instance : instances) {
+            if (instance.getInstanceType() == Instance.InstanceType.LOCK) {
+                ILock lockInstance = (ILock) instance;
+                if (lockInstance.getLockObject().equals("testLock")) {
+                    found = true;
+                }
+            }
+        }
+        Assert.assertTrue(found);
+        instances = Hazelcast.getInstances();
+        found = false;
+        for (Instance instance : instances) {
+            if (instance.getInstanceType() == Instance.InstanceType.LOCK) {
+                ILock lockInstance = (ILock) instance;
+                if (lockInstance.getLockObject().equals("testLock2")) {
+                    found = true;
+                }
+            }
+        }
+        assertFalse(found);
+        Hazelcast.getLock("testLock2");
+        instances = Hazelcast.getInstances();
+        found = false;
+        for (Instance instance : instances) {
+            if (instance.getInstanceType() == Instance.InstanceType.LOCK) {
+                ILock lockInstance = (ILock) instance;
+                if (lockInstance.getLockObject().equals("testLock2")) {
+                    found = true;
+                }
+            }
+        }
+        Assert.assertTrue(found);
+    }
+
+    @Test
+    public void testPutIfAbsentWhenThereIsTTL() throws InterruptedException {
+        String mapName = "busyCorIds";
+        int ttl = 2;
+        Config myConfig = configTTLForMap(mapName, ttl);
+        Hazelcast.init(myConfig);
+        IMap<String, String> myMap = Hazelcast.getMap(mapName);
+        String one = "1";
+        myMap.put(one, one);
+        String myValue = myMap.get(one);
+        Assert.assertTrue(myMap.containsKey(one));
+        Thread.sleep((ttl + 1) * 1000);
+        myValue = myMap.get(one);
+        assertNull(myValue);
+        String oneone = "11";
+        String existValue = myMap.putIfAbsent(one, oneone);
+        assertNull(existValue);
+        myValue = myMap.get(one);
+        assertEquals(oneone, myValue);
+    }
+
+    @Test
+    public void testPutIfAbsentWhenThereIsTTLAndRemovedBeforeTTL() throws InterruptedException {
+        String mapName = "busyCorIds";
+        int ttl = 2;
+        Config myConfig = configTTLForMap(mapName, ttl);
+        Hazelcast.init(myConfig);
+        IMap<String, String> myMap = Hazelcast.getMap(mapName);
+        String one = "1";
+        myMap.put(one, one);
+        String myValue = myMap.get(one);
+        assertNotNull(myValue);
+        Assert.assertTrue(myMap.containsKey(one));
+        myMap.remove(one);
+        Thread.sleep((ttl + 1) * 1000);
+        myValue = myMap.get(one);
+        assertNull(myValue);
+        String oneone = "11";
+        String existValue = myMap.putIfAbsent(one, oneone);
+        assertNull(existValue);
+        myValue = myMap.get(one);
+        assertEquals(oneone, myValue);
+    }
+
+    private Config configTTLForMap(String mapName, int ttl) {
+        Config myConfig = new Config();
+        Map<String, MapConfig> myHazelcastMapConfigs = myConfig.getMapMapConfigs();
+        MapConfig myMapConfig = myHazelcastMapConfigs.get(mapName);
+        if (myMapConfig == null) {
+            myMapConfig = new MapConfig();
+            myMapConfig.setName(mapName);
+            myMapConfig.setTimeToLiveSeconds(ttl);
+            myHazelcastMapConfigs.put(mapName, myMapConfig);
+        } else {
+            myMapConfig.setTimeToLiveSeconds(ttl);
+        }
+        return myConfig;
     }
 
     @Test(timeout = 60000)
@@ -400,9 +501,7 @@ public class ClusterTest {
      * Testing if we are losing any data when we start a node
      * or when we shutdown a node.
      * <p/>
-     * If this test ever fails, it might be because of the fact
-     * that we are not waiting enough between the shutdowns.
-     * We might have to add Thread.sleep(2000) so that we will give
+     * Before the shutdowns we are waiting 2 seconds so that we will give
      * remaining members some time to backup their data.
      */
     @Test(timeout = 60000)
@@ -428,13 +527,16 @@ public class ClusterTest {
         assertEquals(1000, map2.size());
         assertEquals(1000, map3.size());
         assertEquals(1000, map4.size());
+        Thread.sleep(2000);
         h4.shutdown();
         assertEquals(1000, map1.size());
         assertEquals(1000, map2.size());
         assertEquals(1000, map3.size());
+        Thread.sleep(2000);
         h1.shutdown();
         assertEquals(1000, map2.size());
         assertEquals(1000, map3.size());
+        Thread.sleep(2000);
         h2.shutdown();
         assertEquals(1000, map3.size());
     }

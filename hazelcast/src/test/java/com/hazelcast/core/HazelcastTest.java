@@ -1,7 +1,5 @@
 package com.hazelcast.core;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.fail;
 import static org.junit.Assert.*;
@@ -37,7 +35,7 @@ public class HazelcastTest {
 
     @Test
     public void testProxySerialization() {
-        IMap mapProxy = Hazelcast.getMap ("proxySerialization");
+        IMap mapProxy = Hazelcast.getMap("proxySerialization");
         ILock mapLock = Hazelcast.getLock(mapProxy);
     }
 
@@ -69,6 +67,20 @@ public class HazelcastTest {
         assertEquals("New World", map.get("Hello"));
         assertEquals(1, map.size());
         assertEquals("World", value);
+    }
+
+    @Test
+    public void testMapReplaceIfSame() {
+        IMap<String, String> map = Hazelcast.getMap("testMapReplaceIfSame");
+        assertFalse(map.replace("Hello", "Java", "World"));
+        String value = map.put("Hello", "World");
+        assertEquals("World", map.get("Hello"));
+        assertEquals(1, map.size());
+        assertNull(value);
+        assertFalse(map.replace("Hello", "Java", "NewWorld"));
+        assertTrue(map.replace("Hello", "World", "NewWorld"));
+        assertEquals("NewWorld", map.get("Hello"));
+        assertEquals(1, map.size());
     }
 
     @Test
@@ -599,103 +611,5 @@ public class HazelcastTest {
             }
         }
         assertFalse(found);
-    }
-
-    @Test
-    public void testLockInstance() {
-        ILock lock = Hazelcast.getLock("testLock");
-        lock.lock();
-        Collection<Instance> instances = Hazelcast.getInstances();
-        boolean found = false;
-        for (Instance instance : instances) {
-            if (instance.getInstanceType() == Instance.InstanceType.LOCK) {
-                ILock lockInstance = (ILock) instance;
-                if (lockInstance.getLockObject().equals("testLock")) {
-                    found = true;
-                }
-            }
-        }
-        assertTrue(found);
-        instances = Hazelcast.getInstances();
-        found = false;
-        for (Instance instance : instances) {
-            if (instance.getInstanceType() == Instance.InstanceType.LOCK) {
-                ILock lockInstance = (ILock) instance;
-                if (lockInstance.getLockObject().equals("testLock2")) {
-                    found = true;
-                }
-            }
-        }
-        assertFalse(found);
-        Hazelcast.getLock("testLock2");
-        instances = Hazelcast.getInstances();
-        found = false;
-        for (Instance instance : instances) {
-            if (instance.getInstanceType() == Instance.InstanceType.LOCK) {
-                ILock lockInstance = (ILock) instance;
-                if (lockInstance.getLockObject().equals("testLock2")) {
-                    found = true;
-                }
-            }
-        }
-        assertTrue(found);
-    }
-
-    @Test
-    public void testPutIfAbsentWhenThereIsTTLAndRemovedBeforeTTL() throws InterruptedException {
-        String mapName = "busyCorIds";
-        int ttl = 2;
-        Config myConfig = configTTLForMap(mapName, ttl);
-        Hazelcast.init(myConfig);
-        IMap<String, String> myMap = Hazelcast.getMap(mapName);
-        String one = "1";
-        myMap.put(one, one);
-        String myValue = myMap.get(one);
-        assertTrue(myMap.containsKey(one));
-        myMap.remove(one);
-        Thread.sleep((ttl + 1) * 1000);
-        myValue = myMap.get(one);
-        assertNull(myValue);
-        String oneone = "11";
-        String existValue = myMap.putIfAbsent(one, oneone);
-        assertNull(existValue);
-        myValue = myMap.get(one);
-        assertEquals(oneone, myValue);
-    }
-
-    @Test
-    public void testPutIfAbsentWhenThereIsTTL() throws InterruptedException {
-        String mapName = "busyCorIds";
-        int ttl = 2;
-        Config myConfig = configTTLForMap(mapName, ttl);
-        Hazelcast.init(myConfig);
-        IMap<String, String> myMap = Hazelcast.getMap(mapName);
-        String one = "1";
-        myMap.put(one, one);
-        String myValue = myMap.get(one);
-        assertTrue(myMap.containsKey(one));
-        Thread.sleep((ttl + 1) * 1000);
-        myValue = myMap.get(one);
-        assertNull(myValue);
-        String oneone = "11";
-        String existValue = myMap.putIfAbsent(one, oneone);
-        assertNull(existValue);
-        myValue = myMap.get(one);
-        assertEquals(oneone, myValue);
-    }
-
-    private Config configTTLForMap(String mapName, int ttl) {
-        Config myConfig = new Config();
-        Map<String, MapConfig> myHazelcastMapConfigs = myConfig.getMapMapConfigs();
-        MapConfig myMapConfig = myHazelcastMapConfigs.get(mapName);
-        if (myMapConfig == null) {
-            myMapConfig = new MapConfig();
-            myMapConfig.setName(mapName);
-            myMapConfig.setTimeToLiveSeconds(ttl);
-            myHazelcastMapConfigs.put(mapName, myMapConfig);
-        } else {
-            myMapConfig.setTimeToLiveSeconds(ttl);
-        }
-        return myConfig;
     }
 }

@@ -42,6 +42,8 @@ class TransactionImpl implements Transaction {
 
         public boolean queue = false;
 
+        public long lastAccess = -1;
+
         public TransactionRecord(final String name, final Object key, final Object value,
                                  final boolean newRecord) {
             this.name = name;
@@ -214,6 +216,7 @@ class TransactionImpl implements Transaction {
             return null;
         if (rec.removed)
             return null;
+        rec.lastAccess = System.currentTimeMillis();
         return rec.value;
     }
 
