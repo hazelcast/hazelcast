@@ -642,7 +642,7 @@ public class FactoryImpl implements HazelcastInstance {
             name = in.readUTF();
             boolean keyNull = in.readBoolean();
             if (!keyNull) {
-                key = readObject (in);
+                key = readObject(in);
             }
         }
 
@@ -1321,11 +1321,27 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public int drainTo(Collection c) {
-                throw new UnsupportedOperationException();
+                return drainTo(c, Integer.MAX_VALUE);
             }
 
             public int drainTo(Collection c, int maxElements) {
-                throw new UnsupportedOperationException();
+                if (c == null) throw new NullPointerException("drainTo null!");
+                if (maxElements < 0) throw new IllegalArgumentException("Negative maxElements:" + maxElements);
+                if (maxElements == 0) return 0;
+                if (c instanceof QProxy) {
+                    QProxy q = (QProxy) c;
+                    if (q.getName().equals(getName())) {
+                        throw new IllegalArgumentException("Cannot drainTo self!");
+                    }
+                }
+                Object value = poll();
+                int added = 0;
+                while (added < maxElements && value != null) {
+                    c.add(value);
+                    added++;
+                    value = poll();
+                }
+                return added;
             }
 
             public void destroy() {
