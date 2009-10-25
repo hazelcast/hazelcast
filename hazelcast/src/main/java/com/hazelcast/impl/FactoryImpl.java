@@ -1337,7 +1337,9 @@ public class FactoryImpl implements HazelcastInstance {
                 Object value = poll();
                 int added = 0;
                 while (added < maxElements && value != null) {
-                    c.add(value);
+                    if (!c.add(value)) {
+                        throw new RuntimeException("drainTo collection is not able to add!");
+                    }
                     added++;
                     value = poll();
                 }
