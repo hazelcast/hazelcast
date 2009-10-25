@@ -77,17 +77,16 @@ public class MulticastService implements Runnable {
                 final JoinInfo joinInfo = receive();
                 if (joinInfo != null) {
                     if (node.address != null && !node.address.equals(joinInfo.address)) {
-                        if (config.getGroupName().equals(joinInfo.groupName)) {
-                            if (config.getGroupPassword().equals(joinInfo.groupPassword)) {
-                                if (node.master()) {
-                                    if (joinInfo.request) {
-                                        send(joinInfo.copy(false, node.address));
-                                    }
-                                } else {
-                                    if (!node.joined() && !joinInfo.request) {
-                                        if (node.masterAddress == null) {
-                                            node.masterAddress = new Address(joinInfo.address);
-                                        }
+                        if (config.getGroupName().equals(joinInfo.groupName) &&
+                                config.getGroupPassword().equals(joinInfo.groupPassword)) {
+                            if (node.master()) {
+                                if (joinInfo.request) {
+                                    send(joinInfo.copy(false, node.address));
+                                }
+                            } else {
+                                if (!node.joined() && !joinInfo.request) {
+                                    if (node.masterAddress == null) {
+                                        node.masterAddress = new Address(joinInfo.address);
                                     }
                                 }
                             }

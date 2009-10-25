@@ -17,6 +17,7 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.*;
@@ -262,6 +263,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     void doRemoveAddress(Address deadAddress) {
         log("Removing Address " + deadAddress);
         if (!node.joined()) {
+            node.failedConnection(deadAddress);
             return;
         }
         if (deadAddress.equals(thisAddress))
@@ -281,29 +283,29 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         if (isMaster()) {
             setJoins.remove(new MemberInfo(deadAddress));
         }
-        lsMembersBefore.clear();
-        for (MemberImpl member : lsMembers) {
-            lsMembersBefore.add(member);
-        }
         Connection conn = node.connectionManager.getConnection(deadAddress);
         if (conn != null) {
             node.connectionManager.remove(conn);
         }
         MemberImpl member = getMember(deadAddress);
         if (member != null) {
+            lsMembersBefore.clear();
+            for (MemberImpl memberBefore : lsMembers) {
+                lsMembersBefore.add(memberBefore);
+            }
             removeMember(deadAddress);
+            node.blockingQueueManager.syncForDead(deadAddress);
+            node.concurrentMapManager.syncForDead(deadAddress);
+            node.listenerManager.syncForDead(deadAddress);
+            node.topicManager.syncForDead(deadAddress);
+            node.getClusterImpl().setMembers(lsMembers);
+            // toArray will avoid CME as onDisconnect does remove the calls
+            Object[] calls = mapCalls.values().toArray();
+            for (Object call : calls) {
+                ((Call) call).onDisconnect(deadAddress);
+            }
+            logger.log(Level.INFO, this.toString());
         }
-        node.blockingQueueManager.syncForDead(deadAddress);
-        node.concurrentMapManager.syncForDead(deadAddress);
-        node.listenerManager.syncForDead(deadAddress);
-        node.topicManager.syncForDead(deadAddress);
-        node.getClusterImpl().setMembers(lsMembers);
-        // toArray will avoid CME as onDisconnect does remove the calls
-        Object[] calls = mapCalls.values().toArray();
-        for (Object call : calls) {
-            ((Call) call).onDisconnect(deadAddress);
-        }
-        logger.log(Level.INFO, this.toString());
     }
 
     public List<MemberImpl> getMembersBeforeSync() {
@@ -323,8 +325,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     public boolean isPreviousChanged() {
         int indexBefore = (lsMembersBefore.indexOf(thisMember));
         int indexNow = (lsMembers.indexOf(thisMember));
-        MemberImpl previousMemberBefore = getMemberAt(lsMembersBefore, (indexBefore -1));
-        MemberImpl previousMemberNow = getMemberAt(lsMembers, (indexNow -1));
+        MemberImpl previousMemberBefore = getMemberAt(lsMembersBefore, (indexBefore - 1));
+        MemberImpl previousMemberNow = getMemberAt(lsMembers, (indexNow - 1));
         if (previousMemberBefore == null) {
             return (previousMemberNow != null);
         } else {
@@ -341,29 +343,35 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         if (getMember(joinRequest.address) != null)
             return;
         Connection conn = joinRequest.getConnection();
-        if (!node.getConfig().getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
-            if (node.getMasterAddress() != null && !isMaster()) {
-                sendProcessableTo(new Master(node.getMasterAddress()), conn);
-            }
-        }
-        if (isMaster()) {
-            if (joinRequest.to != null && !joinRequest.to.equals(thisAddress)) {
-                sendProcessableTo(new Master(node.getMasterAddress()), conn);
-                return;
-            }
-            Address newAddress = joinRequest.address;
-            if (!joinInProgress) {
-                MemberInfo newMemberInfo = new MemberInfo(newAddress, joinRequest.nodeType);
-                if (setJoins.add(newMemberInfo)) {
+        Config config = node.getConfig();
+        if (config.getGroupName().equals(joinRequest.groupName) &&
+                config.getGroupPassword().equals(joinRequest.groupPassword)) {
+            if (!node.getConfig().getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
+                if (node.getMasterAddress() != null && !isMaster()) {
                     sendProcessableTo(new Master(node.getMasterAddress()), conn);
-                    // sendAddRemoveToAllConns(newAddress);
-                    timeToStartJoin = System.currentTimeMillis() + WAIT_MILLIS_BEFORE_JOIN;
-                } else {
-                    if (System.currentTimeMillis() > timeToStartJoin) {
-                        startJoin();
+                }
+            }
+            if (isMaster()) {
+                if (joinRequest.to != null && !joinRequest.to.equals(thisAddress)) {
+                    sendProcessableTo(new Master(node.getMasterAddress()), conn);
+                    return;
+                }
+                Address newAddress = joinRequest.address;
+                if (!joinInProgress) {
+                    MemberInfo newMemberInfo = new MemberInfo(newAddress, joinRequest.nodeType);
+                    if (setJoins.add(newMemberInfo)) {
+                        sendProcessableTo(new Master(node.getMasterAddress()), conn);
+                        // sendAddRemoveToAllConns(newAddress);
+                        timeToStartJoin = System.currentTimeMillis() + WAIT_MILLIS_BEFORE_JOIN;
+                    } else {
+                        if (System.currentTimeMillis() > timeToStartJoin) {
+                            startJoin();
+                        }
                     }
                 }
             }
+        } else {
+            conn.close();
         }
     }
 

@@ -34,9 +34,8 @@ import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,7 +51,7 @@ public class Node {
 
     private final ClusterImpl clusterImpl;
 
-    private final BlockingQueue<Address> failedConnections = new LinkedBlockingQueue<Address>();
+    private final Set<Address> failedConnections = new CopyOnWriteArraySet<Address>();
 
     private final ShutdownHookThread shutdownHookThread = new ShutdownHookThread();
 
@@ -243,7 +242,7 @@ public class Node {
     }
 
     public void failedConnection(final Address address) {
-        failedConnections.offer(address);
+        failedConnections.add(address);
     }
 
     public ClusterImpl getClusterImpl() {
@@ -551,6 +550,7 @@ public class Node {
 
     private void joinViaPossibleMembers() {
         try {
+            failedConnections.clear();
             final List<Address> lsPossibleAddresses = getPossibleMembers();
             lsPossibleAddresses.remove(address);
             for (final Address adrs : lsPossibleAddresses) {
@@ -561,10 +561,7 @@ public class Node {
             int numberOfSeconds = 0;
             while (!found
                     && numberOfSeconds < config.getNetworkConfig().getJoin().getJoinMembers().getConnectionTimeoutSeconds()) {
-                Address addressFailed;
-                while ((addressFailed = failedConnections.poll()) != null) {
-                    lsPossibleAddresses.remove(addressFailed);
-                }
+                lsPossibleAddresses.removeAll(failedConnections);
                 if (lsPossibleAddresses.size() == 0)
                     break;
                 Thread.sleep(1000);
@@ -586,6 +583,7 @@ public class Node {
             } else {
                 while (!joined) {
                     int numberOfJoinReq = 0;
+                    lsPossibleAddresses.removeAll(failedConnections);
                     for (final Address adrs : lsPossibleAddresses) {
                         final Connection conn = connectionManager.getOrConnect(adrs);
                         if (conn != null && numberOfJoinReq < 5) {

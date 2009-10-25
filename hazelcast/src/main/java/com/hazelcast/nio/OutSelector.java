@@ -46,8 +46,6 @@ public class OutSelector extends SelectorBase {
 
         SocketChannel socketChannel = null;
 
-        int numberOfConnectionError = 0;
-
         public Connector(Address address) {
             this.address = address;
         }
@@ -68,12 +66,7 @@ public class OutSelector extends SelectorBase {
                             + e.getMessage();
                     logger.log(Level.FINEST, msg, e);
                     socketChannel.close();
-                    if (numberOfConnectionError++ < 2) {
-                        logger.log(Level.FINEST, "Couldn't finish connecting, will try again. cause: "
-                                + e.getMessage());
-                    } else {
-                        node.connectionManager.failedConnection(address);
-                    }
+                    node.connectionManager.failedConnection(address);
                 } catch (final Exception ignored) {
                 }
             }
@@ -107,14 +100,7 @@ public class OutSelector extends SelectorBase {
                     } catch (final IOException ignored) {
                     }
                 }
-                if (numberOfConnectionError++ < 2) {
-                    logger.log(Level.FINEST,
-                            "Couldn't register connect! will trying again. cause: "
-                                    + e.getMessage(), e);
-                    run();
-                } else {
-                    node.connectionManager.failedConnection(address);
-                }
+                node.connectionManager.failedConnection(address);
             }
         }
     }

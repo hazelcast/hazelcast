@@ -65,6 +65,30 @@ public class ClusterTest {
     }
 
     @Test(timeout = 60000)
+    public void testDifferentGroups() {
+        Config c1 = new XmlConfigBuilder().build();
+        c1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        c1.getNetworkConfig().getInterfaces().getLsInterfaces().clear();
+        c1.getNetworkConfig().getInterfaces().getLsInterfaces().add("127.0.0.1");
+        c1.getNetworkConfig().getInterfaces().setEnabled(true);
+        Config c2 = new XmlConfigBuilder().build();
+        c2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        c2.getNetworkConfig().getInterfaces().getLsInterfaces().clear();
+        c2.getNetworkConfig().getInterfaces().getLsInterfaces().add("127.0.0.1");
+        c2.getNetworkConfig().getInterfaces().setEnabled(true);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c1);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
+        assertEquals(2, h1.getCluster().getMembers().size());
+        assertEquals(2, h2.getCluster().getMembers().size());
+        Hazelcast.shutdownAll();
+        c2.setGroupName("differentGroup");
+        h1 = Hazelcast.newHazelcastInstance(c1);
+        h2 = Hazelcast.newHazelcastInstance(c2);
+        assertEquals(1, h1.getCluster().getMembers().size());
+        assertEquals(1, h2.getCluster().getMembers().size());
+    }
+
+    @Test(timeout = 60000)
     public void shutdownSuperClient() {
         Config c1 = new XmlConfigBuilder().build();
         c1.setPortAutoIncrement(false);
