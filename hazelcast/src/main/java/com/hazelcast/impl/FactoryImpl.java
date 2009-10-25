@@ -29,6 +29,7 @@ import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import static com.hazelcast.nio.IOUtil.*;
+import com.hazelcast.nio.SerializationHelper;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 
@@ -616,7 +617,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    public static class ProxyKey implements Serializable {
+    public static class ProxyKey extends SerializationHelper implements DataSerializable {
         String name;
         Object key;
 
@@ -626,6 +627,23 @@ public class FactoryImpl implements HazelcastInstance {
         public ProxyKey(String name, Object key) {
             this.name = name;
             this.key = key;
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(name);
+            boolean keyNull = (key == null);
+            out.writeBoolean(keyNull);
+            if (!keyNull) {
+                writeObject(out, key);
+            }
+        }
+
+        public void readData(DataInput in) throws IOException {
+            name = in.readUTF();
+            boolean keyNull = in.readBoolean();
+            if (!keyNull) {
+                key = readObject (in);
+            }
         }
 
         @Override
@@ -1571,9 +1589,9 @@ public class FactoryImpl implements HazelcastInstance {
 
         private transient MProxy mproxyReal = null;
 
-        private ConcurrentMapManager concurrentMapManager = null;
+        private transient ConcurrentMapManager concurrentMapManager = null;
 
-        private ListenerManager listenerManager = null;
+        private transient ListenerManager listenerManager = null;
 
         private volatile transient MProxy dynamicProxy;
 

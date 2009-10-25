@@ -42,8 +42,12 @@ public class SerializationHelper {
         } else if (obj instanceof Boolean) {
             out.writeByte(6);
             out.writeBoolean((Boolean) obj);
-        } else {
+        } else if (obj instanceof DataSerializable) {
             out.writeByte(7);
+            out.writeUTF(obj.getClass().getName());
+            ((DataSerializable) obj).writeData(out);
+        } else {
+            out.writeByte(8);
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             ObjectOutputStream oos = new ObjectOutputStream(bos);
             oos.writeObject(obj);
@@ -71,6 +75,15 @@ public class SerializationHelper {
         } else if (type == 6) {
             return in.readBoolean();
         } else if (type == 7) {
+            DataSerializable ds = null;
+            try {
+                ds = (DataSerializable) Class.forName(in.readUTF()).newInstance();
+            } catch (Throwable e) {
+                throw new IOException(e.getMessage());
+            }
+            ds.readData(in);
+            return ds;
+        } else if (type == 8) {
             int len = in.readInt();
             byte[] buf = new byte[len];
             in.readFully(buf);

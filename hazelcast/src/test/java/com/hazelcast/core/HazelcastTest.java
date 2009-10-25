@@ -1,17 +1,13 @@
 package com.hazelcast.core;
 
-import static junit.framework.Assert.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.fail;
+import static org.junit.Assert.*;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-
-import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -40,6 +36,12 @@ public class HazelcastTest {
     }
 
     @Test
+    public void testProxySerialization() {
+        IMap mapProxy = Hazelcast.getMap ("proxySerialization");
+        ILock mapLock = Hazelcast.getLock(mapProxy);
+    }
+
+    @Test
     public void testMapGetName() {
         IMap<String, String> map = Hazelcast.getMap("testMapGetName");
         assertEquals("testMapGetName", map.getName());
@@ -59,12 +61,10 @@ public class HazelcastTest {
         assertEquals("World", map.get("Hello"));
         assertEquals(1, map.size());
         assertNull(value);
-
         value = map.put("Hello", "World");
         assertEquals("World", map.get("Hello"));
         assertEquals(1, map.size());
         assertEquals("World", value);
-
         value = map.put("Hello", "New World");
         assertEquals("New World", map.get("Hello"));
         assertEquals(1, map.size());
@@ -92,12 +92,10 @@ public class HazelcastTest {
         assertEquals(null, value);
         map.clear();
         assertEquals(0, map.size());
-
         value = map.put("Hello", "World");
         assertEquals(null, value);
         assertEquals("World", map.get("Hello"));
         assertEquals(1, map.size());
-
         map.remove("Hello");
         assertEquals(0, map.size());
     }
@@ -183,13 +181,13 @@ public class HazelcastTest {
         map.put("hello", "new world");
         map.remove("hello");
         try {
-			assertTrue(latchAdded.await(50000, TimeUnit.MILLISECONDS));
-			assertTrue(latchUpdated.await(10, TimeUnit.MILLISECONDS));
-			assertTrue(latchRemoved.await(10, TimeUnit.MILLISECONDS));
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-			assertFalse(e.getMessage(), true);
-		}
+            assertTrue(latchAdded.await(50000, TimeUnit.MILLISECONDS));
+            assertTrue(latchUpdated.await(10, TimeUnit.MILLISECONDS));
+            assertTrue(latchRemoved.await(10, TimeUnit.MILLISECONDS));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            assertFalse(e.getMessage(), true);
+        }
     }
 
     @Test
@@ -315,7 +313,6 @@ public class HazelcastTest {
         String[] items = new String[]{"one", "two", "three", "four"};
         set.addAll(Arrays.asList(items));
         assertEquals(4, set.size());
-
         items = new String[]{"four", "five"};
         set.addAll(Arrays.asList(items));
         assertEquals(5, set.size());
@@ -387,14 +384,12 @@ public class HazelcastTest {
         map.put("Hello", "World");
         Collection<String> values = map.get("Hello");
         assertEquals("World", values.iterator().next());
-
         map.put("Hello", "Europe");
         map.put("Hello", "America");
         map.put("Hello", "Asia");
         map.put("Hello", "Africa");
         map.put("Hello", "Antartica");
         map.put("Hello", "Australia");
-
         values = map.get("Hello");
         assertEquals(7, values.size());
     }
@@ -447,7 +442,6 @@ public class HazelcastTest {
         map.put("Hello", "Africa");
         map.put("Hello", "Antartica");
         map.put("Hello", "Australia");
-
         Set<String> keys = map.keySet();
         assertEquals(1, keys.size());
     }
@@ -462,7 +456,6 @@ public class HazelcastTest {
         map.put("Hello", "Africa");
         map.put("Hello", "Antartica");
         map.put("Hello", "Australia");
-
         Collection<String> values = map.values();
         assertEquals(7, values.size());
     }
@@ -533,7 +526,6 @@ public class HazelcastTest {
         map.put(1, "Asia");
         map.put(1, "Europe");
         map.put(2, "Australia");
-
         assertEquals(4, map.valueCount(1));
         assertEquals(3, map.valueCount(2));
     }
@@ -624,7 +616,6 @@ public class HazelcastTest {
             }
         }
         assertTrue(found);
-
         instances = Hazelcast.getInstances();
         found = false;
         for (Instance instance : instances) {
@@ -636,7 +627,6 @@ public class HazelcastTest {
             }
         }
         assertFalse(found);
-
         Hazelcast.getLock("testLock2");
         instances = Hazelcast.getInstances();
         found = false;
@@ -650,73 +640,62 @@ public class HazelcastTest {
         }
         assertTrue(found);
     }
-    @Test
-    public void testPutIfAbsentWhenThereIsTTLAndRemovedBeforeTTL() throws InterruptedException{
-    	  String mapName = "busyCorIds";
-    	  int ttl = 2;
-    	  
-          Config myConfig = configTTLForMap(mapName, ttl);   
-          Hazelcast.init(myConfig);
-          
-          IMap<String, String> myMap = Hazelcast.getMap(mapName);
-          String one = "1";
-          myMap.put(one, one);           
-          String myValue = myMap.get(one);
-          assertTrue(myMap.containsKey(one));
-          myMap.remove(one);
-          
-          Thread.sleep((ttl+1)*1000);
-          
-          myValue = myMap.get(one);
-          assertNull(myValue);
-          String oneone = "11";
-          String existValue = myMap.putIfAbsent(one, oneone);
-          assertNull(existValue);
-          myValue = myMap.get(one);
-          assertEquals(oneone, myValue);
-    }
-    
-    @Test
-    public void testPutIfAbsentWhenThereIsTTL() throws InterruptedException{
-    	  String mapName = "busyCorIds";
-    	  int ttl = 2;
-    	  
-          Config myConfig = configTTLForMap(mapName, ttl);   
-          Hazelcast.init(myConfig);
-          
-          IMap<String, String> myMap = Hazelcast.getMap(mapName);
-          String one = "1";
-          myMap.put(one, one);           
-          String myValue = myMap.get(one);
-          assertTrue(myMap.containsKey(one));
 
-          Thread.sleep((ttl+1)*1000);
-          
-          myValue = myMap.get(one);
-          assertNull(myValue);
-          String oneone = "11";
-          String existValue = myMap.putIfAbsent(one, oneone);
-          assertNull(existValue);
-          myValue = myMap.get(one);
-          assertEquals(oneone, myValue);
+    @Test
+    public void testPutIfAbsentWhenThereIsTTLAndRemovedBeforeTTL() throws InterruptedException {
+        String mapName = "busyCorIds";
+        int ttl = 2;
+        Config myConfig = configTTLForMap(mapName, ttl);
+        Hazelcast.init(myConfig);
+        IMap<String, String> myMap = Hazelcast.getMap(mapName);
+        String one = "1";
+        myMap.put(one, one);
+        String myValue = myMap.get(one);
+        assertTrue(myMap.containsKey(one));
+        myMap.remove(one);
+        Thread.sleep((ttl + 1) * 1000);
+        myValue = myMap.get(one);
+        assertNull(myValue);
+        String oneone = "11";
+        String existValue = myMap.putIfAbsent(one, oneone);
+        assertNull(existValue);
+        myValue = myMap.get(one);
+        assertEquals(oneone, myValue);
     }
 
-	private Config configTTLForMap(String mapName, int ttl) {
-		Config myConfig = new Config();
-          Map<String, MapConfig> myHazelcastMapConfigs = myConfig.getMapMapConfigs();
+    @Test
+    public void testPutIfAbsentWhenThereIsTTL() throws InterruptedException {
+        String mapName = "busyCorIds";
+        int ttl = 2;
+        Config myConfig = configTTLForMap(mapName, ttl);
+        Hazelcast.init(myConfig);
+        IMap<String, String> myMap = Hazelcast.getMap(mapName);
+        String one = "1";
+        myMap.put(one, one);
+        String myValue = myMap.get(one);
+        assertTrue(myMap.containsKey(one));
+        Thread.sleep((ttl + 1) * 1000);
+        myValue = myMap.get(one);
+        assertNull(myValue);
+        String oneone = "11";
+        String existValue = myMap.putIfAbsent(one, oneone);
+        assertNull(existValue);
+        myValue = myMap.get(one);
+        assertEquals(oneone, myValue);
+    }
 
-          MapConfig myMapConfig =  myHazelcastMapConfigs.get(mapName);
-          if (myMapConfig == null)
-          {
-              myMapConfig = new MapConfig();
-              myMapConfig.setName(mapName);
-              myMapConfig.setTimeToLiveSeconds(ttl);
-              myHazelcastMapConfigs.put(mapName, myMapConfig);
-          }
-          else
-          {
-              myMapConfig.setTimeToLiveSeconds(ttl);
-          }
-		return myConfig;
-	}
+    private Config configTTLForMap(String mapName, int ttl) {
+        Config myConfig = new Config();
+        Map<String, MapConfig> myHazelcastMapConfigs = myConfig.getMapMapConfigs();
+        MapConfig myMapConfig = myHazelcastMapConfigs.get(mapName);
+        if (myMapConfig == null) {
+            myMapConfig = new MapConfig();
+            myMapConfig.setName(mapName);
+            myMapConfig.setTimeToLiveSeconds(ttl);
+            myHazelcastMapConfigs.put(mapName, myMapConfig);
+        } else {
+            myMapConfig.setTimeToLiveSeconds(ttl);
+        }
+        return myConfig;
+    }
 }
