@@ -177,21 +177,43 @@ public class HazelcastClientTest{
     public void putAndget100000RecordsWith1ClusterMember(){
       	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
     	hClient = getHazelcastClient(h);
-    	Map<String, String> map = hClient.getMap("default");
-    	long beginTime = System.currentTimeMillis();
-    	int counter = 100000;
     	
+    	Map<String, String> map = hClient.getMap("default");
+    	
+    	putAndGet(map, 100000);
+    }
+    
+    @Test
+    public void testSuperClient(){
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	
+    	Config c2 = new XmlConfigBuilder().build();
+        c2.setPortAutoIncrement(false);
+        c2.setPort(5710);
+        c2.setSuperClient(true);
+        HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(c2);
+        
+        Map<String,String> map = hSuper.getMap("default");
+        
+        putAndGet(map, 100000);
+
+    }
+    
+	private void putAndGet(Map<String, String> map, int counter) {
+		long beginTime = System.currentTimeMillis();
     	System.out.println("PUT");
     	for (int i = 0; i < counter; i++) {
-    		if(i%1000 == 0){
+    		if(i%10000 == 0){
     			System.out.println(i+": "+(System.currentTimeMillis()-beginTime)+" ms");
     		}
 			map.put("key_"+i, String.valueOf(i));
 		}
+    	System.out.println(System.currentTimeMillis()-beginTime);
+
     	beginTime = System.currentTimeMillis();
     	System.out.println("GET");
     	for (int i = 0; i < counter; i++) {
-    		if(i%1000 == 0){
+    		if(i%10000 == 0){
     			System.out.println(i+": "+(System.currentTimeMillis()-beginTime)+" ms");
     		}
     		assertEquals(String.valueOf(i), map.get("key_"+i));
@@ -199,25 +221,9 @@ public class HazelcastClientTest{
     	
 //    	assertEquals(String.valueOf(i), map.get("key_"+i));
     	System.out.println(System.currentTimeMillis()-beginTime);
-    }
+	}
     
-    @Test
-    public void testSuperClient(){
-    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	Config c2 = new XmlConfigBuilder().build();
-        c2.setPortAutoIncrement(false);
-        c2.setPort(5710);
-        // make sure to super client = true
-        c2.setSuperClient(true);
-        HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(c2);
-        Map map = hSuper.getMap("map");
-        long time = System.currentTimeMillis();
-        for (int i = 0; i < 1000; i++) {
-			map.put("a", "b");
-		}
-        System.out.println(System.currentTimeMillis()-time);
 
-    }
     
 	public static void printThreads() {
 		System.out.println("All running threads");
