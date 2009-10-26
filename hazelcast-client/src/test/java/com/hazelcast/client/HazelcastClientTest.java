@@ -64,7 +64,6 @@ public class HazelcastClientTest{
         assertEquals("CBDEF", oldValue);
         assertEquals(1, realMap.size());
         result = clientMap.put("1", "B");
-        System.out.println("DONE" + result);
         assertEquals("CBDEF", result);
     }
 
@@ -141,20 +140,17 @@ public class HazelcastClientTest{
         map.addEntryListener(new EntryListener<String, String>() {
             public void entryAdded(EntryEvent<String, String> event) {
             	entryAddLatch.countDown();
-            	System.out.println("Added");
                 assertEquals("hello", event.getKey());
             }
 
             public void entryRemoved(EntryEvent<String, String> event) {
                 entryRemovedLatch.countDown();
-                System.out.println("Removed");
                 assertEquals("hello", event.getKey());
                 assertEquals("new world", event.getValue());
             }
 
             public void entryUpdated(EntryEvent<String, String> event) {
             	entryUpdatedLatch.countDown();
-            	System.out.println("Updated");
                 assertEquals("new world", event.getValue());
                 assertEquals("hello", event.getKey());
             }
@@ -229,13 +225,11 @@ public class HazelcastClientTest{
 
     
 	public static void printThreads() {
-		System.out.println("All running threads");
 		Thread[] threads = getAllThreads();
 		for (int i = 0; i < threads.length; i++) {
 			Thread t = threads[i];
 			System.out.println(t.getName());
 		}
-		System.out.println("End of running threads");
 	}
 	static ThreadGroup rootThreadGroup = null;
 

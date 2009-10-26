@@ -65,14 +65,10 @@ public class DynamicClusterTest {
         int counter = 0;
         realMap.get("key");
         while (counter < 3) {
-            System.out.println("COUNTER: " + counter);
             map.put("key", counter);
             assertEquals(counter, map.get("key"));
-            System.out.println("ASSERT MAP.GET");
-            System.out.println("ASSERT REALMAP.GET");
             assertEquals(counter, realMap.get("key"));
             memberMap.get(client.getConnectionManager().getConnection().getAddress().getPort()).shutdown();
-            System.out.println("Killed member");
             counter++;
         }
     }
@@ -91,20 +87,17 @@ public class DynamicClusterTest {
         final CountDownLatch entryRemovedLatch = new CountDownLatch(2);
         map.addEntryListener(new EntryListener<String,String>() {
             public void entryAdded(EntryEvent<String,String> event) {
-                System.out.println("Added " + event.getValue());
                 assertEquals("hello", event.getKey());
                 entryAddLatch.countDown();
             }
 
             public void entryRemoved(EntryEvent<String,String> event) {
-                System.out.println("removed " + event.getValue());
                 entryRemovedLatch.countDown();
                 assertEquals("hello", event.getKey());
                 assertEquals("new world", event.getValue());
             }
 
             public void entryUpdated(EntryEvent<String,String> event) {
-                System.out.println("Updated " + event.getValue());
                 assertEquals("new world", event.getValue());
                 assertEquals("hello", event.getKey());
                 entryUpdatedLatch.countDown();
