@@ -17,6 +17,8 @@
 
 package com.hazelcast.client;
 
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -32,9 +34,11 @@ import javax.net.SocketFactory;
  *
  */
 public class Connection {
+	private static final int BUFFER_SIZE = 1*1024;
 	private Socket socket;
 	private InetSocketAddress address;
 	private int id = -1;
+	private DataOutputStream dos;
 
 	/**
 	 * Creates the Socket to the given host and port
@@ -48,6 +52,7 @@ public class Connection {
 		try {
 			setSocket(SocketFactory.getDefault().createSocket(host, port));
 			socket.setKeepAlive(true);
+			dos = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(),BUFFER_SIZE));
 			this.id = id;
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
@@ -84,5 +89,9 @@ public class Connection {
 	public String toString() {
 		
 		return "Connection ["+id+"]" + " ["+address+"]"; 
+	}
+
+	public DataOutputStream getOutputStream() {
+		return dos;
 	}
 }

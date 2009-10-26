@@ -19,7 +19,6 @@ package com.hazelcast.client;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.Socket;
 
 
 public class PacketWriter extends PacketHandler{
@@ -28,8 +27,7 @@ public class PacketWriter extends PacketHandler{
 		write(getConnection(),request);
 	}
 	public void write(Connection connection, Packet request) throws IOException {
-		Socket socket = connection.getSocket();
-		DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+		DataOutputStream dos= connection.getOutputStream();
 		request.writeTo(dos);
 		dos.flush();
 	}
