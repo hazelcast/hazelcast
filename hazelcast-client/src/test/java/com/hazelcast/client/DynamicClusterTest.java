@@ -40,9 +40,9 @@ public class DynamicClusterTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
         client = getHazelcastClient(h1, h2);
-        Map<String, Integer> realMap = h3.getMap("default");
+        Map realMap = h3.getMap("default");
         Map<Integer, HazelcastInstance> memberMap = getMapOfClusterMembers(h1, h2);
-        Map<String, Integer> map = client.getMap("default");
+        Map map = client.getMap("default");
         int counter = 0;
         while (counter < 2) {
             map.put("key", counter);
@@ -58,10 +58,10 @@ public class DynamicClusterTest {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
-        Map<String,Integer> realMap = h3.getMap("default");
+        Map realMap = h3.getMap("default");
         Map<Integer, HazelcastInstance> memberMap = getMapOfClusterMembers(h1, h2);
         client = getHazelcastClient(h1, h2);
-        Map<String,Integer> map = client.getMap("default");
+        Map map = client.getMap("default");
         int counter = 0;
         realMap.get("key");
         while (counter < 3) {

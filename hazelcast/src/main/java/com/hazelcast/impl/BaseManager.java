@@ -659,11 +659,11 @@ public abstract class BaseManager {
             if (result == OBJECT_REDO) {
                 request.redoCount++;
                 try {
-                    Thread.sleep(1000 * request.redoCount);
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                if (request.redoCount > 5) {
+                if (request.redoCount > 15) {
                     logger.log(Level.INFO, request.name + " Re-doing [" + request.redoCount + "] times! " + this);
                     logger.log(Level.INFO, "\t key= " + request.key + ", req.operation: " + request.operation);
                 }
@@ -862,7 +862,7 @@ public abstract class BaseManager {
                 Object result = localCall.getResultAsObject();
                 if (result == OBJECT_REDO) {
                     onRedo();
-                    Thread.sleep(2000);
+                    Thread.sleep(1000);
                     return call();
                 }
                 if (onResponse(result)) {
@@ -880,7 +880,7 @@ public abstract class BaseManager {
                         result = call.getResultAsObject();
                         if (result == OBJECT_REDO) {
                             onRedo();
-                            Thread.sleep(2000);
+                            Thread.sleep(1000);
                             return call();
                         } else {
                             if (!onResponse(result)) {

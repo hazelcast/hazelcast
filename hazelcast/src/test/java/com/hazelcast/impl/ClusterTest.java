@@ -13,10 +13,9 @@ import org.junit.Assert;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Random;
+import java.io.Serializable;
+import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -573,6 +572,54 @@ public class ClusterTest {
             assertEquals(1000, map2.size());
             assertEquals(1000, map3.size());
             assertEquals(1000, map4.size());
+        }
+    }
+
+    @Test(timeout = 240000)
+    public void testExecutorServiceAndMigration() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        List<DistributedTask> tasks = new ArrayList<DistributedTask>(10000);
+        List<ExecutorServiceAndMigrationCallable> callables = new ArrayList<ExecutorServiceAndMigrationCallable>(10000);
+        for (int i = 0; i < 10000; i++) {
+            ExecutorServiceAndMigrationCallable callable = new ExecutorServiceAndMigrationCallable(i);
+            DistributedTask task = new DistributedTask(callable, "T1");
+            Hazelcast.getExecutorService().execute(task);
+            tasks.add(task);
+            callables.add(callable);
+        }
+        for (int i = 0; i < 10000; i++) {
+            ExecutorServiceAndMigrationCallable callable = callables.get(i);
+            DistributedTask task = tasks.get(i);
+            assertEquals(callable.getInput(), task.get(20, TimeUnit.SECONDS));
+        }
+    }
+
+    public static class ExecutorServiceAndMigrationCallable implements Callable<Integer>, Serializable {
+        int i;
+
+        private ExecutorServiceAndMigrationCallable(int i) {
+            this.i = i;
+        }
+
+        public int getInput() {
+            return i;
+        }
+
+        public Integer call() throws Exception {
+            IMap<Object, Object> map = Hazelcast.getMap("map1");
+            map.lock("T1");
+            try {
+                ISet<Object> set = Hazelcast.getSet("s1");
+                set.size();
+                set.add(i);
+                if (i % 10 == 0) {
+                    set.remove(i);
+                }
+            }
+            finally {
+                map.unlock("T1");
+            }
+            return i;
         }
     }
 }

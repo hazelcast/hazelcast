@@ -39,12 +39,12 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 		this.client = client;
 	}
 
-	public void addEntryListener(EntryListener listener, boolean includeValue) {
+	public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
 
 		addEntryListener(listener, null, includeValue);
 	}
 
-	public void addEntryListener(EntryListener listener, K key,
+	public void addEntryListener(EntryListener<K, V> listener, K key,
 			boolean includeValue) {
 		Packet request = createRequestPacket();
 	    
@@ -89,12 +89,12 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 		
 	}
 
-	public void removeEntryListener(EntryListener listener) {
+	public void removeEntryListener(EntryListener<K, V> listener) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	public void removeEntryListener(EntryListener listener, K key) {
+	public void removeEntryListener(EntryListener<K, V> listener, K key) {
 		// TODO Auto-generated method stub
 		
 	}

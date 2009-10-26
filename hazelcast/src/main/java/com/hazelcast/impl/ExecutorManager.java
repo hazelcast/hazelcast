@@ -42,6 +42,8 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
 
     private final ThreadPoolExecutor executor;
 
+    private final ThreadPoolExecutor executorForMigrations;
+
     private final Map<RemoteExecutionId, SimpleExecution> mapRemoteExecutions = new ConcurrentHashMap<RemoteExecutionId, SimpleExecution>(
             1000);
 
@@ -50,7 +52,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
 
     private final BlockingQueue<Long> executionIds = new ArrayBlockingQueue<Long>(100);
 
-    private boolean started = false;
+    private volatile boolean started = false;
 
     ExecutorManager(Node node) {
         super(node);
@@ -78,7 +80,11 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         }
         executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveSeconds, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(),
-                new ExecutorThreadFactory(node.threadGroup),
+                new ExecutorThreadFactory(node.threadGroup, node.getName()),
+                new RejectionHandler());
+        executorForMigrations = new ThreadPoolExecutor(1, 16, 60, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>(),
+                new ExecutorThreadFactory(node.threadGroup, node.getName() + ".internal"),
                 new RejectionHandler());
         node.getClusterImpl().addMembershipListener(this);
         for (int i = 0; i < 100; i++) {
@@ -88,16 +94,13 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
     }
 
     static class ExecutorThreadFactory implements ThreadFactory {
-        static final AtomicInteger poolNumber = new AtomicInteger(1);
         final ThreadGroup group;
         final AtomicInteger threadNumber = new AtomicInteger(1);
         final String namePrefix;
 
-        ExecutorThreadFactory(ThreadGroup group) {
-            this.group = group;
-//            SecurityManager s = System.getSecurityManager();
-//            group = (s != null) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
-            namePrefix = "hz.pool-" + poolNumber.getAndIncrement() + "-thread-";
+        ExecutorThreadFactory(ThreadGroup threadGroup, String threadGroupName) {
+            this.group = threadGroup;
+            namePrefix = "hz.executor-" + threadGroupName + "-thread-";
         }
 
         public Thread newThread(Runnable r) {
@@ -135,6 +138,13 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
             try {
                 executor.shutdown();
                 executor.awaitTermination(5, TimeUnit.SECONDS);
+            } catch (InterruptedException ignored) {
+            }
+        }
+        if (executorForMigrations != null) {
+            try {
+                executorForMigrations.shutdown();
+                executorForMigrations.awaitTermination(5, TimeUnit.SECONDS);
             } catch (InterruptedException ignored) {
             }
         }
@@ -647,11 +657,15 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         return null;
     }
 
-    public void executeLocally(final Runnable runnable) {
+    public void executeLocally(Runnable runnable) {
         executor.execute(runnable);
     }
 
-    public void handleStream(final Packet packet) {
+    public void executeMigrationTask(Runnable runnable) {
+        executorForMigrations.execute(runnable);
+    }
+
+    public void handleStream(Packet packet) {
         final StreamResponseHandler streamResponseHandler = mapStreams.get(packet.longValue);
         if (streamResponseHandler != null) {
             final Data value = IOUtil.doTake(packet.value);
@@ -664,7 +678,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         packet.returnToContainer();
     }
 
-    public void handleRemoteExecution(final Packet packet) {
+    public void handleRemoteExecution(Packet packet) {
         log("Remote handling packet " + packet);
         final Data callableData = IOUtil.doTake(packet.value);
         final RemoteExecutionId remoteExecutionId = new RemoteExecutionId(packet.conn.getEndPoint(),
@@ -676,10 +690,10 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         packet.returnToContainer();
     }
 
-    public void memberAdded(final MembershipEvent membersipEvent) {
+    public void memberAdded(MembershipEvent membersipEvent) {
     }
 
-    public void memberRemoved(final MembershipEvent membersipEvent) {
+    public void memberRemoved(MembershipEvent membersipEvent) {
         final Collection<DistributedExecutorAction> executionActions = mapExecutions.values();
         for (final DistributedExecutorAction distributedExecutorAction : executionActions) {
             distributedExecutorAction.handleMemberLeft(membersipEvent.getMember());
