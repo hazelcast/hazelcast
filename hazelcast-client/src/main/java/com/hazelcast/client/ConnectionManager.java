@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import com.hazelcast.client.cluster.Bind;
-import com.hazelcast.client.impl.ClusterOperation;
+import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.client.nio.Address;
 
 public class ConnectionManager{

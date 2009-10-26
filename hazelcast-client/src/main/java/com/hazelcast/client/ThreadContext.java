@@ -1,6 +1,6 @@
 package com.hazelcast.client;
 
-import com.hazelcast.client.core.Transaction;
+import com.hazelcast.core.Transaction;
 
 
 

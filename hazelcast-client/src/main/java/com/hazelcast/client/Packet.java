@@ -23,7 +23,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import com.hazelcast.client.impl.ClusterOperation;
+import com.hazelcast.impl.ClusterOperation;
 
 
 public class Packet {	

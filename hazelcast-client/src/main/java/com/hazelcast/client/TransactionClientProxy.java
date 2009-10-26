@@ -17,8 +17,8 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.core.Transaction;
-import com.hazelcast.client.impl.ClusterOperation;
+import com.hazelcast.core.Transaction;
+import com.hazelcast.impl.ClusterOperation;
 
 public class TransactionClientProxy extends ClientProxy implements Transaction{
 

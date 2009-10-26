@@ -1,9 +1,6 @@
 package com.hazelcast.client;
 
 import static com.hazelcast.client.HazelcastClientTest.getHazelcastClient;
-import com.hazelcast.client.core.EntryEvent;
-import com.hazelcast.client.core.EntryListener;
-import com.hazelcast.client.core.IMap;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import org.junit.After;
@@ -17,6 +14,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.IMap;
 
 public class DynamicClusterTest {
     HazelcastClient client;
@@ -38,9 +40,9 @@ public class DynamicClusterTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
         client = getHazelcastClient(h1, h2);
-        Map realMap = h3.getMap("default");
+        Map<String, Integer> realMap = h3.getMap("default");
         Map<Integer, HazelcastInstance> memberMap = getMapOfClusterMembers(h1, h2);
-        Map map = client.getMap("default");
+        Map<String, Integer> map = client.getMap("default");
         int counter = 0;
         while (counter < 2) {
             map.put("key", counter);
@@ -56,10 +58,10 @@ public class DynamicClusterTest {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
-        Map realMap = h3.getMap("default");
+        Map<String,Integer> realMap = h3.getMap("default");
         Map<Integer, HazelcastInstance> memberMap = getMapOfClusterMembers(h1, h2);
         client = getHazelcastClient(h1, h2);
-        Map map = client.getMap("default");
+        Map<String,Integer> map = client.getMap("default");
         int counter = 0;
         realMap.get("key");
         while (counter < 3) {
@@ -80,35 +82,35 @@ public class DynamicClusterTest {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
-        Map realMap = h3.getMap("default");
+        Map<String,String> realMap = h3.getMap("default");
         Map<Integer, HazelcastInstance> memberMap = getMapOfClusterMembers(h1, h2);
         client = getHazelcastClient(h1, h2);
         IMap<String, String> map = client.getMap("default");
         final CountDownLatch entryAddLatch = new CountDownLatch(2);
         final CountDownLatch entryUpdatedLatch = new CountDownLatch(2);
         final CountDownLatch entryRemovedLatch = new CountDownLatch(2);
-        map.addEntryListener(new EntryListener() {
-            public void entryAdded(EntryEvent event) {
+        map.addEntryListener(new EntryListener<String,String>() {
+            public void entryAdded(EntryEvent<String,String> event) {
                 System.out.println("Added " + event.getValue());
                 assertEquals("hello", event.getKey());
                 entryAddLatch.countDown();
             }
 
-            public void entryRemoved(EntryEvent event) {
+            public void entryRemoved(EntryEvent<String,String> event) {
                 System.out.println("removed " + event.getValue());
                 entryRemovedLatch.countDown();
                 assertEquals("hello", event.getKey());
                 assertEquals("new world", event.getValue());
             }
 
-            public void entryUpdated(EntryEvent event) {
+            public void entryUpdated(EntryEvent<String,String> event) {
                 System.out.println("Updated " + event.getValue());
                 assertEquals("new world", event.getValue());
                 assertEquals("hello", event.getKey());
                 entryUpdatedLatch.countDown();
             }
 
-            public void entryEvicted(EntryEvent event) {
+            public void entryEvicted(EntryEvent<String,String> event) {
                 entryRemoved(event);
             }
         }, true);
@@ -129,8 +131,8 @@ public class DynamicClusterTest {
         for (int i = 0; i < 5; i++) {
             HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
             client = getHazelcastClient(h1);
-            Map clientMap = client.getMap("map1");
-            Map hMap = h1.getMap("map1");
+            Map<String, String> clientMap = client.getMap("map1");
+            Map<String, String> hMap = h1.getMap("map1");
             clientMap.put("A", String.valueOf(i));
             assertEquals(String.valueOf(i), hMap.get("A"));
             client.shutdown();

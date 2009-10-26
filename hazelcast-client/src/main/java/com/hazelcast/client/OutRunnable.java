@@ -46,10 +46,10 @@ public class OutRunnable extends IORunnable{
 		Call c = null;
 		try{
 			c = queue.poll(100, TimeUnit.MILLISECONDS);
-//			c = queue.take();
 			if(c==null){
 				return;
 			}
+//			System.out.println("Sending: "+c + " " + c.getRequest().getOperation());
 			callMap.put(c.getId(), c);
 			
 			boolean oldConnectionIsNotNull = (connection!=null);
@@ -66,6 +66,7 @@ public class OutRunnable extends IORunnable{
 			}else{
 				if(connection!=null){
 					writer.write(connection,c.getRequest());
+//					System.out.println("Sent: "+c + " " + c.getRequest().getOperation()+" " +connection );
 				}
 				else{
 					interruptWaitingCalls();
@@ -74,6 +75,7 @@ public class OutRunnable extends IORunnable{
 		} catch (InterruptedException e) {
 			throw e;
 		} catch (Throwable io) {
+			System.out.println("WARNING");
 			enQueue(c);
 			client.connectionManager.destroyConnection(connection);
 		}

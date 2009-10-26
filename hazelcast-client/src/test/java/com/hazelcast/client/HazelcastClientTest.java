@@ -17,10 +17,10 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.core.EntryEvent;
-import com.hazelcast.client.core.EntryListener;
-import com.hazelcast.client.core.IMap;
-import com.hazelcast.client.core.Transaction;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.Transaction;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
@@ -138,25 +138,28 @@ public class HazelcastClientTest{
         final CountDownLatch entryAddLatch = new CountDownLatch(1);
         final CountDownLatch entryUpdatedLatch = new CountDownLatch(1);
         final CountDownLatch entryRemovedLatch = new CountDownLatch(1);
-        map.addEntryListener(new EntryListener() {
-            public void entryAdded(EntryEvent event) {
+        map.addEntryListener(new EntryListener<String, String>() {
+            public void entryAdded(EntryEvent<String, String> event) {
+            	entryAddLatch.countDown();
+            	System.out.println("Added");
                 assertEquals("hello", event.getKey());
-                entryAddLatch.countDown();
             }
 
-            public void entryRemoved(EntryEvent event) {
+            public void entryRemoved(EntryEvent<String, String> event) {
                 entryRemovedLatch.countDown();
+                System.out.println("Removed");
                 assertEquals("hello", event.getKey());
                 assertEquals("new world", event.getValue());
             }
 
-            public void entryUpdated(EntryEvent event) {
+            public void entryUpdated(EntryEvent<String, String> event) {
+            	entryUpdatedLatch.countDown();
+            	System.out.println("Updated");
                 assertEquals("new world", event.getValue());
                 assertEquals("hello", event.getKey());
-                entryUpdatedLatch.countDown();
             }
 
-            public void entryEvicted(EntryEvent event) {
+            public void entryEvicted(EntryEvent<String, String> event) {
                 entryRemoved(event);
             }
         }, true);
@@ -180,12 +183,12 @@ public class HazelcastClientTest{
     	
     	Map<String, String> map = hClient.getMap("default");
     	
-    	putAndGet(map, 100000);
+    	putAndGet(map, 1000);
     }
     
     @Test
     public void testSuperClient(){
-    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	Hazelcast.newHazelcastInstance(null);
     	
     	Config c2 = new XmlConfigBuilder().build();
         c2.setPortAutoIncrement(false);
@@ -195,7 +198,7 @@ public class HazelcastClientTest{
         
         Map<String,String> map = hSuper.getMap("default");
         
-        putAndGet(map, 100000);
+        putAndGet(map, 1000);
 
     }
     

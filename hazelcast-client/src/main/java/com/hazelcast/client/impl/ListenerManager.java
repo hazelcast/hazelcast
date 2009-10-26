@@ -14,9 +14,9 @@ import com.hazelcast.client.Call;
 import com.hazelcast.client.ClientRunnable;
 import com.hazelcast.client.Packet;
 import com.hazelcast.client.Serializer;
-import com.hazelcast.client.core.EntryEvent;
-import com.hazelcast.client.core.EntryListener;
-import com.hazelcast.client.core.EntryEvent.EntryEventType;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.EntryEvent.EntryEventType;
 
 public class ListenerManager extends ClientRunnable{
 	final Map<String, Map<Object, List<EntryListener>>> mapOfListeners = new HashMap<String, Map<Object,List<EntryListener>>>();

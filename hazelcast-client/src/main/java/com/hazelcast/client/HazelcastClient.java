@@ -19,14 +19,26 @@ package com.hazelcast.client;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 
-import com.hazelcast.client.core.IMap;
-import com.hazelcast.client.core.Transaction;
+import com.hazelcast.core.IMap;
 import com.hazelcast.client.impl.ListenerManager;
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.ILock;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.IdGenerator;
+import com.hazelcast.core.Instance;
+import com.hazelcast.core.InstanceListener;
+import com.hazelcast.core.MultiMap;
 
-public class HazelcastClient {
+public class HazelcastClient implements HazelcastInstance{
 	final Map<Long,Call> calls  = new ConcurrentHashMap<Long, Call>();
 	final ListenerManager listenerManager;
 	final OutRunnable out;
@@ -66,7 +78,7 @@ public class HazelcastClient {
 	}
 
 
-	public Transaction getTransaction() {
+	public com.hazelcast.core.Transaction getTransaction() {
 		ThreadContext trc = ThreadContext.get();
 		TransactionClientProxy proxy = (TransactionClientProxy)trc.getTransaction();
 		proxy.setOutRunnable(out);
@@ -81,5 +93,75 @@ public class HazelcastClient {
 		out.shutdown();
 		listenerManager.shutdown();
 		in.shutdown();
+	}
+
+	public void addInstanceListener(InstanceListener instanceListener) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public Cluster getCluster() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public ExecutorService getExecutorService() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public IdGenerator getIdGenerator(String name) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public Collection<Instance> getInstances() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public <E> IList<E> getList(String name) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public ILock getLock(Object obj) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public <K, V> MultiMap<K, V> getMultiMap(String name) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public String getName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public <E> IQueue<E> getQueue(String name) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public <E> ISet<E> getSet(String name) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public <E> ITopic<E> getTopic(String name) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public void removeInstanceListener(InstanceListener instanceListener) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void restart() {
+		// TODO Auto-generated method stub
+		
 	}
 }

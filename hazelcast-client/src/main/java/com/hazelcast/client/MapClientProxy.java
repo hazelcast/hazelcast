@@ -23,12 +23,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import com.hazelcast.client.core.EntryListener;
-import com.hazelcast.client.core.IMap;
-import com.hazelcast.client.core.MapEntry;
-import com.hazelcast.client.impl.ClusterOperation;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEntry;
+import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.client.impl.Keys;
-import com.hazelcast.client.query.Predicate;
+import com.hazelcast.query.Predicate;
 
 public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	
@@ -377,5 +377,11 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 			fillCallSpecificValues(request);
 			Packet response = callAndGetResult(request);
 		}
+	}
+
+
+	public void addIndex(String attribute, boolean ordered) {
+		// TODO Auto-generated method stub
+		
 	}
 }
