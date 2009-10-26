@@ -385,7 +385,7 @@ public class MapMigrator implements Runnable {
         final CountDownLatch latch = new CountDownLatch(lsRecordsToMigrate.size());
         for (final Record rec : lsRecordsToMigrate) {
             final CMap cmap = concurrentMapManager.getMap(rec.getName());
-            node.executorManager.executeLocally(new FallThroughRunnable() {
+            node.executorManager.executeMigrationTask(new FallThroughRunnable() {
                 public void doRun() {
                     try {
                         concurrentMapManager.migrateRecord(cmap, rec);
@@ -395,7 +395,7 @@ public class MapMigrator implements Runnable {
                 }
             });
         }
-        node.executorManager.executeLocally(new FallThroughRunnable() {
+        node.executorManager.executeMigrationTask(new FallThroughRunnable() {
             public void doRun() {
                 try {
                     latch.await(10, TimeUnit.SECONDS);

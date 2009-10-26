@@ -575,7 +575,12 @@ public class ClusterTest {
         }
     }
 
-    @Test(timeout = 240000)
+    /**
+     * Test case for issue 154
+     * ExecutorService can block migration which can lead to dead-lock
+     * 
+     */
+    @Test(timeout = 480000)
     public void testExecutorServiceAndMigration() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         List<DistributedTask> tasks = new ArrayList<DistributedTask>(10000);
