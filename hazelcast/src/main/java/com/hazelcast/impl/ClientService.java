@@ -24,6 +24,7 @@ import static com.hazelcast.nio.IOUtil.toObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.BaseManager.EventTask;
 import com.hazelcast.impl.BaseManager.KeyValue;
@@ -46,6 +47,10 @@ public class ClientService {
         this.node = node;
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_PUT.getValue()] = new MapPutHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_GET.getValue()] = new MapGetHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REMOVE.getValue()] = new MapRemoveHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_EVICT.getValue()] = new MapEvictHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_SIZE.getValue()] = new MapSizeHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_GET_MAP_ENTRY.getValue()] = new GetMapEntryHandler();
         clientOperationHandlers[ClusterOperation.TRANSACTION_BEGIN.getValue()] = new TransactionBeginHandler();
         clientOperationHandlers[ClusterOperation.TRANSACTION_COMMIT.getValue()] = new TransactionCommitHandler();
         clientOperationHandlers[ClusterOperation.TRANSACTION_ROLLBACK.getValue()] = new TransactionRollbackHandler();
@@ -135,6 +140,9 @@ public class ClientService {
         mapClientEndpoints.clear();
     }
     
+    
+    
+    
     public abstract class ClientOperationHandler{
     	public abstract void processCall(Node node, Packet packet);
     	public void handle(Node node, Packet packet){
@@ -174,7 +182,38 @@ public class ClientService {
             packet.value = (Data) map.get(packet.key);
             packet.key = null;
 		}
-    	
+    }
+    public class MapRemoveHandler extends ClientOperationHandler{
+		public void processCall(Node node, Packet packet) {
+			IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
+            packet.value = (Data) map.remove(packet.key);
+            packet.key = null;
+		}
+    }
+    public class MapEvictHandler extends ClientOperationHandler{
+		public void processCall(Node node, Packet packet) {
+			IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
+			Boolean result = map.evict(packet.key);
+			packet.value = toData(result);
+            packet.key = null;
+		}
+    }
+    public class MapSizeHandler extends ClientOperationHandler{
+		public void processCall(Node node, Packet packet) {
+			IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
+			int result = map.size();
+			packet.value = toData(result);
+            packet.key = null;
+		}
+    }
+    public class GetMapEntryHandler extends ClientOperationHandler{
+		public void processCall(Node node, Packet packet) {
+			IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
+			MapEntry result = map.getMapEntry(packet.key);
+			System.out.println("Key: " + result.getKey());
+			packet.value = toData(result);
+            packet.key = null;
+		}
     }
     public class TransactionBeginHandler extends ClientOperationHandler {
     	public void processCall(Node node, Packet packet) {
