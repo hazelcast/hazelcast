@@ -17,18 +17,9 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.Transaction;
-import static com.hazelcast.core.Transaction.TXN_STATUS_ACTIVE;
-import com.hazelcast.impl.BaseManager.KeyValue;
-import com.hazelcast.impl.ClientService.ClientEndpoint;
-import com.hazelcast.impl.ConcurrentMapManager.Entries;
-import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_SUCCESS;
-import com.hazelcast.nio.Data;
-import static com.hazelcast.nio.IOUtil.*;
+import com.hazelcast.impl.ClientService.ClientOperationHandler;
 import com.hazelcast.nio.Packet;
 
-import java.util.List;
 import java.util.logging.Logger;
 
 public class ClientRequestHandler implements Runnable {
@@ -36,78 +27,25 @@ public class ClientRequestHandler implements Runnable {
     private final CallContext callContext;
     private final Node node;
     Logger logger = Logger.getLogger(this.getClass().getName());
+    
+    private ClientOperationHandler[] clientOperationHandlers;    
 
-    public ClientRequestHandler(Node node, Packet packet, CallContext callContext) {
+    public ClientRequestHandler(Node node, Packet packet, CallContext callContext, ClientOperationHandler[] clientOperationHandlers) {
         this.packet = packet;
         this.callContext = callContext;
         this.node = node;
+        this.clientOperationHandlers = clientOperationHandlers;
     }
 
     public void run() {
         ThreadContext.get().setCallContext(callContext);
-        if (packet.operation.equals(ClusterOperation.CONCURRENT_MAP_PUT)) {
-//        	logger.info("PUT" + System.currentTimeMillis());
-        	IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
-            Object oldValue = map.put(packet.key, packet.value);
-//            System.out.println("Value:  " + toObject(doHardCopy(packet.value)));
-            packet.value = (Data) oldValue;
-            
-            sendResponse(packet);
-        } else if (packet.operation.equals(ClusterOperation.CONCURRENT_MAP_GET)) {
-            IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
-            Object value = map.get(packet.key);
-            Data data = (Data) value;
-            if (callContext.getCurrentTxn() != null && callContext.getCurrentTxn().getStatus() == TXN_STATUS_ACTIVE) {
-                data = data;
-            }
-            packet.value = data;
-            sendResponse(packet);
-        } else if (packet.operation.equals(ClusterOperation.TRANSACTION_BEGIN)) {
-            Transaction transaction = node.factory.getTransaction();
-            transaction.begin();
-            sendResponse(packet);
-        } else if (packet.operation.equals(ClusterOperation.TRANSACTION_COMMIT)) {
-            Transaction transaction = node.factory.getTransaction();
-            transaction.commit();
-            sendResponse(packet);
-        } else if (packet.operation.equals(ClusterOperation.TRANSACTION_ROLLBACK)) {
-            Transaction transaction = node.factory.getTransaction();
-            transaction.rollback();
-            sendResponse(packet);
-        } else if (packet.operation.equals(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS)) {
-            IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
-            ConcurrentMapManager.Entries entries = (Entries) map.keySet();
-            List list = entries.getLsKeyValues();
-            Keys keys = new Keys();
-            for (Object obj : list) {
-                KeyValue entry = (KeyValue) obj;
-                keys.addKey(entry.key);
-            }
-            packet.value = toData(keys);
-            sendResponse(packet);
-        } else if (packet.operation.equals(ClusterOperation.REMOTELY_PROCESS)) {
-            node.clusterService.enqueueAndReturn(packet);
-        } else if (packet.operation.equals(ClusterOperation.ADD_LISTENER)) {
-            ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
-            IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
-            Object key = toObject(packet.key);
-            boolean includeValue = (int) packet.longValue == 1;
-            if (key == null) {
-                map.addEntryListener(clientEndpoint, includeValue);
-            } else {
-                map.addEntryListener(clientEndpoint, key, includeValue);
-            }
-            sendResponse(packet);
+        ClientOperationHandler clientOperationHandler = clientOperationHandlers[packet.operation.getValue()];
+        if(clientOperationHandler!=null){
+        	clientOperationHandler.handle(node, packet);
+        	return;
         }
-        
-        
-    }
-
-    private void sendResponse(Packet request) {
-        request.operation = ClusterOperation.RESPONSE;
-        request.responseType = RESPONSE_SUCCESS;
-        if (request.conn != null && request.conn.live()) {
-            request.conn.getWriteHandler().enqueuePacket(request);
+        else{
+        	throw new RuntimeException("Unknown Client Operation, can not handle " + packet.operation);
         }
-    }
+    }        
 }
