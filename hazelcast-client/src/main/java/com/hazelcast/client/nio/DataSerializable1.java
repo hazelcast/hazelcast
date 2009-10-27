@@ -22,7 +22,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 
-public interface DataSerializable extends Serializable {
+public interface DataSerializable1 extends Serializable {
 
     void writeData(DataOutput out) throws IOException;
 

@@ -17,6 +17,8 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.impl.ClusterOperation;
+
 public class ClientProxy {
 	OutRunnable out ;
 	protected String name = "";
@@ -59,6 +61,13 @@ public class ClientProxy {
 		Packet request = new Packet();	    
 	    request.setName(name);
 	    request.setThreadId((int)Thread.currentThread().getId());
+		return request;
+	}
+	protected Packet createRequestPacket(ClusterOperation operation, byte[] key, byte[] value) {
+		Packet request = createRequestPacket();    
+		request.setOperation(operation);
+		request.setKey(key);
+		request.setValue(value);
 		return request;
 	}
 

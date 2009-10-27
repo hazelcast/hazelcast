@@ -25,6 +25,8 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.StringTokenizer;
 
+import com.hazelcast.nio.DataSerializable;
+
 public class Address implements DataSerializable {
 
     /**

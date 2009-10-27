@@ -20,6 +20,7 @@ package com.hazelcast.client;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
@@ -29,6 +30,7 @@ import com.hazelcast.core.HazelcastInstance;
 import static org.junit.Assert.*;
 
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 
 
@@ -37,6 +39,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -78,7 +81,69 @@ public class HazelcastClientTest{
         String value = clientMap.get("1");
         assertEquals("Z", value);
         assertEquals(size + 1, realMap.size());
-
+    }
+    @Test
+    public void removeFromMap(){
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+    	Map map = hClient.getMap("default");
+    	assertNull(map.put("a", "b"));
+    	assertEquals("b", map.get("a"));
+    	assertEquals("b", map.remove("a"));
+    	assertNull(map.remove("a"));
+    	assertNull(map.get("a"));
+    }
+    @Test
+    public void evictFromMap(){
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+    	IMap map = hClient.getMap("default");
+    	assertNull(map.put("a", "b"));
+    	assertEquals("b", map.get("a"));
+    	assertTrue(map.evict("a"));
+    	assertFalse(map.evict("a"));
+    	assertNull(map.get("a"));
+    }
+    @Test
+    public void getSize(){
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+    	IMap map = hClient.getMap("default");
+    	assertEquals(0, map.size());
+    	map.put("a", "b");
+    	assertEquals(1, map.size());
+    	for(int i = 0;i<100;i++){
+    		map.put(String.valueOf(i), String.valueOf(i));
+    	}
+    	assertEquals(101, map.size());
+    	map.remove("a");
+    	assertEquals(100, map.size());
+    	for(int i=0;i<50;i++){
+    		map.remove(String.valueOf(i));
+    	}
+    	assertEquals(50, map.size());
+    	for(int i=50;i<100;i++){
+    		map.remove(String.valueOf(i));
+    	}
+    	assertEquals(0, map.size());
+    }
+    
+    @Test
+    public void getMapEntry(){
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+    	IMap map = hClient.getMap("default");
+    	assertNull(map.put("a", "b"));
+    	map.get("a");
+    	map.get("a");
+    	MapEntry<String, String> entry = map.getMapEntry("a");
+    	assertEquals("a", entry.getKey());
+    	assertEquals("b", entry.getValue());
+    	assertEquals(2, entry.getHits());
+    	assertEquals("b", entry.getValue());
+    	assertEquals("b", entry.setValue("c"));
+    	assertEquals("c", map.get("a"));
+    	assertEquals("c", entry.getValue());
     }
 
 
@@ -179,10 +244,11 @@ public class HazelcastClientTest{
     	
     	Map<String, String> map = hClient.getMap("default");
     	
-    	putAndGet(map, 1000);
+    	putAndGet(map, 100000);
     }
     
     @Test
+    @Ignore
     public void testSuperClient(){
     	Hazelcast.newHazelcastInstance(null);
     	
@@ -194,7 +260,7 @@ public class HazelcastClientTest{
         
         Map<String,String> map = hSuper.getMap("default");
         
-        putAndGet(map, 1000);
+        putAndGet(map, 100000);
 
     }
     

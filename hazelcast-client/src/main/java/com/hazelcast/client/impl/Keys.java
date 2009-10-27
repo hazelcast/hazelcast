@@ -24,7 +24,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.hazelcast.client.Serializer;
-import com.hazelcast.client.nio.DataSerializable;
+import com.hazelcast.nio.DataSerializable;
 
 public class Keys implements DataSerializable{
 	/**

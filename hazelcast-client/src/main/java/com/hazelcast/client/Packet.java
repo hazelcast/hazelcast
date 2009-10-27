@@ -72,9 +72,6 @@ public class Packet {
 
     private byte[] indexTypes = new byte[6];
 	
-	private boolean redoOnDisConnect;
-	
-	
 	public void writeTo(DataOutputStream outputStream) throws IOException {
 		headerInBytes = getHeader();
 		headerSize = headerInBytes.length;
@@ -187,14 +184,16 @@ public class Packet {
 	}
 	public void setKey(byte[] key) {
 		this.key = key;
-		keySize = this.key.length;
+		if(key!=null)
+			keySize = this.key.length;
 	}
 	public byte[] getValue() {
 		return value;
 	}
 	public void setValue(byte[] value) {
 		this.value = value;
-		valueSize = this.value.length;
+		if(value!=null)
+			valueSize = this.value.length;
 	}
 	public void setCallId(long callid) {
 		this.callId = callid;
@@ -298,13 +297,5 @@ public class Packet {
 	}
 	public void setIndexTypes(byte[] indexTypes) {
 		this.indexTypes = indexTypes;
-	}
-	public void setRedoOnDisConnect(boolean redoOnDisConnect) {
-		this.redoOnDisConnect = redoOnDisConnect;
-	}
-	public boolean isRedoOnDisconnect() {
-		return redoOnDisConnect;
-	}
-	
-		
+	}		
 }

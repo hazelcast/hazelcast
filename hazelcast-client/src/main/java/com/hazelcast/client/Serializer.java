@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import com.hazelcast.client.nio.DataSerializable;
+import com.hazelcast.nio.DataSerializable;
 
 public class Serializer {
     private static final byte SERIALIZER_TYPE_DATA = 0;
@@ -103,7 +103,7 @@ public class Serializer {
 		try {
 			if(type == SERIALIZER_TYPE_DATA){
 				String className = dis.readUTF();
-				DataSerializable data = (DataSerializable)Class.forName(className.replaceFirst("com.hazelcast", "com.hazelcast.client")).newInstance();
+				DataSerializable data = (DataSerializable)Class.forName(className.replaceFirst("com.hazelcast.impl.Keys", "com.hazelcast.client.impl.Keys")).newInstance();
 				data.readData(dis);
 				return data;
 			}
