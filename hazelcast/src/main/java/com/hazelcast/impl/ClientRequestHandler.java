@@ -28,7 +28,7 @@ public class ClientRequestHandler implements Runnable {
     private final Node node;
     Logger logger = Logger.getLogger(this.getClass().getName());
     
-    private ClientOperationHandler[] clientOperationHandlers;    
+    private final ClientOperationHandler[] clientOperationHandlers;    
 
     public ClientRequestHandler(Node node, Packet packet, CallContext callContext, ClientOperationHandler[] clientOperationHandlers) {
         this.packet = packet;

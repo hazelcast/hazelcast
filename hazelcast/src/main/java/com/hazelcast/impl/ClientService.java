@@ -24,7 +24,6 @@ import static com.hazelcast.nio.IOUtil.toObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.BaseManager.EventTask;
 import com.hazelcast.impl.BaseManager.KeyValue;
@@ -41,7 +40,7 @@ import java.util.Map;
 public class ClientService {
     private final Node node;
     private final Map<Connection, ClientEndpoint> mapClientEndpoints = new HashMap<Connection, ClientEndpoint>();
-    private ClientOperationHandler[] clientOperationHandlers = new ClientOperationHandler[300];
+    private final ClientOperationHandler[] clientOperationHandlers = new ClientOperationHandler[300];
 
     public ClientService(Node node) {
         this.node = node;
@@ -51,6 +50,8 @@ public class ClientService {
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_EVICT.getValue()] = new MapEvictHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_SIZE.getValue()] = new MapSizeHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_GET_MAP_ENTRY.getValue()] = new GetMapEntryHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_LOCK.getValue()] = new MapLockHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_UNLOCK.getValue()] = new MapUnLockHandler();
         clientOperationHandlers[ClusterOperation.TRANSACTION_BEGIN.getValue()] = new TransactionBeginHandler();
         clientOperationHandlers[ClusterOperation.TRANSACTION_COMMIT.getValue()] = new TransactionCommitHandler();
         clientOperationHandlers[ClusterOperation.TRANSACTION_ROLLBACK.getValue()] = new TransactionRollbackHandler();
@@ -62,6 +63,7 @@ public class ClientService {
     // always called by InThread
     public void handle(Packet packet) {
         ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
+        System.out.println("Packet thread id: "+packet.threadId);
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
         ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext, clientOperationHandlers); 
         node.clusterManager.enqueueEvent(clientEndpoint.hashCode(), clientRequestHandler);
@@ -143,21 +145,7 @@ public class ClientService {
     
     
     
-    public abstract class ClientOperationHandler{
-    	public abstract void processCall(Node node, Packet packet);
-    	public void handle(Node node, Packet packet){
-    		processCall(node,packet);
-    		sendResponse(packet);
-    	}
-    	
-    	protected void sendResponse(Packet request) {
-            request.operation = ClusterOperation.RESPONSE;
-            request.responseType = RESPONSE_SUCCESS;
-            if (request.conn != null && request.conn.live()) {
-                request.conn.getWriteHandler().enqueuePacket(request);
-            }
-        }
-    }
+
     public class RemotelyProcessHandler extends ClientOperationHandler{
 
 		public void processCall(Node node, Packet packet) {
@@ -169,50 +157,48 @@ public class ClientService {
 		}
     }
     
-    public class MapPutHandler extends ClientOperationHandler{
-		public void processCall(Node node, Packet packet) {
-			IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
-            Object oldValue = map.put(packet.key, packet.value);
-            packet.value = (oldValue==null)?null:(Data) oldValue;
+    public class MapPutHandler extends ClientMapOperationHandler{
+		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+			Object oldValue = map.put(key, value);
+            return (oldValue==null)?null:(Data) oldValue;
 		}
     }
-    public class MapGetHandler extends ClientOperationHandler{
-		public void processCall(Node node, Packet packet) {
-			IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
-            packet.value = (Data) map.get(packet.key);
-            packet.key = null;
+    public class MapGetHandler extends ClientMapOperationHandler{
+		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+			return (Data) map.get(key);
 		}
     }
-    public class MapRemoveHandler extends ClientOperationHandler{
-		public void processCall(Node node, Packet packet) {
-			IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
-            packet.value = (Data) map.remove(packet.key);
-            packet.key = null;
+    public class MapRemoveHandler extends ClientMapOperationHandler{
+		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+			return (Data) map.remove(key);
 		}
     }
-    public class MapEvictHandler extends ClientOperationHandler{
-		public void processCall(Node node, Packet packet) {
-			IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
-			Boolean result = map.evict(packet.key);
-			packet.value = toData(result);
-            packet.key = null;
+    public class MapEvictHandler extends ClientMapOperationHandler{
+		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+			return toData(map.evict(key));
 		}
     }
-    public class MapSizeHandler extends ClientOperationHandler{
-		public void processCall(Node node, Packet packet) {
-			IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
-			int result = map.size();
-			packet.value = toData(result);
-            packet.key = null;
+    public class MapSizeHandler extends ClientMapOperationHandler{
+		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+			return toData(map.size());
 		}
     }
-    public class GetMapEntryHandler extends ClientOperationHandler{
-		public void processCall(Node node, Packet packet) {
-			IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
-			MapEntry result = map.getMapEntry(packet.key);
-			System.out.println("Key: " + result.getKey());
-			packet.value = toData(result);
-            packet.key = null;
+    public class GetMapEntryHandler extends ClientMapOperationHandler{
+		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+			return toData(map.getMapEntry(key));
+		}
+    }
+    public class MapLockHandler extends ClientMapOperationHandler{
+		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+			System.out.println();
+			map.lock(key);
+			return null;
+		}
+    }
+    public class MapUnLockHandler extends ClientMapOperationHandler{
+		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+			map.unlock(key);
+			return null;
 		}
     }
     public class TransactionBeginHandler extends ClientOperationHandler {
@@ -235,7 +221,7 @@ public class ClientService {
     }
     public class MapIterateKeysHandler extends ClientOperationHandler {
     	public void processCall(Node node, Packet packet) {
-    		IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
+    		IMap<Object, Object> map = node.factory.getMap(packet.name);
             ConcurrentMapManager.Entries entries = (Entries) map.keySet();
             List<?> list = entries.getLsKeyValues();
             Keys keys = new Keys();
@@ -249,7 +235,7 @@ public class ClientService {
     public class AddListenerHandler extends ClientOperationHandler {
     	public void processCall(Node node, Packet packet) {
     		ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
-            IMap<Object, Object> map = node.factory.getMap(packet.name.substring(2));
+            IMap<Object, Object> map = node.factory.getMap(packet.name);
             Object key = toObject(packet.key);
             boolean includeValue = (int) packet.longValue == 1;
             if (key == null) {
@@ -258,5 +244,29 @@ public class ClientService {
                 map.addEntryListener(clientEndpoint, key, includeValue);
             }
     	}
+    }
+    
+    public abstract class ClientOperationHandler{
+    	public abstract void processCall(Node node, Packet packet);
+    	public void handle(Node node, Packet packet){
+    		processCall(node,packet);
+    		sendResponse(packet);
+    	}
+    	
+    	protected void sendResponse(Packet request) {
+            request.operation = ClusterOperation.RESPONSE;
+            request.responseType = RESPONSE_SUCCESS;
+            if (request.conn != null && request.conn.live()) {
+                request.conn.getWriteHandler().enqueuePacket(request);
+            }
+        }
+    }
+    public abstract class ClientMapOperationHandler extends ClientOperationHandler{
+    	public abstract Data processMapOp(IMap<Object, Object> map, Data key, Data value);
+    	public void processCall(Node node, Packet packet){
+    		IMap<Object, Object> map = node.factory.getMap(packet.name);
+    		Data value = processMapOp(map,packet.key, packet.value);
+    		packet.value = value;
+    	}	
     }
 }
