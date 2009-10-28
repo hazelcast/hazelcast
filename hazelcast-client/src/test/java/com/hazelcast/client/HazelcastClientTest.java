@@ -39,7 +39,6 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -52,6 +51,41 @@ public class HazelcastClientTest{
     	Hazelcast.shutdownAll();
     	if(hClient!=null){	hClient.shutdown(); }
     	Thread.sleep(500);
+    }
+    @Test
+    public void getMapName() throws InterruptedException {
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+    	IMap  map  = hClient.getMap("ABC");
+        assertEquals("ABC", map.getName());
+    }
+    @Test
+    public void lockMap() throws InterruptedException{
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+    	final IMap  map  = hClient.getMap("ABC");
+    	final CountDownLatch latch = new CountDownLatch(1);
+    	map.put("a", "b");
+    	Thread.sleep(1000);
+    	System.out.println("Getting the lock");
+    	map.lock("a");
+    	System.out.println("Got the lock");
+    	new Thread(new Runnable(){
+    		
+    		public void run() {
+    			map.lock("a");
+    			System.out.println("Thread also get the lock");
+    			latch.countDown();
+    		}
+    		
+    	}).start();
+    	Thread.sleep(100);
+    	assertEquals(1, latch.getCount());
+    	System.out.println("Unlocking the key");
+    	map.unlock("a");
+    	System.out.println("Unlocked the key");
+
+    	assertTrue(latch.await(100000, TimeUnit.MILLISECONDS));
     }
     @Test
     public void putToTheMap() throws InterruptedException {
@@ -331,5 +365,7 @@ public class HazelcastClientTest{
 		HazelcastClient client = HazelcastClient.getHazelcastClient(addresses);
 		return client;
 	}
+	
+	
 	
 }

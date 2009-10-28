@@ -36,8 +36,8 @@ public class ListenerManager extends ClientRunnable{
 	private void fireEvent(EntryEvent event){
 		String name = event.getName();
 		Object key = event.getKey();
-		notifyListeners(event, mapOfListeners.get(name).get(null));
-		notifyListeners(event, mapOfListeners.get(name).get(key));
+		notifyListeners(event, mapOfListeners.get(name.substring(2)).get(null));
+		notifyListeners(event, mapOfListeners.get(name.substring(2)).get(key));
 	}
 
 	private void notifyListeners(EntryEvent event,

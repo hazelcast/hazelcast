@@ -44,6 +44,7 @@ public class HazelcastClient implements HazelcastInstance{
 	final OutRunnable out;
 	final InRunnable in;
 	final ConnectionManager connectionManager;
+	final Map<String, ClientProxy> mapProxies = new ConcurrentHashMap<String, ClientProxy>(100); 
 	
 	private HazelcastClient(InetSocketAddress[] clusterMembers) {
 		connectionManager = new ConnectionManager(this, clusterMembers);
@@ -72,9 +73,23 @@ public class HazelcastClient implements HazelcastInstance{
 	
 
 	public <K, V> IMap<K,V> getMap(String name){
-		MapClientProxy<K, V> proxy = new MapClientProxy<K, V>(this,name);
-		proxy.setOutRunnable(out);
-		return proxy;
+		String prefix = "c:";
+		return (IMap<K,V>)getClientProxy(prefix, name);
+	}
+
+	private <V, K> ClientProxy getClientProxy(String prefix, String name) {
+		String mapLookupName = prefix + name;
+		ClientProxy proxy = mapProxies.get(mapLookupName);
+		if(proxy==null){
+			synchronized (mapProxies) {
+				if(proxy==null){
+					MapClientProxy<K, V> clientProxy = new MapClientProxy<K, V>(this,name);
+					clientProxy.setOutRunnable(out);
+					mapProxies.put(mapLookupName, clientProxy);
+				}
+			}
+		}
+		return mapProxies.get(mapLookupName);
 	}
 
 
