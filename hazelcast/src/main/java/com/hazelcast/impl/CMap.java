@@ -123,7 +123,7 @@ public class CMap {
             if (mapStoreConfig.isEnabled()) {
                 String mapStoreClassName = mapStoreConfig.getClassName();
                 try {
-                    Object storeInstance = Class.forName(mapStoreClassName, true, node.getConfig().getClassLoader()).newInstance();
+                    Object storeInstance = Class.forName(mapStoreClassName).newInstance();
                     if (storeInstance instanceof MapLoader) {
                         loaderTemp = (MapLoader) storeInstance;
                     }
@@ -476,6 +476,9 @@ public class CMap {
             touch(record);
             concurrentMapManager.fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, record.getKey(), req.value, record.getMapListeners());
         }
+        if (req.txnId != -1) {
+            concurrentMapManager.unlock(record);
+        }
         logger.log(Level.FINEST, record.getValue() + " PutMulti " + record.getMultiValues());
         req.version = record.getVersion();
         return added;
@@ -786,6 +789,9 @@ public class CMap {
             record.incrementVersion();
             record.setValue(null);
             record.setMultiValues(null);
+        }
+        if (req.txnId != -1) {
+            concurrentMapManager.unlock(record);
         }
         req.version = record.getVersion();
         req.longValue = record.getCopyCount();

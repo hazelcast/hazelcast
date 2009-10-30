@@ -862,7 +862,8 @@ public final class ConcurrentMapManager extends BaseManager {
                 request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
                 setIndexValues(request, value);
                 doOp();
-                Object returnObject = getResultAsObject();
+                Object returnObject;
+                returnObject = getResultAsObject();
                 if (returnObject instanceof AddressAwareException) {
                     rethrowException(operation, (AddressAwareException) returnObject);
                 }

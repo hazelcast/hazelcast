@@ -71,13 +71,13 @@ public class HazelcastClientTest{
     	map.lock("a");
     	System.out.println("Got the lock");
     	new Thread(new Runnable(){
-    		
+
     		public void run() {
     			map.lock("a");
     			System.out.println("Thread also get the lock");
     			latch.countDown();
     		}
-    		
+
     	}).start();
     	Thread.sleep(100);
     	assertEquals(1, latch.getCount());
@@ -85,7 +85,7 @@ public class HazelcastClientTest{
     	map.unlock("a");
     	System.out.println("Unlocked the key");
 
-    	assertTrue(latch.await(100000, TimeUnit.MILLISECONDS));
+    	assertTrue(latch.await(2000, TimeUnit.MILLISECONDS));
     }
     @Test
     public void putToTheMap() throws InterruptedException {
