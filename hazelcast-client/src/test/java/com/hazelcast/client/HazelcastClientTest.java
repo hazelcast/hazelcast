@@ -17,8 +17,6 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Transaction;
@@ -39,6 +37,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -60,6 +59,7 @@ public class HazelcastClientTest{
         assertEquals("ABC", map.getName());
     }
     @Test
+    @Ignore
     public void lockMap() throws InterruptedException{
     	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
     	hClient = getHazelcastClient(h);
@@ -71,13 +71,11 @@ public class HazelcastClientTest{
     	map.lock("a");
     	System.out.println("Got the lock");
     	new Thread(new Runnable(){
-
     		public void run() {
     			map.lock("a");
     			System.out.println("Thread also get the lock");
     			latch.countDown();
     		}
-
     	}).start();
     	Thread.sleep(100);
     	assertEquals(1, latch.getCount());
@@ -107,8 +105,8 @@ public class HazelcastClientTest{
     @Test
     public void getPuttedValueFromTheMap() {
     	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	com.hazelcast.core.IMap<Object, Object> realMap = h.getMap("default");
     	hClient = getHazelcastClient(h);
+    	com.hazelcast.core.IMap<Object, Object> realMap = h.getMap("default");
         Map<String, String> clientMap = hClient.getMap("default");
         int size = realMap.size();
         clientMap.put("1", "Z");
@@ -208,7 +206,7 @@ public class HazelcastClientTest{
     }
 
     @Test
-    public void itertateOverMapEntries() {
+    public void itertateOverMapKeys() {
     	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
     	hClient = getHazelcastClient(h);
         Map<String, String> map = hClient.getMap("default");
@@ -224,6 +222,49 @@ public class HazelcastClientTest{
         }
         assertEquals(3, s.size());
     }
+    @Test
+    public void itertateOverMapEntries() {
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+        IMap<String, String> map = hClient.getMap("default");
+        map.put("1", "A");
+        map.put("2", "B");
+        map.put("3", "C");
+        Set<Entry<String, String>> entrySet = map.entrySet();
+        assertEquals(3, entrySet.size());
+        Set<String> keySet = map.keySet();
+        for (Entry<String,String> entry : entrySet) {
+        	assertTrue(keySet.contains(entry.getKey()));
+        	assertEquals(entry.getValue(), map.get(entry.getKey()));
+        }
+        for (String key : keySet) {
+        	MapEntry  mapEntry = map.getMapEntry(key);
+        	assertEquals(2, mapEntry.getHits());
+        }
+    }
+    @Test
+    public void tryLock() throws InterruptedException{
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+        final IMap<String, String> map = hClient.getMap("default");
+        final CountDownLatch latch = new CountDownLatch(3);
+        map.put("1", "A");
+        map.lock("1");
+        new Thread(new Runnable(){
+			public void run() {
+				if(!map.tryLock("1", 100, TimeUnit.MILLISECONDS)){
+					latch.countDown();
+				}
+				if(!map.tryLock("1")){
+					latch.countDown();
+				}
+				if(map.tryLock("2")){
+					latch.countDown();
+				}
+			}
+        }).start();
+    	assertTrue(latch.await(100, TimeUnit.MILLISECONDS));
+    }
 
     @Test
     public void addListener() throws InterruptedException, IOException {
@@ -236,28 +277,8 @@ public class HazelcastClientTest{
         final CountDownLatch entryAddLatch = new CountDownLatch(1);
         final CountDownLatch entryUpdatedLatch = new CountDownLatch(1);
         final CountDownLatch entryRemovedLatch = new CountDownLatch(1);
-        map.addEntryListener(new EntryListener<String, String>() {
-            public void entryAdded(EntryEvent<String, String> event) {
-            	entryAddLatch.countDown();
-                assertEquals("hello", event.getKey());
-            }
-
-            public void entryRemoved(EntryEvent<String, String> event) {
-                entryRemovedLatch.countDown();
-                assertEquals("hello", event.getKey());
-                assertEquals("new world", event.getValue());
-            }
-
-            public void entryUpdated(EntryEvent<String, String> event) {
-            	entryUpdatedLatch.countDown();
-                assertEquals("new world", event.getValue());
-                assertEquals("hello", event.getKey());
-            }
-
-            public void entryEvicted(EntryEvent<String, String> event) {
-                entryRemoved(event);
-            }
-        }, true);
+        CountDownLatchEntryListener<String, String> listener = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
+        map.addEntryListener(listener, true);
         assertNull(realMap.get("hello"));
         map.put("hello", "world");
         map.put("hello", "new world");
@@ -267,6 +288,185 @@ public class HazelcastClientTest{
         assertTrue(entryUpdatedLatch.await(10, TimeUnit.MILLISECONDS));
         assertTrue(entryRemovedLatch.await(10, TimeUnit.MILLISECONDS));
 
+    }
+    @Test
+    public void addTwoListener1ToMapOtherToKey() throws InterruptedException, IOException {
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+        final IMap<String, String> map = hClient.getMap("default");
+        final CountDownLatch entryAddLatch = new CountDownLatch(5);
+        final CountDownLatch entryUpdatedLatch = new CountDownLatch(5);
+        final CountDownLatch entryRemovedLatch = new CountDownLatch(5);
+        CountDownLatchEntryListener<String, String> listener1 = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
+        CountDownLatchEntryListener<String, String> listener2 = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
+        map.addEntryListener(listener1, true);
+        map.addEntryListener(listener2, "hello", true);
+        map.put("hello", "world");
+        map.put("hello", "new world");
+        map.remove("hello");
+        Thread.sleep(100);
+        
+        assertEquals(3, entryAddLatch.getCount());
+        assertEquals(3, entryRemovedLatch.getCount());
+        assertEquals(3, entryUpdatedLatch.getCount());
+    }
+    @Test
+    @Ignore
+    public void addTwoListener1stToKeyOtherToMap() throws InterruptedException, IOException {
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+        final IMap<String, String> map = hClient.getMap("default");
+        final CountDownLatch entryAddLatch = new CountDownLatch(5);
+        final CountDownLatch entryUpdatedLatch = new CountDownLatch(5);
+        final CountDownLatch entryRemovedLatch = new CountDownLatch(5);
+        CountDownLatchEntryListener<String, String> listener1 = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
+        CountDownLatchEntryListener<String, String> listener2 = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
+        map.addEntryListener(listener2, "hello", true);
+        map.addEntryListener(listener1, true);
+        map.put("hello", "world");
+        map.put("hello", "new world");
+        map.remove("hello");
+        Thread.sleep(100);
+        
+        assertEquals(3, entryAddLatch.getCount());
+        assertEquals(3, entryRemovedLatch.getCount());
+        assertEquals(3, entryUpdatedLatch.getCount());
+    }
+    @Test
+    public void removeListener() throws InterruptedException, IOException {
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+        final IMap<String, String> map = hClient.getMap("default");
+        final CountDownLatch entryAddLatch = new CountDownLatch(5);
+        final CountDownLatch entryUpdatedLatch = new CountDownLatch(5);
+        final CountDownLatch entryRemovedLatch = new CountDownLatch(5);
+        CountDownLatchEntryListener<String, String> listener1 = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
+        CountDownLatchEntryListener<String, String> listener2 = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
+        map.addEntryListener(listener1, true);
+        map.put("hello", "world");
+        map.put("hello", "new world");
+        map.remove("hello");
+        Thread.sleep(100);
+        
+        assertEquals(4, entryAddLatch.getCount());
+        assertEquals(4, entryRemovedLatch.getCount());
+        assertEquals(4, entryUpdatedLatch.getCount());
+        
+        map.removeEntryListener(listener1);
+        
+        map.put("hello", "world");
+        map.put("hello", "new world");
+        map.remove("hello");
+  
+        Thread.sleep(100);
+        assertEquals(4, entryAddLatch.getCount());
+        assertEquals(4, entryRemovedLatch.getCount());
+        assertEquals(4, entryUpdatedLatch.getCount());
+    }
+    @Test
+    public void putIfAbsent(){
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+        IMap<String, String> map = hClient.getMap("default");
+        String result = map.put("1", "CBDEF");
+        assertNull(result);
+        assertNull(map.putIfAbsent("2", "C"));
+        assertEquals("C", map.putIfAbsent("2", "D"));
+    }
+    
+    @Test
+    public void remove(){
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+        IMap<String, String> map = hClient.getMap("default");
+        String result = map.put("1", "CBDEF");
+        assertNull(result);
+        assertFalse(map.remove("1", "CBD"));
+        assertEquals("CBDEF", map.get("1"));
+        assertTrue(map.remove("1", "CBDEF"));
+    }
+    
+    @Test
+    public void replace(){
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+        IMap<String, String> map = hClient.getMap("default");
+        String result = map.put("1", "CBDEF");
+        assertNull(result);
+        assertEquals("CBDEF", map.replace("1", "CBD"));
+        assertNull(map.replace("2", "CBD"));
+        assertFalse(map.replace("2","CBD","ABC"));
+        assertTrue(map.replace("1","CBD","XX"));
+    }
+    @Test
+    public void clear(){
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+        IMap<Integer, Integer> map = hClient.getMap("default");
+        for(int i=0;i<100;i++){
+        	assertNull(map.put(i, i));
+        	assertEquals(i, map.get(i));
+        }
+        map.clear();
+        for(int i=0;i<100;i++){
+        	assertNull(map.get(i));
+        }
+    }
+    @Test
+    public void containsKey(){
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+        IMap<Integer, Integer> map = hClient.getMap("default");
+        int counter = 100;
+		for(int i=0;i<counter;i++){
+        	assertNull(map.put(i, i));
+        	assertEquals(i, map.get(i));
+        }
+        for(int i=0;i<counter;i++){
+        	assertTrue(map.containsKey(i));
+        }
+    }
+    @Test
+    public void containsValue(){
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+        IMap<Integer, Integer> map = hClient.getMap("default");
+        int counter = 100;
+		for(int i=0;i<counter;i++){
+        	assertNull(map.put(i, i));
+        	assertEquals(i, map.get(i));
+        }
+        for(int i=0;i<counter;i++){
+        	assertTrue(map.containsValue(i));
+        }
+    }
+    @Test
+    public void isEmpty(){
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+        IMap<Integer, Integer> map = hClient.getMap("default");
+        int counter = 100;
+		assertTrue(map.isEmpty());
+        for(int i=0;i<counter;i++){
+        	assertNull(map.put(i, i));
+        	assertEquals(i, map.get(i));
+        }
+        assertFalse(map.isEmpty());
+    }
+    @Test
+    public void putAll(){
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+        IMap<Integer, Integer> map = hClient.getMap("default");
+        int counter = 100;
+        Map<Integer, Integer> tempMap = new HashMap<Integer, Integer>();
+		for(int i=0;i<counter;i++){
+			tempMap.put(i,i);
+        }
+		map.putAll(tempMap);
+        for(int i=0;i<counter;i++){
+        	assertEquals(i, map.get(i));
+        }
     }
     
    
@@ -366,6 +566,5 @@ public class HazelcastClientTest{
 		return client;
 	}
 	
-	
-	
+    
 }

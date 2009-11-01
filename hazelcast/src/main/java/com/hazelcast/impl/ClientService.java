@@ -31,10 +31,12 @@ import com.hazelcast.impl.ConcurrentMapManager.Entries;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.query.Predicate;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 
 public class ClientService {
@@ -45,27 +47,35 @@ public class ClientService {
     public ClientService(Node node) {
         this.node = node;
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_PUT.getValue()] = new MapPutHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT.getValue()] = new MapPutIfAbsentHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_GET.getValue()] = new MapGetHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REMOVE.getValue()] = new MapRemoveHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REMOVE_IF_SAME.getValue()] = new MapRemoveIfSameHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_EVICT.getValue()] = new MapEvictHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REPLACE_IF_NOT_NULL.getValue()] = new MapReplaceIfNotNullHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REPLACE_IF_SAME.getValue()] = new MapReplaceIfSameHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_SIZE.getValue()] = new MapSizeHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_GET_MAP_ENTRY.getValue()] = new GetMapEntryHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_LOCK.getValue()] = new MapLockHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_UNLOCK.getValue()] = new MapUnLockHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_UNLOCK.getValue()] = new MapUnlockHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_CONTAINS.getValue()] = new MapContainsKeyHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_CONTAINS_VALUE.getValue()] = new MapContainsValueHandler();
+        
+        
         clientOperationHandlers[ClusterOperation.TRANSACTION_BEGIN.getValue()] = new TransactionBeginHandler();
         clientOperationHandlers[ClusterOperation.TRANSACTION_COMMIT.getValue()] = new TransactionCommitHandler();
         clientOperationHandlers[ClusterOperation.TRANSACTION_ROLLBACK.getValue()] = new TransactionRollbackHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS.getValue()] = new MapIterateKeysHandler();
         clientOperationHandlers[ClusterOperation.ADD_LISTENER.getValue()] = new AddListenerHandler();
+        clientOperationHandlers[ClusterOperation.REMOVE_LISTENER.getValue()] = new RemoveListenerHandler();
         clientOperationHandlers[ClusterOperation.REMOTELY_PROCESS.getValue()] =  new RemotelyProcessHandler();
     }
 
     // always called by InThread
     public void handle(Packet packet) {
         ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
-        System.out.println("Packet thread id: "+packet.threadId);
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
-        ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext, clientOperationHandlers); 
+        ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext, clientOperationHandlers);
         node.clusterManager.enqueueEvent(clientEndpoint.hashCode(), clientRequestHandler);
     }
 
@@ -78,9 +88,9 @@ public class ClientService {
         return clientEndpoint;
     }
 
-    class ClientEndpoint implements EntryListener {
+    class ClientEndpoint<K,V> implements EntryListener<K,V> {
         final Connection conn;
-        private Map<Integer, CallContext> mapOfCallContexts = new HashMap<Integer, CallContext>();
+        final private Map<Integer, CallContext> mapOfCallContexts = new HashMap<Integer, CallContext>();
 
         ClientEndpoint(Connection conn) {
             this.conn = conn;
@@ -94,6 +104,14 @@ public class ClientService {
                 mapOfCallContexts.put(threadId, context);
             }
             return context;
+        }
+        
+        public void addThisAsListener(IMap map, Object key, boolean includeValue){
+        	if (key == null) {
+                map.addEntryListener(this, includeValue);
+            } else {
+                map.addEntryListener(this, key, includeValue);
+            }
         }
         
         @Override
@@ -146,102 +164,157 @@ public class ClientService {
     
     
 
-    public class RemotelyProcessHandler extends ClientOperationHandler{
-
+    private class RemotelyProcessHandler extends ClientOperationHandler{
 		public void processCall(Node node, Packet packet) {
 			node.clusterService.enqueueAndReturn(packet);
 		}
 		@Override
 		protected void sendResponse(Packet request) {
-			
 		}
     }
-    
-    public class MapPutHandler extends ClientMapOperationHandler{
+    private class MapPutHandler extends ClientMapOperationHandler{
 		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
 			Object oldValue = map.put(key, value);
             return (oldValue==null)?null:(Data) oldValue;
 		}
     }
-    public class MapGetHandler extends ClientMapOperationHandler{
+    private class MapPutIfAbsentHandler extends ClientMapOperationHandler{
+		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+			Object oldValue = map.putIfAbsent(key, value);
+            return (oldValue==null)?null:(Data) oldValue;
+		}
+    }
+    private class MapGetHandler extends ClientMapOperationHandler{
 		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
 			return (Data) map.get(key);
 		}
     }
-    public class MapRemoveHandler extends ClientMapOperationHandler{
+    private class MapRemoveHandler extends ClientMapOperationHandler{
 		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
 			return (Data) map.remove(key);
 		}
     }
-    public class MapEvictHandler extends ClientMapOperationHandler{
+    private class MapRemoveIfSameHandler extends ClientMapOperationHandler{
+		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+			return toData(map.remove(key, value));
+		}
+    }
+    private class MapEvictHandler extends ClientMapOperationHandler{
 		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
 			return toData(map.evict(key));
 		}
     }
-    public class MapSizeHandler extends ClientMapOperationHandler{
+    private class MapReplaceIfNotNullHandler extends ClientMapOperationHandler{
+		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+			return (Data)map.replace(key, value);
+		}
+    }
+    private class MapReplaceIfSameHandler extends ClientMapOperationHandler{
+		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+			Object[] arr = (Object[]) toObject(value);
+			return toData(map.replace(key, arr[0], arr[1]));
+		}
+    }
+    private class MapContainsKeyHandler extends ClientMapOperationHandler{
+		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+			return toData(map.containsKey(key));
+		}
+    }
+    private class MapContainsValueHandler extends ClientMapOperationHandler{
+		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+			return toData(map.containsValue(value));
+		}
+    }
+    private class MapSizeHandler extends ClientMapOperationHandler{
 		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
 			return toData(map.size());
 		}
     }
-    public class GetMapEntryHandler extends ClientMapOperationHandler{
+    private class GetMapEntryHandler extends ClientMapOperationHandler{
 		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
 			return toData(map.getMapEntry(key));
 		}
     }
-    public class MapLockHandler extends ClientMapOperationHandler{
+    private class MapLockHandler extends ClientMapOperationHandler{
 		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
-			System.out.println();
-			map.lock(key);
-			return null;
+			throw new RuntimeException("Shouldn't invoke this method");
 		}
+		@Override
+		public void processCall(Node node, Packet packet){
+    		IMap<Object, Object> map = node.factory.getMap(packet.name);
+    		long timeout = packet.timeout;
+    		Data value = null;
+    		if(timeout==-1){
+    			map.lock(packet.key);
+    			value = null;
+    		}
+    		else if(timeout == 0){
+    			value = toData(map.tryLock(packet.key));
+    		}
+    		else{
+    			value = toData(map.tryLock(packet.key, timeout,(TimeUnit) toObject(packet.value)));
+    		}
+    		packet.value = value;
+    	}
     }
-    public class MapUnLockHandler extends ClientMapOperationHandler{
+    private class MapUnlockHandler extends ClientMapOperationHandler{
 		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
 			map.unlock(key);
 			return null;
 		}
     }
-    public class TransactionBeginHandler extends ClientOperationHandler {
-    	public void processCall(Node node, Packet packet) {
-    		Transaction transaction = node.factory.getTransaction();
-            transaction.begin();
-    	}
+    private class TransactionBeginHandler extends ClientTransactionOperationHandler {
+		public void processTransactionOp(Transaction transaction) {
+			transaction.begin();
+		}
     }
-    public class TransactionCommitHandler extends ClientOperationHandler {
-    	public void processCall(Node node, Packet packet) {
-    		Transaction transaction = node.factory.getTransaction();
-            transaction.commit();
-    	}
+    private class TransactionCommitHandler extends ClientTransactionOperationHandler {
+		public void processTransactionOp(Transaction transaction) {
+			transaction.commit();
+		}
     }
-    public class TransactionRollbackHandler extends ClientOperationHandler {
-    	public void processCall(Node node, Packet packet) {
-    		Transaction transaction = node.factory.getTransaction();
-            transaction.rollback();
-    	}
+    private class TransactionRollbackHandler extends ClientTransactionOperationHandler {
+		public void processTransactionOp(Transaction transaction) {
+			transaction.rollback();
+		}
     }
-    public class MapIterateKeysHandler extends ClientOperationHandler {
-    	public void processCall(Node node, Packet packet) {
-    		IMap<Object, Object> map = node.factory.getMap(packet.name);
-            ConcurrentMapManager.Entries entries = (Entries) map.keySet();
+    private class MapIterateKeysHandler extends ClientMapOperationHandler {
+		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+			ConcurrentMapManager.Entries entries = null;
+			if(value==null){
+				entries = (Entries) map.keySet();				
+			}
+			else{
+				Predicate p = (Predicate)toObject(value);
+				entries = (Entries) map.keySet(p);
+			}
             List<?> list = entries.getLsKeyValues();
             Keys keys = new Keys();
             for (Object obj : list) {
                 KeyValue entry = (KeyValue) obj;
                 keys.addKey(entry.key);
             }
-            packet.value = toData(keys);
-    	}
+            return toData(keys);
+		}
     }
-    public class AddListenerHandler extends ClientOperationHandler {
+    private class AddListenerHandler extends ClientOperationHandler {
     	public void processCall(Node node, Packet packet) {
     		ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
             IMap<Object, Object> map = node.factory.getMap(packet.name);
             Object key = toObject(packet.key);
             boolean includeValue = (int) packet.longValue == 1;
+            clientEndpoint.addThisAsListener(map, key, includeValue);
+    	}
+    }
+    private class RemoveListenerHandler extends ClientOperationHandler {
+    	public void processCall(Node node, Packet packet) {
+    		ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
+            IMap<Object, Object> map = node.factory.getMap(packet.name);
+            Object key = toObject(packet.key);
             if (key == null) {
-                map.addEntryListener(clientEndpoint, includeValue);
+                map.removeEntryListener(clientEndpoint);
             } else {
-                map.addEntryListener(clientEndpoint, key, includeValue);
+                map.removeEntryListener(clientEndpoint, key);
             }
     	}
     }
@@ -261,12 +334,19 @@ public class ClientService {
             }
         }
     }
-    public abstract class ClientMapOperationHandler extends ClientOperationHandler{
+    private abstract class ClientMapOperationHandler extends ClientOperationHandler{
     	public abstract Data processMapOp(IMap<Object, Object> map, Data key, Data value);
     	public void processCall(Node node, Packet packet){
     		IMap<Object, Object> map = node.factory.getMap(packet.name);
     		Data value = processMapOp(map,packet.key, packet.value);
     		packet.value = value;
+    	}	
+    }
+    private abstract class ClientTransactionOperationHandler extends ClientOperationHandler{
+    	public abstract void processTransactionOp(Transaction transaction);
+    	public void processCall(Node node, Packet packet){
+    		Transaction transaction = node.factory.getTransaction();
+    		processTransactionOp(transaction);
     	}	
     }
 }

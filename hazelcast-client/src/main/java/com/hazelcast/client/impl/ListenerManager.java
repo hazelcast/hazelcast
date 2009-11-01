@@ -19,7 +19,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryEvent.EntryEventType;
 
 public class ListenerManager extends ClientRunnable{
-	final Map<String, Map<Object, List<EntryListener>>> mapOfListeners = new HashMap<String, Map<Object,List<EntryListener>>>();
+	final public Map<String, Map<Object, List<EntryListener>>> mapOfListeners = new HashMap<String, Map<Object,List<EntryListener>>>();
 	final private BlockingQueue<Call> listenerCalls = new LinkedBlockingQueue<Call>();
 	final BlockingQueue<Packet> queue = new LinkedBlockingQueue<Packet>();
 	
@@ -33,19 +33,36 @@ public class ListenerManager extends ClientRunnable{
 		mapOfListeners.get(name).get(key).add(entryListener);
 	}
 	
+	public void removeEntryListener(String name, Object key, EntryListener entryListener){
+		Map<Object,List<EntryListener>> m = mapOfListeners.get(name);
+		if(m!=null){
+			List<EntryListener> list =  m.get(key);
+			if(list!=null){
+				list.remove(entryListener);
+				if(m.get(key).size()==0){
+					m.remove(key);
+				}
+			}
+			if(m.size()==0){
+				mapOfListeners.remove(name);
+			}
+		}
+	}
+	
 	private void fireEvent(EntryEvent event){
 		String name = event.getName();
 		Object key = event.getKey();
-		notifyListeners(event, mapOfListeners.get(name.substring(2)).get(null));
-		notifyListeners(event, mapOfListeners.get(name.substring(2)).get(key));
+		System.out.println(event);
+		if(mapOfListeners.get(name.substring(2))!=null){
+			notifyListeners(event, mapOfListeners.get(name.substring(2)).get(null));
+			notifyListeners(event, mapOfListeners.get(name.substring(2)).get(key));
+		}
 	}
 
-	private void notifyListeners(EntryEvent event,
-			Collection<EntryListener> collection) {
+	private void notifyListeners(EntryEvent event, Collection<EntryListener> collection) {
 		if(collection == null){
 			return;
 		}
-		
 		for (Iterator<EntryListener> iterator = collection.iterator(); iterator.hasNext();) {
 			EntryListener entryListener = iterator.next();
 			if(event.getEventType().equals(EntryEventType.ADDED)){
@@ -71,18 +88,6 @@ public class ListenerManager extends ClientRunnable{
 		}
 	}
 
-//	public void run() {
-//		while(true){
-//			Packet packet = null;
-//			try {
-//				packet = queue.take();
-//				EntryEvent event = new EntryEvent(packet.getName(),(int)packet.getLongValue(),Serializer.toObject(packet.getKey()),Serializer.toObject(packet.getValue()));
-//				fireEvent(event);
-//			} catch (InterruptedException e) {
-//				return;
-//			}
-//		}
-//	}
 	public void addListenerCall(Call call){
 		listenerCalls.add(call);
 	}

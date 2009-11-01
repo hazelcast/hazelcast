@@ -23,10 +23,10 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.hazelcast.client.Serializer;
+import static com.hazelcast.client.Serializer.toObject;
 import com.hazelcast.nio.DataSerializable;
 
-public class Keys implements DataSerializable{
+public class Keys<K> implements DataSerializable{
 	/**
 	 * 
 	 */
@@ -34,44 +34,35 @@ public class Keys implements DataSerializable{
 	/**
 	 * 
 	 */
-	private Set<Object> keys = new HashSet<Object>();
+	private Set<K> keys = new HashSet<K>();
 	
 	public Keys() {
 	
 	}
 	public void readData(DataInput in) throws IOException {
 		int size = in.readInt();
-		keys = new HashSet<Object>();
+		keys = new HashSet<K>();
 		for(int i=0;i<size;i++){
 			int length = in.readInt();
 			byte[] data = new byte[length];
 			in.readFully(data);
-			Object obj = Serializer.toObject(data);
+			K obj = (K)toObject(data);
 			keys.add(obj);
 		}
 	}
 	
 	public void writeData(DataOutput out) throws IOException {
-//		int size = (keys==null)?0:keys.size();
-//		out.writeInt(size);
-//		if(size>0){
-//			for (Object key : keys) {
-//				System.out.println("KEY: "+key);
-//				out.write(((byte[])key).length);
-//				out.write((byte[])key);
-//			}
-//		}
 		throw new UnsupportedOperationException();
 	}
 	
-	public Set getKeys(){
+	public Set<K> getKeys(){
 		return keys;
 	}
-	public void setKeys(Set keys){
+	public void setKeys(Set<K> keys){
 		this.keys = keys;
 	}
 	public void addKey(byte[] obj) {
-		this.keys.add(obj);
+		this.keys.add((K)toObject(obj));
 		
 	}
 	

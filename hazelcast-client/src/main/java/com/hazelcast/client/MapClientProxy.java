@@ -18,6 +18,7 @@
 package com.hazelcast.client;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +30,10 @@ import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.client.impl.Keys;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.impl.CMap.CMapEntry;
+
+
+import static com.hazelcast.client.Serializer.toByte;
+import static com.hazelcast.client.Serializer.toObject;
 
 public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	
@@ -44,18 +49,32 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 
 	public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
-		Packet request = createRequestPacket(ClusterOperation.ADD_LISTENER, Serializer.toByte(key), null);
+		if(key!=null){
+			if(client.listenerManager.mapOfListeners.containsKey(name) && 
+					client.listenerManager.mapOfListeners.get(name).containsKey(null) && 
+					client.listenerManager.mapOfListeners.get(name).get(null).size() > 0)
+			{	
+				client.listenerManager.registerEntryListener(name, key, listener);
+				return;
+			}
+		}
+		Packet request = createRequestPacket(ClusterOperation.ADD_LISTENER, toByte(key), null);
 		request.setLongValue(includeValue?1:0);
 	    Call c = createCall(request);
 	    client.listenerManager.addListenerCall(c);
 	    doCall(c);
 	    client.listenerManager.registerEntryListener(name, key, listener);
-	    
 	}
 
 	public Set<java.util.Map.Entry<K, V>> entrySet(Predicate predicate) {
-		// TODO Auto-generated method stub
-		return null;
+		Set<K> keySet = null;
+		if(predicate == null){
+			keySet = keySet();
+		}
+		else{
+			keySet = keySet(predicate);
+		}
+		return new LightEntrySet<K, V>(keySet, this);
 	}
 
 	public boolean evict(K key) {
@@ -73,32 +92,34 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 
 	public Set<K> keySet(Predicate predicate) {
-		// TODO Auto-generated method stub
-		return null;
+		Packet request = createRequestPacket(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS, null, toByte(predicate));
+	    Packet response = callAndGetResult(request);
+	    if(response.getValue()!=null){
+	    	Set<K> set = ((Keys<K>)toObject(response.getValue())).getKeys(); 
+	    	return set;
+	    }
+	    return null;	
 	}
 
 	public void lock(K key) {
-		doOp(ClusterOperation.CONCURRENT_MAP_LOCK, key, null);
+		doLock(ClusterOperation.CONCURRENT_MAP_LOCK, key, -1, null);
 	}
 
 	public void removeEntryListener(EntryListener<K, V> listener) {
-		// TODO Auto-generated method stub
-		
+		removeEntryListener(listener, null);
 	}
 
 	public void removeEntryListener(EntryListener<K, V> listener, K key) {
-		// TODO Auto-generated method stub
-		
+		doOp(ClusterOperation.REMOVE_LISTENER, key, null);
+		client.listenerManager.removeEntryListener(name, key, listener);
 	}
 
 	public boolean tryLock(K key) {
-		// TODO Auto-generated method stub
-		return false;
+		return (Boolean)doLock(ClusterOperation.CONCURRENT_MAP_LOCK, key, 0, null);
 	}
 
 	public boolean tryLock(K key, long time, TimeUnit timeunit) {
-		// TODO Auto-generated method stub
-		return false;
+		return (Boolean)doLock(ClusterOperation.CONCURRENT_MAP_LOCK, key, time, timeunit);
 	}
 
 	public void unlock(K key) {
@@ -106,47 +127,46 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 
 	public Collection<V> values(Predicate predicate) {
-		// TODO Auto-generated method stub
-		return null;
+		Set<Entry<K,V>> set = entrySet(predicate);
+		return new ValueCollection<K,V>(this, set);
 	}
 
 	public V putIfAbsent(K arg0, V arg1) {
-		// TODO Auto-generated method stub
-		return null;
+		return (V)doOp(ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT, arg0, arg1);
 	}
 
 	public boolean remove(Object arg0, Object arg1) {
-		return false;
+		return (Boolean)doOp(ClusterOperation.CONCURRENT_MAP_REMOVE_IF_SAME, arg0, arg1);
 	}
 
 	public V replace(K arg0, V arg1) {
-		// TODO Auto-generated method stub
-		return null;
+		return (V)doOp(ClusterOperation.CONCURRENT_MAP_REPLACE_IF_NOT_NULL, arg0, arg1);
 	}
 
 	public boolean replace(K arg0, V arg1, V arg2) {
-		// TODO Auto-generated method stub
-		return false;
+		Object[] arr = new Object[2];
+		arr[0] = arg1;
+		arr[1] = arg2;
+		return (Boolean)doOp(ClusterOperation.CONCURRENT_MAP_REPLACE_IF_SAME, arg0, arr);
 	}
 
 	public void clear() {
-		// TODO Auto-generated method stub
-		
+		Set keys = keySet();
+        for (Object key : keys) {
+            remove(key);
+        }
 	}
 
 	public boolean containsKey(Object arg0) {
-		// TODO Auto-generated method stub
-		return false;
+		return (Boolean)doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS, arg0, null);
 	}
 
 	public boolean containsValue(Object arg0) {
-		// TODO Auto-generated method stub
-		return false;
+		return (Boolean)doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS_VALUE, null, arg0);
 	}
 
 	public Set<java.util.Map.Entry<K, V>> entrySet() {
-		// TODO Auto-generated method stub
-		return null;
+		return entrySet(null);
 	}
 
 	public V get(Object key) {
@@ -154,20 +174,11 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 
 	public boolean isEmpty() {
-		// TODO Auto-generated method stub
-		return false;
+		return size()==0;
 	}
 
 	public Set<K> keySet() {
-		Packet request = createRequestPacket(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS, null, null);
-	    Packet response = callAndGetResult(request);
-	    if(response.getValue()!=null){
-	    	System.out.println("Response:" + response.getValue().length);
-	    	Set set = ((Keys)Serializer.toObject(response.getValue())).getKeys(); 
-	    	return set;
-	    }
-	    return null;
-	    
+		return keySet(null);
 	}
 
 	public V put(K key, V value) {
@@ -176,31 +187,46 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 
 
 	public void putAll(Map<? extends K, ? extends V> arg0) {
-		// TODO Auto-generated method stub
+		for(Iterator<? extends K> it = arg0.keySet().iterator(); it.hasNext(); ){
+			K key = (K)it.next();
+			put((K)key, arg0.get(key));
+		}
 		
 	}
 
 	public V remove(Object arg0) {
-		return (V)doOp(ClusterOperation.CONCURRENT_MAP_REMOVE, (K)arg0, null);
+		return (V)doOp(ClusterOperation.CONCURRENT_MAP_REMOVE, arg0, null);
 	}
 
-	private Object doOp(ClusterOperation operation, K key, V value) {
+	private Object doOp(ClusterOperation operation, Object key, Object value) {
+		Packet request = prepareRequest(operation, key, value);
+	    Packet response = callAndGetResult(request);
+	    return getValue(response);
+	}
+
+	private Packet prepareRequest(ClusterOperation operation, Object key,
+			Object value) {
 		byte[] k = null;
 		byte[] v = null;
 		if(key!=null){
-			k= Serializer.toByte(key);
+			k= toByte(key);
 		}
 		if(value!=null){
-			v= Serializer.toByte(value);
+			v= toByte(value);
 		}
 		Packet request = createRequestPacket(operation, k, v);
+		return request;
+	}
+	private Object doLock(ClusterOperation operation, Object key, long timeout, TimeUnit timeUnit) {
+		Packet request = prepareRequest(operation, key, timeUnit);
+		request.setTimeout(timeout);
 	    Packet response = callAndGetResult(request);
 	    return getValue(response);
 	}
 
 	private V getValue(Packet response) {
 		if(response.getValue()!=null){
-	    	return (V)Serializer.toObject(response.getValue());
+	    	return (V)toObject(response.getValue());
 	    }
 	    return null;
 	}
@@ -210,27 +236,22 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 
 	public Collection<V> values() {
-		// TODO Auto-generated method stub
-		return null;
+		return values(null);
 	}
 
 	public void destroy() {
-		// TODO Auto-generated method stub
-		
+		clear();
 	}
 
 	public Object getId() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	public InstanceType getInstanceType() {
-		// TODO Auto-generated method stub
-		return null;
+		return InstanceType.MAP;
 	}
 
 	public void addIndex(String attribute, boolean ordered) {
-		// TODO Auto-generated method stub
 		
 	}
 }

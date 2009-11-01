@@ -39,7 +39,9 @@ public class ClientRequestHandler implements Runnable {
 
     public void run() {
         ThreadContext.get().setCallContext(callContext);
+        
         ClientOperationHandler clientOperationHandler = clientOperationHandlers[packet.operation.getValue()];
+        
         if(clientOperationHandler!=null){
         	clientOperationHandler.handle(node, packet);
         	return;

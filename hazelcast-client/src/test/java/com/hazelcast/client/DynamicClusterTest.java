@@ -16,8 +16,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
 
 public class DynamicClusterTest {
@@ -85,28 +83,8 @@ public class DynamicClusterTest {
         final CountDownLatch entryAddLatch = new CountDownLatch(2);
         final CountDownLatch entryUpdatedLatch = new CountDownLatch(2);
         final CountDownLatch entryRemovedLatch = new CountDownLatch(2);
-        map.addEntryListener(new EntryListener<String,String>() {
-            public void entryAdded(EntryEvent<String,String> event) {
-                assertEquals("hello", event.getKey());
-                entryAddLatch.countDown();
-            }
-
-            public void entryRemoved(EntryEvent<String,String> event) {
-                entryRemovedLatch.countDown();
-                assertEquals("hello", event.getKey());
-                assertEquals("new world", event.getValue());
-            }
-
-            public void entryUpdated(EntryEvent<String,String> event) {
-                assertEquals("new world", event.getValue());
-                assertEquals("hello", event.getKey());
-                entryUpdatedLatch.countDown();
-            }
-
-            public void entryEvicted(EntryEvent<String,String> event) {
-                entryRemoved(event);
-            }
-        }, true);
+        CountDownLatchEntryListener<String, String> listener = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
+        map.addEntryListener(listener, true);
         map.put("hello", "world");
         map.put("hello", "new world");
         realMap.remove("hello");
