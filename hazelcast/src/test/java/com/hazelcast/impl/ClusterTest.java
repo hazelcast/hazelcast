@@ -11,6 +11,7 @@ import static junit.framework.Assert.assertTrue;
 import org.junit.After;
 import org.junit.Assert;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import java.io.Serializable;
@@ -18,6 +19,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ClusterTest {
@@ -625,6 +627,79 @@ public class ClusterTest {
                 map.unlock("T1");
             }
             return i;
+        }
+    }
+
+    /**
+     * Test for issue 157
+     */
+    @Test(timeout = 16000)
+    public void testMapProxySerialization() {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        Map m1 = h1.getMap("default");
+        m1.put("1", "value1");
+        h2.getMap("amap").put("1", m1);
+        Map m1again = (Map) h2.getMap("amap").get("1");
+        assertEquals("value1", m1again.get("1"));
+    }
+
+    /**
+     * Test for issue 157
+     *
+     */
+    @Test(timeout = 16000)
+    public void testMapProxySerializationWhenUsingExecutorService() throws Exception{
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        Map m1 = h1.getMap("default");
+        m1.put("1", "value1");
+        Future ft = h2.getExecutorService().submit(new DistributedTask(new TestProxyTask(m1), h1.getCluster().getLocalMember()));
+        assertEquals("value1", ft.get());
+    }
+
+    public static class TestProxyTask implements Callable, Serializable {
+        Map map = null;
+
+        public TestProxyTask() {
+        }
+
+        public TestProxyTask(Map map) {
+            this.map = map;
+        }
+
+        public Object call() {
+            return map.get("1");
+        }
+    }
+
+    /**
+     * Test for issue 157
+     *
+     */
+    @Test(timeout = 16000)
+    public void testHazelcastInstanceSerializationWhenUsingExecutorService() throws Exception{
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        Map m1 = h1.getMap("default");
+        m1.put("1", "value1");
+        Future ft = h2.getExecutorService().submit(
+                new DistributedTask(new TestHazelcastInstanceTask(h1), h1.getCluster().getLocalMember()));
+        assertEquals("value1", ft.get());
+    }
+
+    public static class TestHazelcastInstanceTask implements Callable, Serializable {
+        HazelcastInstance hazelcastInstance = null;
+
+        public TestHazelcastInstanceTask() {
+        }
+
+        public TestHazelcastInstanceTask(HazelcastInstance hazelcastInstance) {
+            this.hazelcastInstance = hazelcastInstance;
+        }
+
+        public Object call() {
+            return hazelcastInstance.getMap("default").get("1");
         }
     }
 }

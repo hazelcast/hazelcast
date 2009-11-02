@@ -37,7 +37,7 @@ public final class Hazelcast {
             if (defaultInstance != null) {
                 throw new IllegalStateException("Default Hazelcast instance is already initilized.");
             }
-            defaultInstance = com.hazelcast.impl.FactoryImpl.newFactory(config);
+            defaultInstance = com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(config);
         }
     }
 
@@ -45,7 +45,7 @@ public final class Hazelcast {
         if (defaultInstance == null) {
             synchronized (initLock) {
                 if (defaultInstance == null) {
-                    defaultInstance = com.hazelcast.impl.FactoryImpl.newFactory(null);
+                    defaultInstance = com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(null);
                 }
             }
         }
@@ -167,6 +167,6 @@ public final class Hazelcast {
      * @see #shutdownAll()
      */
     public static HazelcastInstance newHazelcastInstance(Config config) {
-        return com.hazelcast.impl.FactoryImpl.newFactory(config);
+        return com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(config);
     }
 }

@@ -43,6 +43,8 @@ public final class ThreadContext {
 
     private CallContext callContext = null;
 
+    private FactoryImpl currentFactory = null;
+
     private final ObjectPool<Packet> packetCache;
 
     private final static ConcurrentMap<String, BlockingQueue> mapGlobalQueues = new ConcurrentHashMap<String, BlockingQueue>();
@@ -116,6 +118,14 @@ public final class ThreadContext {
 
     public void setExecutionContext(CallContext executionContext) {
         this.setCallContext(executionContext);
+    }
+
+    public FactoryImpl getCurrentFactory() {
+        return currentFactory;
+    }
+
+    public void setCurrentFactory(FactoryImpl currentFactory) {
+        this.currentFactory = currentFactory;
     }
 
     public void reset() {

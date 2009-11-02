@@ -54,7 +54,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
 
     private volatile boolean started = false;
 
-    ExecutorManager(Node node) {
+    ExecutorManager(final Node node) {
         super(node);
         registerPacketProcessor(ClusterOperation.REMOTELY_EXECUTE,
                 new PacketProcessor() {
@@ -81,11 +81,19 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveSeconds, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(),
                 new ExecutorThreadFactory(node.threadGroup, node.getName()),
-                new RejectionHandler());
+                new RejectionHandler()) {
+            protected void beforeExecute(Thread t, Runnable r) {
+                ThreadContext.get().setCurrentFactory(node.factory);
+            }
+        };
         executorForMigrations = new ThreadPoolExecutor(1, 16, 60, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(),
                 new ExecutorThreadFactory(node.threadGroup, node.getName() + ".internal"),
-                new RejectionHandler());
+                new RejectionHandler()){
+            protected void beforeExecute(Thread t, Runnable r) {
+                ThreadContext.get().setCurrentFactory(node.factory);
+            } 
+        };
         node.getClusterImpl().addMembershipListener(this);
         for (int i = 0; i < 100; i++) {
             executionIds.add((long) i);
@@ -646,7 +654,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
             final Long executionId = executionIds.take();
             final InnerFutureTask inner = (InnerFutureTask) task.getInner();
             final Callable callable = inner.getCallable();
-            final Data callableData = ThreadContext.get().toData(callable);
+            final Data callableData = toData(callable);
             final DistributedExecutorAction action = new DistributedExecutorAction(executionId,
                     task, callableData, callable);
             inner.setExecutionManagerCallback(action);
@@ -686,7 +694,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         final SimpleExecution se = new SimpleExecution(remoteExecutionId, executor, null,
                 callableData, null, false);
         mapRemoteExecutions.put(remoteExecutionId, se);
-        executor.execute(se);
+        executeLocally(se);
         packet.returnToContainer();
     }
 
