@@ -177,7 +177,6 @@ public class CMap {
     }
 
     public void own(Request req) {
-//        System.out.println(req.blockId + " ownning.. " + req.caller);
         if (req.key == null || req.key.size() == 0) {
             throw new RuntimeException("Key cannot be null " + req.key);
         }

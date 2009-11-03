@@ -18,6 +18,8 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.config.ConfigProperty;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.impl.ThreadContext;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -93,7 +95,11 @@ public final class Serializer {
         try {
             bbis.set(data.buffer.array(), data.size());
             byte typeId = bbis.readByte();
-            return typeSerizalizers[typeId].read(bbis);
+            Object obj = typeSerizalizers[typeId].read(bbis);
+            if (obj instanceof HazelcastInstanceAware) {
+                ((HazelcastInstanceAware) obj).setHazelcastInstance(ThreadContext.get().getCurrentFactory());
+            }
+            return obj;
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);

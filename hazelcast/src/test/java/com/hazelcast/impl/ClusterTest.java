@@ -702,4 +702,30 @@ public class ClusterTest {
             return hazelcastInstance.getMap("default").get("1");
         }
     }
+
+
+    /**
+     * Test for issue 157
+     *
+     */
+    @Test(timeout = 16000)
+    public void testHazelcastInstanceAwareSerializationWhenUsingExecutorService() throws Exception{
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        Map m1 = h1.getMap("default");
+        m1.put("1", "value1");
+        Future ft = h2.getExecutorService().submit(
+                new DistributedTask(new TestHazelcastInstanceAwareTask(), h1.getCluster().getLocalMember()));
+        assertEquals("value1", ft.get());
+    }
+
+    public static class TestHazelcastInstanceAwareTask extends HazelcastInstanceAwareObject implements Callable, Serializable {
+
+        public TestHazelcastInstanceAwareTask() {
+        }
+
+        public Object call() {
+            return hazelcastInstance.getMap("default").get("1");
+        }
+    }
 }
