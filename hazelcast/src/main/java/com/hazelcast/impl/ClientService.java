@@ -28,6 +28,7 @@ import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.BaseManager.EventTask;
 import com.hazelcast.impl.BaseManager.KeyValue;
 import com.hazelcast.impl.ConcurrentMapManager.Entries;
+import com.hazelcast.impl.FactoryImpl.MProxy;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
@@ -60,8 +61,6 @@ public class ClientService {
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_UNLOCK.getValue()] = new MapUnlockHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_CONTAINS.getValue()] = new MapContainsKeyHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_CONTAINS_VALUE.getValue()] = new MapContainsValueHandler();
-        
-        
         clientOperationHandlers[ClusterOperation.TRANSACTION_BEGIN.getValue()] = new TransactionBeginHandler();
         clientOperationHandlers[ClusterOperation.TRANSACTION_COMMIT.getValue()] = new TransactionCommitHandler();
         clientOperationHandlers[ClusterOperation.TRANSACTION_ROLLBACK.getValue()] = new TransactionRollbackHandler();
@@ -69,6 +68,9 @@ public class ClientService {
         clientOperationHandlers[ClusterOperation.ADD_LISTENER.getValue()] = new AddListenerHandler();
         clientOperationHandlers[ClusterOperation.REMOVE_LISTENER.getValue()] = new RemoveListenerHandler();
         clientOperationHandlers[ClusterOperation.REMOTELY_PROCESS.getValue()] =  new RemotelyProcessHandler();
+        clientOperationHandlers[ClusterOperation.DESTROY.getValue()] =  new DestroyHandler();
+        clientOperationHandlers[ClusterOperation.GET_ID.getValue()] =  new GetIdHandler();
+        clientOperationHandlers[ClusterOperation.ADD_INDEX.getValue()] =  new AddIndexHandler();
     }
 
     // always called by InThread
@@ -76,8 +78,13 @@ public class ClientService {
         ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
         ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext, clientOperationHandlers);
-        node.clusterManager.enqueueEvent(clientEndpoint.hashCode(), clientRequestHandler);
-    }
+        if(!packet.operation.equals(ClusterOperation.CONCURRENT_MAP_UNLOCK)){
+        	node.clusterManager.enqueueEvent(clientEndpoint.hashCode(), clientRequestHandler);
+        }
+        else{
+        	node.executorManager.executeMigrationTask(clientRequestHandler);
+        }
+        }
 
     public ClientEndpoint getClientEndpoint(Connection conn) {
         ClientEndpoint clientEndpoint = mapClientEndpoints.get(conn);
@@ -88,31 +95,47 @@ public class ClientService {
         return clientEndpoint;
     }
 
-    class ClientEndpoint<K,V> implements EntryListener<K,V> {
+    class ClientEndpoint implements EntryListener {
         final Connection conn;
-        final private Map<Integer, CallContext> mapOfCallContexts = new HashMap<Integer, CallContext>();
+        final private Map<Integer, CallContext> callContexts = new HashMap<Integer, CallContext>();
+        final Map<String, Map<Object, EntryEvent>> listeneds = new HashMap<String, Map<Object, EntryEvent>>();
 
         ClientEndpoint(Connection conn) {
             this.conn = conn;
         }
 
         public CallContext getCallContext(int threadId) {
-            CallContext context = mapOfCallContexts.get(threadId);
+            CallContext context = callContexts.get(threadId);
             if (context == null) {
                 int locallyMappedThreadId = ThreadContext.get().createNewThreadId();
                 context = new CallContext(locallyMappedThreadId, true);
-                mapOfCallContexts.put(threadId, context);
+                callContexts.put(threadId, context);
             }
             return context;
         }
         
         public void addThisAsListener(IMap map, Object key, boolean includeValue){
+        	String name = ((MProxy)map).getLongName();
+        	Map<Object, EntryEvent> eventProcessedLog = getEventProcessedLog(name);
         	if (key == null) {
                 map.addEntryListener(this, includeValue);
             } else {
                 map.addEntryListener(this, key, includeValue);
             }
         }
+
+		private Map<Object, EntryEvent> getEventProcessedLog(String name) {
+			Map<Object, EntryEvent> eventProcessedLog = listeneds.get(name);
+        	if(eventProcessedLog == null){
+        		synchronized (name) {
+        			if(eventProcessedLog == null){
+        				eventProcessedLog = new HashMap<Object, EntryEvent>();
+        				listeneds.put(name, eventProcessedLog);
+        			}
+				}
+        	}
+        	return eventProcessedLog;
+		}
         
         @Override
         public int hashCode() {
@@ -136,8 +159,15 @@ public class ClientService {
         }
 
         private void processEvent(EntryEvent event) {
-            Packet packet = createEventPacket(event);
-            sendPacket(packet);
+        	Map<Object, EntryEvent> eventProcessedLog = getEventProcessedLog(event.getName());
+        	if(eventProcessedLog.get(event.getKey())!=null && eventProcessedLog.get(event.getKey()) == event){
+        		return;
+        	}
+        	eventProcessedLog.put(event.getKey(), event);
+        	Object key = listeneds.get(event.getName());
+        	if(key==null){}
+        	Packet packet = createEventPacket(event);
+        	sendPacket(packet);
         }
 
         private void sendPacket(Packet packet) {
@@ -170,6 +200,23 @@ public class ClientService {
 		}
 		@Override
 		protected void sendResponse(Packet request) {
+		}
+    }
+    private class DestroyHandler extends ClientOperationHandler{
+		public void processCall(Node node, Packet packet) {
+			IMap<Object, Object> map = node.factory.getMap(packet.name);
+			map.destroy();
+		}
+    }
+    private class GetIdHandler extends ClientMapOperationHandler{
+		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+			return toData(map.getId());
+		}
+    }
+    private class AddIndexHandler extends ClientMapOperationHandler{
+		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+			map.addIndex((String)toObject(key), (Boolean)toObject(value));
+			return toData(map.getId());
 		}
     }
     private class MapPutHandler extends ClientMapOperationHandler{

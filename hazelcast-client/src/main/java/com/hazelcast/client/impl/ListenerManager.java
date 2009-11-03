@@ -13,10 +13,11 @@ import java.util.concurrent.TimeUnit;
 import com.hazelcast.client.Call;
 import com.hazelcast.client.ClientRunnable;
 import com.hazelcast.client.Packet;
-import com.hazelcast.client.Serializer;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryEvent.EntryEventType;
+
+import static com.hazelcast.client.Serializer.toObject;
 
 public class ListenerManager extends ClientRunnable{
 	final public Map<String, Map<Object, List<EntryListener>>> mapOfListeners = new HashMap<String, Map<Object,List<EntryListener>>>();
@@ -52,7 +53,7 @@ public class ListenerManager extends ClientRunnable{
 	private void fireEvent(EntryEvent event){
 		String name = event.getName();
 		Object key = event.getKey();
-		System.out.println(event);
+//		System.out.println(event);
 		if(mapOfListeners.get(name.substring(2))!=null){
 			notifyListeners(event, mapOfListeners.get(name.substring(2)).get(null));
 			notifyListeners(event, mapOfListeners.get(name.substring(2)).get(key));
@@ -100,7 +101,7 @@ public class ListenerManager extends ClientRunnable{
 		if(packet==null){
 			return;
 		}
-		EntryEvent event = new EntryEvent(packet.getName(),(int)packet.getLongValue(),Serializer.toObject(packet.getKey()),Serializer.toObject(packet.getValue()));
+		EntryEvent event = new EntryEvent(packet.getName(),(int)packet.getLongValue(),toObject(packet.getKey()),toObject(packet.getValue()));
 		fireEvent(event);
 		
 	}

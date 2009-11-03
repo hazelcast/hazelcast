@@ -59,7 +59,6 @@ public class HazelcastClientTest{
         assertEquals("ABC", map.getName());
     }
     @Test
-    @Ignore
     public void lockMap() throws InterruptedException{
     	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
     	hClient = getHazelcastClient(h);
@@ -69,11 +68,11 @@ public class HazelcastClientTest{
     	Thread.sleep(1000);
     	System.out.println("Getting the lock");
     	map.lock("a");
-    	System.out.println("Got the lock");
+    	System.out.println("Got the lock " + Thread.currentThread().getId());
     	new Thread(new Runnable(){
     		public void run() {
     			map.lock("a");
-    			System.out.println("Thread also get the lock");
+    			System.out.println("Thread also get the lock " + Thread.currentThread().getId());
     			latch.countDown();
     		}
     	}).start();
@@ -85,6 +84,30 @@ public class HazelcastClientTest{
 
     	assertTrue(latch.await(2000, TimeUnit.MILLISECONDS));
     }
+    @Test
+    public void addIndex(){
+    	class Customer{
+    		private String name;
+    		private int age;
+			public void setName(String name) {
+				this.name = name;
+			}
+			public String getName() {
+				return name;
+			}
+			public void setAge(int age) {
+				this.age = age;
+			}
+			public int getAge() {
+				return age;
+			}
+    	}
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+    	final IMap<String, Customer>  map  = hClient.getMap("default");
+    	map.addIndex("getAge", false);
+    }
+    
     @Test
     public void putToTheMap() throws InterruptedException {
     	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
@@ -311,7 +334,6 @@ public class HazelcastClientTest{
         assertEquals(3, entryUpdatedLatch.getCount());
     }
     @Test
-    @Ignore
     public void addTwoListener1stToKeyOtherToMap() throws InterruptedException, IOException {
     	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
     	hClient = getHazelcastClient(h);
@@ -410,6 +432,26 @@ public class HazelcastClientTest{
         map.clear();
         for(int i=0;i<100;i++){
         	assertNull(map.get(i));
+        }
+    }
+    @Test
+    public void destroy(){
+    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+    	hClient = getHazelcastClient(h);
+        IMap<Integer, Integer> map = hClient.getMap("default");
+        for(int i=0;i<100;i++){
+        	assertNull(map.put(i, i));
+        	assertEquals(i, map.get(i));
+        }
+        IMap<Integer, Integer> map2 = hClient.getMap("default");
+        assertTrue(map == map2);
+        System.out.println(map.getId());
+        assertTrue(map.getId().equals(map2.getId()));
+        map.destroy();
+        map2 = hClient.getMap("default");
+        assertFalse(map == map2);
+        for(int i=0;i<100;i++){
+        	assertNull(map2.get(i));
         }
     }
     @Test

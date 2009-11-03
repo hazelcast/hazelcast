@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.client.impl.Keys;
 import com.hazelcast.query.Predicate;
@@ -49,15 +50,15 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 
 	public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
-		if(key!=null){
-			if(client.listenerManager.mapOfListeners.containsKey(name) && 
-					client.listenerManager.mapOfListeners.get(name).containsKey(null) && 
-					client.listenerManager.mapOfListeners.get(name).get(null).size() > 0)
-			{	
-				client.listenerManager.registerEntryListener(name, key, listener);
-				return;
-			}
-		}
+//		if(key!=null){
+//			if(client.listenerManager.mapOfListeners.containsKey(name) && 
+//					client.listenerManager.mapOfListeners.get(name).containsKey(null) && 
+//					client.listenerManager.mapOfListeners.get(name).get(null).size() > 0)
+//			{	
+//				client.listenerManager.registerEntryListener(name, key, listener);
+//				return;
+//			}
+//		}
 		Packet request = createRequestPacket(ClusterOperation.ADD_LISTENER, toByte(key), null);
 		request.setLongValue(includeValue?1:0);
 	    Call c = createCall(request);
@@ -240,11 +241,12 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 
 	public void destroy() {
-		clear();
+		doOp(ClusterOperation.DESTROY, null, null);
+		this.client.destroy("c:" + name);
 	}
 
 	public Object getId() {
-		return null;
+		return doOp(ClusterOperation.GET_ID, null, null);
 	}
 
 	public InstanceType getInstanceType() {
@@ -252,6 +254,7 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 
 	public void addIndex(String attribute, boolean ordered) {
+		doOp(ClusterOperation.ADD_INDEX, attribute, ordered);
 		
 	}
 }

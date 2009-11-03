@@ -82,7 +82,10 @@ public enum ClusterOperation {
     CONCURRENT_MAP_EVICT(237),
     TRANSACTION_BEGIN(238),
     TRANSACTION_COMMIT(239),
-    TRANSACTION_ROLLBACK(240),;
+    TRANSACTION_ROLLBACK(240),
+    DESTROY(241),
+    GET_ID(242), 
+    ADD_INDEX(243),;
 
     private int value;
 
@@ -226,6 +229,12 @@ public enum ClusterOperation {
                 return TRANSACTION_COMMIT;
             case 240:
                 return TRANSACTION_ROLLBACK;
+            case 241:
+                return DESTROY;
+            case 242:
+                return GET_ID;
+            case 243:
+                return ADD_INDEX;
             default:
                 return null;
         }

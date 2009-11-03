@@ -39,6 +39,7 @@ import com.hazelcast.core.InstanceListener;
 import com.hazelcast.core.MultiMap;
 
 public class HazelcastClient implements HazelcastInstance{
+	private static final String MAP_PREFIX = "c:";
 	final Map<Long,Call> calls  = new ConcurrentHashMap<Long, Call>();
 	final ListenerManager listenerManager;
 	final OutRunnable out;
@@ -73,7 +74,7 @@ public class HazelcastClient implements HazelcastInstance{
 	
 
 	public <K, V> IMap<K,V> getMap(String name){
-		String prefix = "c:";
+		String prefix = MAP_PREFIX;
 		return (IMap<K,V>)getClientProxy(prefix, name);
 	}
 
@@ -177,6 +178,9 @@ public class HazelcastClient implements HazelcastInstance{
 
 	public void restart() {
 		// TODO Auto-generated method stub
-		
+	}
+	
+	protected void destroy(String proxyName){
+		mapProxies.remove(proxyName);
 	}
 }
