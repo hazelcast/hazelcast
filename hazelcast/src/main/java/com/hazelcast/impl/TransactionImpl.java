@@ -29,97 +29,6 @@ import java.util.logging.Logger;
 
 class TransactionImpl implements Transaction {
 
-    private class TransactionRecord {
-        public String name;
-
-        public Object key;
-
-        public Object value;
-
-        public boolean removed = false;
-
-        public boolean newRecord = false;
-
-        public boolean queue = false;
-
-        public long lastAccess = -1;
-
-        public TransactionRecord(final String name, final Object key, final Object value,
-                                 final boolean newRecord) {
-            this.name = name;
-            this.key = key;
-            this.value = value;
-            this.newRecord = newRecord;
-            if (name.startsWith("q:"))
-                queue = true;
-        }
-
-        public void commit() {
-            if (queue)
-                commitQueue();
-            else
-                commitMap();
-        }
-
-        public void commitMap() {
-            if (removed) {
-                if (name.startsWith("m:s:")) {
-                    ConcurrentMapManager.MRemoveItem mRemoveItem = factory.node.concurrentMapManager.new MRemoveItem();
-                    mRemoveItem.removeItem(name, key);
-                } else if (!newRecord) {
-                    factory.node.concurrentMapManager.new MRemove().remove(name, key, -1);
-                } else {
-                    factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
-                }
-            } else {
-                factory.node.concurrentMapManager.new MPut().put(name, key, value, -1);
-            }
-        }
-
-        public void commitQueue() {
-            if (removed) {
-                commitPoll();
-                // remove the backup at the next member
-            } else {
-                offerAgain();
-            }
-        }
-
-        public void rollback() {
-            if (queue)
-                rollbackQueue();
-            else
-                rollbackMap();
-        }
-
-        public void rollbackMap() {
-            MProxy mapProxy = null;
-            final Object proxy = factory.getOrCreateProxyByName(name);
-            if (proxy instanceof MProxy) {
-                mapProxy = (MProxy) proxy;
-            }
-            if (mapProxy != null) mapProxy.unlock(key);
-        }
-
-        public void rollbackQueue() {
-            if (removed) {
-                offerAgain();
-                // if offer fails, no worries.
-                // there is a backup at the next member
-            }
-        }
-
-        private void commitPoll() {
-            final CommitPoll commitPoll = factory.node.blockingQueueManager.new CommitPoll();
-            commitPoll.commitPoll(name);
-        }
-
-        private void offerAgain() {
-            final Offer offer = factory.node.blockingQueueManager.new Offer();
-            offer.offer(name, value, 0, false);
-        }
-    }
-
     protected static Logger logger = Logger.getLogger(TransactionImpl.class.getName());
 
     private final long id;
@@ -330,5 +239,96 @@ class TransactionImpl implements Transaction {
         transactionRecords.clear();
         status = TXN_STATUS_NO_TXN;
         ThreadContext.get().finalizeTxn();
+    }
+
+    private class TransactionRecord {
+        public String name;
+
+        public Object key;
+
+        public Object value;
+
+        public boolean removed = false;
+
+        public boolean newRecord = false;
+
+        public boolean queue = false;
+
+        public long lastAccess = -1;
+
+        public TransactionRecord(final String name, final Object key, final Object value,
+                                 final boolean newRecord) {
+            this.name = name;
+            this.key = key;
+            this.value = value;
+            this.newRecord = newRecord;
+            if (name.startsWith("q:"))
+                queue = true;
+        }
+
+        public void commit() {
+            if (queue)
+                commitQueue();
+            else
+                commitMap();
+        }
+
+        public void commitMap() {
+            if (removed) {
+                if (name.startsWith("m:s:")) {
+                    ConcurrentMapManager.MRemoveItem mRemoveItem = factory.node.concurrentMapManager.new MRemoveItem();
+                    mRemoveItem.removeItem(name, key);
+                } else if (!newRecord) {
+                    factory.node.concurrentMapManager.new MRemove().remove(name, key, -1);
+                } else {
+                    factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
+                }
+            } else {
+                factory.node.concurrentMapManager.new MPut().put(name, key, value, -1);
+            }
+        }
+
+        public void commitQueue() {
+            if (removed) {
+                commitPoll();
+                // remove the backup at the next member
+            } else {
+                offerAgain();
+            }
+        }
+
+        public void rollback() {
+            if (queue)
+                rollbackQueue();
+            else
+                rollbackMap();
+        }
+
+        public void rollbackMap() {
+            MProxy mapProxy = null;
+            final Object proxy = factory.getOrCreateProxyByName(name);
+            if (proxy instanceof MProxy) {
+                mapProxy = (MProxy) proxy;
+            }
+            if (mapProxy != null) mapProxy.unlock(key);
+        }
+
+        public void rollbackQueue() {
+            if (removed) {
+                offerAgain();
+                // if offer fails, no worries.
+                // there is a backup at the next member
+            }
+        }
+
+        private void commitPoll() {
+            final CommitPoll commitPoll = factory.node.blockingQueueManager.new CommitPoll();
+            commitPoll.commitPoll(name);
+        }
+
+        private void offerAgain() {
+            final Offer offer = factory.node.blockingQueueManager.new Offer();
+            offer.offer(name, value, 0, false);
+        }
     }
 }

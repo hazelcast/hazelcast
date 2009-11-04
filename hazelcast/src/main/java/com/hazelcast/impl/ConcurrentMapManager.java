@@ -453,7 +453,7 @@ public final class ConcurrentMapManager extends BaseManager {
     class MGet extends MTargetAwareOp {
         public Object get(String name, Object key, long timeout) {
             final ThreadContext tc = ThreadContext.get();
-            TransactionImpl txn = tc.getCallContext().getCurrentTxn();
+            TransactionImpl txn = tc.getCallContext().getTransaction();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 if (txn.has(name, key)) {
                     return txn.get(name, key);
@@ -503,7 +503,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public boolean removeItem(String name, Object key, Object value) {
             ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.getCallContext().getCurrentTxn();
+            TransactionImpl txn = threadContext.getCallContext().getTransaction();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 try {
                     boolean locked;
@@ -555,7 +555,7 @@ public final class ConcurrentMapManager extends BaseManager {
         private Object txnalRemove(ClusterOperation operation, String name, Object key, Object value,
                                    long timeout) {
             ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.getCallContext().getCurrentTxn();
+            TransactionImpl txn = threadContext.getCallContext().getTransaction();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 try {
                     if (!txn.has(name, key)) {
@@ -605,7 +605,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         boolean addToSet(String name, Object value) {
             ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.getCallContext().getCurrentTxn();
+            TransactionImpl txn = threadContext.getCallContext().getTransaction();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 if (!txn.has(name, value)) {
                     MContainsKey containsKey = new MContainsKey();
@@ -793,7 +793,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         private Object txnalReplaceIfSame(ClusterOperation operation, String name, Object key, Object value, Object expectedValue, long timeout) {
             ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.getCallContext().getCurrentTxn();
+            TransactionImpl txn = threadContext.getCallContext().getTransaction();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 if (!txn.has(name, key)) {
                     MLock mlock = new MLock();
@@ -844,7 +844,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         private Object txnalPut(ClusterOperation operation, String name, Object key, Object value, long timeout) {
             ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.getCallContext().getCurrentTxn();
+            TransactionImpl txn = threadContext.getCallContext().getTransaction();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 if (!txn.has(name, key)) {
                     MLock mlock = new MLock();
@@ -1116,7 +1116,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public int getSize() {
             int size = (Integer) call();
-            TransactionImpl txn = ThreadContext.get().getCallContext().getCurrentTxn();
+            TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
             if (txn != null) {
                 size += txn.size(name);
             }
@@ -2016,7 +2016,7 @@ public final class ConcurrentMapManager extends BaseManager {
         public Entries(String name, ClusterOperation operation) {
             this.name = name;
             this.operation = operation;
-            TransactionImpl txn = ThreadContext.get().getCallContext().getCurrentTxn();
+            TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
             this.checkValue = (InstanceType.MAP == getInstanceType(name)) &&
                     (operation == CONCURRENT_MAP_ITERATE_VALUES
                             || operation == CONCURRENT_MAP_ITERATE_ENTRIES);
@@ -2042,7 +2042,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public void addEntries(Pairs pairs) {
             if (pairs.lsKeyValues == null) return;
-            TransactionImpl txn = ThreadContext.get().getCallContext().getCurrentTxn();
+            TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
             for (KeyValue entry : pairs.lsKeyValues) {
                 if (txn != null) {
                     Object key = entry.getKey();

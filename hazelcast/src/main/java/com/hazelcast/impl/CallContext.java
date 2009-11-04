@@ -18,7 +18,7 @@
 package com.hazelcast.impl;
 
 public class CallContext {
-    private TransactionImpl currentTxn = null;
+    private TransactionImpl txn = null;
     final int threadId;
     final boolean client;
 
@@ -27,24 +27,20 @@ public class CallContext {
         this.client = client;
     }
 
-    public TransactionImpl getCurrentTxn() {
-        return currentTxn;
-    }
-
-    public void setCurrentTxn(TransactionImpl currentTxn) {
-        this.currentTxn = currentTxn;
+    public TransactionImpl getTransaction() {
+        return txn;
     }
 
     public void setTransaction(TransactionImpl txn) {
-        this.setCurrentTxn(txn);
+        this.txn = txn;
     }
 
-    public void finalizeTxn() {
-        setCurrentTxn(null);
+    public void finalizeTransaction() {
+        setTransaction(null);
     }
 
     public long getTxnId() {
-        return (getCurrentTxn() == null) ? -1L : getCurrentTxn().getId();
+        return (getTransaction() == null) ? -1L : getTransaction().getId();
     }
 
     public int getThreadId() {

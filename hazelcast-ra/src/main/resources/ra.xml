@@ -4,10 +4,15 @@
            xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee
            http://java.sun.com/xml/ns/j2ee/connector_1_5.xsd"
            version="1.5">
+    <description>Hazelcast Resource Adapter</description>
+    <display-name>HazelcastRA</display-name>
+    <icon></icon>
+    <vendor-name>Hazelcast.com</vendor-name>
+    <eis-type>Hazelcast</eis-type>
+    <resourceadapter-version>1.8-SNAPSHOT</resourceadapter-version>
+
     <license>
-        <description>
-            Copyright (c) Hazelcast.com
-        </description>
+        <description>Copyright (c) Hazelcast.com</description>
         <license-required>true</license-required>
     </license>
     <resourceadapter>

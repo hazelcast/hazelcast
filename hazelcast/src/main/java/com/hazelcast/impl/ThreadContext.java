@@ -101,23 +101,15 @@ public final class ThreadContext {
     }
 
     public void finalizeTxn() {
-        getCallContext().finalizeTxn();
+        getCallContext().finalizeTransaction();
     }
 
     public Transaction getTransaction() {
-        return getCallContext().getCurrentTxn();
-    }
+        return getCallContext().getTransaction();
+    } 
 
     public long getTxnId() {
         return getCallContext().getTxnId();
-    }
-
-    public CallContext getExecutionContext() {
-        return getCallContext();
-    }
-
-    public void setExecutionContext(CallContext executionContext) {
-        this.setCallContext(executionContext);
     }
 
     public FactoryImpl getCurrentFactory() {

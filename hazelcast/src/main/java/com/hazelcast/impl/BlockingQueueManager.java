@@ -518,7 +518,7 @@ public class BlockingQueueManager extends BaseManager {
 
         public void commitPoll(String name) {
             this.name = name;
-            TransactionImpl txn = ThreadContext.get().getCallContext().getCurrentTxn();
+            TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
             this.txnId = txn.getId();
             enqueueAndReturn(this);
         }
@@ -552,7 +552,7 @@ public class BlockingQueueManager extends BaseManager {
 
         public int getSize() {
             int size = (Integer) call();
-            TransactionImpl txn = ThreadContext.get().getCallContext().getCurrentTxn();
+            TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
             if (txn != null) {
                 size += txn.size(name);
             }
@@ -613,7 +613,7 @@ public class BlockingQueueManager extends BaseManager {
         Iterator txnOffers = null;
 
         public void set(String name) {
-            TransactionImpl txn = ThreadContext.get().getCallContext().getCurrentTxn();
+            TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
             if (txn != null) {
                 List txnOfferItems = txn.newEntries(name);
                 if (txnOfferItems != null) {
@@ -859,7 +859,7 @@ public class BlockingQueueManager extends BaseManager {
 
         public boolean offer(String name, Object value, long timeout, boolean transactional) {
             ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.getCallContext().getCurrentTxn();
+            TransactionImpl txn = threadContext.getCallContext().getTransaction();
             if (transactional && txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 txn.attachPutOp(name, null, value, true);
             } else {
@@ -939,7 +939,7 @@ public class BlockingQueueManager extends BaseManager {
         public Object poll(String name, long timeout) {
             Object value = objectCall(ClusterOperation.BLOCKING_QUEUE_POLL, name, null, null, timeout, -1);
             ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.getCallContext().getCurrentTxn();
+            TransactionImpl txn = threadContext.getCallContext().getTransaction();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 txn.attachRemoveOp(name, null, value, false);
             }

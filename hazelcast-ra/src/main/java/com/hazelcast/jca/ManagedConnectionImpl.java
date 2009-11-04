@@ -18,6 +18,7 @@
 package com.hazelcast.jca;
 
 import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.core.Hazelcast;
 
 import javax.resource.ResourceException;
 import javax.resource.spi.*;
@@ -95,7 +96,7 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection,
 
     public void begin() throws ResourceException {
         log(this, "txn.begin");
-        ThreadContext.get().getTransaction().begin();
+        Hazelcast.getTransaction().begin();
         fireConnectionEvent(ConnectionEvent.LOCAL_TRANSACTION_STARTED);
     }
 

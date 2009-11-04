@@ -207,6 +207,10 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
+    public static Collection<FactoryImpl> getFactories() {
+        return factories.values();
+    }
+
     public static void shutdown(FactoryImpl factory) {
         synchronized (factoryLock) {
             try {
@@ -364,7 +368,7 @@ public class FactoryImpl implements HazelcastInstance {
     public Transaction getTransaction() {
         initialChecks();
         ThreadContext threadContext = ThreadContext.get();
-        TransactionImpl txn = threadContext.getCallContext().getCurrentTxn();
+        TransactionImpl txn = threadContext.getCallContext().getTransaction();
         if (txn == null) {
             txn = transactionFactory.newTransaction();
             threadContext.getCallContext().setTransaction(txn);
@@ -2210,7 +2214,7 @@ public class FactoryImpl implements HazelcastInstance {
             public boolean containsEntry(Object key, Object value) {
                 check(key);
                 check(value);
-                TransactionImpl txn = ThreadContext.get().getCallContext().getCurrentTxn();
+                TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
                 if (txn != null) {
                     if (txn.has(name, key)) {
                         Object v = txn.get(name, key);
@@ -2223,7 +2227,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public boolean containsKey(Object key) {
                 check(key);
-                TransactionImpl txn = ThreadContext.get().getCallContext().getCurrentTxn();
+                TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
                 if (txn != null) {
                     if (txn.has(name, key)) {
                         Object value = txn.get(name, key);
@@ -2236,7 +2240,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public boolean containsValue(Object value) {
                 check(value);
-                TransactionImpl txn = ThreadContext.get().getCallContext().getCurrentTxn();
+                TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
                 if (txn != null) {
                     if (txn.containsValue(name, value))
                         return true;
