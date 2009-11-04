@@ -215,8 +215,10 @@ public class ClientService {
     }
     private class AddIndexHandler extends ClientMapOperationHandler{
 		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+//			System.out.println((String)toObject(key));
+//			System.out.println(map.getName());
 			map.addIndex((String)toObject(key), (Boolean)toObject(value));
-			return toData(map.getId());
+			return null;
 		}
     }
     private class MapPutHandler extends ClientMapOperationHandler{

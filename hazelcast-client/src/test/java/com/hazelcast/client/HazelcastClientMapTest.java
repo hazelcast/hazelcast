@@ -24,6 +24,12 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.QueryTest;
+import com.hazelcast.query.QueryTest.Employee;
 
 import static org.junit.Assert.*;
 
@@ -32,6 +38,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
@@ -42,7 +50,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 
-public class HazelcastClientTest{
+public class HazelcastClientMapTest{
     private HazelcastClient hClient;
 
     @After
@@ -86,26 +94,42 @@ public class HazelcastClientTest{
     }
     @Test
     public void addIndex(){
-    	class Customer{
-    		private String name;
-    		private int age;
-			public void setName(String name) {
-				this.name = name;
-			}
-			public String getName() {
-				return name;
-			}
-			public void setAge(int age) {
-				this.age = age;
-			}
-			public int getAge() {
-				return age;
-			}
-    	}
+    	
     	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
     	hClient = getHazelcastClient(h);
-    	final IMap<String, Customer>  map  = hClient.getMap("default");
-    	map.addIndex("getAge", false);
+    	IMap map  = hClient.getMap("employees");
+    	int size = 1000;
+    	for(int i=0;i<size;i++){
+    		map.put(String.valueOf(i), new Employee("name"+i, i, true, 0 ));
+    	}
+    	EntryObject e = new PredicateBuilder().getEntryObject();
+        Predicate predicate = e.get("age").equal(23);
+        long begin = System.currentTimeMillis();
+        Set<Entry<Object, Object>> set = map.entrySet(predicate);
+        long timeWithoutIndex = System.currentTimeMillis() - begin; 
+        assertEquals(1, set.size());
+        assertEquals(size, map.size());
+        
+        map.destroy();
+        
+        map  = hClient.getMap("employees");
+        map.addIndex("age", true);
+        for(int i=0;i<size;i++){
+    		map.put(String.valueOf(i), new Employee("name"+i, i, true, 0 ));
+    	}
+        begin = System.currentTimeMillis();
+        set = map.entrySet(predicate);
+        long timeWithIndex = System.currentTimeMillis() - begin; 
+        assertEquals(1, set.size());
+        assertEquals(size, map.size());
+        
+        assertTrue(timeWithoutIndex > 2*timeWithIndex);
+        
+        
+        
+        
+
+        //    	map.addIndex("age", true);
     }
     
     @Test
@@ -159,6 +183,42 @@ public class HazelcastClientTest{
     	assertFalse(map.evict("a"));
     	assertNull(map.get("a"));
     }
+    
+    public class Customer implements DataSerializable{
+		private String name;
+		private int age;
+		
+		public Customer(String name, int age) {
+			this.name = name;
+			this.age = age;
+		}
+		public void setName(String name) {
+			this.name = name;
+		}
+		public String getName() {
+			return name;
+		}
+		public void setAge(int age) {
+			this.age = age;
+		}
+		public int getAge() {
+			return age;
+		}
+		public void readData(DataInput in) throws IOException {
+			this.age = in.readInt();
+			int size = in.readInt();
+			byte[] bytes = new byte[size];
+			in.readFully(bytes);
+			this.name = new String(bytes);
+		}
+		public void writeData(DataOutput out) throws IOException {
+			out.writeInt(age);
+			byte[] bytes = name.getBytes();
+			out.writeInt(bytes.length);
+			out.write(bytes);
+			
+		}
+	}
     @Test
     public void getSize(){
     	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
@@ -608,5 +668,48 @@ public class HazelcastClientTest{
 		return client;
 	}
 	
+    @Test
+    public void testTwoMembersWithIndexes() {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+//        IMap imap = h1.getMap("employees");
+        hClient = getHazelcastClient(h1);
+        final IMap imap  = hClient.getMap("employees");
+        imap.addIndex("name", false);
+        imap.addIndex("age", true);
+        imap.addIndex("active", false);
+        doFunctionalQueryTest(imap);
+    }
     
+    public void doFunctionalQueryTest(IMap imap) {
+        imap.put("1", new Employee("joe", 33, false, 14.56));
+        imap.put("2", new Employee("ali", 23, true, 15.00));
+        for (int i = 3; i < 103; i++) {
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+        }
+        Set<Map.Entry> entries = imap.entrySet();
+        assertEquals(102, entries.size());
+        int itCount = 0;
+        for (Map.Entry entry : entries) {
+            Employee c = (Employee) entry.getValue();
+            itCount++;
+        }
+        assertEquals(102, itCount);
+        EntryObject e = new PredicateBuilder().getEntryObject();
+        Predicate predicate = e.is("active").and(e.get("age").equal(23));
+        entries = imap.entrySet(predicate);
+        assertEquals(3, entries.size());
+        for (Map.Entry entry : entries) {
+            Employee c = (Employee) entry.getValue();
+            assertEquals(c.getAge(), 23);
+            assertTrue(c.isActive());
+        }
+        imap.remove("2");
+        entries = imap.entrySet(predicate);
+        assertEquals(2, entries.size());
+        for (Map.Entry entry : entries) {
+            Employee c = (Employee) entry.getValue();
+            assertEquals(c.getAge(), 23);
+            assertTrue(c.isActive());
+        }
+    }
 }

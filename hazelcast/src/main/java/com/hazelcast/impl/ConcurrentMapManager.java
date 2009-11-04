@@ -29,6 +29,7 @@ import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
+
 import static com.hazelcast.nio.IOUtil.*;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.query.Expression;
@@ -700,7 +701,11 @@ public final class ConcurrentMapManager extends BaseManager {
                 for (int i = 0; i < indexes.length; i++) {
                     Index index = indexes[i];
                     if (index != null) {
-                        newIndexes[i] = index.extractLongValue(value);
+                    	Object realValue = value;
+                    	if(realValue instanceof Data){
+                    		realValue = toObject((Data)value);
+                    	}
+                        newIndexes[i] = index.extractLongValue(realValue);
                         if (typesNew) {
                             indexTypes[i] = index.getIndexType();
                         }
