@@ -1,6 +1,6 @@
 package com.hazelcast.client;
 
-import static com.hazelcast.client.HazelcastClientMapTest.getHazelcastClient;
+import static com.hazelcast.client.TestUtility.*;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import org.junit.After;

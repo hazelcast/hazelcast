@@ -28,10 +28,12 @@ import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
-import com.hazelcast.query.QueryTest;
 import com.hazelcast.query.QueryTest.Employee;
 
+import static com.hazelcast.client.TestUtility.*;
+
 import static org.junit.Assert.*;
+
 
 import org.junit.After;
 import org.junit.Ignore;
@@ -262,31 +264,6 @@ public class HazelcastClientMapTest{
     }
 
 
-    @Test
-    public void rollbackTransaction() {
-      	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-        Transaction transaction = hClient.getTransaction();
-        transaction.begin();
-        Map<String, String> map = hClient.getMap("default");
-        map.put("1", "A");
-        assertEquals("A", map.get("1"));
-        transaction.rollback();
-        assertNull(map.get("1"));
-    }
-
-    @Test
-    public void commitTransaction() {
-      	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-        Transaction transaction = hClient.getTransaction();
-        transaction.begin();
-        Map<String, String> map = hClient.getMap("default");
-        map.put("1", "A");
-        assertEquals("A", map.get("1"));
-        transaction.commit();
-        assertEquals("A", map.get("1"));
-    }
 
     @Test
     public void itertateOverMapKeys() {
@@ -657,15 +634,6 @@ public class HazelcastClientMapTest{
 	        n = root.enumerate( threads, true );
 	    } while ( n == nAlloc );
 	    return threads;
-	}
-	
-	public static HazelcastClient getHazelcastClient(HazelcastInstance ... h) {
-		InetSocketAddress[] addresses = new InetSocketAddress[h.length];
-		for (int i = 0; i < h.length; i++) {
-			addresses[i] = new InetSocketAddress(h[i].getCluster().getLocalMember().getInetAddress(),h[i].getCluster().getLocalMember().getPort());
-		}
-		HazelcastClient client = HazelcastClient.getHazelcastClient(addresses);
-		return client;
 	}
 	
     @Test

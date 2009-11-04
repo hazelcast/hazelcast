@@ -917,6 +917,10 @@ public class FactoryImpl implements HazelcastInstance {
         public FactoryImpl getFactory() {
             return factory;
         }
+        
+        public CollectionProxy getBase(){
+        	return base;
+        }
 
         public void setFactory(FactoryImpl factory) {
             this.factory = factory;

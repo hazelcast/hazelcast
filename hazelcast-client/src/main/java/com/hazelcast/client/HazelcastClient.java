@@ -40,6 +40,7 @@ import com.hazelcast.core.MultiMap;
 
 public class HazelcastClient implements HazelcastInstance{
 	private static final String MAP_PREFIX = "c:";
+	private static final String LIST_PREFIX = "m:l:";
 	final Map<Long,Call> calls  = new ConcurrentHashMap<Long, Call>();
 	final ListenerManager listenerManager;
 	final OutRunnable out;
@@ -74,23 +75,26 @@ public class HazelcastClient implements HazelcastInstance{
 	
 
 	public <K, V> IMap<K,V> getMap(String name){
-		String prefix = MAP_PREFIX;
-		return (IMap<K,V>)getClientProxy(prefix, name);
+		return (IMap<K,V>)getClientProxy(MAP_PREFIX + name);
 	}
 
-	private <V, K> ClientProxy getClientProxy(String prefix, String name) {
-		String mapLookupName = prefix + name;
-		ClientProxy proxy = mapProxies.get(mapLookupName);
+	private <K, V, E> ClientProxy getClientProxy(String name) {
+		ClientProxy proxy = mapProxies.get(name);
 		if(proxy==null){
 			synchronized (mapProxies) {
 				if(proxy==null){
-					MapClientProxy<K, V> clientProxy = new MapClientProxy<K, V>(this,name);
-					clientProxy.setOutRunnable(out);
-					mapProxies.put(mapLookupName, clientProxy);
+					if(name.startsWith(MAP_PREFIX)){
+						proxy = new MapClientProxy<K, V>(this,name);
+					}
+					else if(name.startsWith(LIST_PREFIX)){
+						proxy = new ListClientProxy<E>(this, name);
+					}
+					proxy.setOutRunnable(out);
+					mapProxies.put(name, proxy);
 				}
 			}
 		}
-		return mapProxies.get(mapLookupName);
+		return mapProxies.get(name);
 	}
 
 
@@ -137,8 +141,7 @@ public class HazelcastClient implements HazelcastInstance{
 	}
 
 	public <E> IList<E> getList(String name) {
-		// TODO Auto-generated method stub
-		return null;
+		return (IList<E>)getClientProxy(LIST_PREFIX + name);
 	}
 
 	public ILock getLock(Object obj) {

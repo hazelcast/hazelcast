@@ -17,6 +17,9 @@
 
 package com.hazelcast.client;
 
+import static com.hazelcast.client.Serializer.toByte;
+import static com.hazelcast.client.Serializer.toObject;
+
 import com.hazelcast.impl.ClusterOperation;
 
 public class ClientProxy {
@@ -25,6 +28,10 @@ public class ClientProxy {
 
 	public void setOutRunnable(OutRunnable out) {
 		this.out = out;
+	}
+	
+	public String getName() {
+		return name.substring(2);
 	}
 
 	protected Packet callAndGetResult(Packet request) {
@@ -69,6 +76,32 @@ public class ClientProxy {
 		request.setKey(key);
 		request.setValue(value);
 		return request;
+	}
+	protected Object doOp(ClusterOperation operation, Object key, Object value) {
+		Packet request = prepareRequest(operation, key, value);
+	    Packet response = callAndGetResult(request);
+	    return getValue(response);
+	}
+	
+	protected Packet prepareRequest(ClusterOperation operation, Object key,
+			Object value) {
+		byte[] k = null;
+		byte[] v = null;
+		if(key!=null){
+			k= toByte(key);
+		}
+		if(value!=null){
+			v= toByte(value);
+		}
+		Packet request = createRequestPacket(operation, k, v);
+		return request;
+	}
+	
+	protected Object getValue(Packet response) {
+		if(response.getValue()!=null){
+	    	return toObject(response.getValue());
+	    }
+	    return null;
 	}
 
 }

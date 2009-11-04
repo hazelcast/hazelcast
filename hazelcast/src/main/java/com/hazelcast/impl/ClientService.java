@@ -20,15 +20,22 @@ package com.hazelcast.impl;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_SUCCESS;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
+import static com.hazelcast.impl.BaseManager.getInstanceType;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.ICollection;
+import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Transaction;
+import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.impl.BaseManager.EventTask;
 import com.hazelcast.impl.BaseManager.KeyValue;
 import com.hazelcast.impl.ConcurrentMapManager.Entries;
+import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl;
 import com.hazelcast.impl.FactoryImpl.MProxy;
+import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl.CollectionProxyReal;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
@@ -71,6 +78,7 @@ public class ClientService {
         clientOperationHandlers[ClusterOperation.DESTROY.getValue()] =  new DestroyHandler();
         clientOperationHandlers[ClusterOperation.GET_ID.getValue()] =  new GetIdHandler();
         clientOperationHandlers[ClusterOperation.ADD_INDEX.getValue()] =  new AddIndexHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ADD_TO_LIST.getValue()] = new ListAddHandler();
     }
 
     // always called by InThread
@@ -114,9 +122,7 @@ public class ClientService {
             return context;
         }
         
-        public void addThisAsListener(IMap map, Object key, boolean includeValue){
-        	String name = ((MProxy)map).getLongName();
-        	Map<Object, EntryEvent> eventProcessedLog = getEventProcessedLog(name);
+        public void addThisAsListener(IMap map, Data key, boolean includeValue){
         	if (key == null) {
                 map.addEntryListener(this, includeValue);
             } else {
@@ -157,7 +163,7 @@ public class ClientService {
         public void entryUpdated(EntryEvent event) {
             processEvent(event);
         }
-
+		
         private void processEvent(EntryEvent event) {
         	Map<Object, EntryEvent> eventProcessedLog = getEventProcessedLog(event.getName());
         	if(eventProcessedLog.get(event.getKey())!=null && eventProcessedLog.get(event.getKey()) == event){
@@ -165,8 +171,7 @@ public class ClientService {
         	}
         	eventProcessedLog.put(event.getKey(), event);
         	Object key = listeneds.get(event.getName());
-        	if(key==null){}
-        	Packet packet = createEventPacket(event);
+        	Packet packet = createEntryEventPacket(event);
         	sendPacket(packet);
         }
 
@@ -176,13 +181,15 @@ public class ClientService {
             }
         }
 
-        private Packet createEventPacket(EntryEvent event) {
+        private Packet createEntryEventPacket(EntryEvent event) {
             Packet packet = new Packet();
             EventTask eventTask = (EventTask) event;
             packet.set(event.getName(), ClusterOperation.EVENT, eventTask.getDataKey(), eventTask.getDataValue());
             packet.longValue = event.getEventType().getType();
             return packet;
         }
+
+
         
     }
 
@@ -204,7 +211,7 @@ public class ClientService {
     }
     private class DestroyHandler extends ClientOperationHandler{
 		public void processCall(Node node, Packet packet) {
-			IMap<Object, Object> map = node.factory.getMap(packet.name);
+			IMap<Object, Object> map = (IMap)node.factory.getOrCreateProxyByName(packet.name);
 			map.destroy();
 		}
     }
@@ -215,8 +222,6 @@ public class ClientService {
     }
     private class AddIndexHandler extends ClientMapOperationHandler{
 		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
-//			System.out.println((String)toObject(key));
-//			System.out.println(map.getName());
 			map.addIndex((String)toObject(key), (Boolean)toObject(value));
 			return null;
 		}
@@ -290,7 +295,7 @@ public class ClientService {
 		}
 		@Override
 		public void processCall(Node node, Packet packet){
-    		IMap<Object, Object> map = node.factory.getMap(packet.name);
+    		IMap<Object, Object> map = (IMap)node.factory.getOrCreateProxyByName(packet.name);
     		long timeout = packet.timeout;
     		Data value = null;
     		if(timeout==-1){
@@ -349,23 +354,38 @@ public class ClientService {
     private class AddListenerHandler extends ClientOperationHandler {
     	public void processCall(Node node, Packet packet) {
     		ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
-            IMap<Object, Object> map = node.factory.getMap(packet.name);
-            Object key = toObject(packet.key);
-            boolean includeValue = (int) packet.longValue == 1;
-            clientEndpoint.addThisAsListener(map, key, includeValue);
+    		boolean includeValue = (int) packet.longValue == 1;
+    		if(getInstanceType(packet.name).equals(InstanceType.MAP)){
+    			IMap<Object, Object> map = (IMap)node.factory.getOrCreateProxyByName(packet.name);
+    			clientEndpoint.addThisAsListener(map, packet.key, includeValue);
+    		}
+    		else if(getInstanceType(packet.name).equals(InstanceType.LIST)){
+    			CollectionProxyImpl collectionProxy = (CollectionProxyImpl)node.factory.getOrCreateProxyByName(packet.name);
+    			MProxy mapProxy  = ((CollectionProxyReal)collectionProxy.getBase()).mapProxy;
+    			mapProxy.addEntryListener(clientEndpoint, includeValue);
+    		}
     	}
     }
     private class RemoveListenerHandler extends ClientOperationHandler {
     	public void processCall(Node node, Packet packet) {
     		ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
-            IMap<Object, Object> map = node.factory.getMap(packet.name);
-            Object key = toObject(packet.key);
-            if (key == null) {
+            IMap<Object, Object> map = (IMap)node.factory.getOrCreateProxyByName(packet.name);
+            if (packet.key == null) {
                 map.removeEntryListener(clientEndpoint);
             } else {
-                map.removeEntryListener(clientEndpoint, key);
+                map.removeEntryListener(clientEndpoint, packet.key);
             }
     	}
+    }
+    
+    private class ListAddHandler extends ClientOperationHandler{
+
+		@Override
+		public void processCall(Node node, Packet packet) {
+			IList list = (IList)node.factory.getOrCreateProxyByName(packet.name);
+			packet.value = toData(list.add(packet.key));
+		}
+    	
     }
     
     public abstract class ClientOperationHandler{
@@ -386,10 +406,11 @@ public class ClientService {
     private abstract class ClientMapOperationHandler extends ClientOperationHandler{
     	public abstract Data processMapOp(IMap<Object, Object> map, Data key, Data value);
     	public void processCall(Node node, Packet packet){
-    		IMap<Object, Object> map = node.factory.getMap(packet.name);
+    		IMap<Object, Object> map = (IMap)node.factory.getOrCreateProxyByName(packet.name);
     		Data value = processMapOp(map,packet.key, packet.value);
     		packet.value = value;
-    	}	
+    	}
+		
     }
     private abstract class ClientTransactionOperationHandler extends ClientOperationHandler{
     	public abstract void processTransactionOp(Transaction transaction);

@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.client.impl.Keys;
 import com.hazelcast.query.Predicate;
@@ -50,15 +49,6 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 
 	public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
-//		if(key!=null){
-//			if(client.listenerManager.mapOfListeners.containsKey(name) && 
-//					client.listenerManager.mapOfListeners.get(name).containsKey(null) && 
-//					client.listenerManager.mapOfListeners.get(name).get(null).size() > 0)
-//			{	
-//				client.listenerManager.registerEntryListener(name, key, listener);
-//				return;
-//			}
-//		}
 		Packet request = createRequestPacket(ClusterOperation.ADD_LISTENER, toByte(key), null);
 		request.setLongValue(includeValue?1:0);
 	    Call c = createCall(request);
@@ -88,10 +78,6 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 		return mapEntry;
 	}
 	
-	public String getName() {
-		return name;
-	}
-
 	public Set<K> keySet(Predicate predicate) {
 		Packet request = createRequestPacket(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS, null, toByte(predicate));
 	    Packet response = callAndGetResult(request);
@@ -199,37 +185,11 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 		return (V)doOp(ClusterOperation.CONCURRENT_MAP_REMOVE, arg0, null);
 	}
 
-	private Object doOp(ClusterOperation operation, Object key, Object value) {
-		Packet request = prepareRequest(operation, key, value);
-	    Packet response = callAndGetResult(request);
-	    return getValue(response);
-	}
-
-	private Packet prepareRequest(ClusterOperation operation, Object key,
-			Object value) {
-		byte[] k = null;
-		byte[] v = null;
-		if(key!=null){
-			k= toByte(key);
-		}
-		if(value!=null){
-			v= toByte(value);
-		}
-		Packet request = createRequestPacket(operation, k, v);
-		return request;
-	}
 	private Object doLock(ClusterOperation operation, Object key, long timeout, TimeUnit timeUnit) {
 		Packet request = prepareRequest(operation, key, timeUnit);
 		request.setTimeout(timeout);
 	    Packet response = callAndGetResult(request);
 	    return getValue(response);
-	}
-
-	private V getValue(Packet response) {
-		if(response.getValue()!=null){
-	    	return (V)toObject(response.getValue());
-	    }
-	    return null;
 	}
 
 	public int size() {
@@ -242,7 +202,7 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 
 	public void destroy() {
 		doOp(ClusterOperation.DESTROY, null, null);
-		this.client.destroy("c:" + name);
+		this.client.destroy(name);
 	}
 
 	public Object getId() {
