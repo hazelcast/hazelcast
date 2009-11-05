@@ -995,7 +995,7 @@ public class CMap {
 
             public Object next() {
                 Data value = it.next();
-                return ThreadContext.get().toObject(value);
+                return toObject(value);
             }
 
             public void remove() {
@@ -1016,15 +1016,28 @@ public class CMap {
         }
 
         public int size() {
-            return lsValues.size();
+            return (lsValues == null) ? 0 : lsValues.size();
         }
 
         public Object[] toArray() {
-            throw new UnsupportedOperationException();
+            if (size() == 0) {
+                return null;
+            }
+            return toArray(new Object[size()]);
         }
 
         public Object[] toArray(Object[] a) {
-            throw new UnsupportedOperationException();
+            int size = size();
+            if (size == 0) {
+                return null;
+            }
+            if (a == null || a.length < size) {
+                a = new Object[size];
+            }
+            for (int i = 0; i < size; i++) {
+                a[i] = toObject(lsValues.get(i));
+            }
+            return a;
         }
 
         public void readData(DataInput in) throws IOException {

@@ -388,6 +388,7 @@ public class MapMigrator implements Runnable {
             node.executorManager.executeMigrationTask(new FallThroughRunnable() {
                 public void doRun() {
                     try {
+//                        System.out.println("migrating.. " + block);
                         concurrentMapManager.migrateRecord(cmap, rec);
                     } finally {
                         latch.countDown();

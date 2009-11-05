@@ -38,7 +38,7 @@ class LocallyOwnedMap {
         if (record == null) {
             return OBJECT_REDO;
         } else {
-            if (record.isActive()) {
+            if (record.isActive() && record.isValid()) {
                 try {
                     Object value = toObject(record.getValue());
                     record.setLastAccessed();
@@ -50,7 +50,8 @@ class LocallyOwnedMap {
             } else {
                 //record is removed!
                 mapCache.remove(key);
-                return null;
+//                return null;
+                return OBJECT_REDO;
             }
         }
     }
