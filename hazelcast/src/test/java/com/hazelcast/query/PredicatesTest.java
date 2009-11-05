@@ -79,6 +79,8 @@ public class PredicatesTest {
         assertEquals("(active=false AND age>=4)", sql("active=false AND (age>=4)"));
         assertEquals("(active=false OR age>=4)", sql("active =false or (age>= 4)"));
 
+        assertEquals("name LIKE 'J%'", sql("name like 'J%'"));
+        assertEquals("NOT(name LIKE 'J%')", sql("name not like 'J%'"));
         assertEquals("(active=false OR name LIKE 'J%')", sql("active =false or name like 'J%'"));
         assertEquals("(active=false OR name LIKE 'Java World')", sql("active =false or name like 'Java World'"));
         assertEquals("(active=false OR name LIKE 'Java W% Again')", sql("active =false or name like 'Java W% Again'"));
