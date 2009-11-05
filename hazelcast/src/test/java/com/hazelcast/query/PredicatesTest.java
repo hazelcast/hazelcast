@@ -56,13 +56,18 @@ public class PredicatesTest {
         assertTrue(Predicates.like(new DummyExpression<String>("Java"), "_a__").apply(null));
         assertTrue(Predicates.like(new DummyExpression<String>("Java"), "J%v_").apply(null));
         assertTrue(Predicates.like(new DummyExpression<String>("Java"), "J%_").apply(null));
+        assertFalse(Predicates.like(new DummyExpression<String>("Java"), "java").apply(null));
         assertFalse(Predicates.like(new DummyExpression<String>("Java"), "j%").apply(null));
         assertFalse(Predicates.like(new DummyExpression<String>("Java"), "J_a").apply(null));
         assertFalse(Predicates.like(new DummyExpression<String>("Java"), "J_ava").apply(null));
         assertFalse(Predicates.like(new DummyExpression<String>("Java"), "J_a_a").apply(null));
         assertFalse(Predicates.like(new DummyExpression<String>("Java"), "J_av__").apply(null));
         assertFalse(Predicates.like(new DummyExpression<String>("Java"), "J_Va").apply(null));
-    }
+        assertTrue(Predicates.like(new DummyExpression<String>("Java World"), "Java%ld").apply(null));
+        assertTrue(Predicates.like(new DummyExpression<String>("Java World"), "%World").apply(null));
+        assertTrue(Predicates.like(new DummyExpression<String>("Java World"), "Java_World").apply(null));
+        assertFalse(Predicates.like(new DummyExpression<String>("Java World"), "JavaWorld").apply(null));
+    } 
 
     @Test
     public void testSqlPredicate() {
@@ -75,6 +80,8 @@ public class PredicatesTest {
         assertEquals("(active=false OR age>=4)", sql("active =false or (age>= 4)"));
 
         assertEquals("(active=false OR name LIKE 'J%')", sql("active =false or name like 'J%'"));
+        assertEquals("(active=false OR name LIKE 'Java World')", sql("active =false or name like 'Java World'"));
+        assertEquals("(active=false OR name LIKE 'Java W% Again')", sql("active =false or name like 'Java W% Again'"));
 
         assertEquals("age IN (10,15)", sql("age in (10, 15)"));
         assertEquals("NOT(age IN (10,15))", sql("age not in ( 10 , 15 )"));

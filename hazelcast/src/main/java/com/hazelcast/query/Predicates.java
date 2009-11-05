@@ -315,6 +315,11 @@ public class Predicates {
 
         public LikePredicate(Expression<String> first, String second) {
             this.first = first;
+            char lastChar = second.charAt(second.length()-1);
+            if (lastChar != '\'') {
+                String replacer = "hz#" + lastChar;
+                second = second.substring(0, second.lastIndexOf('\'')+1).replaceAll(replacer, " ");
+            }
             this.second = second;
             second = second.replaceAll("%", ".*").replaceAll("_", ".");
             pattern = Pattern.compile(second);
