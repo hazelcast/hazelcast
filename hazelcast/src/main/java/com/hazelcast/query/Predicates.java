@@ -315,8 +315,9 @@ public class Predicates {
 
         public LikePredicate(Expression<String> first, String second) {
             this.first = first;
+            char firstChar = second.charAt(0);
             char lastChar = second.charAt(second.length()-1);
-            if (lastChar != '\'') {
+            if (firstChar == '\'' && lastChar != '\'') {
                 String replacer = "hz#" + lastChar;
                 second = second.substring(0, second.lastIndexOf('\'')+1).replaceAll(replacer, " ");
             }
