@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
+import java.io.Serializable;
 
 /**
  * Implements a distributed @link java.util.concurrent.ExecutorService.
@@ -121,6 +122,7 @@ public class ExecutorServiceProxy implements ExecutorService {
     }
 
     public <T> Future<T> submit(Callable<T> task) {
+        check (task);
         DistributedTask dtask = new DistributedTask(task);
         Processable action = node.executorManager.createNewExecutionAction(dtask);
         ClusterService clusterService = node.clusterService;
@@ -133,6 +135,7 @@ public class ExecutorServiceProxy implements ExecutorService {
         if (task instanceof DistributedTask) {
             dtask = (DistributedTask) task;
         } else {
+            check (task);
             dtask = new DistributedTask(task, null);
         }
         Processable action = node.executorManager.createNewExecutionAction(dtask);
@@ -146,6 +149,7 @@ public class ExecutorServiceProxy implements ExecutorService {
         if (task instanceof DistributedTask) {
             dtask = (DistributedTask) task;
         } else {
+            check (task);
             dtask = new DistributedTask(task, result);
         }
         Processable action = node.executorManager.createNewExecutionAction(dtask);
@@ -159,9 +163,19 @@ public class ExecutorServiceProxy implements ExecutorService {
         if (command instanceof DistributedTask) {
             dtask = (DistributedTask) command;
         } else {
+            check (command);
             dtask = new DistributedTask(command, null);
         }
         Processable action = node.executorManager.createNewExecutionAction(dtask);
         node.clusterService.enqueueAndReturn(action);
+    }
+
+    private static void check(Object obj) {
+        if (obj == null) {
+            throw new NullPointerException("Object cannot be null.");
+        }
+        if (!(obj instanceof Serializable)) {
+            throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
+        }
     }
 }

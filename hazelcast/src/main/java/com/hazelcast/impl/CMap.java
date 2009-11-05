@@ -184,6 +184,7 @@ public class CMap {
             req.value = new Data();
         }
         Record record = toRecord(req);
+        markAsActive(record);
         markAsOwned(record);
         updateIndexes(true, req, record);
         record.setVersion(req.version);
@@ -199,6 +200,7 @@ public class CMap {
         }
         Record record = getRecord(req.key);
         if (record != null) {
+            record.setActive();
             if (req.version > record.getVersion() + 1) {
                 Request reqCopy = new Request();
                 reqCopy.setFromRequest(req, true);

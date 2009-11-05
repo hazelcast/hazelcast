@@ -1234,7 +1234,7 @@ public final class ConcurrentMapManager extends BaseManager {
         return mapMigrator.isMigrating(req);
     }
 
-    int getBlockId(Data key) {
+    public int getBlockId(Data key) {
         int hash = key.hashCode();
         return Math.abs(hash) % BLOCK_COUNT;
     }

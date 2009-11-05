@@ -100,99 +100,81 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    public static class HazelcastInstanceProxy implements HazelcastInstance, DataSerializable {
-
-        FactoryImpl factory = null;
+    public static class HazelcastInstanceProxy extends HazelcastInstanceAwareObject implements HazelcastInstance {
 
         public HazelcastInstanceProxy() {
         }
 
         public HazelcastInstanceProxy(FactoryImpl factory) {
-            this.factory = factory;
-        }
-
-
-        public void writeData(DataOutput out) throws IOException {
-        }
-
-        public void readData(DataInput in) throws IOException {
-            factory = ThreadContext.get().getCurrentFactory();
-        }
-
-        private void writeObject(ObjectOutputStream out) throws IOException {
-            writeData(out);
-        }
-
-        private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-            readData(in);
-        }
+            this.hazelcastInstance = factory;
+        } 
 
         public String getName() {
-            return factory.getName();
+            return hazelcastInstance.getName();
         }
 
         public void shutdown() {
-            factory.shutdown();
+            hazelcastInstance.shutdown();
         }
 
         public void restart() {
-            factory.restart();
+            hazelcastInstance.restart();
         }
 
         public Collection<Instance> getInstances() {
-            return factory.getInstances();
+            return hazelcastInstance.getInstances();
         }
 
         public ExecutorService getExecutorService() {
-            return factory.getExecutorService();
+            return hazelcastInstance.getExecutorService();
         }
 
-        public ClusterImpl getCluster() {
-            return factory.getCluster();
+        public Cluster getCluster() {
+            return hazelcastInstance.getCluster();
         }
 
         public IdGenerator getIdGenerator(String name) {
-            return factory.getIdGenerator(name);
+            return hazelcastInstance.getIdGenerator(name);
         }
 
         public Transaction getTransaction() {
-            return factory.getTransaction();
+            return hazelcastInstance.getTransaction();
         }
 
         public <K, V> IMap<K, V> getMap(String name) {
-            return factory.getMap(name);
+            return hazelcastInstance.getMap(name);
         }
 
         public <E> IQueue<E> getQueue(String name) {
-            return factory.getQueue(name);
+            return hazelcastInstance.getQueue(name);
         }
 
         public <E> ITopic<E> getTopic(String name) {
-            return factory.getTopic(name);
+            return hazelcastInstance.getTopic(name);
         }
 
         public <E> ISet<E> getSet(String name) {
-            return factory.getSet(name);
+            return hazelcastInstance.getSet(name);
         }
 
         public <E> IList<E> getList(String name) {
-            return factory.getList(name);
+            return hazelcastInstance.getList(name);
         }
 
         public <K, V> MultiMap<K, V> getMultiMap(String name) {
-            return factory.getMultiMap(name);
+            return hazelcastInstance.getMultiMap(name);
         }
 
         public ILock getLock(Object key) {
-            return factory.getLock(key);
+            return hazelcastInstance.getLock(key);
         }
 
         public void addInstanceListener(InstanceListener instanceListener) {
-            factory.addInstanceListener(instanceListener);
+            hazelcastInstance.addInstanceListener(instanceListener);
         }
 
         public void removeInstanceListener(InstanceListener instanceListener) {
-            factory.removeInstanceListener(instanceListener);
+            hazelcastInstance.removeInstanceListener(instanceListener);
         }
     }
 
@@ -237,7 +219,7 @@ public class FactoryImpl implements HazelcastInstance {
             HazelcastInstanceProxy newFactory = newHazelcastInstanceProxy(factory.node.config);
             Collection<FactoryAwareProxy> proxies = factory.proxies.values();
             for (FactoryAwareProxy factoryAwareProxy : proxies) {
-                factoryAwareProxy.setFactory(newFactory.factory);
+                factoryAwareProxy.setFactory((FactoryImpl) newFactory.getHazelcastInstance());
             }
             return newFactory;
         }

@@ -5,7 +5,7 @@ import com.hazelcast.nio.DataSerializable;
 
 import java.io.*;
 
-public abstract class HazelcastInstanceAwareObject implements HazelcastInstanceAware {
+public abstract class HazelcastInstanceAwareObject implements HazelcastInstanceAware, DataSerializable {
     protected transient HazelcastInstance hazelcastInstance = null;
 
     public HazelcastInstance getHazelcastInstance() {
