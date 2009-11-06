@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 
 class LocallyOwnedMap {
     final static Logger logger = Logger.getLogger(LocallyOwnedMap.class.getName());
-    final ConcurrentMap<Object, Record> mapCache = new ConcurrentHashMap<Object, Record>(1000);
+    final private ConcurrentMap<Object, Record> mapCache = new ConcurrentHashMap<Object, Record>(1000);
     final private Queue<Record> localRecords = new ConcurrentLinkedQueue<Record>();
 
     public Object get(Object key) {
@@ -50,8 +50,7 @@ class LocallyOwnedMap {
             } else {
                 //record is removed!
                 mapCache.remove(key);
-//                return null;
-                return OBJECT_REDO;
+                return OBJECT_REDO; 
             }
         }
     }

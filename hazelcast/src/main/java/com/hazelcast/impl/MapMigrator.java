@@ -307,7 +307,16 @@ public class MapMigrator implements Runnable {
                     if (record.isActive()) {
                         if (blocksOwnedAfterDead.contains(record.getBlockId())) {
                             map.markAsOwned(record);
-                            node.queryService.updateIndex(map.name, null, null, record, record.getValueHash());
+                            // you have to update the indexes
+                            // as if this record is new so extract the values first
+                            int valueHash = record.getValueHash();
+                            long[] indexes = record.getIndexes();
+                            byte[] indexTypes = record.getIndexTypes();
+                            // set the indexes to null, (new record)
+                            record.setValueHash(Integer.MIN_VALUE);
+                            record.setIndexes(null, null);
+                            // now update the index
+                            node.queryService.updateIndex(map.name, indexes, indexTypes, record, valueHash);
                         }
                     }
                 }

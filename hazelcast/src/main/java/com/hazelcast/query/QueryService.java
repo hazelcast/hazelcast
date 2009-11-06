@@ -181,7 +181,7 @@ public class QueryService implements Runnable {
                         index.updateIndex(oldValue, newValues[i], types[i], record);
                     }
                 }
-                record.setIndexes(newValues);
+                record.setIndexes(newValues, types);
             }
         }
 

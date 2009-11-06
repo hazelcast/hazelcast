@@ -62,6 +62,7 @@ public class Record implements MapEntry {
     private final RecordEntry recordEntry;
     private final long id;
     private long[] indexes; // indexes of the current value; only used by QueryThread
+    private byte[] indexTypes; // index types of the current value; only used by QueryThread
     private volatile int valueHash = Integer.MIN_VALUE; // hash of the current value; read by ServiceThread, updated by QueryThread
 
     public Record(FactoryImpl factory, String name, int blockId, Data key, Data value, long ttl, long id) {
@@ -163,8 +164,13 @@ public class Record implements MapEntry {
         return indexes;
     }
 
-    public void setIndexes(long[] indexes) {
+    public byte[] getIndexTypes() {
+        return indexTypes;
+    }
+
+    public void setIndexes(long[] indexes, byte[] indexTypes) {
         this.indexes = indexes;
+        this.indexTypes = indexTypes;
     }
 
     public int valueCount() {
@@ -345,7 +351,7 @@ public class Record implements MapEntry {
     }
 
     public String toString() {
-        return "Record key=" + getKey() + ", removable=" + isRemovable() + ", active=" + isActive() + ", valid=" + isValid();
+        return "Record key=" + getKey() + ", removable=" + isRemovable();
     }
 
     public long getVersion() {

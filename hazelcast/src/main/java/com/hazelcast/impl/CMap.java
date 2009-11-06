@@ -236,7 +236,7 @@ public class CMap {
                 if (req.indexes.length != req.indexTypes.length) {
                     throw new RuntimeException("index and type lenghts do not match");
                 }
-                rec.setIndexes(req.indexes);
+                rec.setIndexes(req.indexes, req.indexTypes);
                 if (indexTypes == null) {
                     indexTypes = req.indexTypes;
                 } else {
