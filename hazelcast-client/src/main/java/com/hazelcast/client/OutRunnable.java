@@ -58,7 +58,7 @@ public class OutRunnable extends IORunnable{
 				oldConnectionId = connection.getVersion();
 			}
 			connection = client.connectionManager.getConnection();
-			if(oldConnectionIsNotNull && connection.getVersion()!=oldConnectionId){
+			if(oldConnectionIsNotNull && connection!=null && connection.getVersion()!=oldConnectionId){
 				temp.add(c);
 				queue.drainTo(temp);
 				client.listenerManager.getListenerCalls().drainTo(queue);

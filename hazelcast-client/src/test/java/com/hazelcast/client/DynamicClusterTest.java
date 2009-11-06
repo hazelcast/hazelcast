@@ -117,6 +117,7 @@ public class DynamicClusterTest {
         map.put("hello", "world");
         map.put("hello", "new world");
         map.remove("hello");
+        Thread.sleep(100);
         assertEquals(1, entryAddLatch.getCount());
         assertEquals(1, entryUpdatedLatch.getCount());
         assertEquals(1, entryRemovedLatch.getCount());
