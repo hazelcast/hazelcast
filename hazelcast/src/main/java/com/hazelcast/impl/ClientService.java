@@ -24,10 +24,10 @@ import static com.hazelcast.impl.BaseManager.getInstanceType;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.ICollection;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.Instance;
+import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.impl.BaseManager.EventTask;
@@ -41,9 +41,13 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.query.Predicate;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 
@@ -66,7 +70,7 @@ public class ClientService {
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_GET_MAP_ENTRY.getValue()] = new GetMapEntryHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_LOCK.getValue()] = new MapLockHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_UNLOCK.getValue()] = new MapUnlockHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_CONTAINS.getValue()] = new MapContainsKeyHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_CONTAINS.getValue()] = new MapContainsHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_CONTAINS_VALUE.getValue()] = new MapContainsValueHandler();
         clientOperationHandlers[ClusterOperation.TRANSACTION_BEGIN.getValue()] = new TransactionBeginHandler();
         clientOperationHandlers[ClusterOperation.TRANSACTION_COMMIT.getValue()] = new TransactionCommitHandler();
@@ -79,6 +83,7 @@ public class ClientService {
         clientOperationHandlers[ClusterOperation.GET_ID.getValue()] =  new GetIdHandler();
         clientOperationHandlers[ClusterOperation.ADD_INDEX.getValue()] =  new AddIndexHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ADD_TO_LIST.getValue()] = new ListAddHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REMOVE_ITEM.getValue()] = new ListRemoveHandler();
     }
 
     // always called by InThread
@@ -211,8 +216,8 @@ public class ClientService {
     }
     private class DestroyHandler extends ClientOperationHandler{
 		public void processCall(Node node, Packet packet) {
-			IMap<Object, Object> map = (IMap)node.factory.getOrCreateProxyByName(packet.name);
-			map.destroy();
+			Instance instance = (Instance)node.factory.getOrCreateProxyByName(packet.name);
+			instance.destroy();
 		}
     }
     private class GetIdHandler extends ClientMapOperationHandler{
@@ -269,9 +274,16 @@ public class ClientService {
 			return toData(map.replace(key, arr[0], arr[1]));
 		}
     }
-    private class MapContainsKeyHandler extends ClientMapOperationHandler{
-		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
-			return toData(map.containsKey(key));
+    private class MapContainsHandler extends ClientOperationHandler{
+		public void processCall(Node node, Packet packet) {
+			if(getInstanceType(packet.name).equals(InstanceType.MAP)){
+				IMap<Object, Object> map = (IMap)node.factory.getOrCreateProxyByName(packet.name);
+				packet.value = toData(map.containsKey(packet.key));
+			}
+			else if (getInstanceType(packet.name).equals(InstanceType.LIST)){
+				IList<Object> list = (IList)node.factory.getOrCreateProxyByName(packet.name);
+				packet.value = toData(list.contains(packet.key));
+			}
 		}
     }
     private class MapContainsValueHandler extends ClientMapOperationHandler{
@@ -279,9 +291,18 @@ public class ClientService {
 			return toData(map.containsValue(value));
 		}
     }
-    private class MapSizeHandler extends ClientMapOperationHandler{
-		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
-			return toData(map.size());
+    private class MapSizeHandler extends ClientOperationHandler{
+		@Override
+		public void processCall(Node node, Packet packet) {
+			if(getInstanceType(packet.name).equals(InstanceType.MAP)){
+				IMap<Object, Object> map = (IMap)node.factory.getOrCreateProxyByName(packet.name);
+				packet.value = toData(map.size());
+			}
+			else if(getInstanceType(packet.name).equals(InstanceType.LIST)){
+				IList<Object> list = (IList)node.factory.getOrCreateProxyByName(packet.name);
+				packet.value = toData(list.size());
+			}
+			
 		}
     }
     private class GetMapEntryHandler extends ClientMapOperationHandler{
@@ -332,8 +353,8 @@ public class ClientService {
 			transaction.rollback();
 		}
     }
-    private class MapIterateKeysHandler extends ClientMapOperationHandler {
-		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+    private class MapIterateKeysHandler extends ClientOperationHandler {
+		public Data processMapOp(IMap<Object, Object> map, Data key, Data value, Collection<Data> collection) {
 			ConcurrentMapManager.Entries entries = null;
 			if(value==null){
 				entries = (Entries) map.keySet();				
@@ -342,14 +363,28 @@ public class ClientService {
 				Predicate p = (Predicate)toObject(value);
 				entries = (Entries) map.keySet(p);
 			}
-            List<?> list = entries.getLsKeyValues();
-            Keys keys = new Keys();
+            List<Map.Entry> list = entries.getLsKeyValues();
+            Keys keys = new Keys(collection);
             for (Object obj : list) {
                 KeyValue entry = (KeyValue) obj;
                 keys.addKey(entry.key);
             }
             return toData(keys);
 		}
+
+		@Override
+		public void processCall(Node node, Packet packet) {
+			if(getInstanceType(packet.name).equals(InstanceType.MAP)){
+				packet.value = processMapOp((IMap)node.factory.getOrCreateProxyByName(packet.name), packet.key, packet.value, new HashSet<Data>());
+			}
+			else if(getInstanceType(packet.name).equals(InstanceType.LIST)){
+				CollectionProxyImpl collectionProxy = (CollectionProxyImpl)node.factory.getOrCreateProxyByName(packet.name);
+    			MProxy mapProxy  = ((CollectionProxyReal)collectionProxy.getBase()).mapProxy;
+    			packet.value = processMapOp((IMap)mapProxy, packet.key, packet.value, new ArrayList<Data>());
+			}
+			
+		}
+
     }
     private class AddListenerHandler extends ClientOperationHandler {
     	public void processCall(Node node, Packet packet) {
@@ -379,13 +414,19 @@ public class ClientService {
     }
     
     private class ListAddHandler extends ClientOperationHandler{
-
 		@Override
 		public void processCall(Node node, Packet packet) {
 			IList list = (IList)node.factory.getOrCreateProxyByName(packet.name);
 			packet.value = toData(list.add(packet.key));
 		}
-    	
+    }
+    
+    private class ListRemoveHandler extends ClientOperationHandler{
+		@Override
+		public void processCall(Node node, Packet packet) {
+			IList list = (IList)node.factory.getOrCreateProxyByName(packet.name);
+			packet.value = toData(list.remove(packet.key));
+		}
     }
     
     public abstract class ClientOperationHandler{

@@ -17,7 +17,9 @@
 
 package com.hazelcast.client;
 
+import java.util.AbstractCollection;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -27,21 +29,21 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.ClusterOperation;
-import com.hazelcast.client.impl.Keys;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.impl.CMap.CMapEntry;
 
 
 import static com.hazelcast.client.Serializer.toByte;
-import static com.hazelcast.client.Serializer.toObject;
 
-public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
-	
+public class MapClientProxy<K, V> implements IMap<K, V>, ClientProxy{
+	final ProxyHelper proxyHelper;
 	final private HazelcastClient client;
-
+	final private String name;
+	
 	public MapClientProxy(HazelcastClient client, String name) {
-		this.name = name;
 		this.client = client;
+		this.name = name;
+		proxyHelper = new ProxyHelper(name, client);
 	}
 
 	public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
@@ -49,11 +51,15 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 
 	public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
-		Packet request = createRequestPacket(ClusterOperation.ADD_LISTENER, toByte(key), null);
-		request.setLongValue(includeValue?1:0);
-	    Call c = createCall(request);
-	    client.listenerManager.addListenerCall(c);
-	    doCall(c);
+		if(!(client.listenerManager.entryListeners.get(name)!=null && 
+				client.listenerManager.entryListeners.get(name).get(key)!=null && 
+				client.listenerManager.entryListeners.get(name).get(key).size()>0)){
+			Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, toByte(key), null);
+			request.setLongValue(includeValue?1:0);
+			Call c = proxyHelper.createCall(request);
+		    client.listenerManager.addListenerCall(c, name, key);
+			proxyHelper.doCall(c);
+		}
 	    client.listenerManager.registerEntryListener(name, key, listener);
 	}
 
@@ -69,23 +75,19 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 
 	public boolean evict(K key) {
-		return (Boolean) doOp(ClusterOperation.CONCURRENT_MAP_EVICT, key, null);
+		return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_EVICT, key, null);
 	}
 
 	public MapEntry getMapEntry(K key) {
-		CMapEntry cMapEntry = (CMapEntry)doOp(ClusterOperation.CONCURRENT_MAP_GET_MAP_ENTRY, key, null);
+		CMapEntry cMapEntry = (CMapEntry)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET_MAP_ENTRY, key, null);
 		MapEntry<K, V> mapEntry = new ClientMapEntry(cMapEntry,key, this);
 		return mapEntry;
 	}
 	
 	public Set<K> keySet(Predicate predicate) {
-		Packet request = createRequestPacket(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS, null, toByte(predicate));
-	    Packet response = callAndGetResult(request);
-	    if(response.getValue()!=null){
-	    	Set<K> set = ((Keys<K>)toObject(response.getValue())).getKeys(); 
-	    	return set;
-	    }
-	    return null;	
+		final Collection<K> collection = proxyHelper.keys(predicate);
+		LightKeySet<K> set = new LightKeySet<K>(this, new HashSet<K>(collection));
+		return set;
 	}
 
 	public void lock(K key) {
@@ -97,7 +99,7 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 
 	public void removeEntryListener(EntryListener<K, V> listener, K key) {
-		doOp(ClusterOperation.REMOVE_LISTENER, key, null);
+		proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
 		client.listenerManager.removeEntryListener(name, key, listener);
 	}
 
@@ -110,7 +112,7 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 
 	public void unlock(K key) {
-		doOp(ClusterOperation.CONCURRENT_MAP_UNLOCK, key, null);
+		proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_UNLOCK, key, null);
 	}
 
 	public Collection<V> values(Predicate predicate) {
@@ -119,22 +121,22 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 
 	public V putIfAbsent(K arg0, V arg1) {
-		return (V)doOp(ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT, arg0, arg1);
+		return (V)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT, arg0, arg1);
 	}
 
 	public boolean remove(Object arg0, Object arg1) {
-		return (Boolean)doOp(ClusterOperation.CONCURRENT_MAP_REMOVE_IF_SAME, arg0, arg1);
+		return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REMOVE_IF_SAME, arg0, arg1);
 	}
 
 	public V replace(K arg0, V arg1) {
-		return (V)doOp(ClusterOperation.CONCURRENT_MAP_REPLACE_IF_NOT_NULL, arg0, arg1);
+		return (V)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REPLACE_IF_NOT_NULL, arg0, arg1);
 	}
 
 	public boolean replace(K arg0, V arg1, V arg2) {
 		Object[] arr = new Object[2];
 		arr[0] = arg1;
 		arr[1] = arg2;
-		return (Boolean)doOp(ClusterOperation.CONCURRENT_MAP_REPLACE_IF_SAME, arg0, arr);
+		return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REPLACE_IF_SAME, arg0, arr);
 	}
 
 	public void clear() {
@@ -145,11 +147,11 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 
 	public boolean containsKey(Object arg0) {
-		return (Boolean)doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS, arg0, null);
+		return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS, arg0, null);
 	}
 
 	public boolean containsValue(Object arg0) {
-		return (Boolean)doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS_VALUE, null, arg0);
+		return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS_VALUE, null, arg0);
 	}
 
 	public Set<java.util.Map.Entry<K, V>> entrySet() {
@@ -157,7 +159,7 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 
 	public V get(Object key) {
-		return (V)doOp(ClusterOperation.CONCURRENT_MAP_GET, (K)key, null);
+		return (V)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET, (K)key, null);
 	}
 
 	public boolean isEmpty() {
@@ -169,7 +171,7 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 
 	public V put(K key, V value) {
-		return (V)doOp(ClusterOperation.CONCURRENT_MAP_PUT, key, value);
+		return (V)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_PUT, key, value);
 	}
 
 
@@ -182,31 +184,26 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 
 	public V remove(Object arg0) {
-		return (V)doOp(ClusterOperation.CONCURRENT_MAP_REMOVE, arg0, null);
+		return (V)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REMOVE, arg0, null);
 	}
 
 	private Object doLock(ClusterOperation operation, Object key, long timeout, TimeUnit timeUnit) {
-		Packet request = prepareRequest(operation, key, timeUnit);
+		Packet request = proxyHelper.prepareRequest(operation, key, timeUnit);
 		request.setTimeout(timeout);
-	    Packet response = callAndGetResult(request);
-	    return getValue(response);
+	    Packet response = proxyHelper.callAndGetResult(request);
+	    return proxyHelper.getValue(response);
 	}
 
 	public int size() {
-		return (Integer)doOp(ClusterOperation.CONCURRENT_MAP_SIZE, null, null);
+		return (Integer)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_SIZE, null, null);
 	}
 
 	public Collection<V> values() {
 		return values(null);
 	}
 
-	public void destroy() {
-		doOp(ClusterOperation.DESTROY, null, null);
-		this.client.destroy(name);
-	}
-
 	public Object getId() {
-		return doOp(ClusterOperation.GET_ID, null, null);
+		return proxyHelper.doOp(ClusterOperation.GET_ID, null, null);
 	}
 
 	public InstanceType getInstanceType() {
@@ -214,7 +211,19 @@ public class MapClientProxy<K, V>  extends ClientProxy implements IMap<K, V>{
 	}
 
 	public void addIndex(String attribute, boolean ordered) {
-		doOp(ClusterOperation.ADD_INDEX, attribute, ordered);
+		proxyHelper.doOp(ClusterOperation.ADD_INDEX, attribute, ordered);
 		
+	}
+
+	public String getName() {
+		return name.substring(2);
+	}
+
+	public void destroy() {
+		proxyHelper.destroy();		
+	}
+
+	public void setOutRunnable(OutRunnable out) {
+		proxyHelper.setOutRunnable(out);		
 	}
 }

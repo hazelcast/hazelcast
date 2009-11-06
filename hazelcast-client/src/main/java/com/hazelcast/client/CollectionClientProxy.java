@@ -1,6 +1,7 @@
 package com.hazelcast.client;
 
-public class CollectionClientProxy extends ClientProxy {
-	
+import java.util.AbstractCollection;
+
+public abstract class CollectionClientProxy<E> extends AbstractCollection<E>{
 
 }

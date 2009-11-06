@@ -6,7 +6,7 @@ import com.hazelcast.core.Transaction;
 
 public final class ThreadContext {
     private final static ThreadLocal<ThreadContext> threadLocal = new ThreadLocal<ThreadContext>();
-    TransactionClientProxy transactionProxy = new TransactionClientProxy();
+    TransactionClientProxy transactionProxy = new TransactionClientProxy(null, null);
 	boolean transaction;
 	
 	

@@ -20,7 +20,10 @@ package com.hazelcast.client.impl;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.client.Serializer.toObject;
@@ -34,19 +37,20 @@ public class Keys<K> implements DataSerializable{
 	/**
 	 * 
 	 */
-	private Set<K> keys = new HashSet<K>();
+	private Collection<K> keys;
 	
 	public Keys() {
 	
 	}
 	public void readData(DataInput in) throws IOException {
 		int size = in.readInt();
-		keys = new HashSet<K>();
+		keys = new ArrayList<K>();
 		for(int i=0;i<size;i++){
 			int length = in.readInt();
 			byte[] data = new byte[length];
 			in.readFully(data);
 			K obj = (K)toObject(data);
+			System.out.println();
 			keys.add(obj);
 		}
 	}
@@ -55,7 +59,7 @@ public class Keys<K> implements DataSerializable{
 		throw new UnsupportedOperationException();
 	}
 	
-	public Set<K> getKeys(){
+	public Collection<K> getKeys(){
 		return keys;
 	}
 	public void setKeys(Set<K> keys){

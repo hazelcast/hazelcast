@@ -3,13 +3,13 @@ package com.hazelcast.client;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-public class ClientIterator<K, V> implements Iterator<java.util.Map.Entry<K, V>>{
+public class MapEntryIterator<K, V> implements Iterator<java.util.Map.Entry<K, V>>{
 	private Iterator<K> it;
-	private String name;
 	private MapClientProxy<K,V> proxy;
-
-	public ClientIterator(String name, Iterator<K> it, MapClientProxy<K,V> proxy) {
-		this.name = name;
+	private volatile Entry<K,V> lastEntry;
+	
+	
+	public MapEntryIterator(String name, Iterator<K> it, MapClientProxy<K,V> proxy) {
 		this.it = it;
 		this.proxy = proxy;
 	}
@@ -25,13 +25,15 @@ public class ClientIterator<K, V> implements Iterator<java.util.Map.Entry<K, V>>
 			return next();
 		}
 		else{
-			return new DummyEntry(key, value, proxy);
+			lastEntry = new DummyEntry(key, value, proxy);
+			return lastEntry;
 		}
+		
 	}
 
 	public void remove() {
-		// TODO Auto-generated method stub
-		
+		it.remove();
+		proxy.remove(lastEntry.getKey(), lastEntry.getValue());
 	}
 	private class DummyEntry implements Entry<K,V>{
 

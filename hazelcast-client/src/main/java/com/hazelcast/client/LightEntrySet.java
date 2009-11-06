@@ -16,7 +16,7 @@ public class LightEntrySet<K, V> extends AbstractCollection<java.util.Map.Entry<
 	}
 
 	public Iterator<Entry<K, V>> iterator() {
-		return new ClientIterator<K,V>(name, keySet.iterator(), proxy);
+		return new MapEntryIterator<K,V>(name, keySet.iterator(), proxy);
 	}
 
 	public int size() {

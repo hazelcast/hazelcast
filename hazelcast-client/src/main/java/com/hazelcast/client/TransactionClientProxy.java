@@ -20,22 +20,19 @@ package com.hazelcast.client;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.ClusterOperation;
 
-public class TransactionClientProxy extends ClientProxy implements Transaction{
+public class TransactionClientProxy implements Transaction, ClientProxy{
+	final ProxyHelper proxyHelper;
+
+	public TransactionClientProxy(String name, HazelcastClient client) {
+		proxyHelper = new ProxyHelper(name, client);
+	}
 
 	public void begin() throws IllegalStateException {
-		Packet request = createRequestPacket();
-	    
-	    request.setOperation(ClusterOperation.TRANSACTION_BEGIN);
-	    
-	    callAndGetResult(request);
+		proxyHelper.doOp(ClusterOperation.TRANSACTION_BEGIN, null, null);
 	}
 
 	public void commit() throws IllegalStateException {
-		Packet request = createRequestPacket();
-	    
-	    request.setOperation(ClusterOperation.TRANSACTION_COMMIT);
-	    
-	    callAndGetResult(request);
+		proxyHelper.doOp(ClusterOperation.TRANSACTION_COMMIT, null, null);
 		
 	}
 
@@ -44,11 +41,11 @@ public class TransactionClientProxy extends ClientProxy implements Transaction{
 	}
 
 	public void rollback() throws IllegalStateException {
-		Packet request = createRequestPacket();
-	    
-	    request.setOperation(ClusterOperation.TRANSACTION_ROLLBACK);
-	    
-	    callAndGetResult(request);		
+		proxyHelper.doOp(ClusterOperation.TRANSACTION_ROLLBACK, null, null);
+	}
+
+	public void setOutRunnable(OutRunnable out) {
+		proxyHelper.setOutRunnable(out);
 	}
 
 }

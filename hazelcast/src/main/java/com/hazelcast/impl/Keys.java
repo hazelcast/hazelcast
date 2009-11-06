@@ -23,14 +23,16 @@ import com.hazelcast.nio.DataSerializable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
 public class Keys implements DataSerializable {
 
-    private Set<Data> keys = new HashSet<Data>();
+    private Collection<Data> keys;
 
-    public Keys() {
+    public Keys(Collection<Data> keys) {
+    	this.keys = keys;
     }
 
     public void readData(DataInput in) throws IOException {
@@ -54,9 +56,5 @@ public class Keys implements DataSerializable {
 
     public void addKey(Data obj) {
         this.keys.add(obj);
-    }
-
-    public Set<Data> getKeys() {
-        return keys;
     }
 }

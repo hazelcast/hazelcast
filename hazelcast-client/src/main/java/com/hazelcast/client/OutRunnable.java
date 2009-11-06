@@ -75,7 +75,7 @@ public class OutRunnable extends IORunnable{
 		} catch (InterruptedException e) {
 			throw e;
 		} catch (Throwable io) {
-			System.out.println("WARNING");
+			io.printStackTrace();
 			enQueue(c);
 			client.connectionManager.destroyConnection(connection);
 		}

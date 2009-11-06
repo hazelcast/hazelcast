@@ -1,7 +1,5 @@
 package com.hazelcast.client;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.concurrent.CountDownLatch;
 
 import com.hazelcast.core.ItemListener;
@@ -15,7 +13,6 @@ public class CountDownItemListener<E> implements ItemListener<E>{
 		this.itemRemovedLatch = itemRemovedLatch;
 	}
 	public void itemAdded(E item) {
-		System.out.println(item);
 		itemAddLatch.countDown();
 	
 	}

@@ -7,6 +7,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -17,18 +19,18 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.EntryEvent.EntryEventType;
-import com.hazelcast.core.Instance.InstanceType;
-import com.hazelcast.impl.BaseManager;
+import com.sun.swing.internal.plaf.synth.resources.synth;
 
 import static com.hazelcast.client.Serializer.toObject;
 
 public class ListenerManager extends ClientRunnable{
-	final public Map<String, Map<Object, List<EntryListener<?,?>>>> entryListeners = new HashMap<String, Map<Object,List<EntryListener<?,?>>>>();
-	final public Map<String, List<ItemListener<?>>> itemListeners = new HashMap<String, List<ItemListener<?>>>();
+	final public Map<String, Map<Object, List<EntryListener<?,?>>>> entryListeners = new ConcurrentHashMap<String, Map<Object,List<EntryListener<?,?>>>>();
 	final private BlockingQueue<Call> listenerCalls = new LinkedBlockingQueue<Call>();
+	final public Map<String, Map<Object, Call>> callMap = new ConcurrentHashMap<String, Map<Object,Call>>();
+	final Map<ItemListener, EntryListener> itemListener2EntryListener = new ConcurrentHashMap<ItemListener, EntryListener>();
 	final BlockingQueue<Packet> queue = new LinkedBlockingQueue<Packet>();
 	
-	public void registerEntryListener(String name, Object key, EntryListener<?,?> entryListener){
+	public synchronized void registerEntryListener(String name, Object key, EntryListener<?,?> entryListener){
 		if(!entryListeners.containsKey(name)){
 			entryListeners.put(name, new HashMap<Object,List<EntryListener<?,?>>>());
 		}
@@ -37,15 +39,31 @@ public class ListenerManager extends ClientRunnable{
 		}
 		entryListeners.get(name).get(key).add(entryListener);
 	}
-	
-	public void registerItemListener(String name, ItemListener<?> itemListener){
-		if(!itemListeners.containsKey(name)){
-			itemListeners.put(name, new ArrayList<ItemListener<?>>());
-		}
-		itemListeners.get(name).add(itemListener);
+	public synchronized <E, V> void registerItemListener(String name, final ItemListener<E> itemListener){
+		
+		EntryListener<E,V> e = new EntryListener<E,V>(){	    	
+			public void entryAdded(EntryEvent<E,V> event) {
+				itemListener.itemAdded((E)event.getKey());
+			}
+
+			public void entryEvicted(EntryEvent<E,V> event) {
+				// TODO Auto-generated method stub
+			}
+
+			public void entryRemoved(EntryEvent<E,V> event) {
+				itemListener.itemRemoved((E)event.getKey());
+			}
+
+			public void entryUpdated(EntryEvent<E,V> event) {
+				// TODO Auto-generated method stub
+			}
+	    };
+	    registerEntryListener(name, null, e);
+	    itemListener2EntryListener.put(itemListener, e);
+		
 	}
 	
-	public void removeEntryListener(String name, Object key, EntryListener<?,?> entryListener){
+	public synchronized void removeEntryListener(String name, Object key, EntryListener<?,?> entryListener){
 		Map<Object,List<EntryListener<?,?>>> m = entryListeners.get(name);
 		if(m!=null){
 			List<EntryListener<?,?>> list =  m.get(key);
@@ -53,6 +71,7 @@ public class ListenerManager extends ClientRunnable{
 				list.remove(entryListener);
 				if(m.get(key).size()==0){
 					m.remove(key);
+					removeListenerCall(name, key);
 				}
 			}
 			if(m.size()==0){
@@ -61,6 +80,19 @@ public class ListenerManager extends ClientRunnable{
 		}
 	}
 	
+	public synchronized void removeItemListener(String name, ItemListener itemListener){
+		EntryListener entryListener = itemListener2EntryListener.remove(itemListener);
+		removeEntryListener(name, null, entryListener);
+		
+	}
+	
+	private void removeListenerCall(String name, Object key) {
+		callMap.get(name).remove(key);
+		if(callMap.get(name).size()==0){
+			callMap.remove(name);
+		}
+	}
+
 	private void fireEntryEvent(EntryEvent event){
 		String name = event.getName();
 		Object key = event.getKey();
@@ -99,8 +131,15 @@ public class ListenerManager extends ClientRunnable{
 		}
 	}
 
-	public void addListenerCall(Call call){
+	public synchronized void addListenerCall(Call call, String name, Object key){
 		listenerCalls.add(call);
+		if(!callMap.containsKey(name)){
+			callMap.put(name, new HashMap<Object,Call>());
+		}
+		if(callMap.get(name).containsKey(key)){
+			throw new RuntimeException("There should be mostly one call per (map, key)");
+		}
+		callMap.get(name).put(key,call);
 	}
 	public BlockingQueue<Call> getListenerCalls(){
 		return listenerCalls;
@@ -111,15 +150,8 @@ public class ListenerManager extends ClientRunnable{
 		if(packet==null){
 			return;
 		}
-//		InstanceType instanceType = BaseManager.getInstanceType(packet.getName()); 
-//		if(InstanceType.MAP.equals(instanceType)){
-			EntryEvent event = new EntryEvent(packet.getName(),(int)packet.getLongValue(),toObject(packet.getKey()),toObject(packet.getValue()));
-			fireEntryEvent(event);
-//		}
-//		else if(InstanceType.LIST.equals(instanceType)){
-			
-			
-//		}
+		EntryEvent event = new EntryEvent(packet.getName(),(int)packet.getLongValue(),toObject(packet.getKey()),toObject(packet.getValue()));
+		fireEntryEvent(event);
 		
 	}
 }

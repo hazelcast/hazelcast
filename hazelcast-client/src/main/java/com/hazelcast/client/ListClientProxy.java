@@ -6,185 +6,143 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.impl.ClusterOperation;
 
-public class ListClientProxy<E> extends CollectionClientProxy implements IList<E>{
+public class ListClientProxy<E> extends CollectionClientProxy<E> implements IList<E>, ClientProxy{
 
-	private HazelcastClient client;
+	final private HazelcastClient client;
+	final ProxyHelper proxyHelper;
+	final private String name;
 
 	public ListClientProxy(HazelcastClient hazelcastClient, String name) {
-		this.client = hazelcastClient;
 		this.name = name;
+		this.client = hazelcastClient;
+		proxyHelper = new ProxyHelper(name, hazelcastClient);
 	}
 
-	public void addItemListener(final ItemListener<E> listener, boolean includeValue) {
-		Packet request = createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
+	@Override
+	public Iterator<E> iterator() {
+		final Collection<E> collection = proxyHelper.keys(null);
+		final ListClientProxy<E> proxy = this;
+		return new Iterator<E>(){
+			Iterator<E> iterator = collection.iterator();
+			volatile E lastRecord;
+			public boolean hasNext() {
+				return iterator.hasNext();
+			}
+
+			public E next() {
+				lastRecord = iterator.next();
+				return lastRecord;
+			}
+
+			public void remove() {
+				iterator.remove();
+				proxy.remove(lastRecord);
+			}
+			
+		};
+	}
+
+	@Override
+	public int size() {
+		return (Integer)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_SIZE, null, null);
+	}
+	@Override	
+	public boolean add(E o) {
+		return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_ADD_TO_LIST, o, null);
+	}
+	@Override
+	public boolean remove(Object o) {
+		return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REMOVE_ITEM, o, null);
+	}
+	@Override
+	public boolean contains(Object o) {
+		return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS, o, null);
+	}
+
+	public void addItemListener(ItemListener<E> listener, boolean includeValue) {
+		Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
 		request.setLongValue(includeValue?1:0);
-	    Call c = createCall(request);
-	    client.listenerManager.addListenerCall(c);
-	    doCall(c);
-	    client.listenerManager.registerEntryListener(name, null, new EntryListener(){
-	    	
-			public void entryAdded(EntryEvent event) {
-				listener.itemAdded((E)event.getKey());
-			}
+	    Call c = proxyHelper.createCall(request);
+	    client.listenerManager.addListenerCall(c, name, null);
 
-			public void entryEvicted(EntryEvent event) {
-				// TODO Auto-generated method stub
-			}
-
-			public void entryRemoved(EntryEvent event) {
-				listener.itemRemoved((E)event.getKey());
-			}
-
-			public void entryUpdated(EntryEvent event) {
-				// TODO Auto-generated method stub
-			}
-	    	
-	    });
-		
+	    proxyHelper.doCall(c);
+	    client.listenerManager.registerItemListener(name, listener); 
 	}
-	
-	public String getName(){
+
+	public String getName() {
 		return name.substring(4);
-		
 	}
 
 	public void removeItemListener(ItemListener<E> listener) {
-		// TODO Auto-generated method stub
-		
+		client.listenerManager.removeItemListener(name, listener);
 	}
 
 	public void destroy() {
-		// TODO Auto-generated method stub
-		
+		proxyHelper.destroy();
 	}
 
 	public Object getId() {
-		// TODO Auto-generated method stub
-		return null;
+		return name;
 	}
 
 	public InstanceType getInstanceType() {
 		return InstanceType.LIST;
 	}
 
-	public boolean add(E o) {
-		return (Boolean)doOp(ClusterOperation.CONCURRENT_MAP_ADD_TO_LIST, o, null);
-	}
-
 	public void add(int index, E element) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public boolean addAll(Collection<? extends E> c) {
-		// TODO Auto-generated method stub
-		return false;
+		throw new UnsupportedOperationException();
 	}
 
 	public boolean addAll(int index, Collection<? extends E> c) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	public void clear() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public boolean contains(Object o) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	public boolean containsAll(Collection<?> c) {
-		// TODO Auto-generated method stub
-		return false;
+		Boolean result = true;
+		for (Iterator<? extends E> iterator = c.iterator(); iterator.hasNext();) {
+			E e = (E) iterator.next();
+			if(!add(e)){
+				result = false;
+			}
+		}
+		return result;
 	}
 
 	public E get(int index) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	public int indexOf(Object o) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	public boolean isEmpty() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	public Iterator<E> iterator() {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	public int lastIndexOf(Object o) {
-		// TODO Auto-generated method stub
-		return 0;
+		throw new UnsupportedOperationException();
 	}
 
 	public ListIterator<E> listIterator() {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	public ListIterator<E> listIterator(int index) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public boolean remove(Object o) {
-		// TODO Auto-generated method stub
-		return false;
+		throw new UnsupportedOperationException();
 	}
 
 	public E remove(int index) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public boolean removeAll(Collection<?> c) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	public boolean retainAll(Collection<?> c) {
-		// TODO Auto-generated method stub
-		return false;
+		throw new UnsupportedOperationException();
 	}
 
 	public E set(int index, E element) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public int size() {
-		// TODO Auto-generated method stub
-		return 0;
+		throw new UnsupportedOperationException();
 	}
 
 	public List<E> subList(int fromIndex, int toIndex) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
-	public Object[] toArray() {
-		// TODO Auto-generated method stub
-		return null;
+	public void setOutRunnable(OutRunnable out) {
+		proxyHelper.setOutRunnable(out);
 	}
 
-	public <T> T[] toArray(T[] a) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
+	
 }

@@ -18,13 +18,11 @@ public class CountDownLatchEntryListener<K, V> implements EntryListener<K, V>{
 	}
 
 	public void entryAdded(EntryEvent<K, V> event) {
-//		System.out.println(event);
     	entryAddLatch.countDown();
         assertEquals("hello", event.getKey());
     }
 
     public void entryRemoved(EntryEvent<K, V> event) {
-//    	System.out.println(event);
     	entryRemovedLatch.countDown();
         assertEquals("hello", event.getKey());
         assertEquals("new world", event.getValue());

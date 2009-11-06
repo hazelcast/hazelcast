@@ -75,8 +75,6 @@ public class DynamicClusterTest {
     public void addListenerWithTwoMemberClusterAndKillOne() throws InterruptedException, IOException {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
-        Map<String,String> realMap = h3.getMap("default");
         Map<Integer, HazelcastInstance> memberMap = getMapOfClusterMembers(h1, h2);
         client = getHazelcastClient(h1, h2);
         IMap<String, String> map = client.getMap("default");
@@ -87,16 +85,47 @@ public class DynamicClusterTest {
         map.addEntryListener(listener, true);
         map.put("hello", "world");
         map.put("hello", "new world");
-        realMap.remove("hello");
+        map.remove("hello");
         memberMap.remove(client.getConnectionManager().getConnection().getAddress().getPort()).shutdown();
         map.put("hello", "world");
         map.put("hello", "new world");
-        realMap.remove("hello");
+        map.remove("hello");
         assertTrue(entryAddLatch.await(10, TimeUnit.MILLISECONDS));
         assertTrue(entryUpdatedLatch.await(10, TimeUnit.MILLISECONDS));
         assertTrue(entryRemovedLatch.await(10, TimeUnit.MILLISECONDS));
     }
 
+    @Test
+    public void add2ListenerWithTwoMemberClusterRemoveOneListenerAndKillOneClusterInstance() throws InterruptedException, IOException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        Map<Integer, HazelcastInstance> memberMap = getMapOfClusterMembers(h1, h2);
+        client = getHazelcastClient(h1, h2);
+        IMap<String, String> map = client.getMap("default");
+        final CountDownLatch entryAddLatch = new CountDownLatch(4);
+        final CountDownLatch entryUpdatedLatch = new CountDownLatch(4);
+        final CountDownLatch entryRemovedLatch = new CountDownLatch(4);
+        CountDownLatchEntryListener<String, String> listener = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
+        CountDownLatchEntryListener<String, String> listener2 = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
+        map.addEntryListener(listener, true);
+        map.addEntryListener(listener2,"hello", true);
+        map.put("hello", "world");
+        map.put("hello", "new world");
+        map.remove("hello");
+        map.removeEntryListener(listener2,"hello");
+        memberMap.remove(client.getConnectionManager().getConnection().getAddress().getPort()).shutdown();
+        map.put("hello", "world");
+        map.put("hello", "new world");
+        map.remove("hello");
+        assertEquals(1, entryAddLatch.getCount());
+        assertEquals(1, entryUpdatedLatch.getCount());
+        assertEquals(1, entryRemovedLatch.getCount());
+//        assertTrue(entryAddLatch.await(10, TimeUnit.MILLISECONDS));
+//        assertTrue(entryUpdatedLatch.await(10, TimeUnit.MILLISECONDS));
+//        assertTrue(entryRemovedLatch.await(10, TimeUnit.MILLISECONDS));
+    }
+
+    
     @Test
     public void shutdown() throws InterruptedException {
         for (int i = 0; i < 5; i++) {
