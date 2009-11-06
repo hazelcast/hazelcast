@@ -308,8 +308,7 @@ public class MapMigrator implements Runnable {
                         if (blocksOwnedAfterDead.contains(record.getBlockId())) {
                             map.markAsOwned(record);
                             // you have to update the indexes
-                            // as if this record is new so
-                            // extract the values first
+                            // as if this record is new so extract the values first
                             int valueHash = record.getValueHash();
                             long[] indexes = record.getIndexes();
                             byte[] indexTypes = record.getIndexTypes();
