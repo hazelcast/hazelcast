@@ -219,13 +219,13 @@ public class HazelcastClientListTest {
         list.add(2);
         list.add(3);
         assertEquals(4, list.size());
-        Map<Integer, Integer> counter = new HashMap<Integer, Integer>();
+        Map counter = new HashMap();
         counter.put(1,1);
         counter.put(2,2);
         counter.put(3,1);
         for (Iterator<Integer> iterator = list.iterator(); iterator.hasNext();) {
 			Integer integer = (Integer) iterator.next();
-			counter.put(integer, counter.get(integer)-1);
+			counter.put(integer, (Integer)counter.get(integer)-1);
 			iterator.remove();
 		}
         assertEquals(0,counter.get(1));
