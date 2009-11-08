@@ -24,10 +24,11 @@ import static com.hazelcast.impl.BaseManager.getInstanceType;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.ICollection;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.ISet;
 import com.hazelcast.core.Instance;
-import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.impl.BaseManager.EventTask;
@@ -47,7 +48,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 
@@ -83,7 +83,8 @@ public class ClientService {
         clientOperationHandlers[ClusterOperation.GET_ID.getValue()] =  new GetIdHandler();
         clientOperationHandlers[ClusterOperation.ADD_INDEX.getValue()] =  new AddIndexHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ADD_TO_LIST.getValue()] = new ListAddHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REMOVE_ITEM.getValue()] = new ListRemoveHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ADD_TO_SET.getValue()] = new SetAddHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REMOVE_ITEM.getValue()] = new MapItemRemoveHandler();
     }
 
     // always called by InThread
@@ -280,9 +281,9 @@ public class ClientService {
 				IMap<Object, Object> map = (IMap)node.factory.getOrCreateProxyByName(packet.name);
 				packet.value = toData(map.containsKey(packet.key));
 			}
-			else if (getInstanceType(packet.name).equals(InstanceType.LIST)){
-				IList<Object> list = (IList)node.factory.getOrCreateProxyByName(packet.name);
-				packet.value = toData(list.contains(packet.key));
+			else if (getInstanceType(packet.name).equals(InstanceType.LIST) || getInstanceType(packet.name).equals(InstanceType.SET)){
+				Collection<Object> collection = (Collection)node.factory.getOrCreateProxyByName(packet.name);
+				packet.value = toData(collection.contains(packet.key));
 			}
 		}
     }
@@ -291,18 +292,23 @@ public class ClientService {
 			return toData(map.containsValue(value));
 		}
     }
-    private class MapSizeHandler extends ClientOperationHandler{
+    private class MapSizeHandler extends ClientCollectionOperationHandler{
 		@Override
-		public void processCall(Node node, Packet packet) {
-			if(getInstanceType(packet.name).equals(InstanceType.MAP)){
-				IMap<Object, Object> map = (IMap)node.factory.getOrCreateProxyByName(packet.name);
-				packet.value = toData(map.size());
-			}
-			else if(getInstanceType(packet.name).equals(InstanceType.LIST)){
-				IList<Object> list = (IList)node.factory.getOrCreateProxyByName(packet.name);
-				packet.value = toData(list.size());
-			}
-			
+		public void doListOp(Node node, Packet packet) {
+			IList<Object> list = (IList)node.factory.getOrCreateProxyByName(packet.name);
+			packet.value = toData(list.size());
+		}
+
+		@Override
+		public void doMapOp(Node node, Packet packet) {
+			IMap<Object, Object> map = (IMap)node.factory.getOrCreateProxyByName(packet.name);
+			packet.value = toData(map.size());
+		}
+
+		@Override
+		public void doSetOp(Node node, Packet packet) {
+			ISet<Object> set = (ISet)node.factory.getOrCreateProxyByName(packet.name);
+			packet.value = toData(set.size());
 		}
     }
     private class GetMapEntryHandler extends ClientMapOperationHandler{
@@ -353,7 +359,7 @@ public class ClientService {
 			transaction.rollback();
 		}
     }
-    private class MapIterateKeysHandler extends ClientOperationHandler {
+    private class MapIterateKeysHandler extends ClientCollectionOperationHandler {
 		public Data processMapOp(IMap<Object, Object> map, Data key, Data value, Collection<Data> collection) {
 			ConcurrentMapManager.Entries entries = null;
 			if(value==null){
@@ -371,18 +377,24 @@ public class ClientService {
             }
             return toData(keys);
 		}
+		
+		@Override
+		public void doListOp(Node node, Packet packet) {
+			CollectionProxyImpl collectionProxy = (CollectionProxyImpl)node.factory.getOrCreateProxyByName(packet.name);
+			MProxy mapProxy  = ((CollectionProxyReal)collectionProxy.getBase()).mapProxy;
+			packet.value = processMapOp((IMap)mapProxy, packet.key, packet.value, new ArrayList<Data>());
+		}
 
 		@Override
-		public void processCall(Node node, Packet packet) {
-			if(getInstanceType(packet.name).equals(InstanceType.MAP)){
-				packet.value = processMapOp((IMap)node.factory.getOrCreateProxyByName(packet.name), packet.key, packet.value, new HashSet<Data>());
-			}
-			else if(getInstanceType(packet.name).equals(InstanceType.LIST)){
-				CollectionProxyImpl collectionProxy = (CollectionProxyImpl)node.factory.getOrCreateProxyByName(packet.name);
-    			MProxy mapProxy  = ((CollectionProxyReal)collectionProxy.getBase()).mapProxy;
-    			packet.value = processMapOp((IMap)mapProxy, packet.key, packet.value, new ArrayList<Data>());
-			}
-			
+		public void doMapOp(Node node, Packet packet) {
+			packet.value = processMapOp((IMap)node.factory.getOrCreateProxyByName(packet.name), packet.key, packet.value, new HashSet<Data>());
+		}
+
+		@Override
+		public void doSetOp(Node node, Packet packet) {
+			CollectionProxyImpl collectionProxy = (CollectionProxyImpl)node.factory.getOrCreateProxyByName(packet.name);
+			MProxy mapProxy  = ((CollectionProxyReal)collectionProxy.getBase()).mapProxy;
+			packet.value = processMapOp((IMap)mapProxy, packet.key, packet.value, new HashSet<Data>());		
 		}
 
     }
@@ -394,7 +406,7 @@ public class ClientService {
     			IMap<Object, Object> map = (IMap)node.factory.getOrCreateProxyByName(packet.name);
     			clientEndpoint.addThisAsListener(map, packet.key, includeValue);
     		}
-    		else if(getInstanceType(packet.name).equals(InstanceType.LIST)){
+    		else if(getInstanceType(packet.name).equals(InstanceType.LIST) || getInstanceType(packet.name).equals(InstanceType.SET)){
     			CollectionProxyImpl collectionProxy = (CollectionProxyImpl)node.factory.getOrCreateProxyByName(packet.name);
     			MProxy mapProxy  = ((CollectionProxyReal)collectionProxy.getBase()).mapProxy;
     			mapProxy.addEntryListener(clientEndpoint, includeValue);
@@ -420,13 +432,19 @@ public class ClientService {
 			packet.value = toData(list.add(packet.key));
 		}
     }
-    
-    private class ListRemoveHandler extends ClientOperationHandler{
+    private class SetAddHandler extends ClientOperationHandler{
 		@Override
 		public void processCall(Node node, Packet packet) {
-			IList list = (IList)node.factory.getOrCreateProxyByName(packet.name);
-			packet.value = toData(list.remove(packet.key));
+			ISet list = (ISet)node.factory.getOrCreateProxyByName(packet.name);
+			packet.value = toData(list.add(packet.key));
 		}
+    }
+    
+    private class MapItemRemoveHandler extends ClientOperationHandler{
+    	public void processCall(Node node, Packet packet) {
+    		Collection collection = (Collection)node.factory.getOrCreateProxyByName(packet.name);
+			packet.value = toData(collection.remove(packet.key));
+    	}
     }
     
     public abstract class ClientOperationHandler{
@@ -451,7 +469,27 @@ public class ClientService {
     		Data value = processMapOp(map,packet.key, packet.value);
     		packet.value = value;
     	}
-		
+    }
+    
+    private abstract class ClientCollectionOperationHandler extends ClientOperationHandler{
+
+    	public abstract void doMapOp(Node node, Packet packet);
+    	public abstract void doListOp(Node node, Packet packet);
+    	public abstract void doSetOp(Node node, Packet packet);
+		@Override
+		public void processCall(Node node, Packet packet) {
+			if(getInstanceType(packet.name).equals(InstanceType.LIST)){
+				doListOp(node, packet);
+			}
+			else if(getInstanceType(packet.name).equals(InstanceType.SET)){
+				doSetOp(node, packet);
+			}
+			else if(getInstanceType(packet.name).equals(InstanceType.MAP)){
+				doMapOp(node, packet);
+			}
+			
+		}
+    	
     }
     private abstract class ClientTransactionOperationHandler extends ClientOperationHandler{
     	public abstract void processTransactionOp(Transaction transaction);

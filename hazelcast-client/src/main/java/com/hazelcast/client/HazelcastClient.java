@@ -41,6 +41,7 @@ import com.hazelcast.core.MultiMap;
 public class HazelcastClient implements HazelcastInstance{
 	private static final String MAP_PREFIX = "c:";
 	private static final String LIST_PREFIX = "m:l:";
+	private static final String SET_PREFIX = "m:s:";
 	final Map<Long,Call> calls  = new ConcurrentHashMap<Long, Call>();
 	final ListenerManager listenerManager;
 	final OutRunnable out;
@@ -88,6 +89,9 @@ public class HazelcastClient implements HazelcastInstance{
 					}
 					else if(name.startsWith(LIST_PREFIX)){
 						proxy = new ListClientProxy<E>(this, name);
+					}
+					else if(name.startsWith(SET_PREFIX)){
+						proxy = new SetClientProxy<E>(this, name);
 					}
 					proxy.setOutRunnable(out);
 					mapProxies.put(name, proxy);
@@ -165,8 +169,7 @@ public class HazelcastClient implements HazelcastInstance{
 	}
 
 	public <E> ISet<E> getSet(String name) {
-		// TODO Auto-generated method stub
-		return null;
+		return (ISet<E>)getClientProxy(SET_PREFIX + name);
 	}
 
 	public <E> ITopic<E> getTopic(String name) {
