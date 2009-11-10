@@ -10,7 +10,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public abstract class AbstractRemotelyProcessable extends AbstractNodeAware implements RemotelyProcessable {
-    Connection conn;
+    volatile Connection conn;
 
     public Connection getConnection() {
         return conn;

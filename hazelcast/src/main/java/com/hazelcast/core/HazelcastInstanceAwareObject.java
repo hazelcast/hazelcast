@@ -2,10 +2,11 @@ package com.hazelcast.core;
 
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.SerializationHelper;
 
 import java.io.*;
 
-public abstract class HazelcastInstanceAwareObject implements HazelcastInstanceAware, DataSerializable {
+public abstract class HazelcastInstanceAwareObject extends SerializationHelper implements HazelcastInstanceAware, DataSerializable {
     protected transient HazelcastInstance hazelcastInstance = null;
 
     public HazelcastInstance getHazelcastInstance() {

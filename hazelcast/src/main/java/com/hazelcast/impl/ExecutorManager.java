@@ -89,10 +89,10 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         executorForMigrations = new ThreadPoolExecutor(1, 16, 60, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(),
                 new ExecutorThreadFactory(node.threadGroup, node.getName() + ".internal"),
-                new RejectionHandler()){
+                new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
                 ThreadContext.get().setCurrentFactory(node.factory);
-            } 
+            }
         };
         node.getClusterImpl().addMembershipListener(this);
         for (int i = 0; i < 100; i++) {
@@ -650,19 +650,19 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
     public Processable createNewExecutionAction(final DistributedTask task) {
         if (task == null)
             throw new RuntimeException("task cannot be null");
+        Long executionId = null;
         try {
-            final Long executionId = executionIds.take();
-            final InnerFutureTask inner = (InnerFutureTask) task.getInner();
-            final Callable callable = inner.getCallable();
-            final Data callableData = toData(callable);
-            final DistributedExecutorAction action = new DistributedExecutorAction(executionId,
-                    task, callableData, callable);
-            inner.setExecutionManagerCallback(action);
-            return action;
-        } catch (final Exception e) {
-            e.printStackTrace();
+            executionId = executionIds.take();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
-        return null;
+        final InnerFutureTask inner = (InnerFutureTask) task.getInner();
+        final Callable callable = inner.getCallable();
+        final Data callableData = toData(callable);
+        final DistributedExecutorAction action =
+                new DistributedExecutorAction(executionId, task, callableData, callable);
+        inner.setExecutionManagerCallback(action);
+        return action;
     }
 
     public void executeLocally(Runnable runnable) {

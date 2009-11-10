@@ -25,6 +25,9 @@ import com.hazelcast.nio.*;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -651,12 +654,53 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
     }
 
+    public RemotelyProcessable createInitialProcess() {
+        InitialProcess initialProcess = new InitialProcess();
+        List<AbstractRemotelyProcessable> lsProcessables = initialProcess.getProcessables();
+        node.listenerManager.collectInitialProcess(lsProcessables);
+        return initialProcess;
+    }
+
+    public static class InitialProcess extends AbstractRemotelyProcessable {
+        List<AbstractRemotelyProcessable> lsProcessables = new ArrayList<AbstractRemotelyProcessable>(10);
+
+        public List<AbstractRemotelyProcessable> getProcessables() {
+            return lsProcessables;
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            int size = lsProcessables.size();
+            out.writeInt(size);
+            for (int i = 0; i < size; i++) {
+                writeObject(out, lsProcessables.get(i));
+            }
+        }
+
+        public void readData(DataInput in) throws IOException {
+            int size = in.readInt();
+            for (int i = 0; i < size; i++) {
+                lsProcessables.add((AbstractRemotelyProcessable) readObject(in));
+            }
+        }
+
+        public void process() {
+            for (AbstractRemotelyProcessable processable : lsProcessables) {
+                processable.setConnection(getConnection());
+                processable.setNode(getNode());
+                processable.process();
+            }
+        }
+    }
+
     public void connectionAdded(final Connection connection) {
         enqueueAndReturn(new Processable() {
             public void process() {
                 MemberImpl member = getMember(connection.getEndPoint());
                 if (member != null) {
                     member.didRead();
+                }
+                if (!thisAddress.equals(connection.getEndPoint())) {
+                    sendProcessableTo(createInitialProcess(), connection);
                 }
             }
         });

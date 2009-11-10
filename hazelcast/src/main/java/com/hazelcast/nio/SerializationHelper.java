@@ -23,8 +23,7 @@ public class SerializationHelper {
     protected void writeObject(DataOutput out, Object obj) throws IOException {
         if (obj == null) {
             out.writeByte(0);
-        }
-        if (obj instanceof Long) {
+        } else if (obj instanceof Long) {
             out.writeByte(1);
             out.writeLong((Long) obj);
         } else if (obj instanceof Integer) {

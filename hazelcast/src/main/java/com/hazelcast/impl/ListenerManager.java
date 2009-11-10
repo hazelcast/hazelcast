@@ -17,20 +17,19 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.ItemListener;
-import com.hazelcast.core.MessageListener;
+import com.hazelcast.core.*;
 import static com.hazelcast.impl.ClusterOperation.ADD_LISTENER;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.*;
+import static com.hazelcast.nio.IOUtil.toData;
+import com.hazelcast.cluster.AbstractRemotelyProcessable;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.io.DataInput;
 
 public class ListenerManager extends BaseManager {
     private List<ListenerItem> listeners = new CopyOnWriteArrayList<ListenerItem>();
@@ -200,6 +199,12 @@ public class ListenerManager extends BaseManager {
         }
     }
 
+    public void collectInitialProcess(List<AbstractRemotelyProcessable> lsProcessables) {
+        for (ListenerItem listenerItem : listeners) {
+            lsProcessables.add(listenerItem);
+        }
+    }
+
     void sendAddRemoveListener(Address toAddress, boolean add, String name, Data key,
                                boolean includeValue) {
         Packet packet = obtainPacket();
@@ -310,12 +315,15 @@ public class ListenerManager extends BaseManager {
         }
     }
 
-    class ListenerItem {
+    public static class ListenerItem extends AbstractRemotelyProcessable implements DataSerializable{
         public String name;
         public Object key;
         public Object listener;
         public boolean includeValue;
         public ListenerManager.Type type = ListenerManager.Type.Map;
+
+        public ListenerItem() {
+        }
 
         public ListenerItem(String name, Object key, Object listener, boolean includeValue,
                             ListenerManager.Type listenerType) {
@@ -330,6 +338,22 @@ public class ListenerManager extends BaseManager {
         public boolean listens(EventTask event) {
             String name = event.getName();
             return this.name.equals(name) && (this.key == null || event.getKey().equals(this.key));
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(name);
+            writeObject(out, key);
+            out.writeBoolean(includeValue);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            name = in.readUTF();
+            key = readObject(in);
+            includeValue = in.readBoolean();
+        }
+
+        public void process() {
+           getNode().listenerManager.handleListenerRegisterations(true, name, toData(key), getConnection().getEndPoint(), includeValue); 
         }
     }
 }
