@@ -22,14 +22,7 @@ import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 import static com.hazelcast.impl.BaseManager.getInstanceType;
 
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.ICollection;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.Instance;
-import com.hazelcast.core.Transaction;
+import com.hazelcast.core.*;
 import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.impl.BaseManager.EventTask;
 import com.hazelcast.impl.BaseManager.KeyValue;
@@ -72,19 +65,25 @@ public class ClientService {
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_UNLOCK.getValue()] = new MapUnlockHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_CONTAINS.getValue()] = new MapContainsHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_CONTAINS_VALUE.getValue()] = new MapContainsValueHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ADD_TO_LIST.getValue()] = new ListAddHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ADD_TO_SET.getValue()] = new SetAddHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REMOVE_ITEM.getValue()] = new MapItemRemoveHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS.getValue()] = new MapIterateKeysHandler();
+        clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_OFFER.getValue()] = new QueueOfferHandler();
+        clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_POLL.getValue()] = new QueuePollHandler();
+        clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_REMOVE.getValue()] = new QueueRemoveHandler();
+        clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_PEEK.getValue()] = new QueuePeekHandler();
+
         clientOperationHandlers[ClusterOperation.TRANSACTION_BEGIN.getValue()] = new TransactionBeginHandler();
         clientOperationHandlers[ClusterOperation.TRANSACTION_COMMIT.getValue()] = new TransactionCommitHandler();
         clientOperationHandlers[ClusterOperation.TRANSACTION_ROLLBACK.getValue()] = new TransactionRollbackHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS.getValue()] = new MapIterateKeysHandler();
         clientOperationHandlers[ClusterOperation.ADD_LISTENER.getValue()] = new AddListenerHandler();
         clientOperationHandlers[ClusterOperation.REMOVE_LISTENER.getValue()] = new RemoveListenerHandler();
+
         clientOperationHandlers[ClusterOperation.REMOTELY_PROCESS.getValue()] =  new RemotelyProcessHandler();
         clientOperationHandlers[ClusterOperation.DESTROY.getValue()] =  new DestroyHandler();
         clientOperationHandlers[ClusterOperation.GET_ID.getValue()] =  new GetIdHandler();
         clientOperationHandlers[ClusterOperation.ADD_INDEX.getValue()] =  new AddIndexHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ADD_TO_LIST.getValue()] = new ListAddHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ADD_TO_SET.getValue()] = new SetAddHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REMOVE_ITEM.getValue()] = new MapItemRemoveHandler();
     }
 
     // always called by InThread
@@ -205,7 +204,55 @@ public class ClientService {
     
     
     
-    
+    private class QueueOfferHandler extends ClientQueueOperationHandler{
+        public Data processQueueOp(IQueue<Object> queue, Data key, Data value) {
+            long millis = (Long)toObject(value);
+            try {
+                if(millis==-1){
+                    queue.put(key);
+                    return toData(true);
+                }
+                    else if(millis == 0){
+                    return toData(queue.offer(key));
+                }else{
+                    return toData(queue.offer(key, (Long) toObject(value), TimeUnit.MILLISECONDS));
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException();
+            }
+        }
+    }
+
+    private class QueuePollHandler extends ClientQueueOperationHandler{
+        public Data processQueueOp(IQueue<Object> queue, Data key, Data value) {
+            try {
+                long millis = (Long)toObject(value);
+                if(millis==-1){
+                    return (Data)queue.take();
+                }
+                else if(millis == 0){
+                    return (Data)queue.poll();
+                }else{
+                    return (Data)queue.poll((Long) millis, TimeUnit.MILLISECONDS);
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
+    }
+
+    private class QueueRemoveHandler extends ClientQueueOperationHandler{
+        public Data processQueueOp(IQueue<Object> queue, Data key, Data value) {
+            return (Data)queue.remove();
+        }
+    }
+
+    private class QueuePeekHandler extends ClientQueueOperationHandler{
+        public Data processQueueOp(IQueue<Object> queue, Data key, Data value) {
+            return (Data)queue.peek();
+        }
+    }
 
     private class RemotelyProcessHandler extends ClientOperationHandler{
 		public void processCall(Node node, Packet packet) {
@@ -246,7 +293,7 @@ public class ClientService {
     }
     private class MapGetHandler extends ClientMapOperationHandler{
 		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
-			return (Data) map.get(key);
+			return (Data)map.get(key);
 		}
     }
     private class MapRemoveHandler extends ClientMapOperationHandler{
@@ -467,6 +514,15 @@ public class ClientService {
     	public void processCall(Node node, Packet packet){
     		IMap<Object, Object> map = (IMap)node.factory.getOrCreateProxyByName(packet.name);
     		Data value = processMapOp(map,packet.key, packet.value);
+    		packet.value = value;
+    	}
+    }
+
+    private abstract class ClientQueueOperationHandler extends ClientOperationHandler{
+    	public abstract Data processQueueOp(IQueue<Object> queue, Data key, Data value);
+    	public void processCall(Node node, Packet packet){
+    		IQueue<Object> queue = (IQueue)node.factory.getOrCreateProxyByName(packet.name);
+    		Data value = processQueueOp(queue,packet.key, packet.value);
     		packet.value = value;
     	}
     }
