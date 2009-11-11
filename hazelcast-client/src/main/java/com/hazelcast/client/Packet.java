@@ -24,6 +24,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.client.nio.Address;
 
 
 public class Packet {	
@@ -61,6 +62,8 @@ public class Packet {
     private byte responseType = Constants.ResponseTypes.RESPONSE_NONE;
     
     private boolean lockAddressIsNull = true;
+
+    private Address lockAddress;
     
 	private long callId = -1;
 	
@@ -71,8 +74,11 @@ public class Packet {
     private long[] indexes = new long[6];
 
     private byte[] indexTypes = new byte[6];
-	
-	public void writeTo(DataOutputStream outputStream) throws IOException {
+
+    public Packet() {
+    }
+
+    public void writeTo(DataOutputStream outputStream) throws IOException {
 		headerInBytes = getHeader();
 		headerSize = headerInBytes.length;
 		outputStream.writeInt(headerSize);
@@ -112,6 +118,10 @@ public class Packet {
 		dis2.read(b);
 		this.name = new String(b);
 		this.lockAddressIsNull = dis2.readBoolean();
+        if (!lockAddressIsNull) {
+            lockAddress = new Address();
+            lockAddress.readData(dis2);
+        }
 	    indexCount = dis2.readByte();
         for (int i=0; i<indexCount ; i++) {
             indexes[i] = dis2.readLong();
@@ -143,6 +153,9 @@ public class Packet {
 		dos.writeInt(nameInBytes.length);
 		dos.write(nameInBytes);
 		dos.writeBoolean(lockAddressIsNull);
+        if (!lockAddressIsNull) {
+            lockAddress.writeData(dos);
+        }
 		dos.writeByte(indexCount);
         for (int i=0; i < indexCount; i++){
         	dos.writeLong(indexes[i]);

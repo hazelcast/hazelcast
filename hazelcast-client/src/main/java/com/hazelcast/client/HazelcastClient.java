@@ -43,14 +43,16 @@ public class HazelcastClient implements HazelcastInstance{
 	private static final String MAP_PREFIX = "c:";
 	private static final String LIST_PREFIX = "m:l:";
 	private static final String SET_PREFIX = "m:s:";
+    private static final String QUEUE_PREFIX = "q:";
+
 	final Map<Long,Call> calls  = new ConcurrentHashMap<Long, Call>();
 	final ListenerManager listenerManager;
 	final OutRunnable out;
 	final InRunnable in;
 	final ConnectionManager connectionManager;
-	final Map<String, ClientProxy> mapProxies = new ConcurrentHashMap<String, ClientProxy>(100); 
-	
-	private HazelcastClient(InetSocketAddress[] clusterMembers) {
+	final Map<String, ClientProxy> mapProxies = new ConcurrentHashMap<String, ClientProxy>(100);
+
+    private HazelcastClient(InetSocketAddress[] clusterMembers) {
 		connectionManager = new ConnectionManager(this, clusterMembers);
 
 		out = new OutRunnable(this, calls, new PacketWriter());
@@ -87,6 +89,7 @@ public class HazelcastClient implements HazelcastInstance{
 		if(proxy==null){
 			synchronized (mapProxies) {
 				if(proxy==null){
+                
 					if(name.startsWith(MAP_PREFIX)){
 						proxy = new MapClientProxy<K, V>(this,name);
 					}
@@ -95,7 +98,10 @@ public class HazelcastClient implements HazelcastInstance{
 					}
 					else if(name.startsWith(SET_PREFIX)){
 						proxy = new SetClientProxy<E>(this, name);
-					}
+                    }
+                    else if(name.startsWith(QUEUE_PREFIX)){
+                        proxy = new QueueClientProxy<E>(this, name);
+                    }
 					proxy.setOutRunnable(out);
 					mapProxies.put(name, proxy);
 				}
@@ -167,8 +173,7 @@ public class HazelcastClient implements HazelcastInstance{
 	}
 
 	public <E> IQueue<E> getQueue(String name) {
-		// TODO Auto-generated method stub
-		return null;
+		return (IQueue<E>)getClientProxy(QUEUE_PREFIX + name);
 	}
 
 	public <E> ISet<E> getSet(String name) {

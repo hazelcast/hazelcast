@@ -111,9 +111,7 @@ public class Address implements DataSerializable {
     public void readData(DataInput in) throws IOException {
         in.readFully(ip);
         port = in.readInt();
-        // setHost();
     }
-
 
     public String getHost() {
         if (host == null)

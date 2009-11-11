@@ -12,6 +12,15 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$APPLICATION_HOME_DIR$/lib/junit-4.5.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
     <orderEntry type="library" name="Maven: junit:junit:4.6" level="project" />
     <orderEntry type="library" name="Maven: junit-addons:junit-addons:1.4" level="project" />
     <orderEntry type="library" name="Maven: xerces:xercesImpl:2.6.2" level="project" />

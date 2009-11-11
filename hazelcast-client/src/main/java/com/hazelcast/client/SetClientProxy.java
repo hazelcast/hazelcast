@@ -3,6 +3,7 @@ package com.hazelcast.client;
 import java.util.Iterator;
 
 import com.hazelcast.core.ISet;
+import com.hazelcast.core.IList;
 import com.hazelcast.impl.ClusterOperation;
 
 public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<E>, ClientProxy{
@@ -23,28 +24,29 @@ public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<
 	public boolean contains(Object o) {
 		return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS, o, null);
 	}
-	
-	
+
+
+    @Override
+    public boolean equals(Object o){
+        if(o instanceof ISet && o!=null){
+            return getName().equals(((ISet)o).getName());
+        }
+        else{
+            return false;
+        }
+    }
+
+    @Override
+    public int hashCode(){
+        return getName().hashCode();
+    }
 
 	public String getName() {
 		return name.substring(4);
 	}
 
-
-	public void destroy() {
-		proxyHelper.destroy();		
-	}
-
-	public Object getId() {
-		return name;
-	}
-
 	public InstanceType getInstanceType() {
 		return InstanceType.SET;
-	}
-
-	public void setOutRunnable(OutRunnable out) {
-		proxyHelper.setOutRunnable(out);
 	}
 
 }

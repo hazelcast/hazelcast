@@ -17,6 +17,14 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E>{
 		this.client = hazelcastClient;
 		proxyHelper = new ProxyHelper(name, hazelcastClient);
 	}
+
+    public void destroy() {
+		proxyHelper.destroy();
+	}
+
+    public Object getId() {
+		return name;
+	}
 	
 	@Override
 	public Iterator<E> iterator() {
@@ -59,5 +67,10 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E>{
 	public int size() {
 		return (Integer)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_SIZE, null, null);
 	}
+
+    public void setOutRunnable(OutRunnable out) {
+		proxyHelper.setOutRunnable(out);
+	}
+    
 
 }

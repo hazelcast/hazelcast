@@ -28,18 +28,23 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
 		return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS, o, null);
 	}
 
+    @Override
+    public boolean equals(Object o){
+        if(o instanceof IList && o!=null){
+            return getName().equals(((IList)o).getName());
+        }
+        else{
+            return false;
+        }
+    }
 
+    @Override
+    public int hashCode(){
+        return getName().hashCode();
+    }
 
 	public String getName() {
 		return name.substring(4);
-	}
-
-	public void destroy() {
-		proxyHelper.destroy();
-	}
-
-	public Object getId() {
-		return name;
 	}
 
 	public InstanceType getInstanceType() {
@@ -93,9 +98,7 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
 		throw new UnsupportedOperationException();
 	}
 
-	public void setOutRunnable(OutRunnable out) {
-		proxyHelper.setOutRunnable(out);
-	}
+
 
 	
 }
