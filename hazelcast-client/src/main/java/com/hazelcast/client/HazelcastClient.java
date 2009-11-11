@@ -37,6 +37,7 @@ import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.InstanceListener;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.config.Config;
 
 public class HazelcastClient implements HazelcastInstance{
 	private static final String MAP_PREFIX = "c:";
@@ -72,7 +73,9 @@ public class HazelcastClient implements HazelcastInstance{
 		return new HazelcastClient(clusterMembers);
 	}
 	
-	
+	public Config getConfig() {
+        throw new UnsupportedOperationException();
+    }
 	
 
 	public <K, V> IMap<K,V> getMap(String name){

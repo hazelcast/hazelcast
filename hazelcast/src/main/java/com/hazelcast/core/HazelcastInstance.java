@@ -17,6 +17,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.config.Config;
+
 import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 
@@ -70,4 +72,6 @@ public interface HazelcastInstance {
     public void addInstanceListener(InstanceListener instanceListener);
 
     public void removeInstanceListener(InstanceListener instanceListener);
+
+    public Config getConfig();
 }

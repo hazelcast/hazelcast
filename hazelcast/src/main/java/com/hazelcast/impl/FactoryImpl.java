@@ -176,6 +176,10 @@ public class FactoryImpl implements HazelcastInstance {
         public void removeInstanceListener(InstanceListener instanceListener) {
             hazelcastInstance.removeInstanceListener(instanceListener);
         }
+
+        public Config getConfig() {
+            return hazelcastInstance.getConfig();
+        }
     }
 
     public static void shutdownAll() {
