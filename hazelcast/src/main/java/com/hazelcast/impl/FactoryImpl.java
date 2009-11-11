@@ -2467,7 +2467,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             private Long getNewMillion() {
                 try {
-                    DistributedTask<Long> task = new DistributedTask<Long>(new IncrementTask(name, factory.getName()));
+                    DistributedTask<Long> task = new DistributedTask<Long>(new IncrementTask(name, factory));
                     factory.executorServiceImpl.execute(task);
                     return task.get();
                 } catch (Exception e) {
@@ -2490,23 +2490,22 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    public static class IncrementTask implements Callable<Long>, Serializable {
+    public static class IncrementTask implements Callable<Long>, DataSerializable, HazelcastInstanceAware {
         String name = null;
-        String factoryName = null;
+        transient HazelcastInstance hazelcastInstance = null;
 
         public IncrementTask() {
             super();
         }
 
-        public IncrementTask(String uuidName, String factoryName) {
+        public IncrementTask(String uuidName, HazelcastInstance hazelcastInstance) {
             super();
             this.name = uuidName;
-            this.factoryName = factoryName;
+            this.hazelcastInstance = hazelcastInstance;
         }
 
         public Long call() {
-            FactoryImpl factory = getFactoryImpl(factoryName);
-            MProxy map = factory.idGeneratorMapProxy;
+            MProxy map = ((FactoryImpl) hazelcastInstance).idGeneratorMapProxy;
             map.lock(name);
             try {
                 Long max = (Long) map.get(name);
@@ -2522,6 +2521,18 @@ public class FactoryImpl implements HazelcastInstance {
             } finally {
                 map.unlock(name);
             }
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(name);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            this.name = in.readUTF();
+        }
+
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.hazelcastInstance = hazelcastInstance;
         }
     }
 }
