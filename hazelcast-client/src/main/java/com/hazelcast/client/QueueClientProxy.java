@@ -19,6 +19,7 @@ package com.hazelcast.client;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Instance;
+import com.hazelcast.core.IList;
 import com.hazelcast.impl.ClusterOperation;
 
 import java.util.concurrent.TimeUnit;
@@ -36,6 +37,15 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
 
     public InstanceType getInstanceType() {
         return InstanceType.QUEUE;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public boolean add(E e){
+        boolean result = offer(e);
+        if(!result){
+            throw new IllegalStateException("no space is currently available");
+        }
+        return true;
     }
 
     public boolean offer(E e) {
@@ -91,14 +101,43 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
     }
 
     public int remainingCapacity() {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        throw new UnsupportedOperationException();
     }
 
     public int drainTo(Collection<? super E> objects) {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return drainTo(objects, Integer.MAX_VALUE);
     }
 
     public int drainTo(Collection<? super E> objects, int i) {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        if (objects == null) throw new NullPointerException("drainTo null!");
+        if (i < 0) throw new IllegalArgumentException("Negative maxElements:" + i);
+        if (i == 0) return 0;
+        if (objects instanceof IQueue) {
+           if(((IQueue)objects).getName().equals(getName())){
+                throw new IllegalArgumentException("Cannot drainTo self!");     
+           }
+        }
+        E e;
+        int counter = 0;
+        while((e=poll())!=null && counter<i){
+            objects.add(e);
+            counter++;
+        }
+        return counter;
+    }
+
+    @Override
+	public int size() {
+		return (Integer)proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_SIZE, null, null);
+	}
+
+    @Override
+    public boolean equals(Object o){
+        if(o instanceof IQueue && o!=null){
+            return getName().equals(((IQueue)o).getName());
+        }
+        else{
+            return false;
+        }
     }
 }

@@ -73,6 +73,8 @@ public class ClientService {
         clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_POLL.getValue()] = new QueuePollHandler();
         clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_REMOVE.getValue()] = new QueueRemoveHandler();
         clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_PEEK.getValue()] = new QueuePeekHandler();
+        clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_SIZE.getValue()] = new QueueSizeHandler();
+
 
         clientOperationHandlers[ClusterOperation.TRANSACTION_BEGIN.getValue()] = new TransactionBeginHandler();
         clientOperationHandlers[ClusterOperation.TRANSACTION_COMMIT.getValue()] = new TransactionCommitHandler();
@@ -251,6 +253,12 @@ public class ClientService {
     private class QueuePeekHandler extends ClientQueueOperationHandler{
         public Data processQueueOp(IQueue<Object> queue, Data key, Data value) {
             return (Data)queue.peek();
+        }
+    }
+
+    private class QueueSizeHandler extends ClientQueueOperationHandler{
+        public Data processQueueOp(IQueue<Object> queue, Data key, Data value) {
+            return toData(queue.size());
         }
     }
 

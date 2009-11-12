@@ -38,11 +38,6 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
         }
     }
 
-    @Override
-    public int hashCode(){
-        return getName().hashCode();
-    }
-
 	public String getName() {
 		return name.substring(4);
 	}

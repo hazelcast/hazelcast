@@ -71,6 +71,11 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E>{
     public void setOutRunnable(OutRunnable out) {
 		proxyHelper.setOutRunnable(out);
 	}
+
+    @Override
+    public int hashCode(){
+        return name.hashCode();
+    }
     
 
 }

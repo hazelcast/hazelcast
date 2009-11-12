@@ -36,11 +36,6 @@ public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<
         }
     }
 
-    @Override
-    public int hashCode(){
-        return getName().hashCode();
-    }
-
 	public String getName() {
 		return name.substring(4);
 	}
