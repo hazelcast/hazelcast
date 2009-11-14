@@ -24,6 +24,8 @@ import com.hazelcast.impl.ThreadContext;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.math.BigInteger;
+import java.util.Date;
 
 public final class Serializer {
 
@@ -41,7 +43,11 @@ public final class Serializer {
 
     private static final byte SERIALIZER_TYPE_STRING = 6;
 
-    private static TypeSerializer[] typeSerizalizers = new TypeSerializer[7];
+    private static final byte SERIALIZER_TYPE_DATE = 7;
+
+    private static final byte SERIALIZER_TYPE_BIG_INTEGER = 8;
+
+    private static TypeSerializer[] typeSerizalizers = new TypeSerializer[9];
 
     static {
         registerTypeSerializer(new ObjectSerializer());
@@ -51,6 +57,8 @@ public final class Serializer {
         registerTypeSerializer(new ClassSerializer());
         registerTypeSerializer(new ByteArraySerializer());
         registerTypeSerializer(new DataSerializer());
+        registerTypeSerializer(new DateSerializer());
+        registerTypeSerializer(new BigIntegerSerializer());
     }
 
     final FastByteArrayOutputStream bbos;
@@ -78,8 +86,12 @@ public final class Serializer {
             typeId = SERIALIZER_TYPE_INTEGER;
         } else if (obj instanceof String) {
             typeId = SERIALIZER_TYPE_STRING;
+        } else if (obj instanceof Date) {
+            typeId = SERIALIZER_TYPE_DATE;
         } else if (obj instanceof Class) {
             typeId = SERIALIZER_TYPE_CLASS;
+        } else if (obj instanceof BigInteger) {
+            typeId = SERIALIZER_TYPE_BIG_INTEGER;
         }
         bbos.writeByte(typeId);
         typeSerizalizers[typeId].write(bbos, obj);
@@ -121,6 +133,38 @@ public final class Serializer {
 
         public void write(FastByteArrayOutputStream bbos, Long obj) throws Exception {
             bbos.writeLong(obj.longValue());
+        }
+    }
+
+    static class DateSerializer implements TypeSerializer<Date> {
+        public byte getTypeId() {
+            return SERIALIZER_TYPE_DATE;
+        }
+
+        public Date read(FastByteArrayInputStream bbis) throws Exception {
+            return new Date(bbis.readLong());
+        }
+
+        public void write(FastByteArrayOutputStream bbos, Date obj) throws Exception {
+            bbos.writeLong(obj.getTime());
+        }
+    }
+
+    static class BigIntegerSerializer implements TypeSerializer<BigInteger> {
+        public byte getTypeId() {
+            return SERIALIZER_TYPE_BIG_INTEGER;
+        }
+
+        public BigInteger read(FastByteArrayInputStream bbis) throws Exception {
+            byte[] bytes = new byte[bbis.readInt()];
+            bbis.read(bytes);
+            return new BigInteger(bytes);
+        }
+
+        public void write(FastByteArrayOutputStream bbos, BigInteger obj) throws Exception {
+            byte[] bytes = obj.toByteArray();
+            bbos.writeInt(bytes.length);
+            bbos.write(bytes);
         }
     }
 

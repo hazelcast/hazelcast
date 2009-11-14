@@ -84,7 +84,7 @@ public enum ClusterOperation {
     TRANSACTION_COMMIT(239),
     TRANSACTION_ROLLBACK(240),
     DESTROY(241),
-    GET_ID(242), 
+    GET_ID(242),
     ADD_INDEX(243),;
 
     private int value;

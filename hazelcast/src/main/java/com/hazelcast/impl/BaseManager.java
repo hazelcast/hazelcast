@@ -21,6 +21,7 @@ import com.hazelcast.cluster.RemotelyProcessable;
 import com.hazelcast.core.EntryEvent;
 import static com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.HazelcastInstanceAwareObject;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.ResponseTypes.*;
@@ -200,8 +201,12 @@ public abstract class BaseManager {
             }
         }
 
-        public long size() {
+        public int size() {
             return (lsKeyValues == null) ? 0 : lsKeyValues.size();
+        }
+
+        public KeyValue getEntry(int i) {
+            return (lsKeyValues == null) ? null : lsKeyValues.get(i);
         }
     }
 
@@ -259,7 +264,7 @@ public abstract class BaseManager {
         Object objKey = null;
         Object objValue = null;
         String name = null;
-        String factoryName = null;
+        FactoryImpl factory;
 
         public KeyValue() {
         }
@@ -288,10 +293,17 @@ public abstract class BaseManager {
             }
         }
 
+        public Data getKeyData() {
+            return key;
+        }
+
+        public Data getValueData () {
+            return value;
+        }
+
         public Object getKey() {
             if (objKey == null) {
                 objKey = toObject(key);
-                key = null; // consumed on toObject(key)
             }
             return objKey;
         }
@@ -301,7 +313,6 @@ public abstract class BaseManager {
                 if (value != null) {
                     objValue = toObject(value);
                 } else {
-                    FactoryImpl factory = FactoryImpl.getFactoryImpl(factoryName);
                     objValue = ((FactoryImpl.IGetAwareProxy) factory.getOrCreateProxyByName(name)).get((key == null) ? getKey() : key);
                 }
             }
@@ -311,12 +322,11 @@ public abstract class BaseManager {
         public Object setValue(Object newValue) {
             if (name == null) throw new UnsupportedOperationException();
             this.objValue = value;
-            FactoryImpl factory = FactoryImpl.getFactoryImpl(factoryName);
-            return ((FactoryImpl.MProxy) factory.getOrCreateProxyByName(name)).put(getKey(), newValue);
+            return ((FactoryImpl.MProxy) factory.getOrCreateProxyByName(name)).put(key, newValue);
         }
 
-        public void setName(String factoryName, String name) {
-            this.factoryName = factoryName;
+        public void setName(FactoryImpl factoryImpl, String name) {
+            this.factory = factoryImpl;
             this.name = name;
         }
 

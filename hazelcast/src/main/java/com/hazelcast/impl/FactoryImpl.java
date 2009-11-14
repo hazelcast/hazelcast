@@ -2245,8 +2245,18 @@ public class FactoryImpl implements HazelcastInstance {
 
             public void putAll(Map map) {
                 Set<Entry> entries = map.entrySet();
-                for (Entry entry : entries) {
-                    put(entry.getKey(), entry.getValue());
+                final CountDownLatch latch = new CountDownLatch(entries.size());
+                for (final Entry entry : entries) {
+                    factory.node.executorManager.executeLocally( new Runnable() {
+                        public void run() {
+                            put(entry.getKey(), entry.getValue());
+                        }
+                    });
+                    latch.countDown();
+                }
+                try {
+                    latch.await();
+                } catch (InterruptedException ignored) {
                 }
             }
 

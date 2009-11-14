@@ -29,7 +29,6 @@ import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
-
 import static com.hazelcast.nio.IOUtil.*;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.query.Expression;
@@ -701,10 +700,10 @@ public final class ConcurrentMapManager extends BaseManager {
                 for (int i = 0; i < indexes.length; i++) {
                     Index index = indexes[i];
                     if (index != null) {
-                    	Object realValue = value;
-                    	if(realValue instanceof Data){
-                    		realValue = toObject((Data)value);
-                    	}
+                        Object realValue = value;
+                        if (realValue instanceof Data) {
+                            realValue = toObject((Data) value);
+                        }
                         newIndexes[i] = index.extractLongValue(realValue);
                         if (typesNew) {
                             indexTypes[i] = index.getIndexType();
@@ -2052,17 +2051,17 @@ public final class ConcurrentMapManager extends BaseManager {
                             lsKeyValues.add(createSimpleEntry(node.factory, name, key, value));
                         }
                     } else {
-                        entry.setName(node.factory.getName(), name);
+                        entry.setName(node.factory, name);
                         lsKeyValues.add(entry);
                     }
                 } else {
-                    entry.setName(node.factory.getName(), name);
+                    entry.setName(node.factory, name);
                     lsKeyValues.add(entry);
                 }
             }
         }
 
-        public List<Map.Entry> getLsKeyValues() {
+        public List<Map.Entry> getKeyValues() {
             return lsKeyValues;
         }
 
@@ -2154,11 +2153,23 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public Object[] toArray() {
-            throw new UnsupportedOperationException();
+            return toArray(null);
         }
 
         public Object[] toArray(Object[] a) {
-            throw new UnsupportedOperationException();
+            List values = new ArrayList();
+            Iterator it = iterator();
+            while (it.hasNext()) {
+                Object obj = it.next();
+                if (obj != null) {
+                    values.add(obj);
+                }
+            }
+            if (a == null) {
+                return values.toArray();
+            } else {
+                return values.toArray(a);
+            }
         }
     }
 }
