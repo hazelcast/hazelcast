@@ -107,7 +107,7 @@ public class FactoryImpl implements HazelcastInstance {
 
         public HazelcastInstanceProxy(FactoryImpl factory) {
             this.hazelcastInstance = factory;
-        } 
+        }
 
         public String getName() {
             return hazelcastInstance.getName();
@@ -903,9 +903,9 @@ public class FactoryImpl implements HazelcastInstance {
         public FactoryImpl getFactory() {
             return factory;
         }
-        
-        public CollectionProxy getBase(){
-        	return base;
+
+        public CollectionProxy getBase() {
+            return base;
         }
 
         public void setFactory(FactoryImpl factory) {
@@ -2247,12 +2247,12 @@ public class FactoryImpl implements HazelcastInstance {
                 Set<Entry> entries = map.entrySet();
                 final CountDownLatch latch = new CountDownLatch(entries.size());
                 for (final Entry entry : entries) {
-                    factory.node.executorManager.executeLocally( new Runnable() {
+                    factory.node.executorManager.executeLocally(new Runnable() {
                         public void run() {
                             put(entry.getKey(), entry.getValue());
+                            latch.countDown();
                         }
                     });
-                    latch.countDown();
                 }
                 try {
                     latch.await();
