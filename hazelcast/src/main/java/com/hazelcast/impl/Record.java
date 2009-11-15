@@ -72,7 +72,7 @@ public class Record implements MapEntry {
         this.blockId = blockId;
         this.setKey(key);
         this.setValue(value);
-        this.ttl= ttl;
+        this.ttl = ttl;
         setCreationTime(System.currentTimeMillis());
         this.setLastTouchTime(getCreationTime());
         this.setVersion(0);
@@ -80,8 +80,8 @@ public class Record implements MapEntry {
         this.id = id;
     }
 
-    public Record copy () {
-        return new Record (factory, name, blockId, key.get(), value.get(), 0, id);
+    public Record copy() {
+        return new Record(factory, name, blockId, key.get(), value.get(), 0, id);
     }
 
     public RecordEntry getRecordEntry() {
@@ -369,9 +369,10 @@ public class Record implements MapEntry {
     public long getCreationTime() {
         return creationTime.get();
     }
-    public void setCreationTime(long newValue){
-    	creationTime.set(newValue);
-    	setExpirationTime(this.ttl);
+
+    public void setCreationTime(long newValue) {
+        creationTime.set(newValue);
+        setExpirationTime(this.ttl);
     }
 
     public long getLastAccessTime() {

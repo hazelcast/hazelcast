@@ -1724,12 +1724,11 @@ public class FactoryImpl implements HazelcastInstance {
                     return method.invoke(mproxyReal, args);
                 } catch (Throwable e) {
                     logger.log(Level.FINEST, "Call failed", e);
-                    if (e instanceof InterruptedCallException && factory.restarted) {
+                    if (factory.restarted) {
                         return invoke(proxy, method, args);
                     } else if (e instanceof RuntimeException) {
-                        return e;
+                        throw (RuntimeException) e;
                     } else {
-                        e.printStackTrace();
                         throw new RuntimeException(e);
                     }
                 } finally {
@@ -1770,10 +1769,10 @@ public class FactoryImpl implements HazelcastInstance {
                 return mproxyReal.get(key);
             } catch (Throwable e) {
                 logger.log(Level.FINEST, "Call failed", e);
-                if (e instanceof InterruptedCallException && factory.restarted) {
+                if (factory.restarted) {
                     return get(key);
                 } else if (e instanceof RuntimeException) {
-                    return e;
+                    throw (RuntimeException) e;
                 } else {
                     throw new RuntimeException(e);
                 }
@@ -1788,10 +1787,10 @@ public class FactoryImpl implements HazelcastInstance {
                 return mproxyReal.put(key, value);
             } catch (Throwable e) {
                 logger.log(Level.FINEST, "Call failed", e);
-                if (e instanceof InterruptedCallException && factory.restarted) {
+                if (factory.restarted) {
                     return put(key, value);
                 } else if (e instanceof RuntimeException) {
-                    return e;
+                    throw (RuntimeException) e;
                 } else {
                     throw new RuntimeException(e);
                 }
@@ -1805,10 +1804,11 @@ public class FactoryImpl implements HazelcastInstance {
                 return mproxyReal.remove(key);
             } catch (Throwable e) {
                 logger.log(Level.FINEST, "Call failed", e);
-                if (e instanceof InterruptedCallException && factory.restarted) {
+                logger.log(Level.FINEST, "Call failed", e);
+                if (factory.restarted) {
                     return remove(key);
                 } else if (e instanceof RuntimeException) {
-                    return e;
+                    throw (RuntimeException) e;
                 } else {
                     throw new RuntimeException(e);
                 }

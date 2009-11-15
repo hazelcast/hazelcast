@@ -17,19 +17,22 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.core.*;
+import com.hazelcast.cluster.AbstractRemotelyProcessable;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.MessageListener;
 import static com.hazelcast.impl.ClusterOperation.ADD_LISTENER;
 import com.hazelcast.nio.*;
 import static com.hazelcast.nio.IOUtil.toData;
-import com.hazelcast.cluster.AbstractRemotelyProcessable;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.DataInput;
 
 public class ListenerManager extends BaseManager {
     private List<ListenerItem> listeners = new CopyOnWriteArrayList<ListenerItem>();
@@ -315,7 +318,7 @@ public class ListenerManager extends BaseManager {
         }
     }
 
-    public static class ListenerItem extends AbstractRemotelyProcessable implements DataSerializable{
+    public static class ListenerItem extends AbstractRemotelyProcessable implements DataSerializable {
         public String name;
         public Object key;
         public Object listener;
@@ -353,7 +356,7 @@ public class ListenerManager extends BaseManager {
         }
 
         public void process() {
-           getNode().listenerManager.handleListenerRegisterations(true, name, toData(key), getConnection().getEndPoint(), includeValue); 
+            getNode().listenerManager.handleListenerRegisterations(true, name, toData(key), getConnection().getEndPoint(), includeValue);
         }
     }
 }

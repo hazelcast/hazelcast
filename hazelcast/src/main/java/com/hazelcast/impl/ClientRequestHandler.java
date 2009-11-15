@@ -27,8 +27,8 @@ public class ClientRequestHandler implements Runnable {
     private final CallContext callContext;
     private final Node node;
     Logger logger = Logger.getLogger(this.getClass().getName());
-    
-    private final ClientOperationHandler[] clientOperationHandlers;    
+
+    private final ClientOperationHandler[] clientOperationHandlers;
 
     public ClientRequestHandler(Node node, Packet packet, CallContext callContext, ClientOperationHandler[] clientOperationHandlers) {
         this.packet = packet;
@@ -39,15 +39,12 @@ public class ClientRequestHandler implements Runnable {
 
     public void run() {
         ThreadContext.get().setCallContext(callContext);
-        
         ClientOperationHandler clientOperationHandler = clientOperationHandlers[packet.operation.getValue()];
-        
-        if(clientOperationHandler!=null){
-        	clientOperationHandler.handle(node, packet);
-        	return;
+        if (clientOperationHandler != null) {
+            clientOperationHandler.handle(node, packet);
+            return;
+        } else {
+            throw new RuntimeException("Unknown Client Operation, can not handle " + packet.operation);
         }
-        else{
-        	throw new RuntimeException("Unknown Client Operation, can not handle " + packet.operation);
-        }
-    }        
+    }
 }

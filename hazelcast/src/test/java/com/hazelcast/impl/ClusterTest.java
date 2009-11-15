@@ -11,15 +11,14 @@ import static junit.framework.Assert.assertTrue;
 import org.junit.After;
 import org.junit.Assert;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ClusterTest {
@@ -28,6 +27,42 @@ public class ClusterTest {
     public void cleanup() throws Exception {
         Hazelcast.shutdownAll();
         Thread.sleep(500);
+    }
+
+    @Test(timeout = 10000, expected = RuntimeException.class)
+    public void testPutAfterShutdown() throws InterruptedException {
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        Map map = h1.getMap("default");
+        h1.shutdown();
+        map.put("1", "value");
+    }
+
+    @Test(timeout = 10000, expected = RuntimeException.class)
+    public void testPutAfterSuperClientShutdown() {
+        Config config = new XmlConfigBuilder().build();
+        config.setSuperClient(true);
+        final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(config);
+        Map map = hSuper.getMap("default");
+        hSuper.shutdown();
+        map.put("1", "value");
+    }
+
+    @Test(timeout = 10000)
+    public void testPutAfterRestart() {
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        Map map = h1.getMap("default");
+        h1.restart();
+        map.put("1", "value");
+    }
+
+    @Test(timeout = 10000)
+    public void testPutAfterSuperClientRestart() {
+        Config config = new XmlConfigBuilder().build();
+        config.setSuperClient(true);
+        final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(config);
+        Map map = hSuper.getMap("default");
+        hSuper.restart();
+        map.put("1", "value");
     }
 
     @Test(timeout = 60000)
@@ -646,10 +681,9 @@ public class ClusterTest {
 
     /**
      * Test for issue 157
-     *
      */
     @Test(timeout = 16000)
-    public void testMapProxySerializationWhenUsingExecutorService() throws Exception{
+    public void testMapProxySerializationWhenUsingExecutorService() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         Map m1 = h1.getMap("default");
@@ -675,10 +709,9 @@ public class ClusterTest {
 
     /**
      * Test for issue 157
-     *
      */
     @Test(timeout = 16000)
-    public void testHazelcastInstanceSerializationWhenUsingExecutorService() throws Exception{
+    public void testHazelcastInstanceSerializationWhenUsingExecutorService() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         Map m1 = h1.getMap("default");
@@ -703,13 +736,11 @@ public class ClusterTest {
         }
     }
 
-
     /**
      * Test for issue 157
-     *
      */
     @Test(timeout = 16000)
-    public void testHazelcastInstanceAwareSerializationWhenUsingExecutorService() throws Exception{
+    public void testHazelcastInstanceAwareSerializationWhenUsingExecutorService() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         Map m1 = h1.getMap("default");
@@ -746,7 +777,7 @@ public class ClusterTest {
         h3.getTopic("default").addMessageListener(ml);
         HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
         h4.getTopic("default").publish("message");
-        assertTrue (latch.await(5, TimeUnit.SECONDS));
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
 
     @Test
@@ -767,7 +798,7 @@ public class ClusterTest {
         HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
         h4.getTopic("default").addMessageListener(ml);
         h1.getTopic("default").publish("message");
-        assertTrue (latch.await(5, TimeUnit.SECONDS));
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -795,6 +826,6 @@ public class ClusterTest {
         h3.getMap("default").addEntryListener(ml, true);
         HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
         h4.getMap("default").put("key", "value");
-        assertTrue (latch.await(3, TimeUnit.SECONDS));
+        assertTrue(latch.await(3, TimeUnit.SECONDS));
     }
 }

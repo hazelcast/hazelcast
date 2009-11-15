@@ -1158,7 +1158,7 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     public class MIterateLocal extends MGetEntries {
-        
+
         public MIterateLocal(String name, Predicate predicate) {
             super(thisAddress, CONCURRENT_MAP_ITERATE_KEYS, name, predicate);
             doOp();

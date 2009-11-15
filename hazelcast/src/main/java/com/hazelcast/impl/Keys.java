@@ -24,15 +24,13 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 
 public class Keys implements DataSerializable {
 
     private Collection<Data> keys;
 
     public Keys(Collection<Data> keys) {
-    	this.keys = keys;
+        this.keys = keys;
     }
 
     public void readData(DataInput in) throws IOException {

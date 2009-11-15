@@ -106,7 +106,7 @@ public final class ThreadContext {
 
     public Transaction getTransaction() {
         return getCallContext().getTransaction();
-    } 
+    }
 
     public long getTxnId() {
         return getCallContext().getTxnId();

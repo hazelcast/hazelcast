@@ -50,7 +50,7 @@ class LocallyOwnedMap {
             } else {
                 //record is removed!
                 mapCache.remove(key);
-                return OBJECT_REDO; 
+                return OBJECT_REDO;
             }
         }
     }

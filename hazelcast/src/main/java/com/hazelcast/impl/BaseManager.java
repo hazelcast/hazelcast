@@ -21,7 +21,6 @@ import com.hazelcast.cluster.RemotelyProcessable;
 import com.hazelcast.core.EntryEvent;
 import static com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.HazelcastInstanceAwareObject;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.ResponseTypes.*;
@@ -297,7 +296,7 @@ public abstract class BaseManager {
             return key;
         }
 
-        public Data getValueData () {
+        public Data getValueData() {
             return value;
         }
 
@@ -637,9 +636,7 @@ public abstract class BaseManager {
         }
 
         public void beforeRedo() {
-            if (node.factory.restarted) {
-                throw new InterruptedCallException();
-            } else if (!node.active) {
+            if (node.factory.restarted || !node.active) {
                 throw new RuntimeException();
             }
         }
@@ -647,17 +644,19 @@ public abstract class BaseManager {
         public Object waitAndGetResult() {
             while (true) {
                 try {
-                    Object obj = responses.poll(10, TimeUnit.SECONDS);
+                    Object obj = responses.poll(5, TimeUnit.SECONDS);
                     if (obj != null) {
                         return obj;
                     } else if (node.factory.restarted) {
                         reset();
-                        throw new InterruptedCallException();
+                        throw new RuntimeException();
+                    } else if (!node.active) {
+                        throw new RuntimeException();
                     }
                 } catch (InterruptedException e) {
                     if (node.factory.restarted) {
                         reset();
-                        throw new InterruptedCallException();
+                        throw new RuntimeException();
                     }
                 }
             }
@@ -1239,18 +1238,19 @@ public abstract class BaseManager {
         final EventTask eventTask = new EventTask(eventType, name, eventKey, eventValue);
         int hash;
         if (eventKey != null) {
-        	hash = eventKey.hashCode();
+            hash = eventKey.hashCode();
         } else {
-        	hash = from.hashCode();
+            hash = from.hashCode();
         }
         enqueueEvent(hash, eventTask);
     }
-    public void enqueueEvent(int hash, Runnable runnable){
-    	int index = Math.abs(hash %EVENT_QUEUE_COUNT);
-    	final EventQueue eventQueue = eventQueues[index];
+
+    public void enqueueEvent(int hash, Runnable runnable) {
+        int index = Math.abs(hash % EVENT_QUEUE_COUNT);
+        final EventQueue eventQueue = eventQueues[index];
         final int size = eventQueue.offerRunnable(runnable);
         if (size == 1) executeLocally(eventQueue);
-    } 
+    }
 
     public static class EventQueue extends ConcurrentLinkedQueue<Runnable> implements Runnable {
         private AtomicInteger size = new AtomicInteger();

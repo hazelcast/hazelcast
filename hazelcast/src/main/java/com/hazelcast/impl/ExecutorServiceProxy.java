@@ -19,11 +19,11 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.DistributedTask;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
-import java.io.Serializable;
 
 /**
  * Implements a distributed @link java.util.concurrent.ExecutorService.
@@ -122,7 +122,7 @@ public class ExecutorServiceProxy implements ExecutorService {
     }
 
     public <T> Future<T> submit(Callable<T> task) {
-        check (task);
+        check(task);
         DistributedTask dtask = new DistributedTask(task);
         Processable action = node.executorManager.createNewExecutionAction(dtask);
         ClusterService clusterService = node.clusterService;
@@ -135,7 +135,7 @@ public class ExecutorServiceProxy implements ExecutorService {
         if (task instanceof DistributedTask) {
             dtask = (DistributedTask) task;
         } else {
-            check (task);
+            check(task);
             dtask = new DistributedTask(task, null);
         }
         Processable action = node.executorManager.createNewExecutionAction(dtask);
@@ -149,7 +149,7 @@ public class ExecutorServiceProxy implements ExecutorService {
         if (task instanceof DistributedTask) {
             dtask = (DistributedTask) task;
         } else {
-            check (task);
+            check(task);
             dtask = new DistributedTask(task, result);
         }
         Processable action = node.executorManager.createNewExecutionAction(dtask);
@@ -163,7 +163,7 @@ public class ExecutorServiceProxy implements ExecutorService {
         if (command instanceof DistributedTask) {
             dtask = (DistributedTask) command;
         } else {
-            check (command);
+            check(command);
             dtask = new DistributedTask(command, null);
         }
         Processable action = node.executorManager.createNewExecutionAction(dtask);
