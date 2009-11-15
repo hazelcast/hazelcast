@@ -162,6 +162,14 @@ public final class ReplicatedMapFactory {
             return result;
         }
 
+        public <K> Set<K> localKeySet() {
+            return distributedMap.localKeySet();
+        }
+
+        public <K> Set<K> localKeySet(Predicate predicate) {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
         public void addIndex(String attribute, boolean ordered) {
             distributedMap.addIndex(attribute, ordered);
         }

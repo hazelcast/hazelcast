@@ -51,7 +51,7 @@ public final class ClusterService implements Runnable, Constants {
 
     private long lastCheck = 0;
 
-    private final BaseManager.PacketProcessor[] packetProcessors = new BaseManager.PacketProcessor[300];
+    private final BaseManager.PacketProcessor[] packetProcessors = new BaseManager.PacketProcessor[ClusterOperation.OPERATION_COUNT];
 
     private final Runnable[] periodicRunnables = new Runnable[4];
 

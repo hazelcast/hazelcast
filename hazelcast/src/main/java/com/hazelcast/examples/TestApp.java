@@ -266,6 +266,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleMapGetMany(args);
         } else if (first.equals("m.removemany")) {
             handleMapRemoveMany(args);
+        } else if (command.equals("m.localKeys")) {
+            handleMapLocalKeys();
         } else if (command.equals("m.keys")) {
             handleMapKeys();
         } else if (command.equals("m.values")) {
@@ -494,6 +496,17 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         } else if (first.startsWith("l.")) {
             list.removeItemListener(this);
         }
+    }
+
+    private void handleMapLocalKeys() {
+        Set set = map.localKeySet();
+        Iterator it = set.iterator();
+        int count = 0;
+        while (it.hasNext()) {
+            count++;
+            print(it.next());
+        }
+        print("Total " + count);
     }
 
     private void handleMapKeys() {

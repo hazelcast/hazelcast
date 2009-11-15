@@ -55,5 +55,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
 
     <V> Collection<V> values(Predicate predicate);
 
+    <K> Set<K> localKeySet();
+
+    <K> Set<K> localKeySet(Predicate predicate);
+
     void addIndex(String attribute, boolean ordered);
 }

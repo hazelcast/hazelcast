@@ -1157,6 +1157,26 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    public class MIterateLocal extends MGetEntries {
+        
+        public MIterateLocal(String name, Predicate predicate) {
+            super(thisAddress, CONCURRENT_MAP_ITERATE_KEYS, name, predicate);
+            doOp();
+        }
+
+        public Set iterate() {
+            Entries entries = new Entries(request.name, request.operation);
+            Pairs pairs = (Pairs) getResultAsObject();
+            entries.addEntries(pairs);
+            return entries;
+        }
+
+        @Override
+        public Object getResult() {
+            return getRedoAwareResult();
+        }
+    }
+
     public class MIterate extends MultiCall {
         Entries entries = null;
 
@@ -1164,14 +1184,14 @@ public final class ConcurrentMapManager extends BaseManager {
         final ClusterOperation operation;
         final Predicate predicate;
 
-        public MIterate(String name, Predicate predicate, ClusterOperation operation) {
+        public MIterate(ClusterOperation operation, String name, Predicate predicate) {
             this.name = name;
             this.operation = operation;
             this.predicate = predicate;
         }
 
         TargetAwareOp createNewTargetAwareOp(Address target) {
-            return new MGetEntries(target);
+            return new MGetEntries(target, operation, name, predicate);
         }
 
         void onCall() {
@@ -1194,13 +1214,17 @@ public final class ConcurrentMapManager extends BaseManager {
         Object returnResult() {
             return entries;
         }
+    }
 
-        class MGetEntries extends MMigrationAwareTargettedCall {
-            public MGetEntries(Address target) {
-                this.target = target;
-                request.reset();
-                setLocal(operation, name, null, predicate, -1, -1);
-            }
+    class MGetEntries extends MMigrationAwareTargettedCall {
+        public MGetEntries(Address target, ClusterOperation operation, String name, Predicate predicate) {
+            this.target = target;
+            request.reset();
+            setLocal(operation, name, null, predicate, -1, -1);
+        }
+
+        @Override
+        public void onDisconnect(final Address dead) {
         }
     }
 

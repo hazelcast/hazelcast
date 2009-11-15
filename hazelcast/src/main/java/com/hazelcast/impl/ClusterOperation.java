@@ -18,225 +18,102 @@
 package com.hazelcast.impl;
 
 public enum ClusterOperation {
-    NONE(-1),
-    RESPONSE(1),
-    HEARTBEAT(2),
-    REMOTELY_PROCESS(3),
-    REMOTELY_PROCESS_AND_RESPOND(4),
-    REMOTELY_CALLABLE_BOOLEAN(5),
-    REMOTELY_CALLABLE_OBJECT(6),
-    ADD_LISTENER(51),
-    REMOVE_LISTENER(52),
-    EVENT(53),
-    REMOTELY_EXECUTE(81),
-    STREAM(82),
-    BLOCKING_QUEUE_POLL(101),
-    BLOCKING_QUEUE_OFFER(102),
-    BLOCKING_QUEUE_ADD_BLOCK(103),
-    BLOCKING_QUEUE_REMOVE_BLOCK(104),
-    BLOCKING_QUEUE_FULL_BLOCK(105),
-    BLOCKING_QUEUE_BACKUP_ADD(107),
-    BLOCKING_QUEUE_BACKUP_REMOVE(108),
-    BLOCKING_QUEUE_SIZE(109),
-    BLOCKING_QUEUE_PEEK(110),
-    BLOCKING_QUEUE_READ(111),
-    BLOCKING_QUEUE_REMOVE(112),
-    BLOCKING_QUEUE_TXN_BACKUP_POLL(113),
-    BLOCKING_QUEUE_TXN_COMMIT(114),
-    BLOCKING_QUEUE_PUBLISH(115),
-    BLOCKING_QUEUE_ADD_TOPIC_LISTENER(116),
-    CONCURRENT_MAP_PUT(201),
-    CONCURRENT_MAP_GET(202),
-    CONCURRENT_MAP_REMOVE(203),
-    CONCURRENT_MAP_REMOVE_ITEM(204),
-    CONCURRENT_MAP_GET_MAP_ENTRY(205),
-    CONCURRENT_MAP_BLOCK_INFO(206),
-    CONCURRENT_MAP_SIZE(207),
-    CONCURRENT_MAP_CONTAINS(208),
-    CONCURRENT_MAP_ITERATE_ENTRIES(209),
-    CONCURRENT_MAP_ITERATE_KEYS(210),
-    CONCURRENT_MAP_ITERATE_KEYS_ALL(211),
-    CONCURRENT_MAP_ITERATE_VALUES(212),
-    CONCURRENT_MAP_LOCK(213),
-    CONCURRENT_MAP_UNLOCK(214),
-    CONCURRENT_MAP_BLOCKS(215),
-    CONCURRENT_MAP_MIGRATION_COMPLETE(216),
-    CONCURRENT_MAP_CONTAINS_VALUE(217),
-    CONCURRENT_MAP_PUT_IF_ABSENT(219),
-    CONCURRENT_MAP_REMOVE_IF_SAME(220),
-    CONCURRENT_MAP_REPLACE_IF_NOT_NULL(221),
-    CONCURRENT_MAP_REPLACE_IF_SAME(222),
-    CONCURRENT_MAP_LOCK_RETURN_OLD(223),
-    CONCURRENT_MAP_READ(224),
-    CONCURRENT_MAP_ADD_TO_LIST(225),
-    CONCURRENT_MAP_ADD_TO_SET(226),
-    CONCURRENT_MAP_MIGRATE_RECORD(227),
-    CONCURRENT_MAP_PUT_MULTI(228),
-    CONCURRENT_MAP_REMOVE_MULTI(229),
-    CONCURRENT_MAP_VALUE_COUNT(230),
-    CONCURRENT_MAP_BACKUP_PUT(231),
-    CONCURRENT_MAP_BACKUP_REMOVE(233),
-    CONCURRENT_MAP_BACKUP_REMOVE_MULTI(234),
-    CONCURRENT_MAP_BACKUP_LOCK(235),
-    CONCURRENT_MAP_BACKUP_ADD(236),
-    CONCURRENT_MAP_EVICT(237),
-    TRANSACTION_BEGIN(238),
-    TRANSACTION_COMMIT(239),
-    TRANSACTION_ROLLBACK(240),
-    DESTROY(241),
-    GET_ID(242),
-    ADD_INDEX(243),;
+    NONE(),
+    RESPONSE(),
+    HEARTBEAT(),
+    REMOTELY_PROCESS(),
+    REMOTELY_PROCESS_AND_RESPOND(),
+    REMOTELY_CALLABLE_BOOLEAN(),
+    REMOTELY_CALLABLE_OBJECT(),
+    ADD_LISTENER(),
+    REMOVE_LISTENER(),
+    EVENT(),
+    REMOTELY_EXECUTE(),
+    STREAM(),
+    BLOCKING_QUEUE_POLL(),
+    BLOCKING_QUEUE_OFFER(),
+    BLOCKING_QUEUE_ADD_BLOCK(),
+    BLOCKING_QUEUE_REMOVE_BLOCK(),
+    BLOCKING_QUEUE_FULL_BLOCK(),
+    BLOCKING_QUEUE_BACKUP_ADD(),
+    BLOCKING_QUEUE_BACKUP_REMOVE(),
+    BLOCKING_QUEUE_SIZE(),
+    BLOCKING_QUEUE_PEEK(),
+    BLOCKING_QUEUE_READ(),
+    BLOCKING_QUEUE_REMOVE(),
+    BLOCKING_QUEUE_TXN_BACKUP_POLL(),
+    BLOCKING_QUEUE_TXN_COMMIT(),
+    BLOCKING_QUEUE_PUBLISH(),
+    BLOCKING_QUEUE_ADD_TOPIC_LISTENER(),
+    CONCURRENT_MAP_PUT(),
+    CONCURRENT_MAP_GET(),
+    CONCURRENT_MAP_REMOVE(),
+    CONCURRENT_MAP_REMOVE_ITEM(),
+    CONCURRENT_MAP_GET_MAP_ENTRY(),
+    CONCURRENT_MAP_BLOCK_INFO(),
+    CONCURRENT_MAP_SIZE(),
+    CONCURRENT_MAP_CONTAINS(),
+    CONCURRENT_MAP_ITERATE_ENTRIES(),
+    CONCURRENT_MAP_ITERATE_KEYS(),
+    CONCURRENT_MAP_ITERATE_LOCAL_KEYS(),
+    CONCURRENT_MAP_ITERATE_KEYS_ALL(),
+    CONCURRENT_MAP_ITERATE_VALUES(),
+    CONCURRENT_MAP_LOCK(),
+    CONCURRENT_MAP_UNLOCK(),
+    CONCURRENT_MAP_BLOCKS(),
+    CONCURRENT_MAP_MIGRATION_COMPLETE(),
+    CONCURRENT_MAP_CONTAINS_VALUE(),
+    CONCURRENT_MAP_PUT_IF_ABSENT(),
+    CONCURRENT_MAP_REMOVE_IF_SAME(),
+    CONCURRENT_MAP_REPLACE_IF_NOT_NULL(),
+    CONCURRENT_MAP_REPLACE_IF_SAME(),
+    CONCURRENT_MAP_LOCK_RETURN_OLD(),
+    CONCURRENT_MAP_READ(),
+    CONCURRENT_MAP_ADD_TO_LIST(),
+    CONCURRENT_MAP_ADD_TO_SET(),
+    CONCURRENT_MAP_MIGRATE_RECORD(),
+    CONCURRENT_MAP_PUT_MULTI(),
+    CONCURRENT_MAP_REMOVE_MULTI(),
+    CONCURRENT_MAP_VALUE_COUNT(),
+    CONCURRENT_MAP_BACKUP_PUT(),
+    CONCURRENT_MAP_BACKUP_REMOVE(),
+    CONCURRENT_MAP_BACKUP_REMOVE_MULTI(),
+    CONCURRENT_MAP_BACKUP_LOCK(),
+    CONCURRENT_MAP_BACKUP_ADD(),
+    CONCURRENT_MAP_EVICT(),
+    TRANSACTION_BEGIN(),
+    TRANSACTION_COMMIT(),
+    TRANSACTION_ROLLBACK(),
+    DESTROY(),
+    GET_ID(),
+    ADD_INDEX(),;
+
+    static int idGen = 0;
+    public final static int OPERATION_COUNT = 100;
+    static ClusterOperation[] clusterOperations = new ClusterOperation[OPERATION_COUNT];
+
+    static {
+        ClusterOperation[] cops = ClusterOperation.values();
+        for (ClusterOperation cop : cops) {
+            clusterOperations[cop.getValue()] = cop;
+        }
+    }
 
     private int value;
 
-    ClusterOperation(int op) {
-        value = op;
+    ClusterOperation() {
+        value = nextId();
     }
 
     public int getValue() {
         return value;
     }
 
+    private int nextId() {
+        return idGen++;
+    }
+
     public static ClusterOperation create(int operation) {
-        switch (operation) {
-            case -1:
-                return NONE;
-            case 1:
-                return RESPONSE;
-            case 2:
-                return HEARTBEAT;
-            case 3:
-                return REMOTELY_PROCESS;
-            case 4:
-                return REMOTELY_PROCESS_AND_RESPOND;
-            case 5:
-                return REMOTELY_CALLABLE_BOOLEAN;
-            case 6:
-                return REMOTELY_CALLABLE_OBJECT;
-            case 51:
-                return ADD_LISTENER;
-            case 52:
-                return REMOVE_LISTENER;
-            case 53:
-                return EVENT;
-            case 81:
-                return REMOTELY_EXECUTE;
-            case 82:
-                return STREAM;
-            case 101:
-                return BLOCKING_QUEUE_POLL;
-            case 102:
-                return BLOCKING_QUEUE_OFFER;
-            case 103:
-                return BLOCKING_QUEUE_ADD_BLOCK;
-            case 104:
-                return BLOCKING_QUEUE_REMOVE_BLOCK;
-            case 105:
-                return BLOCKING_QUEUE_FULL_BLOCK;
-            case 107:
-                return BLOCKING_QUEUE_BACKUP_ADD;
-            case 108:
-                return BLOCKING_QUEUE_BACKUP_REMOVE;
-            case 109:
-                return BLOCKING_QUEUE_SIZE;
-            case 110:
-                return BLOCKING_QUEUE_PEEK;
-            case 111:
-                return BLOCKING_QUEUE_READ;
-            case 112:
-                return BLOCKING_QUEUE_REMOVE;
-            case 113:
-                return BLOCKING_QUEUE_TXN_BACKUP_POLL;
-            case 114:
-                return BLOCKING_QUEUE_TXN_COMMIT;
-            case 115:
-                return BLOCKING_QUEUE_PUBLISH;
-            case 116:
-                return BLOCKING_QUEUE_ADD_TOPIC_LISTENER;
-            case 201:
-                return CONCURRENT_MAP_PUT;
-            case 202:
-                return CONCURRENT_MAP_GET;
-            case 203:
-                return CONCURRENT_MAP_REMOVE;
-            case 204:
-                return CONCURRENT_MAP_REMOVE_ITEM;
-            case 205:
-                return CONCURRENT_MAP_GET_MAP_ENTRY;
-            case 206:
-                return CONCURRENT_MAP_BLOCK_INFO;
-            case 207:
-                return CONCURRENT_MAP_SIZE;
-            case 208:
-                return CONCURRENT_MAP_CONTAINS;
-            case 209:
-                return CONCURRENT_MAP_ITERATE_ENTRIES;
-            case 210:
-                return CONCURRENT_MAP_ITERATE_KEYS;
-            case 211:
-                return CONCURRENT_MAP_ITERATE_KEYS_ALL;
-            case 212:
-                return CONCURRENT_MAP_ITERATE_VALUES;
-            case 213:
-                return CONCURRENT_MAP_LOCK;
-            case 214:
-                return CONCURRENT_MAP_UNLOCK;
-            case 215:
-                return CONCURRENT_MAP_BLOCKS;
-            case 216:
-                return CONCURRENT_MAP_MIGRATION_COMPLETE;
-            case 217:
-                return CONCURRENT_MAP_CONTAINS_VALUE;
-            case 219:
-                return CONCURRENT_MAP_PUT_IF_ABSENT;
-            case 220:
-                return CONCURRENT_MAP_REMOVE_IF_SAME;
-            case 221:
-                return CONCURRENT_MAP_REPLACE_IF_NOT_NULL;
-            case 222:
-                return CONCURRENT_MAP_REPLACE_IF_SAME;
-            case 223:
-                return CONCURRENT_MAP_LOCK_RETURN_OLD;
-            case 224:
-                return CONCURRENT_MAP_READ;
-            case 225:
-                return CONCURRENT_MAP_ADD_TO_LIST;
-            case 226:
-                return CONCURRENT_MAP_ADD_TO_SET;
-            case 227:
-                return CONCURRENT_MAP_MIGRATE_RECORD;
-            case 228:
-                return CONCURRENT_MAP_PUT_MULTI;
-            case 229:
-                return CONCURRENT_MAP_REMOVE_MULTI;
-            case 230:
-                return CONCURRENT_MAP_VALUE_COUNT;
-            case 231:
-                return CONCURRENT_MAP_BACKUP_PUT;
-            case 233:
-                return CONCURRENT_MAP_BACKUP_REMOVE;
-            case 234:
-                return CONCURRENT_MAP_BACKUP_REMOVE_MULTI;
-            case 235:
-                return CONCURRENT_MAP_BACKUP_LOCK;
-            case 236:
-                return CONCURRENT_MAP_BACKUP_ADD;
-            case 237:
-                return CONCURRENT_MAP_EVICT;
-            case 238:
-                return TRANSACTION_BEGIN;
-            case 239:
-                return TRANSACTION_COMMIT;
-            case 240:
-                return TRANSACTION_ROLLBACK;
-            case 241:
-                return DESTROY;
-            case 242:
-                return GET_ID;
-            case 243:
-                return ADD_INDEX;
-            default:
-                return null;
-        }
+        return clusterOperations[operation];
     }
 }

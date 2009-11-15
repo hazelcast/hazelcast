@@ -54,7 +54,7 @@ import java.util.concurrent.TimeUnit;
 public class ClientService {
     private final Node node;
     private final Map<Connection, ClientEndpoint> mapClientEndpoints = new HashMap<Connection, ClientEndpoint>();
-    private final ClientOperationHandler[] clientOperationHandlers = new ClientOperationHandler[300];
+    private final ClientOperationHandler[] clientOperationHandlers = new ClientOperationHandler[ClusterOperation.OPERATION_COUNT];
 
     public ClientService(Node node) {
         this.node = node;

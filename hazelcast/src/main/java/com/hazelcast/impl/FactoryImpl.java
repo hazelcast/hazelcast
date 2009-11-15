@@ -1891,6 +1891,14 @@ public class FactoryImpl implements HazelcastInstance {
             return dynamicProxy.allKeys();
         }
 
+        public Set localKeySet() {
+            return dynamicProxy.localKeySet();
+        }
+
+        public Set localKeySet(Predicate predicate) {
+            return dynamicProxy.localKeySet(predicate);
+        }
+
         public Set keySet() {
             return dynamicProxy.keySet();
         }
@@ -2283,6 +2291,15 @@ public class FactoryImpl implements HazelcastInstance {
                 }
             }
 
+            public Set localKeySet() {
+                return localKeySet(null);
+            }
+
+            public Set localKeySet(Predicate predicate) {
+                MIterateLocal miterate = concurrentMapManager.new MIterateLocal(name, predicate);
+                return (Set) miterate.iterate();
+            }
+
             public Set entrySet(Predicate predicate) {
                 return (Set) iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES, predicate);
             }
@@ -2312,7 +2329,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             private Collection iterate(ClusterOperation iteratorType, Predicate predicate) {
-                MIterate miterate = concurrentMapManager.new MIterate(name, predicate, iteratorType);
+                MIterate miterate = concurrentMapManager.new MIterate(iteratorType, name, predicate);
                 return (Collection) miterate.call();
             }
 

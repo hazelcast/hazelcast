@@ -665,6 +665,10 @@ public abstract class BaseManager {
 
         @Override
         public Object getResult() {
+            return getRedoAwareResult();
+        }
+
+        protected Object getRedoAwareResult() {
             Object result = waitAndGetResult();
             if (result == OBJECT_REDO) {
                 request.redoCount++;
