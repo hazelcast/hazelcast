@@ -250,7 +250,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleSetRemoveMany(args);
         } else if (first.equals("m.replace")) {
             handleMapReplace(args);
-        } else if (first.equals("m.putIfAbsent")) {
+        } else if (first.equalsIgnoreCase("m.putIfAbsent")) {
             handleMapPutIfAbsent(args);
         } else if (first.equals("m.put")) {
             handleMapPut(args);
@@ -260,13 +260,13 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleMapGetMapEntry(args);
         } else if (first.equals("m.remove")) {
             handleMapRemove(args);
-        } else if (first.equals("m.putmany")) {
+        } else if (first.equals("m.putmany") || first.equalsIgnoreCase("m.putAll")) {
             handleMapPutMany(args);
         } else if (first.equals("m.getmany")) {
             handleMapGetMany(args);
         } else if (first.equals("m.removemany")) {
             handleMapRemoveMany(args);
-        } else if (command.equals("m.localKeys")) {
+        } else if (command.equalsIgnoreCase("m.localKeys")) {
             handleMapLocalKeys();
         } else if (command.equals("m.keys")) {
             handleMapKeys();
@@ -276,7 +276,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleMapEntries();
         } else if (first.equals("m.lock")) {
             handleMapLock(args);
-        } else if (first.equals("m.tryLock")) {
+        } else if (first.equalsIgnoreCase("m.tryLock")) {
             handleMapTryLock(args);
         } else if (first.equals("m.unlock")) {
             handleMapUnlock(args);
@@ -378,10 +378,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         if (args.length > 3) {
             start = Integer.parseInt(args[3]);
         }
-        long t0 = System.currentTimeMillis();
+        Map theMap = new HashMap(count);
         for (int i = 0; i < count; i++) {
-            map.put("key" + (start + i), value);
+            theMap.put("key" + (start + i), value);
         }
+        long t0 = System.currentTimeMillis();
+        map.putAll(theMap);        
         long t1 = System.currentTimeMillis();
         if (t1 - t0 > 1) {
             System.out.println("size = " + map.size() + ", " + count * 1000 / (t1 - t0)
