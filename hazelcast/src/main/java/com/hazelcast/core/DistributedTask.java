@@ -27,6 +27,14 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.*;
 
+/**
+ * A cancellable asynchronous distributed computation.
+ * 
+ * This class is analogue to java.util.concurrent.FutureTask.
+ * 
+ * Once the computation has completed, the computation cannot
+ * be restarted or cancelled.
+ */
 public class DistributedTask<V> extends FutureTask<V> {
     private volatile V result = null;
 
@@ -86,7 +94,7 @@ public class DistributedTask<V> extends FutureTask<V> {
 
     @Override
     public V get() throws InterruptedException, ExecutionException, MemberLeftException {
-        inner.get();
+   		inner.get();
         if (cancelled)
             throw new CancellationException();
         if (exception != null)
@@ -168,8 +176,14 @@ public class DistributedTask<V> extends FutureTask<V> {
         private final Set<Member> members;
 
         private final Object key;
-
-        private ExecutionManagerCallback executionManagerCallback;
+        
+        /**
+         * A clalback to the ExecutionManager running the task.
+         * When nulled after set/cancel, indicates that
+         * the results are accessible.
+         * Declared volatile to ensure visibility upon completion.
+         */
+        private volatile ExecutionManagerCallback executionManagerCallback;
 
         private ExecutionCallback<V> executionCallback = null; // user
         // executioncallback
@@ -188,16 +202,17 @@ public class DistributedTask<V> extends FutureTask<V> {
         }
 
         public V get() throws InterruptedException, ExecutionException {
+        	if (executionManagerCallback == null) {
+        		return null;
+        	}
             Object r = null;
             while ((r = executionManagerCallback.get()) != OBJECT_DONE) {
-                if (r == OBJECT_DONE) {
-                    return null;
+            	if (r == OBJECT_DONE) {
+            		// nothing to do
                 } else if (r == OBJECT_CANCELLED) {
                     cancelled = true;
-                    return null;
                 } else if (r == OBJECT_MEMBER_LEFT) {
                     memberLeft = true;
-                    return null;
                 } else if (r instanceof Throwable) {
                     innerSetException((Throwable) r);
                 } else {
@@ -208,11 +223,15 @@ public class DistributedTask<V> extends FutureTask<V> {
                     }
                 }
             }
+            executionManagerCallback = null;
             return null;
         }
 
         public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException,
                 TimeoutException {
+        	if (executionManagerCallback == null) {
+        		return null;
+        	}
             long timeoutMillis = unit.toMillis(timeout);
             long start = System.currentTimeMillis();
             long timeLeft = timeoutMillis;
@@ -221,10 +240,9 @@ public class DistributedTask<V> extends FutureTask<V> {
                 if (r == null) {
                     throw new TimeoutException();
                 } else if (r == OBJECT_DONE) {
-                    return null;
+            		// nothing to do
                 } else if (r == OBJECT_CANCELLED) {
                     cancelled = true;
-                    return null;
                 } else if (r instanceof Throwable) {
                     innerSetException((Throwable) r);
                 } else {
@@ -236,19 +254,23 @@ public class DistributedTask<V> extends FutureTask<V> {
                 }
                 timeLeft = timeoutMillis - (System.currentTimeMillis() - start);
             }
+            executionManagerCallback = null;
             return null;
         }
 
         public void innerSet(V value) {
             set(value);
+            innerDone();
         }
 
         public void innerSetException(Throwable throwable) {
             setException(throwable);
+            innerDone();
         }
 
         public void innerSetMemberLeft(Member member) {
             setMemberLeft(member);
+            innerDone();
         }
 
         public Callable<V> getCallable() {
@@ -272,9 +294,13 @@ public class DistributedTask<V> extends FutureTask<V> {
         }
 
         public boolean cancel(boolean mayInterruptIfRunning) {
+        	if (executionManagerCallback == null) {
+        		return false;
+        	}
             cancelled = executionManagerCallback.cancel(mayInterruptIfRunning);
             if (cancelled)
                 innerDone();
+            // executionManagerCallback = null; Should be restartable?
             return cancelled;
         }
 

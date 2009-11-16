@@ -64,8 +64,35 @@ public class ExecutorServiceProxy implements ExecutorService {
         return false;
     }
 
-    public List invokeAll(Collection tasks) throws InterruptedException {
-        throw new UnsupportedOperationException();
+    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
+    	// Inspired to JDK7
+    	if (tasks == null)
+    		throw new NullPointerException();
+    	List<Future<T>> futures = new ArrayList<Future<T>>(tasks.size());
+    	boolean done = false;
+    	try {
+    		for (Callable<T> command : tasks) {
+    	        futures.add(submit(command));
+    		}
+    		for (Future<T> f : futures) {
+    			if (!f.isDone()) {
+    				try {
+    					f.get();
+    				}
+    				catch (CancellationException ignore) {
+    				}
+    				catch (ExecutionException ignore) {
+    				}
+    			}
+    		}
+    		done = true;
+    		return futures;
+    	}
+    	finally {
+    		if (!done)
+    			for (Future<T> f : futures)
+    				f.cancel(true);
+    	}
     }
 
     public List invokeAll(Collection tasks, long timeout, TimeUnit unit)
@@ -170,7 +197,13 @@ public class ExecutorServiceProxy implements ExecutorService {
         node.clusterService.enqueueAndReturn(action);
     }
 
-    private static void check(Object obj) {
+    /**
+     * Check precodintion before submit a task
+     */
+    private void check(Object obj) {
+    	if (!node.executorManager.isStarted()) {
+    		throw new RejectedExecutionException("Hazelcast halted");
+    	}
         if (obj == null) {
             throw new NullPointerException("Object cannot be null.");
         }

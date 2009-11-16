@@ -21,6 +21,7 @@ import com.hazelcast.impl.ExecutorManager;
 
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.AfterClass;
 import static junit.framework.Assert.*;
 import static org.junit.Assert.assertEquals;
 
@@ -35,7 +36,8 @@ import java.util.concurrent.*;
  * @author Marco Ferrante, DISI - University of Genoa
  */
 public class ExecutorServiceTest {
-	
+
+	public static int COUNT = 1000;
 	/**
 	 * Get a service instance.
 	 */
@@ -47,11 +49,27 @@ public class ExecutorServiceTest {
 
     static class BasicTestTask implements Callable<String>, Serializable {
     	
-    	public static String RESULT = "Done";
+    	public static String RESULT = "Task completed";
     	
        	public String call() throws Exception {
     		return RESULT;
     	}
+    }
+    
+    /**
+     * Submit a null task must raise a NullPointerException
+     */
+    @Test
+    public void submitNullTask() throws Exception {
+        ExecutorService executor = Hazelcast.getExecutorService();
+        try {
+        	Callable c = null;
+        	Future future = executor.submit(c);
+        	fail();
+        }
+        catch (NullPointerException npe) {
+        	; // It's ok
+        }
     }
     
     /**
@@ -66,7 +84,94 @@ public class ExecutorServiceTest {
     }
     
     /**
-     * Shutdown behaviour
+     * Test the method isDone()
+     */
+    @Test
+    public void isDoneMethod() throws Exception {
+        Callable<String> task = new BasicTestTask();
+        ExecutorService executor = Hazelcast.getExecutorService();
+        Future future = executor.submit(task);
+        if (future.isDone()) {
+        	assertTrue(future.isDone());
+        }
+        assertEquals(future.get(), BasicTestTask.RESULT);
+    	assertTrue(future.isDone());
+    }
+
+    /**
+     * Test for the issue 129.
+     * Repeadetly runs tasks and check for isDone() status after
+     * get(). 
+     */
+    @Test
+    public void idDoneMethod() throws Exception {
+    	ExecutorService executor = Hazelcast.getExecutorService();
+    	for (int i = 0; i < COUNT; i++) {
+            Callable<String> task1 = new BasicTestTask();
+            Callable<String> task2 = new BasicTestTask();
+            
+            Future future1 = executor.submit(task1);
+            Future future2 = executor.submit(task1);
+            assertEquals(future2.get(), BasicTestTask.RESULT);
+        	assertTrue(future2.isDone());
+            assertEquals(future1.get(), BasicTestTask.RESULT);
+        	assertTrue(future1.isDone());
+    	}
+    }
+
+    /**
+     * Test multiple Future.get() invokation 
+     */
+    @Test
+    public void isTwoGetFromFuture() throws Exception {
+        Callable<String> task = new BasicTestTask();
+        ExecutorService executor = Hazelcast.getExecutorService();
+        Future<String> future = executor.submit(task);
+        String s1 = future.get();
+        assertEquals(s1, BasicTestTask.RESULT);
+    	assertTrue(future.isDone());
+        String s2 = future.get();
+        assertEquals(s2, BasicTestTask.RESULT);
+    	assertTrue(future.isDone());
+        String s3 = future.get();
+        assertEquals(s3, BasicTestTask.RESULT);
+    	assertTrue(future.isDone());
+        String s4 = future.get();
+        assertEquals(s4, BasicTestTask.RESULT);
+    	assertTrue(future.isDone());
+    }
+
+    
+    /**
+     * invokeAll tests
+     */
+    @Test
+    public void testInvokeAll() throws Exception {
+        Callable<String> task = new BasicTestTask();
+        ExecutorService executor = Hazelcast.getExecutorService();
+        assertFalse(executor.isShutdown());
+        
+        // Only one task
+        ArrayList<BasicTestTask> tasks = new ArrayList<BasicTestTask>();
+        tasks.add(new BasicTestTask());
+        List<Future<String>> futures = executor.invokeAll(tasks);
+        assertEquals(futures.size(), 1);
+        assertEquals(futures.get(0).get(), BasicTestTask.RESULT);
+        
+        // More tasks
+        tasks.clear();
+        for (int i = 0; i < COUNT; i++) {
+            tasks.add(new BasicTestTask());
+        }
+        futures = executor.invokeAll(tasks);
+        assertEquals(futures.size(), COUNT);
+        for (int i = 0; i < COUNT; i++) {
+        	assertEquals(futures.get(i).get(), BasicTestTask.RESULT);
+        }
+    }
+    
+    /**
+     * Shutdown-related method behaviour when the cluster is running
      */
     @Test
     public void testShutdownBehaviour() throws Exception {
@@ -97,14 +202,37 @@ public class ExecutorServiceTest {
         }
         assertFalse(executor.isShutdown());
         assertFalse(executor.isTerminated());
+    }
+    
+    /**
+     * Shutting down the cluster should act as the ExecutorService shutdown
+     */
+    @Test
+    public void testClusterShutdown() throws Exception {
+        ExecutorService executor = Hazelcast.getExecutorService();
         
-        // Shutting down the cluster should act as the ExecutorService shutdown
         Hazelcast.shutdown();
         assertNotNull(executor);
         assertTrue(executor.isShutdown());
         assertTrue(executor.isTerminated());
         
+        // New tasks must be rejected
+        Callable<String> task = new BasicTestTask();
+        try {
+        	Future future = executor.submit(task);
+        	fail("Should not be here!");
+        }
+        catch (RejectedExecutionException ree) {
+        	; // It's ok
+        }
+        
+        // Reanimate Hazelcast
+        Hazelcast.restart();
+        executor = Hazelcast.getExecutorService();
+        assertFalse(executor.isShutdown());
+        assertFalse(executor.isTerminated());
+        
+      	Future future = executor.submit(task);
     }
-    
     
 }
