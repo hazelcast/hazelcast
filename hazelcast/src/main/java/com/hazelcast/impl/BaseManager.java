@@ -1171,8 +1171,13 @@ public abstract class BaseManager {
         return node.isSuperClient();
     }
 
+    /**
+     * Log on default logger at FINEST level
+     */
     protected void log(final Object obj) {
-        logger.log(Level.FINEST, obj.toString());
+    	if (logger.isLoggable(Level.FINEST)) {
+    		logger.log(Level.FINEST, obj.toString());
+        }
     }
 
     protected Packet obtainPacket() {
