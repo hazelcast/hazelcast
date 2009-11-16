@@ -47,8 +47,8 @@ public class OutRunnable extends IORunnable{
 		try{
 			c = queue.poll(100, TimeUnit.MILLISECONDS);
 			if(c==null){
-				return;
-			}
+                return;
+            }
 //			System.out.println("Sending: "+c + " " + c.getRequest().getOperation());
 			callMap.put(c.getId(), c);
 			
@@ -75,7 +75,7 @@ public class OutRunnable extends IORunnable{
 		} catch (InterruptedException e) {
 			throw e;
 		} catch (Throwable io) {
-			io.printStackTrace();
+//			io.printStackTrace();
 			enQueue(c);
 			client.connectionManager.destroyConnection(connection);
 		}

@@ -41,8 +41,7 @@ public class InRunnable extends IORunnable implements Runnable{
 				interruptWaitingCalls();
 			}else{
 				packet = reader.readPacket(connection);
-				Call c = null;
-				c = callMap.remove(packet.getCallId());
+                Call c = callMap.remove(packet.getCallId());
 				if(c!=null){
 					synchronized (c) {
 //						System.out.println("Received: " + c + " " + c.getRequest().getOperation());
@@ -53,13 +52,17 @@ public class InRunnable extends IORunnable implements Runnable{
 					if(packet.getOperation().equals(ClusterOperation.EVENT)){
 						client.listenerManager.enqueue(packet);
 					}
+                    if(packet.getCallId()==-1){
+                        //ignore
+                    }
 					else{
-						throw new RuntimeException("In Thread can not handle: "+packet.getOperation() + " : " +packet.getCallId() );
+						throw new RuntimeException("In Thread can not handle: "+packet.getOperation() + " : " +packet.getCallId());
 					}
 				}
 			}
 		
-		} catch (IOException e) {
+		} catch (Exception e) {
+//            e.printStackTrace();
 			client.connectionManager.destroyConnection(connection);
 		}
 	}

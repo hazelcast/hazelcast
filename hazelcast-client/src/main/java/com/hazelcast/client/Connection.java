@@ -93,5 +93,5 @@ public class Connection {
 
 	public DataOutputStream getOutputStream() {
 		return dos;
-	}
+    }
 }

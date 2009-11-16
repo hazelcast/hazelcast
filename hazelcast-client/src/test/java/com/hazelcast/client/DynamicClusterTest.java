@@ -1,8 +1,6 @@
 package com.hazelcast.client;
 
 import static com.hazelcast.client.TestUtility.*;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import org.junit.After;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -16,7 +14,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.core.*;
 
 public class DynamicClusterTest {
     HazelcastClient client;
@@ -124,6 +122,50 @@ public class DynamicClusterTest {
 //        assertTrue(entryAddLatch.await(10, TimeUnit.MILLISECONDS));
 //        assertTrue(entryUpdatedLatch.await(10, TimeUnit.MILLISECONDS));
 //        assertTrue(entryRemovedLatch.await(10, TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    public void addMessageListenerWhithClusterFailOver() throws InterruptedException, IOException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        Map<Integer, HazelcastInstance> memberMap = getMapOfClusterMembers(h1, h2);
+        client = getHazelcastClient(h1,h2);
+        final ITopic<String> topic = client.getTopic("ABC");
+        final CountDownLatch latch = new CountDownLatch(2);
+        final String message =  "Hazelcast Rocks!";
+
+
+        topic.addMessageListener(new MessageListener()
+        {
+            public void onMessage(Object msg) {
+                if(msg.equals(message)){
+                    latch.countDown();
+                }
+                System.out.println(msg);
+            }
+        });
+
+        topic.publish(message);
+
+//        System.err.println("shut start" + System.currentTimeMillis());
+        HazelcastInstance h = memberMap.remove(client.getConnectionManager().getConnection().getAddress().getPort());
+//        System.out.println(h.getCluster().getLocalMember().getPort());
+        h.shutdown();
+//        System.err.println("shut finished" + System.currentTimeMillis());
+
+        for(int i=0;i<2;i++){
+//            System.out.println("Thread number"+i);
+            new Thread(new Runnable(){
+
+                public void run() {
+                    topic.publish(message);
+                }
+            }).start();
+        }
+
+        System.out.println("FINISHED");
+        assertTrue(latch.await(10, TimeUnit.MILLISECONDS));
+
     }
 
     

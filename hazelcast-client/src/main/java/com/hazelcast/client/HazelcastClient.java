@@ -44,13 +44,15 @@ public class HazelcastClient implements HazelcastInstance{
 	private static final String LIST_PREFIX = "m:l:";
 	private static final String SET_PREFIX = "m:s:";
     private static final String QUEUE_PREFIX = "q:";
+    private static final String TOPIC_PREFIX = "t:";
 
-	final Map<Long,Call> calls  = new ConcurrentHashMap<Long, Call>();
-	final ListenerManager listenerManager;
-	final OutRunnable out;
-	final InRunnable in;
-	final ConnectionManager connectionManager;
-	final Map<String, ClientProxy> mapProxies = new ConcurrentHashMap<String, ClientProxy>(100);
+
+    final Map<Long,Call> calls  = new ConcurrentHashMap<Long, Call>();
+    final ListenerManager listenerManager;
+    final OutRunnable out;
+    final InRunnable in;
+    final ConnectionManager connectionManager;
+    final Map<String, ClientProxy> mapProxies = new ConcurrentHashMap<String, ClientProxy>(100);
 
     private HazelcastClient(InetSocketAddress[] clusterMembers) {
 		connectionManager = new ConnectionManager(this, clusterMembers);
@@ -101,6 +103,9 @@ public class HazelcastClient implements HazelcastInstance{
                     }
                     else if(name.startsWith(QUEUE_PREFIX)){
                         proxy = new QueueClientProxy<E>(this, name);
+                    }
+                    else if(name.startsWith(TOPIC_PREFIX)){
+                        proxy = new TopicClientProxy<E>(this, name);
                     }
 					proxy.setOutRunnable(out);
 					mapProxies.put(name, proxy);
@@ -182,7 +187,7 @@ public class HazelcastClient implements HazelcastInstance{
 
 	public <E> ITopic<E> getTopic(String name) {
 		// TODO Auto-generated method stub
-		return null;
+		return (ITopic)getClientProxy(TOPIC_PREFIX + name);
 	}
 
 	public void removeInstanceListener(InstanceListener instanceListener) {

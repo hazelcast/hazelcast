@@ -65,6 +65,12 @@ public class HazelcastClientMapTest {
     }
 
     @Test
+    public void simpleTest(){
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+
+    }
+
+    @Test
     public void lockMap() throws InterruptedException {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
         hClient = getHazelcastClient(h);
@@ -559,6 +565,7 @@ public class HazelcastClientMapTest {
     }
 
     @Test
+    @Ignore
     public void putAndget100000RecordsWith1ClusterMember() {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
         hClient = getHazelcastClient(h);

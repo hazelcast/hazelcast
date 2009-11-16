@@ -310,5 +310,10 @@ public class Packet {
 	}
 	public void setIndexTypes(byte[] indexTypes) {
 		this.indexTypes = indexTypes;
-	}		
+	}
+
+    @Override
+    public String toString(){
+        return "Packet [callId = "+callId+"  name = "+ name +" operation = "+operation+"]";
+    }
 }

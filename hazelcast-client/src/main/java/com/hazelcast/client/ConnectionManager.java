@@ -36,7 +36,7 @@ public class ConnectionManager{
 				if(currentConnection == null){
 					connection = searchForAvailableConnection();
 					if(connection!=null){
-						logger.info("Client is connecting to " + connection + " " + Thread.currentThread().getName() + " " + Thread.currentThread().hashCode());
+						logger.info("Client is connecting to " + connection);
 						bind(connection);
 						currentConnection = connection;
 					}
@@ -62,6 +62,7 @@ public class ConnectionManager{
 		bind.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, Serializer.toByte(null), Serializer.toByte(b));
 		Call cBind = new Call();
 		cBind.setRequest(bind);
+        client.out.callMap.put(cBind.getId(), cBind);
 		client.out.writer.write(connection, bind);
 		try {
 			Thread.sleep(10);
