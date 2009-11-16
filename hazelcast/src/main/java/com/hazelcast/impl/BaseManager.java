@@ -651,7 +651,7 @@ public abstract class BaseManager {
                         reset();
                         throw new RuntimeException();
                     } else if (!node.active) {
-                        throw new RuntimeException();
+                        throw new IllegalStateException("Hazelcast Instance is not active!");
                     }
                 } catch (InterruptedException e) {
                     if (node.factory.restarted) {
