@@ -64,7 +64,7 @@ public class ExecutorServiceProxy implements ExecutorService {
         return false;
     }
 
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
+    public <T> List<Future<T>> invokeAll(Collection<Callable<T>> tasks) throws InterruptedException {
     	// Inspired to JDK7
     	if (tasks == null)
     		throw new NullPointerException();

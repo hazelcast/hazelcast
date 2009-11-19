@@ -152,7 +152,7 @@ public class ExecutorServiceTest {
         assertFalse(executor.isShutdown());
         
         // Only one task
-        ArrayList<BasicTestTask> tasks = new ArrayList<BasicTestTask>();
+        ArrayList<Callable<String>> tasks = new ArrayList<Callable<String>>();
         tasks.add(new BasicTestTask());
         List<Future<String>> futures = executor.invokeAll(tasks);
         assertEquals(futures.size(), 1);
