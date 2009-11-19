@@ -17,9 +17,8 @@ import com.hazelcast.client.nio.Address;
 public class ConnectionManager{
 	private volatile Connection currentConnection;
 	private final AtomicInteger connectionIdGenerator = new AtomicInteger(-1);
-//	private OutRunnable out;
 	private final List<InetSocketAddress> clusterMembers = new ArrayList<InetSocketAddress>();
-	private Logger logger = Logger.getLogger(getClass().toString());
+	private final Logger logger = Logger.getLogger(getClass().toString());
 	private final HazelcastClient client;
 	
 

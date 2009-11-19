@@ -86,6 +86,8 @@ public class ClientService {
         clientOperationHandlers[ClusterOperation.DESTROY.getValue()] =  new DestroyHandler();
         clientOperationHandlers[ClusterOperation.GET_ID.getValue()] =  new GetIdHandler();
         clientOperationHandlers[ClusterOperation.ADD_INDEX.getValue()] =  new AddIndexHandler();
+
+        clientOperationHandlers[ClusterOperation.NEW_ID.getValue()] =  new NewIdHandler();
     }
 
     // always called by InThread
@@ -280,6 +282,13 @@ public class ClientService {
 		public void processCall(Node node, Packet packet) {
 			Instance instance = (Instance)node.factory.getOrCreateProxyByName(packet.name);
 			instance.destroy();
+		}
+    }
+
+    private class NewIdHandler extends ClientOperationHandler{
+		public void processCall(Node node, Packet packet) {
+			IdGenerator idGen = (IdGenerator)node.factory.getOrCreateProxyByName(packet.name);
+            packet.value = toData(idGen.newId());
 		}
     }
     private class GetIdHandler extends ClientMapOperationHandler{

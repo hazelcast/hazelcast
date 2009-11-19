@@ -85,6 +85,7 @@ public enum ClusterOperation {
     TRANSACTION_ROLLBACK(),
     DESTROY(),
     GET_ID(),
+    NEW_ID(),
     ADD_INDEX(),;
 
     static int idGen = 0;

@@ -4,9 +4,9 @@ import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.CMap.CMapEntry;
 
 public 	class ClientMapEntry<K, V> implements MapEntry<K, V>{
-	private CMapEntry mapEntry;
-	private K key;
-	private MapClientProxy<K, V> proxy;
+	private final CMapEntry mapEntry;
+	private final K key;
+	private final MapClientProxy<K, V> proxy;
 	public ClientMapEntry(CMapEntry mapEntry, K key, MapClientProxy<K, V> proxy) {
 		this.mapEntry = mapEntry;
 		this.key = key;

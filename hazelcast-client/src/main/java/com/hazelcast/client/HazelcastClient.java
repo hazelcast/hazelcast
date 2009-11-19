@@ -45,6 +45,7 @@ public class HazelcastClient implements HazelcastInstance{
 	private static final String SET_PREFIX = "m:s:";
     private static final String QUEUE_PREFIX = "q:";
     private static final String TOPIC_PREFIX = "t:";
+    private static final String IDGEN_PREFIX = "i:";
 
 
     final Map<Long,Call> calls  = new ConcurrentHashMap<Long, Call>();
@@ -107,6 +108,9 @@ public class HazelcastClient implements HazelcastInstance{
                     else if(name.startsWith(TOPIC_PREFIX)){
                         proxy = new TopicClientProxy<E>(this, name);
                     }
+                    else if(name.startsWith(IDGEN_PREFIX)){
+                        proxy = new IdGeneratorClientProxy(this, name);
+                    }
 					proxy.setOutRunnable(out);
 					mapProxies.put(name, proxy);
 				}
@@ -134,13 +138,11 @@ public class HazelcastClient implements HazelcastInstance{
 	}
 
 	public void addInstanceListener(InstanceListener instanceListener) {
-		// TODO Auto-generated method stub
-		
-	}
+        throw new UnsupportedOperationException();
+    }
 
 	public Cluster getCluster() {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	public ExecutorService getExecutorService() {
@@ -149,8 +151,7 @@ public class HazelcastClient implements HazelcastInstance{
 	}
 
 	public IdGenerator getIdGenerator(String name) {
-		// TODO Auto-generated method stub
-		return null;
+		return (IdGenerator)getClientProxy(IDGEN_PREFIX + name);
 	}
 
 	public Collection<Instance> getInstances() {

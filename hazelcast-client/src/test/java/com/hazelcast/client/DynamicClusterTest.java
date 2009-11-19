@@ -12,6 +12,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.channels.ServerSocketChannel;
 
 
 import com.hazelcast.core.*;
@@ -147,14 +150,14 @@ public class DynamicClusterTest {
 
         topic.publish(message);
 
-//        System.err.println("shut start" + System.currentTimeMillis());
+        System.err.println("shut start" + System.currentTimeMillis());
         HazelcastInstance h = memberMap.remove(client.getConnectionManager().getConnection().getAddress().getPort());
 //        System.out.println(h.getCluster().getLocalMember().getPort());
         h.shutdown();
-//        System.err.println("shut finished" + System.currentTimeMillis());
+        System.err.println("shut finished" + System.currentTimeMillis());
 
         for(int i=0;i<2;i++){
-//            System.out.println("Thread number"+i);
+            System.out.println("Thread number"+i);
             new Thread(new Runnable(){
 
                 public void run() {

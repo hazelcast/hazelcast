@@ -168,11 +168,19 @@ public class HazelcastClientListTest {
         	assertTrue(list.remove((Object)i));
         }
         assertTrue(list.isEmpty());
-        
-        for(int i=0;i<count;i++){
-        	assertFalse(list.remove((Object)i));
+
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
-        
+
+
+        for(int i=0;i<count;i++){
+            assertFalse(list.remove((Object)i));
+        }
+
+
         for(int i=count;i<2*count;i++){
         	assertFalse(list.remove((Object)i));
         }

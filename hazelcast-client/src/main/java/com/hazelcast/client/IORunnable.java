@@ -26,7 +26,7 @@ import java.util.Map;
 public abstract class IORunnable extends ClientRunnable{
 
 	protected Map<Long, Call> callMap;
-	protected HazelcastClient client;
+	protected final HazelcastClient client;
 	
 
 	public IORunnable(HazelcastClient client, Map<Long,Call> calls) {

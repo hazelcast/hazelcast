@@ -28,10 +28,9 @@ public class PacketReader extends PacketHandler{
 		return readPacket(connection);
 	}
 	public Packet readPacket(Connection connection) throws IOException {
-		Socket s = connection.getSocket();
-		Packet response = new Packet();
-		DataInputStream dis = new DataInputStream(s.getInputStream());
-		response.readFrom(dis);
+		DataInputStream dis = connection.getInputStream();
+        Packet response = new Packet();
+        response.readFrom(dis);
 		return response;
 	}
 

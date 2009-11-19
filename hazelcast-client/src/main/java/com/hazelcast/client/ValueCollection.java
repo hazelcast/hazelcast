@@ -8,8 +8,8 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 public class ValueCollection<K, V> implements Collection<V>{
-	private MapClientProxy<K, V> proxy;
-	private Set<Entry<K,V>> entrySet;
+	private final MapClientProxy<K, V> proxy;
+	private final Set<Entry<K,V>> entrySet;
 
 	public ValueCollection(MapClientProxy<K, V> proxy, Set<Entry<K,V>> entrySet) {
 		this.proxy = proxy;

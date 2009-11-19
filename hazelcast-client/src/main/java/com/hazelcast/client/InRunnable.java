@@ -26,7 +26,7 @@ import com.hazelcast.impl.ClusterOperation;
 
 public class InRunnable extends IORunnable implements Runnable{
 	final PacketReader reader;
-	Logger logger = Logger.getLogger(this.getClass().getName());
+	final Logger logger = Logger.getLogger(this.getClass().getName());
 	public InRunnable(HazelcastClient client, Map<Long,Call> calls, PacketReader reader) {
 		super(client,calls);
 		this.reader = reader;

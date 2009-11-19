@@ -21,9 +21,9 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.impl.ClusterOperation;
 
 public class TopicClientProxy<T> implements ClientProxy, ITopic {
-    private String name;
-    private HazelcastClient client;
-    private ProxyHelper proxyHelper;
+    private final String name;
+    private final HazelcastClient client;
+    private final ProxyHelper proxyHelper;
 
     public TopicClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;

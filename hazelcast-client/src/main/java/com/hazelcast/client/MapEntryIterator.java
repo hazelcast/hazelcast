@@ -4,12 +4,12 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 
 public class MapEntryIterator<K, V> implements Iterator<java.util.Map.Entry<K, V>>{
-	private Iterator<K> it;
-	private MapClientProxy<K,V> proxy;
+	private final Iterator<K> it;
+	private final MapClientProxy<K,V> proxy;
 	private volatile Entry<K,V> lastEntry;
 	
 	
-	public MapEntryIterator(String name, Iterator<K> it, MapClientProxy<K,V> proxy) {
+	public MapEntryIterator(Iterator<K> it, MapClientProxy<K,V> proxy) {
 		this.it = it;
 		this.proxy = proxy;
 	}

@@ -5,8 +5,8 @@ import java.util.Map.Entry;
 
 public class ValueIterator<K,V> implements Iterator<V>{
 	
-	private MapClientProxy<K, V> proxy;
-	private Iterator<Entry<K, V>> entryIterator;
+	private final MapClientProxy<K, V> proxy;
+	private final Iterator<Entry<K, V>> entryIterator;
 
 	public ValueIterator(MapClientProxy<K, V> proxy, Iterator<Entry<K,V>> entryIterator) {
 		this.proxy = proxy;
