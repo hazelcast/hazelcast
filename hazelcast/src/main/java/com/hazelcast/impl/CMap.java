@@ -729,6 +729,10 @@ public class CMap {
         if (record == null) {
             return false;
         }
+        //The record set as removable, also it is not "really" removed yet. It should be considered as removed
+        if (record.isRemovable()){
+            return false;
+        }
         if (req.txnId != -1) {
             concurrentMapManager.unlock(record);
         }
