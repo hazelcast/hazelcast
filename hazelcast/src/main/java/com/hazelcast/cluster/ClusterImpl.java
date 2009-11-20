@@ -1,12 +1,12 @@
-/* 
+/*
  * Copyright (c) 2007-2008, Hazel Ltd. All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at 
- * 
+ * You may obtain a copy of the License at
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,10 +24,7 @@ import com.hazelcast.core.MembershipListener;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.Node;
 
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -47,13 +44,14 @@ public class ClusterImpl implements Cluster {
     public void setMembers(List<MemberImpl> lsMembers) {
         final Set<MembershipListener> listenerSet = listeners.get();
         Set<Member> setNew = new LinkedHashSet<Member>(lsMembers.size());
+        ArrayList<Runnable> notifications = new ArrayList<Runnable>();
         for (MemberImpl member : lsMembers) {
             final MemberImpl dummy = new MemberImpl(node.factory.getName(), member.getAddress(), member.localMember(), member.getNodeType());
             Member clusterMember = clusterMembers.get(dummy);
             if (clusterMember == null) {
                 clusterMember = dummy;
                 if (listenerSet != null && listenerSet.size() > 0) {
-                    node.executorManager.executeLocally(new Runnable() {
+                    notifications.add(new Runnable() {
                         public void run() {
                             MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
                                     dummy, MembershipEvent.MEMBER_ADDED);
@@ -71,12 +69,15 @@ public class ClusterImpl implements Cluster {
         }
         if (listenerSet != null && listenerSet.size() > 0) {
             Set<Member> it = clusterMembers.keySet();
-            for (final Member cm : it) {
-                if (!setNew.contains(cm)) {
-                    node.executorManager.executeLocally(new Runnable() {
+            // build a list of notifications but send them AFTER
+            // removal
+            for (final Member member : it) {
+                if (!setNew.contains(member)) {
+                    //node.executorManager.executeLocally(new Runnable() {
+                    notifications.add(new Runnable() {
                         public void run() {
                             MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
-                                    cm, MembershipEvent.MEMBER_REMOVED);
+                                    member, MembershipEvent.MEMBER_REMOVED);
                             for (MembershipListener listener : listenerSet) {
                                 listener.memberRemoved(membershipEvent);
                             }
@@ -86,10 +87,14 @@ public class ClusterImpl implements Cluster {
             }
         }
         clusterMembers.clear();
-        for (Member cm : setNew) {
-            clusterMembers.put(cm, cm);
+        for (Member member : setNew) {
+            clusterMembers.put(member, member);
         }
         members.set(setNew);
+        // send notifications now
+        for (Runnable notification : notifications) {
+            node.executorManager.executeLocally(notification);
+        }
     }
 
     public void addMembershipListener(MembershipListener listener) {
