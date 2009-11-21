@@ -54,6 +54,7 @@ public class HazelcastClient implements HazelcastInstance{
     final InRunnable in;
     final ConnectionManager connectionManager;
     final Map<String, ClientProxy> mapProxies = new ConcurrentHashMap<String, ClientProxy>(100);
+    final ExecutorServiceManager executorServiceManager;
 
     private HazelcastClient(InetSocketAddress[] clusterMembers) {
 		connectionManager = new ConnectionManager(this, clusterMembers);
@@ -67,11 +68,13 @@ public class HazelcastClient implements HazelcastInstance{
 		listenerManager = new ListenerManager();
 		new Thread(listenerManager,"hz.client.Listener").start();
 		
-		
 		try {
 			connectionManager.getConnection();
 		} catch (IOException ignored) {
 		}
+
+        executorServiceManager = new ExecutorServiceManager(this);
+        new Thread(executorServiceManager,"hz.client.executorManager").start();
 	}
 
 	public static HazelcastClient getHazelcastClient(InetSocketAddress... clusterMembers){
@@ -146,8 +149,7 @@ public class HazelcastClient implements HazelcastInstance{
 	}
 
 	public ExecutorService getExecutorService() {
-		// TODO Auto-generated method stub
-		return null;
+		return new ExecutorServiceClientProxy(this);
 	}
 
 	public IdGenerator getIdGenerator(String name) {

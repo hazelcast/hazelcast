@@ -43,14 +43,14 @@ public class OutRunnable extends IORunnable{
 
 
 	protected void customRun() throws InterruptedException {
-		Call c = null;
+		Call call = null;
 		try{
-			c = queue.poll(100, TimeUnit.MILLISECONDS);
-			if(c==null){
+			call = queue.poll(100, TimeUnit.MILLISECONDS);
+			if(call ==null){
                 return;
             }
-//			System.out.println("Sending: "+c + " " + c.getRequest().getOperation());
-			callMap.put(c.getId(), c);
+//			System.out.println("Sending: "+call + " " + call.getRequest().getOperation());
+			callMap.put(call.getId(), call);
 			
 			boolean oldConnectionIsNotNull = (connection!=null);
 			long oldConnectionId = -1;
@@ -59,14 +59,14 @@ public class OutRunnable extends IORunnable{
 			}
 			connection = client.connectionManager.getConnection();
 			if(oldConnectionIsNotNull && connection!=null && connection.getVersion()!=oldConnectionId){
-				temp.add(c);
+				temp.add(call);
 				queue.drainTo(temp);
 				client.listenerManager.getListenerCalls().drainTo(queue);
 				temp.drainTo(queue);
 			}else{
 				if(connection!=null){
-					writer.write(connection,c.getRequest());
-//					System.out.println("Sent: "+c + " " + c.getRequest().getOperation()+" " +connection );
+					writer.write(connection, call.getRequest());
+//					System.out.println("Sent: "+call + " " + call.getRequest().getOperation()+" " +connection );
 				}
 				else{
 					interruptWaitingCalls();
@@ -76,7 +76,7 @@ public class OutRunnable extends IORunnable{
 			throw e;
 		} catch (Throwable io) {
 //			io.printStackTrace();
-			enQueue(c);
+			enQueue(call);
 			client.connectionManager.destroyConnection(connection);
 		}
 	}

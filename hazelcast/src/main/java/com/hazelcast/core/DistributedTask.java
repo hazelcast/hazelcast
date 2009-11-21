@@ -313,7 +313,7 @@ public class DistributedTask<V> extends FutureTask<V> {
         }
     }
 
-    private static class DistributedRunnableAdapterImpl<V> implements DistributedRunnableAdapter,
+    public static class DistributedRunnableAdapterImpl<V> implements DistributedRunnableAdapter,
             Serializable, Callable<V> {
 
         private static final long serialVersionUID = -2297288043381543510L;

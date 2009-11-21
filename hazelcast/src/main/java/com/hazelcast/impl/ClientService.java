@@ -41,7 +41,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 
 public class ClientService {
@@ -88,6 +88,7 @@ public class ClientService {
         clientOperationHandlers[ClusterOperation.ADD_INDEX.getValue()] =  new AddIndexHandler();
 
         clientOperationHandlers[ClusterOperation.NEW_ID.getValue()] =  new NewIdHandler();
+        clientOperationHandlers[ClusterOperation.REMOTELY_EXECUTE.getValue()] =  new ExecuterServiceHandler();
     }
 
     // always called by InThread
@@ -291,6 +292,21 @@ public class ClientService {
             packet.value = toData(idGen.newId());
 		}
     }
+
+    private class ExecuterServiceHandler extends ClientOperationHandler{
+		public void processCall(Node node, Packet packet) {
+            ExecutorService executorService = node.factory.getExecutorService();
+            Future<Object> future = executorService.submit((Callable<Object>) toObject(packet.key));
+            try {
+                packet.value = toData(future.get());
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                packet.value = toData(e);
+            }
+        }
+    }
+
     private class GetIdHandler extends ClientMapOperationHandler{
 		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
 			return toData(map.getId());

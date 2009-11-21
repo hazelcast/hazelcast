@@ -41,13 +41,18 @@ public class InRunnable extends IORunnable implements Runnable{
 				interruptWaitingCalls();
 			}else{
 				packet = reader.readPacket(connection);
-                Call c = callMap.remove(packet.getCallId());
-				if(c!=null){
-					synchronized (c) {
-//						System.out.println("Received: " + c + " " + c.getRequest().getOperation());
-						c.setResponse(packet);
-						c.notify();
-					}
+                Call call = callMap.remove(packet.getCallId());
+				if(call !=null){
+                    if(call.getRequest().getOperation().equals(ClusterOperation.REMOTELY_EXECUTE)){
+                        client.executorServiceManager.enqueue(packet);
+                    }
+                    else{
+                        synchronized (call) {
+    //						System.out.println("Received: " + call + " " + call.getRequest().getOperation());
+                            call.setResponse(packet);
+                            call.notify();
+                        }
+                    }
 				} else {
 					if(packet.getOperation().equals(ClusterOperation.EVENT)){
 						client.listenerManager.enqueue(packet);
