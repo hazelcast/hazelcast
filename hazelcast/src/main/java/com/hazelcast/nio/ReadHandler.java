@@ -17,6 +17,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.ThreadContext;
 import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
 
@@ -97,14 +98,14 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
         }
     }
 
-    void enqueueFullPacket(Packet p) {
+    void enqueueFullPacket(final Packet p) {
         p.flipBuffers();
         p.read();
         p.setFromConnection(connection);
         if (p.client) {
             node.clientService.handle(p);
         } else {
-            clusterService.enqueueAndReturn(p);
+            clusterService.enqueuePacket(p);
         }
     }
 
@@ -170,8 +171,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
                     if (packet == null) {
                         packet = obtainReadable();
                     }
-                    boolean complete = false;
-                    complete = packet.read(cipherBuffer);
+                    boolean complete = packet.read(cipherBuffer);
                     if (complete) {
                         enqueueFullPacket(packet);
                         packet = null;

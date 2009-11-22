@@ -273,7 +273,7 @@ public class ClientService {
 
     private class RemotelyProcessHandler extends ClientOperationHandler{
 		public void processCall(Node node, Packet packet) {
-			node.clusterService.enqueueAndReturn(packet);
+			node.clusterService.enqueuePacket(packet);
 		}
 		@Override
 		protected void sendResponse(Packet request) {
