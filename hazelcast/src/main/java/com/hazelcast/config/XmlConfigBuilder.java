@@ -433,35 +433,37 @@ public class XmlConfigBuilder implements ConfigBuilder {
         this.config.getMapQConfigs().put(name, qConfig);
     }
 
-    private void handleMap(final org.w3c.dom.Node node) {
+    private void handleMap(final org.w3c.dom.Node node) throws Exception{
         final Node attName = node.getAttributes().getNamedItem("name");
         final String name = getTextContent(attName);
-        final MapConfig config = new MapConfig();
-        config.setName(name);
+        final MapConfig mapConfig = new MapConfig();
+        mapConfig.setName(name);
         final NodeList nodelist = node.getChildNodes();
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String nodeName = n.getNodeName().toLowerCase();
             final String value = getTextContent(n).trim();
             if ("backup-count".equals(nodeName)) {
-                config.setBackupCount(getIntegerValue("backup-count", value, MapConfig.DEFAULT_BACKUP_COUNT));
+                mapConfig.setBackupCount(getIntegerValue("backup-count", value, MapConfig.DEFAULT_BACKUP_COUNT));
             } else if ("eviction-policy".equals(nodeName)) {
-                config.setEvictionPolicy(value);
+                mapConfig.setEvictionPolicy(value);
             } else if ("max-size".equals(nodeName)) {
-                config.setMaxSize(getIntegerValue("max-size", value,
+                mapConfig.setMaxSize(getIntegerValue("max-size", value,
                         MapConfig.DEFAULT_MAX_SIZE));
             } else if ("eviction-percentage".equals(nodeName)) {
-                config.setEvictionPercentage(getIntegerValue("eviction-percentage", value,
+                mapConfig.setEvictionPercentage(getIntegerValue("eviction-percentage", value,
                         MapConfig.DEFAULT_EVICTION_PERCENTAGE));
             } else if ("time-to-live-seconds".equals(nodeName)) {
-                config.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value,
+                mapConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value,
                         MapConfig.DEFAULT_TTL_SECONDS));
             } else if ("map-store".equals(nodeName)) {
                 MapStoreConfig mapStoreConfig = createMapStoreConfig(n);
-                config.setMapStoreConfig(mapStoreConfig);
+                mapConfig.setMapStoreConfig(mapStoreConfig);
+            } else if ("near-cache".equals(nodeName)) {
+                handleViaReflection(n, mapConfig, new NearCacheConfig());
             }
         }
-        this.config.getMapMapConfigs().put(name, config);
+        this.config.getMapMapConfigs().put(name, mapConfig);
     }
 
     private MapStoreConfig createMapStoreConfig(final org.w3c.dom.Node node) {

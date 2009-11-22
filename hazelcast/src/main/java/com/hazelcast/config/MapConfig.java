@@ -25,6 +25,8 @@ public class MapConfig {
 
     private MapStoreConfig mapStoreConfig = null;
 
+    private NearCacheConfig nearCacheConfig = null;
+
     /**
      * @return the name
      */
@@ -125,5 +127,13 @@ public class MapConfig {
      */
     public void setMapStoreConfig(MapStoreConfig mapStoreConfig) {
         this.mapStoreConfig = mapStoreConfig;
+    }
+
+    public NearCacheConfig getNearCacheConfig() {
+        return nearCacheConfig;
+    }
+
+    public void setNearCacheConfig(NearCacheConfig nearCacheConfig) {
+        this.nearCacheConfig = nearCacheConfig;
     }
 }

@@ -52,6 +52,7 @@ public final class ConcurrentMapManager extends BaseManager {
     final Block[] blocks;
     final ConcurrentMap<String, CMap> maps;
     final ConcurrentMap<String, LocallyOwnedMap> mapLocallyOwnedMaps;
+    final ConcurrentMap<String, MapCache> mapCaches;
     final OrderedExecutionTask[] orderedExecutionTasks;
     final MapMigrator mapMigrator;
     long newRecordId = 0;
@@ -61,6 +62,7 @@ public final class ConcurrentMapManager extends BaseManager {
         blocks = new Block[BLOCK_COUNT];
         maps = new ConcurrentHashMap<String, CMap>(10);
         mapLocallyOwnedMaps = new ConcurrentHashMap<String, LocallyOwnedMap>(10);
+        mapCaches = new ConcurrentHashMap<String, MapCache>(10);
         orderedExecutionTasks = new OrderedExecutionTask[BLOCK_COUNT];
         mapMigrator = new MapMigrator(this);
         for (int i = 0; i < BLOCK_COUNT; i++) {
@@ -450,7 +452,10 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     class MGet extends MTargetAwareOp {
+        Object key = null;
+
         public Object get(String name, Object key, long timeout) {
+            this.key = key;
             final ThreadContext tc = ThreadContext.get();
             TransactionImpl txn = tc.getCallContext().getTransaction();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
@@ -458,11 +463,18 @@ public final class ConcurrentMapManager extends BaseManager {
                     return txn.get(name, key);
                 }
             }
-            LocallyOwnedMap locallyOwnedMap = getLocallyOwnedMap(name);
+            MapCache cache = mapCaches.get(name);
+            if (cache != null) {
+                Object value = cache.get(key);
+                if (value != null) {
+                    return value;
+                }
+            }
+            LocallyOwnedMap locallyOwnedMap = mapLocallyOwnedMaps.get(name);
             if (locallyOwnedMap != null) {
-                Object result = locallyOwnedMap.get(key);
-                if (result != OBJECT_REDO) {
-                    return result;
+                Object value = locallyOwnedMap.get(key);
+                if (value != OBJECT_REDO) {
+                    return value;
                 }
             }
             Object value = objectCall(CONCURRENT_MAP_GET, name, key, null, timeout, -1);
@@ -470,6 +482,19 @@ public final class ConcurrentMapManager extends BaseManager {
                 rethrowException(request.operation, (AddressAwareException) value);
             }
             return value;
+        }
+
+        @Override
+        public void handleNoneRedoResponse(Packet packet) {
+            Data value = packet.value;
+            if (value != null && value.size() > 0) {
+                CMap cmap = getOrCreateMap(request.name);
+                MapCache cache = cmap.mapCache;
+                if (cache != null) {
+                    cache.put(this.key, request.key, packet.value);
+                }
+            }
+            super.handleNoneRedoResponse(packet);
         }
 
         @Override
@@ -1292,10 +1317,6 @@ public final class ConcurrentMapManager extends BaseManager {
         return block;
     }
 
-    LocallyOwnedMap getLocallyOwnedMap(String name) {
-        return mapLocallyOwnedMaps.get(name);
-    }
-
     CMap getMap(String name) {
         return maps.get(name);
     }
@@ -1608,7 +1629,7 @@ public final class ConcurrentMapManager extends BaseManager {
         void doOperation(Request request) {
             Record rec = ensureRecord(request);
             if (request.operation == CONCURRENT_MAP_LOCK_RETURN_OLD) {
-                request.value = doHardCopy(rec.getValue());
+                request.value = rec.getValue();
             }
             rec.lock(request.lockThreadId, request.lockAddress);
             rec.setVersion(rec.getVersion() + 1);

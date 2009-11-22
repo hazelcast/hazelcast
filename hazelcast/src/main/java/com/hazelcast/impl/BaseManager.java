@@ -964,7 +964,7 @@ public abstract class BaseManager {
         return id;
     }
 
-    public void enqueueAndReturn(final Object obj) {
+    public void enqueueAndReturn(final Processable obj) {
         node.clusterService.enqueueAndReturn(obj);
     }
 
@@ -1038,8 +1038,7 @@ public abstract class BaseManager {
                 if (address.isThisAddress()) {
                     try {
                         enqueueEvent(eventType, name,
-                                doHardCopy(key),
-                                (includeValue) ? doHardCopy(value) : null,
+                                key,(includeValue) ? value : null,
                                 address);
                     } catch (final Exception e) {
                         e.printStackTrace();
@@ -1356,7 +1355,7 @@ public abstract class BaseManager {
             if (mapTargetListeners == null || mapTargetListeners.size() == 0) {
                 return;
             }
-            sendEvents(eventType, name, doHardCopy(key), doHardCopy(value), mapTargetListeners);
+            sendEvents(eventType, name, key, value, mapTargetListeners);
         } catch (final Exception e) {
             e.printStackTrace();
         }

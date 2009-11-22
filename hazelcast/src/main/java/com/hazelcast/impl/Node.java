@@ -136,10 +136,9 @@ public class Node {
     class BaseVariables {
         final LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
 
-        final Map<Address, MemberImpl> mapMembers = new HashMap<Address, MemberImpl>(
-                100);
+        final Map<Address, MemberImpl> mapMembers = new HashMap<Address, MemberImpl>(100);
 
-        final Map<Long, BaseManager.Call> mapCalls = new HashMap<Long, BaseManager.Call>();
+        final Map<Long, BaseManager.Call> mapCalls = new ConcurrentHashMap<Long, BaseManager.Call>();
 
         final BaseManager.EventQueue[] eventQueues = new BaseManager.EventQueue[BaseManager.EVENT_QUEUE_COUNT];
 

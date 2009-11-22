@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.collection.SortedHashMap;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.*;
 import static com.hazelcast.impl.ClusterOperation.*;
@@ -91,6 +92,8 @@ public class CMap {
 
     final LocallyOwnedMap locallyOwnedMap;
 
+    final MapCache mapCache;
+
     public CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
         this.BLOCK_COUNT = concurrentMapManager.BLOCK_COUNT;
@@ -102,13 +105,7 @@ public class CMap {
         MapConfig mapConfig = node.getConfig().getMapConfig(name.substring(2));
         this.backupCount = mapConfig.getBackupCount();
         ttl = mapConfig.getTimeToLiveSeconds() * 1000L;
-        if ("LFU".equalsIgnoreCase(mapConfig.getEvictionPolicy())) {
-            evictionPolicy = SortedHashMap.OrderingType.LFU;
-        } else if ("LRU".equalsIgnoreCase(mapConfig.getEvictionPolicy())) {
-            evictionPolicy = SortedHashMap.OrderingType.LRU;
-        } else {
-            evictionPolicy = SortedHashMap.OrderingType.NONE;
-        }
+        evictionPolicy = SortedHashMap.getOrderingTypeByName(mapConfig.getEvictionPolicy());
         if (evictionPolicy == SortedHashMap.OrderingType.NONE) {
             maxSize = Integer.MAX_VALUE;
         } else {
@@ -151,6 +148,18 @@ public class CMap {
             concurrentMapManager.mapLocallyOwnedMaps.put(name, locallyOwnedMap);
         } else {
             locallyOwnedMap = null;
+        }
+        NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
+        if (nearCacheConfig == null) {
+            mapCache = null;
+        } else {
+            mapCache = new MapCache(this,
+                    SortedHashMap.getOrderingTypeByName(mapConfig.getEvictionPolicy()),
+                    nearCacheConfig.getMaxSize(),
+                    nearCacheConfig.getTimeToLiveSeconds() * 1000L,
+                    nearCacheConfig.getMaxIdleSeconds() * 1000L);
+            concurrentMapManager.mapCaches.put(name, mapCache);
+                        
         }
     }
 
@@ -567,9 +576,9 @@ public class CMap {
             Record dirtyRecord = itDirtyRecords.next();
             if (dirtyRecord.getWriteTime() > now) {
                 if (dirtyRecord.getValue() != null) {
-                    entriesToStore.put(doHardCopy(dirtyRecord.getKey()), doHardCopy(dirtyRecord.getValue()));
+                    entriesToStore.put(dirtyRecord.getKey(), dirtyRecord.getValue());
                 } else {
-                    keysToDelete.add(doHardCopy(dirtyRecord.getKey()));
+                    keysToDelete.add(dirtyRecord.getKey());
                 }
                 dirtyRecord.setDirty(false);
                 itDirtyRecords.remove();
@@ -646,7 +655,7 @@ public class CMap {
                                 lsKeysToEvict = new ArrayList<Data>(100);
                             }
                             markAsRemoved(record);
-                            lsKeysToEvict.add(doHardCopy(record.getKey()));
+                            lsKeysToEvict.add(record.getKey());
                         }
                     } else {
                         break;
@@ -663,7 +672,7 @@ public class CMap {
                         lsKeysToEvict = new ArrayList<Data>(numberOfRecordsToEvict);
                     }
                     markAsRemoved(record);
-                    lsKeysToEvict.add(doHardCopy(record.getKey()));
+                    lsKeysToEvict.add(record.getKey());
                     if (++evictedCount >= numberOfRecordsToEvict) {
                         break;
                     }

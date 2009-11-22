@@ -1332,8 +1332,7 @@ public class BlockingQueueManager extends BaseManager {
             for (int i = read.index; i < BLOCK_SIZE; i++) {
                 Data data = block.get(i);
                 if (data != null) {
-                    Data value = doHardCopy(data);
-                    read.setResponse(value, i);
+                    read.setResponse(data, i);
                     return;
                 }
             }
@@ -1445,7 +1444,7 @@ public class BlockingQueueManager extends BaseManager {
             if (value == null) {
                 return null;
             }
-            return doHardCopy(value);
+            return value;
         }
 
         boolean doBackup(boolean add, Data data, int blockId, int addIndex) {
@@ -1492,7 +1491,6 @@ public class BlockingQueueManager extends BaseManager {
                 ClusterOperation operation = ClusterOperation.BLOCKING_QUEUE_BACKUP_REMOVE;
                 if (add) {
                     operation = ClusterOperation.BLOCKING_QUEUE_BACKUP_ADD;
-                    data = doHardCopy(data);
                 }
                 Packet packet = obtainPacket(name, null, data, operation, 0);
                 packet.blockId = blockId;

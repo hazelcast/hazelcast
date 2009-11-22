@@ -763,9 +763,9 @@ public class ClusterTest {
     @Test
     public void testTopicListenersWithMultiple() throws Exception {
         final CountDownLatch latch = new CountDownLatch(3);
-        MessageListener ml = new MessageListener() {
+        final MessageListener<Object> ml = new MessageListener<Object>() {
             public void onMessage(Object msg) {
-                assertEquals("message", msg);
+                assertEquals("message1", msg);
                 latch.countDown();
             }
         };
@@ -776,16 +776,16 @@ public class ClusterTest {
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
         h3.getTopic("default").addMessageListener(ml);
         HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
-        h4.getTopic("default").publish("message");
+        h4.getTopic("default").publish("message1");
         assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
 
     @Test
     public void testTopicListenersWithMultiple2() throws Exception {
         final CountDownLatch latch = new CountDownLatch(4);
-        MessageListener ml = new MessageListener() {
+        final MessageListener<Object> ml = new MessageListener<Object>() {
             public void onMessage(Object msg) {
-                assertEquals("message", msg);
+                assertEquals("message2", msg);
                 latch.countDown();
             }
         };
@@ -797,14 +797,14 @@ public class ClusterTest {
         h3.getTopic("default").addMessageListener(ml);
         HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
         h4.getTopic("default").addMessageListener(ml);
-        h1.getTopic("default").publish("message");
+        h1.getTopic("default").publish("message2");
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
     public void testMapListenersWithMultiple() throws Exception {
         final CountDownLatch latch = new CountDownLatch(3);
-        EntryListener ml = new EntryListener() {
+        final EntryListener<Object, Object> ml = new EntryListener<Object, Object>() {
             public void entryAdded(EntryEvent entryEvent) {
                 latch.countDown();
             }
