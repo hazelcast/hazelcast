@@ -217,7 +217,8 @@ public class FactoryImpl implements HazelcastInstance {
 
     public static HazelcastInstance restart(HazelcastInstance hazelcastInstance) {
         synchronized (factoryLock) {
-            FactoryImpl factory = (FactoryImpl) hazelcastInstance;
+            HazelcastInstanceProxy hazelcastInstanceProxy = (HazelcastInstanceProxy) hazelcastInstance;
+            FactoryImpl factory = (FactoryImpl) hazelcastInstanceProxy.getHazelcastInstance();
             factory.restarted = true;
             shutdown(factory);
             HazelcastInstanceProxy newFactory = newHazelcastInstanceProxy(factory.node.config);
