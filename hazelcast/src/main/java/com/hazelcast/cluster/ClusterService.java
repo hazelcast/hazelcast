@@ -48,9 +48,9 @@ public final class ClusterService implements Runnable, Constants {
     private final Condition notEmpty = enqueueLock.newCondition();
 
     private static final int PACKET_BULK_SIZE = 32;
-    private static final int UNKNOWN_BULK_SIZE = 32;
+    private static final int PROCESSABLE_BULK_SIZE = 32;
 
-    private final SimpleBoundedQueue<Processable> processableBulk = new SimpleBoundedQueue<Processable>(UNKNOWN_BULK_SIZE);
+    private final SimpleBoundedQueue<Processable> processableBulk = new SimpleBoundedQueue<Processable>(PROCESSABLE_BULK_SIZE);
     private final SimpleBoundedQueue<Packet> packetBulk = new SimpleBoundedQueue<Packet>(PACKET_BULK_SIZE);
 
     private long totalProcessTime = 0;
@@ -108,9 +108,9 @@ public final class ClusterService implements Runnable, Constants {
         }
     }
 
-    public void enqueueAndReturn(Processable message) {
+    public void enqueueAndReturn(Processable processable) {
         try {
-            processableQueue.put(message);
+            processableQueue.put(processable);
             enqueueLock.lock();
             notEmpty.signal();
         } catch (InterruptedException e) {
@@ -201,7 +201,7 @@ public final class ClusterService implements Runnable, Constants {
         Processable processable = null;
         int retval = 0;
         try {
-            processableQueue.drainTo(processableBulk, UNKNOWN_BULK_SIZE);
+            processableQueue.drainTo(processableBulk, PROCESSABLE_BULK_SIZE);
             final int size = processableBulk.size();
             if (size > 0) {
                 for (int i = 0; i < size; i++) {

@@ -509,16 +509,16 @@ public class ClusterTest {
         String topicName = "TestMessages";
         ITopic<String> topic1 = h1.getTopic(topicName);
         final CountDownLatch latch1 = new CountDownLatch(1);
-        topic1.addMessageListener(new MessageListener() {
-            public void onMessage(Object msg) {
+        topic1.addMessageListener(new MessageListener<String>() {
+            public void onMessage(String msg) {
                 assertEquals("Test1", msg);
                 latch1.countDown();
             }
         });
         ITopic<String> topic2 = h2.getTopic(topicName);
         final CountDownLatch latch2 = new CountDownLatch(2);
-        topic2.addMessageListener(new MessageListener() {
-            public void onMessage(Object msg) {
+        topic2.addMessageListener(new MessageListener<String>() {
+            public void onMessage(String msg) {
                 assertEquals("Test1", msg);
                 latch2.countDown();
             }
@@ -593,6 +593,7 @@ public class ClusterTest {
     @Test(timeout = 240000)
     public void testDataRecoveryAndCorrectness() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        assertEquals(1, h1.getCluster().getMembers().size());
         IMap map1 = h1.getMap("default");
         for (int i = 0; i < 1000; i++) {
             map1.put(i, "value" + i);
@@ -601,6 +602,7 @@ public class ClusterTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         IMap map2 = h2.getMap("default");
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
+        assertEquals(3, h3.getCluster().getMembers().size());
         IMap map3 = h3.getMap("default");
         HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
         IMap map4 = h4.getMap("default");
