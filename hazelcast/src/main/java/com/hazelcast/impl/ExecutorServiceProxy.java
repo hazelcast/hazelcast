@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
 
 /**
  * Implements a distributed @link java.util.concurrent.ExecutorService.
@@ -54,6 +56,16 @@ public class ExecutorServiceProxy implements ExecutorService {
         this.node = node;
     }
 
+    private class ExecutorServiceInvocationHandler implements InvocationHandler {
+        public Object invoke(Object o, Method method, Object[] objects) throws Throwable {
+            String methodName = method.getName();
+            if (methodName.equals("execute")) {
+                
+            }
+            return null;
+        }
+    }
+
     /**
      * Hazelcast ExecutorService cannot be really shut down.
      * The method return always false immeditely.
@@ -64,17 +76,18 @@ public class ExecutorServiceProxy implements ExecutorService {
         return false;
     }
 
-    public <T> List<Future<T>> invokeAll(Collection<Callable<T>> tasks) throws InterruptedException {
+    public List<Future> invokeAll(Collection tasks) throws InterruptedException {
     	// Inspired to JDK7
     	if (tasks == null)
     		throw new NullPointerException();
-    	List<Future<T>> futures = new ArrayList<Future<T>>(tasks.size());
+    	List<Future> futures = new ArrayList<Future>(tasks.size());
     	boolean done = false;
     	try {
-    		for (Callable<T> command : tasks) {
-    	        futures.add(submit(command));
+
+    		for (Object command : tasks) {
+    	        futures.add(submit((Callable) command));
     		}
-    		for (Future<T> f : futures) {
+    		for (Future f : futures) {
     			if (!f.isDone()) {
     				try {
     					f.get();
@@ -90,7 +103,7 @@ public class ExecutorServiceProxy implements ExecutorService {
     	}
     	finally {
     		if (!done)
-    			for (Future<T> f : futures)
+    			for (Future f : futures)
     				f.cancel(true);
     	}
     }
