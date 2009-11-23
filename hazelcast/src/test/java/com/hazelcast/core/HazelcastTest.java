@@ -266,6 +266,22 @@ public class HazelcastTest {
     }
 
     @Test
+    public void testListItemListener(){
+        IList<String> list = Hazelcast.getList("testListListener");
+        list.addItemListener(new ItemListener<String>(){
+         public void itemAdded(String item) {
+            assertEquals("hello", item);
+        }
+
+        public void itemRemoved(String item) {
+            assertEquals("hello", item);
+            }
+        }, true);
+        list.add("hello");
+        list.remove("hello");
+    }
+
+    @Test
     public void testSetAdd() {
         ISet<String> set = Hazelcast.getSet("testSetAdd");
         boolean added = set.add("HelloWorld");
