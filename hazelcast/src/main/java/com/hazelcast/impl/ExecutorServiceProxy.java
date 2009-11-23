@@ -55,17 +55,7 @@ public class ExecutorServiceProxy implements ExecutorService {
     public ExecutorServiceProxy(Node node) {
         this.node = node;
     }
-
-    private class ExecutorServiceInvocationHandler implements InvocationHandler {
-        public Object invoke(Object o, Method method, Object[] objects) throws Throwable {
-            String methodName = method.getName();
-            if (methodName.equals("execute")) {
-                
-            }
-            return null;
-        }
-    }
-
+    
     /**
      * Hazelcast ExecutorService cannot be really shut down.
      * The method return always false immeditely.
