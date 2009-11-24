@@ -67,6 +67,8 @@ public class FactoryImpl implements HazelcastInstance {
 
     private final TransactionFactory transactionFactory;
 
+    private final HazelcastInstanceProxy hazelcastInstanceProxy;
+
     public final Node node;
 
     private final static ConcurrentMap<String, FactoryImpl> factories = new ConcurrentHashMap<String, FactoryImpl>(5);
@@ -96,7 +98,7 @@ public class FactoryImpl implements HazelcastInstance {
                 ManagementService.register(factory, config);
                 jmxRegistered = true;
             }
-            return new HazelcastInstanceProxy(factory);
+            return factory.hazelcastInstanceProxy;
         }
     }
 
@@ -109,16 +111,20 @@ public class FactoryImpl implements HazelcastInstance {
             this.hazelcastInstance = factory;
         }
 
+        FactoryImpl getFactory() {
+            return (FactoryImpl) hazelcastInstance;
+        }
+
         public String getName() {
             return hazelcastInstance.getName();
         }
 
         public void shutdown() {
-            hazelcastInstance.shutdown();
+            FactoryImpl.shutdown(HazelcastInstanceProxy.this);
         }
 
         public void restart() {
-            hazelcastInstance.restart();
+            FactoryImpl.restart(HazelcastInstanceProxy.this);
         }
 
         public Collection<Instance> getInstances() {
@@ -197,8 +203,9 @@ public class FactoryImpl implements HazelcastInstance {
         return factories.values();
     }
 
-    public static void shutdown(FactoryImpl factory) {
+    public static void shutdown(HazelcastInstanceProxy hazelcastInstanceProxy) {
         synchronized (factoryLock) {
+            FactoryImpl factory = hazelcastInstanceProxy.getFactory();
             try {
                 /**
                  * if JMX service cannot unregister
@@ -215,12 +222,11 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    public static HazelcastInstance restart(HazelcastInstance hazelcastInstance) {
+    public static HazelcastInstance restart(HazelcastInstanceProxy hazelcastInstanceProxy) {
         synchronized (factoryLock) {
-            HazelcastInstanceProxy hazelcastInstanceProxy = (HazelcastInstanceProxy) hazelcastInstance;
-            FactoryImpl factory = (FactoryImpl) hazelcastInstanceProxy.getHazelcastInstance();
+            FactoryImpl factory = hazelcastInstanceProxy.getFactory();
             factory.restarted = true;
-            shutdown(factory);
+            shutdown(hazelcastInstanceProxy);
             HazelcastInstanceProxy newFactory = newHazelcastInstanceProxy(factory.node.config);
             Collection<FactoryAwareProxy> proxies = factory.proxies.values();
             for (FactoryAwareProxy factoryAwareProxy : proxies) {
@@ -235,11 +241,11 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public void shutdown() {
-        shutdown(FactoryImpl.this);
+        shutdown(hazelcastInstanceProxy);
     }
 
     public void restart() {
-        restart(FactoryImpl.this);
+        restart(hazelcastInstanceProxy);
     }
 
     public FactoryImpl(String name, Config config) {
@@ -247,6 +253,7 @@ public class FactoryImpl implements HazelcastInstance {
         node = new Node(this, config);
         executorServiceImpl = new ExecutorServiceProxy(node);
         transactionFactory = new TransactionFactory(this);
+        hazelcastInstanceProxy = new HazelcastInstanceProxy(this);
         node.start();
         locksMapProxy = new MProxyImpl("c:__hz_Locks", this);
         idGeneratorMapProxy = new MProxyImpl("c:__hz_IdGenerator", this);

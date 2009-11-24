@@ -18,6 +18,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.impl.FactoryImpl;
 
 import java.util.Collection;
 import java.util.concurrent.ExecutorService;
@@ -129,7 +130,7 @@ public final class Hazelcast {
     public static void restart() {
         synchronized (initLock) {
             if (defaultInstance != null) {
-                defaultInstance = com.hazelcast.impl.FactoryImpl.restart(defaultInstance);
+                defaultInstance = com.hazelcast.impl.FactoryImpl.restart((FactoryImpl.HazelcastInstanceProxy) defaultInstance);
             } else {
                 getDefaultInstance();
             }

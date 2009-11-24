@@ -254,7 +254,7 @@ public final class ClusterService implements Runnable, Constants {
             logger.log(Level.INFO, "Hazelcast ServiceThread is blocked. Restarting Hazelcast!");
             new Thread(new Runnable() {
                 public void run() {
-                    FactoryImpl.restart(node.factory);
+                    node.factory.restart();
                 }
             }).start();
         }
