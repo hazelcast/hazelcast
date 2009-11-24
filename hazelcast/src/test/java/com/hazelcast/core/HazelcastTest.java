@@ -267,18 +267,71 @@ public class HazelcastTest {
 
     @Test
     public void testListItemListener(){
+        final CountDownLatch latch = new CountDownLatch(2);
         IList<String> list = Hazelcast.getList("testListListener");
         list.addItemListener(new ItemListener<String>(){
          public void itemAdded(String item) {
             assertEquals("hello", item);
+            latch.countDown();
         }
 
         public void itemRemoved(String item) {
             assertEquals("hello", item);
+            latch.countDown();
             }
         }, true);
         list.add("hello");
         list.remove("hello");
+        try {
+            assertTrue (latch.await(5, TimeUnit.SECONDS));
+        } catch (InterruptedException ignored) {
+        }
+    }
+
+    @Test
+    public void testSetItemListener(){
+        final CountDownLatch latch = new CountDownLatch(2);
+        ISet<String> set = Hazelcast.getSet("testSetListener");
+        set.addItemListener(new ItemListener<String>(){
+         public void itemAdded(String item) {
+            assertEquals("hello", item);
+            latch.countDown();
+        }
+
+        public void itemRemoved(String item) {
+            assertEquals("hello", item);
+            latch.countDown();
+            }
+        }, true);
+        set.add("hello");
+        set.remove("hello");
+        try {
+            assertTrue (latch.await(5, TimeUnit.SECONDS));
+        } catch (InterruptedException ignored) {
+        }
+    }
+
+    @Test
+    public void testQueueItemListener(){
+        final CountDownLatch latch = new CountDownLatch(2);
+        IQueue<String> queue = Hazelcast.getQueue("testQueueListener");
+        queue.addItemListener(new ItemListener<String>(){
+         public void itemAdded(String item) {
+            assertEquals("hello", item);
+            latch.countDown();
+        }
+
+        public void itemRemoved(String item) {
+            assertEquals("hello", item);
+            latch.countDown();
+            }
+        }, true);
+        queue.offer("hello");
+        assertEquals("hello", queue.poll());
+        try {
+            assertTrue (latch.await(5, TimeUnit.SECONDS));
+        } catch (InterruptedException ignored) {
+        }
     }
 
     @Test

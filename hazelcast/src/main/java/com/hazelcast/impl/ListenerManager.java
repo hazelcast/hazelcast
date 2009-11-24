@@ -18,10 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.ItemListener;
-import com.hazelcast.core.MessageListener;
+import com.hazelcast.core.*;
 import static com.hazelcast.impl.ClusterOperation.ADD_LISTENER;
 import com.hazelcast.nio.*;
 import static com.hazelcast.nio.IOUtil.toData;
@@ -36,10 +33,6 @@ import java.util.logging.Level;
 
 public class ListenerManager extends BaseManager {
     private List<ListenerItem> listeners = new CopyOnWriteArrayList<ListenerItem>();
-
-    public enum Type {
-        Map, Item, Message
-    }
 
     ListenerManager(Node node) {
         super(node);
@@ -220,12 +213,12 @@ public class ListenerManager extends BaseManager {
     }
 
     public void addListener(String name, Object listener, Object key, boolean includeValue,
-                            Type listenerType) {
-        addListener(name, listener, key, includeValue, listenerType, true);
+                            Instance.InstanceType instanceType) {
+        addListener(name, listener, key, includeValue, instanceType, true);
     }
 
     synchronized void addListener(String name, Object listener, Object key, boolean includeValue,
-                                  Type listenerType, boolean shouldRemotelyRegister) {
+                                  Instance.InstanceType instanceType, boolean shouldRemotelyRegister) {
         /**
          * check if already registered send this address to the key owner as a
          * listener add this listener to the local listeners map
@@ -261,7 +254,7 @@ public class ListenerManager extends BaseManager {
             }
         }
         ListenerItem listenerItem = new ListenerItem(name, key, listener, includeValue,
-                listenerType);
+                instanceType);
         listeners.add(listenerItem);
     }
 
@@ -297,7 +290,7 @@ public class ListenerManager extends BaseManager {
 
     private void callListener(ListenerItem listenerItem, EntryEvent event) {
         Object listener = listenerItem.listener;
-        if (listenerItem.type == Type.Map) {
+        if (listenerItem.instanceType == Instance.InstanceType.MAP || listenerItem.instanceType == Instance.InstanceType.MULTIMAP) {
             EntryListener l = (EntryListener) listener;
             if (event.getEventType() == EntryEvent.EntryEventType.ADDED) {
                 l.entryAdded(event);
@@ -306,15 +299,21 @@ public class ListenerManager extends BaseManager {
             } else if (event.getEventType() == EntryEvent.EntryEventType.UPDATED) {
                 l.entryUpdated(event);
             }
-        } else if (listenerItem.type == Type.Item) {
+        } else if (listenerItem.instanceType == Instance.InstanceType.SET || listenerItem.instanceType == Instance.InstanceType.LIST) {
+            ItemListener l = (ItemListener) listener;
+            if (event.getEventType() == EntryEvent.EntryEventType.ADDED)
+                l.itemAdded(event.getKey());
+            else if (event.getEventType() == EntryEvent.EntryEventType.REMOVED)
+                l.itemRemoved(event.getKey());
+        } else if (listenerItem.instanceType == Instance.InstanceType.TOPIC) {
+            MessageListener l = (MessageListener) listener;
+            l.onMessage(event.getValue());
+        } else if (listenerItem.instanceType == Instance.InstanceType.QUEUE) {
             ItemListener l = (ItemListener) listener;
             if (event.getEventType() == EntryEvent.EntryEventType.ADDED)
                 l.itemAdded(event.getValue());
             else if (event.getEventType() == EntryEvent.EntryEventType.REMOVED)
                 l.itemRemoved(event.getValue());
-        } else if (listenerItem.type == Type.Message) {
-            MessageListener l = (MessageListener) listener;
-            l.onMessage(event.getValue());
         }
     }
 
@@ -323,19 +322,19 @@ public class ListenerManager extends BaseManager {
         public Object key;
         public Object listener;
         public boolean includeValue;
-        public ListenerManager.Type type = ListenerManager.Type.Map;
+        public Instance.InstanceType instanceType;
 
         public ListenerItem() {
         }
 
         public ListenerItem(String name, Object key, Object listener, boolean includeValue,
-                            ListenerManager.Type listenerType) {
+                            Instance.InstanceType instanceType) {
             super();
             this.key = key;
             this.listener = listener;
             this.name = name;
             this.includeValue = includeValue;
-            this.type = listenerType;
+            this.instanceType = instanceType;
         }
 
         public boolean listens(EventTask event) {

@@ -865,7 +865,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public void addMessageListener(MessageListener listener) {
                 listenerManager.addListener(name, listener, null, true,
-                        ListenerManager.Type.Message);
+                        getInstanceType());
             }
 
             public void removeMessageListener(MessageListener listener) {
@@ -1059,7 +1059,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public void addItemListener(ItemListener listener, boolean includeValue) {
                 mapProxy.addGenericListener(listener, null, includeValue,
-                        ListenerManager.Type.Item);
+                        getInstanceType());
             }
 
             public void removeItemListener(ItemListener listener) {
@@ -1413,7 +1413,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public void addItemListener(ItemListener listener, boolean includeValue) {
                 listenerManager.addListener(name, listener, null, includeValue,
-                        ListenerManager.Type.Item);
+                        getInstanceType());
             }
 
             public void removeItemListener(ItemListener listener) {
@@ -1694,7 +1694,7 @@ public class FactoryImpl implements HazelcastInstance {
     interface MProxy extends IMap, IRemoveAwareProxy, IGetAwareProxy {
         String getLongName();
 
-        void addGenericListener(Object listener, Object key, boolean includeValue, ListenerManager.Type listenerType);
+        void addGenericListener(Object listener, Object key, boolean includeValue, InstanceType instanceType);
 
         void removeGenericListener(Object listener, Object key);
 
@@ -1972,8 +1972,8 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public void addGenericListener(Object listener, Object key, boolean includeValue,
-                                       ListenerManager.Type listenerType) {
-            dynamicProxy.addGenericListener(listener, key, includeValue, listenerType);
+                                       InstanceType instanceType) {
+            dynamicProxy.addGenericListener(listener, key, includeValue, instanceType);
         }
 
         public void removeGenericListener(Object listener, Object key) {
@@ -2179,10 +2179,10 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public void addGenericListener(Object listener, Object key, boolean includeValue,
-                                           ListenerManager.Type listenerType) {
+                                           InstanceType instanceType) {
                 if (listener == null)
                     throw new IllegalArgumentException("Listener cannot be null");
-                listenerManager.addListener(name, listener, key, includeValue, listenerType);
+                listenerManager.addListener(name, listener, key, includeValue, instanceType);
             }
 
             public void removeGenericListener(Object listener, Object key) {
@@ -2194,14 +2194,14 @@ public class FactoryImpl implements HazelcastInstance {
             public void addEntryListener(EntryListener listener, boolean includeValue) {
                 if (listener == null)
                     throw new IllegalArgumentException("Listener cannot be null");
-                addGenericListener(listener, null, includeValue, ListenerManager.Type.Map);
+                addGenericListener(listener, null, includeValue, getInstanceType());
             }
 
             public void addEntryListener(EntryListener listener, Object key, boolean includeValue) {
                 if (listener == null)
                     throw new IllegalArgumentException("Listener cannot be null");
                 check(key);
-                addGenericListener(listener, key, includeValue, ListenerManager.Type.Map);
+                addGenericListener(listener, key, includeValue, getInstanceType());
             }
 
             public void removeEntryListener(EntryListener listener) {
