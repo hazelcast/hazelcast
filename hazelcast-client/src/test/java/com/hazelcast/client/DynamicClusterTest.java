@@ -150,22 +150,22 @@ public class DynamicClusterTest {
 
         topic.publish(message);
 
-        System.err.println("shut start" + System.currentTimeMillis());
         HazelcastInstance h = memberMap.remove(client.getConnectionManager().getConnection().getAddress().getPort());
-//        System.out.println(h.getCluster().getLocalMember().getPort());
         h.shutdown();
-        System.err.println("shut finished" + System.currentTimeMillis());
-
+        System.out.println("Shut down: " + h.getCluster().getLocalMember().getPort());
+        Thread.sleep(1000);
         for(int i=0;i<2;i++){
-            System.out.println("Thread number"+i);
+
             new Thread(new Runnable(){
 
                 public void run() {
+                    System.out.println("Thread number "+ Thread.currentThread().getId() );
                     topic.publish(message);
                 }
             }).start();
         }
 
+        Thread.sleep(1000);
         System.out.println("FINISHED");
         assertTrue(latch.await(10, TimeUnit.MILLISECONDS));
 

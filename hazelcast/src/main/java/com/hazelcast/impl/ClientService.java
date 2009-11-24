@@ -52,10 +52,12 @@ public class ClientService {
     public ClientService(Node node) {
         this.node = node;
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_PUT.getValue()] = new MapPutHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_PUT_MULTI.getValue()] = new MapPutMultiHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT.getValue()] = new MapPutIfAbsentHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_GET.getValue()] = new MapGetHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REMOVE.getValue()] = new MapRemoveHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REMOVE_IF_SAME.getValue()] = new MapRemoveIfSameHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REMOVE_MULTI.getValue()] = new MapRemoveMultiHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_EVICT.getValue()] = new MapEvictHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REPLACE_IF_NOT_NULL.getValue()] = new MapReplaceIfNotNullHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REPLACE_IF_SAME.getValue()] = new MapReplaceIfSameHandler();
@@ -293,6 +295,20 @@ public class ClientService {
 		}
     }
 
+    private class MapPutMultiHandler extends ClientOperationHandler{
+		public void processCall(Node node, Packet packet) {
+			MultiMap multiMap = (MultiMap)node.factory.getOrCreateProxyByName(packet.name);
+            packet.value = toData(multiMap.put(packet.key, packet.value));
+		}
+    }
+
+    private class MapRemoveMultiHandler extends ClientOperationHandler{
+		public void processCall(Node node, Packet packet) {
+			MultiMap multiMap = (MultiMap)node.factory.getOrCreateProxyByName(packet.name);
+            packet.value = toData(multiMap.remove(packet.key, packet.value));
+		}
+    }
+
     private class ExecuterServiceHandler extends ClientOperationHandler{
 		public void processCall(Node node, Packet packet) {
             ExecutorService executorService = node.factory.getExecutorService();
@@ -330,10 +346,25 @@ public class ClientService {
             return (oldValue==null)?null:(Data) oldValue;
 		}
     }
-    private class MapGetHandler extends ClientMapOperationHandler{
-		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
-			return (Data)map.get(key);
-		}
+    private class MapGetHandler extends ClientOperationHandler{
+
+        public void processCall(Node node, Packet packet) {
+            InstanceType instanceType = getInstanceType(packet.name);
+			if(instanceType.equals(InstanceType.MAP)){
+                IMap<Object, Object> map = (IMap)node.factory.getOrCreateProxyByName(packet.name);
+                packet.value = (Data)map.get(packet.key);
+            }
+            else if(instanceType.equals(InstanceType.MULTIMAP)){
+                FactoryImpl.MultiMapProxy multiMap = (FactoryImpl.MultiMapProxy)node.factory.getOrCreateProxyByName(packet.name);
+                FactoryImpl.MultiMapProxy.MultiMapBase base = multiMap.getBase();
+                MProxy mapProxy = base.mapProxy;
+//
+//                MultiMap multiMap = (MultiMap)node.factory.getOrCreateProxyByName(packet.name);
+//                Collection collection = multiMap.get(packet.key);
+//                System.out.println(collection);
+                packet.value = (Data)mapProxy.get(packet.key);
+            }
+        }
     }
     private class MapRemoveHandler extends ClientMapOperationHandler{
 		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
@@ -363,20 +394,43 @@ public class ClientService {
     }
     private class MapContainsHandler extends ClientOperationHandler{
 		public void processCall(Node node, Packet packet) {
-			if(getInstanceType(packet.name).equals(InstanceType.MAP)){
+            InstanceType instanceType = getInstanceType(packet.name);
+			if(instanceType.equals(InstanceType.MAP)){
 				IMap<Object, Object> map = (IMap)node.factory.getOrCreateProxyByName(packet.name);
 				packet.value = toData(map.containsKey(packet.key));
 			}
-			else if (getInstanceType(packet.name).equals(InstanceType.LIST) || getInstanceType(packet.name).equals(InstanceType.SET)){
+			else if (instanceType.equals(InstanceType.LIST) || instanceType.equals(InstanceType.SET)){
 				Collection<Object> collection = (Collection)node.factory.getOrCreateProxyByName(packet.name);
 				packet.value = toData(collection.contains(packet.key));
 			}
+            else if(instanceType.equals(InstanceType.MULTIMAP)){
+                MultiMap multiMap = (MultiMap)node.factory.getOrCreateProxyByName(packet.name);
+                packet.value = toData(multiMap.containsKey(packet.key));
+            }
 		}
     }
-    private class MapContainsValueHandler extends ClientMapOperationHandler{
+    private class MapContainsValueHandler extends ClientOperationHandler{
 		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
 			return toData(map.containsValue(value));
 		}
+
+        public void processCall(Node node, Packet packet) {
+             InstanceType instanceType = getInstanceType(packet.name);
+			if(instanceType.equals(InstanceType.MAP)){
+				IMap<Object, Object> map = (IMap)node.factory.getOrCreateProxyByName(packet.name);
+				packet.value = toData(map.containsValue(packet.value));
+			}
+            else if(instanceType.equals(InstanceType.MULTIMAP)){
+                MultiMap multiMap = (MultiMap)node.factory.getOrCreateProxyByName(packet.name);
+                if(packet.key!=null && packet.key.size()>0){
+                    packet.value = toData(multiMap.containsEntry(packet.key, packet.value));
+                }
+                else{
+                    packet.value = toData(multiMap.containsValue(packet.value));
+                }
+
+            }
+        }
     }
     private class MapSizeHandler extends ClientCollectionOperationHandler{
 		@Override
@@ -396,6 +450,12 @@ public class ClientService {
 			ISet<Object> set = (ISet)node.factory.getOrCreateProxyByName(packet.name);
 			packet.value = toData(set.size());
 		}
+
+        @Override
+        public void doMultiMapOp(Node node, Packet packet) {
+            MultiMap multiMap = (MultiMap)node.factory.getOrCreateProxyByName(packet.name);
+            packet.value = toData(multiMap.size());
+        }
     }
     private class GetMapEntryHandler extends ClientMapOperationHandler{
 		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
@@ -482,6 +542,10 @@ public class ClientService {
 			MProxy mapProxy  = ((CollectionProxyReal)collectionProxy.getBase()).mapProxy;
 			packet.value = processMapOp((IMap)mapProxy, packet.key, packet.value, new HashSet<Data>());		
 		}
+
+        public void doMultiMapOp(Node node, Packet packet) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
 
     }
     private class AddListenerHandler extends ClientOperationHandler {
@@ -589,25 +653,28 @@ public class ClientService {
     }
     
     private abstract class ClientCollectionOperationHandler extends ClientOperationHandler{
-
     	public abstract void doMapOp(Node node, Packet packet);
     	public abstract void doListOp(Node node, Packet packet);
     	public abstract void doSetOp(Node node, Packet packet);
+        public abstract void doMultiMapOp(Node node, Packet packet);
 		@Override
 		public void processCall(Node node, Packet packet) {
-			if(getInstanceType(packet.name).equals(InstanceType.LIST)){
+			InstanceType instanceType = getInstanceType(packet.name);
+            if(instanceType.equals(InstanceType.LIST)){
 				doListOp(node, packet);
 			}
-			else if(getInstanceType(packet.name).equals(InstanceType.SET)){
+			else if(instanceType.equals(InstanceType.SET)){
 				doSetOp(node, packet);
 			}
-			else if(getInstanceType(packet.name).equals(InstanceType.MAP)){
+			else if(instanceType.equals(InstanceType.MAP)){
 				doMapOp(node, packet);
 			}
-			
+            else if(instanceType.equals(InstanceType.MULTIMAP)){
+                doMultiMapOp(node,packet);
+            }
 		}
-    	
     }
+
     private abstract class ClientTransactionOperationHandler extends ClientOperationHandler{
     	public abstract void processTransactionOp(Transaction transaction);
     	public void processCall(Node node, Packet packet){

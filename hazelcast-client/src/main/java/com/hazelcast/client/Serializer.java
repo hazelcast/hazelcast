@@ -103,7 +103,15 @@ public class Serializer {
 		try {
 			if(type == SERIALIZER_TYPE_DATA){
 				String className = dis.readUTF();
-				DataSerializable data = (DataSerializable)Class.forName(className.replaceFirst("com.hazelcast.impl.Keys", "com.hazelcast.client.impl.Keys")).newInstance();
+
+                if(className.equals("com.hazelcast.impl.Keys")){
+                    className = "com.hazelcast.client.impl.Keys";
+                }
+                else if(className.equals("com.hazelcast.impl.CMap$Values")){
+                    className = "com.hazelcast.client.impl.Values";
+                }
+				DataSerializable data = (DataSerializable)Class.forName(className).newInstance();
+
 				data.readData(dis);
 				return data;
 			}

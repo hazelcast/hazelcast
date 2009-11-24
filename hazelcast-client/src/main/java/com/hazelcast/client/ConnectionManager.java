@@ -22,10 +22,12 @@ public class ConnectionManager{
 	private final HazelcastClient client;
 	
 
-	public ConnectionManager(HazelcastClient client, InetSocketAddress[] clusterMembers) {
+	public ConnectionManager(HazelcastClient client, InetSocketAddress[] clusterMembers, boolean shuffle) {
 		this.client = client;
 		this.clusterMembers.addAll(Arrays.asList(clusterMembers));
-		Collections.shuffle(this.clusterMembers);
+        if(shuffle){
+		    Collections.shuffle(this.clusterMembers);
+        }
 	}
 	
 	public Connection getConnection() throws IOException{

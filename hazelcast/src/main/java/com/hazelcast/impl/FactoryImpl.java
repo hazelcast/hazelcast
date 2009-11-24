@@ -1489,6 +1489,10 @@ public class FactoryImpl implements HazelcastInstance {
             }
         }
 
+        public MultiMapBase getBase(){
+            return base;
+        }
+
         public Object getId() {
             ensure();
             return base.getId();
@@ -1595,7 +1599,7 @@ public class FactoryImpl implements HazelcastInstance {
             return base.valueCount(key);
         }
 
-        private class MultiMapBase implements MultiMap, IGetAwareProxy {
+        public class MultiMapBase implements MultiMap, IGetAwareProxy {
             final MProxy mapProxy;
 
             private MultiMapBase() {

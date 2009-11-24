@@ -106,6 +106,7 @@ public class HazelcastClientExecutorServiceTest {
 
     private ExecutorService getExecutorService() {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        System.out.println(h.getName());
         hClient = getHazelcastClient(h);
         return hClient.getExecutorService();
     }

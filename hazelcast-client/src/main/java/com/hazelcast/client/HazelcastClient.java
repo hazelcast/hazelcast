@@ -46,7 +46,8 @@ public class HazelcastClient implements HazelcastInstance{
     private static final String QUEUE_PREFIX = "q:";
     private static final String TOPIC_PREFIX = "t:";
     private static final String IDGEN_PREFIX = "i:";
-
+    private static final String MULTIMAP_PROXY = "m:u:";
+    
 
     final Map<Long,Call> calls  = new ConcurrentHashMap<Long, Call>();
     final ListenerManager listenerManager;
@@ -55,9 +56,11 @@ public class HazelcastClient implements HazelcastInstance{
     final ConnectionManager connectionManager;
     final Map<String, ClientProxy> mapProxies = new ConcurrentHashMap<String, ClientProxy>(100);
     final ExecutorServiceManager executorServiceManager;
+    final IMap mapLockProxy;
 
-    private HazelcastClient(InetSocketAddress[] clusterMembers) {
-		connectionManager = new ConnectionManager(this, clusterMembers);
+
+    private HazelcastClient(boolean shuffle, InetSocketAddress[] clusterMembers) {
+		connectionManager = new ConnectionManager(this, clusterMembers, shuffle);
 
 		out = new OutRunnable(this, calls, new PacketWriter());
 		new Thread(out,"hz.client.OutThread").start();
@@ -75,10 +78,12 @@ public class HazelcastClient implements HazelcastInstance{
 
         executorServiceManager = new ExecutorServiceManager(this);
         new Thread(executorServiceManager,"hz.client.executorManager").start();
+
+        mapLockProxy = getMap("__hz_Locks");
 	}
 
-	public static HazelcastClient getHazelcastClient(InetSocketAddress... clusterMembers){
-		return new HazelcastClient(clusterMembers);
+	public static HazelcastClient getHazelcastClient(boolean shuffle, InetSocketAddress... clusterMembers){
+		return new HazelcastClient(shuffle, clusterMembers);
 	}
 	
 	public Config getConfig() {
@@ -114,6 +119,9 @@ public class HazelcastClient implements HazelcastInstance{
                     else if(name.startsWith(IDGEN_PREFIX)){
                         proxy = new IdGeneratorClientProxy(this, name);
                     }
+                    else if(name.startsWith(MULTIMAP_PROXY)){
+                        proxy = new MultiMapClientProxy(this, name);
+                    }
 					proxy.setOutRunnable(out);
 					mapProxies.put(name, proxy);
 				}
@@ -138,6 +146,7 @@ public class HazelcastClient implements HazelcastInstance{
 		out.shutdown();
 		listenerManager.shutdown();
 		in.shutdown();
+        executorServiceManager.shutdown();
 	}
 
 	public void addInstanceListener(InstanceListener instanceListener) {
@@ -166,13 +175,11 @@ public class HazelcastClient implements HazelcastInstance{
 	}
 
 	public ILock getLock(Object obj) {
-		// TODO Auto-generated method stub
-		return null;
+        return new LockClientProxy(obj, this);
 	}
 
 	public <K, V> MultiMap<K, V> getMultiMap(String name) {
-		// TODO Auto-generated method stub
-		return null;
+		return (MultiMap<K,V>)getClientProxy(MULTIMAP_PROXY + name);
 	}
 
 	public String getName() {
@@ -194,13 +201,12 @@ public class HazelcastClient implements HazelcastInstance{
 	}
 
 	public void removeInstanceListener(InstanceListener instanceListener) {
-		// TODO Auto-generated method stub
-		
+        throw new UnsupportedOperationException();
 	}
 
 	public void restart() {
-		// TODO Auto-generated method stub
-	}
+        throw new UnsupportedOperationException();
+    }
 	
 	protected void destroy(String proxyName){
 		mapProxies.remove(proxyName);
