@@ -166,7 +166,7 @@ public class HazelcastTest {
         final CountDownLatch latchAdded = new CountDownLatch(1);
         final CountDownLatch latchRemoved = new CountDownLatch(1);
         final CountDownLatch latchUpdated = new CountDownLatch(1);
-        map.addEntryListener(new EntryListener() {
+        map.addEntryListener(new EntryListener<String, String>() {
             public void entryAdded(EntryEvent event) {
                 assertEquals("world", event.getValue());
                 assertEquals("hello", event.getKey());
@@ -212,6 +212,15 @@ public class HazelcastTest {
     }
 
     @Test
+    public void testMapPutWitTTL() throws Exception{
+        IMap<String, String> map = Hazelcast.getMap("testMapEviction");
+        map.put("key", "value", 100, TimeUnit.MILLISECONDS);
+        assertEquals(true, map.containsKey("key"));
+        Thread.sleep(500);
+        assertEquals(false, map.containsKey("key"));
+    }
+
+    @Test
     public void testListAdd() {
         IList<String> list = Hazelcast.getList("testListAdd");
         list.add("Hello World");
@@ -227,34 +236,10 @@ public class HazelcastTest {
     }
 
     @Test
-    public void testListGet() {
-        // Unsupported
-        //IList<String> list = Hazelcast.getList("testListGet");
-        //list.add("Hello World");
-        //assertEquals("Hello World", list.get(0));
-    }
-
-    @Test
     public void testListIterator() {
         IList<String> list = Hazelcast.getList("testListIterator");
         list.add("Hello World");
         assertEquals("Hello World", list.iterator().next());
-    }
-
-    @Test
-    public void testListListIterator() {
-        // Unsupported
-        //IList<String> list = Hazelcast.getList("testListListIterator");
-        //list.add("Hello World");
-        //assertEquals("Hello World", list.listIterator().next());
-    }
-
-    @Test
-    public void testListIndexOf() {
-        // Unsupported
-        //IList<String> list = Hazelcast.getList("testListIndexOf");
-        //list.add("Hello World");
-        //assertEquals(0, list.indexOf("Hello World"));
     }
 
     @Test
@@ -409,8 +394,8 @@ public class HazelcastTest {
     public void testTopicPublish() {
         ITopic<String> topic = Hazelcast.getTopic("testTopicPublish");
         final CountDownLatch latch = new CountDownLatch(1);
-        topic.addMessageListener(new MessageListener() {
-            public void onMessage(Object msg) {
+        topic.addMessageListener(new MessageListener<String>() {
+            public void onMessage(String msg) {
                 assertEquals("Hello World", msg);
                 latch.countDown();
             }

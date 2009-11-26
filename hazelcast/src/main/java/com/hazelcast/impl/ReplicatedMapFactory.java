@@ -50,6 +50,10 @@ public final class ReplicatedMapFactory {
             }
         }
 
+        public V put(K key, V value, long ttl, TimeUnit timeunit) {
+            return distributedMap.put(key, value, ttl, timeunit);
+        }
+
         @Override
         public V put(K key, V value) {
             return distributedMap.put(key, value);
@@ -67,6 +71,14 @@ public final class ReplicatedMapFactory {
                 return currentValue;
             }
             return distributedMap.putIfAbsent(key, value);
+        }
+
+        public V putIfAbsent(K key, V value, long ttl, TimeUnit timeunit) {
+            V currentValue = super.get(key);
+            if (currentValue != null) {
+                return currentValue;
+            }
+            return distributedMap.putIfAbsent(key, value, ttl, timeunit);
         }
 
         public void entryAdded(EntryEvent<K, V> event) {

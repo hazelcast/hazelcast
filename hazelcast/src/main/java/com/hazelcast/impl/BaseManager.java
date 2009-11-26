@@ -586,8 +586,8 @@ public abstract class BaseManager {
         }
 
         public Object objectCall(final ClusterOperation operation, final String name, final Object key,
-                                 final Object value, final long timeout, final long recordId) {
-            setLocal(operation, name, key, value, timeout, recordId);
+                                 final Object value, final long timeout, final long ttl) {
+            setLocal(operation, name, key, value, timeout, ttl);
             return objectCall();
         }
 
@@ -596,7 +596,7 @@ public abstract class BaseManager {
         }
 
         public void setLocal(final ClusterOperation operation, final String name, final Object key,
-                             final Object value, final long timeout, final long recordId) {
+                             final Object value, final long timeout, final long ttl) {
             Data keyData = null;
             Data valueData = null;
             if (key != null) {
@@ -608,7 +608,7 @@ public abstract class BaseManager {
             if (value != null) {
                 valueData = toData(value);
             }
-            request.setLocal(operation, name, keyData, valueData, -1, timeout, thisAddress);
+            request.setLocal(operation, name, keyData, valueData, -1, timeout, ttl, thisAddress);
             request.attachment = this;
         }
 

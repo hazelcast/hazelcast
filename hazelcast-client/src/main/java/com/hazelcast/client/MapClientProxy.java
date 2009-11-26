@@ -120,8 +120,12 @@ public class MapClientProxy<K, V> implements IMap<K, V>, ClientProxy{
 		return new ValueCollection<K,V>(this, set);
 	}
 
-	public V putIfAbsent(K arg0, V arg1) {
-		return (V)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT, arg0, arg1);
+    public V putIfAbsent(K key, V value, long ttl, TimeUnit timeunit) {
+		throw new UnsupportedOperationException();
+	}
+
+	public V putIfAbsent(K key, V value) {
+		return (V)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT, key, value);
 	}
 
 	public boolean remove(Object arg0, Object arg1) {
@@ -180,6 +184,10 @@ public class MapClientProxy<K, V> implements IMap<K, V>, ClientProxy{
 
 	public V put(K key, V value) {
 		return (V)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_PUT, key, value);
+	}
+
+    public V put(K key, V value, long ttl, TimeUnit timeunit) {
+		throw new UnsupportedOperationException();
 	}
 
 

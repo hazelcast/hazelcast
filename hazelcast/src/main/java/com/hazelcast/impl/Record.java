@@ -313,7 +313,7 @@ public class Record implements MapEntry {
     }
 
     public void setExpirationTime(long ttl) {
-        if (ttl == 0) {
+        if (ttl <= 0) {
             expirationTime = Long.MAX_VALUE;
         } else {
             expirationTime = getCreationTime() + ttl;
@@ -372,7 +372,6 @@ public class Record implements MapEntry {
 
     public void setCreationTime(long newValue) {
         creationTime.set(newValue);
-        setExpirationTime(this.ttl);
     }
 
     public long getLastAccessTime() {

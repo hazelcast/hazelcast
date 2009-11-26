@@ -26,6 +26,7 @@ class Request {
     Data key = null;
     Data value = null;
     long timeout = -1;
+    long ttl = -1;
 
     boolean local = true;
     boolean scheduled = false;
@@ -38,7 +39,7 @@ class Request {
     int lockCount = 0;
     int lockThreadId = -1;
     int blockId = -1;
-    long eventId = -1;
+    long callId = -1;
     long longValue = -1;
     long version = -1;
     long txnId = -1;
@@ -59,8 +60,9 @@ class Request {
         this.value = null;
         this.blockId = -1;
         this.timeout = -1;
+        this.ttl = -1;
         this.txnId = -1;
-        this.eventId = -1;
+        this.callId = -1;
         this.lockThreadId = -1;
         this.lockAddress = null;
         this.lockCount = 0;
@@ -85,8 +87,8 @@ class Request {
     }
 
     public void set(final boolean local, final ClusterOperation operation, final String name,
-                    final Data key, final Data value, final int blockId, final long timeout,
-                    final long txnId, final long eventId, final int lockThreadId,
+                    final Data key, final Data value, final int blockId, final long timeout, long ttl,
+                    final long txnId, final long callId, final int lockThreadId,
                     final Address lockAddress, final int lockCount, final Address caller,
                     final long longValue, final long version) {
         this.local = local;
@@ -96,8 +98,9 @@ class Request {
         this.value = value;
         this.blockId = blockId;
         this.timeout = timeout;
+        this.ttl = ttl;
         this.txnId = txnId;
-        this.eventId = eventId;
+        this.callId = callId;
         this.lockThreadId = lockThreadId;
         this.lockAddress = lockAddress;
         this.lockCount = lockCount;
@@ -107,10 +110,10 @@ class Request {
     }
 
     public void setLocal(final ClusterOperation operation, final String name, final Data key,
-                         final Data value, final int blockId, final long timeout,
+                         final Data value, final int blockId, final long timeout, final long ttl,
                          final Address thisAddress) {
         reset();
-        set(true, operation, name, key, value, blockId, timeout, -1, -1, -1, thisAddress, 0,
+        set(true, operation, name, key, value, blockId, timeout, ttl, -1, -1, -1, thisAddress, 0,
                 thisAddress, -1, -1);
         this.txnId = ThreadContext.get().getTxnId();
         this.lockThreadId = ThreadContext.get().getThreadId();
@@ -119,8 +122,8 @@ class Request {
 
     public void setFromRequest(Request req, boolean hardCopy) {
         reset();
-        set(req.local, req.operation, req.name, null, null, req.blockId, req.timeout,
-                req.txnId, req.eventId, req.lockThreadId, req.lockAddress, req.lockCount,
+        set(req.local, req.operation, req.name, null, null, req.blockId, req.timeout, req.ttl,
+                req.txnId, req.callId, req.lockThreadId, req.lockAddress, req.lockCount,
                 req.caller, req.longValue, req.version);
         if (hardCopy) {
             key = req.key;
@@ -141,7 +144,7 @@ class Request {
     public void setFromPacket(final Packet packet) {
         reset();
         set(false, packet.operation, packet.name, packet.key, packet.value,
-                packet.blockId, packet.timeout, packet.txnId, packet.callId, packet.threadId,
+                packet.blockId, packet.timeout, packet.ttl, packet.txnId, packet.callId, packet.threadId,
                 packet.lockAddress, packet.lockCount, packet.conn.getEndPoint(), packet.longValue,
                 packet.version);
         if (packet.indexCount > 0) {
@@ -166,8 +169,9 @@ class Request {
         packet.value = value;
         packet.blockId = blockId;
         packet.timeout = timeout;
+        packet.ttl = ttl;
         packet.txnId = txnId;
-        packet.callId = eventId;
+        packet.callId = callId;
         packet.threadId = lockThreadId;
         packet.lockAddress = lockAddress;
         packet.lockCount = lockCount;

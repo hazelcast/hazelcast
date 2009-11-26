@@ -29,6 +29,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
 
     String getName();
 
+    V put (K key, V value, long ttl, TimeUnit timeunit);
+
+    V putIfAbsent (K key, V value, long ttl, TimeUnit timeunit);
+
     void lock(K key);
 
     boolean tryLock(K key);

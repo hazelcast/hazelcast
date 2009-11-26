@@ -361,8 +361,16 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class MEvict extends MBackupAndMigrationAwareOp {
         public boolean evict(String name, Object key) {
+            return evict(CONCURRENT_MAP_EVICT, name, key);
+        }
+
+        public boolean evictInternally(String name, Object key) {
+            return evict(CONCURRENT_MAP_EVICT_INTERNAL, name, key);
+        }
+
+        public boolean evict(ClusterOperation operation, String name, Object key) {
             Data k = (key instanceof Data) ? (Data) key : toData(key);
-            request.setLocal(CONCURRENT_MAP_EVICT, name, k, null, 0, -1, thisAddress);
+            request.setLocal(operation, name, k, null, 0, -1, -1, thisAddress);
             doOp();
             boolean result = getResultAsBoolean();
             if (result) {
@@ -803,16 +811,16 @@ public final class ConcurrentMapManager extends BaseManager {
             return (result == Boolean.TRUE);
         }
 
-        public Object replace(String name, Object key, Object value, long timeout) {
-            return txnalPut(CONCURRENT_MAP_REPLACE_IF_NOT_NULL, name, key, value, timeout);
+        public Object replace(String name, Object key, Object value, long timeout, long ttl) {
+            return txnalPut(CONCURRENT_MAP_REPLACE_IF_NOT_NULL, name, key, value, timeout, ttl);
         }
 
-        public Object putIfAbsent(String name, Object key, Object value, long timeout) {
-            return txnalPut(CONCURRENT_MAP_PUT_IF_ABSENT, name, key, value, timeout);
+        public Object putIfAbsent(String name, Object key, Object value, long timeout, long ttl) {
+            return txnalPut(CONCURRENT_MAP_PUT_IF_ABSENT, name, key, value, timeout, ttl);
         }
 
-        public Object put(String name, Object key, Object value, long timeout) {
-            return txnalPut(CONCURRENT_MAP_PUT, name, key, value, timeout);
+        public Object put(String name, Object key, Object value, long timeout, long ttl) {
+            return txnalPut(CONCURRENT_MAP_PUT, name, key, value, timeout, ttl);
         }
 
         private Object txnalReplaceIfSame(ClusterOperation operation, String name, Object key, Object value, Object expectedValue, long timeout) {
@@ -866,7 +874,7 @@ public final class ConcurrentMapManager extends BaseManager {
             }
         }
 
-        private Object txnalPut(ClusterOperation operation, String name, Object key, Object value, long timeout) {
+        private Object txnalPut(ClusterOperation operation, String name, Object key, Object value, long timeout, long ttl) {
             ThreadContext threadContext = ThreadContext.get();
             TransactionImpl txn = threadContext.getCallContext().getTransaction();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
@@ -887,7 +895,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     return txn.attachPutOp(name, key, value, false);
                 }
             } else {
-                setLocal(operation, name, key, value, timeout, -1);
+                setLocal(operation, name, key, value, timeout, ttl);
                 request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
                 setIndexValues(request, value);
                 doOp();
@@ -1300,7 +1308,7 @@ public final class ConcurrentMapManager extends BaseManager {
             public void run() {
                 try {
                     MEvict mEvict = new MEvict();
-                    mEvict.evict(name, key);
+                    mEvict.evictInternally(name, key);
                 } catch (Exception ignored) {
                 }
             }

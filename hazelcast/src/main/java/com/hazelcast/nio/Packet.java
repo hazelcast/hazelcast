@@ -53,6 +53,8 @@ public final class Packet {
 
     public long timeout = -1;
 
+    public long ttl = -1;
+
     public boolean local = true;
 
     public int currentCallCount = 0;
@@ -117,6 +119,7 @@ public final class Packet {
         bbHeader.putInt(threadId);
         bbHeader.putInt(lockCount);
         bbHeader.putLong(timeout);
+        bbHeader.putLong(ttl);
         bbHeader.putLong(txnId);
         bbHeader.putLong(longValue);
         bbHeader.putLong(version);
@@ -152,6 +155,7 @@ public final class Packet {
         threadId = bbHeader.getInt();
         lockCount = bbHeader.getInt();
         timeout = bbHeader.getLong();
+        ttl = bbHeader.getLong();
         txnId = bbHeader.getLong();
         longValue = bbHeader.getLong();
         version = bbHeader.getLong();
@@ -178,6 +182,7 @@ public final class Packet {
         lockCount = 0;
         lockAddress = null;
         timeout = -1;
+        ttl = -1;
         txnId = -1;
         responseType = Constants.ResponseTypes.RESPONSE_NONE;
         local = true;

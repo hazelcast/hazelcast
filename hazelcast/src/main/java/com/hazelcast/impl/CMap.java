@@ -19,14 +19,15 @@ package com.hazelcast.impl;
 
 import com.hazelcast.collection.SortedHashMap;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
 import static com.hazelcast.impl.ClusterOperation.*;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
-import static com.hazelcast.nio.IOUtil.*;
+import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Index;
 
@@ -81,6 +82,8 @@ public class CMap {
     int writeDelaySeconds = -1;
 
     Set<Record> setDirtyRecords = null;
+
+    boolean ttlPerRecord = false;
 
     final long removeDelayMillis;
 
@@ -159,7 +162,6 @@ public class CMap {
                     nearCacheConfig.getTimeToLiveSeconds() * 1000L,
                     nearCacheConfig.getMaxIdleSeconds() * 1000L);
             concurrentMapManager.mapCaches.put(name, mapCache);
-                        
         }
     }
 
@@ -351,21 +353,26 @@ public class CMap {
             } else {
                 Block block = blocks[record.getBlockId()];
                 if (thisAddress.equals(block.getOwner())) {
-                    touch(record);
-                    if (value == null) {
-                        return record.valueCount() > 0;
-                    } else {
-                        return record.containsValue(value);
+                    if (record.isActive() && record.isValid()) {
+                        touch(record);
+                        if (value == null) {
+                            return record.valueCount() > 0;
+                        } else {
+                            return record.containsValue(value);
+                        }
                     }
                 }
             }
         } else {
             Collection<Record> records = mapRecords.values();
             for (Record record : records) {
-                Block block = blocks[record.getBlockId()];
-                if (thisAddress.equals(block.getOwner())) {
-                    if (record.containsValue(value)) {
-                        return true;
+                long now = System.currentTimeMillis();
+                if (record.isActive() && record.isValid(now)) {
+                    Block block = blocks[record.getBlockId()];
+                    if (thisAddress.equals(block.getOwner())) {
+                        if (record.containsValue(value)) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -545,6 +552,10 @@ public class CMap {
             touch(record);
             record.setLastUpdated();
         }
+        if (req.ttl > 0) {
+            record.setExpirationTime(req.ttl);
+            ttlPerRecord = true;
+        }
         markAsOwned(record);
         req.version = record.getVersion();
         req.longValue = record.getCopyCount();
@@ -645,7 +656,7 @@ public class CMap {
     void startEviction() {
         List<Data> lsKeysToEvict = null;
         if (evictionPolicy == SortedHashMap.OrderingType.NONE) {
-            if (ttl != 0) {
+            if (ttl != 0 || ttlPerRecord) {
                 long now = System.currentTimeMillis();
                 Collection<Record> values = mapRecords.values();
                 for (Record record : values) {
@@ -663,10 +674,11 @@ public class CMap {
                 }
             }
         } else {
-            Collection<Record> values = mapRecords.values();
+            Collection<Record> records = mapRecords.values();
             int numberOfRecordsToEvict = (int) (ownedRecords.size() * evictionRate);
             int evictedCount = 0;
-            for (Record record : values) {
+            loopRecords:
+            for (Record record : records) {
                 if (record.isActive() && record.isEvictable()) {
                     if (lsKeysToEvict == null) {
                         lsKeysToEvict = new ArrayList<Data>(numberOfRecordsToEvict);
@@ -674,7 +686,7 @@ public class CMap {
                     markAsRemoved(record);
                     lsKeysToEvict.add(record.getKey());
                     if (++evictedCount >= numberOfRecordsToEvict) {
-                        break;
+                        break loopRecords;
                     }
                 }
             }
@@ -690,6 +702,9 @@ public class CMap {
         Record record = getRecord(req.key);
         if (record != null && record.isEvictable()) {
             if (ownerForSure(record)) {
+                if (req.operation == CONCURRENT_MAP_EVICT_INTERNAL && record.isActive()) {
+                    return false;
+                }
                 concurrentMapManager.fireMapEvent(mapListeners, name, EntryEvent.TYPE_EVICTED, record.getKey(), record.getValue(), record.getMapListeners());
                 removeAndPurgeRecord(record);
                 return true;
@@ -739,7 +754,7 @@ public class CMap {
             return false;
         }
         //The record set as removable, also it is not "really" removed yet. It should be considered as removed
-        if (record.isRemovable()){
+        if (record.isRemovable()) {
             return false;
         }
         if (req.txnId != -1) {

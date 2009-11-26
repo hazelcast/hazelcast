@@ -1794,9 +1794,13 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public Object put(Object key, Object value) {
+            return put(key, value, 0, TimeUnit.SECONDS);
+        }
+
+        public Object put(Object key, Object value, long ttl, TimeUnit timeunit) {
             beforeCall();
             try {
-                return mproxyReal.put(key, value);
+                return mproxyReal.put(key, value, ttl, timeunit);
             } catch (Throwable e) {
                 logger.log(Level.FINEST, "Call failed", e);
                 if (factory.restarted) {
@@ -1827,6 +1831,14 @@ public class FactoryImpl implements HazelcastInstance {
             } finally {
                 afterCall();
             }
+        }
+
+        public Object putIfAbsent(Object key, Object value, long ttl, TimeUnit timeunit) {
+            return dynamicProxy.putIfAbsent(key, value, ttl, timeunit);
+        }
+
+        public Object putIfAbsent(Object key, Object value) {
+            return dynamicProxy.putIfAbsent(key, value);
         }
 
         public void addIndex(String attribute, boolean ordered) {
@@ -1933,10 +1945,6 @@ public class FactoryImpl implements HazelcastInstance {
 
         public Set entrySet(Predicate predicate) {
             return dynamicProxy.entrySet(predicate);
-        }
-
-        public Object putIfAbsent(Object key, Object value) {
-            return dynamicProxy.putIfAbsent(key, value);
         }
 
         public boolean remove(Object key, Object value) {
@@ -2092,7 +2100,45 @@ public class FactoryImpl implements HazelcastInstance {
                 check(key);
                 check(value);
                 MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
-                return mput.put(name, key, value, -1);
+                return mput.put(name, key, value, -1, -1);
+            }
+
+            public Object put(Object key, Object value, long ttl, TimeUnit timeunit) {
+                if (ttl < 0) {
+                    throw new IllegalArgumentException("ttl value cannot be negative. " + ttl);
+                }
+                if (ttl == 0) {
+                    ttl = -1;
+                }
+                return put(key, value, -1, timeunit.toMillis(ttl));
+            }
+
+            public Object put(Object key, Object value, long timeout, long ttl) {
+                check(key);
+                check(value);
+                MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
+                return mput.put(name, key, value, timeout, ttl);
+            }
+
+            public Object putIfAbsent(Object key, Object value) {
+                return putIfAbsent(key, value, -1, -1);
+            }
+
+            public Object putIfAbsent(Object key, Object value, long ttl, TimeUnit timeunit) {
+                if (ttl < 0) {
+                    throw new IllegalArgumentException("ttl value cannot be negative. " + ttl);
+                }
+                if (ttl == 0) {
+                    ttl = -1;
+                }
+                return putIfAbsent(key, value, -1, timeunit.toMillis(ttl));
+            }
+
+            public Object putIfAbsent(Object key, Object value, long timeout, long ttl) {
+                check(key);
+                check(value);
+                MPut mput = concurrentMapManager.new MPut();
+                return mput.putIfAbsent(name, key, value, timeout, ttl);
             }
 
             public Object get(Object key) {
@@ -2119,13 +2165,6 @@ public class FactoryImpl implements HazelcastInstance {
                 return count;
             }
 
-            public Object putIfAbsent(Object key, Object value) {
-                check(key);
-                check(value);
-                MPut mput = concurrentMapManager.new MPut();
-                return mput.putIfAbsent(name, key, value, -1);
-            }
-
             public boolean removeMulti(Object key, Object value) {
                 check(key);
                 check(value);
@@ -2144,7 +2183,7 @@ public class FactoryImpl implements HazelcastInstance {
                 check(key);
                 check(value);
                 MPut mput = concurrentMapManager.new MPut();
-                return mput.replace(name, key, value, -1);
+                return mput.replace(name, key, value, -1, -1);
             }
 
             public boolean replace(Object key, Object oldValue, Object newValue) {
