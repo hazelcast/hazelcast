@@ -74,6 +74,7 @@ public class Record implements MapEntry {
         this.setValue(value);
         this.ttl = ttl;
         setCreationTime(System.currentTimeMillis());
+        this.setExpirationTime(ttl);
         this.setLastTouchTime(getCreationTime());
         this.setVersion(0);
         recordEntry = new RecordEntry(this);

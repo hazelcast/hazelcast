@@ -510,12 +510,12 @@ public class CMap {
         }
         Record record = getRecord(req.key);
         if (req.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
-            if (record != null && record.isActive() && record.getValue() != null) {
+            if (record != null && record.isActive() && record.isValid() && record.getValue() != null) {
                 req.response = record.getValue();
                 return;
             }
         } else if (req.operation == CONCURRENT_MAP_REPLACE_IF_NOT_NULL) {
-            if (record == null || !record.isActive() || record.getValue() == null) {
+            if (record == null || !record.isActive() || !record.isValid() || record.getValue() == null) {
                 return;
             }
         } else if (req.operation == CONCURRENT_MAP_REPLACE_IF_SAME) {

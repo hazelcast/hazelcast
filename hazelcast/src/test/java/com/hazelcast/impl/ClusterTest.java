@@ -144,46 +144,39 @@ public class ClusterTest {
 
     @Test
     public void testPutIfAbsentWhenThereIsTTL() throws InterruptedException {
-        String mapName = "busyCorIds";
-        int ttl = 2;
+        String mapName = "testTTL";
+        int ttl = 1;
         Config myConfig = configTTLForMap(mapName, ttl);
         Hazelcast.init(myConfig);
         IMap<String, String> myMap = Hazelcast.getMap(mapName);
-        String one = "1";
-        myMap.put(one, one);
-        String myValue = myMap.get(one);
-        Assert.assertTrue(myMap.containsKey(one));
+        String key = "1";
+        String value = "value1";
+        myMap.put(key, value);
+        assertEquals(value, myMap.get(key));
+        assertTrue(myMap.containsKey(key));
         Thread.sleep((ttl + 1) * 1000);
-        myValue = myMap.get(one);
-        assertNull(myValue);
-        String oneone = "11";
-        String existValue = myMap.putIfAbsent(one, oneone);
-        assertNull(existValue);
-        myValue = myMap.get(one);
-        assertEquals(oneone, myValue);
+        assertFalse(myMap.containsKey(key));
+        assertNull(myMap.get(key));
+        assertNull(myMap.putIfAbsent(key, "value2"));
     }
 
     @Test
     public void testPutIfAbsentWhenThereIsTTLAndRemovedBeforeTTL() throws InterruptedException {
-        String mapName = "busyCorIds";
-        int ttl = 2;
+        String mapName = "testTTL";
+        int ttl = 1;
         Config myConfig = configTTLForMap(mapName, ttl);
         Hazelcast.init(myConfig);
         IMap<String, String> myMap = Hazelcast.getMap(mapName);
-        String one = "1";
-        myMap.put(one, one);
-        String myValue = myMap.get(one);
-        assertNotNull(myValue);
-        Assert.assertTrue(myMap.containsKey(one));
-        myMap.remove(one);
+        String key = "1";
+        String value = "value1";
+        myMap.put(key, value);
+        assertEquals(value, myMap.get(key));
+        assertTrue(myMap.containsKey(key));
+        assertEquals(value, myMap.remove(key));
         Thread.sleep((ttl + 1) * 1000);
-        myValue = myMap.get(one);
-        assertNull(myValue);
-        String oneone = "11";
-        String existValue = myMap.putIfAbsent(one, oneone);
-        assertNull(existValue);
-        myValue = myMap.get(one);
-        assertEquals(oneone, myValue);
+        assertFalse(myMap.containsKey(key));
+        assertNull(myMap.get(key));
+        assertNull(myMap.putIfAbsent(key, "value2"));
     }
 
     private Config configTTLForMap(String mapName, int ttl) {
