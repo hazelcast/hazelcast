@@ -39,7 +39,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.logging.Level;
@@ -1489,7 +1488,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
         }
 
-        public MultiMapBase getBase(){
+        public MultiMapBase getBase() {
             return base;
         }
 
@@ -2507,45 +2506,41 @@ public class FactoryImpl implements HazelcastInstance {
 
         private class IdGeneratorBase implements IdGenerator {
 
-            private static final long MILLION = 1000000;
+            private static final long MILLION = 1000L * 1000L;
 
-            AtomicLong million = new AtomicLong(-1);
+            final AtomicLong million = new AtomicLong(-1);
 
-            AtomicLong currentId = new AtomicLong(2 * MILLION);
-
-            AtomicBoolean fetching = new AtomicBoolean(false);
+            final AtomicLong currentId = new AtomicLong(2 * MILLION);
 
             public String getName() {
                 return name.substring(2);
             }
 
             public long newId() {
-                long millionNow = million.get();
                 long idAddition = currentId.incrementAndGet();
                 if (idAddition >= MILLION) {
                     synchronized (this) {
                         try {
-                            millionNow = million.get();
-                            idAddition = currentId.incrementAndGet();
+                            idAddition = currentId.get();
                             if (idAddition >= MILLION) {
                                 Long idMillion = getNewMillion();
                                 long newMillion = idMillion * MILLION;
                                 million.set(newMillion);
-                                currentId.set(0);
+                                currentId.set(0L);
                             }
-                            millionNow = million.get();
-                            idAddition = currentId.incrementAndGet();
+                            return newId();
                         } catch (Throwable t) {
                             t.printStackTrace();
                         }
                     }
                 }
+                long millionNow = million.get();
                 return millionNow + idAddition;
             }
 
             private Long getNewMillion() {
                 try {
-                    DistributedTask<Long> task = new DistributedTask<Long>(new IncrementTask(name, factory));
+                    DistributedTask<Long> task = new DistributedTask<Long>(new IncrementTask(name, factory), name);
                     factory.executorServiceImpl.execute(task);
                     return task.get();
                 } catch (Exception e) {
