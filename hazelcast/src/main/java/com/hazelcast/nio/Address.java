@@ -22,6 +22,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.StringTokenizer;
@@ -39,7 +40,7 @@ public class Address implements DataSerializable {
 
     private int port = -1;
 
-    private transient InetAddress inetAddress;
+    private transient InetSocketAddress inetSocketAddress;
 
     private int hash = -1;
 
@@ -52,7 +53,7 @@ public class Address implements DataSerializable {
     public Address(InetAddress inetAddress, int port) {
         this.ip = inetAddress.getAddress();
         this.port = port;
-        this.inetAddress = inetAddress;
+        this.inetSocketAddress = new InetSocketAddress(inetAddress, port);
     }
 
     public Address(Address address) {
@@ -147,12 +148,16 @@ public class Address implements DataSerializable {
     }
 
     public InetAddress getInetAddress() throws UnknownHostException {
+        return getInetSocketAddress().getAddress();
+    }
+
+    public InetSocketAddress getInetSocketAddress() throws UnknownHostException {
         if (host == null)
             setHost();
-        if (inetAddress == null) {
-            inetAddress = InetAddress.getByName(host);
+        if (inetSocketAddress == null) {
+            inetSocketAddress = new InetSocketAddress(InetAddress.getByName(host), port);
         }
-        return inetAddress;
+        return inetSocketAddress;
     }
 
     @Override

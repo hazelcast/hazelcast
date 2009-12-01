@@ -18,6 +18,7 @@
 package com.hazelcast.core;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 public interface Member {
 
@@ -26,6 +27,8 @@ public interface Member {
     int getPort();
 
     InetAddress getInetAddress();
+
+    InetSocketAddress getInetSocketAddress(); 
 
     boolean isSuperClient();
 }

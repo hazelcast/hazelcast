@@ -51,8 +51,10 @@ public class Packet {
 	
 	private int lockCount = 0;
 	
+	private long ttl = -1;
+
 	private long timeout = -1;
-	
+
 	private long txnId = -1;
 	
 	private long longValue;
@@ -107,6 +109,7 @@ public class Packet {
 		this.threadId = dis2.readInt();
 		this.lockCount = dis2.readInt();
 		this.timeout = dis2.readLong();
+		this.ttl = dis2.readLong();
 		this.txnId = dis2.readLong();
 		this.longValue = dis2.readLong();
 		this.version = dis2.readLong();
@@ -143,6 +146,7 @@ public class Packet {
 		dos.writeInt(threadId);
 		dos.writeInt(lockCount);
 		dos.writeLong(timeout);
+		dos.writeLong(ttl);
 		dos.writeLong(txnId);
 		dos.writeLong(longValue);
 		dos.writeLong(version);

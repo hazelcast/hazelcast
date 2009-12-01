@@ -23,6 +23,7 @@ import com.hazelcast.nio.DataSerializable;
 
 import java.io.*;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
 public final class MemberImpl implements Member, DataSerializable {
@@ -61,6 +62,15 @@ public final class MemberImpl implements Member, DataSerializable {
     public InetAddress getInetAddress() {
         try {
             return address.getInetAddress();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public InetSocketAddress getInetSocketAddress() {
+        try {
+            return address.getInetSocketAddress();
         } catch (UnknownHostException e) {
             e.printStackTrace();
             return null;
