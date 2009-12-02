@@ -28,6 +28,7 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Index;
 
@@ -95,7 +96,7 @@ public class CMap {
 
     final LocallyOwnedMap locallyOwnedMap;
 
-    final MapCache mapCache;
+    final MapNearCache mapNearCache;
 
     public CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
@@ -154,14 +155,15 @@ public class CMap {
         }
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
         if (nearCacheConfig == null) {
-            mapCache = null;
+            mapNearCache = null;
         } else {
-            mapCache = new MapCache(this,
+            mapNearCache = new MapNearCache(this,
                     SortedHashMap.getOrderingTypeByName(mapConfig.getEvictionPolicy()),
                     nearCacheConfig.getMaxSize(),
                     nearCacheConfig.getTimeToLiveSeconds() * 1000L,
-                    nearCacheConfig.getMaxIdleSeconds() * 1000L);
-            concurrentMapManager.mapCaches.put(name, mapCache);
+                    nearCacheConfig.getMaxIdleSeconds() * 1000L,
+                    nearCacheConfig.isInvalidateOnChange());
+            concurrentMapManager.mapCaches.put(name, mapNearCache);
         }
     }
 
@@ -563,6 +565,9 @@ public class CMap {
         if (oldValue == null) {
             concurrentMapManager.fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, record);
         } else {
+            if (mapNearCache != null && mapNearCache.shouldInvalidateOnChange()) {
+                sendInvalidation(record);
+            }
             concurrentMapManager.fireMapEvent(mapListeners, name, EntryEvent.TYPE_UPDATED, record);
         }
         if (req.txnId != -1) {
@@ -574,6 +579,25 @@ public class CMap {
             req.response = Boolean.TRUE;
         } else {
             req.response = oldValue;
+        }
+    }
+
+    void sendInvalidation(Record record) {
+        System.out.println("sending invalidation");
+        for (MemberImpl member : concurrentMapManager.lsMembers) {
+            if (!member.localMember()) {
+                if (member.getAddress() != null) {
+                    Packet packet = concurrentMapManager.obtainPacket();
+                    packet.name = name;
+                    packet.key = record.getKey();
+                    packet.operation = ClusterOperation.CONCURRENT_MAP_INVALIDATE;
+                    boolean sent = concurrentMapManager.send(packet, member.getAddress());
+                    if (!sent) {
+                        System.out.println("not sent!");
+                        packet.returnToContainer();
+                    }
+                }
+            }
         }
     }
 
@@ -814,6 +838,9 @@ public class CMap {
             record.setMultiValues(null);
         }
         if (oldValue != null) {
+            if (mapNearCache != null && mapNearCache.shouldInvalidateOnChange()) {
+                sendInvalidation(record);
+            }
             concurrentMapManager.fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, record.getKey(), oldValue, record.getMapListeners());
             record.incrementVersion();
             record.setValue(null);

@@ -14,6 +14,19 @@ public class NearCacheConfig {
 
     private int maxIdleSeconds = DEFAULT_MAX_IDLE_SECONDS;
 
+    private boolean invalidateOnChange = true;
+
+    public NearCacheConfig(int timeToLiveSeconds, int maxSize, String evictionPolicy, int maxIdleSeconds, boolean invalidateOnChange) {
+        this.timeToLiveSeconds = timeToLiveSeconds;
+        this.maxSize = maxSize;
+        this.evictionPolicy = evictionPolicy;
+        this.maxIdleSeconds = maxIdleSeconds;
+        this.invalidateOnChange = invalidateOnChange;
+    }
+
+    public NearCacheConfig() {
+    }
+
     public int getTimeToLiveSeconds() {
         return timeToLiveSeconds;
     }
@@ -44,5 +57,13 @@ public class NearCacheConfig {
 
     public void setMaxIdleSeconds(int maxIdleSeconds) {
         this.maxIdleSeconds = maxIdleSeconds;
+    }
+
+    public boolean isInvalidateOnChange() {
+        return invalidateOnChange;
+    }
+
+    public void setInvalidateOnChange(boolean invalidateOnChange) {
+        this.invalidateOnChange = invalidateOnChange;
     }
 }

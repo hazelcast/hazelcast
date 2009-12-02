@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class MapCache {
+public class MapNearCache {
     private final SortedHashMap<Data, Object> sortedMap;
     private final ConcurrentMap<Object, CacheEntry> cache;
     private final CMap cmap;
@@ -19,15 +19,21 @@ public class MapCache {
     private final long ttl;           // 0 means never expires
     private final long maxIdleTime;   // 0 means never idle 
     private final AtomicLong callCount = new AtomicLong();
+    private final boolean invalidateOnChange;
 
-    public MapCache(CMap cmap, SortedHashMap.OrderingType orderingType, int maxSize, long ttl, long maxIdleTime) {
+    public MapNearCache(CMap cmap, SortedHashMap.OrderingType orderingType, int maxSize, long ttl, long maxIdleTime, boolean invalidateOnChange) {
         this.cmap = cmap;
         this.maxSize = maxSize;
         this.ttl = ttl;
         this.maxIdleTime = maxIdleTime;
-        int size = (maxSize == 0) ? 100 : maxSize;
+        this.invalidateOnChange = invalidateOnChange;
+        int size = (maxSize == 0) ? 1000 : maxSize;
         this.sortedMap = new SortedHashMap<Data, Object>(size, orderingType);
         this.cache = new ConcurrentHashMap<Object, CacheEntry>(size);
+    }
+
+    boolean shouldInvalidateOnChange() {
+        return invalidateOnChange;
     }
 
     public Object get(Object key) {
@@ -87,11 +93,10 @@ public class MapCache {
         int evictionCount = (int) (cache.size() * 0.25);
         List<Data> lsRemoves = new ArrayList<Data>(evictionCount);
         int count = 0;
-        loop:
         for (Data key : sortedMap.keySet()) {
             lsRemoves.add(key);
             if (count++ >= evictionCount) {
-                break loop;
+                break;
             }
         }
         for (Data key : lsRemoves) {
@@ -103,12 +108,11 @@ public class MapCache {
     public void invalidate(Data key) {
         checkThread();
         Object theKey = sortedMap.remove(key);
-        if (theKey == null) {
-            throw new IllegalStateException("key cannot be null");
-        }
-        CacheEntry removedCacheEntry = cache.remove(theKey);
-        if (removedCacheEntry == null) {
-            throw new IllegalStateException("Removed CacheEntry cannot be null");
+        if (theKey != null) {
+            CacheEntry removedCacheEntry = cache.remove(theKey);
+            if (removedCacheEntry == null) {
+                throw new IllegalStateException("Removed CacheEntry cannot be null");
+            }
         }
     }
 
@@ -172,7 +176,6 @@ public class MapCache {
         }
 
         public void process() {
-//            SortedHashMap.touch(sortedMap, keyData, SortedHashMap.OrderingType.LFU);
             sortedMap.get(keyData);
         }
     }

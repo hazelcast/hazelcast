@@ -52,7 +52,7 @@ public final class ConcurrentMapManager extends BaseManager {
     final Block[] blocks;
     final ConcurrentMap<String, CMap> maps;
     final ConcurrentMap<String, LocallyOwnedMap> mapLocallyOwnedMaps;
-    final ConcurrentMap<String, MapCache> mapCaches;
+    final ConcurrentMap<String, MapNearCache> mapCaches;
     final OrderedExecutionTask[] orderedExecutionTasks;
     final MapMigrator mapMigrator;
     long newRecordId = 0;
@@ -62,7 +62,7 @@ public final class ConcurrentMapManager extends BaseManager {
         blocks = new Block[BLOCK_COUNT];
         maps = new ConcurrentHashMap<String, CMap>(10);
         mapLocallyOwnedMaps = new ConcurrentHashMap<String, LocallyOwnedMap>(10);
-        mapCaches = new ConcurrentHashMap<String, MapCache>(10);
+        mapCaches = new ConcurrentHashMap<String, MapNearCache>(10);
         orderedExecutionTasks = new OrderedExecutionTask[BLOCK_COUNT];
         mapMigrator = new MapMigrator(this);
         for (int i = 0; i < BLOCK_COUNT; i++) {
@@ -116,6 +116,7 @@ public final class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_BLOCKS, new BlocksOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_MIGRATION_COMPLETE, new MigrationCompleteOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_VALUE_COUNT, new ValueCountOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_INVALIDATE, new InvalidateOperationHandler());
     }
 
     public void reset() {
@@ -471,7 +472,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     return txn.get(name, key);
                 }
             }
-            MapCache cache = mapCaches.get(name);
+            MapNearCache cache = mapCaches.get(name);
             if (cache != null) {
                 Object value = cache.get(key);
                 if (value != null) {
@@ -497,7 +498,7 @@ public final class ConcurrentMapManager extends BaseManager {
             Data value = packet.value;
             if (value != null && value.size() > 0) {
                 CMap cmap = getOrCreateMap(request.name);
-                MapCache cache = cmap.mapCache;
+                MapNearCache cache = cmap.mapNearCache;
                 if (cache != null) {
                     cache.put(this.key, request.key, packet.value);
                 }
@@ -1487,6 +1488,20 @@ public final class ConcurrentMapManager extends BaseManager {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.backup(request);
+        }
+    }
+
+    class InvalidateOperationHandler implements PacketProcessor {
+
+        public void process(Packet packet) {
+            CMap cmap = getMap(packet.name);
+            if (cmap != null) {
+                MapNearCache mapNearCache = cmap.mapNearCache;
+                if (mapNearCache != null) {
+                    mapNearCache.invalidate(packet.key);
+                }
+            }
+            packet.returnToContainer();
         }
     }
 
