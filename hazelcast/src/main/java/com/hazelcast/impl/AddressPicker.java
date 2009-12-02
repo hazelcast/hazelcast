@@ -96,7 +96,7 @@ public class AddressPicker {
                         final InetAddress inetAddress = e.nextElement();
                         if (inetAddress instanceof Inet4Address) {
                             final String address = inetAddress.getHostAddress();
-                            final List<String> interfaces = config.getNetworkConfig().getInterfaces().getLsInterfaces();
+                            final List<String> interfaces = config.getNetworkConfig().getInterfaces().getInterfaceList();
                             if (config.getNetworkConfig().getInterfaces().isEnabled()) {
                                 if (matchAddress(address, interfaces)) {
                                     currentAddress = address;

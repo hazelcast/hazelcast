@@ -435,7 +435,7 @@ public class Node {
                     Interfaces interfaces = config.getNetworkConfig().getInterfaces();
                     if (interfaces.isEnabled()) {
                         address = new Address(inetAddress.getAddress(), config.getPort());
-                        shouldCheck = AddressPicker.matchAddress(address.getHost(), interfaces.getLsInterfaces());
+                        shouldCheck = AddressPicker.matchAddress(address.getHost(), interfaces.getInterfaceList());
                     }
                     if (shouldCheck) {
                         return new Address(inetAddress.getAddress(), port);
@@ -471,7 +471,7 @@ public class Node {
                         Interfaces interfaces = config.getNetworkConfig().getInterfaces();
                         if (interfaces.isEnabled()) {
                             addrs = new Address(inetAddress.getAddress(), config.getPort());
-                            shouldCheck = AddressPicker.matchAddress(addrs.getHost(), interfaces.getLsInterfaces());
+                            shouldCheck = AddressPicker.matchAddress(addrs.getHost(), interfaces.getInterfaceList());
                         }
                         if (shouldCheck) {
                             for (int i = 0; i < 3; i++) {

@@ -198,13 +198,13 @@ public class ClusterTest {
     public void testDifferentGroups() {
         Config c1 = new XmlConfigBuilder().build();
         c1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
-        c1.getNetworkConfig().getInterfaces().getLsInterfaces().clear();
-        c1.getNetworkConfig().getInterfaces().getLsInterfaces().add("127.0.0.1");
+        c1.getNetworkConfig().getInterfaces().clear();
+        c1.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
         c1.getNetworkConfig().getInterfaces().setEnabled(true);
         Config c2 = new XmlConfigBuilder().build();
         c2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
-        c2.getNetworkConfig().getInterfaces().getLsInterfaces().clear();
-        c2.getNetworkConfig().getInterfaces().getLsInterfaces().add("127.0.0.1");
+        c2.getNetworkConfig().getInterfaces().clear();
+        c2.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
         c2.getNetworkConfig().getInterfaces().setEnabled(true);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c1);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
@@ -285,7 +285,7 @@ public class ClusterTest {
         c.getNetworkConfig().getJoin().getJoinMembers().setEnabled(true);
         c.getNetworkConfig().getInterfaces().setEnabled(true);
         c.getNetworkConfig().getJoin().getJoinMembers().addAddress(new Address("127.1.0.1", 5701));
-        c.getNetworkConfig().getInterfaces().getLsInterfaces().add("127.0.0.1");
+        c.getNetworkConfig().getInterfaces().getInterfaceList().add("127.0.0.1");
         HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(c);
         hNormal.getMap("default").put("1", "first");
         assertEquals("first", hNormal.getMap("default").put("1", "first"));

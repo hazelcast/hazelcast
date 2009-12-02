@@ -27,16 +27,31 @@ public class Interfaces {
     }
 
     /**
+     * Adds a new interface
+     * @param ip
+     */
+    public void addInterface(String ip) {
+        lsInterfaces.add(ip);
+    }
+
+    /**
+     * clears all interfaces.
+     */
+    public void clear() {
+        lsInterfaces.clear();
+    }
+
+    /**
      * @return the lsInterfaces
      */
-    public List<String> getLsInterfaces() {
+    public List<String> getInterfaceList() {
         return lsInterfaces;
     }
 
     /**
      * @param lsInterfaces the lsInterfaces to set
      */
-    public void setLsInterfaces(List<String> lsInterfaces) {
+    public void setInterfaceList(List<String> lsInterfaces) {
         this.lsInterfaces = lsInterfaces;
     }
 }
