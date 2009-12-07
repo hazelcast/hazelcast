@@ -257,6 +257,23 @@ public final class Packet {
         indexCount = 0;
     }
 
+    public void clearForResponse() {
+        this.name = null;
+        this.key = null;
+        this.value = null;
+        this.blockId = -1;
+        this.timeout = -1;
+        this.ttl = -1;
+        this.txnId = -1;
+        this.threadId = -1;
+        this.lockAddress = null;
+        this.lockCount = 0;
+        this.longValue = Long.MIN_VALUE;
+        this.version = -1;
+        this.indexes = null;
+        this.indexTypes = null;
+    }
+
     @Override
     public String toString() {
         return "Packet " + operation + " name=" + name + "  local=" + local + "  blockId="
