@@ -182,9 +182,16 @@ public class Packet {
         }
         dos.writeLong(callId);
         dos.writeByte(responseType);
-        byte[] nameInBytes = name.getBytes();
-        dos.writeInt(nameInBytes.length);
-        dos.write(nameInBytes);
+        int nameLen = 0;
+        byte[] nameInBytes = null;
+        if (name != null) {
+            nameInBytes = name.getBytes();
+            nameLen = nameInBytes.length;
+        }
+        dos.writeInt(nameLen);
+        if (nameLen > 0) {
+            dos.write(nameInBytes);
+        }
         dos.writeByte(indexCount);
         for (int i = 0; i < indexCount; i++) {
             dos.writeLong(indexes[i]);
