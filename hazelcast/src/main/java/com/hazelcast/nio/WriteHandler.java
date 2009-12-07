@@ -83,7 +83,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     public void handle() {
         if (lastPacket == null) {
             lastPacket = (Packet) writeQueue.poll();
-            if (lastPacket == null) {
+            if (lastPacket == null && socketBB.position() == 0) {
                 ready = true;
                 return;
             }

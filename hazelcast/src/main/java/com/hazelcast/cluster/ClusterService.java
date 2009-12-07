@@ -17,11 +17,11 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.collection.SimpleBoundedQueue;
 import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.impl.*;
 import com.hazelcast.impl.BaseManager.PacketProcessor;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.util.SimpleBoundedQueue;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -47,8 +47,8 @@ public final class ClusterService implements Runnable, Constants {
     private final ReentrantLock enqueueLock = new ReentrantLock();
     private final Condition notEmpty = enqueueLock.newCondition();
 
-    private static final int PACKET_BULK_SIZE = 32;
-    private static final int PROCESSABLE_BULK_SIZE = 32;
+    private static final int PACKET_BULK_SIZE = 64;
+    private static final int PROCESSABLE_BULK_SIZE = 64;
 
     private final SimpleBoundedQueue<Processable> processableBulk = new SimpleBoundedQueue<Processable>(PROCESSABLE_BULK_SIZE);
     private final SimpleBoundedQueue<Packet> packetBulk = new SimpleBoundedQueue<Packet>(PACKET_BULK_SIZE);

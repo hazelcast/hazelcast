@@ -17,6 +17,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.util.ByteUtil;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Constants;
 import com.hazelcast.impl.ThreadContext;
@@ -85,13 +86,18 @@ public final class Packet {
     }
 
     protected void putString(ByteBuffer bb, String str) {
-        byte[] bytes = str.getBytes();
-        bb.putInt(bytes.length);
-        bb.put(bytes);
+        if (str == null) {
+            bb.putInt(0);
+        } else {
+            byte[] bytes = str.getBytes();
+            bb.putInt(bytes.length);
+            bb.put(bytes);
+        }
     }
 
     protected String getString(ByteBuffer bb) {
         int size = bb.getInt();
+        if (size ==0) return null;
         byte[] bytes = new byte[size];
         bb.get(bytes);
         return new String(bytes);
@@ -114,24 +120,59 @@ public final class Packet {
         if (value != null && value.size > 0) {
             value = new Data(ByteBuffer.wrap(value.buffer.array()));
         }
-        bbHeader.putInt(operation.getValue());
+        bbHeader.put(operation.getValue());
         bbHeader.putInt(blockId);
         bbHeader.putInt(threadId);
-        bbHeader.putInt(lockCount);
-        bbHeader.putLong(timeout);
-        bbHeader.putLong(ttl);
-        bbHeader.putLong(txnId);
-        bbHeader.putLong(longValue);
-        bbHeader.putLong(version);
-        bbHeader.putLong(callId);
-        bbHeader.put((byte) (client ? 1 : 0));
-        bbHeader.put(responseType);
-        putString(bbHeader, name);
-        boolean lockAddressNull = (lockAddress == null);
-        writeBoolean(bbHeader, lockAddressNull);
-        if (!lockAddressNull) {
+        byte booleans = 0;
+        if (lockCount != 0) {
+            booleans = ByteUtil.setTrue(booleans, 0);
+        }
+        if (timeout != -1) {
+            booleans = ByteUtil.setTrue(booleans, 1);
+        }
+        if (ttl != -1) {
+            booleans = ByteUtil.setTrue(booleans, 2);
+        }
+        if (txnId != -1) {
+            booleans = ByteUtil.setTrue(booleans, 3);
+        }
+        if (longValue != Long.MIN_VALUE) {
+            booleans = ByteUtil.setTrue(booleans, 4);
+        }
+        if (version != -1) {
+            booleans = ByteUtil.setTrue(booleans, 5);
+        }
+        if (client) {
+            booleans = ByteUtil.setTrue(booleans, 6);
+        }
+        if (lockAddress == null) {
+            booleans = ByteUtil.setTrue(booleans, 7);
+        }
+        bbHeader.put(booleans);
+        if (lockCount != 0) {
+            bbHeader.putInt(lockCount);
+        }
+        if (timeout != -1) {
+            bbHeader.putLong(timeout);
+        }
+        if (ttl != -1) {
+            bbHeader.putLong(ttl);
+        }
+        if (txnId != -1) {
+            bbHeader.putLong(txnId);
+        }
+        if (longValue != Long.MIN_VALUE) {
+            bbHeader.putLong(longValue);
+        }
+        if (version != -1) {
+            bbHeader.putLong(version);
+        }
+        if (lockAddress != null) {
             lockAddress.writeObject(bbHeader);
         }
+        bbHeader.putLong(callId);
+        bbHeader.put(responseType);
+        putString(bbHeader, name);
         bbHeader.put(indexCount);
         for (int i = 0; i < indexCount; i++) {
             bbHeader.putLong(indexes[i]);
@@ -150,24 +191,37 @@ public final class Packet {
     }
 
     public void read() {
-        operation = ClusterOperation.create(bbHeader.getInt());
+        operation = ClusterOperation.create(bbHeader.get());
         blockId = bbHeader.getInt();
         threadId = bbHeader.getInt();
-        lockCount = bbHeader.getInt();
-        timeout = bbHeader.getLong();
-        ttl = bbHeader.getLong();
-        txnId = bbHeader.getLong();
-        longValue = bbHeader.getLong();
-        version = bbHeader.getLong();
-        callId = bbHeader.getLong();
-        client = (bbHeader.get() == 1);
-        responseType = bbHeader.get();
-        name = getString(bbHeader);
-        boolean lockAddressNull = readBoolean(bbHeader);
+        byte booleans = bbHeader.get();
+        if (ByteUtil.isTrue(booleans, 0)) {
+            lockCount = bbHeader.getInt();
+        }
+        if (ByteUtil.isTrue(booleans, 1)) {
+            timeout = bbHeader.getLong();
+        }
+        if (ByteUtil.isTrue(booleans, 2)) {
+            ttl = bbHeader.getLong();
+        }
+        if (ByteUtil.isTrue(booleans, 3)) {
+            txnId = bbHeader.getLong();
+        }
+        if (ByteUtil.isTrue(booleans, 4)) {
+            longValue = bbHeader.getLong();
+        }
+        if (ByteUtil.isTrue(booleans, 5)) {
+            version = bbHeader.getLong();
+        }
+        client = ByteUtil.isTrue(booleans, 6);
+        boolean lockAddressNull = ByteUtil.isTrue(booleans, 7);
         if (!lockAddressNull) {
             lockAddress = new Address();
             lockAddress.readObject(bbHeader);
         }
+        callId = bbHeader.getLong();
+        responseType = bbHeader.get();
+        name = getString(bbHeader);
         indexCount = bbHeader.get();
         for (int i = 0; i < indexCount; i++) {
             indexes[i] = bbHeader.getLong();

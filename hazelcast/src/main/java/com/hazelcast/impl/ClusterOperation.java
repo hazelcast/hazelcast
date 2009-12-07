@@ -88,10 +88,10 @@ public enum ClusterOperation {
     DESTROY(),
     GET_ID(),
     NEW_ID(),
-    ADD_INDEX(),;
+    ADD_INDEX();
 
-    static int idGen = 0;
-    public final static int OPERATION_COUNT = 100;
+    static byte idGen = 0;
+    public final static byte OPERATION_COUNT = 100;
     static ClusterOperation[] clusterOperations = new ClusterOperation[OPERATION_COUNT];
 
     static {
@@ -101,17 +101,17 @@ public enum ClusterOperation {
         }
     }
 
-    private int value;
+    private final byte value;
 
     ClusterOperation() {
         value = nextId();
     }
 
-    public int getValue() {
+    public byte getValue() {
         return value;
     }
 
-    private int nextId() {
+    private synchronized byte nextId() {
         return idGen++;
     }
 

@@ -420,6 +420,7 @@ public abstract class BaseManager {
             remoteReq.local = false;
             if (isMigrating(remoteReq)) {
                 packet.responseType = RESPONSE_REDO;
+                packet.lockAddress = null;
                 sendResponse(packet);
             } else {
                 handle(remoteReq);
@@ -441,6 +442,7 @@ public abstract class BaseManager {
                     packet.value = request.value;
                 }
                 if (request.response == OBJECT_REDO) {
+                    packet.lockAddress = null;
                     packet.responseType = RESPONSE_REDO;
                 } else if (request.response != null) {
                     if (request.response instanceof Boolean) {
@@ -695,7 +697,9 @@ public abstract class BaseManager {
         }
 
         public void reset() {
-            removeCall(getId());
+            if (getId() != -1) {
+                removeCall(getId());
+            }
             super.reset();
             responses.clear();
         }
@@ -957,13 +961,6 @@ public abstract class BaseManager {
         } else throw new RuntimeException("Unknown InstanceType " + name);
     }
 
-    public long addCall(final Call call) {
-        final long id = localIdGen.incrementAndGet();
-        call.setId(id);
-        mapCalls.put(id, call);
-        return id;
-    }
-
     public void enqueueAndReturn(final Processable obj) {
         node.clusterService.enqueueAndReturn(obj);
     }
@@ -980,8 +977,19 @@ public abstract class BaseManager {
         return packet;
     }
 
+    public long addCall(final Call call) {
+        final long id = localIdGen.incrementAndGet();
+        call.setId(id);
+        mapCalls.put(id, call);
+        return id;
+    }
+
     public Call removeCall(final Long id) {
-        return mapCalls.remove(id);
+        Call callRemoved =  mapCalls.remove(id);
+        if (callRemoved != null) {
+            callRemoved.setId(-1);
+        }
+        return callRemoved;
     }
 
     public void registerPacketProcessor(ClusterOperation operation, PacketProcessor packetProcessor) {
@@ -1038,7 +1046,7 @@ public abstract class BaseManager {
                 if (address.isThisAddress()) {
                     try {
                         enqueueEvent(eventType, name,
-                                key,(includeValue) ? value : null,
+                                key, (includeValue) ? value : null,
                                 address);
                     } catch (final Exception e) {
                         e.printStackTrace();
@@ -1174,8 +1182,8 @@ public abstract class BaseManager {
      * Log on default logger at FINEST level
      */
     protected void log(final Object obj) {
-    	if (logger.isLoggable(Level.FINEST)) {
-    		logger.log(Level.FINEST, obj.toString());
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.log(Level.FINEST, obj.toString());
         }
     }
 
@@ -1195,6 +1203,7 @@ public abstract class BaseManager {
 
     protected void sendRedoResponse(final Packet packet) {
         packet.responseType = RESPONSE_REDO;
+        packet.lockAddress = null;
         sendResponse(packet);
     }
 
@@ -1203,6 +1212,8 @@ public abstract class BaseManager {
         packet.operation = ClusterOperation.RESPONSE;
         if (packet.responseType == RESPONSE_NONE) {
             packet.responseType = RESPONSE_SUCCESS;
+        } else if (packet.responseType == RESPONSE_REDO) {
+            packet.lockAddress = null;
         }
         final boolean sent = send(packet, packet.conn);
         if (!sent) {
@@ -1414,6 +1425,11 @@ public abstract class BaseManager {
             memberImpl.didWrite();
         }
         packet.currentCallCount = mapCalls.size();
+        if (packet.lockAddress != null) {
+            if (thisAddress.equals(packet.lockAddress)) {
+                packet.lockAddress = null;
+            }
+        }
         conn.getWriteHandler().enqueuePacket(packet);
         return true;
     }

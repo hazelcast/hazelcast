@@ -40,16 +40,21 @@ class Request {
     int lockThreadId = -1;
     int blockId = -1;
     long callId = -1;
-    long longValue = -1;
+    long longValue = Long.MIN_VALUE;
     long version = -1;
     long txnId = -1;
     long[] indexes;
     byte[] indexTypes;
     Object attachment = null;
-    Object response = null;
+    Object response = null; 
 
     public boolean hasEnoughTimeToSchedule() {
         return timeout == -1 || timeout > 100;
+    }
+
+    public Address getActualLockAddress() {
+        if (lockAddress != null) return lockAddress;
+        return caller;
     }
 
     public void reset() {
@@ -67,7 +72,7 @@ class Request {
         this.lockAddress = null;
         this.lockCount = 0;
         this.caller = null;
-        this.longValue = -1;
+        this.longValue = Long.MIN_VALUE;
         this.response = null;
         this.scheduled = false;
         this.attachment = null;
@@ -183,5 +188,22 @@ class Request {
             System.arraycopy(indexes, 0, packet.indexes, 0, indexes.length);
             System.arraycopy(indexTypes, 0, packet.indexTypes, 0, indexes.length);
         }
+    }
+
+    public void clearForResponse() {
+        this.name = null;
+        this.key = null;
+        this.value = null;
+        this.blockId = -1;
+        this.timeout = -1;
+        this.ttl = -1;
+        this.txnId = -1;
+        this.lockThreadId = -1;
+        this.lockAddress = null;
+        this.lockCount = 0;
+        this.longValue = Long.MIN_VALUE;
+        this.version = -1;
+        this.indexes = null;
+        this.indexTypes = null;
     }
 }

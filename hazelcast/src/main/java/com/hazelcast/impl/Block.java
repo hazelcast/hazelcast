@@ -28,13 +28,13 @@ public class Block implements DataSerializable {
     private int blockId;
     private Address owner;
     private Address migrationAddress;
+    private int hash = Integer.MIN_VALUE;
 
     public Block() {
     }
 
     public Block(Block block) {
-        blockId = block.blockId;
-        owner = block.owner;
+        this(block.blockId, block.owner);
         migrationAddress = block.migrationAddress;
     }
 
@@ -53,6 +53,7 @@ public class Block implements DataSerializable {
 
     public void setOwner(Address owner) {
         this.owner = owner;
+        hash = Integer.MIN_VALUE;
     }
 
     public Address getMigrationAddress() {
@@ -109,10 +110,12 @@ public class Block implements DataSerializable {
 
     @Override
     public int hashCode() {
-        int result = blockId;
-        result = 31 * result + (owner != null ? owner.hashCode() : 0);
-//        result = 31 * result + (migrationAddress != null ? migrationAddress.hashCode() : 0);
-        return result;
+        if (hash == Integer.MIN_VALUE) {
+            int result = blockId;
+            result = 31 * result + (owner != null ? owner.hashCode() : 0);
+            hash = result;
+        }
+        return hash;
     }
 
     @Override

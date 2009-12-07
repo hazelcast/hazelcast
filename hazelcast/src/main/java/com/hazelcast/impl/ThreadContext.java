@@ -17,7 +17,7 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.collection.SimpleBoundedQueue;
+import com.hazelcast.util.SimpleBoundedQueue;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.ConcurrentMapManager.MEvict;
 import com.hazelcast.nio.Data;

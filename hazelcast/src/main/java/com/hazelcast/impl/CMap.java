@@ -17,7 +17,7 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.collection.SortedHashMap;
+import com.hazelcast.util.SortedHashMap;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -513,6 +513,7 @@ public class CMap {
         Record record = getRecord(req.key);
         if (req.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
             if (record != null && record.isActive() && record.isValid() && record.getValue() != null) {
+                req.clearForResponse();
                 req.response = record.getValue();
                 return;
             }
@@ -523,8 +524,6 @@ public class CMap {
         } else if (req.operation == CONCURRENT_MAP_REPLACE_IF_SAME) {
             if (record == null || !record.isActive() || !record.isValid()) {
                 req.response = Boolean.FALSE;
-                req.value = null;
-                req.key = null;
                 return;
             }
             ConcurrentMapManager.MultiData multiData = (ConcurrentMapManager.MultiData) toObject(req.value);
@@ -544,7 +543,6 @@ public class CMap {
         boolean created = false;
         if (record == null) {
             record = createNewRecord(req.key, req.value);
-            req.key = null;
             created = true;
         } else {
             markAsActive(record);
@@ -559,9 +557,6 @@ public class CMap {
             ttlPerRecord = true;
         }
         markAsOwned(record);
-        req.version = record.getVersion();
-        req.longValue = record.getCopyCount();
-        req.value = null;
         if (oldValue == null) {
             concurrentMapManager.fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, record);
         } else {
@@ -575,6 +570,9 @@ public class CMap {
         }
         updateIndexes(created, req, record);
         markAsDirty(record);
+        req.clearForResponse();
+        req.version = record.getVersion();
+        req.longValue = record.getCopyCount();
         if (req.operation == CONCURRENT_MAP_REPLACE_IF_SAME) {
             req.response = Boolean.TRUE;
         } else {
@@ -810,10 +808,11 @@ public class CMap {
         return true;
     }
 
-    public Data remove(Request req) {
+    public void remove(Request req) {
         Record record = mapRecords.get(req.key);
         if (record == null) {
-            return null;
+            req.clearForResponse();
+            return;
         }
         if (req.txnId != -1) {
             concurrentMapManager.unlock(record);
@@ -821,13 +820,13 @@ public class CMap {
         if (!record.isValid()) {
             if (record.isEvictable()) {
                 scheduleForEviction(record);
-                return null;
+                return;
             }
         }
         if (req.value != null) {
             if (record.getValue() != null) {
                 if (!record.getValue().equals(req.value)) {
-                    return null;
+                    return;
                 }
             }
         }
@@ -849,15 +848,16 @@ public class CMap {
         if (req.txnId != -1) {
             concurrentMapManager.unlock(record);
         }
-        req.version = record.getVersion();
-        req.longValue = record.getCopyCount();
         if (record.isRemovable()) {
             markAsRemoved(record);
         }
+        req.clearForResponse();
+        req.version = record.getVersion();
+        req.longValue = record.getCopyCount();
         if (oldValue != null) {
             req.key = null;
         }
-        return oldValue;
+        req.response = oldValue;
     }
 
     void reset() {

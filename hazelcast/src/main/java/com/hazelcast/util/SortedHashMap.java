@@ -15,7 +15,7 @@
  *
  */
 
-package com.hazelcast.collection;
+package com.hazelcast.util;
 
 import java.util.*;
 

@@ -8,7 +8,7 @@ public class TestUtility {
 	public static HazelcastClient getHazelcastClient(HazelcastInstance ... h) {
 		InetSocketAddress[] addresses = new InetSocketAddress[h.length];
 		for (int i = 0; i < h.length; i++) {
-			addresses[i] = new InetSocketAddress(h[i].getCluster().getLocalMember().getInetAddress(),h[i].getCluster().getLocalMember().getPort());
+			addresses[i] = h[i].getCluster().getLocalMember().getInetSocketAddress();
 		}
 		HazelcastClient client = HazelcastClient.getHazelcastClient(true, addresses);
 		return client;

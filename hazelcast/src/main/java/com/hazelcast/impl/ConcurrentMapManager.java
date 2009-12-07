@@ -1487,7 +1487,9 @@ public final class ConcurrentMapManager extends BaseManager {
     class BackupPacketProcessor extends AbstractOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            request.response = cmap.backup(request);
+            Object value = cmap.backup(request);
+            request.clearForResponse();
+            request.response = value;
         }
     }
 
@@ -1521,7 +1523,7 @@ public final class ConcurrentMapManager extends BaseManager {
     class RemoveOperationHandler extends StoreAwareOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            request.response = cmap.remove(request);
+            cmap.remove(request);
         }
     }
 
@@ -1574,7 +1576,9 @@ public final class ConcurrentMapManager extends BaseManager {
 
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            request.response = cmap.get(request);
+            Data value = cmap.get(request);
+            request.clearForResponse();
+            request.response = value;
         }
 
         public void afterExecute(Request request) {

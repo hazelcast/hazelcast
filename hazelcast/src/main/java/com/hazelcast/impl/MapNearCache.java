@@ -1,6 +1,6 @@
 package com.hazelcast.impl;
 
-import com.hazelcast.collection.SortedHashMap;
+import com.hazelcast.util.SortedHashMap;
 import com.hazelcast.nio.Data;
 import static com.hazelcast.nio.IOUtil.toObject;
 

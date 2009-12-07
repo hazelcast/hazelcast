@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package com.hazelcast.collection;
+package com.hazelcast.util;
 
 import org.junit.Test;
 import org.junit.After;

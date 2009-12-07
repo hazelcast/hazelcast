@@ -627,6 +627,7 @@ public class ClientService {
     	}
     	
     	protected void sendResponse(Packet request) {
+            request.lockAddress = null;
             request.operation = ClusterOperation.RESPONSE;
             request.responseType = RESPONSE_SUCCESS;
             if (request.conn != null && request.conn.live()) {

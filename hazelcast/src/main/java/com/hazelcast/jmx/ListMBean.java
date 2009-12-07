@@ -136,13 +136,13 @@ public class ListMBean extends AbstractMBean<IList<?>> {
     }
 
     @JMXAttribute("ObjectAdded")
-    @JMXDescription("Object added to the collection since the start time")
+    @JMXDescription("Object added to the util since the start time")
     public long getItemsReceived() {
         return receivedStats.getTotal();
     }
 
     @JMXAttribute("ObjectRemoved")
-    @JMXDescription("Object removed from the collection since the start time")
+    @JMXDescription("Object removed from the util since the start time")
     public long getItemsServed() {
         return servedStats.getTotal();
     }
