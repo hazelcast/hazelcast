@@ -823,4 +823,20 @@ public class ClusterTest {
         h4.getMap("default").put("key", "value");
         assertTrue(latch.await(3, TimeUnit.SECONDS));
     }
+
+    /**
+     * Test for the issue 184
+     *
+     * Hazelcas.newHazelcastInstance(new Config()) doesn't join the cluster.
+     * new Config() should be enough as the default config.
+     *
+     */
+    @Test(timeout = 240000)
+    public void testDefaultConfigCluster() {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        assertEquals(1, h1.getCluster().getMembers().size());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        assertEquals(2, h1.getCluster().getMembers().size());
+        assertEquals(2, h2.getCluster().getMembers().size());
+    }
 }
