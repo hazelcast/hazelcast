@@ -3,14 +3,16 @@
  */
 package com.hazelcast.config;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Interfaces {
 
     private boolean enabled = false;
 
-    private List<String> lsInterfaces = new ArrayList<String>();
+    private final Set<String> interfaceSet = new HashSet<String>();
 
     /**
      * @return the enabled
@@ -22,7 +24,7 @@ public class Interfaces {
     /**
      * @param enabled the enabled to set
      */
-    public void setEnabled(boolean enabled) {
+    public void setEnabled(final boolean enabled) {
         this.enabled = enabled;
     }
 
@@ -30,28 +32,32 @@ public class Interfaces {
      * Adds a new interface
      * @param ip
      */
-    public void addInterface(String ip) {
-        lsInterfaces.add(ip);
+    public void addInterface(final String ip) {
+       	interfaceSet.add(ip);
     }
 
     /**
      * clears all interfaces.
      */
     public void clear() {
-        lsInterfaces.clear();
+    	interfaceSet.clear();
     }
 
     /**
-     * @return the lsInterfaces
+     * @return a read-only collection of interfaces
      */
-    public List<String> getInterfaceList() {
-        return lsInterfaces;
+    public Collection<String> getInterfaces() {
+        return Collections.unmodifiableCollection(interfaceSet);
     }
 
     /**
-     * @param lsInterfaces the lsInterfaces to set
+     * Adds a collection of interfaces.
+     * Clears the current collection and then adds all entries of new collection.
+     * 
+     * @param interfaces the interfaces to set
      */
-    public void setInterfaceList(List<String> lsInterfaces) {
-        this.lsInterfaces = lsInterfaces;
+    public void setInterfaces(final Collection<String> interfaces) {
+    	clear();
+    	this.interfaceSet.addAll(interfaces);
     }
 }

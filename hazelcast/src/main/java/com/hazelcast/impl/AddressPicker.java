@@ -22,6 +22,7 @@ import com.hazelcast.nio.Address;
 
 import java.net.*;
 import java.nio.channels.ServerSocketChannel;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -34,7 +35,7 @@ public class AddressPicker {
     public AddressPicker() {
     }
 
-    public static boolean matchAddress(final String address, final List<String> interfaces) {
+    public static boolean matchAddress(final String address, final Collection<String> interfaces) {
         final int[] ip = new int[4];
         int i = 0;
         final StringTokenizer st = new StringTokenizer(address, ".");
@@ -96,7 +97,7 @@ public class AddressPicker {
                         final InetAddress inetAddress = e.nextElement();
                         if (inetAddress instanceof Inet4Address) {
                             final String address = inetAddress.getHostAddress();
-                            final List<String> interfaces = config.getNetworkConfig().getInterfaces().getInterfaceList();
+                            final Collection<String> interfaces = config.getNetworkConfig().getInterfaces().getInterfaces();
                             if (config.getNetworkConfig().getInterfaces().isEnabled()) {
                                 if (matchAddress(address, interfaces)) {
                                     currentAddress = address;

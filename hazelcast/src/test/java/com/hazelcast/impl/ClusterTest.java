@@ -285,7 +285,7 @@ public class ClusterTest {
         c.getNetworkConfig().getJoin().getJoinMembers().setEnabled(true);
         c.getNetworkConfig().getInterfaces().setEnabled(true);
         c.getNetworkConfig().getJoin().getJoinMembers().addAddress(new Address("127.1.0.1", 5701));
-        c.getNetworkConfig().getInterfaces().getInterfaceList().add("127.0.0.1");
+        c.getNetworkConfig().getInterfaces().getInterfaces().add("127.0.0.1");
         HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(c);
         hNormal.getMap("default").put("1", "first");
         assertEquals("first", hNormal.getMap("default").put("1", "first"));

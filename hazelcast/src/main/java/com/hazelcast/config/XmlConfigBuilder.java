@@ -283,7 +283,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String value = getTextContent(n).trim();
             if ("interface".equalsIgnoreCase(n.getNodeName())) {
-                interfaces.getInterfaceList().add(value);
+                interfaces.addInterface(value);
             }
         }
     }
