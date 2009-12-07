@@ -33,28 +33,27 @@ import java.util.*;
 
 public class HazelcastClientQueueTest {
 
-    private HazelcastClient hClient;
+    @Test (expected = NullPointerException.class)
+    public void testPutNull() throws InterruptedException {
+        HazelcastClient hClient = getHazelcastClient();
+        IQueue<?> queue = hClient.getQueue("testPutNull");
+        queue.put(null);
 
-    @After
-    public void shutdownAll() throws InterruptedException{
-    	Hazelcast.shutdownAll();
-    	if(hClient!=null){	hClient.shutdown(); }
-    	Thread.sleep(500);
     }
 
     @Test
     public void testQueueName(){
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-    	IQueue<?> queue = hClient.getQueue("ABC");
-    	assertEquals("ABC", queue.getName());
+        HazelcastClient hClient = getHazelcastClient();
+
+    	IQueue<?> queue = hClient.getQueue("testQueueName");
+    	assertEquals("testQueueName", queue.getName());
     }
 
     @Test
     public void testQueueOffer() throws InterruptedException {
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-    	IQueue<String> queue = hClient.getQueue("ABC");
+        HazelcastClient hClient = getHazelcastClient();
+
+    	IQueue<String> queue = hClient.getQueue("testQueueOffer");
         assertTrue(queue.offer("a"));
         assertTrue(queue.offer("b", 10, TimeUnit.MILLISECONDS));
         assertEquals("a", queue.poll());
@@ -64,10 +63,10 @@ public class HazelcastClientQueueTest {
 
     @Test
     public void testQueuePoll() throws InterruptedException {
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        hClient = getHazelcastClient(h);
+        HazelcastClient hClient = getHazelcastClient();
+
         final CountDownLatch cl = new CountDownLatch(1);
-        final IQueue<String> queue = hClient.getQueue("ABC");
+        final IQueue<String> queue = hClient.getQueue("testQueuePoll");
         assertTrue(queue.offer("a"));
         assertEquals("a", queue.poll());
         new Thread(new Runnable(){
@@ -89,30 +88,27 @@ public class HazelcastClientQueueTest {
 
     @Test
     public void testQueueRemove(){
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        HazelcastClient hClient = getHazelcastClient();
 
-    	hClient = getHazelcastClient(h);
-    	IQueue<String> queue = hClient.getQueue("ABC");
+    	IQueue<String> queue = hClient.getQueue("testQueueRemove");
         assertTrue(queue.offer("a"));
         assertEquals("a", queue.remove());
     }
 
     @Test
     public void testQueuePeek(){
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        HazelcastClient hClient = getHazelcastClient();
 
-    	hClient = getHazelcastClient(h);
-    	IQueue<String> queue = hClient.getQueue("ABC");
+    	IQueue<String> queue = hClient.getQueue("testQueuePeek");
         assertTrue(queue.offer("a"));
         assertEquals("a", queue.peek());
     }
 
     @Test
     public void element(){
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        HazelcastClient hClient = getHazelcastClient();
 
-    	hClient = getHazelcastClient(h);
-    	IQueue<String> queue = hClient.getQueue("ABC");
+    	IQueue<String> queue = hClient.getQueue("element");
         assertTrue(queue.offer("a"));
         assertEquals("a", queue.element());
     }
@@ -120,9 +116,9 @@ public class HazelcastClientQueueTest {
     @Test
 
     public void addAll(){
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-    	IQueue<String> queue = hClient.getQueue("ABC");
+        HazelcastClient hClient = getHazelcastClient();
+
+    	IQueue<String> queue = hClient.getQueue("addAll");
         List list = new ArrayList();
         list.add("a");
         list.add("b");
@@ -135,9 +131,9 @@ public class HazelcastClientQueueTest {
 
     @Test
     public void clear(){
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-    	IQueue<String> queue = hClient.getQueue("ABC");
+        HazelcastClient hClient = getHazelcastClient();
+
+    	IQueue<String> queue = hClient.getQueue("clear");
         List list = new ArrayList();
         list.add("a");
         list.add("b");
@@ -150,9 +146,9 @@ public class HazelcastClientQueueTest {
 
     @Test
     public void containsAll(){
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        hClient = getHazelcastClient(h);
-        IQueue<String> queue = hClient.getQueue("ABC");
+        HazelcastClient hClient = getHazelcastClient();
+
+        IQueue<String> queue = hClient.getQueue("containsAll");
         List list = new ArrayList();
         list.add("a");
         list.add("b");
@@ -165,17 +161,18 @@ public class HazelcastClientQueueTest {
     @Test
 
     public void equals(){
+        HazelcastClient hClient = getHazelcastClient();
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        hClient = getHazelcastClient(h);
-        IQueue<String> queue = hClient.getQueue("ABC");
-        assertEquals(queue, h.getQueue("ABC"));
+
+        IQueue<String> queue = hClient.getQueue("equals");
+        assertEquals(queue, h.getQueue("equals"));
 
     }
     @Test
     public void isEmpty(){
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        hClient = getHazelcastClient(h);
-        IQueue<String> queue = hClient.getQueue("ABC");
+        HazelcastClient hClient = getHazelcastClient();
+
+        IQueue<String> queue = hClient.getQueue("isEmpty");
         assertTrue(queue.isEmpty());
         queue.offer("asd");
         assertFalse(queue.isEmpty());
@@ -183,9 +180,9 @@ public class HazelcastClientQueueTest {
 
     @Test
     public void iterator(){
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        hClient = getHazelcastClient(h);
-        IQueue<String> queue = hClient.getQueue("ABC");
+        HazelcastClient hClient = getHazelcastClient();
+
+        IQueue<String> queue = hClient.getQueue("iterator");
         assertTrue(queue.isEmpty());
         int count = 100;
         Map<Integer, Integer> map = new HashMap<Integer, Integer>();
@@ -204,10 +201,10 @@ public class HazelcastClientQueueTest {
         }
     }
     @Test
-    public void removeAl(){
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        hClient = getHazelcastClient(h);
-        IQueue<String> queue = hClient.getQueue("ABC");
+    public void removeAll(){
+        HazelcastClient hClient = getHazelcastClient();
+
+        IQueue<String> queue = hClient.getQueue("removeAll");
         assertTrue(queue.isEmpty());
         int count = 100;
         Map<Integer, Integer> map = new HashMap<Integer, Integer>();

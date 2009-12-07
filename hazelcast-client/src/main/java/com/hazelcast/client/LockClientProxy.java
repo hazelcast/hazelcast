@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.ILock;
+import static com.hazelcast.client.ProxyHelper.check;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -50,6 +51,7 @@ public class LockClientProxy implements ILock, ClientProxy{
     }
 
     public boolean tryLock(long l, TimeUnit timeUnit) throws InterruptedException {
+        check(l, timeUnit);
         return client.mapLockProxy.tryLock(lockObject, l, timeUnit);
     }
 

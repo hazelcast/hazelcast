@@ -6,8 +6,8 @@ import java.util.Set;
 
 public class LightKeySet<E> extends AbstractCollection<E> implements Set<E>{
 	final Set<E> realSet;
-	final MapClientProxy<?,?> proxy;
-	public LightKeySet(MapClientProxy<?,?> proxy, Set<E> set) {
+	final EntryHolder<?,?> proxy;
+	public LightKeySet(EntryHolder<?,?> proxy, Set<E> set) {
 		this.proxy = proxy;
 		this.realSet = set;
 	}

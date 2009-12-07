@@ -34,23 +34,18 @@ import static org.junit.Assert.assertFalse;
 
 public class HazelcastClientLockTest {
 
-     private HazelcastClient hClient;
-
-
-
-    @After
-    public void shutdownAll() throws InterruptedException{
-    	Hazelcast.shutdownAll();
-    	if(hClient!=null){	hClient.shutdown(); }
-    	Thread.sleep(500);
+    @Test (expected = NullPointerException.class)
+    public void testLockNull(){
+        HazelcastClient hClient = getHazelcastClient();
+        final ILock lock = hClient.getLock(null);
+        lock.lock();
     }
 
     @Test
-
     public void testLockUnlock() throws InterruptedException {
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        hClient = getHazelcastClient(h);
-        final ILock lock = hClient.getLock("Fuad");
+        HazelcastClient hClient = getHazelcastClient();
+
+        final ILock lock = hClient.getLock("testLockUnlock");
         lock.lock();
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -76,9 +71,9 @@ public class HazelcastClientLockTest {
 
     @Test
     public void testTryLock() throws InterruptedException {
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        hClient = getHazelcastClient(h);
-        final ILock lock = hClient.getLock("Fuad");
+        HazelcastClient hClient = getHazelcastClient();
+
+        final ILock lock = hClient.getLock("testTryLock");
         assertTrue(lock.tryLock());
         lock.lock();
         final CountDownLatch latch = new CountDownLatch(1);

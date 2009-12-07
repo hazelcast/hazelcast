@@ -35,12 +35,7 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.query.Predicate;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 
 
@@ -71,6 +66,8 @@ public class ClientService {
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ADD_TO_SET.getValue()] = new SetAddHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REMOVE_ITEM.getValue()] = new MapItemRemoveHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS.getValue()] = new MapIterateKeysHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_VALUE_COUNT.getValue()] = new MapValueCountHandler();
+
         clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_OFFER.getValue()] = new QueueOfferHandler();
         clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_POLL.getValue()] = new QueuePollHandler();
         clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_REMOVE.getValue()] = new QueueRemoveHandler();
@@ -91,6 +88,11 @@ public class ClientService {
 
         clientOperationHandlers[ClusterOperation.NEW_ID.getValue()] =  new NewIdHandler();
         clientOperationHandlers[ClusterOperation.REMOTELY_EXECUTE.getValue()] =  new ExecuterServiceHandler();
+        clientOperationHandlers[ClusterOperation.GET_INSTANCES.getValue()] =  new GetInstancesHandler();
+        clientOperationHandlers[ClusterOperation.GET_MEMBERS.getValue()] =  new GetMembersHandler();
+        clientOperationHandlers[ClusterOperation.GET_CLUSTER_TIME.getValue()] =  new GetClusterTimeHandler();
+
+
     }
 
     // always called by InThread
@@ -302,10 +304,25 @@ public class ClientService {
 		}
     }
 
-    private class MapRemoveMultiHandler extends ClientOperationHandler{
+     private class MapValueCountHandler extends ClientOperationHandler{
 		public void processCall(Node node, Packet packet) {
 			MultiMap multiMap = (MultiMap)node.factory.getOrCreateProxyByName(packet.name);
-            packet.value = toData(multiMap.remove(packet.key, packet.value));
+            packet.value = toData(multiMap.valueCount(packet.key));
+		}
+    }
+
+    private class MapRemoveMultiHandler extends ClientOperationHandler{
+		public void processCall(Node node, Packet packet) {
+            MultiMap multiMap = (MultiMap)node.factory.getOrCreateProxyByName(packet.name);
+            if(packet.value==null || packet.value.size==0){
+                FactoryImpl.MultiMapProxy mmProxy = (FactoryImpl.MultiMapProxy)multiMap;
+                FactoryImpl.MultiMapProxy.MultiMapBase base = mmProxy.getBase();
+                MProxy mapProxy = base.mapProxy;
+                packet.value = (Data)mapProxy.remove(packet.key);
+            }
+            else{
+                packet.value = toData(multiMap.remove(packet.key, packet.value));
+            }
 		}
     }
 
@@ -320,6 +337,42 @@ public class ClientService {
             } catch (ExecutionException e) {
                 packet.value = toData(e);
             }
+        }
+    }
+
+    private class GetInstancesHandler extends ClientOperationHandler{
+		public void processCall(Node node, Packet packet) {
+            Collection<Instance> instances = node.factory.getInstances();
+            Object[] instanceIds = new Object[instances.size()];
+            int counter = 0;
+            for (Iterator<Instance> instanceIterator = instances.iterator(); instanceIterator.hasNext();) {
+                Instance instance = instanceIterator.next();
+                instanceIds[counter] = instance.getId();
+                counter++;
+            }
+            packet.value = toData(instanceIds);
+        }
+    }
+
+    private class GetMembersHandler extends ClientOperationHandler{
+		public void processCall(Node node, Packet packet) {
+            Cluster cluster = node.factory.getCluster();
+            Set<Member> members = cluster.getMembers();
+            Set<Data> setData = new HashSet<Data>();
+            for (Iterator<Member> iterator = members.iterator(); iterator.hasNext();) {
+                Member member = iterator.next();
+                setData.add(toData(member));
+            }
+            Keys keys = new Keys(setData);
+            packet.value = toData(keys);
+        }
+    }
+
+     private class GetClusterTimeHandler extends ClientOperationHandler{
+		public void processCall(Node node, Packet packet) {
+            Cluster cluster = node.factory.getCluster();
+            long clusterTime = cluster.getClusterTime();
+            packet.value = toData(clusterTime);
         }
     }
 
@@ -358,10 +411,6 @@ public class ClientService {
                 FactoryImpl.MultiMapProxy multiMap = (FactoryImpl.MultiMapProxy)node.factory.getOrCreateProxyByName(packet.name);
                 FactoryImpl.MultiMapProxy.MultiMapBase base = multiMap.getBase();
                 MProxy mapProxy = base.mapProxy;
-//
-//                MultiMap multiMap = (MultiMap)node.factory.getOrCreateProxyByName(packet.name);
-//                Collection collection = multiMap.get(packet.key);
-//                System.out.println(collection);
                 packet.value = (Data)mapProxy.get(packet.key);
             }
         }
@@ -456,6 +505,10 @@ public class ClientService {
             MultiMap multiMap = (MultiMap)node.factory.getOrCreateProxyByName(packet.name);
             packet.value = toData(multiMap.size());
         }
+        @Override
+        public void doQueueOp(Node node, Packet packet) {
+            //ignore
+        }
     }
     private class GetMapEntryHandler extends ClientMapOperationHandler{
 		public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
@@ -506,7 +559,7 @@ public class ClientService {
 		}
     }
     private class MapIterateKeysHandler extends ClientCollectionOperationHandler {
-		public Data processMapOp(IMap<Object, Object> map, Data key, Data value, Collection<Data> collection) {
+		public Data getMapKeys(IMap<Object, Object> map, Data key, Data value, Collection<Data> collection) {
 			ConcurrentMapManager.Entries entries = null;
 			if(value==null){
 				entries = (Entries) map.keySet();				
@@ -528,23 +581,32 @@ public class ClientService {
 		public void doListOp(Node node, Packet packet) {
 			CollectionProxyImpl collectionProxy = (CollectionProxyImpl)node.factory.getOrCreateProxyByName(packet.name);
 			MProxy mapProxy  = ((CollectionProxyReal)collectionProxy.getBase()).mapProxy;
-			packet.value = processMapOp((IMap)mapProxy, packet.key, packet.value, new ArrayList<Data>());
+			packet.value = getMapKeys((IMap)mapProxy, packet.key, packet.value, new ArrayList<Data>());
 		}
 
 		@Override
 		public void doMapOp(Node node, Packet packet) {
-			packet.value = processMapOp((IMap)node.factory.getOrCreateProxyByName(packet.name), packet.key, packet.value, new HashSet<Data>());
+			packet.value = getMapKeys((IMap)node.factory.getOrCreateProxyByName(packet.name), packet.key, packet.value, new HashSet<Data>());
 		}
 
 		@Override
 		public void doSetOp(Node node, Packet packet) {
 			CollectionProxyImpl collectionProxy = (CollectionProxyImpl)node.factory.getOrCreateProxyByName(packet.name);
 			MProxy mapProxy  = ((CollectionProxyReal)collectionProxy.getBase()).mapProxy;
-			packet.value = processMapOp((IMap)mapProxy, packet.key, packet.value, new HashSet<Data>());		
+			packet.value = getMapKeys((IMap)mapProxy, packet.key, packet.value, new HashSet<Data>());
 		}
 
         public void doMultiMapOp(Node node, Packet packet) {
-            //To change body of implemented methods use File | Settings | File Templates.
+            FactoryImpl.MultiMapProxy multiMap = (FactoryImpl.MultiMapProxy)node.factory.getOrCreateProxyByName(packet.name);
+            FactoryImpl.MultiMapProxy.MultiMapBase base = multiMap.getBase();
+            MProxy mapProxy = base.mapProxy;
+            packet.value = getMapKeys(mapProxy, packet.key, packet.value, new HashSet<Data>());
+
+        }
+
+        public void doQueueOp(Node node, Packet packet) {
+            IQueue queue = (IQueue)node.factory.getOrCreateProxyByName(packet.name);
+
         }
 
     }
@@ -558,9 +620,13 @@ public class ClientService {
     		}
     		else if(getInstanceType(packet.name).equals(InstanceType.LIST) || getInstanceType(packet.name).equals(InstanceType.SET)){
     			CollectionProxyImpl collectionProxy = (CollectionProxyImpl)node.factory.getOrCreateProxyByName(packet.name);
-    			MProxy mapProxy  = ((CollectionProxyReal)collectionProxy.getBase()).mapProxy;
-    			mapProxy.addEntryListener(clientEndpoint, includeValue);
+    			IMap map  = ((CollectionProxyReal)collectionProxy.getBase()).mapProxy;
+                clientEndpoint.addThisAsListener(map, null, includeValue);
     		}
+            else if(getInstanceType(packet.name).equals(InstanceType.LIST)){
+                
+
+            }
             else if(getInstanceType(packet.name).equals(InstanceType.TOPIC)){
                 ITopic<Object> topic = (ITopic)node.factory.getOrCreateProxyByName(packet.name);
                 final String packetName = packet.name;
@@ -658,6 +724,8 @@ public class ClientService {
     	public abstract void doListOp(Node node, Packet packet);
     	public abstract void doSetOp(Node node, Packet packet);
         public abstract void doMultiMapOp(Node node, Packet packet);
+        public abstract void doQueueOp(Node node, Packet packet);
+
 		@Override
 		public void processCall(Node node, Packet packet) {
 			InstanceType instanceType = getInstanceType(packet.name);
@@ -672,6 +740,9 @@ public class ClientService {
 			}
             else if(instanceType.equals(InstanceType.MULTIMAP)){
                 doMultiMapOp(node,packet);
+            }
+            else if(instanceType.equals(InstanceType.QUEUE)){
+                doQueueOp(node,packet);
             }
 		}
     }

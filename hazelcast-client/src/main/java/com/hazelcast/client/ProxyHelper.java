@@ -21,9 +21,11 @@ import static com.hazelcast.client.Serializer.toByte;
 import static com.hazelcast.client.Serializer.toObject;
 
 import java.util.Collection;
-import java.util.Set;
+import java.util.EventListener;
+import java.util.concurrent.TimeUnit;
+import java.io.Serializable;
 
-import com.hazelcast.client.impl.Keys;
+import com.hazelcast.client.impl.CollectionWrapper;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.query.Predicate;
 
@@ -123,13 +125,32 @@ public class ProxyHelper {
 	}
 	
 	public <K> Collection<K> keys(Predicate predicate) {
-		Packet request = createRequestPacket(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS, null, (predicate==null)?null:toByte(predicate));
-	    Packet response = callAndGetResult(request);
-	    if(response.getValue()!=null){
-	    	Collection<K> collection = ((Keys<K>)toObject(response.getValue())).getKeys(); 
-	    	return collection;
-	    }
-	    return null;	
+        
+        return ((CollectionWrapper<K>)doOp(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS, null, predicate)).getKeys();
 	}
+
+    static void check(Object obj) {
+        if (obj == null) {
+            throw new NullPointerException("Object cannot be null.");
+        }
+        if (!(obj instanceof Serializable)) {
+            throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
+        }
+    }
+
+    static void check(EventListener listener) {
+        if(listener==null){
+            throw new  NullPointerException("Listener can not be null");
+        }
+    }
+
+    static void check(long time, TimeUnit timeunit) {
+        if(time<0){
+            throw new IllegalArgumentException("Time can not be less than 0.");
+        }
+        if(timeunit==null){
+            throw new NullPointerException("TimeUnit can not be null.");
+        }
+    }
 
 }

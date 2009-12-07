@@ -17,20 +17,18 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.core.Instance;
+import com.hazelcast.core.ITopic;
 import com.hazelcast.impl.ClusterOperation;
+import static com.hazelcast.client.ProxyHelper.check;
 
-import java.util.Collection;
-import java.util.Set;
+import java.util.*;
 
-public class MultiMapClientProxy implements ClientProxy, MultiMap{
-    private final HazelcastClient client;
+public class MultiMapClientProxy implements ClientProxy, MultiMap, EntryHolder {
     private final String name;
     private final ProxyHelper proxyHelper;
 
     public MultiMapClientProxy(HazelcastClient client, String name){
         this.name = name;
-        this.client = client;
         proxyHelper = new ProxyHelper(name, client);
     }
 
@@ -43,43 +41,62 @@ public class MultiMapClientProxy implements ClientProxy, MultiMap{
     }
 
     public boolean put(Object key, Object value) {
+        check(key);
+        check(value);
         return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_PUT_MULTI, key, value);
     }
 
     public Collection get(Object key) {
+        check(key);
+
         return (Collection)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET, key, null);
     }
 
     public boolean remove(Object key, Object value) {
+        check(key);
+        check(value);
+
         return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REMOVE_MULTI, key, value);
     }
 
     public Collection remove(Object key) {
-//        return (Collection)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REMOVE_MULTI, key, null);
-        return null;
+        check(key);
+        return (Collection)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REMOVE_MULTI, key, null);
     }
 
     public Set keySet() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        final Collection<Object> collection = proxyHelper.keys(null);
+		LightKeySet<Object> set = new LightKeySet<Object>(this, new HashSet<Object>(collection));
+		return set;
     }
 
     public Collection values() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        Set<Map.Entry> set = entrySet();
+		return new ValueCollection(this, set);
     }
 
+
     public Set entrySet() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        Set<Object> keySet = keySet();
+		return new LightMultiMapEntrySet<Object, Collection>(keySet, this, getInstanceType());
     }
 
     public boolean containsKey(Object key) {
+        check(key);
+
         return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS, key, null);
     }
 
     public boolean containsValue(Object value) {
+        check(value);
+
         return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS_VALUE, null, value);
     }
 
     public boolean containsEntry(Object key, Object value) {
+        check(key);
+        check(value);
+
         return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS_VALUE, key, value);
     }
 
@@ -88,11 +105,15 @@ public class MultiMapClientProxy implements ClientProxy, MultiMap{
     }
 
     public void clear() {
-        //To change body of implemented methods use File | Settings | File Templates.
+        Set keys = keySet();
+        for (Object key : keys) {
+            remove(key);
+        }
     }
 
     public int valueCount(Object key) {
-        return 0;
+        check(key);
+        return (Integer)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_VALUE_COUNT, key, null);
     }
 
     public InstanceType getInstanceType() {
@@ -105,5 +126,19 @@ public class MultiMapClientProxy implements ClientProxy, MultiMap{
 
     public Object getId() {
         return name;
+    }
+
+    @Override
+    public boolean equals(Object o){
+        if(o instanceof MultiMap && o!=null){
+            return getName().equals(((MultiMap)o).getName());
+        }
+        else{
+            return false;
+        }
+    }
+    @Override
+    public int hashCode(){
+        return getName().hashCode();
     }
 }

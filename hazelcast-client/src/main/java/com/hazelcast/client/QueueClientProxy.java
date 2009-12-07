@@ -21,6 +21,7 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.IList;
 import com.hazelcast.impl.ClusterOperation;
+import static com.hazelcast.client.ProxyHelper.check;
 
 import java.util.concurrent.TimeUnit;
 import java.util.Collection;
@@ -41,6 +42,7 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
 
     @Override
     public boolean add(E e){
+        check(e);
         boolean result = offer(e);
         if(!result){
             throw new IllegalStateException("no space is currently available");
@@ -49,6 +51,7 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
     }
 
     public boolean offer(E e) {
+        check(e);
         return innerOffer(e, 0);
     }
 
@@ -72,6 +75,8 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
     }
 
     public boolean offer(E e, long l, TimeUnit timeUnit) throws InterruptedException {
+        check(e);
+        check(l, timeUnit);
         l = (l<0)?0:l;
         if(e==null){
             throw new NullPointerException();
@@ -84,6 +89,7 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
     }
 
     public E poll(long l, TimeUnit timeUnit) throws InterruptedException {
+        check(l, timeUnit);
         l = (l<0)?0:l;
         return innerPoll(timeUnit.toMillis(l));
     }
@@ -97,6 +103,7 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
     }
 
     public void put(E e) throws InterruptedException {
+        check(e);
         innerOffer(e, -1);
     }
 

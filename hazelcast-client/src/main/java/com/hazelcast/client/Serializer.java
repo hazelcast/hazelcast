@@ -105,7 +105,7 @@ public class Serializer {
 				String className = dis.readUTF();
 
                 if(className.equals("com.hazelcast.impl.Keys")){
-                    className = "com.hazelcast.client.impl.Keys";
+                    className = "com.hazelcast.client.impl.CollectionWrapper";
                 }
                 else if(className.equals("com.hazelcast.impl.CMap$Values")){
                     className = "com.hazelcast.client.impl.Values";

@@ -88,7 +88,10 @@ public enum ClusterOperation {
     DESTROY(),
     GET_ID(),
     NEW_ID(),
-    ADD_INDEX();
+    ADD_INDEX(),
+    GET_INSTANCES(),
+    GET_MEMBERS(),
+    GET_CLUSTER_TIME();
 
     static byte idGen = 0;
     public final static byte OPERATION_COUNT = 100;

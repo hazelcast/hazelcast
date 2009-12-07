@@ -19,6 +19,7 @@ package com.hazelcast.client;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.impl.ClusterOperation;
+import static com.hazelcast.client.ProxyHelper.check;
 
 public class TopicClientProxy<T> implements ClientProxy, ITopic {
     private final String name;
@@ -40,10 +41,12 @@ public class TopicClientProxy<T> implements ClientProxy, ITopic {
     }
 
     public void publish(Object message) {
+        check(message);
         proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_PUBLISH, message, null);
     }
 
     public void addMessageListener(MessageListener messageListener) {
+        check(messageListener);
         if(!client.listenerManager.allreadyRegisteredAMessageListener(name)){
             proxyHelper.doOp(ClusterOperation.ADD_LISTENER, null, null);
         }
@@ -51,6 +54,7 @@ public class TopicClientProxy<T> implements ClientProxy, ITopic {
     }
 
     public void removeMessageListener(MessageListener messageListener) {
+        check(messageListener);
         client.listenerManager.removeMessageListener(name, messageListener);
         if(!client.listenerManager.allreadyRegisteredAMessageListener(name)){
             proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, null, null);
@@ -68,4 +72,19 @@ public class TopicClientProxy<T> implements ClientProxy, ITopic {
     public Object getId() {
         return name;
     }
+    @Override
+    public boolean equals(Object o){
+        if(o instanceof ITopic && o!=null){
+            return getName().equals(((ITopic)o).getName());
+        }
+        else{
+            return false;
+        }
+    }
+    @Override
+    public int hashCode(){
+        return getName().hashCode();
+    }
+
+
 }

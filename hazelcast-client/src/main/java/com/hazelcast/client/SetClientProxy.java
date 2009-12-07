@@ -5,6 +5,7 @@ import java.util.Iterator;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.IList;
 import com.hazelcast.impl.ClusterOperation;
+import static com.hazelcast.client.ProxyHelper.check;
 
 public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<E>, ClientProxy{
 
@@ -14,14 +15,17 @@ public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<
 	
 	@Override	
 	public boolean add(E o) {
+        check(o);
 		return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_ADD_TO_SET, o, null);
 	}
 	@Override
 	public boolean remove(Object o) {
+        check(o);
 		return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REMOVE_ITEM, o, null);
 	}
 	@Override
 	public boolean contains(Object o) {
+        check(o);
 		return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS, o, null);
 	}
 

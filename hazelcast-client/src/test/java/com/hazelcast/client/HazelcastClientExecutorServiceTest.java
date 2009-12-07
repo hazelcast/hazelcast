@@ -33,15 +33,7 @@ import static junit.framework.Assert.assertTrue;
 
 public class HazelcastClientExecutorServiceTest {
 
-    private HazelcastClient hClient;
     private static final int COUNT = 10;
-
-    @After
-    public void shutdownAll() throws InterruptedException{
-    	Hazelcast.shutdownAll();
-    	if(hClient!=null){	hClient.shutdown(); }
-    	Thread.sleep(500);
-    }
 
      /**
      * Test multiple Future.get() invokation
@@ -105,9 +97,7 @@ public class HazelcastClientExecutorServiceTest {
     }
 
     private ExecutorService getExecutorService() {
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        System.out.println(h.getName());
-        hClient = getHazelcastClient(h);
+        HazelcastClient hClient = getHazelcastClient();
         return hClient.getExecutorService();
     }
 

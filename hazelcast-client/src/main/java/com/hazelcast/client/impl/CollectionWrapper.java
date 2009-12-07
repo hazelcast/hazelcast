@@ -29,7 +29,7 @@ import java.util.Set;
 import static com.hazelcast.client.Serializer.toObject;
 import com.hazelcast.nio.DataSerializable;
 
-public class Keys<K> implements DataSerializable{
+public class CollectionWrapper<K> implements DataSerializable{
 	/**
 	 * 
 	 */
@@ -39,10 +39,11 @@ public class Keys<K> implements DataSerializable{
 	 */
 	private Collection<K> keys;
 	
-	public Keys() {
+	public CollectionWrapper() {
 	
 	}
-	public void readData(DataInput in) throws IOException {
+
+    public void readData(DataInput in) throws IOException {
 		int size = in.readInt();
 		keys = new ArrayList<K>();
 		for(int i=0;i<size;i++){
@@ -50,7 +51,6 @@ public class Keys<K> implements DataSerializable{
 			byte[] data = new byte[length];
 			in.readFully(data);
 			K obj = (K)toObject(data);
-			System.out.println();
 			keys.add(obj);
 		}
 	}

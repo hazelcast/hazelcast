@@ -8,10 +8,10 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 public class ValueCollection<K, V> implements Collection<V>{
-	private final MapClientProxy<K, V> proxy;
+	private final EntryHolder<K, V> proxy;
 	private final Set<Entry<K,V>> entrySet;
 
-	public ValueCollection(MapClientProxy<K, V> proxy, Set<Entry<K,V>> entrySet) {
+	public ValueCollection(EntryHolder<K, V> proxy, Set<Entry<K,V>> entrySet) {
 		this.proxy = proxy;
 		this.entrySet = entrySet;
 	}
@@ -28,7 +28,7 @@ public class ValueCollection<K, V> implements Collection<V>{
 	}
 
 	public boolean contains(Object arg0) {
-		return proxy.containsValue(arg0);
+		return proxy.containsValue((V)arg0);
 	}
 
 	public boolean containsAll(Collection<?> arg0) {
@@ -42,11 +42,11 @@ public class ValueCollection<K, V> implements Collection<V>{
 	}
 
 	public boolean isEmpty() {
-		return proxy.isEmpty();
+		return proxy.size()==0;
 	}
 
 	public Iterator<V> iterator() {
-		return new ValueIterator<K,V>(proxy, entrySet.iterator());
+		return new ValueIterator<K,V>(entrySet.iterator());
 	}
 
 	public boolean remove(Object arg0) {

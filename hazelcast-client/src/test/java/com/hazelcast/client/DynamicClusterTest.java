@@ -12,9 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.nio.channels.ServerSocketChannel;
 
 
 import com.hazelcast.core.*;
@@ -44,9 +41,9 @@ public class DynamicClusterTest {
         Map map = client.getMap("default");
         int counter = 0;
         while (counter < 2) {
-            map.put("key", counter);
-            assertEquals(counter, realMap.get("key"));
-            assertEquals(counter, map.get("key"));
+            map.put("currentIteratedKey", counter);
+            assertEquals(counter, realMap.get("currentIteratedKey"));
+            assertEquals(counter, map.get("currentIteratedKey"));
             memberMap.get(client.getConnectionManager().getConnection().getAddress().getPort()).shutdown();
             counter++;
         }
@@ -62,11 +59,11 @@ public class DynamicClusterTest {
         client = getHazelcastClient(h1, h2);
         Map map = client.getMap("default");
         int counter = 0;
-        realMap.get("key");
+        realMap.get("currentIteratedKey");
         while (counter < 3) {
-            map.put("key", counter);
-            assertEquals(counter, map.get("key"));
-            assertEquals(counter, realMap.get("key"));
+            map.put("currentIteratedKey", counter);
+            assertEquals(counter, map.get("currentIteratedKey"));
+            assertEquals(counter, realMap.get("currentIteratedKey"));
             memberMap.get(client.getConnectionManager().getConnection().getAddress().getPort()).shutdown();
             counter++;
         }

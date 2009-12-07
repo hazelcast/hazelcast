@@ -1,6 +1,8 @@
 package com.hazelcast.client;
 
-public interface ClientProxy {
-	public void setOutRunnable(OutRunnable out) ;
+import com.hazelcast.core.Instance;
+
+public interface ClientProxy{
+	void setOutRunnable(OutRunnable out) ;
 
 }

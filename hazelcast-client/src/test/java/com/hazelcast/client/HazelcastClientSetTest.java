@@ -14,35 +14,32 @@ import java.util.concurrent.CountDownLatch;
 import org.junit.After;
 import org.junit.Test;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.*;
 
 import static com.hazelcast.client.TestUtility.*;
 
 public class HazelcastClientSetTest {
-    private HazelcastClient hClient;
 
-    @After
-    public void shutdownAll() throws InterruptedException{
-    	Hazelcast.shutdownAll();
-    	if(hClient!=null){	hClient.shutdown(); }
-    	Thread.sleep(500);
+    @Test (expected = NullPointerException.class)
+    public void testAddNull() throws InterruptedException {
+        HazelcastClient hClient = getHazelcastClient();
+        ISet<?> set = hClient.getSet("testAddNull");
+        set.add(null);
+
     }
+
     @Test
     public void getSetName(){
-    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-    	ISet set = hClient.getSet("ABC");
-    	assertEquals("ABC", set.getName());
+        HazelcastClient hClient = getHazelcastClient();
+
+    	ISet set = hClient.getSet("getSetName");
+    	assertEquals("getSetName", set.getName());
     }
     @Test
     public void addRemoveItemListener() throws InterruptedException{
-    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-        final ISet set = hClient.getSet("default");
+        HazelcastClient hClient = getHazelcastClient();
+
+        final ISet set = hClient.getSet("addRemoveItemListener");
         final CountDownLatch addLatch = new CountDownLatch(4);
         final CountDownLatch removeLatch = new CountDownLatch(4);
         ItemListener<String> listener  = new CountDownItemListener<String>(addLatch, removeLatch);
@@ -63,17 +60,17 @@ public class HazelcastClientSetTest {
     
     @Test
     public void destroy(){
-    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-        ISet set = hClient.getSet("default");
+        HazelcastClient hClient = getHazelcastClient();
+
+        ISet set = hClient.getSet("destroy");
         for(int i=0;i<100;i++){
         	assertTrue(set.add(i));
         }
-        ISet set2 = hClient.getSet("default");
+        ISet set2 = hClient.getSet("destroy");
         assertTrue(set == set2);
         assertTrue(set.getId().equals(set2.getId()));
         set.destroy();
-        set2 = hClient.getSet("default");
+        set2 = hClient.getSet("destroy");
         assertFalse(set == set2);
 //        for(int i=0;i<100;i++){
 //        	assertNull(list2.get(i));
@@ -81,9 +78,9 @@ public class HazelcastClientSetTest {
     }
     @Test
     public void add(){
-    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-        ISet set = hClient.getSet("default");
+        HazelcastClient hClient = getHazelcastClient();
+
+        ISet set = hClient.getSet("add");
         int count = 10000;
         for(int i=0;i<count;i++){
         	assertTrue(set.add(i));
@@ -96,9 +93,9 @@ public class HazelcastClientSetTest {
     }
     @Test
     public void contains(){
-    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-        ISet set = hClient.getSet("default");
+        HazelcastClient hClient = getHazelcastClient();
+
+        ISet set = hClient.getSet("contains");
         int count = 10000;
         for(int i=0;i<count;i++){
         	set.add(i);
@@ -114,9 +111,9 @@ public class HazelcastClientSetTest {
     
     @Test
     public void addAll(){
-    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-        ISet set= hClient.getSet("default");
+        HazelcastClient hClient = getHazelcastClient();
+
+        ISet set= hClient.getSet("addAll");
         List arr = new ArrayList<Integer>();
         int count = 100;
         for(int i=0;i<count;i++){
@@ -127,9 +124,9 @@ public class HazelcastClientSetTest {
     
     @Test
     public void containsAll(){
-    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-        ISet set = hClient.getSet("default");
+        HazelcastClient hClient = getHazelcastClient();
+
+        ISet set = hClient.getSet("containsAll");
         List arrList = new ArrayList<Integer>();
         int count = 100;
         for(int i=0;i<count;i++){
@@ -144,9 +141,9 @@ public class HazelcastClientSetTest {
     
     @Test
     public void size(){
-    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-        ISet set = hClient.getSet("default");
+        HazelcastClient hClient = getHazelcastClient();
+
+        ISet set = hClient.getSet("size");
         int count = 100;
         assertTrue(set.isEmpty());
         for(int i=0;i<count;i++){
@@ -162,9 +159,9 @@ public class HazelcastClientSetTest {
     
     @Test
     public void remove(){
-    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-        ISet set = hClient.getSet("default");
+        HazelcastClient hClient = getHazelcastClient();
+
+        ISet set = hClient.getSet("remove");
         int count = 100;
         assertTrue(set.isEmpty());
         for(int i=0;i<count;i++){
@@ -188,9 +185,9 @@ public class HazelcastClientSetTest {
     
     @Test
     public void clear(){
-    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-        ISet set = hClient.getSet("default");
+        HazelcastClient hClient = getHazelcastClient();
+
+        ISet set = hClient.getSet("clear");
         int count = 100;
         assertTrue(set.isEmpty());
         for(int i=0;i<count;i++){
@@ -203,9 +200,9 @@ public class HazelcastClientSetTest {
     
     @Test
     public void removeAll(){
-    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-        ISet set = hClient.getSet("default");
+        HazelcastClient hClient = getHazelcastClient();
+
+        ISet set = hClient.getSet("removeAll");
         List arrList = new ArrayList<Integer>();
         int count = 100;
         for(int i=0;i<count;i++){
@@ -219,9 +216,9 @@ public class HazelcastClientSetTest {
     
     @Test
     public void iterate(){
-    	HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-        ISet set = hClient.getSet("default");
+        HazelcastClient hClient = getHazelcastClient();
+
+        ISet set = hClient.getSet("iterate");
         set.add(1);
         set.add(2);
         set.add(2);

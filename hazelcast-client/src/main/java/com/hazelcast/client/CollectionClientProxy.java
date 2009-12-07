@@ -6,6 +6,7 @@ import java.util.Iterator;
 
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.impl.ClusterOperation;
+import static com.hazelcast.client.ProxyHelper.check;
 
 public abstract class CollectionClientProxy<E> extends AbstractCollection<E>{
 	final protected HazelcastClient client;
@@ -50,6 +51,7 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E>{
 	}
 	
 	public void addItemListener(ItemListener<E> listener, boolean includeValue) {
+        check(listener);
 		Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
 		request.setLongValue(includeValue?1:0);
 	    Call c = proxyHelper.createCall(request);
@@ -60,6 +62,7 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E>{
 	}
 	
 	public void removeItemListener(ItemListener<E> listener) {
+        check(listener);
 		client.listenerManager.removeItemListener(name, listener);
 	}
 	

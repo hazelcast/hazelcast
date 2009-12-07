@@ -57,6 +57,7 @@ public class HazelcastClient implements HazelcastInstance{
     final Map<String, ClientProxy> mapProxies = new ConcurrentHashMap<String, ClientProxy>(100);
     final ExecutorServiceManager executorServiceManager;
     final IMap mapLockProxy;
+    final ClusterClientProxy clusterClientProxy;
 
 
     private HazelcastClient(boolean shuffle, InetSocketAddress[] clusterMembers) {
@@ -80,6 +81,9 @@ public class HazelcastClient implements HazelcastInstance{
         new Thread(executorServiceManager,"hz.client.executorManager").start();
 
         mapLockProxy = getMap("__hz_Locks");
+
+        clusterClientProxy = new ClusterClientProxy(this);
+        clusterClientProxy.setOutRunnable(out);
 	}
 
 	public static HazelcastClient getHazelcastClient(boolean shuffle, InetSocketAddress... clusterMembers){
@@ -95,7 +99,7 @@ public class HazelcastClient implements HazelcastInstance{
 		return (IMap<K,V>)getClientProxy(MAP_PREFIX + name);
 	}
 
-	private <K, V, E> ClientProxy getClientProxy(String name) {
+	<K, V, E> ClientProxy getClientProxy(String name) {
 		ClientProxy proxy = mapProxies.get(name);
 		if(proxy==null){
 			synchronized (mapProxies) {
@@ -154,8 +158,8 @@ public class HazelcastClient implements HazelcastInstance{
     }
 
 	public Cluster getCluster() {
-		throw new UnsupportedOperationException();
-	}
+        return clusterClientProxy;
+    }
 
 	public ExecutorService getExecutorService() {
 		return new ExecutorServiceClientProxy(this);
@@ -166,8 +170,7 @@ public class HazelcastClient implements HazelcastInstance{
 	}
 
 	public Collection<Instance> getInstances() {
-		// TODO Auto-generated method stub
-		return null;
+		return clusterClientProxy.getInstances();
 	}
 
 	public <E> IList<E> getList(String name) {

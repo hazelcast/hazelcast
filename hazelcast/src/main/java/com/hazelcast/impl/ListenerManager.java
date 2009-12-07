@@ -300,11 +300,11 @@ public class ListenerManager extends BaseManager {
                 l.entryUpdated(event);
             }
         } else if (listenerItem.instanceType == Instance.InstanceType.SET || listenerItem.instanceType == Instance.InstanceType.LIST) {
-            ItemListener l = (ItemListener) listener;
+            EntryListener l = (EntryListener) listener;
             if (event.getEventType() == EntryEvent.EntryEventType.ADDED)
-                l.itemAdded(event.getKey());
+                l.entryAdded(event);
             else if (event.getEventType() == EntryEvent.EntryEventType.REMOVED)
-                l.itemRemoved(event.getKey());
+                l.entryRemoved(event);
         } else if (listenerItem.instanceType == Instance.InstanceType.TOPIC) {
             MessageListener l = (MessageListener) listener;
             l.onMessage(event.getValue());

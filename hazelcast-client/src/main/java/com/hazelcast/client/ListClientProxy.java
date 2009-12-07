@@ -8,6 +8,7 @@ import java.util.ListIterator;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.impl.ClusterOperation;
+import static com.hazelcast.client.ProxyHelper.check;
 
 public class ListClientProxy<E> extends CollectionClientProxy<E> implements IList<E>, ClientProxy{
 	public ListClientProxy(HazelcastClient hazelcastClient, String name) {
@@ -17,14 +18,17 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
 
 	@Override	
 	public boolean add(E o) {
+        check(o);
 		return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_ADD_TO_LIST, o, null);
 	}
 	@Override
 	public boolean remove(Object o) {
+        check(o);
 		return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REMOVE_ITEM, o, null);
 	}
 	@Override
 	public boolean contains(Object o) {
+        check(o);
 		return (Boolean)proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS, o, null);
 	}
 
@@ -51,14 +55,7 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
 	}
 
 	public boolean addAll(int index, Collection<? extends E> c) {
-		Boolean result = true;
-		for (Iterator<? extends E> iterator = c.iterator(); iterator.hasNext();) {
-			E e = (E) iterator.next();
-			if(!add(e)){
-				result = false;
-			}
-		}
-		return result;
+		throw new UnsupportedOperationException();
 	}
 
 	public E get(int index) {

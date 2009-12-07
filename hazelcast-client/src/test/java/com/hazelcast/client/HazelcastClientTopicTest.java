@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 import org.junit.After;
 import org.junit.Test;
+import org.junit.Ignore;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
@@ -28,31 +29,29 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class HazelcastClientTopicTest {
-      private HazelcastClient hClient;
 
-    @After
-    public void shutdownAll() throws InterruptedException{
-    	Hazelcast.shutdownAll();
-    	if(hClient!=null){	hClient.shutdown(); }
-    	Thread.sleep(500);
+    @Test (expected = NullPointerException.class)
+    public void testAddNull() throws InterruptedException {
+        HazelcastClient hClient = getHazelcastClient();
+        ITopic<?> topic = hClient.getTopic("testAddNull");
+        topic.publish(null);
+
     }
-
     @Test
     public void testName(){
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-    	ITopic<?> topic = hClient.getTopic("ABC");
-    	assertEquals("ABC", topic.getName());
+        HazelcastClient hClient = getHazelcastClient();
+        System.out.println("1");
+    	ITopic<?> topic = hClient.getTopic("testName");
+    	assertEquals("testName", topic.getName());
     }
 
     @Test
     public void addMessageListener() throws InterruptedException {
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        hClient = getHazelcastClient(h);
-        ITopic<String> topic = hClient.getTopic("ABC");
+        HazelcastClient hClient = getHazelcastClient();
+        System.out.println("2");
+        ITopic<String> topic = hClient.getTopic("addMessageListener");
         final CountDownLatch latch = new CountDownLatch(1);
         final String message =  "Hazelcast Rocks!";
-
 
         topic.addMessageListener(new MessageListener()
         {
@@ -71,9 +70,8 @@ public class HazelcastClientTopicTest {
 
     @Test
     public void addTwoMessageListener() throws InterruptedException {
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-    	ITopic<String> topic = hClient.getTopic("ABC");
+        HazelcastClient hClient = getHazelcastClient();
+    	ITopic<String> topic = hClient.getTopic("addTwoMessageListener");
         final CountDownLatch latch = new CountDownLatch(2);
         final String message =  "Hazelcast Rocks!";
 
@@ -98,13 +96,12 @@ public class HazelcastClientTopicTest {
 
         topic.publish(message);
 
-        assertTrue(latch.await(10, TimeUnit.MILLISECONDS));
+        assertTrue(latch.await(100, TimeUnit.MILLISECONDS));
     }
    @Test
    public void removeMessageListener() throws InterruptedException {
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-    	hClient = getHazelcastClient(h);
-    	ITopic<String> topic = hClient.getTopic("ABC");
+        HazelcastClient hClient = getHazelcastClient();
+    	ITopic<String> topic = hClient.getTopic("removeMessageListener");
         final CountDownLatch latch = new CountDownLatch(2);
         final String message =  "Hazelcast Rocks!";
 

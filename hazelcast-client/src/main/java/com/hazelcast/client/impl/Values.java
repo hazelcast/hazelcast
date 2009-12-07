@@ -46,7 +46,7 @@ public class Values<V> implements Collection, DataSerializable {
         }
 
         public boolean contains(Object o) {
-            throw new UnsupportedOperationException();
+            return lsValues.contains(o);
         }
 
         public boolean containsAll(Collection c) {
