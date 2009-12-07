@@ -3,7 +3,7 @@
  */
 package com.hazelcast.config;
 
-public final class ExecutorConfig {
+public class ExecutorConfig {
 
     public final static int DEFAULT_CORE_POOL_SIZE = 10;
     public final static int DEFAULT_MAX_POOL_SIZE = 50;
@@ -11,7 +11,7 @@ public final class ExecutorConfig {
 
     private int corePoolSize = DEFAULT_CORE_POOL_SIZE;
 
-    private int maxPoolsize = DEFAULT_MAX_POOL_SIZE;
+    private int maxPoolSize = DEFAULT_MAX_POOL_SIZE;
 
     private int keepAliveSeconds = DEFAULT_KEEPALIVE_SECONDS;
 
@@ -26,21 +26,29 @@ public final class ExecutorConfig {
      * @param corePoolSize the corePoolSize to set
      */
     public void setCorePoolSize(int corePoolSize) {
-        this.corePoolSize = corePoolSize;
+    	if(corePoolSize > 0) {
+            this.corePoolSize = corePoolSize;
+    	} else {
+    		throw new UnsupportedOperationException("corePoolSize must be positive");
+    	}
     }
 
     /**
      * @return the maxPoolsize
      */
     public int getMaxPoolsize() {
-        return maxPoolsize;
+        return maxPoolSize;
     }
 
     /**
      * @param maxPoolsize the maxPoolsize to set
      */
-    public void setMaxPoolsize(int maxPoolsize) {
-        this.maxPoolsize = maxPoolsize;
+    public void setMaxPoolsize(final int maxPoolSize) {
+    	if(maxPoolSize > 0) {
+            this.maxPoolSize = maxPoolSize;
+    	} else {
+    		throw new UnsupportedOperationException("maxPoolSize must be positive");
+    	}
     }
 
     /**
@@ -54,6 +62,10 @@ public final class ExecutorConfig {
      * @param keepAliveSeconds the keepAliveSeconds to set
      */
     public void setKeepAliveSeconds(int keepAliveSeconds) {
-        this.keepAliveSeconds = keepAliveSeconds;
+    	if(keepAliveSeconds > 0) {
+    	       this.keepAliveSeconds = keepAliveSeconds;
+    	} else {
+    		throw new UnsupportedOperationException("keepAlice seconds must be positive");
+    	}
     }
 }
