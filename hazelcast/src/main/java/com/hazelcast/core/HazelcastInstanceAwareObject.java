@@ -1,10 +1,13 @@
 package com.hazelcast.core;
 
-import com.hazelcast.impl.ThreadContext;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.SerializationHelper;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
-import java.io.*;
+import com.hazelcast.impl.ThreadContext;
 
 public abstract class HazelcastInstanceAwareObject implements HazelcastInstanceAware, Serializable {
     protected transient HazelcastInstance hazelcastInstance = null;
