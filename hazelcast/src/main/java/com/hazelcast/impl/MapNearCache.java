@@ -27,7 +27,7 @@ public class MapNearCache {
         this.ttl = ttl;
         this.maxIdleTime = maxIdleTime;
         this.invalidateOnChange = invalidateOnChange;
-        int size = (maxSize == 0) ? 1000 : maxSize;
+        int size = (maxSize == 0 || maxSize > 50000) ? 10000 : maxSize; 
         this.sortedMap = new SortedHashMap<Data, Object>(size, orderingType);
         this.cache = new ConcurrentHashMap<Object, CacheEntry>(size);
     }

@@ -567,6 +567,9 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                            final Object callable) throws InterruptedException {
             Object executionResult = null;
             try {
+                if (callable instanceof HazelcastInstanceAware) {
+                    ((HazelcastInstanceAware) callable).setHazelcastInstance(node.factory);
+                }
                 if (callable instanceof Callable) {
                     executionResult = ((Callable) callable).call();
                 } else if (callable instanceof Runnable) {
