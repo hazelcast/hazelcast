@@ -5,8 +5,6 @@ import java.util.Map;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.Region;
 import org.hibernate.cache.Timestamper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
@@ -17,7 +15,6 @@ import com.hazelcast.core.MapEntry;
  */
 abstract class AbstractHazelcastRegion implements HazelcastRegion {
 
-    private static final Logger LOG = LoggerFactory.getLogger(HazelcastRegion.class);
     private final IMap cache;
     private final String regionName;
 
@@ -34,7 +31,6 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
      * Calls <code>{@link IMap#destroy()}</code> on the given <code>{@link Region}</code>.
      */
     public void destroy() throws CacheException {
-        LOG.info("Calling destroy on {}", regionName);
         getCache().destroy();
     }
 

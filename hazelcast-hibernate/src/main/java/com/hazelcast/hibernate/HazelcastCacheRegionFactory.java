@@ -1,6 +1,7 @@
 package com.hazelcast.hibernate;
 
 import java.util.Properties;
+import java.util.logging.Logger;
 
 import org.hibernate.cache.CacheDataDescription;
 import org.hibernate.cache.CacheException;
@@ -10,8 +11,6 @@ import org.hibernate.cache.QueryResultsRegion;
 import org.hibernate.cache.RegionFactory;
 import org.hibernate.cache.TimestampsRegion;
 import org.hibernate.cfg.Settings;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IdGenerator;
@@ -25,7 +24,7 @@ import com.hazelcast.hibernate.timestamp.HazelcastTimestampsRegion;
  */
 public class HazelcastCacheRegionFactory implements RegionFactory {
 
-    private static final Logger LOG = LoggerFactory.getLogger(HazelcastCacheRegionFactory.class);
+    private static final Logger LOG = Logger.getLogger(HazelcastCacheRegionFactory.class.getName());
 
     private final IdGenerator idGenerator;
 
@@ -36,7 +35,6 @@ public class HazelcastCacheRegionFactory implements RegionFactory {
 
     public HazelcastCacheRegionFactory(final Properties properties) {
         this();
-        LOG.info("HazelcastCacheRegionFactory got properties: {}", properties);
     }
 
     public CollectionRegion buildCollectionRegion(final String regionName, final Properties properties,
@@ -75,7 +73,6 @@ public class HazelcastCacheRegionFactory implements RegionFactory {
      */
     public long nextTimestamp() {
         final long id = idGenerator.newId();
-        LOG.info("Got next timestamp ID: {}", id);
         return id;
     }
 

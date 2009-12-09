@@ -1,12 +1,11 @@
 package com.hazelcast.hibernate.provider;
 
 import java.util.Properties;
+import java.util.logging.Logger;
 
 import org.hibernate.cache.Cache;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.CacheProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IdGenerator;
@@ -25,7 +24,7 @@ import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
  */
 public final class HazelcastCacheProvider implements CacheProvider {
 
-    private static final Logger LOG = LoggerFactory.getLogger(HazelcastCacheProvider.class);
+    private static final Logger LOG = Logger.getLogger(HazelcastCacheProvider.class.getName());
     private final IdGenerator idGenerator;
 
     public HazelcastCacheProvider() {
@@ -55,7 +54,6 @@ public final class HazelcastCacheProvider implements CacheProvider {
      */
     public long nextTimestamp() {
         final long id = idGenerator.newId();
-        LOG.info("Got next timestamp ID: {}", id);
         return id;
     }
 

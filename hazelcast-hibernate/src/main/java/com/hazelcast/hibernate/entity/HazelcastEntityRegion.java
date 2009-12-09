@@ -5,8 +5,6 @@ import org.hibernate.cache.CacheException;
 import org.hibernate.cache.EntityRegion;
 import org.hibernate.cache.access.AccessType;
 import org.hibernate.cache.access.EntityRegionAccessStrategy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.hazelcast.hibernate.region.AbstractTransactionalDataRegion;
 
@@ -14,8 +12,6 @@ import com.hazelcast.hibernate.region.AbstractTransactionalDataRegion;
  * @author Leo Kim (lkim@limewire.com)
  */
 public class HazelcastEntityRegion extends AbstractTransactionalDataRegion implements EntityRegion {
-
-    private static final Logger LOG = LoggerFactory.getLogger(HazelcastEntityRegion.class);
 
     public HazelcastEntityRegion(final String name, final CacheDataDescription metadata) {
         super(name, metadata);
@@ -26,7 +22,7 @@ public class HazelcastEntityRegion extends AbstractTransactionalDataRegion imple
             throw new CacheException(
                     "Got null AccessType while attempting to determine a proper EntityRegionAccessStrategy. This can't happen!");
         }
-        LOG.info("Attempting to add {} EntityRegion: {}", accessType, getName());
+
         if (AccessType.READ_ONLY.equals(accessType)) {
             return new ReadOnlyAccessStrategy(this);
         }
