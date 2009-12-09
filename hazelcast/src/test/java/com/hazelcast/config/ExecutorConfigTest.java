@@ -22,14 +22,14 @@ public class ExecutorConfigTest {
 	@Test
 	public void testGetMaxPoolsize() {
 		ExecutorConfig executorConfig = new ExecutorConfig();
-		assertTrue(executorConfig.getMaxPoolsize() == ExecutorConfig.DEFAULT_MAX_POOL_SIZE);
+		assertTrue(executorConfig.getMaxPoolSize() == ExecutorConfig.DEFAULT_MAX_POOL_SIZE);
 	}
 
 	@Test
 	public void testSetMaxPoolsize() {
 		ExecutorConfig executorConfig = new ExecutorConfig();
-		executorConfig.setMaxPoolsize(1234);
-		assertTrue(executorConfig.getMaxPoolsize() == 1234);
+		executorConfig.setMaxPoolSize(1234);
+		assertTrue(executorConfig.getMaxPoolSize() == 1234);
 	}
 
 	@Test
@@ -54,7 +54,7 @@ public class ExecutorConfigTest {
 	@Test(expected = UnsupportedOperationException.class)
 	public void shouldNotAcceptNegativeMaxPoolSize() {
 		ExecutorConfig executorConfig = new ExecutorConfig();
-		executorConfig.setMaxPoolsize(-1);
+		executorConfig.setMaxPoolSize(-1);
 	}
 	
 	@Test(expected = UnsupportedOperationException.class)

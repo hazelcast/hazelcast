@@ -284,8 +284,8 @@ public class ClusterTest {
         c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         c.getNetworkConfig().getJoin().getJoinMembers().setEnabled(true);
         c.getNetworkConfig().getInterfaces().setEnabled(true);
-        c.getNetworkConfig().getJoin().getJoinMembers().addAddress(new Address("127.1.0.1", 5701));
-        c.getNetworkConfig().getInterfaces().getInterfaces().add("127.0.0.1");
+        c.getNetworkConfig().getJoin().getJoinMembers().addAddress(new Address("127.0.0.1", 5701));
+        c.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
         HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(c);
         hNormal.getMap("default").put("1", "first");
         assertEquals("first", hNormal.getMap("default").put("1", "first"));
@@ -756,6 +756,48 @@ public class ClusterTest {
     }
 
     @Test
+    public void testKeyOwner() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        Map<String, String> m1 = h1.getMap("default");
+        for (int i = 0; i < 100; i++) {
+            m1.put(String.valueOf(i), "value" + i);
+        }
+        assertNotNull(getKeyOwner(h1, "1"));
+    }
+
+    private Member getKeyOwner(HazelcastInstance hi, Object key) throws Exception {
+        MultiTask<Member> task = new MultiTask<Member>(new GetOwnerCallable(key), hi.getCluster().getMembers());
+        hi.getExecutorService().execute(task);
+        Collection<Member> results = task.get();
+        for (Member member : results) {
+            if (member != null) {
+                return member;
+            }
+        }
+        return null;
+    }
+
+    public static class GetOwnerCallable extends HazelcastInstanceAwareObject implements Callable<Member>, Serializable {
+        private Object key = null;
+
+        public GetOwnerCallable() {
+        }
+
+        public GetOwnerCallable(Object key) {
+            this.key = key;
+        }
+
+        public Member call() throws Exception {
+            System.out.println("key is " + key);
+            if (hazelcastInstance.getMap("default").localKeySet().contains(key)) {
+                return hazelcastInstance.getCluster().getLocalMember();
+            }
+            return null;
+        }
+    }
+
+    @Test
     public void testTopicListenersWithMultiple() throws Exception {
         final CountDownLatch latch = new CountDownLatch(3);
         final MessageListener<Object> ml = new MessageListener<Object>() {
@@ -826,10 +868,9 @@ public class ClusterTest {
 
     /**
      * Test for the issue 184
-     *
+     * <p/>
      * Hazelcas.newHazelcastInstance(new Config()) doesn't join the cluster.
      * new Config() should be enough as the default config.
-     *
      */
     @Test(timeout = 240000)
     public void testDefaultConfigCluster() {

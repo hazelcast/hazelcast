@@ -34,16 +34,16 @@ public class ExecutorConfig {
     }
 
     /**
-     * @return the maxPoolsize
+     * @return the maxPoolSize
      */
-    public int getMaxPoolsize() {
+    public int getMaxPoolSize() {
         return maxPoolSize;
     }
 
     /**
-     * @param maxPoolsize the maxPoolsize to set
+     * @param maxPoolSize the maxPoolSize to set
      */
-    public void setMaxPoolsize(final int maxPoolSize) {
+    public void setMaxPoolSize(final int maxPoolSize) {
     	if(maxPoolSize > 0) {
             this.maxPoolSize = maxPoolSize;
     	} else {

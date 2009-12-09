@@ -237,7 +237,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
             if ("core-pool-size".equals(name)) {
                 executorConfig.setCorePoolSize(getIntegerValue("core-pool-size", value, ExecutorConfig.DEFAULT_CORE_POOL_SIZE));
             } else if ("max-pool-size".equals(name)) {
-                executorConfig.setMaxPoolsize(getIntegerValue("max-pool-size", value, ExecutorConfig.DEFAULT_MAX_POOL_SIZE));
+                executorConfig.setMaxPoolSize(getIntegerValue("max-pool-size", value, ExecutorConfig.DEFAULT_MAX_POOL_SIZE));
             } else if ("keep-alive-seconds".equals(name)) {
                 executorConfig.setKeepAliveSeconds(getIntegerValue("keep-alive-seconds", value, ExecutorConfig.DEFAULT_KEEPALIVE_SECONDS));
             }
