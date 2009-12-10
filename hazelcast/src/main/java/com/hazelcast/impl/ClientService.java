@@ -677,8 +677,9 @@ public class ClientService {
     private class MapItemRemoveHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
             Collection collection = (Collection) node.factory.getOrCreateProxyByName(packet.name);
+            Data value = toData(collection.remove(packet.key));
             packet.clearForResponse();
-            packet.value = toData(collection.remove(packet.key));
+            packet.value = value;
         }
     }
 

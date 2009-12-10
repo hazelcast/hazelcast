@@ -147,4 +147,24 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
             return false;
         }
     }
+    @Override
+    public void clear(){
+        throw new UnsupportedOperationException();
+    }
+    @Override
+    public boolean containsAll(java.util.Collection<?> objects){
+        throw new UnsupportedOperationException();
+    }
+    @Override
+    public boolean removeAll(java.util.Collection<?> objects){
+        throw new UnsupportedOperationException();
+    }
+    @Override
+    public java.util.Iterator<E> iterator(){
+        throw new UnsupportedOperationException();
+    }
+    @Override
+    public void addItemListener(ItemListener<E> listener, boolean includeValue) {
+        throw new UnsupportedOperationException();
+    }
 }

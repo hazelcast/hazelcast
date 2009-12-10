@@ -47,8 +47,12 @@ public class TopicClientProxy<T> implements ClientProxy, ITopic {
 
     public void addMessageListener(MessageListener messageListener) {
         check(messageListener);
-        if(!client.listenerManager.allreadyRegisteredAMessageListener(name)){
-            proxyHelper.doOp(ClusterOperation.ADD_LISTENER, null, null);
+        if(client.listenerManager.noMessageListenerRegistered(name)){
+            Packet request = proxyHelper.prepareRequest(ClusterOperation.ADD_LISTENER, null, null);
+	        proxyHelper.callAndGetResult(request);
+            Call c = proxyHelper.createCall(request);
+            client.listenerManager.addListenerCall(c, name, null);            
+	        proxyHelper.doCall(c);
         }
         client.listenerManager.registerMessageListener(name, messageListener);
     }
@@ -56,7 +60,7 @@ public class TopicClientProxy<T> implements ClientProxy, ITopic {
     public void removeMessageListener(MessageListener messageListener) {
         check(messageListener);
         client.listenerManager.removeMessageListener(name, messageListener);
-        if(!client.listenerManager.allreadyRegisteredAMessageListener(name)){
+        if(client.listenerManager.noMessageListenerRegistered(name)){
             proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, null, null);
         }
     }

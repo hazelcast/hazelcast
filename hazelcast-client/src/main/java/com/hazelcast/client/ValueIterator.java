@@ -16,8 +16,11 @@ public class ValueIterator<K,V> implements Iterator<V>{
 	}
 
 	public V next() {
-		V next ;
-		while((next = entryIterator.next().getValue())!=null);
+		V next = entryIterator.next().getValue();
+        if(next==null){
+            System.out.println("Next is null");
+            next = next();
+        }
 		return next;
 	}
 

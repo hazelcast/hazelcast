@@ -188,7 +188,7 @@ public class HazelcastClientMultiMapTest {
     @Test
     public void values() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
-        MultiMap multiMap = Hazelcast.getMultiMap("entrySet");
+        MultiMap multiMap = hClient.getMultiMap("entrySet");
         Map<String, List<String>> valueKeyListMap = new HashMap<String, List<String>>();
         int count =100;
         for (int i=0;i<count;i++){
@@ -208,8 +208,11 @@ public class HazelcastClientMultiMapTest {
 
         Collection collection = multiMap.values();
         assertEquals(count*(count+1)/2, collection.size());
+        Iterator<String> iterator = collection.iterator()  ;
+        System.out.println(iterator.getClass());
 
-        for (Iterator<String> iterator = collection.iterator(); iterator.hasNext();) {
+
+        for (; iterator.hasNext();) {
             String value =  iterator.next();
             assertNotNull(valueKeyListMap.get(value).remove(0));
             if(valueKeyListMap.get(value).size()==0){

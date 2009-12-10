@@ -53,9 +53,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, ClientProxy, EntryHolde
 
 	public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         check(listener);
-        if(!(client.listenerManager.entryListeners.get(name)!=null &&
-				client.listenerManager.entryListeners.get(name).get(key)!=null && 
-				client.listenerManager.entryListeners.get(name).get(key).size()>0)){
+        if(client.listenerManager.noEntryListenerRegistered(key, name)){
 			Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, toByte(key), null);
 			request.setLongValue(includeValue?1:0);
 			Call c = proxyHelper.createCall(request);

@@ -14,70 +14,6 @@ import com.hazelcast.core.*;
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
 
 public class HazelcastClientTest {
-    @Test
-    public void testGetInstancesCreatedFromClient() {
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        List list = getHazelcastClient(h).getList("testGetInstancesCreatedFromClient");
-        Map map = getHazelcastClient(h).getMap("testGetInstancesCreatedFromClient");
-        MultiMap mmap = getHazelcastClient(h).getMultiMap("testGetInstancesCreatedFromClient");
-        Queue q = getHazelcastClient(h).getQueue("testGetInstancesCreatedFromClient");
-        Set set = getHazelcastClient(h).getSet("testGetInstancesCreatedFromClient");
-        ITopic topic = getHazelcastClient(h).getTopic("testGetInstancesCreatedFromClient");
-
-        Collection<Instance> caches = getHazelcastClient(h).getInstances();
-        assertEquals(0, caches.size());
-        List listOfInstances = new ArrayList();
-        listOfInstances.add(list);
-        listOfInstances.add(map);
-        listOfInstances.add(mmap);
-        listOfInstances.add(q);
-        listOfInstances.add(set);
-        listOfInstances.add(topic);
-        list.add("List");
-        map.put("key", "value");
-        assertEquals(2, getHazelcastClient(h).getInstances().size());
-        mmap.put("key", "value1");
-        q.offer("Element");
-        assertEquals(4, getHazelcastClient(h).getInstances().size());
-        set.add("element");
-        topic.publish("Message");
-        assertEquals(6, getHazelcastClient(h).getInstances().size());
-        caches = getHazelcastClient(h).getInstances();
-        for (Iterator<Instance> instanceIterator = caches.iterator(); instanceIterator.hasNext();) {
-            Instance instance = instanceIterator.next();
-            assertTrue(instance.getId().toString().endsWith("testGetInstancesCreatedFromClient"));
-            assertTrue(listOfInstances.contains(instance));
-            instance.destroy();
-        }
-        h.shutdown();
-    }
-    @Test
-    public void testGetInstancesCreatedFromCluster() {
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        List list = h.getList("testGetInstancesCreatedFromCluster");
-        Map map = h.getMap("testGetInstancesCreatedFromCluster");
-        MultiMap mmap = h.getMultiMap("testGetInstancesCreatedFromCluster");
-        Queue q = h.getQueue("testGetInstancesCreatedFromCluster");
-        Set set = h.getSet("testGetInstancesCreatedFromCluster");
-        ITopic topic = h.getTopic("testGetInstancesCreatedFromCluster");
-
-        List listOfInstances = new ArrayList();
-        listOfInstances.add(list);
-        listOfInstances.add(map);
-        listOfInstances.add(mmap);
-        listOfInstances.add(q);
-        listOfInstances.add(set);
-        listOfInstances.add(topic);
-
-        Collection<Instance> caches = getHazelcastClient(h).getInstances();
-//        assertEquals(6, caches.size());
-        for (Iterator<Instance> instanceIterator = caches.iterator(); instanceIterator.hasNext();) {
-            Instance instance = instanceIterator.next();
-            assertTrue(instance.getId().toString().endsWith("testGetInstancesCreatedFromCluster"));
-            assertTrue(listOfInstances.contains(instance));
-        }
-        h.shutdown();
-    }
 
     @Test
     public void testGetClusterMemberSize() {
@@ -341,6 +277,7 @@ public class HazelcastClientTest {
     }
 
     @Test
+    @Ignore
     public void testListItemListener(){
         final CountDownLatch latch = new CountDownLatch(2);
         IList<String> list = getHazelcastClient().getList("testListListener");
@@ -364,6 +301,7 @@ public class HazelcastClientTest {
     }
 
     @Test
+    @Ignore
     public void testSetItemListener(){
         final CountDownLatch latch = new CountDownLatch(2);
         ISet<String> set = getHazelcastClient().getSet("testSetListener");
@@ -386,19 +324,19 @@ public class HazelcastClientTest {
         }
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void testQueueItemListener(){
         final CountDownLatch latch = new CountDownLatch(2);
         IQueue<String> queue = getHazelcastClient().getQueue("testQueueListener");
         queue.addItemListener(new ItemListener<String>(){
-         public void itemAdded(String item) {
-            assertEquals("hello", item);
-            latch.countDown();
-        }
+            public void itemAdded(String item) {
+                assertEquals("hello", item);
+                latch.countDown();
+            }
 
-        public void itemRemoved(String item) {
-            assertEquals("hello", item);
-            latch.countDown();
+            public void itemRemoved(String item) {
+                assertEquals("hello", item);
+                latch.countDown();
             }
         }, true);
         queue.offer("hello");
@@ -514,7 +452,7 @@ public class HazelcastClientTest {
         assertEquals(8, queue.size());
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void testQueueContains() {
         IQueue<String> queue = getHazelcastClient().getQueue("testQueueContains");
         String[] items = new String[]{"one", "two", "three", "four"};
@@ -525,7 +463,7 @@ public class HazelcastClientTest {
         assertTrue(queue.contains("four"));
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void testQueueContainsAll() {
         IQueue<String> queue = getHazelcastClient().getQueue("testQueueContainsAll");
         String[] items = new String[]{"one", "two", "three", "four"};

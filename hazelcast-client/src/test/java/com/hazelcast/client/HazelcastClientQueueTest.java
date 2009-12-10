@@ -129,7 +129,7 @@ public class HazelcastClientQueueTest {
 
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void clear(){
         HazelcastClient hClient = getHazelcastClient();
 
@@ -144,7 +144,7 @@ public class HazelcastClientQueueTest {
         assertTrue(queue.size()==0);
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void containsAll(){
         HazelcastClient hClient = getHazelcastClient();
 
@@ -178,7 +178,7 @@ public class HazelcastClientQueueTest {
         assertFalse(queue.isEmpty());
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void iterator(){
         HazelcastClient hClient = getHazelcastClient();
 
@@ -200,7 +200,7 @@ public class HazelcastClientQueueTest {
             assertTrue(map.get(i)==0);
         }
     }
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void removeAll(){
         HazelcastClient hClient = getHazelcastClient();
 

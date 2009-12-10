@@ -13,6 +13,7 @@ import java.util.concurrent.CountDownLatch;
 
 import org.junit.After;
 import org.junit.Test;
+import org.junit.Ignore;
 
 import com.hazelcast.core.*;
 

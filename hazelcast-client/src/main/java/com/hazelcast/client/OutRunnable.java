@@ -58,11 +58,12 @@ public class OutRunnable extends IORunnable{
 				oldConnectionId = connection.getVersion();
 			}
 			connection = client.connectionManager.getConnection();
-			if(oldConnectionIsNotNull && connection!=null && connection.getVersion()!=oldConnectionId){
+			if(restoredConnection(connection, oldConnectionIsNotNull, oldConnectionId)){
 				temp.add(call);
 				queue.drainTo(temp);
 				client.listenerManager.getListenerCalls().drainTo(queue);
 				temp.drainTo(queue);
+//                System.out.println("finish restore ops");
 			}else{
 				if(connection!=null){
 					writer.write(connection, call.getRequest());
@@ -81,7 +82,11 @@ public class OutRunnable extends IORunnable{
 		}
 	}
 
-	public void enQueue(Call call){
+    private boolean restoredConnection(Connection connection, boolean oldConnectionIsNotNull, long oldConnectionId) {
+        return oldConnectionIsNotNull && connection!=null && connection.getVersion()!=oldConnectionId;
+    }
+
+    public void enQueue(Call call){
 		try {
 			queue.put(call);
 		} catch (InterruptedException e) {

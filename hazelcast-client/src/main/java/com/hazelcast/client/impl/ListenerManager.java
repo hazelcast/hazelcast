@@ -82,13 +82,17 @@ public class ListenerManager extends ClientRunnable{
         }
     }
 
-    public boolean allreadyRegisteredAMessageListener(String name){
+    public boolean noMessageListenerRegistered(String name){
         if(!messageListeners.containsKey(name)){
-            return false;
+            return true;
         }
-        return messageListeners.get(name).size()>0;
+        return messageListeners.get(name).size()<=0;
+    }
 
-
+    public boolean noEntryListenerRegistered(Object key, String name) {
+        return !(entryListeners.get(name)!=null &&
+				entryListeners.get(name).get(key)!=null &&
+				entryListeners.get(name).get(key).size()>0);
     }
 
     public synchronized void removeEntryListener(String name, Object key, EntryListener<?,?> entryListener){

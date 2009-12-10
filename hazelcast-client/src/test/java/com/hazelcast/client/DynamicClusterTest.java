@@ -8,8 +8,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -26,8 +25,10 @@ public class DynamicClusterTest {
     @After
     public void after() throws InterruptedException {
         Hazelcast.shutdownAll();
-        client.shutdown();
-        Thread.sleep(500);
+        if(client!=null){
+            client.shutdown();
+        }
+//        Thread.sleep(500);
     }
 
     @Test
@@ -68,7 +69,7 @@ public class DynamicClusterTest {
             counter++;
         }
     }
-
+                       
     @Test
     public void addListenerWithTwoMemberClusterAndKillOne() throws InterruptedException, IOException {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
@@ -85,7 +86,9 @@ public class DynamicClusterTest {
         map.put("hello", "new world");
         map.remove("hello");
         memberMap.remove(client.getConnectionManager().getConnection().getAddress().getPort()).shutdown();
+        System.out.println("Map is putting");
         map.put("hello", "world");
+        System.out.println("map put");
         map.put("hello", "new world");
         map.remove("hello");
         assertTrue(entryAddLatch.await(10, TimeUnit.MILLISECONDS));
@@ -135,9 +138,9 @@ public class DynamicClusterTest {
         final String message =  "Hazelcast Rocks!";
 
 
-        topic.addMessageListener(new MessageListener()
+        topic.addMessageListener(new MessageListener<String>()
         {
-            public void onMessage(Object msg) {
+            public void onMessage(String msg) {
                 if(msg.equals(message)){
                     latch.countDown();
                 }
@@ -164,7 +167,7 @@ public class DynamicClusterTest {
 
         Thread.sleep(1000);
         System.out.println("FINISHED");
-        assertTrue(latch.await(10, TimeUnit.MILLISECONDS));
+        assertTrue(latch.await(2, TimeUnit.SECONDS));
 
     }
 
@@ -182,6 +185,73 @@ public class DynamicClusterTest {
             h1.shutdown();
         }
     }
+
+     @Test
+    public void testGetInstancesCreatedFromClient() {
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        List list = getHazelcastClient(h).getList("testGetInstancesCreatedFromClient");
+        Map map = getHazelcastClient(h).getMap("testGetInstancesCreatedFromClient");
+        MultiMap mmap = getHazelcastClient(h).getMultiMap("testGetInstancesCreatedFromClient");
+        Queue q = getHazelcastClient(h).getQueue("testGetInstancesCreatedFromClient");
+        Set set = getHazelcastClient(h).getSet("testGetInstancesCreatedFromClient");
+        ITopic topic = getHazelcastClient(h).getTopic("testGetInstancesCreatedFromClient");
+
+        Collection<Instance> caches = getHazelcastClient(h).getInstances();
+        assertEquals(0, caches.size());
+        List listOfInstances = new ArrayList();
+        listOfInstances.add(list);
+        listOfInstances.add(map);
+        listOfInstances.add(mmap);
+        listOfInstances.add(q);
+        listOfInstances.add(set);
+        listOfInstances.add(topic);
+        list.add("List");
+        map.put("key", "value");
+        assertEquals(2, getHazelcastClient(h).getInstances().size());
+        mmap.put("key", "value1");
+        q.offer("Element");
+        assertEquals(4, getHazelcastClient(h).getInstances().size());
+        set.add("element");
+        topic.publish("Message");
+        assertEquals(6, getHazelcastClient(h).getInstances().size());
+        caches = getHazelcastClient(h).getInstances();
+        for (Iterator<Instance> instanceIterator = caches.iterator(); instanceIterator.hasNext();) {
+            Instance instance = instanceIterator.next();
+            assertTrue(instance.getId().toString().endsWith("testGetInstancesCreatedFromClient"));
+            assertTrue(listOfInstances.contains(instance));
+            instance.destroy();
+        }
+        h.shutdown();
+    }
+    @Test
+    public void testGetInstancesCreatedFromCluster() {
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        List list = h.getList("testGetInstancesCreatedFromCluster");
+        Map map = h.getMap("testGetInstancesCreatedFromCluster");
+        MultiMap mmap = h.getMultiMap("testGetInstancesCreatedFromCluster");
+        Queue q = h.getQueue("testGetInstancesCreatedFromCluster");
+        Set set = h.getSet("testGetInstancesCreatedFromCluster");
+        ITopic topic = h.getTopic("testGetInstancesCreatedFromCluster");
+
+        List listOfInstances = new ArrayList();
+        listOfInstances.add(list);
+        listOfInstances.add(map);
+        listOfInstances.add(mmap);
+        listOfInstances.add(q);
+        listOfInstances.add(set);
+        listOfInstances.add(topic);
+
+        Collection<Instance> caches = getHazelcastClient(h).getInstances();
+//        assertEquals(6, caches.size());
+        for (Iterator<Instance> instanceIterator = caches.iterator(); instanceIterator.hasNext();) {
+            Instance instance = instanceIterator.next();
+            assertTrue(instance.getId().toString().endsWith("testGetInstancesCreatedFromCluster"));
+            assertTrue(listOfInstances.contains(instance));
+        }
+        h.shutdown();
+    }
+
+
 
     private Map<Integer, HazelcastInstance> getMapOfClusterMembers(HazelcastInstance... h) {
         Map<Integer, HazelcastInstance> memberMap = new HashMap<Integer, HazelcastInstance>();
