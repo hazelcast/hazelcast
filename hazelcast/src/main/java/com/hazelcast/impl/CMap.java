@@ -17,7 +17,6 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.util.SortedHashMap;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -31,6 +30,7 @@ import static com.hazelcast.nio.IOUtil.toObject;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Index;
+import com.hazelcast.util.SortedHashMap;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -106,7 +106,13 @@ public class CMap {
         this.thisAddress = concurrentMapManager.thisAddress;
         this.name = name;
         mapRecords = new SortedHashMap<Data, Record>(10000);
-        MapConfig mapConfig = node.getConfig().getMapConfig(name.substring(2));
+        MapConfig mapConfig = null;
+        String mapConfigName = name.substring(2);
+        if (mapConfigName.startsWith("__hz_") || mapConfigName.startsWith("l:") || mapConfigName.startsWith("s:")) {
+            mapConfig = new MapConfig();
+        } else {
+            mapConfig = node.getConfig().getMapConfig(mapConfigName);
+        }
         this.backupCount = mapConfig.getBackupCount();
         ttl = mapConfig.getTimeToLiveSeconds() * 1000L;
         evictionPolicy = SortedHashMap.getOrderingTypeByName(mapConfig.getEvictionPolicy());

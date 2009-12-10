@@ -18,6 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.Transaction;
+import com.hazelcast.core.Instance;
 import com.hazelcast.impl.BlockingQueueManager.CommitPoll;
 import com.hazelcast.impl.BlockingQueueManager.Offer;
 import com.hazelcast.impl.FactoryImpl.MProxy;
@@ -41,6 +42,20 @@ class TransactionImpl implements Transaction {
     public TransactionImpl(FactoryImpl factory, long txnId) {
         this.id = txnId;
         this.factory = factory;
+    }
+
+    public Object attachAddOp(final String name, final Object key) {
+        TransactionRecord rec = findTransactionRecord(name, key);
+        if (rec == null) {
+            rec = new TransactionRecord(name, key, 1, true);
+            transactionRecords.add(rec);
+            return null;
+        } else {
+            final Object old = rec.value;
+            rec.value = ((Integer) rec.value) + 1;
+            rec.removed = false;
+            return old;
+        }
     }
 
     public Object attachPutOp(final String name, final Object key, final Object value,
@@ -178,7 +193,7 @@ class TransactionImpl implements Transaction {
                     if (transactionRecord.name.startsWith("m:s:")) {
                         size--;
                     } else if (!transactionRecord.newRecord) {
-                        if (!transactionRecord.queue) {
+                        if (transactionRecord.instanceType != Instance.InstanceType.QUEUE) {
                             size--;
                         }
                     }
@@ -252,7 +267,7 @@ class TransactionImpl implements Transaction {
 
         public boolean newRecord = false;
 
-        public boolean queue = false;
+        public Instance.InstanceType instanceType = null;
 
         public long lastAccess = -1;
 
@@ -262,12 +277,11 @@ class TransactionImpl implements Transaction {
             this.key = key;
             this.value = value;
             this.newRecord = newRecord;
-            if (name.startsWith("q:"))
-                queue = true;
+            instanceType = factory.node.concurrentMapManager.getInstanceType(name);
         }
 
         public void commit() {
-            if (queue)
+            if (instanceType == Instance.InstanceType.QUEUE)
                 commitQueue();
             else
                 commitMap();
@@ -284,7 +298,14 @@ class TransactionImpl implements Transaction {
                     factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
                 }
             } else {
-                factory.node.concurrentMapManager.new MPut().put(name, key, value, -1,  -1);
+                if (instanceType == Instance.InstanceType.LIST) {
+                    int count = (Integer) value;
+                    for (int i=0; i < count; i++) {
+                        factory.node.concurrentMapManager.new MAdd().addToList(name, key);
+                    }
+                } else {
+                    factory.node.concurrentMapManager.new MPut().put(name, key, value, -1,  -1);
+                }
             }
         }
 
@@ -298,7 +319,7 @@ class TransactionImpl implements Transaction {
         }
 
         public void rollback() {
-            if (queue)
+            if (instanceType == Instance.InstanceType.QUEUE)
                 rollbackQueue();
             else
                 rollbackMap();
