@@ -197,8 +197,10 @@ class TransactionImpl implements Transaction {
                             size--;
                         }
                     }
-                } else {
-                    if (transactionRecord.newRecord) {
+                } else if (transactionRecord.newRecord) {
+                    if (transactionRecord.instanceType == Instance.InstanceType.LIST) {
+                        size += (Integer) transactionRecord.value;
+                    } else {
                         size++;
                     }
                 }
