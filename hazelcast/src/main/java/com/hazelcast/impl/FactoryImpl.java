@@ -2029,11 +2029,8 @@ public class FactoryImpl implements HazelcastInstance {
 
         private class MProxyReal implements MProxy {
 
-            final InstanceType instanceType;
-
             public MProxyReal() {
                 super();
-                this.instanceType = BaseManager.getInstanceType(name);
             }
 
             @Override
@@ -2042,7 +2039,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public InstanceType getInstanceType() {
-                return instanceType;
+                return InstanceType.MAP;
             }
 
             public Object getId() {
@@ -2321,7 +2318,8 @@ public class FactoryImpl implements HazelcastInstance {
             public boolean add(Object value) {
                 check(value);
                 MAdd madd = concurrentMapManager.new MAdd();
-                if (instanceType == InstanceType.LIST) {
+                InstanceType type = concurrentMapManager.getInstanceType(name);
+                if (type == InstanceType.LIST) {
                     return madd.addToList(name, value);
                 } else {
                     return madd.addToSet(name, value);
@@ -2347,7 +2345,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public Set localKeySet(Predicate predicate) {
                 MIterateLocal miterate = concurrentMapManager.new MIterateLocal(name, predicate);
-                return (Set) miterate.iterate();
+                return miterate.iterate();
             }
 
             public Set entrySet(Predicate predicate) {
