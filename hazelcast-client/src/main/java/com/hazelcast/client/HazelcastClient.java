@@ -59,19 +59,18 @@ public class HazelcastClient implements HazelcastInstance{
     final IMap mapLockProxy;
     final ClusterClientProxy clusterClientProxy;
 
-
-    private HazelcastClient(boolean shuffle, InetSocketAddress[] clusterMembers) {
-		connectionManager = new ConnectionManager(this, clusterMembers, shuffle);
+    private HazelcastClient(String groupName, String groupPassword, boolean shuffle, InetSocketAddress[] clusterMembers) {
+        connectionManager = new ConnectionManager(this, clusterMembers, shuffle);
 
 		out = new OutRunnable(this, calls, new PacketWriter());
 		new Thread(out,"hz.client.OutThread").start();
-		
+
 		in = new InRunnable(this, calls, new PacketReader());
 		new Thread(in,"hz.client.InThread").start();
 
 		listenerManager = new ListenerManager();
 		new Thread(listenerManager,"hz.client.Listener").start();
-		
+
 		try {
 			connectionManager.getConnection();
 		} catch (IOException ignored) {
@@ -84,11 +83,26 @@ public class HazelcastClient implements HazelcastInstance{
 
         clusterClientProxy = new ClusterClientProxy(this);
         clusterClientProxy.setOutRunnable(out);
+        Boolean authenticate = clusterClientProxy.authenticate(groupName, groupPassword);
+        if(!authenticate){
+            this.shutdown();
+            throw new RuntimeException("Wrong group name and password.");
+        }
+
 	}
 
-	public static HazelcastClient getHazelcastClient(boolean shuffle, InetSocketAddress... clusterMembers){
-		return new HazelcastClient(shuffle, clusterMembers);
-	}
+    public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, boolean shuffle, String... addresses){
+        InetSocketAddress[] socketAddressArr = new InetSocketAddress[addresses.length];
+
+        for(int i=0;i<addresses.length;i++){
+            String[] seperated = addresses[i].split(":");
+            int port = (seperated.length>1)?Integer.valueOf(seperated[1]):5701;
+
+            InetSocketAddress inetSocketAddress = new InetSocketAddress(seperated[0], port);
+            socketAddressArr[i] = inetSocketAddress;
+        }
+        return new HazelcastClient(groupName, groupPassword, shuffle, socketAddressArr);
+    }
 	
 	public Config getConfig() {
         throw new UnsupportedOperationException();

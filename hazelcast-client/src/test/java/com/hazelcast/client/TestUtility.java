@@ -18,11 +18,17 @@ public class TestUtility {
     }
     
 	public static HazelcastClient getHazelcastClient(HazelcastInstance ... h) {
-		InetSocketAddress[] addresses = new InetSocketAddress[h.length];
+		String[] addresses = new String[h.length];
 		for (int i = 0; i < h.length; i++) {
-			addresses[i] = h[i].getCluster().getLocalMember().getInetSocketAddress();
+			addresses[i] = h[i].getCluster().getLocalMember().getInetSocketAddress().getHostName();
+//            addresses[i] = h[i].getCluster().getLocalMember().getInetSocketAddress().getHostName() + ":" + h[i].getCluster().getLocalMember().getInetSocketAddress().getPort();
+
 		}
-		HazelcastClient client = HazelcastClient.getHazelcastClient(true, addresses);
+        String name = h[0].getConfig().getGroupName();
+        String pass = h[0].getConfig().getGroupPassword();
+//		HazelcastClient client = HazelcastClient.getHazelcastClient(true, addresses);
+        HazelcastClient client = HazelcastClient.newHazelcastClient(name, pass, true, addresses);
+
 		return client;
 	}
 

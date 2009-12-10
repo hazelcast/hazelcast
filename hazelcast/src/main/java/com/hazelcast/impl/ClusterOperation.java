@@ -91,7 +91,8 @@ public enum ClusterOperation {
     ADD_INDEX(),
     GET_INSTANCES(),
     GET_MEMBERS(),
-    GET_CLUSTER_TIME();
+    GET_CLUSTER_TIME(),
+    CLIENT_AUTHENTICATE();
 
     static byte idGen = 0;
     public final static byte OPERATION_COUNT = 100;

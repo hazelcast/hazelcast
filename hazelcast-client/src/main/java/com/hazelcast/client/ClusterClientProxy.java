@@ -68,4 +68,8 @@ public class ClusterClientProxy implements ClientProxy, Cluster {
     public long getClusterTime() {
         return (Long)proxyHelper.doOp(ClusterOperation.GET_CLUSTER_TIME, null, null);
     }
+
+    public boolean authenticate(String groupName, String groupPassword) {
+        return (Boolean)proxyHelper.doOp(ClusterOperation.CLIENT_AUTHENTICATE, groupName, groupPassword);
+    }
 }

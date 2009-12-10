@@ -251,7 +251,19 @@ public class DynamicClusterTest {
         h.shutdown();
     }
 
+     @Test
+    public void testAuthenticate(){
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        HazelcastClient client = HazelcastClient.newHazelcastClient("dev", "dev-pass", true, h.getCluster().getLocalMember().getInetSocketAddress().getAddress().getCanonicalHostName() + ":" + h.getCluster().getLocalMember().getInetSocketAddress().getPort());
+        Map map = client.getMap("aasd");
+    }
 
+    @Test(expected = RuntimeException.class)
+    public void testAuthenticateWrongPass(){
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        HazelcastClient client = HazelcastClient.newHazelcastClient("dev", "wrong-pass", true, h.getCluster().getLocalMember().getInetSocketAddress().getAddress().getCanonicalHostName() + ":" + h.getCluster().getLocalMember().getInetSocketAddress().getPort());
+        Map map = client.getMap("aasd");
+    }
 
     private Map<Integer, HazelcastInstance> getMapOfClusterMembers(HazelcastInstance... h) {
         Map<Integer, HazelcastInstance> memberMap = new HashMap<Integer, HazelcastInstance>();

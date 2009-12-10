@@ -85,6 +85,7 @@ public class ClientService {
         clientOperationHandlers[ClusterOperation.GET_INSTANCES.getValue()] = new GetInstancesHandler();
         clientOperationHandlers[ClusterOperation.GET_MEMBERS.getValue()] = new GetMembersHandler();
         clientOperationHandlers[ClusterOperation.GET_CLUSTER_TIME.getValue()] = new GetClusterTimeHandler();
+        clientOperationHandlers[ClusterOperation.CLIENT_AUTHENTICATE.getValue()] = new ClientAuthenticateHandler();
     }
 
     // always called by InThread
@@ -359,6 +360,16 @@ public class ClientService {
             Cluster cluster = node.factory.getCluster();
             long clusterTime = cluster.getClusterTime();
             packet.value = toData(clusterTime);
+        }
+    }
+
+    private class ClientAuthenticateHandler extends ClientOperationHandler {
+        public void processCall(Node node, Packet packet) {
+            String groupName = node.factory.getConfig().getGroupName();
+            String pass = node.factory.getConfig().getGroupPassword();
+            Boolean value =  (groupName.equals(toObject(packet.key)) && pass.equals(toObject(packet.value)))  ;
+            packet.clearForResponse();
+            packet.value = toData(value);
         }
     }
 
