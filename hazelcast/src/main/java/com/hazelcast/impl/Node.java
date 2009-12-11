@@ -53,7 +53,7 @@ public class Node {
 
     private final Set<Address> failedConnections = new CopyOnWriteArraySet<Address>();
 
-    private final ShutdownHookThread shutdownHookThread = new ShutdownHookThread();
+    private final ShutdownHookThread shutdownHookThread = new ShutdownHookThread("hz.ShutdownThread");
 
     private final boolean superClient;
 
@@ -364,6 +364,10 @@ public class Node {
     }
 
     class ShutdownHookThread extends Thread {
+
+        ShutdownHookThread(String name) {
+            super(name);
+        }
 
         @Override
         public void run() {
