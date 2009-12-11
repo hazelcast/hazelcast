@@ -39,6 +39,11 @@ import com.hazelcast.core.InstanceListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.config.Config;
 
+/***
+ * Hazelcast Client enables you to do all Hazelcast operations wihtout being a member of the cluster. It connects to one of the
+ * cluster members and delegates all cluster wide operations to it. When the relied cluster member
+ * dies, client will transparently switch to another live member.
+ */
 public class HazelcastClient implements HazelcastInstance{
 	private static final String MAP_PREFIX = "c:";
 	private static final String LIST_PREFIX = "m:l:";
@@ -91,6 +96,33 @@ public class HazelcastClient implements HazelcastInstance{
 
 	}
 
+    /***
+     * Returns a new HazelcastClient. It will shuffle the given address list and pick one address to connect.
+     *
+     * @param groupName Group name of a cluster that client will connect
+     * @param groupPassword Group Password of a cluster that client will connect.
+     * @param addresses Addresses of Cluster Members that client will choose one to connect. If the connected member
+     * dies client will switch to the next one in the list.
+     * An address is in the form ip:port. If you will not specify the port, it will assume the default one, 5701.
+     * ex: "10.90.0.1", "10.90.0.2:5702"
+     * @return Returns a new Hazelcast Client instance.
+     */
+    public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, String... addresses){
+        return newHazelcastClient(groupName, groupPassword, true, addresses);
+    }
+
+    /***
+     * Returns a new HazelcastClient.
+     *
+     * @param groupName Group name of a cluster that client will connect
+     * @param groupPassword Group Password of a cluster that client will connect.
+     * @param shuffle Specifies whether to shuffle the list of addresses
+     * @param addresses Addresses of Cluster Members that client will choose one to connect. If the connected member
+     * dies client will switch to the next one in the list.
+     * An address is in the form ip:port. If you will not specify the port, it will assume the default one, 5701.
+     * ex: "10.90.0.1", "10.90.0.2:5702"
+     * @return Returns a new Hazelcast Client instance.
+     */
     public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, boolean shuffle, String... addresses){
         InetSocketAddress[] socketAddressArr = new InetSocketAddress[addresses.length];
 
@@ -101,7 +133,21 @@ public class HazelcastClient implements HazelcastInstance{
             InetSocketAddress inetSocketAddress = new InetSocketAddress(seperated[0], port);
             socketAddressArr[i] = inetSocketAddress;
         }
-        return new HazelcastClient(groupName, groupPassword, shuffle, socketAddressArr);
+        return newHazelcastClient(groupName, groupPassword, shuffle, socketAddressArr);
+    }
+
+    /***
+     * Returns a new HazelcastClient.
+     *
+     * @param groupName Group name of a cluster that client will connect
+     * @param groupPassword Group Password of a cluster that client will connect.
+     * @param shuffle Specifies whether to shuffle the list of addresses
+     * @param addresses InetSocketAddress of Cluster Members that client will choose one to connect. If the connected member
+     * dies client will switch to the next one in the list.
+     * @return Returns a new Hazelcast Client instance.
+     */
+    public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, boolean shuffle, InetSocketAddress... addresses){
+        return new HazelcastClient(groupName, groupPassword, shuffle, addresses);
     }
 	
 	public Config getConfig() {
