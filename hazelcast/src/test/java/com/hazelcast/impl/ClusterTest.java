@@ -827,14 +827,16 @@ public class ClusterTest {
             }
         };
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        h1.getTopic("default").addMessageListener(ml);
+        assertEquals(1, h1.getCluster().getMembers().size());
+        h1.getTopic("default2").addMessageListener(ml);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        h2.getTopic("default").addMessageListener(ml);
+        h2.getTopic("default2").addMessageListener(ml);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
-        h3.getTopic("default").addMessageListener(ml);
+        h3.getTopic("default2").addMessageListener(ml);
         HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
-        h4.getTopic("default").addMessageListener(ml);
-        h1.getTopic("default").publish("message2");
+        h4.getTopic("default2").addMessageListener(ml);
+        assertEquals(4, h4.getCluster().getMembers().size());
+        h1.getTopic("default2").publish("message2");
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
@@ -856,13 +858,14 @@ public class ClusterTest {
             }
         };
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        h1.getMap("default").addEntryListener(ml, true);
+        assertEquals(1, h1.getCluster().getMembers().size());
+        h1.getMap("default3").addEntryListener(ml, true);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        h2.getMap("default").addEntryListener(ml, true);
+        h2.getMap("default3").addEntryListener(ml, true);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
-        h3.getMap("default").addEntryListener(ml, true);
+        h3.getMap("default3").addEntryListener(ml, true);
         HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
-        h4.getMap("default").put("key", "value");
+        h4.getMap("default3").put("key", "value");
         assertTrue(latch.await(3, TimeUnit.SECONDS));
     }
 

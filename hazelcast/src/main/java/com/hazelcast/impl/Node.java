@@ -388,15 +388,6 @@ public class Node {
         joined = true;
     }
 
-    void setAsMaster() {
-        masterAddress = address;
-        logger.log(Level.FINEST, "adding member myself");
-        clusterManager.addMember(address, getLocalNodeType()); // add
-        // myself
-        clusterImpl.setMembers(baseVariables.lsMembers);
-        unlock();
-    }
-
     private Address findMaster() {
         try {
             final String ip = System.getProperty("join.ip");
@@ -512,43 +503,45 @@ public class Node {
         }
     }
 
+    void setAsMaster() {
+        masterAddress = address;
+        logger.log(Level.FINEST, "adding member myself");
+        clusterManager.addMember(address, getLocalNodeType()); // add
+        // myself
+        clusterImpl.setMembers(baseVariables.lsMembers);
+        unlock();
+    }
+
     private void joinWithMulticast() {
-        masterAddress = findMaster();
-        logger.log(Level.FINEST, address + " master: " + masterAddress);
-        if (masterAddress == null || masterAddress.equals(address)) {
-            clusterManager.addMember(address, getLocalNodeType()); // add
-            // myself
-            masterAddress = address;
-            clusterImpl.setMembers(baseVariables.lsMembers);
-            unlock();
-        } else {
-            while (!joined) {
-                try {
-                    logger.log(Level.FINEST, "joining... " + masterAddress);
-                    if (masterAddress == null) {
-                        joinWithMulticast();
-                    } else if (masterAddress.equals(address)) {
+        while (!joined) {
+            try {
+                logger.log(Level.FINEST, "joining... " + masterAddress);
+                if (masterAddress == null) {
+                    masterAddress = findMaster();
+                    if (masterAddress == null || masterAddress.equals(address)) {
                         setAsMaster();
+                        return;
                     }
-                    joinExisting(masterAddress);
-                    Thread.sleep(500);
-                } catch (final Exception e) {
-                    logger.log(Level.FINEST, "multicast join", e);
                 }
+                if (!masterAddress.equals(address)) {
+                    connectAndSendJoinRequest(masterAddress);
+                }
+                Thread.sleep(500);
+            } catch (final Exception e) {
+                logger.log(Level.FINEST, "multicast join", e);
             }
         }
     }
 
-    private void joinExisting(final Address masterAddress) throws Exception {
-        if (masterAddress == null) return;
-        if (masterAddress.equals(getThisAddress())) return;
+    private void connectAndSendJoinRequest(final Address masterAddress) throws Exception {
+        if (masterAddress == null || masterAddress.equals(address)) {
+            throw new IllegalArgumentException();
+        }
         Connection conn = connectionManager.getOrConnect(masterAddress);
-        if (conn == null)
-            Thread.sleep(1000);
-        conn = connectionManager.getConnection(masterAddress);
         logger.log(Level.FINEST, "Master connnection " + conn);
-        if (conn != null)
+        if (conn != null) {
             clusterManager.sendJoinRequest(masterAddress);
+        }
     }
 
     private void joinViaPossibleMembers() {
