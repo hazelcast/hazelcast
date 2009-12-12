@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2007-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
  * limitations under the License.
  *
  */
+
 package com.hazelcast.jmx;
 
 interface StatisticsCollector {
