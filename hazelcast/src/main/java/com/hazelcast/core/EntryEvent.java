@@ -22,6 +22,8 @@ import java.util.EventObject;
 /**
  * Map Entry event.  
  *
+ * @see com.hazelcast.core.EntryListener
+ * @see com.hazelcast.core.IMap#addEntryListener(EntryListener, boolean)
  * @param <K> key of the map entry
  * @param <V> value of the map entry
  */

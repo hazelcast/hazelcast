@@ -19,6 +19,16 @@ package com.hazelcast.core;
 
 import java.util.EventListener;
 
+/**
+ * Message listener for {@link ITopic}.
+ *
+ * @param <E> message
+ */
 public interface MessageListener<E> extends EventListener {
-    void onMessage(E msg);
+    /**
+     * Invoked when a message is recieved for the added topic.
+     *
+     * @param message recieved message
+     */
+    void onMessage(E message);
 }

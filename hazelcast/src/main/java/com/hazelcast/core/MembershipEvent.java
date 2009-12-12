@@ -19,6 +19,12 @@ package com.hazelcast.core;
 
 import java.util.EventObject;
 
+/**
+ * Membership event fired when a new member is added
+ * to the cluster and/or when a member leaves the cluster.
+ *
+ * @see MembershipListener
+ */
 public class MembershipEvent extends EventObject {
 
     private static final long serialVersionUID = -2010865371829087371L;
@@ -37,14 +43,28 @@ public class MembershipEvent extends EventObject {
         this.eventType = eventType;
     }
 
+    /**
+     * Returns the cluster of the event.
+     * @return
+     */
     public Cluster getCluster() {
         return (Cluster) getSource();
     }
 
+    /**
+     * Returns the membership event type; #MEMBER_ADDED or #MEMBER_REMOVED
+     * 
+     * @return the membeship event type
+     */
     public int getEventType() {
         return eventType;
     }
 
+    /**
+     * Returns the removed or added member.
+     *
+     * @return member which is removed/added
+     */
     public Member getMember() {
         return member;
     }

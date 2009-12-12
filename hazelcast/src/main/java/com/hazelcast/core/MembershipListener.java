@@ -19,9 +19,22 @@ package com.hazelcast.core;
 
 import java.util.EventListener;
 
+/**
+ * Cluster membership listener.
+ */
 public interface MembershipListener extends EventListener {
 
+    /**
+     * Invoked when a new member is added to the cluster.
+     *
+     * @param membersipEvent membership event
+     */
     void memberAdded(MembershipEvent membersipEvent);
 
+    /**
+     * Invoked when an existing member leaves the cluster.
+     *
+     * @param membersipEvent membership event
+     */
     void memberRemoved(MembershipEvent membersipEvent);
 }

@@ -19,9 +19,24 @@ package com.hazelcast.core;
 
 import java.util.EventListener;
 
+/**
+ * Item listener for {@link IQueue}, {@link ISet} and {@link IList}
+ *
+ * @param <E> item
+ */
 public interface ItemListener<E> extends EventListener {
 
+    /**
+     * Invoked when an item is added.
+     *
+     * @param item added item
+     */
     void itemAdded(E item);
 
+    /**
+     * Invoked when an item is removed.
+     *
+     * @param item removed item.
+     */
     void itemRemoved(E item);
 }

@@ -19,15 +19,45 @@ package com.hazelcast.core;
 
 import java.util.Set;
 
+/**
+ * Hazelcast cluster interface.
+ */
 public interface Cluster {
 
+    /**
+     * Adds MembershipListener to listen for membership updates.
+     *
+     * @param listener membership listener
+     */
     void addMembershipListener(MembershipListener listener);
 
+    /**
+     * Removes the specified membership listener.
+     * @param listener membership listener to remove
+     */
     void removeMembershipListener(MembershipListener listener);
 
+    /**
+     * Set of current members of the cluster.
+     * @return current members of the cluster
+     */
     Set<Member> getMembers();
 
+    /**
+     * Returns this Hazelcast instance member
+     * @return this Hazelcast instance member
+     */
     Member getLocalMember();
 
+    /**
+     * Returns the cluster-wide time.
+     * <p>
+     * Cluster tries to keep a cluster-wide time which is
+     * might be different than the member's own system time.
+     * Cluster-wide time is -almost- the same on all members 
+     * of the cluster.
+     *
+     * @return
+     */
     long getClusterTime();
 }

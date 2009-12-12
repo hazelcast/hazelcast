@@ -20,15 +20,55 @@ package com.hazelcast.core;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
+/**
+ * Cluster member interface
+ *
+ * @see Cluster
+ * @see MembershipListener
+ */
 public interface Member {
 
+    /**
+     * Returns if this member is the local member.
+     *
+     * @return <tt>true<tt> if this member is the
+     * local member, <tt>false</tt> otherwise.
+     */
     boolean localMember();
 
-    int getPort();
+    /**
+     * Returns the port number of this member.
+     * <p>
+     * Each member in the cluster has a server socket. 
+     *
+     * @deprecated use link{#getInetSocketAddress()}
+     *
+     * @return port number of this member.
+     */
+    @Deprecated int getPort();
 
-    InetAddress getInetAddress();
+    /**
+     * Returns the InetAddress of this member.
+     *
+     * @deprecated use link{#getInetSocketAddress()}
+     * @return InetAddress of this member
+     */
+    @Deprecated InetAddress getInetAddress();
 
-    InetSocketAddress getInetSocketAddress(); 
+    /**
+     * Returns the InetSocketAddress of this member.
+     *
+     * @return InetSocketAddress of this member
+     */
+    InetSocketAddress getInetSocketAddress();
 
+    /**
+     * Returns if this member is a super client.
+     * Super client is a cluster member which doesn't
+     * hold any data on it.
+     *
+     * @return <tt>true</tt> if this member is a super
+     * client, <tt>false</tt> otherwise
+     */
     boolean isSuperClient();
 }

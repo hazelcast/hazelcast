@@ -17,6 +17,11 @@
 
 package com.hazelcast.core;
 
+/**
+ * Hazelcast transaction interface.
+ * 
+ * @see Hazelcast#getTransaction()
+ */
 public interface Transaction {
 
     public static final int TXN_STATUS_NO_TXN = 0;
