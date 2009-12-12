@@ -23,8 +23,8 @@
 
     <target name="jar" depends="compile">
         <jar jarfile="${hazelcast.jar.name}">
-            <fileset dir="${src.dir}" />
-            <fileset dir="${classes.dir}" />
+            <fileset dir="${src.dir}"/>
+            <fileset dir="${classes.dir}"/>
             <manifest>
                 <attribute name="Built-By" value="Hazelcast.com"/>
                 <attribute name="Main-Class" value="com.hazelcast.examples.TestApp"/>
@@ -34,14 +34,17 @@
 
     <target name="javadoc">
         <javadoc destdir="javadoc" author="true" version="true" use="true" windowtitle="Hazelcast API">
-            <fileset dir="src" defaultexcludes="yes">
-                <include name="com/hazelcast/core/**"/>
-                <include name="com/hazelcast/config/**"/>
-                <include name="com/hazelcast/query/**"/>
-                <exclude name="com/hazelcast/impl/**"/>
-                <include name="com/hazelcast/web/SnapshotEvent.java"/>
-                <include name="com/hazelcast/web/SnapshotListener.java"/>
-                <include name="com/hazelcast/web/Context.java"/>
+             <fileset dir="hazelcast/src/main/java/" defaultexcludes="true">
+                <include name="**/nio/DataSerializable*"/>
+                <include name="**/core/**"/>
+                <include name="**/config/**"/>
+                <include name="**/jmx/**"/>
+                <include name="**/query/**"/>
+                <exclude name="**/*.html"/>
+            </fileset>
+             <fileset dir="hazelcast-client/src/main/java/" defaultexcludes="true">
+                <include name="**/HazelcastClient.java"/>
+                <exclude name="**/*.html"/>
             </fileset>
             <doctitle>
                 <![CDATA[<h1>Hazelcast</h1>]]>

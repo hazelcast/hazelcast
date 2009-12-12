@@ -20,5 +20,10 @@ package com.hazelcast.core;
 import java.util.concurrent.locks.Lock;
 
 public interface ILock extends Lock, Instance {
+    /**
+     * Returns the lock object, the key for this lock instance.
+     * 
+     * @return lock object.
+     */
     Object getLockObject();
 }

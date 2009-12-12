@@ -23,9 +23,22 @@ public interface Instance {
         QUEUE, MAP, SET, LIST, LOCK, TOPIC, MULTIMAP, ID_GENERATOR
     }
 
+    /**
+     * Returns instance type such as map, set, list, lock, topic, multimap, id generator
+     *
+     * @return instance type
+     */
     InstanceType getInstanceType();
 
+    /**
+     * Destroys this instance cluster-wide.
+     * Clears and releases all resources for this instance.
+     */
     void destroy();
 
+    /**
+     * Returns the unique id for this instance.
+     * @return id the of this instance
+     */
     Object getId();
 }

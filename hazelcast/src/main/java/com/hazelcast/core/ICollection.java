@@ -17,10 +17,33 @@
 
 package com.hazelcast.core;
 
+/**
+ * Concurrent, distributed, partitioned, observable collection.
+ * @param <E> item
+ */
 public interface ICollection<E> extends Instance {
+    /**
+     * Returns the name of this collection
+     *
+     * @return name of this collection
+     */
     String getName();
 
+    /**
+     * Adds an item listener for this collection. Listener will get notified
+     * for all collection add/remove events.
+     *
+     * @param listener     item listener
+     * @param includeValue <tt>true</tt> updated item should be passed
+     * to the item listener, <tt>false</tt> otherwise.
+     */
     void addItemListener(ItemListener<E> listener, boolean includeValue);
 
+    /**
+     * Removes the specified item listener.
+     * Returns silently if the specified listener is not added before.
+     *
+     * @param listener item listener for this collection
+     */
     void removeItemListener(ItemListener<E> listener);
 }
