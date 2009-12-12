@@ -681,14 +681,72 @@ public class ClusterTest {
      * Test for issue 157
      */
     @Test(timeout = 16000)
-    public void testMapProxySerialization() {
+    public void testMapProxySerialization() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        Map m1 = h1.getMap("default");
-        m1.put("1", "value1");
-        h2.getMap("amap").put("1", m1);
-        Map m1again = (Map) h2.getMap("amap").get("1");
-        assertEquals("value1", m1again.get("1"));
+        Map map = h1.getMap("default");
+        map.put("1", "value1");
+        IQueue q = h1.getQueue("default");
+        q.offer("item1");
+        MultiMap mm = h1.getMultiMap("default");
+        mm.put("1", "mmValue");
+        ILock lock = h1.getLock("serializationTestLock");
+        lock.lock();
+        ITopic topic = h1.getTopic("default");
+        IdGenerator ig = h1.getIdGenerator("default");
+        assertEquals(1, ig.newId());
+        ISet set = h1.getSet("default");
+        set.add("item");
+        h2.getMap("amap").put("1", map);
+        h2.getMap("amap").put("2", q);
+        h2.getMap("amap").put("3", mm);
+        h2.getMap("amap").put("4", lock);
+        h2.getMap("amap").put("5", topic);
+        h2.getMap("amap").put("6", ig);
+        h2.getMap("amap").put("7", set);
+        Map m1 = (Map) h1.getMap("amap").get("1");
+        Map m2 = (Map) h2.getMap("amap").get("1");
+        assertEquals("value1", m1.get("1"));
+        assertEquals("value1", m2.get("1"));
+        IQueue q1 = (IQueue) h1.getMap("amap").get("2");
+        IQueue q2 = (IQueue) h2.getMap("amap").get("2");
+        assertEquals(1, q1.size());
+        assertEquals(1, q2.size());
+        assertEquals("item1", q2.poll());
+        MultiMap mm1 = (MultiMap) h1.getMap("amap").get("3");
+        MultiMap mm2 = (MultiMap) h2.getMap("amap").get("3");
+        assertTrue(mm1.get("1").contains("mmValue"));
+        assertTrue(mm2.get("1").contains("mmValue"));
+        ILock lock1 = (ILock) h1.getMap("amap").get("4");
+        ILock lock2 = (ILock) h2.getMap("amap").get("4");
+        assertEquals("serializationTestLock", lock1.getLockObject());
+        assertEquals("serializationTestLock", lock2.getLockObject());
+        assertFalse(lock2.tryLock());
+        ITopic topic1 = (ITopic) h1.getMap("amap").get("5");
+        ITopic topic2 = (ITopic) h2.getMap("amap").get("5");
+        final CountDownLatch latch = new CountDownLatch(2);
+        topic1.addMessageListener(new MessageListener() {
+            public void onMessage(Object msg) {
+                assertEquals("message5", msg);
+                latch.countDown();
+            }
+        });
+        topic2.addMessageListener(new MessageListener() {
+            public void onMessage(Object msg) {
+                assertEquals("message5", msg);
+                latch.countDown();
+            }
+        });
+        topic.publish("message5");
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        IdGenerator ig1 = (IdGenerator) h1.getMap("amap").get("6");
+        IdGenerator ig2 = (IdGenerator) h2.getMap("amap").get("6");
+        assertEquals(2, ig1.newId());
+        assertEquals(1000001, ig2.newId());
+        ISet set1 = (ISet) h1.getMap("amap").get("7");
+        ISet set2 = (ISet) h2.getMap("amap").get("7");
+        assertTrue(set1.contains("item"));
+        assertTrue(set2.contains("item"));
     }
 
     /**

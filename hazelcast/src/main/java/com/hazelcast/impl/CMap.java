@@ -1027,7 +1027,17 @@ public class CMap {
         }
 
         public boolean contains(Object o) {
-            throw new UnsupportedOperationException();
+            if (o == null) {
+                throw new IllegalArgumentException("Contains cannot have null argument.");
+            }
+            Iterator it = iterator();
+            while (it.hasNext()) {
+                Object v = it.next();
+                if (o.equals(v)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public boolean containsAll(Collection c) {
@@ -1119,7 +1129,7 @@ public class CMap {
         }
     }
 
-    public static class CMapEntry implements MapEntry, DataSerializable {
+    public static class CMapEntry implements HazelcastInstanceAware, MapEntry, DataSerializable {
         private long cost = 0;
         private long expirationTime = 0;
         private long lastAccessTime = 0;
@@ -1128,10 +1138,11 @@ public class CMap {
         private long version = 0;
         private int hits = 0;
         private boolean valid = true;
-        private String factoryName = null;
         private String name = null;
         private Object key = null;
         private Object value = null;
+        private HazelcastInstance hazelcastInstance = null;
+
 
         public CMapEntry() {
         }
@@ -1169,8 +1180,11 @@ public class CMap {
             valid = in.readBoolean();
         }
 
-        public void set(String factoryName, String name, Object key) {
-            this.factoryName = factoryName;
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.hazelcastInstance = hazelcastInstance;
+        }
+
+        public void set(String name, Object key) {
             this.name = name;
             this.key = key;
         }
@@ -1213,7 +1227,7 @@ public class CMap {
 
         public Object getValue() {
             if (value == null) {
-                FactoryImpl factory = FactoryImpl.getFactoryImpl(factoryName);
+                FactoryImpl factory = (FactoryImpl) hazelcastInstance;
                 value = ((FactoryImpl.MProxy) factory.getOrCreateProxyByName(name)).get(key);
             }
             return value;
@@ -1221,7 +1235,7 @@ public class CMap {
 
         public Object setValue(Object value) {
             Object oldValue = this.value;
-            FactoryImpl factory = FactoryImpl.getFactoryImpl(factoryName);
+            FactoryImpl factory = (FactoryImpl) hazelcastInstance;
             ((FactoryImpl.MProxy) factory.getOrCreateProxyByName(name)).put(key, value);
             return oldValue;
         }

@@ -48,9 +48,9 @@ public class FactoryImpl implements HazelcastInstance {
 
     private final Logger logger = Logger.getLogger(FactoryImpl.class.getName());
 
-    private final ConcurrentMap<String, FactoryAwareProxy> proxiesByName = new ConcurrentHashMap<String, FactoryAwareProxy>(1000);
+    private final ConcurrentMap<String, HazelcastInstanceAwareInstance> proxiesByName = new ConcurrentHashMap<String, HazelcastInstanceAwareInstance>(1000);
 
-    private final ConcurrentMap<ProxyKey, FactoryAwareProxy> proxies = new ConcurrentHashMap<ProxyKey, FactoryAwareProxy>(1000);
+    private final ConcurrentMap<ProxyKey, HazelcastInstanceAwareInstance> proxies = new ConcurrentHashMap<ProxyKey, HazelcastInstanceAwareInstance>(1000);
 
     private final MProxy locksMapProxy;
 
@@ -227,9 +227,9 @@ public class FactoryImpl implements HazelcastInstance {
             factory.restarted = true;
             shutdown(hazelcastInstanceProxy);
             HazelcastInstanceProxy newFactory = newHazelcastInstanceProxy(factory.node.config);
-            Collection<FactoryAwareProxy> proxies = factory.proxies.values();
-            for (FactoryAwareProxy factoryAwareProxy : proxies) {
-                factoryAwareProxy.setFactory((FactoryImpl) newFactory.getHazelcastInstance());
+            Collection<HazelcastInstanceAwareInstance> proxies = factory.proxies.values();
+            for (HazelcastInstanceAwareInstance factoryAwareProxy : proxies) {
+                factoryAwareProxy.setHazelcastInstance(newFactory.getHazelcastInstance());
             }
             return newFactory;
         }
@@ -339,7 +339,7 @@ public class FactoryImpl implements HazelcastInstance {
         return lsProxies;
     }
 
-    public Collection<FactoryAwareProxy> getProxies() {
+    public Collection<HazelcastInstanceAwareInstance> getProxies() {
         initialChecks();
         return proxies.values();
     }
@@ -444,7 +444,7 @@ public class FactoryImpl implements HazelcastInstance {
     // should only be called from service thread!!
     public Object createProxy(ProxyKey proxyKey) {
         boolean created = false;
-        FactoryAwareProxy proxy = proxies.get(proxyKey);
+        HazelcastInstanceAwareInstance proxy = proxies.get(proxyKey);
         if (proxy == null) {
             created = true;
             String name = proxyKey.name;
@@ -510,7 +510,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    public static class LockProxy implements FactoryAwareProxy, ILock, DataSerializable {
+    public static class LockProxy extends SerializationHelper implements HazelcastInstanceAwareInstance, ILock, DataSerializable {
 
         private Object key = null;
         private transient ILock base = null;
@@ -519,19 +519,16 @@ public class FactoryImpl implements HazelcastInstance {
         public LockProxy() {
         }
 
-        public LockProxy(FactoryImpl factory, Object key) {
+        public LockProxy(HazelcastInstance hazelcastInstance, Object key) {
             super();
             this.key = key;
+            setHazelcastInstance(hazelcastInstance);
             base = new LockProxyBase();
-            this.factory = factory;
+
         }
 
-        public FactoryImpl getFactory() {
-            return factory;
-        }
-
-        public void setFactory(FactoryImpl factory) {
-            this.factory = factory;
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.factory = (FactoryImpl) hazelcastInstance;
         }
 
         private void ensure() {
@@ -560,15 +557,12 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public void writeData(DataOutput out) throws IOException {
-            out.writeUTF(factory.getName());
-            Data data = doHardCopy(toData(key));
-            data.writeData(out);
+            writeObject(out, key);
         }
 
         public void readData(DataInput in) throws IOException {
-            Data data = new Data();
-            data.readData(in);
-            key = toObject(data);
+            key = readObject(in);
+            setHazelcastInstance(ThreadContext.get().getCurrentFactory());
         }
 
         public void lock() {
@@ -789,12 +783,12 @@ public class FactoryImpl implements HazelcastInstance {
 
         public void set(String name, FactoryImpl factory) {
             setName(name);
-            setFactory(factory);
+            setHazelcastInstance(factory);
         }
 
         @Override
-        public void setFactory(FactoryImpl factory) {
-            super.setFactory(factory);
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            super.setHazelcastInstance(hazelcastInstance);
             topicManager = factory.node.topicManager;
             listenerManager = factory.node.listenerManager;
         }
@@ -893,7 +887,7 @@ public class FactoryImpl implements HazelcastInstance {
 
     }
 
-    public static class CollectionProxyImpl extends BaseCollection implements CollectionProxy, FactoryAwareProxy, DataSerializable {
+    public static class CollectionProxyImpl extends BaseCollection implements CollectionProxy, HazelcastInstanceAwareInstance, DataSerializable {
         String name = null;
         private transient CollectionProxy base = null;
         private transient FactoryImpl factory = null;
@@ -915,8 +909,8 @@ public class FactoryImpl implements HazelcastInstance {
             return base;
         }
 
-        public void setFactory(FactoryImpl factory) {
-            this.factory = factory;
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.factory = (FactoryImpl) hazelcastInstance;
         }
 
         private void ensure() {
@@ -999,7 +993,6 @@ public class FactoryImpl implements HazelcastInstance {
 
         public void readData(DataInput in) throws IOException {
             name = in.readUTF();
-            setFactory(ThreadContext.get().getCurrentFactory());
         }
 
         private void writeObject(ObjectOutputStream out) throws IOException {
@@ -1186,7 +1179,7 @@ public class FactoryImpl implements HazelcastInstance {
         InstanceType getInstanceType();
     }
 
-    public static class QProxyImpl extends AbstractQueue implements QProxy, FactoryAwareProxy, DataSerializable {
+    public static class QProxyImpl extends AbstractQueue implements QProxy, HazelcastInstanceAwareInstance, DataSerializable {
         private transient QProxy qproxyReal = null;
         private transient FactoryImpl factory = null;
         private String name = null;
@@ -1199,15 +1192,15 @@ public class FactoryImpl implements HazelcastInstance {
         private QProxyImpl(String name, FactoryImpl factory) {
             this.name = name;
             qproxyReal = new QProxyReal();
-            setFactory(factory);
+            setHazelcastInstance(factory);
         }
 
         public FactoryImpl getFactory() {
             return factory;
         }
 
-        public void setFactory(FactoryImpl factory) {
-            this.factory = factory;
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.factory = (FactoryImpl) hazelcastInstance;
             this.blockingQueueManager = factory.node.blockingQueueManager;
             this.listenerManager = factory.node.listenerManager;
         }
@@ -1248,7 +1241,6 @@ public class FactoryImpl implements HazelcastInstance {
 
         public void readData(DataInput in) throws IOException {
             name = in.readUTF();
-            setFactory(ThreadContext.get().getCurrentFactory());
         }
 
         private void writeObject(ObjectOutputStream out) throws IOException {
@@ -1470,26 +1462,26 @@ public class FactoryImpl implements HazelcastInstance {
 
     public static class MultiMapProxy extends FactoryAwareNamedProxy implements MultiMap, DataSerializable, IGetAwareProxy {
 
-        private transient MultiMapBase base = null;
+        private transient MultiMap base = null;
 
         public MultiMapProxy() {
         }
 
         public MultiMapProxy(String name, FactoryImpl factory) {
             setName(name);
-            setFactory(factory);
+            setHazelcastInstance(factory);
             this.base = new MultiMapBase();
         }
 
         private void ensure() {
             initialChecks();
             if (base == null) {
-                base = (MultiMapBase) factory.getOrCreateProxyByName(name);
+                base = (MultiMap) factory.getOrCreateProxyByName(name);
             }
         }
 
         public MultiMapBase getBase() {
-            return base;
+            return (MultiMapBase) base;
         }
 
         public Object getId() {
@@ -1750,13 +1742,13 @@ public class FactoryImpl implements HazelcastInstance {
 
         private MProxyImpl(String name, FactoryImpl factory) {
             setName(name);
-            setFactory(factory);
+            setHazelcastInstance(factory);
             mproxyReal = new MProxyReal();
         }
 
         @Override
-        public void setFactory(FactoryImpl factory) {
-            super.setFactory(factory);
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            super.setHazelcastInstance(hazelcastInstance);
             this.concurrentMapManager = factory.node.concurrentMapManager;
             this.listenerManager = factory.node.listenerManager;
             ClassLoader cl = MProxy.class.getClassLoader();
@@ -2392,13 +2384,10 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    interface FactoryAwareProxy extends Instance {
-        void setFactory(FactoryImpl factory);
-
-        FactoryImpl getFactory();
+    interface HazelcastInstanceAwareInstance extends Instance, HazelcastInstanceAware {
     }
 
-    static abstract class FactoryAwareNamedProxy implements FactoryAwareProxy, DataSerializable {
+    static abstract class FactoryAwareNamedProxy implements HazelcastInstanceAwareInstance, DataSerializable {
         transient protected FactoryImpl factory = null;
         protected String name = null;
 
@@ -2417,8 +2406,8 @@ public class FactoryImpl implements HazelcastInstance {
             return factory;
         }
 
-        public void setFactory(FactoryImpl factory) {
-            this.factory = factory;
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.factory = (FactoryImpl) hazelcastInstance;
         }
 
         public void writeData(DataOutput out) throws IOException {
@@ -2427,7 +2416,7 @@ public class FactoryImpl implements HazelcastInstance {
 
         public void readData(DataInput in) throws IOException {
             setName(in.readUTF());
-            setFactory(ThreadContext.get().getCurrentFactory());
+            setHazelcastInstance(ThreadContext.get().getCurrentFactory());
         }
 
         private void writeObject(ObjectOutputStream out) throws IOException {
@@ -2448,14 +2437,14 @@ public class FactoryImpl implements HazelcastInstance {
 
         public IdGeneratorProxy(String name, FactoryImpl factory) {
             setName(name);
-            setFactory(factory);
+            setHazelcastInstance(factory);
             base = new IdGeneratorBase();
         }
 
         private void ensure() {
             initialChecks();
             if (base == null) {
-                base = factory.getIdGenerator(name);
+                base = (IdGenerator) factory.getOrCreateProxyByName(name);
             }
         }
 

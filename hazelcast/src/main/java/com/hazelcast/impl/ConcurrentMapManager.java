@@ -447,7 +447,7 @@ public final class ConcurrentMapManager extends BaseManager {
         public MapEntry get(String name, Object key) {
             CMap.CMapEntry mapEntry = (CMap.CMapEntry) objectCall(CONCURRENT_MAP_GET_MAP_ENTRY, name, key, null, 0, -1);
             if (mapEntry != null) {
-                mapEntry.set(node.factory.getName(), name, key);
+                mapEntry.set(name, key);
             }
             return mapEntry;
         }

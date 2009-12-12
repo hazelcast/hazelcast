@@ -19,13 +19,39 @@ package com.hazelcast.core;
 
 import java.util.EventListener;
 
+/**
+ * Map Entry listener to get notified when a map entry
+ * is added, removed, updated or evicted.
+ * @param <K> key of the map entry
+ * @param <V> value of the map entry.
+ */
 public interface EntryListener<K, V> extends EventListener {
-    
+
+    /**
+     * Invoked when an entry is added.
+     *
+     * @param event entry event
+     */
     void entryAdded(EntryEvent<K, V> event);
 
+    /**
+     * Invoked when an entry is removed.
+     *
+     * @param event entry event
+     */
     void entryRemoved(EntryEvent<K, V> event);
 
+    /**
+     * Invoked when an entry is updated.
+     *
+     * @param event entry event
+     */
     void entryUpdated(EntryEvent<K, V> event);
 
+    /**
+     * Invoked when an entry is evicted.
+     *
+     * @param event entry event
+     */
     void entryEvicted(EntryEvent<K, V> event);
 }

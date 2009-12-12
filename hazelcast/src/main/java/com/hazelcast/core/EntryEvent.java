@@ -19,6 +19,12 @@ package com.hazelcast.core;
 
 import java.util.EventObject;
 
+/**
+ * Map Entry event.  
+ *
+ * @param <K> key of the map entry
+ * @param <V> value of the map entry
+ */
 public class EntryEvent<K, V> extends EventObject {
 
     private static final long serialVersionUID = -2296203982913729851L;
@@ -81,18 +87,38 @@ public class EntryEvent<K, V> extends EventObject {
         return name;
     }
 
+    /**
+     * Returns the key of the entry event
+     * 
+     * @return the key
+     */
     public K getKey() {
         return key;
     }
 
+    /**
+     * Returns the value of the entry event
+     *
+     * @return
+     */
     public V getValue() {
         return value;
     }
 
+    /**
+     * Return the event type
+     *
+     * @return event type
+     */
     public EntryEventType getEventType() {
         return entryEventType;
     }
 
+    /**
+     * Returns the name of the map for this event.
+     *
+     * @return name of the map.
+     */
     public String getName() {
         return name;
     }

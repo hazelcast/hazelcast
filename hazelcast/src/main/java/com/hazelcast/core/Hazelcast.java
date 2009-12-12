@@ -38,7 +38,7 @@ public final class Hazelcast {
     }
 
     /**
-     * Initilizes Hazelcast instance with the specified configuration.
+     * Initilizes this Hazelcast instance with the specified configuration.
      * This method should be called before calling any other methods otherwise
      *
      * @param config configuration for this Hazelcast instance.
@@ -122,7 +122,7 @@ public final class Hazelcast {
      * Returns the distributed multimap instance with the specified name.
      *
      * @param name name of the distributed multimap
-     * @return distributed mutimap instance with the specified name
+     * @return distributed multimap instance with the specified name
      */
     public static <K, V> MultiMap<K, V> getMultiMap(String name) {
         return getDefaultInstance().getMultiMap(name);
@@ -141,7 +141,6 @@ public final class Hazelcast {
      * by this dead member will be removed so that these locks can be
      * available for live members immediately.
      * <pre>
-     * <p/>
      * Lock lock = Hazelcast.getLock("PROCESS_LOCK");
      * lock.lock();
      * try {
@@ -284,10 +283,23 @@ public final class Hazelcast {
         return getDefaultInstance().getInstances();
     }
 
+    /**
+     * Add a instance listener which will be notified when a
+     * new instance such as map, queue, multima, topic, lock is
+     * added or removed.
+     *
+     * @param instanceListener instance listener
+     */
     public static void addInstanceListener(InstanceListener instanceListener) {
         getDefaultInstance().addInstanceListener(instanceListener);
     }
 
+    /**
+     * Removes the specified instance listener. Returns silently
+     * if specified instance listener doesn't exist.
+     *
+     * @param instanceListener instance listener to remove
+     */
     public static void removeInstanceListener(InstanceListener instanceListener) {
         getDefaultInstance().removeInstanceListener(instanceListener);
     }
