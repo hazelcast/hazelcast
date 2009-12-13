@@ -18,7 +18,7 @@ public class TopicConfigTest {
 	@Test
 	public void testGetName() {
 		TopicConfig topicConfig = new TopicConfig();
-		assertNotNull(topicConfig.getName());
+		assertNull(topicConfig.getName());
 	}
 
 	/**
