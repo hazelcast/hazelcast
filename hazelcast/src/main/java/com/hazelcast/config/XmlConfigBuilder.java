@@ -27,6 +27,7 @@ import java.io.*;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,6 +41,38 @@ public class XmlConfigBuilder implements ConfigBuilder {
     private URL configurationUrl;
     boolean usingSystemConfig = false;
 
+    public static class IterableNodeList implements Iterable<Node> {
+
+    	private final NodeList parent;
+    	private final int maximum;
+
+    	public IterableNodeList(final NodeList parent) {
+    		this.parent = parent;
+    		this.maximum = parent.getLength();
+    	}
+    	
+		public Iterator<Node> iterator() {
+			return new Iterator<Node>() {
+				
+				private int index = 0;
+
+				public boolean hasNext() {
+					return (index < maximum);
+				}
+
+				public Node next() {
+					return parent.item(index++);
+				}
+
+				public void remove() {
+					throw new UnsupportedOperationException();
+				}
+				
+			};
+		}
+    	
+    }
+    
     public XmlConfigBuilder(String xmlFileName) throws FileNotFoundException {
         this(new FileInputStream(xmlFileName));
     }
@@ -333,12 +366,12 @@ public class XmlConfigBuilder implements ConfigBuilder {
 
     private void invoke(Object target, Method method, String value) {
         if (method == null) return;
-        Class[] args = method.getParameterTypes();
+        Class<?>[] args = method.getParameterTypes();
         if (args == null || args.length == 0) return;
-        Class arg = method.getParameterTypes()[0];
+        Class<?> arg = method.getParameterTypes()[0];
         try {
             if (arg == String.class) {
-                method.invoke(target, new String[]{value});
+                method.invoke(target, new Object[]{value});
             } else if (arg == int.class) {
                 method.invoke(target, new Object[]{Integer.parseInt(value)});
             } else if (arg == long.class) {
