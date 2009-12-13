@@ -35,8 +35,9 @@ public class TopicConfig {
     /**
      * @param name the name to set
      */
-    public void setName(String name) {
+    public TopicConfig setName(String name) {
         this.name = name;
+        return this;
     }
 
     /**
@@ -49,7 +50,8 @@ public class TopicConfig {
     /**
      * @param globalOrderingEnabled the globalOrderingEnabled to set
      */
-    public void setGlobalOrderingEnabled(boolean globalOrderingEnabled) {
+    public TopicConfig setGlobalOrderingEnabled(boolean globalOrderingEnabled) {
         this.globalOrderingEnabled = globalOrderingEnabled;
+        return this;
     }
 }

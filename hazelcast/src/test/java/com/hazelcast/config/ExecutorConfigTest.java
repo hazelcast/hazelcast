@@ -31,8 +31,7 @@ public class ExecutorConfigTest {
 
 	@Test
 	public void testSetCorePoolSize() {
-		ExecutorConfig executorConfig = new ExecutorConfig();
-		executorConfig.setCorePoolSize(1234);
+		ExecutorConfig executorConfig = new ExecutorConfig().setCorePoolSize(1234);
 		assertTrue(executorConfig.getCorePoolSize() == 1234);
 	}
 
@@ -44,8 +43,7 @@ public class ExecutorConfigTest {
 
 	@Test
 	public void testSetMaxPoolsize() {
-		ExecutorConfig executorConfig = new ExecutorConfig();
-		executorConfig.setMaxPoolSize(1234);
+		ExecutorConfig executorConfig = new ExecutorConfig().setMaxPoolSize(1234);
 		assertTrue(executorConfig.getMaxPoolSize() == 1234);
 	}
 
@@ -57,27 +55,44 @@ public class ExecutorConfigTest {
 
 	@Test
 	public void testSetKeepAliveSeconds() {
-		ExecutorConfig executorConfig = new ExecutorConfig();
-		executorConfig.setKeepAliveSeconds(1234);
+		ExecutorConfig executorConfig = new ExecutorConfig().setKeepAliveSeconds(1234);
 		assertTrue(executorConfig.getKeepAliveSeconds() == 1234);
 	}
 	
-	@Test(expected = UnsupportedOperationException.class)
+	@Test(expected = IllegalArgumentException.class)
 	public void shouldNotAcceptNegativeCorePoolSize() {
-		ExecutorConfig executorConfig = new ExecutorConfig();
-		executorConfig.setCorePoolSize(-1);
+		new ExecutorConfig().setCorePoolSize(-1);
 	}
 	
-	@Test(expected = UnsupportedOperationException.class)
+	@Test(expected = IllegalArgumentException.class)
+	public void shouldNotAcceptZeroCorePoolSize() {
+		new ExecutorConfig().setCorePoolSize(0);
+	}
+	
+	@Test(expected = IllegalArgumentException.class)
 	public void shouldNotAcceptNegativeMaxPoolSize() {
-		ExecutorConfig executorConfig = new ExecutorConfig();
-		executorConfig.setMaxPoolSize(-1);
+		new ExecutorConfig().setMaxPoolSize(-1);
 	}
 	
-	@Test(expected = UnsupportedOperationException.class)
+	@Test(expected = IllegalArgumentException.class)
+	public void shouldNotAcceptZeroMaxPoolSize() {
+		new ExecutorConfig().setMaxPoolSize(0);
+	}
+	
+	@Test(expected = IllegalArgumentException.class)
 	public void shouldNotAcceptNegativeKeepAliveSeconds() {
-		ExecutorConfig executorConfig = new ExecutorConfig();
-		executorConfig.setKeepAliveSeconds(-1);
+		new ExecutorConfig().setKeepAliveSeconds(-1);
+	}
+	
+	@Test(expected = IllegalArgumentException.class)
+	public void shouldNotAcceptZeroKeepAliveSeconds() {
+		new ExecutorConfig().setKeepAliveSeconds(0);
 	}
 
+	@Test
+	public void testSettingCoreAndMaxPoolSize() {
+		ExecutorConfig executorConfig = new ExecutorConfig().setCorePoolSize(1234).setMaxPoolSize(5678);
+		assertEquals(1234, executorConfig.getCorePoolSize());
+		assertEquals(5678, executorConfig.getMaxPoolSize());
+	}
 }
