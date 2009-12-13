@@ -164,7 +164,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * @return <tt>MapEntry</tt> of the specified key
      * @see MapEntry
      */
-    MapEntry getMapEntry(K key);
+    MapEntry<K, V> getMapEntry(K key);
 
     /**
      * Evicts the specified key from this map. If
