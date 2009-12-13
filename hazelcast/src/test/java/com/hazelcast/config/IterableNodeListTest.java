@@ -42,7 +42,7 @@ public class IterableNodeListTest {
 		int count = 0;
 		
 		for(Node node : new XmlConfigBuilder.IterableNodeList(nodeList)) {
-			count++;
+			count += (node != null)?1:0;
 		}
 		
 		assertEquals(3, count);

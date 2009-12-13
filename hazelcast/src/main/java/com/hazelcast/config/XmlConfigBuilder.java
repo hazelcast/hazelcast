@@ -178,9 +178,8 @@ public class XmlConfigBuilder implements ConfigBuilder {
         } catch (final Throwable e) {
             domLevel3 = false;
         }
-        final NodeList nodelist = docElement.getChildNodes();
-        for (int i = 0; i < nodelist.getLength(); i++) {
-            final org.w3c.dom.Node node = nodelist.item(i);
+        
+        for(org.w3c.dom.Node node  : new IterableNodeList(docElement.getChildNodes())) {
             final String nodeName = node.getNodeName();
             if ("network".equals(nodeName)) {
                 handleNetwork(node);
@@ -214,9 +213,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
     }
 
     private void handleNetwork(final org.w3c.dom.Node node) throws Exception {
-        final NodeList nodelist = node.getChildNodes();
-        for (int i = 0; i < nodelist.getLength(); i++) {
-            final org.w3c.dom.Node child = nodelist.item(i);
+        for(org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = child.getNodeName();
             if ("port".equals(nodeName)) {
                 handlePort(child);
@@ -278,10 +275,8 @@ public class XmlConfigBuilder implements ConfigBuilder {
     }
 
     private void handleExecutor(final org.w3c.dom.Node node) {
-        final NodeList nodelist = node.getChildNodes();
         final ExecutorConfig executorConfig = config.getExecutorConfig();
-        for (int i = 0; i < nodelist.getLength(); i++) {
-            final org.w3c.dom.Node n = nodelist.item(i);
+        for(org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String name = n.getNodeName().toLowerCase();
             final String value = getTextContent(n).trim();
             if ("core-pool-size".equals(name)) {
@@ -295,9 +290,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
     }
 
     private void handleGroup(final org.w3c.dom.Node node) {
-        final NodeList nodelist = node.getChildNodes();
-        for (int i = 0; i < nodelist.getLength(); i++) {
-            final org.w3c.dom.Node n = nodelist.item(i);
+        for(org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();
             final String nodeName = n.getNodeName().toLowerCase();
             if ("name".equals(nodeName)) {
@@ -309,9 +302,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
     }
 
     private void handleProperties(final org.w3c.dom.Node node) {
-        final NodeList nodelist = node.getChildNodes();
-        for (int i = 0; i < nodelist.getLength(); i++) {
-            final org.w3c.dom.Node n = nodelist.item(i);
+        for(org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();
             final String name = n.getNodeName().toLowerCase();
             System.setProperty(name, value);
@@ -323,16 +314,14 @@ public class XmlConfigBuilder implements ConfigBuilder {
         final Interfaces interfaces = config.getNetworkConfig().getInterfaces();
         for (int a = 0; a < atts.getLength(); a++) {
             final org.w3c.dom.Node att = atts.item(a);
-            final String value = att.getNodeValue();
             if ("enabled".equals(att.getNodeName())) {
+                final String value = att.getNodeValue();
                 interfaces.setEnabled(checkTrue(value));
             }
         }
-        final NodeList nodelist = node.getChildNodes();
-        for (int i = 0; i < nodelist.getLength(); i++) {
-            final org.w3c.dom.Node n = nodelist.item(i);
-            final String value = getTextContent(n).trim();
+        for(org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             if ("interface".equalsIgnoreCase(n.getNodeName())) {
+                final String value = getTextContent(n).trim();
                 interfaces.addInterface(value);
             }
         }
@@ -347,9 +336,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
             final String value = att.getNodeValue();
             invoke(target, method, value);
         }
-        final NodeList nodelist = node.getChildNodes();
-        for (int i = 0; i < nodelist.getLength(); i++) {
-            final org.w3c.dom.Node n = nodelist.item(i);
+        for(org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();
             String methodName = "set" + getMethodName(n.getNodeName());
             Method method = getMethod(target, methodName);
@@ -415,9 +402,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
     }
 
     private void handleJoin(final org.w3c.dom.Node node) {
-        final NodeList nodelist = node.getChildNodes();
-        for (int i = 0; i < nodelist.getLength(); i++) {
-            final org.w3c.dom.Node child = nodelist.item(i);
+        for(org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             final String name = child.getNodeName().toLowerCase();
             if ("multicast".equals(name)) {
                 handleMulticast(child);
@@ -433,17 +418,15 @@ public class XmlConfigBuilder implements ConfigBuilder {
         for (int a = 0; a < atts.getLength(); a++) {
             final org.w3c.dom.Node att = atts.item(a);
             final String value = getTextContent(att).trim();
-            if (att.getNodeName().equals("enabled")) {
+            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
                 join.getMulticastConfig().setEnabled(checkTrue(value));
             }
         }
-        final NodeList nodelist = node.getChildNodes();
-        for (int i = 0; i < nodelist.getLength(); i++) {
-            final org.w3c.dom.Node n = nodelist.item(i);
+        for(org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();
-            if (n.getNodeName().equalsIgnoreCase("multicast-group")) {
+            if ("multicast-group".equalsIgnoreCase(n.getNodeName())) {
                 join.getMulticastConfig().setMulticastGroup(value);
-            } else if (n.getNodeName().equalsIgnoreCase("multicast-port")) {
+            } else if ("multicast-port".equalsIgnoreCase(n.getNodeName())) {
                 join.getMulticastConfig().setMulticastPort(Integer.parseInt(value));
             }
         }
@@ -469,9 +452,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
         final String name = getTextContent(attName);
         final QueueConfig qConfig = new QueueConfig();
         qConfig.setName(name);
-        final NodeList nodelist = node.getChildNodes();
-        for (int i = 0; i < nodelist.getLength(); i++) {
-            final org.w3c.dom.Node n = nodelist.item(i);
+        for(org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = n.getNodeName().toLowerCase();
             final String value = getTextContent(n).trim();
             if ("max-size-per-jvm".equals(nodeName)) {
@@ -488,9 +469,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
         final String name = getTextContent(attName);
         final MapConfig mapConfig = new MapConfig();
         mapConfig.setName(name);
-        final NodeList nodelist = node.getChildNodes();
-        for (int i = 0; i < nodelist.getLength(); i++) {
-            final org.w3c.dom.Node n = nodelist.item(i);
+        for(org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = n.getNodeName().toLowerCase();
             final String value = getTextContent(n).trim();
             if ("backup-count".equals(nodeName)) {
@@ -526,9 +505,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
                 mapStoreConfig.setEnabled(checkTrue(value));
             }
         }
-        final NodeList nodelist = node.getChildNodes();
-        for (int i = 0; i < nodelist.getLength(); i++) {
-            final org.w3c.dom.Node n = nodelist.item(i);
+        for(org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = n.getNodeName().toLowerCase();
             final String value = getTextContent(n).trim();
             if ("class-name".equals(nodeName)) {
@@ -574,7 +551,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
                         e.printStackTrace();
                     }
                 }
-            } else if (n.getNodeName().equalsIgnoreCase("interface")) {
+            } else if ("interface".equalsIgnoreCase(n.getNodeName())) {
                 final int indexStar = value.indexOf('*');
                 final int indexDash = value.indexOf('-');
                 if (indexStar == -1 && indexDash == -1) {
@@ -611,9 +588,8 @@ public class XmlConfigBuilder implements ConfigBuilder {
         final String name = getTextContent(attName);
         final TopicConfig tConfig = new TopicConfig();
         tConfig.setName(name);
-        final NodeList nodelist = node.getChildNodes();
-        for (int i = 0; i < nodelist.getLength(); i++) {
-            final org.w3c.dom.Node n = nodelist.item(i);
+        
+        for(org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();
             if (n.getNodeName().equalsIgnoreCase("global-ordering-enabled")) {
                 tConfig.setGlobalOrderingEnabled(checkTrue(value));
