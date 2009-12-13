@@ -63,10 +63,8 @@ public class Config {
 
     public Config() {
         final String superClientProp = System.getProperty("hazelcast.super.client");
-        if (superClientProp != null) {
-            if ("true".equalsIgnoreCase(superClientProp)) {
-                superClient = true;
-            }
+        if ("true".equalsIgnoreCase(superClientProp)) {
+            superClient = true;
         }
         String os = System.getProperty("os.name").toLowerCase();
         reuseAddress = (os.indexOf("win") == -1);
@@ -76,8 +74,9 @@ public class Config {
         return classLoader;
     }
 
-    public void setClassLoader(ClassLoader classLoader) {
+    public Config setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
+        return this;
     }
 
     public QueueConfig getQueueConfig(final String name) {
@@ -142,8 +141,9 @@ public class Config {
         return networkConfig;
     }
 
-    public void setNetworkConfig(NetworkConfig networkConfig) {
+    public Config setNetworkConfig(NetworkConfig networkConfig) {
         this.networkConfig = networkConfig;
+        return this;
     }
 
     /**
@@ -156,8 +156,9 @@ public class Config {
     /**
      * @param xmlConfig the xmlConfig to set
      */
-    public void setXmlConfig(String xmlConfig) {
+    public Config setXmlConfig(String xmlConfig) {
         this.xmlConfig = xmlConfig;
+        return this;
     }
 
     /**
@@ -170,8 +171,9 @@ public class Config {
     /**
      * @param groupName the groupName to set
      */
-    public void setGroupName(String groupName) {
+    public Config setGroupName(String groupName) {
         this.groupName = groupName;
+        return this;
     }
 
     /**
@@ -184,8 +186,9 @@ public class Config {
     /**
      * @param groupPassword the groupPassword to set
      */
-    public void setGroupPassword(String groupPassword) {
+    public Config setGroupPassword(String groupPassword) {
         this.groupPassword = groupPassword;
+        return this;
     }
 
     /**
@@ -198,8 +201,9 @@ public class Config {
     /**
      * @param port the port to set
      */
-    public void setPort(int port) {
+    public Config setPort(int port) {
         this.port = port;
+        return this;
     }
 
     /**
@@ -212,16 +216,18 @@ public class Config {
     /**
      * @param portAutoIncrement the portAutoIncrement to set
      */
-    public void setPortAutoIncrement(boolean portAutoIncrement) {
+    public Config setPortAutoIncrement(boolean portAutoIncrement) {
         this.portAutoIncrement = portAutoIncrement;
+        return this;
     }
 
     public boolean isReuseAddress() {
         return reuseAddress;
     }
 
-    public void setReuseAddress(boolean reuseAddress) {
+    public Config setReuseAddress(boolean reuseAddress) {
         this.reuseAddress = reuseAddress;
+        return this;
     }
 
     /**
@@ -234,8 +240,9 @@ public class Config {
     /**
      * @param executorConfig the executorConfig to set
      */
-    public void setExecutorConfig(ExecutorConfig executorConfig) {
+    public Config setExecutorConfig(ExecutorConfig executorConfig) {
         this.executorConfig = executorConfig;
+        return this;
     }
 
     /**
@@ -248,8 +255,9 @@ public class Config {
     /**
      * @param mapTopicConfigs the mapTopicConfigs to set
      */
-    public void setMapTopicConfigs(Map<String, TopicConfig> mapTopicConfigs) {
+    public Config setMapTopicConfigs(Map<String, TopicConfig> mapTopicConfigs) {
         this.mapTopicConfigs = mapTopicConfigs;
+        return this;
     }
 
     /**
@@ -262,8 +270,9 @@ public class Config {
     /**
      * @param mapQConfigs the mapQConfigs to set
      */
-    public void setMapQConfigs(Map<String, QueueConfig> mapQConfigs) {
+    public Config setMapQConfigs(Map<String, QueueConfig> mapQConfigs) {
         this.mapQueueConfigs = mapQConfigs;
+        return this;
     }
 
     /**
@@ -276,8 +285,9 @@ public class Config {
     /**
      * @param mapMapConfigs the mapMapConfigs to set
      */
-    public void setMapMapConfigs(Map<String, MapConfig> mapMapConfigs) {
+    public Config setMapMapConfigs(Map<String, MapConfig> mapMapConfigs) {
         this.mapMapConfigs = mapMapConfigs;
+        return this;
     }
 
     /**
@@ -290,8 +300,9 @@ public class Config {
     /**
      * @param configurationUrl the configurationUrl to set
      */
-    public void setConfigurationUrl(URL configurationUrl) {
+    public Config setConfigurationUrl(URL configurationUrl) {
         this.configurationUrl = configurationUrl;
+        return this;
     }
 
     /**
@@ -304,15 +315,17 @@ public class Config {
     /**
      * @param configurationFile the configurationFile to set
      */
-    public void setConfigurationFile(File configurationFile) {
+    public Config setConfigurationFile(File configurationFile) {
         this.configurationFile = configurationFile;
+        return this;
     }
 
     public boolean isSuperClient() {
         return superClient;
     }
 
-    public void setSuperClient(boolean superClient) {
+    public Config setSuperClient(boolean superClient) {
         this.superClient = superClient;
+        return this;
     }
 }
