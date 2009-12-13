@@ -152,7 +152,7 @@ public class ClusterMBean extends AbstractMBean<HazelcastInstance> {
     @JMXAttribute("GroupName")
     @JMXDescription("The current group name")
     public String getGroupName() {
-        return config.getGroupName();
+        return config.getGroupConfig().getName();
     }
 
     @JMXAttribute("Port")

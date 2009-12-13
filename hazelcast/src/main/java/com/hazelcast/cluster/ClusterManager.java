@@ -347,8 +347,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             return;
         Connection conn = joinRequest.getConnection();
         Config config = node.getConfig();
-        if (config.getGroupName().equals(joinRequest.groupName) &&
-                config.getGroupPassword().equals(joinRequest.groupPassword)) {
+        if (config.getGroupConfig().getName().equals(joinRequest.groupName) &&
+                config.getGroupConfig().getPassword().equals(joinRequest.groupPassword)) {
             if (!node.getConfig().getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
                 if (node.getMasterAddress() != null && !isMaster()) {
                     sendProcessableTo(new Master(node.getMasterAddress()), conn);
@@ -629,8 +629,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         if (toAddress == null) {
             toAddress = node.getMasterAddress();
         }
-        sendProcessableTo(new JoinRequest(thisAddress, node.getConfig().getGroupName(),
-                node.getConfig().getGroupPassword(), node.getLocalNodeType()), toAddress);
+        sendProcessableTo(new JoinRequest(thisAddress, node.getConfig().getGroupConfig().getName(),
+                node.getConfig().getGroupConfig().getPassword(), node.getLocalNodeType()), toAddress);
     }
 
     public void registerScheduledAction(ScheduledAction scheduledAction) {

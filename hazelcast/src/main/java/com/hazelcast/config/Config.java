@@ -27,15 +27,9 @@ public class Config {
 
     public static final int DEFAULT_PORT = 5701;
 
-    public static final String DEFAULT_GROUP_PASSWORD = "group-pass";
-
-    public static final String DEFAULT_GROUP_NAME = "group-dev";
-
     private String xmlConfig = null;
-
-    private String groupName = DEFAULT_GROUP_NAME;
-
-    private String groupPassword = DEFAULT_GROUP_PASSWORD;
+    
+    private GroupConfig groupConfig = new GroupConfig();
 
     private int port = DEFAULT_PORT;
 
@@ -161,36 +155,15 @@ public class Config {
         return this;
     }
 
-    /**
-     * @return the groupName
-     */
-    public String getGroupName() {
-        return groupName;
+    public GroupConfig getGroupConfig() {
+    	return groupConfig;
     }
 
-    /**
-     * @param groupName the groupName to set
-     */
-    public Config setGroupName(String groupName) {
-        this.groupName = groupName;
-        return this;
+    public Config setGroupConfig(final GroupConfig groupConfig) {
+    	this.groupConfig = groupConfig;
+    	return this;
     }
-
-    /**
-     * @return the groupPassword
-     */
-    public String getGroupPassword() {
-        return groupPassword;
-    }
-
-    /**
-     * @param groupPassword the groupPassword to set
-     */
-    public Config setGroupPassword(String groupPassword) {
-        this.groupPassword = groupPassword;
-        return this;
-    }
-
+    
     /**
      * @return the port
      */

@@ -40,8 +40,8 @@ public class TestUtility {
             addresses[i] = h[i].getCluster().getLocalMember().getInetSocketAddress();
 
 		}
-        String name = h[0].getConfig().getGroupName();
-        String pass = h[0].getConfig().getGroupPassword();
+        String name = h[0].getConfig().getGroupConfig().getName();
+        String pass = h[0].getConfig().getGroupConfig().getPassword();
         HazelcastClient client = HazelcastClient.newHazelcastClient(name, pass, true, addresses);
 
 		return client;

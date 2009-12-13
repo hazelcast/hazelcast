@@ -294,9 +294,9 @@ public class XmlConfigBuilder implements ConfigBuilder {
             final String value = getTextContent(n).trim();
             final String nodeName = n.getNodeName().toLowerCase();
             if ("name".equals(nodeName)) {
-                config.setGroupName(value);
+                config.getGroupConfig().setName(value);
             } else if ("password".equals(nodeName)) {
-                config.setGroupPassword(value);
+                config.getGroupConfig().setPassword(value);
             }
         }
     }

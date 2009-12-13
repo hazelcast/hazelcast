@@ -228,7 +228,7 @@ public class ClusterTest {
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
         Hazelcast.shutdownAll();
-        c2.setGroupName("differentGroup");
+        c2.getGroupConfig().setName("differentGroup");
         h1 = Hazelcast.newHazelcastInstance(c1);
         h2 = Hazelcast.newHazelcastInstance(c2);
         assertEquals(1, h1.getCluster().getMembers().size());

@@ -365,8 +365,8 @@ public class ClientService {
 
     private class ClientAuthenticateHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            String groupName = node.factory.getConfig().getGroupName();
-            String pass = node.factory.getConfig().getGroupPassword();
+            String groupName = node.factory.getConfig().getGroupConfig().getName();
+            String pass = node.factory.getConfig().getGroupConfig().getPassword();
             Boolean value =  (groupName.equals(toObject(packet.key)) && pass.equals(toObject(packet.value)))  ;
             packet.clearForResponse();
             packet.value = toData(value);

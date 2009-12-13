@@ -332,8 +332,8 @@ public class Node {
         try {
             final String ip = System.getProperty("join.ip");
             if (ip == null) {
-                JoinInfo joinInfo = new JoinInfo(true, address, config.getGroupName(),
-                        config.getGroupPassword(), getLocalNodeType());
+                JoinInfo joinInfo = new JoinInfo(true, address, config.getGroupConfig().getName(),
+                        config.getGroupConfig().getPassword(), getLocalNodeType());
                 for (int i = 0; i < 200; i++) {
                     multicastService.send(joinInfo);
                     if (masterAddress == null) {
