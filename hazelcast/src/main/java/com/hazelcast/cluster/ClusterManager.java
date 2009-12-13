@@ -741,7 +741,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
     }
 
-    protected MemberImpl createMember(Address address, Node.NodeType nodeType) {
+    protected MemberImpl createMember(Address address, NodeType nodeType) {
         return new MemberImpl(node.getName(), address, thisAddress.equals(address), nodeType);
     }
 
@@ -749,7 +749,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         return mapMembers.get(address);
     }
 
-    final public MemberImpl addMember(Address address, Node.NodeType nodeType) {
+    final public MemberImpl addMember(Address address, NodeType nodeType) {
         if (address == null) {
             logger.log(Level.FINEST, "Address cannot be null");
             return null;

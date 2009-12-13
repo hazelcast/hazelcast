@@ -34,9 +34,7 @@ import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,13 +51,13 @@ public class Node {
 
     private final Set<Address> failedConnections = new CopyOnWriteArraySet<Address>();
 
-    private final ShutdownHookThread shutdownHookThread = new ShutdownHookThread("hz.ShutdownThread");
+    private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
 
     private final boolean superClient;
 
     private final NodeType localNodeType;
 
-    final BaseVariables baseVariables;
+    final NodeBaseVariables baseVariables;
 
     public final ConcurrentMapManager concurrentMapManager;
 
@@ -101,64 +99,6 @@ public class Node {
 
     volatile Thread queryThread = null;
 
-    public enum NodeType {
-        MEMBER(1),
-        SUPER_CLIENT(2),
-        JAVA_CLIENT(3),
-        CSHARP_CLIENT(4);
-
-        NodeType(int type) {
-            this.value = type;
-        }
-
-        private int value;
-
-        public int getValue() {
-            return value;
-        }
-
-        public static NodeType create(int value) {
-            switch (value) {
-                case 1:
-                    return MEMBER;
-                case 2:
-                    return SUPER_CLIENT;
-                case 3:
-                    return JAVA_CLIENT;
-                case 4:
-                    return CSHARP_CLIENT;
-                default:
-                    return null;
-            }
-        }
-    }
-
-    class BaseVariables {
-        final LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
-
-        final Map<Address, MemberImpl> mapMembers = new HashMap<Address, MemberImpl>(100);
-
-        final Map<Long, BaseManager.Call> mapCalls = new ConcurrentHashMap<Long, BaseManager.Call>();
-
-        final BaseManager.EventQueue[] eventQueues = new BaseManager.EventQueue[BaseManager.EVENT_QUEUE_COUNT];
-
-        final Map<Long, StreamResponseHandler> mapStreams = new ConcurrentHashMap<Long, StreamResponseHandler>();
-
-        final AtomicLong localIdGen = new AtomicLong(0);
-
-        final Address thisAddress;
-
-        final MemberImpl thisMember;
-
-        BaseVariables(Address thisAddress, MemberImpl thisMember) {
-            this.thisAddress = thisAddress;
-            this.thisMember = thisMember;
-            for (int i = 0; i < BaseManager.EVENT_QUEUE_COUNT; i++) {
-                eventQueues[i] = new BaseManager.EventQueue();
-            }
-        }
-    }
-
     public final FactoryImpl factory;
 
     public Node(FactoryImpl factory, Config config) {
@@ -195,7 +135,7 @@ public class Node {
             throw new RuntimeException(e);
         }
         clusterImpl = new ClusterImpl(this);
-        baseVariables = new BaseVariables(address, localMember);
+        baseVariables = new NodeBaseVariables(address, localMember);
         //initialize managers..
         clusterService = new ClusterService(this);
         clusterService.start();
@@ -363,9 +303,9 @@ public class Node {
         join();
     }
 
-    class ShutdownHookThread extends Thread {
+    public class NodeShutdownHookThread extends Thread {
 
-        ShutdownHookThread(String name) {
+        NodeShutdownHookThread(String name) {
             super(name);
         }
 
@@ -555,11 +495,12 @@ public class Node {
             }
             boolean found = false;
             int numberOfSeconds = 0;
-            while (!found
-                    && numberOfSeconds < config.getNetworkConfig().getJoin().getJoinMembers().getConnectionTimeoutSeconds()) {
+            final int connectionTimeoutSeconds = config.getNetworkConfig().getJoin().getJoinMembers().getConnectionTimeoutSeconds();
+            while (!found && numberOfSeconds < connectionTimeoutSeconds) {
                 lsPossibleAddresses.removeAll(failedConnections);
-                if (lsPossibleAddresses.size() == 0)
+                if (lsPossibleAddresses.size() == 0) {
                     break;
+                }
                 Thread.sleep(1000);
                 numberOfSeconds++;
                 int numberOfJoinReq = 0;
@@ -627,8 +568,9 @@ public class Node {
             }
             while (!joined) {
                 final Connection connection = connectionManager.getOrConnect(requiredAddress);
-                if (connection == null)
-                    joinViaRequiredMember();
+                if (connection == null) {
+                	joinViaRequiredMember();
+                }
                 logger.log(Level.FINEST, "Sending joinRequest " + requiredAddress);
                 clusterManager.sendJoinRequest(requiredAddress);
                 Thread.sleep(2000);

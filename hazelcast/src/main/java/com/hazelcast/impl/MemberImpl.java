@@ -31,14 +31,14 @@ public final class MemberImpl implements Member, DataSerializable {
     protected String factoryName;
     protected boolean localMember;
     protected Address address;
-    protected Node.NodeType nodeType;
+    protected NodeType nodeType;
     protected transient long lastRead = 0;
     protected transient long lastWrite = 0;
 
     public MemberImpl() {
     }
 
-    public MemberImpl(String factoryName, Address address, boolean localMember, Node.NodeType nodeType) {
+    public MemberImpl(String factoryName, Address address, boolean localMember, NodeType nodeType) {
         super();
         this.factoryName = factoryName;
         this.nodeType = nodeType;
@@ -55,7 +55,7 @@ public final class MemberImpl implements Member, DataSerializable {
         return address.getPort();
     }
 
-    public Node.NodeType getNodeType() {
+    public NodeType getNodeType() {
         return nodeType;
     }
 
@@ -98,7 +98,7 @@ public final class MemberImpl implements Member, DataSerializable {
     }
 
     public boolean isSuperClient() {
-        return (nodeType == Node.NodeType.SUPER_CLIENT);
+        return (nodeType == NodeType.SUPER_CLIENT);
     }
 
     private void writeObject(ObjectOutputStream out) throws IOException {
@@ -112,7 +112,7 @@ public final class MemberImpl implements Member, DataSerializable {
     public void readData(DataInput in) throws IOException {
         address = new Address();
         address.readData(in);
-        nodeType = Node.NodeType.create(in.readInt());
+        nodeType = NodeType.create(in.readInt());
         factoryName = in.readUTF();
         Node node = FactoryImpl.getFactoryImpl(factoryName).node;
         localMember = node.getThisAddress().equals(address);
