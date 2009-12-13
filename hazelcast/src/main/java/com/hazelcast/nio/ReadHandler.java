@@ -17,7 +17,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.ThreadContext;
 import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
 
