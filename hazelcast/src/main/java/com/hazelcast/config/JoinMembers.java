@@ -31,7 +31,7 @@ public class JoinMembers {
 
     private String requiredMember = null;
 
-    private List<Address> addresses = new ArrayList<Address>();
+    private final List<Address> addresses = new ArrayList<Address>();
 
     public JoinMembers addMember(final String member) {
         members.add(member);
@@ -57,7 +57,7 @@ public class JoinMembers {
     /**
      * @param connectionTimeoutSeconds the connectionTimeoutSeconds to set
      */
-    public JoinMembers setConnectionTimeoutSeconds(int connectionTimeoutSeconds) {
+    public JoinMembers setConnectionTimeoutSeconds(final int connectionTimeoutSeconds) {
         this.connectionTimeoutSeconds = connectionTimeoutSeconds;
         return this;
     }
@@ -72,7 +72,7 @@ public class JoinMembers {
     /**
      * @param enabled the enabled to set
      */
-    public JoinMembers setEnabled(boolean enabled) {
+    public JoinMembers setEnabled(final boolean enabled) {
         this.enabled = enabled;
         return this;
     }
@@ -87,7 +87,7 @@ public class JoinMembers {
     /**
      * @param members the members to set
      */
-    public JoinMembers setMembers(List<String> members) {
+    public JoinMembers setMembers(final List<String> members) {
         this.members = members;
         return this;
     }
@@ -102,7 +102,7 @@ public class JoinMembers {
     /**
      * @param requiredMember the requiredMember to set
      */
-    public JoinMembers setRequiredMember(String requiredMember) {
+    public JoinMembers setRequiredMember(final String requiredMember) {
         this.requiredMember = requiredMember;
         return this;
     }
