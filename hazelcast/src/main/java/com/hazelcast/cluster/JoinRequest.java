@@ -33,6 +33,7 @@ public class JoinRequest extends AbstractRemotelyProcessable {
     public String groupPassword;
 
     public JoinRequest() {
+        super();
     }
 
     public JoinRequest(Address address, String groupName, String groupPassword, NodeType type) {
@@ -77,12 +78,14 @@ public class JoinRequest extends AbstractRemotelyProcessable {
 
     @Override
     public String toString() {
-        return "JoinRequest{" +
-                "nodeType=" + nodeType +
-                ", address=" + address +
-                ", groupName='" + groupName + '\'' +
-                ", groupPassword='" + groupPassword + '\'' +
-                '}';
+    	return new StringBuilder(128)
+    		.append("JoinRequest{")
+    		.append("nodeType=").append(nodeType)
+            .append(", address=").append(address)
+            .append(", groupName='").append(groupName).append('\'')
+            .append(", groupPassword='").append(groupPassword).append('\'')
+            .append('}')
+            .toString();
     }
 
     public void process() {
