@@ -30,7 +30,7 @@ public class AsymmetricEncryptionConfig {
         return enabled;
     }
 
-    public AsymmetricEncryptionConfig setEnabled(boolean enabled) {
+    public AsymmetricEncryptionConfig setEnabled(final boolean enabled) {
         this.enabled = enabled;
         return this;
     }
@@ -39,7 +39,7 @@ public class AsymmetricEncryptionConfig {
         return algorithm;
     }
 
-    public AsymmetricEncryptionConfig setAlgorithm(String algorithm) {
+    public AsymmetricEncryptionConfig setAlgorithm(final String algorithm) {
         this.algorithm = algorithm;
         return this;
     }
@@ -48,7 +48,7 @@ public class AsymmetricEncryptionConfig {
         return keyPassword;
     }
 
-    public AsymmetricEncryptionConfig setKeyPassword(String keyPassword) {
+    public AsymmetricEncryptionConfig setKeyPassword(final String keyPassword) {
         this.keyPassword = keyPassword;
         return this;
     }
@@ -57,7 +57,7 @@ public class AsymmetricEncryptionConfig {
         return keyAlias;
     }
 
-    public AsymmetricEncryptionConfig setKeyAlias(String keyAlias) {
+    public AsymmetricEncryptionConfig setKeyAlias(final String keyAlias) {
         this.keyAlias = keyAlias;
         return this;
     }
@@ -66,7 +66,7 @@ public class AsymmetricEncryptionConfig {
         return storeType;
     }
 
-    public AsymmetricEncryptionConfig setStoreType(String storeType) {
+    public AsymmetricEncryptionConfig setStoreType(final String storeType) {
         this.storeType = storeType;
         return this;
     }
@@ -75,7 +75,7 @@ public class AsymmetricEncryptionConfig {
         return storePassword;
     }
 
-    public AsymmetricEncryptionConfig setStorePassword(String storePassword) {
+    public AsymmetricEncryptionConfig setStorePassword(final String storePassword) {
         this.storePassword = storePassword;
         return this;
     }
@@ -84,23 +84,23 @@ public class AsymmetricEncryptionConfig {
         return storePath;
     }
 
-    public AsymmetricEncryptionConfig setStorePath(String storePath) {
+    public AsymmetricEncryptionConfig setStorePath(final String storePath) {
         this.storePath = storePath;
         return this;
     }
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer();
-        sb.append("AsymmetricEncryptionConfig");
-        sb.append("{enabled=").append(enabled);
-        sb.append(", algorithm='").append(algorithm).append('\'');
-        sb.append(", keyPassword='").append(keyPassword).append('\'');
-        sb.append(", keyAlias='").append(keyAlias).append('\'');
-        sb.append(", storeType='").append(storeType).append('\'');
-        sb.append(", storePassword='").append(storePassword).append('\'');
-        sb.append(", storePath='").append(storePath).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return new StringBuilder(256)
+        .append("AsymmetricEncryptionConfig")
+        .append("{enabled=").append(enabled)
+        .append(", algorithm='").append(algorithm).append('\'')
+        .append(", keyPassword='").append(keyPassword).append('\'')
+        .append(", keyAlias='").append(keyAlias).append('\'')
+        .append(", storeType='").append(storeType).append('\'')
+        .append(", storePassword='").append(storePassword).append('\'')
+        .append(", storePath='").append(storePath).append('\'')
+        .append('}')
+        .toString();
     }
 }
