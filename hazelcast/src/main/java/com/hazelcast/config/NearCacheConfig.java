@@ -48,39 +48,44 @@ public class NearCacheConfig {
         return timeToLiveSeconds;
     }
 
-    public void setTimeToLiveSeconds(int timeToLiveSeconds) {
+    public NearCacheConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
         this.timeToLiveSeconds = timeToLiveSeconds;
+        return this;
     }
 
     public int getMaxSize() {
         return maxSize;
     }
 
-    public void setMaxSize(int maxSize) {
+    public NearCacheConfig setMaxSize(int maxSize) {
         this.maxSize = maxSize;
+        return this;
     }
 
     public String getEvictionPolicy() {
         return evictionPolicy;
     }
 
-    public void setEvictionPolicy(String evictionPolicy) {
+    public NearCacheConfig setEvictionPolicy(String evictionPolicy) {
         this.evictionPolicy = evictionPolicy;
+        return this;
     }
 
     public int getMaxIdleSeconds() {
         return maxIdleSeconds;
     }
 
-    public void setMaxIdleSeconds(int maxIdleSeconds) {
+    public NearCacheConfig setMaxIdleSeconds(int maxIdleSeconds) {
         this.maxIdleSeconds = maxIdleSeconds;
+        return this;
     }
 
     public boolean isInvalidateOnChange() {
         return invalidateOnChange;
     }
 
-    public void setInvalidateOnChange(boolean invalidateOnChange) {
+    public NearCacheConfig setInvalidateOnChange(boolean invalidateOnChange) {
         this.invalidateOnChange = invalidateOnChange;
+        return this;
     }
 }

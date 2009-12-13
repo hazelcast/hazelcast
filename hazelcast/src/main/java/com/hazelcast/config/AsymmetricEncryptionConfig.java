@@ -30,56 +30,63 @@ public class AsymmetricEncryptionConfig {
         return enabled;
     }
 
-    public void setEnabled(boolean enabled) {
+    public AsymmetricEncryptionConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
+        return this;
     }
 
     public String getAlgorithm() {
         return algorithm;
     }
 
-    public void setAlgorithm(String algorithm) {
+    public AsymmetricEncryptionConfig setAlgorithm(String algorithm) {
         this.algorithm = algorithm;
+        return this;
     }
 
     public String getKeyPassword() {
         return keyPassword;
     }
 
-    public void setKeyPassword(String keyPassword) {
+    public AsymmetricEncryptionConfig setKeyPassword(String keyPassword) {
         this.keyPassword = keyPassword;
+        return this;
     }
 
     public String getKeyAlias() {
         return keyAlias;
     }
 
-    public void setKeyAlias(String keyAlias) {
+    public AsymmetricEncryptionConfig setKeyAlias(String keyAlias) {
         this.keyAlias = keyAlias;
+        return this;
     }
 
     public String getStoreType() {
         return storeType;
     }
 
-    public void setStoreType(String storeType) {
+    public AsymmetricEncryptionConfig setStoreType(String storeType) {
         this.storeType = storeType;
+        return this;
     }
 
     public String getStorePassword() {
         return storePassword;
     }
 
-    public void setStorePassword(String storePassword) {
+    public AsymmetricEncryptionConfig setStorePassword(String storePassword) {
         this.storePassword = storePassword;
+        return this;
     }
 
     public String getStorePath() {
         return storePath;
     }
 
-    public void setStorePath(String storePath) {
+    public AsymmetricEncryptionConfig setStorePath(String storePath) {
         this.storePath = storePath;
+        return this;
     }
 
     @Override

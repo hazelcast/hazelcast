@@ -51,8 +51,9 @@ public class MapConfig {
     /**
      * @param name the name to set
      */
-    public void setName(String name) {
+    public MapConfig setName(String name) {
         this.name = name;
+        return this;
     }
 
     /**
@@ -65,8 +66,9 @@ public class MapConfig {
     /**
      * @param backupCount the backupCount to set
      */
-    public void setBackupCount(int backupCount) {
+    public MapConfig setBackupCount(int backupCount) {
         this.backupCount = backupCount;
+        return this;
     }
 
     /**
@@ -79,8 +81,9 @@ public class MapConfig {
     /**
      * @param evictionPercentage the evictionPercentage to set
      */
-    public void setEvictionPercentage(int evictionPercentage) {
+    public MapConfig setEvictionPercentage(int evictionPercentage) {
         this.evictionPercentage = evictionPercentage;
+        return this;
     }
 
     /**
@@ -93,8 +96,9 @@ public class MapConfig {
     /**
      * @param timeToLiveSeconds the timeToLiveSeconds to set
      */
-    public void setTimeToLiveSeconds(int timeToLiveSeconds) {
+    public MapConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
         this.timeToLiveSeconds = timeToLiveSeconds;
+        return this;
     }
 
     /**
@@ -107,8 +111,9 @@ public class MapConfig {
     /**
      * @param maxSize the maxSize to set
      */
-    public void setMaxSize(int maxSize) {
+    public MapConfig setMaxSize(int maxSize) {
         this.maxSize = maxSize;
+        return this;
     }
 
     /**
@@ -121,8 +126,9 @@ public class MapConfig {
     /**
      * @param evictionPolicy the evictionPolicy to set
      */
-    public void setEvictionPolicy(String evictionPolicy) {
+    public MapConfig setEvictionPolicy(String evictionPolicy) {
         this.evictionPolicy = evictionPolicy;
+        return this;
     }
 
     /**
@@ -139,15 +145,17 @@ public class MapConfig {
      *
      * @param mapStoreConfig the mapStoreConfig to set
      */
-    public void setMapStoreConfig(MapStoreConfig mapStoreConfig) {
+    public MapConfig setMapStoreConfig(MapStoreConfig mapStoreConfig) {
         this.mapStoreConfig = mapStoreConfig;
+        return this;
     }
 
     public NearCacheConfig getNearCacheConfig() {
         return nearCacheConfig;
     }
 
-    public void setNearCacheConfig(NearCacheConfig nearCacheConfig) {
+    public MapConfig setNearCacheConfig(NearCacheConfig nearCacheConfig) {
         this.nearCacheConfig = nearCacheConfig;
+        return this;
     }
 }

@@ -36,8 +36,9 @@ public class NetworkConfig {
     /**
      * @param interfaces the interfaces to set
      */
-    public void setInterfaces(Interfaces interfaces) {
+    public NetworkConfig setInterfaces(final Interfaces interfaces) {
         this.interfaces = interfaces;
+        return this;
     }
 
     /**
@@ -50,23 +51,26 @@ public class NetworkConfig {
     /**
      * @param join the join to set
      */
-    public void setJoin(Join join) {
+    public NetworkConfig setJoin(final Join join) {
         this.join = join;
+        return this;
     }
 
     public SymmetricEncryptionConfig getSymmetricEncryptionConfig() {
         return symmetricEncryptionConfig;
     }
 
-    public void setSymmetricEncryptionConfig(SymmetricEncryptionConfig symmetricEncryptionConfig) {
+    public NetworkConfig setSymmetricEncryptionConfig(final SymmetricEncryptionConfig symmetricEncryptionConfig) {
         this.symmetricEncryptionConfig = symmetricEncryptionConfig;
+        return this;
     }
 
     public AsymmetricEncryptionConfig getAsymmetricEncryptionConfig() {
         return asymmetricEncryptionConfig;
     }
 
-    public void setAsymmetricEncryptionConfig(AsymmetricEncryptionConfig asymmetricEncryptionConfig) {
+    public NetworkConfig setAsymmetricEncryptionConfig(final AsymmetricEncryptionConfig asymmetricEncryptionConfig) {
         this.asymmetricEncryptionConfig = asymmetricEncryptionConfig;
+        return this;
     }
 }

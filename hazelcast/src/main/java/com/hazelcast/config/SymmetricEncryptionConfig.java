@@ -29,48 +29,54 @@ public class SymmetricEncryptionConfig {
         return enabled;
     }
 
-    public void setEnabled(boolean enabled) {
+    public SymmetricEncryptionConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
+        return this;
     }
 
     public String getSalt() {
         return salt;
     }
 
-    public void setSalt(String salt) {
+    public SymmetricEncryptionConfig setSalt(String salt) {
         this.salt = salt;
+        return this;
     }
 
     public String getPassword() {
         return password;
     }
 
-    public void setPassword(String password) {
+    public SymmetricEncryptionConfig setPassword(String password) {
         this.password = password;
+        return this;
     }
 
     public int getIterationCount() {
         return iterationCount;
     }
 
-    public void setIterationCount(int iterationCount) {
+    public SymmetricEncryptionConfig setIterationCount(int iterationCount) {
         this.iterationCount = iterationCount;
+        return this;
     }
 
     public String getAlgorithm() {
         return algorithm;
     }
 
-    public void setAlgorithm(String algorithm) {
+    public SymmetricEncryptionConfig setAlgorithm(String algorithm) {
         this.algorithm = algorithm;
+        return this;
     }
 
     public byte[] getKey() {
         return key;
     }
 
-    public void setKey(byte[] key) {
+    public SymmetricEncryptionConfig setKey(byte[] key) {
         this.key = key;
+        return this;
     }
 
     @Override

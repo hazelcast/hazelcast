@@ -39,12 +39,13 @@ public class ExecutorConfig {
     /**
      * @param corePoolSize the corePoolSize to set
      */
-    public void setCorePoolSize(int corePoolSize) {
-    	if(corePoolSize > 0) {
-            this.corePoolSize = corePoolSize;
-    	} else {
-    		throw new UnsupportedOperationException("corePoolSize must be positive");
+    public ExecutorConfig setCorePoolSize(final int corePoolSize) {
+    	if(corePoolSize <= 0) {
+    		throw new IllegalArgumentException("corePoolSize must be positive");
     	}
+    	
+        this.corePoolSize = corePoolSize;
+    	return this;
     }
 
     /**
@@ -57,12 +58,13 @@ public class ExecutorConfig {
     /**
      * @param maxPoolSize the maxPoolSize to set
      */
-    public void setMaxPoolSize(final int maxPoolSize) {
-    	if(maxPoolSize > 0) {
-            this.maxPoolSize = maxPoolSize;
-    	} else {
-    		throw new UnsupportedOperationException("maxPoolSize must be positive");
+    public ExecutorConfig setMaxPoolSize(final int maxPoolSize) {
+    	if(maxPoolSize <= 0) {
+    		throw new IllegalArgumentException("maxPoolSize must be positive");
     	}
+    	
+        this.maxPoolSize = maxPoolSize;
+    	return this;
     }
 
     /**
@@ -75,11 +77,12 @@ public class ExecutorConfig {
     /**
      * @param keepAliveSeconds the keepAliveSeconds to set
      */
-    public void setKeepAliveSeconds(int keepAliveSeconds) {
-    	if(keepAliveSeconds > 0) {
-    	       this.keepAliveSeconds = keepAliveSeconds;
-    	} else {
-    		throw new UnsupportedOperationException("keepAlice seconds must be positive");
+    public ExecutorConfig setKeepAliveSeconds(final int keepAliveSeconds) {
+    	if(keepAliveSeconds <= 0) {
+    		throw new IllegalArgumentException("keepAlice seconds must be positive");
     	}
+    	
+    	this.keepAliveSeconds = keepAliveSeconds;
+    	return this;
     }
 }

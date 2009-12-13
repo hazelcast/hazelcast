@@ -33,8 +33,9 @@ public class Join {
     /**
      * @param multicastConfig the multicastConfig to set
      */
-    public void setMulticastConfig(MulticastConfig multicastConfig) {
+    public Join setMulticastConfig(MulticastConfig multicastConfig) {
         this.multicastConfig = multicastConfig;
+        return this;
     }
 
     /**
@@ -47,7 +48,8 @@ public class Join {
     /**
      * @param joinMembers the joinMembers to set
      */
-    public void setJoinMembers(JoinMembers joinMembers) {
+    public Join setJoinMembers(JoinMembers joinMembers) {
         this.joinMembers = joinMembers;
+        return this;
     }
 }

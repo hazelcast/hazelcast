@@ -38,8 +38,9 @@ public final class QueueConfig {
     /**
      * @param name the name to set
      */
-    public void setName(String name) {
+    public QueueConfig setName(String name) {
         this.name = name;
+        return this;
     }
 
     /**
@@ -52,8 +53,9 @@ public final class QueueConfig {
     /**
      * @param maxSizePerJVM the maxSizePerJVM to set
      */
-    public void setMaxSizePerJVM(int maxSizePerJVM) {
+    public QueueConfig setMaxSizePerJVM(int maxSizePerJVM) {
         this.maxSizePerJVM = maxSizePerJVM;
+        return this;
     }
 
     /**
@@ -66,7 +68,8 @@ public final class QueueConfig {
     /**
      * @param timeToLiveSeconds the timeToLiveSeconds to set
      */
-    public void setTimeToLiveSeconds(int timeToLiveSeconds) {
+    public QueueConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
         this.timeToLiveSeconds = timeToLiveSeconds;
+        return this;
     }
 }

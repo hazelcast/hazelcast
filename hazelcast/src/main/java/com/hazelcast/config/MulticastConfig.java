@@ -39,8 +39,9 @@ public class MulticastConfig {
     /**
      * @param enabled the enabled to set
      */
-    public void setEnabled(boolean enabled) {
+    public MulticastConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
+        return this;
     }
 
     /**
@@ -53,8 +54,9 @@ public class MulticastConfig {
     /**
      * @param multicastGroup the multicastGroup to set
      */
-    public void setMulticastGroup(String multicastGroup) {
+    public MulticastConfig setMulticastGroup(String multicastGroup) {
         this.multicastGroup = multicastGroup;
+        return this;
     }
 
     /**
@@ -67,7 +69,8 @@ public class MulticastConfig {
     /**
      * @param multicastPort the multicastPort to set
      */
-    public void setMulticastPort(int multicastPort) {
+    public MulticastConfig setMulticastPort(int multicastPort) {
         this.multicastPort = multicastPort;
+        return this;
     }
 }

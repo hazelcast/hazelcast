@@ -38,23 +38,26 @@ public class Interfaces {
     /**
      * @param enabled the enabled to set
      */
-    public void setEnabled(final boolean enabled) {
+    public Interfaces setEnabled(final boolean enabled) {
         this.enabled = enabled;
+    	return this;
     }
 
     /**
      * Adds a new interface
      * @param ip
      */
-    public void addInterface(final String ip) {
+    public Interfaces addInterface(final String ip) {
        	interfaceSet.add(ip);
+    	return this;
     }
 
     /**
      * clears all interfaces.
      */
-    public void clear() {
+    public Interfaces clear() {
     	interfaceSet.clear();
+    	return this;
     }
 
     /**
@@ -70,8 +73,9 @@ public class Interfaces {
      * 
      * @param interfaces the interfaces to set
      */
-    public void setInterfaces(final Collection<String> interfaces) {
+    public Interfaces setInterfaces(final Collection<String> interfaces) {
     	clear();
     	this.interfaceSet.addAll(interfaces);
+    	return this;
     }
 }
