@@ -87,6 +87,8 @@
                     <includes>
                         <include>**/ExecutorConfigTest.java</include>
                         <include>**/InterfacesTest.java</include>
+                        <include>**/TopicConfigTest.java</include>
+                        <include>**/IterableNodeListTest.java</include>
                         <include>**/HazelcastTest.java</include>
                         <include>**/TransactionTest.java</include>
                         <include>**/GeneralTest.java</include>
