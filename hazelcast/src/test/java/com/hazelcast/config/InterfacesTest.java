@@ -31,32 +31,29 @@ public class InterfacesTest {
 	final String interfaceC = "127.0.0.3";
 
 	@Test
-	public void testIsEnabled() {
+	public void testIsEnabledByDefault() {
 		Interfaces interfaces = new Interfaces();
 		assertFalse(interfaces.isEnabled());
 	}
 
 	@Test
 	public void testSetEnabled() {
-		Interfaces interfaces = new Interfaces();
-		interfaces.setEnabled(true);
+		Interfaces interfaces = new Interfaces().setEnabled(true);
 		assertTrue(interfaces.isEnabled());
 	}
 
 	@Test
 	public void testAddInterface() {
-		Interfaces interfaces = new Interfaces();
-		interfaces.addInterface(interfaceA);
+		Interfaces interfaces = new Interfaces().addInterface(interfaceA);
 		assertTrue(interfaces.getInterfaces().contains(interfaceA));
 	}
 
 	@Test
 	public void testClear() {
-		Interfaces interfaces = new Interfaces();
-		
-		interfaces.addInterface(interfaceA);
-		interfaces.addInterface(interfaceB);
-		interfaces.addInterface(interfaceC);
+		Interfaces interfaces = new Interfaces()
+			.addInterface(interfaceA)
+			.addInterface(interfaceB)
+			.addInterface(interfaceC);
 
 		assertTrue(interfaces.getInterfaces().size() == 3);
 		interfaces.clear();
@@ -71,14 +68,12 @@ public class InterfacesTest {
 
 	@Test
 	public void testSetInterfaceList() {
-		
 		List<String> interfaceList = new ArrayList<String>();
 		interfaceList.add(interfaceA);
 		interfaceList.add(interfaceB);
 		interfaceList.add(interfaceC);
 
-		Interfaces interfaces = new Interfaces();
-		interfaces.setInterfaces(interfaceList);
+		Interfaces interfaces = new Interfaces().setInterfaces(interfaceList);
 
 		assertTrue(interfaces.getInterfaces().contains(interfaceA));
 		assertTrue(interfaces.getInterfaces().contains(interfaceB));
@@ -87,9 +82,7 @@ public class InterfacesTest {
 
 	@Test
 	public void shouldNotContainDuplicateInterfaces() {
-		Interfaces interfaces = new Interfaces();
-		
-		interfaces.addInterface(interfaceA);
+		Interfaces interfaces = new Interfaces().addInterface(interfaceA);
 		assertTrue(interfaces.getInterfaces().size() == 1);
 		
 		interfaces.addInterface(interfaceA);
@@ -98,9 +91,10 @@ public class InterfacesTest {
 	
 	@Test(expected = UnsupportedOperationException.class)
 	public void shouldNotBeModifiable() {
-		Interfaces interfaces = new Interfaces();
-		interfaces.addInterface(interfaceA);
-		interfaces.getInterfaces().clear();
+		new Interfaces()
+			.addInterface(interfaceA)
+			.getInterfaces()
+			.clear();
 	}
 	
 }
