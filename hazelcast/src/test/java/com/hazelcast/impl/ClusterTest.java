@@ -322,7 +322,6 @@ public class ClusterTest {
     }
 
     @Test(timeout = 60000)
-    @Ignore
     public void testTcpIpWithDifferentBuildNumber() throws Exception {
         System.setProperty("hazelcast.build", "1");
         Config c = new XmlConfigBuilder().build();
@@ -337,6 +336,20 @@ public class ClusterTest {
         assertEquals("value1", h1.getMap("default").put("1", "value2"));
         System.setProperty("hazelcast.build", "2");
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
+        assertEquals(1, h1.getCluster().getMembers().size());
+        assertEquals(1, h2.getCluster().getMembers().size());
+        System.setProperty("hazelcast.build", "t");
+    }
+
+    @Test(timeout = 60000)
+    public void testMulticastWithDifferentBuildNumber() throws Exception {
+        System.setProperty("hazelcast.build", "1");
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        assertEquals(1, h1.getCluster().getMembers().size());
+        h1.getMap("default").put("1", "value1");
+        assertEquals("value1", h1.getMap("default").put("1", "value2"));
+        System.setProperty("hazelcast.build", "2");
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         assertEquals(1, h1.getCluster().getMembers().size());
         assertEquals(1, h2.getCluster().getMembers().size());
         System.setProperty("hazelcast.build", "t");
@@ -766,7 +779,7 @@ public class ClusterTest {
             }
         });
         topic.publish("message5");
-        assertEquals(true, latch.await(5, TimeUnit.SECONDS));
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
         IdGenerator ig1 = (IdGenerator) h1.getMap("amap").get("6");
         IdGenerator ig2 = (IdGenerator) h2.getMap("amap").get("6");
         assertEquals(2, ig1.newId());
@@ -940,7 +953,7 @@ public class ClusterTest {
         h4.getTopic("default2").addMessageListener(ml);
         assertEquals(4, h4.getCluster().getMembers().size());
         h1.getTopic("default2").publish("message2");
-        assertEquals(true, latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
