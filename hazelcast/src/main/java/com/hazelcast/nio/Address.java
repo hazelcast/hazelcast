@@ -169,6 +169,9 @@ public class Address implements DataSerializable {
         if (!(o instanceof Address))
             return false;
         final Address address = (Address) o;
+        if (hashCode() != address.hashCode()) {
+            return false;
+        }
         return port == address.port && Arrays.equals(ip, address.ip);
     }
 
@@ -183,10 +186,10 @@ public class Address implements DataSerializable {
         this.hash = hash(ip) * 29 + port;
     }
 
-    private int hash(byte[] id) {
+    private int hash(byte[] bytes) {
         int hash = 0;
-        for (byte anId : id) {
-            hash = (hash * 29) + anId;
+        for (byte b : bytes) {
+            hash = (hash * 29) + b;
         }
         return hash;
     }

@@ -17,7 +17,6 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.*;
@@ -346,9 +345,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         if (getMember(joinRequest.address) != null)
             return;
         Connection conn = joinRequest.getConnection();
-        Config config = node.getConfig();
-        if (config.getGroupConfig().getName().equals(joinRequest.groupName) &&
-                config.getGroupConfig().getPassword().equals(joinRequest.groupPassword)) {
+        if (node.validateJoinRequest(joinRequest)) {
             if (!node.getConfig().getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
                 if (node.getMasterAddress() != null && !isMaster()) {
                     sendProcessableTo(new Master(node.getMasterAddress()), conn);
@@ -359,12 +356,10 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                     sendProcessableTo(new Master(node.getMasterAddress()), conn);
                     return;
                 }
-                Address newAddress = joinRequest.address;
                 if (!joinInProgress) {
-                    MemberInfo newMemberInfo = new MemberInfo(newAddress, joinRequest.nodeType);
+                    MemberInfo newMemberInfo = new MemberInfo(joinRequest.address, joinRequest.nodeType);
                     if (setJoins.add(newMemberInfo)) {
                         sendProcessableTo(new Master(node.getMasterAddress()), conn);
-                        // sendAddRemoveToAllConns(newAddress);
                         timeToStartJoin = System.currentTimeMillis() + WAIT_MILLIS_BEFORE_JOIN;
                     } else {
                         if (System.currentTimeMillis() > timeToStartJoin) {
@@ -611,7 +606,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             }
             member.didRead();
         }
-        mapOldMembers.clear();
         if (!lsMembers.contains(thisMember)) {
             throw new RuntimeException("Member list doesn't contain local member!");
         }
@@ -630,7 +624,9 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             toAddress = node.getMasterAddress();
         }
         sendProcessableTo(new JoinRequest(thisAddress, node.getConfig().getGroupConfig().getName(),
-                node.getConfig().getGroupConfig().getPassword(), node.getLocalNodeType()), toAddress);
+                node.getConfig().getGroupConfig().getPassword(),
+                node.getLocalNodeType(), Packet.PACKET_VERSION, node.getBuildNumber()),
+                toAddress);
     }
 
     public void registerScheduledAction(ScheduledAction scheduledAction) {

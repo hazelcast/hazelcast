@@ -89,9 +89,8 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
             } else {
                 inBuffer.clear();
             }
-        } catch (final Throwable t) {
-            logger.log(Level.SEVERE, "Fatal Error at ReadHandler for endPoint: "
-                    + connection.getEndPoint(), t);
+        } catch (final Exception t) {
+            handleSocketException(t);
         } finally {
             registerOp(inSelector.selector, SelectionKey.OP_READ);
         }

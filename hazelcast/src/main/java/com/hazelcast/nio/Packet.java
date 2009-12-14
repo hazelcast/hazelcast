@@ -21,8 +21,11 @@ import com.hazelcast.util.ByteUtil;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Constants;
 import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.config.ConfigProperty;
 
 import java.nio.ByteBuffer;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public final class Packet {
 
@@ -30,7 +33,7 @@ public final class Packet {
 
     public ClusterOperation operation = ClusterOperation.NONE;
 
-    public ByteBuffer bbSizes = ByteBuffer.allocate(12);
+    public ByteBuffer bbSizes = ByteBuffer.allocate(13);
 
     public ByteBuffer bbHeader = ByteBuffer.allocate(500);
 
@@ -81,6 +84,11 @@ public final class Packet {
     int totalWritten = 0;
 
     public boolean client = false;
+
+    public static final byte PACKET_VERSION = ConfigProperty.PACKET_VERSION.getByte((byte) 2);
+
+    private static final Logger logger = Logger.getLogger(Packet.class.getName());
+
 
     public Packet() {
     }
@@ -182,6 +190,7 @@ public final class Packet {
         bbSizes.putInt(bbHeader.limit());
         bbSizes.putInt(key == null ? 0 : key.size);
         bbSizes.putInt(value == null ? 0 : value.size);
+        bbSizes.put(PACKET_VERSION);
         bbSizes.flip();
         totalSize = 0;
         totalSize += bbSizes.limit();
@@ -311,6 +320,13 @@ public final class Packet {
             if (valueSize > 0) value = new Data(valueSize);
             if (bbHeader.limit() == 0) {
                 throw new RuntimeException("read.bbHeader size cannot be 0");
+            }
+            byte packetVersion = bbSizes.get();
+            if (packetVersion != PACKET_VERSION) {
+                String msg = "Packet versions are not the same. Expected " + PACKET_VERSION
+                        + " Found: " + packetVersion;
+                logger.log(Level.WARNING, msg);
+                throw new RuntimeException(msg);
             }
         }
         if (sizeRead) {

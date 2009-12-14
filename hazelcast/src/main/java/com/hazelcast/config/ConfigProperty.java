@@ -24,7 +24,8 @@ public enum ConfigProperty {
     MAX_NO_HEARTBEAT_SECONDS("hazelcast.max.no.heartbeat.seconds", "30"),
     CONCURRENT_MAP_BLOCK_COUNT("hazelcast.map.block.count", "271"),
     BLOCKING_QUEUE_BLOCK_SIZE("hazelcast.queue.block.size", "1000"),
-    REMOVE_DELAY_SECONDS("hazelcast.map.remove.delay.seconds", "5");
+    REMOVE_DELAY_SECONDS("hazelcast.map.remove.delay.seconds", "5"),
+    PACKET_VERSION("hazelcast.packet.version", "1");
 
     private final String name;
     private final String defaultValue;
@@ -40,6 +41,10 @@ public enum ConfigProperty {
 
     public int getInteger() {
         return Integer.getInteger(name, Integer.parseInt(this.defaultValue));
+    }
+
+    public int getByte() {
+        return getByte(Byte.parseByte(this.defaultValue));
     }
 
     public boolean getBoolean() {
@@ -60,6 +65,12 @@ public enum ConfigProperty {
 
     public int getInteger(int defaultValue) {
         return Integer.getInteger(name, defaultValue);
+    }
+
+    public byte getByte(byte defaultValue) {
+        String val = System.getProperty(name);
+        if (val == null) return defaultValue;
+        return Byte.parseByte(val);
     }
 
     public boolean getBoolean(boolean defaultValue) {

@@ -31,22 +31,26 @@ public class JoinRequest extends AbstractRemotelyProcessable {
     public Address to;
     public String groupName;
     public String groupPassword;
+    public byte packetVersion;
+    public int buildNumber;
 
     public JoinRequest() {
         super();
     }
 
-    public JoinRequest(Address address, String groupName, String groupPassword, NodeType type) {
-        this(null, address, groupName, groupPassword, type);
+    public JoinRequest(Address address, String groupName, String groupPassword, NodeType type, byte packetVersion, int buildNumber) {
+        this(null, address, groupName, groupPassword, type, packetVersion, buildNumber);
     }
 
-    public JoinRequest(Address to, Address address, String groupName, String groupPassword, NodeType type) {
+    public JoinRequest(Address to, Address address, String groupName, String groupPassword, NodeType type, byte packetVersion, int buildNumber) {
         super();
         this.to = to;
         this.address = address;
         this.groupName = groupName;
         this.groupPassword = groupPassword;
         this.nodeType = type;
+        this.packetVersion = packetVersion;
+        this.buildNumber = buildNumber;
     }
 
     @Override
@@ -61,6 +65,8 @@ public class JoinRequest extends AbstractRemotelyProcessable {
         nodeType = NodeType.create(in.readInt());
         groupName = in.readUTF();
         groupPassword = in.readUTF();
+        packetVersion = in.readByte();
+        buildNumber = in.readInt();
     }
 
     @Override
@@ -74,6 +80,8 @@ public class JoinRequest extends AbstractRemotelyProcessable {
         out.writeInt(nodeType.getValue());
         out.writeUTF(groupName);
         out.writeUTF(groupPassword);
+        out.writeByte(packetVersion);
+        out.writeInt(buildNumber);
     }
 
     @Override
@@ -84,6 +92,8 @@ public class JoinRequest extends AbstractRemotelyProcessable {
             .append(", address=").append(address)
             .append(", groupName='").append(groupName).append('\'')
             .append(", groupPassword='").append(groupPassword).append('\'')
+            .append(", buildNumber='").append(buildNumber).append('\'')
+            .append(", packetVersion='").append(packetVersion).append('\'')
             .append('}')
             .toString();
     }

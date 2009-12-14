@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.cluster.JoinRequest;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.config.Interfaces;
@@ -89,9 +90,9 @@ public class Node {
 
     public final ThreadGroup threadGroup;
 
-    volatile Address address = null;
+    final Address address;
 
-    volatile MemberImpl localMember = null;
+    final MemberImpl localMember;
 
     volatile Address masterAddress = null;
 
@@ -100,6 +101,8 @@ public class Node {
     volatile Thread queryThread = null;
 
     public final FactoryImpl factory;
+
+    private final int buildNumber;
 
     public Node(FactoryImpl factory, Config config) {
         this.threadGroup = new ThreadGroup(factory.getName());
@@ -119,7 +122,17 @@ public class Node {
             }
         } catch (Exception ignored) {
         }
+        int tmpBuildNumber = 0;
+        try {
+            tmpBuildNumber = Integer.getInteger("hazelcast.build", -1);
+            if (tmpBuildNumber == -1) {
+                tmpBuildNumber = Integer.parseInt(build);
+            }
+        } catch (Exception ignored) {
+        }
+        buildNumber = tmpBuildNumber;
         ServerSocketChannel serverSocketChannel;
+        Address localAddress = null;
         try {
             final String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
             final String preferIPv6Address = System.getProperty("java.net.preferIPv6Addresses");
@@ -128,12 +141,13 @@ public class Node {
             }
             AddressPicker addressPicker = new AddressPicker();
             serverSocketChannel = ServerSocketChannel.open();
-            address = addressPicker.pickAddress(this, serverSocketChannel);
-            address.setThisAddress(true);
-            localMember = new MemberImpl(getName(), address, true, localNodeType);
+            localAddress = addressPicker.pickAddress(this, serverSocketChannel);
+            localAddress.setThisAddress(true);
         } catch (final Throwable e) {
             throw new RuntimeException(e);
         }
+        address = localAddress;
+        localMember = new MemberImpl(getName(), address, true, localNodeType);
         clusterImpl = new ClusterImpl(this);
         baseVariables = new NodeBaseVariables(address, localMember);
         //initialize managers..
@@ -263,7 +277,6 @@ public class Node {
             concurrentMapManager.reset();
             clientService.reset();
             executorManager.stop();
-            address = null;
             masterAddress = null;
             clusterManager.stop();
             int numThreads = threadGroup.activeCount();
@@ -333,7 +346,7 @@ public class Node {
             final String ip = System.getProperty("join.ip");
             if (ip == null) {
                 JoinInfo joinInfo = new JoinInfo(true, address, config.getGroupConfig().getName(),
-                        config.getGroupConfig().getPassword(), getLocalNodeType());
+                        config.getGroupConfig().getPassword(), getLocalNodeType(), Packet.PACKET_VERSION, buildNumber);
                 for (int i = 0; i < 200; i++) {
                     multicastService.send(joinInfo);
                     if (masterAddress == null) {
@@ -350,6 +363,13 @@ public class Node {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public boolean validateJoinRequest(JoinRequest joinRequest) {
+        return config.getGroupConfig().getName().equals(joinRequest.groupName) &&
+                config.getGroupConfig().getPassword().equals(joinRequest.groupPassword) &&
+                Packet.PACKET_VERSION == joinRequest.packetVersion &&
+                buildNumber == joinRequest.buildNumber;
     }
 
     private Address getAddressFor(final String host) {
@@ -453,6 +473,7 @@ public class Node {
     }
 
     private void joinWithMulticast() {
+        int tryCount = 0;
         while (!joined) {
             try {
                 logger.log(Level.FINEST, "joining... " + masterAddress);
@@ -463,8 +484,26 @@ public class Node {
                         return;
                     }
                 }
+                if (tryCount++ > 20) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("\n");
+                    sb.append("===========================");
+                    sb.append("\n");
+                    sb.append("Couldn't connect to discovered master! tryCount: " + tryCount);
+                    sb.append("\n");
+                    sb.append("masterAddress: " + masterAddress);
+                    sb.append("\n");
+                    sb.append("connection: " + connectionManager.getConnection(masterAddress));
+                    sb.append("===========================");
+                    sb.append("\n");
+                    logger.log(Level.WARNING, sb.toString());
+                    tryCount = 0;
+                }
                 if (!masterAddress.equals(address)) {
                     connectAndSendJoinRequest(masterAddress);
+                } else {
+                    masterAddress = null;
+                    tryCount = 0;
                 }
                 Thread.sleep(500);
             } catch (final Exception e) {
@@ -473,7 +512,7 @@ public class Node {
         }
     }
 
-    private void connectAndSendJoinRequest(final Address masterAddress) throws Exception {
+    private void connectAndSendJoinRequest(Address masterAddress) throws Exception {
         if (masterAddress == null || masterAddress.equals(address)) {
             throw new IllegalArgumentException();
         }
@@ -569,7 +608,7 @@ public class Node {
             while (!joined) {
                 final Connection connection = connectionManager.getOrConnect(requiredAddress);
                 if (connection == null) {
-                	joinViaRequiredMember();
+                    joinViaRequiredMember();
                 }
                 logger.log(Level.FINEST, "Sending joinRequest " + requiredAddress);
                 clusterManager.sendJoinRequest(requiredAddress);
@@ -590,6 +629,10 @@ public class Node {
 
     public Config getConfig() {
         return config;
+    }
+
+    public int getBuildNumber() {
+        return buildNumber;
     }
 
     public String toString() {

@@ -2,8 +2,8 @@ package com.hazelcast.config;
 
 public class GroupConfig {
 
-    public static final String DEFAULT_GROUP_PASSWORD = "group-pass";
-    public static final String DEFAULT_GROUP_NAME = "group-dev";
+    public static final String DEFAULT_GROUP_PASSWORD = "dev-pass";
+    public static final String DEFAULT_GROUP_NAME = "dev";
 
     private String name = DEFAULT_GROUP_NAME;
 	private String password = DEFAULT_GROUP_PASSWORD;

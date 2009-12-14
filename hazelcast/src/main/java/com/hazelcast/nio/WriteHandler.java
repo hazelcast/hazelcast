@@ -127,8 +127,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             }
         } catch (final Throwable t) {
             logger.log(Level.SEVERE, "Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
-            t.printStackTrace();
-            System.exit(0);
+            t.printStackTrace(); 
         } finally {
             ready = false;
             registerWrite();
@@ -197,22 +196,22 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         final Cipher cipher;
         final int writeBlockSize;
 
-        boolean aliasWritten = false;
+        boolean aliasWritten = false; 
 
         AsymmetricCipherPacketWriter() {
-            cipher = init();
-            writeBlockSize = cipher.getBlockSize();
-        }
-
-        Cipher init() {
             Cipher c = null;
             try {
                 c = CipherHelper.createAsymmetricWriterCipher(node);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Asymmetric Cipher for WriteHandler cannot be initialized.", e);
+                cipher = null;
+                writeBlockSize = 0;
+                CipherHelper.handleCipherException(e, connection);                
+                return;
             }
-            return c;
-        }
+            cipher = c;
+            writeBlockSize = cipher.getBlockSize();
+        } 
 
         public boolean writePacket(Packet packet) throws Exception {
             if (!aliasWritten) {
@@ -222,7 +221,11 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                 socketBB.put(localAliasBytes);
                 aliasWritten = true;
             }
-            return encryptAndWrite(packet);
+            boolean complete = encryptAndWrite(packet);
+            if (complete) {
+                aliasWritten = false;
+            }
+            return complete;
         }
 
         public final boolean encryptAndWrite(Packet packet) throws Exception {
@@ -246,7 +249,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             return packet.totalWritten >= packet.totalSize;
         }
 
-        private final int encryptAndWriteToSocket(ByteBuffer src) throws Exception {
+        private int encryptAndWriteToSocket(ByteBuffer src) throws Exception {
             int remaining = src.remaining();
             if (src.hasRemaining()) {
                 doCipherUpdate(src);
@@ -283,10 +286,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         final Cipher cipher;
 
         SymmetricCipherPacketWriter() {
-            cipher = init();
-        }
-
-        Cipher init() {
             Cipher c = null;
             try {
                 c = CipherHelper.createSymmetricWriterCipher(node);
@@ -294,14 +293,10 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                 logger.log(Level.SEVERE, "Symmetric Cipher for WriteHandler cannot be initialized.", e);
                 CipherHelper.handleCipherException(e, connection);
             }
-            return c;
+            cipher = c;
         }
 
         public boolean writePacket(Packet packet) throws Exception {
-            return encryptAndWrite(packet);
-        }
-
-        public final boolean encryptAndWrite(Packet packet) throws Exception {
             if (cipherBuffer.position() > 0 && socketBB.hasRemaining()) {
                 cipherBuffer.flip();
                 copyToDirectBuffer(cipherBuffer, socketBB);
@@ -336,7 +331,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             return complete;
         }
 
-        private final int encryptAndWriteToSocket(ByteBuffer src) throws Exception {
+        private int encryptAndWriteToSocket(ByteBuffer src) throws Exception {
             int remaining = src.remaining();
             if (src.hasRemaining() && cipherBuffer.hasRemaining()) {
                 int outputSize = cipher.getOutputSize(src.remaining());
