@@ -22,7 +22,7 @@ import com.hazelcast.nio.Address;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JoinMembers {
+public class TcpIpConfig {
     private int connectionTimeoutSeconds = 5;
 
     private boolean enabled = false;
@@ -33,12 +33,18 @@ public class JoinMembers {
 
     private final List<Address> addresses = new ArrayList<Address>();
 
-    public JoinMembers addMember(final String member) {
+    public TcpIpConfig addMember(final String member) {
         members.add(member);
         return this;
     }
 
-    public JoinMembers addAddress(final Address address) {
+    public TcpIpConfig clear() {
+        members.clear();
+        addresses.clear();
+        return this;
+    }
+
+    public TcpIpConfig addAddress(final Address address) {
         addresses.add(address);
         return this;
     }
@@ -57,7 +63,7 @@ public class JoinMembers {
     /**
      * @param connectionTimeoutSeconds the connectionTimeoutSeconds to set
      */
-    public JoinMembers setConnectionTimeoutSeconds(final int connectionTimeoutSeconds) {
+    public TcpIpConfig setConnectionTimeoutSeconds(final int connectionTimeoutSeconds) {
         this.connectionTimeoutSeconds = connectionTimeoutSeconds;
         return this;
     }
@@ -72,7 +78,7 @@ public class JoinMembers {
     /**
      * @param enabled the enabled to set
      */
-    public JoinMembers setEnabled(final boolean enabled) {
+    public TcpIpConfig setEnabled(final boolean enabled) {
         this.enabled = enabled;
         return this;
     }
@@ -87,7 +93,7 @@ public class JoinMembers {
     /**
      * @param members the members to set
      */
-    public JoinMembers setMembers(final List<String> members) {
+    public TcpIpConfig setMembers(final List<String> members) {
         this.members = members;
         return this;
     }
@@ -102,7 +108,7 @@ public class JoinMembers {
     /**
      * @param requiredMember the requiredMember to set
      */
-    public JoinMembers setRequiredMember(final String requiredMember) {
+    public TcpIpConfig setRequiredMember(final String requiredMember) {
         this.requiredMember = requiredMember;
         return this;
     }

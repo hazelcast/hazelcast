@@ -21,7 +21,7 @@ public class Join {
 
     private MulticastConfig multicastConfig = new MulticastConfig();
 
-    private JoinMembers joinMembers = new JoinMembers();
+    private TcpIpConfig tcpIpConfig = new TcpIpConfig();
 
     /**
      * @return the multicastConfig
@@ -41,15 +41,15 @@ public class Join {
     /**
      * @return the joinMembers
      */
-    public JoinMembers getJoinMembers() {
-        return joinMembers;
+    public TcpIpConfig getJoinMembers() {
+        return tcpIpConfig;
     }
 
     /**
-     * @param joinMembers the joinMembers to set
+     * @param tcpIpConfig the joinMembers to set
      */
-    public Join setJoinMembers(final JoinMembers joinMembers) {
-        this.joinMembers = joinMembers;
+    public Join setJoinMembers(final TcpIpConfig tcpIpConfig) {
+        this.tcpIpConfig = tcpIpConfig;
         return this;
     }
 }
