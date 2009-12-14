@@ -17,7 +17,10 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.config.*;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.nio.Address;
 import static junit.framework.Assert.assertFalse;
@@ -25,9 +28,7 @@ import static junit.framework.Assert.assertTrue;
 import org.junit.After;
 import org.junit.Assert;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 import org.junit.Test;
-import org.junit.Ignore;
 
 import java.io.Serializable;
 import java.util.*;
@@ -307,7 +308,7 @@ public class ClusterTest {
         assertEquals("value1", h1.getMap("default").put("1", "value2"));
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
         assertEquals(2, h2.getCluster().getMembers().size());
-        assertEquals("value2", h2.getMap("default").get("1")); 
+        assertEquals("value2", h2.getMap("default").get("1"));
     }
 
     @Test(timeout = 60000)
@@ -354,7 +355,7 @@ public class ClusterTest {
         assertEquals(1, h2.getCluster().getMembers().size());
         System.setProperty("hazelcast.build", "t");
     }
-    
+
     @Test(timeout = 60000)
     public void testMapMaxSize() throws Exception {
         Config c = new XmlConfigBuilder().build();
@@ -373,8 +374,6 @@ public class ClusterTest {
             assertEquals(3, map.size());
         }
     }
-
-
 
     @Test(timeout = 180000)
     public void testLosingEntries() throws Exception {
@@ -998,5 +997,46 @@ public class ClusterTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
+    }
+
+    /**
+     * Fix for the issue 156
+     * When an entry is in a map for more than TTL time
+     * the entry should get evicted and eviction event
+     * should be fired.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testMapEvictionWithTTL() throws Exception {
+        Config cfg = new Config();
+        Map<String, MapConfig> mapConfigs = new HashMap<String, MapConfig>();
+        MapConfig mCfg = new MapConfig();
+        mCfg.setTimeToLiveSeconds(3);
+        mapConfigs.put("testMapEvictionWithTTL", mCfg);
+        cfg.setMapMapConfigs(mapConfigs);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(cfg);
+        IMap map1 = h1.getMap("testMapEvictionWithTTL");
+        final CountDownLatch latch = new CountDownLatch(1);
+        map1.addEntryListener(new EntryListener() {
+            public void entryAdded(EntryEvent entryEvent) {
+            }
+
+            public void entryRemoved(EntryEvent entryEvent) {
+            }
+
+            public void entryUpdated(EntryEvent entryEvent) {
+            }
+
+            public void entryEvicted(EntryEvent entryEvent) {
+                assertEquals("1", entryEvent.getKey());
+                assertEquals("v1", entryEvent.getValue());
+                latch.countDown();
+            }
+        }, true);
+        map1.put("1", "v1");
+        Assert.assertTrue(map1.get("1").equals("v1"));
+        Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
+        Assert.assertTrue(map1.get("1") == null);
     }
 }
