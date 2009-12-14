@@ -66,6 +66,8 @@ public class Packet {
 
     private byte[] indexTypes = new byte[10];
 
+    private static final byte PACKET_VERSION = 2;
+
     public Packet() {
     }
 
@@ -75,6 +77,7 @@ public class Packet {
         outputStream.writeInt(headerSize);
         outputStream.writeInt(keySize);
         outputStream.writeInt(valueSize);
+        outputStream.writeByte(PACKET_VERSION);
         outputStream.write(headerInBytes);
         if (key != null)
             outputStream.write(key);
@@ -86,6 +89,11 @@ public class Packet {
         headerSize = dis.readInt();
         keySize = dis.readInt();
         valueSize = dis.readInt();
+        byte packetVersion = dis.readByte();
+        if (packetVersion != PACKET_VERSION) {
+            throw new RuntimeException("Invalid packet version. Expected:"
+                    + PACKET_VERSION + ", Found:" + packetVersion);
+        }
         headerInBytes = new byte[headerSize];
         dis.read(headerInBytes);
         ByteArrayInputStream bis = new ByteArrayInputStream(headerInBytes);
