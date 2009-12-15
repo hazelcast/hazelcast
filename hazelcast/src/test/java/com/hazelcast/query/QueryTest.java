@@ -201,7 +201,7 @@ public class QueryTest {
         doFunctionalQueryTest(imap);
         assertEquals(101, imap.size());
         h1.shutdown();
-        imap = h2.getMap("employees");        
+        imap = h2.getMap("employees");
         assertEquals(101, imap.size());
         Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and age=23"));
         assertEquals(2, entries.size());
@@ -244,6 +244,25 @@ public class QueryTest {
         imap.addIndex("active", false);
         HazelcastInstance h2 = newInstance();
         doFunctionalQueryTest(imap);
+    }
+
+    @Test
+    public void testWithDashInTheNameAndSqlPredicate() {
+        IMap<String, Employee> map = Hazelcast.getMap("employee");
+        Employee toto = new Employee("toto", 23, true, 165765.0);
+        System.out.println("put " + toto);
+        map.put("1", toto);
+        Employee toto2 = new Employee("toto-super+hero", 23, true, 165765.0);
+        map.put("2", toto2);
+        //Works well
+        Set<Map.Entry<String, Employee>> entries = map.entrySet(new SqlPredicate("name='toto-super+hero'"));
+        System.out.println("Set entries = " + entries);
+        assertTrue(entries.size() > 0);
+        for (Map.Entry<String, Employee> entry : entries) {
+            Employee e = entry.getValue();
+            System.out.println(e);
+            assertEquals(e, toto2);
+        }
     }
 
     public void doFunctionalSQLQueryTest(IMap imap) {
@@ -340,6 +359,30 @@ public class QueryTest {
 
         public boolean isActive() {
             return active;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Employee employee = (Employee) o;
+            if (active != employee.active) return false;
+            if (age != employee.age) return false;
+            if (Double.compare(employee.salary, salary) != 0) return false;
+            if (name != null ? !name.equals(employee.name) : employee.name != null) return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result;
+            long temp;
+            result = name != null ? name.hashCode() : 0;
+            result = 31 * result + age;
+            result = 31 * result + (active ? 1 : 0);
+            temp = salary != +0.0d ? Double.doubleToLongBits(salary) : 0L;
+            result = 31 * result + (int) (temp ^ (temp >>> 32));
+            return result;
         }
 
         @Override

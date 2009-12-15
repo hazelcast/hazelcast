@@ -42,40 +42,13 @@ class Parser {
         precedence.put("or", 3);
     }
 
+    private static final List<String> charOperators = Arrays.asList("(", ")", "+", "-", "=", "<", ">", "*", "/");
+
     public Parser() {
-    }
-
-    private int getApostropheIndex(String str, int start) {
-        return str.indexOf("'", start);
-    }
-
-    private String clearQuote(String str) {
-        int indexSpace = str.indexOf(' ');
-        if (indexSpace == -1) return str;
-        String replacer = "hz#0";
-        int counter = 0;
-        while (str.indexOf(replacer) != -1) {
-            replacer = "hz#" + (++counter);
-        }
-        return str.replaceAll(" ", replacer) + counter;
     }
 
     public List<String> toPrefix(String in) {
 //        System.out.println(in);
-        int indexLike = getApostropheIndex(in, 0);
-        if (indexLike != -1) {
-            StringBuilder sb = new StringBuilder(in.substring(0, indexLike));
-            int start = indexLike;
-            while (start != -1) {
-                int indexNext = getApostropheIndex(in, start + 1);
-                String quote = in.substring(indexLike, indexNext+1);
-                String cleanQuote = clearQuote(quote);
-                sb.append(cleanQuote);
-                start = indexNext;
-                start = getApostropheIndex(in, start + 1);
-            }
-            in = sb.toString();
-        }
         int indexIn = in.indexOf(" in ");
         if (indexIn == -1) {
             indexIn = in.indexOf(" IN ");
@@ -138,7 +111,6 @@ class Parser {
 
     public List<String> split(String in) {
         StringBuilder result = new StringBuilder();
-        List<String> charOperators = Arrays.asList("(", ")", "+", "-", "=", "<", ">", "*", "/");
         char[] chars = in.toCharArray();
         for (int i = 0; i < chars.length; i++) {
             char c = chars[i];

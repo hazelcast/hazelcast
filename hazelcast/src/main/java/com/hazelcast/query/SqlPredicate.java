@@ -23,10 +23,7 @@ import static com.hazelcast.query.Predicates.*;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class SqlPredicate extends AbstractPredicate implements IndexAwarePredicate {
     private transient Predicate predicate;
@@ -70,9 +67,46 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         predicate = createPredicate(sql);
     }
 
+    private int getApostropheIndex(String str, int start) {
+        return str.indexOf("'", start);
+    }
+
     private Predicate createPredicate(String sql) {
+        Map<String, String> mapPhrases = new HashMap<String, String>(1);
+        int apoIndex = getApostropheIndex(sql, 0);
+        if (apoIndex != -1) {
+            int phraseId = 0;
+            StringBuilder newSql = new StringBuilder();
+            while (apoIndex != -1) {
+                phraseId++;
+                int start = apoIndex + 1;
+                int end = getApostropheIndex(sql, apoIndex + 1);
+                if (end == -1) {
+                    throw new RuntimeException("Missing ' in sql");
+                }
+                String phrase = sql.substring(start, end);
+                String key = "$" + phraseId;
+                mapPhrases.put(key, phrase);
+                String before = sql.substring(0, apoIndex);
+                sql = sql.substring(end + 1);
+                newSql.append(before);
+                newSql.append(key);
+                apoIndex = getApostropheIndex(sql, 0);
+            }
+            sql = newSql.toString();
+//            System.out.println("new sql " + sql);
+        }
         Parser parser = new Parser();
-        List<Object> tokens = new ArrayList<Object>(parser.toPrefix(sql));
+        List<String> sqlTokens = parser.toPrefix(sql);
+        List<Object> tokens = new ArrayList<Object>(sqlTokens.size());
+        for (String token : sqlTokens) {
+            String finalToken = token;
+            String value = mapPhrases.get(token);
+            if (value != null) {
+                finalToken = value;
+            }
+            tokens.add(finalToken);
+        }
 //        System.out.println(sql);
 //        System.out.println("token " + tokens);
         if (tokens.size() == 0) throw new RuntimeException("Invalid SQL :" + sql);

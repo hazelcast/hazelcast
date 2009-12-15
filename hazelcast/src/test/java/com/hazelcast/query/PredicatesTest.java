@@ -24,6 +24,11 @@ import org.junit.Test;
 public class PredicatesTest {
     @Test
     public void testEqual() {
+        assertTrue(new SqlPredicate("name='abc-123-xvz'").apply(createEntry("1", new QueryTest.Employee("abc-123-xvz", 34, true, 10D))));
+        assertTrue(new SqlPredicate("name='abc 123-xvz'").apply(createEntry("1", new QueryTest.Employee("abc 123-xvz", 34, true, 10D))));
+        assertTrue(new SqlPredicate("name='abc 123-xvz+(123)'").apply(createEntry("1", new QueryTest.Employee("abc 123-xvz+(123)", 34, true, 10D))));
+        assertFalse(new SqlPredicate("name='abc 123-xvz+(123)'").apply(createEntry("1", new QueryTest.Employee("abc123-xvz+(123)", 34, true, 10D))));
+        assertTrue(new SqlPredicate("name LIKE 'abc-%'").apply(createEntry("1", new QueryTest.Employee("abc-123", 34, true, 10D))));
         assertTrue(Predicates.equal(new DummyExpression("value"), "value").apply(null));
         assertFalse(Predicates.equal(new DummyExpression("value1"), "value").apply(null));
         assertFalse(Predicates.equal(new DummyExpression("value"), "value1").apply(null));
@@ -63,28 +68,29 @@ public class PredicatesTest {
         assertFalse(Predicates.like(new DummyExpression<String>("Java"), "J_a_a").apply(null));
         assertFalse(Predicates.like(new DummyExpression<String>("Java"), "J_av__").apply(null));
         assertFalse(Predicates.like(new DummyExpression<String>("Java"), "J_Va").apply(null));
+        assertTrue(Predicates.like(new DummyExpression<String>("Java World"), "Java World").apply(null));
         assertTrue(Predicates.like(new DummyExpression<String>("Java World"), "Java%ld").apply(null));
         assertTrue(Predicates.like(new DummyExpression<String>("Java World"), "%World").apply(null));
         assertTrue(Predicates.like(new DummyExpression<String>("Java World"), "Java_World").apply(null));
         assertFalse(Predicates.like(new DummyExpression<String>("Java World"), "JavaWorld").apply(null));
-    } 
+    }
 
     @Test
     public void testSqlPredicate() {
         assertEquals("active=true", sql("active"));
+        assertEquals("(active=true AND name=abc xyz 123)", sql("active AND name='abc xyz 123'"));
+        assertEquals("(name LIKE 'abc-xyz+(123)' AND name=abc xyz 123)", sql("name like 'abc-xyz+(123)' AND name='abc xyz 123'"));
         assertEquals("(active=true AND age>4)", sql("active and age > 4"));
         assertEquals("(active=true AND age>4)", sql("active and age>4"));
         assertEquals("(active=false AND age<=4)", sql("active=false AND age<=4"));
         assertEquals("(active=false AND age<=4)", sql("active= false and age <= 4"));
         assertEquals("(active=false AND age>=4)", sql("active=false AND (age>=4)"));
         assertEquals("(active=false OR age>=4)", sql("active =false or (age>= 4)"));
-
         assertEquals("name LIKE 'J%'", sql("name like 'J%'"));
         assertEquals("NOT(name LIKE 'J%')", sql("name not like 'J%'"));
         assertEquals("(active=false OR name LIKE 'J%')", sql("active =false or name like 'J%'"));
         assertEquals("(active=false OR name LIKE 'Java World')", sql("active =false or name like 'Java World'"));
         assertEquals("(active=false OR name LIKE 'Java W% Again')", sql("active =false or name like 'Java W% Again'"));
-
         assertEquals("age IN (10,15)", sql("age in (10, 15)"));
         assertEquals("NOT(age IN (10,15))", sql("age not in ( 10 , 15 )"));
         assertEquals("(active=true AND age BETWEEN 10 AND 15)", sql("active and age between 10 and 15"));
@@ -92,7 +98,6 @@ public class PredicatesTest {
         assertEquals("(active=true OR age IN (10,15))", sql("active or (age in ( 10,15))"));
         assertEquals("(age>10 AND (active=true OR age IN (10,15)))", sql("age>10 AND (active or (age IN (10, 15 )))"));
         assertEquals("(age<=10 AND (active=true OR NOT(age IN (10,15))))", sql("age<=10 AND (active or (age not in (10 , 15)))"));
-
         assertEquals("age BETWEEN 10 AND 15", sql("age between 10 and 15"));
         assertEquals("NOT(age BETWEEN 10 AND 15)", sql("age not between 10 and 15"));
         assertEquals("(active=true AND age BETWEEN 10 AND 15)", sql("active and age between 10 and 15"));

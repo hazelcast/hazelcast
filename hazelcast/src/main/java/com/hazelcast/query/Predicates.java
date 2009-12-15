@@ -314,13 +314,7 @@ public class Predicates {
         }
 
         public LikePredicate(Expression<String> first, String second) {
-            this.first = first;
-            char firstChar = second.charAt(0);
-            char lastChar = second.charAt(second.length()-1);
-            if (firstChar == '\'' && lastChar != '\'') {
-                String replacer = "hz#" + lastChar;
-                second = second.substring(0, second.lastIndexOf('\'')+1).replaceAll(replacer, " ");
-            }
+            this.first = first; 
             this.second = second;
             second = second.replaceAll("%", ".*").replaceAll("_", ".");
             pattern = Pattern.compile(second);
@@ -356,8 +350,9 @@ public class Predicates {
         public String toString() {
             final StringBuffer sb = new StringBuffer();
             sb.append(first);
-            sb.append(" LIKE ");
+            sb.append(" LIKE '");
             sb.append(second);
+            sb.append("'");
             return sb.toString();
         }
     }
