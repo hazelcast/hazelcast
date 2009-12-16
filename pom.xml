@@ -116,7 +116,7 @@
     <distributionManagement>
         <repository>
             <id>ssh-repository</id>
-            <url>scp://oztalip,hazelcast@web.sourceforge.net:/home/groups/h/ha/hazelcast/htdocs/m2repo/</url>
+            <url>scp://shell.sourceforge.net/home/groups/h/ha/hazelcast/htdocs/m2repo</url>            
         </repository>
     </distributionManagement>
 
