@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 
 import com.hazelcast.client.cluster.Bind;
 import com.hazelcast.impl.ClusterOperation;
-import com.hazelcast.client.nio.Address;
+import com.hazelcast.nio.Address;
 
 public class ConnectionManager{
 	private volatile Connection currentConnection;

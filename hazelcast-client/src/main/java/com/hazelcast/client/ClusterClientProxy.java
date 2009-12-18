@@ -43,8 +43,10 @@ public class ClusterClientProxy implements ClientProxy, Cluster {
     public Collection<Instance> getInstances() {
         Object[] instances = (Object[])proxyHelper.doOp(ClusterOperation.GET_INSTANCES, null, null);
         List<Instance> list = new ArrayList<Instance>();
-        for(int i=0;i<instances.length;i++){
-            list.add((Instance)client.getClientProxy((String)instances[i]));
+        if(instances!=null){
+	        for(int i=0;i<instances.length;i++){
+	            list.add((Instance)client.getClientProxy((String)instances[i]));
+	        }
         }
         return list;
     }

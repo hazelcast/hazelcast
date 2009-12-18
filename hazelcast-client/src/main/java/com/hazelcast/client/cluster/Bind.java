@@ -21,7 +21,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.hazelcast.client.nio.Address;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
 
 public class Bind implements DataSerializable{

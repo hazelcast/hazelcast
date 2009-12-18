@@ -35,10 +35,17 @@ public class HazelcastClientTest {
     @Test
     public void testGetClusterMemberSize() {
         Cluster cluster = getHazelcastClient().getCluster();
-        Set<Member> members = cluster.getMembers();
+        Set<com.hazelcast.core.Member> members = cluster.getMembers();
         //Tests are run with only one member in the cluster, this may change later
         assertEquals(1, members.size());
+        
+        for (Iterator<com.hazelcast.core.Member> iterator = members.iterator(); iterator.hasNext();) {
+			com.hazelcast.core.Member member = iterator.next();
+			assertNotNull(member);
+		}
     }
+    
+    
 
     @Test
     public void testGetClusterTime() {
