@@ -11,6 +11,15 @@ public class GroupConfig {
 	public GroupConfig() {
 	}
 	
+	public GroupConfig(final String name) {
+		setName(name);
+	}
+	
+	public GroupConfig(final String name, final String password) {
+		setName(name);
+		setPassword(password);
+	}
+	
 	/**
 	 * @return the name
 	 */
@@ -21,7 +30,11 @@ public class GroupConfig {
 	/**
 	 * @param name the name to set
 	 */
-	public GroupConfig setName(String name) {
+	public GroupConfig setName(final String name) {
+		if(name == null) {
+			throw new NullPointerException("group name cannot be null");
+		}
+
 		this.name = name;
 		return this;
 	}
@@ -36,7 +49,11 @@ public class GroupConfig {
 	/**
 	 * @param password the password to set
 	 */
-	public GroupConfig setPassword(String password) {
+	public GroupConfig setPassword(final String password) {
+		if(password == null) {
+			throw new NullPointerException("group password cannot be null");
+		}
+		
 		this.password = password;
 		return this;
 	}

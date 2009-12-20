@@ -69,6 +69,10 @@ public final class QueueConfig {
      * @param timeToLiveSeconds the timeToLiveSeconds to set
      */
     public QueueConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
+    	if(timeToLiveSeconds < 0) {
+    		throw new IllegalArgumentException("queue TTL must be positive");
+    	}
+    	
         this.timeToLiveSeconds = timeToLiveSeconds;
         return this;
     }

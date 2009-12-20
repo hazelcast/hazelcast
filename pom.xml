@@ -95,6 +95,8 @@
                         <include>**/IOTest.java</include>
                         <include>**/ParserTest.java</include>
                         <include>**/PredicatesTest.java</include>
+                        <include>**/GroupConfigTest.java</include>
+                        <include>**/QueueConfigTest.java</include>
                     </includes>
                 </configuration>
             </plugin>
