@@ -27,14 +27,14 @@ public interface MembershipListener extends EventListener {
     /**
      * Invoked when a new member is added to the cluster.
      *
-     * @param membersipEvent membership event
+     * @param membershipEvent membership event
      */
-    void memberAdded(MembershipEvent membersipEvent);
+    void memberAdded(MembershipEvent membershipEvent);
 
     /**
      * Invoked when an existing member leaves the cluster.
      *
-     * @param membersipEvent membership event
+     * @param membershipEvent membership event
      */
-    void memberRemoved(MembershipEvent membersipEvent);
+    void memberRemoved(MembershipEvent membershipEvent);
 }
