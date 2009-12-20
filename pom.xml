@@ -97,6 +97,7 @@
                         <include>**/PredicatesTest.java</include>
                         <include>**/GroupConfigTest.java</include>
                         <include>**/QueueConfigTest.java</include>
+                        <include>**/SortedHashMapTest.java</include>
                     </includes>
                 </configuration>
             </plugin>
