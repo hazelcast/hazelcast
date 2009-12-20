@@ -44,7 +44,7 @@ public class Node {
 
     private volatile boolean joined = false;
 
-    volatile boolean active = false;
+    private volatile boolean active = false;
 
     private volatile boolean completelyShutdown = false;
 
@@ -260,12 +260,12 @@ public class Node {
     }
 
     public void shutdown() {
-        if (active) {
+        if (isActive()) {
             // set the joined=false first so that
             // threads do not process unnecessary
             // events, such as removeaddress
             joined = false;
-            active = false;
+            setActive(false);
             inSelector.shutdown();
             outSelector.shutdown();
             clusterService.stop();
@@ -308,7 +308,7 @@ public class Node {
             multicastServiceThread.start();
             multicastServiceThread.setPriority(6);
         }
-        active = true;
+        setActive(true);
         if (!completelyShutdown) {
             logger.log(Level.FINEST, "Adding ShutdownHook");
             Runtime.getRuntime().addShutdownHook(shutdownHookThread);
@@ -325,7 +325,7 @@ public class Node {
         @Override
         public void run() {
             try {
-                if (active && !completelyShutdown) {
+                if (isActive() && !completelyShutdown) {
                     completelyShutdown = true;
                     if (ConfigProperty.SHUTDOWNHOOK_ENABLED.getBoolean()) {
                         shutdown();
@@ -639,4 +639,18 @@ public class Node {
     public String toString() {
         return "Node[" + getName() + "]";
     }
+
+	/**
+	 * @param active the active to set
+	 */
+	public void setActive(boolean active) {
+		this.active = active;
+	}
+
+	/**
+	 * @return the active
+	 */
+	public boolean isActive() {
+		return active;
+	}
 }

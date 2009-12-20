@@ -31,10 +31,9 @@ import com.hazelcast.impl.base.AddressAwareException;
 import com.hazelcast.impl.base.KeyValue;
 import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.impl.base.Pairs;
-import com.hazelcast.impl.concurrentmap.AddMapIndex;
+import com.hazelcast.impl.concurrentmap.MultiData;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
 import static com.hazelcast.nio.IOUtil.*;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.query.Index;
@@ -144,86 +143,6 @@ public final class ConcurrentMapManager extends BaseManager {
         return hash;
     }
 
-    public static class InitialState extends AbstractRemotelyProcessable {
-        List<MapState> lsMapStates = new ArrayList();
-
-        public InitialState() {
-        }
-
-        public void createAndAddMapState(CMap cmap) {
-            MapState mapState = new MapState(cmap.name);
-            int indexCount = cmap.mapIndexes.size();
-            for (int i = 0; i < indexCount; i++) {
-                Index index = cmap.indexes[i];
-                AddMapIndex mi = new AddMapIndex(cmap.name, index.getExpression(), index.isOrdered());
-                mapState.addMapIndex(mi);
-            }
-            lsMapStates.add(mapState);
-        }
-
-        public void process() {
-            FactoryImpl factory = getNode().factory;
-            if (factory.node.active) {
-                for (MapState mapState : lsMapStates) {
-                    CMap cmap = factory.node.concurrentMapManager.getOrCreateMap(mapState.name);
-                    for (AddMapIndex mapIndex : mapState.lsMapIndexes) {
-                        cmap.addIndex(mapIndex.getExpression(), mapIndex.isOrdered());
-                    }
-                }
-            }
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            out.writeInt(lsMapStates.size());
-            for (MapState mapState : lsMapStates) {
-                mapState.writeData(out);
-            }
-        }
-
-        public void readData(DataInput in) throws IOException {
-            int size = in.readInt();
-            for (int i = 0; i < size; i++) {
-                MapState mapState = new MapState();
-                mapState.readData(in);
-                lsMapStates.add(mapState);
-            }
-        }
-
-        class MapState implements DataSerializable {
-            String name;
-            List<AddMapIndex> lsMapIndexes = new ArrayList();
-
-            MapState() {
-            }
-
-            MapState(String name) {
-                this.name = name;
-            }
-
-            void addMapIndex(AddMapIndex mapIndex) {
-                lsMapIndexes.add(mapIndex);
-            }
-
-            public void writeData(DataOutput out) throws IOException {
-                out.writeUTF(name);
-                out.writeInt(lsMapIndexes.size());
-                for (AddMapIndex mapIndex : lsMapIndexes) {
-                    mapIndex.writeData(out);
-                }
-            }
-
-            public void readData(DataInput in) throws IOException {
-                name = in.readUTF();
-                int size = in.readInt();
-                for (int i = 0; i < size; i++) {
-                    AddMapIndex mapIndex = new AddMapIndex();
-                    mapIndex.readData(in);
-                    lsMapIndexes.add(mapIndex);
-                }
-            }
-        }
-    }
-
     void backupRecord(final Record rec) {
         if (rec.getMultiValues() != null) {
             List<Data> values = rec.getMultiValues();
@@ -244,7 +163,7 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     void migrateRecord(final CMap cmap, final Record rec) {
-        if (!node.active || node.factory.restarted) return;
+        if (!node.isActive() || node.factory.restarted) return;
         MMigrate mmigrate = new MMigrate();
         if (cmap.isMultiMap()) {
             List<Data> values = rec.getMultiValues();
@@ -674,9 +593,9 @@ public final class ConcurrentMapManager extends BaseManager {
     void setIndexValues(Request request, Object value) {
         CMap cmap = getMap(request.name);
         if (cmap != null) {
-            int indexCount = cmap.mapIndexes.size();
+            int indexCount = cmap.getMapIndexes().size();
             if (indexCount > 0) {
-                Index[] indexes = cmap.indexes;
+                Index[] indexes = cmap.getIndexes();
                 byte[] indexTypes = cmap.indexTypes;
                 long[] newIndexes = new long[indexCount];
                 boolean typesNew = false;
@@ -702,59 +621,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
                 request.setIndexes(newIndexes, indexTypes);
             }
-        }
-    }
-
-    public static class MultiData implements DataSerializable {
-        List<Data> lsData = null;
-
-        public MultiData() {
-        }
-
-        public MultiData(Data d1, Data d2) {
-            lsData = new ArrayList<Data>(2);
-            lsData.add(d1);
-            lsData.add(d2);
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            int size = lsData.size();
-            out.writeInt(size);
-            for (int i = 0; i < size; i++) {
-                Data d = lsData.get(i);
-                d.writeData(out);
-            }
-        }
-
-        public void readData(DataInput in) throws IOException {
-            int size = in.readInt();
-            lsData = new ArrayList<Data>(size);
-            for (int i = 0; i < size; i++) {
-                Data data = new Data();
-                data.readData(in);
-                lsData.add(data);
-            }
-        }
-
-        public int size() {
-            return (lsData == null) ? 0 : lsData.size();
-        }
-
-        public List<Data> getAllData() {
-            return lsData;
-        }
-
-        public Data getData(int index) {
-            return (lsData == null) ? null : lsData.get(index);
-        }
-
-        @Override
-        public String toString() {
-            final StringBuilder sb = new StringBuilder();
-            sb.append("MultiData");
-            sb.append("{size=").append(size());
-            sb.append('}');
-            return sb.toString();
         }
     }
 
@@ -1728,7 +1594,7 @@ public final class ConcurrentMapManager extends BaseManager {
             final CMap cmap = getOrCreateMap(request.name);
             return new Runnable() {
                 public void run() {
-                    request.response = node.queryService.containsValue(cmap.name, request.value);
+                    request.response = node.queryService.containsValue(cmap.getName(), request.value);
                     enqueueAndReturn(new Processable() {
                         public void process() {
                             returnResponse(request);
@@ -1775,7 +1641,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 if (request.value != null) {
                     predicate = (Predicate) toObject(request.value);
                 }
-                QueryContext queryContext = new QueryContext(cmap.name, predicate);
+                QueryContext queryContext = new QueryContext(cmap.getName(), predicate);
                 node.queryService.query(queryContext);
                 Set<MapEntry> results = queryContext.getResults(); 
                 if (predicate != null) {

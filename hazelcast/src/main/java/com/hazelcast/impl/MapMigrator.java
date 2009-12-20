@@ -18,6 +18,8 @@
 package com.hazelcast.impl;
 
 import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_BLOCKS;
+
+import com.hazelcast.impl.concurrentmap.InitialState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
@@ -239,7 +241,7 @@ public class MapMigrator implements Runnable {
                 }
             }
         }
-        ConcurrentMapManager.InitialState initialState = new ConcurrentMapManager.InitialState();
+        InitialState initialState = new InitialState();
         Collection<CMap> cmaps = concurrentMapManager.maps.values();
         for (final CMap cmap : cmaps) {
             initialState.createAndAddMapState(cmap);
@@ -316,7 +318,7 @@ public class MapMigrator implements Runnable {
                             record.setValueHash(Integer.MIN_VALUE);
                             record.setIndexes(null, null);
                             // now update the index
-                            node.queryService.updateIndex(map.name, indexes, indexTypes, record, valueHash);
+                            node.queryService.updateIndex(map.getName(), indexes, indexTypes, record, valueHash);
                         }
                     }
                 }
@@ -367,7 +369,7 @@ public class MapMigrator implements Runnable {
         blockReal.setOwner(block.getOwner());
         blockReal.setMigrationAddress(block.getMigrationAddress());
         logger.log(Level.FINEST, "migrate block " + block);
-        if (!node.active || node.factory.restarted) return;
+        if (!node.isActive() || node.factory.restarted) return;
         if (concurrentMapManager.isSuperClient())
             return;
         blockMigrating = block;

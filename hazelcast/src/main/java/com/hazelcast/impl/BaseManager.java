@@ -458,7 +458,7 @@ public abstract class BaseManager {
         }
 
         public void beforeRedo() {
-            if (node.factory.restarted || !node.active) {
+            if (node.factory.restarted || !node.isActive()) {
                 throw new RuntimeException();
             }
         }
@@ -472,7 +472,7 @@ public abstract class BaseManager {
                     } else if (node.factory.restarted) {
                         reset();
                         throw new RuntimeException();
-                    } else if (!node.active) {
+                    } else if (!node.isActive()) {
                         throw new IllegalStateException("Hazelcast Instance is not active!");
                     }
                 } catch (InterruptedException e) {
@@ -689,7 +689,7 @@ public abstract class BaseManager {
 
         Object call() {
             try {
-                if (!node.active) {
+                if (!node.isActive()) {
                     throw new RuntimeException();
                 }
                 onCall();
