@@ -39,16 +39,16 @@ public class Join {
     }
 
     /**
-     * @return the joinMembers
+     * @return the tcpIpConfig 
      */
-    public TcpIpConfig getJoinMembers() {
+    public TcpIpConfig getTcpIpConfig() {
         return tcpIpConfig;
     }
 
     /**
-     * @param tcpIpConfig the joinMembers to set
+     * @param tcpIpConfig the tcpIpConfig to set
      */
-    public Join setJoinMembers(final TcpIpConfig tcpIpConfig) {
+    public Join setTcpIpConfig(final TcpIpConfig tcpIpConfig) {
         this.tcpIpConfig = tcpIpConfig;
         return this;
     }

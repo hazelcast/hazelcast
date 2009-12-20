@@ -586,13 +586,9 @@ public class BlockingQueueManager extends BaseManager {
                 request.reset();
                 request.name = name;
                 request.operation = BLOCKING_QUEUE_SIZE;
+                request.setLongRequest();
             }
-
-            @Override
-            void handleNoneRedoResponse(final Packet packet) {
-                handleLongNoneRedoResponse(packet);
-            }
-
+            
             @Override
             public void doLocalOp() {
                 Q q = getQ(name);
@@ -869,7 +865,7 @@ public class BlockingQueueManager extends BaseManager {
         }
 
         @Override
-        void handleNoneRedoResponse(Packet packet) {
+        public void handleNoneRedoResponse(Packet packet) {
             if (request.operation == ClusterOperation.BLOCKING_QUEUE_OFFER
                     && packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
                 if (!zeroBackup) {
@@ -973,7 +969,7 @@ public class BlockingQueueManager extends BaseManager {
         }
 
         @Override
-        void handleNoneRedoResponse(Packet packet) {
+        public void handleNoneRedoResponse(Packet packet) {
             if (request.operation == ClusterOperation.BLOCKING_QUEUE_POLL
                     && packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
                 if (!zeroBackup) {

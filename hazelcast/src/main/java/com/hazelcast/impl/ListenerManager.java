@@ -134,12 +134,8 @@ public class ListenerManager extends BaseManager {
                 this.target = target;
                 request.reset();
                 setLocal(ADD_LISTENER, name);
+                request.setBooleanRequest();
                 request.longValue = (includeValue) ? 1 : 0;
-            }
-
-            @Override
-            void handleNoneRedoResponse(final Packet packet) {
-                handleBooleanNoneRedoResponse(packet);
             }
         }
     }
@@ -298,7 +294,7 @@ public class ListenerManager extends BaseManager {
                 l.entryRemoved(event);
             } else if (event.getEventType() == EntryEvent.EntryEventType.UPDATED) {
                 l.entryUpdated(event);
-            }else if (event.getEventType() == EntryEvent.EntryEventType.EVICTED) {
+            } else if (event.getEventType() == EntryEvent.EntryEventType.EVICTED) {
                 l.entryEvicted(event);
             }
         } else if (listenerItem.instanceType == Instance.InstanceType.SET || listenerItem.instanceType == Instance.InstanceType.LIST) {

@@ -435,7 +435,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             this.arp = arp;
             super.target = address;
             arp.setNode(node);
-            doOp(ClusterOperation.REMOTELY_CALLABLE_OBJECT, "call", null, arp, 0, -1);
+            setLocal(ClusterOperation.REMOTELY_CALLABLE_OBJECT, "call", null, arp, 0, -1);
+            doOp();
         }
 
         @Override
@@ -461,7 +462,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             this.arp = arp;
             super.target = address;
             arp.setNode(node);
-            doOp(ClusterOperation.REMOTELY_CALLABLE_BOOLEAN, "call", null, arp, 0, -1);
+            setLocal(ClusterOperation.REMOTELY_CALLABLE_BOOLEAN, "call", null, arp, 0, -1);
+            doOp();
         }
 
         public Address getTarget() {

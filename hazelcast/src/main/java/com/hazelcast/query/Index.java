@@ -24,7 +24,7 @@ public class Index<T> {
     final Expression expression;
     final boolean ordered;
     volatile boolean strong = false;
-    volatile boolean checkedStregth = false;
+    volatile boolean checkedStrength = false;
     volatile byte returnType = -1;
 
     public Index(Expression expression, boolean ordered) {
@@ -96,6 +96,22 @@ public class Index<T> {
         return returnType;
     }
 
+
+    public long extractLongValue(Object value) {
+        Object extractedValue = expression.getValue(value);
+        if (extractedValue == null) {
+            return Long.MAX_VALUE;
+        } else {
+            if (!checkedStrength) {
+                if (extractedValue instanceof Boolean || extractedValue instanceof Number) {
+                    strong = true;
+                }
+                checkedStrength = true;
+            }
+            return QueryService.getLongValue(extractedValue);
+        }
+    }
+
     public byte getIndexType(Class klass) {
         if (klass == String.class) {
             return 1;
@@ -115,23 +131,6 @@ public class Index<T> {
             return 8;
         } else {
             return 9;
-        }
-    }
-
-    public long extractLongValue(Object value) {
-        Object extractedValue = expression.getValue(value);
-        if (extractedValue == null) {
-            return Long.MAX_VALUE;
-        } else {
-            if (!checkedStregth) {
-                if (extractedValue instanceof Boolean) {
-                    strong = true;
-                } else if (extractedValue instanceof Number) {
-                    strong = !(extractedValue instanceof Double || extractedValue instanceof Float);
-                }
-                checkedStregth = true;
-            }
-            return QueryService.getLongValue(extractedValue);
         }
     }
 
@@ -158,49 +157,77 @@ public class Index<T> {
                 }
             }
         }
-        if (value instanceof Number) {
-            return ((Number) value).longValue();
-        } else if (value instanceof Boolean) {
-            return (Boolean.TRUE.equals(value)) ? 1 : -1;
-        } else {
-            return value.hashCode();
-        }
+        return QueryService.getLongValue(value);
     }
 
     Set<T> getRecords(long value) {
         return mapIndex.get(value);
     }
 
-    Set<T> getRecords(long[] values) {
+    Set<T> getRecords(QueryContext queryContext, long[] values) {
         Set<T> results = new HashSet<T>();
         for (long value : values) {
             Set<T> records = mapIndex.get(value);
             if (records != null) {
+                if (queryContext.getIndexedPredicateCount() > 1 && records.size() > 100) {
+                    return null;
+                }
                 results.addAll(records);
+                if (queryContext.getIndexedPredicateCount() > 1 && results.size() > 100) {
+                    return null;
+                }
             }
         }
         return results;
     }
 
-    Set<T> getSubRecords(boolean equal, boolean lessThan, long value) {
+    Set<T> getSubRecords(QueryContext queryContext, boolean equal, boolean lessThan, long value) {
+        if (mapIndex instanceof HashSet) return null;
         TreeMap<Long, Set<T>> treeMap = (TreeMap<Long, Set<T>>) mapIndex;
         Set<T> results = new HashSet<T>();
         Map<Long, Set<T>> sub = (lessThan) ? treeMap.headMap(value) : treeMap.tailMap(value);
         Set<Map.Entry<Long, Set<T>>> entries = sub.entrySet();
         for (Map.Entry<Long, Set<T>> entry : entries) {
             if (equal || entry.getKey() != value) {
-                results.addAll(entry.getValue());
+                Set<T> values = entry.getValue();
+                if (queryContext.getIndexedPredicateCount() > 1 && values.size() > 100) {
+                    return null;
+                }
+                results.addAll(values);
+            }
+            if (queryContext.getIndexedPredicateCount() > 1 && results.size() > 100) {
+                return null;
             }
         }
         return results;
     }
 
-    Set<T> getSubRecords(long from, long to) {
+    /**
+     * from and to should be included
+     *
+     * @param from from value (included)
+     * @param to   to value (included
+     * @return matching record set
+     */
+    Set<T> getSubRecordsBetween(QueryContext queryContext, long from, long to) {
+        if (mapIndex instanceof HashSet) return null;
         TreeMap<Long, Set<T>> treeMap = (TreeMap<Long, Set<T>>) mapIndex;
         Set<T> results = new HashSet<T>();
         Collection<Set<T>> sub = treeMap.subMap(from, to).values();
         for (Set<T> records : sub) {
+            if (queryContext.getIndexedPredicateCount() > 1 && sub.size() > 100) {
+                return null;
+            }
             results.addAll(records);
+            if (queryContext.getIndexedPredicateCount() > 1 && results.size() > 100) {
+                return null;
+            }
+        }
+        // treeMap.subMap(from, to) doesn't include the last
+        // 'to' entry. so get and add it.
+        Set<T> lastSet = treeMap.get(to);
+        if (lastSet != null) {
+            results.addAll(lastSet);
         }
         return results;
     }

@@ -17,15 +17,17 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.util.ByteUtil;
+import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Constants;
 import com.hazelcast.impl.ThreadContext;
-import com.hazelcast.config.ConfigProperty;
+import com.hazelcast.util.ByteUtil;
 
 import java.nio.ByteBuffer;
-import java.util.logging.Logger;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public final class Packet {
 
@@ -89,26 +91,47 @@ public final class Packet {
 
     private static final Logger logger = Logger.getLogger(Packet.class.getName());
 
-
     public Packet() {
     }
 
+    private static final Map<String, byte[]> mapStringByteCache = new HashMap<String, byte[]>(10000);
+
+    /**
+     * only ServiceThread should call
+     */
     protected void putString(ByteBuffer bb, String str) {
         if (str == null) {
             bb.putInt(0);
         } else {
-            byte[] bytes = str.getBytes();
+            byte[] bytes = mapStringByteCache.get(str);
+            if (bytes == null) {
+                bytes = str.getBytes();
+                if (mapStringByteCache.size() >= 10000) {
+                    mapStringByteCache.clear();
+                    logger.log(Level.WARNING, "So many different names!");
+                }
+                mapStringByteCache.put(str, bytes);
+            }
             bb.putInt(bytes.length);
             bb.put(bytes);
         }
     }
 
+    private static final byte[] stringBytesTemp = new byte[2000];
+
+    /**
+     * Only InThread should call
+     */
     protected String getString(ByteBuffer bb) {
-        int size = bb.getInt();
-        if (size ==0) return null;
-        byte[] bytes = new byte[size];
-        bb.get(bytes);
-        return new String(bytes);
+        int length = bb.getInt();
+        if (length == 0) return null;
+        if (length > stringBytesTemp.length) {
+            byte[] bytes = new byte[length];
+            return new String(bytes);
+        } else {
+            bb.get(stringBytesTemp, 0, length);
+            return new String(stringBytesTemp, 0, length);
+        }
     }
 
     protected void writeBoolean(ByteBuffer bb, boolean value) {

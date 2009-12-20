@@ -498,34 +498,11 @@ public abstract class BaseManager {
             }
         }
 
-        public void handleBooleanNoneRedoResponse(final Packet packet) {
-            removeCall(getId());
-            if (packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
-                responses.add(Boolean.TRUE);
-            } else {
-                responses.add(Boolean.FALSE);
-            }
-        }
-
         @Override
         public void redo() {
             removeCall(getId());
             responses.clear();
             responses.add(OBJECT_REDO);
-        }
-
-        void handleObjectNoneRedoResponse(final Packet packet) {
-            removeCall(getId());
-            if (packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
-                final Data oldValue = doTake(packet.value);
-                if (oldValue == null || oldValue.size() == 0) {
-                    responses.add(OBJECT_NULL);
-                } else {
-                    responses.add(oldValue);
-                }
-            } else {
-                throw new RuntimeException("responseType " + packet.responseType);
-            }
         }
     }
 
@@ -534,14 +511,10 @@ public abstract class BaseManager {
 
         public boolean booleanCall(final ClusterOperation operation, final String name, final Object key,
                                    final Object value, final long timeout, final long recordId) {
-            doOp(operation, name, key, value, timeout, recordId);
-            return getResultAsBoolean();
-        }
-
-        public void doOp(final ClusterOperation operation, final String name, final Object key,
-                         final Object value, final long timeout, final long recordId) {
             setLocal(operation, name, key, value, timeout, recordId);
+            request.setBooleanRequest();
             doOp();
+            return getResultAsBoolean();
         }
 
         public void reset() {
@@ -583,6 +556,7 @@ public abstract class BaseManager {
         }
 
         public Object objectCall() {
+            request.setObjectRequest();            
             doOp();
             return getResultAsObject();
         }
@@ -590,6 +564,7 @@ public abstract class BaseManager {
         public Object objectCall(final ClusterOperation operation, final String name, final Object key,
                                  final Object value, final long timeout, final long ttl) {
             setLocal(operation, name, key, value, timeout, ttl);
+            request.setObjectRequest();
             return objectCall();
         }
 
@@ -704,8 +679,7 @@ public abstract class BaseManager {
             responses.clear();
         }
 
-        public void handleBooleanNoneRedoResponse(final Packet packet) {
-            removeCall(getId());
+        private void handleBooleanNoneRedoResponse(final Packet packet) {
             if (packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
                 setResult(Boolean.TRUE);
             } else {
@@ -713,8 +687,7 @@ public abstract class BaseManager {
             }
         }
 
-        void handleLongNoneRedoResponse(final Packet packet) {
-            removeCall(getId());
+        private void handleLongNoneRedoResponse(final Packet packet) {
             if (packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
                 setResult(packet.longValue);
             } else {
@@ -723,8 +696,7 @@ public abstract class BaseManager {
             }
         }
 
-        void handleObjectNoneRedoResponse(final Packet packet) {
-            removeCall(getId());
+        private void handleObjectNoneRedoResponse(final Packet packet) {
             if (packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
                 final Data oldValue = doTake(packet.value);
                 if (oldValue == null || oldValue.size() == 0) {
@@ -733,8 +705,21 @@ public abstract class BaseManager {
                     setResult(oldValue);
                 }
             } else {
-                throw new RuntimeException("handleObjectNoneRedoResponse.responseType "
+                throw new RuntimeException(request.operation + " handleObjectNoneRedoResponse.responseType "
                         + packet.responseType);
+            }
+        }
+
+        protected void handleNoneRedoResponse(final Packet packet) {
+            removeCall(getId());
+            if (request.isBooleanRequest()) {
+                handleBooleanNoneRedoResponse(packet);
+            } else if (request.isLongRequest()) {
+                handleLongNoneRedoResponse(packet);
+            } else if (request.isObjectRequest()) {
+                handleObjectNoneRedoResponse(packet);
+            } else {
+                throw new RuntimeException(request.operation + " Unknown request.responseType. " + request.responseType);
             }
         }
 
@@ -748,17 +733,11 @@ public abstract class BaseManager {
     }
 
     public abstract class BooleanOp extends TargetAwareOp {
-        @Override
-        void handleNoneRedoResponse(final Packet packet) {
-            handleBooleanNoneRedoResponse(packet);
-        }
+
     }
 
     abstract class LongOp extends TargetAwareOp {
-        @Override
-        void handleNoneRedoResponse(final Packet packet) {
-            handleLongNoneRedoResponse(packet);
-        }
+
     }
 
     public abstract class TargetAwareOp extends ResponseQueueCall {
@@ -830,10 +809,6 @@ public abstract class BaseManager {
                 request.local = true;
                 ((RequestHandler) getPacketProcessor(request.operation)).handle(request);
             }
-        }
-
-        void handleNoneRedoResponse(final Packet packet) {
-            handleObjectNoneRedoResponse(packet);
         }
 
         public abstract void setTarget();
@@ -985,7 +960,7 @@ public abstract class BaseManager {
     }
 
     public Call removeCall(final Long id) {
-        Call callRemoved =  mapCalls.remove(id);
+        Call callRemoved = mapCalls.remove(id);
         if (callRemoved != null) {
             callRemoved.setId(-1);
         }
@@ -1343,7 +1318,6 @@ public abstract class BaseManager {
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
                       final int eventType, final Data key, final Data value, Map<Address, Boolean> keyListeners) {
         try {
-            // logger.log(Level.FINEST,eventType + " FireMapEvent " + record);
             Map<Address, Boolean> mapTargetListeners = null;
             if (keyListeners != null) {
                 mapTargetListeners = new HashMap<Address, Boolean>(keyListeners);

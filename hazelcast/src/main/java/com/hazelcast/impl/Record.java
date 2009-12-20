@@ -46,6 +46,7 @@ public class Record implements MapEntry {
     private final FactoryImpl factory;
     private final String name;
     private final int blockId;
+    private final long maxIdleMillis;
     private int lockThreadId = -1;
     private Address lockAddress = null;
     private int lockCount = 0;
@@ -57,7 +58,6 @@ public class Record implements MapEntry {
     private boolean dirty = false;
     private long writeTime = -1;
     private long removeTime;
-    private final long ttl;
 
     private final RecordEntry recordEntry;
     private final long id;
@@ -65,16 +65,16 @@ public class Record implements MapEntry {
     private byte[] indexTypes; // index types of the current value; only used by QueryThread
     private volatile int valueHash = Integer.MIN_VALUE; // hash of the current value; read by ServiceThread, updated by QueryThread
 
-    public Record(FactoryImpl factory, String name, int blockId, Data key, Data value, long ttl, long id) {
+    public Record(FactoryImpl factory, String name, int blockId, Data key, Data value, long ttl, long maxIdleMillis, long id) {
         super();
         this.factory = factory;
         this.name = name;
         this.blockId = blockId;
         this.setKey(key);
         this.setValue(value);
-        this.ttl = ttl;
-        setCreationTime(System.currentTimeMillis());
+        this.setCreationTime(System.currentTimeMillis());
         this.setExpirationTime(ttl);
+        this.maxIdleMillis = (maxIdleMillis == 0) ? Long.MAX_VALUE : maxIdleMillis;
         this.setLastTouchTime(getCreationTime());
         this.setVersion(0);
         recordEntry = new RecordEntry(this);
@@ -82,7 +82,7 @@ public class Record implements MapEntry {
     }
 
     public Record copy() {
-        return new Record(factory, name, blockId, key.get(), value.get(), 0, id);
+        return new Record(factory, name, blockId, key.get(), value.get(), 0, maxIdleMillis, id);
     }
 
     public RecordEntry getRecordEntry() {
@@ -322,11 +322,16 @@ public class Record implements MapEntry {
     }
 
     public boolean isValid(long now) {
-        return expirationTime > now;
+        if (expirationTime == Long.MAX_VALUE && maxIdleMillis == Long.MAX_VALUE) {
+            return true;
+        }
+        long lastTouch = Math.max(lastAccessTime.get(), creationTime.get());
+        long idle = now - lastTouch;
+        return expirationTime > now && (maxIdleMillis > idle);
     }
 
     public boolean isValid() {
-        return expirationTime > System.currentTimeMillis();
+        return isValid(System.currentTimeMillis());
     }
 
     public void markRemoved() {

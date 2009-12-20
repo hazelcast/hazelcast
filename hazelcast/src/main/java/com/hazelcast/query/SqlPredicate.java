@@ -48,8 +48,8 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         return false;
     }
 
-    public Set<MapEntry> filter(Map<Expression, Index<MapEntry>> mapIndexes) {
-        return ((IndexAwarePredicate) predicate).filter(mapIndexes);
+    public Set<MapEntry> filter(QueryContext queryContext) {
+        return ((IndexAwarePredicate) predicate).filter(queryContext);
     }
 
     public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index<MapEntry>> mapIndexes) {

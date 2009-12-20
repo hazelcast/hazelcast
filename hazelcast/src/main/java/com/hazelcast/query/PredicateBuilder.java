@@ -46,7 +46,7 @@ public class PredicateBuilder implements Predicate, IndexAwarePredicate {
         return strong;
     }
 
-    public Set<MapEntry> filter(Map<Expression, Index<MapEntry>> mapIndexes) {
+    public Set<MapEntry> filter(QueryContext queryContext) {
         return null;
     }
 

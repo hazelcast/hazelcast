@@ -29,7 +29,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 public class QueryService implements Runnable {
@@ -185,9 +184,11 @@ public class QueryService implements Runnable {
             }
         }
 
-        public Set<MapEntry> doQuery(AtomicBoolean strongRef, Predicate predicate) {
+        public Set<MapEntry> doQuery(QueryContext queryContext) {
             boolean strong = false;
             Set<MapEntry> results = null;
+            Predicate predicate = queryContext.getPredicate();
+            queryContext.setMapIndexes(mapIndexes);
             try {
                 if (predicate != null && mapIndexes != null && predicate instanceof IndexAwarePredicate) {
                     List<IndexAwarePredicate> lsIndexAwarePredicates = new ArrayList<IndexAwarePredicate>();
@@ -204,9 +205,10 @@ public class QueryService implements Runnable {
                             }
                         }
                     }
+                    queryContext.setIndexedPredicateCount(lsIndexAwarePredicates.size());
                     if (lsIndexAwarePredicates.size() == 1) {
                         IndexAwarePredicate indexAwarePredicate = lsIndexAwarePredicates.get(0);
-                        Set<MapEntry> sub = indexAwarePredicate.filter(mapIndexes);
+                        Set<MapEntry> sub = indexAwarePredicate.filter(queryContext);
                         if (sub == null || sub.size() == 0) {
                             return null;
                         } else {
@@ -222,19 +224,31 @@ public class QueryService implements Runnable {
                         Set<MapEntry> smallestSet = null;
                         List<Set<MapEntry>> lsSubResults = new ArrayList<Set<MapEntry>>(lsIndexAwarePredicates.size());
                         for (IndexAwarePredicate indexAwarePredicate : lsIndexAwarePredicates) {
-                            Set<MapEntry> sub = indexAwarePredicate.filter(mapIndexes);
-                            if (sub == null || sub.size() == 0) {
+                            Set<MapEntry> sub = indexAwarePredicate.filter(queryContext);
+                            if (sub == null) {
+                                strong = false;
+                            }else if (sub.size() == 0) {
+                                strong = true;
                                 return null;
                             } else {
-                                if (smallestSet == null) {
-                                    smallestSet = sub;
+                                if (sub.size() > 100) {
+                                    strong = false;
                                 } else {
-                                    if (sub.size() < smallestSet.size()) {
+                                    if (smallestSet == null) {
                                         smallestSet = sub;
-                                    }
+                                    } else {
+                                        if (sub.size() < smallestSet.size()) {
+                                            lsSubResults.add(smallestSet);
+                                            smallestSet = sub;
+                                        } else {
+                                            lsSubResults.add(sub);
+                                        }
+                                    } 
                                 }
-                                lsSubResults.add(sub);
                             }
+                        }
+                        if (smallestSet == null) {
+                            return null;
                         }
                         results = new HashSet<MapEntry>(smallestSet.size());
                         for (MapEntry entry : smallestSet) {
@@ -273,7 +287,8 @@ public class QueryService implements Runnable {
                     }
                 }
             } finally {
-                strongRef.set(strong);
+                queryContext.setStrong(strong);
+
             }
             return results;
         }
@@ -281,7 +296,11 @@ public class QueryService implements Runnable {
 
     public static long getLongValue(Object value) {
         if (value == null) return Long.MAX_VALUE;
-        if (value instanceof Number) {
+        if (value instanceof Double) {
+            return Double.doubleToLongBits((Double) value);
+        } else if (value instanceof Float) {
+            return Float.floatToIntBits((Float) value);
+        } else if (value instanceof Number) {
             return ((Number) value).longValue();
         } else if (value instanceof Boolean) {
             return (Boolean.TRUE.equals(value)) ? 1 : -1;
@@ -305,17 +324,18 @@ public class QueryService implements Runnable {
         return false;
     }
 
-    public Set<MapEntry> query(final String name, final AtomicBoolean strongRef, final Predicate predicate) {
+    public QueryContext query(final QueryContext queryContext) {
         try {
-            final BlockingQueue<Set<MapEntry>> resultQ = new ArrayBlockingQueue<Set<MapEntry>>(1);
+            final BlockingQueue<QueryContext> resultQ = new ArrayBlockingQueue<QueryContext>(1);
             queryQ.put(new Runnable() {
                 public void run() {
-                    IndexRegion indexRegion = getIndexRegion(name);
-                    Set<MapEntry> results = indexRegion.doQuery(strongRef, predicate);
+                    IndexRegion indexRegion = getIndexRegion(queryContext.getMapName());
+                    Set<MapEntry> results = indexRegion.doQuery(queryContext);
                     if (results == null) {
                         results = new HashSet(0);
                     }
-                    resultQ.offer(results);
+                    queryContext.setResults(results);
+                    resultQ.offer(queryContext);
                 }
             });
             return resultQ.take();

@@ -21,11 +21,11 @@ public enum ConfigProperty {
     SERIALIZER_SHARED("hazelcast.serializer.shared", "false"),
     SHUTDOWNHOOK_ENABLED("hazelcast.shutdownhook.enabled", "true"),
     WAIT_SECONDS_BEFORE_JOIN("hazelcast.wait.seconds.before.join", "5"),
-    MAX_NO_HEARTBEAT_SECONDS("hazelcast.max.no.heartbeat.seconds", "30"),
+    MAX_NO_HEARTBEAT_SECONDS("hazelcast.max.no.heartbeat.seconds", "60"),
     CONCURRENT_MAP_BLOCK_COUNT("hazelcast.map.block.count", "271"),
     BLOCKING_QUEUE_BLOCK_SIZE("hazelcast.queue.block.size", "1000"),
     REMOVE_DELAY_SECONDS("hazelcast.map.remove.delay.seconds", "5"),
-    PACKET_VERSION("hazelcast.packet.version", "1");
+    PACKET_VERSION("hazelcast.packet.version", "2");
 
     private final String name;
     private final String defaultValue;

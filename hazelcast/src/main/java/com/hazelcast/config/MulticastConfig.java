@@ -22,12 +22,15 @@ public class MulticastConfig {
     public final static boolean DEFAULT_ENABLED = true;
     public final static String DEFAULT_MULTICAST_GROUP = "224.2.2.3";
     public final static int DEFAULT_MULTICAST_PORT = 54327;
+    public final static int DEFAULT_MULTICAST_TIMEOUT_SECONDS = 2;
 
     private boolean enabled = DEFAULT_ENABLED;
 
     private String multicastGroup = DEFAULT_MULTICAST_GROUP;
 
     private int multicastPort = DEFAULT_MULTICAST_PORT;
+
+    private int multicastTimeoutSeconds = DEFAULT_MULTICAST_TIMEOUT_SECONDS;
 
     /**
      * @return the enabled
@@ -71,6 +74,21 @@ public class MulticastConfig {
      */
     public MulticastConfig setMulticastPort(int multicastPort) {
         this.multicastPort = multicastPort;
+        return this;
+    }
+
+    /**
+     * @return the multicastTimeoutSeconds
+     */
+    public int getMulticastTimeoutSeconds() {
+        return multicastTimeoutSeconds;
+    }
+
+    /**
+     * @param multicastTimeoutSeconds the multicastTimeoutSeconds to set
+     */
+    public MulticastConfig setMulticastTimeoutSeconds(int multicastTimeoutSeconds) {
+        this.multicastTimeoutSeconds = multicastTimeoutSeconds;
         return this;
     }
 }

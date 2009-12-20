@@ -45,6 +45,25 @@ public class ClusterTest {
         Hazelcast.shutdownAll();
     }
 
+    @Test
+    public void testIdle() throws Exception {
+        Config config = new XmlConfigBuilder().build();
+        MapConfig mapConfig = config.getMapConfig("default");
+        mapConfig.setMaxIdleSeconds(3);
+        mapConfig.setEvictionDelaySeconds(10);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        Map map = h1.getMap("default");
+        map.put(1, 1);
+        assertEquals(1, map.get(1));
+        Thread.sleep(1000);
+        assertEquals(1, map.get(1));
+        Thread.sleep(1000);
+        assertEquals(1, map.get(1));
+        Thread.sleep(4000);
+        assertNull(map.get(1));
+        assertEquals(0, map.size());
+    }
+
     @Test(timeout = 10000, expected = RuntimeException.class)
     public void testPutAfterShutdown() throws InterruptedException {
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
@@ -116,6 +135,20 @@ public class ClusterTest {
         map.put("1", "value2");
         assertEquals("value2", map.get("1"));
         assertEquals("value2", h.getMap("default").get("1"));
+    }
+
+    @Test(timeout = 60000)
+    public void testMapReplaceIfSame() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        IMap map1 = h1.getMap("default");
+        IMap map2 = h2.getMap("default");
+        map1.put("1", "value1");
+        assertEquals(2, h1.getCluster().getMembers().size());
+        assertEquals("value1", map1.get("1"));
+        assertEquals("value1", map2.get("1"));
+        assertTrue(map2.replace("1", "value1", "value2"));
+        assertTrue(map1.replace("1", "value2", "value3"));
     }
 
     @Test
@@ -298,17 +331,16 @@ public class ClusterTest {
     public void testTcpIp() throws Exception {
         Config c = new XmlConfigBuilder().build();
         c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
-        c.getNetworkConfig().getJoin().getJoinMembers().setEnabled(true);
+        c.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
         c.getNetworkConfig().getInterfaces().setEnabled(true);
-        c.getNetworkConfig().getJoin().getJoinMembers().addAddress(new Address("127.0.0.1", 5701));
+        c.getNetworkConfig().getJoin().getTcpIpConfig().addAddress(new Address("127.0.0.1", 5701));
         c.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
         assertEquals(1, h1.getCluster().getMembers().size());
         h1.getMap("default").put("1", "value1");
         assertEquals("value1", h1.getMap("default").put("1", "value2"));
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
-        assertEquals(2, h2.getCluster().getMembers().size());
-        assertEquals("value2", h2.getMap("default").get("1"));
+        testTwoNodes(h1, h2);
     }
 
     @Test(timeout = 60000)
@@ -318,8 +350,114 @@ public class ClusterTest {
         h1.getMap("default").put("1", "value1");
         assertEquals("value1", h1.getMap("default").put("1", "value2"));
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        testTwoNodes(h1, h2);
+    }
+
+    private void testTwoNodes(HazelcastInstance h1, HazelcastInstance h2) throws Exception {
+        IMap map1 = h1.getMap("default");
+        IMap map2 = h2.getMap("default");
+        assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
         assertEquals("value2", h2.getMap("default").get("1"));
+        assertEquals("value2", h1.getMap("default").get("1"));
+        assertEquals(1, h1.getMap("default").size());
+        assertEquals(1, h2.getMap("default").size());
+        assertFalse(map1.containsKey("2"));
+        assertFalse(map2.containsKey("2"));
+        assertFalse(map1.containsValue("value1"));
+        assertFalse(map2.containsValue("value1"));
+        assertTrue(map1.containsKey("1"));
+        assertTrue(map2.containsKey("1"));
+        assertTrue(map1.containsValue("value2"));
+        assertTrue(map2.containsValue("value2"));
+        map1.lock("1");
+        assertFalse(map2.tryLock("1"));
+        map1.unlock("1");
+        assertTrue(map2.tryLock("1"));
+        map2.unlock("1");
+        assertEquals("value2", map1.putIfAbsent("1", "value1"));
+        assertEquals("value2", map2.putIfAbsent("1", "value1"));
+        assertEquals("value2", map1.get("1"));
+        assertEquals("value2", map2.get("1"));
+        assertNull(map1.putIfAbsent("3", "value3"));
+        assertEquals("value3", map1.get("3"));
+        assertEquals("value3", map2.get("3"));
+        assertEquals("value3", map2.remove("3"));
+        assertNull(map1.get("3"));
+        assertNull(map2.get("3"));
+        assertNull(map2.putIfAbsent("3", "value3"));
+        assertEquals("value3", map1.get("3"));
+        assertEquals("value3", map2.get("3"));
+        assertEquals("value3", map1.remove("3"));
+        assertNull(map1.get("3"));
+        assertNull(map2.get("3"));
+        assertEquals(1, map1.keySet().size());
+        assertEquals(1, map1.values().size());
+        assertEquals(1, map1.entrySet().size());
+        assertEquals(1, map2.keySet().size());
+        assertEquals(1, map2.values().size());
+        assertEquals(1, map2.entrySet().size());
+        Set<Map.Entry> entries = map1.entrySet();
+        for (Map.Entry entry : entries) {
+            assertEquals("1", entry.getKey());
+            assertEquals("value2", entry.getValue());
+        }
+        entries = map2.entrySet();
+        for (Map.Entry entry : entries) {
+            assertEquals("1", entry.getKey());
+            assertEquals("value2", entry.getValue());
+        }
+        listenerTest(map2, map1);
+//        listenerTest(map1, map2);
+    }
+
+    @Test(timeout = 60000)
+    public void testListeners() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        assertEquals(1, h1.getCluster().getMembers().size());
+        h1.getMap("default").put("1", "value1");
+        assertEquals("value1", h1.getMap("default").put("1", "value2"));
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        listenerTest(h2.getMap("default"), h1.getMap("default"));
+    }
+
+    private void listenerTest(IMap map, IMap mapSource) throws Exception {
+        final CountDownLatch latchAdded = new CountDownLatch(2);
+        final CountDownLatch latchUpdated = new CountDownLatch(1);
+        final CountDownLatch latchRemoved = new CountDownLatch(1);
+        final CountDownLatch latchEvicted = new CountDownLatch(1);
+        EntryListener listener = new EntryListener() {
+            public void entryAdded(EntryEvent entryEvent) {
+                System.out.println("added");
+                latchAdded.countDown();
+            }
+
+            public void entryRemoved(EntryEvent entryEvent) {
+                System.out.println("removed");
+                latchRemoved.countDown();
+            }
+
+            public void entryUpdated(EntryEvent entryEvent) {
+                System.out.println("updated");
+                latchUpdated.countDown();
+            }
+
+            public void entryEvicted(EntryEvent entryEvent) {
+                System.out.println("evicted");
+                latchEvicted.countDown();
+            }
+        };
+        map.addEntryListener(listener, true);
+        assertNull(mapSource.put("5", "value5"));
+        assertEquals("value5", mapSource.put("5", "value55"));
+        assertTrue(mapSource.evict("5"));
+        assertNull(mapSource.put("5", "value5"));
+        assertEquals("value5", mapSource.remove("5"));
+        assertTrue(latchAdded.await(5, TimeUnit.SECONDS));
+        assertTrue(latchUpdated.await(5, TimeUnit.SECONDS));
+        assertTrue(latchRemoved.await(5, TimeUnit.SECONDS));
+        assertTrue(latchEvicted.await(5, TimeUnit.SECONDS));
+        map.removeEntryListener(listener);
     }
 
     @Test(timeout = 60000)
@@ -327,9 +465,9 @@ public class ClusterTest {
         System.setProperty("hazelcast.build", "1");
         Config c = new XmlConfigBuilder().build();
         c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
-        c.getNetworkConfig().getJoin().getJoinMembers().setEnabled(true);
+        c.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
         c.getNetworkConfig().getInterfaces().setEnabled(true);
-        c.getNetworkConfig().getJoin().getJoinMembers().addAddress(new Address("127.0.0.1", 5701));
+        c.getNetworkConfig().getJoin().getTcpIpConfig().addAddress(new Address("127.0.0.1", 5701));
         c.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
         assertEquals(1, h1.getCluster().getMembers().size());
@@ -1035,8 +1173,8 @@ public class ClusterTest {
             }
         }, true);
         map1.put("1", "v1");
-        Assert.assertTrue(map1.get("1").equals("v1"));
-        Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
-        Assert.assertTrue(map1.get("1") == null);
+        assertEquals("v1", map1.get("1"));
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertNull(map1.get("1"));
     }
 }

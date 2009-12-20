@@ -347,7 +347,8 @@ public class Node {
             if (ip == null) {
                 JoinInfo joinInfo = new JoinInfo(true, address, config.getGroupConfig().getName(),
                         config.getGroupConfig().getPassword(), getLocalNodeType(), Packet.PACKET_VERSION, buildNumber);
-                for (int i = 0; i < 200; i++) {
+                int tryCount = config.getNetworkConfig().getJoin().getMulticastConfig().getMulticastTimeoutSeconds() * 100;
+                for (int i = 0; i < tryCount ; i++) {
                     multicastService.send(joinInfo);
                     if (masterAddress == null) {
                         Thread.sleep(10);
@@ -405,7 +406,7 @@ public class Node {
 
     private List<Address> getPossibleMembers() {
         Join join = config.getNetworkConfig().getJoin();
-        final List<String> lsJoinMembers = join.getJoinMembers().getMembers();
+        final List<String> lsJoinMembers = join.getTcpIpConfig().getMembers();
         final List<Address> lsPossibleAddresses = new ArrayList<Address>();
         for (final String host : lsJoinMembers) {
             // check if host is hostname of ip address
@@ -443,7 +444,7 @@ public class Node {
                 e.printStackTrace();
             }
         }
-        lsPossibleAddresses.addAll(config.getNetworkConfig().getJoin().getJoinMembers().getAddresses());
+        lsPossibleAddresses.addAll(config.getNetworkConfig().getJoin().getTcpIpConfig().getAddresses());
         return lsPossibleAddresses;
     }
 
@@ -534,7 +535,7 @@ public class Node {
             }
             boolean found = false;
             int numberOfSeconds = 0;
-            final int connectionTimeoutSeconds = config.getNetworkConfig().getJoin().getJoinMembers().getConnectionTimeoutSeconds();
+            final int connectionTimeoutSeconds = config.getNetworkConfig().getJoin().getTcpIpConfig().getConnectionTimeoutSeconds();
             while (!found && numberOfSeconds < connectionTimeoutSeconds) {
                 lsPossibleAddresses.removeAll(failedConnections);
                 if (lsPossibleAddresses.size() == 0) {
@@ -589,11 +590,11 @@ public class Node {
 
     private void joinViaRequiredMember() {
         try {
-            final Address requiredAddress = getAddressFor(config.getNetworkConfig().getJoin().getJoinMembers().getRequiredMember());
+            final Address requiredAddress = getAddressFor(config.getNetworkConfig().getJoin().getTcpIpConfig().getRequiredMember());
             logger.log(Level.FINEST, "Joining over required member " + requiredAddress);
             if (requiredAddress == null) {
                 throw new RuntimeException("Invalid required member "
-                        + config.getNetworkConfig().getJoin().getJoinMembers().getRequiredMember());
+                        + config.getNetworkConfig().getJoin().getTcpIpConfig().getRequiredMember());
             }
             if (requiredAddress.equals(address)) {
                 setAsMaster();
@@ -620,7 +621,7 @@ public class Node {
     }
 
     private void joinWithTCP() {
-        if (config.getNetworkConfig().getJoin().getJoinMembers().getRequiredMember() != null) {
+        if (config.getNetworkConfig().getJoin().getTcpIpConfig().getRequiredMember() != null) {
             joinViaRequiredMember();
         } else {
             joinViaPossibleMembers();

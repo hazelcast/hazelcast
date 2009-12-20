@@ -74,29 +74,35 @@ public class CMap {
 
     final long ttl; //ttl for entries
 
+    final long maxIdle; //maxIdle for entries
+
     final Instance.InstanceType instanceType;
 
     final MapLoader loader;
 
     final MapStore store;
 
-    int writeDelaySeconds = -1;
+    final long writeDelayMillis;
 
-    Set<Record> setDirtyRecords = null;
-
-    boolean ttlPerRecord = false;
+    final Set<Record> setDirtyRecords;
 
     final long removeDelayMillis;
 
+    final long evictionDelayMillis;
+
     final Map<Expression, Index<MapEntry>> mapIndexes = new ConcurrentHashMap(10);
+
+    final LocallyOwnedMap locallyOwnedMap;
+
+    final MapNearCache mapNearCache;
+
+    boolean ttlPerRecord = false;
 
     volatile Index<MapEntry>[] indexes = null;
 
     volatile byte[] indexTypes = null;
 
-    final LocallyOwnedMap locallyOwnedMap;
-
-    final MapNearCache mapNearCache;
+    long lastEvictionTime = 0;
 
     public CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
@@ -115,6 +121,8 @@ public class CMap {
         }
         this.backupCount = mapConfig.getBackupCount();
         ttl = mapConfig.getTimeToLiveSeconds() * 1000L;
+        evictionDelayMillis = mapConfig.getEvictionDelaySeconds() * 1000L;
+        maxIdle = mapConfig.getMaxIdleSeconds() * 1000L;
         evictionPolicy = SortedHashMap.getOrderingTypeByName(mapConfig.getEvictionPolicy());
         if (evictionPolicy == SortedHashMap.OrderingType.NONE) {
             maxSize = Integer.MAX_VALUE;
@@ -126,6 +134,7 @@ public class CMap {
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         MapStore storeTemp = null;
         MapLoader loaderTemp = null;
+        int writeDelaySeconds = -1;
         if (mapStoreConfig != null) {
             if (mapStoreConfig.isEnabled()) {
                 String mapStoreClassName = mapStoreConfig.getClassName();
@@ -138,9 +147,6 @@ public class CMap {
                         storeTemp = (MapStore) storeInstance;
                     }
                     writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
-                    if (writeDelaySeconds > 0) {
-                        setDirtyRecords = new HashSet<Record>(5000);
-                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -148,8 +154,10 @@ public class CMap {
         }
         loader = loaderTemp;
         store = storeTemp;
+        writeDelayMillis = (writeDelaySeconds == -1) ? -1L : writeDelaySeconds * 1000L;
+        setDirtyRecords = (writeDelayMillis == -1) ? null : new HashSet<Record>(5000);
         if (writeDelaySeconds > 0) {
-            removeDelayMillis = concurrentMapManager.GLOBAL_REMOVE_DELAY_MILLIS + (writeDelaySeconds * 1000L);
+            removeDelayMillis = concurrentMapManager.GLOBAL_REMOVE_DELAY_MILLIS + writeDelaySeconds;
         } else {
             removeDelayMillis = concurrentMapManager.GLOBAL_REMOVE_DELAY_MILLIS;
         }
@@ -587,7 +595,6 @@ public class CMap {
     }
 
     void sendInvalidation(Record record) {
-        System.out.println("sending invalidation");
         for (MemberImpl member : concurrentMapManager.lsMembers) {
             if (!member.localMember()) {
                 if (member.getAddress() != null) {
@@ -597,7 +604,6 @@ public class CMap {
                     packet.operation = ClusterOperation.CONCURRENT_MAP_INVALIDATE;
                     boolean sent = concurrentMapManager.send(packet, member.getAddress());
                     if (!sent) {
-                        System.out.println("not sent!");
                         packet.returnToContainer();
                     }
                 }
@@ -682,10 +688,14 @@ public class CMap {
     }
 
     void startEviction() {
+        long now = System.currentTimeMillis();
+        if ((now - lastEvictionTime) < evictionDelayMillis) {
+            return;
+        }
+        lastEvictionTime = now;
         List<Data> lsKeysToEvict = null;
         if (evictionPolicy == SortedHashMap.OrderingType.NONE) {
-            if (ttl != 0 || ttlPerRecord) {
-                long now = System.currentTimeMillis();
+            if (ttl != 0 || maxIdle != 0 || ttlPerRecord) {
                 Collection<Record> values = mapRecords.values();
                 for (Record record : values) {
                     if (record.isActive() && !record.isValid(now)) {
@@ -892,8 +902,8 @@ public class CMap {
     void markAsDirty(Record record) {
         if (!record.isDirty()) {
             record.setDirty(true);
-            if (writeDelaySeconds > 0) {
-                record.setWriteTime(System.currentTimeMillis() + (writeDelaySeconds * 1000L));
+            if (writeDelayMillis > 0) {
+                record.setWriteTime(System.currentTimeMillis() + writeDelayMillis);
                 setDirtyRecords.add(record);
             }
         }
@@ -951,9 +961,6 @@ public class CMap {
             }
             node.queryService.updateIndex(name, newIndexes, indexTypes, record, valueHash);
         } else if (created || record.getValueHash() != valueHash) {
-            if (!created) {
-//                System.out.println( record.getValueHash() + " ... " + valueHash);
-            }
             node.queryService.updateIndex(name, null, null, record, valueHash);
         }
     }
@@ -963,7 +970,7 @@ public class CMap {
             throw new RuntimeException("Cannot create record from a 0 size key: " + key);
         }
         int blockId = concurrentMapManager.getBlockId(key);
-        Record rec = new Record(node.factory, name, blockId, key, value, ttl, concurrentMapManager.newRecordId());
+        Record rec = new Record(node.factory, name, blockId, key, value, ttl, maxIdle, concurrentMapManager.newRecordId());
         Block ownerBlock = concurrentMapManager.getOrCreateBlock(blockId);
         if (thisAddress.equals(ownerBlock.getRealOwner())) {
             ownedRecords.add(rec);
@@ -1142,7 +1149,6 @@ public class CMap {
         private Object key = null;
         private Object value = null;
         private HazelcastInstance hazelcastInstance = null;
-
 
         public CMapEntry() {
         }

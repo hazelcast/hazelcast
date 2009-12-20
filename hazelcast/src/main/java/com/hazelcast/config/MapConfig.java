@@ -21,7 +21,9 @@ public class MapConfig {
 
     public final static int DEFAULT_BACKUP_COUNT = 1;
     public final static int DEFAULT_EVICTION_PERCENTAGE = 25;
+    public final static int DEFAULT_EVICTION_DELAY_SECONDS = 3;
     public final static int DEFAULT_TTL_SECONDS = 0;
+    public final static int DEFAULT_MAX_IDLE_SECONDS = 0;
     public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
     public final static String DEFAULT_EVICTION_POLICY = "NONE";
 
@@ -32,6 +34,10 @@ public class MapConfig {
     private int evictionPercentage = DEFAULT_EVICTION_PERCENTAGE;
 
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
+
+    private int maxIdleSeconds = DEFAULT_TTL_SECONDS;
+
+    private int evictionDelaySeconds = DEFAULT_EVICTION_DELAY_SECONDS;
 
     private int maxSize = DEFAULT_MAX_SIZE;
 
@@ -87,6 +93,21 @@ public class MapConfig {
     }
 
     /**
+     * @return the evictionDelaySeconds
+     */
+    public int getEvictionDelaySeconds() {
+        return evictionDelaySeconds;
+    }
+
+    /**
+     * @param evictionDelaySeconds the evictionPercentage to set
+     */
+    public MapConfig setEvictionDelaySeconds(int evictionDelaySeconds) {
+        this.evictionDelaySeconds = evictionDelaySeconds;
+        return this;
+    }
+
+    /**
      * @return the timeToLiveSeconds
      */
     public int getTimeToLiveSeconds() {
@@ -98,6 +119,21 @@ public class MapConfig {
      */
     public MapConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
         this.timeToLiveSeconds = timeToLiveSeconds;
+        return this;
+    }
+
+    /**
+     * @return the maxIdleSeconds
+     */
+    public int getMaxIdleSeconds() {
+        return maxIdleSeconds;
+    }
+
+    /**
+     * @param maxIdleSeconds the maxIdleSeconds to set
+     */
+    public MapConfig setMaxIdleSeconds(int maxIdleSeconds) {
+        this.maxIdleSeconds = maxIdleSeconds;
         return this;
     }
 

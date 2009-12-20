@@ -22,6 +22,11 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
 
 class Request {
+
+    enum ResponseType {
+        OBJECT, BOOLEAN, LONG
+    }
+
     String name = null;
     Data key = null;
     Data value = null;
@@ -46,7 +51,8 @@ class Request {
     long[] indexes;
     byte[] indexTypes;
     Object attachment = null;
-    Object response = null; 
+    Object response = null;
+    ResponseType responseType = ResponseType.OBJECT;
 
     public boolean hasEnoughTimeToSchedule() {
         return timeout == -1 || timeout > 100;
@@ -80,6 +86,7 @@ class Request {
         this.redoCount = 0;
         this.indexes = null;
         this.indexTypes = null;
+        responseType = ResponseType.OBJECT;
     }
 
     public void setIndexes(long[] newIndexes, byte[] indexTypes) {
@@ -205,5 +212,29 @@ class Request {
         this.version = -1;
         this.indexes = null;
         this.indexTypes = null;
+    }
+
+    public void setLongRequest() {
+        responseType = ResponseType.LONG;
+    }
+
+    public void setBooleanRequest() {
+        responseType = ResponseType.BOOLEAN;
+    }
+
+    public void setObjectRequest() {
+        responseType = ResponseType.OBJECT;
+    }
+
+    public boolean isLongRequest() {
+        return (responseType == ResponseType.LONG);
+    }
+
+    public boolean isBooleanRequest() {
+        return (responseType == ResponseType.BOOLEAN);
+    }
+
+    public boolean isObjectRequest() {
+        return (responseType == ResponseType.OBJECT);
     }
 }

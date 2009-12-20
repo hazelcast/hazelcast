@@ -54,22 +54,16 @@ public class Predicates {
             this.less = less;
         }
 
-        public boolean apply(MapEntry entry) {
+        protected boolean doApply(Object first, Object second) {
             int expectedResult = (less) ? -1 : 1;
-            Expression<Comparable> cFirst = (Expression<Comparable>) first;
-            int result;
-            if (secondIsExpression) {
-                result = cFirst.getValue(entry).compareTo(((Expression) second).getValue(entry));
-            } else {
-                result = cFirst.getValue(entry).compareTo(second);
-            }
+            int result = ((Comparable) first).compareTo(second);
             if (equal && result == 0) return true;
             return (expectedResult == result);
         }
 
-        public Set<MapEntry> filter(Map<Expression, Index<MapEntry>> namedIndexes) {
-            Index index = namedIndexes.get(first);
-            return index.getSubRecords(equal, less, index.getLongValue(second));
+        public Set<MapEntry> filter(QueryContext queryContext) {
+            Index index = queryContext.getMapIndexes().get(first);
+            return index.getSubRecords(queryContext, equal, less, index.getLongValue(second));
         }
 
         @Override
@@ -85,6 +79,8 @@ public class Predicates {
 
     public static class BetweenPredicate extends EqualPredicate {
         Object to;
+        Comparable fromConvertedValue = null;
+        Comparable toConvertedValue = null;
 
         public BetweenPredicate() {
         }
@@ -102,15 +98,20 @@ public class Predicates {
         public boolean apply(MapEntry entry) {
             Expression<Comparable> cFirst = (Expression<Comparable>) first;
             Comparable firstValue = cFirst.getValue(entry);
-            Comparable fromValue = (Comparable) second;
-            Comparable toValue = (Comparable) to;
-            if (firstValue == null || fromValue == null || toValue == null) return false;
-            return firstValue.compareTo(fromValue) >= 0 && firstValue.compareTo(toValue) <= 0;
+            if (firstValue == null) {
+                return false;
+            }
+            if (fromConvertedValue == null) {
+                fromConvertedValue = (Comparable) getConvertedRealValue(firstValue, second);
+                toConvertedValue = (Comparable) getConvertedRealValue(firstValue, to);
+            }
+            if (firstValue == null || fromConvertedValue == null || toConvertedValue == null) return false;
+            return firstValue.compareTo(fromConvertedValue) >= 0 && firstValue.compareTo(toConvertedValue) <= 0;
         }
 
-        public Set<MapEntry> filter(Map<Expression, Index<MapEntry>> namedIndexes) {
-            Index index = namedIndexes.get(first);
-            return index.getSubRecords(index.getLongValue(second), index.getLongValue(to));
+        public Set<MapEntry> filter(QueryContext queryContext) {
+            Index index = queryContext.getMapIndexes().get(first);
+            return index.getSubRecordsBetween(queryContext, index.getLongValue(second), index.getLongValue(to));
         }
 
         public void writeData(DataOutput out) throws IOException {
@@ -251,14 +252,14 @@ public class Predicates {
             }
         }
 
-        public Set<MapEntry> filter(Map<Expression, Index<MapEntry>> mapIndexes) {
-            Index index = mapIndexes.get(first);
+        public Set<MapEntry> filter(QueryContext queryContext) {
+            Index index = queryContext.getMapIndexes().get(first);
             if (index != null) {
                 long[] longValues = new long[values.length];
                 for (int i = 0; i < values.length; i++) {
                     longValues[i] = index.getLongValue(values[i]);
                 }
-                return index.getRecords(longValues);
+                return index.getRecords(queryContext, longValues);
             } else {
                 return null;
             }
@@ -314,7 +315,7 @@ public class Predicates {
         }
 
         public LikePredicate(Expression<String> first, String second) {
-            this.first = first; 
+            this.first = first;
             this.second = second;
             second = second.replaceAll("%", ".*").replaceAll("_", ".");
             pattern = Pattern.compile(second);
@@ -379,7 +380,7 @@ public class Predicates {
 
         public boolean apply(MapEntry entry) {
             if (secondIsExpression) {
-                return first.getValue(entry).equals(((Expression) second).getValue(entry));
+                return doApply(first.getValue(entry), ((Expression) second).getValue(entry));
             } else {
                 Object firstVal = first.getValue(entry);
                 if (firstVal == null) {
@@ -387,19 +388,26 @@ public class Predicates {
                 } else if (second == null) {
                     return false;
                 } else {
-                    if (convertedSecondValue != null) {
-                        return firstVal.equals(convertedSecondValue);
-                    } else {
-                        if (firstVal.getClass() == second.getClass()) {
-                            convertedSecondValue = second;
-                        } else if (second instanceof String) {
-                            String str = (String) second;
-                            convertedSecondValue = getRealObject(firstVal, str);
-                        }
+                    if (convertedSecondValue == null) {
+                        convertedSecondValue = getConvertedRealValue(firstVal, second);
                     }
-                    return firstVal.equals(convertedSecondValue);
+                    return doApply(firstVal, convertedSecondValue);
                 }
             }
+        }
+
+        protected static Object getConvertedRealValue(Object firstValue, Object value) {
+            if (firstValue == null) return value;
+            if (firstValue.getClass() == value.getClass()) {
+                return value;
+            } else if (value instanceof String) {
+                String str = (String) value;
+                return getRealObject(firstValue, str);
+            } else throw new RuntimeException("Cannot get real object " + value);
+        }
+
+        protected boolean doApply(Object first, Object second) {
+            return first.equals(second);
         }
 
         public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index<MapEntry>> mapIndexes) {
@@ -421,8 +429,8 @@ public class Predicates {
             }
         }
 
-        public Set<MapEntry> filter(Map<Expression, Index<MapEntry>> mapIndexes) {
-            Index index = mapIndexes.get(first);
+        public Set<MapEntry> filter(QueryContext queryContext) {
+            Index index = queryContext.getMapIndexes().get(first);
             if (index != null) {
                 return index.getRecords(index.getLongValue(second));
             } else {
@@ -461,7 +469,7 @@ public class Predicates {
     }
 
     public static abstract class AbstractPredicate extends SerializationHelper implements Predicate, DataSerializable {
-        public Object getRealObject(Object type, String value) {
+        public static Object getRealObject(Object type, String value) {
             Object result = null;
             if (type instanceof Boolean) {
                 result = "true".equalsIgnoreCase(value) ? true : false;
@@ -525,7 +533,7 @@ public class Predicates {
             return strong;
         }
 
-        public Set<MapEntry> filter(Map<Expression, Index<MapEntry>> mapIndexes) {
+        public Set<MapEntry> filter(QueryContext queryContext) {
             return null;
         }
 

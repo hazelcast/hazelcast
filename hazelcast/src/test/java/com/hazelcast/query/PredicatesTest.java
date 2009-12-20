@@ -24,7 +24,13 @@ import org.junit.Test;
 public class PredicatesTest {
     @Test
     public void testEqual() {
-        assertTrue(new SqlPredicate("name='abc-123-xvz'").apply(createEntry("1", new QueryTest.Employee("abc-123-xvz", 34, true, 10D))));
+        Object value = new QueryTest.Employee("abc-123-xvz", 34, true, 10D);
+        assertTrue(new SqlPredicate("age > 5").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("salary > 5").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("salary > 5 and salary < 11").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("salary between 9.99 and 10.01").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("salary between 5 and 15").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("name='abc-123-xvz'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("name='abc 123-xvz'").apply(createEntry("1", new QueryTest.Employee("abc 123-xvz", 34, true, 10D))));
         assertTrue(new SqlPredicate("name='abc 123-xvz+(123)'").apply(createEntry("1", new QueryTest.Employee("abc 123-xvz+(123)", 34, true, 10D))));
         assertFalse(new SqlPredicate("name='abc 123-xvz+(123)'").apply(createEntry("1", new QueryTest.Employee("abc123-xvz+(123)", 34, true, 10D))));

@@ -224,7 +224,7 @@ public class HazelcastTest {
         IMap<String, String> map = Hazelcast.getMap("testMapEviction");
         map.put("key", "value");
         assertEquals(true, map.containsKey("key"));
-        map.evict("key");
+        assertTrue(map.evict("key"));
         assertEquals(false, map.containsKey("key"));
     }
 

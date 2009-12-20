@@ -62,6 +62,12 @@ public class QueryTest {
         HazelcastInstance h1 = newInstance();
         IMap imap = h1.getMap("employees");
         doFunctionalSQLQueryTest(imap);
+        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and age>23"));
+        assertEquals(2, entries.size());
+        for (Map.Entry entry : entries) {
+            Employee c = (Employee) entry.getValue();
+            System.out.println(c);
+        }
     }
 
     @Test
@@ -108,6 +114,63 @@ public class QueryTest {
             assertTrue(c.isActive());
         }
         assertTrue(tookWithIndex < (tookWithout / 2));
+    }
+
+    @Test
+    public void testRangeIndexSQLPerformance() {
+        HazelcastInstance h1 = newInstance();
+        IMap imap = h1.getMap("employees");
+        for (int i = 0; i < 5000; i++) {
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+        }
+        long start = System.currentTimeMillis();
+        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and salary between 4010.99 and 4032.01"));
+        long tookWithout = (System.currentTimeMillis() - start);
+        assertEquals(11, entries.size());
+        for (Map.Entry entry : entries) {
+            Employee c = (Employee) entry.getValue();
+            assertTrue(c.getAge() < 4033);
+            assertTrue(c.isActive());
+        }
+        imap.clear();
+        imap = h1.getMap("employees2");
+        imap.addIndex("name", false);
+        imap.addIndex("salary", true);
+        imap.addIndex("active", false);
+        for (int i = 0; i < 5000; i++) {
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+        }
+        imap.put(String.valueOf(10), new Employee("name" + 10, 10, true, 4010.99D));
+        imap.put(String.valueOf(11), new Employee("name" + 11, 11, true, 4032.01D));
+        start = System.currentTimeMillis();
+        entries = imap.entrySet(new SqlPredicate("active and salary between 4010.99 and 4032.01"));
+        long tookWithIndex = (System.currentTimeMillis() - start);
+        assertEquals(13, entries.size());
+        boolean foundFirst = false;
+        boolean foundLast = false;
+        for (Map.Entry entry : entries) {
+            Employee c = (Employee) entry.getValue();
+            assertTrue(c.getAge() < 4033);
+            assertTrue(c.isActive());
+            if (c.getSalary() == 4010.99D) {
+                foundFirst = true;
+            } else if (c.getSalary() == 4032.01D) {
+                foundLast = true;
+            }
+        }
+        assertTrue(foundFirst);
+        assertTrue(foundLast);
+//        System.out.println(tookWithIndex + " vs. " + tookWithout);
+        assertTrue(tookWithIndex < (tookWithout / 2));
+        for (int i = 0; i < 5000; i++) {
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), 100.25D));
+        }
+        entries = imap.entrySet(new SqlPredicate("salary between 99.99 and 100.25"));
+        assertEquals(5000, entries.size());
+        for (Map.Entry entry : entries) {
+            Employee c = (Employee) entry.getValue();
+            assertTrue(c.getSalary() == 100.25D);
+        }
     }
 
     @Test
