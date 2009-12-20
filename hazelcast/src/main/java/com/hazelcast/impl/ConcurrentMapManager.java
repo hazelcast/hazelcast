@@ -26,12 +26,13 @@ import com.hazelcast.core.Transaction;
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
+
+import com.hazelcast.impl.concurrentmap.AddMapIndex;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import static com.hazelcast.nio.IOUtil.*;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.query.Expression;
 import com.hazelcast.query.Index;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryContext;
@@ -162,7 +163,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 for (MapState mapState : lsMapStates) {
                     CMap cmap = factory.node.concurrentMapManager.getOrCreateMap(mapState.name);
                     for (AddMapIndex mapIndex : mapState.lsMapIndexes) {
-                        cmap.addIndex(mapIndex.expression, mapIndex.ordered);
+                        cmap.addIndex(mapIndex.getExpression(), mapIndex.isOrdered());
                     }
                 }
             }
@@ -216,38 +217,6 @@ public final class ConcurrentMapManager extends BaseManager {
                     lsMapIndexes.add(mapIndex);
                 }
             }
-        }
-    }
-
-    public static class AddMapIndex extends AbstractRemotelyProcessable {
-        String mapName;
-        Expression expression;
-        boolean ordered;
-
-        public AddMapIndex() {
-        }
-
-        public AddMapIndex(String mapName, Expression expression, boolean ordered) {
-            this.mapName = mapName;
-            this.expression = expression;
-            this.ordered = ordered;
-        }
-
-        public void process() {
-            CMap cmap = getNode().concurrentMapManager.getOrCreateMap(mapName);
-            cmap.addIndex(expression, ordered);
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            out.writeUTF(mapName);
-            out.writeBoolean(ordered);
-            writeObject(out, expression);
-        }
-
-        public void readData(DataInput in) throws IOException {
-            mapName = in.readUTF();
-            ordered = in.readBoolean();
-            expression = (Expression) readObject(in);
         }
     }
 
@@ -1288,7 +1257,7 @@ public final class ConcurrentMapManager extends BaseManager {
         return maps.get(name);
     }
 
-    CMap getOrCreateMap(String name) {
+    public CMap getOrCreateMap(String name) {
         checkServiceThread();
         CMap map = maps.get(name);
         if (map == null) {
