@@ -27,11 +27,22 @@ public class Request {
         OBJECT, BOOLEAN, LONG
     }
 
+    public final static long DEFAULT_TIMEOUT = -1;
+    public final static long DEFAULT_TTL = -1;
+    public final static int DEFAULT_REDO_COUNT = 0;
+    public final static long DEFAULT_TXN_ID = -1;
+    public final static int DEFAULT_LOCK_COUNT = 0;
+    public final static int DEFAULT_LOCK_THREAD_ID = -1;
+    public final static int DEFAULT_BLOCK_ID = -1;
+    public final static long DEFAULT_CALL_ID = -1;
+    public final static long DEFAULT_VERSION = -1;
+    
+    
     String name = null;
     Data key = null;
     Data value = null;
-    long timeout = -1;
-    long ttl = -1;
+    long timeout = DEFAULT_TIMEOUT;
+    long ttl = DEFAULT_TTL;
 
     boolean local = true;
     boolean scheduled = false;
@@ -40,14 +51,14 @@ public class Request {
     Address caller = null;
     Address lockAddress = null;
 
-    int redoCount = 0;
-    int lockCount = 0;
-    int lockThreadId = -1;
-    int blockId = -1;
-    long callId = -1;
+    int redoCount = DEFAULT_REDO_COUNT;
+    int lockCount = DEFAULT_LOCK_COUNT;
+    int lockThreadId = DEFAULT_LOCK_THREAD_ID;
+    int blockId = DEFAULT_BLOCK_ID;
+    long callId = DEFAULT_CALL_ID;
     long longValue = Long.MIN_VALUE;
-    long version = -1;
-    long txnId = -1;
+    long version = DEFAULT_VERSION;
+    long txnId = DEFAULT_TXN_ID;
     long[] indexes;
     byte[] indexTypes;
     Object attachment = null;
@@ -55,7 +66,7 @@ public class Request {
     ResponseType responseType = ResponseType.OBJECT;
 
     public boolean hasEnoughTimeToSchedule() {
-        return timeout == -1 || timeout > 100;
+        return (timeout == -1) || (timeout > 100);
     }
 
     public Address getActualLockAddress() {
@@ -69,21 +80,21 @@ public class Request {
         this.name = null;
         this.key = null;
         this.value = null;
-        this.blockId = -1;
-        this.timeout = -1;
-        this.ttl = -1;
-        this.txnId = -1;
-        this.callId = -1;
-        this.lockThreadId = -1;
+        this.blockId = DEFAULT_BLOCK_ID;
+        this.timeout = DEFAULT_TIMEOUT;
+        this.ttl = DEFAULT_TTL;
+        this.txnId = DEFAULT_TXN_ID;
+        this.callId = DEFAULT_CALL_ID;
+        this.lockThreadId = DEFAULT_LOCK_THREAD_ID;
         this.lockAddress = null;
-        this.lockCount = 0;
+        this.lockCount = DEFAULT_LOCK_COUNT;
         this.caller = null;
         this.longValue = Long.MIN_VALUE;
         this.response = null;
         this.scheduled = false;
         this.attachment = null;
-        this.version = -1;
-        this.redoCount = 0;
+        this.version = DEFAULT_VERSION;
+        this.redoCount = DEFAULT_REDO_COUNT;
         this.indexes = null;
         this.indexTypes = null;
         responseType = ResponseType.OBJECT;
@@ -125,11 +136,22 @@ public class Request {
                          final Data value, final int blockId, final long timeout, final long ttl,
                          final Address thisAddress) {
         reset();
-        set(true, operation, name, key, value, blockId, timeout, ttl, -1, -1, -1, thisAddress, 0,
-                thisAddress, -1, -1);
-        this.txnId = ThreadContext.get().getTxnId();
-        this.lockThreadId = ThreadContext.get().getThreadId();
-        this.caller = thisAddress;
+        set(true,
+        	operation,
+        	name,
+        	key,
+        	value,
+        	blockId,
+        	timeout,
+        	ttl,
+        	ThreadContext.get().getTxnId(),
+        	DEFAULT_CALL_ID,
+        	ThreadContext.get().getThreadId(),
+        	thisAddress,
+        	DEFAULT_LOCK_COUNT,
+        	thisAddress,
+        	Long.MIN_VALUE,
+        	DEFAULT_VERSION);
     }
 
     public void setFromRequest(Request req, boolean hardCopy) {
@@ -137,12 +159,9 @@ public class Request {
         set(req.local, req.operation, req.name, null, null, req.blockId, req.timeout, req.ttl,
                 req.txnId, req.callId, req.lockThreadId, req.lockAddress, req.lockCount,
                 req.caller, req.longValue, req.version);
-        if (hardCopy) {
-            key = req.key;
-            value = req.value;
-        } else {
-            key = req.key;
-            value = req.value;
+        key = req.key;
+        value = req.value;
+        if (!hardCopy) {
             req.key = null;
             req.value = null;
         }
@@ -201,15 +220,15 @@ public class Request {
         this.name = null;
         this.key = null;
         this.value = null;
-        this.blockId = -1;
-        this.timeout = -1;
-        this.ttl = -1;
-        this.txnId = -1;
-        this.lockThreadId = -1;
+        this.blockId = DEFAULT_BLOCK_ID;
+        this.timeout = DEFAULT_TIMEOUT;
+        this.ttl = DEFAULT_TTL;
+        this.txnId = DEFAULT_TXN_ID;
+        this.lockThreadId = DEFAULT_LOCK_THREAD_ID;
         this.lockAddress = null;
-        this.lockCount = 0;
+        this.lockCount = DEFAULT_LOCK_COUNT;
         this.longValue = Long.MIN_VALUE;
-        this.version = -1;
+        this.version = DEFAULT_VERSION;
         this.indexes = null;
         this.indexTypes = null;
     }
