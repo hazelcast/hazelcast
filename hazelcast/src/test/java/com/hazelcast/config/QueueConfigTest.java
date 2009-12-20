@@ -49,6 +49,14 @@ public class QueueConfigTest {
 	}
 
 	/**
+	 * Test method for {@link com.hazelcast.config.QueueConfig#setMaxSizePerJVM(int)}.
+	 */
+	@Test(expected = IllegalArgumentException.class)
+	public void testSetMaxSizePerJVMMustBePositive() {
+		QueueConfig queueConfig = new QueueConfig().setMaxSizePerJVM(-1);
+	}
+
+	/**
 	 * Test method for {@link com.hazelcast.config.QueueConfig#getTimeToLiveSeconds()}.
 	 */
 	@Test

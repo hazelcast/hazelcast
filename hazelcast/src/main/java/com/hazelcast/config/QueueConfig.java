@@ -54,6 +54,10 @@ public final class QueueConfig {
      * @param maxSizePerJVM the maxSizePerJVM to set
      */
     public QueueConfig setMaxSizePerJVM(int maxSizePerJVM) {
+    	if(maxSizePerJVM < 0) {
+    		throw new IllegalArgumentException("queue max size per JVM must be positive");
+    	}
+    	
         this.maxSizePerJVM = maxSizePerJVM;
         return this;
     }
