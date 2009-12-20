@@ -102,15 +102,7 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
     }
 
     public static OrderingType getOrderingTypeByName(String orderingType) {
-        if ("LFU".equalsIgnoreCase(orderingType)) {
-            return SortedHashMap.OrderingType.LFU;
-        } else if ("LRU".equalsIgnoreCase(orderingType)) {
-            return SortedHashMap.OrderingType.LRU;
-        } else if ("NONE".equalsIgnoreCase(orderingType)) {
-            return SortedHashMap.OrderingType.NONE;
-        } else {
-            throw new IllegalArgumentException("Unknown ordering type " + orderingType);
-        }
+    	return OrderingType.valueOf(orderingType.toUpperCase());
     }
 
     public V get(Object key) {
