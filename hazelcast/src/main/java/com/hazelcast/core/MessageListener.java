@@ -26,9 +26,9 @@ import java.util.EventListener;
  */
 public interface MessageListener<E> extends EventListener {
     /**
-     * Invoked when a message is recieved for the added topic.
+     * Invoked when a message is received for the added topic.
      *
-     * @param message recieved message
+     * @param message received message
      */
     void onMessage(E message);
 }
