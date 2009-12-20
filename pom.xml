@@ -22,6 +22,15 @@
         <jdk.version>1.5</jdk.version>
         <target.dir>target</target.dir>
     </properties>
+    <url>http://www.hazelcast.com/</url>
+    <issueManagement>
+    	<system>Google Code</system>
+    	<url>http://code.google.com/p/hazelcast/issues</url>
+    </issueManagement>
+    <organization>
+    	<name>Hazelcast Ltd.</name>
+    	<url>http://www.hazelcast.com/</url>
+    </organization>
 
     <build>
         <sourceDirectory>src/main/java</sourceDirectory>
