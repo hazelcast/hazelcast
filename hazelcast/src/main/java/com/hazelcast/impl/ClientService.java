@@ -20,13 +20,13 @@ package com.hazelcast.impl;
 import com.hazelcast.core.*;
 import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.impl.BaseManager.EventTask;
-import com.hazelcast.impl.BaseManager.KeyValue;
 import static com.hazelcast.impl.BaseManager.getInstanceType;
 import com.hazelcast.impl.ConcurrentMapManager.Entries;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_SUCCESS;
 import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl;
 import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl.CollectionProxyReal;
 import com.hazelcast.impl.FactoryImpl.MProxy;
+import com.hazelcast.impl.base.KeyValue;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 import static com.hazelcast.nio.IOUtil.toData;
@@ -581,7 +581,7 @@ public class ClientService {
             Keys keys = new Keys(collection);
             for (Object obj : list) {
                 KeyValue entry = (KeyValue) obj;
-                keys.addKey(entry.key);
+                keys.addKey(entry.getKeyData());
             }
             return toData(keys);
         }

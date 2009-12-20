@@ -27,6 +27,10 @@ import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
 
+import com.hazelcast.impl.base.AddressAwareException;
+import com.hazelcast.impl.base.KeyValue;
+import com.hazelcast.impl.base.PacketProcessor;
+import com.hazelcast.impl.base.Pairs;
 import com.hazelcast.impl.concurrentmap.AddMapIndex;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
@@ -2040,9 +2044,9 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public void addEntries(Pairs pairs) {
-            if (pairs.lsKeyValues == null) return;
+            if (pairs.getLsKeyValues() == null) return;
             TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
-            for (KeyValue entry : pairs.lsKeyValues) {
+            for (KeyValue entry : pairs.getLsKeyValues()) {
                 if (txn != null) {
                     Object key = entry.getKey();
                     if (txn.has(name, key)) {

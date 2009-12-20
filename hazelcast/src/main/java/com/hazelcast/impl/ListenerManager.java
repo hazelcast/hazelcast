@@ -20,6 +20,8 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.core.*;
 import static com.hazelcast.impl.ClusterOperation.ADD_LISTENER;
+
+import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.nio.*;
 import static com.hazelcast.nio.IOUtil.toData;
 

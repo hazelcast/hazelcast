@@ -20,6 +20,8 @@ package com.hazelcast.cluster;
 import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.*;
+import com.hazelcast.impl.base.Call;
+import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.nio.*;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;

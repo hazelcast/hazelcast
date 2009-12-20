@@ -19,7 +19,7 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.impl.*;
-import com.hazelcast.impl.BaseManager.PacketProcessor;
+import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.util.SimpleBoundedQueue;
 
@@ -59,7 +59,7 @@ public final class ClusterService implements Runnable, Constants {
 
     private long lastCheck = 0;
 
-    private final BaseManager.PacketProcessor[] packetProcessors = new BaseManager.PacketProcessor[ClusterOperation.OPERATION_COUNT];
+    private final PacketProcessor[] packetProcessors = new PacketProcessor[ClusterOperation.OPERATION_COUNT];
 
     private final Runnable[] periodicRunnables = new Runnable[4];
 
@@ -80,7 +80,7 @@ public final class ClusterService implements Runnable, Constants {
         throw new RuntimeException("Not enough space for a runnable " + runnable);
     }
 
-    public void registerPacketProcessor(ClusterOperation operation, BaseManager.PacketProcessor packetProcessor) {
+    public void registerPacketProcessor(ClusterOperation operation, PacketProcessor packetProcessor) {
         if (packetProcessors[operation.getValue()] != null) {
             logger.log(Level.SEVERE, operation + " is registered already with "
                     + packetProcessors[operation.getValue()]);

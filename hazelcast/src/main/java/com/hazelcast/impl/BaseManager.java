@@ -24,16 +24,17 @@ import com.hazelcast.core.Member;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.ResponseTypes.*;
+
+import com.hazelcast.impl.base.AddressAwareException;
+import com.hazelcast.impl.base.Call;
+import com.hazelcast.impl.base.EventQueue;
+import com.hazelcast.impl.base.PacketProcessor;
+import com.hazelcast.impl.base.RequestHandler;
 import com.hazelcast.nio.*;
 import static com.hazelcast.nio.IOUtil.*;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -167,48 +168,6 @@ public abstract class BaseManager {
         }
     }
 
-    public static class Pairs implements DataSerializable {
-        List<KeyValue> lsKeyValues = null;
-
-        public Pairs() {
-        }
-
-        public void addKeyValue(KeyValue keyValue) {
-            if (lsKeyValues == null) {
-                lsKeyValues = new ArrayList<KeyValue>();
-            }
-            lsKeyValues.add(keyValue);
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            int size = (lsKeyValues == null) ? 0 : lsKeyValues.size();
-            out.writeInt(size);
-            for (int i = 0; i < size; i++) {
-                lsKeyValues.get(i).writeData(out);
-            }
-        }
-
-        public void readData(DataInput in) throws IOException {
-            int size = in.readInt();
-            for (int i = 0; i < size; i++) {
-                if (lsKeyValues == null) {
-                    lsKeyValues = new ArrayList<KeyValue>();
-                }
-                KeyValue kv = new KeyValue();
-                kv.readData(in);
-                lsKeyValues.add(kv);
-            }
-        }
-
-        public int size() {
-            return (lsKeyValues == null) ? 0 : lsKeyValues.size();
-        }
-
-        public KeyValue getEntry(int i) {
-            return (lsKeyValues == null) ? null : lsKeyValues.get(i);
-        }
-    }
-
     public static Map.Entry createSimpleEntry(final FactoryImpl factory, final String name, final Object key, final Object value) {
         return new Map.Entry() {
             public Object getKey() {
@@ -234,105 +193,6 @@ public abstract class BaseManager {
         String msg = operation + " failed at " + thisAddress
                 + " because of an exception thrown at " + exception.getAddress();
         throw new RuntimeException(msg, exception.getException());
-    }
-
-    public static class AddressAwareException implements Serializable {
-        private Exception exception;
-        private Address address; //where the exception happened
-
-        public AddressAwareException(Exception exception, Address address) {
-            this.exception = exception;
-            this.address = address;
-        }
-
-        public AddressAwareException() {
-        }
-
-        public Exception getException() {
-            return exception;
-        }
-
-        public Address getAddress() {
-            return address;
-        }
-    }
-
-    public static class KeyValue implements Map.Entry, DataSerializable {
-        Data key = null;
-        Data value = null;
-        Object objKey = null;
-        Object objValue = null;
-        String name = null;
-        FactoryImpl factory;
-
-        public KeyValue() {
-        }
-
-        public KeyValue(Data key, Data value) {
-            this.key = key;
-            this.value = value;
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            key.writeData(out);
-            boolean gotValue = (value != null && value.size() > 0);
-            out.writeBoolean(gotValue);
-            if (gotValue) {
-                value.writeData(out);
-            }
-        }
-
-        public void readData(DataInput in) throws IOException {
-            key = new Data();
-            key.readData(in);
-            boolean gotValue = in.readBoolean();
-            if (gotValue) {
-                value = new Data();
-                value.readData(in);
-            }
-        }
-
-        public Data getKeyData() {
-            return key;
-        }
-
-        public Data getValueData() {
-            return value;
-        }
-
-        public Object getKey() {
-            if (objKey == null) {
-                objKey = toObject(key);
-            }
-            return objKey;
-        }
-
-        public Object getValue() {
-            if (objValue == null) {
-                if (value != null) {
-                    objValue = toObject(value);
-                } else {
-                    objValue = ((FactoryImpl.IGetAwareProxy) factory.getOrCreateProxyByName(name)).get((key == null) ? getKey() : key);
-                }
-            }
-            return objValue;
-        }
-
-        public Object setValue(Object newValue) {
-            if (name == null) throw new UnsupportedOperationException();
-            this.objValue = value;
-            return ((FactoryImpl.MProxy) factory.getOrCreateProxyByName(name)).put(key, newValue);
-        }
-
-        public void setName(FactoryImpl factoryImpl, String name) {
-            this.factory = factoryImpl;
-            this.name = name;
-        }
-
-        @Override
-        public String toString() {
-            return "Map.Entry key=" + getKey() + ", value=" + getValue();
-        }
     }
 
     abstract class AbstractCall implements Call {
@@ -361,21 +221,6 @@ public abstract class BaseManager {
         public void reset() {
             id = -1;
         }
-    }
-
-    public interface Call extends Processable {
-
-        long getId();
-
-        void handleResponse(Packet packet);
-
-        void onDisconnect(Address dead);
-
-        void setId(long id);
-    }
-
-    interface RequestHandler {
-        void handle(Request request);
     }
 
     abstract class MigrationAwareOperationHandler extends AbstractOperationHandler {
@@ -1242,27 +1087,6 @@ public abstract class BaseManager {
         if (size == 1) executeLocally(eventQueue);
     }
 
-    public static class EventQueue extends ConcurrentLinkedQueue<Runnable> implements Runnable {
-        private AtomicInteger size = new AtomicInteger();
-
-        public int offerRunnable(Runnable runnable) {
-            offer(runnable);
-            return size.incrementAndGet();
-        }
-
-        public void run() {
-            while (true) {
-                final Runnable eventTask = poll();
-                if (eventTask != null) {
-                    eventTask.run();
-                    size.decrementAndGet();
-                } else {
-                    return;
-                }
-            }
-        }
-    }
-
     class EventTask extends EntryEvent implements Runnable {
         protected final Data dataKey;
 
@@ -1406,9 +1230,5 @@ public abstract class BaseManager {
         }
         conn.getWriteHandler().enqueuePacket(packet);
         return true;
-    }
-
-    public interface PacketProcessor {
-        void process(Packet packet);
     }
 }

@@ -1673,7 +1673,7 @@ public class FactoryImpl implements HazelcastInstance {
         boolean removeKey(Object key);
     }
 
-    interface IGetAwareProxy {
+    public interface IGetAwareProxy {
 
         Object get(Object key);
     }
@@ -1687,7 +1687,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    interface MProxy extends IMap, IRemoveAwareProxy, IGetAwareProxy {
+    public interface MProxy extends IMap, IRemoveAwareProxy, IGetAwareProxy {
         String getLongName();
 
         void addGenericListener(Object listener, Object key, boolean includeValue, InstanceType instanceType);

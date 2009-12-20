@@ -21,7 +21,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
 
-class Request {
+public class Request {
 
     enum ResponseType {
         OBJECT, BOOLEAN, LONG

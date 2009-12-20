@@ -23,6 +23,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import static com.hazelcast.impl.Constants.Objects.*;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TIMEOUT;
+
+import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.nio.*;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
