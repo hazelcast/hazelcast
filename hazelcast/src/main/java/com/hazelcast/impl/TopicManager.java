@@ -36,7 +36,7 @@ public class TopicManager extends BaseManager {
     public TopicInstance getTopicInstance(String name) {
         TopicInstance ti = mapTopics.get(name);
         if (ti == null) {
-            ti = new TopicInstance(name);
+            ti = new TopicInstance(this, name);
             mapTopics.put(name, ti);
         }
         return ti;
@@ -95,26 +95,35 @@ public class TopicManager extends BaseManager {
         }
     }
 
-    class TopicInstance {
-        String name;
+    public final class TopicInstance {
+    	
+    	private final TopicManager topicManager;
+        private final String name;
+        private final Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>();
 
-        Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
-
-        public TopicInstance(String name) {
-            super();
+        public TopicInstance(final TopicManager topicManager, final String name) {
+        	if(topicManager == null) {
+        		throw new NullPointerException("topic manager cannot be null");
+        	}
+        	
+        	if(name == null) {
+        		throw new NullPointerException("topic name cannot be null");
+        	}
+        	
+            this.topicManager = topicManager;
             this.name = name;
         }
 
-        public void addListener(Address address, boolean includeValue) {
+        public void addListener(final Address address, final boolean includeValue) {
             mapListeners.put(address, includeValue);
         }
 
-        public void removeListener(Address address) {
+        public void removeListener(final Address address) {
             mapListeners.remove(address);
         }
 
-        public void publish(Data msg) {
-            fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, msg);
+        public void publish(final Data msg) {
+            topicManager.fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, msg);
         }
     }
 }
