@@ -28,14 +28,23 @@ public class LogFormatter extends Formatter {
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
     @Override
-    public String format(LogRecord record) {
+    public String format(final LogRecord record) {
         if (record.getLoggerName().equals("com.hazelcast.system")) {
             return record.getMessage() + LINE_SEPARATOR;
         }
+        
         StringBuilder sb = new StringBuilder();
-        sb.append(new Date(record.getMillis())).append(" ").append(
-                record.getLevel().getLocalizedName()).append(": ").append("[").append(record.getSourceClassName())
-                .append("] ").append(record.getMessage()).append(LINE_SEPARATOR);
+        
+        sb.append(new Date(record.getMillis()))
+        	.append(' ')
+        	.append(record.getLevel().getLocalizedName())
+        	.append(": ")
+        	.append('[')
+        	.append(record.getSourceClassName())
+            .append("] ")
+            .append(record.getMessage())
+            .append(LINE_SEPARATOR);
+        
         if (record.getThrown() != null) {
             try {
                 StringWriter sw = new StringWriter();
@@ -46,6 +55,7 @@ public class LogFormatter extends Formatter {
             } catch (Exception ignored) {
             }
         }
+        
         return sb.toString();
     }
 }
