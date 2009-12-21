@@ -23,10 +23,8 @@ import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.util.SimpleBoundedQueue;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.Queue;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -39,8 +37,8 @@ public final class ClusterService implements Runnable, Constants {
 
     private static final long MAX_IDLE_NANOS = TimeUnit.SECONDS.toNanos(ConfigProperty.MAX_NO_HEARTBEAT_SECONDS.getInteger());
 
-    private final BlockingQueue<Packet> packetQueue = new LinkedBlockingQueue<Packet>();
-    private final BlockingQueue<Processable> processableQueue = new LinkedBlockingQueue<Processable>();
+    private final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<Packet>();
+    private final Queue<Processable> processableQueue = new ConcurrentLinkedQueue<Processable>();
 
     private volatile boolean running = true;
 
@@ -49,9 +47,6 @@ public final class ClusterService implements Runnable, Constants {
 
     private static final int PACKET_BULK_SIZE = 64;
     private static final int PROCESSABLE_BULK_SIZE = 64;
-
-    private final SimpleBoundedQueue<Processable> processableBulk = new SimpleBoundedQueue<Processable>(PROCESSABLE_BULK_SIZE);
-    private final SimpleBoundedQueue<Packet> packetBulk = new SimpleBoundedQueue<Packet>(PACKET_BULK_SIZE);
 
     private long totalProcessTime = 0;
 
@@ -98,11 +93,9 @@ public final class ClusterService implements Runnable, Constants {
 
     public void enqueuePacket(Packet packet) {
         try {
-            packetQueue.put(packet);
+            packetQueue.offer(packet);
             enqueueLock.lock();
             notEmpty.signal();
-        } catch (InterruptedException e) {
-            node.handleInterruptedException(Thread.currentThread(), e);
         } finally {
             enqueueLock.unlock();
         }
@@ -110,11 +103,9 @@ public final class ClusterService implements Runnable, Constants {
 
     public void enqueueAndReturn(Processable processable) {
         try {
-            processableQueue.put(processable);
+            processableQueue.offer(processable);
             enqueueLock.lock();
             notEmpty.signal();
-        } catch (InterruptedException e) {
-            node.handleInterruptedException(Thread.currentThread(), e);
         } finally {
             enqueueLock.unlock();
         }
@@ -171,51 +162,42 @@ public final class ClusterService implements Runnable, Constants {
                 }
             }
         }
-        processableBulk.clear();
-        packetBulk.clear();
         packetQueue.clear();
         processableQueue.clear();
     }
 
     private int dequeuePackets() {
         Packet packet = null;
-        int retval = 0;
         try {
-            packetQueue.drainTo(packetBulk, PACKET_BULK_SIZE);
-            final int size = packetBulk.size();
-            if (size > 0) {
-                for (int i = 0; i < size; i++) {
-                    packet = packetBulk.remove();
-                    checkPeriodics();
-                    processPacket(packet);
+            for (int i = 0; i < PACKET_BULK_SIZE; i++) {
+                checkPeriodics();
+                packet = packetQueue.poll();
+                if (packet == null) {
+                    return i;
                 }
+                processPacket(packet);
             }
-            retval = size;
         } catch (final Throwable e) {
             logger.log(Level.SEVERE, "error processing messages  packet=" + packet, e);
         }
-        return retval;
+        return PACKET_BULK_SIZE;
     }
 
     private int dequeueProcessables() {
         Processable processable = null;
-        int retval = 0;
         try {
-            processableQueue.drainTo(processableBulk, PROCESSABLE_BULK_SIZE);
-            final int size = processableBulk.size();
-            if (size > 0) {
-                for (int i = 0; i < size; i++) {
-                    processable = processableBulk.remove();
-                    checkPeriodics();
-                    processProcessable(processable);
+            for (int i = 0; i < PROCESSABLE_BULK_SIZE; i++) {
+                checkPeriodics();
+                processable = processableQueue.poll();
+                if (processable == null) {
+                    return i;
                 }
+                processProcessable(processable);
             }
-            retval = size;
-            checkPeriodics();
         } catch (final Throwable e) {
-            logger.log(Level.SEVERE, "error processing messages  obj=" + processable, e);
+            logger.log(Level.SEVERE, "error processing messages  processable=" + processable, e);
         }
-        return retval;
+        return PACKET_BULK_SIZE;        
     }
 
     public void start() {
@@ -230,7 +212,7 @@ public final class ClusterService implements Runnable, Constants {
         processableQueue.clear();
         try {
             final CountDownLatch l = new CountDownLatch(1);
-            processableQueue.put(new Processable() {
+            processableQueue.offer(new Processable() {
                 public void process() {
                     running = false;
                     l.countDown();

@@ -522,7 +522,7 @@ public class CMap {
 
     public void put(Request req) {
         if (ownedRecords.size() >= maxSize) {
-            startEviction();
+            startEviction(true);
         }
         if (req.value == null) {
             req.value = new Data();
@@ -690,9 +690,9 @@ public class CMap {
         }
     }
 
-    void startEviction() {
+    void startEviction(boolean force) {
         long now = System.currentTimeMillis();
-        if ((now - lastEvictionTime) < evictionDelayMillis) {
+        if (!force && ((now - lastEvictionTime) < evictionDelayMillis)) {
             return;
         }
         lastEvictionTime = now;
@@ -983,7 +983,7 @@ public class CMap {
             if (maxSize != Integer.MAX_VALUE) {
                 int limitSize = (maxSize / concurrentMapManager.lsMembers.size());
                 if (ownedRecords.size() > limitSize) {
-                    startEviction();
+                    startEviction(true);
                 }
             }
         }

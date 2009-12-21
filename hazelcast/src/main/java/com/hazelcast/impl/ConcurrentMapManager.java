@@ -77,7 +77,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 Collection<CMap> cmaps = maps.values();
                 for (CMap cmap : cmaps) {
                     cmap.startRemove();
-                    cmap.startEviction();
+                    cmap.startEviction(false);
                     if (cmap.writeDelayMillis > 0) {
                         cmap.startAsyncStoreWrite();
                     }
