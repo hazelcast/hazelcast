@@ -264,6 +264,7 @@ public class Node {
             // set the joined=false first so that
             // threads do not process unnecessary
             // events, such as removeaddress
+            long start = System.currentTimeMillis();
             joined = false;
             setActive(false);
             inSelector.shutdown();
@@ -286,6 +287,7 @@ public class Node {
                 Thread thread = threads[i];
                 thread.interrupt();
             }
+            logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (System.currentTimeMillis() - start) + " ms.");
         }
     }
 

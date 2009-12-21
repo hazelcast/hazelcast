@@ -60,8 +60,10 @@ public final class Data implements DataSerializable {
 
     public Data(Data data) {
         this.size = data.size();
-        this.buffer = ByteBuffer.allocate(size);
-        System.arraycopy(data.buffer.array(), 0, buffer.array(), 0, size);
+        if (size > 0) {
+            this.buffer = ByteBuffer.allocate(size);
+            System.arraycopy(data.buffer.array(), 0, buffer.array(), 0, size);
+        }
         this.hash = data.hash;
     }
 

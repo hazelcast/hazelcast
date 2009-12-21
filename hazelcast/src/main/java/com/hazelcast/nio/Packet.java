@@ -24,8 +24,8 @@ import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.util.ByteUtil;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,11 +43,9 @@ public final class Packet {
 
     public Data value = new Data();
 
-    public byte indexCount = 0;
+    public long[] indexes = null;
 
-    public long[] indexes = new long[10];
-
-    public byte[] indexTypes = new byte[10];
+    public byte[] indexTypes = null;
 
     public long txnId = -1;
 
@@ -94,12 +92,12 @@ public final class Packet {
     public Packet() {
     }
 
-    private static final Map<String, byte[]> mapStringByteCache = new HashMap<String, byte[]>(10000);
+    private static final Map<String, byte[]> mapStringByteCache = new ConcurrentHashMap<String, byte[]>(10000);
 
     /**
      * only ServiceThread should call
      */
-    protected void putString(ByteBuffer bb, String str) {
+    private static void putString(ByteBuffer bb, String str) {
         if (str == null) {
             bb.putInt(0);
         } else {
@@ -117,21 +115,12 @@ public final class Packet {
         }
     }
 
-    private static final byte[] stringBytesTemp = new byte[2000];
-
-    /**
-     * Only InThread should call
-     */
-    protected String getString(ByteBuffer bb) {
+    private static String getString(ByteBuffer bb) {
         int length = bb.getInt();
         if (length == 0) return null;
-        if (length > stringBytesTemp.length) {
-            byte[] bytes = new byte[length];
-            return new String(bytes);
-        } else {
-            bb.get(stringBytesTemp, 0, length);
-            return new String(stringBytesTemp, 0, length);
-        }
+        byte[] bytes = new byte[length];
+        bb.get(bytes, 0, length);
+        return new String(bytes);
     }
 
     protected void writeBoolean(ByteBuffer bb, boolean value) {
@@ -204,8 +193,9 @@ public final class Packet {
         bbHeader.putLong(callId);
         bbHeader.put(responseType);
         putString(bbHeader, name);
+        byte indexCount = (indexes == null) ? 0 : (byte) indexes.length;
         bbHeader.put(indexCount);
-        for (int i = 0; i < indexCount; i++) {
+        for (byte i = 0; i < indexCount; i++) {
             bbHeader.putLong(indexes[i]);
             bbHeader.put(indexTypes[i]);
         }
@@ -254,10 +244,14 @@ public final class Packet {
         callId = bbHeader.getLong();
         responseType = bbHeader.get();
         name = getString(bbHeader);
-        indexCount = bbHeader.get();
-        for (int i = 0; i < indexCount; i++) {
-            indexes[i] = bbHeader.getLong();
-            indexTypes[i] = bbHeader.get();
+        byte indexCount = bbHeader.get();
+        if (indexCount > 0) {
+            indexes = new long[indexCount];
+            indexTypes = new byte[indexCount];
+            for (byte i = 0; i < indexCount; i++) {
+                indexes[i] = bbHeader.getLong();
+                indexTypes[i] = bbHeader.get();
+            }
         }
     }
 
@@ -286,7 +280,8 @@ public final class Packet {
         totalSize = 0;
         totalWritten = 0;
         sizeRead = false;
-        indexCount = 0;
+        indexes = null;
+        indexTypes = null;
     }
 
     public void clearForResponse() {
@@ -308,8 +303,11 @@ public final class Packet {
 
     @Override
     public String toString() {
-        return "Packet " + operation + " name=" + name + "  local=" + local + "  blockId="
-                + blockId + " data=" + value + " client=" + client;
+        int keySize = (key == null) ? 0 : key.size();
+        int valueSize = (value == null) ? 0 : value.size();
+        return "Packet [" + operation + "] name=" + name + ",local=" + local + ",blockId="
+                + blockId + ", keySize=" + keySize + ", valueSize=" + valueSize
+                + " client=" + client;
     }
 
     public void flipBuffers() {

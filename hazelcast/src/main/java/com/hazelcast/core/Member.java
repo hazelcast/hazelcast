@@ -41,7 +41,7 @@ public interface Member {
      * <p>
      * Each member in the cluster has a server socket. 
      *
-     * @deprecated use link{#getInetSocketAddress()}
+     * @deprecated use @link{#getInetSocketAddress()}
      *
      * @return port number of this member.
      */
@@ -50,7 +50,7 @@ public interface Member {
     /**
      * Returns the InetAddress of this member.
      *
-     * @deprecated use link{#getInetSocketAddress()}
+     * @deprecated use @link{#getInetSocketAddress()}
      * @return InetAddress of this member
      */
     @Deprecated InetAddress getInetAddress();

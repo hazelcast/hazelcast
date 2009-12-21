@@ -841,7 +841,7 @@ public class ClusterTest {
             IMap<Object, Object> map = Hazelcast.getMap("map1");
             map.lock("T1");
             try {
-                ISet<Object> set = Hazelcast.getSet("s1");
+                ISet<Object> set = Hazelcast.getSet("setName1");
                 set.size();
                 set.add(i);
                 if (i % 10 == 0) {

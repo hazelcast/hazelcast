@@ -90,6 +90,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
                 inBuffer.clear();
             }
         } catch (final Exception t) {
+            t.printStackTrace();
             handleSocketException(t);
         } finally {
             registerOp(inSelector.selector, SelectionKey.OP_READ);

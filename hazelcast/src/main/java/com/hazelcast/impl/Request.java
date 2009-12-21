@@ -69,11 +69,6 @@ public class Request {
         return (timeout == -1) || (timeout > 100);
     }
 
-    public Address getActualLockAddress() {
-        if (lockAddress != null) return lockAddress;
-        return caller;
-    }
-
     public void reset() {
         this.local = true;
         this.operation = ClusterOperation.NONE;
@@ -156,15 +151,9 @@ public class Request {
 
     public void setFromRequest(Request req, boolean hardCopy) {
         reset();
-        set(req.local, req.operation, req.name, null, null, req.blockId, req.timeout, req.ttl,
+        set(req.local, req.operation, req.name, req.key, req.value, req.blockId, req.timeout, req.ttl,
                 req.txnId, req.callId, req.lockThreadId, req.lockAddress, req.lockCount,
                 req.caller, req.longValue, req.version);
-        key = req.key;
-        value = req.value;
-        if (!hardCopy) {
-            req.key = null;
-            req.value = null;
-        }
         attachment = req.attachment;
         response = req.response;
         scheduled = req.scheduled;
@@ -178,12 +167,8 @@ public class Request {
                 packet.blockId, packet.timeout, packet.ttl, packet.txnId, packet.callId, packet.threadId,
                 packet.lockAddress, packet.lockCount, packet.conn.getEndPoint(), packet.longValue,
                 packet.version);
-        if (packet.indexCount > 0) {
-            indexes = new long[packet.indexCount];
-            System.arraycopy(packet.indexes, 0, indexes, 0, indexes.length);
-            indexTypes = new byte[packet.indexCount];
-            System.arraycopy(packet.indexTypes, 0, indexTypes, 0, indexes.length);
-        }
+        indexes = packet.indexes;
+        indexTypes = packet.indexTypes;
     }
 
     public Request hardCopy() {
@@ -208,12 +193,8 @@ public class Request {
         packet.lockCount = lockCount;
         packet.longValue = longValue;
         packet.version = version;
-        byte indexCount = (indexes == null) ? 0 : (byte) indexes.length;
-        packet.indexCount = indexCount;
-        if (indexCount > 0) {
-            System.arraycopy(indexes, 0, packet.indexes, 0, indexes.length);
-            System.arraycopy(indexTypes, 0, packet.indexTypes, 0, indexes.length);
-        }
+        packet.indexes = indexes;
+        packet.indexTypes = indexTypes;
     }
 
     public void clearForResponse() {

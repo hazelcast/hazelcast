@@ -17,6 +17,8 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
@@ -26,7 +28,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
-public final class MemberImpl implements Member, DataSerializable {
+public final class MemberImpl implements Member, HazelcastInstanceAware, DataSerializable {
 
     protected String factoryName;
     protected boolean localMember;
@@ -101,6 +103,11 @@ public final class MemberImpl implements Member, DataSerializable {
         return (nodeType == NodeType.SUPER_CLIENT);
     }
 
+    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+        FactoryImpl factoryImpl = (FactoryImpl) hazelcastInstance;
+        localMember = factoryImpl.node.address.equals(address);
+    }
+
     private void writeObject(ObjectOutputStream out) throws IOException {
         writeData(out);
     }
@@ -113,15 +120,11 @@ public final class MemberImpl implements Member, DataSerializable {
         address = new Address();
         address.readData(in);
         nodeType = NodeType.create(in.readInt());
-        factoryName = in.readUTF();
-        Node node = FactoryImpl.getFactoryImpl(factoryName).node;
-        localMember = node.getThisAddress().equals(address);
     }
 
     public void writeData(DataOutput out) throws IOException {
         address.writeData(out);
-        out.writeInt(nodeType.getValue());
-        out.writeUTF(factoryName);
+        out.writeInt(nodeType.getValue()); 
     }
 
     @Override

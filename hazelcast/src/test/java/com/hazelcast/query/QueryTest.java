@@ -41,6 +41,30 @@ public class QueryTest {
     }
 
     @Test
+    public void testTwoNodesWithIndexes() throws Exception{
+        HazelcastInstance h1 = newInstance();
+        HazelcastInstance h2 = newInstance();
+        IMap imap = h1.getMap("employees");
+        imap.addIndex("name", false);
+        imap.addIndex("age", true);
+        imap.addIndex("active", false);
+        for (int i = 0; i < 5000; i++) {
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+        }
+        assertEquals(2, h1.getCluster().getMembers().size());
+        assertEquals(2, h2.getCluster().getMembers().size());
+        imap = h2.getMap("employees");
+        imap.addIndex("name", false);
+        imap.addIndex("age", true);
+        imap.addIndex("active", false);
+        for (int i = 0; i < 5000; i++) {
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+        }
+        assertEquals(2, h1.getCluster().getMembers().size());
+        assertEquals(2, h2.getCluster().getMembers().size());
+    }
+
+    @Test
     public void testOneMemberWithoutIndex() {
         HazelcastInstance h1 = newInstance();
         IMap imap = h1.getMap("employees");

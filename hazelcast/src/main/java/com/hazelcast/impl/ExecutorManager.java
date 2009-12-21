@@ -54,6 +54,8 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
 
     private final BlockingQueue<Long> executionIds = new ArrayBlockingQueue<Long>(100);
 
+    private final CallContext callContextServer = new CallContext(ThreadContext.get().createNewThreadId(), false);    
+
     private volatile boolean started = false;
 
     ExecutorManager(final Node node) {
@@ -86,6 +88,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
                 ThreadContext.get().setCurrentFactory(node.factory);
+                ThreadContext.get().setCallContext(callContextServer);
             }
         };
         executorForMigrations = new ThreadPoolExecutor(1, 16, 60, TimeUnit.SECONDS,
@@ -94,6 +97,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
                 ThreadContext.get().setCurrentFactory(node.factory);
+                ThreadContext.get().setCallContext(callContextServer);
             }
         };
         node.getClusterImpl().addMembershipListener(this);
