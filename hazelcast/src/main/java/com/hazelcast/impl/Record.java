@@ -53,7 +53,7 @@ public class Record implements MapEntry {
     private List<BaseManager.ScheduledAction> lsScheduledActions = null;
     private Map<Address, Boolean> mapListeners = null;
     private int copyCount = 0;
-    private List<Data> lsMultiValues = null; // multimap values
+    private Set<Data> lsMultiValues = null; // multimap values
     private SortedSet<VersionedBackupOp> backupOps = null;
     private boolean dirty = false;
     private long writeTime = -1;
@@ -206,10 +206,8 @@ public class Record implements MapEntry {
             return this.getValue().equals(value);
         } else if (getMultiValues() != null) {
             int count = getMultiValues().size();
-            for (int i = 0; i < count; i++) {
-                if (value.equals(getMultiValues().get(i))) {
-                    return true;
-                }
+            if (count > 0) {
+                return getMultiValues().contains(value);
             }
         }
         return false;
@@ -217,7 +215,7 @@ public class Record implements MapEntry {
 
     public void addValue(Data value) {
         if (getMultiValues() == null) {
-            setMultiValues(new ArrayList<Data>(2));
+            setMultiValues(new HashSet<Data>(2));
         }
         getMultiValues().add(value);
     }
@@ -444,11 +442,11 @@ public class Record implements MapEntry {
         this.lockAddress = lockAddress;
     }
 
-    public List<Data> getMultiValues() {
+    public Set<Data> getMultiValues() {
         return lsMultiValues;
     }
 
-    public void setMultiValues(List<Data> lsValues) {
+    public void setMultiValues(Set<Data> lsValues) {
         this.lsMultiValues = lsValues;
     }
 

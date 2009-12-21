@@ -145,11 +145,10 @@ public final class ConcurrentMapManager extends BaseManager {
 
     void backupRecord(final Record rec) {
         if (rec.getMultiValues() != null) {
-            List<Data> values = rec.getMultiValues();
+            Set<Data> values = rec.getMultiValues();
             int initialVersion = ((int) rec.getVersion() - values.size());
             int version = (initialVersion < 0) ? 0 : initialVersion;
-            for (int i = 0; i < values.size(); i++) {
-                Data value = values.get(i);
+            for (Data value : values) {
                 Record record = rec.copy();
                 record.setValue(value);
                 record.setVersion(version++);
@@ -166,7 +165,7 @@ public final class ConcurrentMapManager extends BaseManager {
         if (!node.isActive() || node.factory.restarted) return;
         MMigrate mmigrate = new MMigrate();
         if (cmap.isMultiMap()) {
-            List<Data> values = rec.getMultiValues();
+            Set<Data> values = rec.getMultiValues();
             if (values == null || values.size() == 0) {
                 mmigrate.migrateMulti(rec, null);
             } else {
@@ -1695,9 +1694,9 @@ public final class ConcurrentMapManager extends BaseManager {
                             if (size > 0) {
                                 if (request.operation == CONCURRENT_MAP_ITERATE_KEYS) {
                                     pairs.addKeyValue(new KeyValue(record.getKey(), null));
-                                } else {
-                                    for (int i = 0; i < size; i++) {
-                                        Data value = record.getMultiValues().get(i);
+                                } else { 
+                                    Set<Data> values = record.getMultiValues();
+                                    for (Data value : values) {
                                         pairs.addKeyValue(new KeyValue(record.getKey(), value));
                                     }
                                 }

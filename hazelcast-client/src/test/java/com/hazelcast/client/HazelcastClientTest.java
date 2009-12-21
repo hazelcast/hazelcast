@@ -38,13 +38,18 @@ public class HazelcastClientTest {
         Set<com.hazelcast.core.Member> members = cluster.getMembers();
         //Tests are run with only one member in the cluster, this may change later
         assertEquals(1, members.size());
-        
-        for (Iterator<com.hazelcast.core.Member> iterator = members.iterator(); iterator.hasNext();) {
-			com.hazelcast.core.Member member = iterator.next();
-			assertNotNull(member);
-		}
     }
-    
+
+    @Test
+    public void iterateOverMembers(){
+        Cluster cluster = getHazelcastClient().getCluster();
+        Set<com.hazelcast.core.Member> members = cluster.getMembers();
+        for (Iterator<com.hazelcast.core.Member> iterator = members.iterator(); iterator.hasNext();) {
+            com.hazelcast.core.Member member = iterator.next();
+            assertNotNull(member);
+        }
+
+    }
     
 
     @Test

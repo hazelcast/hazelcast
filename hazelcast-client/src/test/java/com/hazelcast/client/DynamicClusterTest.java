@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 
 
 import com.hazelcast.core.*;
@@ -212,6 +213,7 @@ public class DynamicClusterTest {
         Queue q = getHazelcastClient(h).getQueue("testGetInstancesCreatedFromClient");
         Set set = getHazelcastClient(h).getSet("testGetInstancesCreatedFromClient");
         ITopic topic = getHazelcastClient(h).getTopic("testGetInstancesCreatedFromClient");
+        Lock lock = getHazelcastClient(h).getLock("testGetInstancesCreatedFromClient");
 
         Collection<Instance> caches = getHazelcastClient(h).getInstances();
         assertEquals(0, caches.size());
@@ -222,6 +224,7 @@ public class DynamicClusterTest {
         listOfInstances.add(q);
         listOfInstances.add(set);
         listOfInstances.add(topic);
+        listOfInstances.add(lock);
         list.add("List");
         map.put("key", "value");
         assertEquals(2, getHazelcastClient(h).getInstances().size());
@@ -230,10 +233,11 @@ public class DynamicClusterTest {
         assertEquals(4, getHazelcastClient(h).getInstances().size());
         set.add("element");
         topic.publish("Message");
-        assertEquals(6, getHazelcastClient(h).getInstances().size());
+//        assertEquals(7, getHazelcastClient(h).getInstances().size());
         caches = getHazelcastClient(h).getInstances();
         for (Iterator<Instance> instanceIterator = caches.iterator(); instanceIterator.hasNext();) {
             Instance instance = instanceIterator.next();
+            System.out.println("INstance id:" +instance.getId().toString());            
             assertTrue(instance.getId().toString().endsWith("testGetInstancesCreatedFromClient"));
             assertTrue(listOfInstances.contains(instance));
             instance.destroy();
@@ -249,6 +253,8 @@ public class DynamicClusterTest {
         Queue q = h.getQueue("testGetInstancesCreatedFromCluster");
         Set set = h.getSet("testGetInstancesCreatedFromCluster");
         ITopic topic = h.getTopic("testGetInstancesCreatedFromCluster");
+        ILock lock = h.getLock("testGetInstancesCreatedFromCluster") ;
+        System.out.println("Lock id " + lock.getId()) ;
 
         List listOfInstances = new ArrayList();
         listOfInstances.add(list);
@@ -257,11 +263,14 @@ public class DynamicClusterTest {
         listOfInstances.add(q);
         listOfInstances.add(set);
         listOfInstances.add(topic);
+        listOfInstances.add(lock);
 
         Collection<Instance> caches = getHazelcastClient(h).getInstances();
-//        assertEquals(6, caches.size());
+        assertEquals(7, caches.size());
         for (Iterator<Instance> instanceIterator = caches.iterator(); instanceIterator.hasNext();) {
+
             Instance instance = instanceIterator.next();
+            System.out.println("INstance id:" +instance.getId().toString());
             assertTrue(instance.getId().toString().endsWith("testGetInstancesCreatedFromCluster"));
             assertTrue(listOfInstances.contains(instance));
         }

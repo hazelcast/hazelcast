@@ -22,6 +22,7 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.client.impl.CollectionWrapper;
 
 import java.util.*;
@@ -44,9 +45,15 @@ public class ClusterClientProxy implements ClientProxy, Cluster {
         Object[] instances = (Object[])proxyHelper.doOp(ClusterOperation.GET_INSTANCES, null, null);
         List<Instance> list = new ArrayList<Instance>();
         if(instances!=null){
-	        for(int i=0;i<instances.length;i++){
-	            list.add((Instance)client.getClientProxy((String)instances[i]));
-	        }
+            for(int i=0;i<instances.length;i++){
+                if(instances[i] instanceof FactoryImpl.ProxyKey){
+                    FactoryImpl.ProxyKey proxyKey = (FactoryImpl.ProxyKey)instances[i];
+                    list.add((Instance)client.getClientProxy(proxyKey.getKey()));
+                }
+                else{
+                    list.add((Instance)client.getClientProxy(instances[i]));
+                }
+            }
         }
         return list;
     }

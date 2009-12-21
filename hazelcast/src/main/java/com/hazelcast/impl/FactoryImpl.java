@@ -756,6 +756,12 @@ public class FactoryImpl implements HazelcastInstance {
             sb.append('}');
             return sb.toString();
         }
+        public String getName(){
+            return name;
+        }
+        public Object getKey(){
+            return key;
+        }
     }
 
     interface TopicProxy extends ITopic, Instance {

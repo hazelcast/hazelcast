@@ -135,7 +135,7 @@ public class QueryService implements Runnable {
         boolean searchValueIndex(Data value) {
             if (instanceType == Instance.InstanceType.MULTIMAP) {
                 for (Record record : ownedRecords) {
-                    List<Data> multiValues = record.getMultiValues();
+                    Set<Data> multiValues = record.getMultiValues();
                     for (Data v : multiValues) {
                         if (v.equals(value)) return true;
                     }

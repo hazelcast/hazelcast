@@ -59,7 +59,7 @@ public class HazelcastClient implements HazelcastInstance{
     final OutRunnable out;
     final InRunnable in;
     final ConnectionManager connectionManager;
-    final Map<String, ClientProxy> mapProxies = new ConcurrentHashMap<String, ClientProxy>(100);
+    final Map<Object, ClientProxy> mapProxies = new ConcurrentHashMap<Object, ClientProxy>(100);
     final ExecutorServiceManager executorServiceManager;
     final IMap mapLockProxy;
     final ClusterClientProxy clusterClientProxy;
@@ -159,39 +159,44 @@ public class HazelcastClient implements HazelcastInstance{
 		return (IMap<K,V>)getClientProxy(MAP_PREFIX + name);
 	}
 
-	<K, V, E> ClientProxy getClientProxy(String name) {
-		ClientProxy proxy = mapProxies.get(name);
+	<K, V, E> ClientProxy getClientProxy(Object o) {
+		ClientProxy proxy = mapProxies.get(o);
 		if(proxy==null){
 			synchronized (mapProxies) {
 				if(proxy==null){
-                
-					if(name.startsWith(MAP_PREFIX)){
-						proxy = new MapClientProxy<K, V>(this,name);
-					}
-					else if(name.startsWith(LIST_PREFIX)){
-						proxy = new ListClientProxy<E>(this, name);
-					}
-					else if(name.startsWith(SET_PREFIX)){
-						proxy = new SetClientProxy<E>(this, name);
-                    }
-                    else if(name.startsWith(QUEUE_PREFIX)){
-                        proxy = new QueueClientProxy<E>(this, name);
-                    }
-                    else if(name.startsWith(TOPIC_PREFIX)){
-                        proxy = new TopicClientProxy<E>(this, name);
-                    }
-                    else if(name.startsWith(IDGEN_PREFIX)){
-                        proxy = new IdGeneratorClientProxy(this, name);
-                    }
-                    else if(name.startsWith(MULTIMAP_PROXY)){
-                        proxy = new MultiMapClientProxy(this, name);
-                    }
+                    if(o instanceof String){
+                        String name = (String)o;
+                        if(name.startsWith(MAP_PREFIX)){
+                            proxy = new MapClientProxy<K, V>(this,name);
+                        }
+                        else if(name.startsWith(LIST_PREFIX)){
+                            proxy = new ListClientProxy<E>(this, name);
+                        }
+                        else if(name.startsWith(SET_PREFIX)){
+                            proxy = new SetClientProxy<E>(this, name);
+                        }
+                        else if(name.startsWith(QUEUE_PREFIX)){
+                            proxy = new QueueClientProxy<E>(this, name);
+                        }
+                        else if(name.startsWith(TOPIC_PREFIX)){
+                            proxy = new TopicClientProxy<E>(this, name);
+                        }
+                        else if(name.startsWith(IDGEN_PREFIX)){
+                            proxy = new IdGeneratorClientProxy(this, name);
+                        }
+                        else if(name.startsWith(MULTIMAP_PROXY)){
+                            proxy = new MultiMapClientProxy(this, name);
+                        }
+                        else{
+                            proxy = new LockClientProxy(o, this);
+                        }
 					proxy.setOutRunnable(out);
-					mapProxies.put(name, proxy);
+					mapProxies.put(o, proxy);
+                    }
 				}
 			}
 		}
-		return mapProxies.get(name);
+		return mapProxies.get(o);
 	}
 
 

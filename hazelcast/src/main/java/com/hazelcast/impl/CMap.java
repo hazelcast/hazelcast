@@ -1013,12 +1013,12 @@ public class CMap {
     }
 
     public static class Values implements Collection, DataSerializable {
-        List<Data> lsValues = null;
+        Collection<Data> lsValues = null;
 
         public Values() {
         }
 
-        public Values(List<Data> lsValues) {
+        public Values(Collection<Data> lsValues) {
             super();
             this.lsValues = lsValues;
         }
@@ -1114,8 +1114,11 @@ public class CMap {
             if (a == null || a.length < size) {
                 a = new Object[size];
             }
-            for (int i = 0; i < size; i++) {
-                a[i] = toObject(lsValues.get(i));
+
+            Iterator<Data> it = lsValues.iterator();
+            int index =0;
+            while (it.hasNext()) {
+                a[index++] = toObject(it.next());
             }
             return a;
         }

@@ -81,4 +81,18 @@ public class LockClientProxy implements ILock, ClientProxy{
     public void setOutRunnable(OutRunnable out) {
         proxyHelper.setOutRunnable(out);
     }
+
+     @Override
+    public boolean equals(Object o){
+        if(o instanceof ILock && o!=null){
+            return getId().equals(((ILock)o).getId());
+        }
+        else{
+            return false;
+        }
+    }
+    @Override
+    public int hashCode(){
+        return getId().hashCode();
+    }
 }
