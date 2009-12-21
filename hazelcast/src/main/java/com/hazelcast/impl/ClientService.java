@@ -20,22 +20,23 @@ package com.hazelcast.impl;
 import com.hazelcast.core.*;
 import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.impl.BaseManager.EventTask;
-import static com.hazelcast.impl.BaseManager.getInstanceType;
 import com.hazelcast.impl.ConcurrentMapManager.Entries;
-import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_SUCCESS;
 import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl;
 import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl.CollectionProxyReal;
 import com.hazelcast.impl.FactoryImpl.MProxy;
 import com.hazelcast.impl.base.KeyValue;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
-import static com.hazelcast.nio.IOUtil.toData;
-import static com.hazelcast.nio.IOUtil.toObject;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.query.Predicate;
 
 import java.util.*;
 import java.util.concurrent.*;
+
+import static com.hazelcast.impl.BaseManager.getInstanceType;
+import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_SUCCESS;
+import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class ClientService {
     private final Node node;
@@ -367,7 +368,7 @@ public class ClientService {
         public void processCall(Node node, Packet packet) {
             String groupName = node.factory.getConfig().getGroupConfig().getName();
             String pass = node.factory.getConfig().getGroupConfig().getPassword();
-            Boolean value =  (groupName.equals(toObject(packet.key)) && pass.equals(toObject(packet.value)))  ;
+            Boolean value = (groupName.equals(toObject(packet.key)) && pass.equals(toObject(packet.value)));
             packet.clearForResponse();
             packet.value = toData(value);
         }
@@ -388,15 +389,23 @@ public class ClientService {
 
     private class MapPutHandler extends ClientMapOperationHandler {
         public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
-            Object oldValue = map.put(key, value);
-            return (oldValue == null) ? null : (Data) oldValue;
+            MProxy mproxy = (MProxy) map;
+            if (node.concurrentMapManager.isMapIndexed(mproxy.getLongName())) {
+                return (Data) map.put(key, toObject(value));
+            } else {
+                return (Data) map.put(key, value);
+            }
         }
     }
 
     private class MapPutIfAbsentHandler extends ClientMapOperationHandler {
         public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
-            Object oldValue = map.putIfAbsent(key, value);
-            return (oldValue == null) ? null : (Data) oldValue;
+            MProxy mproxy = (MProxy) map;
+            if (node.concurrentMapManager.isMapIndexed(mproxy.getLongName())) {
+                return (Data) map.putIfAbsent(key, toObject(value));
+            } else {
+                return (Data) map.putIfAbsent(key, value);
+            }
         }
     }
 

@@ -52,11 +52,44 @@ public class Member implements com.hazelcast.core.Member, DataSerializable{
         address = new Address();
         address.readData(in);
         nodeType = NodeType.create(in.readInt());
-        String factoryName = in.readUTF();
     }
 
     public void writeData(DataOutput out) throws IOException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Member [");
+        sb.append(address.getHost());
+        sb.append(":");
+        sb.append(address.getPort());
+        sb.append("] ");
+        return sb.toString();
+    }
+
+    @Override
+    public int hashCode() {
+        final int PRIME = 31;
+        int result = 1;
+        result = PRIME * result + ((address == null) ? 0 : address.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        final Member other = (Member) obj;
+        if (address == null) {
+            if (other.address != null)
+                return false;
+        } else if (!address.equals(other.address))
+            return false;
+        return true;
+    }
 }

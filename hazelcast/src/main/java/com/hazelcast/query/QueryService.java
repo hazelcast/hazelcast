@@ -29,6 +29,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class QueryService implements Runnable {
@@ -348,8 +349,13 @@ public class QueryService implements Runnable {
         try {
             queryQ.put(new Runnable() {
                 public void run() {
+                    try{
                     IndexRegion indexRegion = getIndexRegion(name);
                     indexRegion.doUpdateIndex(newValues, types, record, valueHash);
+                    }catch (Exception e) {
+                        e.printStackTrace();
+                        logger.log(Level.SEVERE, "Indexing error." + e);
+                    }
                 }
             });
         } catch (InterruptedException ignore) {

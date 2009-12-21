@@ -215,6 +215,7 @@ public class CMap {
         Record record = toRecord(req);
         markAsActive(record);
         markAsOwned(record);
+        record.setIndexes(null, null);
         updateIndexes(true, req, record);
         record.setVersion(req.version);
     }
@@ -263,7 +264,7 @@ public class CMap {
                     throw new RuntimeException("index types cannot be null!");
                 }
                 if (req.indexes.length != req.indexTypes.length) {
-                    throw new RuntimeException("index and type lenghts do not match");
+                    throw new RuntimeException("index and type lengths do not match");
                 }
                 rec.setIndexes(req.indexes, req.indexTypes);
                 if (indexTypes == null) {
@@ -950,7 +951,7 @@ public class CMap {
         if (request.indexes != null) {
             int indexCount = request.indexes.length;
             if (indexCount == 0)
-                throw new RuntimeException(node.getName() + " request countains no index " + request.indexes);
+                throw new RuntimeException(node.getName() + " request contains no index " + request.indexes);
             if (getMapIndexes().size() > indexCount) {
                 throw new RuntimeException(node.getName() + ": indexCount=" + indexCount + " but expected " + getMapIndexes().size());
             }

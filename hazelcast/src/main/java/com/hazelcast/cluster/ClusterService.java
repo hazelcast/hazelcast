@@ -140,8 +140,8 @@ public final class ClusterService implements Runnable, Constants {
         }
         packetProcessor.process(packet);
         final long processEnd = System.nanoTime();
-        final long elipsedTime = processEnd - processStart;
-        totalProcessTime += elipsedTime;
+        final long elapsedTime = processEnd - processStart;
+        totalProcessTime += elapsedTime;
     }
 
     public void processProcessable(Processable processable) {
@@ -149,8 +149,8 @@ public final class ClusterService implements Runnable, Constants {
         final long processStart = System.nanoTime();
         processable.process();
         final long processEnd = System.nanoTime();
-        final long elipsedTime = processEnd - processStart;
-        totalProcessTime += elipsedTime;
+        final long elapsedTime = processEnd - processStart;
+        totalProcessTime += elapsedTime;
     }
 
     public void run() {
@@ -251,12 +251,13 @@ public final class ClusterService implements Runnable, Constants {
     private void checkPeriodics() {
         final long now = System.nanoTime();
         if ((now - lastCheck) > MAX_IDLE_NANOS) {
-            logger.log(Level.INFO, "Hazelcast ServiceThread is blocked. Restarting Hazelcast!");
+            logger.log(Level.INFO, "Hazelcast ServiceThread is blocked for "
+                    + ((now - lastCheck) / 1000000) + " ms. Restarting Hazelcast!");
             new Thread(new Runnable() {
                 public void run() {
                     node.factory.restart();
                 }
-            }).start();
+            }, "hz.RestartThread").start();
         }
         lastCheck = now;
         if ((now - lastPeriodicCheck) > PERIODIC_CHECK_INTERVAL_NANOS) {

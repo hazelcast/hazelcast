@@ -33,9 +33,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class MulticastService implements Runnable {
 
-    private MulticastSocket multicastSocket;
-    private DatagramPacket datagramPacketSend;
-    private DatagramPacket datagramPacketReceive;
+    private final MulticastSocket multicastSocket;
+    private final DatagramPacket datagramPacketSend;
+    private final DatagramPacket datagramPacketReceive;
+    private final Object sendLock = new Object();
+    private final Object receiveLock = new Object();
     private int bufferSize = 1024;
     private volatile boolean running = true;
     final Node node;
@@ -99,15 +101,16 @@ public class MulticastService implements Runnable {
     }
 
     public JoinInfo receive() {
-        synchronized (datagramPacketReceive) {
+        synchronized (receiveLock) {
             try {
                 try {
                     multicastSocket.receive(datagramPacketReceive);
-                    JoinInfo joinInfo = new JoinInfo();
-                    joinInfo.readFromPacket(datagramPacketReceive);
-                    return joinInfo;
                 } catch (SocketTimeoutException ignore) {
+                    return null;
                 }
+                JoinInfo joinInfo = new JoinInfo();
+                joinInfo.readFromPacket(datagramPacketReceive);
+                return joinInfo;
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -116,9 +119,9 @@ public class MulticastService implements Runnable {
     }
 
     public void send(JoinInfo joinInfo) {
-        synchronized (datagramPacketSend) {
-            joinInfo.writeToPacket(datagramPacketSend);
+        synchronized (sendLock) {
             try {
+                joinInfo.writeToPacket(datagramPacketSend);
                 multicastSocket.send(datagramPacketSend);
             } catch (IOException e) {
                 e.printStackTrace();

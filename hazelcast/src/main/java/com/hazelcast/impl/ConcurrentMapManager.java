@@ -19,14 +19,9 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.config.ConfigProperty;
-import static com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Transaction;
-import static com.hazelcast.impl.ClusterOperation.*;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
-import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
-
 import com.hazelcast.impl.base.AddressAwareException;
 import com.hazelcast.impl.base.KeyValue;
 import com.hazelcast.impl.base.PacketProcessor;
@@ -34,7 +29,6 @@ import com.hazelcast.impl.base.Pairs;
 import com.hazelcast.impl.concurrentmap.MultiData;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
-import static com.hazelcast.nio.IOUtil.*;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.query.Index;
 import com.hazelcast.query.Predicate;
@@ -47,9 +41,14 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
+
+import static com.hazelcast.core.Instance.InstanceType;
+import static com.hazelcast.impl.ClusterOperation.*;
+import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
+import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
+import static com.hazelcast.nio.IOUtil.*;
 
 public final class ConcurrentMapManager extends BaseManager {
     static final int BLOCK_COUNT = ConfigProperty.CONCURRENT_MAP_BLOCK_COUNT.getInteger(271);
@@ -587,6 +586,14 @@ public final class ConcurrentMapManager extends BaseManager {
             }
             return result;
         }
+    }
+
+    boolean isMapIndexed(String name) {
+        CMap cmap = getMap(name);
+        if (cmap != null) {
+            return (cmap.getMapIndexes().size() > 0);
+        }
+        return false;
     }
 
     void setIndexValues(Request request, Object value) {
@@ -1154,6 +1161,7 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     // master should call this method
+
     boolean sendBlockInfo(Block block, Address address) {
         return send("mapblock", CONCURRENT_MAP_BLOCK_INFO, block, address);
     }
@@ -1532,6 +1540,7 @@ public final class ConcurrentMapManager extends BaseManager {
     abstract class StoreAwareOperationHandler extends SchedulableOperationHandler implements AsynchronousExecution {
 
         // executor thread
+
         public void execute(Request request) {
             CMap cmap = maps.get(request.name);
             if (request.operation == CONCURRENT_MAP_GET) {
@@ -1572,6 +1581,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         //serviceThread
+
         public void afterExecute(Request request) {
             if (request.response == null) {
                 doOperation(request);
@@ -1642,7 +1652,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
                 QueryContext queryContext = new QueryContext(cmap.getName(), predicate);
                 node.queryService.query(queryContext);
-                Set<MapEntry> results = queryContext.getResults(); 
+                Set<MapEntry> results = queryContext.getResults();
                 if (predicate != null) {
                     if (!queryContext.isStrong()) {
                         Iterator<MapEntry> it = results.iterator();
@@ -1694,7 +1704,7 @@ public final class ConcurrentMapManager extends BaseManager {
                             if (size > 0) {
                                 if (request.operation == CONCURRENT_MAP_ITERATE_KEYS) {
                                     pairs.addKeyValue(new KeyValue(record.getKey(), null));
-                                } else { 
+                                } else {
                                     Set<Data> values = record.getMultiValues();
                                     for (Data value : values) {
                                         pairs.addKeyValue(new KeyValue(record.getKey(), value));
