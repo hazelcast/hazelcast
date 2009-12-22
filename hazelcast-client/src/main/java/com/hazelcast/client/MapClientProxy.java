@@ -47,16 +47,15 @@ public class MapClientProxy<K, V> implements IMap<K, V>, ClientProxy, EntryHolde
 
     public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         check(listener);
-        if (client.listenerManager.noEntryListenerRegistered(key, name)) {
-            Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, toByte(key), null);
-            request.setLongValue(includeValue ? 1 : 0);
-            Call c = proxyHelper.createCall(request);
-            client.listenerManager.addListenerCall(c, name, key);
-            proxyHelper.doCall(c);
-        }
-        client.listenerManager.registerEntryListener(name, key, listener);
-    }
-
+        if(client.listenerManager.noEntryListenerRegistered(key, name)){
+			Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, toByte(key), null);
+			request.setLongValue(includeValue?1:0);
+			Call c = proxyHelper.createCall(request);
+		    client.listenerManager.addListenerCall(c);
+			proxyHelper.doCall(c);
+		}
+	    client.listenerManager.registerEntryListener(name, key, listener);
+	}
     public Set<java.util.Map.Entry<K, V>> entrySet(Predicate predicate) {
         Set<K> keySet = null;
         if (predicate == null) {

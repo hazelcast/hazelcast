@@ -72,7 +72,7 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E>{
 		Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
 		request.setLongValue(includeValue?1:0);
 	    Call c = proxyHelper.createCall(request);
-	    client.listenerManager.addListenerCall(c, name, null);
+	    client.listenerManager.addListenerCall(c);
 
 	    proxyHelper.doCall(c);
 	    client.listenerManager.registerItemListener(name, listener); 

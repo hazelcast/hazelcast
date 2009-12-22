@@ -73,7 +73,7 @@ public class HazelcastClient implements HazelcastInstance{
 		in = new InRunnable(this, calls, new PacketReader());
 		new Thread(in,"hz.client.InThread").start();
 
-		listenerManager = new ListenerManager();
+		listenerManager = new ListenerManager(this);
 		new Thread(listenerManager,"hz.client.Listener").start();
 
 		try {
@@ -159,7 +159,8 @@ public class HazelcastClient implements HazelcastInstance{
 		return (IMap<K,V>)getClientProxy(MAP_PREFIX + name);
 	}
 
-	<K, V, E> ClientProxy getClientProxy(Object o) {
+
+	public <K, V, E> ClientProxy getClientProxy(Object o) {
 		ClientProxy proxy = mapProxies.get(o);
 		if(proxy==null){
 			synchronized (mapProxies) {
@@ -219,7 +220,7 @@ public class HazelcastClient implements HazelcastInstance{
 	}
 
 	public void addInstanceListener(InstanceListener instanceListener) {
-        throw new UnsupportedOperationException();
+		clusterClientProxy.addInstanceListener(instanceListener);
     }
 
 	public Cluster getCluster() {
@@ -269,7 +270,7 @@ public class HazelcastClient implements HazelcastInstance{
 	}
 
 	public void removeInstanceListener(InstanceListener instanceListener) {
-        throw new UnsupportedOperationException();
+        clusterClientProxy.removeInstanceListener(instanceListener);
 	}
 
 	public void restart() {

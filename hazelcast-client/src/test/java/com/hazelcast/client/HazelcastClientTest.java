@@ -28,6 +28,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import com.hazelcast.core.*;
+import com.hazelcast.core.InstanceEvent.InstanceEventType;
+
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
 
 public class HazelcastClientTest {
@@ -51,6 +53,39 @@ public class HazelcastClientTest {
 
     }
     
+    @Test
+    public void addInstanceListener() throws InterruptedException{
+    	final CountDownLatch destroyedLatch = new CountDownLatch(1);
+    	final CountDownLatch createdLatch = new CountDownLatch(1);
+    	final IMap instance = getHazelcastClient().getMap("addInstanceListener");
+
+    	InstanceListener listener = new InstanceListener() {
+			
+			public void instanceDestroyed(InstanceEvent event) {
+				assertEquals(InstanceEventType.DESTROYED, event.getEventType());
+				assertEquals(instance, event.getInstance());
+				destroyedLatch.countDown();
+			}
+			
+			public void instanceCreated(InstanceEvent event) {
+				assertEquals(InstanceEventType.CREATED, event.getEventType());
+				IMap map = (IMap)event.getInstance();
+				assertEquals(instance.getName(), map.getName());
+				assertEquals(1, map.size());
+				createdLatch.countDown();
+			}
+		};
+    	getHazelcastClient().addInstanceListener(listener);
+    	instance.put(1, 1);
+
+    	instance.destroy();
+    	
+    	assertTrue(createdLatch.await(1, TimeUnit.SECONDS));
+    	assertTrue(destroyedLatch.await(1, TimeUnit.SECONDS));
+    	
+    	getHazelcastClient().removeInstanceListener(listener);
+    }
+   
 
     @Test
     public void testGetClusterTime() {

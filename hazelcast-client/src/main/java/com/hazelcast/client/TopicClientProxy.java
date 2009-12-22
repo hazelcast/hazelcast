@@ -52,7 +52,7 @@ public class TopicClientProxy<T> implements ClientProxy, ITopic {
             Packet request = proxyHelper.prepareRequest(ClusterOperation.ADD_LISTENER, null, null);
 	        proxyHelper.callAndGetResult(request);
             Call c = proxyHelper.createCall(request);
-            client.listenerManager.addListenerCall(c, name, null);            
+            client.listenerManager.addListenerCall(c);            
 	        proxyHelper.doCall(c);
         }
         client.listenerManager.registerMessageListener(name, messageListener);

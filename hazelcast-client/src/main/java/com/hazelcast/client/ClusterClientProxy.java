@@ -17,8 +17,12 @@
 
 package com.hazelcast.client;
 
+import static com.hazelcast.client.ProxyHelper.check;
+import static com.hazelcast.client.Serializer.toByte;
+
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.Cluster;
+import com.hazelcast.core.InstanceListener;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.ClusterOperation;
@@ -82,4 +86,23 @@ public class ClusterClientProxy implements ClientProxy, Cluster {
     public boolean authenticate(String groupName, String groupPassword) {
         return (Boolean)proxyHelper.doOp(ClusterOperation.CLIENT_AUTHENTICATE, groupName, groupPassword);
     }
+
+
+	public void addInstanceListener(InstanceListener listener) {
+		check(listener);
+        if(client.listenerManager.noInstanceListenerRegistered()){
+			Packet request = proxyHelper.createRequestPacket(ClusterOperation.CLIENT_ADD_INSTANCE_LISTENER, null, null);
+			Call c = proxyHelper.createCall(request);
+		    client.listenerManager.addListenerCall(c);
+			proxyHelper.doCall(c);
+		}
+	    client.listenerManager.registerInstanceListener(listener);
+	}
+
+
+	public void removeInstanceListener(InstanceListener instanceListener) {
+		check(instanceListener);
+		client.listenerManager.removeInstanceListener(instanceListener);
+		
+	}
 }
