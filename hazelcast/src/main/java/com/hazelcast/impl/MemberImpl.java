@@ -36,6 +36,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     protected NodeType nodeType;
     protected transient long lastRead = 0;
     protected transient long lastWrite = 0;
+    protected transient long connectionTimeoutMillis = 0;
 
     public MemberImpl() {
     }
@@ -97,6 +98,16 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
 
     public long getLastWrite() {
         return lastWrite;
+    }
+
+    public boolean isDead() {
+        long now = System.currentTimeMillis();
+        if (connectionTimeoutMillis > now) {
+            return true;
+        } else if (connectionTimeoutMillis == 0){
+            connectionTimeoutMillis = now + 10000;
+        }
+        return false;
     }
 
     public boolean isSuperClient() {

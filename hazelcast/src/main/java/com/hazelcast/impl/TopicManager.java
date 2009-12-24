@@ -53,7 +53,7 @@ public class TopicManager extends BaseManager {
     }
 
     @Override
-    void handleListenerRegisterations(boolean add, String name, Data key, Address address,
+    void handleListenerRegistrations(boolean add, String name, Data key, Address address,
                                       boolean includeValue) {
         TopicInstance instance = getTopicInstance(name);
         if (add) {

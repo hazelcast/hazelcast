@@ -18,7 +18,6 @@
 package com.hazelcast.core;
 
 import org.junit.After;
-import static org.junit.Assert.*;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -30,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
+
+import static org.junit.Assert.*;
 
 public class TransactionTest {
     @Test
@@ -259,6 +260,35 @@ public class TransactionTest {
         assertFalse(txnMap2.tryLock("1"));
         txnMap.unlock("1");
         assertTrue(txnMap2.tryLock("1", 2, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testTryPut2() {
+        IMap map = Hazelcast.getMap("testTryPut");
+        map.tryPut("1", "value", 5, TimeUnit.SECONDS);
+
+    }
+
+    @Test
+    public void testTryPut() {
+        Map map = Hazelcast.getMap("testTryPut");
+        map.put("1", "value");
+        TransactionalMap txnMap = newTransactionalMapProxy("testTryPut");
+        TransactionalMap txnMap2 = newTransactionalMapProxy("testTryPut");
+        txnMap.lock("1");
+        long start = System.currentTimeMillis();
+        assertFalse(txnMap2.tryPut("1", "value2", 2, TimeUnit.SECONDS));
+        long end = System.currentTimeMillis();
+        long took = (end - start);
+        assertTrue((took > 1000) ? (took < 4000) : false);
+        assertEquals("value", map.get("1"));
+        assertEquals("value", txnMap.get("1"));
+        assertEquals("value", txnMap2.get("1"));
+        txnMap.unlock("1");
+        assertTrue(txnMap2.tryPut("1", "value2", 2, TimeUnit.SECONDS));
+        assertEquals("value2", map.get("1"));
+        assertEquals("value2", txnMap.get("1"));
+        assertEquals("value2", txnMap2.get("1"));
     }
 
     @Test

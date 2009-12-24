@@ -217,6 +217,10 @@ public class MapClientProxy<K, V> implements IMap<K, V>, ClientProxy, EntryHolde
         throw new UnsupportedOperationException();
     }
 
+    public boolean tryPut(K key, V value, long timeout, TimeUnit timeunit) {
+        throw new UnsupportedOperationException();
+    }
+
     public void putAll(final Map<? extends K, ? extends V> map) {
         ExecutorService es = Executors.newFixedThreadPool(50);
         List<Future> lsFutures = new ArrayList(map.size());

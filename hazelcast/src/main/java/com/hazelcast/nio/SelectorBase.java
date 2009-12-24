@@ -24,10 +24,10 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,7 +38,7 @@ public class SelectorBase implements Runnable {
 
     protected final Selector selector;
 
-    protected final BlockingQueue<Runnable> selectorQueue = new LinkedBlockingQueue<Runnable>();
+    protected final Queue<Runnable> selectorQueue = new ConcurrentLinkedQueue<Runnable>();
 
     protected volatile boolean live = true;
 
@@ -80,20 +80,16 @@ public class SelectorBase implements Runnable {
     }
 
     public int addTask(final Runnable runnable) {
-        try {
-            selectorQueue.put(runnable);
-            return size.incrementAndGet();
-        } catch (final InterruptedException e) {
-            node.handleInterruptedException(Thread.currentThread(), e);
-            return 0;
-        }
+        selectorQueue.offer(runnable);
+        return size.incrementAndGet();
     }
 
     public void processSelectionQueue() {
         while (live) {
             final Runnable runnable = selectorQueue.poll();
-            if (runnable == null)
+            if (runnable == null) {
                 return;
+            }
             runnable.run();
             size.decrementAndGet();
         }
@@ -105,9 +101,9 @@ public class SelectorBase implements Runnable {
                 processSelectionQueue();
             }
             if (!live) return;
-            int selectedKeys;
+            int selectedKeyCount;
             try {
-                selectedKeys = selector.select(waitTime);
+                selectedKeyCount = selector.select(waitTime);
                 if (Thread.interrupted()) {
                     node.handleInterruptedException(Thread.currentThread(),
                             new RuntimeException());
@@ -115,7 +111,7 @@ public class SelectorBase implements Runnable {
             } catch (final Throwable exp) {
                 continue;
             }
-            if (selectedKeys == 0) {
+            if (selectedKeyCount == 0) {
                 continue;
             }
             final Set<SelectionKey> setSelectedKeys = selector.selectedKeys();

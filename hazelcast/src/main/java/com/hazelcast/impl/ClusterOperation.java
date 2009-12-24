@@ -44,8 +44,8 @@ public enum ClusterOperation {
     BLOCKING_QUEUE_TXN_BACKUP_POLL(),
     BLOCKING_QUEUE_TXN_COMMIT(),
     BLOCKING_QUEUE_PUBLISH(),
-    BLOCKING_QUEUE_ADD_TOPIC_LISTENER(),
     CONCURRENT_MAP_PUT(),
+    CONCURRENT_MAP_TRY_PUT(),
     CONCURRENT_MAP_GET(),
     CONCURRENT_MAP_REMOVE(),
     CONCURRENT_MAP_REMOVE_ITEM(),
@@ -67,7 +67,6 @@ public enum ClusterOperation {
     CONCURRENT_MAP_REPLACE_IF_NOT_NULL(),
     CONCURRENT_MAP_REPLACE_IF_SAME(),
     CONCURRENT_MAP_LOCK_RETURN_OLD(),
-    CONCURRENT_MAP_READ(),
     CONCURRENT_MAP_ADD_TO_LIST(),
     CONCURRENT_MAP_ADD_TO_SET(),
     CONCURRENT_MAP_MIGRATE_RECORD(),
@@ -96,7 +95,7 @@ public enum ClusterOperation {
     CLIENT_ADD_INSTANCE_LISTENER();
 
     static byte idGen = 0;
-    public final static byte OPERATION_COUNT = 100;
+    public final static byte OPERATION_COUNT = 127;
     static ClusterOperation[] clusterOperations = new ClusterOperation[OPERATION_COUNT];
 
     static {

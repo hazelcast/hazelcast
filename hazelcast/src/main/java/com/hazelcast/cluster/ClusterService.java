@@ -21,10 +21,11 @@ import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.impl.*;
 import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.util.SimpleBoundedQueue;
 
 import java.util.Queue;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -33,9 +34,11 @@ import java.util.logging.Logger;
 public final class ClusterService implements Runnable, Constants {
     private final Logger logger = Logger.getLogger(ClusterService.class.getName());
 
-    private static final long PERIODIC_CHECK_INTERVAL_NANOS = TimeUnit.SECONDS.toNanos(1);
+    private static final long PERIODIC_CHECK_INTERVAL_MILLIS = TimeUnit.SECONDS.toMillis(1);
 
-    private static final long MAX_IDLE_NANOS = TimeUnit.SECONDS.toNanos(ConfigProperty.MAX_NO_HEARTBEAT_SECONDS.getInteger());
+    private static final long MAX_IDLE_MILLIS = TimeUnit.SECONDS.toMillis(ConfigProperty.MAX_NO_HEARTBEAT_SECONDS.getInteger());
+
+    private static final boolean RESTART_ON_MAX_IDLE = ConfigProperty.RESTART_ON_MAX_IDLE.getBoolean();
 
     private final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<Packet>();
     private final Queue<Processable> processableQueue = new ConcurrentLinkedQueue<Processable>();
@@ -47,8 +50,6 @@ public final class ClusterService implements Runnable, Constants {
 
     private static final int PACKET_BULK_SIZE = 64;
     private static final int PROCESSABLE_BULK_SIZE = 64;
-
-    private long totalProcessTime = 0;
 
     private long lastPeriodicCheck = 0;
 
@@ -113,7 +114,6 @@ public final class ClusterService implements Runnable, Constants {
 
     public void processPacket(Packet packet) {
         if (!running) return;
-        final long processStart = System.nanoTime();
         final MemberImpl memberFrom = node.clusterManager.getMember(packet.conn.getEndPoint());
         if (memberFrom != null) {
             memberFrom.didRead();
@@ -130,18 +130,11 @@ public final class ClusterService implements Runnable, Constants {
             throw new RuntimeException(msg);
         }
         packetProcessor.process(packet);
-        final long processEnd = System.nanoTime();
-        final long elapsedTime = processEnd - processStart;
-        totalProcessTime += elapsedTime;
     }
 
     public void processProcessable(Processable processable) {
         if (!running) return;
-        final long processStart = System.nanoTime();
         processable.process();
-        final long processEnd = System.nanoTime();
-        final long elapsedTime = processEnd - processStart;
-        totalProcessTime += elapsedTime;
     }
 
     public void run() {
@@ -197,13 +190,12 @@ public final class ClusterService implements Runnable, Constants {
         } catch (final Throwable e) {
             logger.log(Level.SEVERE, "error processing messages  processable=" + processable, e);
         }
-        return PACKET_BULK_SIZE;        
+        return PACKET_BULK_SIZE;
     }
 
     public void start() {
-        totalProcessTime = 0;
-        lastPeriodicCheck = System.nanoTime();
-        lastCheck = System.nanoTime();
+        lastPeriodicCheck = System.currentTimeMillis();
+        lastCheck = System.currentTimeMillis();
         running = true;
     }
 
@@ -211,14 +203,14 @@ public final class ClusterService implements Runnable, Constants {
         packetQueue.clear();
         processableQueue.clear();
         try {
-            final CountDownLatch l = new CountDownLatch(1);
+            final CountDownLatch stopLatch = new CountDownLatch(1);
             processableQueue.offer(new Processable() {
                 public void process() {
                     running = false;
-                    l.countDown();
+                    stopLatch.countDown();
                 }
             });
-            l.await();
+            stopLatch.await();
         } catch (InterruptedException ignored) {
         }
     }
@@ -231,18 +223,27 @@ public final class ClusterService implements Runnable, Constants {
     }
 
     private void checkPeriodics() {
-        final long now = System.nanoTime();
-        if ((now - lastCheck) > MAX_IDLE_NANOS) {
-            logger.log(Level.INFO, "Hazelcast ServiceThread is blocked for "
-                    + ((now - lastCheck) / 1000000) + " ms. Restarting Hazelcast!");
-            new Thread(new Runnable() {
-                public void run() {
-                    node.factory.restart();
-                }
-            }, "hz.RestartThread").start();
+        final long now = System.currentTimeMillis();
+        if ((now - lastCheck) > MAX_IDLE_MILLIS) {
+            StringBuilder sb = new StringBuilder ("Hazelcast ServiceThread is blocked for ");
+            sb.append((now - lastCheck));
+            sb.append(" ms. Restarting Hazelcast!");
+            sb.append("\n\tnow:" + now);
+            sb.append("\n\tlastCheck:" + lastCheck);
+            sb.append("\n\tmaxIdleMillis:" + MAX_IDLE_MILLIS);
+            sb.append("\n\tRESTART_ON_MAX_IDLE:" + RESTART_ON_MAX_IDLE);
+            sb.append("\n"); 
+            logger.log(Level.INFO, sb.toString());
+            if (RESTART_ON_MAX_IDLE) {
+                new Thread(new Runnable() {
+                    public void run() {
+                        node.factory.restart();
+                    }
+                }, "hz.RestartThread").start();
+            }
         }
         lastCheck = now;
-        if ((now - lastPeriodicCheck) > PERIODIC_CHECK_INTERVAL_NANOS) {
+        if ((now - lastPeriodicCheck) > PERIODIC_CHECK_INTERVAL_MILLIS) {
             for (Runnable runnable : periodicRunnables) {
                 if (runnable != null) {
                     runnable.run();
@@ -250,9 +251,5 @@ public final class ClusterService implements Runnable, Constants {
             }
             lastPeriodicCheck = now;
         }
-    }
-
-    public long getTotalProcessTime() {
-        return totalProcessTime;
     }
 }

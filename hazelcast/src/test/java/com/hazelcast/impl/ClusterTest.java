@@ -23,11 +23,8 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.nio.Address;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
 import org.junit.After;
 import org.junit.Assert;
-import static org.junit.Assert.*;
 import org.junit.Test;
 
 import java.io.Serializable;
@@ -37,6 +34,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class ClusterTest {
 
@@ -55,9 +56,9 @@ public class ClusterTest {
         Map map = h1.getMap("default");
         map.put(1, 1);
         assertEquals(1, map.get(1));
-        Thread.sleep(1000);
+        Thread.sleep(2000);
         assertEquals(1, map.get(1));
-        Thread.sleep(1000);
+        Thread.sleep(2000);
         assertEquals(1, map.get(1));
         Thread.sleep(4000);
         assertNull(map.get(1));

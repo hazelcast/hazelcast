@@ -308,7 +308,7 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     @Override
-    final void handleListenerRegisterations(boolean add, String name, Data key, Address address,
+    final void handleListenerRegistrations(boolean add, String name, Data key, Address address,
                                             boolean includeValue) {
         Q q = getQ(name);
         if (add) {

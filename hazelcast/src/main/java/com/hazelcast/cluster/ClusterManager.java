@@ -23,14 +23,15 @@ import com.hazelcast.impl.*;
 import com.hazelcast.impl.base.Call;
 import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.nio.*;
-import static com.hazelcast.nio.IOUtil.toData;
-import static com.hazelcast.nio.IOUtil.toObject;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
+
+import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public final class ClusterManager extends BaseManager implements ConnectionListener {
 
@@ -75,8 +76,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 new PacketProcessor() {
                     public void process(Packet packet) {
                         Data data = IOUtil.doTake(packet.value);
-                        RemotelyProcessable rp = (RemotelyProcessable) ThreadContext.get()
-                                .toObject(data);
+                        RemotelyProcessable rp = (RemotelyProcessable) toObject(data);
                         rp.setConnection(packet.conn);
                         rp.setNode(node);
                         rp.process();
@@ -162,6 +162,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                                 if (lsDeadAddresses == null) {
                                     lsDeadAddresses = new ArrayList<Address>();
                                 }
+                                logger.log(Level.WARNING, "NO Heartbeat! should remove " + address);
                                 lsDeadAddresses.add(address);
                             }
                         }
@@ -179,7 +180,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             }
             if (lsDeadAddresses != null) {
                 for (Address address : lsDeadAddresses) {
-                    logger.log(Level.FINEST, "NO HEARTBEAT should remove " + address);
                     doRemoveAddress(address);
                     sendRemoveMemberToOthers(address);
                 }
@@ -191,6 +191,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 boolean removed = false;
                 if (masterMember != null) {
                     if ((now - masterMember.getLastRead()) >= (MAX_NO_HEARTBEAT_MILLIS)) {
+                        logger.log(Level.WARNING, "NO Heartbeat! should remove " + getMasterAddress());
                         doRemoveAddress(getMasterAddress());
                         removed = true;
                     }
@@ -215,7 +216,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                     } else {
                         Connection conn = node.connectionManager.getConnection(address);
                         if (conn != null && conn.live()) {
-                            if ((now - member.getLastWrite()) > 1000) {
+                            if ((now - member.getLastWrite()) > 500) {
                                 Packet packet = obtainPacket("heartbeat", null, null,
                                         ClusterOperation.HEARTBEAT, 0);
                                 sendOrReleasePacket(packet, conn);
@@ -577,10 +578,10 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                     }
                 }
                 calls.clear();
-                AbstractRemotelyCallable<Boolean> connCheckcallable = new ConnectionCheckCall();
+                AbstractRemotelyCallable<Boolean> connCheckCallable = new ConnectionCheckCall();
                 for (final Address target : newMemberList) {
                     AsyncRemotelyBooleanCallable call = new AsyncRemotelyBooleanCallable();
-                    call.executeProcess(target, connCheckcallable);
+                    call.executeProcess(target, connCheckCallable);
                     calls.add(call);
                 }
                 for (AsyncRemotelyBooleanCallable call : calls) {

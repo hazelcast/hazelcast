@@ -1174,15 +1174,15 @@ public abstract class BaseManager {
         return node.clusterManager.getMember(address);
     }
 
-    void handleListenerRegisterations(final boolean add, final String name, final Data key,
+    void handleListenerRegistrations(final boolean add, final String name, final Data key,
                                       final Address address, final boolean includeValue) {
         if (name.startsWith("q:")) {
-            node.blockingQueueManager.handleListenerRegisterations(add, name, key, address,
+            node.blockingQueueManager.handleListenerRegistrations(add, name, key, address,
                     includeValue);
         } else if (name.startsWith("t:")) {
-            node.topicManager.handleListenerRegisterations(add, name, key, address, includeValue);
+            node.topicManager.handleListenerRegistrations(add, name, key, address, includeValue);
         } else {
-            node.concurrentMapManager.handleListenerRegisterations(add, name, key, address,
+            node.concurrentMapManager.handleListenerRegistrations(add, name, key, address,
                     includeValue);
         }
     }

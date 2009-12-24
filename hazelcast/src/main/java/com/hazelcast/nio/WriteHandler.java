@@ -29,7 +29,7 @@ import java.util.logging.Level;
 
 public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
-    private final Queue writeQueue = new ConcurrentLinkedQueue();
+    private final Queue<Packet> writeQueue = new ConcurrentLinkedQueue<Packet>();
 
     private final AtomicBoolean informSelector = new AtomicBoolean(true);
 
@@ -66,13 +66,10 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         }
     }
 
-    long enqueueTime = 0;
-
     public void enqueuePacket(final Packet packet) {
         packet.write();
         writeQueue.offer(packet);
-        if (informSelector.get()) {
-            informSelector.set(false);
+        if (informSelector.compareAndSet(true, false)) { 
             outSelector.addTask(this);
             if (packet.currentCallCount < 2) {
                 outSelector.selector.wakeup();
@@ -82,7 +79,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     public void handle() {
         if (lastPacket == null) {
-            lastPacket = (Packet) writeQueue.poll();
+            lastPacket = writeQueue.poll();
             if (lastPacket == null && socketBB.position() == 0) {
                 ready = true;
                 return;
@@ -93,7 +90,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         try {
             while (socketBB.hasRemaining()) {
                 if (lastPacket == null) {
-                    lastPacket = (Packet) writeQueue.poll();
+                    lastPacket = writeQueue.poll();
                 }
                 if (lastPacket != null) {
                     boolean packetDone = packetWriter.writePacket(lastPacket);

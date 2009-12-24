@@ -239,11 +239,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
                 cipherBuffer.clear();
             }
         }
-    }
-
-    void log(String str) {
-//        System.out.println(str);
-    }
+    } 
 
     public final void run() {
         registerOp(inSelector.selector, SelectionKey.OP_READ);

@@ -21,7 +21,7 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module" module-name="hazelcast" scope="PROVIDED" />
+    <orderEntry type="module" module-name="hazelcast" exported="" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: junit:junit:4.6" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: junit-addons:junit-addons:1.4" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: xerces:xercesImpl:2.6.2" level="project" />

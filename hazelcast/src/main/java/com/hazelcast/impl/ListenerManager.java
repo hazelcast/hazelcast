@@ -71,7 +71,7 @@ public class ListenerManager extends BaseManager {
         String name = packet.name;
         Address address = packet.conn.getEndPoint();
         packet.returnToContainer();
-        handleListenerRegisterations(add, name, key, address, returnValue);
+        handleListenerRegistrations(add, name, key, address, returnValue);
     }
 
     public void syncForDead(Address deadAddress) {
@@ -105,7 +105,7 @@ public class ListenerManager extends BaseManager {
             if (from == null) throw new RuntimeException("Listener origin is not known!");
             boolean add = (request.operation == ADD_LISTENER);
             boolean includeValue = (request.longValue == 1);
-            handleListenerRegisterations(add, request.name, request.key, request.caller, includeValue);
+            handleListenerRegistrations(add, request.name, request.key, request.caller, includeValue);
             request.response = Boolean.TRUE;
         }
     }
@@ -171,7 +171,7 @@ public class ListenerManager extends BaseManager {
             if (key != null) {
                 Address owner = node.concurrentMapManager.getKeyOwner(key);
                 if (owner.equals(thisAddress)) {
-                    handleListenerRegisterations(add, name, key, thisAddress, includeValue);
+                    handleListenerRegistrations(add, name, key, thisAddress, includeValue);
                 } else {
                     Packet packet = obtainPacket();
                     packet.set(name, packetProcess, key, null);
@@ -184,7 +184,7 @@ public class ListenerManager extends BaseManager {
             } else {
                 for (MemberImpl member : lsMembers) {
                     if (member.localMember()) {
-                        handleListenerRegisterations(add, name, key, thisAddress, includeValue);
+                        handleListenerRegistrations(add, name, key, thisAddress, includeValue);
                     } else {
                         sendAddRemoveListener(member.getAddress(), add, name, key, includeValue);
                     }
@@ -355,7 +355,7 @@ public class ListenerManager extends BaseManager {
         }
 
         public void process() {
-            getNode().listenerManager.handleListenerRegisterations(true, name, toData(key), getConnection().getEndPoint(), includeValue);
+            getNode().listenerManager.handleListenerRegistrations(true, name, toData(key), getConnection().getEndPoint(), includeValue);
         }
     }
 }

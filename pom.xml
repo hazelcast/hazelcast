@@ -69,9 +69,6 @@
                     <archive>
                         <index>true</index>
                         <compress>true</compress>
-                        <manifest>
-                            <mainClass>com.hazelcast.examples.SimpleMapTest</mainClass>
-                        </manifest>
                     </archive>
                 </configuration>
             </plugin>
@@ -91,28 +88,6 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <includes>
-                        <include>**/ExecutorConfigTest.java</include>
-                        <include>**/InterfacesTest.java</include>
-                        <include>**/TopicConfigTest.java</include>
-                        <include>**/IterableNodeListTest.java</include>
-                        <include>**/HazelcastTest.java</include>
-                        <include>**/TransactionTest.java</include>
-                        <include>**/GeneralTest.java</include>
-                        <include>**/IOTest.java</include>
-                        <include>**/ParserTest.java</include>
-                        <include>**/PredicatesTest.java</include>
-                        <include>**/GroupConfigTest.java</include>
-                        <include>**/QueueConfigTest.java</include>
-                        <include>**/SortedHashMapTest.java</include>
-                    </includes>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
                     <finalName>hazelcast-${version}</finalName>
@@ -121,7 +96,6 @@
                     </descriptors>
                 </configuration>
             </plugin>
-
         </plugins>
     </build>
 

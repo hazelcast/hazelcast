@@ -87,6 +87,7 @@ public final class ConcurrentMapManager extends BaseManager {
         node.clusterService.registerPeriodicRunnable(mapMigrator);
         registerPacketProcessor(CONCURRENT_MAP_GET_MAP_ENTRY, new GetMapEnryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_GET, new GetOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_TRY_PUT, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT_IF_ABSENT, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REPLACE_IF_NOT_NULL, new PutOperationHandler());
@@ -649,6 +650,10 @@ public final class ConcurrentMapManager extends BaseManager {
             return txnalPut(CONCURRENT_MAP_PUT, name, key, value, timeout, ttl);
         }
 
+        public boolean tryPut(String name, Object key, Object value, long timeout, long ttl) {
+            return (Boolean) txnalPut(CONCURRENT_MAP_TRY_PUT, name, key, value, timeout, ttl);
+        }
+
         private Object txnalReplaceIfSame(ClusterOperation operation, String name, Object key, Object newValue, Object expectedValue, long timeout) {
             ThreadContext threadContext = ThreadContext.get();
             TransactionImpl txn = threadContext.getCallContext().getTransaction();
@@ -725,14 +730,24 @@ public final class ConcurrentMapManager extends BaseManager {
                 setLocal(operation, name, key, value, timeout, ttl);
                 request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
                 setIndexValues(request, value);
-                request.setObjectRequest();
-                doOp();
-                Object returnObject = getResultAsObject();
-                if (returnObject instanceof AddressAwareException) {
-                    rethrowException(operation, (AddressAwareException) returnObject);
+                if (operation == CONCURRENT_MAP_TRY_PUT) {
+                    request.setBooleanRequest();
+                    doOp();
+                    Boolean returnObject = getResultAsBoolean();
+                    if (returnObject) {
+                        backup(CONCURRENT_MAP_BACKUP_PUT);
+                    }
+                    return returnObject;
+                } else {
+                    request.setObjectRequest();
+                    doOp();
+                    Object returnObject = getResultAsObject();
+                    if (returnObject instanceof AddressAwareException) {
+                        rethrowException(operation, (AddressAwareException) returnObject);
+                    }
+                    backup(CONCURRENT_MAP_BACKUP_PUT);
+                    return returnObject;
                 }
-                backup(CONCURRENT_MAP_BACKUP_PUT);
-                return returnObject;
             }
         }
     }
@@ -1150,7 +1165,7 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     @Override
-    void handleListenerRegisterations(boolean add, String name, Data key,
+    void handleListenerRegistrations(boolean add, String name, Data key,
                                       Address address, boolean includeValue) {
         CMap cmap = getOrCreateMap(name);
         if (add) {
@@ -1346,9 +1361,22 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     class PutOperationHandler extends StoreAwareOperationHandler {
+        @Override
+        protected void onNoTimeToSchedule(Request request) {
+            request.response = null;
+            request.value = null;
+            if (request.operation == CONCURRENT_MAP_TRY_PUT) {
+                request.response = Boolean.FALSE;
+            }
+            returnResponse(request);
+        }
+
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             cmap.put(request);
+            if (request.operation == CONCURRENT_MAP_TRY_PUT) {
+                request.response = Boolean.TRUE;
+            }
         }
     }
 

@@ -20,6 +20,8 @@ package com.hazelcast.nio;
 import com.hazelcast.cluster.AddOrRemoveConnection;
 
 import java.nio.channels.SocketChannel;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Connection {
     final SocketChannel socketChannel;
@@ -33,6 +35,8 @@ public class Connection {
     private volatile boolean live = true;
 
     Address endPoint = null;
+
+    private final static Logger logger = Logger.getLogger(Connection.class.getName());
 
     public Connection(ConnectionManager connectionManager, SocketChannel socketChannel) {
         this.connectionManager = connectionManager;
@@ -106,6 +110,7 @@ public class Connection {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        logger.log(Level.INFO, "Connection lost " + endPoint);
         connectionManager.remove(this);
         AddOrRemoveConnection addOrRemoveConnection = new AddOrRemoveConnection(endPoint, false);
         addOrRemoveConnection.setNode(connectionManager.node);

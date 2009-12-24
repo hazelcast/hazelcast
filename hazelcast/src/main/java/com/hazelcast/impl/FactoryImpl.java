@@ -27,9 +27,7 @@ import com.hazelcast.impl.BlockingQueueManager.QIterator;
 import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.impl.concurrentmap.AddMapIndex;
 import com.hazelcast.jmx.ManagementService;
-import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
-import static com.hazelcast.nio.IOUtil.*;
 import com.hazelcast.nio.SerializationHelper;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
@@ -756,10 +754,12 @@ public class FactoryImpl implements HazelcastInstance {
             sb.append('}');
             return sb.toString();
         }
-        public String getName(){
+
+        public String getName() {
             return name;
         }
-        public Object getKey(){
+
+        public Object getKey() {
             return key;
         }
     }
@@ -1831,6 +1831,10 @@ public class FactoryImpl implements HazelcastInstance {
             }
         }
 
+        public boolean tryPut(Object key, Object value, long time, TimeUnit timeunit) {
+            return dynamicProxy.tryPut(key, value, time, timeunit);
+        }
+
         public Object putIfAbsent(Object key, Object value, long ttl, TimeUnit timeunit) {
             return dynamicProxy.putIfAbsent(key, value, ttl, timeunit);
         }
@@ -2104,8 +2108,10 @@ public class FactoryImpl implements HazelcastInstance {
                 }
                 if (ttl == 0) {
                     ttl = -1;
+                } else {
+                    ttl = timeunit.toMillis(ttl);
                 }
-                return put(key, value, -1, timeunit.toMillis(ttl));
+                return put(key, value, -1, ttl);
             }
 
             public Object put(Object key, Object value, long timeout, long ttl) {
@@ -2113,6 +2119,21 @@ public class FactoryImpl implements HazelcastInstance {
                 check(value);
                 MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
                 return mput.put(name, key, value, timeout, ttl);
+            }
+
+            public boolean tryPut(Object key, Object value, long timeout, TimeUnit timeunit) {
+                if (timeout < 0) {
+                    throw new IllegalArgumentException("timeout value cannot be negative. " + timeout);
+                }
+                if (timeout == 0) {
+                    timeout = -1;
+                } else {
+                    timeout =  timeunit.toMillis(timeout);
+                }
+                check(key);
+                check(value);
+                MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
+                return mput.tryPut(name, key, value, timeout, -1);
             }
 
             public Object putIfAbsent(Object key, Object value) {

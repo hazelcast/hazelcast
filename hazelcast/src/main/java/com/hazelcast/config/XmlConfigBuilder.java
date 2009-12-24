@@ -484,6 +484,9 @@ public class XmlConfigBuilder implements ConfigBuilder {
             } else if ("eviction-percentage".equals(nodeName)) {
                 mapConfig.setEvictionPercentage(getIntegerValue("eviction-percentage", value,
                         MapConfig.DEFAULT_EVICTION_PERCENTAGE));
+            } else if ("eviction-delay-seconds".equals(nodeName)) {
+                mapConfig.setEvictionDelaySeconds(getIntegerValue("eviction-delay-seconds", value,
+                        MapConfig.DEFAULT_EVICTION_DELAY_SECONDS));
             } else if ("time-to-live-seconds".equals(nodeName)) {
                 mapConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value,
                         MapConfig.DEFAULT_TTL_SECONDS));

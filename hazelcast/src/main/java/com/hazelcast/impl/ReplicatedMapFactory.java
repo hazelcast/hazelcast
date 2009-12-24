@@ -76,6 +76,10 @@ public final class ReplicatedMapFactory {
             return distributedMap.put(key, value);
         }
 
+        public boolean tryPut(K key, V value, long timeout, TimeUnit timeunit) {
+            return distributedMap.tryPut(key, value, timeout, timeunit);
+        }
+
         @Override
         public V remove(Object key) {
             return distributedMap.remove(key);

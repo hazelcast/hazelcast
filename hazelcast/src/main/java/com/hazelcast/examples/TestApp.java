@@ -1,12 +1,12 @@
-/* 
+/*
  * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at 
- * 
+ * You may obtain a copy of the License at
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -50,17 +50,23 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private boolean echo = false;
 
+    private HazelcastInstance hazelcast;
+
+    public TestApp(HazelcastInstance hazelcast) {
+        this.hazelcast = hazelcast;
+    }
+
     public static void main(String[] args) throws Exception {
-        TestApp testApp = new TestApp();
+        TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(null));
         testApp.start(args);
     }
 
     public void start(String[] args) throws Exception {
-        queue = Hazelcast.getQueue(namespace);
-        topic = Hazelcast.getTopic(namespace);
-        map = Hazelcast.getMap(namespace);
-        set = Hazelcast.getSet(namespace);
-        list = Hazelcast.getList(namespace);
+        queue = hazelcast.getQueue(namespace);
+        topic = hazelcast.getTopic(namespace);
+        map = hazelcast.getMap(namespace);
+        set = hazelcast.getSet(namespace);
+        list = hazelcast.getList(namespace);
         LineReader lineReader = new DefaultLineReader();
         while (true) {
             System.out.print("hazelcast[" + namespace + "] > ");
@@ -197,24 +203,24 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         } else if ("silent".equals(first)) {
             silent = Boolean.parseBoolean(args[1]);
         } else if ("restart".equals(first)) {
-            Hazelcast.restart();
+            hazelcast.restart();
         } else if ("shutdown".equals(first)) {
-            Hazelcast.shutdown();
+            hazelcast.shutdown();
         } else if ("echo".equals(first)) {
             echo = Boolean.parseBoolean(args[1]);
         } else if ("ns".equals(first)) {
             if (args.length > 1) {
                 namespace = args[1];
-                queue = Hazelcast.getQueue(namespace);
-                topic = Hazelcast.getTopic(namespace);
-                map = Hazelcast.getMap(namespace);
-                set = Hazelcast.getSet(namespace);
-                list = Hazelcast.getList(namespace);
+                queue = hazelcast.getQueue(namespace);
+                topic = hazelcast.getTopic(namespace);
+                map = hazelcast.getMap(namespace);
+                set = hazelcast.getSet(namespace);
+                list = hazelcast.getList(namespace);
             }
         } else if ("whoami".equals(first)) {
-            System.out.println(Hazelcast.getCluster().getLocalMember());
+            System.out.println(hazelcast.getCluster().getLocalMember());
         } else if ("who".equals(first)) {
-            System.out.println(Hazelcast.getCluster());
+            System.out.println(hazelcast.getCluster());
         } else if ("jvm".equals(first)) {
             System.gc();
             System.out.println("Memory max: " + Runtime.getRuntime().maxMemory() / 1024 / 1024
@@ -314,11 +320,11 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         } else if (first.equals("execute")) {
             execute(args);
         } else if (first.equals("txn")) {
-            Hazelcast.getTransaction().begin();
+            hazelcast.getTransaction().begin();
         } else if (first.equals("commit")) {
-            Hazelcast.getTransaction().commit();
+            hazelcast.getTransaction().commit();
         } else if (first.equals("rollback")) {
-            Hazelcast.getTransaction().rollback();
+            hazelcast.getTransaction().rollback();
         } else if (first.equalsIgnoreCase("executeOnKey")) {
             executeOnKey(args);
         } else if (first.equalsIgnoreCase("executeOnMember")) {
@@ -339,7 +345,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     private void handleInstances(String[] args) {
-        Collection<Instance> instances = Hazelcast.getInstances();
+        Collection<Instance> instances = hazelcast.getInstances();
         for (Instance instance : instances) {
             print(instance);
         }
@@ -400,7 +406,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             theMap.put("key" + (start + i), value);
         }
         long t0 = System.currentTimeMillis();
-        map.putAll(theMap);        
+        map.putAll(theMap);
         long t1 = System.currentTimeMillis();
         if (t1 - t0 > 1) {
             System.out.println("size = " + map.size() + ", " + count * 1000 / (t1 - t0)
@@ -441,7 +447,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     private void handleLock(String[] args) {
         String lockStr = args[0];
         String key = args[1];
-        Lock lock = Hazelcast.getLock(key);
+        Lock lock = hazelcast.getLock(key);
         if (lockStr.equalsIgnoreCase("lock")) {
             lock.lock();
             print("true");
@@ -808,7 +814,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private void ex(String input) throws Exception {
         FutureTask<String> task = new DistributedTask<String>(new Echo(input));
-        ExecutorService executorService = Hazelcast.getExecutorService();
+        ExecutorService executorService = hazelcast.getExecutorService();
         executorService.execute(task);
         String echoResult = task.get();
     }
@@ -816,7 +822,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     private void doExecute(boolean onKey, boolean onMember, String[] args) {
         // executeOnKey <echo-string> <key>
         try {
-            ExecutorService executorService = Hazelcast.getExecutorService();
+            ExecutorService executorService = hazelcast.getExecutorService();
             Echo callable = new Echo(args[1]);
             FutureTask<String> task = null;
             if (onKey) {
@@ -824,7 +830,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                 task = new DistributedTask<String>(callable, key);
             } else if (onMember) {
                 int memberIndex = Integer.parseInt(args[2]);
-                Member member = (Member) Hazelcast.getCluster().getMembers().toArray()[memberIndex];
+                Member member = (Member) hazelcast.getCluster().getMembers().toArray()[memberIndex];
                 task = new DistributedTask<String>(callable, member);
             } else {
                 task = new DistributedTask<String>(callable);
@@ -841,8 +847,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     private void executeOnMembers(String[] args) {
         // executeOnMembers <echo-string>
         try {
-            ExecutorService executorService = Hazelcast.getExecutorService();
-            MultiTask<String> echoTask = new MultiTask(new Echo(args[1]), Hazelcast.getCluster()
+            ExecutorService executorService = hazelcast.getExecutorService();
+            MultiTask<String> echoTask = new MultiTask(new Echo(args[1]), hazelcast.getCluster()
                     .getMembers());
             executorService.execute(echoTask);
             Collection<String> results = echoTask.get();
@@ -859,8 +865,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     private void executeLong(String[] args) {
         // executeOnMembers <echo-string>
         try {
-            ExecutorService executorService = Hazelcast.getExecutorService();
-            MultiTask<String> echoTask = new MultiTask(new LongTask(args[1]), Hazelcast.getCluster()
+            ExecutorService executorService = hazelcast.getExecutorService();
+            MultiTask<String> echoTask = new MultiTask(new LongTask(args[1]), hazelcast.getCluster()
                     .getMembers()) {
                 @Override
                 public void setMemberLeft(Member member) {
@@ -885,16 +891,16 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     private void executeLongTaskOnOtherMember(String[] args) {
         // executeOnMembers <echo-string>
         try {
-            ExecutorService executorService = Hazelcast.getExecutorService();
+            ExecutorService executorService = hazelcast.getExecutorService();
             Member otherMember = null;
-            Set<Member> members = Hazelcast.getCluster().getMembers();
+            Set<Member> members = hazelcast.getCluster().getMembers();
             for (Member member : members) {
                 if (!member.localMember()) {
                     otherMember = member;
                 }
             }
             if (otherMember == null) {
-                otherMember = Hazelcast.getCluster().getLocalMember();
+                otherMember = hazelcast.getCluster().getLocalMember();
             }
             DistributedTask<String> echoTask = new DistributedTask(new LongTask(args[1]), otherMember) {
                 @Override

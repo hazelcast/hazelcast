@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Concurrent, distributed, observable and queryable map. 
+ * Concurrent, distributed, observable and queryable map.
  *
  * @param <K> key
  * @param <V> value
@@ -39,6 +39,19 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * @return name of this map
      */
     String getName();
+
+    /**
+     * Tries to put the given key, value into this map within specified
+     * timeout value.
+     *
+     * @param key      key of the entry
+     * @param value    value of the entry
+     * @param timeout    maximum time to wait
+     * @param timeunit time unit for the ttl
+     * @return <tt>true</tt> if the put is successful, <tt>false</tt>
+     *         otherwise.
+     */
+    boolean tryPut(K key, V value, long timeout, TimeUnit timeunit);
 
     /**
      * Puts an entry into this map with a given ttl (time to live) value.
@@ -84,8 +97,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
 
     /**
      * Tries to acquire the lock for the specified key.
-     * <p>If the lock is not availabe then the current thread
-     * doesn't wait and returns false immidiately.
+     * <p>If the lock is not available then the current thread
+     * doesn't wait and returns false immediately.
      *
      * @param key key to lock.
      * @return <tt>true</tt> if lock is acquired, <tt>false</tt> otherwise.
@@ -110,7 +123,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
     boolean tryLock(K key, long time, TimeUnit timeunit);
 
     /**
-     * Releases the lock for the specified key. It is never blocking and
+     * Releases the lock for the specified key. It never blocks and
      * returns immediately.
      *
      * @param key key to lock.
@@ -245,7 +258,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
     /**
      * Adds an index to this map for the specified entries so
      * that queries can run faster.
-     * <p>
+     * <p/>
      * Let's say your map values are Employee objects.
      * <pre>
      *   public class Employee implements Serializable {
@@ -253,12 +266,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      *       private int age;
      *       private String name = null;
      *       // other fields.
-     *
+     * <p/>
      *       // getters setter
-     *
+     * <p/>
      *   }
      * </pre>
-     * <p>
+     * <p/>
      * If you are querying your values mostly based on age and active then
      * you should consider indexing these fields.
      * <pre>
@@ -266,14 +279,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      *   imap.addIndex("age", true);        // ordered, since we have ranged queries for this field
      *   imap.addIndex("active", false);    // not ordered, because boolean field cannot have range
      * </pre>
-     * <p>
+     * <p/>
      * Index attribute should either have a getter method or be public.
      * You should also make sure to add the indexes before adding
      * entries to this map.
      *
      * @param attribute attribute of value
-     * @param ordered <tt>true</tt> if index should be ordered,
-     * <tt>false</tt> otherwise.
+     * @param ordered   <tt>true</tt> if index should be ordered,
+     *                  <tt>false</tt> otherwise.
      */
     void addIndex(String attribute, boolean ordered);
 }
