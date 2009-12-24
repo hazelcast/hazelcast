@@ -68,7 +68,7 @@ public class EntryEvent<K, V> extends EventObject {
     public EntryEvent(Object source) {
         super(source);
         this.name = (String) source;
-        collection = (name.charAt(0) == 't') || (name.charAt(0) == 'q') || (name.charAt(3) == ':');
+        collection = !(name.startsWith("c:") || name.startsWith("m:u:"));
     }
 
     public EntryEvent(Object source, int eventType, K key, V value) {

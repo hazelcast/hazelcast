@@ -543,7 +543,7 @@ public abstract class BaseManager {
 
         private void handleObjectNoneRedoResponse(final Packet packet) {
             if (packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
-                final Data oldValue = doTake(packet.value);
+                final Data oldValue = packet.value;
                 if (oldValue == null || oldValue.size() == 0) {
                     setResult(OBJECT_NULL);
                 } else {

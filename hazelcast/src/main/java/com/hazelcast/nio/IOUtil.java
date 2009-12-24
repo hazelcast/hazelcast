@@ -66,9 +66,5 @@ public final class IOUtil {
         if (from == null || from.size == 0)
             return null;
         return new Data(from);
-    }
-
-    public static Data doTake(Data target) {
-        return target;
-    }
+    } 
 }

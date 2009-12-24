@@ -505,17 +505,18 @@ public class CMap {
             }
         }
         if (added) {
+            Data value = req.value;
             node.queryService.updateIndex(getName(), null, null, record, Integer.MIN_VALUE);
-            record.addValue(req.value);
-            req.value = null;
+            record.addValue(value);
             record.setVersion(record.getVersion() + 1);
             touch(record);
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKey(), req.value, record.getMapListeners());
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKey(), value, record.getMapListeners());
         }
         if (req.txnId != -1) {
             concurrentMapManager.unlock(record);
         }
         logger.log(Level.FINEST, record.getValue() + " PutMulti " + record.getMultiValues());
+        req.clearForResponse();
         req.version = record.getVersion();
         return added;
     }

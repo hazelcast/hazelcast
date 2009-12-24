@@ -213,7 +213,7 @@ public final class ConcurrentMapManager extends BaseManager {
         @Override
         public void afterGettingResult(Request request) {
             if (request.operation == CONCURRENT_MAP_LOCK_RETURN_OLD) {
-                oldValue = doTake(request.value);
+                oldValue = request.value;
             }
             super.afterGettingResult(request);
         }
@@ -221,7 +221,7 @@ public final class ConcurrentMapManager extends BaseManager {
         @Override
         public void handleNoneRedoResponse(Packet packet) {
             if (request.operation == CONCURRENT_MAP_LOCK_RETURN_OLD) {
-                oldValue = doTake(packet.value);
+                oldValue = packet.value;
             }
             super.handleNoneRedoResponse(packet);
         }

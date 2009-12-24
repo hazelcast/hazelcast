@@ -75,7 +75,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         registerPacketProcessor(ClusterOperation.REMOTELY_PROCESS_AND_RESPOND,
                 new PacketProcessor() {
                     public void process(Packet packet) {
-                        Data data = IOUtil.doTake(packet.value);
+                        Data data = packet.value;
                         RemotelyProcessable rp = (RemotelyProcessable) toObject(data);
                         rp.setConnection(packet.conn);
                         rp.setNode(node);

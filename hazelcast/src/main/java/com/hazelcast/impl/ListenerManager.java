@@ -57,8 +57,8 @@ public class ListenerManager extends BaseManager {
 
     private void handleEvent(Packet packet) {
         int eventType = (int) packet.longValue;
-        Data key = IOUtil.doTake(packet.key);
-        Data value = IOUtil.doTake(packet.value);
+        Data key = packet.key;
+        Data value = packet.value;
         String name = packet.name;
         Address from = packet.conn.getEndPoint();
         packet.returnToContainer();
@@ -66,7 +66,7 @@ public class ListenerManager extends BaseManager {
     }
 
     private void handleAddRemoveListener(boolean add, Packet packet) {
-        Data key = (packet.key != null) ? IOUtil.doTake(packet.key) : null;
+        Data key = (packet.key != null) ? packet.key : null;
         boolean returnValue = (packet.longValue == 1);
         String name = packet.name;
         Address address = packet.conn.getEndPoint();

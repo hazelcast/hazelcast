@@ -523,7 +523,6 @@ public class FactoryImpl implements HazelcastInstance {
             this.key = key;
             setHazelcastInstance(hazelcastInstance);
             base = new LockProxyBase();
-
         }
 
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
@@ -1597,6 +1596,26 @@ public class FactoryImpl implements HazelcastInstance {
             return base.valueCount(key);
         }
 
+        public void addEntryListener(EntryListener entryListener, boolean includeValue) {
+            ensure();
+            base.addEntryListener(entryListener, includeValue);
+        }
+
+        public void removeEntryListener(EntryListener entryListener) {
+            ensure();
+            base.removeEntryListener(entryListener);
+        }
+
+        public void addEntryListener(EntryListener entryListener, Object key, boolean includeValue) {
+            ensure();
+            base.addEntryListener(entryListener, key, includeValue);
+        }
+
+        public void removeEntryListener(EntryListener entryListener, Object key) {
+            ensure();
+            base.removeEntryListener(entryListener, key);
+        }
+
         class MultiMapBase implements MultiMap, IGetAwareProxy {
             final MProxy mapProxy;
 
@@ -1670,6 +1689,22 @@ public class FactoryImpl implements HazelcastInstance {
 
             public Object getId() {
                 return name;
+            }
+
+            public void addEntryListener(EntryListener entryListener, boolean includeValue) {
+                mapProxy.addEntryListener(entryListener, includeValue);
+            }
+
+            public void removeEntryListener(EntryListener entryListener) {
+                mapProxy.removeEntryListener(entryListener);
+            }
+
+            public void addEntryListener(EntryListener entryListener, Object key, boolean includeValue) {
+                mapProxy.addEntryListener(entryListener,key, includeValue);
+            }
+
+            public void removeEntryListener(EntryListener entryListener, Object key) {
+                mapProxy.removeEntryListener(entryListener, key);
             }
         }
     }
@@ -2128,7 +2163,7 @@ public class FactoryImpl implements HazelcastInstance {
                 if (timeout == 0) {
                     timeout = -1;
                 } else {
-                    timeout =  timeunit.toMillis(timeout);
+                    timeout = timeunit.toMillis(timeout);
                 }
                 check(key);
                 check(value);

@@ -32,8 +32,6 @@ import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
-import static com.hazelcast.nio.IOUtil.doHardCopy;
-import static com.hazelcast.nio.IOUtil.doTake;
 import com.hazelcast.nio.Packet;
 
 import java.io.DataInput;
@@ -319,7 +317,7 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     final void handleTxnBackupPoll(Packet packet) {
-        doTxnBackupPoll(packet.txnId, doTake(packet.value));
+        doTxnBackupPoll(packet.txnId, packet.value);
     }
 
     final void handleTxnCommit(Packet packet) {
@@ -341,7 +339,7 @@ public class BlockingQueueManager extends BaseManager {
             int blockId = packet.blockId;
             Q q = getQ(name);
             if (packet.operation == ClusterOperation.BLOCKING_QUEUE_BACKUP_ADD) {
-                Data data = doTake(packet.value);
+                Data data = packet.value;
                 q.doBackup(true, data, blockId, (int) packet.longValue);
             } else if (packet.operation == ClusterOperation.BLOCKING_QUEUE_BACKUP_REMOVE) {
                 q.doBackup(false, null, blockId, 0);
@@ -804,7 +802,7 @@ public class BlockingQueueManager extends BaseManager {
         }
 
         public void handleResponse(Packet packet) {
-            Data value = doTake(packet.value);
+            Data value = packet.value;
             int indexRead = (int) packet.longValue;
             setResponse(value, indexRead);
             removeCall(getId());

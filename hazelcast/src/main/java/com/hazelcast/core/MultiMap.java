@@ -138,4 +138,45 @@ public interface MultiMap<K, V> extends Instance {
      * @return number of values matching to given key in the multimap.
      */
     int valueCount(K key);
+
+    /**
+     * Adds an entry listener for this multimap. Listener will get notified
+     * for all multimap add/remove/update/evict events.
+     *
+     * @param listener     entry listener
+     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
+     *                     contain the value.
+     */
+    void addEntryListener(EntryListener<K, V> listener, boolean includeValue);
+
+    /**
+     * Removes the specified entry listener
+     * Returns silently if there is no such listener added before.
+     *
+     * @param listener entry listener
+     */
+    void removeEntryListener(EntryListener<K, V> listener);
+
+    /**
+     * Adds the specified entry listener for the specified key.
+     * The listener will get notified for all
+     * add/remove/update/evict events of the specified key only.
+     *
+     * @param listener     entry listener
+     * @param key          the key to listen
+     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
+     *                     contain the value.
+     */
+    void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue);
+
+    /**
+     * Removes the specified entry listener for the specified key.
+     * Returns silently if there is no such listener added before for
+     * the key.
+     *
+     * @param listener
+     * @param key
+     */
+    void removeEntryListener(EntryListener<K, V> listener, K key);
+
 }

@@ -24,6 +24,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -179,7 +180,7 @@ public class HazelcastTest {
 
     @Test
     public void testMapEntryListener() {
-        IMap<String, String> map = Hazelcast.getMap("testMapEntrySet");
+        IMap<String, String> map = Hazelcast.getMap("testMapEntryListener");
         final CountDownLatch latchAdded = new CountDownLatch(1);
         final CountDownLatch latchRemoved = new CountDownLatch(1);
         final CountDownLatch latchUpdated = new CountDownLatch(1);
@@ -210,9 +211,68 @@ public class HazelcastTest {
         map.put("hello", "new world");
         map.remove("hello");
         try {
-            assertTrue(latchAdded.await(50000, TimeUnit.MILLISECONDS));
-            assertTrue(latchUpdated.await(10, TimeUnit.MILLISECONDS));
-            assertTrue(latchRemoved.await(10, TimeUnit.MILLISECONDS));
+            assertTrue(latchAdded.await(5, TimeUnit.SECONDS));
+            assertTrue(latchUpdated.await(5, TimeUnit.SECONDS));
+            assertTrue(latchRemoved.await(5, TimeUnit.SECONDS));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            assertFalse(e.getMessage(), true);
+        }
+    }
+
+    @Test
+    public void testMultiMapEntryListener() {
+        MultiMap<String, String> map = Hazelcast.getMultiMap("testMultiMapEntryListener");
+        final CountDownLatch latchAdded = new CountDownLatch(3);
+        final CountDownLatch latchRemoved = new CountDownLatch(1);
+        final Set<String> expectedValues = new CopyOnWriteArraySet<String>();
+        expectedValues.add("hello");
+        expectedValues.add("world");
+        expectedValues.add("again");
+        map.addEntryListener(new EntryListener<String, String>() {
+
+            public void entryAdded(EntryEvent event) {
+                Object key = event.getKey();
+                Object value = event.getValue();
+
+                if ("2".equals(key)) {
+                    assertEquals("again", value);
+                } else {
+                    assertEquals("1", key);
+                }
+                assertTrue(expectedValues.contains(value));
+                expectedValues.remove(value);
+                latchAdded.countDown();
+            }
+
+            public void entryRemoved(EntryEvent event) {
+                assertEquals("1", event.getKey());
+                assertEquals(2, ((Collection) event.getValue()).size());
+                latchRemoved.countDown();
+            }
+
+            public void entryUpdated(EntryEvent event) {
+                throw new AssertionError("MultiMap cannot get update event!");
+            }
+
+            public void entryEvicted(EntryEvent event) {
+                entryRemoved(event);
+            }
+        }, true);
+        map.put("1", "hello");
+        map.put("1", "world");
+        map.put("2", "again");
+        Collection<String> values = map.get("1");
+        assertEquals(2, values.size());
+        assertTrue(values.contains("hello"));
+        assertTrue(values.contains("world"));
+        assertEquals(1, map.get("2").size());
+        assertEquals(3, map.size());
+        map.remove("1");
+        assertEquals(1, map.size());
+        try {
+            assertTrue(latchAdded.await(5, TimeUnit.SECONDS));
+            assertTrue(latchRemoved.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
             assertFalse(e.getMessage(), true);
@@ -221,7 +281,7 @@ public class HazelcastTest {
 
     @Test
     public void testMapEvict() {
-        IMap<String, String> map = Hazelcast.getMap("testMapEviction");
+        IMap<String, String> map = Hazelcast.getMap("testMapEvict");
         map.put("key", "value");
         assertEquals(true, map.containsKey("key"));
         assertTrue(map.evict("key"));
@@ -230,7 +290,7 @@ public class HazelcastTest {
 
     @Test
     public void testMapPutWitTTL() throws Exception {
-        IMap<String, String> map = Hazelcast.getMap("testMapEviction");
+        IMap<String, String> map = Hazelcast.getMap("testMapPutWitTTL");
         map.put("key", "value", 100, TimeUnit.MILLISECONDS);
         assertEquals(true, map.containsKey("key"));
         Thread.sleep(500);

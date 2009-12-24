@@ -685,7 +685,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
     public void handleStream(Packet packet) {
         final StreamResponseHandler streamResponseHandler = mapStreams.get(packet.longValue);
         if (streamResponseHandler != null) {
-            final Data value = IOUtil.doTake(packet.value);
+            final Data value = packet.value;
             executor.execute(new Runnable() {
                 public void run() {
                     streamResponseHandler.handleStreamResponse(value);
@@ -697,7 +697,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
 
     public void handleRemoteExecution(Packet packet) {
         log("Remote handling packet " + packet);
-        final Data callableData = IOUtil.doTake(packet.value);
+        final Data callableData = packet.value;
         final RemoteExecutionId remoteExecutionId = new RemoteExecutionId(packet.conn.getEndPoint(),
                 packet.longValue);
         final SimpleExecution se = new SimpleExecution(remoteExecutionId, executor, null,
