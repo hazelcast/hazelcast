@@ -23,6 +23,7 @@ import static org.junit.Assert.*;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -50,6 +51,26 @@ public class HazelcastClientTest {
             com.hazelcast.core.Member member = iterator.next();
             assertNotNull(member);
         }
+
+    }
+
+    @Test
+    public void putDate(){
+        Map<String, Date> map = getHazelcastClient().getMap("putDate");
+        Date date = new Date();
+        map.put("key", date);
+        Date d = map.get("key");
+        assertEquals(date.getTime(), d.getTime());
+
+    }
+
+    @Test
+    public void putBigInteger(){
+        Map<String, BigInteger> map = getHazelcastClient().getMap("putBigInteger");
+        BigInteger number = new BigInteger("12312312312");
+        map.put("key", number);
+        BigInteger b = map.get("key");
+        assertEquals(number, b);
 
     }
     

@@ -25,11 +25,13 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.math.BigInteger;
+import java.util.Date;
 
 import com.hazelcast.nio.DataSerializable;
 
 public class Serializer {
-    private static final byte SERIALIZER_TYPE_DATA = 0;
+   private static final byte SERIALIZER_TYPE_DATA = 0;
 
     private static final byte SERIALIZER_TYPE_OBJECT = 1;
 
@@ -42,6 +44,10 @@ public class Serializer {
     private static final byte SERIALIZER_TYPE_CLASS = 5;
 
     private static final byte SERIALIZER_TYPE_STRING = 6;
+
+    private static final byte SERIALIZER_TYPE_DATE = 7;
+
+    private static final byte SERIALIZER_TYPE_BIG_INTEGER = 8;
     
     private static final int STRING_CHUNK_SIZE = 16*1024;
 
@@ -84,6 +90,17 @@ public class Serializer {
 				dos.writeByte(SERIALIZER_TYPE_CLASS);
 				dos.writeUTF(((Class<?>)object).getName());
 			}
+            else if (object instanceof Date) {
+                dos.writeByte(SERIALIZER_TYPE_DATE);
+                dos.writeLong(((Date)object).getTime());
+            }
+            else if (object instanceof BigInteger){
+                dos.writeByte(SERIALIZER_TYPE_BIG_INTEGER);
+                byte[] bytes = ((BigInteger)object).toByteArray();
+                dos.writeInt(bytes.length);
+                dos.write(bytes);
+            }
+
 			else{
 				dos.writeByte(SERIALIZER_TYPE_OBJECT);
 				ObjectOutputStream os = new ObjectOutputStream(dos);
@@ -140,6 +157,14 @@ public class Serializer {
 			else if(type == SERIALIZER_TYPE_CLASS){
 				return Class.forName(dis.readUTF());
 			}
+            else if(type == SERIALIZER_TYPE_DATE){
+                return new Date(dis.readLong());
+            }
+            else if(type == SERIALIZER_TYPE_BIG_INTEGER){
+                byte[] byts = new byte[dis.readInt()];
+                dis.read(byts);
+                return new BigInteger(byts);
+            }
 			else if(type == SERIALIZER_TYPE_OBJECT){
 				ObjectInputStream os = new ObjectInputStream(dis);
 				return os.readObject();
