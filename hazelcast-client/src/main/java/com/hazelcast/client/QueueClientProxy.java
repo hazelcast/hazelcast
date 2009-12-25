@@ -51,6 +51,14 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
         return true;
     }
 
+    @Override
+    public String toString() {
+        return "Queue{" +
+                "name='" + name + '\'' +
+                '}';
+    }
+
+
     public boolean offer(E e) {
         check(e);
         return innerOffer(e, 0);
@@ -148,6 +156,7 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
             return false;
         }
     }
+
     @Override
     public void clear(){
         throw new UnsupportedOperationException();

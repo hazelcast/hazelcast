@@ -69,8 +69,8 @@ public class Serializer {
 			else if(object instanceof byte[]){
 				byte[] bytes = (byte[]) object;
 				dos.writeByte(SERIALIZER_TYPE_BYTE_ARRAY);
-				bos.write(bytes.length);
-				bos.write(bytes);
+				dos.writeInt(bytes.length);
+				dos.write(bytes);
 			}
 			else if(object instanceof Integer){
 				dos.writeByte(SERIALIZER_TYPE_INTEGER);

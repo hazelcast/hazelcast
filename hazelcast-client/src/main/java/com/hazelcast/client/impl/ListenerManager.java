@@ -245,5 +245,8 @@ public class ListenerManager extends ClientRunnable{
 		
 	}
 
-	
+
+    public void registerMembershipListener(MembershipListener listener) {
+        //To change body of created methods use File | Settings | File Templates.
+    }
 }

@@ -66,8 +66,15 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E>{
 			}
 		};
 	}
-	
-	public void addItemListener(ItemListener<E> listener, boolean includeValue) {
+
+    @Override
+    public String toString() {
+        return "CollectionClientProxy{" +
+                "name='" + name + '\'' +
+                '}';
+    }
+
+    public void addItemListener(ItemListener<E> listener, boolean includeValue) {
         check(listener);
 		Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
 		request.setLongValue(includeValue?1:0);
