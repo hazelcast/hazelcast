@@ -20,6 +20,7 @@ package com.hazelcast.core;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A specialized map whose keys can be associated with multiple values.
@@ -59,7 +60,7 @@ public interface MultiMap<K, V> extends Instance {
      * @param value the value of the entry to remove
      * @return true if the size of the multimap changed after the remove operation, false otherwise.
      */
-    boolean remove(K key, V value);
+    boolean remove(Object key, Object value);
 
     /**
      * Removes all the entries with the given key.
@@ -68,7 +69,7 @@ public interface MultiMap<K, V> extends Instance {
      * @return the collection of removed values associated with the given key. Returned collection
      *         might be modifiable but it has no effect on the multimap
      */
-    Collection<V> remove(K key);
+    Collection<V> remove(Object key);
 
     /**
      * Returns the set of keys in the multimap.
@@ -108,7 +109,7 @@ public interface MultiMap<K, V> extends Instance {
      * @param value the value whose existence is checked.
      * @return true if the multimap contains an entry with the value, false otherwise.
      */
-    boolean containsValue(V value);
+    boolean containsValue(Object value);
 
     /**
      * Returns whether the multimap contains the given key-value pair.
@@ -179,4 +180,54 @@ public interface MultiMap<K, V> extends Instance {
      */
     void removeEntryListener(EntryListener<K, V> listener, K key);
 
+    /**
+     * Acquires the lock for the specified key.
+     * <p>If the lock is not available then
+     * the current thread becomes disabled for thread scheduling
+     * purposes and lies dormant until the lock has been acquired.
+     * <p/>
+     * Scope of the lock is this multimap only.
+     * Acquired lock is only for the key in this multimap.
+     * <p/>
+     * Locks are re-entrant so if the key is locked N times then
+     * it should be unlocked N times before another thread can acquire it.
+     *
+     * @param key key to lock.
+     */
+    void lock(K key);
+
+    /**
+     * Tries to acquire the lock for the specified key.
+     * <p>If the lock is not available then the current thread
+     * doesn't wait and returns false immediately.
+     *
+     * @param key key to lock.
+     * @return <tt>true</tt> if lock is acquired, <tt>false</tt> otherwise.
+     */
+    boolean tryLock(K key);
+
+    /**
+     * Tries to acquire the lock for the specified key.
+     * <p>If the lock is not available then
+     * the current thread becomes disabled for thread scheduling
+     * purposes and lies dormant until one of two things happens:
+     * <ul>
+     * <li>The lock is acquired by the current thread; or
+     * <li>The specified waiting time elapses
+     * </ul>
+     *
+     * @param time     the maximum time to wait for the lock
+     * @param timeunit the time unit of the <tt>time</tt> argument.
+     * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
+     *         if the waiting time elapsed before the lock was acquired.
+     */
+    boolean tryLock(K key, long time, TimeUnit timeunit);
+
+    /**
+     * Releases the lock for the specified key. It never blocks and
+     * returns immediately.
+     *
+     * @param key key to lock.
+     */
+    void unlock(K key);
 }

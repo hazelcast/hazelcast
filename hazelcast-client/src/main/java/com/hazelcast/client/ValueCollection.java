@@ -45,12 +45,12 @@ public class ValueCollection<K, V> implements Collection<V>{
 	}
 
 	public boolean contains(Object arg0) {
-		return proxy.containsValue((V)arg0);
+		return proxy.containsValue(arg0);
 	}
 
 	public boolean containsAll(Collection<?> arg0) {
 		for (Iterator<?> iterator = arg0.iterator(); iterator.hasNext();) {
-			Object object = (Object) iterator.next();
+			Object object = iterator.next();
 			if(!contains(object)){
 				return false;
 			}

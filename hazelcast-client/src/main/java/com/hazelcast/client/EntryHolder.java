@@ -17,8 +17,6 @@
 
 package com.hazelcast.client;
 
-import java.util.Iterator;
-
 public interface EntryHolder<K, V> {
 
     V remove(Object arg0);

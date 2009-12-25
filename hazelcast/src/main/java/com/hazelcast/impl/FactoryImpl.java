@@ -1616,6 +1616,26 @@ public class FactoryImpl implements HazelcastInstance {
             base.removeEntryListener(entryListener, key);
         }
 
+        public void lock(Object key) {
+            ensure();
+            base.lock(key);
+        }
+
+        public boolean tryLock(Object key) {
+            ensure();
+            return base.tryLock(key);
+        }
+
+        public boolean tryLock(Object key, long time, TimeUnit timeunit) {
+            ensure();
+            return base.tryLock(key, time, timeunit);
+        }
+
+        public void unlock(Object key) {
+            ensure();
+            base.unlock(key);
+        }
+
         class MultiMapBase implements MultiMap, IGetAwareProxy {
             final MProxy mapProxy;
 
@@ -1705,6 +1725,22 @@ public class FactoryImpl implements HazelcastInstance {
 
             public void removeEntryListener(EntryListener entryListener, Object key) {
                 mapProxy.removeEntryListener(entryListener, key);
+            }
+
+            public void lock(Object key) {
+                mapProxy.lock(key);
+            }
+
+            public boolean tryLock(Object key) {
+                return mapProxy.tryLock(key);
+            }
+
+            public boolean tryLock(Object key, long time, TimeUnit timeunit) {
+                return mapProxy.tryLock(key, time, timeunit);
+            }
+
+            public void unlock(Object key) {
+                mapProxy.unlock(key);
             }
         }
     }

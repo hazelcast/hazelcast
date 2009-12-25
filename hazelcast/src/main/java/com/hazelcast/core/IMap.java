@@ -109,7 +109,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * Tries to acquire the lock for the specified key.
      * <p>If the lock is not available then
      * the current thread becomes disabled for thread scheduling
-     * purposes and lies dormant until one of three things happens:
+     * purposes and lies dormant until one of two things happens:
      * <ul>
      * <li>The lock is acquired by the current thread; or
      * <li>The specified waiting time elapses
