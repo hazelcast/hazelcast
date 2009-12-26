@@ -79,10 +79,6 @@ public class FactoryImpl implements HazelcastInstance {
 
     private static boolean jmxRegistered = false;
 
-    public static FactoryImpl getFactoryImpl(String name) {
-        return factories.get(name);
-    }
-
     public static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config) {
         synchronized (factoryLock) {
             String name = "_hzInstance_" + nextFactoryId++;

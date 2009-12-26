@@ -26,8 +26,6 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,8 +43,7 @@ public final class ClusterService implements Runnable, Constants {
 
     private volatile boolean running = true;
 
-    private final ReentrantLock enqueueLock = new ReentrantLock();
-    private final Condition notEmpty = enqueueLock.newCondition();
+    private final Object notEmptyLock = new Object();
 
     private static final int PACKET_BULK_SIZE = 64;
     private static final int PROCESSABLE_BULK_SIZE = 64;
@@ -93,22 +90,16 @@ public final class ClusterService implements Runnable, Constants {
     }
 
     public void enqueuePacket(Packet packet) {
-        try {
-            packetQueue.offer(packet);
-            enqueueLock.lock();
-            notEmpty.signal();
-        } finally {
-            enqueueLock.unlock();
+        packetQueue.offer(packet);
+        synchronized (notEmptyLock) {
+            notEmptyLock.notify();
         }
     }
 
     public void enqueueAndReturn(Processable processable) {
-        try {
-            processableQueue.offer(processable);
-            enqueueLock.lock();
-            notEmpty.signal();
-        } finally {
-            enqueueLock.unlock();
+        processableQueue.offer(processable);
+        synchronized (notEmptyLock) {
+            notEmptyLock.notify();
         }
     }
 
@@ -144,14 +135,13 @@ public final class ClusterService implements Runnable, Constants {
             readPackets = (dequeuePackets() != 0);
             readProcessables = (dequeueProcessables() != 0);
             if (!readPackets && !readProcessables) {
-                enqueueLock.lock();
                 try {
-                    notEmpty.await(100, TimeUnit.MILLISECONDS);
+                    synchronized (notEmptyLock) {
+                        notEmptyLock.wait(100);
+                    }
                     checkPeriodics();
                 } catch (InterruptedException e) {
                     node.handleInterruptedException(Thread.currentThread(), e);
-                } finally {
-                    enqueueLock.unlock();
                 }
             }
         }
@@ -225,14 +215,14 @@ public final class ClusterService implements Runnable, Constants {
     private void checkPeriodics() {
         final long now = System.currentTimeMillis();
         if ((now - lastCheck) > MAX_IDLE_MILLIS) {
-            StringBuilder sb = new StringBuilder ("Hazelcast ServiceThread is blocked for ");
+            StringBuilder sb = new StringBuilder("Hazelcast ServiceThread is blocked for ");
             sb.append((now - lastCheck));
             sb.append(" ms. Restarting Hazelcast!");
             sb.append("\n\tnow:" + now);
             sb.append("\n\tlastCheck:" + lastCheck);
             sb.append("\n\tmaxIdleMillis:" + MAX_IDLE_MILLIS);
             sb.append("\n\tRESTART_ON_MAX_IDLE:" + RESTART_ON_MAX_IDLE);
-            sb.append("\n"); 
+            sb.append("\n");
             logger.log(Level.INFO, sb.toString());
             if (RESTART_ON_MAX_IDLE) {
                 new Thread(new Runnable() {

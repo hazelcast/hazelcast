@@ -4,4 +4,4 @@
 @REM e.g  : clusterWebapp.bat myapp.ear
 @REM e.g  : clusterWebapp.bat mywebapp.war
 
-java -cp hazelcast-${project.version}.jar com.hazelcast.web.Installer %*
+java -cp ../lib/hazelcast-${project.version}.jar:../lib/hazelcast-wm-${project.version}.jar com.hazelcast.web.Installer %*

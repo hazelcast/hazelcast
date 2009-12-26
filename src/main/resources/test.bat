@@ -1,1 +1,0 @@
-java -server -cp hazelcast-${project.version}.jar com.hazelcast.examples.SimpleMapTest

@@ -83,7 +83,7 @@
             Valid values are:
             NONE (no eviction),
             LRU (Least Recently Used),
-            LFU (Least Frequiently Used).
+            LFU (Least Frequently Used).
             NONE is the default.
         -->
         <eviction-policy>NONE</eviction-policy>
