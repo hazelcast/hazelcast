@@ -36,7 +36,6 @@ import com.hazelcast.client.Packet;
 import com.hazelcast.core.*;
 import com.hazelcast.core.EntryEvent.EntryEventType;
 import com.hazelcast.core.InstanceEvent.InstanceEventType;
-import com.sun.swing.internal.plaf.synth.resources.synth;
 
 import static com.hazelcast.client.Serializer.toObject;
 import static com.hazelcast.impl.BaseManager.getInstanceType;
