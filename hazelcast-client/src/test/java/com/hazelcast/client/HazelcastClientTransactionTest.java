@@ -18,20 +18,22 @@
 package com.hazelcast.client;
 
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-import java.util.Map;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
 
-import org.junit.After;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.Transaction;
 
 public class HazelcastClientTransactionTest {
 

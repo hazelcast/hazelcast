@@ -19,9 +19,8 @@ package com.hazelcast.client;
 
 import java.net.InetSocketAddress;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Hazelcast;
-import static com.hazelcast.client.TestUtility.getHazelcastClient;
+import com.hazelcast.core.HazelcastInstance;
 
 public class TestUtility {
     static HazelcastClient client;

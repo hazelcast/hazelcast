@@ -17,6 +17,7 @@
 
 package com.hazelcast.client;
 
+import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -28,15 +29,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
-import org.junit.After;
 import org.junit.Test;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
-
-import static com.hazelcast.client.TestUtility.*;
 
 public class HazelcastClientListTest {
 
@@ -57,7 +53,7 @@ public class HazelcastClientListTest {
     @Test
     public void addRemoveItemListener() throws InterruptedException{
     	HazelcastClient hClient = getHazelcastClient();
-        final IList list = hClient.getList("addRemoveItemListener");
+        final IList<String> list = hClient.getList("addRemoveItemListener");
         final CountDownLatch addLatch = new CountDownLatch(4);
         final CountDownLatch removeLatch = new CountDownLatch(4);
         ItemListener<String> listener  = new CountDownItemListener<String>(addLatch, removeLatch);
@@ -80,11 +76,11 @@ public class HazelcastClientListTest {
     public void destroy(){
         HazelcastClient hClient = getHazelcastClient();
 
-        IList list = hClient.getList("destroy");
+        IList<Integer> list = hClient.getList("destroy");
         for(int i=0;i<100;i++){
         	assertTrue(list.add(i));
         }
-        IList list2 = hClient.getList("destroy");
+        IList<Integer> list2 = hClient.getList("destroy");
         assertTrue(list == list2);
         assertTrue(list.getId().equals(list2.getId()));
         list.destroy();
@@ -95,7 +91,7 @@ public class HazelcastClientListTest {
     public void add(){
         HazelcastClient hClient = getHazelcastClient();
 
-        IList list = hClient.getList("add");
+        IList<Integer> list = hClient.getList("add");
         int count = 10000;
         for(int i=0;i<count;i++){
         	assertTrue(list.add(i));
@@ -105,7 +101,7 @@ public class HazelcastClientListTest {
     public void contains(){
         HazelcastClient hClient = getHazelcastClient();
 
-        IList list = hClient.getList("contains");
+        IList<Integer> list = hClient.getList("contains");
         int count = 10000;
         for(int i=0;i<count;i++){
         	list.add(i);
@@ -123,8 +119,8 @@ public class HazelcastClientListTest {
     public void addAll(){
         HazelcastClient hClient = getHazelcastClient();
 
-        IList list = hClient.getList("addAll");
-        List arrList = new ArrayList<Integer>();
+        IList<Integer> list = hClient.getList("addAll");
+        List<Integer> arrList = new ArrayList<Integer>();
         int count = 100;
         for(int i=0;i<count;i++){
         	arrList.add(i);
@@ -136,8 +132,8 @@ public class HazelcastClientListTest {
     public void containsAll(){
         HazelcastClient hClient = getHazelcastClient();
 
-        IList list = hClient.getList("containsAll");
-        List arrList = new ArrayList<Integer>();
+        IList<Integer> list = hClient.getList("containsAll");
+        List<Integer> arrList = new ArrayList<Integer>();
         int count = 100;
         for(int i=0;i<count;i++){
         	arrList.add(i);
@@ -153,7 +149,7 @@ public class HazelcastClientListTest {
     public void size(){
         HazelcastClient hClient = getHazelcastClient();
 
-        IList list = hClient.getList("size");
+        IList<Integer> list = hClient.getList("size");
         int count = 100;
         assertTrue(list.isEmpty());
         for(int i=0;i<count;i++){
@@ -171,7 +167,7 @@ public class HazelcastClientListTest {
     public void remove(){
         HazelcastClient hClient = getHazelcastClient();
 
-        IList list = hClient.getList("remove");
+        IList<Integer> list = hClient.getList("remove");
         int count = 100;
         assertTrue(list.isEmpty());
         for(int i=0;i<count;i++){
@@ -197,7 +193,7 @@ public class HazelcastClientListTest {
     public void clear(){
         HazelcastClient hClient = getHazelcastClient();
 
-        IList list = hClient.getList("clear");
+        IList<Integer> list = hClient.getList("clear");
         int count = 100;
         assertTrue(list.isEmpty());
         for(int i=0;i<count;i++){
@@ -212,8 +208,8 @@ public class HazelcastClientListTest {
     public void removeAll(){
         HazelcastClient hClient = getHazelcastClient();
 
-        IList list = hClient.getList("removeAll");
-        List arrList = new ArrayList<Integer>();
+        IList<Integer> list = hClient.getList("removeAll");
+        List<Integer> arrList = new ArrayList<Integer>();
         int count = 100;
         for(int i=0;i<count;i++){
         	arrList.add(i);
@@ -228,13 +224,13 @@ public class HazelcastClientListTest {
     public void iterate(){
         HazelcastClient hClient = getHazelcastClient();
 
-        IList list = hClient.getList("iterate");
+        IList<Integer> list = hClient.getList("iterate");
         list.add(1);
         list.add(2);
         list.add(2);
         list.add(3);
         assertEquals(4, list.size());
-        Map counter = new HashMap();
+        Map<Integer, Integer> counter = new HashMap<Integer, Integer>();
         counter.put(1,1);
         counter.put(2,2);
         counter.put(3,1);
@@ -243,9 +239,9 @@ public class HazelcastClientListTest {
 			counter.put(integer, (Integer)counter.get(integer)-1);
 			iterator.remove();
 		}
-        assertEquals(0,counter.get(1));
-        assertEquals(0,counter.get(2));
-        assertEquals(0,counter.get(3));
+        assertEquals(Integer.valueOf(0),counter.get(1));
+        assertEquals(Integer.valueOf(0),counter.get(2));
+        assertEquals(Integer.valueOf(0),counter.get(3));
         
         assertTrue(list.isEmpty());
     }

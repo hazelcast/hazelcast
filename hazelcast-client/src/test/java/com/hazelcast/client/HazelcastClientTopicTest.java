@@ -17,17 +17,18 @@
 
 package com.hazelcast.client;
 
-import org.junit.After;
-import org.junit.Test;
-import org.junit.Ignore;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import com.hazelcast.core.*;
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import org.junit.Test;
+
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.MessageListener;
 
 public class HazelcastClientTopicTest {
 
@@ -54,9 +55,9 @@ public class HazelcastClientTopicTest {
         final CountDownLatch latch = new CountDownLatch(1);
         final String message =  "Hazelcast Rocks!";
 
-        topic.addMessageListener(new MessageListener()
+        topic.addMessageListener(new MessageListener<String>()
         {
-            public void onMessage(Object msg) {
+            public void onMessage(String msg) {
                 if(msg.equals(message)){
                     latch.countDown();
                 }
@@ -77,18 +78,16 @@ public class HazelcastClientTopicTest {
         final String message =  "Hazelcast Rocks!";
 
 
-        topic.addMessageListener(new MessageListener()
-        {
-            public void onMessage(Object msg) {
+        topic.addMessageListener(new MessageListener<String>() {
+            public void onMessage(String msg) {
                 if(msg.equals(message)){
                     latch.countDown();
                 }
             }
         });
 
-        topic.addMessageListener(new MessageListener()
-        {
-            public void onMessage(Object msg) {
+        topic.addMessageListener(new MessageListener<String>() {
+            public void onMessage(String msg) {
                 if(msg.equals(message)){
                     latch.countDown();
                 }
@@ -98,7 +97,8 @@ public class HazelcastClientTopicTest {
         topic.publish(message);
 
         assertTrue(latch.await(100, TimeUnit.MILLISECONDS));
-    }
+   }
+    
    @Test
    public void removeMessageListener() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
@@ -106,9 +106,8 @@ public class HazelcastClientTopicTest {
         final CountDownLatch latch = new CountDownLatch(2);
         final String message =  "Hazelcast Rocks!";
 
-        MessageListener<String> messageListener = new MessageListener()
-        {
-            public void onMessage(Object msg) {
+        MessageListener<String> messageListener = new MessageListener<String>() {
+            public void onMessage(String msg) {
                 if(msg.equals(message)){
                     latch.countDown();
                 }

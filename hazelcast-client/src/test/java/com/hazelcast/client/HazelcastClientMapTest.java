@@ -18,20 +18,10 @@
 package com.hazelcast.client;
 
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEntry;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.query.EntryObject;
-import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
-import org.junit.After;
-import static org.junit.Assert.*;
-import org.junit.Ignore;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -39,17 +29,31 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import org.junit.Test;
+
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEntry;
+import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder;
 
 public class HazelcastClientMapTest {
 
     @Test(expected = NullPointerException.class)
     public void testPutNull(){
         HazelcastClient hClient = getHazelcastClient();
-        final IMap imap = hClient.getMap("testPutNull");
+        final IMap<Integer, Integer> imap = hClient.getMap("testPutNull");
         imap.put(1, null);
     }
 
@@ -57,7 +61,7 @@ public class HazelcastClientMapTest {
     public void getMapName() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
 
-        IMap map = hClient.getMap("getMapName");
+        IMap<Object, Object> map = hClient.getMap("getMapName");
         assertEquals("getMapName", map.getName());
     }
 

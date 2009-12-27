@@ -17,20 +17,20 @@
 
 package com.hazelcast.client;
 
-import org.junit.After;
-import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
+import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.fail;
+import static org.junit.Assert.assertEquals;
 
-import java.util.concurrent.*;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.io.Serializable;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
-import static junit.framework.Assert.*;
-import static junit.framework.Assert.assertTrue;
+import org.junit.Test;
 
 public class HazelcastClientExecutorServiceTest {
 
@@ -68,7 +68,7 @@ public class HazelcastClientExecutorServiceTest {
 
         // Only one task
         ArrayList<Callable<String>> tasks = new ArrayList<Callable<String>>();
-        tasks.add(new BasicTestTask());
+        tasks.add(task);
         List<Future<String>> futures = executor.invokeAll(tasks);
         assertEquals(futures.size(), 1);
         assertEquals(futures.get(0).get(), BasicTestTask.RESULT);
@@ -89,12 +89,10 @@ public class HazelcastClientExecutorServiceTest {
      * Submit a null task must raise a NullPointerException
      */
     @Test(expected = NullPointerException.class)
-
-    public void submitNullTask() throws Exception {
-        ExecutorService executor = getExecutorService();
-            Callable c = null;
-            Future future = executor.submit(c);
-            fail();
+    public void submitNullTask() {
+        Callable<?> callable = null;
+    	getExecutorService().submit(callable);
+    	fail();
     }
 
     private ExecutorService getExecutorService() {
@@ -109,7 +107,7 @@ public class HazelcastClientExecutorServiceTest {
     public void testBasicTask() throws Exception {
         Callable<String> task = new BasicTestTask();
         ExecutorService executor = getExecutorService();
-        Future future = executor.submit(task);
+        Future<?> future = executor.submit(task);
         assertEquals(future.get(), BasicTestTask.RESULT);
     }
 
@@ -120,7 +118,7 @@ public class HazelcastClientExecutorServiceTest {
     public void isDoneMethod() throws Exception {
         Callable<String> task = new BasicTestTask();
         ExecutorService executor = getExecutorService();
-        Future future = executor.submit(task);
+        Future<?> future = executor.submit(task);
         if (future.isDone()) {
             assertTrue(future.isDone());
         }
@@ -140,8 +138,8 @@ public class HazelcastClientExecutorServiceTest {
             Callable<String> task1 = new BasicTestTask();
             Callable<String> task2 = new BasicTestTask();
 
-            Future future1 = executor.submit(task1);
-            Future future2 = executor.submit(task1);
+            Future<?> future1 = executor.submit(task1);
+            Future<?> future2 = executor.submit(task2);
             assertEquals(future2.get(), BasicTestTask.RESULT);
             assertTrue(future2.isDone());
             assertEquals(future1.get(), BasicTestTask.RESULT);
@@ -153,7 +151,7 @@ public class HazelcastClientExecutorServiceTest {
     public void testBasicRunnable() throws Exception {
         ExecutorService executor = getExecutorService();
 
-        Future future = executor.submit(new BasicRunnable());
+        Future<?> future = executor.submit(new BasicRunnable());
         assertNull(future.get());
     }
 

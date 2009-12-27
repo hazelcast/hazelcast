@@ -17,20 +17,24 @@
 
 package com.hazelcast.client;
 
-import org.junit.After;
-import org.junit.Test;
+import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import org.junit.Test;
+
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IList;
 import com.hazelcast.core.IQueue;
-import static com.hazelcast.client.TestUtility.getHazelcastClient;
-
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.CountDownLatch;
-import java.util.*;
 
 public class HazelcastClientQueueTest {
 
@@ -120,7 +124,7 @@ public class HazelcastClientQueueTest {
         HazelcastClient hClient = getHazelcastClient();
 
     	IQueue<String> queue = hClient.getQueue("addAll");
-        List list = new ArrayList();
+        List<String> list = new ArrayList<String>();
         list.add("a");
         list.add("b");
 
@@ -135,7 +139,7 @@ public class HazelcastClientQueueTest {
         HazelcastClient hClient = getHazelcastClient();
 
     	IQueue<String> queue = hClient.getQueue("clear");
-        List list = new ArrayList();
+        List<String> list = new ArrayList<String>();
         list.add("a");
         list.add("b");
         assertTrue(queue.size()==0);
@@ -150,7 +154,7 @@ public class HazelcastClientQueueTest {
         HazelcastClient hClient = getHazelcastClient();
 
         IQueue<String> queue = hClient.getQueue("containsAll");
-        List list = new ArrayList();
+        List<String> list = new ArrayList<String>();
         list.add("a");
         list.add("b");
         assertTrue(queue.size()==0);
@@ -213,10 +217,9 @@ public class HazelcastClientQueueTest {
             queue.offer(""+i);
             map.put(i,1);
         }
-        List list = new ArrayList();
+        List<String> list = new ArrayList<String>();
         for(int i=0;i<count/2;i++){
-            list.add(""+i);
-
+            list.add(String.valueOf(i));
         }
 
         queue.removeAll(list);

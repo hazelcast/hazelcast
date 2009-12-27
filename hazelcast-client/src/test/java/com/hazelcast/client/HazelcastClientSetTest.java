@@ -17,6 +17,7 @@
 
 package com.hazelcast.client;
 
+import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -28,13 +29,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
-import org.junit.After;
 import org.junit.Test;
-import org.junit.Ignore;
 
-import com.hazelcast.core.*;
-
-import static com.hazelcast.client.TestUtility.*;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ItemListener;
 
 public class HazelcastClientSetTest {
 
@@ -50,14 +48,14 @@ public class HazelcastClientSetTest {
     public void getSetName(){
         HazelcastClient hClient = getHazelcastClient();
 
-    	ISet set = hClient.getSet("getSetName");
+    	ISet<String> set = hClient.getSet("getSetName");
     	assertEquals("getSetName", set.getName());
     }
     @Test
     public void addRemoveItemListener() throws InterruptedException{
         HazelcastClient hClient = getHazelcastClient();
 
-        final ISet set = hClient.getSet("addRemoveItemListener");
+        final ISet<String> set = hClient.getSet("addRemoveItemListener");
         final CountDownLatch addLatch = new CountDownLatch(4);
         final CountDownLatch removeLatch = new CountDownLatch(4);
         ItemListener<String> listener  = new CountDownItemListener<String>(addLatch, removeLatch);
@@ -80,11 +78,11 @@ public class HazelcastClientSetTest {
     public void destroy(){
         HazelcastClient hClient = getHazelcastClient();
 
-        ISet set = hClient.getSet("destroy");
+        ISet<Integer> set = hClient.getSet("destroy");
         for(int i=0;i<100;i++){
         	assertTrue(set.add(i));
         }
-        ISet set2 = hClient.getSet("destroy");
+        ISet<Integer> set2 = hClient.getSet("destroy");
         assertTrue(set == set2);
         assertTrue(set.getId().equals(set2.getId()));
         set.destroy();
@@ -98,7 +96,7 @@ public class HazelcastClientSetTest {
     public void add(){
         HazelcastClient hClient = getHazelcastClient();
 
-        ISet set = hClient.getSet("add");
+        ISet<Integer> set = hClient.getSet("add");
         int count = 10000;
         for(int i=0;i<count;i++){
         	assertTrue(set.add(i));
@@ -113,7 +111,7 @@ public class HazelcastClientSetTest {
     public void contains(){
         HazelcastClient hClient = getHazelcastClient();
 
-        ISet set = hClient.getSet("contains");
+        ISet<Integer> set = hClient.getSet("contains");
         int count = 10000;
         for(int i=0;i<count;i++){
         	set.add(i);
@@ -131,8 +129,8 @@ public class HazelcastClientSetTest {
     public void addAll(){
         HazelcastClient hClient = getHazelcastClient();
 
-        ISet set= hClient.getSet("addAll");
-        List arr = new ArrayList<Integer>();
+        ISet<Integer> set= hClient.getSet("addAll");
+        List<Integer> arr = new ArrayList<Integer>();
         int count = 100;
         for(int i=0;i<count;i++){
         	arr.add(i);
@@ -144,8 +142,8 @@ public class HazelcastClientSetTest {
     public void containsAll(){
         HazelcastClient hClient = getHazelcastClient();
 
-        ISet set = hClient.getSet("containsAll");
-        List arrList = new ArrayList<Integer>();
+        ISet<Integer> set = hClient.getSet("containsAll");
+        List<Integer> arrList = new ArrayList<Integer>();
         int count = 100;
         for(int i=0;i<count;i++){
         	arrList.add(i);
@@ -161,7 +159,7 @@ public class HazelcastClientSetTest {
     public void size(){
         HazelcastClient hClient = getHazelcastClient();
 
-        ISet set = hClient.getSet("size");
+        ISet<Integer> set = hClient.getSet("size");
         int count = 100;
         assertTrue(set.isEmpty());
         for(int i=0;i<count;i++){
@@ -179,7 +177,7 @@ public class HazelcastClientSetTest {
     public void remove(){
         HazelcastClient hClient = getHazelcastClient();
 
-        ISet set = hClient.getSet("remove");
+        ISet<Integer> set = hClient.getSet("remove");
         int count = 100;
         assertTrue(set.isEmpty());
         for(int i=0;i<count;i++){
@@ -205,7 +203,7 @@ public class HazelcastClientSetTest {
     public void clear(){
         HazelcastClient hClient = getHazelcastClient();
 
-        ISet set = hClient.getSet("clear");
+        ISet<Integer> set = hClient.getSet("clear");
         int count = 100;
         assertTrue(set.isEmpty());
         for(int i=0;i<count;i++){
@@ -220,8 +218,8 @@ public class HazelcastClientSetTest {
     public void removeAll(){
         HazelcastClient hClient = getHazelcastClient();
 
-        ISet set = hClient.getSet("removeAll");
-        List arrList = new ArrayList<Integer>();
+        ISet<Integer> set = hClient.getSet("removeAll");
+        List<Integer> arrList = new ArrayList<Integer>();
         int count = 100;
         for(int i=0;i<count;i++){
         	arrList.add(i);
@@ -236,24 +234,24 @@ public class HazelcastClientSetTest {
     public void iterate(){
         HazelcastClient hClient = getHazelcastClient();
 
-        ISet set = hClient.getSet("iterate");
+        ISet<Integer> set = hClient.getSet("iterate");
         set.add(1);
         set.add(2);
         set.add(2);
         set.add(3);
         assertEquals(3, set.size());
-        Map counter = new HashMap();
+        Map<Integer, Integer> counter = new HashMap<Integer, Integer>();
         counter.put(1,1);
         counter.put(2,1);
         counter.put(3,1);
         for (Iterator<Integer> iterator = set.iterator(); iterator.hasNext();) {
-			Integer integer = (Integer) iterator.next();
-			counter.put(integer, (Integer)counter.get(integer)-1);
+			Integer integer = iterator.next();
+			counter.put(integer, counter.get(integer)-1);
 			iterator.remove();
 		}
-        assertEquals(0,counter.get(1));
-        assertEquals(0,counter.get(2));
-        assertEquals(0,counter.get(3));
+        assertEquals(Integer.valueOf(0),counter.get(1));
+        assertEquals(Integer.valueOf(0),counter.get(2));
+        assertEquals(Integer.valueOf(0),counter.get(3));
         
         assertTrue(set.isEmpty());
     }

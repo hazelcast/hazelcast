@@ -17,21 +17,17 @@
 
 package com.hazelcast.client;
 
-import org.junit.After;
-import org.junit.Test;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertEquals;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ILock;
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
-
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
+import org.junit.Test;
+
+import com.hazelcast.core.ILock;
 
 public class HazelcastClientLockTest {
 

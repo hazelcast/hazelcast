@@ -78,7 +78,7 @@ public class HazelcastClientTest {
     public void addInstanceListener() throws InterruptedException{
     	final CountDownLatch destroyedLatch = new CountDownLatch(1);
     	final CountDownLatch createdLatch = new CountDownLatch(1);
-    	final IMap instance = getHazelcastClient().getMap("addInstanceListener");
+    	final IMap<Integer, Integer> instance = getHazelcastClient().getMap("addInstanceListener");
 
     	InstanceListener listener = new InstanceListener() {
 			
@@ -90,7 +90,7 @@ public class HazelcastClientTest {
 			
 			public void instanceCreated(InstanceEvent event) {
 				assertEquals(InstanceEventType.CREATED, event.getEventType());
-				IMap map = (IMap)event.getInstance();
+				IMap<Integer, Integer> map = (IMap<Integer, Integer>) event.getInstance();
 				assertEquals(instance.getName(), map.getName());
 				assertEquals(1, map.size());
 				createdLatch.countDown();
@@ -118,8 +118,9 @@ public class HazelcastClientTest {
 
     @Test
     public void testProxySerialization() {
-        IMap mapProxy = getHazelcastClient().getMap("proxySerialization");
+        IMap<Object, Object> mapProxy = getHazelcastClient().getMap("proxySerialization");
         ILock mapLock = getHazelcastClient().getLock(mapProxy);
+        assertNotNull(mapLock);
     }
 
     @Test
@@ -262,26 +263,26 @@ public class HazelcastClientTest {
         final CountDownLatch latchAdded = new CountDownLatch(1);
         final CountDownLatch latchRemoved = new CountDownLatch(1);
         final CountDownLatch latchUpdated = new CountDownLatch(1);
-        map.addEntryListener(new EntryListener() {
-            public void entryAdded(EntryEvent event) {
+        map.addEntryListener(new EntryListener<String, String>() {
+            public void entryAdded(EntryEvent<String, String> event) {
                 assertEquals("world", event.getValue());
                 assertEquals("hello", event.getKey());
                 latchAdded.countDown();
             }
 
-            public void entryRemoved(EntryEvent event) {
+            public void entryRemoved(EntryEvent<String, String> event) {
                 assertEquals("hello", event.getKey());
                 assertEquals("new world", event.getValue());
                 latchRemoved.countDown();
             }
 
-            public void entryUpdated(EntryEvent event) {
+            public void entryUpdated(EntryEvent<String, String> event) {
                 assertEquals("new world", event.getValue());
                 assertEquals("hello", event.getKey());
                 latchUpdated.countDown();
             }
 
-            public void entryEvicted(EntryEvent event) {
+            public void entryEvicted(EntryEvent<String, String> event) {
                 entryRemoved(event);
             }
         }, true);
@@ -507,8 +508,8 @@ public class HazelcastClientTest {
     public void testTopicPublish() {
         ITopic<String> topic = getHazelcastClient().getTopic("testTopicPublish");
         final CountDownLatch latch = new CountDownLatch(1);
-        topic.addMessageListener(new MessageListener() {
-            public void onMessage(Object msg) {
+        topic.addMessageListener(new MessageListener<String>() {
+            public void onMessage(String msg) {
                 assertEquals("Hello World", msg);
                 latch.countDown();
             }

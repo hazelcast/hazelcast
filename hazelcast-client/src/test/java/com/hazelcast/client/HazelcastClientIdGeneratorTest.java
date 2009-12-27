@@ -31,9 +31,7 @@ import java.util.Map;
 
 public class HazelcastClientIdGeneratorTest {
 
-     private HazelcastClient hClient;
-
-
+	private HazelcastClient hClient;
 
     @After
     public void shutdownAll() throws InterruptedException{
@@ -43,30 +41,28 @@ public class HazelcastClientIdGeneratorTest {
     }
 
     @Test
-
     public void idGenerator(){
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
         hClient = getHazelcastClient(h);
         IdGenerator nativeId = h.getIdGenerator("id");
         IdGenerator clientId = hClient.getIdGenerator("id");
         long v = clientId.newId();
-        Map map = new HashMap();
+        Map<Long, Integer> map = new HashMap<Long, Integer>();
         int count = 10;
 
-        for(int i=0;i<count;i++){
+        for(int i=0;i<count;i++) {
            long genId = nativeId.newId();
            assertNull( map.put(genId,1));
-            System.out.println(genId);
+           System.out.println(genId);
         }
         System.out.println(v);
 
-        for(int i=0;i<count;i++){
-            long genId = clientId.newId();
+        for(int i=0;i<count;i++) {
+        	long genId = clientId.newId();
             assertNull(map.put(genId,1));
             System.out.println(genId);
         }
         assertTrue(true);
-
     }
 
 }
