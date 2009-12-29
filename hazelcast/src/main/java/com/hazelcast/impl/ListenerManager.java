@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.core.*;
+
 import static com.hazelcast.impl.ClusterOperation.ADD_LISTENER;
 
 import com.hazelcast.impl.base.PacketProcessor;
@@ -288,32 +289,55 @@ public class ListenerManager extends BaseManager {
 
     private void callListener(ListenerItem listenerItem, EntryEvent event) {
         Object listener = listenerItem.listener;
-        if (listenerItem.instanceType == Instance.InstanceType.MAP || listenerItem.instanceType == Instance.InstanceType.MULTIMAP) {
-            EntryListener l = (EntryListener) listener;
-            if (event.getEventType() == EntryEvent.EntryEventType.ADDED) {
-                l.entryAdded(event);
-            } else if (event.getEventType() == EntryEvent.EntryEventType.REMOVED) {
-                l.entryRemoved(event);
-            } else if (event.getEventType() == EntryEvent.EntryEventType.UPDATED) {
-                l.entryUpdated(event);
-            } else if (event.getEventType() == EntryEvent.EntryEventType.EVICTED) {
-                l.entryEvicted(event);
+        
+        EntryEventType entryEventType = event.getEventType();
+        
+        switch(listenerItem.instanceType) {
+        case MAP:
+        case MULTIMAP:
+            EntryListener entryListener = (EntryListener) listener;
+            switch(entryEventType) {
+            case ADDED:
+            	entryListener.entryAdded(event);
+            	break;
+            case REMOVED:
+            	entryListener.entryRemoved(event);
+            	break;
+            case UPDATED:
+            	entryListener.entryUpdated(event);
+            	break;
+            case EVICTED:
+            	entryListener.entryEvicted(event);
+            	break;
             }
-        } else if (listenerItem.instanceType == Instance.InstanceType.SET || listenerItem.instanceType == Instance.InstanceType.LIST) {
-            ItemListener l = (ItemListener) listener;
-            if (event.getEventType() == EntryEvent.EntryEventType.ADDED)
-                l.itemAdded(event.getKey());
-            else if (event.getEventType() == EntryEvent.EntryEventType.REMOVED)
-                l.itemRemoved(event.getKey());
-        } else if (listenerItem.instanceType == Instance.InstanceType.TOPIC) {
-            MessageListener l = (MessageListener) listener;
-            l.onMessage(event.getValue());
-        } else if (listenerItem.instanceType == Instance.InstanceType.QUEUE) {
-            ItemListener l = (ItemListener) listener;
-            if (event.getEventType() == EntryEvent.EntryEventType.ADDED)
-                l.itemAdded(event.getValue());
-            else if (event.getEventType() == EntryEvent.EntryEventType.REMOVED)
-                l.itemRemoved(event.getValue());
+        	break;
+        case SET:
+        case LIST:
+            ItemListener itemListener = (ItemListener) listener;
+            switch(entryEventType) {
+            case ADDED:
+            	itemListener.itemAdded(event.getKey());
+            	break;
+            case REMOVED:
+            	itemListener.itemRemoved(event.getKey());
+            	break;
+            }
+        	break;
+        case TOPIC:
+            MessageListener messageListener = (MessageListener) listener;
+            messageListener.onMessage(event.getValue());
+        	break;
+        case QUEUE:
+            ItemListener queueItemListener = (ItemListener) listener;
+            switch(entryEventType) {
+            case ADDED:
+            	queueItemListener.itemAdded(event.getValue());
+            	break;
+            case REMOVED:
+            	queueItemListener.itemRemoved(event.getValue());
+            	break;
+            }
+        	break;
         }
     }
 

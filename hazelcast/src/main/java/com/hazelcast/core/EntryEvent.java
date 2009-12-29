@@ -31,13 +31,13 @@ public class EntryEvent<K, V> extends EventObject {
 
     private static final long serialVersionUID = -2296203982913729851L;
 
-    public static final int TYPE_ADDED = 1;
+    public static final int TYPE_ADDED = EntryEventType.ADDED.getType();
 
-    public static final int TYPE_REMOVED = 2;
+    public static final int TYPE_REMOVED = EntryEventType.REMOVED.getType();
 
-    public static final int TYPE_UPDATED = 3;
+    public static final int TYPE_UPDATED = EntryEventType.UPDATED.getType();
 
-    public static final int TYPE_EVICTED = 4;
+    public static final int TYPE_EVICTED = EntryEventType.EVICTED.getType();
 
     protected EntryEventType entryEventType = EntryEventType.ADDED;
 
@@ -46,23 +46,7 @@ public class EntryEvent<K, V> extends EventObject {
     protected V value;
 
     protected final String name;
-
-    public enum EntryEventType {
-        ADDED(1),
-        REMOVED(2),
-        UPDATED(3),
-        EVICTED(4);
-        private int type;
-
-        EntryEventType(int type) {
-            this.type = type;
-        }
-
-        public int getType() {
-            return type;
-        }
-    }
-
+    
     protected boolean collection;
 
     public EntryEvent(Object source) {
@@ -75,13 +59,7 @@ public class EntryEvent<K, V> extends EventObject {
         this(source);
         this.key = key;
         this.value = value;
-        if (eventType == TYPE_REMOVED) {
-            entryEventType = EntryEventType.REMOVED;
-        } else if (eventType == TYPE_UPDATED) {
-            entryEventType = EntryEventType.UPDATED;
-        } else if (eventType == TYPE_EVICTED) {
-            entryEventType = EntryEventType.EVICTED;
-        }
+        this.entryEventType = entryEventType.getByType(eventType);
     }
 
     @Override
