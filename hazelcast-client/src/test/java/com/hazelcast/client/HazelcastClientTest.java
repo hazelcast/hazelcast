@@ -53,30 +53,10 @@ public class HazelcastClientTest {
         }
 
     }
-
-    @Test
-    public void putDate(){
-        Map<String, Date> map = getHazelcastClient().getMap("putDate");
-        Date date = new Date();
-        map.put("key", date);
-        Date d = map.get("key");
-        assertEquals(date.getTime(), d.getTime());
-
-    }
-
-    @Test
-    public void putBigInteger(){
-        Map<String, BigInteger> map = getHazelcastClient().getMap("putBigInteger");
-        BigInteger number = new BigInteger("12312312312");
-        map.put("key", number);
-        BigInteger b = map.get("key");
-        assertEquals(number, b);
-
-    }
     
     @Test
     public void addInstanceListener() throws InterruptedException{
-    	final CountDownLatch destroyedLatch = new CountDownLatch(1);
+        final CountDownLatch destroyedLatch = new CountDownLatch(1);
     	final CountDownLatch createdLatch = new CountDownLatch(1);
     	final IMap<Integer, Integer> instance = getHazelcastClient().getMap("addInstanceListener");
 
@@ -96,13 +76,14 @@ public class HazelcastClientTest {
 				createdLatch.countDown();
 			}
 		};
-    	getHazelcastClient().addInstanceListener(listener);
-    	instance.put(1, 1);
 
-    	instance.destroy();
-    	
-    	assertTrue(createdLatch.await(1, TimeUnit.SECONDS));
-    	assertTrue(destroyedLatch.await(1, TimeUnit.SECONDS));
+        getHazelcastClient().addInstanceListener(listener);
+        instance.put(1, 1);
+
+
+        assertTrue(createdLatch.await(2, TimeUnit.SECONDS));
+        instance.destroy();
+        assertTrue(destroyedLatch.await(2, TimeUnit.SECONDS));
     	
     	getHazelcastClient().removeInstanceListener(listener);
     }
@@ -151,6 +132,26 @@ public class HazelcastClientTest {
         assertEquals("New World", map.get("Hello"));
         assertEquals(1, map.size());
         assertEquals("World", value);
+    }
+
+    @Test
+    public void testPutDate(){
+        Map<String, Date> map = getHazelcastClient().getMap("putDate");
+        Date date = new Date();
+        map.put("key", date);
+        Date d = map.get("key");
+        assertEquals(date.getTime(), d.getTime());
+
+    }
+
+    @Test
+    public void testPutBigInteger(){
+        Map<String, BigInteger> map = getHazelcastClient().getMap("putBigInteger");
+        BigInteger number = new BigInteger("12312312312");
+        map.put("key", number);
+        BigInteger b = map.get("key");
+        assertEquals(number, b);
+
     }
 
     @Test
@@ -290,7 +291,7 @@ public class HazelcastClientTest {
         map.put("hello", "new world");
         map.remove("hello");
         try {
-            assertTrue(latchAdded.await(50000, TimeUnit.MILLISECONDS));
+            assertTrue(latchAdded.await(5000, TimeUnit.MILLISECONDS));
             assertTrue(latchUpdated.await(10, TimeUnit.MILLISECONDS));
             assertTrue(latchRemoved.await(10, TimeUnit.MILLISECONDS));
         } catch (InterruptedException e) {

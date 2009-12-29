@@ -175,15 +175,13 @@ public class ClientService {
         
         public void instanceCreated(InstanceEvent event) {
 			processEvent(event);
-			
-		}
+        }
 
 		public void instanceDestroyed(InstanceEvent event) {
 			processEvent(event);
 		}
 
 		private void processEvent(InstanceEvent event) {
-           
             Packet packet = createInstanceEventPacket(event);
             sendPacket(packet);
         }
@@ -396,6 +394,7 @@ public class ClientService {
     }
     private class ClientAddInstanceListenerHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
+//            System.out.println("Add listener");
         	ClientEndpoint endPoint = getClientEndpoint(packet.conn);
             node.factory.addInstanceListener(endPoint);
         }

@@ -36,7 +36,9 @@ public class TestClientApp {
 
     public void run() {
         final BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        message();
         while (true) {
+
             System.out.print("client > ");
             try {
                 final String command = in.readLine();
@@ -61,14 +63,20 @@ public class TestClientApp {
             connect(args);
         } else {
             if (hz == null) {
-                System.out.println("Make sure you started Hazelcast server first.");
-                System.out.println("You should connect first by typing 'connect <hazelcast-server-ip>'");
+                message();
                 return;
             } else {
                 System.out.println("Unknown command. Sample commands:");
                 System.out.println("connect 192.168.1.3");
             }
         }
+    }
+
+    private void message() {
+        System.out.println("Make sure you started Hazelcast server first.");
+        System.out.println("You should connect first by typing 'connect <hazelcast-server-ip> <group-name> <group-dev>'");
+        System.out.println("If group-name is 'dev' and password is 'dev-pass', 'connect <hazelcast-server-ip>' will be enough ");
+
     }
 
     private void connect(String[] args) {

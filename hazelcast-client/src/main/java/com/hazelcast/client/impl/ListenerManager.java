@@ -208,7 +208,8 @@ public class ListenerManager extends ClientRunnable{
 
     private void notifyInstanceListeners(Packet packet) {
     	String id = (String)toObject(packet.getKey());
-    	InstanceEvent event = new InstanceEvent((InstanceEventType)toObject(packet.getValue()), (Instance)client.getClientProxy(id));
+        InstanceEventType instanceEventType = (InstanceEventType)toObject(packet.getValue());
+    	InstanceEvent event = new InstanceEvent(instanceEventType, (Instance)client.getClientProxy(id));
     	for(Iterator<InstanceListener> it = instanceListeners.iterator();it.hasNext();){
     		InstanceListener listener = it.next();
     		if(InstanceEventType.CREATED.equals(event.getEventType())){
