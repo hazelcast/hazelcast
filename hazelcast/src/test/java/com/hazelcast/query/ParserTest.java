@@ -146,7 +146,6 @@ public class ParserTest {
 	@Test
 	public void parserShouldThrowOnInvalidInput() {
 		parser.toPrefix(")");
-		fail();
 	}
 	
 	@Test

@@ -92,7 +92,9 @@ class Parser {
                     while (openParanthesesFound(stack)) {
                         output.add(stack.remove(stack.size() - 1));
                     }
-                    stack.remove(stack.size() - 1);
+                    if(stack.size() > 0) { // temporarily fix for issue #189
+                        stack.remove(stack.size() - 1);
+                    }
                 } else {
                     while (openParanthesesFound(stack) && !hasHigherPrecedence(token, stack.get(stack.size() - 1))) {
                         output.add(stack.remove(stack.size() - 1));
