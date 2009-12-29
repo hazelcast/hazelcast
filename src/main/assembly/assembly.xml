@@ -46,14 +46,6 @@
                 <exclude>**/.svn/**</exclude>
             </excludes>
         </fileSet>
-        <!--<fileSet>-->
-            <!--<directory>target/classes/</directory>-->
-            <!--<outputDirectory>/bin/</outputDirectory>-->
-            <!--<includes>-->
-                <!--<include>*.bat</include>-->
-                <!--<include>*.sh</include>-->
-            <!--</includes>-->
-        <!--</fileSet>-->
         <fileSet>
             <directory>src/main/resources/</directory>
             <outputDirectory>/license/</outputDirectory>
