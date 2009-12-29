@@ -350,7 +350,7 @@ public class HazelcastClientMapTest {
     @Test
     public void addListenerAndMultiPut() throws InterruptedException, IOException {
         HazelcastClient hClient = getHazelcastClient();
-        final IMap<String, byte[]> map = hClient.getMap("addListener");
+        final IMap<String, byte[]> map = hClient.getMap("addListenerAndMultiPut");
         map.clear();
         int counter = 100;
         assertEquals(0, map.size());
@@ -365,7 +365,7 @@ public class HazelcastClientMapTest {
             many.put(""+i, new byte[i]);
         }
         map.putAll(many);
-        assertTrue(entryAddLatch.await(10, TimeUnit.MILLISECONDS));
+        assertTrue(entryAddLatch.await(10, TimeUnit.SECONDS));
 //        assertTrue(entryUpdatedLatch.await(10, TimeUnit.MILLISECONDS));
 //        assertTrue(entryRemovedLatch.await(10, TimeUnit.MILLISECONDS));
     }
