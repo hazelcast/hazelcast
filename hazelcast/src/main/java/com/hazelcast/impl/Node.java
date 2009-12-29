@@ -25,7 +25,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.config.Interfaces;
 import com.hazelcast.config.Join;
-import com.hazelcast.impl.MulticastService.JoinInfo;
 import com.hazelcast.nio.*;
 import com.hazelcast.query.QueryService;
 
