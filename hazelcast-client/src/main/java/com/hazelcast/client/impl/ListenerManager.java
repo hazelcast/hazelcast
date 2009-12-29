@@ -34,7 +34,7 @@ import com.hazelcast.client.ClientRunnable;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.Packet;
 import com.hazelcast.core.*;
-import com.hazelcast.core.EntryEvent.EntryEventType;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.InstanceEvent.InstanceEventType;
 
 import static com.hazelcast.client.Serializer.toObject;
