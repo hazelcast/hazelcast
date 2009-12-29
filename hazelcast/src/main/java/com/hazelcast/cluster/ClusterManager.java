@@ -317,6 +317,10 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         return lsMembersBefore;
     }
 
+    public boolean isNextOrPreviousChanged() {
+    	return isNextChanged() || isPreviousChanged();
+    }
+    
     public boolean isNextChanged() {
         Member nextMemberBefore = getNextMemberBeforeSync(thisAddress, true, 1);
         Member nextMemberNow = getNextMemberAfter(thisAddress, true, 1);

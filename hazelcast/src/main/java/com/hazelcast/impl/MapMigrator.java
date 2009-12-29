@@ -47,7 +47,7 @@ public class MapMigrator implements Runnable {
     public MapMigrator(ConcurrentMapManager concurrentMapManager) {
         this.concurrentMapManager = concurrentMapManager;
         this.node = concurrentMapManager.node;
-        this.BLOCK_COUNT = concurrentMapManager.BLOCK_COUNT;
+        this.BLOCK_COUNT = ConcurrentMapManager.BLOCK_COUNT;
         this.blocks = concurrentMapManager.blocks;
         this.thisAddress = concurrentMapManager.thisAddress;
     }
@@ -71,8 +71,9 @@ public class MapMigrator implements Runnable {
                     storageEnabledMemberCount++;
                 }
             }
-            if (storageEnabledMemberCount == 0)
+            if (storageEnabledMemberCount == 0) {
                 return;
+            }
             int aveBlockOwnCount = BLOCK_COUNT / (storageEnabledMemberCount);
             for (Block block : blocks) {
                 if (block.getOwner() == null) {
@@ -114,13 +115,18 @@ public class MapMigrator implements Runnable {
                     }
                 }
             }
+
             int addressIndex = 0;
+            
+            final Address [] addresses = addressBlocks.keySet().toArray(new Address[] {});
+            final int addressLength = addresses.length;
+            
             for (int i = 0; i < BLOCK_COUNT; i++) {
                 Block block = blocks[i];
                 if (block.getOwner() == null) {
                     block = new Block(block);
-                    int index = addressIndex++ % addressBlocks.size();
-                    block.setOwner((Address) addressBlocks.keySet().toArray()[index]);
+                    int index = addressIndex++ % addressLength;
+                    block.setOwner(addresses[index]);
                     lsBlocksToRedistribute.add(block);
                 }
             }
@@ -131,7 +137,7 @@ public class MapMigrator implements Runnable {
         if (!concurrentMapManager.isMaster()) {
             return;
         }
-        if (concurrentMapManager.lsMembers.size() < 2) {
+        if (concurrentMapManager.getMembers().size() < 2) {
             for (int i = 0; i < BLOCK_COUNT; i++) {
                 Block block = blocks[i];
                 if (block == null) {
@@ -203,7 +209,7 @@ public class MapMigrator implements Runnable {
         if (concurrentMapManager.isMaster()) {
             if (concurrentMapManager.isSuperClient()) {
                 MemberImpl nonSuperMember = null;
-                for (MemberImpl member : concurrentMapManager.lsMembers) {
+                for (MemberImpl member : concurrentMapManager.getMembers()) {
                     if (!member.isSuperClient()) {
                         nonSuperMember = member;
                     }
@@ -228,7 +234,7 @@ public class MapMigrator implements Runnable {
                 }
             }
             Data dataAllBlocks = null;
-            for (MemberImpl member : concurrentMapManager.lsMembers) {
+            for (MemberImpl member : concurrentMapManager.getMembers()) {
                 if (!member.localMember()) {
                     if (dataAllBlocks == null) {
                         ConcurrentMapManager.Blocks allBlocks = new ConcurrentMapManager.Blocks();
@@ -257,7 +263,9 @@ public class MapMigrator implements Runnable {
     }
 
     public void syncForDead(Address deadAddress) {
-        if (deadAddress == null || deadAddress.equals(thisAddress)) return;
+        if (deadAddress == null || deadAddress.equals(thisAddress)) {
+        	return;
+        }
         Set<Integer> blocksOwnedAfterDead = new HashSet<Integer>();
         for (Block block : blocks) {
             if (block != null) {
@@ -306,20 +314,18 @@ public class MapMigrator implements Runnable {
             for (Record record : records) {
                 if (record != null) {
                     concurrentMapManager.onDisconnect(record, deadAddress);
-                    if (record.isActive()) {
-                        if (blocksOwnedAfterDead.contains(record.getBlockId())) {
-                            map.markAsOwned(record);
-                            // you have to update the indexes
-                            // as if this record is new so extract the values first
-                            int valueHash = record.getValueHash();
-                            long[] indexes = record.getIndexes();
-                            byte[] indexTypes = record.getIndexTypes();
-                            // set the indexes to null, (new record)
-                            record.setValueHash(Integer.MIN_VALUE);
-                            record.setIndexes(null, null);
-                            // now update the index
-                            node.queryService.updateIndex(map.getName(), indexes, indexTypes, record, valueHash);
-                        }
+                    if (record.isActive() && blocksOwnedAfterDead.contains(record.getBlockId())) {
+                        map.markAsOwned(record);
+                        // you have to update the indexes
+                        // as if this record is new so extract the values first
+                        int valueHash = record.getValueHash();
+                        long[] indexes = record.getIndexes();
+                        byte[] indexTypes = record.getIndexTypes();
+                        // set the indexes to null, (new record)
+                        record.setValueHash(Integer.MIN_VALUE);
+                        record.setIndexes(null, null);
+                        // now update the index
+                        node.queryService.updateIndex(map.getName(), indexes, indexTypes, record, valueHash);
                     }
                 }
             }
@@ -328,9 +334,7 @@ public class MapMigrator implements Runnable {
     }
 
     void backupIfNextOrPreviousChanged() {
-        boolean nextOrPreviousChanged = node.clusterManager.isNextChanged()
-                || node.clusterManager.isPreviousChanged();
-        if (nextOrPreviousChanged) {
+        if (node.clusterManager.isNextOrPreviousChanged()) {
             List<Record> lsOwnedRecords = new ArrayList<Record>(1000);
             Collection<CMap> cmaps = concurrentMapManager.maps.values();
             for (final CMap cmap : cmaps) {
@@ -369,9 +373,12 @@ public class MapMigrator implements Runnable {
         blockReal.setOwner(block.getOwner());
         blockReal.setMigrationAddress(block.getMigrationAddress());
         logger.log(Level.FINEST, "migrate block " + block);
-        if (!node.isActive() || node.factory.restarted) return;
-        if (concurrentMapManager.isSuperClient())
+        if (!node.isActive() || node.factory.restarted) {
+        	return;
+        }
+        if (concurrentMapManager.isSuperClient()) {
             return;
+        }
         blockMigrating = block;
         List<Record> lsRecordsToMigrate = new ArrayList<Record>(1000);
         Collection<CMap> cmaps = concurrentMapManager.maps.values();
@@ -421,7 +428,7 @@ public class MapMigrator implements Runnable {
                             blockReal.setMigrationAddress(null);
                         }
                     });
-                    for (MemberImpl member : concurrentMapManager.lsMembers) {
+                    for (MemberImpl member : concurrentMapManager.getMembers()) {
                         if (!member.localMember()) {
                             boolean sent = false;
                             while (!sent) {
