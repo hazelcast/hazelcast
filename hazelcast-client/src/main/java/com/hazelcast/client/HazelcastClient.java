@@ -164,6 +164,7 @@ public class HazelcastClient implements HazelcastInstance{
 		ClientProxy proxy = mapProxies.get(o);
 		if(proxy==null){
 			synchronized (mapProxies) {
+                proxy = mapProxies.get(o);
 				if(proxy==null){
                     if(o instanceof String){
                         String name = (String)o;

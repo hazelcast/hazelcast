@@ -33,9 +33,7 @@ public abstract class IORunnable extends ClientRunnable{
 		this.client = client;
 		this.callMap = calls;
 	}
-	public void setCallMap(Map<Long, Call> calls) {
-		this.callMap = calls;
-	}
+    
 	public void interruptWaitingCalls() {
 		Collection<Call> cc = callMap.values();
 		List<Call> waitingCalls = new ArrayList<Call>();

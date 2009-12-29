@@ -17,19 +17,18 @@
 
 package com.hazelcast.client;
 
-import static com.hazelcast.client.Serializer.toObject;
-
 import java.util.concurrent.*;
+
+import static com.hazelcast.client.Serializer.toObject;
 
 public class FutureProxy<T> implements Future<T> {
     final Callable<T> callable;
     final ProxyHelper proxyHelper;
+    final BlockingQueue<Packet> queue = new LinkedBlockingQueue<Packet>();
     volatile boolean isDone = false;
     private T result;
-    BlockingQueue<Packet> queue = new LinkedBlockingQueue<Packet>();
 
-
-    public FutureProxy(ProxyHelper proxyHelper, Callable<T> callable){
+    public FutureProxy(ProxyHelper proxyHelper, Callable<T> callable) {
         this.proxyHelper = proxyHelper;
         this.callable = callable;
     }
@@ -52,18 +51,16 @@ public class FutureProxy<T> implements Future<T> {
         } catch (TimeoutException ignore) {
             return null;
         }
-
     }
 
     public T get(long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
-        if(result == null){
-            synchronized (this){
-                if(result==null){
+        if (result == null) {
+            synchronized (this) {
+                if (result == null) {
                     Packet packet = null;
-                    if(l<0){
+                    if (l < 0) {
                         packet = queue.take();
-                    }
-                    else{
+                    } else {
                         packet = queue.poll(l, timeUnit);
                     }
                     result = handleResult(packet);
@@ -71,21 +68,18 @@ public class FutureProxy<T> implements Future<T> {
             }
         }
         return result;
-
-
     }
 
     private T handleResult(Packet packet) throws ExecutionException {
         Object o = toObject(packet.getValue());
-        if(o instanceof ExecutionException){
+        if (o instanceof ExecutionException) {
             throw (ExecutionException) o;
-        }
-        else{
-            return (T)o;
+        } else {
+            return (T) o;
         }
     }
 
-    public void enqueue(Packet packet){
+    public void enqueue(Packet packet) {
         queue.offer(packet);
         isDone = true;
     }
