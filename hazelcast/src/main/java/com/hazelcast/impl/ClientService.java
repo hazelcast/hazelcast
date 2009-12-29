@@ -114,7 +114,7 @@ public class ClientService {
     class ClientEndpoint implements EntryListener, InstanceListener {
         final Connection conn;
         final private Map<Integer, CallContext> callContexts = new HashMap<Integer, CallContext>();
-        final Map<String, Map<Object, EntryEvent>> listeneds = new HashMap<String, Map<Object, EntryEvent>>();
+        final ConcurrentMap<String, ConcurrentMap<Object, EntryEvent>> listeneds = new ConcurrentHashMap<String, ConcurrentMap<Object, EntryEvent>>();
         final Map<String, MessageListener<Object>> messageListeners = new HashMap<String, MessageListener<Object>>();
 
         ClientEndpoint(Connection conn) {
@@ -139,15 +139,11 @@ public class ClientService {
             }
         }
 
-        private Map<Object, EntryEvent> getEventProcessedLog(String name) {
-            Map<Object, EntryEvent> eventProcessedLog = listeneds.get(name);
+        private ConcurrentMap<Object, EntryEvent> getEventProcessedLog(String name) {
+            ConcurrentMap<Object, EntryEvent> eventProcessedLog = listeneds.get(name);
             if (eventProcessedLog == null) {
-                synchronized (name) {
-                    if (eventProcessedLog == null) {
-                        eventProcessedLog = new HashMap<Object, EntryEvent>();
-                        listeneds.put(name, eventProcessedLog);
-                    }
-                }
+                eventProcessedLog = new ConcurrentHashMap<Object, EntryEvent>();
+                listeneds.putIfAbsent(name, eventProcessedLog);
             }
             return eventProcessedLog;
         }
@@ -185,14 +181,24 @@ public class ClientService {
             Packet packet = createInstanceEventPacket(event);
             sendPacket(packet);
         }
-		
+        
+        /**
+         * if a client is listening for both key and the entire
+         * map, then we should make sure that we don't send
+         * two separate events. One is enough. so check
+         * if we already sent one.
+         *
+         * called by executor service threads
+         * 
+         * @param event
+         */
         private void processEvent(EntryEvent event) {
+            final Object key = event.getKey();
             Map<Object, EntryEvent> eventProcessedLog = getEventProcessedLog(event.getName());
-            if (eventProcessedLog.get(event.getKey()) != null && eventProcessedLog.get(event.getKey()) == event) {
+            if (eventProcessedLog.get(key) != null && eventProcessedLog.get(key) == event) {
                 return;
             }
-            eventProcessedLog.put(event.getKey(), event);
-            Object key = listeneds.get(event.getName());
+            eventProcessedLog.put(key, event);
             Packet packet = createEntryEventPacket(event);
             sendPacket(packet);
         }
