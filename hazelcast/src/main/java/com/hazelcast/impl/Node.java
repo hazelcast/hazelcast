@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.cluster.JoinRequest;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigProperty;

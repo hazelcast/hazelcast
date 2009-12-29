@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.config.Config;
 import com.hazelcast.nio.Address;
 
@@ -79,11 +80,11 @@ public class MulticastService implements Runnable {
                     if (node.address != null && !node.address.equals(joinInfo.address)) {
                         if (node.validateJoinRequest(joinInfo)) {
                             if (node.master()) {
-                                if (joinInfo.request) {
+                                if (joinInfo.isRequest()) {
                                     send(joinInfo.copy(false, node.address));
                                 }
                             } else {
-                                if (!node.joined() && !joinInfo.request) {
+                                if (!node.joined() && !joinInfo.isRequest()) {
                                     if (node.masterAddress == null) {
                                         node.masterAddress = new Address(joinInfo.address);
                                     }
