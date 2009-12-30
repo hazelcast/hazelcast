@@ -24,9 +24,6 @@ import com.hazelcast.impl.base.Call;
 import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.nio.*;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -554,7 +551,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
         executeLocally(new Runnable() {
             public void run() {
-                List<MemberInfo> lsMemberInfos = membersUpdate.lsMemberInfos;
+                Collection<MemberInfo> lsMemberInfos = membersUpdate.getMemberInfos();
                 List<Address> newMemberList = new ArrayList<Address>(lsMemberInfos.size());
                 for (final MemberInfo memberInfo : lsMemberInfos) {
                     newMemberList.add(memberInfo.address);
@@ -597,14 +594,17 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         });
     }
 
-    void updateMembers(List<MemberInfo> lsMemberInfos) {
+    void updateMembers(Collection<MemberInfo> lsMemberInfos) {
         logger.log(Level.FINEST, "MEMBERS UPDATE!!");
+        
+        // Copy lsMembers to lsMembersBefore
         lsMembersBefore.clear();
         Map<Address, MemberImpl> mapOldMembers = new HashMap<Address, MemberImpl>();
         for (MemberImpl member : lsMembers) {
             lsMembersBefore.add(member);
             mapOldMembers.put(member.getAddress(), member);
         }
+        
         lsMembers.clear();
         for (MemberInfo memberInfo : lsMemberInfos) {
             MemberImpl member = mapOldMembers.get(memberInfo.address);
@@ -666,37 +666,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         return initialProcess;
     }
 
-    public static class InitialProcess extends AbstractRemotelyProcessable {
-        List<AbstractRemotelyProcessable> lsProcessables = new ArrayList<AbstractRemotelyProcessable>(10);
-
-        public List<AbstractRemotelyProcessable> getProcessables() {
-            return lsProcessables;
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            int size = lsProcessables.size();
-            out.writeInt(size);
-            for (int i = 0; i < size; i++) {
-                writeObject(out, lsProcessables.get(i));
-            }
-        }
-
-        public void readData(DataInput in) throws IOException {
-            int size = in.readInt();
-            for (int i = 0; i < size; i++) {
-                lsProcessables.add((AbstractRemotelyProcessable) readObject(in));
-            }
-        }
-
-        public void process() {
-            for (AbstractRemotelyProcessable processable : lsProcessables) {
-                processable.setConnection(getConnection());
-                processable.setNode(getNode());
-                processable.process();
-            }
-        }
-    }
-
     public void connectionAdded(final Connection connection) {
         enqueueAndReturn(new Processable() {
             public void process() {
@@ -726,8 +695,9 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         logger.log(Level.FINEST, "ClusterManager adding " + member);
         if (lsMembers.contains(member)) {
             for (MemberImpl m : lsMembers) {
-                if (m.equals(member))
+                if (m.equals(member)) {
                     member = m;
+                }
             }
         } else {
             if (!member.getAddress().equals(thisAddress)) {
@@ -760,8 +730,9 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             return null;
         }
         MemberImpl member = getMember(address);
-        if (member == null)
+        if (member == null) {
             member = createMember(address, nodeType);
+        }
         addMember(member);
         return member;
     }

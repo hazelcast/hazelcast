@@ -23,63 +23,71 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.Collections;
 
 public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
 
-    public List<MemberInfo> lsMemberInfos = null;
+	private static final long serialVersionUID = -2311579721761844861L;
+	
+	private Collection<MemberInfo> memberInfos;
 
     public MembersUpdateCall() {
+    	memberInfos = new ArrayList<MemberInfo>();
     }
 
-    public MembersUpdateCall(List<MemberImpl> lsMembers) {
-        int size = lsMembers.size();
-        lsMemberInfos = new ArrayList<MemberInfo>(size);
-        for (int i = 0; i < size; i++) {
-            MemberImpl member = lsMembers.get(i);
-            lsMemberInfos.add(new MemberInfo(member.getAddress(), member.getNodeType()));
+    public MembersUpdateCall(Collection<MemberImpl> lsMembers) {
+    	memberInfos = new ArrayList<MemberInfo>(lsMembers.size());
+        for (MemberImpl member : lsMembers) {
+        	memberInfos.add(new MemberInfo(member.getAddress(), member.getNodeType()));
         }
     }
 
     public Boolean call() {
-        node.clusterManager.updateMembers(lsMemberInfos);
+        node.clusterManager.updateMembers(getMemberInfos());
         return Boolean.TRUE;
     }
 
-    public void addMemberInfo(MemberInfo address) {
-        if (!lsMemberInfos.contains(address)) {
-            lsMemberInfos.add(address);
-        }
+    public void addMemberInfo(MemberInfo memberInfo) {
+    	if(!memberInfos.contains(memberInfo)) {
+           	memberInfos.add(memberInfo);
+    	}
     }
 
     @Override
     public void readData(DataInput in) throws IOException {
         int size = in.readInt();
-        lsMemberInfos = new ArrayList<MemberInfo>(size);
-        for (int i = 0; i < size; i++) {
+        memberInfos = new ArrayList<MemberInfo>(size);
+        while (size-- > 0) {
             MemberInfo memberInfo = new MemberInfo();
             memberInfo.readData(in);
-            lsMemberInfos.add(memberInfo);
+            memberInfos.add(memberInfo);
         }
     }
 
     @Override
     public void writeData(DataOutput out) throws IOException {
-        int size = lsMemberInfos.size();
-        out.writeInt(size);
-        for (int i = 0; i < size; i++) {
-            MemberInfo memberInfo = lsMemberInfos.get(i);
+        out.writeInt(memberInfos.size());
+        for(MemberInfo memberInfo : memberInfos) {
             memberInfo.writeData(out);
         }
     }
 
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer("MembersUpdateCall {");
-        for (MemberInfo address : lsMemberInfos) {
-            sb.append("\n").append(address);
+        StringBuilder sb = new StringBuilder("MembersUpdateCall {\n");
+        for (MemberInfo address : memberInfos) {
+            sb.append(address).append('\n');
         }
-        sb.append("\n}");
+        sb.append('}');
         return sb.toString();
     }
+
+	/**
+	 * @return the lsMemberInfos
+	 */
+	public Collection<MemberInfo> getMemberInfos() {
+		return Collections.unmodifiableCollection(memberInfos);
+	}
 }
+
