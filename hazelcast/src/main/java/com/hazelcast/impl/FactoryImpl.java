@@ -1091,49 +1091,6 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    public static abstract class BaseCollection extends AbstractCollection implements List {
-
-        public void add(int index, Object element) {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean addAll(int index, Collection c) {
-            throw new UnsupportedOperationException();
-        }
-
-        public Object get(int index) {
-            throw new UnsupportedOperationException();
-        }
-
-        public int indexOf(Object o) {
-            throw new UnsupportedOperationException();
-        }
-
-        public int lastIndexOf(Object o) {
-            throw new UnsupportedOperationException();
-        }
-
-        public ListIterator listIterator() {
-            throw new UnsupportedOperationException();
-        }
-
-        public ListIterator listIterator(int index) {
-            throw new UnsupportedOperationException();
-        }
-
-        public Object remove(int index) {
-            throw new UnsupportedOperationException();
-        }
-
-        public Object set(int index, Object element) {
-            throw new UnsupportedOperationException();
-        }
-
-        public List subList(int fromIndex, int toIndex) {
-            throw new UnsupportedOperationException();
-        }
-    }
-
     public static class QProxyImpl extends AbstractQueue implements QProxy, HazelcastInstanceAwareInstance, DataSerializable {
         private transient QProxy qproxyReal = null;
         private transient FactoryImpl factory = null;
