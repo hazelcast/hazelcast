@@ -1142,45 +1142,6 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    interface QProxy extends IQueue {
-
-        boolean offer(Object obj);
-
-        boolean offer(Object obj, long timeout, TimeUnit unit) throws InterruptedException;
-
-        void put(Object obj) throws InterruptedException;
-
-        Object peek();
-
-        Object poll();
-
-        Object poll(long timeout, TimeUnit unit) throws InterruptedException;
-
-        Object take() throws InterruptedException;
-
-        int remainingCapacity();
-
-        Iterator iterator();
-
-        int size();
-
-        void addItemListener(ItemListener listener, boolean includeValue);
-
-        void removeItemListener(ItemListener listener);
-
-        String getName();
-
-        boolean remove(Object obj);
-
-        int drainTo(Collection c);
-
-        int drainTo(Collection c, int maxElements);
-
-        void destroy();
-
-        InstanceType getInstanceType();
-    }
-
     public static class QProxyImpl extends AbstractQueue implements QProxy, HazelcastInstanceAwareInstance, DataSerializable {
         private transient QProxy qproxyReal = null;
         private transient FactoryImpl factory = null;
