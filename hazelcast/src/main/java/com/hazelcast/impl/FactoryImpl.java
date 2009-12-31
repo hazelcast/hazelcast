@@ -759,10 +759,6 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    interface TopicProxy extends ITopic, Instance {
-
-    }
-
     public static class TopicProxyImpl extends FactoryAwareNamedProxy implements TopicProxy, DataSerializable {
         private transient TopicProxy base = null;
         private TopicManager topicManager = null;
@@ -883,10 +879,6 @@ public class FactoryImpl implements HazelcastInstance {
                 return name;
             }
         }
-    }
-
-    interface CollectionProxy extends IRemoveAwareProxy, ISet, IList {
-
     }
 
     public static class CollectionProxyImpl extends BaseCollection implements CollectionProxy, HazelcastInstanceAwareInstance, DataSerializable {
@@ -1702,16 +1694,6 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    interface IRemoveAwareProxy {
-
-        boolean removeKey(Object key);
-    }
-
-    public interface IGetAwareProxy {
-
-        Object get(Object key);
-    }
-
     private static void check(Object obj) {
         if (obj == null) {
             throw new NullPointerException("Object cannot be null.");
@@ -2418,9 +2400,6 @@ public class FactoryImpl implements HazelcastInstance {
                 return mevict.evict(name, key);
             }
         }
-    }
-
-    interface HazelcastInstanceAwareInstance extends Instance, HazelcastInstanceAware {
     }
 
     static abstract class FactoryAwareNamedProxy implements HazelcastInstanceAwareInstance, DataSerializable {

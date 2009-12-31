@@ -11,8 +11,8 @@ import java.io.IOException;
 import java.util.Map;
 
 import com.hazelcast.impl.FactoryImpl;
+import com.hazelcast.impl.IGetAwareProxy;
 import com.hazelcast.impl.MProxy;
-import com.hazelcast.impl.FactoryImpl.IGetAwareProxy;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 
@@ -71,7 +71,7 @@ public class KeyValue implements Map.Entry, DataSerializable {
             if (value != null) {
                 objValue = toObject(value);
             } else {
-                objValue = ((FactoryImpl.IGetAwareProxy) factory.getOrCreateProxyByName(name)).get((key == null) ? getKey() : key);
+                objValue = ((IGetAwareProxy) factory.getOrCreateProxyByName(name)).get((key == null) ? getKey() : key);
             }
         }
         return objValue;

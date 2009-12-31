@@ -2017,7 +2017,7 @@ public final class ConcurrentMapManager extends BaseManager {
                         ((MultiMap) node.factory.getOrCreateProxyByName(name)).remove(entry.getKey(), entry.getValue());
                     }
                 } else {
-                    ((FactoryImpl.IRemoveAwareProxy) node.factory.getOrCreateProxyByName(name)).removeKey(entry.getKey());
+                    ((IRemoveAwareProxy) node.factory.getOrCreateProxyByName(name)).removeKey(entry.getKey());
                 }
                 it.remove();
             }

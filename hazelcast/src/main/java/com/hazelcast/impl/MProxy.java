@@ -7,8 +7,6 @@ import java.util.Set;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Instance.InstanceType;
-import com.hazelcast.impl.FactoryImpl.IGetAwareProxy;
-import com.hazelcast.impl.FactoryImpl.IRemoveAwareProxy;
 
 public interface MProxy extends IMap, IRemoveAwareProxy, IGetAwareProxy {
     String getLongName();
