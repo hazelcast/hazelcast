@@ -179,7 +179,7 @@ public abstract class BaseManager {
             }
 
             public Object setValue(Object newValue) {
-                return ((FactoryImpl.MProxy) factory.getOrCreateProxyByName(name)).put(key, newValue);
+                return ((MProxy) factory.getOrCreateProxyByName(name)).put(key, newValue);
             }
 
             @Override

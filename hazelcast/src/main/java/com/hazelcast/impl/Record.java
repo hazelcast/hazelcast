@@ -535,7 +535,7 @@ public class Record implements MapEntry {
         }
 
         public Object setValue(Object value) {
-            FactoryImpl.MProxy proxy = (FactoryImpl.MProxy) record.factory.getOrCreateProxyByName(record.getName());
+            MProxy proxy = (MProxy) record.factory.getOrCreateProxyByName(record.getName());
             return proxy.put(getKey(), value);
         }
 

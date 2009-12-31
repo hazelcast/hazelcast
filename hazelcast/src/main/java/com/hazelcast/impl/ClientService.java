@@ -23,7 +23,6 @@ import com.hazelcast.impl.BaseManager.EventTask;
 import com.hazelcast.impl.ConcurrentMapManager.Entries;
 import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl;
 import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl.CollectionProxyReal;
-import com.hazelcast.impl.FactoryImpl.MProxy;
 import com.hazelcast.impl.base.KeyValue;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;

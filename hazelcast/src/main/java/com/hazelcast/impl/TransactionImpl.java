@@ -21,7 +21,6 @@ import com.hazelcast.core.Transaction;
 import com.hazelcast.core.Instance;
 import com.hazelcast.impl.BlockingQueueManager.CommitPoll;
 import com.hazelcast.impl.BlockingQueueManager.Offer;
-import com.hazelcast.impl.FactoryImpl.MProxy;
 
 import java.util.ArrayList;
 import java.util.List;

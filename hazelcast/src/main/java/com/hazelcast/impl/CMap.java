@@ -1241,7 +1241,7 @@ public class CMap {
         public Object getValue() {
             if (value == null) {
                 FactoryImpl factory = (FactoryImpl) hazelcastInstance;
-                value = ((FactoryImpl.MProxy) factory.getOrCreateProxyByName(name)).get(key);
+                value = ((MProxy) factory.getOrCreateProxyByName(name)).get(key);
             }
             return value;
         }
@@ -1249,7 +1249,7 @@ public class CMap {
         public Object setValue(Object value) {
             Object oldValue = this.value;
             FactoryImpl factory = (FactoryImpl) hazelcastInstance;
-            ((FactoryImpl.MProxy) factory.getOrCreateProxyByName(name)).put(key, value);
+            ((MProxy) factory.getOrCreateProxyByName(name)).put(key, value);
             return oldValue;
         }
 

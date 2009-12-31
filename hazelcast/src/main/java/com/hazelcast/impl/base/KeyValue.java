@@ -11,8 +11,8 @@ import java.io.IOException;
 import java.util.Map;
 
 import com.hazelcast.impl.FactoryImpl;
+import com.hazelcast.impl.MProxy;
 import com.hazelcast.impl.FactoryImpl.IGetAwareProxy;
-import com.hazelcast.impl.FactoryImpl.MProxy;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 
@@ -80,7 +80,7 @@ public class KeyValue implements Map.Entry, DataSerializable {
     public Object setValue(Object newValue) {
         if (name == null) throw new UnsupportedOperationException();
         this.objValue = value;
-        return ((FactoryImpl.MProxy) factory.getOrCreateProxyByName(name)).put(key, newValue);
+        return ((MProxy) factory.getOrCreateProxyByName(name)).put(key, newValue);
     }
 
     public void setName(FactoryImpl factoryImpl, String name) {
