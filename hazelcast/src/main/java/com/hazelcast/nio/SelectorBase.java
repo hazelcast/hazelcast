@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class SelectorBase implements Runnable {
+public abstract class SelectorBase implements Runnable {
 
     protected final Logger logger = Logger.getLogger(this.getClass().getName());
 
@@ -40,18 +40,17 @@ public class SelectorBase implements Runnable {
 
     protected final Queue<Runnable> selectorQueue = new ConcurrentLinkedQueue<Runnable>();
 
+    protected final Node node;
+
     protected volatile boolean live = true;
 
-    protected int waitTime = 16;
+    private final int waitTime;
 
-    AtomicInteger size = new AtomicInteger();
+    protected final AtomicInteger size = new AtomicInteger();
 
-    final Node node;
-
-    public SelectorBase(Node node) {
+    public SelectorBase(Node node, int waitTime) {
         this.node = node;
-        selectorQueue.clear();
-        size.set(0);
+        this.waitTime = waitTime;
         Selector selectorTemp = null;
         try {
             selectorTemp = Selector.open();
@@ -84,16 +83,7 @@ public class SelectorBase implements Runnable {
         return size.incrementAndGet();
     }
 
-    public void processSelectionQueue() {
-        while (live) {
-            final Runnable runnable = selectorQueue.poll();
-            if (runnable == null) {
-                return;
-            }
-            runnable.run();
-            size.decrementAndGet();
-        }
-    }
+    abstract void processSelectionQueue() ;
 
     public void run() {
         while (live) {

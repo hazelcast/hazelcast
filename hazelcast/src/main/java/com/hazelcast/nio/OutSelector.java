@@ -26,19 +26,30 @@ import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class OutSelector extends SelectorBase {
+public final class OutSelector extends SelectorBase {
 
     protected final Logger logger = Logger.getLogger(OutSelector.class.getName());
 
     public OutSelector(Node node) {
-        super(node);
-        super.waitTime = 1;
+        super(node, 1);
     }
 
     public void connect(final Address address) {
         logger.log(Level.FINEST, "connect to " + address);
         final Connector connector = new Connector(address);
         this.addTask(connector);
+    }
+
+
+    public void processSelectionQueue() {
+        while (live) {
+            final Runnable runnable = selectorQueue.poll();
+            if (runnable == null) {
+                return;
+            }
+            runnable.run();
+            size.decrementAndGet();
+        }
     }
 
     private class Connector implements Runnable, SelectionHandler {

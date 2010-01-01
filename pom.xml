@@ -52,6 +52,35 @@
         </resources>
 
         <plugins>
+
+      <plugin>
+        <groupId>com.agilejava.docbkx</groupId>
+        <artifactId>docbkx-maven-plugin</artifactId>
+<executions>
+          <execution>
+            <goals>
+              <goal>generate-html</goal>
+            </goals>
+            <phase>generate-sources</phase>
+          </execution>
+        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>org.docbook</groupId>
+            <artifactId>docbook-xml</artifactId>
+            <version>4.4</version>
+            <scope>runtime</scope>
+          </dependency>
+        </dependencies>
+         <configuration>
+		<xincludeSupported>true</xincludeSupported>
+		<generateSectionTocLevel>true</generateSectionTocLevel>
+		<sectionAutolabel>true</sectionAutolabel>
+		<chapterAutolabel>true</chapterAutolabel>
+          <highlightSource>true</highlightSource>
+
+	</configuration>
+      </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

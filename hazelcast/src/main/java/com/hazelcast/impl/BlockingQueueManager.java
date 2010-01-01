@@ -580,7 +580,7 @@ public class BlockingQueueManager extends BaseManager {
             return size;
         }
 
-        class MGetSize extends MigrationAwareTargettedCall {
+        class MGetSize extends MigrationAwareTargetedCall {
             public MGetSize(Address target) {
                 this.target = target;
                 request.reset();
@@ -750,7 +750,7 @@ public class BlockingQueueManager extends BaseManager {
                 Packet packet = obtainPacket();
                 packet.name = name;
                 packet.operation = getOperation();
-                packet.callId = getId();
+                packet.callId = getCallId();
                 packet.blockId = blockId;
                 packet.timeout = 0;
                 packet.longValue = index;
@@ -805,13 +805,13 @@ public class BlockingQueueManager extends BaseManager {
             Data value = packet.value;
             int indexRead = (int) packet.longValue;
             setResponse(value, indexRead);
-            removeCall(getId());
+            removeCall(getCallId());
             packet.returnToContainer();
         }
 
         @Override
         public void onDisconnect(Address dead) {
-            removeCall(getId());
+            removeCall(getCallId());
             enqueueAndReturn(Read.this);
         }
 
@@ -828,7 +828,7 @@ public class BlockingQueueManager extends BaseManager {
                 Packet packet = obtainPacket();
                 packet.name = name;
                 packet.operation = getOperation();
-                packet.callId = getId();
+                packet.callId = getCallId();
                 packet.blockId = blockId;
                 packet.timeout = 0;
                 packet.longValue = index;
@@ -845,7 +845,7 @@ public class BlockingQueueManager extends BaseManager {
         }
     }
 
-    class Offer extends BooleanOp {
+    class Offer extends TargetAwareOp {
 
         int doCount = 1;
 

@@ -97,7 +97,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
         }
     }
 
-    void enqueueFullPacket(final Packet p) {
+    public void enqueueFullPacket(final Packet p) {
         p.flipBuffers();
         p.read();
         p.setFromConnection(connection);
@@ -245,7 +245,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
         registerOp(inSelector.selector, SelectionKey.OP_READ);
     }
 
-    private Packet obtainReadable() {
+    public Packet obtainReadable() {
         final Packet packet = ThreadContext.get().getPacketPool().obtain();
         packet.reset();
         packet.local = false;

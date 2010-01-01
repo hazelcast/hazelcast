@@ -9,11 +9,11 @@ import com.hazelcast.nio.Packet;
 
 public interface Call extends Processable {
 
-    long getId();
+    long getCallId();
 
     void handleResponse(Packet packet);
 
     void onDisconnect(Address dead);
 
-    void setId(long id);
+    void setCallId(long id);
 }

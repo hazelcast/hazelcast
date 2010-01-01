@@ -19,25 +19,25 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.RemotelyProcessable;
 import com.hazelcast.core.EntryEvent;
-import static com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.core.Member;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
-import static com.hazelcast.impl.Constants.ResponseTypes.*;
-
-import com.hazelcast.impl.base.AddressAwareException;
-import com.hazelcast.impl.base.Call;
-import com.hazelcast.impl.base.EventQueue;
-import com.hazelcast.impl.base.PacketProcessor;
-import com.hazelcast.impl.base.RequestHandler;
+import com.hazelcast.impl.base.*;
 import com.hazelcast.nio.*;
-import static com.hazelcast.nio.IOUtil.*;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.hazelcast.core.Instance.InstanceType;
+import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
+import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
+import static com.hazelcast.impl.Constants.ResponseTypes.*;
+import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public abstract class BaseManager {
 
@@ -196,30 +196,30 @@ public abstract class BaseManager {
     }
 
     abstract class AbstractCall implements Call {
-        private long id = -1;
+        private long callId = -1;
 
         public AbstractCall() {
         }
 
-        public long getId() {
-            return id;
+        public long getCallId() {
+            return callId;
         }
 
         public void onDisconnect(final Address dead) {
         }
 
         public void redo() {
-            removeCall(getId());
-            id = -1;
+            removeCall(getCallId());
+            callId = -1;
             enqueueAndReturn(this);
         }
 
-        public void setId(final long id) {
-            this.id = id;
+        public void setCallId(final long callId) {
+            this.callId = callId;
         }
 
         public void reset() {
-            id = -1;
+            callId = -1;
         }
     }
 
@@ -345,7 +345,7 @@ public abstract class BaseManager {
 
         @Override
         public void redo() {
-            removeCall(getId());
+            removeCall(getCallId());
             responses.clear();
             responses.add(OBJECT_REDO);
         }
@@ -401,7 +401,7 @@ public abstract class BaseManager {
         }
 
         public Object objectCall() {
-            request.setObjectRequest();            
+            request.setObjectRequest();
             doOp();
             return getResultAsObject();
         }
@@ -446,6 +446,7 @@ public abstract class BaseManager {
     }
 
     public abstract class ResponseQueueCall extends RequestBasedCall {
+
         private final BlockingQueue responses = new ArrayBlockingQueue(1);
 
         public ResponseQueueCall() {
@@ -499,8 +500,11 @@ public abstract class BaseManager {
                     throw new RuntimeException(e);
                 }
                 if (request.redoCount > 15) {
-                    logger.log(Level.INFO, request.name + " Re-doing [" + request.redoCount + "] times! " + this);
-                    logger.log(Level.INFO, "\t key= " + request.key + ", req.operation: " + request.operation);
+                    StringBuffer sb = new StringBuffer();
+                    sb.append("callId= " + getCallId() + ", thisAddress= " + thisAddress + ", target= " + getTarget());
+                    sb.append("\n\t");
+                    sb.append(request.operation + " Re-doing [" + request.redoCount + "] times! " + request.name);
+                    logger.log(Level.INFO, sb.toString());
                 }
                 beforeRedo();
                 doOp();
@@ -509,16 +513,20 @@ public abstract class BaseManager {
             return result;
         }
 
+        protected Address getTarget() {
+            return thisAddress;
+        }
+
         @Override
         public void redo() {
-            removeCall(getId());
+            removeCall(getCallId());
             responses.clear();
             setResult(OBJECT_REDO);
         }
 
         public void reset() {
-            if (getId() != -1) {
-                removeCall(getId());
+            if (getCallId() != -1) {
+                removeCall(getCallId());
             }
             super.reset();
             responses.clear();
@@ -556,7 +564,7 @@ public abstract class BaseManager {
         }
 
         protected void handleNoneRedoResponse(final Packet packet) {
-            removeCall(getId());
+            removeCall(getCallId());
             if (request.isBooleanRequest()) {
                 handleBooleanNoneRedoResponse(packet);
             } else if (request.isLongRequest()) {
@@ -575,14 +583,6 @@ public abstract class BaseManager {
                 responses.add(obj);
             }
         }
-    }
-
-    public abstract class BooleanOp extends TargetAwareOp {
-
-    }
-
-    abstract class LongOp extends TargetAwareOp {
-
     }
 
     public abstract class TargetAwareOp extends ResponseQueueCall {
@@ -637,7 +637,7 @@ public abstract class BaseManager {
             addCall(TargetAwareOp.this);
             final Packet packet = obtainPacket();
             request.setPacket(packet);
-            packet.callId = getId();
+            packet.callId = getCallId();
             final boolean sent = send(packet, target);
             if (!sent) {
                 logger.log(Level.FINEST, TargetAwareOp.this + " Packet cannot be sent to " + target);
@@ -657,6 +657,11 @@ public abstract class BaseManager {
         }
 
         public abstract void setTarget();
+
+        @Override
+        public Address getTarget() {
+            return target;
+        }
 
         public boolean isMigrationAware() {
             return false;
@@ -734,7 +739,7 @@ public abstract class BaseManager {
         }
     }
 
-    abstract class MigrationAwareTargettedCall extends TargetAwareOp {
+    abstract class MigrationAwareTargetedCall extends TargetAwareOp {
 
         public void onDisconnect(final Address dead) {
             redo();
@@ -799,7 +804,7 @@ public abstract class BaseManager {
 
     public long addCall(final Call call) {
         final long id = localIdGen.incrementAndGet();
-        call.setId(id);
+        call.setCallId(id);
         mapCalls.put(id, call);
         return id;
     }
@@ -807,7 +812,7 @@ public abstract class BaseManager {
     public Call removeCall(final Long id) {
         Call callRemoved = mapCalls.remove(id);
         if (callRemoved != null) {
-            callRemoved.setId(-1);
+            callRemoved.setCallId(-1);
         }
         return callRemoved;
     }
@@ -1175,7 +1180,7 @@ public abstract class BaseManager {
     }
 
     void handleListenerRegistrations(final boolean add, final String name, final Data key,
-                                      final Address address, final boolean includeValue) {
+                                     final Address address, final boolean includeValue) {
         if (name.startsWith("q:")) {
             node.blockingQueueManager.handleListenerRegistrations(add, name, key, address,
                     includeValue);

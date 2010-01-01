@@ -27,7 +27,7 @@ import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class InSelector extends SelectorBase {
+public final class InSelector extends SelectorBase {
 
     final Logger logger = Logger.getLogger(InSelector.class.getName());
 
@@ -36,8 +36,7 @@ public class InSelector extends SelectorBase {
     final SelectionKey key;
 
     public InSelector(Node node, ServerSocketChannel serverSocketChannel) {
-        super(node);
-        this.waitTime = 64;
+        super(node, 64);
         this.serverSocketChannel = serverSocketChannel;
         SelectionKey sKey = null;
         try {
@@ -49,6 +48,17 @@ public class InSelector extends SelectorBase {
         logger.log(Level.FINEST, "Started Selector at "
                 + serverSocketChannel.socket().getLocalPort());
         selector.wakeup();
+    }
+
+    public void processSelectionQueue() {
+        while (live) {
+            final Runnable runnable = selectorQueue.poll();
+            if (runnable == null) {
+                return;
+            }
+            runnable.run();
+            size.decrementAndGet();
+        }
     }
 
     @Override

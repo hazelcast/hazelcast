@@ -459,7 +459,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
     }
 
-    public class AsyncRemotelyBooleanCallable extends BooleanOp {
+    public class AsyncRemotelyBooleanCallable extends TargetAwareOp {
         AbstractRemotelyCallable<Boolean> arp = null;
 
         public void executeProcess(Address address, AbstractRemotelyCallable<Boolean> arp) {
@@ -467,9 +467,11 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             super.target = address;
             arp.setNode(node);
             setLocal(ClusterOperation.REMOTELY_CALLABLE_BOOLEAN, "call", null, arp, 0, -1);
+            request.setBooleanRequest();
             doOp();
         }
 
+        @Override
         public Address getTarget() {
             return target;
         }
@@ -477,7 +479,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         @Override
         public void onDisconnect(final Address dead) {
             if (dead.equals(target)) {
-                removeCall(getId());
+                removeCall(getCallId());
                 setResult(Boolean.FALSE);
             }
         }

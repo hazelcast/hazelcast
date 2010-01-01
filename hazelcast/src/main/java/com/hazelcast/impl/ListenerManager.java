@@ -132,7 +132,7 @@ public class ListenerManager extends BaseManager {
             return Boolean.TRUE;
         }
 
-        class AddListenerAtTarget extends MigrationAwareTargettedCall {
+        class AddListenerAtTarget extends MigrationAwareTargetedCall {
             public AddListenerAtTarget(Address target) {
                 this.target = target;
                 request.reset();

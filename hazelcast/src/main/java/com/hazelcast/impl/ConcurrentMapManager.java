@@ -48,7 +48,8 @@ import static com.hazelcast.core.Instance.InstanceType;
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
-import static com.hazelcast.nio.IOUtil.*;
+import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public final class ConcurrentMapManager extends BaseManager {
     static final int BLOCK_COUNT = ConfigProperty.CONCURRENT_MAP_BLOCK_COUNT.getInteger(271);
@@ -311,7 +312,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void setTarget() {
-            target = getTarget(request.key);
+            target = getKeyOwner(request.key);
             if (target == null) {
                 Block block = blocks[(request.blockId)];
                 if (block != null) {
@@ -340,6 +341,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class MGet extends MTargetAwareOp {
         Object key = null;
+        MapNearCache cache = null;
 
         public Object get(String name, Object key, long timeout) {
             this.key = key;
@@ -350,7 +352,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     return txn.get(name, key);
                 }
             }
-            MapNearCache cache = mapCaches.get(name);
+            cache = mapCaches.get(name);
             if (cache != null) {
                 Object value = cache.get(key);
                 if (value != null) {
@@ -372,12 +374,10 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
-        public void handleNoneRedoResponse(Packet packet) {
-            Data value = packet.value;
-            if (value != null && value.size() > 0) {
-                CMap cmap = getOrCreateMap(request.name);
-                MapNearCache cache = cmap.mapNearCache;
-                if (cache != null) {
+        public final void handleNoneRedoResponse(Packet packet) {
+            if (cache != null) {
+                Data value = packet.value;
+                if (value != null && value.size() > 0) {
                     cache.put(this.key, request.key, packet.value);
                 }
             }
@@ -852,7 +852,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    abstract class MMigrationAwareTargettedCall extends MigrationAwareTargettedCall {
+    abstract class MMigrationAwareTargetedCall extends MigrationAwareTargetedCall {
 
         @Override
         public void process() {
@@ -871,12 +871,8 @@ public final class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void setTarget() {
-            setTargetBasedOnKey();
-        }
-
-        final void setTargetBasedOnKey() {
             if (target == null) {
-                target = getTarget(request.key);
+                target = getKeyOwner(request.key);
             }
         }
     }
@@ -885,10 +881,6 @@ public final class ConcurrentMapManager extends BaseManager {
                       final int eventType, final Record record) {
         checkServiceThread();
         fireMapEvent(mapListeners, name, eventType, record.getKey(), record.getValue(), record.getMapListeners());
-    }
-
-    public Address getKeyOwner(Data key) {
-        return getTarget(key);
     }
 
     public class MContainsValue extends MultiCall {
@@ -921,7 +913,7 @@ public final class ConcurrentMapManager extends BaseManager {
             return contains;
         }
 
-        class MGetContainsValue extends MMigrationAwareTargettedCall {
+        class MGetContainsValue extends MMigrationAwareTargetedCall {
             public MGetContainsValue(Address target) {
                 this.target = target;
                 request.reset();
@@ -958,7 +950,7 @@ public final class ConcurrentMapManager extends BaseManager {
             @Override
             public void onDisconnect(final Address dead) {
                 if (dead.equals(target)) {
-                    removeCall(getId());
+                    removeCall(getCallId());
                     setResult(Boolean.TRUE);
                 }
             }
@@ -999,7 +991,7 @@ public final class ConcurrentMapManager extends BaseManager {
             return size;
         }
 
-        class MGetSize extends MMigrationAwareTargettedCall {
+        class MGetSize extends MMigrationAwareTargetedCall {
             public MGetSize(Address target) {
                 this.target = target;
                 request.reset();
@@ -1068,7 +1060,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MGetEntries extends MMigrationAwareTargettedCall {
+    class MGetEntries extends MMigrationAwareTargetedCall {
         public MGetEntries(Address target, ClusterOperation operation, String name, Predicate predicate) {
             this.target = target;
             request.reset();
@@ -1080,7 +1072,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    Address getTarget(Data key) {
+    public Address getKeyOwner(Data key) {
         checkServiceThread();
         int blockId = getBlockId(key);
         Block block = blocks[blockId];
@@ -1099,13 +1091,6 @@ public final class ConcurrentMapManager extends BaseManager {
 
     @Override
     public boolean isMigrating(Request req) {
-//        if (migrating && req.key != null) {
-//            CMap cmap = getMap(req.name);
-//            if (cmap != null && cmap.getRecord(req.key) != null) {
-//                return false;
-//            }
-//        }
-//        return migrating;
         return mapMigrator.isMigrating(req);
     }
 
@@ -1166,7 +1151,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     @Override
     void handleListenerRegistrations(boolean add, String name, Data key,
-                                      Address address, boolean includeValue) {
+                                     Address address, boolean includeValue) {
         CMap cmap = getOrCreateMap(name);
         if (add) {
             cmap.addListener(key, address, includeValue);
@@ -1174,7 +1159,6 @@ public final class ConcurrentMapManager extends BaseManager {
             cmap.removeListener(key, address);
         }
     }
-
     // master should call this method
 
     boolean sendBlockInfo(Block block, Address address) {
@@ -1284,7 +1268,7 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     boolean rightRemoteTarget(Packet packet) {
-        boolean right = thisAddress.equals(getTarget(packet.key));
+        boolean right = thisAddress.equals(getKeyOwner(packet.key));
         if (!right) {
             // not the owner (at least not anymore)
             if (isMaster()) {
@@ -1566,7 +1550,6 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     abstract class StoreAwareOperationHandler extends SchedulableOperationHandler implements AsynchronousExecution {
-
         // executor thread
 
         public void execute(Request request) {
@@ -1607,7 +1590,6 @@ public final class ConcurrentMapManager extends BaseManager {
             doOperation(request);
             returnResponse(request);
         }
-
         //serviceThread
 
         public void afterExecute(Request request) {
