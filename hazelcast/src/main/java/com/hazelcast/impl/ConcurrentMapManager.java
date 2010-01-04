@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1169,13 +1169,13 @@ public final class ConcurrentMapManager extends BaseManager {
 
     void checkServiceThread() {
         if (Thread.currentThread() != node.serviceThread) {
+            new Error("Only ServiceThread can access this method1. " + Thread.currentThread()).printStackTrace();
             throw new Error("Only ServiceThread can access this method. " + Thread.currentThread());
         }
     }
 
     @Override
-    void handleListenerRegistrations(boolean add, String name, Data key,
-                                     Address address, boolean includeValue) {
+    void handleListenerRegistrations(boolean add, String name, Data key, Address address, boolean includeValue) {
         CMap cmap = getOrCreateMap(name);
         if (add) {
             cmap.addListener(key, address, includeValue);
@@ -1183,8 +1183,8 @@ public final class ConcurrentMapManager extends BaseManager {
             cmap.removeListener(key, address);
         }
     }
-
     // master should call this method
+
     boolean sendBlockInfo(Block block, Address address) {
         return send("mapblock", CONCURRENT_MAP_BLOCK_INFO, block, address);
     }
@@ -1240,6 +1240,13 @@ public final class ConcurrentMapManager extends BaseManager {
                 mapMigrator.migrateBlock(blockInfo);
             }
             packet.returnToContainer();
+            if (isMaster() && !blockInfo.isMigrating()) {
+                for (MemberImpl member : lsMembers) {
+                    if (!member.localMember()) {
+                        sendBlockInfo(blockInfo, member.getAddress());
+                    }
+                }
+            }
         }
 
         void doBlockInfo(Block blockInfo) {

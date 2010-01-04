@@ -266,42 +266,9 @@ public class MapMigrator implements Runnable {
         Set<Integer> blocksOwnedAfterDead = new HashSet<Integer>();
         for (Block block : blocks) {
             if (block != null) {
-                if (deadAddress.equals(block.getOwner())) {
-                    MemberImpl member = concurrentMapManager.getNextMemberBeforeSync(block.getOwner(), true, 1);
-                    if (member == null) {
-                        if (!concurrentMapManager.isSuperClient()) {
-                            block.setOwner(thisAddress);
-                        } else {
-                            block.setOwner(null);
-                        }
-                    } else {
-                        if (!deadAddress.equals(member.getAddress())) {
-                            block.setOwner(member.getAddress());
-                        } else {
-                            block.setOwner(null);
-                        }
-                    }
-                    if (thisAddress.equals(block.getOwner())) {
-                        blocksOwnedAfterDead.add(block.getBlockId());
-                    }
-                }
-                if (block.getMigrationAddress() != null) {
-                    if (deadAddress.equals(block.getMigrationAddress())) {
-                        MemberImpl member = concurrentMapManager.getNextMemberBeforeSync(block.getMigrationAddress(), true, 1);
-                        if (member == null) {
-                            if (!concurrentMapManager.isSuperClient()) {
-                                block.setMigrationAddress(thisAddress);
-                            } else {
-                                block.setMigrationAddress(null);
-                            }
-                        } else {
-                            if (!deadAddress.equals(member.getAddress())) {
-                                block.setMigrationAddress(member.getAddress());
-                            } else {
-                                block.setMigrationAddress(null);
-                            }
-                        }
-                    }
+                syncForDead(deadAddress, block);
+                if (thisAddress.equals(block.getOwner())) {
+                    blocksOwnedAfterDead.add(block.getBlockId());
                 }
             }
         }
@@ -328,6 +295,46 @@ public class MapMigrator implements Runnable {
             }
         }
         onMembershipChange();
+        if (blockMigrating != null) {
+            syncForDead(deadAddress, blockMigrating);
+        }
+    }
+
+    void syncForDead(Address deadAddress, Block block) {
+        if (deadAddress.equals(block.getOwner())) {
+            MemberImpl member = concurrentMapManager.getNextMemberBeforeSync(block.getOwner(), true, 1);
+            if (member == null) {
+                if (!concurrentMapManager.isSuperClient()) {
+                    block.setOwner(thisAddress);
+                } else {
+                    block.setOwner(null);
+                }
+            } else {
+                if (!deadAddress.equals(member.getAddress())) {
+                    block.setOwner(member.getAddress());
+                } else {
+                    block.setOwner(null);
+                }
+            }
+        }
+        if (block.getMigrationAddress() != null) {
+            if (deadAddress.equals(block.getMigrationAddress())) {
+                MemberImpl member = concurrentMapManager.getNextMemberBeforeSync(block.getMigrationAddress(), true, 1);
+                if (member == null) {
+                    if (!concurrentMapManager.isSuperClient()) {
+                        block.setMigrationAddress(thisAddress);
+                    } else {
+                        block.setMigrationAddress(null);
+                    }
+                } else {
+                    if (!deadAddress.equals(member.getAddress())) {
+                        block.setMigrationAddress(member.getAddress());
+                    } else {
+                        block.setMigrationAddress(null);
+                    }
+                }
+            }
+        }
     }
 
     void backupIfNextOrPreviousChanged() {
@@ -367,6 +374,13 @@ public class MapMigrator implements Runnable {
             throw new RuntimeException();
         }
         Block blockReal = blocks[block.getBlockId()];
+        if (blockReal.isMigrating()) {
+            if (!block.getOwner().equals(blockReal.getOwner()) || block.getMigrationAddress().equals(blockReal.getMigrationAddress())) {
+                logger.log(Level.SEVERE, blockReal + ". Already migrating block is migrating again to " + block);
+            } else {
+                return;
+            }
+        }
         blockReal.setOwner(block.getOwner());
         blockReal.setMigrationAddress(block.getMigrationAddress());
         logger.log(Level.FINEST, "migrate block " + block);
@@ -403,7 +417,6 @@ public class MapMigrator implements Runnable {
             node.executorManager.executeMigrationTask(new FallThroughRunnable() {
                 public void doRun() {
                     try {
-//                        System.out.println("migrating.. " + block);
                         concurrentMapManager.migrateRecord(cmap, rec);
                     } finally {
                         latch.countDown();
@@ -415,25 +428,18 @@ public class MapMigrator implements Runnable {
             public void doRun() {
                 try {
                     latch.await(10, TimeUnit.SECONDS);
-                    block.setOwner(block.getMigrationAddress());
-                    block.setMigrationAddress(null);
-//                System.out.println("migration complete " + block);
                     concurrentMapManager.enqueueAndReturn(new Processable() {
                         public void process() {
                             Block blockReal = blocks[block.getBlockId()];
-                            blockReal.setOwner(block.getOwner());
+                            blockReal.setOwner(blockReal.getMigrationAddress());
                             blockReal.setMigrationAddress(null);
-                        }
-                    });
-                    for (MemberImpl member : concurrentMapManager.getMembers()) {
-                        if (!member.localMember()) {
-                            boolean sent = false;
-                            while (!sent) {
-                                sent = concurrentMapManager.sendBlockInfo(block, member.getAddress());
-                                Thread.sleep(1000);
+                            for (MemberImpl member : concurrentMapManager.lsMembers) {
+                                if (!member.localMember()) {
+                                    concurrentMapManager.sendBlockInfo(blockReal, member.getAddress());
+                                }
                             }
                         }
-                    }
+                    });
                 } catch (InterruptedException ignored) {
                 }
             }

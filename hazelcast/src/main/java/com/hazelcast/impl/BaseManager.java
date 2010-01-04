@@ -24,10 +24,7 @@ import com.hazelcast.impl.base.*;
 import com.hazelcast.nio.*;
 
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -500,29 +497,39 @@ public abstract class BaseManager {
                     throw new RuntimeException(e);
                 }
                 if (request.redoCount > 15) {
-                    StringBuffer sb = new StringBuffer();
-                    Address target = getTarget();
-                    Connection targetConnection = null;
-                    MemberImpl targetMember = null;
-                    Object key = toObject(request.key);
-                    Block block = node.concurrentMapManager.getOrCreateBlock(request.key);
-                    if (target != null) {
-                        targetMember = getMember(target);
-                        targetConnection = node.connectionManager.getConnection(target);
-                        if (targetMember != null) {
-                            if (lsMembers.contains(targetMember)) {
-                                logger.log(Level.SEVERE, targetMember + " is not in lsMembers");
+                    final CountDownLatch l = new CountDownLatch(1);
+                    enqueueAndReturn(new Processable() {
+                        public void process() {
+                            StringBuffer sb = new StringBuffer();
+                            Address target = getTarget();
+                            Connection targetConnection = null;
+                            MemberImpl targetMember = null;
+                            Object key = toObject(request.key);
+                            Block block = node.concurrentMapManager.getOrCreateBlock(request.key);
+                            if (target != null) {
+                                targetMember = getMember(target);
+                                targetConnection = node.connectionManager.getConnection(target);
+                                if (targetMember != null) {
+                                    if (lsMembers.contains(targetMember)) {
+                                        logger.log(Level.SEVERE, targetMember + " is not in lsMembers");
+                                    }
+                                }
                             }
+                            sb.append("======= " + request.callId + ": " + request.operation + " ======== ");
+                            sb.append("\n\t");
+                            sb.append("thisAddress= " + thisAddress + ", target= " + getTarget());
+                            sb.append("\n\t");
+                            sb.append("targetMember= " + targetMember + ", targetConn=" + targetConnection + ", targetBlock=" + block);
+                            sb.append("\n\t");
+                            sb.append(key + " Re-doing [" + request.redoCount + "] times! " + request.name);
+                            logger.log(Level.INFO, sb.toString());
+                            l.countDown();
                         }
+                    });
+                    try {
+                        l.await();
+                    } catch (InterruptedException e) {
                     }
-                    sb.append("======= " + getCallId() + ": " + request.operation + " ======== ");
-                    sb.append("\n\t");
-                    sb.append("thisAddress= " + thisAddress + ", target= " + getTarget());
-                    sb.append("\n\t");
-                    sb.append("targetMember= " + targetMember + ", targetConn=" + targetConnection + ", targetBlock=" + block);
-                    sb.append("\n\t");
-                    sb.append(key + " Re-doing [" + request.redoCount + "] times! " + request.name);
-                    logger.log(Level.INFO, sb.toString());
                 }
                 beforeRedo();
                 doOp();
@@ -656,6 +663,7 @@ public abstract class BaseManager {
             final Packet packet = obtainPacket();
             request.setPacket(packet);
             packet.callId = getCallId();
+            request.callId = getCallId();
             final boolean sent = send(packet, target);
             if (!sent) {
                 logger.log(Level.FINEST, TargetAwareOp.this + " Packet cannot be sent to " + target);
@@ -943,12 +951,12 @@ public abstract class BaseManager {
         return node.getMasterAddress();
     }
 
-    protected final MemberImpl getNextMemberAfter(final Address address,
+    protected MemberImpl getNextMemberAfter(final Address address,
                                                   final boolean skipSuperClient, final int distance) {
         return getNextMemberAfter(lsMembers, address, skipSuperClient, distance);
     }
 
-    protected final MemberImpl getNextMemberAfter(final List<MemberImpl> lsMembers,
+    protected MemberImpl getNextMemberAfter(final List<MemberImpl> lsMembers,
                                                   final Address address, final boolean skipSuperClient, final int distance) {
         final int size = lsMembers.size();
         if (size <= 1)
@@ -975,18 +983,18 @@ public abstract class BaseManager {
         return null;
     }
 
-    protected final MemberImpl getNextMemberBeforeSync(final Address address,
+    protected MemberImpl getNextMemberBeforeSync(final Address address,
                                                        final boolean skipSuperClient, final int distance) {
         return getNextMemberAfter(node.clusterManager.getMembersBeforeSync(), address,
                 skipSuperClient, distance);
     }
 
-    protected final MemberImpl getPreviousMemberBefore(final Address address,
+    protected MemberImpl getPreviousMemberBefore(final Address address,
                                                        final boolean skipSuperClient, final int distance) {
         return getPreviousMemberBefore(lsMembers, address, skipSuperClient, distance);
     }
 
-    protected final MemberImpl getPreviousMemberBefore(final List<MemberImpl> lsMembers,
+    protected MemberImpl getPreviousMemberBefore(final List<MemberImpl> lsMembers,
                                                        final Address address, final boolean skipSuperClient, final int distance) {
         final int size = lsMembers.size();
         if (size <= 1)
@@ -1013,11 +1021,11 @@ public abstract class BaseManager {
         return null;
     }
 
-    protected final boolean isMaster() {
+    protected boolean isMaster() {
         return node.master();
     }
 
-    protected final boolean isSuperClient() {
+    protected boolean isSuperClient() {
         return node.isSuperClient();
     }
 
@@ -1025,7 +1033,7 @@ public abstract class BaseManager {
         return ThreadContext.get().getPacketPool().obtain();
     }
 
-    protected final boolean send(final String name, final ClusterOperation operation, final DataSerializable ds,
+    protected boolean send(final String name, final ClusterOperation operation, final DataSerializable ds,
                                  final Address address) {
         final Packet packet = obtainPacket();
         packet.set(name, operation, null, ds);
