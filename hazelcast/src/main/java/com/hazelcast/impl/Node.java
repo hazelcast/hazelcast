@@ -164,7 +164,7 @@ public class Node {
         Logger systemLogger = Logger.getLogger("com.hazelcast.system");
         systemLogger.log(Level.INFO, "Hazelcast " + version + " ("
                 + build + ") starting at " + address);
-        systemLogger.log(Level.INFO, "Copyright (C) 2009 Hazelcast.com");
+        systemLogger.log(Level.INFO, "Copyright (C) 2008-2010 Hazelcast.com");
         Join join = config.getNetworkConfig().getJoin();
         MulticastService mcService = null;
         try {
