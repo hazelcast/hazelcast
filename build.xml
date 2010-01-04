@@ -37,6 +37,7 @@
              <fileset dir="hazelcast/src/main/java/" defaultexcludes="true">
                 <include name="**/nio/DataSerializable*"/>
                 <include name="**/core/**"/>
+                <include name="**/monitor/**"/>
                 <include name="**/config/**"/>
                 <include name="**/jmx/**"/>
                 <include name="**/query/**"/>
@@ -50,7 +51,7 @@
                 <![CDATA[<h1>Hazelcast</h1>]]>
             </doctitle>
             <bottom>
-                <![CDATA[<i>Copyright &#169; 2008-2009 Hazel Ltd. All Rights Reserved.</i>]]></bottom>
+                <![CDATA[<i>Copyright &#169; 2008-2010 Hazel Ltd. All Rights Reserved.</i>]]></bottom>
             <link offline="false" href="http://java.sun.com/j2se/1.5.0/docs/api/" packagelistLoc="C:\tmp"/>
             <link href="http://java.sun.com/j2se/1.5.0/docs/api/"/>
             <link href="http://java.sun.com/products/servlet/2.3/javadoc/"/>
