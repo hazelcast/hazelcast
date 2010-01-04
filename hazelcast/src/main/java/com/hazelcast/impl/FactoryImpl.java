@@ -2268,7 +2268,7 @@ public class FactoryImpl implements HazelcastInstance {
                         return true;
                 }
                 MContainsValue mContainsValue = concurrentMapManager.new MContainsValue(name, value);
-                return (Boolean) mContainsValue.call();
+                return mContainsValue.call();
             }
 
             public boolean isEmpty() {

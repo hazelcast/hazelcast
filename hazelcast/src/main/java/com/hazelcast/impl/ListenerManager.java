@@ -19,12 +19,11 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.core.*;
-
-import static com.hazelcast.impl.ClusterOperation.ADD_LISTENER;
-
 import com.hazelcast.impl.base.PacketProcessor;
-import com.hazelcast.nio.*;
-import static com.hazelcast.nio.IOUtil.toData;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Data;
+import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.Packet;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -33,6 +32,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
+
+import static com.hazelcast.impl.ClusterOperation.ADD_LISTENER;
+import static com.hazelcast.impl.ClusterOperation.ADD_LISTENER_NO_RESPONSE;
+import static com.hazelcast.impl.ClusterOperation.REMOVE_LISTENER;
+import static com.hazelcast.nio.IOUtil.toData;
 
 public class ListenerManager extends BaseManager {
     private List<ListenerItem> listeners = new CopyOnWriteArrayList<ListenerItem>();
@@ -44,14 +48,11 @@ public class ListenerManager extends BaseManager {
                 handleEvent(packet);
             }
         });
-        registerPacketProcessor(ClusterOperation.ADD_LISTENER, new PacketProcessor() {
+        registerPacketProcessor(ADD_LISTENER, new AddRemoveListenerOperationHandler());
+        registerPacketProcessor(REMOVE_LISTENER, new AddRemoveListenerOperationHandler());
+        registerPacketProcessor(ADD_LISTENER_NO_RESPONSE, new PacketProcessor() {
             public void process(Packet packet) {
                 handleAddRemoveListener(true, packet);
-            }
-        });
-        registerPacketProcessor(ClusterOperation.REMOVE_LISTENER, new PacketProcessor() {
-            public void process(Packet packet) {
-                handleAddRemoveListener(false, packet);
             }
         });
     }
@@ -81,7 +82,7 @@ public class ListenerManager extends BaseManager {
 
     public void syncForAdd() {
         for (ListenerItem listenerItem : listeners) {
-            registerListener(listenerItem.name, listenerItem.key, true, listenerItem.includeValue);
+            registerListenerWithNoResponse(listenerItem.name, listenerItem.key, true, listenerItem.includeValue);
         }
     }
 
@@ -102,7 +103,7 @@ public class ListenerManager extends BaseManager {
 
         void doOperation(Request request) {
             Address from = request.caller;
-            logger.log(Level.FINEST, "AddListnerOperation from " + from + ", local=" + request.local);
+            logger.log(Level.FINEST, "AddListenerOperation from " + from + ", local=" + request.local);
             if (from == null) throw new RuntimeException("Listener origin is not known!");
             boolean add = (request.operation == ADD_LISTENER);
             boolean includeValue = (request.longValue == 1);
@@ -111,12 +112,16 @@ public class ListenerManager extends BaseManager {
         }
     }
 
-    public class AddRemoveListener extends MultiCall {
+    public class AddRemoveListener extends MultiCall<Boolean> {
         final String name;
+        final Object key;
+        final boolean add;
         final boolean includeValue;
 
-        public AddRemoveListener(String name, boolean includeValue) {
+        public AddRemoveListener(String name, Object key, boolean add, boolean includeValue) {
             this.name = name;
+            this.key = key;
+            this.add = add;
             this.includeValue = includeValue;
         }
 
@@ -134,38 +139,46 @@ public class ListenerManager extends BaseManager {
 
         class AddListenerAtTarget extends MigrationAwareTargetedCall {
             public AddListenerAtTarget(Address target) {
-                this.target = target;
                 request.reset();
-                setLocal(ADD_LISTENER, name);
+                this.target = target;
+                ClusterOperation operation = (add) ? ADD_LISTENER : REMOVE_LISTENER;
+                setLocal(operation, name, key, null, -1, -1);
                 request.setBooleanRequest();
                 request.longValue = (includeValue) ? 1 : 0;
+            }
+
+            @Override
+            public boolean isMigrationAware() {
+                return (request.key != null);
             }
         }
     }
 
     private void registerListener(String name, Object key, boolean add, boolean includeValue) {
+        AddRemoveListener addRemoveListener = new AddRemoveListener(name, key, add, includeValue);
+        addRemoveListener.call();
+    }
+
+    private void registerListenerWithNoResponse(String name, Object key, boolean add, boolean includeValue) {
         Data dataKey = null;
         if (key != null) {
             dataKey = ThreadContext.get().toData(key);
         }
-        enqueueAndReturn(new ListenerRegistrationProcess(name, dataKey, add, includeValue));
+        enqueueAndReturn(new ListenerRegistrationProcess(name, dataKey, includeValue));
     }
 
     class ListenerRegistrationProcess implements Processable {
         final String name;
         final Data key;
         boolean add = true;
-        ClusterOperation packetProcess = ClusterOperation.ADD_LISTENER;
         boolean includeValue = true;
 
-        public ListenerRegistrationProcess(String name, Data key, boolean add, boolean includeValue) {
+        public ListenerRegistrationProcess(String name, Data key, boolean includeValue) {
             super();
             this.key = key;
             this.name = name;
             this.add = add;
             this.includeValue = includeValue;
-            if (!add)
-                packetProcess = ClusterOperation.REMOVE_LISTENER;
         }
 
         public void process() {
@@ -175,7 +188,7 @@ public class ListenerManager extends BaseManager {
                     handleListenerRegistrations(add, name, key, thisAddress, includeValue);
                 } else {
                     Packet packet = obtainPacket();
-                    packet.set(name, packetProcess, key, null);
+                    packet.set(name, ADD_LISTENER_NO_RESPONSE, key, null);
                     packet.longValue = (includeValue) ? 1 : 0;
                     boolean sent = send(packet, owner);
                     if (!sent) {
@@ -213,34 +226,27 @@ public class ListenerManager extends BaseManager {
 
     public void addListener(String name, Object listener, Object key, boolean includeValue,
                             Instance.InstanceType instanceType) {
-        addListener(name, listener, key, includeValue, instanceType, true);
-    }
-
-    synchronized void addListener(String name, Object listener, Object key, boolean includeValue,
-                                  Instance.InstanceType instanceType, boolean shouldRemotelyRegister) {
         /**
          * check if already registered send this address to the key owner as a
          * listener add this listener to the local listeners map
          */
-        if (shouldRemotelyRegister) {
-            boolean remotelyRegister = true;
-            for (ListenerItem listenerItem : listeners) {
-                if (remotelyRegister) {
-                    if (listenerItem.listener == listener) {
-                        if (listenerItem.name.equals(name)) {
-                            if (key == null) {
-                                if (listenerItem.key == null) {
-                                    if (!includeValue || listenerItem.includeValue == includeValue) {
-                                        remotelyRegister = false;
-                                    }
+        boolean remotelyRegister = true;
+        for (ListenerItem listenerItem : listeners) {
+            if (remotelyRegister) {
+                if (listenerItem.listener == listener) {
+                    if (listenerItem.name.equals(name)) {
+                        if (key == null) {
+                            if (listenerItem.key == null) {
+                                if (!includeValue || listenerItem.includeValue == includeValue) {
+                                    remotelyRegister = false;
                                 }
-                            } else {
-                                if (listenerItem.key != null) {
-                                    if (listenerItem.key.equals(key)) {
-                                        if (!includeValue
-                                                || listenerItem.includeValue == includeValue) {
-                                            remotelyRegister = false;
-                                        }
+                            }
+                        } else {
+                            if (listenerItem.key != null) {
+                                if (listenerItem.key.equals(key)) {
+                                    if (!includeValue
+                                            || listenerItem.includeValue == includeValue) {
+                                        remotelyRegister = false;
                                     }
                                 }
                             }
@@ -248,9 +254,9 @@ public class ListenerManager extends BaseManager {
                     }
                 }
             }
-            if (remotelyRegister) {
-                registerListener(name, key, true, includeValue);
-            }
+        }
+        if (remotelyRegister) {
+            registerListener(name, key, true, includeValue);
         }
         ListenerItem listenerItem = new ListenerItem(name, key, listener, includeValue,
                 instanceType);
@@ -289,55 +295,53 @@ public class ListenerManager extends BaseManager {
 
     private void callListener(ListenerItem listenerItem, EntryEvent event) {
         Object listener = listenerItem.listener;
-        
         EntryEventType entryEventType = event.getEventType();
-        
-        switch(listenerItem.instanceType) {
-        case MAP:
-        case MULTIMAP:
-            EntryListener entryListener = (EntryListener) listener;
-            switch(entryEventType) {
-            case ADDED:
-            	entryListener.entryAdded(event);
-            	break;
-            case REMOVED:
-            	entryListener.entryRemoved(event);
-            	break;
-            case UPDATED:
-            	entryListener.entryUpdated(event);
-            	break;
-            case EVICTED:
-            	entryListener.entryEvicted(event);
-            	break;
-            }
-        	break;
-        case SET:
-        case LIST:
-            ItemListener itemListener = (ItemListener) listener;
-            switch(entryEventType) {
-            case ADDED:
-            	itemListener.itemAdded(event.getKey());
-            	break;
-            case REMOVED:
-            	itemListener.itemRemoved(event.getKey());
-            	break;
-            }
-        	break;
-        case TOPIC:
-            MessageListener messageListener = (MessageListener) listener;
-            messageListener.onMessage(event.getValue());
-        	break;
-        case QUEUE:
-            ItemListener queueItemListener = (ItemListener) listener;
-            switch(entryEventType) {
-            case ADDED:
-            	queueItemListener.itemAdded(event.getValue());
-            	break;
-            case REMOVED:
-            	queueItemListener.itemRemoved(event.getValue());
-            	break;
-            }
-        	break;
+        switch (listenerItem.instanceType) {
+            case MAP:
+            case MULTIMAP:
+                EntryListener entryListener = (EntryListener) listener;
+                switch (entryEventType) {
+                    case ADDED:
+                        entryListener.entryAdded(event);
+                        break;
+                    case REMOVED:
+                        entryListener.entryRemoved(event);
+                        break;
+                    case UPDATED:
+                        entryListener.entryUpdated(event);
+                        break;
+                    case EVICTED:
+                        entryListener.entryEvicted(event);
+                        break;
+                }
+                break;
+            case SET:
+            case LIST:
+                ItemListener itemListener = (ItemListener) listener;
+                switch (entryEventType) {
+                    case ADDED:
+                        itemListener.itemAdded(event.getKey());
+                        break;
+                    case REMOVED:
+                        itemListener.itemRemoved(event.getKey());
+                        break;
+                }
+                break;
+            case TOPIC:
+                MessageListener messageListener = (MessageListener) listener;
+                messageListener.onMessage(event.getValue());
+                break;
+            case QUEUE:
+                ItemListener queueItemListener = (ItemListener) listener;
+                switch (entryEventType) {
+                    case ADDED:
+                        queueItemListener.itemAdded(event.getValue());
+                        break;
+                    case REMOVED:
+                        queueItemListener.itemRemoved(event.getValue());
+                        break;
+                }
+                break;
         }
     }
 

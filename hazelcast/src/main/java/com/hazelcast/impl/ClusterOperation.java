@@ -26,6 +26,7 @@ public enum ClusterOperation {
     REMOTELY_CALLABLE_BOOLEAN(),
     REMOTELY_CALLABLE_OBJECT(),
     ADD_LISTENER(),
+    ADD_LISTENER_NO_RESPONSE(),
     REMOVE_LISTENER(),
     EVENT(),
     REMOTELY_EXECUTE(),
@@ -91,7 +92,7 @@ public enum ClusterOperation {
     GET_INSTANCES(),
     GET_MEMBERS(),
     GET_CLUSTER_TIME(),
-    CLIENT_AUTHENTICATE(), 
+    CLIENT_AUTHENTICATE(),
     CLIENT_ADD_INSTANCE_LISTENER();
 
     static byte idGen = 0;

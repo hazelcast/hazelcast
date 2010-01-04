@@ -448,6 +448,7 @@ public class ClusterTest {
                 latchEvicted.countDown();
             }
         };
+        System.out.println("adding listener");
         map.addEntryListener(listener, true);
         assertNull(mapSource.put("5", "value5"));
         assertEquals("value5", mapSource.put("5", "value55"));

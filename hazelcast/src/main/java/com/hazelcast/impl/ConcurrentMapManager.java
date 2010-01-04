@@ -884,7 +884,7 @@ public final class ConcurrentMapManager extends BaseManager {
         fireMapEvent(mapListeners, name, eventType, record.getKey(), record.getValue(), record.getMapListeners());
     }
 
-    public class MContainsValue extends MultiCall {
+    public class MContainsValue extends MultiCall<Boolean> {
         boolean contains = false;
         final String name;
         final Object value;
@@ -958,12 +958,12 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    public class MSize extends MultiCall {
+    public class MSize extends MultiCall<Integer> {
         int size = 0;
         final String name;
 
         public int getSize() {
-            int size = (Integer) call();
+            int size = call();
             TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
             if (txn != null) {
                 size += txn.size(name);

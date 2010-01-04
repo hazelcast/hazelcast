@@ -686,7 +686,7 @@ public abstract class BaseManager {
         }
     }
 
-    abstract class MultiCall {
+    abstract class MultiCall<T> {
         abstract TargetAwareOp createNewTargetAwareOp(Address target);
 
         /**
@@ -710,7 +710,7 @@ public abstract class BaseManager {
 
         abstract Object returnResult();
 
-        Object call() {
+        T call() {
             try {
                 if (!node.isActive()) {
                     throw new RuntimeException();
@@ -753,7 +753,7 @@ public abstract class BaseManager {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            return returnResult();
+            return (T) returnResult();
         }
     }
 
