@@ -514,6 +514,14 @@ public class Record implements MapEntry {
         this.copyCount = copyCount;
     }
 
+    public boolean isLocked() {
+        return lockCount > 0;
+    }
+
+    public int getScheduledActionCount() {
+        return (lsScheduledActions == null) ? 0 : lsScheduledActions.size();
+    }
+
     public static class RecordEntry implements MapEntry {
 
         private final Record record;

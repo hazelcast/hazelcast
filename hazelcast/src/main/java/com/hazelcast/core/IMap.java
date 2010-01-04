@@ -17,6 +17,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
 
 import java.util.Collection;
@@ -252,7 +253,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * @param predicate query criteria
      * @return keys of matching locally owned entries.
      */
-
     <K> Set<K> localKeySet(Predicate predicate);
 
     /**
@@ -289,4 +289,19 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      *                  <tt>false</tt> otherwise.
      */
     void addIndex(String attribute, boolean ordered);
+
+    /**
+     * Returns LocalMapStats for this map.
+     * LocalMapStats is the statistics for the local portion of this
+     * distributed map and contains information such as ownedEntryCount
+     * backupEntryCount, lastUpdateTime, lockedEntryCount.
+     * <p>
+     * Since this stats are only for the local portion of this map, if you
+     * need the cluster-wide MapStats then you need to get the LocalMapStats
+     * from all members of the cluster and combine them.
+     *
+     *
+     * @return this map's local statistics.
+     */
+    LocalMapStats getLocalMapStats();
 }

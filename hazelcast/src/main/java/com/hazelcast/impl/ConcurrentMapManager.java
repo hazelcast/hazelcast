@@ -27,6 +27,7 @@ import com.hazelcast.impl.base.KeyValue;
 import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.impl.base.Pairs;
 import com.hazelcast.impl.concurrentmap.MultiData;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
@@ -997,6 +998,29 @@ public final class ConcurrentMapManager extends BaseManager {
                 request.reset();
                 setLocal(CONCURRENT_MAP_SIZE, name);
                 request.setLongRequest();
+            }
+        }
+    }
+
+    public class MLocalMapStats extends TargetAwareOp {
+        public LocalMapStats getLocalMapStats(String name) {
+            request.name = name;
+            doOp();
+            return (LocalMapStats) getResultAsObject();
+        }
+
+        @Override
+        public void setTarget() {
+            target = thisAddress;
+        }
+
+        @Override
+        public void doLocalOp() {
+            if (isMigrating(request)) {
+                setResult(OBJECT_REDO);
+            } else {
+                CMap cmap = getOrCreateMap(request.name);
+                setResult(cmap.getLocalMapStats());
             }
         }
     }

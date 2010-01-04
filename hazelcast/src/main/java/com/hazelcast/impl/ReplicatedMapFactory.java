@@ -18,6 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.*;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
 
 import java.util.Collection;
@@ -136,6 +137,10 @@ public final class ReplicatedMapFactory {
 
         public void unlock(K key) {
             distributedMap.unlock(key);
+        }
+
+        public LocalMapStats getLocalMapStats() {
+            return distributedMap.getLocalMapStats();
         }
 
         public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {

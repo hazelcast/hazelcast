@@ -501,9 +501,27 @@ public abstract class BaseManager {
                 }
                 if (request.redoCount > 15) {
                     StringBuffer sb = new StringBuffer();
-                    sb.append("callId= " + getCallId() + ", thisAddress= " + thisAddress + ", target= " + getTarget());
+                    Address target = getTarget();
+                    Connection targetConnection = null;
+                    MemberImpl targetMember = null;
+                    Object key = toObject(request.key);
+                    Block block = node.concurrentMapManager.getOrCreateBlock(request.key);
+                    if (target != null) {
+                        targetMember = getMember(target);
+                        targetConnection = node.connectionManager.getConnection(target);
+                        if (targetMember != null) {
+                            if (lsMembers.contains(targetMember)) {
+                                logger.log(Level.SEVERE, targetMember + " is not in lsMembers");
+                            }
+                        }
+                    }
+                    sb.append("======= " + getCallId() + ": " + request.operation + " ======== ");
                     sb.append("\n\t");
-                    sb.append(request.operation + " Re-doing [" + request.redoCount + "] times! " + request.name);
+                    sb.append("thisAddress= " + thisAddress + ", target= " + getTarget());
+                    sb.append("\n\t");
+                    sb.append("targetMember= " + targetMember + ", targetConn=" + targetConnection + ", targetBlock=" + block);
+                    sb.append("\n\t");
+                    sb.append(key + " Re-doing [" + request.redoCount + "] times! " + request.name);
                     logger.log(Level.INFO, sb.toString());
                 }
                 beforeRedo();

@@ -251,6 +251,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleIterator(args);
         } else if (first.indexOf(".contains") != -1) {
             handleContains(args);
+        } else if (first.indexOf(".stats") != -1) {
+            handStats(args);
         } else if ("t.publish".equals(first)) {
             handleTopicPublish(args);
         } else if ("q.offer".equals(first)) {
@@ -412,6 +414,16 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             System.out.println("size = " + map.size() + ", " + count * 1000 / (t1 - t0)
                     + " evt/s, " + (count * 1000 / (t1 - t0)) * (b * 8) / 1024 + " Kbit/s, "
                     + count * b / 1024 + " KB added");
+        }
+    }
+
+    private void handStats(String[] args) {
+        String iteratorStr = args[0];
+        if (iteratorStr.startsWith("s.")) {
+        } else if (iteratorStr.startsWith("m.")) {
+            print(map.getLocalMapStats());
+        } else if (iteratorStr.startsWith("q.")) {
+        } else if (iteratorStr.startsWith("l.")) {
         }
     }
 

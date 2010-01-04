@@ -22,6 +22,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.CMap.CMapEntry;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
 
 import java.util.*;
@@ -192,6 +193,10 @@ public class MapClientProxy<K, V> implements IMap<K, V>, ClientProxy, EntryHolde
     }
 
     public <K> Set<K> localKeySet(Predicate predicate) {
+        throw new UnsupportedOperationException();
+    }
+
+    public LocalMapStats getLocalMapStats() {
         throw new UnsupportedOperationException();
     }
 

@@ -27,6 +27,7 @@ import com.hazelcast.impl.BlockingQueueManager.QIterator;
 import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.impl.concurrentmap.AddMapIndex;
 import com.hazelcast.jmx.ManagementService;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.SerializationHelper;
 import com.hazelcast.query.Predicate;
@@ -1790,6 +1791,10 @@ public class FactoryImpl implements HazelcastInstance {
             return dynamicProxy.putIfAbsent(key, value);
         }
 
+        public LocalMapStats getLocalMapStats() {
+            return dynamicProxy.getLocalMapStats();
+        }
+
         public void addIndex(String attribute, boolean ordered) {
             dynamicProxy.addIndex(attribute, ordered);
         }
@@ -2182,6 +2187,11 @@ public class FactoryImpl implements HazelcastInstance {
                 MLock mlock = concurrentMapManager.new MLock();
                 boolean unlocked = mlock.unlock(name, key, 0);
 //                if (! unlocked) throw new IllegalMonitorStateException();
+            }
+
+            public LocalMapStats getLocalMapStats() {
+                MLocalMapStats mLocalMapStats = concurrentMapManager.new MLocalMapStats();
+                return mLocalMapStats.getLocalMapStats(name);
             }
 
             public void addGenericListener(Object listener, Object key, boolean includeValue,

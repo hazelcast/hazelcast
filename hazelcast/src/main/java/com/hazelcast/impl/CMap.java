@@ -21,14 +21,10 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
-import static com.hazelcast.impl.ClusterOperation.*;
-
 import com.hazelcast.impl.concurrentmap.MultiData;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
-import static com.hazelcast.nio.IOUtil.toData;
-import static com.hazelcast.nio.IOUtil.toObject;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Index;
@@ -41,6 +37,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.hazelcast.impl.ClusterOperation.*;
+import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class CMap {
 
@@ -105,6 +105,8 @@ public class CMap {
     volatile byte[] indexTypes = null;
 
     long lastEvictionTime = 0;
+
+    final long creationTime;
 
     public CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
@@ -181,6 +183,7 @@ public class CMap {
                     nearCacheConfig.isInvalidateOnChange());
             concurrentMapManager.mapCaches.put(name, mapNearCache);
         }
+        this.creationTime = System.currentTimeMillis();
     }
 
     public void addIndex(Expression expression, boolean ordered) {
@@ -330,6 +333,57 @@ public class CMap {
             }
         }
         return size;
+    }
+
+    public LocalMapStatsImpl getLocalMapStats() {
+        long now = System.currentTimeMillis();
+        int ownedEntryCount = 0;
+        int backupEntryCount = 0;
+        int markedAsRemovedEntryCount = 0;
+        int ownedEntryMemoryCost = 0;
+        int backupEntryMemoryCost = 0;
+        int markedAsRemovedMemoryCost = 0;
+        int hits = 0;
+        int lockedEntryCount = 0;
+        int lockWaitCount = 0;
+        LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
+        Collection<Record> records = mapRecords.values();
+        for (Record record : records) {
+            if (record.isActive() && record.isValid(now)) {
+                Block block = blocks[record.getBlockId()];
+                if (thisAddress.equals(block.getOwner())) {
+                    ownedEntryCount += record.valueCount();
+                    ownedEntryMemoryCost += record.getCost();
+                    localMapStats.setLastAccessTime(record.getLastAccessTime());
+                    localMapStats.setLastUpdateTime(record.getLastUpdateTime());
+                    hits += record.getHits();
+                    if (record.isLocked()) {
+                        lockedEntryCount++;
+                        lockWaitCount += record.getScheduledActionCount();
+                    }
+                } else {
+                    backupEntryCount += record.valueCount();
+                    backupEntryMemoryCost += record.getCost();
+                }
+            }
+        }
+        for (Record removedRecord : setRemovedRecords) {
+            markedAsRemovedMemoryCost += removedRecord.getCost();
+        }
+        localMapStats.setMarkedAsRemovedEntryCount(setRemovedRecords.size());
+        localMapStats.setMarkedAsRemovedMemoryCost(markedAsRemovedMemoryCost);
+        localMapStats.setLockWaitCount(lockWaitCount);
+        localMapStats.setLockedEntryCount(lockedEntryCount);
+        localMapStats.setHits(hits);
+        localMapStats.setOwnedEntryCount(ownedEntryCount);
+        localMapStats.setBackupEntryCount(backupEntryCount);
+        localMapStats.setMarkedAsRemovedEntryCount(markedAsRemovedEntryCount);
+        localMapStats.setOwnedEntryMemoryCost(ownedEntryMemoryCost);
+        localMapStats.setBackupEntryMemoryCost(backupEntryMemoryCost);
+        localMapStats.setMarkedAsRemovedMemoryCost(markedAsRemovedMemoryCost);
+        localMapStats.setLastEvictionTime(this.lastEvictionTime);
+        localMapStats.setCreationTime(this.creationTime);
+        return localMapStats;
     }
 
     public int size() {
@@ -1116,9 +1170,8 @@ public class CMap {
             if (a == null || a.length < size) {
                 a = new Object[size];
             }
-
             Iterator<Data> it = lsValues.iterator();
-            int index =0;
+            int index = 0;
             while (it.hasNext()) {
                 a[index++] = toObject(it.next());
             }
@@ -1292,31 +1345,31 @@ public class CMap {
         return "CMap [" + getName() + "] size=" + size() + ", backup-size=" + backupSize();
     }
 
-	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
 
-	/**
-	 * @return the mapIndexes
-	 */
-	public Map<Expression, Index<MapEntry>> getMapIndexes() {
-		return mapIndexes;
-	}
+    /**
+     * @return the mapIndexes
+     */
+    public Map<Expression, Index<MapEntry>> getMapIndexes() {
+        return mapIndexes;
+    }
 
-	/**
-	 * @param indexes the indexes to set
-	 */
-	public void setIndexes(Index<MapEntry>[] indexes) {
-		this.indexes = indexes;
-	}
+    /**
+     * @param indexes the indexes to set
+     */
+    public void setIndexes(Index<MapEntry>[] indexes) {
+        this.indexes = indexes;
+    }
 
-	/**
-	 * @return the indexes
-	 */
-	public Index<MapEntry>[] getIndexes() {
-		return indexes;
-	}
+    /**
+     * @return the indexes
+     */
+    public Index<MapEntry>[] getIndexes() {
+        return indexes;
+    }
 }
