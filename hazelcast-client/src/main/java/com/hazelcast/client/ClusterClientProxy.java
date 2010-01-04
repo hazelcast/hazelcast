@@ -91,7 +91,8 @@ public class ClusterClientProxy implements ClientProxy, Cluster {
     }
 
     public boolean authenticate(String groupName, String groupPassword) {
-        return (Boolean)proxyHelper.doOp(ClusterOperation.CLIENT_AUTHENTICATE, groupName, groupPassword);
+        Object result = proxyHelper.doOp(ClusterOperation.CLIENT_AUTHENTICATE, groupName, groupPassword);
+        return (Boolean) result;
     }
 
 

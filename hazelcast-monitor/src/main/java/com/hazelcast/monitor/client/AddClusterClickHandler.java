@@ -28,9 +28,9 @@ import java.util.List;
 
 public class AddClusterClickHandler implements ClickHandler {
     private DecoratedStackPanel leftPanel;
-    private String groupName;
-    private String pass;
-    private String addresses;
+    private TextBox groupName;
+    private TextBox pass;
+    private TextBox addresses;
     private Label lbError;
     private HazelcastMonitor hazelcastMonitor;
 
@@ -42,7 +42,7 @@ public class AddClusterClickHandler implements ClickHandler {
     private final HazelcastServiceAsync hazelcastService = GWT
             .create(HazelcastService.class);
 
-    public AddClusterClickHandler(HazelcastMonitor hazelcastMonitor, String groupName, String pass, String addresses,
+    public AddClusterClickHandler(HazelcastMonitor hazelcastMonitor, TextBox groupName, TextBox pass, TextBox addresses,
                                   Label lbError) {
         this.hazelcastMonitor = hazelcastMonitor;
         leftPanel = (DecoratedStackPanel) hazelcastMonitor.mainPanel.getLeftWidget();
@@ -54,12 +54,11 @@ public class AddClusterClickHandler implements ClickHandler {
 
     public void onClick(ClickEvent event) {
         connectToCluster();
-        hazelcastMonitor.setupTimer();
     }
 
     private void connectToCluster() {
         try {
-            hazelcastService.connectCluster(groupName, pass, addresses, new AsyncCallback<ClusterView>() {
+            hazelcastService.connectCluster(groupName.getText(), pass.getText(), addresses.getText(), new AsyncCallback<ClusterView>() {
                 public void onSuccess(ClusterView clusterView) {
                     hazelcastMonitor.createAndAddClusterWidgets(clusterView);
                 }

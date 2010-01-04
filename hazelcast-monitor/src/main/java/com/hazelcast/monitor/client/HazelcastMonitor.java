@@ -89,7 +89,7 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
                 "Add Cluster to Monitor");
 
         final TextBox tbGroupName = new TextBox();
-        tbGroupName.setText("fuad-dev");
+        tbGroupName.setText("dev");
         final TextBox tbGroupPass = new TextBox();
         tbGroupPass.setText("dev-pass");
         final TextBox tbAddresses = new TextBox();
@@ -98,8 +98,7 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
         lbError.setVisible(false);
 
         Button btAddCluster = new Button("Add Cluster");
-        ClickHandler clickHandler = new AddClusterClickHandler(this, tbGroupName.getText(), tbGroupPass.getText(),
-                tbAddresses.getText(), lbError);
+        ClickHandler clickHandler = new AddClusterClickHandler(this, tbGroupName, tbGroupPass, tbAddresses, lbError);
         btAddCluster.addClickHandler(clickHandler);
 
         VerticalPanel vPanel = new VerticalPanel();
@@ -156,7 +155,6 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
     }
 
     private void deRegisterAll() {
-        System.out.println("De Registering " + mapClusterWidgets.size() + " clusters");
         for (ClusterWidgets cw : mapClusterWidgets.values()) {
             cw.deRegisterAll();
         }
@@ -179,5 +177,6 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
         clusterWidgets.clusterName = clusterView.getGroupName();
         DecoratedStackPanel leftPanel = (DecoratedStackPanel) mainPanel.getLeftWidget();
         leftPanel.add(clusterWidgets.clusterTree, clusterView.getGroupName());
+        setupTimer();
     }
 }
