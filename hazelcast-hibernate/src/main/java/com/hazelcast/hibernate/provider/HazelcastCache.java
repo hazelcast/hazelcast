@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,21 @@
 
 package com.hazelcast.hibernate.provider;
 
-import java.util.Map;
-import java.util.logging.Logger;
-
-import org.hibernate.cache.Cache;
-import org.hibernate.cache.CacheException;
-import org.hibernate.cache.Timestamper;
-
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
+import org.hibernate.cache.Cache;
+import org.hibernate.cache.CacheException;
+import org.hibernate.cache.Timestamper;
+
+import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Implementation of (deprecated) Hibernate <code>Cache</code> interface for compatibility with pre-Hibernate 3.3.x
  * code.
- * 
+ *
  * @author Leo Kim (lkim@limewire.com)
  * @see HazelcastCacheProvider
  * @see HazelcastCacheRegionFactory

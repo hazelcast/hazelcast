@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,6 @@ import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
 import com.hazelcast.impl.base.PacketProcessor;
-
-import static com.hazelcast.impl.ClusterOperation.BLOCKING_QUEUE_SIZE;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
@@ -38,6 +34,11 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.Level;
+
+import static com.hazelcast.impl.ClusterOperation.BLOCKING_QUEUE_SIZE;
+import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
+import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 
 public class BlockingQueueManager extends BaseManager {
     private static final int BLOCK_SIZE = ConfigProperty.BLOCKING_QUEUE_BLOCK_SIZE.getInteger(1000);
@@ -307,7 +308,7 @@ public class BlockingQueueManager extends BaseManager {
 
     @Override
     final void handleListenerRegistrations(boolean add, String name, Data key, Address address,
-                                            boolean includeValue) {
+                                           boolean includeValue) {
         Q q = getQ(name);
         if (add) {
             q.addListener(address, includeValue);
@@ -588,7 +589,7 @@ public class BlockingQueueManager extends BaseManager {
                 request.operation = BLOCKING_QUEUE_SIZE;
                 request.setLongRequest();
             }
-            
+
             @Override
             public void doLocalOp() {
                 Q q = getQ(name);
@@ -1121,8 +1122,8 @@ public class BlockingQueueManager extends BaseManager {
             QueueConfig qconfig = node.getConfig().getQueueConfig(name.substring(2));
             maxSizePerJVM = (qconfig.getMaxSizePerJVM() == 0) ? QueueConfig.DEFAULT_MAX_SIZE_PER_JVM : qconfig.getMaxSizePerJVM();
             maxAge = (qconfig.getTimeToLiveSeconds() == 0) ? QueueConfig.DEFAULT_TTL_SECONDS : qconfig.getTimeToLiveSeconds() * 1000l;
-            log(name + ".maxSizePerJVM=" + maxSizePerJVM);
-            log(name + ".maxAge=" + maxAge);
+            logger.log(Level.FINEST, name + ".maxSizePerJVM=" + maxSizePerJVM);
+            logger.log(Level.FINEST, name + ".maxAge=" + maxAge);
             this.name = name;
             Address master = getMasterAddress();
             if (master.isThisAddress()) {

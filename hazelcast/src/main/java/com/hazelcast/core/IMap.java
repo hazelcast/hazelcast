@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      *
      * @param key      key of the entry
      * @param value    value of the entry
-     * @param timeout    maximum time to wait
+     * @param timeout  maximum time to wait
      * @param timeunit time unit for the ttl
      * @return <tt>true</tt> if the put is successful, <tt>false</tt>
      *         otherwise.
@@ -295,11 +295,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * LocalMapStats is the statistics for the local portion of this
      * distributed map and contains information such as ownedEntryCount
      * backupEntryCount, lastUpdateTime, lockedEntryCount.
-     * <p>
+     * <p/>
      * Since this stats are only for the local portion of this map, if you
      * need the cluster-wide MapStats then you need to get the LocalMapStats
      * from all members of the cluster and combine them.
-     *
      *
      * @return this map's local statistics.
      */

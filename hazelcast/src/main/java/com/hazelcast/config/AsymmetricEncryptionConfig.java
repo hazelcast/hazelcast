@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,15 +92,15 @@ public class AsymmetricEncryptionConfig {
     @Override
     public String toString() {
         return new StringBuilder(256)
-        .append("AsymmetricEncryptionConfig")
-        .append("{enabled=").append(enabled)
-        .append(", algorithm='").append(algorithm).append('\'')
-        .append(", keyPassword='").append(keyPassword).append('\'')
-        .append(", keyAlias='").append(keyAlias).append('\'')
-        .append(", storeType='").append(storeType).append('\'')
-        .append(", storePassword='").append(storePassword).append('\'')
-        .append(", storePath='").append(storePath).append('\'')
-        .append('}')
-        .toString();
+                .append("AsymmetricEncryptionConfig")
+                .append("{enabled=").append(enabled)
+                .append(", algorithm='").append(algorithm).append('\'')
+                .append(", keyPassword='").append(keyPassword).append('\'')
+                .append(", keyAlias='").append(keyAlias).append('\'')
+                .append(", storeType='").append(storeType).append('\'')
+                .append(", storePassword='").append(storePassword).append('\'')
+                .append(", storePath='").append(storePath).append('\'')
+                .append('}')
+                .toString();
     }
 }

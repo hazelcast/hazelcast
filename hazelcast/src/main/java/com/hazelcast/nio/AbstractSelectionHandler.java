@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.cluster.ClusterService;
-import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 import com.hazelcast.impl.Node;
 
 import java.nio.channels.SelectionKey;
@@ -26,6 +25,8 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 
 abstract class AbstractSelectionHandler implements SelectionHandler {
 

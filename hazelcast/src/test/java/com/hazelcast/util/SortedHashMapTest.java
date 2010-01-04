@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,102 +17,102 @@
 
 package com.hazelcast.util;
 
-import org.junit.Test;
 import org.junit.After;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 
-import static junit.framework.Assert.assertEquals;
-
-import java.util.Set;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
+
+import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class SortedHashMapTest {
 
-    private SortedHashMap<String,String> map = new SortedHashMap<String,String>();
+    private SortedHashMap<String, String> map = new SortedHashMap<String, String>();
 
     @After
-    public void clear(){
+    public void clear() {
         map.clear();
     }
 
     @Test
     public void testPutAndGet() {
-        map.put("hello","world");
-        assertEquals("world",map.get("hello"));
+        map.put("hello", "world");
+        assertEquals("world", map.get("hello"));
     }
 
     @Test
     public void testTouch() {
-        map.put("hello","world");
+        map.put("hello", "world");
         long updateTime = System.currentTimeMillis();
-        SortedHashMap.touch(map,"hello", SortedHashMap.OrderingType.LFU);
-        assertEquals(updateTime,map.getEntry("hello").lastAccess);
+        SortedHashMap.touch(map, "hello", SortedHashMap.OrderingType.LFU);
+        assertEquals(updateTime, map.getEntry("hello").lastAccess);
     }
 
     @Test
     public void testMoveToTop() {
-        for(int i=0;i<10;++i){
-            map.put("hello"+i,"world");
+        for (int i = 0; i < 10; ++i) {
+            map.put("hello" + i, "world");
         }
-        SortedHashMap.moveToTop(map,"hello9");
+        SortedHashMap.moveToTop(map, "hello9");
         Set<String> keys = map.keySet();
-        assertEquals("hello9",keys.iterator().next());
+        assertEquals("hello9", keys.iterator().next());
     }
 
     @Test
     public void testGet() {
-        map.put("hello","world");
-        assertEquals("world",map.get("hello"));
+        map.put("hello", "world");
+        assertEquals("world", map.get("hello"));
     }
 
     @Test
     public void testRemove() {
-        map.put("hello","world");
+        map.put("hello", "world");
         map.remove("hello");
-        assertEquals(0,map.size());
+        assertEquals(0, map.size());
     }
 
     @Test
     public void testContainsValue() {
-        map.put("hello","world");
+        map.put("hello", "world");
         assertTrue(map.containsValue("world"));
     }
 
     @Test
     public void testKeySet() {
-        for(int i=0;i<10;++i){
-            map.put("hello"+i,"world");
+        for (int i = 0; i < 10; ++i) {
+            map.put("hello" + i, "world");
         }
         Set<String> keys = map.keySet();
-        int i=0;
-        for(String key:keys){
-            assertEquals("hello"+i++,key);
+        int i = 0;
+        for (String key : keys) {
+            assertEquals("hello" + i++, key);
         }
     }
 
     @Test
     public void testValues() {
-        for(int i=0;i<10;++i){
-            map.put("hello"+i,"world"+i);
+        for (int i = 0; i < 10; ++i) {
+            map.put("hello" + i, "world" + i);
         }
         Collection<String> values = map.values();
-        int i=0;
-        for(String value:values){
-            assertEquals("world"+i++,value);
+        int i = 0;
+        for (String value : values) {
+            assertEquals("world" + i++, value);
         }
     }
 
     @Test
     public void testEntrySet() {
-        for(int i=0;i<10;++i){
-            map.put("hello"+i,"world"+i);
+        for (int i = 0; i < 10; ++i) {
+            map.put("hello" + i, "world" + i);
         }
-        Set<Map.Entry<String,String>> entries = map.entrySet();
-        int i=0;
-        for(Map.Entry<String,String> entry:entries){
-            assertEquals("hello"+i,entry.getKey());
-            assertEquals("world"+i++,entry.getValue());
+        Set<Map.Entry<String, String>> entries = map.entrySet();
+        int i = 0;
+        for (Map.Entry<String, String> entry : entries) {
+            assertEquals("hello" + i, entry.getKey());
+            assertEquals("world" + i++, entry.getValue());
         }
     }
 }

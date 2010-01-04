@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +36,7 @@ public class Request {
     public final static int DEFAULT_BLOCK_ID = -1;
     public final static long DEFAULT_CALL_ID = -1;
     public final static long DEFAULT_VERSION = -1;
-    
-    
+
     String name = null;
     Data key = null;
     Data value = null;
@@ -132,21 +131,21 @@ public class Request {
                          final Address thisAddress) {
         reset();
         set(true,
-        	operation,
-        	name,
-        	key,
-        	value,
-        	blockId,
-        	timeout,
-        	ttl,
-        	ThreadContext.get().getTxnId(),
-        	DEFAULT_CALL_ID,
-        	ThreadContext.get().getThreadId(),
-        	thisAddress,
-        	DEFAULT_LOCK_COUNT,
-        	thisAddress,
-        	Long.MIN_VALUE,
-        	DEFAULT_VERSION);
+                operation,
+                name,
+                key,
+                value,
+                blockId,
+                timeout,
+                ttl,
+                ThreadContext.get().getTxnId(),
+                DEFAULT_CALL_ID,
+                ThreadContext.get().getThreadId(),
+                thisAddress,
+                DEFAULT_LOCK_COUNT,
+                thisAddress,
+                Long.MIN_VALUE,
+                DEFAULT_VERSION);
     }
 
     public void setFromRequest(Request req, boolean hardCopy) {

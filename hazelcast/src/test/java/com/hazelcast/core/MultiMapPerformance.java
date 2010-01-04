@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,83 +17,84 @@
 
 package com.hazelcast.core;
 
-import org.junit.Test;
 import org.junit.After;
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 import java.util.Collection;
 
-public class MultiMapPerformance extends PerformanceTest{
-    private MultiMap<String,String> map = Hazelcast.getMultiMap("MultiMapPerformance");
+import static org.junit.Assert.assertEquals;
+
+public class MultiMapPerformance extends PerformanceTest {
+    private MultiMap<String, String> map = Hazelcast.getMultiMap("MultiMapPerformance");
 
     @After
-    public void clear(){
+    public void clear() {
         t.stop();
         t.printResult();
         map.clear();
-        assertEquals(0,map.size());
+        assertEquals(0, map.size());
     }
 
     @Test
-    public void testMultiMapPutWithSameKeyAndValue(){
+    public void testMultiMapPutWithSameKeyAndValue() {
         String test = "testMultiMapPutWithSameKeyAndValue";
         t = new PerformanceTimer(test, ops);
-        for(int i=0; i<ops; ++i){
-            map.put("Hello","World");
+        for (int i = 0; i < ops; ++i) {
+            map.put("Hello", "World");
         }
     }
 
     @Test
-    public void testMultiMapPutWithSameKeyAndDifferentValue(){
+    public void testMultiMapPutWithSameKeyAndDifferentValue() {
         String test = "testMultiMapPutWithSameKeyAndDifferentValue";
-        ops/=100;
+        ops /= 100;
         t = new PerformanceTimer(test, ops);
-        for(int i=0; i<ops; ++i){
-            map.put("Hello","World"+i);
+        for (int i = 0; i < ops; ++i) {
+            map.put("Hello", "World" + i);
         }
-        ops*=100;
+        ops *= 100;
     }
 
     @Test
-    public void testMultiMapPutWithDifferentKey(){
+    public void testMultiMapPutWithDifferentKey() {
         String test = "testMultiMapPutWithDifferentKey";
         t = new PerformanceTimer(test, ops);
-        for(int i=0; i<ops; ++i){
-            map.put("Hello"+i,"World");
+        for (int i = 0; i < ops; ++i) {
+            map.put("Hello" + i, "World");
         }
     }
 
     @Test
-    public void testMultiMapValues(){
+    public void testMultiMapValues() {
         String test = "testMultiMapValues";
-        for(int i=0; i<ops; ++i){
-            map.put("Hello"+i,"World");
+        for (int i = 0; i < ops; ++i) {
+            map.put("Hello" + i, "World");
         }
         t = new PerformanceTimer(test, ops);
         Collection<String> values = map.values();
     }
 
     @Test
-    public void testMultiMapGet(){
+    public void testMultiMapGet() {
         String test = "testMultiMapGet";
-        for(int i=0; i<ops; ++i){
-            map.put("Hello"+i,"World");
+        for (int i = 0; i < ops; ++i) {
+            map.put("Hello" + i, "World");
         }
         t = new PerformanceTimer(test, ops);
-        for(int i=0; i< ops; ++i){
-            Collection<String> values = map.get("Hello"+i);
+        for (int i = 0; i < ops; ++i) {
+            Collection<String> values = map.get("Hello" + i);
         }
     }
 
     @Test
-    public void testMultiMapValueCount(){
+    public void testMultiMapValueCount() {
         String test = "testMultiMapGet";
-        for(int i=0; i<ops; ++i){
-            map.put("Hello"+i,"World");
+        for (int i = 0; i < ops; ++i) {
+            map.put("Hello" + i, "World");
         }
         t = new PerformanceTimer(test, ops);
-        for(int i=0; i< ops; ++i){
-            int count = map.valueCount("Hello"+i);
+        for (int i = 0; i < ops; ++i) {
+            int count = map.valueCount("Hello" + i);
         }
     }
 }

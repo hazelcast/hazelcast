@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,24 +17,23 @@
 
 package com.hazelcast.hibernate.provider;
 
-import java.util.Properties;
-import java.util.logging.Logger;
-
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.IdGenerator;
+import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
 import org.hibernate.cache.Cache;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.CacheProvider;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.IdGenerator;
-import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
+import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * Implementation of (deprecated) Hibernate <code>CacheProvider</code> interface for compatibility with pre-Hibernate
  * 3.3.x code.
- * <p>
+ * <p/>
  * To enable, <code>hibernate.cache.provider_class=com.hazelcast.hibernate.provider.HazelcastCacheProvider</code>. This
  * cache provider relies on <code>hazelcast.xml</code> for cache configuration.
- * 
+ *
  * @author Leo Kim (lkim@limewire.com)
  * @see HazelcastCache
  * @see HazelcastCacheRegionFactory
@@ -59,7 +58,7 @@ public final class HazelcastCacheProvider implements CacheProvider {
      * From what I can tell from the <code>{@link org.hibernate.cache.CacheCurrencyStrategy}</code>s implemented in
      * Hibernate, the return value "false" will mean an object will be replaced in a cache if it already exists there,
      * and "true" will not replace it.
-     * 
+     *
      * @return true - for a large cluster, unnecessary puts will most likely slow things down.
      */
     public boolean isMinimalPutsEnabledByDefault() {
@@ -85,5 +84,4 @@ public final class HazelcastCacheProvider implements CacheProvider {
         LOG.info("Shutting down HazelcastCacheProvider...");
         Hazelcast.shutdown();
     }
-
 }

@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,35 +48,35 @@ public class Master extends AbstractRemotelyProcessable {
         super();
         this.address = originAddress;
     }
-
     /* (non-Javadoc)
-     * @see com.hazelcast.cluster.AbstractRemotelyProcessable#readData(java.io.DataInput)
-     */
+    * @see com.hazelcast.cluster.AbstractRemotelyProcessable#readData(java.io.DataInput)
+    */
+
     @Override
     public void readData(final DataInput in) throws IOException {
         address = new Address();
         address.readData(in);
     }
-
     /* (non-Javadoc)
-     * @see com.hazelcast.cluster.AbstractRemotelyProcessable#writeData(java.io.DataOutput)
-     */
+    * @see com.hazelcast.cluster.AbstractRemotelyProcessable#writeData(java.io.DataOutput)
+    */
+
     @Override
     public void writeData(final DataOutput out) throws IOException {
         address.writeData(out);
     }
-
     /* (non-Javadoc)
-     * @see java.lang.Object#toString()
-     */
+    * @see java.lang.Object#toString()
+    */
+
     @Override
     public String toString() {
         return "Master " + address;
     }
-
     /* (non-Javadoc)
-     * @see com.hazelcast.impl.BaseManager.Processable#process()
-     */
+    * @see com.hazelcast.impl.BaseManager.Processable#process()
+    */
+
     public void process() {
         node.clusterManager.handleMaster(this);
     }

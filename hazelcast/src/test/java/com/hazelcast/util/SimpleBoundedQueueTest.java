@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,17 @@
 
 package com.hazelcast.util;
 
-import org.junit.Test;
 import org.junit.After;
+import org.junit.Test;
+
 import static junit.framework.Assert.assertEquals;
 
 public class SimpleBoundedQueueTest {
 
     private SimpleBoundedQueue<String> queue = new SimpleBoundedQueue<String>(10);
+
     @After
-    public void clear(){
+    public void clear() {
         queue.clear();
     }
 
@@ -37,10 +39,10 @@ public class SimpleBoundedQueueTest {
 
     @Test
     public void testSize() {
-       queue.add("hello");
-        assertEquals(1,queue.size());
+        queue.add("hello");
+        assertEquals(1, queue.size());
         queue.add("world");
-        assertEquals(2,queue.size());
+        assertEquals(2, queue.size());
     }
 
     @Test

@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.core.Transaction;
 import com.hazelcast.core.Instance;
+import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.BlockingQueueManager.CommitPoll;
 import com.hazelcast.impl.BlockingQueueManager.Offer;
 
@@ -301,11 +301,11 @@ class TransactionImpl implements Transaction {
             } else {
                 if (instanceType == Instance.InstanceType.LIST) {
                     int count = (Integer) value;
-                    for (int i=0; i < count; i++) {
+                    for (int i = 0; i < count; i++) {
                         factory.node.concurrentMapManager.new MAdd().addToList(name, key);
                     }
                 } else {
-                    factory.node.concurrentMapManager.new MPut().put(name, key, value, -1,  -1);
+                    factory.node.concurrentMapManager.new MPut().put(name, key, value, -1, -1);
                 }
             }
         }

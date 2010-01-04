@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
         long now = System.currentTimeMillis();
         if (connectionTimeoutMillis > now) {
             return true;
-        } else if (connectionTimeoutMillis == 0){
+        } else if (connectionTimeoutMillis == 0) {
             connectionTimeoutMillis = now + 10000;
         }
         return false;
@@ -135,7 +135,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
 
     public void writeData(DataOutput out) throws IOException {
         address.writeData(out);
-        out.writeInt(nodeType.getValue()); 
+        out.writeInt(nodeType.getValue());
     }
 
     @Override

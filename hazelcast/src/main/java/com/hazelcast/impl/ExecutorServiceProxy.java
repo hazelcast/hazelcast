@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 
 /**
  * Implements a distributed @link java.util.concurrent.ExecutorService.
@@ -56,7 +54,7 @@ public class ExecutorServiceProxy implements ExecutorService {
     public ExecutorServiceProxy(Node node) {
         this.node = node;
     }
-    
+
     /**
      * Hazelcast ExecutorService cannot be really shut down.
      * The method return always false immeditely.
@@ -68,35 +66,34 @@ public class ExecutorServiceProxy implements ExecutorService {
     }
 
     public List<Future> invokeAll(Collection tasks) throws InterruptedException {
-    	// Inspired to JDK7
-    	if (tasks == null)
-    		throw new NullPointerException();
-    	List<Future> futures = new ArrayList<Future>(tasks.size());
-    	boolean done = false;
-    	try {
-
-    		for (Object command : tasks) {
-    	        futures.add(submit((Callable) command));
-    		}
-    		for (Future f : futures) {
-    			if (!f.isDone()) {
-    				try {
-    					f.get();
-    				}
-    				catch (CancellationException ignore) {
-    				}
-    				catch (ExecutionException ignore) {
-    				}
-    			}
-    		}
-    		done = true;
-    		return futures;
-    	}
-    	finally {
-    		if (!done)
-    			for (Future f : futures)
-    				f.cancel(true);
-    	}
+        // Inspired to JDK7
+        if (tasks == null)
+            throw new NullPointerException();
+        List<Future> futures = new ArrayList<Future>(tasks.size());
+        boolean done = false;
+        try {
+            for (Object command : tasks) {
+                futures.add(submit((Callable) command));
+            }
+            for (Future f : futures) {
+                if (!f.isDone()) {
+                    try {
+                        f.get();
+                    }
+                    catch (CancellationException ignore) {
+                    }
+                    catch (ExecutionException ignore) {
+                    }
+                }
+            }
+            done = true;
+            return futures;
+        }
+        finally {
+            if (!done)
+                for (Future f : futures)
+                    f.cancel(true);
+        }
     }
 
     public List invokeAll(Collection tasks, long timeout, TimeUnit unit)
@@ -205,9 +202,9 @@ public class ExecutorServiceProxy implements ExecutorService {
      * Check precodintion before submit a task
      */
     private void check(Object obj) {
-    	if (!node.executorManager.isStarted()) {
-    		throw new RejectedExecutionException("Hazelcast halted");
-    	}
+        if (!node.executorManager.isStarted()) {
+            throw new RejectedExecutionException("Hazelcast halted");
+        }
         if (obj == null) {
             throw new NullPointerException("Object cannot be null.");
         }

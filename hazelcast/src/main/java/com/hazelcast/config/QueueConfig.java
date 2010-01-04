@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,10 +54,9 @@ public final class QueueConfig {
      * @param maxSizePerJVM the maxSizePerJVM to set
      */
     public QueueConfig setMaxSizePerJVM(int maxSizePerJVM) {
-    	if(maxSizePerJVM < 0) {
-    		throw new IllegalArgumentException("queue max size per JVM must be positive");
-    	}
-    	
+        if (maxSizePerJVM < 0) {
+            throw new IllegalArgumentException("queue max size per JVM must be positive");
+        }
         this.maxSizePerJVM = maxSizePerJVM;
         return this;
     }
@@ -73,10 +72,9 @@ public final class QueueConfig {
      * @param timeToLiveSeconds the timeToLiveSeconds to set
      */
     public QueueConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
-    	if(timeToLiveSeconds < 0) {
-    		throw new IllegalArgumentException("queue TTL must be positive");
-    	}
-    	
+        if (timeToLiveSeconds < 0) {
+            throw new IllegalArgumentException("queue TTL must be positive");
+        }
         this.timeToLiveSeconds = timeToLiveSeconds;
         return this;
     }

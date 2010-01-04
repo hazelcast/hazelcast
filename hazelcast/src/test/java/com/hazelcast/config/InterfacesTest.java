@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,84 +17,79 @@
 
 package com.hazelcast.config;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Test;
+import static org.junit.Assert.*;
 
 public class InterfacesTest {
 
-	final String interfaceA = "127.0.0.1";
-	final String interfaceB = "127.0.0.2";
-	final String interfaceC = "127.0.0.3";
+    final String interfaceA = "127.0.0.1";
+    final String interfaceB = "127.0.0.2";
+    final String interfaceC = "127.0.0.3";
 
-	@Test
-	public void testIsEnabledByDefault() {
-		Interfaces interfaces = new Interfaces();
-		assertFalse(interfaces.isEnabled());
-	}
+    @Test
+    public void testIsEnabledByDefault() {
+        Interfaces interfaces = new Interfaces();
+        assertFalse(interfaces.isEnabled());
+    }
 
-	@Test
-	public void testSetEnabled() {
-		Interfaces interfaces = new Interfaces().setEnabled(true);
-		assertTrue(interfaces.isEnabled());
-	}
+    @Test
+    public void testSetEnabled() {
+        Interfaces interfaces = new Interfaces().setEnabled(true);
+        assertTrue(interfaces.isEnabled());
+    }
 
-	@Test
-	public void testAddInterface() {
-		Interfaces interfaces = new Interfaces().addInterface(interfaceA);
-		assertTrue(interfaces.getInterfaces().contains(interfaceA));
-	}
+    @Test
+    public void testAddInterface() {
+        Interfaces interfaces = new Interfaces().addInterface(interfaceA);
+        assertTrue(interfaces.getInterfaces().contains(interfaceA));
+    }
 
-	@Test
-	public void testClear() {
-		Interfaces interfaces = new Interfaces()
-			.addInterface(interfaceA)
-			.addInterface(interfaceB)
-			.addInterface(interfaceC);
+    @Test
+    public void testClear() {
+        Interfaces interfaces = new Interfaces()
+                .addInterface(interfaceA)
+                .addInterface(interfaceB)
+                .addInterface(interfaceC);
+        assertTrue(interfaces.getInterfaces().size() == 3);
+        interfaces.clear();
+        assertTrue(interfaces.getInterfaces().size() == 0);
+    }
 
-		assertTrue(interfaces.getInterfaces().size() == 3);
-		interfaces.clear();
-		assertTrue(interfaces.getInterfaces().size() == 0);
-	}
+    @Test
+    public void testGetInterfaceList() {
+        Interfaces interfaces = new Interfaces();
+        assertNotNull(interfaces.getInterfaces());
+    }
 
-	@Test
-	public void testGetInterfaceList() {
-		Interfaces interfaces = new Interfaces();
-		assertNotNull(interfaces.getInterfaces());
-	}
+    @Test
+    public void testSetInterfaceList() {
+        List<String> interfaceList = new ArrayList<String>();
+        interfaceList.add(interfaceA);
+        interfaceList.add(interfaceB);
+        interfaceList.add(interfaceC);
+        Interfaces interfaces = new Interfaces().setInterfaces(interfaceList);
+        assertTrue(interfaces.getInterfaces().contains(interfaceA));
+        assertTrue(interfaces.getInterfaces().contains(interfaceB));
+        assertTrue(interfaces.getInterfaces().contains(interfaceC));
+    }
 
-	@Test
-	public void testSetInterfaceList() {
-		List<String> interfaceList = new ArrayList<String>();
-		interfaceList.add(interfaceA);
-		interfaceList.add(interfaceB);
-		interfaceList.add(interfaceC);
+    @Test
+    public void shouldNotContainDuplicateInterfaces() {
+        Interfaces interfaces = new Interfaces().addInterface(interfaceA);
+        assertTrue(interfaces.getInterfaces().size() == 1);
+        interfaces.addInterface(interfaceA);
+        assertTrue(interfaces.getInterfaces().size() == 1);
+    }
 
-		Interfaces interfaces = new Interfaces().setInterfaces(interfaceList);
-
-		assertTrue(interfaces.getInterfaces().contains(interfaceA));
-		assertTrue(interfaces.getInterfaces().contains(interfaceB));
-		assertTrue(interfaces.getInterfaces().contains(interfaceC));
-	}
-
-	@Test
-	public void shouldNotContainDuplicateInterfaces() {
-		Interfaces interfaces = new Interfaces().addInterface(interfaceA);
-		assertTrue(interfaces.getInterfaces().size() == 1);
-		
-		interfaces.addInterface(interfaceA);
-		assertTrue(interfaces.getInterfaces().size() == 1);
-	}
-	
-	@Test(expected = UnsupportedOperationException.class)
-	public void shouldNotBeModifiable() {
-		new Interfaces()
-			.addInterface(interfaceA)
-			.getInterfaces()
-			.clear();
-	}
-	
+    @Test(expected = UnsupportedOperationException.class)
+    public void shouldNotBeModifiable() {
+        new Interfaces()
+                .addInterface(interfaceA)
+                .getInterfaces()
+                .clear();
+    }
 }

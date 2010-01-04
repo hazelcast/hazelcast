@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ package com.hazelcast.impl;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
-import static com.hazelcast.nio.IOUtil.toObject;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -29,6 +28,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class Record implements MapEntry {
     private static final Logger logger = Logger.getLogger(Record.class.getName());

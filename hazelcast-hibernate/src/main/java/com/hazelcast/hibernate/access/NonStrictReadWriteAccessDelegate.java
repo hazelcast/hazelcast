@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,14 @@
 
 package com.hazelcast.hibernate.access;
 
+import com.hazelcast.hibernate.region.HazelcastRegion;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.access.SoftLock;
-
-import com.hazelcast.hibernate.region.HazelcastRegion;
 
 /**
  * Makes no guarantee of consistency between the cache and the database. Stale data from the cache is possible if expiry
  * is not configured appropriately.
- * 
+ *
  * @author Leo Kim (lkim@limewire.com)
  */
 public class NonStrictReadWriteAccessDelegate<T extends HazelcastRegion> extends AbstractAccessDelegate<T> {
@@ -39,7 +38,7 @@ public class NonStrictReadWriteAccessDelegate<T extends HazelcastRegion> extends
     }
 
     public boolean afterUpdate(final Object key, final Object value, final Object currentVersion,
-            final Object previousVersion, final SoftLock lock) throws CacheException {
+                               final Object previousVersion, final SoftLock lock) throws CacheException {
         return false;
     }
 
@@ -75,7 +74,7 @@ public class NonStrictReadWriteAccessDelegate<T extends HazelcastRegion> extends
     }
 
     public boolean putFromLoad(final Object key, final Object value, final long txTimestamp, final Object version,
-            final boolean minimalPutOverride) throws CacheException {
+                               final boolean minimalPutOverride) throws CacheException {
         getCache().put(key, value);
         return true;
     }
@@ -88,14 +87,15 @@ public class NonStrictReadWriteAccessDelegate<T extends HazelcastRegion> extends
         getCache().clear();
     }
 
-    public void unlockItem(final Object key, final SoftLock lock) throws CacheException {}
+    public void unlockItem(final Object key, final SoftLock lock) throws CacheException {
+    }
 
-    public void unlockRegion(final SoftLock lock) throws CacheException {}
+    public void unlockRegion(final SoftLock lock) throws CacheException {
+    }
 
     public boolean update(final Object key, final Object value, final Object currentVersion,
-            final Object previousVersion) throws CacheException {
+                          final Object previousVersion) throws CacheException {
         getCache().put(key, value);
         return true;
     }
-
 }

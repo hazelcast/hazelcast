@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ public class Config {
     public static final int DEFAULT_PORT = 5701;
 
     private String xmlConfig = null;
-    
+
     private GroupConfig groupConfig = new GroupConfig();
 
     private int port = DEFAULT_PORT;
@@ -156,14 +156,14 @@ public class Config {
     }
 
     public GroupConfig getGroupConfig() {
-    	return groupConfig;
+        return groupConfig;
     }
 
     public Config setGroupConfig(final GroupConfig groupConfig) {
-    	this.groupConfig = groupConfig;
-    	return this;
+        this.groupConfig = groupConfig;
+        return this;
     }
-    
+
     /**
      * @return the port
      */

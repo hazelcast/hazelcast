@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -239,14 +239,14 @@ public class FastByteArrayInputStream extends ByteArrayInputStream implements Da
      *             form: <blockquote>
      *             <p/>
      *             <pre>
-     *                                                                                     DataInputStream d = new DataInputStream(in);
-     *                                                                                     </pre>
+     *                                                                                                 DataInputStream d = new DataInputStream(in);
+     *                                                                                                 </pre>
      *             <p/>
      *             </blockquote> with: <blockquote>
      *             <p/>
      *             <pre>
-     *                                                                                     BufferedReader d = new BufferedReader(new InputStreamReader(in));
-     *                                                                                     </pre>
+     *                                                                                                 BufferedReader d = new BufferedReader(new InputStreamReader(in));
+     *                                                                                                 </pre>
      *             <p/>
      *             </blockquote>
      */

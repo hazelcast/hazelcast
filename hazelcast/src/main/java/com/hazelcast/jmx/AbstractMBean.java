@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,6 @@ public abstract class AbstractMBean<E> implements DynamicMBean, MBeanRegistratio
 
     private volatile ObjectNameSpec parentName = new ObjectNameSpec();
     private volatile ObjectName objectName;
-
     // Use a weak reference? http://weblogs.java.net/blog/emcmanus/archive/2005/07/cleaning_up_an_1.html
     private E managedObject;
 

@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.hibernate.access.ReadWriteAccessDelegate;
 
 /**
  * Makes <b>READ COMMITTED</b> consistency guarantees even in a clustered environment.
- * 
+ *
  * @author Leo Kim (lkim@limewire.com)
  */
 final class ReadWriteAccessStrategy extends AbstractEntityRegionAccessStrategy {

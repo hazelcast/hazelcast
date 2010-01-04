@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,7 +102,7 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
     }
 
     public static OrderingType getOrderingTypeByName(String orderingType) {
-    	return OrderingType.valueOf(orderingType.toUpperCase());
+        return OrderingType.valueOf(orderingType.toUpperCase());
     }
 
     public V get(Object key) {
@@ -446,8 +446,8 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
             return nextEntry();
         }
     }
-
     // These Overrides alter the behavior of superclass view iterator() methods
+
     Iterator<K> newKeyIterator() {
         return new KeyIterator();
     }

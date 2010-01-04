@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,19 +32,16 @@ public class LogFormatter extends Formatter {
         if (record.getLoggerName().equals("com.hazelcast.system")) {
             return record.getMessage() + LINE_SEPARATOR;
         }
-        
         StringBuilder sb = new StringBuilder();
-        
         sb.append(new Date(record.getMillis()))
-        	.append(' ')
-        	.append(record.getLevel().getLocalizedName())
-        	.append(": ")
-        	.append('[')
-        	.append(record.getSourceClassName())
-            .append("] ")
-            .append(record.getMessage())
-            .append(LINE_SEPARATOR);
-        
+                .append(' ')
+                .append(record.getLevel().getLocalizedName())
+                .append(": ")
+                .append('[')
+                .append(record.getSourceClassName())
+                .append("] ")
+                .append(record.getMessage())
+                .append(LINE_SEPARATOR);
         if (record.getThrown() != null) {
             try {
                 StringWriter sw = new StringWriter();
@@ -55,7 +52,6 @@ public class LogFormatter extends Formatter {
             } catch (Exception ignored) {
             }
         }
-        
         return sb.toString();
     }
 }

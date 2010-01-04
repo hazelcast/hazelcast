@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 
 package com.hazelcast.nio;
 
+import org.junit.Test;
+
 import static com.hazelcast.nio.IOUtil.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import org.junit.Test;
-
 
 public class IOTest {
 
@@ -29,13 +29,11 @@ public class IOTest {
     public void testHardCopy() {
         Data data = toData("value");
         Data hardCopy = doHardCopy(data);
-
         assertEquals(data, hardCopy);
         assertEquals("value", toObject(hardCopy));
         assertEquals(data, hardCopy);
         assertEquals(data.size(), hardCopy.size());
         assertTrue(hardCopy.size() > 0);
-
         assertEquals("value", toObject(hardCopy));
         assertTrue(hardCopy.size() > 0);
     }

@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,16 @@
 
 package com.hazelcast.core;
 
-import org.junit.Test;
 import org.junit.After;
+import org.junit.Test;
 
 import static junit.framework.Assert.assertTrue;
 
-public class IListPerformance extends PerformanceTest{
-    private IList<Integer> list= Hazelcast.getList("IListPerformance");
+public class IListPerformance extends PerformanceTest {
+    private IList<Integer> list = Hazelcast.getList("IListPerformance");
 
     @After
-    public void clear(){
+    public void clear() {
         t.stop();
         t.printResult();
         list.clear();
@@ -34,30 +34,30 @@ public class IListPerformance extends PerformanceTest{
     }
 
     @Test
-    public void testListAdd(){
+    public void testListAdd() {
         String test = "testListAdd";
         t = new PerformanceTimer(test, ops);
-        for(int i=0; i<ops; ++i){
+        for (int i = 0; i < ops; ++i) {
             list.add(i);
         }
     }
 
     @Test
-    public void testListContains(){
+    public void testListContains() {
         String test = "testListContains";
-        for(int i=0; i<ops; ++i){
+        for (int i = 0; i < ops; ++i) {
             list.add(i);
         }
         t = new PerformanceTimer(test, ops);
-        for(int i=0; i<ops; ++i){
-          list.contains(i);
+        for (int i = 0; i < ops; ++i) {
+            list.contains(i);
         }
     }
 
     @Test
-    public void testListIterator(){
+    public void testListIterator() {
         String test = "testListIterator";
-        for(int i=0; i<ops; ++i){
+        for (int i = 0; i < ops; ++i) {
             list.add(i);
         }
         t = new PerformanceTimer(test, ops);

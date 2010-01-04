@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,20 +20,20 @@ package com.hazelcast.core;
 import org.junit.After;
 import org.junit.Test;
 
-public class IQueuePerformance extends PerformanceTest{
+public class IQueuePerformance extends PerformanceTest {
     private IQueue<String> queue = Hazelcast.getQueue("IQueuePerformance");
 
     @After
-    public void clear(){
+    public void clear() {
         queue.clear();
         t.stop();
         t.printResult();
     }
 
     @Test
-    public void testQueueAdd(){
+    public void testQueueAdd() {
         t = new PerformanceTimer("testQueueAdd", ops);
-        for(int i=0; i<ops; ++i){
+        for (int i = 0; i < ops; ++i) {
             queue.add("Hello");
         }
     }

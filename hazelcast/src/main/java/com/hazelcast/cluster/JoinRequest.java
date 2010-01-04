@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,16 +86,16 @@ public class JoinRequest extends AbstractRemotelyProcessable {
 
     @Override
     public String toString() {
-    	return new StringBuilder(128)
-    		.append("JoinRequest{")
-    		.append("nodeType=").append(nodeType)
-            .append(", address=").append(address)
-            .append(", groupName='").append(groupName).append('\'')
-            .append(", groupPassword='").append(groupPassword).append('\'')
-            .append(", buildNumber='").append(buildNumber).append('\'')
-            .append(", packetVersion='").append(packetVersion).append('\'')
-            .append('}')
-            .toString();
+        return new StringBuilder(128)
+                .append("JoinRequest{")
+                .append("nodeType=").append(nodeType)
+                .append(", address=").append(address)
+                .append(", groupName='").append(groupName).append('\'')
+                .append(", groupPassword='").append(groupPassword).append('\'')
+                .append(", buildNumber='").append(buildNumber).append('\'')
+                .append(", packetVersion='").append(packetVersion).append('\'')
+                .append('}')
+                .toString();
     }
 
     public void process() {

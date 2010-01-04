@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,13 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
-import static com.hazelcast.query.Predicates.*;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
+
+import static com.hazelcast.query.Predicates.*;
 
 public class SqlPredicate extends AbstractPredicate implements IndexAwarePredicate {
     private transient Predicate predicate;

@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 
 package com.hazelcast.nio;
 
-import static com.hazelcast.nio.IOUtil.copyToDirectBuffer;
-
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -26,6 +24,8 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
+
+import static com.hazelcast.nio.IOUtil.copyToDirectBuffer;
 
 public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
@@ -69,7 +69,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     public void enqueuePacket(final Packet packet) {
         packet.write();
         writeQueue.offer(packet);
-        if (informSelector.compareAndSet(true, false)) { 
+        if (informSelector.compareAndSet(true, false)) {
             outSelector.addTask(this);
             if (packet.currentCallCount < 2) {
                 outSelector.selector.wakeup();
@@ -124,7 +124,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             }
         } catch (final Throwable t) {
             logger.log(Level.SEVERE, "Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
-            t.printStackTrace(); 
+            t.printStackTrace();
         } finally {
             ready = false;
             registerWrite();
@@ -193,7 +193,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         final Cipher cipher;
         final int writeBlockSize;
 
-        boolean aliasWritten = false; 
+        boolean aliasWritten = false;
 
         AsymmetricCipherPacketWriter() {
             Cipher c = null;
@@ -203,12 +203,12 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                 logger.log(Level.SEVERE, "Asymmetric Cipher for WriteHandler cannot be initialized.", e);
                 cipher = null;
                 writeBlockSize = 0;
-                CipherHelper.handleCipherException(e, connection);                
+                CipherHelper.handleCipherException(e, connection);
                 return;
             }
             cipher = c;
             writeBlockSize = cipher.getBlockSize();
-        } 
+        }
 
         public boolean writePacket(Packet packet) throws Exception {
             if (!aliasWritten) {
@@ -335,7 +335,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                 if (outputSize <= cipherBuffer.remaining()) {
                     cipher.update(src, cipherBuffer);
                 } else {
-                    int min = Math.min (src.remaining(), cipherBuffer.remaining());
+                    int min = Math.min(src.remaining(), cipherBuffer.remaining());
                     int len = min / 2;
                     if (len > 0) {
                         int limitOld = src.limit();

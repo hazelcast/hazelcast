@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,14 @@
 
 package com.hazelcast.hibernate.region;
 
-import java.util.Map;
-
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEntry;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.Region;
 import org.hibernate.cache.Timestamper;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEntry;
+import java.util.Map;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
@@ -60,7 +59,7 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
 
     /**
      * Hazelcast does not support pushing elements to disk.
-     * 
+     *
      * @return -1 (according to <code>{@link Region}</code>, this value means "unsupported"
      */
     public long getElementCountOnDisk() {
@@ -90,7 +89,7 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
 
     /**
      * TODO: I am not clear as to what this is a timeout for.
-     * 
+     *
      * @return 60000 (milliseconds)
      */
     public int getTimeout() {
@@ -106,7 +105,7 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
 
     /**
      * Appears to be used only by <code>org.hibernate.stat.SecondLevelCacheStatistics</code>.
-     * 
+     *
      * @return the internal <code>IMap</code> used for this region.
      */
     public Map toMap() {

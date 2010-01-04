@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,12 +40,11 @@ public class ExecutorConfig {
      * @param corePoolSize the corePoolSize to set
      */
     public ExecutorConfig setCorePoolSize(final int corePoolSize) {
-    	if(corePoolSize <= 0) {
-    		throw new IllegalArgumentException("corePoolSize must be positive");
-    	}
-    	
+        if (corePoolSize <= 0) {
+            throw new IllegalArgumentException("corePoolSize must be positive");
+        }
         this.corePoolSize = corePoolSize;
-    	return this;
+        return this;
     }
 
     /**
@@ -59,12 +58,11 @@ public class ExecutorConfig {
      * @param maxPoolSize the maxPoolSize to set
      */
     public ExecutorConfig setMaxPoolSize(final int maxPoolSize) {
-    	if(maxPoolSize <= 0) {
-    		throw new IllegalArgumentException("maxPoolSize must be positive");
-    	}
-    	
+        if (maxPoolSize <= 0) {
+            throw new IllegalArgumentException("maxPoolSize must be positive");
+        }
         this.maxPoolSize = maxPoolSize;
-    	return this;
+        return this;
     }
 
     /**
@@ -78,11 +76,10 @@ public class ExecutorConfig {
      * @param keepAliveSeconds the keepAliveSeconds to set
      */
     public ExecutorConfig setKeepAliveSeconds(final int keepAliveSeconds) {
-    	if(keepAliveSeconds <= 0) {
-    		throw new IllegalArgumentException("keepAlice seconds must be positive");
-    	}
-    	
-    	this.keepAliveSeconds = keepAliveSeconds;
-    	return this;
+        if (keepAliveSeconds <= 0) {
+            throw new IllegalArgumentException("keepAlice seconds must be positive");
+        }
+        this.keepAliveSeconds = keepAliveSeconds;
+        return this;
     }
 }

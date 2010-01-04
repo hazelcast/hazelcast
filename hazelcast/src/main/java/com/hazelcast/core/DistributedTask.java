@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 
 package com.hazelcast.core;
 
-import static com.hazelcast.impl.Constants.Objects.*;
 import com.hazelcast.impl.DistributedRunnableAdapter;
 import com.hazelcast.impl.ExecutionManagerCallback;
 import com.hazelcast.impl.InnerFutureTask;
@@ -27,11 +26,13 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.*;
 
+import static com.hazelcast.impl.Constants.Objects.*;
+
 /**
  * A cancellable asynchronous distributed computation.
- * 
+ * <p/>
  * This class is analogue to java.util.concurrent.FutureTask.
- * 
+ * <p/>
  * Once the computation has completed, the computation cannot
  * be restarted or cancelled.
  */
@@ -94,7 +95,7 @@ public class DistributedTask<V> extends FutureTask<V> {
 
     @Override
     public V get() throws InterruptedException, ExecutionException, MemberLeftException {
-   		inner.get();
+        inner.get();
         if (cancelled)
             throw new CancellationException();
         if (exception != null)
@@ -176,7 +177,7 @@ public class DistributedTask<V> extends FutureTask<V> {
         private final Set<Member> members;
 
         private final Object key;
-        
+
         /**
          * A clalback to the ExecutionManager running the task.
          * When nulled after set/cancel, indicates that
@@ -202,13 +203,13 @@ public class DistributedTask<V> extends FutureTask<V> {
         }
 
         public V get() throws InterruptedException, ExecutionException {
-        	if (executionManagerCallback == null) {
-        		return null;
-        	}
+            if (executionManagerCallback == null) {
+                return null;
+            }
             Object r = null;
             while ((r = executionManagerCallback.get()) != OBJECT_DONE) {
-            	if (r == OBJECT_DONE) {
-            		// nothing to do
+                if (r == OBJECT_DONE) {
+                    // nothing to do
                 } else if (r == OBJECT_CANCELLED) {
                     cancelled = true;
                 } else if (r == OBJECT_MEMBER_LEFT) {
@@ -229,9 +230,9 @@ public class DistributedTask<V> extends FutureTask<V> {
 
         public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException,
                 TimeoutException {
-        	if (executionManagerCallback == null) {
-        		return null;
-        	}
+            if (executionManagerCallback == null) {
+                return null;
+            }
             long timeoutMillis = unit.toMillis(timeout);
             long start = System.currentTimeMillis();
             long timeLeft = timeoutMillis;
@@ -240,7 +241,7 @@ public class DistributedTask<V> extends FutureTask<V> {
                 if (r == null) {
                     throw new TimeoutException();
                 } else if (r == OBJECT_DONE) {
-            		// nothing to do
+                    // nothing to do
                 } else if (r == OBJECT_CANCELLED) {
                     cancelled = true;
                 } else if (r instanceof Throwable) {
@@ -294,9 +295,9 @@ public class DistributedTask<V> extends FutureTask<V> {
         }
 
         public boolean cancel(boolean mayInterruptIfRunning) {
-        	if (executionManagerCallback == null) {
-        		return false;
-        	}
+            if (executionManagerCallback == null) {
+                return false;
+            }
             cancelled = executionManagerCallback.cancel(mayInterruptIfRunning);
             if (cancelled)
                 innerDone();

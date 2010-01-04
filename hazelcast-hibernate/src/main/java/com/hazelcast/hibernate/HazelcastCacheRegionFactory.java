@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,24 +17,17 @@
 
 package com.hazelcast.hibernate;
 
-import java.util.Properties;
-import java.util.logging.Logger;
-
-import org.hibernate.cache.CacheDataDescription;
-import org.hibernate.cache.CacheException;
-import org.hibernate.cache.CollectionRegion;
-import org.hibernate.cache.EntityRegion;
-import org.hibernate.cache.QueryResultsRegion;
-import org.hibernate.cache.RegionFactory;
-import org.hibernate.cache.TimestampsRegion;
-import org.hibernate.cfg.Settings;
-
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.hibernate.collection.HazelcastCollectionRegion;
 import com.hazelcast.hibernate.entity.HazelcastEntityRegion;
 import com.hazelcast.hibernate.query.HazelcastQueryResultsRegion;
 import com.hazelcast.hibernate.timestamp.HazelcastTimestampsRegion;
+import org.hibernate.cache.*;
+import org.hibernate.cfg.Settings;
+
+import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
@@ -55,12 +48,12 @@ public class HazelcastCacheRegionFactory implements RegionFactory {
     }
 
     public CollectionRegion buildCollectionRegion(final String regionName, final Properties properties,
-            final CacheDataDescription metadata) throws CacheException {
+                                                  final CacheDataDescription metadata) throws CacheException {
         return new HazelcastCollectionRegion(regionName, metadata);
     }
 
     public EntityRegion buildEntityRegion(final String regionName, final Properties properties,
-            final CacheDataDescription metadata) throws CacheException {
+                                          final CacheDataDescription metadata) throws CacheException {
         return new HazelcastEntityRegion(regionName, metadata);
     }
 
@@ -78,7 +71,7 @@ public class HazelcastCacheRegionFactory implements RegionFactory {
      * From what I can tell from the <code>{@link org.hibernate.cache.CacheCurrencyStrategy}</code>s implemented in
      * Hibernate, the return value "false" will mean an object will be replaced in a cache if it already exists there,
      * and "true" will not replace it.
-     * 
+     *
      * @return true - for a large cluster, unnecessary puts will most likely slow things down.
      */
     public boolean isMinimalPutsEnabledByDefault() {

@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ package com.hazelcast.config;
 public class MapConfig {
 
     public final static int DEFAULT_BACKUP_COUNT = 1;
-    
+
     public final static int MIN_EVICTION_PERCENTAGE = 0;
     public final static int DEFAULT_EVICTION_PERCENTAGE = 25;
     public final static int MAX_EVICTION_PERCENTAGE = 100;
@@ -77,14 +77,13 @@ public class MapConfig {
      * Number of backups. If 1 is set as the backup-count for example,
      * then all entries of the map will be copied to another JVM for
      * fail-safety. Valid numbers are 0 (no backup), 1, 2, 3.
-     * 
+     *
      * @param backupCount the backupCount to set
      */
     public MapConfig setBackupCount(final int backupCount) {
-    	if((backupCount < 0) || (backupCount > 3)) {
-    		throw new IllegalArgumentException("map backup count must be 0, 1, 2 or 3");
-    	}
-    	
+        if ((backupCount < 0) || (backupCount > 3)) {
+            throw new IllegalArgumentException("map backup count must be 0, 1, 2 or 3");
+        }
         this.backupCount = backupCount;
         return this;
     }
@@ -100,19 +99,17 @@ public class MapConfig {
      * When max. size is reached, specified percentage of the map will be evicted.
      * Any integer between 0 and 100 is allowed.
      * If 25 is set for example, 25% of the entries will get evicted.
-     * 
+     *
      * @param evictionPercentage the evictionPercentage to set
      * @throws IllegalArgumentException if evictionPercentage is not in the 0-100 range.
      */
     public MapConfig setEvictionPercentage(final int evictionPercentage) {
-    	if(evictionPercentage < MIN_EVICTION_PERCENTAGE) {
-    		throw new IllegalArgumentException("eviction percentage must be greater or equal than 0");
-    	}
-    	
-    	if(evictionPercentage > MAX_EVICTION_PERCENTAGE) {
-    		throw new IllegalArgumentException("eviction percentage must be smaller or equal than 100");
-    	}
-    	
+        if (evictionPercentage < MIN_EVICTION_PERCENTAGE) {
+            throw new IllegalArgumentException("eviction percentage must be greater or equal than 0");
+        }
+        if (evictionPercentage > MAX_EVICTION_PERCENTAGE) {
+            throw new IllegalArgumentException("eviction percentage must be smaller or equal than 100");
+        }
         this.evictionPercentage = evictionPercentage;
         return this;
     }
@@ -173,10 +170,9 @@ public class MapConfig {
      * @param maxSize the maxSize to set
      */
     public MapConfig setMaxSize(final int maxSize) {
-    	if(maxSize < 0) {
-    		throw new IllegalArgumentException("map max size must be greater than 0");
-    	}
-    	
+        if (maxSize < 0) {
+            throw new IllegalArgumentException("map max size must be greater than 0");
+        }
         this.maxSize = maxSize;
         return this;
     }

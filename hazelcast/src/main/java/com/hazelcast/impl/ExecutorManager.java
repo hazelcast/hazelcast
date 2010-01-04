@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,11 @@ import com.hazelcast.cluster.AbstractNodeAware;
 import com.hazelcast.cluster.NodeAware;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
-import static com.hazelcast.impl.Constants.Objects.*;
-import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TIMEOUT;
-
 import com.hazelcast.impl.base.PacketProcessor;
-import com.hazelcast.nio.*;
-import static com.hazelcast.nio.IOUtil.toData;
-import static com.hazelcast.nio.IOUtil.toObject;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Data;
+import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.Packet;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -39,6 +37,11 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.hazelcast.impl.Constants.Objects.*;
+import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TIMEOUT;
+import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class ExecutorManager extends BaseManager implements MembershipListener {
 
@@ -54,7 +57,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
 
     private final BlockingQueue<Long> executionIds = new ArrayBlockingQueue<Long>(100);
 
-    private final CallContext callContextServer = new CallContext(ThreadContext.get().createNewThreadId(), false);    
+    private final CallContext callContextServer = new CallContext(ThreadContext.get().createNewThreadId(), false);
 
     private volatile boolean started = false;
 
@@ -426,7 +429,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
             } else if (innerFutureTask.getMember() != null) {
                 final MemberImpl mem = (MemberImpl) innerFutureTask.getMember();
                 target = mem.getAddress();
-                log(" Target " + target);
+                logger.log(Level.FINEST, " Target " + target);
             } else {
                 Set<Member> members = node.getClusterImpl().getMembers();
                 final int random = (int) (Math.random() * 1000);
@@ -696,7 +699,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
     }
 
     public void handleRemoteExecution(Packet packet) {
-        log("Remote handling packet " + packet);
+        logger.log(Level.FINEST, "Remote handling packet " + packet);
         final Data callableData = packet.value;
         final RemoteExecutionId remoteExecutionId = new RemoteExecutionId(packet.conn.getEndPoint(),
                 packet.longValue);

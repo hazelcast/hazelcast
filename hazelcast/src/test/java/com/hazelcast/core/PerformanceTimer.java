@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,16 +26,16 @@ public class PerformanceTimer implements Serializable {
     private long end;
     private long numberOfOperations;
 
-    public PerformanceTimer(){
+    public PerformanceTimer() {
         this.start = System.currentTimeMillis();
     }
 
-    public PerformanceTimer(long numberOfOperations){
+    public PerformanceTimer(long numberOfOperations) {
         this.start = System.currentTimeMillis();
         this.numberOfOperations = numberOfOperations;
     }
 
-    public PerformanceTimer(String testName, long numberOfOperations){
+    public PerformanceTimer(String testName, long numberOfOperations) {
         this.start = System.currentTimeMillis();
         this.numberOfOperations = numberOfOperations;
         this.testName = testName;
@@ -46,7 +46,7 @@ public class PerformanceTimer implements Serializable {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         StringBuilder m = new StringBuilder();
         m.append(testName);
         m.append(",");
@@ -58,31 +58,31 @@ public class PerformanceTimer implements Serializable {
         return m.toString();
     }
 
-    public static PerformanceTimer fromString(String pm){
+    public static PerformanceTimer fromString(String pm) {
         String[] entries = pm.split(",");
         PerformanceTimer perf = new PerformanceTimer(entries[0], Long.parseLong(entries[1]));
         perf.setElapsed(Long.parseLong(entries[2]));
         return perf;
     }
 
-    public void stop(){
+    public void stop() {
         this.end = System.currentTimeMillis();
     }
 
-    public long elapsed(){
+    public long elapsed() {
         return end - start;
     }
 
-    private void setElapsed(long elapsed){
+    private void setElapsed(long elapsed) {
         start = 0;
         end = elapsed;
     }
 
-    public double operationsPerSecond(){
-        return (double)numberOfOperations/((double)elapsed()/1000d);
+    public double operationsPerSecond() {
+        return (double) numberOfOperations / ((double) elapsed() / 1000d);
     }
 
-    public void printResult(){
+    public void printResult() {
         System.out.println(toString());
         /*System.out.println(testName);
         System.out.println("number of operations: " + numberOfOperations);

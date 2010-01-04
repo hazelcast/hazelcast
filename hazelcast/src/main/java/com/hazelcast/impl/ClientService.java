@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,8 +88,8 @@ public class ClientService {
         clientOperationHandlers[ClusterOperation.CLIENT_AUTHENTICATE.getValue()] = new ClientAuthenticateHandler();
         clientOperationHandlers[ClusterOperation.CLIENT_ADD_INSTANCE_LISTENER.getValue()] = new ClientAddInstanceListenerHandler();
     }
-
     // always called by InThread
+
     public void handle(Packet packet) {
         ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
@@ -167,28 +167,28 @@ public class ClientService {
         public void entryUpdated(EntryEvent event) {
             processEvent(event);
         }
-        
+
         public void instanceCreated(InstanceEvent event) {
-			processEvent(event);
+            processEvent(event);
         }
 
-		public void instanceDestroyed(InstanceEvent event) {
-			processEvent(event);
-		}
+        public void instanceDestroyed(InstanceEvent event) {
+            processEvent(event);
+        }
 
-		private void processEvent(InstanceEvent event) {
+        private void processEvent(InstanceEvent event) {
             Packet packet = createInstanceEventPacket(event);
             sendPacket(packet);
         }
-        
+
         /**
          * if a client is listening for both key and the entire
          * map, then we should make sure that we don't send
          * two separate events. One is enough. so check
          * if we already sent one.
-         *
+         * <p/>
          * called by executor service threads
-         * 
+         *
          * @param event
          */
         private void processEvent(EntryEvent event) {
@@ -215,6 +215,7 @@ public class ClientService {
             packet.longValue = event.getEventType().getType();
             return packet;
         }
+
         private Packet createInstanceEventPacket(InstanceEvent event) {
             Packet packet = new Packet();
             packet.set(null, ClusterOperation.EVENT, toData(event.getInstance().getId()), toData(event.getEventType()));
@@ -397,10 +398,11 @@ public class ClientService {
             packet.value = toData(value);
         }
     }
+
     private class ClientAddInstanceListenerHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
 //            System.out.println("Add listener");
-        	ClientEndpoint endPoint = getClientEndpoint(packet.conn);
+            ClientEndpoint endPoint = getClientEndpoint(packet.conn);
             node.factory.addInstanceListener(endPoint);
         }
     }

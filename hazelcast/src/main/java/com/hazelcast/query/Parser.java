@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,7 +92,7 @@ class Parser {
                     while (openParanthesesFound(stack)) {
                         output.add(stack.remove(stack.size() - 1));
                     }
-                    if(stack.size() > 0) { // temporarily fix for issue #189
+                    if (stack.size() > 0) { // temporarily fix for issue #189
                         stack.remove(stack.size() - 1);
                     }
                 } else {

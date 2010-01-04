@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,28 +32,29 @@ public interface Member {
      * Returns if this member is the local member.
      *
      * @return <tt>true<tt> if this member is the
-     * local member, <tt>false</tt> otherwise.
+     *         local member, <tt>false</tt> otherwise.
      */
     boolean localMember();
 
     /**
      * Returns the port number of this member.
-     * <p>
-     * Each member in the cluster has a server socket. 
-     *
-     * @deprecated use @link{#getInetSocketAddress()}
+     * <p/>
+     * Each member in the cluster has a server socket.
      *
      * @return port number of this member.
+     * @deprecated use @link{#getInetSocketAddress()}
      */
-    @Deprecated int getPort();
+    @Deprecated
+    int getPort();
 
     /**
      * Returns the InetAddress of this member.
      *
-     * @deprecated use @link{#getInetSocketAddress()}
      * @return InetAddress of this member
+     * @deprecated use @link{#getInetSocketAddress()}
      */
-    @Deprecated InetAddress getInetAddress();
+    @Deprecated
+    InetAddress getInetAddress();
 
     /**
      * Returns the InetSocketAddress of this member.
@@ -68,7 +69,7 @@ public interface Member {
      * hold any data on it.
      *
      * @return <tt>true</tt> if this member is a super
-     * client, <tt>false</tt> otherwise
+     *         client, <tt>false</tt> otherwise
      */
     boolean isSuperClient();
 }

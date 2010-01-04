@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ public class MembershipEvent extends EventObject {
 
     /**
      * Returns the cluster of the event.
+     *
      * @return
      */
     public Cluster getCluster() {
@@ -53,7 +54,7 @@ public class MembershipEvent extends EventObject {
 
     /**
      * Returns the membership event type; #MEMBER_ADDED or #MEMBER_REMOVED
-     * 
+     *
      * @return the membeship event type
      */
     public int getEventType() {

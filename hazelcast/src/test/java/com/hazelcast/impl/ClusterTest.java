@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -408,8 +408,7 @@ public class ClusterTest {
             assertEquals("1", entry.getKey());
             assertEquals("value2", entry.getValue());
         }
-        listenerTest(map2, map1);
-//        listenerTest(map1, map2);
+        listenerTest(map2, map1); 
     }
 
     @Test(timeout = 60000)
@@ -429,26 +428,21 @@ public class ClusterTest {
         final CountDownLatch latchEvicted = new CountDownLatch(1);
         EntryListener listener = new EntryListener() {
             public void entryAdded(EntryEvent entryEvent) {
-                System.out.println("added");
                 latchAdded.countDown();
             }
 
             public void entryRemoved(EntryEvent entryEvent) {
-                System.out.println("removed");
                 latchRemoved.countDown();
             }
 
             public void entryUpdated(EntryEvent entryEvent) {
-                System.out.println("updated");
                 latchUpdated.countDown();
             }
 
             public void entryEvicted(EntryEvent entryEvent) {
-                System.out.println("evicted");
                 latchEvicted.countDown();
             }
         };
-        System.out.println("adding listener");
         map.addEntryListener(listener, true);
         assertNull(mapSource.put("5", "value5"));
         assertEquals("value5", mapSource.put("5", "value55"));

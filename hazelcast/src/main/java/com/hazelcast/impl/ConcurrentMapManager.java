@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1183,8 +1183,8 @@ public final class ConcurrentMapManager extends BaseManager {
             cmap.removeListener(key, address);
         }
     }
-    // master should call this method
 
+    // master should call this method
     boolean sendBlockInfo(Block block, Address address) {
         return send("mapblock", CONCURRENT_MAP_BLOCK_INFO, block, address);
     }

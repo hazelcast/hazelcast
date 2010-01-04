@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,8 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.util.SortedHashMap;
 import com.hazelcast.nio.Data;
-import static com.hazelcast.nio.IOUtil.toObject;
+import com.hazelcast.util.SortedHashMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,6 +26,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class MapNearCache {
     private final SortedHashMap<Data, Object> sortedMap;
@@ -44,7 +45,7 @@ public class MapNearCache {
         this.ttl = ttl;
         this.maxIdleTime = maxIdleTime;
         this.invalidateOnChange = invalidateOnChange;
-        int size = (maxSize == 0 || maxSize > 50000) ? 10000 : maxSize; 
+        int size = (maxSize == 0 || maxSize > 50000) ? 10000 : maxSize;
         this.sortedMap = new SortedHashMap<Data, Object>(size, orderingType);
         this.cache = new ConcurrentHashMap<Object, CacheEntry>(size);
     }

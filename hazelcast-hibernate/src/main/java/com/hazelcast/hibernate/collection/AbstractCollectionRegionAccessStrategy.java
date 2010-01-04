@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,11 @@
 
 package com.hazelcast.hibernate.collection;
 
+import com.hazelcast.hibernate.access.AccessDelegate;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.CollectionRegion;
 import org.hibernate.cache.access.CollectionRegionAccessStrategy;
 import org.hibernate.cache.access.SoftLock;
-
-import com.hazelcast.hibernate.access.AccessDelegate;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
@@ -65,7 +64,7 @@ abstract class AbstractCollectionRegionAccessStrategy implements CollectionRegio
     }
 
     public boolean putFromLoad(final Object key, final Object value, final long txTimestamp, final Object version,
-            final boolean minimalPutOverride) throws CacheException {
+                               final boolean minimalPutOverride) throws CacheException {
         return delegate.putFromLoad(key, value, txTimestamp, version, minimalPutOverride);
     }
 

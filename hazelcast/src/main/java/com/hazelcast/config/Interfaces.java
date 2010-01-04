@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,24 +40,25 @@ public class Interfaces {
      */
     public Interfaces setEnabled(final boolean enabled) {
         this.enabled = enabled;
-    	return this;
+        return this;
     }
 
     /**
      * Adds a new interface
+     *
      * @param ip
      */
     public Interfaces addInterface(final String ip) {
-       	interfaceSet.add(ip);
-    	return this;
+        interfaceSet.add(ip);
+        return this;
     }
 
     /**
      * clears all interfaces.
      */
     public Interfaces clear() {
-    	interfaceSet.clear();
-    	return this;
+        interfaceSet.clear();
+        return this;
     }
 
     /**
@@ -70,12 +71,12 @@ public class Interfaces {
     /**
      * Adds a collection of interfaces.
      * Clears the current collection and then adds all entries of new collection.
-     * 
+     *
      * @param interfaces the interfaces to set
      */
     public Interfaces setInterfaces(final Collection<String> interfaces) {
-    	clear();
-    	this.interfaceSet.addAll(interfaces);
-    	return this;
+        clear();
+        this.interfaceSet.addAll(interfaces);
+        return this;
     }
 }

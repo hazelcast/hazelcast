@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,15 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
-import static com.hazelcast.nio.IOUtil.toObject;
-
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 class LocallyOwnedMap {
     final static Logger logger = Logger.getLogger(LocallyOwnedMap.class.getName());

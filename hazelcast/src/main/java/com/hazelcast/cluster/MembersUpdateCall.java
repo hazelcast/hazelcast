@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,18 +28,18 @@ import java.util.Collections;
 
 public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
 
-	private static final long serialVersionUID = -2311579721761844861L;
-	
-	private Collection<MemberInfo> memberInfos;
+    private static final long serialVersionUID = -2311579721761844861L;
+
+    private Collection<MemberInfo> memberInfos;
 
     public MembersUpdateCall() {
-    	memberInfos = new ArrayList<MemberInfo>();
+        memberInfos = new ArrayList<MemberInfo>();
     }
 
     public MembersUpdateCall(Collection<MemberImpl> lsMembers) {
-    	memberInfos = new ArrayList<MemberInfo>(lsMembers.size());
+        memberInfos = new ArrayList<MemberInfo>(lsMembers.size());
         for (MemberImpl member : lsMembers) {
-        	memberInfos.add(new MemberInfo(member.getAddress(), member.getNodeType()));
+            memberInfos.add(new MemberInfo(member.getAddress(), member.getNodeType()));
         }
     }
 
@@ -49,9 +49,9 @@ public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
     }
 
     public void addMemberInfo(MemberInfo memberInfo) {
-    	if(!memberInfos.contains(memberInfo)) {
-           	memberInfos.add(memberInfo);
-    	}
+        if (!memberInfos.contains(memberInfo)) {
+            memberInfos.add(memberInfo);
+        }
     }
 
     @Override
@@ -68,7 +68,7 @@ public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
     @Override
     public void writeData(DataOutput out) throws IOException {
         out.writeInt(memberInfos.size());
-        for(MemberInfo memberInfo : memberInfos) {
+        for (MemberInfo memberInfo : memberInfos) {
             memberInfo.writeData(out);
         }
     }
@@ -83,11 +83,11 @@ public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
         return sb.toString();
     }
 
-	/**
-	 * @return the lsMemberInfos
-	 */
-	public Collection<MemberInfo> getMemberInfos() {
-		return Collections.unmodifiableCollection(memberInfos);
-	}
+    /**
+     * @return the lsMemberInfos
+     */
+    public Collection<MemberInfo> getMemberInfos() {
+        return Collections.unmodifiableCollection(memberInfos);
+    }
 }
 

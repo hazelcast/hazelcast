@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.core;
 
 /**
  * Concurrent, distributed, partitioned, observable collection.
+ *
  * @param <E> item
  */
 public interface ICollection<E> extends Instance {
@@ -35,7 +36,7 @@ public interface ICollection<E> extends Instance {
      *
      * @param listener     item listener
      * @param includeValue <tt>true</tt> updated item should be passed
-     * to the item listener, <tt>false</tt> otherwise.
+     *                     to the item listener, <tt>false</tt> otherwise.
      */
     void addItemListener(ItemListener<E> listener, boolean includeValue);
 

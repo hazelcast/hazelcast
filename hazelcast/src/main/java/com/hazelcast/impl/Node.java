@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,7 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.ClusterImpl;
-import com.hazelcast.cluster.ClusterManager;
-import com.hazelcast.cluster.ClusterService;
-import com.hazelcast.cluster.JoinInfo;
-import com.hazelcast.cluster.JoinRequest;
+import com.hazelcast.cluster.*;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.config.Interfaces;
@@ -350,7 +346,7 @@ public class Node {
                 JoinInfo joinInfo = new JoinInfo(true, address, config.getGroupConfig().getName(),
                         config.getGroupConfig().getPassword(), getLocalNodeType(), Packet.PACKET_VERSION, buildNumber);
                 int tryCount = config.getNetworkConfig().getJoin().getMulticastConfig().getMulticastTimeoutSeconds() * 100;
-                for (int i = 0; i < tryCount ; i++) {
+                for (int i = 0; i < tryCount; i++) {
                     multicastService.send(joinInfo);
                     if (masterAddress == null) {
                         Thread.sleep(10);
@@ -642,17 +638,17 @@ public class Node {
         return "Node[" + getName() + "]";
     }
 
-	/**
-	 * @param active the active to set
-	 */
-	public void setActive(boolean active) {
-		this.active = active;
-	}
+    /**
+     * @param active the active to set
+     */
+    public void setActive(boolean active) {
+        this.active = active;
+    }
 
-	/**
-	 * @return the active
-	 */
-	public boolean isActive() {
-		return active;
-	}
+    /**
+     * @return the active
+     */
+    public boolean isActive() {
+        return active;
+    }
 }

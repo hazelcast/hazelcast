@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -263,7 +263,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     void doRemoveAddress(Address deadAddress) {
-        log("Removing Address " + deadAddress);
+        logger.log(Level.FINEST, "Removing Address " + deadAddress);
         if (!node.joined()) {
             node.failedConnection(deadAddress);
             return;
@@ -280,7 +280,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             } else {
                 node.setMasterAddress(null);
             }
-            log("Now Master " + node.getMasterAddress());
+            logger.log(Level.FINEST, "Now Master " + node.getMasterAddress());
         }
         if (isMaster()) {
             setJoins.remove(new MemberInfo(deadAddress));
@@ -315,9 +315,9 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     public boolean isNextOrPreviousChanged() {
-    	return isNextChanged() || isPreviousChanged();
+        return isNextChanged() || isPreviousChanged();
     }
-    
+
     public boolean isNextChanged() {
         Member nextMemberBefore = getNextMemberBeforeSync(thisAddress, true, 1);
         Member nextMemberNow = getNextMemberAfter(thisAddress, true, 1);
@@ -598,7 +598,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     void updateMembers(Collection<MemberInfo> lsMemberInfos) {
         logger.log(Level.FINEST, "MEMBERS UPDATE!!");
-        
         // Copy lsMembers to lsMembersBefore
         lsMembersBefore.clear();
         Map<Address, MemberImpl> mapOldMembers = new HashMap<Address, MemberImpl>();
@@ -606,7 +605,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             lsMembersBefore.add(member);
             mapOldMembers.put(member.getAddress(), member);
         }
-        
         lsMembers.clear();
         for (MemberInfo memberInfo : lsMemberInfos) {
             MemberImpl member = mapOldMembers.get(memberInfo.address);

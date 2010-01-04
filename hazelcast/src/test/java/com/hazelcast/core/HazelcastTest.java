@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,6 @@
 
 package com.hazelcast.core;
 
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.fail;
-import static org.junit.Assert.*;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -27,6 +24,10 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.fail;
+import static org.junit.Assert.*;
 
 public class HazelcastTest {
     @Test
@@ -234,7 +235,6 @@ public class HazelcastTest {
             public void entryAdded(EntryEvent event) {
                 Object key = event.getKey();
                 Object value = event.getValue();
-
                 if ("2".equals(key)) {
                     assertEquals("again", value);
                 } else {

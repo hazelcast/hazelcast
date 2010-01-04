@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,28 +33,31 @@ public interface Cluster {
 
     /**
      * Removes the specified membership listener.
+     *
      * @param listener membership listener to remove
      */
     void removeMembershipListener(MembershipListener listener);
 
     /**
      * Set of current members of the cluster.
+     *
      * @return current members of the cluster
      */
     Set<Member> getMembers();
 
     /**
      * Returns this Hazelcast instance member
+     *
      * @return this Hazelcast instance member
      */
     Member getLocalMember();
 
     /**
      * Returns the cluster-wide time.
-     * <p>
+     * <p/>
      * Cluster tries to keep a cluster-wide time which is
      * might be different than the member's own system time.
-     * Cluster-wide time is -almost- the same on all members 
+     * Cluster-wide time is -almost- the same on all members
      * of the cluster.
      *
      * @return

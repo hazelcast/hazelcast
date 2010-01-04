@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public class TopicManager extends BaseManager {
 
     @Override
     void handleListenerRegistrations(boolean add, String name, Data key, Address address,
-                                      boolean includeValue) {
+                                     boolean includeValue) {
         TopicInstance instance = getTopicInstance(name);
         if (add) {
             instance.addListener(address, includeValue);
@@ -96,20 +96,18 @@ public class TopicManager extends BaseManager {
     }
 
     public final class TopicInstance {
-    	
-    	private final TopicManager topicManager;
+
+        private final TopicManager topicManager;
         private final String name;
         private final Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>();
 
         public TopicInstance(final TopicManager topicManager, final String name) {
-        	if(topicManager == null) {
-        		throw new NullPointerException("topic manager cannot be null");
-        	}
-        	
-        	if(name == null) {
-        		throw new NullPointerException("topic name cannot be null");
-        	}
-        	
+            if (topicManager == null) {
+                throw new NullPointerException("topic manager cannot be null");
+            }
+            if (name == null) {
+                throw new NullPointerException("topic name cannot be null");
+            }
             this.topicManager = topicManager;
             this.name = name;
         }

@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -852,7 +852,7 @@ public abstract class BaseManager {
             request.setPacket(packet);
             if (request.response == Boolean.TRUE) {
                 final boolean sent = sendResponse(packet, request.caller);
-                log(request.local + " returning scheduled response " + sent);
+                logger.log(Level.FINEST, request.local + " returning scheduled response " + sent);
             } else {
                 sendResponseFailure(packet, request.caller);
             }
@@ -1021,15 +1021,6 @@ public abstract class BaseManager {
         return node.isSuperClient();
     }
 
-    /**
-     * Log on default logger at FINEST level
-     */
-    protected void log(final Object obj) {
-        if (logger.isLoggable(Level.FINEST)) {
-            logger.log(Level.FINEST, obj.toString());
-        }
-    }
-
     protected Packet obtainPacket() {
         return ThreadContext.get().getPacketPool().obtain();
     }
@@ -1193,12 +1184,12 @@ public abstract class BaseManager {
         }
     }
 
-    MemberImpl getMember(final Address address) {
+    MemberImpl getMember(Address address) {
         return node.clusterManager.getMember(address);
     }
 
-    void handleListenerRegistrations(final boolean add, final String name, final Data key,
-                                     final Address address, final boolean includeValue) {
+    void handleListenerRegistrations(boolean add, String name, Data key,
+                                     Address address, boolean includeValue) {
         if (name.startsWith("q:")) {
             node.blockingQueueManager.handleListenerRegistrations(add, name, key, address,
                     includeValue);

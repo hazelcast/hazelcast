@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,11 @@
 
 package com.hazelcast.hibernate.access;
 
-import java.util.logging.Logger;
-
+import com.hazelcast.hibernate.region.HazelcastRegion;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.access.SoftLock;
 
-import com.hazelcast.hibernate.region.HazelcastRegion;
+import java.util.logging.Logger;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
@@ -41,7 +40,7 @@ public class ReadOnlyAccessDelegate<T extends HazelcastRegion> extends NonStrict
      */
     @Override
     public boolean afterUpdate(final Object key, final Object value, final Object currentVersion,
-            final Object previousVersion, final SoftLock lock) throws CacheException {
+                               final Object previousVersion, final SoftLock lock) throws CacheException {
         throw new UnsupportedOperationException("Cannot update an item in a read-only cache: "
                 + getHazelcastRegion().getName());
     }
@@ -85,9 +84,8 @@ public class ReadOnlyAccessDelegate<T extends HazelcastRegion> extends NonStrict
      */
     @Override
     public boolean update(final Object key, final Object value, final Object currentVersion,
-            final Object previousVersion) throws CacheException {
+                          final Object previousVersion) throws CacheException {
         throw new UnsupportedOperationException("Attempting to update an item in a read-only cache: "
                 + getHazelcastRegion().getName());
     }
-
 }

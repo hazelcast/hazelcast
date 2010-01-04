@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,12 @@
 
 package com.hazelcast.hibernate.collection;
 
+import com.hazelcast.hibernate.region.AbstractTransactionalDataRegion;
 import org.hibernate.cache.CacheDataDescription;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.CollectionRegion;
 import org.hibernate.cache.access.AccessType;
 import org.hibernate.cache.access.CollectionRegionAccessStrategy;
-
-import com.hazelcast.hibernate.region.AbstractTransactionalDataRegion;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
@@ -39,7 +38,6 @@ public class HazelcastCollectionRegion extends AbstractTransactionalDataRegion i
             throw new CacheException(
                     "Got null AccessType while attempting to build CollectionRegionAccessStrategy. This can't happen!");
         }
-
         if (AccessType.READ_ONLY.equals(accessType)) {
             return new ReadOnlyAccessStrategy(this);
         }
@@ -55,5 +53,4 @@ public class HazelcastCollectionRegion extends AbstractTransactionalDataRegion i
         throw new CacheException("Got unknown AccessType " + accessType
                 + " while attempting to build CollectionRegionAccessStrategy.");
     }
-
 }

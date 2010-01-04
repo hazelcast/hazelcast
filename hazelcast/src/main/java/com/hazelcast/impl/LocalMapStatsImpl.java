@@ -1,12 +1,12 @@
-/*
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
- *
+/* 
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
+ * You may obtain a copy of the License at 
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -98,7 +98,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     public void setLastAccessTime(long lastAccessTime) {
-        this.lastAccessTime = Math.max (this.lastAccessTime, lastAccessTime);
+        this.lastAccessTime = Math.max(this.lastAccessTime, lastAccessTime);
     }
 
     public long getLastUpdateTime() {
@@ -106,7 +106,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     public void setLastUpdateTime(long lastUpdateTime) {
-        this.lastUpdateTime = Math.max (this.lastUpdateTime, lastUpdateTime);
+        this.lastUpdateTime = Math.max(this.lastUpdateTime, lastUpdateTime);
     }
 
     public long getLastEvictionTime() {
@@ -123,7 +123,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
 
     public void setHits(int hits) {
         this.hits = hits;
-    } 
+    }
 
     public int getLockedEntryCount() {
         return lockedEntryCount;

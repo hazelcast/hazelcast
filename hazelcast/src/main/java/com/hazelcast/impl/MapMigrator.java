@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_BLOCKS;
-
 import com.hazelcast.impl.concurrentmap.InitialState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
@@ -28,6 +26,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_BLOCKS;
 
 public class MapMigrator implements Runnable {
 
@@ -115,12 +115,9 @@ public class MapMigrator implements Runnable {
                     }
                 }
             }
-
             int addressIndex = 0;
-            
-            final Address [] addresses = addressBlocks.keySet().toArray(new Address[] {});
+            final Address[] addresses = addressBlocks.keySet().toArray(new Address[]{});
             final int addressLength = addresses.length;
-            
             for (int i = 0; i < BLOCK_COUNT; i++) {
                 Block block = blocks[i];
                 if (block.getOwner() == null) {
@@ -264,7 +261,7 @@ public class MapMigrator implements Runnable {
 
     public void syncForDead(Address deadAddress) {
         if (deadAddress == null || deadAddress.equals(thisAddress)) {
-        	return;
+            return;
         }
         Set<Integer> blocksOwnedAfterDead = new HashSet<Integer>();
         for (Block block : blocks) {
@@ -374,7 +371,7 @@ public class MapMigrator implements Runnable {
         blockReal.setMigrationAddress(block.getMigrationAddress());
         logger.log(Level.FINEST, "migrate block " + block);
         if (!node.isActive() || node.factory.restarted) {
-        	return;
+            return;
         }
         if (concurrentMapManager.isSuperClient()) {
             return;

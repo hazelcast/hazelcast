@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -228,7 +228,7 @@ public class QueryService implements Runnable {
                             Set<MapEntry> sub = indexAwarePredicate.filter(queryContext);
                             if (sub == null) {
                                 strong = false;
-                            }else if (sub.size() == 0) {
+                            } else if (sub.size() == 0) {
                                 strong = true;
                                 return null;
                             } else {
@@ -244,7 +244,7 @@ public class QueryService implements Runnable {
                                         } else {
                                             lsSubResults.add(sub);
                                         }
-                                    } 
+                                    }
                                 }
                             }
                         }
@@ -289,7 +289,6 @@ public class QueryService implements Runnable {
                 }
             } finally {
                 queryContext.setStrong(strong);
-
             }
             return results;
         }
@@ -349,10 +348,10 @@ public class QueryService implements Runnable {
         try {
             queryQ.put(new Runnable() {
                 public void run() {
-                    try{
-                    IndexRegion indexRegion = getIndexRegion(name);
-                    indexRegion.doUpdateIndex(newValues, types, record, valueHash);
-                    }catch (Exception e) {
+                    try {
+                        IndexRegion indexRegion = getIndexRegion(name);
+                        indexRegion.doUpdateIndex(newValues, types, record, valueHash);
+                    } catch (Exception e) {
                         e.printStackTrace();
                         logger.log(Level.SEVERE, "Indexing error." + e);
                     }

@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2008-2009, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,14 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.impl.ThreadContext;
-import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
 
 import javax.crypto.Cipher;
 import javax.crypto.ShortBufferException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.logging.Level;
+
+import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
 
 class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
@@ -239,7 +240,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
                 cipherBuffer.clear();
             }
         }
-    } 
+    }
 
     public final void run() {
         registerOp(inSelector.selector, SelectionKey.OP_READ);
