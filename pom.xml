@@ -16,6 +16,7 @@
         <module>hazelcast-wm</module>
         <module>hazelcast-ra</module>
         <module>hazelcast-client</module>
+        <module>hazelcast-monitor</module>
     </modules>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

@@ -261,7 +261,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, ClientProxy, EntryHolde
     }
 
     public Object getId() {
-        return proxyHelper.doOp(ClusterOperation.GET_ID, null, null);
+        return name;
     }
 
     public InstanceType getInstanceType() {

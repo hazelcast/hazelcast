@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+		  http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+         version="2.5">
+
+    <servlet>
+        <servlet-name>Hazelcastmonitor</servlet-name>
+        <servlet-class>com.hazelcast.monitor.server.HazelcastServiceImpl</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>Hazelcastmonitor</servlet-name>
+        <url-pattern>/Hazelcastmonitor/serve</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ChartGenerator</servlet-name>
+        <servlet-class>com.hazelcast.monitor.server.ChartGenerator</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ChartGenerator</servlet-name>
+        <url-pattern>/ChartGenerator</url-pattern>
+    </servlet-mapping>
+
+    <!-- Default page to serve -->
+    <welcome-file-list>
+        <welcome-file>HazelcastMonitor.html</welcome-file>
+    </welcome-file-list>
+</web-app>

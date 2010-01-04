@@ -63,10 +63,11 @@ public class HazelcastClient implements HazelcastInstance{
     final ExecutorServiceManager executorServiceManager;
     final IMap mapLockProxy;
     final ClusterClientProxy clusterClientProxy;
+    final String groupName;
 
     private HazelcastClient(String groupName, String groupPassword, boolean shuffle, InetSocketAddress[] clusterMembers) {
         connectionManager = new ConnectionManager(this, clusterMembers, shuffle);
-
+        this.groupName = groupName;
 		out = new OutRunnable(this, calls, new PacketWriter());
 		new Thread(out,"hz.client.OutThread").start();
 
@@ -253,8 +254,7 @@ public class HazelcastClient implements HazelcastInstance{
 	}
 
 	public String getName() {
-		// TODO Auto-generated method stub
-		return null;
+		return groupName;
 	}
 
 	public <E> IQueue<E> getQueue(String name) {
