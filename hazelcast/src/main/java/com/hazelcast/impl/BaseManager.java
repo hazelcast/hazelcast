@@ -1035,9 +1035,9 @@ public abstract class BaseManager {
 
     protected boolean send(final String name, final ClusterOperation operation, final DataSerializable ds,
                                  final Address address) {
-        final Packet packet = obtainPacket();
+        Packet packet = obtainPacket();
         packet.set(name, operation, null, ds);
-        final boolean sent = send(packet, address);
+        boolean sent = send(packet, address);
         if (!sent)
             packet.returnToContainer();
         return sent;

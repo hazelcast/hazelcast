@@ -25,12 +25,12 @@
     </properties>
     <url>http://www.hazelcast.com/</url>
     <issueManagement>
-    	<system>Google Code</system>
-    	<url>http://code.google.com/p/hazelcast/issues</url>
+        <system>Google Code</system>
+        <url>http://code.google.com/p/hazelcast/issues</url>
     </issueManagement>
     <organization>
-    	<name>Hazelcast Ltd.</name>
-    	<url>http://www.hazelcast.com/</url>
+        <name>Hazelcast Ltd.</name>
+        <url>http://www.hazelcast.com/</url>
     </organization>
 
     <build>
@@ -53,35 +53,33 @@
         </resources>
 
         <plugins>
-
-      <plugin>
-        <groupId>com.agilejava.docbkx</groupId>
-        <artifactId>docbkx-maven-plugin</artifactId>
-<executions>
-          <execution>
-            <goals>
-              <goal>generate-html</goal>
-            </goals>
-            <phase>generate-sources</phase>
-          </execution>
-        </executions>
-        <dependencies>
-          <dependency>
-            <groupId>org.docbook</groupId>
-            <artifactId>docbook-xml</artifactId>
-            <version>4.4</version>
-            <scope>runtime</scope>
-          </dependency>
-        </dependencies>
-         <configuration>
-		<xincludeSupported>true</xincludeSupported>
-		<generateSectionTocLevel>true</generateSectionTocLevel>
-		<sectionAutolabel>true</sectionAutolabel>
-		<chapterAutolabel>true</chapterAutolabel>
-          <highlightSource>true</highlightSource>
-
-	</configuration>
-      </plugin>
+            <plugin>
+                <groupId>com.agilejava.docbkx</groupId>
+                <artifactId>docbkx-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate-html</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.docbook</groupId>
+                        <artifactId>docbook-xml</artifactId>
+                        <version>4.4</version>
+                        <scope>runtime</scope>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <xincludeSupported>true</xincludeSupported>
+                    <generateSectionTocLevel>true</generateSectionTocLevel>
+                    <sectionAutolabel>true</sectionAutolabel>
+                    <chapterAutolabel>true</chapterAutolabel>
+                    <highlightSource>true</highlightSource>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -91,7 +89,6 @@
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -102,7 +99,6 @@
                     </archive>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -115,7 +111,6 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -132,7 +127,7 @@
     <distributionManagement>
         <repository>
             <id>ssh-repository</id>
-            <url>scp://shell.sourceforge.net/home/groups/h/ha/hazelcast/htdocs/m2repo</url>            
+            <url>scp://shell.sourceforge.net/home/groups/h/ha/hazelcast/htdocs/m2repo</url>
         </repository>
     </distributionManagement>
 

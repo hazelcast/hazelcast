@@ -1243,7 +1243,9 @@ public final class ConcurrentMapManager extends BaseManager {
             if (isMaster() && !blockInfo.isMigrating()) {
                 for (MemberImpl member : lsMembers) {
                     if (!member.localMember()) {
-                        sendBlockInfo(blockInfo, member.getAddress());
+                        if (!member.getAddress().equals(packet.conn.getEndPoint())) {
+                            sendBlockInfo(blockInfo, member.getAddress());
+                        }
                     }
                 }
             }
