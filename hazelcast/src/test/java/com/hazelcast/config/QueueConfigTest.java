@@ -68,7 +68,7 @@ public class QueueConfigTest {
      */
     @Test(expected = IllegalArgumentException.class)
     public void testSetMaxSizePerJVMMustBePositive() {
-        QueueConfig queueConfig = new QueueConfig().setMaxSizePerJVM(-1);
+        new QueueConfig().setMaxSizePerJVM(-1);
     }
 
     /**

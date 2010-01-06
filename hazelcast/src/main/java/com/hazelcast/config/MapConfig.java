@@ -19,7 +19,9 @@ package com.hazelcast.config;
 
 public class MapConfig {
 
+    public final static int MIN_BACKUP_COUNT = 0;
     public final static int DEFAULT_BACKUP_COUNT = 1;
+    public final static int MAX_BACKUP_COUNT = 3;
 
     public final static int MIN_EVICTION_PERCENTAGE = 0;
     public final static int DEFAULT_EVICTION_PERCENTAGE = 25;
@@ -81,7 +83,7 @@ public class MapConfig {
      * @param backupCount the backupCount to set
      */
     public MapConfig setBackupCount(final int backupCount) {
-        if ((backupCount < 0) || (backupCount > 3)) {
+        if ((backupCount < MIN_BACKUP_COUNT) || (backupCount > MAX_BACKUP_COUNT)) {
             throw new IllegalArgumentException("map backup count must be 0, 1, 2 or 3");
         }
         this.backupCount = backupCount;
