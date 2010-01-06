@@ -30,7 +30,6 @@ import java.net.UnknownHostException;
 
 public final class MemberImpl implements Member, HazelcastInstanceAware, DataSerializable {
 
-    protected String factoryName;
     protected boolean localMember;
     protected Address address;
     protected NodeType nodeType;
@@ -41,9 +40,8 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     public MemberImpl() {
     }
 
-    public MemberImpl(String factoryName, Address address, boolean localMember, NodeType nodeType) {
+    public MemberImpl(Address address, boolean localMember, NodeType nodeType) {
         super();
-        this.factoryName = factoryName;
         this.nodeType = nodeType;
         this.localMember = localMember;
         this.address = address;

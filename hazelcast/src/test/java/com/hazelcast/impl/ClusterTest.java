@@ -726,39 +726,40 @@ public class ClusterTest {
      */
     @Test(timeout = 60000)
     public void testDataRecovery() throws Exception {
+        final int size = 1000;
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         IMap map1 = h1.getMap("default");
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < size; i++) {
             map1.put(i, "value" + i);
         }
-        assertEquals(1000, map1.size());
+        assertEquals(size, map1.size());
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         IMap map2 = h2.getMap("default");
-        assertEquals(1000, map1.size());
-        assertEquals(1000, map2.size());
+        assertEquals(size, map1.size());
+        assertEquals(size, map2.size());
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
         IMap map3 = h3.getMap("default");
-        assertEquals(1000, map1.size());
-        assertEquals(1000, map2.size());
-        assertEquals(1000, map3.size());
+        assertEquals(size, map1.size());
+        assertEquals(size, map2.size());
+        assertEquals(size, map3.size());
         HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
         IMap map4 = h4.getMap("default");
-        assertEquals(1000, map1.size());
-        assertEquals(1000, map2.size());
-        assertEquals(1000, map3.size());
-        assertEquals(1000, map4.size());
+        assertEquals(size, map1.size());
+        assertEquals(size, map2.size());
+        assertEquals(size, map3.size());
+        assertEquals(size, map4.size());
         Thread.sleep(2000);
         h4.shutdown();
-        assertEquals(1000, map1.size());
-        assertEquals(1000, map2.size());
-        assertEquals(1000, map3.size());
+        assertEquals(size, map1.size());
+        assertEquals(size, map2.size());
+        assertEquals(size, map3.size());
         Thread.sleep(2000);
         h1.shutdown();
-        assertEquals(1000, map2.size());
-        assertEquals(1000, map3.size());
+        assertEquals(size, map2.size());
+        assertEquals(size, map3.size());
         Thread.sleep(2000);
         h2.shutdown();
-        assertEquals(1000, map3.size());
+        assertEquals(size, map3.size());
     }
 
     /**
@@ -776,13 +777,14 @@ public class ClusterTest {
      */
     @Test(timeout = 240000)
     public void testDataRecoveryAndCorrectness() throws Exception {
+        final int size = 1000;
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         assertEquals(1, h1.getCluster().getMembers().size());
         IMap map1 = h1.getMap("default");
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < size; i++) {
             map1.put(i, "value" + i);
         }
-        assertEquals(1000, map1.size());
+        assertEquals(size, map1.size());
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         IMap map2 = h2.getMap("default");
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
@@ -791,10 +793,10 @@ public class ClusterTest {
         HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
         IMap map4 = h4.getMap("default");
         for (int i = 0; i < 20000; i++) {
-            assertEquals(1000, map1.size());
-            assertEquals(1000, map2.size());
-            assertEquals(1000, map3.size());
-            assertEquals(1000, map4.size());
+            assertEquals(size, map1.size());
+            assertEquals(size, map2.size());
+            assertEquals(size, map3.size());
+            assertEquals(size, map4.size());
         }
     }
 

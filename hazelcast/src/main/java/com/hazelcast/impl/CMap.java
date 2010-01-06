@@ -576,6 +576,7 @@ public class CMap {
     }
 
     public void put(Request req) {
+        long now = System.currentTimeMillis();
         if (ownedRecords.size() >= maxSize) {
             startEviction(true);
         }
@@ -584,17 +585,17 @@ public class CMap {
         }
         Record record = getRecord(req.key);
         if (req.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
-            if (record != null && record.isActive() && record.isValid() && record.getValue() != null) {
+            if (record != null && record.isActive() && record.isValid(now) && record.getValue() != null) {
                 req.clearForResponse();
                 req.response = record.getValue();
                 return;
             }
         } else if (req.operation == CONCURRENT_MAP_REPLACE_IF_NOT_NULL) {
-            if (record == null || !record.isActive() || !record.isValid() || record.getValue() == null) {
+            if (record == null || !record.isActive() || !record.isValid(now) || record.getValue() == null) {
                 return;
             }
         } else if (req.operation == CONCURRENT_MAP_REPLACE_IF_SAME) {
-            if (record == null || !record.isActive() || !record.isValid()) {
+            if (record == null || !record.isActive() || !record.isValid(now)) {
                 req.response = Boolean.FALSE;
                 return;
             }
@@ -618,7 +619,7 @@ public class CMap {
             created = true;
         } else {
             markAsActive(record);
-            oldValue = record.getValue();
+            oldValue = (record.isValid(now)) ? record.getValue() : null;
             record.setValue(req.value);
             record.incrementVersion();
             touch(record);

@@ -143,7 +143,7 @@ public class Node {
             throw new RuntimeException(e);
         }
         address = localAddress;
-        localMember = new MemberImpl(getName(), address, true, localNodeType);
+        localMember = new MemberImpl(address, true, localNodeType);
         clusterImpl = new ClusterImpl(this);
         baseVariables = new NodeBaseVariables(address, localMember);
         //initialize managers..

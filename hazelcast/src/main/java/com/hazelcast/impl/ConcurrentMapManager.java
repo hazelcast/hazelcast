@@ -1189,12 +1189,14 @@ public final class ConcurrentMapManager extends BaseManager {
         return send("mapblock", CONCURRENT_MAP_BLOCK_INFO, block, address);
     }
 
-    void printBlocks() {
-        logger.log(Level.FINEST, "=========================================");
+    String printBlocks() {
+        StringBuilder sb = new StringBuilder("======== BLOCKS =========");
         for (int i = 0; i < BLOCK_COUNT; i++) {
-            logger.log(Level.FINEST, String.valueOf(blocks[i]));
+            sb.append("\n\t");
+            sb.append(blocks[i]);
         }
-        logger.log(Level.FINEST, "=========================================");
+        sb.append("\n==============================");
+        return sb.toString();
     }
 
     class MigrationCompleteOperationHandler extends AbstractOperationHandler {
@@ -1231,15 +1233,35 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    boolean isBlockInfoValid(Block blockInfo) {
+        boolean valid = true;
+        if (blockInfo.getOwner() != null) {
+            if (getMember(blockInfo.getOwner()) == null) {
+                valid = false;
+            }
+        }
+        if (valid && blockInfo.getMigrationAddress() != null) {
+            if (getMember(blockInfo.getMigrationAddress()) == null) {
+                valid = false;
+            }
+        }
+        if (!valid) {
+            logger.log(Level.WARNING, "Invalid block info: " + blockInfo);
+            logger.log(Level.INFO, node.clusterManager.toString());
+            logger.log(Level.INFO, printBlocks());
+        }
+        return valid;
+    }
+
     class BlockInfoOperationHandler implements PacketProcessor {
 
         public void process(Packet packet) {
             Block blockInfo = (Block) toObject(packet.value);
+            if (!isBlockInfoValid(blockInfo)) return;
             doBlockInfo(blockInfo);
             if (thisAddress.equals(blockInfo.getOwner()) && blockInfo.isMigrating()) {
                 mapMigrator.migrateBlock(blockInfo);
             }
-            packet.returnToContainer();
             if (isMaster() && !blockInfo.isMigrating()) {
                 for (MemberImpl member : lsMembers) {
                     if (!member.localMember()) {
@@ -1249,9 +1271,11 @@ public final class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
+            packet.returnToContainer();
         }
 
         void doBlockInfo(Block blockInfo) {
+            if (!isBlockInfoValid(blockInfo)) return;
             Block block = blocks[blockInfo.getBlockId()];
             if (block == null) {
                 block = blockInfo;

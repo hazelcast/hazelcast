@@ -717,7 +717,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     protected MemberImpl createMember(Address address, NodeType nodeType) {
-        return new MemberImpl(node.getName(), address, thisAddress.equals(address), nodeType);
+        return new MemberImpl(address, thisAddress.equals(address), nodeType);
     }
 
     public MemberImpl getMember(Address address) {

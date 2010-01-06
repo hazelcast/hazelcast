@@ -510,8 +510,8 @@ public abstract class BaseManager {
                                 targetMember = getMember(target);
                                 targetConnection = node.connectionManager.getConnection(target);
                                 if (targetMember != null) {
-                                    if (lsMembers.contains(targetMember)) {
-                                        logger.log(Level.SEVERE, targetMember + " is not in lsMembers");
+                                    if (!lsMembers.contains(targetMember)) {
+                                        logger.log(Level.SEVERE, targetMember + " is not in member list!");
                                     }
                                 }
                             }

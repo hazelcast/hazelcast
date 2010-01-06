@@ -188,17 +188,19 @@ public class MapMigrator implements Runnable {
     }
 
     void initiateMigration() {
-//        System.out.println("initiate migration " + lsBlocksToMigrate.size());
-        if (lsBlocksToMigrate != null && lsBlocksToMigrate.size() > 0) {
+        if (lsBlocksToMigrate.size() > 0) {
             Block block = lsBlocksToMigrate.remove(0);
-            if (thisAddress.equals(block.getOwner())) {
-                migrateBlock(block);
-            } else {
-                concurrentMapManager.sendBlockInfo(block, block.getOwner());
+            if (concurrentMapManager.isBlockInfoValid(block)) {
+                if (thisAddress.equals(block.getOwner())) {
+                    migrateBlock(block);
+                } else {
+                    concurrentMapManager.sendBlockInfo(block, block.getOwner());
+                }
             }
-        } else {
+        }
+        if (blockMigrating == null) {
+            lsBlocksToMigrate.clear();
             reArrangeBlocks();
-//            System.out.println("rearranged " + lsBlocksToMigrate.size());
         }
     }
 
@@ -302,7 +304,7 @@ public class MapMigrator implements Runnable {
 
     void syncForDead(Address deadAddress, Block block) {
         if (deadAddress.equals(block.getOwner())) {
-            MemberImpl member = concurrentMapManager.getNextMemberBeforeSync(block.getOwner(), true, 1);
+            MemberImpl member = concurrentMapManager.getNextMemberBeforeSync(deadAddress, true, 1);
             if (member == null) {
                 if (!concurrentMapManager.isSuperClient()) {
                     block.setOwner(thisAddress);
@@ -317,9 +319,9 @@ public class MapMigrator implements Runnable {
                 }
             }
         }
-        if (block.getMigrationAddress() != null) {
+        if (block.isMigrating()) {
             if (deadAddress.equals(block.getMigrationAddress())) {
-                MemberImpl member = concurrentMapManager.getNextMemberBeforeSync(block.getMigrationAddress(), true, 1);
+                MemberImpl member = concurrentMapManager.getNextMemberBeforeSync(deadAddress, true, 1);
                 if (member == null) {
                     if (!concurrentMapManager.isSuperClient()) {
                         block.setMigrationAddress(thisAddress);
@@ -364,6 +366,9 @@ public class MapMigrator implements Runnable {
     }
 
     void migrateBlock(final Block block) {
+        if (!concurrentMapManager.isBlockInfoValid(block)) {
+            return;
+        }
         if (!thisAddress.equals(block.getOwner())) {
             throw new RuntimeException();
         }
@@ -375,11 +380,10 @@ public class MapMigrator implements Runnable {
         }
         Block blockReal = blocks[block.getBlockId()];
         if (blockReal.isMigrating()) {
-            if (!block.getOwner().equals(blockReal.getOwner()) || block.getMigrationAddress().equals(blockReal.getMigrationAddress())) {
-                logger.log(Level.SEVERE, blockReal + ". Already migrating block is migrating again to " + block);
-            } else {
-                return;
+            if (!block.getOwner().equals(blockReal.getOwner()) || !block.getMigrationAddress().equals(blockReal.getMigrationAddress())) {
+                logger.log(Level.WARNING, blockReal + ". Already migrating block is migrating again to " + block);
             }
+            return;
         }
         blockReal.setOwner(block.getOwner());
         blockReal.setMigrationAddress(block.getMigrationAddress());
