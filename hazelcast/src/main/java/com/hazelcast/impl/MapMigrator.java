@@ -192,7 +192,7 @@ public class MapMigrator implements Runnable {
             Block block = lsBlocksToMigrate.remove(0);
             if (concurrentMapManager.isBlockInfoValid(block)) {
                 if (thisAddress.equals(block.getOwner())) {
-                    migrateBlock(block);
+                    concurrentMapManager.doBlockInfo(block);
                 } else {
                     concurrentMapManager.sendBlockInfo(block, block.getOwner());
                 }
@@ -236,11 +236,11 @@ public class MapMigrator implements Runnable {
             for (MemberImpl member : concurrentMapManager.getMembers()) {
                 if (!member.localMember()) {
                     if (dataAllBlocks == null) {
-                        ConcurrentMapManager.Blocks allBlocks = new ConcurrentMapManager.Blocks();
+                        ConcurrentMapManager.BlockOwners allBlockOwners = new ConcurrentMapManager.BlockOwners();
                         for (Block block : blocks) {
-                            allBlocks.addBlock(block);
+                            allBlockOwners.addBlock(block);
                         }
-                        dataAllBlocks = ThreadContext.get().toData(allBlocks);
+                        dataAllBlocks = ThreadContext.get().toData(allBlockOwners);
                     }
                     concurrentMapManager.send("blocks", CONCURRENT_MAP_BLOCKS, dataAllBlocks, member.getAddress());
                 }
@@ -365,36 +365,38 @@ public class MapMigrator implements Runnable {
         }
     }
 
-    void migrateBlock(final Block block) {
-        if (!concurrentMapManager.isBlockInfoValid(block)) {
+    void migrateBlock(final Block blockInfo) {
+        if (!concurrentMapManager.isBlockInfoValid(blockInfo)) {
             return;
         }
-        if (!thisAddress.equals(block.getOwner())) {
+        if (!thisAddress.equals(blockInfo.getOwner())) {
             throw new RuntimeException();
         }
-        if (block.getMigrationAddress() == null) {
+        if (!blockInfo.isMigrating()) {
             throw new RuntimeException();
         }
-        if (block.getOwner().equals(block.getMigrationAddress())) {
+        if (blockInfo.getOwner().equals(blockInfo.getMigrationAddress())) {
             throw new RuntimeException();
         }
-        Block blockReal = blocks[block.getBlockId()];
+        Block blockReal = blocks[blockInfo.getBlockId()];
         if (blockReal.isMigrating()) {
-            if (!block.getOwner().equals(blockReal.getOwner()) || !block.getMigrationAddress().equals(blockReal.getMigrationAddress())) {
-                logger.log(Level.WARNING, blockReal + ". Already migrating block is migrating again to " + block);
+            if (!blockInfo.getMigrationAddress().equals(blockReal.getMigrationAddress())) {
+                logger.log(Level.WARNING, blockReal + ". Already migrating blockInfo is migrating again to " + blockInfo);
+            } else {
+                logger.log(Level.WARNING, blockInfo + " migration unknown " + blockReal);
             }
             return;
         }
-        blockReal.setOwner(block.getOwner());
-        blockReal.setMigrationAddress(block.getMigrationAddress());
-        logger.log(Level.FINEST, "migrate block " + block);
+        blockReal.setOwner(blockInfo.getOwner());
+        blockReal.setMigrationAddress(blockInfo.getMigrationAddress());
+        logger.log(Level.FINEST, "migrate blockInfo " + blockInfo);
         if (!node.isActive() || node.factory.restarted) {
             return;
         }
         if (concurrentMapManager.isSuperClient()) {
             return;
         }
-        blockMigrating = block;
+        blockMigrating = blockInfo;
         List<Record> lsRecordsToMigrate = new ArrayList<Record>(1000);
         Collection<CMap> cmaps = concurrentMapManager.maps.values();
         for (final CMap cmap : cmaps) {
@@ -408,7 +410,7 @@ public class MapMigrator implements Runnable {
                     if (rec.getKey() == null || rec.getKey().size() == 0) {
                         throw new RuntimeException("Record.key is null or empty " + rec.getKey());
                     }
-                    if (rec.getBlockId() == block.getBlockId()) {
+                    if (rec.getBlockId() == blockInfo.getBlockId()) {
                         lsRecordsToMigrate.add(rec);
                         cmap.markAsRemoved(rec);
                     }
@@ -431,18 +433,18 @@ public class MapMigrator implements Runnable {
         node.executorManager.executeMigrationTask(new FallThroughRunnable() {
             public void doRun() {
                 try {
-                    logger.log(Level.FINEST, "migrate block " + block + " await ");
+                    logger.log(Level.FINEST, "migrate blockInfo " + blockInfo + " await ");
                     latch.await(10, TimeUnit.SECONDS);
                     concurrentMapManager.enqueueAndReturn(new Processable() {
                         public void process() {
-                            Block blockReal = blocks[block.getBlockId()];
-                            logger.log(Level.FINEST, "migrate completing [" + block+ "] realBlock " + blockReal);                           
+                            Block blockReal = blocks[blockInfo.getBlockId()];
+                            logger.log(Level.FINEST, "migrate completing [" + blockInfo + "] realBlock " + blockReal);
                             blockReal.setOwner(blockReal.getMigrationAddress());
                             blockReal.setMigrationAddress(null);
-                            logger.log(Level.FINEST, "migrate complete [" + block.getMigrationAddress() + "] now realBlock " + blockReal);
+                            logger.log(Level.FINEST, "migrate complete [" + blockInfo.getMigrationAddress() + "] now realBlock " + blockReal);
                             for (MemberImpl member : concurrentMapManager.lsMembers) {
                                 if (!member.localMember()) {
-                                    concurrentMapManager.sendBlockInfo(blockReal, member.getAddress());
+                                    concurrentMapManager.sendBlockInfo(new Block(blockReal), member.getAddress());
                                 }
                             }
                         }

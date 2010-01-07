@@ -286,7 +286,7 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     class MMigrate extends MBackupAwareOp {
-        
+
         public boolean migrateMulti(Record record, Data value) {
             copyRecordToRequest(record, request, true);
             request.value = value;
@@ -1218,15 +1218,16 @@ public final class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void process(Packet packet) {
-            Blocks blocks = (Blocks) toObject(packet.value);
-            handleBlocks(blocks);
+            BlockOwners blockOwners = (BlockOwners) toObject(packet.value);
+            handleBlocks(blockOwners);
             packet.returnToContainer();
         }
 
-        void handleBlocks(Blocks blocks) {
-            List<Block> lsBlocks = blocks.lsBlocks;
+        void handleBlocks(BlockOwners blockOwners) {
+            List<Block> lsBlocks = blockOwners.lsBlocks;
             for (Block block : lsBlocks) {
                 doBlockInfo(block);
+                logger.log(Level.FINEST, "handleBlocks " + block);
             }
         }
     }
@@ -1256,49 +1257,54 @@ public final class ConcurrentMapManager extends BaseManager {
         public void process(Packet packet) {
             Block blockInfo = (Block) toObject(packet.value);
             if (!isBlockInfoValid(blockInfo)) return;
+            System.out.println(packet.conn.getEndPoint() + "send blockInfo " + blockInfo);
             doBlockInfo(blockInfo);
-            if (thisAddress.equals(blockInfo.getOwner()) && blockInfo.isMigrating()) {
-                mapMigrator.migrateBlock(blockInfo);
-            }
             if (isMaster() && !blockInfo.isMigrating()) {
                 for (MemberImpl member : lsMembers) {
                     if (!member.localMember()) {
                         if (!member.getAddress().equals(packet.conn.getEndPoint())) {
-                            sendBlockInfo(blockInfo, member.getAddress());
+                            sendBlockInfo(new Block(blockInfo), member.getAddress());
                         }
                     }
                 }
             }
             packet.returnToContainer();
         }
+    }
 
-        void doBlockInfo(Block blockInfo) {
-            if (!isBlockInfoValid(blockInfo)) return;
-            Block block = blocks[blockInfo.getBlockId()];
-            if (block == null) {
-                block = blockInfo;
-                blocks[block.getBlockId()] = block;
-            } else {
-                if (thisAddress.equals(block.getOwner())) {
-                    // I am already owner!
-                    if (block.isMigrating()) {
-                        if (!block.getMigrationAddress().equals(blockInfo.getMigrationAddress())) {
-                            throw new RuntimeException();
-                        }
-                    } else {
-                        if (blockInfo.getMigrationAddress() != null) {
-                            // I am being told to migrate
-                            block.setMigrationAddress(blockInfo.getMigrationAddress());
-                        }
-                    }
-                } else {
-                    block.setOwner(blockInfo.getOwner());
-                    block.setMigrationAddress(blockInfo.getMigrationAddress());
+    void doBlockInfo(Block blockInfo) {
+        if (!isBlockInfoValid(blockInfo)){
+            logger.log (Level.FINEST, "blockInfo invalid " + blockInfo);
+            return;
+        }
+        Block block = blocks[blockInfo.getBlockId()];
+        if (block == null) {
+            logger.log(Level.FINEST, "Real Block is null, BlockInfo is: " + blockInfo);
+            block = new Block(blockInfo);
+            blocks[block.getBlockId()] = block;
+            block.setMigrationAddress(null);
+        }
+        if (thisAddress.equals(block.getOwner())) {
+            // I am already owner!
+            if (block.isMigrating()) {
+                if (!block.getMigrationAddress().equals(blockInfo.getMigrationAddress())) {
+                    logger.log(Level.SEVERE, block.getMigrationAddress() + " existing block migration address are not the same as the new." + blockInfo.getMigrationAddress());
                 }
+            } else if (blockInfo.isMigrating()) {
+                // I am being told to migrate
+                logger.log(Level.FINEST, "now migrate " + blockInfo);
+                mapMigrator.migrateBlock(blockInfo);
             }
-            if (block.getOwner() != null && block.getOwner().equals(block.getMigrationAddress())) {
-                block.setMigrationAddress(null);
+        } else {
+            if (blockInfo.isMigrating()) {
+                logger.log(Level.SEVERE, "not the block owner but has migration info " + blockInfo);
             }
+            block.setOwner(blockInfo.getOwner());
+            block.setMigrationAddress(blockInfo.getMigrationAddress());
+        }
+        if (block.getOwner() != null && block.getOwner().equals(block.getMigrationAddress())) {
+            block.setMigrationAddress(null);
+            logger.log(Level.SEVERE, "block owner cannot be same as the migration address!");
         }
     }
 
@@ -1325,11 +1331,6 @@ public final class ConcurrentMapManager extends BaseManager {
     boolean rightRemoteTarget(Packet packet) {
         boolean right = thisAddress.equals(getKeyOwner(packet.key));
         if (!right) {
-            // not the owner (at least not anymore)
-            if (isMaster()) {
-                Block block = getOrCreateBlock(packet.key);
-                sendBlockInfo(block, packet.conn.getEndPoint());
-            }
             sendRedoResponse(packet);
         }
         return right;
@@ -1919,7 +1920,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    public static class Blocks extends AbstractRemotelyProcessable {
+    public static class BlockOwners extends AbstractRemotelyProcessable {
         List<Block> lsBlocks = new ArrayList<Block>(BLOCK_COUNT);
 
         public void addBlock(Block block) {
@@ -1930,7 +1931,7 @@ public final class ConcurrentMapManager extends BaseManager {
             int size = in.readInt();
             for (int i = 0; i < size; i++) {
                 Block block = new Block();
-                block.readData(in);
+                block.readOwnership(in);
                 addBlock(block);
             }
         }
@@ -1939,14 +1940,14 @@ public final class ConcurrentMapManager extends BaseManager {
             int size = lsBlocks.size();
             out.writeInt(size);
             for (Block block : lsBlocks) {
-                block.writeData(out);
+                block.writeOwnership(out);
             }
         }
 
         public void process() {
             BlocksOperationHandler h = (BlocksOperationHandler)
                     getNode().clusterService.getPacketProcessor(CONCURRENT_MAP_BLOCKS);
-            h.handleBlocks(Blocks.this);
+            h.handleBlocks(BlockOwners.this);
         }
     }
 

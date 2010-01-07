@@ -523,13 +523,15 @@ public abstract class BaseManager {
                             sb.append("\n\t");
                             sb.append(key + " Re-doing [" + request.redoCount + "] times! " + request.name);
                             logger.log(Level.INFO, sb.toString());
+                            logger.log (Level.INFO, node.concurrentMapManager.printBlocks());
                             l.countDown();
+                            System.exit(1);
                         }
                     });
                     try {
-                        l.await();
+                        l.await(); 
                     } catch (InterruptedException e) {
-                    }
+                    } 
                 }
                 beforeRedo();
                 doOp();

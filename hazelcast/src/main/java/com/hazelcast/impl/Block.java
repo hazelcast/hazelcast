@@ -72,13 +72,17 @@ public class Block implements DataSerializable {
         return (getMigrationAddress() != null) ? getMigrationAddress() : getOwner();
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readOwnership(DataInput in) throws IOException {
         this.blockId = in.readInt();
         boolean owned = in.readBoolean();
         if (owned) {
             this.owner = new Address();
             this.owner.readData(in);
         }
+    }
+
+    public void readData(DataInput in) throws IOException {
+        readOwnership(in);
         boolean migrating = in.readBoolean();
         if (migrating) {
             setMigrationAddress(new Address());
@@ -86,13 +90,17 @@ public class Block implements DataSerializable {
         }
     }
 
-    public void writeData(DataOutput out) throws IOException {
-        out.writeInt(getBlockId());
-        boolean owned = (getOwner() != null);
+    public void writeOwnership(DataOutput out) throws IOException {
+        out.writeInt(this.blockId);
+        boolean owned = (this.owner != null);
         out.writeBoolean(owned);
         if (owned) {
-            getOwner().writeData(out);
+            this.owner.writeData(out);
         }
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        writeOwnership(out);
         boolean migrating = (getMigrationAddress() != null);
         out.writeBoolean(migrating);
         if (migrating)
