@@ -1297,7 +1297,8 @@ public final class ConcurrentMapManager extends BaseManager {
             }
         } else {
             if (blockInfo.isMigrating()) {
-                logger.log(Level.SEVERE, "not the block owner but has migration info " + blockInfo);
+                logger.log(Level.WARNING, "not the block owner but has migration info " + blockInfo);
+                return;
             }
             block.setOwner(blockInfo.getOwner());
             block.setMigrationAddress(blockInfo.getMigrationAddress());
