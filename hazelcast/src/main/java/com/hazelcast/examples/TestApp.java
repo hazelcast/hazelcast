@@ -961,7 +961,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         System.out.println("Topic received = " + msg);
     }
 
-    public static class LongTask implements Callable<String>, Serializable {
+    public static class LongTask extends HazelcastInstanceAwareObject implements Callable<String>, Serializable {
         String input = null;
 
         public LongTask() {
@@ -980,11 +980,11 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                 System.out.println("Interrupted! Cancelling task!");
                 return "No-result";
             }
-            return Hazelcast.getCluster().getLocalMember().toString() + ":" + input;
+            return getHazelcastInstance().getCluster().getLocalMember().toString() + ":" + input;
         }
     }
 
-    public static class Echo implements Callable<String>, Serializable {
+    public static class Echo extends HazelcastInstanceAwareObject implements Callable<String>, Serializable {
         String input = null;
 
         public Echo() {
@@ -997,7 +997,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
 
         public String call() {
-            return Hazelcast.getCluster().getLocalMember().toString() + ":" + input;
+            return getHazelcastInstance().getCluster().getLocalMember().toString() + ":" + input;
         }
     }
 

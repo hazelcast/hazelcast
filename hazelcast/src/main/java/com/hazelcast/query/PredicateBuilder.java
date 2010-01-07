@@ -53,10 +53,8 @@ public class PredicateBuilder implements Predicate, IndexAwarePredicate {
     public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index<MapEntry>> mapIndexes) {
         Predicate predicate = lsPredicates.get(0);
         if (predicate instanceof IndexAwarePredicate) {
-            if (predicate instanceof IndexAwarePredicate) {
-                IndexAwarePredicate p = (IndexAwarePredicate) predicate;
-                p.collectAppliedIndexes(setAppliedIndexes, mapIndexes);
-            }
+            IndexAwarePredicate p = (IndexAwarePredicate) predicate;
+            p.collectAppliedIndexes(setAppliedIndexes, mapIndexes);
         }
     }
 

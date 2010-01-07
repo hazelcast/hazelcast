@@ -431,12 +431,15 @@ public class MapMigrator implements Runnable {
         node.executorManager.executeMigrationTask(new FallThroughRunnable() {
             public void doRun() {
                 try {
+                    logger.log(Level.FINEST, "migrate block " + block + " await ");
                     latch.await(10, TimeUnit.SECONDS);
                     concurrentMapManager.enqueueAndReturn(new Processable() {
                         public void process() {
                             Block blockReal = blocks[block.getBlockId()];
+                            logger.log(Level.FINEST, "migrate completing [" + block+ "] realBlock " + blockReal);                           
                             blockReal.setOwner(blockReal.getMigrationAddress());
                             blockReal.setMigrationAddress(null);
+                            logger.log(Level.FINEST, "migrate complete [" + block.getMigrationAddress() + "] now realBlock " + blockReal);
                             for (MemberImpl member : concurrentMapManager.lsMembers) {
                                 if (!member.localMember()) {
                                     concurrentMapManager.sendBlockInfo(blockReal, member.getAddress());

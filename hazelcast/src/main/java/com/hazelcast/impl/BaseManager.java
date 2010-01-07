@@ -641,7 +641,7 @@ public abstract class BaseManager {
 
         @Override
         public void beforeRedo() {
-            logger.log(Level.FINEST, "BeforeRedo target " + target);
+            logger.log(Level.FINEST, request.operation + " BeforeRedo target " + target);
             super.beforeRedo();
         }
 

@@ -286,8 +286,7 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     class MMigrate extends MBackupAwareOp {
-        volatile int keysize = 0;
-
+        
         public boolean migrateMulti(Record record, Data value) {
             copyRecordToRequest(record, request, true);
             request.value = value;
@@ -300,7 +299,6 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public boolean migrate(Record record) {
-            keysize = record.getKey().size();
             copyRecordToRequest(record, request, true);
             if (request.key == null) throw new RuntimeException("req.key is null " + request.redoCount);
             request.operation = CONCURRENT_MAP_MIGRATE_RECORD;
