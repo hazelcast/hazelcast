@@ -525,7 +525,6 @@ public abstract class BaseManager {
                             logger.log(Level.INFO, sb.toString());
                             logger.log (Level.INFO, node.concurrentMapManager.printBlocks());
                             l.countDown();
-                            System.exit(1);
                         }
                     });
                     try {
