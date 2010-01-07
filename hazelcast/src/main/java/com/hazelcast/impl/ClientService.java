@@ -81,7 +81,7 @@ public class ClientService {
         clientOperationHandlers[ClusterOperation.GET_ID.getValue()] = new GetIdHandler();
         clientOperationHandlers[ClusterOperation.ADD_INDEX.getValue()] = new AddIndexHandler();
         clientOperationHandlers[ClusterOperation.NEW_ID.getValue()] = new NewIdHandler();
-        clientOperationHandlers[ClusterOperation.REMOTELY_EXECUTE.getValue()] = new ExecuterServiceHandler();
+        clientOperationHandlers[ClusterOperation.REMOTELY_EXECUTE.getValue()] = new ExecutorServiceHandler();
         clientOperationHandlers[ClusterOperation.GET_INSTANCES.getValue()] = new GetInstancesHandler();
         clientOperationHandlers[ClusterOperation.GET_MEMBERS.getValue()] = new GetMembersHandler();
         clientOperationHandlers[ClusterOperation.GET_CLUSTER_TIME.getValue()] = new GetClusterTimeHandler();
@@ -339,7 +339,7 @@ public class ClientService {
         }
     }
 
-    private class ExecuterServiceHandler extends ClientOperationHandler {
+    private class ExecutorServiceHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
             Future<?> future = null;
             ExecutorService executorService = node.factory.getExecutorService();
