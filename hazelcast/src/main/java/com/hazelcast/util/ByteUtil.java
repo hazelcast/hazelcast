@@ -17,48 +17,61 @@
 
 package com.hazelcast.util;
 
-public class ByteUtil {
-    private final static byte[] POWERS = new byte[8];
+/**
+ * This class allows to set, clear and check bits of a byte value.
+ */
+public final class ByteUtil {
 
-    static {
-        POWERS[0] = 1;
-        POWERS[1] = 2;
-        POWERS[2] = 4;
-        POWERS[3] = 8;
-        POWERS[4] = 16;
-        POWERS[5] = 32;
-        POWERS[6] = 64;
-        POWERS[7] = -128;
-    }
+	private final static byte[] POWERS = new byte[] {1, 2, 4, 8, 16, 32, 64, -128};
 
-    public static byte setTrue(byte number, int index) {
+	/**
+	 * All members are static and there should never be an instance of this class.
+	 */
+	private ByteUtil() {
+	}
+
+	/**
+	 * Sets a bit to 1.
+	 * 
+	 * @param number the original byte value
+	 * @param index the bit to set
+	 * @return the modified byte value
+	 */
+    public static byte setTrue(final byte number, final int index) {
         return (byte) (number | POWERS[index]);
     }
 
-    public static byte setFalse(byte number, int index) {
+    /**
+     * Clears a bit, by setting it to 0.
+     * 
+     * @param number the original byte value
+     * @param index the bit to set
+     * @return the modified byte value
+     */
+    public static byte setFalse(final byte number, final int index) {
         return (byte) (number & ~(POWERS[index]));
     }
 
-    public static boolean isTrue(byte number, int index) {
-        return (byte) (number & (POWERS[index])) != 0;
+    /**
+     * Checks if the index-th bit of number is set.
+     * 
+     * @param number the byte value
+     * @param index the bit to check
+     * @return true if the bit is set, false otherwise
+     */
+    public static boolean isTrue(final byte number, final int index) {
+        return (number & (POWERS[index])) != 0;
     }
 
-    public static boolean isFalse(byte number, int index) {
-        return (byte) (number & (POWERS[index])) == 0;
+    /**
+     * Checks if the index-th bit of number is NOT set. 
+     * 
+     * @param number the byte value
+     * @param index the bit to check
+     * @return true if the bit is NOT set, false otherwise
+     */
+    public static boolean isFalse(final byte number, final int index) {
+        return (number & (POWERS[index])) == 0;
     }
 
-    public static void main(String[] args) {
-        byte x = 0;
-        x = setTrue(x, 1);
-        x = setTrue(x, 3);
-        x = setTrue(x, 6);
-        for (byte i = 0; i < 8; i++) {
-            boolean get = isTrue(x, i);
-            System.out.println(i + " " + get);
-        }
-        for (byte i = 0; i < 8; i++) {
-            boolean get = isTrue(x, i);
-            System.out.println(i + " " + get);
-        }
-    }
 }
