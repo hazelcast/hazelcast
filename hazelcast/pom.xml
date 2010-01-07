@@ -76,6 +76,7 @@
                         <include>**/GroupConfigTest.java</include>
                         <include>**/QueueConfigTest.java</include>
                         <include>**/SortedHashMapTest.java</include>
+                        <include>**/ByteUtilTest.java</include>
                     </includes>
                 </configuration>
             </plugin>
