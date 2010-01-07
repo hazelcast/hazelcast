@@ -22,40 +22,47 @@ import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import com.hazelcast.core.*;
+import com.hazelcast.core.Member;
+import com.hazelcast.monitor.DistributedMapStatsCallable;
 import org.junit.Test;
 
 public class HazelcastClientExecutorServiceTest {
 
     private static final int COUNT = 10;
 
-     /**
+    /**
      * Test multiple Future.get() invokation
      */
     @Test
     public void isTwoGetFromFuture() throws Exception {
         Callable<String> task = new BasicTestTask();
-         ExecutorService executor = getExecutorService();
-         Future<String> future = executor.submit(task);
+        ExecutorService executor = getExecutorService();
+        Future<String> future = executor.submit(task);
         String s1 = future.get();
-        assertEquals(s1, BasicTestTask.RESULT);
-    	assertTrue(future.isDone());
+        assertEquals(BasicTestTask.RESULT, s1);
+        assertTrue(future.isDone());
         String s2 = future.get();
-        assertEquals(s2, BasicTestTask.RESULT);
-    	assertTrue(future.isDone());
+        assertEquals(BasicTestTask.RESULT, s2);
+        assertTrue(future.isDone());
         String s3 = future.get();
-        assertEquals(s3, BasicTestTask.RESULT);
-    	assertTrue(future.isDone());
+        assertEquals(BasicTestTask.RESULT, s3);
+        assertTrue(future.isDone());
         String s4 = future.get();
-        assertEquals(s4, BasicTestTask.RESULT);
-    	assertTrue(future.isDone());
+        assertEquals(BasicTestTask.RESULT, s4);
+        assertTrue(future.isDone());
     }
 
     /**
@@ -81,7 +88,7 @@ public class HazelcastClientExecutorServiceTest {
         futures = executor.invokeAll(tasks);
         assertEquals(futures.size(), COUNT);
         for (int i = 0; i < COUNT; i++) {
-        	assertEquals(futures.get(i).get(), BasicTestTask.RESULT);
+            assertEquals(futures.get(i).get(), BasicTestTask.RESULT);
         }
     }
 
@@ -91,8 +98,8 @@ public class HazelcastClientExecutorServiceTest {
     @Test(expected = NullPointerException.class)
     public void submitNullTask() {
         Callable<?> callable = null;
-    	getExecutorService().submit(callable);
-    	fail();
+        getExecutorService().submit(callable);
+        fail();
     }
 
     private ExecutorService getExecutorService() {
@@ -155,7 +162,7 @@ public class HazelcastClientExecutorServiceTest {
         assertNull(future.get());
     }
 
-    public static class BasicRunnable implements Runnable, Serializable{
+    public static class BasicRunnable implements Runnable, Serializable {
         public void run() {
             System.out.println("I am running: Hazelcast rocks in Thread: -> " + Thread.currentThread().getName());
         }
@@ -163,14 +170,38 @@ public class HazelcastClientExecutorServiceTest {
 
     public static class BasicTestTask implements Callable<String>, Serializable {
 
-    	public static String RESULT = "Task completed";
+        public static String RESULT = "Task completed";
 
-       	public String call() throws Exception {
-    		return RESULT;
-    	}
+        public String call() throws Exception {
+            return RESULT;
+        }
     }
 
+    @Test
+    public void multiTaskWithOneMember() throws ExecutionException, InterruptedException {
+        ExecutorService esService = getExecutorService();
+        Set<Member> members = getHazelcastClient().getCluster().getMembers();
+        MultiTask<DistributedMapStatsCallable.MemberMapStat> task =
+                new MultiTask<DistributedMapStatsCallable.MemberMapStat>(new DistributedMapStatsCallable("default"), members);
 
+        esService.submit(task);
+
+        Collection<DistributedMapStatsCallable.MemberMapStat> mapStats = null;
+        mapStats = task.get();
+
+        for (DistributedMapStatsCallable.MemberMapStat memberMapStat : mapStats) {
+            assertNotNull(memberMapStat);
+        }
+        assertEquals(members.size(), mapStats.size());
+    }
+
+    @Test
+    public void multiTaskWithTwoMember() throws ExecutionException, InterruptedException {
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        multiTaskWithOneMember();
+        h.shutdown();
+
+    }
 
 
 }

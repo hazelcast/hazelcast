@@ -19,14 +19,13 @@ package com.hazelcast.client;
 
 import java.util.concurrent.*;
 
-import static com.hazelcast.client.Serializer.toObject;
-
 public class FutureProxy<T> implements Future<T> {
     final Callable<T> callable;
     final ProxyHelper proxyHelper;
-    final BlockingQueue<Packet> queue = new LinkedBlockingQueue<Packet>();
-    volatile boolean isDone = false;
-    private T result;
+    private volatile boolean isDone = false;
+    private ClientExecutionManagerCallback callback;
+    private volatile T result;
+    private volatile ExecutionException exception = null;
 
     public FutureProxy(ProxyHelper proxyHelper, Callable<T> callable) {
         this.proxyHelper = proxyHelper;
@@ -34,7 +33,7 @@ public class FutureProxy<T> implements Future<T> {
     }
 
     public boolean cancel(boolean b) {
-        return false;
+        return callback.cancel(b);
     }
 
     public boolean isCancelled() {
@@ -46,41 +45,41 @@ public class FutureProxy<T> implements Future<T> {
     }
 
     public T get() throws InterruptedException, ExecutionException {
-        try {
-            return get(-1, null);
-        } catch (TimeoutException ignore) {
-            return null;
-        }
+        Object result = callback.get();
+        return handleResult(result);
     }
 
     public T get(long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
-        if (result == null) {
-            synchronized (this) {
-                if (result == null) {
-                    Packet packet = null;
-                    if (l < 0) {
-                        packet = queue.take();
-                    } else {
-                        packet = queue.poll(l, timeUnit);
-                    }
-                    result = handleResult(packet);
-                }
-            }
-        }
-        return result;
+
+        return handleResult(callback.get(l, timeUnit));
     }
 
-    private T handleResult(Packet packet) throws ExecutionException {
-        Object o = toObject(packet.getValue());
-        if (o instanceof ExecutionException) {
-            throw (ExecutionException) o;
+    private T handleResult(Object result) throws ExecutionException {
+        if(exception!=null){
+            throw this.exception;
+        }
+        if(isDone){
+            return this.result;
+        }
+        if (result instanceof ExecutionException) {
+            this.exception = (ExecutionException) result;
+            throw this.exception;
         } else {
-            return (T) o;
+            isDone = true;
+            this.result = (T)result;
+            return this.result;
         }
     }
 
     public void enqueue(Packet packet) {
-        queue.offer(packet);
-        isDone = true;
+        callback.offer(packet);
+    }
+
+    public ClientExecutionManagerCallback getCallback() {
+        return callback;
+    }
+
+    public void setCallback(ClientExecutionManagerCallback callback) {
+        this.callback = callback;
     }
 }

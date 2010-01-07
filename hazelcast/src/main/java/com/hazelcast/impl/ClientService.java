@@ -341,13 +341,35 @@ public class ClientService {
 
     private class ExecuterServiceHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
+            Future<?> future = null;
             ExecutorService executorService = node.factory.getExecutorService();
-            Future<Object> future = executorService.submit((Callable<Object>) toObject(packet.key));
+            Callable<Object> callable = (Callable<Object>) toObject(packet.key);
+            Object result;
             try {
-                packet.value = toData(future.get());
+                if (callable instanceof ClientDistributedTask) {
+                    DistributedTask task = null;
+                    ClientDistributedTask cdt = (ClientDistributedTask) callable;
+                    System.out.println(cdt.getKey());
+                    System.out.println(cdt.getMember());
+                    System.out.println(cdt.getMembers());
+                    if (cdt.getKey() != null) {
+                        task = new DistributedTask(cdt.getCallable(), cdt.getKey());
+                    } else if (cdt.getMember() != null) {
+                        task = new DistributedTask(cdt.getCallable(), cdt.getMember());
+                    } else if (cdt.getMembers() != null) {
+                        task = new MultiTask(cdt.getCallable(), cdt.getMembers());
+                    }
+                    executorService.submit(task);
+                    result = task.get();
+                } else {
+                    future = executorService.submit(callable);
+                    result = future.get();
+                }
+                packet.value = toData(result);
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                return;
             } catch (ExecutionException e) {
+                e.printStackTrace();
                 packet.value = toData(e);
             }
         }

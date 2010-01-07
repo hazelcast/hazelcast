@@ -61,10 +61,9 @@ public class ExecutorServiceManager extends ClientRunnable{
     }
 
     public void enqueue(Packet packet) {
-        FutureProxy future = map.get(packet.getLongValue());
+        FutureProxy future = map.remove(packet.getLongValue());
         if(future!=null){
             future.enqueue(packet);
         }
-        map.remove(packet.getLongValue());
     }
 }

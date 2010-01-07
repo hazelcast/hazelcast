@@ -17,27 +17,24 @@
 package com.hazelcast.monitor.client.event;
 
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.Date;
 
 public class MapStatistics implements ChangeEvent, Serializable {
     private int clusterId;
+    private Date date;
 
-    public int getSize() {
-        return size;
-    }
-
-    public void setSize(int size) {
-        this.size = size;
-    }
+    Collection<LocalMapStatistics> listOfLocalStats;
 
     private int size;
 
-    public MapStatistics(int clusterId) {
-        this.clusterId = clusterId;
+    public MapStatistics() {
 
     }
 
-    public MapStatistics() {
-
+    public MapStatistics(int clusterId) {
+        this.clusterId = clusterId;
+        this.date = new Date();
     }
 
     public ChangeEventType getChangeEventType() {
@@ -47,4 +44,43 @@ public class MapStatistics implements ChangeEvent, Serializable {
     public int getClusterId() {
         return clusterId;
     }
+
+    public Date getCreatedDate() {
+        return date;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
+    }
+
+    public Collection<LocalMapStatistics> getListOfLocalStats() {
+        return listOfLocalStats;
+    }
+
+    public void setListOfLocalStats(Collection<LocalMapStatistics> listOfLocalStats) {
+        this.listOfLocalStats = listOfLocalStats;
+    }
+
+    public static class LocalMapStatistics implements Serializable{
+
+        public int ownedEntryCount;
+        public int backupEntryCount;
+        public int markedAsRemovedEntryCount;
+        public int ownedEntryMemoryCost;
+        public int backupEntryMemoryCost;
+        public int markedAsRemovedMemoryCost;
+        public long creationTime;
+        public long lastAccessTime;
+        public long lastUpdateTime;
+        public long lastEvictionTime;
+        public int hits;
+        public int lockedEntryCount;
+        public int lockWaitCount;
+        public String memberName;
+    }
+
 }

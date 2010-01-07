@@ -17,17 +17,20 @@
 package com.hazelcast.monitor.client.event;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.List;
 
 public class MemberEvent implements ChangeEvent, Serializable {
     private int clusterId;
     private List<String> members;
+    private Date date;
 
     public MemberEvent() {
     }
 
     public MemberEvent(int clusterId) {
         this.clusterId = clusterId;
+        this.date = new Date();
     }
 
     public List<String> getMembers() {
@@ -44,5 +47,9 @@ public class MemberEvent implements ChangeEvent, Serializable {
 
     public int getClusterId() {
         return clusterId;
+    }
+
+    public Date getCreatedDate() {
+        return date;
     }
 }

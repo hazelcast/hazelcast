@@ -19,9 +19,13 @@ package com.hazelcast.monitor.client.event;
 import com.hazelcast.monitor.client.InstanceType;
 
 import java.io.Serializable;
+import java.util.Date;
 
 public class InstanceCreated extends InstanceEvent implements Serializable {
-    public InstanceCreated() {
+    private Date date;
+
+    public InstanceCreated(Date date) {
+        this.date = date;
 
     }
 

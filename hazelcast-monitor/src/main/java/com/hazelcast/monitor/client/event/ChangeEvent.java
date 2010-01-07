@@ -17,9 +17,11 @@
 package com.hazelcast.monitor.client.event;
 
 import java.io.Serializable;
+import java.util.Date;
 
 public interface ChangeEvent extends Serializable {
     ChangeEventType getChangeEventType();
 
     int getClusterId();
+    Date getCreatedDate();
 }

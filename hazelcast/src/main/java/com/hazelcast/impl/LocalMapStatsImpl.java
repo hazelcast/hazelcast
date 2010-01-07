@@ -19,7 +19,9 @@ package com.hazelcast.impl;
 
 import com.hazelcast.monitor.LocalMapStats;
 
-public class LocalMapStatsImpl implements LocalMapStats {
+import java.io.Serializable;
+
+public class LocalMapStatsImpl implements LocalMapStats, Serializable {
     private int ownedEntryCount;
     private int backupEntryCount;
     private int markedAsRemovedEntryCount;

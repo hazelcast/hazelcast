@@ -42,6 +42,7 @@ public class SessionObject {
     final BlockingQueue<ChangeEvent> queue = new LinkedBlockingQueue<ChangeEvent>();
     final List<ChangeEventGenerator> eventGenerators = new CopyOnWriteArrayList<ChangeEventGenerator>();
     final Map<Integer, HazelcastClient> mapOfHz = new ConcurrentHashMap<Integer, HazelcastClient>();
+
     final private Object lock = new Object();
     private TimerTask task;
 
@@ -90,6 +91,7 @@ public class SessionObject {
         task = new TimerTask() {
             @Override
             public void run() {
+                System.out.println("Running... Number of event Generators is: "+ eventGenerators.size());
                 for (ChangeEventGenerator eventGenerator : eventGenerators) {
                     ChangeEvent event = eventGenerator.generateEvent();
                     queue.offer(event);
@@ -126,6 +128,7 @@ public class SessionObject {
         try {
             client = HazelcastClient.newHazelcastClient(name, pass, ips);
         } catch (RuntimeException e) {
+            e.printStackTrace();
             throw new ConnectionExceptoin(e.getMessage());
         }
         client.addInstanceListener(new InstanceListener() {
@@ -179,5 +182,4 @@ public class SessionObject {
         }
         return clusterView;
     }
-
 }

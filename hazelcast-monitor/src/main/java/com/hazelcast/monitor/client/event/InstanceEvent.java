@@ -18,11 +18,14 @@ package com.hazelcast.monitor.client.event;
 
 import com.hazelcast.monitor.client.InstanceType;
 
+import java.util.Date;
+
 public abstract class InstanceEvent implements ChangeEvent {
 
     private String name;
     private InstanceType instanceType;
     private int clusterId;
+    private Date date;
 
     public InstanceEvent() {
 
@@ -32,6 +35,7 @@ public abstract class InstanceEvent implements ChangeEvent {
         this.name = name;
         this.instanceType = instanceType;
         this.clusterId = clusterId;
+        this.date = new Date();
     }
 
     public InstanceType getInstanceType() {
@@ -46,6 +50,8 @@ public abstract class InstanceEvent implements ChangeEvent {
         return clusterId;
     }
 
-
+    public Date getCreatedDate() {
+        return date;
+    }
 }
 

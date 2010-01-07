@@ -387,6 +387,8 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
             } else {
                 final Set<Member> members = innerFutureTask.getMembers();
                 for (final Member member : members) {
+                    MemberImpl memberImpl = (MemberImpl) member;
+                    memberImpl.setHazelcastInstance(node.factory);
                     if (member.localMember()) {
                         executeLocal();
                     } else {

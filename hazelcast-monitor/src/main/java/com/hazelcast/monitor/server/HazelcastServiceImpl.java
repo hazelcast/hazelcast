@@ -34,7 +34,7 @@ import java.util.List;
 
 public class HazelcastServiceImpl extends RemoteServiceServlet implements HazelcastService {
     private static final long serialVersionUID = 7042401980726503097L;
-    private Object lock = new Object();
+    private static Object lock = new Object();
 
 
     public ClusterView connectCluster(String name, String pass, String ips) throws ConnectionExceptoin {
@@ -47,6 +47,7 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
         final SessionObject sessionObject = getSessionObject();
         ArrayList<ClusterView> list = new ArrayList<ClusterView>();
         for (int clusterId : sessionObject.mapOfHz.keySet()) {
+            deRegisterEvent(ChangeEventType.MAP_STATISTICS, clusterId, null);
             ClusterView cv = sessionObject.createClusterView(clusterId);
             list.add(cv);
         }
@@ -54,10 +55,15 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
     }
 
     private SessionObject getSessionObject() {
-        String key = "session_object";
         HttpServletRequest request = this.getThreadLocalRequest();
 
         HttpSession session = request.getSession();
+        SessionObject sessionObject = getSessionObject(session);
+        return sessionObject;
+    }
+
+    static SessionObject getSessionObject(HttpSession session) {
+        String key = "session_object";
         SessionObject sessionObject = (SessionObject) session.getAttribute(key);
         if (sessionObject == null) {
             synchronized (lock) {
@@ -86,7 +92,7 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
             if (client == null) {
                 System.err.println("Client is null: Cluster id: " + clusterId + ", client map size: " + sessionObject.mapOfHz.size());
             }
-            eventGenerator = new MapStatisticsGenerator(client.getMap(instanceName), clusterId);
+            eventGenerator = new MapStatisticsGenerator(client, instanceName, clusterId);
             sessionObject.eventGenerators.add(eventGenerator);
         }
 

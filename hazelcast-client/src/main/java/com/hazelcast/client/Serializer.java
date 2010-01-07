@@ -127,9 +127,9 @@ public class Serializer {
                 else if(className.equals("com.hazelcast.impl.CMap$Values")){
                     className = "com.hazelcast.client.impl.Values";
                 }
-                else if(className.equals("com.hazelcast.impl.MemberImpl")){
-                    className = "com.hazelcast.client.Member";
-                }
+//                else if(className.equals("com.hazelcast.impl.MemberImpl")){
+//                    className = "com.hazelcast.client.Member";
+//                }
 				DataSerializable data = (DataSerializable)Class.forName(className).newInstance();
 
 				data.readData(dis);

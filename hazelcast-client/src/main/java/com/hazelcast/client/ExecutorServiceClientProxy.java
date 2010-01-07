@@ -17,31 +17,31 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.core.DistributedTask;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MultiTask;
+import com.hazelcast.impl.ClientDistributedTask;
+import com.hazelcast.impl.InnerFutureTask;
 
-import java.util.concurrent.*;
-import java.util.List;
-import java.util.Collection;
-import java.util.ArrayList;
 import java.io.Serializable;
+import java.util.*;
+import java.util.concurrent.*;
 
-public class ExecutorServiceClientProxy implements ClientProxy, ExecutorService{
+public class ExecutorServiceClientProxy implements ClientProxy, ExecutorService {
 
     final ProxyHelper proxyHelper;
-	final private HazelcastClient client;
+    final private HazelcastClient client;
 
-	public ExecutorServiceClientProxy(HazelcastClient client) {
-		this.client = client;
-		proxyHelper = new ProxyHelper("", client);
-	}
+    public ExecutorServiceClientProxy(HazelcastClient client) {
+        this.client = client;
+        proxyHelper = new ProxyHelper("", client);
+    }
 
     public void setOutRunnable(OutRunnable out) {
         proxyHelper.setOutRunnable(out);
     }
 
     public void shutdown() {
-
     }
 
     public List<Runnable> shutdownNow() {
@@ -60,11 +60,15 @@ public class ExecutorServiceClientProxy implements ClientProxy, ExecutorService{
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    
-
     public <T> Future<T> submit(Callable<T> tCallable) {
         check(tCallable);
+        ClientExecutionManagerCallback callback = new ClientExecutionManagerCallback.SingleResultClientExecutionManagerCallBack();
+        return innerExecute(tCallable, callback);
+    }
+
+    private <T> Future<T> innerExecute(Callable<T> tCallable, ClientExecutionManagerCallback callback) {
         FutureProxy<T> future = new FutureProxy(proxyHelper, tCallable);
+        future.setCallback(callback);
         client.executorServiceManager.enqueue(future);
         return future;
     }
@@ -79,9 +83,34 @@ public class ExecutorServiceClientProxy implements ClientProxy, ExecutorService{
     }
 
     public <T> Future<T> submit(Runnable runnable, T t) {
-        check(runnable);
-        DistributedTask.DistributedRunnableAdapterImpl<T> adapter  = new DistributedTask.DistributedRunnableAdapterImpl(runnable, t);
-        return submit(adapter);
+        Callable adapter = null;
+        ClientExecutionManagerCallback callback = null;
+        if (runnable instanceof DistributedTask) {
+            DistributedTask dt = (DistributedTask) runnable;
+            InnerFutureTask inner = (InnerFutureTask) dt.getInner();
+            check(inner.getCallable());
+            if (runnable instanceof MultiTask) {
+                if (inner.getMembers() == null) {
+                    Set<Member> set = new HashSet<Member>();
+                    set.add(inner.getMember());
+                    adapter = new ClientDistributedTask(inner.getCallable(), null, set, null);
+                }
+                callback = new ClientExecutionManagerCallback.MultipleResultClientExecutionManagerCallBack();
+            } else {
+                callback = new ClientExecutionManagerCallback.SingleResultClientExecutionManagerCallBack();
+            }
+            if(adapter==null){
+                adapter = new ClientDistributedTask(inner.getCallable(), inner.getMember(), inner.getMembers(), inner.getKey());
+            }
+            inner.setExecutionManagerCallback(callback);
+        } else {
+            check(runnable);
+            adapter = new DistributedTask.DistributedRunnableAdapterImpl(runnable, t);
+        }
+        if (callback == null) {
+            callback = new ClientExecutionManagerCallback.SingleResultClientExecutionManagerCallBack();
+        }
+        return innerExecute(adapter, callback);
     }
 
     public Future<?> submit(Runnable runnable) {
@@ -89,37 +118,35 @@ public class ExecutorServiceClientProxy implements ClientProxy, ExecutorService{
     }
 
     public List<Future> invokeAll(Collection tasks) throws InterruptedException {
-            // Inspired to JDK7
-            if (tasks == null)
-                throw new NullPointerException();
-            List<Future> futures = new ArrayList<Future>(tasks.size());
-            boolean done = false;
-            try {
-
-                for (Object command : tasks) {
-                    futures.add(submit((Callable) command));
-                }
-                for (Future f : futures) {
-                    if (!f.isDone()) {
-                        try {
-                            f.get();
-                        }
-                        catch (CancellationException ignore) {
-                        }
-                        catch (ExecutionException ignore) {
-                        }
+        // Inspired to JDK7
+        if (tasks == null)
+            throw new NullPointerException();
+        List<Future> futures = new ArrayList<Future>(tasks.size());
+        boolean done = false;
+        try {
+            for (Object command : tasks) {
+                futures.add(submit((Callable) command));
+            }
+            for (Future f : futures) {
+                if (!f.isDone()) {
+                    try {
+                        f.get();
+                    }
+                    catch (CancellationException ignore) {
+                    }
+                    catch (ExecutionException ignore) {
                     }
                 }
-                done = true;
-                return futures;
             }
-            finally {
-                if (!done)
-                    for (Future f : futures)
-                        f.cancel(true);
-            }
+            done = true;
+            return futures;
         }
-    
+        finally {
+            if (!done)
+                for (Future f : futures)
+                    f.cancel(true);
+        }
+    }
 
     public List invokeAll(Collection tasks, long timeout, TimeUnit unit)
             throws InterruptedException {
@@ -136,6 +163,6 @@ public class ExecutorServiceClientProxy implements ClientProxy, ExecutorService{
     }
 
     public void execute(Runnable runnable) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        submit(runnable, null);
     }
 }

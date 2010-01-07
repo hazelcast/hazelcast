@@ -17,10 +17,16 @@
 
 package com.hazelcast.monitor.server;
 
+import com.hazelcast.monitor.client.event.ChangeEventType;
+import com.hazelcast.monitor.client.event.MapStatistics;
+import com.hazelcast.monitor.server.event.ChangeEventGenerator;
+import com.hazelcast.monitor.server.event.MapStatisticsGenerator;
 import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartFrame;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.time.*;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
@@ -29,31 +35,44 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Date;
+import java.util.List;
+
+import static com.hazelcast.monitor.server.HazelcastServiceImpl.getSessionObject;
 
 public class ChartGenerator extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse response) throws javax.servlet.ServletException, java.io.IOException {
-        XYSeries zeroSeries = new XYSeries("");
-        zeroSeries.add(0.0, 0.0);
-        zeroSeries.add(150.0, 0.0);
+        String name = req.getParameter("name");
+        System.out.println("ChartGenerator generating chart for name: "+ name);
+        SessionObject sessionObject = getSessionObject(req.getSession());
+        List<MapStatistics> list = null;
+        for(ChangeEventGenerator eventGenerator: sessionObject.eventGenerators){
+            if(eventGenerator.getChangeEventType().equals(ChangeEventType.MAP_STATISTICS)){
+                MapStatisticsGenerator msg = (MapStatisticsGenerator) eventGenerator;
+                if(!msg.getName().equals(name)){
+                    continue;
+                }
+                list = msg.getPastMapStatistics();
+            }
 
-        XYSeries series = new XYSeries("Average Weight");
-
-        series.add(20.0, Math.random() * 100);
-        series.add(40.0, Math.random() * 100);
-        series.add(55.0, Math.random() * 100);
-        series.add(70.0, Math.random() * 100);
-        XYSeriesCollection xyDataset = new XYSeriesCollection(series);
-        xyDataset.addSeries(zeroSeries);
-
-        JFreeChart chart = ChartFactory.createXYLineChart
-                ("XYLine Chart using JFreeChart", "Age", "Weight",
-                        xyDataset, PlotOrientation.VERTICAL, false, false, false);
+        }
+        System.out.println("ChartGenerator, list is: "+ list);
+        if(list==null){
+            return;
+        }
+        TimeSeries ts = new TimeSeries("Map.size()", Second.class);
+        for(int i=0;i<list.size();i++){
+            ts.add(new Second(list.get(i).getCreatedDate()), list.get(i).getSize());
+        }
+        TimeSeriesCollection timeDataset = new TimeSeriesCollection();
+        timeDataset.addSeries(ts);
+        JFreeChart chart =
+                  ChartFactory.createTimeSeriesChart("Map:"+name , "Time", "Size", timeDataset, false, false, false);
         try {
             OutputStream out = response.getOutputStream();
             response.setContentType("image/png");
-            ChartUtilities.writeChartAsPNG(out, chart, 200, 200);
+            ChartUtilities.writeChartAsPNG(out, chart, 1000, 400);
         } catch (IOException ignore) {
-//            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
     }
 }
