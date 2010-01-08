@@ -1273,8 +1273,8 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     void doBlockInfo(Block blockInfo) {
-        if (!isBlockInfoValid(blockInfo)){
-            logger.log (Level.FINEST, "blockInfo invalid " + blockInfo);
+        if (!isBlockInfoValid(blockInfo)) {
+            logger.log(Level.FINEST, "blockInfo invalid " + blockInfo);
             return;
         }
         Block block = blocks[blockInfo.getBlockId()];
@@ -1283,12 +1283,18 @@ public final class ConcurrentMapManager extends BaseManager {
             block = new Block(blockInfo);
             blocks[block.getBlockId()] = block;
             block.setMigrationAddress(null);
+        } else if (block.getOwner() == null) {
+            block.setOwner(blockInfo.getOwner());
+            if (block.isMigrating()) {
+               logger.log(Level.WARNING, "has no block owner but migrating! " + blockInfo + " realBlock:" + block);
+            }
+            block.setMigrationAddress(null);
         }
         if (thisAddress.equals(block.getOwner())) {
             // I am already owner!
             if (block.isMigrating()) {
                 if (!block.getMigrationAddress().equals(blockInfo.getMigrationAddress())) {
-                    logger.log(Level.SEVERE, block.getMigrationAddress() + " existing block migration address are not the same as the new." + blockInfo.getMigrationAddress());
+                    logger.log(Level.WARNING, block.getMigrationAddress() + " existing block migration address are not the same as the new." + blockInfo.getMigrationAddress());
                 }
             } else if (blockInfo.isMigrating()) {
                 // I am being told to migrate
@@ -1296,8 +1302,10 @@ public final class ConcurrentMapManager extends BaseManager {
                 mapMigrator.migrateBlock(blockInfo);
             }
         } else {
+            // this is just 'set-the-owner-info'
+            // it cannot have migrationAddress
             if (blockInfo.isMigrating()) {
-                logger.log(Level.WARNING, "not the block owner but has migration info " + blockInfo);
+                logger.log(Level.WARNING, "not the block owner but has migration info " + blockInfo + " realBlock:" + block);
                 return;
             }
             block.setOwner(blockInfo.getOwner());
@@ -1305,7 +1313,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
         if (block.getOwner() != null && block.getOwner().equals(block.getMigrationAddress())) {
             block.setMigrationAddress(null);
-            logger.log(Level.SEVERE, "block owner cannot be same as the migration address!");
+            logger.log(Level.WARNING, "block owner cannot be same as the migration address!");
         }
     }
 

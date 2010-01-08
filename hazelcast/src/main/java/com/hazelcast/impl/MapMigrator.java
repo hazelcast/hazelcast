@@ -119,9 +119,9 @@ public class MapMigrator implements Runnable {
             final Address[] addresses = addressBlocks.keySet().toArray(new Address[]{});
             final int addressLength = addresses.length;
             for (int i = 0; i < BLOCK_COUNT; i++) {
-                Block block = blocks[i];
-                if (block.getOwner() == null) {
-                    block = new Block(block);
+                Block blockReal = blocks[i];
+                if (blockReal.getOwner() == null) {
+                    Block block = new Block(blockReal);
                     int index = addressIndex++ % addressLength;
                     block.setOwner(addresses[index]);
                     lsBlocksToRedistribute.add(block);
