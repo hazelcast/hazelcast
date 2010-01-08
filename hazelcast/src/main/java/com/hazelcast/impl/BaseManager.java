@@ -496,7 +496,7 @@ public abstract class BaseManager {
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                if (request.redoCount > 15) {
+                if (request.redoCount > 19 && (request.redoCount % 10 == 0)) {
                     final CountDownLatch l = new CountDownLatch(1);
                     enqueueAndReturn(new Processable() {
                         public void process() {
