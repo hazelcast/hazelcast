@@ -34,7 +34,7 @@ public class ClusterImpl implements Cluster {
     final AtomicReference<Set<Member>> members = new AtomicReference<Set<Member>>();
     final AtomicReference<Member> localMember = new AtomicReference<Member>();
     final Map<Member, Member> clusterMembers = new ConcurrentHashMap<Member, Member>();
-    long clusterTimeDiff = 0;
+    volatile long clusterTimeDiff = Long.MAX_VALUE;
     final Node node;
 
     public ClusterImpl(Node node) {
@@ -147,11 +147,18 @@ public class ClusterImpl implements Cluster {
         return sb.toString();
     }
 
-    public void setClusterTimeDiff(long clusterTimeDiff) {
-        this.clusterTimeDiff = clusterTimeDiff;
+    public long getClusterTime() {
+        return System.currentTimeMillis() + ((clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff);
     }
 
-    public long getClusterTime() {
-        return System.currentTimeMillis() + clusterTimeDiff;
+    public void setMasterTime(long masterTime) {
+        long diff = masterTime - System.currentTimeMillis();
+        if (Math.abs(diff) < Math.abs(clusterTimeDiff)) {
+            this.clusterTimeDiff = diff;
+        }
+    }
+
+    public long getClusterTimeFor(long localTime) {
+        return localTime + ((clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff);
     }
 }

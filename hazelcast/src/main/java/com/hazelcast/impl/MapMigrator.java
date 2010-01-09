@@ -54,6 +54,9 @@ public class MapMigrator implements Runnable {
 
     void reArrangeBlocks() {
         if (concurrentMapManager.isMaster()) {
+            if (blockMigrating != null) {
+                logger.log(Level.SEVERE, "Cannot migrate when there is already a block migrating: " + blockMigrating);
+            }
             List<MemberImpl> lsMembers = concurrentMapManager.lsMembers;
             // make sue that all blocks are actually created
             for (int i = 0; i < BLOCK_COUNT; i++) {
@@ -75,19 +78,17 @@ public class MapMigrator implements Runnable {
                 return;
             }
             int aveBlockOwnCount = BLOCK_COUNT / (storageEnabledMemberCount);
-            for (Block block : blocks) {
-                if (block.getOwner() == null) {
-                    lsBlocksToRedistribute.add(new Block(block));
-                } else {
-                    if (!block.isMigrating()) {
-                        Integer countInt = addressBlocks.get(block.getOwner());
-                        int count = (countInt == null) ? 0 : countInt;
-                        if (count >= aveBlockOwnCount) {
-                            lsBlocksToRedistribute.add(new Block(block));
-                        } else {
-                            count++;
-                            addressBlocks.put(block.getOwner(), count);
-                        }
+            for (Block blockReal : blocks) {
+                if (blockReal.getOwner() == null) {
+                    lsBlocksToRedistribute.add(new Block(blockReal));
+                } else if (!blockReal.isMigrating()) {
+                    Integer countInt = addressBlocks.get(blockReal.getOwner());
+                    int count = (countInt == null) ? 0 : countInt;
+                    if (count >= aveBlockOwnCount) {
+                        lsBlocksToRedistribute.add(new Block(blockReal));
+                    } else {
+                        count++;
+                        addressBlocks.put(blockReal.getOwner(), count);
                     }
                 }
             }
@@ -118,8 +119,7 @@ public class MapMigrator implements Runnable {
             int addressIndex = 0;
             final Address[] addresses = addressBlocks.keySet().toArray(new Address[]{});
             final int addressLength = addresses.length;
-            for (int i = 0; i < BLOCK_COUNT; i++) {
-                Block blockReal = blocks[i];
+            for (Block blockReal : blocks) {
                 if (blockReal.getOwner() == null) {
                     Block block = new Block(blockReal);
                     int index = addressIndex++ % addressLength;
@@ -147,7 +147,6 @@ public class MapMigrator implements Runnable {
         if (blockMigrating != null) {
             Block blockReal = blocks[blockMigrating.getBlockId()];
             if (blockReal.getOwner() != null && !blockReal.isMigrating()) {
-                blockMigrating = null;
                 completeMigration();
             }
         }

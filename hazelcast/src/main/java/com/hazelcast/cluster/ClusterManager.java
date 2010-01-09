@@ -545,7 +545,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     void startJoin() {
         joinInProgress = true;
-        final MembersUpdateCall membersUpdate = new MembersUpdateCall(lsMembers);
+        final MembersUpdateCall membersUpdate = new MembersUpdateCall(lsMembers, node.getClusterImpl().getClusterTime());
         if (setJoins != null && setJoins.size() > 0) {
             for (MemberInfo memberJoined : setJoins) {
                 membersUpdate.addMemberInfo(memberJoined);

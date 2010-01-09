@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -339,13 +340,13 @@ public class CMap {
         long now = System.currentTimeMillis();
         int ownedEntryCount = 0;
         int backupEntryCount = 0;
-        int markedAsRemovedEntryCount = 0;
         int ownedEntryMemoryCost = 0;
         int backupEntryMemoryCost = 0;
         int markedAsRemovedMemoryCost = 0;
         int hits = 0;
         int lockedEntryCount = 0;
         int lockWaitCount = 0;
+        ClusterImpl clusterImpl = node.getClusterImpl();
         LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
         Collection<Record> records = mapRecords.values();
         for (Record record : records) {
@@ -354,8 +355,8 @@ public class CMap {
                 if (thisAddress.equals(block.getOwner())) {
                     ownedEntryCount += record.valueCount();
                     ownedEntryMemoryCost += record.getCost();
-                    localMapStats.setLastAccessTime(record.getLastAccessTime());
-                    localMapStats.setLastUpdateTime(record.getLastUpdateTime());
+                    localMapStats.setLastAccessTime(clusterImpl.getClusterTimeFor(record.getLastAccessTime()));
+                    localMapStats.setLastUpdateTime(clusterImpl.getClusterTimeFor(record.getLastUpdateTime()));
                     hits += record.getHits();
                     if (record.isLocked()) {
                         lockedEntryCount++;
@@ -377,12 +378,10 @@ public class CMap {
         localMapStats.setHits(hits);
         localMapStats.setOwnedEntryCount(ownedEntryCount);
         localMapStats.setBackupEntryCount(backupEntryCount);
-        localMapStats.setMarkedAsRemovedEntryCount(markedAsRemovedEntryCount);
         localMapStats.setOwnedEntryMemoryCost(ownedEntryMemoryCost);
         localMapStats.setBackupEntryMemoryCost(backupEntryMemoryCost);
-        localMapStats.setMarkedAsRemovedMemoryCost(markedAsRemovedMemoryCost);
-        localMapStats.setLastEvictionTime(this.lastEvictionTime);
-        localMapStats.setCreationTime(this.creationTime);
+        localMapStats.setLastEvictionTime(clusterImpl.getClusterTimeFor(this.lastEvictionTime));
+        localMapStats.setCreationTime(clusterImpl.getClusterTimeFor(this.creationTime));
         return localMapStats;
     }
 

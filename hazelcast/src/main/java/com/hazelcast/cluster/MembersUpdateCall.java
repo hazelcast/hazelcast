@@ -32,11 +32,14 @@ public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
 
     private Collection<MemberInfo> memberInfos;
 
+    private long masterTime = System.currentTimeMillis();
+
     public MembersUpdateCall() {
         memberInfos = new ArrayList<MemberInfo>();
     }
 
-    public MembersUpdateCall(Collection<MemberImpl> lsMembers) {
+    public MembersUpdateCall(Collection<MemberImpl> lsMembers, long masterTime) {
+        this.masterTime = masterTime;
         memberInfos = new ArrayList<MemberInfo>(lsMembers.size());
         for (MemberImpl member : lsMembers) {
             memberInfos.add(new MemberInfo(member.getAddress(), member.getNodeType()));
@@ -44,6 +47,7 @@ public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
     }
 
     public Boolean call() {
+        node.getClusterImpl().setMasterTime(masterTime);
         node.clusterManager.updateMembers(getMemberInfos());
         return Boolean.TRUE;
     }
@@ -56,6 +60,7 @@ public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
 
     @Override
     public void readData(DataInput in) throws IOException {
+        masterTime = in.readLong();
         int size = in.readInt();
         memberInfos = new ArrayList<MemberInfo>(size);
         while (size-- > 0) {
@@ -67,6 +72,7 @@ public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
 
     @Override
     public void writeData(DataOutput out) throws IOException {
+        out.writeLong(masterTime);
         out.writeInt(memberInfos.size());
         for (MemberInfo memberInfo : memberInfos) {
             memberInfo.writeData(out);
