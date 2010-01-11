@@ -471,7 +471,6 @@ public class ClientService {
             if (instanceType.equals(InstanceType.MAP)) {
                 IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
                 packet.value = (Data) map.get(packet.key);
-                byte[] bytes = packet.value.buffer.array();
             } else if (instanceType.equals(InstanceType.MULTIMAP)) {
                 FactoryImpl.MultiMapProxy multiMap = (FactoryImpl.MultiMapProxy) node.factory.getOrCreateProxyByName(packet.name);
                 FactoryImpl.MultiMapProxy.MultiMapBase base = multiMap.getBase();
