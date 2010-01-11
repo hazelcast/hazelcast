@@ -22,6 +22,7 @@ import com.hazelcast.impl.ExecutionManagerCallback;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -45,7 +46,7 @@ public abstract class ClientExecutionManagerCallback implements ExecutionManager
     //!!called by multiple threads
     public abstract Object get(long l, TimeUnit timeUnit) throws InterruptedException;
 
-    protected Object handleResult(Packet packet) {
+    protected Object handleResult(Packet packet) throws ExecutionException {
         Object o = toObject(packet.getValue());
         return o;
     }
@@ -71,7 +72,11 @@ public abstract class ClientExecutionManagerCallback implements ExecutionManager
                     } else {
                         packet = queue.poll(l, timeUnit);
                     }
-                    this.result = handleResult(packet);
+                    try {
+                        this.result = handleResult(packet);
+                    } catch (ExecutionException e) {
+                        throw new RuntimeException(e);
+                    }
                     done = true;
                 }
                 return result;
@@ -95,7 +100,11 @@ public abstract class ClientExecutionManagerCallback implements ExecutionManager
                         } else {
                             packet = queue.poll(l, timeUnit);
                         }
-                        this.result = handleResult(packet);
+                        try {
+                            this.result = handleResult(packet);
+                        } catch (ExecutionException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                     if (it == null) {
                         it = result.iterator();
@@ -109,8 +118,13 @@ public abstract class ClientExecutionManagerCallback implements ExecutionManager
             }
         }
 
-        protected Collection<Object> handleResult(Packet packet) {
+        protected Collection<Object> handleResult(Packet packet) throws ExecutionException {
             Object o = toObject(packet.getValue());
+            if(o instanceof ExecutionException){
+                ExecutionException e = (ExecutionException)o;
+                throw e;
+
+            }
             if (o instanceof Collection) {
                 return (Collection) o;
             }

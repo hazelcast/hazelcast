@@ -79,7 +79,7 @@ public class ClusterClientProxy implements ClientProxy, Cluster {
 
     public Set<Member> getMembers() {
         CollectionWrapper<Member> cw = (CollectionWrapper<Member>)proxyHelper.doOp(ClusterOperation.GET_MEMBERS, null, null);
-        return new HashSet<Member>(cw.getKeys());
+        return new LinkedHashSet<Member>(cw.getKeys());
     }
 
     public Member getLocalMember() {

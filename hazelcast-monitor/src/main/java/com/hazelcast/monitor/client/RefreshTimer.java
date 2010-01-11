@@ -52,7 +52,6 @@ public class
                 for (Iterator<ChangeEvent> iterator = result.iterator(); iterator.hasNext();) {
                     ChangeEvent changeEvent = iterator.next();
                     int clusterId = changeEvent.getClusterId();
-                    System.out.println("Received an event for cluster id: " + clusterId);
                     ClusterWidgets clusterWidgets = hazelcastMonitor.mapClusterWidgets.get(clusterId);
                     if (clusterWidgets == null) {
                         Integer[] arr = new Integer[hazelcastMonitor.mapClusterWidgets.keySet().size()];

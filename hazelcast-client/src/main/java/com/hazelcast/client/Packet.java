@@ -95,7 +95,7 @@ public class Packet {
                     + PACKET_VERSION + ", Found:" + packetVersion);
         }
         headerInBytes = new byte[headerSize];
-        dis.read(headerInBytes);
+        dis.readFully(headerInBytes);
         ByteArrayInputStream bis = new ByteArrayInputStream(headerInBytes);
         DataInputStream dis2 = new DataInputStream(bis);
         this.operation = ClusterOperation.create(dis2.readByte());
@@ -128,7 +128,7 @@ public class Packet {
         int nameLength = dis2.readInt();
         if (nameLength > 0) {
             byte[] b = new byte[nameLength];
-            dis2.read(b);
+            dis2.readFully(b);
             this.name = new String(b);
         }
         indexCount = dis2.readByte();
@@ -137,9 +137,9 @@ public class Packet {
             indexTypes[i] = dis2.readByte();
         }
         key = new byte[keySize];
-        dis.read(key);
+        dis.readFully(key);
         value = new byte[valueSize];
-        dis.read(value);
+        dis.readFully(value);
     }
 
     private byte[] getHeader() throws IOException {

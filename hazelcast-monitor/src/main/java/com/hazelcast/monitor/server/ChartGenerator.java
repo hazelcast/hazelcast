@@ -43,7 +43,6 @@ import static com.hazelcast.monitor.server.HazelcastServiceImpl.getSessionObject
 public class ChartGenerator extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse response) throws javax.servlet.ServletException, java.io.IOException {
         String name = req.getParameter("name");
-        System.out.println("ChartGenerator generating chart for name: "+ name);
         SessionObject sessionObject = getSessionObject(req.getSession());
         List<MapStatistics> list = null;
         for(ChangeEventGenerator eventGenerator: sessionObject.eventGenerators){
@@ -56,13 +55,12 @@ public class ChartGenerator extends HttpServlet {
             }
 
         }
-        System.out.println("ChartGenerator, list is: "+ list);
         if(list==null){
             return;
         }
         TimeSeries ts = new TimeSeries("Map.size()", Second.class);
         for(int i=0;i<list.size();i++){
-            ts.add(new Second(list.get(i).getCreatedDate()), list.get(i).getSize());
+            ts.addOrUpdate(new Second(list.get(i).getCreatedDate()), list.get(i).getSize());
         }
         TimeSeriesCollection timeDataset = new TimeSeriesCollection();
         timeDataset.addSeries(ts);

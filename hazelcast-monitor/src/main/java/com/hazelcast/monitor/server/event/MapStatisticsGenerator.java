@@ -22,7 +22,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiTask;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
-import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
 import com.hazelcast.monitor.client.event.MapStatistics;
@@ -38,7 +37,6 @@ public class MapStatisticsGenerator implements ChangeEventGenerator {
     private HazelcastClient client;
     private String mapName;
 
-
     public MapStatisticsGenerator(HazelcastClient client, String instanceName, int clusterId) {
         this.clusterId = clusterId;
         this.client = client;
@@ -53,12 +51,11 @@ public class MapStatisticsGenerator implements ChangeEventGenerator {
     public synchronized ChangeEvent generateEvent() {
         ExecutorService esService = client.getExecutorService();
         Set<Member> members = client.getCluster().getMembers();
-        System.out.println("Members: "+ members.size());
+        final List<Member> lsMembers = new ArrayList<Member>(members);
         MultiTask<DistributedMapStatsCallable.MemberMapStat> task =
-                new MultiTask<DistributedMapStatsCallable.MemberMapStat>(new DistributedMapStatsCallable(mapName),members);
-
+                new MultiTask<DistributedMapStatsCallable.MemberMapStat>(new DistributedMapStatsCallable(mapName), members);
         esService.execute(task);
-        Collection<DistributedMapStatsCallable.MemberMapStat> mapStats = null;
+        Collection<DistributedMapStatsCallable.MemberMapStat> mapStats;
         try {
             mapStats = task.get();
         } catch (InterruptedException e) {
@@ -69,9 +66,16 @@ public class MapStatisticsGenerator implements ChangeEventGenerator {
         if (mapStats == null) {
             return null;
         }
+        List<DistributedMapStatsCallable.MemberMapStat> lsMapStats = new ArrayList(mapStats);
+        Collections.sort(lsMapStats, new Comparator<DistributedMapStatsCallable.MemberMapStat>() {
+            public int compare(DistributedMapStatsCallable.MemberMapStat o1, DistributedMapStatsCallable.MemberMapStat o2) {
+                int i1 = lsMembers.indexOf(o1.getMember());
+                int i2 = lsMembers.indexOf(o2.getMember());
+                return i1 - i2;
+            }
+        });
         List<MapStatistics.LocalMapStatistics> listOfStats = new ArrayList<MapStatistics.LocalMapStatistics>();
-        System.out.println("Size of list returned from exs : "+ mapStats.size());        
-        for (DistributedMapStatsCallable.MemberMapStat memberMapStat:mapStats) {
+        for (DistributedMapStatsCallable.MemberMapStat memberMapStat : lsMapStats) {
             MapStatistics.LocalMapStatistics stat = new MapStatistics.LocalMapStatistics();
             stat.backupEntryCount = memberMapStat.getLocalMapStats().getBackupEntryCount();
             stat.backupEntryMemoryCost = memberMapStat.getLocalMapStats().getBackupEntryMemoryCost();
@@ -87,18 +91,14 @@ public class MapStatisticsGenerator implements ChangeEventGenerator {
             stat.ownedEntryMemoryCost = memberMapStat.getLocalMapStats().getOwnedEntryMemoryCost();
             stat.lastEvictionTime = memberMapStat.getLocalMapStats().getLastEvictionTime();
             stat.memberName = memberMapStat.getMember().getInetSocketAddress().getHostName() + ":"
-                    +memberMapStat.getMember().getInetSocketAddress().getPort();
-
+                    + memberMapStat.getMember().getInetSocketAddress().getPort();
             listOfStats.add(stat);
-
         }
-        System.out.println("Returning List of Stats: "+ listOfStats.size());
-
         MapStatistics event = new MapStatistics(clusterId);
         event.setSize(map.size());
         event.setListOfLocalStats(listOfStats);
-        if(!list.isEmpty() && list.get(list.size()-1).equals(event)){
-            list.remove(list.size()-1);
+        if (!list.isEmpty() && list.get(list.size() - 1).equals(event)) {
+            list.remove(list.size() - 1);
         }
         list.add(event);
         while (list.size() > 100) {

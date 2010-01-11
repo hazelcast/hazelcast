@@ -19,12 +19,25 @@ package com.hazelcast.monitor.server;
 
 import org.junit.Test;
 
+import static com.hazelcast.monitor.client.MapStatisticsPanel.formatMemorySize;
+
 public class HazelcastServerImplTest {
 
     @Test
     public void run() {
-
+        System.out.println(toPrecision((double)2000/1024));
+        System.out.println("1234: " + formatMemorySize(1234));
+        System.out.println("1234345: " + formatMemorySize(1234345));
+        System.out.println("123: " + formatMemorySize(123));
+        System.out.println("123434: " + formatMemorySize(123434));
+        System.out.println("1234999999: " + formatMemorySize(1234999999));
+        System.out.println("0: " + formatMemorySize(0));
+        System.out.println("1024: " + formatMemorySize(1024));
     }
 
-
+    private static String toPrecision(double dbl){
+        int ix = (int)(dbl * 100.0); // scale it
+        double dbl2 = ((double)ix)/100.0;
+        return String.valueOf(dbl2);
+    }
 }

@@ -23,10 +23,6 @@ import java.net.Socket;
 
 public class PacketReader extends PacketHandler{
 
-	public Packet readPacket() throws IOException {
-		Connection connection = getConnection();
-		return readPacket(connection);
-	}
 	public Packet readPacket(Connection connection) throws IOException {
 		DataInputStream dis = connection.getInputStream();
         Packet response = new Packet();

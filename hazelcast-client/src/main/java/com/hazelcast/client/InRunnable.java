@@ -17,76 +17,76 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.impl.ClusterOperation;
+
 import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import com.hazelcast.impl.ClusterOperation;
+public class InRunnable extends IORunnable implements Runnable {
+    final PacketReader reader;
+    final Logger logger = Logger.getLogger(this.getClass().getName());
 
+    public InRunnable(HazelcastClient client, Map<Long, Call> calls, PacketReader reader) {
+        super(client, calls);
+        this.reader = reader;
+    }
 
-public class InRunnable extends IORunnable implements Runnable{
-	final PacketReader reader;
-	final Logger logger = Logger.getLogger(this.getClass().getName());
-	public InRunnable(HazelcastClient client, Map<Long,Call> calls, PacketReader reader) {
-		super(client,calls);
-		this.reader = reader;
-	}
-
-	protected void customRun() {
-		Connection connection = null;
-		Packet packet=null;
-		try {
-			connection = client.connectionManager.getConnection();
-			if(connection == null){
-				interruptWaitingCalls();
-			}else{
-				packet = reader.readPacket(connection);
+    protected void customRun() {
+        Connection connection = null;
+        Packet packet = null;
+        try {
+            connection = client.connectionManager.getConnection();
+            if (connection == null) {
+                interruptWaitingCalls();
+            } else {
+                packet = reader.readPacket(connection);
                 Call call = callMap.remove(packet.getCallId());
-				if(call !=null){
-                    if(call.getRequest().getOperation().equals(ClusterOperation.REMOTELY_EXECUTE)){
+                if (call != null) {
+                    if (call.getRequest().getOperation().equals(ClusterOperation.REMOTELY_EXECUTE)) {
                         client.executorServiceManager.enqueue(packet);
-                    }
-                    else{
+                    } else {
                         synchronized (call) {
-    //						System.out.println("Received: " + call + " " + call.getRequest().getOperation());
+                            //						System.out.println("Received: " + call + " " + call.getRequest().getOperation());
                             call.setResponse(packet);
                             call.notify();
                         }
                     }
-				} else {
-					if(packet.getOperation().equals(ClusterOperation.EVENT)){
-						client.listenerManager.enqueue(packet);
-					}
-                    if(packet.getCallId()==-1){
-                        //ignore
+                } else {
+                    if (packet.getOperation().equals(ClusterOperation.EVENT)) {
+                        client.listenerManager.enqueue(packet);
                     }
-					else{
-						throw new RuntimeException("In Thread can not handle: "+packet.getOperation() + " : " +packet.getCallId());
-					}
-				}
-			}
-		
-		} catch (Exception e) {
+                    if (packet.getCallId() == -1) {
+                        //ignore
+                    } else {
+                        throw new RuntimeException("In Thread can not handle: " + packet.getOperation() + " : " + packet.getCallId());
+                    }
+                }
+            }
+        } catch (RuntimeException re) {
+            throw re;
+        } catch (Exception e) {
 //            e.printStackTrace();
-			client.connectionManager.destroyConnection(connection);
-		}
-	}
-	public void shutdown(){
-		synchronized (monitor) {
-			if(running){
-				this.running = false;
-				try {
-					Connection connection = client.connectionManager.getConnection();
-					if(connection!=null){
-						connection.getSocket().close();
-					}
-				} catch (IOException ignored) {}
-		
-				try {
-					monitor.wait();
-				} catch (InterruptedException ignored) {
-				}
-			}
-		}
-	}
+            client.connectionManager.destroyConnection(connection);
+        }
+    }
+
+    public void shutdown() {
+        synchronized (monitor) {
+            if (running) {
+                this.running = false;
+                try {
+                    Connection connection = client.connectionManager.getConnection();
+                    if (connection != null) {
+                        connection.getSocket().close();
+                    }
+                } catch (IOException ignored) {
+                }
+                try {
+                    monitor.wait();
+                } catch (InterruptedException ignored) {
+                }
+            }
+        }
+    }
 }

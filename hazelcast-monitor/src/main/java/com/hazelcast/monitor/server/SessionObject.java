@@ -91,7 +91,6 @@ public class SessionObject {
         task = new TimerTask() {
             @Override
             public void run() {
-                System.out.println("Running... Number of event Generators is: "+ eventGenerators.size());
                 for (ChangeEventGenerator eventGenerator : eventGenerators) {
                     ChangeEvent event = eventGenerator.generateEvent();
                     queue.offer(event);
