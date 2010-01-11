@@ -22,6 +22,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -41,8 +42,7 @@ public class MapMigrator implements Runnable {
     final List<Block> lsBlocksToMigrate = new ArrayList<Block>(100);
     final static long MIGRATION_INTERVAL_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
-    Block blockMigrating = null;
-    long nextMigrationMillis = 0;
+    long nextMigrationMillis = System.currentTimeMillis() + MIGRATION_INTERVAL_MILLIS;
 
     public MapMigrator(ConcurrentMapManager concurrentMapManager) {
         this.concurrentMapManager = concurrentMapManager;
@@ -54,110 +54,63 @@ public class MapMigrator implements Runnable {
 
     void reArrangeBlocks() {
         if (concurrentMapManager.isMaster()) {
-            if (blockMigrating != null) {
-                logger.log(Level.SEVERE, "Cannot migrate when there is already a block migrating: " + blockMigrating);
-            }
-            List<MemberImpl> lsMembers = concurrentMapManager.lsMembers;
-            // make sue that all blocks are actually created
-            for (int i = 0; i < BLOCK_COUNT; i++) {
-                Block block = blocks[i];
-                if (block == null) {
-                    concurrentMapManager.getOrCreateBlock(i);
-                }
-            }
-            List<Block> lsBlocksToRedistribute = new ArrayList<Block>();
-            Map<Address, Integer> addressBlocks = new HashMap<Address, Integer>();
-            int storageEnabledMemberCount = 0;
-            for (MemberImpl member : lsMembers) {
-                if (!member.isSuperClient()) {
-                    addressBlocks.put(member.getAddress(), 0);
-                    storageEnabledMemberCount++;
-                }
-            }
-            if (storageEnabledMemberCount == 0) {
+            Map<Address, Integer> addressBlocks = getCurrentMemberBlocks();
+            if (addressBlocks.size() == 0) {
                 return;
             }
-            int aveBlockOwnCount = BLOCK_COUNT / (storageEnabledMemberCount);
+            List<Block> lsBlocksToRedistribute = new ArrayList<Block>();
+            int aveBlockOwnCount = BLOCK_COUNT / (addressBlocks.size());
             for (Block blockReal : blocks) {
                 if (blockReal.getOwner() == null) {
+                    logger.log(Level.SEVERE, "Master cannot have null block owner " + blockReal);
+                    return;
+                }
+                if (blockReal.isMigrating()) {
+                    logger.log(Level.SEVERE, "Cannot have migrating block " + blockReal);
+                    return;
+                }
+                Integer countInt = addressBlocks.get(blockReal.getOwner());
+                int count = (countInt == null) ? 0 : countInt;
+                if (count >= aveBlockOwnCount) {
                     lsBlocksToRedistribute.add(new Block(blockReal));
-                } else if (!blockReal.isMigrating()) {
-                    Integer countInt = addressBlocks.get(blockReal.getOwner());
-                    int count = (countInt == null) ? 0 : countInt;
-                    if (count >= aveBlockOwnCount) {
-                        lsBlocksToRedistribute.add(new Block(blockReal));
-                    } else {
-                        count++;
-                        addressBlocks.put(blockReal.getOwner(), count);
-                    }
+                } else {
+                    addressBlocks.put(blockReal.getOwner(), ++count);
                 }
             }
-            Set<Address> allAddress = addressBlocks.keySet();
+            Collection<Address> allAddress = addressBlocks.keySet();
             lsBlocksToMigrate.clear();
-            setNewMembers:
             for (Address address : allAddress) {
                 Integer countInt = addressBlocks.get(address);
                 int count = (countInt == null) ? 0 : countInt;
-                while (count < aveBlockOwnCount) {
-                    if (lsBlocksToRedistribute.size() > 0) {
-                        Block blockToMigrate = lsBlocksToRedistribute.remove(0);
-                        if (blockToMigrate.getOwner() == null) {
-                            blockToMigrate.setOwner(address);
-                        } else {
-                            blockToMigrate.setMigrationAddress(address);
-                            if (blockToMigrate.getOwner().equals(blockToMigrate.getMigrationAddress())) {
-                                blockToMigrate.setMigrationAddress(null);
-                            }
-                        }
+                while (count < aveBlockOwnCount && lsBlocksToRedistribute.size() > 0) {
+                    Block blockToMigrate = lsBlocksToRedistribute.remove(0);
+                    if (!blockToMigrate.getOwner().equals(address)) {
+                        blockToMigrate.setMigrationAddress(address);
                         lsBlocksToMigrate.add(blockToMigrate);
-                        count++;
-                    } else {
-                        break setNewMembers;
                     }
-                }
-            }
-            int addressIndex = 0;
-            final Address[] addresses = addressBlocks.keySet().toArray(new Address[]{});
-            final int addressLength = addresses.length;
-            for (Block blockReal : blocks) {
-                if (blockReal.getOwner() == null) {
-                    Block block = new Block(blockReal);
-                    int index = addressIndex++ % addressLength;
-                    block.setOwner(addresses[index]);
-                    lsBlocksToRedistribute.add(block);
+                    count++;
                 }
             }
         }
     }
 
-    public void run() {
-        if (!concurrentMapManager.isMaster()) {
-            return;
-        }
-        if (concurrentMapManager.getMembers().size() < 2) {
-            for (int i = 0; i < BLOCK_COUNT; i++) {
-                Block block = blocks[i];
-                if (block == null) {
-                    block = concurrentMapManager.getOrCreateBlock(i);
-                    block.setOwner(thisAddress);
-                }
-            }
-            return;
-        }
-        if (blockMigrating != null) {
-            Block blockReal = blocks[blockMigrating.getBlockId()];
-            if (blockReal.getOwner() != null && !blockReal.isMigrating()) {
-                completeMigration();
+    boolean isBlockEmpty(int blockId) {
+        Collection<CMap> cmaps = concurrentMapManager.maps.values();
+        for (final CMap cmap : cmaps) {
+            if (cmap.hasOwned(blockId)) {
+                return false;
             }
         }
-        if (blockMigrating != null) {
-            return;
-        }
-        if (System.currentTimeMillis() > nextMigrationMillis) {
-            for (int i = 0; i < 1; i++) {
-                initiateMigration();
+        return true;
+    }
+
+    public boolean containsMigratingBlock() {
+        for (Block block : blocks) {
+            if (block != null && block.isMigrating()) {
+                return true;
             }
         }
+        return false;
     }
 
     public boolean isMigrating(Request req) {
@@ -167,26 +120,64 @@ public class MapMigrator implements Runnable {
                     + req.blockId + " caller: " + req.caller);
             return true;
         }
-        if (blockMigrating != null) {
-            if (!blocks[blockMigrating.getBlockId()].isMigrating()) {
-                completeMigration();
-            } else {
-                if (req.key == null) {
-                    return true;
-                } else if (blockMigrating.getBlockId() == concurrentMapManager.getBlockId(req.key)) {
-                    return true;
-                }
+        if (req.key != null) {
+            Block block = concurrentMapManager.getOrCreateBlock(req.key);
+            return block.isMigrating();
+        } else {
+            for (Block block : blocks) {
+                if (block != null && block.isMigrating()) return true;
             }
         }
         return false;
     }
 
-    void completeMigration() {
-        blockMigrating = null;
-        nextMigrationMillis = System.currentTimeMillis() + MIGRATION_INTERVAL_MILLIS;
+    Queue qMasterMigratorTasks = new ConcurrentLinkedQueue();
+
+    public void run() {
+        if (!concurrentMapManager.isMaster()) return;
+        if (concurrentMapManager.getMembers().size() < 2) return;
+        long now = System.currentTimeMillis();
+        if (now > nextMigrationMillis) {
+            final MasterMigratorTask task = new MasterMigratorTask();
+            qMasterMigratorTasks.offer(task);
+            node.executorManager.executeMigrationTask(task);
+            nextMigrationMillis = now + MIGRATION_INTERVAL_MILLIS;
+        }
+    }
+
+    class MasterMigratorTask extends FallThroughRunnable {
+        public void doRun() {
+            if (qMasterMigratorTasks.poll() != null) {
+                ConcurrentMapManager.MBlockMigrationCheck check = concurrentMapManager.new MBlockMigrationCheck();
+                boolean isMigrating = check.call();
+                if (!isMigrating) {
+                    concurrentMapManager.enqueueAndReturn(new Processable() {
+                        public void process() {
+                            if (concurrentMapManager.isMaster()) {
+                                initiateMigration();
+                            }
+                        }
+                    });
+                }
+                qMasterMigratorTasks.clear();
+            }
+        }
     }
 
     void initiateMigration() {
+        for (int i = 0; i < BLOCK_COUNT; i++) {
+            Block block = blocks[i];
+            if (block == null) {
+                block = concurrentMapManager.getOrCreateBlock(i);
+                block.setOwner(thisAddress);
+            }
+        }
+        if (concurrentMapManager.getMembers().size() < 2) {
+            return;
+        }
+        if (lsBlocksToMigrate.size() == 0) {
+            reArrangeBlocks();
+        }
         if (lsBlocksToMigrate.size() > 0) {
             Block block = lsBlocksToMigrate.remove(0);
             if (concurrentMapManager.isBlockInfoValid(block)) {
@@ -196,10 +187,6 @@ public class MapMigrator implements Runnable {
                     concurrentMapManager.sendBlockInfo(block, block.getOwner());
                 }
             }
-        }
-        if (blockMigrating == null) {
-            lsBlocksToMigrate.clear();
-            reArrangeBlocks();
         }
     }
 
@@ -228,9 +215,10 @@ public class MapMigrator implements Runnable {
             for (int i = 0; i < BLOCK_COUNT; i++) {
                 Block block = blocks[i];
                 if (block == null) {
-                    concurrentMapManager.getOrCreateBlock(i);
+                    block = concurrentMapManager.getOrCreateBlock(i);
                 }
             }
+            quickBlockRearrangement();
             Data dataAllBlocks = null;
             for (MemberImpl member : concurrentMapManager.getMembers()) {
                 if (!member.localMember()) {
@@ -254,10 +242,87 @@ public class MapMigrator implements Runnable {
         onMembershipChange();
     }
 
+    Map<Address, Integer> getCurrentMemberBlocks() {
+        List<MemberImpl> lsMembers = concurrentMapManager.lsMembers;
+        Map<Address, Integer> addressBlocks = new HashMap<Address, Integer>();
+        for (MemberImpl member : lsMembers) {
+            if (!member.isSuperClient()) {
+                addressBlocks.put(member.getAddress(), 0);
+            }
+        }
+        return addressBlocks;
+    }
+
+    private void quickBlockRearrangement() {
+        //create all blocks
+        for (int i = 0; i < BLOCK_COUNT; i++) {
+            Block block = blocks[i];
+            if (block == null) {
+                block = concurrentMapManager.getOrCreateBlock(i);
+            }
+            if (block.getOwner() == null) {
+                block.setOwner(thisAddress);
+            }
+        }
+        // find storage enabled members
+        Map<Address, Integer> addressBlocks = getCurrentMemberBlocks();
+        if (addressBlocks.size() == 0) {
+            return;
+        }
+        /**
+         * ======= RULES =========
+         * if there is no storage enabled node
+         *  1. then all blocks owners are null and no migration
+         * else
+         *  1. all blocks are owned by a member at any given time
+         *  2. empty blocks are be given (no need to migrate) to
+         *  a new member immediately
+         *  3. master checks if anybody is migrating before starting
+         *  migration. if blockMigrating != null then it can migrate
+         *  else master asks all members if they are migrating over executor
+         *  thread. be careful with the fact that master can die and
+         *  new master may not have blockMigrating info.
+         *  4. all blocks message cannot contain migration address
+         *  5. if there is at least one storage enabled member then
+         *  all blocks message cannot have null block owner.
+         *
+         */
+        // find unowned blocks
+        // find owned by me but empty blocks
+        // distribute them first
+        // equally redistribute again
+        List<Block> ownableBlocks = new ArrayList<Block>();
+        for (Block blockReal : blocks) {
+            if (blockReal.getOwner() == null) {
+                logger.log(Level.SEVERE, "QBR cannot have block with null owner: " + blockReal);
+            } else if (!blockReal.isMigrating() && thisAddress.equals(blockReal.getOwner())) {
+                // i am the owner
+                // is it empty? can I give that block
+                // without migrating
+                if (isBlockEmpty(blockReal.getBlockId())) {
+                    ownableBlocks.add(blockReal);
+                }
+            }
+            Integer countInt = addressBlocks.get(blockReal.getOwner());
+            int count = (countInt == null) ? 0 : countInt;
+            addressBlocks.put(blockReal.getOwner(), ++count);
+        }
+        int aveBlockOwnCount = BLOCK_COUNT / (addressBlocks.size());
+        Set<Address> allAddress = addressBlocks.keySet();
+        for (Address address : allAddress) {
+            Integer countInt = addressBlocks.get(address);
+            int count = (countInt == null) ? 0 : countInt;
+            while (count < aveBlockOwnCount && ownableBlocks.size() > 0) {
+                Block ownableBlock = ownableBlocks.remove(0);
+                ownableBlock.setOwner(address);
+                count++;
+            }
+        }
+    }
+
     public void onMembershipChange() {
         lsBlocksToMigrate.clear();
         backupIfNextOrPreviousChanged();
-        nextMigrationMillis = System.currentTimeMillis() + MIGRATION_INTERVAL_MILLIS;
     }
 
     public void syncForDead(Address deadAddress) {
@@ -296,9 +361,6 @@ public class MapMigrator implements Runnable {
             }
         }
         onMembershipChange();
-        if (blockMigrating != null) {
-            syncForDead(deadAddress, blockMigrating);
-        }
     }
 
     void syncForDead(Address deadAddress, Block block) {
@@ -395,7 +457,6 @@ public class MapMigrator implements Runnable {
         if (concurrentMapManager.isSuperClient()) {
             return;
         }
-        blockMigrating = blockInfo;
         List<Record> lsRecordsToMigrate = new ArrayList<Record>(1000);
         Collection<CMap> cmaps = concurrentMapManager.maps.values();
         for (final CMap cmap : cmaps) {

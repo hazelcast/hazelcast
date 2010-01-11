@@ -93,6 +93,12 @@ public class FactoryImpl implements HazelcastInstance {
                 ManagementService.register(factory, config);
                 jmxRegistered = true;
             }
+            if (false && factory.node.getClusterImpl().getMembers().size() == 1) {
+                try {
+                    Thread.sleep(7000);
+                } catch (InterruptedException e) {
+                }
+            }
             return factory.hazelcastInstanceProxy;
         }
     }

@@ -232,6 +232,41 @@ public class CMap {
         if (req.key == null || req.key.size() == 0) {
             throw new RuntimeException("Backup key size cannot be 0: " + req.key);
         }
+        if (instanceType == Instance.InstanceType.MAP || instanceType == Instance.InstanceType.SET) {
+            return backupOneValue(req);
+        } else {
+            return backupMultiValue(req);
+        }
+    }
+
+    /**
+     * Map and Set have one value only so we can ignore the
+     * values with old version.
+     *
+     * @param req
+     * @return
+     */
+    private boolean backupOneValue(Request req) {
+        Record record = getRecord(req.key);
+        if (record != null && record.isActive() && req.version < record.getVersion()) {
+            return false;
+        }
+        doBackup(req); 
+        if (record != null) {
+            record.setVersion(req.version);
+        }
+        return true;
+    }
+
+    /**
+     * MultiMap and List have to use versioned backup
+     * because each key can have multiple values and
+     * we don't want to miss backing up each one.
+     *
+     * @param req
+     * @return
+     */
+    private boolean backupMultiValue(Request req) {
         Record record = getRecord(req.key);
         if (record != null) {
             record.setActive();
@@ -286,9 +321,7 @@ public class CMap {
                     record.decrementCopyCount();
                 }
                 record.setValue(null);
-                if (record.isRemovable()) {
-                    removeAndPurgeRecord(record);
-                }
+                markAsRemoved(record);
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_LOCK) {
             Record rec = toRecord(req);
@@ -301,7 +334,7 @@ public class CMap {
             Record record = getRecord(req.key);
             if (record != null) {
                 if (req.value == null) {
-                    removeAndPurgeRecord(record);
+                    markAsRemoved(record);
                 } else {
                     if (record.containsValue(req.value)) {
                         if (record.getMultiValues() != null) {
@@ -316,7 +349,7 @@ public class CMap {
                     }
                 }
                 if (record.isRemovable()) {
-                    removeAndPurgeRecord(record);
+                    markAsRemoved(record);
                 }
             }
         } else {
@@ -403,6 +436,16 @@ public class CMap {
 //        System.out.println(size + " is size.. backup.size " + backupSize() + " ownedEntryCount:" + ownedRecords.size());
 //        System.out.println(size + " map size " + mapRecords.size() +  " @ " + node.getThisAddress());
         return size;
+    }
+
+    public boolean hasOwned(long blockId) {
+        Collection<Record> records = mapRecords.values();
+        for (Record record : records) {
+            if (record.getBlockId() == blockId && record.isActive()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public int valueCount(Data key) {
@@ -823,7 +866,6 @@ public class CMap {
             } else {
                 record = createNewRecord(req.key, req.value);
             }
-            req.key = null;
         } else {
             if (req.value != null) {
                 if (isMultiMap()) {
@@ -833,7 +875,6 @@ public class CMap {
                 }
             }
         }
-        req.value = null;
         record.setCopyCount((int) req.longValue);
         if (req.lockCount >= 0) {
             record.setLockAddress(req.lockAddress);

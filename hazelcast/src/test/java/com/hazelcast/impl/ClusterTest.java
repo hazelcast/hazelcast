@@ -661,6 +661,27 @@ public class ClusterTest {
      * Simple symmetric encryption test.
      */
     @Test(timeout = 60000)
+    public void testBigValue() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        IMap<Integer, byte[]> map1 = h1.getMap("default");
+        IMap<Integer, byte[]> map2 = h2.getMap("default");
+        byte[] v = new byte[10000000];
+        for (int i = 0; i < v.length; i++) {
+            if (i % 10 == 1) {
+                v[i] = 109;
+            }
+        }
+        v[v.length - 1] = 109;
+        map1.put (1, v);
+        assertTrue(Arrays.equals(v, map1.get(1)));
+        assertTrue(Arrays.equals(v, map2.get(1)));
+    }
+
+    /**
+     * Simple symmetric encryption test.
+     */
+    @Test(timeout = 60000)
     public void testSymmetricEncryption() throws Exception {
         Config c = new XmlConfigBuilder().build();
         SymmetricEncryptionConfig encryptionConfig = new SymmetricEncryptionConfig();

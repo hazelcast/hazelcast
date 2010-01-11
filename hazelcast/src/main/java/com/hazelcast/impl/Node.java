@@ -157,10 +157,10 @@ public class Node {
         clusterManager = new ClusterManager(this);
         concurrentMapManager = new ConcurrentMapManager(this);
         blockingQueueManager = new BlockingQueueManager(this);
-        executorManager = new ExecutorManager(this);
         listenerManager = new ListenerManager(this);
         topicManager = new TopicManager(this);
         clusterManager.addMember(localMember);
+        executorManager = new ExecutorManager(this);
         Logger systemLogger = Logger.getLogger("com.hazelcast.system");
         systemLogger.log(Level.INFO, "Hazelcast " + version + " ("
                 + build + ") starting at " + address);

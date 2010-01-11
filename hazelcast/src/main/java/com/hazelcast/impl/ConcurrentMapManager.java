@@ -55,6 +55,8 @@ import static com.hazelcast.nio.IOUtil.toObject;
 public final class ConcurrentMapManager extends BaseManager {
     static final int BLOCK_COUNT = ConfigProperty.CONCURRENT_MAP_BLOCK_COUNT.getInteger(271);
     static long GLOBAL_REMOVE_DELAY_MILLIS = ConfigProperty.REMOVE_DELAY_SECONDS.getLong() * 1000L;
+    static boolean LOG_STATE = ConfigProperty.LOG_STATE.getBoolean();
+    long lastLogStateTime = System.currentTimeMillis();
     final Block[] blocks;
     final ConcurrentMap<String, CMap> maps;
     final ConcurrentMap<String, LocallyOwnedMap> mapLocallyOwnedMaps;
@@ -119,6 +121,7 @@ public final class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_CONTAINS_VALUE, new ContainsValueOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_BLOCK_INFO, new BlockInfoOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_BLOCKS, new BlocksOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_BLOCK_MIGRATION_CHECK, new BlockMigrationCheckHandler());
         registerPacketProcessor(CONCURRENT_MAP_VALUE_COUNT, new ValueCountOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_INVALIDATE, new InvalidateOperationHandler());
     }
@@ -142,6 +145,13 @@ public final class ConcurrentMapManager extends BaseManager {
             hash = (hash * 31) + ((block == null) ? 0 : block.hashCode());
         }
         return hash;
+    }
+
+    void logState () {
+        if (LOG_STATE && (System.currentTimeMillis() - lastLogStateTime  > 2000)) {
+            StringBuffer sbState = new StringBuffer();
+            logger.log(Level.INFO, sbState.toString());
+        }
     }
 
     void backupRecord(final Record rec) {
@@ -921,6 +931,46 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    public class MBlockMigrationCheck extends MultiCall<Boolean> {
+        boolean contains = false;
+
+        public MBlockMigrationCheck() {
+        }
+
+        TargetAwareOp createNewTargetAwareOp(Address target) {
+            return new MGetBlockMigrationCheck(target);
+        }
+
+        boolean onResponse(Object response) {
+            if (response == Boolean.TRUE) {
+                this.contains = true;
+                return false;
+            }
+            return true;
+        }
+
+        void onCall() {
+            contains = false;
+        }
+
+        Object returnResult() {
+            return contains;
+        }
+
+        class MGetBlockMigrationCheck extends TargetAwareOp {
+            public MGetBlockMigrationCheck(Address target) {
+                this.target = target;
+                request.reset();
+                setLocal(CONCURRENT_MAP_BLOCK_MIGRATION_CHECK, null, null, null, 0, -1);
+                request.setBooleanRequest();
+            }
+
+            @Override
+            public void setTarget() {
+            }
+        }
+    }
+
     public class MSize extends MultiCall<Integer> {
         int size = 0;
         final String name;
@@ -1162,6 +1212,13 @@ public final class ConcurrentMapManager extends BaseManager {
         return sb.toString();
     }
 
+    class BlockMigrationCheckHandler extends AbstractOperationHandler {
+        @Override
+        void doOperation(Request request) {
+            request.response = mapMigrator.containsMigratingBlock();
+        }
+    }
+
     class BlocksOperationHandler extends BlockInfoOperationHandler {
 
         @Override
@@ -1174,10 +1231,18 @@ public final class ConcurrentMapManager extends BaseManager {
         void handleBlocks(BlockOwners blockOwners) {
             List<Block> lsBlocks = blockOwners.lsBlocks;
             for (Block block : lsBlocks) {
-                if (block.isMigrating()) {
-                    logger.log(Level.WARNING, "handleBlock should not receive migrating block: " + block);
+                if (getNumberOfStorageMembers() == 0) {
+                    Block blockReal = getOrCreateBlock(block.getBlockId());
+                    blockReal.setOwner(block.getOwner());
+                } else {
+                    if (block.getOwner() == null) {
+                        logger.log(Level.SEVERE, "Blocks cannot have block with null owner: " + block);
+                    }
+                    if (block.isMigrating()) {
+                        logger.log(Level.SEVERE, "handleBlock should not receive migrating block: " + block);
+                    }
+                    doBlockInfo(block);
                 }
-                doBlockInfo(block);
             }
         }
     }
@@ -1207,7 +1272,6 @@ public final class ConcurrentMapManager extends BaseManager {
         public void process(Packet packet) {
             Block blockInfo = (Block) toObject(packet.value);
             if (!isBlockInfoValid(blockInfo)) return;
-            System.out.println(packet.conn.getEndPoint() + "send blockInfo " + blockInfo);
             doBlockInfo(blockInfo);
             if (isMaster() && !blockInfo.isMigrating()) {
                 for (MemberImpl member : lsMembers) {
@@ -1235,7 +1299,7 @@ public final class ConcurrentMapManager extends BaseManager {
         } else if (blockReal.getOwner() == null) {
             blockReal.setOwner(blockInfo.getOwner());
             if (blockReal.isMigrating()) {
-                logger.log(Level.WARNING, "has no blockReal owner but migrating! " + blockInfo + " realBlock:" + blockReal);
+                logger.log(Level.WARNING, "has no block owner but migrating! " + blockInfo + " realBlock:" + blockReal);
             }
             blockReal.setMigrationAddress(null);
         }
@@ -1258,7 +1322,7 @@ public final class ConcurrentMapManager extends BaseManager {
             // this is just 'set-the-owner-info'
             // it cannot have migrationAddress
             if (blockInfo.isMigrating()) {
-                logger.log(Level.WARNING, "not the blockReal owner but has migration info " + blockInfo + " realBlock:" + blockReal);
+                logger.log(Level.WARNING, thisAddress + " not the blockReal owner but has migration info " + blockInfo + " realBlock:" + blockReal);
                 return;
             }
             blockReal.setOwner(blockInfo.getOwner());

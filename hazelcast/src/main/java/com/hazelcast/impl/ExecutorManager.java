@@ -57,7 +57,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
 
     private final BlockingQueue<Long> executionIds = new ArrayBlockingQueue<Long>(100);
 
-    private final CallContext callContextServer = new CallContext(ThreadContext.get().createNewThreadId(), false);
+    private final Map<Thread, CallContext> mapThreadCallContexts = new ConcurrentHashMap<Thread, CallContext>(100);
 
     private volatile boolean started = false;
 
@@ -90,8 +90,14 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 new ExecutorThreadFactory(node.threadGroup, node.getName()),
                 new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
-                ThreadContext.get().setCurrentFactory(node.factory);
-                ThreadContext.get().setCallContext(callContextServer);
+                ThreadContext threadContext = ThreadContext.get();
+                CallContext callContext = mapThreadCallContexts.get(t);
+                if (callContext == null) {
+                    callContext = new CallContext(threadContext.createNewThreadId(), false);
+                    mapThreadCallContexts.put (t, callContext);
+                }
+                threadContext.setCurrentFactory(node.factory);
+                threadContext.setCallContext(callContext);
             }
         };
         executorForMigrations = new ThreadPoolExecutor(1, 16, 60, TimeUnit.SECONDS,
@@ -99,8 +105,14 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 new ExecutorThreadFactory(node.threadGroup, node.getName() + ".internal"),
                 new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
-                ThreadContext.get().setCurrentFactory(node.factory);
-                ThreadContext.get().setCallContext(callContextServer);
+                ThreadContext threadContext = ThreadContext.get();
+                CallContext callContext = mapThreadCallContexts.get(t);
+                if (callContext == null) {
+                    callContext = new CallContext(threadContext.createNewThreadId(), false);
+                    mapThreadCallContexts.put (t, callContext);
+                }
+                threadContext.setCurrentFactory(node.factory);
+                threadContext.setCallContext(callContext);
             }
         };
         node.getClusterImpl().addMembershipListener(this);
