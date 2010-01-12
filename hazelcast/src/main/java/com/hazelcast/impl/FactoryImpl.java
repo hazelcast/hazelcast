@@ -190,13 +190,13 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public static void shutdownAll() {
-        ManagementService.shutdown();
         synchronized (factoryLock) {
             Collection<FactoryImpl> colFactories = factories.values();
             for (FactoryImpl factory : colFactories) {
                 factory.shutdown();
             }
             factories.clear();
+            shutdownManagementService();
         }
     }
 
@@ -220,6 +220,22 @@ public class FactoryImpl implements HazelcastInstance {
             }
             factory.node.shutdown();
             factories.remove(factory.getName());
+            if (factories.size() == 0) {
+                shutdownManagementService();
+            }
+        }
+    }
+
+    private static void shutdownManagementService() {
+        try {
+            System.out.println("shut jmx " + jmxRegistered);
+
+            if (jmxRegistered) {
+                ManagementService.shutdown();
+                jmxRegistered = false;
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
     }
 

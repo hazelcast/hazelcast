@@ -18,6 +18,8 @@
 package com.hazelcast.jmx;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.impl.ExecutorManager;
+import com.hazelcast.impl.ExecutorThreadFactory;
 import com.hazelcast.impl.FactoryImpl;
 
 import javax.management.MBeanServer;
@@ -52,7 +54,7 @@ public class ManagementService {
 
     private static boolean started = false;
 
-    public static synchronized boolean init() {
+    private static boolean init() {
         if (started) {
             return true;
         }
@@ -65,7 +67,7 @@ public class ManagementService {
         // Scheduler of the statistics collectors
         if (showDetails()) {
             if (statCollectors == null) {
-                statCollectors = new ScheduledThreadPoolExecutor(2);
+                statCollectors = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(null, "jmx"));
             }
         }
         started = true;
@@ -75,7 +77,7 @@ public class ManagementService {
     /**
      * Register all the MBeans.
      */
-    public static void register(FactoryImpl instance, Config config) {
+    public static synchronized void register(FactoryImpl instance, Config config) {
         if (!init()) {
             return;
         }
@@ -97,7 +99,7 @@ public class ManagementService {
     /**
      * Unregister a cluster instance.
      */
-    public static void unregister(FactoryImpl instance) {
+    public static synchronized void unregister(FactoryImpl instance) {
         // Remove all entries register for the cluster
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         Set<ObjectName> entries;
@@ -118,7 +120,7 @@ public class ManagementService {
     /**
      * Stop the management service
      */
-    public static void shutdown() {
+    public static synchronized void shutdown() {
         // Remove all registered entries
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         Set<ObjectName> entries;
@@ -135,6 +137,7 @@ public class ManagementService {
             logger.log(Level.FINE, "Error unregistering MBeans", e);
         }
         if (statCollectors != null) {
+            System.out.println("shutting down!!!!!!!!");
             statCollectors.shutdownNow();
             statCollectors = null;
         }
