@@ -22,6 +22,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
 import org.junit.After;
 import org.junit.Assert;
@@ -408,7 +409,7 @@ public class ClusterTest {
             assertEquals("1", entry.getKey());
             assertEquals("value2", entry.getValue());
         }
-        listenerTest(map2, map1); 
+        listenerTest(map2, map1);
     }
 
     @Test(timeout = 60000)
@@ -674,7 +675,7 @@ public class ClusterTest {
             }
         }
         v[v.length - 1] = 109;
-        map1.put (1, v);
+        map1.put(1, v);
         assertTrue(Arrays.equals(v, map1.get(1)));
         assertTrue(Arrays.equals(v, map2.get(1)));
     }
@@ -1196,5 +1197,29 @@ public class ClusterTest {
         assertEquals("v1", map1.get("1"));
         assertTrue(latch.await(10, TimeUnit.SECONDS));
         assertNull(map1.get("1"));
+    }
+
+    @Test
+    public void testIfProperBackuped() throws InterruptedException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        int counter = 1000;
+        Map<Integer, String> map = new HashMap();
+        for (int i = 0; i < counter; i++) {
+            map.put(i, String.valueOf(i));
+        }
+        IMap map1 = h1.getMap("testIfProperBackuped");
+        map1.putAll(map);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        IMap map2 = h2.getMap("testIfProperBackuped");
+        for (int i = 0; i < 5; i++) {
+            Thread.sleep(10000);
+            LocalMapStats mapStats1 = map1.getLocalMapStats();
+            LocalMapStats mapStats2 = map2.getLocalMapStats();
+            while (mapStats1.getOwnedEntryCount() == counter) {
+                Thread.sleep(1000);
+            }
+            assertEquals(mapStats1.getOwnedEntryCount(), mapStats2.getBackupEntryCount());
+            assertEquals("Migrated blocks are not backed up", mapStats2.getOwnedEntryCount(), mapStats1.getBackupEntryCount());
+        }
     }
 }
