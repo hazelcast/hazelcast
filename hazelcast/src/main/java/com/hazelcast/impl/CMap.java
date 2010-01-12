@@ -295,6 +295,7 @@ public class CMap {
         }
         if (req.operation == CONCURRENT_MAP_BACKUP_PUT) {
             Record rec = toRecord(req);
+            rec.setActive();
             if (rec.getVersion() == 0) {
                 rec.setVersion(req.version);
             }

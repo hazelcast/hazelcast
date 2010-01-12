@@ -658,7 +658,8 @@ public class ClusterTest {
     }
 
     /**
-     * Simple symmetric encryption test.
+     * Testing to see if we are able to send and receive
+     * 10MB values.
      */
     @Test(timeout = 60000)
     public void testBigValue() throws Exception {

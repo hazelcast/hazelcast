@@ -516,7 +516,7 @@ public class Node {
             throw new IllegalArgumentException();
         }
         Connection conn = connectionManager.getOrConnect(masterAddress);
-        logger.log(Level.FINEST, "Master connnection " + conn);
+        logger.log(Level.FINEST, "Master connection " + conn);
         if (conn != null) {
             clusterManager.sendJoinRequest(masterAddress);
         }
@@ -527,9 +527,9 @@ public class Node {
             failedConnections.clear();
             final List<Address> lsPossibleAddresses = getPossibleMembers();
             lsPossibleAddresses.remove(address);
-            for (final Address adrs : lsPossibleAddresses) {
-                logger.log(Level.FINEST, "connecting to " + adrs);
-                connectionManager.getOrConnect(adrs);
+            for (final Address possibleAddress : lsPossibleAddresses) {
+                logger.log(Level.FINEST, "connecting to " + possibleAddress);
+                connectionManager.getOrConnect(possibleAddress);
             }
             boolean found = false;
             int numberOfSeconds = 0;
@@ -542,12 +542,12 @@ public class Node {
                 Thread.sleep(1000);
                 numberOfSeconds++;
                 int numberOfJoinReq = 0;
-                for (final Address adrs : lsPossibleAddresses) {
-                    final Connection conn = connectionManager.getOrConnect(adrs);
+                for (final Address possibleAddress : lsPossibleAddresses) {
+                    final Connection conn = connectionManager.getOrConnect(possibleAddress);
                     logger.log(Level.FINEST, "conn " + conn);
                     if (conn != null && numberOfJoinReq < 5) {
                         found = true;
-                        clusterManager.sendJoinRequest(adrs);
+                        clusterManager.sendJoinRequest(possibleAddress);
                         numberOfJoinReq++;
                     }
                 }
@@ -559,10 +559,10 @@ public class Node {
                 while (!joined) {
                     int numberOfJoinReq = 0;
                     lsPossibleAddresses.removeAll(failedConnections);
-                    for (final Address adrs : lsPossibleAddresses) {
-                        final Connection conn = connectionManager.getOrConnect(adrs);
+                    for (final Address possibleAddress : lsPossibleAddresses) {
+                        final Connection conn = connectionManager.getOrConnect(possibleAddress);
                         if (conn != null && numberOfJoinReq < 5) {
-                            clusterManager.sendJoinRequest(adrs);
+                            clusterManager.sendJoinRequest(possibleAddress);
                             numberOfJoinReq++;
                         }
                     }
