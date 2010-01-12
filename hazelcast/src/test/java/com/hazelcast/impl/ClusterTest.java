@@ -30,10 +30,7 @@ import org.junit.Test;
 
 import java.io.Serializable;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static junit.framework.Assert.assertFalse;
@@ -656,6 +653,44 @@ public class ClusterTest {
         Thread.sleep(1000);
         h.shutdown();
         assertTrue(latch.await(5, TimeUnit.SECONDS));
+    }
+
+    @Test(timeout = 60000)
+    public void testLockWaiters() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        final IMap map1 = h1.getMap("default");
+        for (int i = 0; i < 5000; i++) {
+            map1.put(i, "value" + i);
+        }
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        final IMap map2 = h2.getMap("default");
+        testLockWaiters(map1, map2, 1);
+        testLockWaiters(map2, map2, 2);
+        testLockWaiters(map1, map1, 3);
+        testLockWaiters(map2, map1, 4);
+
+    }
+
+    private void testLockWaiters (final IMap mapLocker, final IMap mapWaiter, final Object key) throws Exception {
+        mapLocker.lock(key);
+        final int count = 10;
+        final CountDownLatch latchStart = new CountDownLatch(count);
+        final CountDownLatch latchEnd = new CountDownLatch(count);
+        ExecutorService es = Executors.newFixedThreadPool(count);
+        for (int i = 0; i < count; i++) {
+            es.execute(new Runnable() {
+                public void run() {
+                    latchStart.countDown();
+                    mapWaiter.put(key, "value");
+                    latchEnd.countDown();
+                }
+            });
+        }
+        assertTrue(latchStart.await(1, TimeUnit.SECONDS));
+        Thread.sleep(1000); // extra second so that map2.put can actually start
+        mapLocker.unlock(key);
+        assertTrue(latchEnd.await(10, TimeUnit.SECONDS));
+        es.shutdown();
     }
 
     /**

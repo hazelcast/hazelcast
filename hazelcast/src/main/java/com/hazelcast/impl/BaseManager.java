@@ -193,7 +193,9 @@ public abstract class BaseManager {
     }
 
     abstract class AbstractCall implements Call {
-        private long callId = -1;
+        protected long callId = -1;
+        protected long firstEnqueueTime = -1;
+        protected int enqueueCount = 0;
 
         public AbstractCall() {
         }
@@ -205,10 +207,17 @@ public abstract class BaseManager {
         public void onDisconnect(final Address dead) {
         }
 
+        public void onEnqueue() {
+            if (firstEnqueueTime == -1) {
+                firstEnqueueTime = System.currentTimeMillis();
+            }
+            enqueueCount++;
+        }
+
         public void redo() {
             removeCall(getCallId());
             callId = -1;
-            enqueueAndReturn(this);
+            enqueueCall(this);
         }
 
         public void setCallId(final long callId) {
@@ -217,6 +226,29 @@ public abstract class BaseManager {
 
         public void reset() {
             callId = -1;
+            firstEnqueueTime = -1;
+            enqueueCount = 0;
+        }
+
+        public long getFirstEnqueueTime() {
+            return firstEnqueueTime;
+        }
+
+        public int getEnqueueCount() {
+            return enqueueCount;
+        }
+
+        protected int getDurationSeconds() {
+            return (int) (System.currentTimeMillis() - firstEnqueueTime) / 1000;
+        }
+
+        @Override
+        public String toString() {
+            return this.getClass().getSimpleName() + "{[" +
+                    "" + getCallId() +
+                    "], duration=" + (+getDurationSeconds()) +
+                    "sn., enqueueCount=" + getEnqueueCount() +
+                    '}';
         }
     }
 
@@ -436,10 +468,14 @@ public abstract class BaseManager {
 
         abstract Object getResult();
 
+        @Override
         public String toString() {
-            return RequestBasedCall.this.getClass().getSimpleName()
-                    + " operation= " + ((request != null) ? request.operation : " unknown")
-                    + " name= " + ((request != null) ? request.name : " unknown");
+            return this.getClass().getSimpleName() + "{[" +
+                    "" + getCallId() +
+                    "], duration=" + (+getDurationSeconds()) +
+                    "sn., enqueueCount=" + getEnqueueCount() +
+                    ", " + request +
+                    '}';
         }
     }
 
@@ -453,7 +489,7 @@ public abstract class BaseManager {
         @Override
         public void doOp() {
             responses.clear();
-            enqueueAndReturn(ResponseQueueCall.this);
+            enqueueCall(ResponseQueueCall.this);
         }
 
         public void beforeRedo() {
@@ -694,6 +730,17 @@ public abstract class BaseManager {
         public boolean isMigrationAware() {
             return false;
         }
+
+        @Override
+        public String toString() {
+            return this.getClass().getSimpleName() + "{[" +
+                    "" + getCallId() +
+                    "], firstEnqueue=" + (System.currentTimeMillis() - firstEnqueueTime) / 1000 +
+                    "sn., enqueueCount=" + enqueueCount +
+                    ", " + request + 
+                    ", target=" + getTarget() +
+                    '}';
+        }
     }
 
     abstract class MultiCall<T> {
@@ -812,6 +859,11 @@ public abstract class BaseManager {
             }
             return InstanceType.MAP;
         } else throw new RuntimeException("Unknown InstanceType " + name);
+    }
+
+    public void enqueueCall(Call call) {
+        call.onEnqueue();
+        enqueueAndReturn(call);
     }
 
     public void enqueueAndReturn(final Processable obj) {

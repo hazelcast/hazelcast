@@ -557,6 +557,56 @@ public class CMap {
         return true;
     }
 
+    void unlock(Record record) {
+        record.setLockThreadId(-1);
+        record.setLockCount(0);
+        record.setLockAddress(null);
+        fireScheduledActions(record);
+    }
+
+    void fireScheduledActions(Record record) {
+        concurrentMapManager.checkServiceThread();
+        if (record.getLockCount() == 0) {
+            record.setLockThreadId(-1);
+            record.setLockAddress(null);
+            if (record.getScheduledActions() != null) {
+                while (record.getScheduledActions().size() > 0) {
+                    BaseManager.ScheduledAction sa = record.getScheduledActions().remove(0);
+                    node.clusterManager.deregisterScheduledAction(sa);
+                    if (!sa.expired()) {
+                        sa.consume();
+                        if (record.isLocked()) {
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public void onDisconnect(Record record, Address deadAddress) {
+        if (record == null || deadAddress == null) return;
+        List<BaseManager.ScheduledAction> lsScheduledActions = record.getScheduledActions();
+        if (lsScheduledActions != null) {
+            if (lsScheduledActions.size() > 0) {
+                Iterator<BaseManager.ScheduledAction> it = lsScheduledActions.iterator();
+                while (it.hasNext()) {
+                    BaseManager.ScheduledAction sa = it.next();
+                    if (deadAddress.equals(sa.request.caller)) {
+                        node.clusterManager.deregisterScheduledAction(sa);
+                        sa.setValid(false);
+                        it.remove();
+                    }
+                }
+            }
+        }
+        if (record.getLockCount() > 0) {
+            if (deadAddress.equals(record.getLockAddress())) {
+                unlock(record);
+            }
+        }
+    }
+
     public boolean removeMulti(Request req) {
         Record record = getRecord(req.key);
         if (record == null) return false;
@@ -610,7 +660,7 @@ public class CMap {
             concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKey(), value, record.getMapListeners());
         }
         if (req.txnId != -1) {
-            concurrentMapManager.unlock(record);
+            unlock(record);
         }
         logger.log(Level.FINEST, record.getValue() + " PutMulti " + record.getMultiValues());
         req.clearForResponse();
@@ -682,7 +732,7 @@ public class CMap {
             concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_UPDATED, record);
         }
         if (req.txnId != -1) {
-            concurrentMapManager.unlock(record);
+            unlock(record);
         }
         updateIndexes(created, req, record);
         markAsDirty(record);
@@ -896,7 +946,7 @@ public class CMap {
             return false;
         }
         if (req.txnId != -1) {
-            concurrentMapManager.unlock(record);
+            unlock(record);
         }
         boolean removed = false;
         if (record.getCopyCount() > 0) {
@@ -931,7 +981,7 @@ public class CMap {
             return;
         }
         if (req.txnId != -1) {
-            concurrentMapManager.unlock(record);
+            unlock(record);
         }
         if (!record.isValid()) {
             if (record.isEvictable()) {
@@ -962,7 +1012,7 @@ public class CMap {
             record.setMultiValues(null);
         }
         if (req.txnId != -1) {
-            concurrentMapManager.unlock(record);
+            unlock(record);
         }
         if (record.isRemovable()) {
             markAsRemoved(record);

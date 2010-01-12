@@ -30,4 +30,11 @@ public interface Call extends Processable {
     void onDisconnect(Address dead);
 
     void setCallId(long id);
+
+    void onEnqueue();
+
+    long getFirstEnqueueTime();
+
+    int getEnqueueCount();
+
 }

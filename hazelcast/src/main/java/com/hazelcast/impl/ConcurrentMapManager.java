@@ -22,10 +22,7 @@ import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Transaction;
-import com.hazelcast.impl.base.AddressAwareException;
-import com.hazelcast.impl.base.KeyValue;
-import com.hazelcast.impl.base.PacketProcessor;
-import com.hazelcast.impl.base.Pairs;
+import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.concurrentmap.MultiData;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
@@ -78,6 +75,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
         node.clusterService.registerPeriodicRunnable(new Runnable() {
             public void run() {
+                logState();
                 Collection<CMap> cmaps = maps.values();
                 for (CMap cmap : cmaps) {
                     cmap.startRemove();
@@ -147,10 +145,21 @@ public final class ConcurrentMapManager extends BaseManager {
         return hash;
     }
 
-    void logState () {
-        if (LOG_STATE && (System.currentTimeMillis() - lastLogStateTime  > 2000)) {
-            StringBuffer sbState = new StringBuffer();
+    void logState() {
+        long now = System.currentTimeMillis();
+        if (LOG_STATE && ((now - lastLogStateTime) > 30000)) {
+            StringBuffer sbState = new StringBuffer("State");
+            for (Block block : blocks) {
+                sbState.append(block);
+                sbState.append("\n");
+            }
+            Collection<Call> calls = mapCalls.values();
+            for (Call call : calls) {
+                sbState.append (call);
+                sbState.append("\n");
+            }
             logger.log(Level.INFO, sbState.toString());
+            lastLogStateTime = now;
         }
     }
 
@@ -548,44 +557,6 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MBackup extends MTargetAwareOp {
-        protected Address owner = null;
-        protected int distance = 0;
-
-        public void sendBackup(ClusterOperation operation, Address owner, boolean hardCopy,
-                               int distance, Request reqBackup) {
-            this.owner = owner;
-            this.distance = distance;
-            request.operation = operation;
-            request.setFromRequest(reqBackup, hardCopy);
-            request.operation = operation;
-            request.caller = thisAddress;
-            request.setBooleanRequest();
-            doOp();
-        }
-
-        public void reset() {
-            super.reset();
-            owner = null;
-            distance = 0;
-        }
-
-        @Override
-        public void process() {
-            MemberImpl targetMember = getNextMemberAfter(owner, true, distance);
-            if (targetMember == null) {
-                setResult(Boolean.TRUE);
-                return;
-            }
-            target = targetMember.getAddress();
-            if (target.equals(thisAddress)) {
-                doLocalOp();
-            } else {
-                invoke();
-            }
-        }
-    }
-
     class MPutMulti extends MBackupAndMigrationAwareOp {
 
         boolean put(String name, Object key, Object value) {
@@ -775,6 +746,44 @@ public final class ConcurrentMapManager extends BaseManager {
         @Override
         public boolean isMigrationAware() {
             return true;
+        }
+    }
+
+    class MBackup extends MTargetAwareOp {
+        protected Address owner = null;
+        protected int distance = 0;
+
+        public void sendBackup(ClusterOperation operation, Address owner, boolean hardCopy,
+                               int distance, Request reqBackup) {
+            reset();
+            this.owner = owner;
+            this.distance = distance;
+            request.setFromRequest(reqBackup, hardCopy);
+            request.operation = operation;
+            request.caller = thisAddress;
+            request.setBooleanRequest();
+            doOp();
+        }
+
+        public void reset() {
+            super.reset();
+            owner = null;
+            distance = 0;
+        }
+
+        @Override
+        public void process() {
+            MemberImpl targetMember = getNextMemberAfter(owner, true, distance);
+            if (targetMember == null) {
+                setResult(Boolean.TRUE);
+                return;
+            }
+            target = targetMember.getAddress();
+            if (target.equals(thisAddress)) {
+                doLocalOp();
+            } else {
+                invoke();
+            }
         }
     }
 
@@ -1529,12 +1538,13 @@ public final class ConcurrentMapManager extends BaseManager {
             if (record != null) {
                 unlocked = record.unlock(request.lockThreadId, request.lockAddress);
                 if (unlocked) {
+                    CMap cmap = getOrCreateMap(record.getName());
                     record.setVersion(record.getVersion() + 1);
                     request.version = record.getVersion();
                     request.lockCount = record.getLockCount();
-                    fireScheduledActions(record);
+                    cmap.fireScheduledActions(record);
                 }
-                logger.log(Level.FINEST, unlocked + " now lock count " + record.getLockCount() + " lockthreadId " + record.getLockThreadId());
+                logger.log(Level.FINEST, unlocked + " now lock count " + record.getLockCount() + " lockThreadId " + record.getLockThreadId());
             }
             if (unlocked) {
                 request.response = Boolean.TRUE;
@@ -1898,53 +1908,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    public void unlock(Record record) {
-        record.setLockThreadId(-1);
-        record.setLockCount(0);
-        record.setLockAddress(null);
-        fireScheduledActions(record);
-    }
 
-    public void fireScheduledActions(Record record) {
-        checkServiceThread();
-        if (record.getLockCount() == 0) {
-            record.setLockThreadId(-1);
-            record.setLockAddress(null);
-            if (record.getScheduledActions() != null) {
-                while (record.getScheduledActions().size() > 0) {
-                    ScheduledAction sa = record.getScheduledActions().remove(0);
-                    node.clusterManager.deregisterScheduledAction(sa);
-                    if (!sa.expired()) {
-                        sa.consume();
-                        return;
-                    }
-                }
-            }
-        }
-    }
-
-    public void onDisconnect(Record record, Address deadAddress) {
-        if (record == null || deadAddress == null) return;
-        List<ScheduledAction> lsScheduledActions = record.getScheduledActions();
-        if (lsScheduledActions != null) {
-            if (lsScheduledActions.size() > 0) {
-                Iterator<ScheduledAction> it = lsScheduledActions.iterator();
-                while (it.hasNext()) {
-                    ScheduledAction sa = it.next();
-                    if (deadAddress.equals(sa.request.caller)) {
-                        node.clusterManager.deregisterScheduledAction(sa);
-                        sa.setValid(false);
-                        it.remove();
-                    }
-                }
-            }
-        }
-        if (record.getLockCount() > 0) {
-            if (deadAddress.equals(record.getLockAddress())) {
-                unlock(record);
-            }
-        }
-    }
 
     public static class BlockOwners extends AbstractRemotelyProcessable {
         List<Block> lsBlocks = new ArrayList<Block>(BLOCK_COUNT);

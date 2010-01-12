@@ -68,6 +68,15 @@ public class Request {
         return (timeout == -1) || (timeout > 100);
     }
 
+    @Override
+    public String toString() {
+        return "Request{" +
+                "name='" + name + '\'' +
+                "," + operation + 
+                ", redoCount='" + redoCount + '\'' +
+                '}';
+    }
+
     public void reset() {
         this.local = true;
         this.operation = ClusterOperation.NONE;

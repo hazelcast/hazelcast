@@ -339,13 +339,13 @@ public class MapMigrator implements Runnable {
             }
         }
         Collection<CMap> cmaps = concurrentMapManager.maps.values();
-        for (CMap map : cmaps) {
-            Collection<Record> records = map.mapRecords.values();
+        for (CMap cmap : cmaps) {
+            Collection<Record> records = cmap.mapRecords.values();
             for (Record record : records) {
                 if (record != null) {
-                    concurrentMapManager.onDisconnect(record, deadAddress);
+                    cmap.onDisconnect(record, deadAddress);
                     if (record.isActive() && blocksOwnedAfterDead.contains(record.getBlockId())) {
-                        map.markAsOwned(record);
+                        cmap.markAsOwned(record);
                         // you have to update the indexes
                         // as if this record is new so extract the values first
                         int valueHash = record.getValueHash();
@@ -355,7 +355,7 @@ public class MapMigrator implements Runnable {
                         record.setValueHash(Integer.MIN_VALUE);
                         record.setIndexes(null, null);
                         // now update the index
-                        node.queryService.updateIndex(map.getName(), indexes, indexTypes, record, valueHash);
+                        node.queryService.updateIndex(cmap.getName(), indexes, indexTypes, record, valueHash);
                     }
                 }
             }
