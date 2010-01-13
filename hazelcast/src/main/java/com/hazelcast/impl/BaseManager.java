@@ -80,7 +80,7 @@ public abstract class BaseManager {
 
     public Address getThisAddress() {
         return thisAddress;
-    } 
+    }
 
     public static Map.Entry createSimpleEntry(final FactoryImpl factory, final String name, final Object key, final Object value) {
         return new Map.Entry() {
@@ -654,7 +654,7 @@ public abstract class BaseManager {
                     "" + getCallId() +
                     "], firstEnqueue=" + (System.currentTimeMillis() - firstEnqueueTime) / 1000 +
                     "sn., enqueueCount=" + enqueueCount +
-                    ", " + request + 
+                    ", " + request +
                     ", target=" + getTarget() +
                     '}';
         }
@@ -962,6 +962,24 @@ public abstract class BaseManager {
                 return member;
         }
         return null;
+    }
+
+    protected int getMemberIndexOf(Address address) {
+        final int size = lsMembers.size();
+        for (int i = 0; i < size; i++) {
+            final MemberImpl member = lsMembers.get(i);
+            if (member.getAddress().equals(address)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    protected int getDistance(Address from, Address to) {
+        int fromIndex = getMemberIndexOf(from);
+        int toIndex = getMemberIndexOf(to);
+        int size = lsMembers.size();
+        return ((toIndex - fromIndex) + size) % size;
     }
 
     protected MemberImpl getNextMemberBeforeSync(final Address address,

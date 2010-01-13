@@ -137,6 +137,24 @@ public class ClusterTest {
     }
 
     @Test(timeout = 60000)
+    public void testBackupCount() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        IMap map1 = h1.getMap("default");
+        IMap map2 = h2.getMap("default");
+        for (int i = 0; i < 10000; i++) {
+            map1.put(i, i);
+        }
+        assertEquals(map1.getLocalMapStats().getBackupEntryCount(), map2.getLocalMapStats().getOwnedEntryCount());
+        assertEquals(map2.getLocalMapStats().getBackupEntryCount(), map1.getLocalMapStats().getOwnedEntryCount());
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
+        IMap map3 = h3.getMap("default");
+        assertEquals(map2.getLocalMapStats().getBackupEntryCount(), map1.getLocalMapStats().getOwnedEntryCount());
+        assertEquals(map1.getLocalMapStats().getBackupEntryCount(), map3.getLocalMapStats().getOwnedEntryCount());
+        assertEquals(map3.getLocalMapStats().getBackupEntryCount(), map2.getLocalMapStats().getOwnedEntryCount());
+    }
+
+    @Test(timeout = 60000)
     public void testMapReplaceIfSame() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
@@ -668,10 +686,9 @@ public class ClusterTest {
         testLockWaiters(map2, map2, 2);
         testLockWaiters(map1, map1, 3);
         testLockWaiters(map2, map1, 4);
-
     }
 
-    private void testLockWaiters (final IMap mapLocker, final IMap mapWaiter, final Object key) throws Exception {
+    private void testLockWaiters(final IMap mapLocker, final IMap mapWaiter, final Object key) throws Exception {
         mapLocker.lock(key);
         final int count = 10;
         final CountDownLatch latchStart = new CountDownLatch(count);

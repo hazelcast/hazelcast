@@ -323,6 +323,28 @@ public class MapMigrator implements Runnable {
     public void onMembershipChange() {
         lsBlocksToMigrate.clear();
         backupIfNextOrPreviousChanged();
+        removeUnknownRecords();
+    }
+
+    private void removeUnknownRecords() {
+        Collection<CMap> cmaps = concurrentMapManager.maps.values();
+        for (CMap cmap : cmaps) {
+            Collection<Record> records = cmap.mapRecords.values();
+            for (Record record : records) {
+                if (record != null) {
+                    if (record.isActive()) {
+                        Block block = blocks[record.getBlockId()];
+                        Address owner = (block.isMigrating()) ? block.getMigrationAddress() : block.getOwner();
+                        if (!thisAddress.equals(owner)) {
+                            int distance = concurrentMapManager.getDistance(owner, thisAddress);
+                            if (distance > cmap.getBackupCount()) {
+                                cmap.markAsRemoved(record);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public void syncForDead(Address deadAddress) {
