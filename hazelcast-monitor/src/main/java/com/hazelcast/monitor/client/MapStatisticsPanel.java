@@ -85,7 +85,8 @@ public class MapStatisticsPanel implements MonitoringPanel {
         VerticalPanel vPanel = (VerticalPanel) dsp.getContent();
         Label label = (Label) vPanel.getWidget(0);
         label.setText("Current Map Size: " + size);
-        FlexTable table = (FlexTable) vPanel.getWidget(1);
+        AbsolutePanel absTablePanel = (AbsolutePanel)vPanel.getWidget(1);
+        FlexTable table = (FlexTable) absTablePanel.getWidget(0);
         int row = 1;
         Collection<MapStatistics.LocalMapStatistics> collection = event.getListOfLocalStats();
         DateTimeFormat ttipFormat = DateTimeFormat.getFormat("yyyy.MM.dd HH:mm:ss");
@@ -127,7 +128,10 @@ public class MapStatisticsPanel implements MonitoringPanel {
         while (table.getRowCount() > row) {
             table.removeRow(row);
         }
-        Image image = (Image) vPanel.getWidget(2);
+
+        AbsolutePanel absolutePanel = (AbsolutePanel) vPanel.getWidget(2);
+        Image image = (Image) absolutePanel.getWidget(0);
+
         image.setUrl("/ChartGenerator?name=" + mapName + "&dummy = " + Math.random() * 10);
     }
 
@@ -143,9 +147,9 @@ public class MapStatisticsPanel implements MonitoringPanel {
         if ((result = (double) size / gb) >= 1) {
             return toPrecision(result) + " GB";
         } else if ((result = (double) size / mb) >= 1) {
-            return toPrecision(result) + " MB";
+            return Math.round(result) + " MB";
         } else if ((result = (double) size / kb) >= 1) {
-            return toPrecision(result) + " KB";
+            return Math.round(result) + " KB";
         } else {
             return size + " Bytes";
         }
@@ -162,15 +166,16 @@ public class MapStatisticsPanel implements MonitoringPanel {
         VerticalPanel vPanel = new VerticalPanel();
         vPanel.add(new Label());
         FlexTable table = new FlexTable();
+        table.addStyleName("table");
         table.setWidget(0, 0, new LabelWithToolTip("Members", "Members of the Cluster"));
         table.setWidget(0, 1, new LabelWithToolTip("Entries", "Number of Entries"));
-        table.setWidget(0, 2, new LabelWithToolTip("Size", "Memory Size of Entries"));
+        table.setWidget(0, 2, new LabelWithToolTip("Memory", "Memory Size of Entries"));
         table.setWidget(0, 3, new LabelWithToolTip("Backups", "Number of Backups"));
-        table.setWidget(0, 4, new LabelWithToolTip("Size", "Memory Size of Backups"));
-        table.setWidget(0, 5, new LabelWithToolTip("Marked as Remove", "Entries Marked as Remove"));
-        table.setWidget(0, 6, new LabelWithToolTip("Size", "Memory Size of the Entries Marked as Remove"));
-        table.setWidget(0, 7, new LabelWithToolTip("Locks", "Number of locked records"));
-        table.setWidget(0, 8, new LabelWithToolTip("Waits on Lock", "Total Number of Threads waiting on locked records"));
+        table.setWidget(0, 4, new LabelWithToolTip("Memory", "Memory Size of Backups"));
+        table.setWidget(0, 5, new LabelWithToolTip("M. Remove", "Entries Marked as Remove"));
+        table.setWidget(0, 6, new LabelWithToolTip("Memory", "Memory Size of the Entries Marked as Remove"));
+        table.setWidget(0, 7, new LabelWithToolTip("Locks", "Number of Locked Entries"));
+        table.setWidget(0, 8, new LabelWithToolTip("W. Lock", "Total Number of Threads Waiting on Locked Entries"));
         table.setWidget(0, 9, new LabelWithToolTip("Hits", "Number of Hits"));
         table.setWidget(0, 10, new LabelWithToolTip("Last Access", "Last Access Time"));
         table.setWidget(0, 11, new LabelWithToolTip("Last Eviction", "Last Eviction Time"));
@@ -179,8 +184,15 @@ public class MapStatisticsPanel implements MonitoringPanel {
 
         table.getRowFormatter().addStyleName(0, "mapstatsHeader");
         table.addStyleName("mapstats");
-        vPanel.add(table);
-        vPanel.add(new Image());
+
+        AbsolutePanel absTablePanel = new AbsolutePanel();
+        absTablePanel.addStyleName("img-shadow");
+        absTablePanel.add(table);
+        vPanel.add(absTablePanel);
+        AbsolutePanel absImagePanel = new AbsolutePanel();
+        absImagePanel.addStyleName("img-shadow");
+        absImagePanel.add(new Image());
+        vPanel.add(absImagePanel);
         disclosurePanel.add(vPanel);
         disclosurePanel.setOpen(true);
         return disclosurePanel;

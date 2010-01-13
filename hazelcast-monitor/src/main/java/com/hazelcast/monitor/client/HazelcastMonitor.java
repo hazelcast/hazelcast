@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-
+                                           
 package com.hazelcast.monitor.client;
 
 import com.google.gwt.core.client.EntryPoint;
@@ -38,10 +38,11 @@ import static com.hazelcast.monitor.client.AddClusterClickHandler.createClusterW
  * Entry point classes define <code>onModuleLoad()</code>.
  */
 public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
-    private static final String LEFT_PANEL_SIZE = "300";
+    private static final String LEFT_PANEL_SIZE = "270";
     private static final int REFRESH_INTERVAL = 1000;
     Map<Integer, ClusterWidgets> mapClusterWidgets = new HashMap<Integer, ClusterWidgets>();
     HorizontalSplitPanel mainPanel;
+    DecoratedStackPanel dsPanel;
     private Timer refreshTimer;
 
 
@@ -59,8 +60,11 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
         mainPanel = new HorizontalSplitPanel();
         mainPanel.setSplitPosition(LEFT_PANEL_SIZE);
 
-        DecoratedStackPanel leftPanel = new DecoratedStackPanel();
-        leftPanel.setWidth(LEFT_PANEL_SIZE);
+        VerticalPanel leftPanel = new VerticalPanel();
+        dsPanel = new DecoratedStackPanel();
+        dsPanel.setWidth(LEFT_PANEL_SIZE);
+        leftPanel.add(new Image("images/logo_2.png"));
+        leftPanel.add(dsPanel);
         mainPanel.setLeftWidget(leftPanel);
 
         VerticalPanel rightPanel = new VerticalPanel();
@@ -124,6 +128,7 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
 
     public void onValueChange(final ValueChangeEvent event) {
         String token = event.getValue().toString();
+        System.out.println("ValueChanged: " + token);
         Map<String, String> map = parseParamString(token);
         String name = map.get("name");
         int clusterId = Integer.valueOf(map.get("clusterId"));
@@ -175,8 +180,7 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
         clusterWidgets.mainPanel = mainPanel;
         mapClusterWidgets.put(clusterWidgets.clusterId, clusterWidgets);
         clusterWidgets.clusterName = clusterView.getGroupName();
-        DecoratedStackPanel leftPanel = (DecoratedStackPanel) mainPanel.getLeftWidget();
-        leftPanel.add(clusterWidgets.clusterTree, clusterView.getGroupName());
+        dsPanel.add(clusterWidgets.clusterTree, clusterView.getGroupName());
         setupTimer();
     }
 }

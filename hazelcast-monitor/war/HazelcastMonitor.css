@@ -10,23 +10,39 @@ h1 {
 
 .toolTip {
     font-size: 10pt;
-    color: #6D98F9;
-    background-color: white;
-    font-style: italic;
+    color: black;
+    background-color: #FFFED3;
+    /*font-style: italic;*/
 
 }
 
+.table {
+   width:1010px;
+}
+
+.link {
+    color: black;
+
+}
 .mapstatsHeader {
 /*background-color: #2062B8;*/
-    /*background-color: #4C95F5;*/
-    background-color: #6D98F9;
+/*background-color: #4C95F5;*/
+    /*background-color: #6D98F9;*/
+    background-color: #11839C;
     color: white;
     text-align: center;
 }
 
+.header {
+    font-weight:bold;
+    font-size:20pt;
+    text-align:left;
+}
+
 .mapstatsEvenRow {
-    background-color: #DAE3F7;
-    /*background-color: #C0C0C0;*/
+    /*background-color: #DAE3F7;*/
+    /*background-color: #11EFFD;*/
+    background-color: #ADF9FE;
 }
 
 .mapstats {
@@ -34,17 +50,73 @@ h1 {
     padding: 2px;
     margin-bottom: 6px;
 }
+.mapstatsStringColumn {
+    text-align: center;
+}
 
 .mapstatsNumericColumn {
-    text-align: right; /*width: 8em;*/
+    text-align: right;
 }
+
+
+.img-shadow {
+  float:left;
+  background: url(images/shadowAlpha.png) no-repeat bottom right !important;
+  background: url(images/shadow.gif) no-repeat bottom right;
+  margin: 10px 0 0 10px !important;
+  margin: 10px 0 0 5px;
+  }
+
+.img-shadow img {
+  display: block;
+  position: relative;
+  background-color: #fff;
+  border: 1px solid #a9a9a9;
+  margin: -6px 6px 6px -6px;
+  padding: 4px;
+  }
+
+.img-shadow table {
+  display: block;
+  position: relative;
+  background-color: #fff;
+  border: 1px solid #a9a9a9;
+  margin: -6px 6px 6px -6px;
+  padding: 4px;
+  }
+
+.p-shadow {
+  width: 90%;
+  float:left;
+  background: url(images/shadowAlpha.png) no-repeat bottom right !important;
+  background: url(images/shadow.gif) no-repeat bottom right;
+  margin: 10px 0 0 10px !important;
+  margin: 10px 0 0 5px;
+  }
+
+.p-shadow div {
+  background: none !important;
+  background: url(images/shadow2.gif) no-repeat left top;
+  padding: 0 !important;
+  padding: 0 6px 6px 0;
+  }
+
+.p-shadow p {
+  color: #777;
+  background-color: #fff;
+  font: italic 1em georgia, serif;
+  border: 1px solid #a9a9a9;
+  padding: 4px;
+  margin: -6px 6px 6px -6px !important;
+  margin: 0;
+  }
 
 .sendButton {
     display: block;
     font-size: 16pt;
 }
-
 /** Most GWT widgets already have a style name defined */
+
 .gwt-DialogBox {
     width: 400px;
 }
@@ -65,12 +137,13 @@ text-align : center;
 
 }
 
-/*body {*/
-/*margin: 0;*/
-/*padding: 0;*/
-/*font: 12px century gothic, helvetica, arial, "Trebuchet MS", Arial, Helvetica, sans-serif;*/
-/*color: #5A554E;*/
-/*}*/
+body {
+    margin: 0;
+    padding: 0;
+    font: 12px century gothic, helvetica, arial, "Trebuchet MS", Arial, Helvetica, sans-serif;
+}
+}
+
 
 /*h1, h2, h3 {*/
 /*margin: 0;*/
@@ -162,7 +235,7 @@ text-align : center;
 /*border: 1px solid #E9E4D8;*/
 /*}*/
 
-/* Wrapper */
+/*Wrapper*/
 
 /*#wrapper {*/
 /*}*/
@@ -176,13 +249,13 @@ text-align : center;
 /*clear: both;*/
 /*}*/
 
-/* Header */
+/*Header*/
 
 /*#header {*/
 /*height: 151px;*/
 /*}*/
 
-/* Logo */
+/*Logo*/
 
 /*#logo {*/
 /*float: left;*/

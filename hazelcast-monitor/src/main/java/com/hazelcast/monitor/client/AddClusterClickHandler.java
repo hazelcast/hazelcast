@@ -27,7 +27,6 @@ import java.util.Iterator;
 import java.util.List;
 
 public class AddClusterClickHandler implements ClickHandler {
-    private DecoratedStackPanel leftPanel;
     private TextBox groupName;
     private TextBox pass;
     private TextBox addresses;
@@ -45,7 +44,6 @@ public class AddClusterClickHandler implements ClickHandler {
     public AddClusterClickHandler(HazelcastMonitor hazelcastMonitor, TextBox groupName, TextBox pass, TextBox addresses,
                                   Label lbError) {
         this.hazelcastMonitor = hazelcastMonitor;
-        leftPanel = (DecoratedStackPanel) hazelcastMonitor.mainPanel.getLeftWidget();
         this.groupName = groupName;
         this.pass = pass;
         this.addresses = addresses;
@@ -129,6 +127,7 @@ public class AddClusterClickHandler implements ClickHandler {
                         "&type=" + ((type == null) ? "MEMBER" : type) +
                         "&name=" + name;
         Hyperlink link = new Hyperlink(name, token);
+        link.addStyleName("link");
         return link;
     }
 }
