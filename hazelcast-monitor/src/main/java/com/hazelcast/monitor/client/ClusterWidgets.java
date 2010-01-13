@@ -53,7 +53,7 @@ public class ClusterWidgets {
     }
 
     public void handle(ChangeEvent changeEvent) {
-        System.out.println("Handling event: " + changeEvent);
+//        System.out.println("Handling event: " + changeEvent);
         if (changeEvent instanceof InstanceCreated) {
             new InstanceCreatedHandler(this).handle(changeEvent);
         } else if (changeEvent instanceof InstanceDestroyed) {

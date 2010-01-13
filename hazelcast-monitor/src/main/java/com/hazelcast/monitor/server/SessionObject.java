@@ -125,7 +125,8 @@ public class SessionObject {
     private HazelcastClient newHazelcastClient(String name, String pass, String ips, final int id) throws ConnectionExceptoin {
         HazelcastClient client;
         try {
-            client = HazelcastClient.newHazelcastClient(name, pass, ips);
+            String[] addresses = splitAddresses(ips);
+            client = HazelcastClient.newHazelcastClient(name, pass, addresses);
         } catch (RuntimeException e) {
             e.printStackTrace();
             throw new ConnectionExceptoin(e.getMessage());
@@ -150,6 +151,10 @@ public class SessionObject {
         eventGenerators.add(new MembershipEventGenerator(client, id));
 
         return client;
+    }
+    private String[] splitAddresses(String ips){
+        String[] result = ips.split(",");
+        return result;
     }
 
     ClusterView createClusterView(int clusterId) {

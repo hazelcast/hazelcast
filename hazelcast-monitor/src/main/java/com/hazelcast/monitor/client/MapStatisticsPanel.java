@@ -18,6 +18,10 @@
 package com.hazelcast.monitor.client;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.dom.client.MouseOutEvent;
+import com.google.gwt.event.dom.client.MouseOutHandler;
+import com.google.gwt.event.dom.client.MouseOverEvent;
+import com.google.gwt.event.dom.client.MouseOverHandler;
 import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
@@ -80,11 +84,12 @@ public class MapStatisticsPanel implements MonitoringPanel {
         int size = event.getSize();
         VerticalPanel vPanel = (VerticalPanel) dsp.getContent();
         Label label = (Label) vPanel.getWidget(0);
-        label.setText("Size:"+ size);
+        label.setText("Current Map Size: " + size);
         FlexTable table = (FlexTable) vPanel.getWidget(1);
         int row = 1;
         Collection<MapStatistics.LocalMapStatistics> collection = event.getListOfLocalStats();
-        DateTimeFormat dtf = DateTimeFormat.getFormat("yyyy.MM.dd HH:mm:ss");
+        DateTimeFormat ttipFormat = DateTimeFormat.getFormat("yyyy.MM.dd HH:mm:ss");
+        DateTimeFormat displayFormat = DateTimeFormat.getFormat("HH:mm:ss");
         for (MapStatistics.LocalMapStatistics localMapStatistics : collection) {
             table.setText(row, 0, localMapStatistics.memberName);
             table.setText(row, 1, "" + localMapStatistics.ownedEntryCount);
@@ -93,13 +98,30 @@ public class MapStatisticsPanel implements MonitoringPanel {
             table.setText(row, 4, "" + formatMemorySize(localMapStatistics.backupEntryMemoryCost));
             table.setText(row, 5, "" + localMapStatistics.markedAsRemovedEntryCount);
             table.setText(row, 6, "" + formatMemorySize(localMapStatistics.markedAsRemovedMemoryCost));
-            table.setText(row, 7, "" + localMapStatistics.lockWaitCount);
-            table.setText(row, 8, "" + localMapStatistics.lockedEntryCount);
+            table.setText(row, 7, "" + localMapStatistics.lockedEntryCount);
+            table.setText(row, 8, "" + localMapStatistics.lockWaitCount);
             table.setText(row, 9, "" + localMapStatistics.hits);
-            table.setText(row, 10, dtf.format(new Date(localMapStatistics.lastAccessTime)));
-            table.setText(row, 11, dtf.format(new Date(localMapStatistics.lastEvictionTime)));
-            table.setText(row, 12, dtf.format(new Date(localMapStatistics.lastUpdateTime)));
-            table.setText(row, 13, dtf.format(new Date(localMapStatistics.creationTime)));
+            addDateToTable(table, row, 10, new Date(localMapStatistics.lastAccessTime), ttipFormat, displayFormat);
+            addDateToTable(table, row, 11, new Date(localMapStatistics.lastEvictionTime), ttipFormat, displayFormat);
+            addDateToTable(table, row, 12, new Date(localMapStatistics.lastUpdateTime), ttipFormat, displayFormat);
+            addDateToTable(table, row, 13, new Date(localMapStatistics.creationTime), ttipFormat, displayFormat);
+            table.getColumnFormatter().addStyleName(0, "mapstatsStringColumn");
+            table.getCellFormatter().addStyleName(row, 1, "mapstatsNumericColumn");
+            table.getCellFormatter().addStyleName(row, 3, "mapstatsNumericColumn");
+            table.getCellFormatter().addStyleName(row, 5, "mapstatsNumericColumn");
+            table.getCellFormatter().addStyleName(row, 7, "mapstatsNumericColumn");
+            table.getCellFormatter().addStyleName(row, 8, "mapstatsNumericColumn");
+            table.getCellFormatter().addStyleName(row, 9, "mapstatsNumericColumn");
+            table.getCellFormatter().addStyleName(row, 2, "mapstatsStringColumn");
+            table.getCellFormatter().addStyleName(row, 4, "mapstatsStringColumn");
+            table.getCellFormatter().addStyleName(row, 6, "mapstatsStringColumn");
+            table.getCellFormatter().addStyleName(row, 10, "mapstatsStringColumn");
+            table.getCellFormatter().addStyleName(row, 11, "mapstatsStringColumn");
+            table.getCellFormatter().addStyleName(row, 12, "mapstatsStringColumn");
+            table.getCellFormatter().addStyleName(row, 13, "mapstatsStringColumn");
+            if(row%2==0){
+                table.getRowFormatter().addStyleName(row, "mapstatsEvenRow");    
+            }
             row++;
         }
         while (table.getRowCount() > row) {
@@ -109,11 +131,14 @@ public class MapStatisticsPanel implements MonitoringPanel {
         image.setUrl("/ChartGenerator?name=" + mapName + "&dummy = " + Math.random() * 10);
     }
 
+    private void addDateToTable(FlexTable table, int row, int col, Date date, DateTimeFormat ttipFormat, DateTimeFormat displayFormat) {
+        table.setWidget(row, col, new LabelWithToolTip( displayFormat.format(date), ttipFormat.format(date)));
+    }
+
     public static String formatMemorySize(long size) {
         int gb = 1024 * 1024 * 1024;
         int mb = 1024 * 1024;
         int kb = 1024;
-        
         double result;
         if ((result = (double) size / gb) >= 1) {
             return toPrecision(result) + " GB";
@@ -125,35 +150,64 @@ public class MapStatisticsPanel implements MonitoringPanel {
             return size + " Bytes";
         }
     }
-    private static String toPrecision(double dbl){
-        int ix = (int)(dbl * 100.0); // scale it
-        double dbl2 = ((double)ix)/100.0;
+
+    private static String toPrecision(double dbl) {
+        int ix = (int) (dbl * 100.0); // scale it
+        double dbl2 = ((double) ix) / 100.0;
         return String.valueOf(dbl2);
     }
 
     private DisclosurePanel initPanel() {
-        final DisclosurePanel disclosurePanel = new DisclosurePanel("Map Statistics");
+        final DisclosurePanel disclosurePanel = new DisclosurePanel("Statistics For the Map: "+ mapName);
         VerticalPanel vPanel = new VerticalPanel();
         vPanel.add(new Label());
         FlexTable table = new FlexTable();
-        table.setText(0, 0, "Members");
-        table.setText(0, 1, "# of Entries");
-        table.setText(0, 2, "Memory Size");
-        table.setText(0, 3, "# of Backups");
-        table.setText(0, 4, "Memory Size");
-        table.setText(0, 5, "Marked as Remove");
-        table.setText(0, 6, "Memory Size");
-        table.setText(0, 7, "# of Waits on Lock");
-        table.setText(0, 8, "# of Locks");
-        table.setText(0, 9, "Hits");
-        table.setText(0, 10, "Last Access");
-        table.setText(0, 11, "Last Eviction");
-        table.setText(0, 12, "Last Update");
-        table.setText(0, 13, "Creation Time");
+        table.setWidget(0, 0, new LabelWithToolTip("Members", "Members of the Cluster"));
+        table.setWidget(0, 1, new LabelWithToolTip("Entries", "Number of Entries"));
+        table.setWidget(0, 2, new LabelWithToolTip("Size", "Memory Size of Entries"));
+        table.setWidget(0, 3, new LabelWithToolTip("Backups", "Number of Backups"));
+        table.setWidget(0, 4, new LabelWithToolTip("Size", "Memory Size of Backups"));
+        table.setWidget(0, 5, new LabelWithToolTip("Marked as Remove", "Entries Marked as Remove"));
+        table.setWidget(0, 6, new LabelWithToolTip("Size", "Memory Size of the Entries Marked as Remove"));
+        table.setWidget(0, 7, new LabelWithToolTip("Locks", "Number of locked records"));
+        table.setWidget(0, 8, new LabelWithToolTip("Waits on Lock", "Total Number of Threads waiting on locked records"));
+        table.setWidget(0, 9, new LabelWithToolTip("Hits", "Number of Hits"));
+        table.setWidget(0, 10, new LabelWithToolTip("Last Access", "Last Access Time"));
+        table.setWidget(0, 11, new LabelWithToolTip("Last Eviction", "Last Eviction Time"));
+        table.setWidget(0, 12, new LabelWithToolTip("Last Update", "Last Update Time"));
+        table.setWidget(0, 13, new LabelWithToolTip("Creation Time", "Creation Time of the Map"));
+
+        table.getRowFormatter().addStyleName(0, "mapstatsHeader");
+        table.addStyleName("mapstats");
         vPanel.add(table);
         vPanel.add(new Image());
         disclosurePanel.add(vPanel);
         disclosurePanel.setOpen(true);
         return disclosurePanel;
+    }
+
+    private class LabelWithToolTip extends Label {
+        private LabelWithToolTip(final String label, final String toolTip) {
+            super(label);
+            final Map<Integer, ToolTip> map = new HashMap();
+            this.addMouseOverHandler(new MouseOverHandler() {
+                public void onMouseOver(MouseOverEvent event) {
+                    String tip = toolTip;
+                    if(tip==null || tip.equals("")){
+                        tip = label;
+                    }
+                    ToolTip ttip = new ToolTip(tip, event.getClientX(), event.getClientY());
+                    map.put(1, ttip);
+                }
+            });
+            this.addMouseOutHandler(new MouseOutHandler(){
+                public void onMouseOut(MouseOutEvent event) {
+                    ToolTip tip = map.remove(1);
+                    if(tip!=null){
+                        tip.hide();
+                    }
+                }
+            });
+        }
     }
 }

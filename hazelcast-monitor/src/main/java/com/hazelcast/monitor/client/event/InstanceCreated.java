@@ -24,6 +24,10 @@ import java.util.Date;
 public class InstanceCreated extends InstanceEvent implements Serializable {
     private Date date;
 
+    public InstanceCreated(){
+        
+    }
+
     public InstanceCreated(Date date) {
         this.date = date;
 

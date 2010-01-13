@@ -349,9 +349,6 @@ public class ClientService {
                 if (callable instanceof ClientDistributedTask) {
                     DistributedTask task = null;
                     ClientDistributedTask cdt = (ClientDistributedTask) callable;
-                    System.out.println(cdt.getKey());
-                    System.out.println(cdt.getMember());
-                    System.out.println(cdt.getMembers());
                     if (cdt.getKey() != null) {
                         task = new DistributedTask(cdt.getCallable(), cdt.getKey());
                     } else if (cdt.getMember() != null) {

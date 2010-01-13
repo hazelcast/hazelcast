@@ -22,20 +22,18 @@ import com.hazelcast.monitor.client.event.MapStatistics;
 import com.hazelcast.monitor.server.event.ChangeEventGenerator;
 import com.hazelcast.monitor.server.event.MapStatisticsGenerator;
 import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartFrame;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.data.time.*;
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
+import org.jfree.data.time.Second;
+import org.jfree.data.time.TimeSeries;
+import org.jfree.data.time.TimeSeriesCollection;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.awt.*;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Date;
 import java.util.List;
 
 import static com.hazelcast.monitor.server.HazelcastServiceImpl.getSessionObject;
@@ -45,31 +43,45 @@ public class ChartGenerator extends HttpServlet {
         String name = req.getParameter("name");
         SessionObject sessionObject = getSessionObject(req.getSession());
         List<MapStatistics> list = null;
-        for(ChangeEventGenerator eventGenerator: sessionObject.eventGenerators){
-            if(eventGenerator.getChangeEventType().equals(ChangeEventType.MAP_STATISTICS)){
+        for (ChangeEventGenerator eventGenerator : sessionObject.eventGenerators) {
+            if (eventGenerator.getChangeEventType().equals(ChangeEventType.MAP_STATISTICS)) {
                 MapStatisticsGenerator msg = (MapStatisticsGenerator) eventGenerator;
-                if(!msg.getName().equals(name)){
+                if (!msg.getName().equals(name)) {
                     continue;
                 }
                 list = msg.getPastMapStatistics();
             }
-
         }
-        if(list==null){
+        if (list == null) {
             return;
         }
         TimeSeries ts = new TimeSeries("Map.size()", Second.class);
-        for(int i=0;i<list.size();i++){
-            ts.addOrUpdate(new Second(list.get(i).getCreatedDate()), list.get(i).getSize());
+        int maxSize = Integer.MIN_VALUE;
+        int minSize = Integer.MAX_VALUE;
+        for (int i = 0; i < list.size(); i++) {
+            int size = list.get(i).getSize();
+            maxSize = Math.max(size, maxSize);
+            minSize = Math.min(size, minSize);
+            ts.addOrUpdate(new Second(list.get(i).getCreatedDate()), new Integer(size));
         }
+        maxSize = (int) (maxSize*1.1);
+        minSize = (int) (minSize*0.8);
         TimeSeriesCollection timeDataset = new TimeSeriesCollection();
         timeDataset.addSeries(ts);
+//        if (list.size() > 0) {
+//            TimeSeries _ts = new TimeSeries("", Second.class);
+//            _ts.addOrUpdate(new Second(list.get(0).getCreatedDate()), minSize);
+//            _ts.addOrUpdate(new Second(list.get(0).getCreatedDate()), maxSize);
+//            timeDataset.addSeries(_ts);
+//        }
+
         JFreeChart chart =
-                  ChartFactory.createTimeSeriesChart("Map:"+name , "Time", "Size", timeDataset, false, false, false);
+                ChartFactory.createTimeSeriesChart("Map: " + name, "Time", "Size", timeDataset, false, true, true);
+        chart.setBackgroundPaint(Color.WHITE);
         try {
             OutputStream out = response.getOutputStream();
             response.setContentType("image/png");
-            ChartUtilities.writeChartAsPNG(out, chart, 1000, 400);
+            ChartUtilities.writeChartAsPNG(out, chart, 1000, 300);
         } catch (IOException ignore) {
         }
     }

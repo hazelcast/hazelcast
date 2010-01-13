@@ -53,6 +53,7 @@ public class AddClusterClickHandler implements ClickHandler {
     }
 
     public void onClick(ClickEvent event) {
+//        lbError.setText("");
         connectToCluster();
     }
 

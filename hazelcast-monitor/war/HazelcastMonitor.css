@@ -1,12 +1,42 @@
 /** Add css rules here for your application. */
 
-/** Example rules used by the template application (remove for your app) */
 h1 {
     font-size: 2em;
     font-weight: bold;
     color: #777777;
     margin: 40px 0px 70px;
     text-align: center;
+}
+
+.toolTip {
+    font-size: 10pt;
+    color: #6D98F9;
+    background-color: white;
+    font-style: italic;
+
+}
+
+.mapstatsHeader {
+/*background-color: #2062B8;*/
+    /*background-color: #4C95F5;*/
+    background-color: #6D98F9;
+    color: white;
+    text-align: center;
+}
+
+.mapstatsEvenRow {
+    background-color: #DAE3F7;
+    /*background-color: #C0C0C0;*/
+}
+
+.mapstats {
+    border: 1px solid silver;
+    padding: 2px;
+    margin-bottom: 6px;
+}
+
+.mapstatsNumericColumn {
+    text-align: right; /*width: 8em;*/
 }
 
 .sendButton {
@@ -27,7 +57,463 @@ h1 {
     color: red;
 }
 
-/** Set ids using widget.getElement().setId("idOfElement") */
 #closeButton {
     margin: 15px 6px 6px;
+. mapstatsStringColumn {
+text-align : center;
 }
+
+}
+
+/*body {*/
+/*margin: 0;*/
+/*padding: 0;*/
+/*font: 12px century gothic, helvetica, arial, "Trebuchet MS", Arial, Helvetica, sans-serif;*/
+/*color: #5A554E;*/
+/*}*/
+
+/*h1, h2, h3 {*/
+/*margin: 0;*/
+/*}*/
+
+/*h1, h2 {*/
+/*font-weight: normal;*/
+/*}*/
+
+/*h1 {*/
+/*font-size: 32px;*/
+/*}*/
+
+/*h2 {*/
+/*font-size: 24px;*/
+/*}*/
+
+/*p, ol, ul, dl {*/
+/*margin-top: 0;*/
+/*text-align: left;*/
+/*line-height: 1.8;*/
+/*}*/
+
+/*table {*/
+/*padding: 0px;*/
+/*margin: 0px;*/
+/*width: 100%;*/
+/*border-bottom: 0px solid #bbb;*/
+/*}*/
+
+/*table td.spc {*/
+/*padding-left: 20px;*/
+/*}*/
+
+/*table.lined {*/
+/*margin-bottom: 10px;*/
+/*border-bottom: 2px solid #bbb;*/
+/*}*/
+
+/*table.lined td {*/
+/*border-top: 1px solid #ddd;*/
+/*padding-right: 5px;*/
+/*}*/
+
+/*ul {*/
+/*margin-left: 0;*/
+/*padding-left: 0;*/
+/*list-style: none;*/
+/*}*/
+
+/*strong {*/
+/*color: #4A3E29;*/
+/*}*/
+
+/*a {*/
+/*color: #506C00;*/
+/*}*/
+
+/*a:hover {*/
+/*text-decoration: none;*/
+/*}*/
+
+/*a img {*/
+/*border: 0;*/
+/*}*/
+
+/*.alignleft {*/
+/*float: left;*/
+/*}*/
+
+/*.alignright {*/
+/*float: right;*/
+/*}*/
+
+/*.aligncenter {*/
+/*margin: 0 auto;*/
+/*}*/
+
+/*img.alignleft {*/
+/*margin: 0 27px 0 0;*/
+/*}*/
+
+/*img.alignright {*/
+/*margin: 0 0 0 27px;*/
+/*}*/
+
+/*img.border {*/
+/*padding: 4px;*/
+/*border: 1px solid #E9E4D8;*/
+/*}*/
+
+/* Wrapper */
+
+/*#wrapper {*/
+/*}*/
+
+/*.container {*/
+/*width: 1000px;*/
+/*margin: 0 auto;*/
+/*}*/
+
+/*.clearfix {*/
+/*clear: both;*/
+/*}*/
+
+/* Header */
+
+/*#header {*/
+/*height: 151px;*/
+/*}*/
+
+/* Logo */
+
+/*#logo {*/
+/*float: left;*/
+/*width: 308px;*/
+/*height: 151px;*/
+/*}*/
+
+/*#logo h1, #logo p {*/
+/*text-transform: lowercase;*/
+/*line-height: 1;*/
+/*}*/
+
+/*#logo h1 {*/
+/*padding: 77px 0 0 50px;*/
+/*letter-spacing: -2px;*/
+/*font-size: 30px;*/
+/*color: #FFFFFF;*/
+/*}*/
+
+/*#logo h1 sup {*/
+/*font-size: 18px;*/
+/*font-weight: normal;*/
+/*}*/
+
+/*#logo p {*/
+/*padding: 0 0 0 50px;*/
+/*font-size: 13px;*/
+/*color: #F8AB80;*/
+/*}*/
+
+/*#logo a {*/
+/*text-decoration: none;*/
+/*}*/
+
+/*#logo a:hover {*/
+/*text-decoration: underline;*/
+/*}*/
+
+/*#logo h1 a {*/
+/*color: #FFFFFF;*/
+/*}*/
+
+/*#logo p a {*/
+/*color: #F8AB80;*/
+/*}*/
+
+/* Banner */
+
+/*#banner {*/
+/*float: left;*/
+/*height: 58px;*/
+/*padding: 33px 0 0 0;*/
+/*}*/
+
+/* Menu */
+
+/*#menu {*/
+/*height: 76px;*/
+/*}*/
+
+/*#menu ul {*/
+/*height: 67px;*/
+/*margin: 0 25px;*/
+/*padding: 9px 0 0 14px;*/
+/*list-style: none;*/
+/*line-height: 1*/
+/*}*/
+
+/*#menu li {*/
+/*float: left;*/
+/*height: 35px;*/
+/*padding: 15px 20px 0 20px;*/
+/*}*/
+
+/*#menu li.active {*/
+/*}*/
+
+/*#menu a {*/
+/*text-transform: lowercase;*/
+/*text-decoration: none;*/
+/*letter-spacing: -1px;*/
+/*font-size: 18px;*/
+/*color: #FFFFFF;*/
+/*}*/
+
+/*#menu a:hover {*/
+/*text-decoration: underline;*/
+/*}*/
+
+/* Bar */
+
+/*.bar {*/
+/*height: 48px;*/
+/*margin: 0 25px;*/
+/*}*/
+
+/*.bar .text {*/
+/*float: left;*/
+/*padding: 15px 0 0 25px;*/
+/*xtext-transform: lowercase;*/
+/*font-size: 14px;*/
+/*color: #526d73;*/
+/*}*/
+
+/*.bar .text strong {*/
+/*color: #526d73;*/
+/*}*/
+
+/* Top Bar */
+
+/*#top-bar {*/
+/*}*/
+
+/* Search */
+
+/*#search {*/
+/*float: right;*/
+/*width: 245px;*/
+/*height: 48px;*/
+/*}*/
+
+/*#search form, #search fieldset {*/
+/*margin: 0;*/
+/*padding: 0;*/
+/*border: 0;*/
+/*}*/
+
+/*#search .input-text {*/
+/*float: left;*/
+/*width: 178px;*/
+/*margin: 12px 0 0 0;*/
+/*padding: 4px 10px;*/
+/*font: inherit;*/
+/*line-height: normal;*/
+/*border: none;*/
+/*background: none;*/
+/*color: inherit;*/
+/*}*/
+
+/*#search .input-submit {*/
+/*display: none;*/
+/*}*/
+
+/* Page */
+
+/*#page {*/
+/*}*/
+
+/* Content */
+
+/*.learnmore {*/
+/*border: 1px solid #ff3800;*/
+/*padding: 5px 14px;*/
+/*margin-top: 5px;*/
+/*background: #ff4f01;*/
+/*text-transform: lowercase;*/
+/*font-size: 1.4em;*/
+/*text-decoration: none;*/
+/*color: #fff;*/
+/*}*/
+
+/*.learnmore:hover {*/
+/*background: #ff3800;*/
+/*}*/
+
+/*#content {*/
+/*float: left;*/
+/*width: 655px;*/
+/*padding: 0 24px 0 25px;*/
+/*}*/
+
+/*#content.full {*/
+/*width: 945px;*/
+/*}*/
+
+/*#content ul {*/
+/*display: inline;*/
+/*list-style: square;*/
+/*}*/
+
+/*#content ul li {*/
+/*margin-left: 16px;*/
+/*}*/
+
+/* Post */
+
+/*.post {*/
+/*}*/
+
+/*.post .title, .post .date {*/
+/*padding: 0 25px;*/
+/*}*/
+
+/*.post .title {*/
+/*margin: 0;*/
+/*padding-top: 30px;*/
+/*line-height: normal;*/
+/*font-size: 32px;*/
+/*color: #5A5544;*/
+/*}*/
+
+/*.post .title a {*/
+/*text-decoration: none;*/
+/*color: #5A5544;*/
+/*}*/
+
+/*.post .title a:hover {*/
+/*text-decoration: underline;*/
+/*}*/
+
+/*.post .date {*/
+/*line-height: normal;*/
+/*color: #ACAAA1;*/
+/*}*/
+
+/*.post .entry {*/
+/*margin: 0 25px;*/
+/*padding: 20px 0;*/
+/*border-top: 1px solid #E5E1D8;*/
+/*}*/
+
+/*.post .meta {*/
+/*height: 53px;*/
+/*background: #E5ECDB;*/
+/*border-bottom: 1px solid #DDE5CE;*/
+/*}*/
+
+/*.post .meta p {*/
+/*line-height: normal;*/
+/*}*/
+
+/*.post .meta .tags {*/
+/*float: left;*/
+/*padding: 20px 0 0 25px;*/
+/*}*/
+
+/*.post .meta .links {*/
+/*float: right;*/
+/*padding: 20px 25px 0 0;*/
+/*}*/
+
+/*.post .meta .comments {*/
+/*margin-right: 30px;*/
+/*padding-left: 22px;*/
+/*}*/
+
+/*.post .meta .more {*/
+/*padding-left: 17px;*/
+/*}*/
+
+/* Sidebar */
+
+/*#sidebar {*/
+/*float: right;*/
+/*width: 246px;*/
+/*padding: 14px 50px 0 0;*/
+/*}*/
+
+/*#sidebar ul {*/
+/*margin: 0;*/
+/*padding: 0 0 0 25px;*/
+/*list-style: none;*/
+/*line-height: normal;*/
+/*border-left: 1px solid #E5E1D8;*/
+/*}*/
+
+/*#sidebar li {*/
+/*}*/
+
+/*#sidebar li ul {*/
+/*padding: 0;*/
+/*padding-left: 16px;*/
+/*line-height: 1.8;*/
+/*list-style: square;*/
+/*border: none;*/
+/*}*/
+
+/*#sidebar li li {*/
+/*}*/
+
+/*#sidebar h2 {*/
+/*margin: 0 0 20px 0;*/
+/*padding: 20px 0 5px 0;*/
+/*border-bottom: 1px solid #E5E1D8;*/
+/*}*/
+
+/* 2 Columns */
+
+/*.two-cols {*/
+/*margin: 0 25px;*/
+/*padding: 35px 35px 0 35px;*/
+/*color: #736F6A;*/
+/*}*/
+
+/*.two-cols .col1 {*/
+/*float: left;*/
+/*width: 595px;*/
+/*}*/
+
+/*.two-cols .col2 {*/
+/*float: right;*/
+/*width: 210px;*/
+/*padding: 0 0 0 25px;*/
+/*border-left: 1px solid #423C31;*/
+/*}*/
+
+/*.two-cols h2 {*/
+/*font-size: 26px;*/
+/*color: #FFFFFF;*/
+/*}*/
+
+/*.two-cols a {*/
+/*color: #736F6A;*/
+/*}*/
+
+/* Footer */
+
+/*#footer {*/
+/*padding: 55px 0;*/
+/*}*/
+
+/*#footer p {*/
+/*text-align: center;*/
+/*color: #8F8B83;*/
+/*}*/
+
+/*#footer a {*/
+/*color: #8F8B83;*/
+/*}*/
+
+/*.quote {*/
+/*padding-left: 70px;*/
+/*padding-bottom: 16px;*/
+/*}*/
