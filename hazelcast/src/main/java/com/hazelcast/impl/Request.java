@@ -37,32 +37,32 @@ public class Request {
     public final static long DEFAULT_CALL_ID = -1;
     public final static long DEFAULT_VERSION = -1;
 
-    String name = null;
-    Data key = null;
-    Data value = null;
-    long timeout = DEFAULT_TIMEOUT;
-    long ttl = DEFAULT_TTL;
+    public String name = null;
+    public Data key = null;
+    public Data value = null;
+    public long timeout = DEFAULT_TIMEOUT;
+    public long ttl = DEFAULT_TTL;
 
-    boolean local = true;
-    boolean scheduled = false;
-    ClusterOperation operation;
+    public boolean local = true;
+    public boolean scheduled = false;
+    public ClusterOperation operation;
 
-    Address caller = null;
-    Address lockAddress = null;
+    public Address caller = null;
+    public Address lockAddress = null;
 
-    int redoCount = DEFAULT_REDO_COUNT;
-    int lockCount = DEFAULT_LOCK_COUNT;
-    int lockThreadId = DEFAULT_LOCK_THREAD_ID;
-    int blockId = DEFAULT_BLOCK_ID;
-    long callId = DEFAULT_CALL_ID;
-    long longValue = Long.MIN_VALUE;
-    long version = DEFAULT_VERSION;
-    long txnId = DEFAULT_TXN_ID;
-    long[] indexes;
-    byte[] indexTypes;
-    Object attachment = null;
-    Object response = null;
-    ResponseType responseType = ResponseType.OBJECT;
+    public int redoCount = DEFAULT_REDO_COUNT;
+    public int lockCount = DEFAULT_LOCK_COUNT;
+    public int lockThreadId = DEFAULT_LOCK_THREAD_ID;
+    public int blockId = DEFAULT_BLOCK_ID;
+    public long callId = DEFAULT_CALL_ID;
+    public long longValue = Long.MIN_VALUE;
+    public long version = DEFAULT_VERSION;
+    public long txnId = DEFAULT_TXN_ID;
+    public long[] indexes;
+    public byte[] indexTypes;
+    public Object attachment = null;
+    public Object response = null;
+    public ResponseType responseType = ResponseType.OBJECT;
 
     public boolean hasEnoughTimeToSchedule() {
         return (timeout == -1) || (timeout > 100);
@@ -72,8 +72,9 @@ public class Request {
     public String toString() {
         return "Request{" +
                 "name='" + name + '\'' +
-                "," + operation + 
+                "," + operation +
                 ", redoCount='" + redoCount + '\'' +
+                ", threadId='" + lockThreadId + '\'' +
                 '}';
     }
 
@@ -177,6 +178,23 @@ public class Request {
                 packet.version);
         indexes = packet.indexes;
         indexTypes = packet.indexTypes;
+    }
+
+    public void setFromRecord(Record record) {
+        reset();
+        name = record.getName();
+        version = record.getVersion();
+        blockId = record.getBlockId();
+        lockThreadId = record.getLockThreadId();
+        lockAddress = record.getLockAddress();
+        lockCount = record.getLockCount();
+        longValue = record.getCopyCount();
+        ttl = record.getRemainingTTL();
+        key = record.getKey();
+        value = record.getValue();
+        if (record.getIndexes() != null) {
+            setIndexes(record.getIndexes(), record.getIndexTypes());
+        }
     }
 
     public Request hardCopy() {

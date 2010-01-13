@@ -18,6 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
@@ -51,7 +52,7 @@ public class Record implements MapEntry {
     private int lockThreadId = -1;
     private Address lockAddress = null;
     private int lockCount = 0;
-    private List<BaseManager.ScheduledAction> lsScheduledActions = null;
+    private List<ScheduledAction> lsScheduledActions = null;
     private Map<Address, Boolean> mapListeners = null;
     private int copyCount = 0;
     private Set<Data> lsMultiValues = null; // multimap values
@@ -253,20 +254,20 @@ public class Record implements MapEntry {
         return false;
     }
 
-    public void addScheduledAction(BaseManager.ScheduledAction scheduledAction) {
+    public void addScheduledAction(ScheduledAction scheduledAction) {
         if (getScheduledActions() == null) {
-            setScheduledActions(new ArrayList<BaseManager.ScheduledAction>(1));
+            setScheduledActions(new LinkedList<ScheduledAction>());
         }
         getScheduledActions().add(scheduledAction);
-        logger.log(Level.FINEST, scheduledAction.request.operation + " scheduling " + scheduledAction);
+        logger.log(Level.FINEST, scheduledAction.getRequest().operation + " scheduling " + scheduledAction);
     }
 
     public boolean isRemovable() {
-        return (valueCount() <= 0 && !hasListener() && (getScheduledActions() == null || getScheduledActions().size() == 0) && (getBackupOps() == null || getBackupOps().size() == 0));
+        return !isActive() && (valueCount() <= 0 && !hasListener() && (getScheduledActionCount() == 0) && getBackupOpCount() == 0);
     }
 
     public boolean isEvictable() {
-        return (lockCount == 0 && !hasListener() && (getScheduledActions() == null || getScheduledActions().size() == 0));
+        return (lockCount == 0 && !hasListener() && (getScheduledActionCount()== 0));
     }
 
     public boolean hasListener() {
@@ -310,6 +311,15 @@ public class Record implements MapEntry {
 
     public long getExpirationTime() {
         return expirationTime;
+    }
+
+    public long getRemainingTTL(){
+        if (expirationTime == Long.MAX_VALUE) {
+            return -1;
+        } else {
+            long ttl = expirationTime - System.currentTimeMillis();
+            return (ttl < 0) ? 1 : ttl;
+        }
     }
 
     public void setExpirationTime(long ttl) {
@@ -451,6 +461,10 @@ public class Record implements MapEntry {
         this.lsMultiValues = lsValues;
     }
 
+    public int getBackupOpCount() {
+        return (backupOps == null) ? 0 : backupOps.size();
+    }
+
     public SortedSet<VersionedBackupOp> getBackupOps() {
         return backupOps;
     }
@@ -495,11 +509,11 @@ public class Record implements MapEntry {
         this.lastTouchTime = lastTouchTime;
     }
 
-    public List<BaseManager.ScheduledAction> getScheduledActions() {
+    public List<ScheduledAction> getScheduledActions() {
         return lsScheduledActions;
     }
 
-    public void setScheduledActions(List<BaseManager.ScheduledAction> lsScheduledActions) {
+    public void setScheduledActions(List<ScheduledAction> lsScheduledActions) {
         this.lsScheduledActions = lsScheduledActions;
     }
 

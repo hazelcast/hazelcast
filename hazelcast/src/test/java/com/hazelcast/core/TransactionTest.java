@@ -263,6 +263,20 @@ public class TransactionTest {
     }
 
     @Test
+    public void testMapRemoveAndLock() {
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapRemoveAndLock");
+        TransactionalMap txnMap2 = newTransactionalMapProxy("testMapRemoveAndLock");
+        txnMap.put("Hello", "World");
+        txnMap.remove("Hello");
+        assertTrue(txnMap.tryLock("Hello"));
+        try {
+            Thread.sleep(6000);
+        } catch (InterruptedException e) {
+        }
+        assertEquals(false, txnMap2.tryLock("Hello") );
+    }
+
+    @Test
     public void testTryPut2() {
         IMap map = Hazelcast.getMap("testTryPut");
         map.tryPut("1", "value", 5, TimeUnit.SECONDS);

@@ -22,6 +22,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.impl.*;
 import com.hazelcast.impl.base.Call;
 import com.hazelcast.impl.base.PacketProcessor;
+import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.nio.*;
 
 import java.util.*;
@@ -36,7 +37,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     private final long MAX_NO_HEARTBEAT_MILLIS = ConfigProperty.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
 
-    Set<ScheduledAction> setScheduledActions = new HashSet<ScheduledAction>(1000);
+    private final Set<ScheduledAction> setScheduledActions = new LinkedHashSet<ScheduledAction>(1000);
 
     private final Set<MemberInfo> setJoins = new LinkedHashSet<MemberInfo>(100);
 

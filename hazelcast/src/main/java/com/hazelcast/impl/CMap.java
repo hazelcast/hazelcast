@@ -22,6 +22,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.impl.concurrentmap.MultiData;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
@@ -251,7 +252,7 @@ public class CMap {
         if (record != null && record.isActive() && req.version < record.getVersion()) {
             return false;
         }
-        doBackup(req); 
+        doBackup(req);
         if (record != null) {
             record.setVersion(req.version);
         }
@@ -349,9 +350,7 @@ public class CMap {
                         }
                     }
                 }
-                if (record.isRemovable()) {
-                    markAsRemoved(record);
-                }
+                markAsRemoved(record);
             }
         } else {
             logger.log(Level.SEVERE, "Unknown backup operation " + req.operation);
@@ -557,6 +556,19 @@ public class CMap {
         return true;
     }
 
+    void lock(Request request) {
+        Record rec = concurrentMapManager.ensureRecord(request);
+        if (request.operation == CONCURRENT_MAP_LOCK_RETURN_OLD) {
+            request.value = rec.getValue();
+        }
+        rec.lock(request.lockThreadId, request.lockAddress);
+        rec.setVersion(rec.getVersion() + 1);
+        request.version = rec.getVersion();
+        request.lockCount = rec.getLockCount();
+        markAsActive(rec);
+        request.response = Boolean.TRUE;
+    }
+
     void unlock(Record record) {
         record.setLockThreadId(-1);
         record.setLockCount(0);
@@ -571,7 +583,7 @@ public class CMap {
             record.setLockAddress(null);
             if (record.getScheduledActions() != null) {
                 while (record.getScheduledActions().size() > 0) {
-                    BaseManager.ScheduledAction sa = record.getScheduledActions().remove(0);
+                    ScheduledAction sa = record.getScheduledActions().remove(0);
                     node.clusterManager.deregisterScheduledAction(sa);
                     if (!sa.expired()) {
                         sa.consume();
@@ -586,13 +598,13 @@ public class CMap {
 
     public void onDisconnect(Record record, Address deadAddress) {
         if (record == null || deadAddress == null) return;
-        List<BaseManager.ScheduledAction> lsScheduledActions = record.getScheduledActions();
+        List<ScheduledAction> lsScheduledActions = record.getScheduledActions();
         if (lsScheduledActions != null) {
             if (lsScheduledActions.size() > 0) {
-                Iterator<BaseManager.ScheduledAction> it = lsScheduledActions.iterator();
+                Iterator<ScheduledAction> it = lsScheduledActions.iterator();
                 while (it.hasNext()) {
-                    BaseManager.ScheduledAction sa = it.next();
-                    if (deadAddress.equals(sa.request.caller)) {
+                    ScheduledAction sa = it.next();
+                    if (deadAddress.equals(sa.getRequest().caller)) {
                         node.clusterManager.deregisterScheduledAction(sa);
                         sa.setValid(false);
                         it.remove();
@@ -825,7 +837,7 @@ public class CMap {
 
     void startRemove() {
         long now = System.currentTimeMillis();
-        if (setRemovedRecords.size() > 10) {
+        if (setRemovedRecords.size() > 0) {
             Iterator<Record> itRemovedRecords = setRemovedRecords.iterator();
             while (itRemovedRecords.hasNext()) {
                 Record record = itRemovedRecords.next();
@@ -942,9 +954,6 @@ public class CMap {
             return false;
         }
         //The record set as removable, also it is not "really" removed yet. It should be considered as removed
-        if (record.isRemovable()) {
-            return false;
-        }
         if (req.txnId != -1) {
             unlock(record);
         }
@@ -968,9 +977,7 @@ public class CMap {
         }
         req.version = record.getVersion();
         req.longValue = record.getCopyCount();
-        if (record.isRemovable()) {
-            markAsRemoved(record);
-        }
+        markAsRemoved(record);
         return true;
     }
 
@@ -1014,9 +1021,7 @@ public class CMap {
         if (req.txnId != -1) {
             unlock(record);
         }
-        if (record.isRemovable()) {
-            markAsRemoved(record);
-        }
+        markAsRemoved(record);
         req.clearForResponse();
         req.version = record.getVersion();
         req.longValue = record.getCopyCount();
@@ -1069,7 +1074,7 @@ public class CMap {
     }
 
     boolean shouldRemove(Record record, long now) {
-        return !record.isActive() && ((now - record.getRemoveTime()) > removeDelayMillis);
+        return record.isRemovable() && ((now - record.getRemoveTime()) > removeDelayMillis);
     }
 
     void markAsRemoved(Record record) {

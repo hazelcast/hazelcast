@@ -148,14 +148,17 @@ public final class ConcurrentMapManager extends BaseManager {
     void logState() {
         long now = System.currentTimeMillis();
         if (LOG_STATE && ((now - lastLogStateTime) > 30000)) {
-            StringBuffer sbState = new StringBuffer("State");
+            StringBuffer sbState = new StringBuffer("State[" + new Date(now));
+            sbState.append("]======================\n");
+            sbState.append(node.clusterManager);
+            sbState.append("\n");
             for (Block block : blocks) {
                 sbState.append(block);
                 sbState.append("\n");
             }
             Collection<Call> calls = mapCalls.values();
             for (Call call : calls) {
-                sbState.append (call);
+                sbState.append(call);
                 sbState.append("\n");
             }
             logger.log(Level.INFO, sbState.toString());
@@ -306,7 +309,7 @@ public final class ConcurrentMapManager extends BaseManager {
     class MMigrate extends MBackupAwareOp {
 
         public boolean migrateMulti(Record record, Data value) {
-            copyRecordToRequest(record, request, true);
+            request.setFromRecord(record);
             request.value = value;
             request.operation = CONCURRENT_MAP_MIGRATE_RECORD;
             request.setBooleanRequest();
@@ -317,7 +320,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public boolean migrate(Record record) {
-            copyRecordToRequest(record, request, true);
+            request.setFromRecord(record);
             if (request.key == null) throw new RuntimeException("req.key is null " + request.redoCount);
             request.operation = CONCURRENT_MAP_MIGRATE_RECORD;
             request.setBooleanRequest();
@@ -789,7 +792,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class MBackupOp extends MBackupAwareOp {
         public void backup(Record record) {
-            copyRecordToRequest(record, request, true);
+            request.setFromRecord(record);
             doOp();
             getResultAsBoolean();
             target = thisAddress;
@@ -1343,26 +1346,6 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    private void copyRecordToRequest(Record record, Request request, boolean includeKeyValue) {
-        request.name = record.getName();
-        request.version = record.getVersion();
-        request.blockId = record.getBlockId();
-        request.lockThreadId = record.getLockThreadId();
-        request.lockAddress = record.getLockAddress();
-        request.lockCount = record.getLockCount();
-        request.longValue = record.getCopyCount();
-        if (includeKeyValue) {
-            request.key = record.getKey();
-            if (record.getValue() != null) {
-                request.value = record.getValue();
-            }
-        }
-        if (record.getIndexes() != null) {
-            CMap cmap = getMap(record.getName());
-            request.setIndexes(record.getIndexes(), cmap.indexTypes);
-        }
-    }
-
     boolean rightRemoteTarget(Packet packet) {
         boolean right = thisAddress.equals(getKeyOwner(packet.key));
         if (!right) {
@@ -1562,15 +1545,8 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         void doOperation(Request request) {
-            Record rec = ensureRecord(request);
-            if (request.operation == CONCURRENT_MAP_LOCK_RETURN_OLD) {
-                request.value = rec.getValue();
-            }
-            rec.lock(request.lockThreadId, request.lockAddress);
-            rec.setVersion(rec.getVersion() + 1);
-            request.version = rec.getVersion();
-            request.lockCount = rec.getLockCount();
-            request.response = Boolean.TRUE;
+            CMap cmap = getOrCreateMap(request.name);
+            cmap.lock(request);
         }
     }
 
@@ -1907,8 +1883,6 @@ public final class ConcurrentMapManager extends BaseManager {
             }
         }
     }
-
-
 
     public static class BlockOwners extends AbstractRemotelyProcessable {
         List<Block> lsBlocks = new ArrayList<Block>(BLOCK_COUNT);

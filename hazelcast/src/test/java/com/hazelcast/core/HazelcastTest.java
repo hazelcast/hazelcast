@@ -435,9 +435,8 @@ public class HazelcastTest {
     @Test
     public void testSetRemove() {
         ISet<String> set = Hazelcast.getSet("testSetRemove");
-        boolean added = set.add("HelloWorld");
-        assertTrue(added);
-        set.remove("HelloWorld");
+        assertTrue(set.add("HelloWorld"));
+        assertTrue(set.remove("HelloWorld"));
         assertEquals(0, set.size());
         assertTrue(set.add("HelloWorld"));
         assertFalse(set.add("HelloWorld"));

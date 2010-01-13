@@ -25,6 +25,7 @@ import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
 import com.hazelcast.impl.base.PacketProcessor;
+import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
@@ -228,17 +229,17 @@ public class BlockingQueueManager extends BaseManager {
                     }
                 }
             }
-            // packetalidate the dead member's scheduled actions
+            // validate the dead member's scheduled actions
             List<ScheduledPollAction> scheduledPollActions = q.lsScheduledPollActions;
             for (ScheduledPollAction scheduledAction : scheduledPollActions) {
-                if (deadAddress.equals(scheduledAction.request.caller)) {
+                if (deadAddress.equals(scheduledAction.getRequest().caller)) {
                     scheduledAction.setValid(false);
                     node.clusterManager.deregisterScheduledAction(scheduledAction);
                 }
             }
             List<ScheduledOfferAction> scheduledOfferActions = q.lsScheduledOfferActions;
             for (ScheduledOfferAction scheduledAction : scheduledOfferActions) {
-                if (deadAddress.equals(scheduledAction.request.caller)) {
+                if (deadAddress.equals(scheduledAction.getRequest().caller)) {
                     scheduledAction.setValid(false);
                     node.clusterManager.deregisterScheduledAction(scheduledAction);
                 }
