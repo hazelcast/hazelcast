@@ -27,7 +27,7 @@ public enum ConfigProperty {
     BLOCKING_QUEUE_BLOCK_SIZE("hazelcast.queue.block.size", "1000"),
     REMOVE_DELAY_SECONDS("hazelcast.map.remove.delay.seconds", "5"),
     PACKET_VERSION("hazelcast.packet.version", "2"),
-    LOG_STATE("hazelcast.log.state", "true");
+    LOG_STATE("hazelcast.log.state", "false");
 
     private final String name;
     private final String defaultValue;

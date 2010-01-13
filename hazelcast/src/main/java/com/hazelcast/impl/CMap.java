@@ -273,7 +273,7 @@ public class CMap {
             record.setActive();
             if (req.version > record.getVersion() + 1) {
                 Request reqCopy = new Request();
-                reqCopy.setFromRequest(req, true);
+                reqCopy.setFromRequest(req);
                 req.key = null;
                 req.value = null;
                 record.addBackupOp(new VersionedBackupOp(this, reqCopy));

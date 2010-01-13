@@ -18,8 +18,8 @@
 package com.hazelcast.examples;
 
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.IMap;
 
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
@@ -32,18 +32,26 @@ public class SimpleMapTest {
 
     public static void main(String[] args) {
         int threadCount = 40;
+        final boolean testLocks = false;
         final Stats stats = new Stats();
         ExecutorService es = Executors.newFixedThreadPool(threadCount);
         for (int i = 0; i < threadCount; i++) {
             es.submit(new Runnable() {
                 public void run() {
-                    Map<String, byte[]> map = Hazelcast.getMap("default");
+                    IMap<String, byte[]> map = Hazelcast.getMap("default");
                     while (true) {
                         int key = (int) (Math.random() * ENTRY_COUNT);
                         int operation = ((int) (Math.random() * 100)) % 10;
                         if (operation < 4) {
                             map.put(String.valueOf(key), new byte[VALUE_SIZE]);
                             stats.mapPuts.incrementAndGet();
+                        } else if (testLocks && operation < 7) {
+                            map.lock(String.valueOf(key));
+                            stats.mapLocks.incrementAndGet();
+                            map.put(String.valueOf(key), new byte[VALUE_SIZE]);
+                            stats.mapPuts.incrementAndGet();
+                            map.unlock(String.valueOf(key));
+                            stats.mapUnlocks.incrementAndGet();
                         } else if (operation < 8) {
                             map.get(String.valueOf(key));
                             stats.mapGets.incrementAndGet();
@@ -76,6 +84,8 @@ public class SimpleMapTest {
 
     public static class Stats {
         public AtomicLong mapPuts = new AtomicLong();
+        public AtomicLong mapLocks = new AtomicLong();
+        public AtomicLong mapUnlocks = new AtomicLong();
         public AtomicLong mapGets = new AtomicLong();
         public AtomicLong mapRemoves = new AtomicLong();
 
@@ -83,20 +93,24 @@ public class SimpleMapTest {
             long mapPutsNow = mapPuts.getAndSet(0);
             long mapGetsNow = mapGets.getAndSet(0);
             long mapRemovesNow = mapRemoves.getAndSet(0);
+            long mapLocksNow = mapLocks.getAndSet(0);
+            long mapUnlocksNow = mapUnlocks.getAndSet(0);
             Stats newOne = new Stats();
             newOne.mapPuts.set(mapPutsNow);
             newOne.mapGets.set(mapGetsNow);
             newOne.mapRemoves.set(mapRemovesNow);
+            newOne.mapLocks.set(mapLocksNow);
+            newOne.mapUnlocks.set(mapUnlocksNow);
             return newOne;
         }
 
         public long total() {
-            return mapPuts.get() + mapGets.get() + mapRemoves.get();
+            return mapPuts.get() + mapGets.get() + mapRemoves.get() + mapLocks.get() + mapUnlocks.get();
         }
 
         public String toString() {
             return "total= " + total() + ", puts:" + mapPuts.get() + ", gets:" + mapGets.get()
-                    + ", remove:" + mapRemoves.get();
+                    + ", remove:" + mapRemoves.get() + ", lock:" + mapLocks.get() + ", unlock:" + mapUnlocks.get();
         }
     }
 }

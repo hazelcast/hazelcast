@@ -36,14 +36,14 @@ public class GeneralTest {
         request.value = value;
         request.name = "somename";
         Request hardCopy = new Request();
-        hardCopy.setFromRequest(request, true);
+        hardCopy.setFromRequest(request);
         assertEquals(request.key, hardCopy.key);
         assertEquals(request.value, hardCopy.value);
         assertTrue(hardCopy.key.size() > 0);
         assertTrue(hardCopy.value.size() > 0);
         assertEquals("value", toObject(hardCopy.value));
         hardCopy = new Request();
-        hardCopy.setFromRequest(request, true);
+        hardCopy.setFromRequest(request);
         assertEquals(request.key, hardCopy.key);
         assertEquals(request.value, hardCopy.value);
         assertTrue(hardCopy.key.size() > 0);

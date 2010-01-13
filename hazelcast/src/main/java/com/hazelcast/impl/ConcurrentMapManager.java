@@ -352,13 +352,6 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MAddRemoveKeyListener extends MTargetAwareOp {
-        public boolean addRemoveListener(boolean add, String name, Object key) {
-            ClusterOperation operation = (add) ? ClusterOperation.ADD_LISTENER : ClusterOperation.REMOVE_LISTENER;
-            return booleanCall(operation, name, key, null, -1, -1);
-        }
-    }
-
     class MGet extends MTargetAwareOp {
         Object key = null;
         MapNearCache cache = null;
@@ -761,7 +754,7 @@ public final class ConcurrentMapManager extends BaseManager {
             reset();
             this.owner = owner;
             this.distance = distance;
-            request.setFromRequest(reqBackup, hardCopy);
+            request.setFromRequest(reqBackup);
             request.operation = operation;
             request.caller = thisAddress;
             request.setBooleanRequest();
@@ -837,7 +830,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 backupCount = map.getBackupCount();
                 backupCount = Math.min(backupCount, lsMembers.size());
                 if (backupCount > 0) {
-                    reqBackup.setFromRequest(request, true);
+                    reqBackup.setFromRequest(request);
                 }
             }
         }

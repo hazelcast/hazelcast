@@ -118,7 +118,6 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Insta
 
     public void postDeregister() {
         // Required by MBeanRegistration interface
-        ;
     }
 
     public void instanceCreated(InstanceEvent event) {
@@ -126,7 +125,9 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Insta
             logger.log(Level.FINE, "Received created notification {0} {1}",
                     new String[]{event.getInstance().getInstanceType().toString(), event.getInstance().toString()});
         }
-        creationStats.addEvent();
+        if (creationStats != null) {
+            creationStats.addEvent();
+        }
         registerInstance(event.getInstance());
     }
 
@@ -134,7 +135,9 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Insta
         if (logger.isLoggable(Level.FINE)) {
             logger.log(Level.FINE, "Received destroyed notification " + event.getInstance().toString());
         }
-        destructionStats.addEvent();
+        if (destructionStats != null) {
+            destructionStats.addEvent();
+        }
         unregisterInstance(event.getInstance());
     }
 

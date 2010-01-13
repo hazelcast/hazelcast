@@ -158,7 +158,7 @@ public class Request {
                 DEFAULT_VERSION);
     }
 
-    public void setFromRequest(Request req, boolean hardCopy) {
+    public void setFromRequest(Request req) {
         reset();
         set(req.local, req.operation, req.name, req.key, req.value, req.blockId, req.timeout, req.ttl,
                 req.txnId, req.callId, req.lockThreadId, req.lockAddress, req.lockCount,
@@ -199,7 +199,7 @@ public class Request {
 
     public Request hardCopy() {
         final Request copy = new Request();
-        copy.setFromRequest(this, true);
+        copy.setFromRequest(this);
         return copy;
     }
 

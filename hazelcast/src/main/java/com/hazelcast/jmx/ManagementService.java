@@ -18,7 +18,6 @@
 package com.hazelcast.jmx;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.impl.ExecutorManager;
 import com.hazelcast.impl.ExecutorThreadFactory;
 import com.hazelcast.impl.FactoryImpl;
 
@@ -49,21 +48,29 @@ public class ManagementService {
     private final static Logger logger = Logger.getLogger(ManagementService.class.getName());
 
     public final static String ENABLE_JMX = "hazelcast.jmx";
+    
+    public final static String HAZELCAST_JMX_DETAILED = "hazelcast.jmx.detailed";
 
     private volatile static ScheduledThreadPoolExecutor statCollectors;
 
     private static boolean started = false;
 
-    private static boolean init() {
-        if (started) {
-            return true;
+    private static boolean showDetail = false;
+
+    private static synchronized void start() {
+        String jmxProperty = System.getProperty(ENABLE_JMX);
+        if ("FALSE".equalsIgnoreCase(jmxProperty)) {
+            return;
         }
-        if (!("TRUE".equalsIgnoreCase(System.getProperty(ENABLE_JMX))
+        if (!("TRUE".equalsIgnoreCase(jmxProperty)
                 || System.getProperties().containsKey("com.sun.management.jmxremote"))) {
             // JMX disabled
-            return false;
+            return;
         }
-        logger.log(Level.INFO, "JMX agent enabled");
+        if ("TRUE".equalsIgnoreCase(System.getProperty(HAZELCAST_JMX_DETAILED))) {
+            showDetail = true;
+        }
+        logger.log(Level.INFO, "Hazelcast JMX agent enabled");
         // Scheduler of the statistics collectors
         if (showDetails()) {
             if (statCollectors == null) {
@@ -71,14 +78,16 @@ public class ManagementService {
             }
         }
         started = true;
-        return true;
     }
 
     /**
      * Register all the MBeans.
      */
     public static synchronized void register(FactoryImpl instance, Config config) {
-        if (!init()) {
+        if (!started) {
+            start();
+        }
+        if (!started) {
             return;
         }
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
@@ -100,6 +109,9 @@ public class ManagementService {
      * Unregister a cluster instance.
      */
     public static synchronized void unregister(FactoryImpl instance) {
+        if (!started) {
+            return;
+        }
         // Remove all entries register for the cluster
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         Set<ObjectName> entries;
@@ -121,6 +133,9 @@ public class ManagementService {
      * Stop the management service
      */
     public static synchronized void shutdown() {
+        if (!started) {
+            return;
+        }
         // Remove all registered entries
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         Set<ObjectName> entries;
@@ -149,7 +164,7 @@ public class ManagementService {
      * For forward compatibility, return always true.
      */
     protected static boolean showDetails() {
-        return true;
+        return showDetail;
     }
 
     protected static class ScheduledCollector implements Runnable, StatisticsCollector {
