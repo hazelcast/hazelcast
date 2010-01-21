@@ -18,7 +18,6 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
-import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Transaction;
@@ -50,9 +49,9 @@ import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public final class ConcurrentMapManager extends BaseManager {
-    static final int BLOCK_COUNT = ConfigProperty.CONCURRENT_MAP_BLOCK_COUNT.getInteger(271);
-    static long GLOBAL_REMOVE_DELAY_MILLIS = ConfigProperty.REMOVE_DELAY_SECONDS.getLong() * 1000L;
-    static boolean LOG_STATE = ConfigProperty.LOG_STATE.getBoolean();
+    final int BLOCK_COUNT;
+    final long GLOBAL_REMOVE_DELAY_MILLIS;
+    final boolean LOG_STATE;
     long lastLogStateTime = System.currentTimeMillis();
     final Block[] blocks;
     final ConcurrentMap<String, CMap> maps;
@@ -64,6 +63,9 @@ public final class ConcurrentMapManager extends BaseManager {
 
     ConcurrentMapManager(Node node) {
         super(node);
+        BLOCK_COUNT = node.groupProperties.CONCURRENT_MAP_BLOCK_COUNT.getInteger();
+        GLOBAL_REMOVE_DELAY_MILLIS = node.groupProperties.REMOVE_DELAY_SECONDS.getLong() * 1000L;
+        LOG_STATE = node.groupProperties.LOG_STATE.getBoolean();
         blocks = new Block[BLOCK_COUNT];
         maps = new ConcurrentHashMap<String, CMap>(10);
         mapLocallyOwnedMaps = new ConcurrentHashMap<String, LocallyOwnedMap>(10);
@@ -1878,7 +1880,7 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     public static class BlockOwners extends AbstractRemotelyProcessable {
-        List<Block> lsBlocks = new ArrayList<Block>(BLOCK_COUNT);
+        List<Block> lsBlocks = new ArrayList<Block>(1000);
 
         public void addBlock(Block block) {
             lsBlocks.add(block);

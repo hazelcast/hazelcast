@@ -25,8 +25,8 @@ public final class ByteUtil {
     /**
      * Array of bit positions.
      */
-    private static final byte[] POWERS = new byte[] {
-        1, 2, 4, 8, 16, 32, 64, -128
+    private static final byte[] POWERS = new byte[]{
+            1, 2, 4, 8, 16, 32, 64, -128
     };
 
     /**
@@ -40,7 +40,7 @@ public final class ByteUtil {
      * Sets a bit to 1.
      *
      * @param number the original byte value
-     * @param index the bit to set
+     * @param index  the bit to set
      * @return the modified byte value
      */
     public static byte setTrue(final byte number, final int index) {
@@ -51,7 +51,7 @@ public final class ByteUtil {
      * Clears a bit, by setting it to 0.
      *
      * @param number the original byte value
-     * @param index the bit to set
+     * @param index  the bit to set
      * @return the modified byte value
      */
     public static byte setFalse(final byte number, final int index) {
@@ -62,7 +62,7 @@ public final class ByteUtil {
      * Checks if the index-th bit of number is set.
      *
      * @param number the byte value
-     * @param index the bit to check
+     * @param index  the bit to check
      * @return true if the bit is set, false otherwise
      */
     public static boolean isTrue(final byte number, final int index) {
@@ -73,11 +73,10 @@ public final class ByteUtil {
      * Checks if the index-th bit of number is NOT set.
      *
      * @param number the byte value
-     * @param index the bit to check
+     * @param index  the bit to check
      * @return true if the bit is NOT set, false otherwise
      */
     public static boolean isFalse(final byte number, final int index) {
         return (number & (POWERS[index])) == 0;
     }
-
 }

@@ -273,7 +273,7 @@ public class TransactionTest {
             Thread.sleep(6000);
         } catch (InterruptedException e) {
         }
-        assertEquals(false, txnMap2.tryLock("Hello") );
+        assertEquals(false, txnMap2.tryLock("Hello"));
     }
 
     @Test

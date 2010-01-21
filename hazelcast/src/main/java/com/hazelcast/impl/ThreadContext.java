@@ -47,14 +47,14 @@ public final class ThreadContext {
 
     private final ObjectPool<Packet> packetCache;
 
-    private final static ConcurrentMap<String, BlockingQueue> mapGlobalQueues = new ConcurrentHashMap<String, BlockingQueue>();
+    private final static ConcurrentMap<String, BlockingQueue> mapGlobalPools = new ConcurrentHashMap<String, BlockingQueue>();
 
     private final ConcurrentMap<FactoryImpl, CallCache> mapCallCacheForFactories = new ConcurrentHashMap<FactoryImpl, CallCache>();
 
     private final static AtomicInteger newThreadId = new AtomicInteger();
 
     static {
-        mapGlobalQueues.put("PacketCache", new ArrayBlockingQueue(2000));
+        mapGlobalPools.put("PacketCache", new ArrayBlockingQueue(2000));
     }
 
     private ThreadContext() {
@@ -214,7 +214,7 @@ public final class ThreadContext {
             super();
             this.name = name;
             this.maxSize = maxSize;
-            this.objectQueue = mapGlobalQueues.get(name);
+            this.objectQueue = mapGlobalPools.get(name);
             if (maxSize > 0) {
                 this.localPool = new SimpleBoundedQueue<E>(maxSize);
             } else {

@@ -47,7 +47,7 @@ public class MapMigrator implements Runnable {
     public MapMigrator(ConcurrentMapManager concurrentMapManager) {
         this.concurrentMapManager = concurrentMapManager;
         this.node = concurrentMapManager.node;
-        this.BLOCK_COUNT = ConcurrentMapManager.BLOCK_COUNT;
+        this.BLOCK_COUNT = concurrentMapManager.BLOCK_COUNT;
         this.blocks = concurrentMapManager.blocks;
         this.thisAddress = concurrentMapManager.thisAddress;
     }

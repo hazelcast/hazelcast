@@ -267,7 +267,7 @@ public class Record implements MapEntry {
     }
 
     public boolean isEvictable() {
-        return (lockCount == 0 && !hasListener() && (getScheduledActionCount()== 0));
+        return (lockCount == 0 && !hasListener() && (getScheduledActionCount() == 0));
     }
 
     public boolean hasListener() {
@@ -313,7 +313,7 @@ public class Record implements MapEntry {
         return expirationTime;
     }
 
-    public long getRemainingTTL(){
+    public long getRemainingTTL() {
         if (expirationTime == Long.MAX_VALUE) {
             return -1;
         } else {

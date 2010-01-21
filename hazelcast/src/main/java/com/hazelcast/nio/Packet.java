@@ -17,9 +17,9 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Constants;
+import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.util.ByteUtil;
 
@@ -85,7 +85,7 @@ public final class Packet {
 
     public boolean client = false;
 
-    public static final byte PACKET_VERSION = ConfigProperty.PACKET_VERSION.getByte((byte) 2);
+    public static final byte PACKET_VERSION = GroupProperties.PACKET_VERSION.getByte();
 
     private static final Logger logger = Logger.getLogger(Packet.class.getName());
 

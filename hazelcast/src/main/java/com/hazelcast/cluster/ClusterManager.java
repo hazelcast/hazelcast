@@ -17,7 +17,6 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.*;
 import com.hazelcast.impl.base.Call;
@@ -33,9 +32,9 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public final class ClusterManager extends BaseManager implements ConnectionListener {
 
-    private final long WAIT_MILLIS_BEFORE_JOIN = ConfigProperty.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
+    private final long WAIT_MILLIS_BEFORE_JOIN;
 
-    private final long MAX_NO_HEARTBEAT_MILLIS = ConfigProperty.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
+    private final long MAX_NO_HEARTBEAT_MILLIS;
 
     private final Set<ScheduledAction> setScheduledActions = new LinkedHashSet<ScheduledAction>(1000);
 
@@ -49,6 +48,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     public ClusterManager(final Node node) {
         super(node);
+        WAIT_MILLIS_BEFORE_JOIN = node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
+        MAX_NO_HEARTBEAT_MILLIS = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
         node.clusterService.registerPeriodicRunnable(new Runnable() {
             public void run() {
                 heartBeater();

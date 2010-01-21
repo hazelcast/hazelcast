@@ -18,7 +18,6 @@
 package com.hazelcast.impl.base;
 
 import com.hazelcast.impl.Request;
-import com.hazelcast.nio.Packet;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -43,7 +42,6 @@ public abstract class ScheduledAction {
     }
 
     public abstract boolean consume();
-
 
     public boolean expired() {
         return !valid || timeout != -1 && System.currentTimeMillis() >= getExpireTime();

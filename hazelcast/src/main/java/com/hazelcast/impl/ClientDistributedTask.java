@@ -18,10 +18,9 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.Member;
 
-import java.io.*;
+import java.io.Serializable;
 import java.util.Set;
 import java.util.concurrent.Callable;
-
 
 public class ClientDistributedTask<V> implements Serializable, Callable {
     private Callable<V> callable;

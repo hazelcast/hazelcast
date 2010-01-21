@@ -17,7 +17,10 @@
 
 package com.hazelcast.monitor;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.Member;
 
 import java.io.Serializable;
 import java.util.concurrent.Callable;
@@ -41,10 +44,9 @@ public class DistributedMapStatsCallable implements Callable<DistributedMapStats
         hzInstance = hazelcastInstance;
     }
 
-    public static class MemberMapStat implements Serializable{
+    public static class MemberMapStat implements Serializable {
         Member member;
         LocalMapStats localMapStats;
-
 
         public MemberMapStat(Member member, LocalMapStats localMapStats) {
             this.member = member;

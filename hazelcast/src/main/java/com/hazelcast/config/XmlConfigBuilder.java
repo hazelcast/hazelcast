@@ -302,7 +302,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();
             final String name = n.getNodeName().toLowerCase();
-            System.setProperty(name, value);
+            config.setProperty(name, value);
         }
     }
 

@@ -36,5 +36,4 @@ public interface Call extends Processable {
     long getFirstEnqueueTime();
 
     int getEnqueueCount();
-
 }

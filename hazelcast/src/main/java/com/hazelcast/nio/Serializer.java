@@ -17,8 +17,8 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.ThreadContext;
 
 import java.io.IOException;
@@ -47,7 +47,7 @@ public final class Serializer {
 
     private static final byte SERIALIZER_TYPE_BIG_INTEGER = 8;
 
-    private static TypeSerializer[] typeSerizalizers = new TypeSerializer[9];
+    private static TypeSerializer[] typeSerializer = new TypeSerializer[9];
 
     static {
         registerTypeSerializer(new ObjectSerializer());
@@ -94,7 +94,7 @@ public final class Serializer {
             typeId = SERIALIZER_TYPE_BIG_INTEGER;
         }
         bbos.writeByte(typeId);
-        typeSerizalizers[typeId].write(bbos, obj);
+        typeSerializer[typeId].write(bbos, obj);
         bbos.flush();
         Data data = new Data(bbos.getBytes(), bbos.size());
         data.postRead();
@@ -107,7 +107,7 @@ public final class Serializer {
         try {
             bbis.set(data.buffer.array(), data.size());
             byte typeId = bbis.readByte();
-            Object obj = typeSerizalizers[typeId].read(bbis);
+            Object obj = typeSerializer[typeId].read(bbis);
             if (obj instanceof HazelcastInstanceAware) {
                 ((HazelcastInstanceAware) obj).setHazelcastInstance(ThreadContext.get().getCurrentFactory());
             }
@@ -119,7 +119,7 @@ public final class Serializer {
     }
 
     private static void registerTypeSerializer(TypeSerializer ts) {
-        typeSerizalizers[ts.getTypeId()] = ts;
+        typeSerializer[ts.getTypeId()] = ts;
     }
 
     static class LongSerializer implements TypeSerializer<Long> {
@@ -264,7 +264,7 @@ public final class Serializer {
     }
 
     static class ObjectSerializer implements TypeSerializer<Object> {
-        static final boolean shared = ConfigProperty.SERIALIZER_SHARED.getBoolean(false);
+        static final boolean shared = GroupProperties.SERIALIZER_SHARED.getBoolean();
 
         public byte getTypeId() {
             return SERIALIZER_TYPE_OBJECT;

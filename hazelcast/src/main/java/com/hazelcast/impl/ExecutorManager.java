@@ -94,7 +94,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 CallContext callContext = mapThreadCallContexts.get(t);
                 if (callContext == null) {
                     callContext = new CallContext(threadContext.createNewThreadId(), false);
-                    mapThreadCallContexts.put (t, callContext);
+                    mapThreadCallContexts.put(t, callContext);
                 }
                 threadContext.setCurrentFactory(node.factory);
                 threadContext.setCallContext(callContext);
@@ -109,7 +109,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 CallContext callContext = mapThreadCallContexts.get(t);
                 if (callContext == null) {
                     callContext = new CallContext(threadContext.createNewThreadId(), false);
-                    mapThreadCallContexts.put (t, callContext);
+                    mapThreadCallContexts.put(t, callContext);
                 }
                 threadContext.setCurrentFactory(node.factory);
                 threadContext.setCallContext(callContext);

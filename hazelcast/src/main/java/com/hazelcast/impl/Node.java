@@ -19,7 +19,6 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.*;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.config.Interfaces;
 import com.hazelcast.config.Join;
 import com.hazelcast.nio.*;
@@ -84,6 +83,8 @@ public class Node {
 
     public final Config config;
 
+    public final GroupProperties groupProperties;
+
     public final ThreadGroup threadGroup;
 
     final Address address;
@@ -104,6 +105,7 @@ public class Node {
         this.threadGroup = new ThreadGroup(factory.getName());
         this.factory = factory;
         this.config = config;
+        this.groupProperties = new GroupProperties(config);
         superClient = config.isSuperClient();
         localNodeType = (superClient) ? NodeType.SUPER_CLIENT : NodeType.MEMBER;
         String version = "unknown";
@@ -325,7 +327,7 @@ public class Node {
             try {
                 if (isActive() && !completelyShutdown) {
                     completelyShutdown = true;
-                    if (ConfigProperty.SHUTDOWNHOOK_ENABLED.getBoolean()) {
+                    if (groupProperties.SHUTDOWNHOOK_ENABLED.getBoolean()) {
                         shutdown();
                     }
                 }

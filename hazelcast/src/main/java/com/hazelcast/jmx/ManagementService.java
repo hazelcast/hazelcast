@@ -48,7 +48,7 @@ public class ManagementService {
     private final static Logger logger = Logger.getLogger(ManagementService.class.getName());
 
     public final static String ENABLE_JMX = "hazelcast.jmx";
-    
+
     public final static String HAZELCAST_JMX_DETAILED = "hazelcast.jmx.detailed";
 
     private volatile static ScheduledThreadPoolExecutor statCollectors;

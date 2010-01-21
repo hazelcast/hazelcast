@@ -17,7 +17,6 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
@@ -42,13 +41,14 @@ import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 
 public class BlockingQueueManager extends BaseManager {
-    private static final int BLOCK_SIZE = ConfigProperty.BLOCKING_QUEUE_BLOCK_SIZE.getInteger(1000);
+    private final int BLOCK_SIZE;
     private final Map<String, Q> mapQueues = new HashMap<String, Q>(10);
     private final Map<Long, List<Data>> mapTxnPolledElements = new HashMap<Long, List<Data>>(10);
     private int nextIndex = 0;
 
     BlockingQueueManager(Node node) {
         super(node);
+        BLOCK_SIZE = node.groupProperties.BLOCKING_QUEUE_BLOCK_SIZE.getInteger();
         node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_POLL, new PacketProcessor() {
             public void process(Packet packet) {
                 try {

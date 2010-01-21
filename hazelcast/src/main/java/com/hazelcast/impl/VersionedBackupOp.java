@@ -53,5 +53,4 @@ public class VersionedBackupOp implements Runnable, Comparable {
     public int hashCode() {
         return (int) (request.version ^ (request.version >>> 32));
     }
-
 }
