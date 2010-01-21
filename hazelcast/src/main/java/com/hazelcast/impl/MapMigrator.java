@@ -91,6 +91,7 @@ public class MapMigrator implements Runnable {
                     count++;
                 }
             }
+            Collections.shuffle(lsBlocksToMigrate);
         }
     }
 
@@ -134,14 +135,15 @@ public class MapMigrator implements Runnable {
     Queue qMasterMigratorTasks = new ConcurrentLinkedQueue();
 
     public void run() {
-        if (!concurrentMapManager.isMaster()) return;
-        if (concurrentMapManager.getMembers().size() < 2) return;
+        removeUnknownRecords();
         long now = System.currentTimeMillis();
         if (now > nextMigrationMillis) {
+            nextMigrationMillis = now + MIGRATION_INTERVAL_MILLIS;
+            if (!concurrentMapManager.isMaster()) return;
+            if (concurrentMapManager.getMembers().size() < 2) return;
             final MasterMigratorTask task = new MasterMigratorTask();
             qMasterMigratorTasks.offer(task);
             node.executorManager.executeMigrationTask(task);
-            nextMigrationMillis = now + MIGRATION_INTERVAL_MILLIS;
         }
     }
 
