@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigProperty;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.BlockingQueueManager.Offer;
@@ -80,6 +81,8 @@ public class FactoryImpl implements HazelcastInstance {
 
     private static boolean jmxRegistered = false;
 
+    private final static int FIRST_MEMBER_WAIT_SECONDS = ConfigProperty.FIRST_MEMBER_WAIT_SECONDS.getInteger();
+
     public static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config) {
         synchronized (factoryLock) {
             String name = "_hzInstance_" + nextFactoryId++;
@@ -93,9 +96,9 @@ public class FactoryImpl implements HazelcastInstance {
                 ManagementService.register(factory, config);
                 jmxRegistered = true;
             }
-            if (false && factory.node.getClusterImpl().getMembers().size() == 1) {
+            if (FIRST_MEMBER_WAIT_SECONDS > 0 && factory.node.getClusterImpl().getMembers().size() == 1) {
                 try {
-                    Thread.sleep(7000);
+                    Thread.sleep( FIRST_MEMBER_WAIT_SECONDS * 1000);
                 } catch (InterruptedException e) {
                 }
             }
