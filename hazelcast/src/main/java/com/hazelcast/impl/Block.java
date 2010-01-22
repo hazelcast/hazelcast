@@ -29,6 +29,7 @@ public class Block implements DataSerializable {
     private Address owner;
     private Address migrationAddress;
     private int hash = Integer.MIN_VALUE;
+    private boolean migrationStarted = false;
 
     public Block() {
     }
@@ -47,6 +48,14 @@ public class Block implements DataSerializable {
         return blockId;
     }
 
+    public boolean isMigrationStarted() {
+        return migrationStarted;
+    }
+
+    public void setMigrationStarted(boolean migrationStarted) {
+        this.migrationStarted = migrationStarted;
+    }
+
     public Address getOwner() {
         return owner;
     }
@@ -62,6 +71,9 @@ public class Block implements DataSerializable {
 
     public void setMigrationAddress(Address migrationAddress) {
         this.migrationAddress = migrationAddress;
+        if (migrationAddress == null) {
+            migrationStarted = false;
+        }
     }
 
     public boolean isMigrating() {

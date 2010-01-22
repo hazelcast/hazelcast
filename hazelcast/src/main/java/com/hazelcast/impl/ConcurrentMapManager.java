@@ -1238,47 +1238,69 @@ public final class ConcurrentMapManager extends BaseManager {
         void handleBlocks(BlockOwners blockOwners) {
             List<Block> lsBlocks = blockOwners.lsBlocks;
             for (Block block : lsBlocks) {
-                if (getNumberOfStorageMembers() == 0) {
-                    Block blockReal = getOrCreateBlock(block.getBlockId());
-                    blockReal.setOwner(block.getOwner());
-                } else {
-                    if (block.getOwner() == null) {
-                        logger.log(Level.SEVERE, "Blocks cannot have block with null owner: " + block);
+                Block blockReal = getOrCreateBlock(block.getBlockId());
+                if (!sameBlocks(block, blockReal)) {
+                    if (blockReal.getOwner() == null) {
+                        blockReal.setOwner(block.getOwner());
                     }
-                    if (block.isMigrating()) {
-                        logger.log(Level.SEVERE, "handleBlock should not receive migrating block: " + block);
+                    if (block.getOwner().equals(thisAddress)) {
+                        if (!blockReal.getOwner().equals(thisAddress)) {
+                            // I think I am not the owner of this block
+                            // but block info says i am !!
+                            logger.log(Level.WARNING, blockReal + " not owner. wrong block info " + block);
+                        } else {
+                            if (block.isMigrating()) {
+                                if (!blockReal.isMigrating()) {
+                                    // i should start migrating.
+                                    logger.log(Level.FINEST, "Migration Started " + block);
+                                    mapMigrator.migrateBlock(block);
+                                } else {
+                                    if (!block.getMigrationAddress().equals(blockReal.getMigrationAddress())) {
+                                        // i am already migrating to somewhere else!
+                                        logger.log(Level.WARNING, blockReal + " invalid migration address " + block);
+                                    } else {
+                                        // yes. I am in fact migrating to the right address
+                                        // check if I am really migrating. Is migration somehow hanging?
+                                    }
+                                }
+                            }
+                        }
+                    } else if (blockReal.getOwner().equals(thisAddress)) {
+                        // i think i own the block but
+                        // block info says i am not!
+                        logger.log(Level.WARNING, blockReal + " owner. wrong block info " + block);
+                    } else {
+                        // block is not mine at all just set the info
+                        blockReal.setOwner(block.getOwner());
+                        if (blockReal.isMigrating() && !block.isMigrating()) {
+                            logger.log(Level.FINEST, "Migration Complete " + block);
+                        } else if (!blockReal.isMigrating() && block.isMigrating()) {
+                            logger.log(Level.FINEST, "Migration Started " + block);
+                        }
+                        blockReal.setMigrationAddress(block.getMigrationAddress());
                     }
-                    doBlockInfo(block);
                 }
             }
         }
-    }
 
-    boolean isBlockInfoValid(Block blockInfo) {
-        boolean valid = true;
-        if (blockInfo.getOwner() != null) {
-            if (getMember(blockInfo.getOwner()) == null) {
-                valid = false;
+        boolean sameBlocks(Block b1, Block b2) {
+            if (b1.getBlockId() != b2.getBlockId()) {
+                throw new IllegalArgumentException("Not the same blocks!");
             }
-        }
-        if (valid && blockInfo.getMigrationAddress() != null) {
-            if (getMember(blockInfo.getMigrationAddress()) == null) {
-                valid = false;
+            if (!b1.getOwner().equals(b2.getOwner())) {
+                return false;
             }
+            if (b1.isMigrating() && !b1.getMigrationAddress().equals(b2.getMigrationAddress())) {
+                return false;
+            }
+            return true;
         }
-        if (!valid) {
-            logger.log(Level.WARNING, "Invalid block info: " + blockInfo);
-            logger.log(Level.INFO, node.clusterManager.toString());
-            logger.log(Level.INFO, printBlocks());
-        }
-        return valid;
     }
 
     class BlockInfoOperationHandler implements PacketProcessor {
 
         public void process(Packet packet) {
             Block blockInfo = (Block) toObject(packet.value);
-            if (!isBlockInfoValid(blockInfo)) return;
             doBlockInfo(blockInfo);
             if (isMaster() && !blockInfo.isMigrating()) {
                 for (MemberImpl member : lsMembers) {
@@ -1294,50 +1316,14 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     void doBlockInfo(Block blockInfo) {
-        if (!isBlockInfoValid(blockInfo)) {
-            logger.log(Level.FINEST, "blockInfo invalid " + blockInfo);
-            return;
+        if (blockInfo.isMigrating()) {
+            logger.log(Level.WARNING, "block info cannot be migrating " + blockInfo);
         }
         Block blockReal = blocks[blockInfo.getBlockId()];
-        if (blockReal == null) {
-            blockReal = new Block(blockInfo);
-            blocks[blockReal.getBlockId()] = blockReal;
-            blockReal.setMigrationAddress(null);
-        } else if (blockReal.getOwner() == null) {
+        if (blockReal.isMigrating()) {
             blockReal.setOwner(blockInfo.getOwner());
-            if (blockReal.isMigrating()) {
-                logger.log(Level.WARNING, "has no block owner but migrating! " + blockInfo + " realBlock:" + blockReal);
-            }
             blockReal.setMigrationAddress(null);
-        }
-        if (thisAddress.equals(blockReal.getOwner())) {
-            // I am already owner!
-            if (blockReal.isMigrating()) {
-                if (!blockInfo.isMigrating()) {
-                    // I got blockInfo as part of Blocks
-                    // upon membership change
-                    return;
-                } else if (!blockReal.getMigrationAddress().equals(blockInfo.getMigrationAddress())) {
-                    logger.log(Level.WARNING, blockReal.getMigrationAddress() + " existing blockReal migration address are not the same as the new." + blockInfo.getMigrationAddress());
-                }
-            } else if (blockInfo.isMigrating()) {
-                // I am being told to migrate
-                logger.log(Level.FINEST, "now migrate " + blockInfo);
-                mapMigrator.migrateBlock(blockInfo);
-            }
-        } else {
-            // this is just 'set-the-owner-info'
-            // it cannot have migrationAddress
-            if (blockInfo.isMigrating()) {
-                logger.log(Level.WARNING, thisAddress + " not the blockReal owner but has migration info " + blockInfo + " realBlock:" + blockReal);
-                return;
-            }
-            blockReal.setOwner(blockInfo.getOwner());
-            blockReal.setMigrationAddress(blockInfo.getMigrationAddress());
-        }
-        if (blockReal.getOwner() != null && blockReal.getOwner().equals(blockReal.getMigrationAddress())) {
-            blockReal.setMigrationAddress(null);
-            logger.log(Level.WARNING, "blockReal owner cannot be same as the migration address!");
+            logger.log(Level.INFO, "Migration complete info : " + blockInfo);
         }
     }
 
@@ -1890,7 +1876,8 @@ public final class ConcurrentMapManager extends BaseManager {
             int size = in.readInt();
             for (int i = 0; i < size; i++) {
                 Block block = new Block();
-                block.readOwnership(in);
+                block.readData(in);
+//                block.readOwnership(in);
                 addBlock(block);
             }
         }
@@ -1899,7 +1886,8 @@ public final class ConcurrentMapManager extends BaseManager {
             int size = lsBlocks.size();
             out.writeInt(size);
             for (Block block : lsBlocks) {
-                block.writeOwnership(out);
+                block.writeData(out);
+//                block.writeOwnership(out);
             }
         }
 

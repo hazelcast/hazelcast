@@ -59,7 +59,7 @@ public final class ClusterService implements Runnable, Constants {
 
     public ClusterService(Node node) {
         this.node = node;
-        MAX_IDLE_MILLIS = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger();
+        MAX_IDLE_MILLIS = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
         RESTART_ON_MAX_IDLE = node.groupProperties.RESTART_ON_MAX_IDLE.getBoolean();
     }
 
