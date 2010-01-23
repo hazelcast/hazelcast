@@ -31,7 +31,10 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -252,8 +255,6 @@ public class PartitionManager implements Runnable, PartitionService {
         return false;
     }
 
-    Queue qMasterMigratorTasks = new ConcurrentLinkedQueue();
-
     public void run() {
         removeUnknownRecords();
         long now = System.currentTimeMillis();
@@ -261,30 +262,7 @@ public class PartitionManager implements Runnable, PartitionService {
             nextMigrationMillis = now + MIGRATION_INTERVAL_MILLIS;
             if (!concurrentMapManager.isMaster()) return;
             if (concurrentMapManager.getMembers().size() < 2) return;
-//            sendBlocks();
-//            final MasterMigratorTask task = new MasterMigratorTask();
-//            qMasterMigratorTasks.offer(task);
-//            node.executorManager.executeMigrationTask(task);
             initiateMigration();
-        }
-    }
-
-    class MasterMigratorTask extends FallThroughRunnable {
-        public void doRun() {
-            if (qMasterMigratorTasks.poll() != null) {
-                ConcurrentMapManager.MBlockMigrationCheck check = concurrentMapManager.new MBlockMigrationCheck();
-                boolean isMigrating = check.call();
-                if (!isMigrating) {
-                    concurrentMapManager.enqueueAndReturn(new Processable() {
-                        public void process() {
-                            if (concurrentMapManager.isMaster()) {
-                                initiateMigration();
-                            }
-                        }
-                    });
-                }
-                qMasterMigratorTasks.clear();
-            }
         }
     }
 
@@ -408,24 +386,6 @@ public class PartitionManager implements Runnable, PartitionService {
         if (addressBlocks.size() == 0) {
             return;
         }
-        /**
-         * ======= RULES =========
-         * if there is no storage enabled node
-         *  1. then all blocks owners are null and no migration
-         * else
-         *  1. all blocks are owned by a member at any given time
-         *  2. empty blocks are be given (no need to migrate) to
-         *  a new member immediately
-         *  3. master checks if anybody is migrating before starting
-         *  migration. if blockMigrating != null then it can migrate
-         *  else master asks all members if they are migrating over executor
-         *  thread. be careful with the fact that master can die and
-         *  new master may not have blockMigrating info.
-         *  4. all blocks message cannot contain migration address
-         *  5. if there is at least one storage enabled member then
-         *  all blocks message cannot have null block owner.
-         *
-         */
         // find unowned blocks
         // find owned by me but empty blocks
         // distribute them first
@@ -463,6 +423,10 @@ public class PartitionManager implements Runnable, PartitionService {
         lsBlocksToMigrate.clear();
         backupIfNextOrPreviousChanged();
         removeUnknownRecords();
+        if (concurrentMapManager.isMaster()) {
+            sendBlocks(null);
+        }
+        nextMigrationMillis = System.currentTimeMillis() + MIGRATION_INTERVAL_MILLIS;
     }
 
     private void removeUnknownRecords() {
@@ -557,6 +521,11 @@ public class PartitionManager implements Runnable, PartitionService {
                         block.setMigrationAddress(null);
                     }
                 }
+            }
+        }
+        for (Block b : blocks) {
+            if (b != null && b.isMigrating() && b.getOwner().equals(b.getMigrationAddress())) {
+                b.setMigrationAddress(null);
             }
         }
     }
@@ -654,17 +623,21 @@ public class PartitionManager implements Runnable, PartitionService {
                             blockInfo.setOwner(blockInfo.getMigrationAddress());
                             blockInfo.setMigrationAddress(null);
                             completeMigration(blockInfo);
-                            for (MemberImpl member : concurrentMapManager.lsMembers) {
-                                if (!member.localMember()) {
-                                    concurrentMapManager.sendBlockInfo(new Block(blockInfo), member.getAddress());
-                                }
-                            }
+                            sendCompletionInfo(blockInfo);
                         }
                     });
                 } catch (InterruptedException ignored) {
                 }
             }
         });
+    }
+
+    void sendCompletionInfo(Block blockInfo) {
+        for (MemberImpl member : concurrentMapManager.lsMembers) {
+            if (!member.localMember()) {
+                concurrentMapManager.sendBlockInfo(new Block(blockInfo), member.getAddress());
+            }
+        }
     }
 
     void completeMigration(Block blockInfo) {
@@ -690,9 +663,15 @@ public class PartitionManager implements Runnable, PartitionService {
                 }
                 if (block.getOwner().equals(thisAddress)) {
                     if (!blockReal.getOwner().equals(thisAddress)) {
-                        // I think I am not the owner of this block
-                        // but block info says i am !!
-                        logger.log(Level.WARNING, blockReal + " not owner. wrong block info " + block);
+                        if (blockReal.getOwner().equals(block.getMigrationAddress()) && !blockReal.isMigrating()) {
+                            // I already migrated to the new owner but
+                            // somehow master doesn't know. maybe master did change in the meantime.
+                            sendCompletionInfo(new Block(blockReal));
+                        } else {
+                            // I think I am not the owner of this block
+                            // but block info says i am !!
+                            logger.log(Level.SEVERE, blockReal + " block info is inconsistent! " + block);
+                        }
                     } else {
                         if (block.isMigrating()) {
                             if (!blockReal.isMigrating()) {
@@ -703,10 +682,13 @@ public class PartitionManager implements Runnable, PartitionService {
                             } else {
                                 if (!block.getMigrationAddress().equals(blockReal.getMigrationAddress())) {
                                     // i am already migrating to somewhere else!
-                                    logger.log(Level.WARNING, blockReal + " invalid migration address " + block);
+                                    logger.log(Level.SEVERE, blockReal + " invalid migration address " + block);
                                 } else {
                                     // yes. I am in fact migrating to the right address
                                     // check if I am really migrating. Is migration somehow hanging?
+                                    if (!blockReal.isMigrationStarted()) {
+                                        logger.log(Level.SEVERE, blockReal + " must be migrating but migration didn't even start " + block);
+                                    }
                                 }
                             }
                         }
@@ -716,7 +698,7 @@ public class PartitionManager implements Runnable, PartitionService {
                     // block info says i am not!
                     logger.log(Level.WARNING, blockReal + " owner. wrong block info " + block);
                 } else {
-                    // block is not mine at all just set the info
+                    // block is not mine at all, just got the info
                     blockReal.setOwner(block.getOwner());
                     if (blockReal.isMigrating() && !block.isMigrating()) {
                         logger.log(Level.FINEST, "Migration Complete " + block);
@@ -725,6 +707,11 @@ public class PartitionManager implements Runnable, PartitionService {
                         fireMigrationEvent(true, new Block(block));
                     }
                     blockReal.setMigrationAddress(block.getMigrationAddress());
+                }
+            } else if (blockReal.isMigrating() && thisAddress.equals(blockReal.getOwner())) {
+                if (!blockReal.isMigrationStarted()) {
+                    fireMigrationEvent(true, new Block(block));
+                    migrateBlock(block);
                 }
             }
         }
