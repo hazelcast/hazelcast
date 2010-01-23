@@ -237,7 +237,6 @@ public class FactoryImpl implements HazelcastInstance {
 
     private static void shutdownManagementService() {
         try {
-            System.out.println("shut jmx " + jmxRegistered);
             if (jmxRegistered) {
                 ManagementService.shutdown();
                 jmxRegistered = false;

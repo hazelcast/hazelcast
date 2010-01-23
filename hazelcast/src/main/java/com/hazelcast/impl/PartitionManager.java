@@ -649,7 +649,7 @@ public class PartitionManager implements Runnable, PartitionService {
             fireMigrationEvent(false, new Block(blockReal));
             blockReal.setOwner(blockInfo.getOwner());
             blockReal.setMigrationAddress(null);
-            logger.log(Level.INFO, "Migration complete info : " + blockInfo);
+            logger.log(Level.FINEST, "Migration complete info : " + blockInfo);
         }
     }
 

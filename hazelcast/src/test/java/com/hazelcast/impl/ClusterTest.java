@@ -1306,17 +1306,17 @@ public class ClusterTest {
     }
 
     @Test
-    public void testIfProperBackuped() throws InterruptedException {
+    public void testIfProperlyBackedUp() throws InterruptedException {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         int counter = 1000;
         Map<Integer, String> map = new HashMap();
         for (int i = 0; i < counter; i++) {
             map.put(i, String.valueOf(i));
         }
-        IMap map1 = h1.getMap("testIfProperBackuped");
+        IMap map1 = h1.getMap("testIfProperlyBackedUp");
         map1.putAll(map);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        IMap map2 = h2.getMap("testIfProperBackuped");
+        IMap map2 = h2.getMap("testIfProperlyBackedUp");
         for (int i = 0; i < 5; i++) {
             Thread.sleep(10000);
             LocalMapStats mapStats1 = map1.getLocalMapStats();
