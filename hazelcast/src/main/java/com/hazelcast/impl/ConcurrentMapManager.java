@@ -17,7 +17,6 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Transaction;
@@ -31,9 +30,6 @@ import com.hazelcast.query.Index;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryContext;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -58,7 +54,7 @@ public final class ConcurrentMapManager extends BaseManager {
     final ConcurrentMap<String, LocallyOwnedMap> mapLocallyOwnedMaps;
     final ConcurrentMap<String, MapNearCache> mapCaches;
     final OrderedExecutionTask[] orderedExecutionTasks;
-    final MapMigrator mapMigrator;
+    final PartitionManager partitionManager;
     long newRecordId = 0;
 
     ConcurrentMapManager(Node node) {
@@ -71,7 +67,7 @@ public final class ConcurrentMapManager extends BaseManager {
         mapLocallyOwnedMaps = new ConcurrentHashMap<String, LocallyOwnedMap>(10);
         mapCaches = new ConcurrentHashMap<String, MapNearCache>(10);
         orderedExecutionTasks = new OrderedExecutionTask[BLOCK_COUNT];
-        mapMigrator = new MapMigrator(this);
+        partitionManager = new PartitionManager(this);
         for (int i = 0; i < BLOCK_COUNT; i++) {
             orderedExecutionTasks[i] = new OrderedExecutionTask();
         }
@@ -88,7 +84,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
             }
         });
-        node.clusterService.registerPeriodicRunnable(mapMigrator);
+        node.clusterService.registerPeriodicRunnable(partitionManager);
         registerPacketProcessor(CONCURRENT_MAP_GET_MAP_ENTRY, new GetMapEnryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_GET, new GetOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_TRY_PUT, new PutOperationHandler());
@@ -131,11 +127,11 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     public void syncForDead(Address deadAddress) {
-        mapMigrator.syncForDead(deadAddress);
+        partitionManager.syncForDead(deadAddress);
     }
 
     public void syncForAdd() {
-        mapMigrator.syncForAdd();
+        partitionManager.syncForAdd();
     }
 
     public int hashBlocks() {
@@ -1135,7 +1131,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     @Override
     public boolean isMigrating(Request req) {
-        return mapMigrator.isMigrating(req);
+        return partitionManager.isMigrating(req);
     }
 
     public int getBlockId(Data key) {
@@ -1222,7 +1218,7 @@ public final class ConcurrentMapManager extends BaseManager {
     class BlockMigrationCheckHandler extends AbstractOperationHandler {
         @Override
         void doOperation(Request request) {
-            request.response = mapMigrator.containsMigratingBlock();
+            request.response = partitionManager.containsMigratingBlock();
         }
     }
 
@@ -1230,70 +1226,9 @@ public final class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void process(Packet packet) {
-            BlockOwners blockOwners = (BlockOwners) toObject(packet.value);
-            handleBlocks(blockOwners);
+            Blocks blocks = (Blocks) toObject(packet.value);
+            partitionManager.handleBlocks(blocks);
             packet.returnToContainer();
-        }
-
-        void handleBlocks(BlockOwners blockOwners) {
-            List<Block> lsBlocks = blockOwners.lsBlocks;
-            for (Block block : lsBlocks) {
-                Block blockReal = getOrCreateBlock(block.getBlockId());
-                if (!sameBlocks(block, blockReal)) {
-                    if (blockReal.getOwner() == null) {
-                        blockReal.setOwner(block.getOwner());
-                    }
-                    if (block.getOwner().equals(thisAddress)) {
-                        if (!blockReal.getOwner().equals(thisAddress)) {
-                            // I think I am not the owner of this block
-                            // but block info says i am !!
-                            logger.log(Level.WARNING, blockReal + " not owner. wrong block info " + block);
-                        } else {
-                            if (block.isMigrating()) {
-                                if (!blockReal.isMigrating()) {
-                                    // i should start migrating.
-                                    logger.log(Level.FINEST, "Migration Started " + block);
-                                    mapMigrator.migrateBlock(block);
-                                } else {
-                                    if (!block.getMigrationAddress().equals(blockReal.getMigrationAddress())) {
-                                        // i am already migrating to somewhere else!
-                                        logger.log(Level.WARNING, blockReal + " invalid migration address " + block);
-                                    } else {
-                                        // yes. I am in fact migrating to the right address
-                                        // check if I am really migrating. Is migration somehow hanging?
-                                    }
-                                }
-                            }
-                        }
-                    } else if (blockReal.getOwner().equals(thisAddress)) {
-                        // i think i own the block but
-                        // block info says i am not!
-                        logger.log(Level.WARNING, blockReal + " owner. wrong block info " + block);
-                    } else {
-                        // block is not mine at all just set the info
-                        blockReal.setOwner(block.getOwner());
-                        if (blockReal.isMigrating() && !block.isMigrating()) {
-                            logger.log(Level.FINEST, "Migration Complete " + block);
-                        } else if (!blockReal.isMigrating() && block.isMigrating()) {
-                            logger.log(Level.FINEST, "Migration Started " + block);
-                        }
-                        blockReal.setMigrationAddress(block.getMigrationAddress());
-                    }
-                }
-            }
-        }
-
-        boolean sameBlocks(Block b1, Block b2) {
-            if (b1.getBlockId() != b2.getBlockId()) {
-                throw new IllegalArgumentException("Not the same blocks!");
-            }
-            if (!b1.getOwner().equals(b2.getOwner())) {
-                return false;
-            }
-            if (b1.isMigrating() && !b1.getMigrationAddress().equals(b2.getMigrationAddress())) {
-                return false;
-            }
-            return true;
         }
     }
 
@@ -1301,7 +1236,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public void process(Packet packet) {
             Block blockInfo = (Block) toObject(packet.value);
-            doBlockInfo(blockInfo);
+            partitionManager.completeMigration(blockInfo);
             if (isMaster() && !blockInfo.isMigrating()) {
                 for (MemberImpl member : lsMembers) {
                     if (!member.localMember()) {
@@ -1312,18 +1247,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
             }
             packet.returnToContainer();
-        }
-    }
-
-    void doBlockInfo(Block blockInfo) {
-        if (blockInfo.isMigrating()) {
-            logger.log(Level.WARNING, "block info cannot be migrating " + blockInfo);
-        }
-        Block blockReal = blocks[blockInfo.getBlockId()];
-        if (blockReal.isMigrating()) {
-            blockReal.setOwner(blockInfo.getOwner());
-            blockReal.setMigrationAddress(null);
-            logger.log(Level.INFO, "Migration complete info : " + blockInfo);
         }
     }
 
@@ -1862,39 +1785,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 AsynchronousExecution ae = (AsynchronousExecution) getPacketProcessor(request.operation);
                 ae.afterExecute(request);
             }
-        }
-    }
-
-    public static class BlockOwners extends AbstractRemotelyProcessable {
-        List<Block> lsBlocks = new ArrayList<Block>(1000);
-
-        public void addBlock(Block block) {
-            lsBlocks.add(block);
-        }
-
-        public void readData(DataInput in) throws IOException {
-            int size = in.readInt();
-            for (int i = 0; i < size; i++) {
-                Block block = new Block();
-                block.readData(in);
-//                block.readOwnership(in);
-                addBlock(block);
-            }
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            int size = lsBlocks.size();
-            out.writeInt(size);
-            for (Block block : lsBlocks) {
-                block.writeData(out);
-//                block.writeOwnership(out);
-            }
-        }
-
-        public void process() {
-            BlocksOperationHandler h = (BlocksOperationHandler)
-                    getNode().clusterService.getPacketProcessor(CONCURRENT_MAP_BLOCKS);
-            h.handleBlocks(BlockOwners.this);
         }
     }
 

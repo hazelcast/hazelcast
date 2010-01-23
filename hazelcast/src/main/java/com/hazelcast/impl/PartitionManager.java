@@ -17,22 +17,30 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.core.HazelcastInstanceAwareObject;
+import com.hazelcast.core.Member;
 import com.hazelcast.impl.concurrentmap.InitialState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
+import com.hazelcast.partition.MigrationEvent;
+import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionService;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_BLOCKS;
+import static com.hazelcast.nio.IOUtil.toData;
 
-public class MapMigrator implements Runnable {
+public class PartitionManager implements Runnable, PartitionService {
 
-    final static Logger logger = Logger.getLogger(MapMigrator.class.getName());
+    final Logger logger = Logger.getLogger(PartitionManager.class.getName());
 
     final ConcurrentMapManager concurrentMapManager;
     final Node node;
@@ -40,16 +48,128 @@ public class MapMigrator implements Runnable {
     final Block[] blocks;
     final Address thisAddress;
     final List<Block> lsBlocksToMigrate = new ArrayList<Block>(100);
-    final static long MIGRATION_INTERVAL_MILLIS = TimeUnit.SECONDS.toMillis(10);
+
+    final long MIGRATION_INTERVAL_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
     long nextMigrationMillis = System.currentTimeMillis() + MIGRATION_INTERVAL_MILLIS;
 
-    public MapMigrator(ConcurrentMapManager concurrentMapManager) {
+    final List<MigrationListener> lsMigrationListeners = new LinkedList<MigrationListener>();
+
+    public PartitionManager(ConcurrentMapManager concurrentMapManager) {
         this.concurrentMapManager = concurrentMapManager;
         this.node = concurrentMapManager.node;
         this.BLOCK_COUNT = concurrentMapManager.BLOCK_COUNT;
         this.blocks = concurrentMapManager.blocks;
         this.thisAddress = concurrentMapManager.thisAddress;
+    }
+
+    public void addMigrationListener(final MigrationListener migrationListener) {
+        concurrentMapManager.enqueueAndReturn(new Processable() {
+            public void process() {
+                lsMigrationListeners.add(migrationListener);
+            }
+        });
+    }
+
+    public void removeMigrationListener(final MigrationListener migrationListener) {
+        concurrentMapManager.enqueueAndReturn(new Processable() {
+            public void process() {
+                lsMigrationListeners.remove(migrationListener);
+            }
+        });
+    }
+
+    public Set<Partition> getPartitions() {
+        final BlockingQueue<Set<Partition>> responseQ = new ArrayBlockingQueue<Set<Partition>>(1);
+        concurrentMapManager.enqueueAndReturn(new Processable() {
+            public void process() {
+                Set<Partition> partitions = new HashSet<Partition>(BLOCK_COUNT);
+                for (int i = 0; i < BLOCK_COUNT; i++) {
+                    Block block = blocks[i];
+                    if (block == null) {
+                        block = concurrentMapManager.getOrCreateBlock(i);
+                    }
+                    MemberImpl memberOwner = null;
+                    if (block.getOwner() != null) {
+                        if (thisAddress.equals(block.getOwner())) {
+                            memberOwner = concurrentMapManager.thisMember;
+                        } else {
+                            memberOwner = concurrentMapManager.getMember(block.getOwner());
+                        }
+                    }
+                    partitions.add(new PartitionImpl(block.getBlockId(), memberOwner));
+                }
+                responseQ.offer(partitions);
+            }
+        });
+        try {
+            return responseQ.take();
+        } catch (InterruptedException ignored) {
+        }
+        return null;
+    }
+
+    public static class PartitionImpl extends HazelcastInstanceAwareObject implements Partition {
+        int partitionId;
+        MemberImpl owner;
+
+        PartitionImpl(int partitionId, MemberImpl owner) {
+            this.partitionId = partitionId;
+            this.owner = owner;
+        }
+
+        public int getPartitionId() {
+            return partitionId;
+        }
+
+        public Member getOwner() {
+            return owner;
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            super.writeData(out);
+            out.writeInt(partitionId);
+            boolean hasOwner = (owner != null);
+            out.writeBoolean(hasOwner);
+            if (hasOwner) {
+                owner.writeData(out);
+            }
+        }
+
+        public void readData(DataInput in) throws IOException {
+            super.readData(in);
+            partitionId = in.readInt();
+            boolean hasOwner = in.readBoolean();
+            if (hasOwner) {
+                owner = new MemberImpl();
+                owner.readData(in);
+                owner.setHazelcastInstance(hazelcastInstance);
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "Partition [" +
+                    +partitionId +
+                    "], owner=" + owner;
+        }
+    }
+
+    public Partition getPartition(Object key) {
+        final BlockingQueue<Partition> responseQ = new ArrayBlockingQueue<Partition>(1);
+        final Data keyData = toData(key);
+        concurrentMapManager.enqueueAndReturn(new Processable() {
+            public void process() {
+                Block block = blocks[concurrentMapManager.getBlockId(keyData)];
+                MemberImpl memberOwner = (block.getOwner() == null) ? null : concurrentMapManager.getMember(block.getOwner());
+                responseQ.offer(new PartitionImpl(block.getBlockId(), memberOwner));
+            }
+        });
+        try {
+            return responseQ.take();
+        } catch (InterruptedException ignored) {
+        }
+        return null;
     }
 
     void reArrangeBlocks() {
@@ -253,7 +373,7 @@ public class MapMigrator implements Runnable {
                 block.setOwner(thisAddress);
             }
         }
-        ConcurrentMapManager.BlockOwners allBlockOwners = new ConcurrentMapManager.BlockOwners();
+        Blocks allBlockOwners = new Blocks();
         for (Block block : blocks) {
             if (blockInfo != null && block.getBlockId() == blockInfo.getBlockId()) {
                 allBlockOwners.addBlock(blockInfo);
@@ -533,7 +653,7 @@ public class MapMigrator implements Runnable {
                         public void process() {
                             blockInfo.setOwner(blockInfo.getMigrationAddress());
                             blockInfo.setMigrationAddress(null);
-                            concurrentMapManager.doBlockInfo(blockInfo);
+                            completeMigration(blockInfo);
                             for (MemberImpl member : concurrentMapManager.lsMembers) {
                                 if (!member.localMember()) {
                                     concurrentMapManager.sendBlockInfo(new Block(blockInfo), member.getAddress());
@@ -545,5 +665,100 @@ public class MapMigrator implements Runnable {
                 }
             }
         });
+    }
+
+    void completeMigration(Block blockInfo) {
+        if (blockInfo.isMigrating()) {
+            logger.log(Level.WARNING, "block info cannot be migrating " + blockInfo);
+        }
+        Block blockReal = blocks[blockInfo.getBlockId()];
+        if (blockReal.isMigrating()) {
+            fireMigrationEvent(false, new Block(blockReal));
+            blockReal.setOwner(blockInfo.getOwner());
+            blockReal.setMigrationAddress(null);
+            logger.log(Level.INFO, "Migration complete info : " + blockInfo);
+        }
+    }
+
+    void handleBlocks(Blocks blockOwners) {
+        List<Block> lsBlocks = blockOwners.lsBlocks;
+        for (Block block : lsBlocks) {
+            Block blockReal = concurrentMapManager.getOrCreateBlock(block.getBlockId());
+            if (!sameBlocks(block, blockReal)) {
+                if (blockReal.getOwner() == null) {
+                    blockReal.setOwner(block.getOwner());
+                }
+                if (block.getOwner().equals(thisAddress)) {
+                    if (!blockReal.getOwner().equals(thisAddress)) {
+                        // I think I am not the owner of this block
+                        // but block info says i am !!
+                        logger.log(Level.WARNING, blockReal + " not owner. wrong block info " + block);
+                    } else {
+                        if (block.isMigrating()) {
+                            if (!blockReal.isMigrating()) {
+                                // i should start migrating.
+                                logger.log(Level.FINEST, "Migration Started " + block);
+                                fireMigrationEvent(true, new Block(block));
+                                migrateBlock(block);
+                            } else {
+                                if (!block.getMigrationAddress().equals(blockReal.getMigrationAddress())) {
+                                    // i am already migrating to somewhere else!
+                                    logger.log(Level.WARNING, blockReal + " invalid migration address " + block);
+                                } else {
+                                    // yes. I am in fact migrating to the right address
+                                    // check if I am really migrating. Is migration somehow hanging?
+                                }
+                            }
+                        }
+                    }
+                } else if (blockReal.getOwner().equals(thisAddress)) {
+                    // i think i own the block but
+                    // block info says i am not!
+                    logger.log(Level.WARNING, blockReal + " owner. wrong block info " + block);
+                } else {
+                    // block is not mine at all just set the info
+                    blockReal.setOwner(block.getOwner());
+                    if (blockReal.isMigrating() && !block.isMigrating()) {
+                        logger.log(Level.FINEST, "Migration Complete " + block);
+                    } else if (!blockReal.isMigrating() && block.isMigrating()) {
+                        logger.log(Level.FINEST, "Migration Started " + block);
+                        fireMigrationEvent(true, new Block(block));
+                    }
+                    blockReal.setMigrationAddress(block.getMigrationAddress());
+                }
+            }
+        }
+    }
+
+    boolean sameBlocks(Block b1, Block b2) {
+        if (b1.getBlockId() != b2.getBlockId()) {
+            throw new IllegalArgumentException("Not the same blocks!");
+        }
+        if (!b1.getOwner().equals(b2.getOwner())) {
+            return false;
+        }
+        if (b1.isMigrating() && !b1.getMigrationAddress().equals(b2.getMigrationAddress())) {
+            return false;
+        }
+        return true;
+    }
+
+    void fireMigrationEvent(final boolean started, Block block) {
+        if (lsMigrationListeners.size() > 0) {
+            final MemberImpl memberOwner = concurrentMapManager.getMember(block.getOwner());
+            final MemberImpl memberMigration = concurrentMapManager.getMember(block.getMigrationAddress());
+            final MigrationEvent migrationEvent = new MigrationEvent(concurrentMapManager.node, block.getBlockId(), memberOwner, memberMigration);
+            for (final MigrationListener migrationListener : lsMigrationListeners) {
+                concurrentMapManager.executeLocally(new Runnable() {
+                    public void run() {
+                        if (started) {
+                            migrationListener.migrationStarted(migrationEvent);
+                        } else {
+                            migrationListener.migrationCompleted(migrationEvent);
+                        }
+                    }
+                });
+            }
+        }
     }
 }

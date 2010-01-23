@@ -38,6 +38,7 @@ import com.hazelcast.core.Instance;
 import com.hazelcast.core.InstanceListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.config.Config;
+import com.hazelcast.partition.PartitionService;
 
 /***
  * Hazelcast Client enables you to do all Hazelcast operations wihtout being a member of the cluster. It connects to one of the
@@ -154,9 +155,12 @@ public class HazelcastClient implements HazelcastInstance{
 	public Config getConfig() {
         throw new UnsupportedOperationException();
     }
-	
 
-	public <K, V> IMap<K,V> getMap(String name){
+    public PartitionService getPartitionService() {
+        throw new UnsupportedOperationException();
+    }
+
+    public <K, V> IMap<K,V> getMap(String name){
 		return (IMap<K,V>)getClientProxy(MAP_PREFIX + name);
 	}
 

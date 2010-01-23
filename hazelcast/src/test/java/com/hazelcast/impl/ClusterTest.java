@@ -24,6 +24,7 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.Partition;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -61,6 +62,59 @@ public class ClusterTest {
         Thread.sleep(4000);
         assertNull(map.get(1));
         assertEquals(0, map.size());
+    }
+
+    @Test
+    public void testFirstNodeNoWait() throws Exception {
+        final Config config = new XmlConfigBuilder().build();
+        final BlockingQueue<Integer> counts = new ArrayBlockingQueue<Integer>(2);
+        for (int j = 0; j < 2; j++) {
+            new Thread(new Runnable() {
+                public void run() {
+                    final HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+                    for (int i = 0; i < 3000; i++) {
+                        h.getMap("default").put(i, "value");
+                    }
+                    counts.offer(getLocalPartitions(h).size());
+                }
+            }).start();
+        }
+        int first = counts.take();
+        int second = counts.take();
+        assertTrue(first == 0 || first == 271);
+        assertTrue(second == 0 || second == 271);
+        assertEquals(271, Math.abs(second - first));
+    }
+
+    @Test
+    public void testFirstNodeWait() throws Exception {
+        final Config config = new XmlConfigBuilder().build();
+        config.setProperty(GroupProperties.PROP_FIRST_MEMBER_WAIT_SECONDS, "7");
+        final CountDownLatch latch = new CountDownLatch(2);
+        for (int j = 0; j < 2; j++) {
+            new Thread(new Runnable() {
+                public void run() {
+                    final HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+                    for (int i = 0; i < 3000; i++) {
+                        h.getMap("default").put(i, "value");
+                    }
+                    assertTrue(getLocalPartitions(h).size() > 134);
+                    latch.countDown();
+                }
+            }).start();
+        }
+        latch.await(20, TimeUnit.SECONDS);
+    }
+
+    private Set<Partition> getLocalPartitions(HazelcastInstance h) {
+        Set<Partition> partitions = h.getPartitionService().getPartitions();
+        Set<Partition> localPartitions = new HashSet<Partition>();
+        for (Partition partition : partitions) {
+            if (h.getCluster().getLocalMember().equals(partition.getOwner())) {
+                localPartitions.add(partition);
+            }
+        }
+        return localPartitions;
     }
 
     @Test(timeout = 10000, expected = RuntimeException.class)

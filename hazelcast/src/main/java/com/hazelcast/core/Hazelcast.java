@@ -19,6 +19,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.impl.FactoryImpl;
+import com.hazelcast.partition.PartitionService;
 
 import java.util.Collection;
 import java.util.concurrent.ExecutorService;
@@ -318,5 +319,25 @@ public final class Hazelcast {
      */
     public static HazelcastInstance newHazelcastInstance(Config config) {
         return com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(config);
+    }
+
+    /**
+     * Returns the configuration of this Hazelcast instance.
+     *
+     * @return configuration of this Hazelcast instance
+     */
+    public static Config getConfig() {
+        return getDefaultInstance().getConfig();
+    }
+
+    /**
+     * Returns the partition service of this Hazelcast instance.
+     * PartitionService allows you to introspect current partitions in the
+     * cluster, partition owner members and listen for partition migration events.
+     *
+     * @return partition service
+     */
+    public static PartitionService getPartitionService() {
+        return getDefaultInstance().getPartitionService();
     }
 }

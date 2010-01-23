@@ -18,6 +18,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.partition.PartitionService;
 
 import java.util.Collection;
 import java.util.concurrent.ExecutorService;
@@ -177,8 +178,8 @@ public interface HazelcastInstance {
      * <tt>AtomicLong.incrementAndGet()</tt> . Generated IDs are unique during the life
      * cycle of the cluster. If the entire cluster is restarted, IDs start from <tt>0</tt> again.
      *
-     * @param name
-     * @return
+     * @param name name of the IdGenerator
+     * @return IdGenerator for the given name
      */
     public IdGenerator getIdGenerator(String name);
 
@@ -205,7 +206,7 @@ public interface HazelcastInstance {
 
     /**
      * Add a instance listener which will be notified when a
-     * new instance such as map, queue, multima, topic, lock is
+     * new instance such as map, queue, multimap, topic, lock is
      * added or removed.
      *
      * @param instanceListener instance listener
@@ -226,4 +227,13 @@ public interface HazelcastInstance {
      * @return configuration of this Hazelcast instance
      */
     public Config getConfig();
+
+    /**
+     * Returns the partition service of this Hazelcast instance.
+     * PartitionService allows you to introspect current partitions in the
+     * cluster, partition owner members and listen for partition migration events.
+     *
+     * @return partition service
+     */
+    public PartitionService getPartitionService();
 }

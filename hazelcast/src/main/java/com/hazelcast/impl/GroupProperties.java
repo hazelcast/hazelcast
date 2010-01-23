@@ -21,9 +21,21 @@ import com.hazelcast.config.Config;
 
 public class GroupProperties {
 
-    public static final GroupProperty SERIALIZER_SHARED = new GroupProperty(null, "hazelcast.serializer.shared", "false");
+    public static final String PROP_SERIALIZER_SHARED = "hazelcast.serializer.shared";
+    public static final String PROP_PACKET_VERSION = "hazelcast.packet.version";
+    public static final String PROP_SHUTDOWNHOOK_ENABLED = "hazelcast.shutdownhook.enabled";
+    public static final String PROP_WAIT_SECONDS_BEFORE_JOIN = "hazelcast.wait.seconds.before.join";
+    public static final String PROP_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.max.no.heartbeat.seconds";
+    public static final String PROP_FIRST_MEMBER_WAIT_SECONDS = "hazelcast.first.member.wait.seconds";
+    public static final String PROP_RESTART_ON_MAX_IDLE = "hazelcast.restart.on.max.idle";
+    public static final String PROP_CONCURRENT_MAP_BLOCK_COUNT = "hazelcast.map.block.count";
+    public static final String PROP_BLOCKING_QUEUE_BLOCK_SIZE = "hazelcast.queue.block.size";
+    public static final String PROP_REMOVE_DELAY_SECONDS = "hazelcast.map.remove.delay.seconds";
+    public static final String PROP_LOG_STATE = "hazelcast.log.state";
 
-    public static final GroupProperty PACKET_VERSION = new GroupProperty(null, "hazelcast.packet.version", "3");
+    public static final GroupProperty SERIALIZER_SHARED = new GroupProperty(null, PROP_SERIALIZER_SHARED, "false");
+
+    public static final GroupProperty PACKET_VERSION = new GroupProperty(null, PROP_PACKET_VERSION, "3");
 
     public final GroupProperty SHUTDOWNHOOK_ENABLED;
 
@@ -44,15 +56,15 @@ public class GroupProperties {
     public final GroupProperty LOG_STATE;
 
     public GroupProperties(Config config) {
-        SHUTDOWNHOOK_ENABLED = new GroupProperty(config, "hazelcast.shutdownhook.enabled", "true");
-        WAIT_SECONDS_BEFORE_JOIN = new GroupProperty(config, "hazelcast.wait.seconds.before.join", "5");
-        MAX_NO_HEARTBEAT_SECONDS = new GroupProperty(config, "hazelcast.max.no.heartbeat.seconds", "300");
-        FIRST_MEMBER_WAIT_SECONDS = new GroupProperty(config, "hazelcast.first.member.wait.seconds", "0");
-        RESTART_ON_MAX_IDLE = new GroupProperty(config, "hazelcast.restart.on.max.idle", "false");
-        CONCURRENT_MAP_BLOCK_COUNT = new GroupProperty(config, "hazelcast.map.block.count", "271");
-        BLOCKING_QUEUE_BLOCK_SIZE = new GroupProperty(config, "hazelcast.queue.block.size", "1000");
-        REMOVE_DELAY_SECONDS = new GroupProperty(config, "hazelcast.map.remove.delay.seconds", "5");
-        LOG_STATE = new GroupProperty(config, "hazelcast.log.state", "false");
+        SHUTDOWNHOOK_ENABLED = new GroupProperty(config, PROP_SHUTDOWNHOOK_ENABLED, "true");
+        WAIT_SECONDS_BEFORE_JOIN = new GroupProperty(config, PROP_WAIT_SECONDS_BEFORE_JOIN, "5");
+        MAX_NO_HEARTBEAT_SECONDS = new GroupProperty(config, PROP_MAX_NO_HEARTBEAT_SECONDS, "300");
+        FIRST_MEMBER_WAIT_SECONDS = new GroupProperty(config, PROP_FIRST_MEMBER_WAIT_SECONDS, "0");
+        RESTART_ON_MAX_IDLE = new GroupProperty(config, PROP_RESTART_ON_MAX_IDLE, "false");
+        CONCURRENT_MAP_BLOCK_COUNT = new GroupProperty(config, PROP_CONCURRENT_MAP_BLOCK_COUNT, "271");
+        BLOCKING_QUEUE_BLOCK_SIZE = new GroupProperty(config, PROP_BLOCKING_QUEUE_BLOCK_SIZE, "1000");
+        REMOVE_DELAY_SECONDS = new GroupProperty(config, PROP_REMOVE_DELAY_SECONDS, "5");
+        LOG_STATE = new GroupProperty(config, PROP_LOG_STATE, "false");
     }
 
     public static class GroupProperty {

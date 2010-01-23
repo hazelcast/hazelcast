@@ -30,6 +30,7 @@ import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.SerializationHelper;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 
@@ -81,27 +82,30 @@ public class FactoryImpl implements HazelcastInstance {
     private static boolean jmxRegistered = false;
 
     public static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config) {
+        FactoryImpl factory = null;
+        boolean firstMember = false;
         synchronized (factoryLock) {
             String name = "_hzInstance_" + nextFactoryId++;
             if (config == null) {
                 config = new XmlConfigBuilder().build();
             }
-            FactoryImpl factory = new FactoryImpl(name, config);
+            factory = new FactoryImpl(name, config);
             FactoryImpl old = factories.put(name, factory);
             if (old != null) throw new RuntimeException();
             if (!jmxRegistered) {
                 ManagementService.register(factory, config);
                 jmxRegistered = true;
             }
-            int firstMemberWaitSeconds = factory.node.groupProperties.FIRST_MEMBER_WAIT_SECONDS.getInteger();
-            if (firstMemberWaitSeconds > 0 && factory.node.getClusterImpl().getMembers().size() == 1) {
-                try {
-                    Thread.sleep(firstMemberWaitSeconds * 1000);
-                } catch (InterruptedException e) {
-                }
-            }
-            return factory.hazelcastInstanceProxy;
+            firstMember = (factory.node.getClusterImpl().getMembers().size() == 1);
         }
+        int firstMemberWaitSeconds = factory.node.groupProperties.FIRST_MEMBER_WAIT_SECONDS.getInteger();
+        if (firstMemberWaitSeconds > 0 && firstMember) {
+            try {
+                Thread.sleep(firstMemberWaitSeconds * 1000);
+            } catch (InterruptedException e) {
+            }
+        }
+        return factory.hazelcastInstanceProxy;
     }
 
     public static class HazelcastInstanceProxy extends HazelcastInstanceAwareObject implements HazelcastInstance {
@@ -187,6 +191,10 @@ public class FactoryImpl implements HazelcastInstance {
 
         public Config getConfig() {
             return hazelcastInstance.getConfig();
+        }
+
+        public PartitionService getPartitionService() {
+            return hazelcastInstance.getPartitionService();
         }
     }
 
@@ -385,6 +393,10 @@ public class FactoryImpl implements HazelcastInstance {
             threadContext.getCallContext().setTransaction(txn);
         }
         return txn;
+    }
+
+    public PartitionService getPartitionService() {
+        return node.concurrentMapManager.partitionManager;
     }
 
     public <K, V> IMap<K, V> getMap(String name) {
