@@ -101,7 +101,7 @@ public class ListenerManager extends BaseManager {
 
         void doOperation(Request request) {
             Address from = request.caller;
-            logger.log(Level.FINEST, "AddListenerOperation from " + from + ", local=" + request.local);
+            logger.log(Level.FINEST, "AddListenerOperation from " + from + ", local=" + request.local + "  key:" + request.key);
             if (from == null) throw new RuntimeException("Listener origin is not known!");
             boolean add = (request.operation == ADD_LISTENER);
             boolean includeValue = (request.longValue == 1);
@@ -112,13 +112,11 @@ public class ListenerManager extends BaseManager {
 
     public class AddRemoveListener extends MultiCall<Boolean> {
         final String name;
-        final Object key;
         final boolean add;
         final boolean includeValue;
 
-        public AddRemoveListener(String name, Object key, boolean add, boolean includeValue) {
+        public AddRemoveListener(String name, boolean add, boolean includeValue) {
             this.name = name;
-            this.key = key;
             this.add = add;
             this.includeValue = includeValue;
         }
@@ -140,7 +138,7 @@ public class ListenerManager extends BaseManager {
                 request.reset();
                 this.target = target;
                 ClusterOperation operation = (add) ? ADD_LISTENER : REMOVE_LISTENER;
-                setLocal(operation, name, key, null, -1, -1);
+                setLocal(operation, name, null, null, -1, -1);
                 request.setBooleanRequest();
                 request.longValue = (includeValue) ? 1 : 0;
             }
@@ -153,8 +151,12 @@ public class ListenerManager extends BaseManager {
     }
 
     private void registerListener(String name, Object key, boolean add, boolean includeValue) {
-        AddRemoveListener addRemoveListener = new AddRemoveListener(name, key, add, includeValue);
-        addRemoveListener.call();
+        if (key == null) {
+            AddRemoveListener addRemoveListener = new AddRemoveListener(name, add, includeValue);
+            addRemoveListener.call();
+        } else {
+            node.concurrentMapManager.new MAddKeyListener().addListener(name, add, key, includeValue);
+        }
     }
 
     private void registerListenerWithNoResponse(String name, Object key, boolean includeValue) {

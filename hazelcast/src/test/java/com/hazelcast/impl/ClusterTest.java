@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class ClusterTest {
 
@@ -478,7 +479,48 @@ public class ClusterTest {
             assertEquals("1", entry.getKey());
             assertEquals("value2", entry.getValue());
         }
-        listenerTest(map2, map1);
+        allMapListenerTest(map2, "5", map1);
+    }
+
+    @Test(timeout = 60000)
+    public void testListeners2() throws Exception {
+        final CountDownLatch latchAdded = new CountDownLatch(2);
+        final CountDownLatch latchUpdated = new CountDownLatch(1);
+        final CountDownLatch latchRemoved = new CountDownLatch(1);
+        final CountDownLatch latchEvicted = new CountDownLatch(1);
+        EntryListener listener = new EntryListener() {
+            public void entryAdded(EntryEvent entryEvent) {
+                latchAdded.countDown();
+            }
+
+            public void entryRemoved(EntryEvent entryEvent) {
+                latchRemoved.countDown();
+            }
+
+            public void entryUpdated(EntryEvent entryEvent) {
+                latchUpdated.countDown();
+            }
+
+            public void entryEvicted(EntryEvent entryEvent) {
+                latchEvicted.countDown();
+            }
+        };
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        IMap mapSource = h2.getMap("default");
+        IMap map = h1.getMap("default");
+        Object key = "2133aa";
+        map.addEntryListener(listener, true);
+        assertNull(mapSource.put(key, "value5"));
+        assertEquals("value5", mapSource.put(key, "value55"));
+        assertTrue(mapSource.evict(key));
+        assertNull(mapSource.put(key, "value5"));
+        assertEquals("value5", mapSource.remove(key));
+        assertTrue(latchAdded.await(5, TimeUnit.SECONDS));
+        assertTrue(latchUpdated.await(5, TimeUnit.SECONDS));
+        assertTrue(latchRemoved.await(5, TimeUnit.SECONDS));
+        assertTrue(latchEvicted.await(5, TimeUnit.SECONDS));
+        map.removeEntryListener(listener);
     }
 
     @Test(timeout = 60000)
@@ -488,10 +530,10 @@ public class ClusterTest {
         h1.getMap("default").put("1", "value1");
         assertEquals("value1", h1.getMap("default").put("1", "value2"));
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        listenerTest(h2.getMap("default"), h1.getMap("default"));
+        allMapListenerTest(h2.getMap("default"), "5", h1.getMap("default"));
     }
 
-    private void listenerTest(IMap map, IMap mapSource) throws Exception {
+    private void allMapListenerTest(IMap map, Object keyToUpdate, IMap mapSource) throws Exception {
         final CountDownLatch latchAdded = new CountDownLatch(2);
         final CountDownLatch latchUpdated = new CountDownLatch(1);
         final CountDownLatch latchRemoved = new CountDownLatch(1);
@@ -514,11 +556,11 @@ public class ClusterTest {
             }
         };
         map.addEntryListener(listener, true);
-        assertNull(mapSource.put("5", "value5"));
-        assertEquals("value5", mapSource.put("5", "value55"));
-        assertTrue(mapSource.evict("5"));
-        assertNull(mapSource.put("5", "value5"));
-        assertEquals("value5", mapSource.remove("5"));
+        assertNull(mapSource.put(keyToUpdate, "value5"));
+        assertEquals("value5", mapSource.put(keyToUpdate, "value55"));
+        assertTrue(mapSource.evict(keyToUpdate));
+        assertNull(mapSource.put(keyToUpdate, "value5"));
+        assertEquals("value5", mapSource.remove(keyToUpdate));
         assertTrue(latchAdded.await(5, TimeUnit.SECONDS));
         assertTrue(latchUpdated.await(5, TimeUnit.SECONDS));
         assertTrue(latchRemoved.await(5, TimeUnit.SECONDS));

@@ -185,10 +185,9 @@ public abstract class BaseManager {
             Request remoteReq = new Request();
             remoteReq.setFromPacket(packet);
             remoteReq.local = false;
-            if (isMigrating(remoteReq)) {
+            if (isMigrating(remoteReq) || !isRightRemoteTarget(packet)) {
                 packet.responseType = RESPONSE_REDO;
-                sendResponse(packet);
-            } else if (!isRightRemoteTarget(packet)) {
+                sendResponse(packet); 
             } else {
                 handle(remoteReq);
                 packet.returnToContainer();
@@ -666,7 +665,7 @@ public abstract class BaseManager {
         /**
          * As MultiCall receives the responses from the target members
          * it will pass each response to the extending call so that it can
-         * consume and checks if the call should continue.
+         * consume and check if the call should continue.
          *
          * @param response response object from one of the targets
          * @return false if call is completed.

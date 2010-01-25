@@ -350,6 +350,23 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    class MAddKeyListener extends MTargetAwareOp {
+
+        public boolean addListener(String name, boolean add, Object key, boolean includeValue) {
+            ClusterOperation operation = (add) ? ADD_LISTENER : REMOVE_LISTENER;
+            setLocal(operation, name, key, null, -1, -1);
+            request.longValue = (includeValue) ? 1 : 0;
+            request.setBooleanRequest();
+            doOp();
+            return getResultAsBoolean();
+        }
+
+        @Override
+        public boolean isMigrationAware() {
+            return true;
+        }
+    }
+
     class MGet extends MTargetAwareOp {
         Object key = null;
         MapNearCache cache = null;
