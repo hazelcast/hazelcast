@@ -47,7 +47,7 @@ import java.util.logging.Logger;
 
 public class FactoryImpl implements HazelcastInstance {
 
-    private final Logger logger = Logger.getLogger(FactoryImpl.class.getName());
+    private static final Logger logger = Logger.getLogger(FactoryImpl.class.getName());
 
     private final ConcurrentMap<String, HazelcastInstanceAwareInstance> proxiesByName = new ConcurrentHashMap<String, HazelcastInstanceAwareInstance>(1000);
 
@@ -91,7 +91,9 @@ public class FactoryImpl implements HazelcastInstance {
             }
             factory = new FactoryImpl(name, config);
             FactoryImpl old = factories.put(name, factory);
-            if (old != null) throw new RuntimeException();
+            if (old != null) {
+            	throw new RuntimeException();
+            }
             if (!jmxRegistered) {
                 ManagementService.register(factory, config);
                 jmxRegistered = true;
@@ -332,10 +334,16 @@ public class FactoryImpl implements HazelcastInstance {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+        	return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+        	return false;
+        }
         FactoryImpl factory = (FactoryImpl) o;
-        if (!name.equals(factory.name)) return false;
+        if (!name.equals(factory.name)) {
+        	return false;
+        }
         return true;
     }
 
@@ -1798,7 +1806,6 @@ public class FactoryImpl implements HazelcastInstance {
             try {
                 return mproxyReal.remove(key);
             } catch (Throwable e) {
-                logger.log(Level.FINEST, "Call failed", e);
                 logger.log(Level.FINEST, "Call failed", e);
                 if (factory.restarted) {
                     return remove(key);
