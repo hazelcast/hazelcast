@@ -36,7 +36,6 @@ import com.hazelcast.client.Packet;
 import com.hazelcast.core.*;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.InstanceEvent.InstanceEventType;
-import com.sun.jmx.remote.internal.ArrayQueue;
 
 import static com.hazelcast.client.Serializer.toObject;
 import static com.hazelcast.impl.BaseManager.getInstanceType;
