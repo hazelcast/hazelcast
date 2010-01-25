@@ -87,6 +87,7 @@ public class ClientService {
         clientOperationHandlers[ClusterOperation.GET_CLUSTER_TIME.getValue()] = new GetClusterTimeHandler();
         clientOperationHandlers[ClusterOperation.CLIENT_AUTHENTICATE.getValue()] = new ClientAuthenticateHandler();
         clientOperationHandlers[ClusterOperation.CLIENT_ADD_INSTANCE_LISTENER.getValue()] = new ClientAddInstanceListenerHandler();
+        clientOperationHandlers[ClusterOperation.CLIENT_ADD_MEMBERSHIP_LISTENER.getValue()] = new ClientAddMembershipListenerHandler();
     }
     // always called by InThread
 
@@ -110,7 +111,7 @@ public class ClientService {
         return clientEndpoint;
     }
 
-    class ClientEndpoint implements EntryListener, InstanceListener {
+    class ClientEndpoint implements EntryListener, InstanceListener, MembershipListener {
         final Connection conn;
         final private Map<Integer, CallContext> callContexts = new HashMap<Integer, CallContext>();
         final ConcurrentMap<String, ConcurrentMap<Object, EntryEvent>> listeneds = new ConcurrentHashMap<String, ConcurrentMap<Object, EntryEvent>>();
@@ -176,6 +177,19 @@ public class ClientService {
             processEvent(event);
         }
 
+        public void memberAdded(MembershipEvent membershipEvent) {
+            processEvent(membershipEvent);
+        }
+
+        public void memberRemoved(MembershipEvent membershipEvent) {
+            processEvent(membershipEvent);
+        }
+
+        private void processEvent(MembershipEvent membershipEvent) {
+            Packet packet = createMembershipEventPacket(membershipEvent);
+            sendPacket(packet);
+        }
+
         private void processEvent(InstanceEvent event) {
             Packet packet = createInstanceEventPacket(event);
             sendPacket(packet);
@@ -219,6 +233,12 @@ public class ClientService {
         private Packet createInstanceEventPacket(InstanceEvent event) {
             Packet packet = new Packet();
             packet.set(null, ClusterOperation.EVENT, toData(event.getInstance().getId()), toData(event.getEventType()));
+            return packet;
+        }
+
+        private Packet createMembershipEventPacket(MembershipEvent membershipEvent) {
+            Packet packet = new Packet();
+            packet.set(null, ClusterOperation.EVENT, toData(membershipEvent.getMember()), toData(membershipEvent.getEventType()));
             return packet;
         }
     }
@@ -423,6 +443,13 @@ public class ClientService {
 //            System.out.println("Add listener");
             ClientEndpoint endPoint = getClientEndpoint(packet.conn);
             node.factory.addInstanceListener(endPoint);
+        }
+    }
+
+    private class ClientAddMembershipListenerHandler extends ClientOperationHandler {
+        public void processCall(Node node, Packet packet) {
+            ClientEndpoint endPoint = getClientEndpoint(packet.conn);
+            node.factory.getCluster().addMembershipListener(endPoint);
         }
     }
 

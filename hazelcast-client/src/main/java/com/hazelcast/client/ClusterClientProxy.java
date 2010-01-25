@@ -65,7 +65,7 @@ public class ClusterClientProxy implements ClientProxy, Cluster {
     public void addMembershipListener(MembershipListener listener) {
         check(listener);
         if(client.listenerManager.noMembershipListenerRegistered()){
-			Packet request = proxyHelper.createRequestPacket(ClusterOperation.CLIENT_ADD_INSTANCE_LISTENER, null, null);
+			Packet request = proxyHelper.createRequestPacket(ClusterOperation.CLIENT_ADD_MEMBERSHIP_LISTENER, null, null);
 			Call c = proxyHelper.createCall(request);
 		    client.listenerManager.addListenerCall(c);
 			proxyHelper.doCall(c);

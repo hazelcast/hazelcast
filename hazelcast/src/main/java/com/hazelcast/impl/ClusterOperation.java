@@ -93,7 +93,8 @@ public enum ClusterOperation {
     GET_MEMBERS(),
     GET_CLUSTER_TIME(),
     CLIENT_AUTHENTICATE(),
-    CLIENT_ADD_INSTANCE_LISTENER();
+    CLIENT_ADD_INSTANCE_LISTENER(),
+    CLIENT_ADD_MEMBERSHIP_LISTENER();
 
     static byte idGen = 0;
     public final static byte OPERATION_COUNT = 127;

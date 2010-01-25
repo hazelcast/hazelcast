@@ -107,9 +107,7 @@ public class DynamicClusterTest {
         map.put("hello", "new world");
         map.remove("hello");
         memberMap.remove(client.getConnectionManager().getConnection().getAddress().getPort()).shutdown();
-        System.out.println("Map is putting");
         map.put("hello", "world");
-        System.out.println("map put");
         map.put("hello", "new world");
         map.remove("hello");
         assertTrue(entryAddLatch.await(10, TimeUnit.MILLISECONDS));
@@ -238,6 +236,7 @@ public class DynamicClusterTest {
         h.shutdown();
     }
 
+    //ok to fail due to lock
     @Test
     public void testGetInstancesCreatedFromCluster() {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
@@ -248,7 +247,6 @@ public class DynamicClusterTest {
         Set set = h.getSet("testGetInstancesCreatedFromCluster");
         ITopic topic = h.getTopic("testGetInstancesCreatedFromCluster");
         ILock lock = h.getLock("testGetInstancesCreatedFromCluster");
-        System.out.println("Lock id " + lock.getId());
         List listOfInstances = new ArrayList();
         listOfInstances.add(list);
         listOfInstances.add(map);
@@ -258,7 +256,7 @@ public class DynamicClusterTest {
         listOfInstances.add(topic);
         listOfInstances.add(lock);
         Collection<Instance> caches = getHazelcastClient(h).getInstances();
-        assertEquals(7, caches.size());
+        assertEquals(listOfInstances.size(), caches.size());
         for (Iterator<Instance> instanceIterator = caches.iterator(); instanceIterator.hasNext();) {
             Instance instance = instanceIterator.next();
             System.out.println("INstance id:" + instance.getId().toString());
@@ -310,8 +308,8 @@ public class DynamicClusterTest {
         Map map = client.getMap("aasd");
     }
 
-    //    @Test
-    public void addMemberShipListener() {
+    @Test
+    public void addMemberShipListener() throws InterruptedException {
         String grName = "dev";
         String grPass = "pass";
         Config conf = new Config();
@@ -321,6 +319,27 @@ public class DynamicClusterTest {
         conf.setGroupConfig(gc);
         HazelcastInstance h = Hazelcast.newHazelcastInstance(conf);
         HazelcastClient client = HazelcastClient.newHazelcastClient(grName, grPass, true, h.getCluster().getLocalMember().getInetSocketAddress().getAddress().getCanonicalHostName() + ":" + h.getCluster().getLocalMember().getInetSocketAddress().getPort());
+        final CountDownLatch added = new CountDownLatch(1);
+        final CountDownLatch removed = new CountDownLatch(1);
+        final Map<String, Member> map = new HashMap<String, Member>();
+        client.getCluster().addMembershipListener(new MembershipListener() {
+            public void memberAdded(MembershipEvent membershipEvent) {
+                added.countDown();
+                map.put("Added", membershipEvent.getMember());
+            }
+
+            public void memberRemoved(MembershipEvent membershipEvent) {
+                removed.countDown();
+                map.put("Removed", membershipEvent.getMember());
+            }
+        });
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(conf);
+        Member member = h2.getCluster().getLocalMember();
+        h2.shutdown();
+        assertTrue(added.await(10, TimeUnit.SECONDS));
+        assertEquals(member.getInetSocketAddress(), map.get("Added").getInetSocketAddress());
+        assertTrue(removed.await(10, TimeUnit.SECONDS));
+        assertEquals(member.getInetSocketAddress(), map.get("Removed").getInetSocketAddress());
     }
 
     @Test
@@ -335,7 +354,6 @@ public class DynamicClusterTest {
         user.setAge(30);
         user.setAddress(new DataSerializableUser.Address());
         final CountDownLatch cdl = new CountDownLatch(2);
-
         EntryListener<Integer, DataSerializableUser> listener = new EntryListener<Integer, DataSerializableUser>() {
             public void entryAdded(EntryEvent<Integer, DataSerializableUser> entryEvent) {
                 DataSerializableUser u = entryEvent.getValue();
@@ -367,7 +385,6 @@ public class DynamicClusterTest {
         assertEquals(user.getFamilyName(), dsu.getFamilyName());
         assertEquals(user.getAge(), dsu.getAge());
         assertEquals(user.getAddress().getAddress(), dsu.getAddress().getAddress());
-
         assertTrue(cdl.await(2, TimeUnit.SECONDS));
     }
 
