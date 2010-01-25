@@ -64,7 +64,7 @@ public class ClusterClientProxy implements ClientProxy, Cluster {
 
     public void addMembershipListener(MembershipListener listener) {
         check(listener);
-        if(client.listenerManager.noInstanceListenerRegistered()){
+        if(client.listenerManager.noMembershipListenerRegistered()){
 			Packet request = proxyHelper.createRequestPacket(ClusterOperation.CLIENT_ADD_INSTANCE_LISTENER, null, null);
 			Call c = proxyHelper.createCall(request);
 		    client.listenerManager.addListenerCall(c);
@@ -74,7 +74,8 @@ public class ClusterClientProxy implements ClientProxy, Cluster {
     }
 
     public void removeMembershipListener(MembershipListener listener) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        client.listenerManager.removeMembershipListener(listener);
+
     }
 
     public Set<Member> getMembers() {

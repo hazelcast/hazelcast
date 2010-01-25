@@ -197,28 +197,30 @@ public final class Serializer {
     }
 
     static class StringSerializer implements TypeSerializer<String> {
-        private static final int STRING_CHUNK_SIZE = 16 * 1024;
+//        private static final int STRING_CHUNK_SIZE = 16 * 1024;
 
         public byte getTypeId() {
             return SERIALIZER_TYPE_STRING;
         }
 
         public String read(FastByteArrayInputStream bbis) throws Exception {
-            StringBuilder result = new StringBuilder();
-            while (bbis.available() > 0) {
-                result.append(bbis.readShortUTF());
-            }
-            return result.toString();
+//            StringBuilder result = new StringBuilder();
+//            while (bbis.available() > 0) {
+//                result.append(bbis.readUTF());
+//            }
+//            return result.toString();
+            return bbis.readUTF();
         }
 
         public void write(FastByteArrayOutputStream bbos, String obj) throws Exception {
-            int length = obj.length();
-            int chunkSize = length / STRING_CHUNK_SIZE + 1;
-            for (int i = 0; i < chunkSize; i++) {
-                int beginIndex = Math.max(0, i * STRING_CHUNK_SIZE - 1);
-                int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
-                bbos.writeShortUTF(obj.substring(beginIndex, endIndex));
-            }
+            bbos.writeUTF(obj);
+//            int length = obj.length();
+//            int chunkSize = length / STRING_CHUNK_SIZE + 1;
+//            for (int i = 0; i < chunkSize; i++) {
+//                int beginIndex = Math.max(0, i * STRING_CHUNK_SIZE - 1);
+//                int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
+//                bbos.writeUTF(obj.substring(beginIndex, endIndex));
+//            }
         }
     }
 
@@ -246,7 +248,7 @@ public final class Serializer {
         }
 
         public DataSerializable read(FastByteArrayInputStream bbis) throws Exception {
-            String className = bbis.readShortUTF();
+            String className = bbis.readUTF();
             try {
                 DataSerializable ds = (DataSerializable) Class.forName(className).newInstance();
                 ds.readData(bbis);
@@ -258,7 +260,7 @@ public final class Serializer {
         }
 
         public void write(FastByteArrayOutputStream bbos, DataSerializable obj) throws Exception {
-            bbos.writeShortUTF(obj.getClass().getName());
+            bbos.writeUTF(obj.getClass().getName());
             obj.writeData(bbos);
         }
     }

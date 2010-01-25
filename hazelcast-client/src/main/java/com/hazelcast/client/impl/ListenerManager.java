@@ -36,6 +36,7 @@ import com.hazelcast.client.Packet;
 import com.hazelcast.core.*;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.InstanceEvent.InstanceEventType;
+import com.sun.jmx.remote.internal.ArrayQueue;
 
 import static com.hazelcast.client.Serializer.toObject;
 import static com.hazelcast.impl.BaseManager.getInstanceType;
@@ -44,18 +45,18 @@ public class ListenerManager extends ClientRunnable{
 	final private Map<String, Map<Object, List<EntryListener<?,?>>>> entryListeners = new ConcurrentHashMap<String, Map<Object,List<EntryListener<?,?>>>>();
 	final private Map<String, List<MessageListener<Object>>> messageListeners = new ConcurrentHashMap<String, List<MessageListener<Object>>>();
 	final private List<InstanceListener> instanceListeners = new CopyOnWriteArrayList<InstanceListener>();
+    final private List<MembershipListener> memberShipListeners = new CopyOnWriteArrayList<MembershipListener>();
     final private BlockingQueue<Call> listenerCalls = new LinkedBlockingQueue<Call>();
-	final Map<ItemListener, EntryListener> itemListener2EntryListener = new ConcurrentHashMap<ItemListener, EntryListener>();
-	final BlockingQueue<Packet> queue = new LinkedBlockingQueue<Packet>();
-	final private HazelcastClient client;
+    final Map<ItemListener, EntryListener> itemListener2EntryListener = new ConcurrentHashMap<ItemListener, EntryListener>();
+    final BlockingQueue<Packet> queue = new LinkedBlockingQueue<Packet>();
+    final private HazelcastClient client;
 
-	
-	public ListenerManager(HazelcastClient hazelcastClient) {
+    public ListenerManager(HazelcastClient hazelcastClient) {
 		this.client = hazelcastClient;
 	}
 
 	public synchronized void registerEntryListener(String name, Object key, EntryListener<?,?> entryListener){
-		if(!entryListeners.containsKey(name)){
+        if(!entryListeners.containsKey(name)){
 			entryListeners.put(name, new HashMap<Object,List<EntryListener<?,?>>>());
 		}
 		if(!entryListeners.get(name).containsKey(key)){
@@ -119,6 +120,10 @@ public class ListenerManager extends ClientRunnable{
     }
     public synchronized boolean noInstanceListenerRegistered() {
 		return instanceListeners.isEmpty();
+	}
+     
+    public synchronized boolean noMembershipListenerRegistered() {
+		return memberShipListeners.isEmpty();
 	}
 
     public synchronized void removeEntryListener(String name, Object key, EntryListener<?,?> entryListener){
@@ -210,10 +215,10 @@ public class ListenerManager extends ClientRunnable{
     	String id = (String)toObject(packet.getKey());
         InstanceEventType instanceEventType = (InstanceEventType)toObject(packet.getValue());
     	InstanceEvent event = new InstanceEvent(instanceEventType, (Instance)client.getClientProxy(id));
-    	for(Iterator<InstanceListener> it = instanceListeners.iterator();it.hasNext();){
-    		InstanceListener listener = it.next();
-    		if(InstanceEventType.CREATED.equals(event.getEventType())){
-    			listener.instanceCreated(event);
+        for(Iterator<InstanceListener> it = instanceListeners.iterator();it.hasNext();){
+            InstanceListener listener = it.next();
+            if(InstanceEventType.CREATED.equals(event.getEventType())){
+                listener.instanceCreated(event);
     		}
     		else if(InstanceEventType.DESTROYED.equals(event.getEventType())){
     			listener.instanceDestroyed(event);
@@ -247,6 +252,10 @@ public class ListenerManager extends ClientRunnable{
 
 
     public void registerMembershipListener(MembershipListener listener) {
-        //To change body of created methods use File | Settings | File Templates.
+        this.memberShipListeners.add(listener);
+    }
+
+    public void removeMembershipListener(MembershipListener listener) {
+        this.memberShipListeners.remove(listener);
     }
 }

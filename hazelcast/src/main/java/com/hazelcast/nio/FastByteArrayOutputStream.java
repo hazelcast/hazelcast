@@ -26,6 +26,8 @@ public final class FastByteArrayOutputStream extends ByteArrayOutputStream imple
 
     private final byte writeBuffer[] = new byte[8];
 
+    private static final int STRING_CHUNK_SIZE = 16 * 1024;
+
     public FastByteArrayOutputStream() {
         this(32);
     }
@@ -151,51 +153,17 @@ public final class FastByteArrayOutputStream extends ByteArrayOutputStream imple
     }
 
     public final void writeUTF(final String str) throws IOException {
-        final int strlen = str.length();
-        int utflen = 0;
-        int c, count = 0;
-        /* use charAt instead of copying String to char array */
-        for (int i = 0; i < strlen; i++) {
-            c = str.charAt(i);
-            if ((c >= 0x0001) && (c <= 0x007F)) {
-                utflen++;
-            } else if (c > 0x07FF) {
-                utflen += 3;
-            } else {
-                utflen += 2;
-            }
+        int length = str.length();
+        int chunkSize = length / STRING_CHUNK_SIZE + 1;
+        writeInt(chunkSize);
+        for (int i = 0; i < chunkSize; i++) {
+            int beginIndex = Math.max(0, i * STRING_CHUNK_SIZE - 1);
+            int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
+            writeShortUTF(str.substring(beginIndex, endIndex));
         }
-//        if (utflen > 65535)
-//            throw new UTFDataFormatException("encoded string too long: " + utflen + " bytes");
-        final byte[] bytearr = new byte[utflen + 4];
-        bytearr[count++] = (byte) ((utflen >>> 24) & 0xFF);
-        bytearr[count++] = (byte) ((utflen >>> 16) & 0xFF);
-        bytearr[count++] = (byte) ((utflen >>> 8) & 0xFF);
-        bytearr[count++] = (byte) ((utflen) & 0xFF);
-        int i;
-        for (i = 0; i < strlen; i++) {
-            c = str.charAt(i);
-            if (!((c >= 0x0001) && (c <= 0x007F)))
-                break;
-            bytearr[count++] = (byte) c;
-        }
-        for (; i < strlen; i++) {
-            c = str.charAt(i);
-            if ((c >= 0x0001) && (c <= 0x007F)) {
-                bytearr[count++] = (byte) c;
-            } else if (c > 0x07FF) {
-                bytearr[count++] = (byte) (0xE0 | ((c >> 12) & 0x0F));
-                bytearr[count++] = (byte) (0x80 | ((c >> 6) & 0x3F));
-                bytearr[count++] = (byte) (0x80 | ((c) & 0x3F));
-            } else {
-                bytearr[count++] = (byte) (0xC0 | ((c >> 6) & 0x1F));
-                bytearr[count++] = (byte) (0x80 | ((c) & 0x3F));
-            }
-        }
-        write(bytearr, 0, utflen + 4);
     }
 
-    public final void writeShortUTF(final String str) throws IOException {
+    private final void writeShortUTF(final String str) throws IOException {
         final int strlen = str.length();
         int utflen = 0;
         int c, count = 0;

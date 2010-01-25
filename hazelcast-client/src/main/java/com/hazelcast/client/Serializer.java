@@ -18,6 +18,8 @@
 package com.hazelcast.client;
 
 import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.FastByteArrayInputStream;
+import com.hazelcast.nio.FastByteArrayOutputStream;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -42,11 +44,13 @@ public class Serializer {
 
     private static final byte SERIALIZER_TYPE_BIG_INTEGER = 8;
 
-    private static final int STRING_CHUNK_SIZE = 16 * 1024;
+//    private static final int STRING_CHUNK_SIZE = 16 * 1024;
 
     public static byte[] toByte(Object object) {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(bos);
+//        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+//        DataOutputStream dos = new DataOutputStream(bos);
+        FastByteArrayOutputStream dos = new FastByteArrayOutputStream();
+        dos.reset();
         if (object == null) return new byte[0];
         try {
             if (object instanceof DataSerializable) {
@@ -56,13 +60,14 @@ public class Serializer {
             } else if (object instanceof String) {
                 String string = (String) object;
                 dos.writeByte(SERIALIZER_TYPE_STRING);
-                int length = string.length();
-                int chunkSize = length / STRING_CHUNK_SIZE + 1;
-                for (int i = 0; i < chunkSize; i++) {
-                    int beginIndex = Math.max(0, i * STRING_CHUNK_SIZE - 1);
-                    int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
-                    dos.writeUTF(string.substring(beginIndex, endIndex));
-                }
+                dos.writeUTF(string);
+//                int length = string.length();
+//                int chunkSize = length / STRING_CHUNK_SIZE + 1;
+//                for (int i = 0; i < chunkSize; i++) {
+//                    int beginIndex = Math.max(0, i * STRING_CHUNK_SIZE - 1);
+//                    int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
+//                    dos.writeUTF(string.substring(beginIndex, endIndex));
+//                }
             } else if (object instanceof byte[]) {
                 byte[] bytes = (byte[]) object;
                 dos.writeByte(SERIALIZER_TYPE_BYTE_ARRAY);
@@ -96,14 +101,15 @@ public class Serializer {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        byte[] bytes = bos.toByteArray();
+        byte[] bytes = dos.toByteArray();
         return bytes;
     }
 
     public static Object toObject(byte[] bytes) {
-        ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-        DataInputStream dis = new DataInputStream(bis);
-        int type = bis.read();
+//        ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+//        DataInputStream dis = new DataInputStream(bis);
+        FastByteArrayInputStream dis = new FastByteArrayInputStream(bytes);
+        int type = dis.read();
         try {
             if (type == SERIALIZER_TYPE_DATA) {
                 String className = dis.readUTF();
@@ -116,17 +122,18 @@ public class Serializer {
                 data.readData(dis);
                 return data;
             } else if (type == SERIALIZER_TYPE_STRING) {
-                StringBuilder result = new StringBuilder();
-                while (dis.available() > 0) {
-                    result.append(dis.readUTF());
-                }
-                return result.toString();
+//                StringBuilder result = new StringBuilder();
+//                while (dis.available() > 0) {
+//                    result.append(dis.readUTF());
+//                }
+//                return result.toString();
+                return dis.readUTF();
             } else if (type == SERIALIZER_TYPE_BYTE_ARRAY) {
                 int size = dis.readInt();
                 byte[] b = new byte[size];
-                int redSize = bis.read(b);
-                if (size != redSize) {
-                    throw new RuntimeException("Couldn't read all of the data");
+                int redSize = dis.read(b);
+                if (size!=0 && size != redSize) {
+                    throw new RuntimeException("Couldn't read all of the data Size: "+ size + ", But I red:"+redSize);
                 }
                 return b;
             } else if (type == SERIALIZER_TYPE_INTEGER) {

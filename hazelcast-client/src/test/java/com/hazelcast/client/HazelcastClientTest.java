@@ -17,9 +17,8 @@
 
 package com.hazelcast.client;
 
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.fail;
-import static org.junit.Assert.*;
+import com.hazelcast.core.*;
+import com.hazelcast.core.InstanceEvent.InstanceEventType;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -28,10 +27,10 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import com.hazelcast.core.*;
-import com.hazelcast.core.InstanceEvent.InstanceEventType;
-
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.fail;
+import static org.junit.Assert.*;
 
 public class HazelcastClientTest {
 
@@ -44,56 +43,51 @@ public class HazelcastClientTest {
     }
 
     @Test
-    public void iterateOverMembers(){
+    public void iterateOverMembers() {
         Cluster cluster = getHazelcastClient().getCluster();
         Set<com.hazelcast.core.Member> members = cluster.getMembers();
         for (Iterator<com.hazelcast.core.Member> iterator = members.iterator(); iterator.hasNext();) {
             com.hazelcast.core.Member member = iterator.next();
             assertNotNull(member);
         }
-
     }
-    
+
     @Test
-    public void addInstanceListener() throws InterruptedException{
+    public void addInstanceListener() throws InterruptedException {
         final CountDownLatch destroyedLatch = new CountDownLatch(1);
-    	final CountDownLatch createdLatch = new CountDownLatch(1);
-    	final IMap<Integer, Integer> instance = getHazelcastClient().getMap("addInstanceListener");
+        final CountDownLatch createdLatch = new CountDownLatch(1);
+        final IMap<Integer, Integer> instance = getHazelcastClient().getMap("addInstanceListener");
+        InstanceListener listener = new InstanceListener() {
 
-    	InstanceListener listener = new InstanceListener() {
-			
-			public void instanceDestroyed(InstanceEvent event) {
-				assertEquals(InstanceEventType.DESTROYED, event.getEventType());
-				assertEquals(instance, event.getInstance());
-				destroyedLatch.countDown();
-			}
-			
-			public void instanceCreated(InstanceEvent event) {
-				assertEquals(InstanceEventType.CREATED, event.getEventType());
-				IMap<Integer, Integer> map = (IMap<Integer, Integer>) event.getInstance();
-				assertEquals(instance.getName(), map.getName());
-				assertEquals(1, map.size());
-				createdLatch.countDown();
-			}
-		};
+            public void instanceDestroyed(InstanceEvent event) {
+                assertEquals(InstanceEventType.DESTROYED, event.getEventType());
+                assertEquals(instance, event.getInstance());
+                destroyedLatch.countDown();
+            }
 
+            public void instanceCreated(InstanceEvent event) {
+                assertEquals(InstanceEventType.CREATED, event.getEventType());
+                IMap<Integer, Integer> map = (IMap<Integer, Integer>) event.getInstance();
+                assertEquals(instance.getName(), map.getName());
+                assertEquals(1, map.size());
+                createdLatch.countDown();
+            }
+        };
         getHazelcastClient().addInstanceListener(listener);
         instance.put(1, 1);
-
-
+        assertEquals(1, instance.size());
         assertTrue(createdLatch.await(2, TimeUnit.SECONDS));
         instance.destroy();
         assertTrue(destroyedLatch.await(2, TimeUnit.SECONDS));
-    	
-    	getHazelcastClient().removeInstanceListener(listener);
+        getHazelcastClient().removeInstanceListener(listener);
+        Thread.sleep(2000);
     }
-   
 
     @Test
     public void testGetClusterTime() {
         Cluster cluster = getHazelcastClient().getCluster();
         long clusterTime = cluster.getClusterTime();
-        assertTrue(clusterTime>0);
+        assertTrue(clusterTime > 0);
         System.out.println(clusterTime);
     }
 
@@ -135,23 +129,21 @@ public class HazelcastClientTest {
     }
 
     @Test
-    public void testPutDate(){
+    public void testPutDate() {
         Map<String, Date> map = getHazelcastClient().getMap("putDate");
         Date date = new Date();
         map.put("key", date);
         Date d = map.get("key");
         assertEquals(date.getTime(), d.getTime());
-
     }
 
     @Test
-    public void testPutBigInteger(){
+    public void testPutBigInteger() {
         Map<String, BigInteger> map = getHazelcastClient().getMap("putBigInteger");
         BigInteger number = new BigInteger("12312312312");
         map.put("key", number);
         BigInteger b = map.get("key");
         assertEquals(number, b);
-
     }
 
     @Test
@@ -249,7 +241,7 @@ public class HazelcastClientTest {
     public void mapEntrySetWhenRemoved() {
         IMap<String, String> map = getHazelcastClient().getMap("testMapEntrySetWhenRemoved");
         map.put("Hello", "World");
-        map.put("HC","Rocks");
+        map.put("HC", "Rocks");
         Set<IMap.Entry<String, String>> set = map.entrySet();
         map.remove("Hello");
         map.remove("HC");
@@ -365,57 +357,57 @@ public class HazelcastClientTest {
 
     @Test
     @Ignore
-    public void testListItemListener(){
+    public void testListItemListener() {
         final CountDownLatch latch = new CountDownLatch(2);
         IList<String> list = getHazelcastClient().getList("testListListener");
-        list.addItemListener(new ItemListener<String>(){
-         public void itemAdded(String item) {
-            assertEquals("hello", item);
-            latch.countDown();
-        }
+        list.addItemListener(new ItemListener<String>() {
+            public void itemAdded(String item) {
+                assertEquals("hello", item);
+                latch.countDown();
+            }
 
-        public void itemRemoved(String item) {
-            assertEquals("hello", item);
-            latch.countDown();
+            public void itemRemoved(String item) {
+                assertEquals("hello", item);
+                latch.countDown();
             }
         }, true);
         list.add("hello");
         list.remove("hello");
         try {
-            assertTrue (latch.await(5, TimeUnit.SECONDS));
+            assertTrue(latch.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException ignored) {
         }
     }
 
     @Test
     @Ignore
-    public void testSetItemListener(){
+    public void testSetItemListener() {
         final CountDownLatch latch = new CountDownLatch(2);
         ISet<String> set = getHazelcastClient().getSet("testSetListener");
-        set.addItemListener(new ItemListener<String>(){
-         public void itemAdded(String item) {
-            assertEquals("hello", item);
-            latch.countDown();
-        }
+        set.addItemListener(new ItemListener<String>() {
+            public void itemAdded(String item) {
+                assertEquals("hello", item);
+                latch.countDown();
+            }
 
-        public void itemRemoved(String item) {
-            assertEquals("hello", item);
-            latch.countDown();
+            public void itemRemoved(String item) {
+                assertEquals("hello", item);
+                latch.countDown();
             }
         }, true);
         set.add("hello");
         set.remove("hello");
         try {
-            assertTrue (latch.await(5, TimeUnit.SECONDS));
+            assertTrue(latch.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException ignored) {
         }
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testQueueItemListener(){
+    public void testQueueItemListener() {
         final CountDownLatch latch = new CountDownLatch(2);
         IQueue<String> queue = getHazelcastClient().getQueue("testQueueListener");
-        queue.addItemListener(new ItemListener<String>(){
+        queue.addItemListener(new ItemListener<String>() {
             public void itemAdded(String item) {
                 assertEquals("hello", item);
                 latch.countDown();
@@ -429,7 +421,7 @@ public class HazelcastClientTest {
         queue.offer("hello");
         assertEquals("hello", queue.poll());
         try {
-            assertTrue (latch.await(5, TimeUnit.SECONDS));
+            assertTrue(latch.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException ignored) {
         }
     }
@@ -730,7 +722,7 @@ public class HazelcastClientTest {
     public void testGetMapEntryHits() {
         IMap<String, String> map = getHazelcastClient().getMap("testGetMapEntryHits");
         map.put("Hello", "World");
-        MapEntry me = map.getMapEntry("Hello");
+        MapEntry<String, String> me = map.getMapEntry("Hello");
         assertEquals(0, me.getHits());
         map.get("Hello");
         map.get("Hello");
@@ -743,7 +735,7 @@ public class HazelcastClientTest {
     public void testGetMapEntryVersion() {
         IMap<String, String> map = getHazelcastClient().getMap("testGetMapEntryVersion");
         map.put("Hello", "World");
-        MapEntry me = map.getMapEntry("Hello");
+        MapEntry<String, String> me = map.getMapEntry("Hello");
         assertEquals(0, me.getVersion());
         map.put("Hello", "1");
         map.put("Hello", "2");
@@ -781,5 +773,12 @@ public class HazelcastClientTest {
             }
         }
         assertFalse(found);
+    }
+
+    @Test
+    public void newSerializer(){
+        byte[] b = Serializer.toByte("Fuad");
+        System.out.println("Size:" +b.length);
+        assertEquals("Fuad",Serializer.toObject(b));
     }
 }

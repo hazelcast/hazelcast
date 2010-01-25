@@ -87,7 +87,6 @@ public class SessionObject {
 
     private void initTimer(final HttpSession session) {
         Timer timer = getTimerFromServletContext(session);
-
         task = new TimerTask() {
             @Override
             public void run() {
@@ -110,7 +109,6 @@ public class SessionObject {
                     session.getServletContext().setAttribute("timer", timer);
                 }
             }
-
         }
         return timer;
     }
@@ -126,7 +124,12 @@ public class SessionObject {
         HazelcastClient client;
         try {
             String[] addresses = splitAddresses(ips);
-            client = HazelcastClient.newHazelcastClient(name, pass, addresses);
+            if (addresses.length > 0) {
+                client = HazelcastClient.newHazelcastClient(name, pass, addresses[0]);
+            }
+            else{
+                throw new ConnectionExceptoin("Not a valid address");
+            }
         } catch (RuntimeException e) {
             e.printStackTrace();
             throw new ConnectionExceptoin(e.getMessage());
@@ -144,15 +147,14 @@ public class SessionObject {
                 Instance instance = event.getInstance();
                 InstanceEvent changeEvent = new InstanceDestroyed(id, instanceTypeMatchMap.get(event.getInstanceType()),
                         getName(instance));
-
                 queue.offer(changeEvent);
             }
         });
         eventGenerators.add(new MembershipEventGenerator(client, id));
-
         return client;
     }
-    private String[] splitAddresses(String ips){
+
+    private String[] splitAddresses(String ips) {
         String[] result = ips.split(",");
         return result;
     }
@@ -165,7 +167,6 @@ public class SessionObject {
         MemberEvent memberEvent = (MemberEvent) new MembershipEventGenerator(client, clusterId).generateEvent();
         clusterView.getMembers().addAll(memberEvent.getMembers());
         Collection<Instance> instances = client.getInstances();
-
         for (Iterator<Instance> iterator = instances.iterator(); iterator.hasNext();) {
             Instance instance = iterator.next();
             if (Instance.InstanceType.MAP.equals(instance.getInstanceType())) {
