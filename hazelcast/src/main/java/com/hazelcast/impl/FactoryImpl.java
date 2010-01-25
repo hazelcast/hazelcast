@@ -388,7 +388,7 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public IdGenerator getIdGenerator(String name) {
-        return (IdGenerator) getOrCreateProxyByName("i:" + name);
+        return (IdGenerator) getOrCreateProxyByName(Prefix.IDGEN + name);
     }
 
     public Transaction getTransaction() {
@@ -407,33 +407,27 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public <K, V> IMap<K, V> getMap(String name) {
-        name = "c:" + name;
-        return (IMap<K, V>) getOrCreateProxyByName(name);
+        return (IMap<K, V>) getOrCreateProxyByName(Prefix.MAP + name);
     }
 
     public <E> IQueue<E> getQueue(String name) {
-        name = "q:" + name;
-        return (IQueue) getOrCreateProxyByName(name);
+        return (IQueue) getOrCreateProxyByName(Prefix.QUEUE + name);
     }
 
     public <E> ITopic<E> getTopic(String name) {
-        name = "t:" + name;
-        return (ITopic) getOrCreateProxyByName(name);
+        return (ITopic) getOrCreateProxyByName(Prefix.TOPIC + name);
     }
 
     public <E> ISet<E> getSet(String name) {
-        name = "m:s:" + name;
-        return (ISet) getOrCreateProxyByName(name);
+        return (ISet) getOrCreateProxyByName(Prefix.SET + name);
     }
 
     public <E> IList<E> getList(String name) {
-        name = "m:l:" + name;
-        return (IList) getOrCreateProxyByName(name);
+        return (IList) getOrCreateProxyByName(Prefix.LIST + name);
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
-        name = "m:u:" + name;
-        return (MultiMap<K, V>) getOrCreateProxyByName(name);
+        return (MultiMap<K, V>) getOrCreateProxyByName(Prefix.MULTIMAP + name);
     }
 
     public ILock getLock(Object key) {
@@ -465,13 +459,13 @@ public class FactoryImpl implements HazelcastInstance {
         Instance proxy = proxies.remove(proxyKey);
         if (proxy != null) {
             String name = proxyKey.name;
-            if (name.startsWith("q:")) {
+            if (name.startsWith(Prefix.QUEUE)) {
                 node.blockingQueueManager.destroy(name);
-            } else if (name.startsWith("c:")) {
+            } else if (name.startsWith(Prefix.MAP)) {
                 node.concurrentMapManager.destroy(name);
-            } else if (name.startsWith("m:")) {
+            } else if (name.startsWith(Prefix.MAP_BASED)) {
                 node.concurrentMapManager.destroy(name);
-            } else if (name.startsWith("t:")) {
+            } else if (name.startsWith(Prefix.TOPIC)) {
                 node.topicManager.destroy(name);
             }
             fireInstanceDestroyEvent(proxy);
@@ -485,19 +479,19 @@ public class FactoryImpl implements HazelcastInstance {
         if (proxy == null) {
             created = true;
             String name = proxyKey.name;
-            if (name.startsWith("q:")) {
+            if (name.startsWith(Prefix.QUEUE)) {
                 proxy = new QProxyImpl(name, this);
-            } else if (name.startsWith("t:")) {
+            } else if (name.startsWith(Prefix.TOPIC)) {
                 proxy = new TopicProxyImpl(name, this);
-            } else if (name.startsWith("c:")) {
+            } else if (name.startsWith(Prefix.MAP)) {
                 proxy = new MProxyImpl(name, this);
-            } else if (name.startsWith("m:")) {
+            } else if (name.startsWith(Prefix.MAP_BASED)) {
                 if (BaseManager.getInstanceType(name) == Instance.InstanceType.MULTIMAP) {
                     proxy = new MultiMapProxy(name, this);
                 } else {
                     proxy = new CollectionProxyImpl(name, this);
                 }
-            } else if (name.startsWith("i:")) {
+            } else if (name.startsWith(Prefix.IDGEN)) {
                 proxy = new IdGeneratorProxy(name, this);
             } else if (name.equals("lock")) {
                 proxy = new LockProxy(this, proxyKey.key);

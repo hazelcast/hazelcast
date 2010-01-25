@@ -35,15 +35,8 @@ import java.util.concurrent.ExecutorService;
  * dies, client will transparently switch to another live member.
  */
 public class HazelcastClient implements HazelcastInstance {
-    private static final String MAP_PREFIX = "c:";
-    private static final String LIST_PREFIX = "m:l:";
-    private static final String SET_PREFIX = "m:s:";
-    private static final String QUEUE_PREFIX = "q:";
-    private static final String TOPIC_PREFIX = "t:";
-    private static final String IDGEN_PREFIX = "i:";
-    private static final String MULTIMAP_PROXY = "m:u:";
 
-    final Map<Long, Call> calls = new ConcurrentHashMap<Long, Call>();
+	final Map<Long, Call> calls = new ConcurrentHashMap<Long, Call>();
     final ListenerManager listenerManager;
     final OutRunnable out;
     final InRunnable in;
@@ -176,7 +169,7 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public <K, V> IMap<K, V> getMap(String name) {
-        return (IMap<K, V>) getClientProxy(MAP_PREFIX + name);
+        return (IMap<K, V>) getClientProxy(Prefix.MAP + name);
     }
 
     public <K, V, E> ClientProxy getClientProxy(Object o) {
@@ -187,19 +180,19 @@ public class HazelcastClient implements HazelcastInstance {
                 if (proxy == null) {
                     if (o instanceof String) {
                         String name = (String) o;
-                        if (name.startsWith(MAP_PREFIX)) {
+                        if (name.startsWith(Prefix.MAP)) {
                             proxy = new MapClientProxy<K, V>(this, name);
-                        } else if (name.startsWith(LIST_PREFIX)) {
+                        } else if (name.startsWith(Prefix.LIST)) {
                             proxy = new ListClientProxy<E>(this, name);
-                        } else if (name.startsWith(SET_PREFIX)) {
+                        } else if (name.startsWith(Prefix.SET)) {
                             proxy = new SetClientProxy<E>(this, name);
-                        } else if (name.startsWith(QUEUE_PREFIX)) {
+                        } else if (name.startsWith(Prefix.QUEUE)) {
                             proxy = new QueueClientProxy<E>(this, name);
-                        } else if (name.startsWith(TOPIC_PREFIX)) {
+                        } else if (name.startsWith(Prefix.TOPIC)) {
                             proxy = new TopicClientProxy<E>(this, name);
-                        } else if (name.startsWith(IDGEN_PREFIX)) {
+                        } else if (name.startsWith(Prefix.IDGEN)) {
                             proxy = new IdGeneratorClientProxy(this, name);
-                        } else if (name.startsWith(MULTIMAP_PROXY)) {
+                        } else if (name.startsWith(Prefix.MULTIMAP)) {
                             proxy = new MultiMapClientProxy(this, name);
                         } else {
                             proxy = new LockClientProxy(o, this);
@@ -244,7 +237,7 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public IdGenerator getIdGenerator(String name) {
-        return (IdGenerator) getClientProxy(IDGEN_PREFIX + name);
+        return (IdGenerator) getClientProxy(Prefix.IDGEN + name);
     }
 
     public Collection<Instance> getInstances() {
@@ -252,7 +245,7 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public <E> IList<E> getList(String name) {
-        return (IList<E>) getClientProxy(LIST_PREFIX + name);
+        return (IList<E>) getClientProxy(Prefix.LIST + name);
     }
 
     public ILock getLock(Object obj) {
@@ -260,7 +253,7 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
-        return (MultiMap<K, V>) getClientProxy(MULTIMAP_PROXY + name);
+        return (MultiMap<K, V>) getClientProxy(Prefix.MULTIMAP + name);
     }
 
     public String getName() {
@@ -268,16 +261,16 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public <E> IQueue<E> getQueue(String name) {
-        return (IQueue<E>) getClientProxy(QUEUE_PREFIX + name);
+        return (IQueue<E>) getClientProxy(Prefix.QUEUE + name);
     }
 
     public <E> ISet<E> getSet(String name) {
-        return (ISet<E>) getClientProxy(SET_PREFIX + name);
+        return (ISet<E>) getClientProxy(Prefix.SET + name);
     }
 
     public <E> ITopic<E> getTopic(String name) {
         // TODO Auto-generated method stub
-        return (ITopic) getClientProxy(TOPIC_PREFIX + name);
+        return (ITopic) getClientProxy(Prefix.TOPIC + name);
     }
 
     public void removeInstanceListener(InstanceListener instanceListener) {

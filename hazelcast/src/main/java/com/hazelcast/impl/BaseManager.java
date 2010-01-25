@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.RemotelyProcessable;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.nio.*;
 
@@ -756,13 +757,13 @@ public abstract class BaseManager {
     }
 
     public static InstanceType getInstanceType(final String name) {
-        if (name.startsWith("q:")) {
+        if (name.startsWith(Prefix.QUEUE)) {
             return InstanceType.QUEUE;
-        } else if (name.startsWith("t:")) {
+        } else if (name.startsWith(Prefix.TOPIC)) {
             return InstanceType.TOPIC;
-        } else if (name.startsWith("c:")) {
+        } else if (name.startsWith(Prefix.MAP)) {
             return InstanceType.MAP;
-        } else if (name.startsWith("m:")) {
+        } else if (name.startsWith(Prefix.MAP_BASED)) {
             if (name.length() > 3) {
                 final String typeStr = name.substring(2, 4);
                 if ("s:".equals(typeStr)) {
@@ -774,7 +775,9 @@ public abstract class BaseManager {
                 }
             }
             return InstanceType.MAP;
-        } else throw new RuntimeException("Unknown InstanceType " + name);
+        } else {
+        	throw new RuntimeException("Unknown InstanceType " + name);
+        }
     }
 
     public void enqueueCall(Call call) {
