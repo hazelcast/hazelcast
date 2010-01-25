@@ -101,7 +101,7 @@ public class ListenerManager extends BaseManager {
 
         void doOperation(Request request) {
             Address from = request.caller;
-            logger.log(Level.FINEST, "AddListenerOperation from " + from + ", local=" + request.local + "  key:" + request.key);
+            logger.log(Level.FINEST, "AddListenerOperation from " + from + ", local=" + request.local + "  key:" + request.key + " op:" + request.operation);
             if (from == null) throw new RuntimeException("Listener origin is not known!");
             boolean add = (request.operation == ADD_LISTENER);
             boolean includeValue = (request.longValue == 1);

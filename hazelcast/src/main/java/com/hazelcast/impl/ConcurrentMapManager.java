@@ -94,6 +94,7 @@ public final class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_REPLACE_IF_SAME, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT_MULTI, new PutMultiOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REMOVE, new RemoveOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_EVICT, new EvictOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REMOVE_IF_SAME, new RemoveOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REMOVE_ITEM, new RemoveItemOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_BACKUP_PUT, new BackupPacketProcessor());
@@ -288,11 +289,10 @@ public final class ConcurrentMapManager extends BaseManager {
         @Override
         public void process() {
             setTarget();
-            if (!thisAddress.equals(target)) {
+            if (request.operation == CONCURRENT_MAP_EVICT_INTERNAL && !thisAddress.equals(target)) {
                 setResult(false);
             } else {
-                prepareForBackup();
-                doLocalOp();
+                super.process();
             }
         }
 
@@ -1370,6 +1370,14 @@ public final class ConcurrentMapManager extends BaseManager {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.getMapEntry(request);
+        }
+    }
+
+    class EvictOperationHandler extends MTargetAwareOperationHandler {
+        @Override
+        void doOperation(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            request.response = cmap.evict(request);
         }
     }
 

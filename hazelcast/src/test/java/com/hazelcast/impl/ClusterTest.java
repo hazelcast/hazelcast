@@ -484,10 +484,10 @@ public class ClusterTest {
 
     @Test(timeout = 60000)
     public void testListeners2() throws Exception {
-        final CountDownLatch latchAdded = new CountDownLatch(2);
+        final CountDownLatch latchAdded = new CountDownLatch(1);
         final CountDownLatch latchUpdated = new CountDownLatch(1);
         final CountDownLatch latchRemoved = new CountDownLatch(1);
-        final CountDownLatch latchEvicted = new CountDownLatch(1);
+        final CountDownLatch latchEvicted = new CountDownLatch(0);
         EntryListener listener = new EntryListener() {
             public void entryAdded(EntryEvent entryEvent) {
                 latchAdded.countDown();
@@ -510,17 +510,19 @@ public class ClusterTest {
         IMap mapSource = h2.getMap("default");
         IMap map = h1.getMap("default");
         Object key = "2133aa";
-        map.addEntryListener(listener, true);
+        map.addEntryListener(listener, key, true);
         assertNull(mapSource.put(key, "value5"));
         assertEquals("value5", mapSource.put(key, "value55"));
-        assertTrue(mapSource.evict(key));
-        assertNull(mapSource.put(key, "value5"));
+        assertFalse(mapSource.evict(key));
+        assertEquals("value55", mapSource.put(key, "value5"));
         assertEquals("value5", mapSource.remove(key));
+        map.removeEntryListener(listener, key);
+        assertTrue(mapSource.evict(key));
         assertTrue(latchAdded.await(5, TimeUnit.SECONDS));
         assertTrue(latchUpdated.await(5, TimeUnit.SECONDS));
         assertTrue(latchRemoved.await(5, TimeUnit.SECONDS));
         assertTrue(latchEvicted.await(5, TimeUnit.SECONDS));
-        map.removeEntryListener(listener);
+
     }
 
     @Test(timeout = 60000)
@@ -1350,7 +1352,7 @@ public class ClusterTest {
     @Test
     public void testIfProperlyBackedUp() throws InterruptedException {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        int counter = 1000;
+        int counter = 5000;
         Map<Integer, String> map = new HashMap();
         for (int i = 0; i < counter; i++) {
             map.put(i, String.valueOf(i));
@@ -1363,7 +1365,8 @@ public class ClusterTest {
             Thread.sleep(10000);
             LocalMapStats mapStats1 = map1.getLocalMapStats();
             LocalMapStats mapStats2 = map2.getLocalMapStats();
-            while (mapStats1.getOwnedEntryCount() == counter) {
+            System.out.println("now " + mapStats1.getOwnedEntryCount());
+            if (mapStats1.getOwnedEntryCount() == counter) {
                 Thread.sleep(1000);
             }
             assertEquals(mapStats1.getOwnedEntryCount(), mapStats2.getBackupEntryCount());
