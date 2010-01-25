@@ -148,18 +148,29 @@ public class ListenerManager extends ClientRunnable {
         if (collection == null) {
             return;
         }
-        for (Iterator<EntryListener<?, ?>> iterator = collection.iterator(); iterator.hasNext();) {
-            EntryListener<?, ?> entryListener = iterator.next();
-            if (event.getEventType().equals(EntryEventType.ADDED)) {
-                entryListener.entryAdded(event);
-            } else if (event.getEventType().equals(EntryEventType.REMOVED)) {
-                entryListener.entryRemoved(event);
-            } else if (event.getEventType().equals(EntryEventType.UPDATED)) {
-                entryListener.entryUpdated(event);
-            } else if (event.getEventType().equals(EntryEventType.EVICTED)) {
-                entryListener.entryEvicted(event);
+        
+    	switch(event.getEventType()) {
+    	case ADDED:
+            for(EntryListener<?, ?> entryListener : collection) {
+            	entryListener.entryAdded(event);
             }
-        }
+    		break;
+    	case UPDATED:
+    		for(EntryListener<?, ?> entryListener : collection) {
+    			entryListener.entryUpdated(event);
+    		}
+    		break;
+    	case REMOVED:
+            for(EntryListener<?, ?> entryListener : collection) {
+            	entryListener.entryRemoved(event);
+            }
+    		break;
+    	case EVICTED:
+            for(EntryListener<?, ?> entryListener : collection) {
+            	entryListener.entryEvicted(event);
+            }
+    		break;
+    	}
     }
 
     public void enqueue(Packet packet) {
