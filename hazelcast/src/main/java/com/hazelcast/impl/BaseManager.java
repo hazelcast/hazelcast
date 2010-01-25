@@ -766,11 +766,11 @@ public abstract class BaseManager {
         } else if (name.startsWith(Prefix.MAP_BASED)) {
             if (name.length() > 3) {
                 final String typeStr = name.substring(2, 4);
-                if ("s:".equals(typeStr)) {
+                if (Prefix.AS_SET.equals(typeStr)) {
                     return InstanceType.SET;
-                } else if ("l:".equals(typeStr)) {
+                } else if (Prefix.AS_LIST.equals(typeStr)) {
                     return InstanceType.LIST;
-                } else if ("u:".equals(typeStr)) {
+                } else if (Prefix.AS_MULTIMAP.equals(typeStr)) {
                     return InstanceType.MULTIMAP;
                 }
             }
@@ -1199,10 +1199,10 @@ public abstract class BaseManager {
 
     void handleListenerRegistrations(boolean add, String name, Data key,
                                      Address address, boolean includeValue) {
-        if (name.startsWith("q:")) {
+        if (name.startsWith(Prefix.QUEUE)) {
             node.blockingQueueManager.handleListenerRegistrations(add, name, key, address,
                     includeValue);
-        } else if (name.startsWith("t:")) {
+        } else if (name.startsWith(Prefix.TOPIC)) {
             node.topicManager.handleListenerRegistrations(add, name, key, address, includeValue);
         } else {
             node.concurrentMapManager.handleListenerRegistrations(add, name, key, address,
