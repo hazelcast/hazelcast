@@ -29,7 +29,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class AddressPicker {
-    protected static Logger logger = Logger.getLogger(AddressPicker.class.getName());
+    protected static final Logger logger = Logger.getLogger(AddressPicker.class.getName());
 
     public AddressPicker() {
     }
@@ -64,12 +64,14 @@ public class AddressPicker {
             } else if (dashIndex != -1) {
                 final int start = Integer.parseInt(mask.substring(0, dashIndex).trim());
                 final int end = Integer.parseInt(mask.substring(dashIndex + 1).trim());
-                if (ipa < start || ipa > end)
-                    return false;
+                if (ipa < start || ipa > end) {
+                	return false;
+                }
             } else {
                 final int x = Integer.parseInt(mask);
-                if (x != ipa)
-                    return false;
+                if (x != ipa) {
+                	return false;
+                }
             }
         }
         return true;
