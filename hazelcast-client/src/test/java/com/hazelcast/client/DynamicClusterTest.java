@@ -388,6 +388,34 @@ public class DynamicClusterTest {
         assertTrue(cdl.await(2, TimeUnit.SECONDS));
     }
 
+    @Test
+    public void clientWithAutoMemberListUpdate() throws InterruptedException {
+        Config conf = new Config();
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(conf);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(conf.getGroupConfig().getName(), conf.getGroupConfig().getPassword(),
+                h1.getCluster().getLocalMember().getInetSocketAddress().toString().substring(1));
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(conf);
+        Thread.sleep(1000);
+        h1.shutdown();
+        Map<Integer, Integer> map = client.getMap("map");
+        map.put(1, 1);
+        assertEquals(Integer.valueOf(1), map.get(1));
+    }
+
+    @Test
+    public void ensureClientWillUpdateMembersList() throws InterruptedException {
+        Config conf = new Config();
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(conf);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(conf);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(conf.getGroupConfig().getName(), conf.getGroupConfig().getPassword(),
+                h1.getCluster().getLocalMember().getInetSocketAddress().toString().substring(1));
+        Thread.sleep(1000);
+        h1.shutdown();
+        Map<Integer, Integer> map = client.getMap("map");
+        map.put(1, 1);
+        assertEquals(Integer.valueOf(1), map.get(1));
+    }
+
     private Map<Integer, HazelcastInstance> getMapOfClusterMembers(HazelcastInstance... h) {
         Map<Integer, HazelcastInstance> memberMap = new HashMap<Integer, HazelcastInstance>();
         for (HazelcastInstance hazelcastInstance : h) {

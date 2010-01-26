@@ -74,10 +74,10 @@ public class HazelcastClient implements HazelcastInstance {
             connectionManager.getConnection();
         } catch (IOException ignored) {
         }
-
-//        this.getCluster().addMembershipListener(connectionManager);
-
-
+        if (automatic) {
+            this.getCluster().addMembershipListener(connectionManager);
+            connectionManager.updateMembers();
+        }
     }
 
     private HazelcastClient(String groupName, String groupPassword, InetSocketAddress address) {

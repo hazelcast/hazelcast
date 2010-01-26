@@ -27,7 +27,10 @@ import com.hazelcast.nio.Address;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -55,9 +58,6 @@ public class ConnectionManager implements MembershipListener {
     }
 
     public Connection getConnection() throws IOException {
-//        if (!scheduled) {
-//            schedulePeriodicMemberListUpdate();
-//        }
         Connection connection;
         if (currentConnection == null) {
             synchronized (this) {
@@ -72,28 +72,6 @@ public class ConnectionManager implements MembershipListener {
             }
         }
         return currentConnection;
-    }
-
-    private void schedulePeriodicMemberListUpdate() {
-        if (!scheduled) {
-            synchronized (scheduled) {
-                if (!scheduled) {
-                    Timer timer = new Timer();
-                    timer.schedule(new TimerTask() {
-                        @Override
-                        public void run() {
-                            System.out.println("Cluster:" + client.getCluster());
-                            Set<Member> members = client.getCluster().getMembers();
-                            clusterMembers.clear();
-                            for (Member member : members) {
-                                clusterMembers.add(member.getInetSocketAddress());
-                            }
-                        }
-                    }, new Date(), PERIOD);
-                    scheduled = true;
-                }
-            }
-        }
     }
 
     public synchronized void destroyConnection(Connection connection) {
@@ -151,11 +129,21 @@ public class ConnectionManager implements MembershipListener {
         return connection;
     }
 
-    public void memberAdded(MembershipEvent membershipEvent) {
-        this.clusterMembers.add(membershipEvent.getMember().getInetSocketAddress());
+    public synchronized void memberAdded(MembershipEvent membershipEvent) {
+        if (!this.clusterMembers.contains(membershipEvent.getMember().getInetSocketAddress())) {
+            this.clusterMembers.add(membershipEvent.getMember().getInetSocketAddress());
+        }
     }
 
-    public void memberRemoved(MembershipEvent membershipEvent) {
+    public synchronized void memberRemoved(MembershipEvent membershipEvent) {
         this.clusterMembers.remove(membershipEvent.getMember().getInetSocketAddress());
+    }
+
+    public synchronized void updateMembers() {
+        Set<Member> members = client.getCluster().getMembers();
+        clusterMembers.clear();
+        for (Member member : members) {
+            clusterMembers.add(member.getInetSocketAddress());
+        }
     }
 }
