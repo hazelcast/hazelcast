@@ -132,7 +132,7 @@ public class MapStatisticsPanel implements MonitoringPanel {
         AbsolutePanel absolutePanel = (AbsolutePanel) vPanel.getWidget(2);
         Image image = (Image) absolutePanel.getWidget(0);
 
-        image.setUrl("/ChartGenerator?name=" + mapName + "&dummy = " + Math.random() * 10);
+        image.setUrl("ChartGenerator?name=" + mapName + "&dummy = " + Math.random() * 10);
     }
 
     private void addDateToTable(FlexTable table, int row, int col, Date date, DateTimeFormat ttipFormat, DateTimeFormat displayFormat) {
