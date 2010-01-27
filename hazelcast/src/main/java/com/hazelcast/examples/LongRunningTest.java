@@ -76,7 +76,7 @@ public class LongRunningTest {
                 }
             }
             try {
-                int nextSeconds = random(60, 600);
+                int nextSeconds = random(60, 160);
                 log("Next Action after " + nextSeconds + " seconds.");
                 log("members:" + nodes.size() + ", starts: " + starts + ", stops:" + stops + ", restart:" + restarts);
                 Thread.sleep(nextSeconds * 1000);
@@ -92,7 +92,7 @@ public class LongRunningTest {
     void addNode() {
         starts++;
         int entryCount = random(10000);
-        int threadCount = random(1, 50);
+        int threadCount = random(10, 50);
         int valueSizeMax = (entryCount < 1000) ? 50000 : 1000;
         int valueSize = random(10, valueSizeMax);
         TheNode node = new TheNode(nodeIdGen++, entryCount, threadCount, valueSize);

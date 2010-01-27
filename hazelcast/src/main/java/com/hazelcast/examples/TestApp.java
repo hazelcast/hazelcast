@@ -18,6 +18,7 @@
 package com.hazelcast.examples;
 
 import com.hazelcast.core.*;
+import com.hazelcast.partition.Partition;
 
 import java.io.*;
 import java.lang.management.ManagementFactory;
@@ -321,6 +322,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleListContains(args);
         } else if (first.equals("execute")) {
             execute(args);
+        } else if (first.equals("partitions")) {
+            handlePartitions(args);
         } else if (first.equals("txn")) {
             hazelcast.getTransaction().begin();
         } else if (first.equals("commit")) {
@@ -343,6 +346,13 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             System.exit(0);
         } else {
             print("type 'help' for help");
+        }
+    }
+
+    private void handlePartitions (String[] args) {
+        Set<Partition> partitions = hazelcast.getPartitionService().getPartitions();
+        for (Partition partition : partitions) {
+            System.out.println(partition);
         }
     }
 

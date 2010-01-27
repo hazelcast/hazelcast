@@ -342,6 +342,9 @@ public class PartitionManager implements Runnable, PartitionService {
     }
 
     void sendBlocks(Block blockInfo) {
+        if (blockInfo != null && blockInfo.isMigrating() && blockInfo.getMigrationAddress().equals(blockInfo.getOwner())) {
+            blockInfo.setMigrationAddress(null);
+        }
         for (int i = 0; i < BLOCK_COUNT; i++) {
             Block block = blocks[i];
             if (block == null) {
@@ -349,6 +352,8 @@ public class PartitionManager implements Runnable, PartitionService {
             }
             if (block.getOwner() == null) {
                 block.setOwner(thisAddress);
+            } else if (block.getOwner().equals(block.getMigrationAddress())) {
+                block.setMigrationAddress(null);
             }
         }
         Blocks allBlockOwners = new Blocks();
@@ -557,29 +562,26 @@ public class PartitionManager implements Runnable, PartitionService {
     }
 
     void migrateBlock(final Block blockInfo) {
+        Block blockReal = blocks[blockInfo.getBlockId()];
         if (!thisAddress.equals(blockInfo.getOwner())) {
-            throw new RuntimeException();
+            throw new RuntimeException("migrateBlock should be called from owner: " + blockInfo);
         }
         if (!blockInfo.isMigrating()) {
-            throw new RuntimeException();
+            throw new RuntimeException("migrateBlock cannot have non-migrating block: " + blockInfo);
         }
         if (blockInfo.getOwner().equals(blockInfo.getMigrationAddress())) {
-            throw new RuntimeException();
+            throw new RuntimeException("migrateBlock cannot have same owner and migrationAddress:" + blockInfo);
         }
-        Block blockReal = blocks[blockInfo.getBlockId()];
-        if (blockReal.isMigrationStarted()) {
-            return;
-        }
-        blockReal.setMigrationStarted(true);
-        blockReal.setOwner(blockInfo.getOwner());
-        blockReal.setMigrationAddress(blockInfo.getMigrationAddress());
-        logger.log(Level.FINEST, "migrate blockInfo " + blockInfo);
         if (!node.isActive() || node.factory.restarted) {
             return;
         }
         if (concurrentMapManager.isSuperClient()) {
             return;
         }
+        blockReal.setMigrationStarted(true);
+        blockReal.setOwner(blockInfo.getOwner());
+        blockReal.setMigrationAddress(blockInfo.getMigrationAddress());
+        logger.log(Level.FINEST, "migrate blockInfo " + blockInfo);
         List<Record> lsRecordsToMigrate = new ArrayList<Record>(1000);
         Collection<CMap> cmaps = concurrentMapManager.maps.values();
         for (final CMap cmap : cmaps) {
@@ -622,7 +624,7 @@ public class PartitionManager implements Runnable, PartitionService {
                         public void process() {
                             blockInfo.setOwner(blockInfo.getMigrationAddress());
                             blockInfo.setMigrationAddress(null);
-                            completeMigration(blockInfo);
+                            completeMigration(blockInfo.getBlockId());
                             sendCompletionInfo(blockInfo);
                         }
                     });
@@ -640,16 +642,13 @@ public class PartitionManager implements Runnable, PartitionService {
         }
     }
 
-    void completeMigration(Block blockInfo) {
-        if (blockInfo.isMigrating()) {
-            logger.log(Level.WARNING, "block info cannot be migrating " + blockInfo);
-        }
-        Block blockReal = blocks[blockInfo.getBlockId()];
+    void completeMigration(int blockId) {
+        Block blockReal = blocks[blockId];
         if (blockReal.isMigrating()) {
             fireMigrationEvent(false, new Block(blockReal));
-            blockReal.setOwner(blockInfo.getOwner());
+            blockReal.setOwner(blockReal.getMigrationAddress());
             blockReal.setMigrationAddress(null);
-            logger.log(Level.FINEST, "Migration complete info : " + blockInfo);
+            logger.log(Level.FINEST, "Migration complete info : " + blockReal);
         }
     }
 
@@ -661,60 +660,26 @@ public class PartitionManager implements Runnable, PartitionService {
                 if (blockReal.getOwner() == null) {
                     blockReal.setOwner(block.getOwner());
                 }
-                if (block.getOwner().equals(thisAddress)) {
-                    if (!blockReal.getOwner().equals(thisAddress)) {
-                        if (blockReal.getOwner().equals(block.getMigrationAddress()) && !blockReal.isMigrating()) {
-                            // I already migrated to the new owner but
-                            // somehow master doesn't know. maybe master did change in the meantime.
-                            sendCompletionInfo(new Block(blockReal));
-                        } else {
-                            // I think I am not the owner of this block
-                            // but block info says i am !!
-                            logger.log(Level.SEVERE, blockReal + " block info is inconsistent! " + block);
-                        }
-                    } else {
-                        if (block.isMigrating()) {
-                            if (!blockReal.isMigrating()) {
-                                // i should start migrating.
-                                logger.log(Level.FINEST, "Migration Started " + block);
-                                fireMigrationEvent(true, new Block(block));
-                                migrateBlock(block);
-                            } else {
-                                if (!block.getMigrationAddress().equals(blockReal.getMigrationAddress())) {
-                                    // i am already migrating to somewhere else!
-                                    logger.log(Level.SEVERE, blockReal + " invalid migration address " + block);
-                                } else {
-                                    // yes. I am in fact migrating to the right address
-                                    // check if I am really migrating. Is migration somehow hanging?
-                                    if (!blockReal.isMigrationStarted()) {
-                                        logger.log(Level.SEVERE, blockReal + " must be migrating but migration didn't even start " + block);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else if (blockReal.getOwner().equals(thisAddress)) {
-                    // i think i own the block but
-                    // block info says i am not!
-                    logger.log(Level.WARNING, blockReal + " owner. wrong block info " + block);
+                if (block.getOwner().equals(thisAddress) && block.isMigrating()) {
+                    startMigration(new Block(block));
                 } else {
-                    // block is not mine at all, just got the info
                     blockReal.setOwner(block.getOwner());
-                    if (blockReal.isMigrating() && !block.isMigrating()) {
-                        logger.log(Level.FINEST, "Migration Complete " + block);
-                    } else if (!blockReal.isMigrating() && block.isMigrating()) {
-                        logger.log(Level.FINEST, "Migration Started " + block);
+                    blockReal.setMigrationAddress(block.getMigrationAddress());
+                    if (block.isMigrating()) {
                         fireMigrationEvent(true, new Block(block));
                     }
-                    blockReal.setMigrationAddress(block.getMigrationAddress());
-                }
-            } else if (blockReal.isMigrating() && thisAddress.equals(blockReal.getOwner())) {
-                if (!blockReal.isMigrationStarted()) {
-                    fireMigrationEvent(true, new Block(block));
-                    migrateBlock(block);
                 }
             }
+            if (!sameBlocks(block, blockReal)) {
+                logger.log(Level.SEVERE, blockReal + " Still blocks don't match " + block);
+            }
         }
+    }
+
+    void startMigration(Block block) {
+        logger.log(Level.FINEST, "Migration Started " + block);
+        fireMigrationEvent(true, new Block(block));
+        migrateBlock(block);
     }
 
     boolean sameBlocks(Block b1, Block b2) {

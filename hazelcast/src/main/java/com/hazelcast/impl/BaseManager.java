@@ -448,6 +448,7 @@ public abstract class BaseManager {
                 if (request.redoCount > 19 && (request.redoCount % 10 == 0)) {
                     final CountDownLatch l = new CountDownLatch(1);
                     final Request reqCopy = request.hardCopy();
+                    reqCopy.redoCount = request.redoCount;
                     final Address targetCopy = getTarget();
                     enqueueAndReturn(new Processable() {
                         public void process() {

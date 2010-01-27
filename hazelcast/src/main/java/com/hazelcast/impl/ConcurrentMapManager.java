@@ -1253,7 +1253,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public void process(Packet packet) {
             Block blockInfo = (Block) toObject(packet.value);
-            partitionManager.completeMigration(blockInfo);
+            partitionManager.completeMigration(blockInfo.getBlockId());
             if (isMaster() && !blockInfo.isMigrating()) {
                 for (MemberImpl member : lsMembers) {
                     if (!member.localMember()) {
