@@ -908,7 +908,8 @@ public class CMap {
                     return false;
                 }
                 concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_EVICTED, record.getKey(), record.getValue(), record.getMapListeners());
-                removeAndPurgeRecord(record);
+                record.setValue(null);
+                markAsRemoved(record);
                 return true;
             }
         }
@@ -1099,7 +1100,6 @@ public class CMap {
 
     void updateIndexes(boolean created, Request request, Record record) {
         int valueHash = (record.getValue() != null) ? record.getValue().hashCode() : Integer.MIN_VALUE;
-//        if (true) return;
         if (request.indexes != null) {
             int indexCount = request.indexes.length;
             if (indexCount == 0)

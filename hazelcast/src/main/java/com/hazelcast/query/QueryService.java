@@ -158,8 +158,8 @@ public class QueryService implements Runnable {
             return false;
         }
 
-        public void doUpdateIndex(final long[] newValues, final byte[] types, final Record record, final int valueHash) {
-            if (record.isActive()) {
+        public void doUpdateIndex(final long[] newValues, final byte[] types, final Record record, final boolean active, final int valueHash) {
+            if (active) {
                 updateValueIndex(valueHash, record);
                 ownedRecords.add(record);
             } else {
@@ -178,7 +178,11 @@ public class QueryService implements Runnable {
                     if (oldValue == Long.MIN_VALUE) {
                         index.addNewIndex(newValues[i], types[i], record);
                     } else {
-                        index.updateIndex(oldValue, newValues[i], types[i], record);
+                        if (active) {
+                            index.updateIndex(oldValue, newValues[i], types[i], record);
+                        } else {
+                            index.removeIndex(oldValue, record);
+                        }
                     }
                 }
                 record.setIndexes(newValues, types);
@@ -346,11 +350,12 @@ public class QueryService implements Runnable {
 
     public void updateIndex(final String name, final long[] newValues, final byte[] types, final Record record, final int valueHash) {
         try {
+            final boolean active = record.isActive();
             queryQ.put(new Runnable() {
                 public void run() {
                     try {
                         IndexRegion indexRegion = getIndexRegion(name);
-                        indexRegion.doUpdateIndex(newValues, types, record, valueHash);
+                        indexRegion.doUpdateIndex(newValues, types, record, active, valueHash);
                     } catch (Exception e) {
                         e.printStackTrace();
                         logger.log(Level.SEVERE, "Indexing error." + e);

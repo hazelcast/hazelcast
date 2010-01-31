@@ -1365,7 +1365,6 @@ public class ClusterTest {
             Thread.sleep(10000);
             LocalMapStats mapStats1 = map1.getLocalMapStats();
             LocalMapStats mapStats2 = map2.getLocalMapStats();
-            System.out.println("now " + mapStats1.getOwnedEntryCount());
             if (mapStats1.getOwnedEntryCount() == counter) {
                 Thread.sleep(1000);
             }

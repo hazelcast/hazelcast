@@ -59,12 +59,12 @@ public class Index<T> {
         } else if (returnType != type) {
             throw new RuntimeException("Index types are not the same. Found:" + returnType + " New:" + type);
         }
-        Set<T> lsRecords = mapIndex.get(value);
-        if (lsRecords == null) {
-            lsRecords = new LinkedHashSet<T>();
-            mapIndex.put(value, lsRecords);
+        Set<T> setRecords = mapIndex.get(value);
+        if (setRecords == null) {
+            setRecords = new LinkedHashSet<T>();
+            mapIndex.put(value, setRecords);
         }
-        lsRecords.add(record);
+        setRecords.add(record);
     }
 
     void updateIndex(long oldValue, long newValue, byte type, T record) {
@@ -79,10 +79,10 @@ public class Index<T> {
     }
 
     void removeIndex(long value, T record) {
-        Set<T> lsRecords = mapIndex.get(value);
-        if (lsRecords != null && lsRecords.size() > 0) {
-            lsRecords.remove(record);
-            if (lsRecords.size() == 0) {
+        Set<T> setRecords = mapIndex.get(value);
+        if (setRecords != null && setRecords.size() > 0) {
+            setRecords.remove(record);
+            if (setRecords.size() == 0) {
                 mapIndex.remove(value);
             }
         }

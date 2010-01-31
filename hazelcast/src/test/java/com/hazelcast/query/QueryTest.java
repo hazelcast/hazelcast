@@ -88,11 +88,7 @@ public class QueryTest {
         IMap imap = h1.getMap("employees");
         doFunctionalSQLQueryTest(imap);
         Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and age>23"));
-        assertEquals(2, entries.size());
-        for (Map.Entry entry : entries) {
-            Employee c = (Employee) entry.getValue();
-            System.out.println(c);
-        }
+        assertEquals(27, entries.size()); 
     }
 
     @Test
