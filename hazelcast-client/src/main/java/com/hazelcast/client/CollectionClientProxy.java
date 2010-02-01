@@ -82,12 +82,12 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E>{
 	    client.listenerManager.addListenerCall(c);
 
 	    proxyHelper.doCall(c);
-	    client.listenerManager.registerItemListener(name, listener); 
+	    client.listenerManager.itemListenerManager.registerItemListener(name, listener);
 	}
 	
 	public void removeItemListener(ItemListener<E> listener) {
         check(listener);
-		client.listenerManager.removeItemListener(name, listener);
+		client.listenerManager.itemListenerManager.removeItemListener(name, listener);
 	}
 	
 	@Override

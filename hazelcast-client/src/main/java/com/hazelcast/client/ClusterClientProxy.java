@@ -64,17 +64,17 @@ public class ClusterClientProxy implements ClientProxy, Cluster {
 
     public void addMembershipListener(MembershipListener listener) {
         check(listener);
-        if(client.listenerManager.noMembershipListenerRegistered()){
+        if(client.listenerManager.membershipListenerManager.noMembershipListenerRegistered()){
 			Packet request = proxyHelper.createRequestPacket(ClusterOperation.CLIENT_ADD_MEMBERSHIP_LISTENER, null, null);
 			Call c = proxyHelper.createCall(request);
 		    client.listenerManager.addListenerCall(c);
 			proxyHelper.doCall(c);
 		}
-	    client.listenerManager.registerMembershipListener(listener);
+	    client.listenerManager.membershipListenerManager.registerMembershipListener(listener);
     }
 
     public void removeMembershipListener(MembershipListener listener) {
-        client.listenerManager.removeMembershipListener(listener);
+        client.listenerManager.membershipListenerManager.removeMembershipListener(listener);
 
     }
 
@@ -99,19 +99,22 @@ public class ClusterClientProxy implements ClientProxy, Cluster {
 
 	public void addInstanceListener(InstanceListener listener) {
 		check(listener);
-        if(client.listenerManager.noInstanceListenerRegistered()){
+//        if(client.listenerManager.noInstanceListenerRegistered()){
+        if(client.listenerManager.instanceListenerManager.noInstanceListenerRegistered()){
 			Packet request = proxyHelper.createRequestPacket(ClusterOperation.CLIENT_ADD_INSTANCE_LISTENER, null, null);
 			Call c = proxyHelper.createCall(request);
 		    client.listenerManager.addListenerCall(c);
 			proxyHelper.doCall(c);
 		}
-	    client.listenerManager.registerInstanceListener(listener);
+//	    client.listenerManager.registerInstanceListener(listener);
+        client.listenerManager.instanceListenerManager.registerInstanceListener(listener);
 	}
 
 
 	public void removeInstanceListener(InstanceListener instanceListener) {
 		check(instanceListener);
-		client.listenerManager.removeInstanceListener(instanceListener);
-		
+//		client.listenerManager.removeInstanceListener(instanceListener);
+		client.listenerManager.instanceListenerManager.removeInstanceListener(instanceListener);
+
 	}
 }

@@ -86,7 +86,7 @@ public class ConnectionManager implements MembershipListener {
         try {
             b = new Bind(new Address(connection.getAddress().getHostName(), connection.getSocket().getLocalPort()));
         } catch (UnknownHostException e) {
-            e.printStackTrace();
+            logger.warning(e.getMessage() +" while creating the bind package.");
         }
         Packet bind = new Packet();
         bind.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, Serializer.toByte(null), Serializer.toByte(b));
@@ -97,8 +97,7 @@ public class ConnectionManager implements MembershipListener {
         try {
             Thread.sleep(10);
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            return;
         }
     }
 

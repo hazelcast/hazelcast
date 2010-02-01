@@ -51,27 +51,27 @@ public class MapClientProxy<K, V> implements IMap<K, V>, ClientProxy, EntryHolde
 
     public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         check(listener);
-        if (client.listenerManager.noEntryListenerRegistered(key, name)) {
+        if (client.listenerManager.entryListenerManager.noEntryListenerRegistered(key, name)) {
             Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, toByte(key), null);
             request.setLongValue(includeValue ? 1 : 0);
             Call c = proxyHelper.createCall(request);
             client.listenerManager.addListenerCall(c);
             proxyHelper.doCall(c);
         }
-        client.listenerManager.registerEntryListener(name, key, listener);
+        client.listenerManager.entryListenerManager.registerEntryListener(name, key, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener) {
         check(listener);
         proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, null, null);
-        client.listenerManager.removeEntryListener(name, null, listener);
+        client.listenerManager.entryListenerManager.removeEntryListener(name, null, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener, K key) {
         check(listener);
         check(key);
         proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
-        client.listenerManager.removeEntryListener(name, key, listener);
+        client.listenerManager.entryListenerManager.removeEntryListener(name, key, listener);
     }
 
     public Set<java.util.Map.Entry<K, V>> entrySet(Predicate predicate) {

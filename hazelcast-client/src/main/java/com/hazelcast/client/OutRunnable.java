@@ -17,7 +17,7 @@
 
 package com.hazelcast.client;
 
-import java.util.*;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -27,14 +27,14 @@ public class OutRunnable extends IORunnable {
     final PacketWriter writer;
     final BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
     final BlockingQueue<Call> temp = new LinkedBlockingQueue<Call>();
+    private Connection connection = null;
+
     Logger logger = Logger.getLogger(this.getClass().toString());
 
     public OutRunnable(final HazelcastClient client, final Map<Long, Call> calls, final PacketWriter writer) {
         super(client, calls);
         this.writer = writer;
     }
-
-    Connection connection = null;
 
     protected void customRun() throws InterruptedException {
         Call call = null;
@@ -56,11 +56,9 @@ public class OutRunnable extends IORunnable {
                 queue.drainTo(temp);
                 client.listenerManager.getListenerCalls().drainTo(queue);
                 temp.drainTo(queue);
-//                System.out.println("finish restore ops");
             } else {
                 if (connection != null) {
                     writer.write(connection, call.getRequest());
-//					System.out.println("Sent: "+call + " " + call.getRequest().getOperation()+" " +connection );
                 } else {
                     interruptWaitingCalls();
                 }
@@ -68,7 +66,7 @@ public class OutRunnable extends IORunnable {
         } catch (InterruptedException e) {
             throw e;
         } catch (Throwable io) {
-//			io.printStackTrace();
+            logger.info("OutRunnable got an exception:" + io.getMessage());
             enQueue(call);
             client.connectionManager.destroyConnection(connection);
         }
@@ -84,24 +82,5 @@ public class OutRunnable extends IORunnable {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-    }
-
-    public void redoWaitingCalls() {
-        BlockingQueue<Call> remainingCalls = new LinkedBlockingQueue<Call>();
-        queue.drainTo(remainingCalls);
-        Collection<Call> cc = callMap.values();
-        List<Call> waitingCalls = new ArrayList<Call>();
-        waitingCalls.addAll(cc);
-        for (Iterator<Call> iterator = waitingCalls.iterator(); iterator.hasNext();) {
-            Call call = iterator.next();
-            redo(call);
-        }
-        remainingCalls.drainTo(queue);
-    }
-
-    private void redo(Call call) {
-        logger.info("Redo " + call + " operation:" + call.getRequest().getOperation());
-        callMap.remove(call.getId());
-        enQueue(call);
     }
 }
