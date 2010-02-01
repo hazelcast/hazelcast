@@ -64,7 +64,7 @@ public class CMap {
 
     final SortedHashMap<Data, Record> mapRecords;
 
-    private final String name;
+    final String name;
 
     final Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
 
@@ -94,11 +94,13 @@ public class CMap {
 
     final long evictionDelayMillis;
 
-    private final Map<Expression, Index<MapEntry>> mapIndexes = new ConcurrentHashMap(10);
+    final Map<Expression, Index<MapEntry>> mapIndexes = new ConcurrentHashMap<Expression, Index<MapEntry>>(10);
 
     final LocallyOwnedMap locallyOwnedMap;
 
     final MapNearCache mapNearCache;
+
+    final long creationTime;
 
     boolean ttlPerRecord = false;
 
@@ -107,8 +109,6 @@ public class CMap {
     volatile byte[] indexTypes = null;
 
     long lastEvictionTime = 0;
-
-    final long creationTime;
 
     public CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
@@ -136,7 +136,7 @@ public class CMap {
             maxSize = (mapConfig.getMaxSize() == 0) ? MapConfig.DEFAULT_MAX_SIZE : mapConfig.getMaxSize();
         }
         evictionRate = mapConfig.getEvictionPercentage() / 100f;
-        instanceType = concurrentMapManager.getInstanceType(name);
+        instanceType = ConcurrentMapManager.getInstanceType(name);
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         MapStore storeTemp = null;
         MapLoader loaderTemp = null;
@@ -190,9 +190,9 @@ public class CMap {
 
     public void addIndex(Expression expression, boolean ordered) {
         if (!getMapIndexes().containsKey(expression)) {
-            Index index = new Index(expression, ordered);
+            Index<MapEntry> index = new Index<MapEntry>(expression, ordered);
             getMapIndexes().put(expression, index);
-            Index[] newIndexes = new Index[getMapIndexes().size()];
+            Index<MapEntry>[] newIndexes = new Index[getMapIndexes().size()];
             if (getIndexes() != null) {
                 System.arraycopy(getIndexes(), 0, newIndexes, 0, getIndexes().length);
             }

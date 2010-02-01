@@ -18,9 +18,10 @@
 package com.hazelcast.nio;
 
 import java.io.*;
+import java.util.Date;
 
 public class SerializationHelper {
-    protected void writeObject(DataOutput out, Object obj) throws IOException {
+    public static void writeObject(DataOutput out, Object obj) throws IOException {
         if (obj == null) {
             out.writeByte(0);
         } else if (obj instanceof Long) {
@@ -41,12 +42,15 @@ public class SerializationHelper {
         } else if (obj instanceof Boolean) {
             out.writeByte(6);
             out.writeBoolean((Boolean) obj);
-        } else if (obj instanceof DataSerializable) {
+        } else if (obj instanceof Date) {
             out.writeByte(7);
+            out.writeLong(((Date) obj).getTime());
+        } else if (obj instanceof DataSerializable) {
+            out.writeByte(8);
             out.writeUTF(obj.getClass().getName());
             ((DataSerializable) obj).writeData(out);
         } else {
-            out.writeByte(8);
+            out.writeByte(9);
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             ObjectOutputStream oos = new ObjectOutputStream(bos);
             oos.writeObject(obj);
@@ -57,7 +61,7 @@ public class SerializationHelper {
         }
     }
 
-    protected Object readObject(DataInput in) throws IOException {
+    public static Object readObject(DataInput in) throws IOException {
         byte type = in.readByte();
         if (type == 0) {
             return null;
@@ -74,6 +78,8 @@ public class SerializationHelper {
         } else if (type == 6) {
             return in.readBoolean();
         } else if (type == 7) {
+            return new Date(in.readLong());
+        } else if (type == 8) {
             DataSerializable ds = null;
             try {
                 ds = (DataSerializable) Class.forName(in.readUTF()).newInstance();
@@ -82,7 +88,7 @@ public class SerializationHelper {
             }
             ds.readData(in);
             return ds;
-        } else if (type == 8) {
+        } else if (type == 9) {
             int len = in.readInt();
             byte[] buf = new byte[len];
             in.readFully(buf);
