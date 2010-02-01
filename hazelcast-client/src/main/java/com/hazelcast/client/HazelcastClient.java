@@ -146,8 +146,8 @@ public class HazelcastClient implements HazelcastInstance {
 
     /**
      * Returns a new HazelcastClient.
-     * Giving address of one member is enough. It will connect to that member and
-     * periodically will get addresses of all members in the cluster. If the connected member will die, automatically will
+     * Giving address of one member is enough. It will connect to that member and will get addresses of all members
+     * in the cluster. If the connected member will die or leave the cluster, client will automatically
      * switch to another member in the cluster.
      *
      * @param groupName
