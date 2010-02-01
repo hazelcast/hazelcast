@@ -80,7 +80,6 @@ public class HazelcastClientTest {
         instance.destroy();
         assertTrue(destroyedLatch.await(2, TimeUnit.SECONDS));
         getHazelcastClient().removeInstanceListener(listener);
-        Thread.sleep(2000);
     }
 
     @Test
@@ -88,7 +87,6 @@ public class HazelcastClientTest {
         Cluster cluster = getHazelcastClient().getCluster();
         long clusterTime = cluster.getClusterTime();
         assertTrue(clusterTime > 0);
-        System.out.println(clusterTime);
     }
 
     @Test
@@ -778,7 +776,6 @@ public class HazelcastClientTest {
     @Test
     public void newSerializer(){
         byte[] b = Serializer.toByte("Fuad");
-        System.out.println("Size:" +b.length);
         assertEquals("Fuad",Serializer.toObject(b));
     }
 }
