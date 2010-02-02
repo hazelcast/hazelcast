@@ -80,7 +80,7 @@ public class SerializationHelper {
         } else if (type == 7) {
             return new Date(in.readLong());
         } else if (type == 8) {
-            DataSerializable ds = null;
+            DataSerializable ds;
             try {
                 ds = (DataSerializable) Class.forName(in.readUTF()).newInstance();
             } catch (Throwable e) {

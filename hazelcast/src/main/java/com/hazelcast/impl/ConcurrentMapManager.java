@@ -139,7 +139,7 @@ public final class ConcurrentMapManager extends BaseManager {
         int hash = 1;
         for (int i = 0; i < BLOCK_COUNT; i++) {
             Block block = blocks[i];
-            hash = (hash * 31) + ((block == null) ? 0 : block.hashCode());
+            hash = (hash * 31) + ((block == null) ? 0 : block.customHash());
         }
         return hash;
     }
@@ -581,10 +581,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     boolean isMapIndexed(String name) {
         CMap cmap = getMap(name);
-        if (cmap != null) {
-            return (cmap.getMapIndexes().size() > 0);
-        }
-        return false;
+        return cmap != null && (cmap.getMapIndexes().size() > 0);
     }
 
     void setIndexValues(Request request, Object value) {

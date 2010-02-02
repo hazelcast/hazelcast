@@ -44,11 +44,7 @@ public class Serializer {
 
     private static final byte SERIALIZER_TYPE_BIG_INTEGER = 8;
 
-//    private static final int STRING_CHUNK_SIZE = 16 * 1024;
-
     public static byte[] toByte(Object object) {
-//        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-//        DataOutputStream dos = new DataOutputStream(bos);
         FastByteArrayOutputStream dos = new FastByteArrayOutputStream();
         dos.reset();
         if (object == null) return new byte[0];
@@ -61,13 +57,6 @@ public class Serializer {
                 String string = (String) object;
                 dos.writeByte(SERIALIZER_TYPE_STRING);
                 dos.writeUTF(string);
-//                int length = string.length();
-//                int chunkSize = length / STRING_CHUNK_SIZE + 1;
-//                for (int i = 0; i < chunkSize; i++) {
-//                    int beginIndex = Math.max(0, i * STRING_CHUNK_SIZE - 1);
-//                    int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
-//                    dos.writeUTF(string.substring(beginIndex, endIndex));
-//                }
             } else if (object instanceof byte[]) {
                 byte[] bytes = (byte[]) object;
                 dos.writeByte(SERIALIZER_TYPE_BYTE_ARRAY);
@@ -101,13 +90,10 @@ public class Serializer {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        byte[] bytes = dos.toByteArray();
-        return bytes;
+        return dos.toByteArray();
     }
 
     public static Object toObject(byte[] bytes) {
-//        ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-//        DataInputStream dis = new DataInputStream(bis);
         FastByteArrayInputStream dis = new FastByteArrayInputStream(bytes);
         int type = dis.read();
         try {
@@ -122,11 +108,6 @@ public class Serializer {
                 data.readData(dis);
                 return data;
             } else if (type == SERIALIZER_TYPE_STRING) {
-//                StringBuilder result = new StringBuilder();
-//                while (dis.available() > 0) {
-//                    result.append(dis.readUTF());
-//                }
-//                return result.toString();
                 return dis.readUTF();
             } else if (type == SERIALIZER_TYPE_BYTE_ARRAY) {
                 int size = dis.readInt();
@@ -145,9 +126,9 @@ public class Serializer {
             } else if (type == SERIALIZER_TYPE_DATE) {
                 return new Date(dis.readLong());
             } else if (type == SERIALIZER_TYPE_BIG_INTEGER) {
-                byte[] byts = new byte[dis.readInt()];
-                dis.read(byts);
-                return new BigInteger(byts);
+                byte[] intBytes = new byte[dis.readInt()];
+                dis.read(intBytes);
+                return new BigInteger(intBytes);
             } else if (type == SERIALIZER_TYPE_OBJECT) {
                 ObjectInputStream os = new ObjectInputStream(dis);
                 Object o = os.readObject();

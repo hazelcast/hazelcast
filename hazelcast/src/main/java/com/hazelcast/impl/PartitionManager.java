@@ -350,9 +350,9 @@ public class PartitionManager implements Runnable, PartitionService {
             if (block == null) {
                 block = concurrentMapManager.getOrCreateBlock(i);
             }
-            if (block.getOwner() == null) {
+            if (block.getOwner() == null && !concurrentMapManager.isSuperClient()) {
                 block.setOwner(thisAddress);
-            } else if (block.getOwner().equals(block.getMigrationAddress())) {
+            } else if (block.getOwner() != null && block.getOwner().equals(block.getMigrationAddress())) {
                 block.setMigrationAddress(null);
             }
         }
@@ -382,7 +382,7 @@ public class PartitionManager implements Runnable, PartitionService {
             if (block == null) {
                 block = concurrentMapManager.getOrCreateBlock(i);
             }
-            if (block.getOwner() == null) {
+            if (block.getOwner() == null && !concurrentMapManager.isSuperClient()) {
                 block.setOwner(thisAddress);
             }
         }
@@ -529,7 +529,7 @@ public class PartitionManager implements Runnable, PartitionService {
             }
         }
         for (Block b : blocks) {
-            if (b != null && b.isMigrating() && b.getOwner().equals(b.getMigrationAddress())) {
+            if (b != null && b.isMigrating() && b.getMigrationAddress().equals(b.getOwner())) {
                 b.setMigrationAddress(null);
             }
         }
@@ -660,7 +660,7 @@ public class PartitionManager implements Runnable, PartitionService {
                 if (blockReal.getOwner() == null) {
                     blockReal.setOwner(block.getOwner());
                 }
-                if (block.getOwner().equals(thisAddress) && block.isMigrating()) {
+                if (thisAddress.equals(block.getOwner()) && block.isMigrating()) {
                     startMigration(new Block(block));
                 } else {
                     blockReal.setOwner(block.getOwner());
@@ -685,6 +685,11 @@ public class PartitionManager implements Runnable, PartitionService {
     boolean sameBlocks(Block b1, Block b2) {
         if (b1.getBlockId() != b2.getBlockId()) {
             throw new IllegalArgumentException("Not the same blocks!");
+        }
+        if (b1.getOwner() == null) {
+            if (b2.getOwner() == null) {
+                return true;
+            }
         }
         if (!b1.getOwner().equals(b2.getOwner())) {
             return false;

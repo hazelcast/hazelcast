@@ -74,6 +74,7 @@ public class Block implements DataSerializable {
         if (migrationAddress == null) {
             migrationStarted = false;
         }
+        hash = Integer.MIN_VALUE;
     }
 
     public boolean isMigrating() {
@@ -130,9 +131,14 @@ public class Block implements DataSerializable {
 
     @Override
     public int hashCode() {
+        return blockId;
+    }
+
+    public int customHash() {
         if (hash == Integer.MIN_VALUE) {
             int result = blockId;
             result = 31 * result + (owner != null ? owner.hashCode() : 0);
+            result = 31 * result + (migrationAddress != null ? migrationAddress.hashCode() : 0);
             hash = result;
         }
         return hash;

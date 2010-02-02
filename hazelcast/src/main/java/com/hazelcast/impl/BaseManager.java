@@ -954,9 +954,8 @@ public abstract class BaseManager {
         }
         if (indexOfMember == -1)
             return null;
-        indexOfMember++;
         int foundDistance = 0;
-        for (int i = 0; i < size; i++) {
+        for (int i = 1; i < size; i++) {
             final MemberImpl member = lsMembers.get((indexOfMember + i) % size);
             if (!(skipSuperClient && member.isSuperClient())) {
                 foundDistance++;

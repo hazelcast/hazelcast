@@ -37,8 +37,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
+/**
+ * Run these tests with
+ * -Xms512m -Xmx512m
+ */
 public class ClusterTest {
 
     @After
@@ -126,14 +129,31 @@ public class ClusterTest {
         map.put("1", "value");
     }
 
-    @Test(timeout = 10000, expected = RuntimeException.class)
-    public void testPutAfterSuperClientShutdown() {
+    @Test(timeout = 20000)
+    public void testSuperClientPartitionOwnership() {
         Config config = new XmlConfigBuilder().build();
         config.setSuperClient(true);
+        HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(null);
         final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(config);
         Map map = hSuper.getMap("default");
+        assertNull(map.put("1", "value"));
+        hNormal.shutdown();
+        Set<Partition> partitions = hSuper.getPartitionService().getPartitions();
+        for (Partition partition : partitions) {
+            assertNull(partition.getOwner());
+        }
+        hNormal = Hazelcast.newHazelcastInstance(null);
+        partitions = hSuper.getPartitionService().getPartitions();
+        for (Partition partition : partitions) {
+            assertEquals(hNormal.getCluster().getLocalMember(), partition.getOwner());
+        }
+        assertNull(map.put("1", "value"));
         hSuper.shutdown();
-        map.put("1", "value");
+        partitions = hNormal.getPartitionService().getPartitions();
+        for (Partition partition : partitions) {
+            assertEquals(hNormal.getCluster().getLocalMember(), partition.getOwner());
+        }
+        assertEquals("value", hNormal.getMap("default").get("1"));
     }
 
     @Test(timeout = 10000)
@@ -144,14 +164,25 @@ public class ClusterTest {
         map.put("1", "value");
     }
 
-    @Test(timeout = 10000)
-    public void testPutAfterSuperClientRestart() {
-        Config config = new XmlConfigBuilder().build();
-        config.setSuperClient(true);
-        final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(config);
-        Map map = hSuper.getMap("default");
-        hSuper.restart();
-        map.put("1", "value");
+    @Test(timeout = 30000)
+    public void testSuperClientPutAfterBeforeNormalMember() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch latchSuperPut = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            public void run() {
+                Config config = new XmlConfigBuilder().build();
+                config.setSuperClient(true);
+                final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(config);
+                latch.countDown();
+                Map map = hSuper.getMap("default");
+                map.put("1", "value");
+                latchSuperPut.countDown();
+            }
+        }).start();
+        latch.await(10, TimeUnit.SECONDS);
+        HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(null);
+        assertTrue(latchSuperPut.await(10, TimeUnit.SECONDS));
+        assertEquals("value", hNormal.getMap("default").get("1"));
     }
 
     @Test(timeout = 60000)
@@ -522,7 +553,6 @@ public class ClusterTest {
         assertTrue(latchUpdated.await(5, TimeUnit.SECONDS));
         assertTrue(latchRemoved.await(5, TimeUnit.SECONDS));
         assertTrue(latchEvicted.await(5, TimeUnit.SECONDS));
-
     }
 
     @Test(timeout = 60000)
