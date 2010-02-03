@@ -643,13 +643,79 @@ public class ClusterTest {
         c.getMapMapConfigs().put("default", mapConfig);
         HazelcastInstance h = Hazelcast.newHazelcastInstance(c);
         IMap map = h.getMap("default");
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 10; i++) {
             map.put(String.valueOf(i), String.valueOf(i));
+            int expectedSize = (i < 3) ? i + 1 : 3;
+            assertEquals(expectedSize, map.size());
         }
-        assertEquals(3, map.size());
-        for (int i = 3; i < 10; i++) {
-            map.put(String.valueOf(i), String.valueOf(i));
-            assertEquals(3, map.size());
+    }
+
+    /**
+     * Test for issue #204:
+     * http://code.google.com/p/hazelcast/issues/detail?id=204
+     * <p/>
+     * Summary:
+     * Eviction events are not fired
+     */
+    @Test
+    public void testEvictionOfEntriesWithTTL() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        IMap map1 = h1.getMap("default");
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        IMap map2 = h2.getMap("default");
+        CountingListener cl1 = new CountingListener(100, 0, 0, 100);
+        CountingListener cl2 = new CountingListener(100, 0, 0, 100);
+        map1.addEntryListener(cl1, true);
+        map2.addEntryListener(cl2, true);
+        for (int i = 0; i < 50; i++) {
+            map1.put(Integer.valueOf(i), i, 5, TimeUnit.SECONDS);
+            map1.put(String.valueOf(i), i, 5, TimeUnit.SECONDS);
+        }
+        assertTrue(cl1.await(7));
+        assertTrue(cl2.await(7));
+    }
+
+    class CountingListener implements EntryListener {
+        final CountDownLatch latchAdded;
+        final CountDownLatch latchRemoved;
+        final CountDownLatch latchUpdated;
+        final CountDownLatch latchEvicted;
+
+        public CountingListener(int adds, int removes, int updates, int evicts) {
+            latchAdded = new CountDownLatch(adds);
+            latchRemoved = new CountDownLatch(removes);
+            latchUpdated = new CountDownLatch(updates);
+            latchEvicted = new CountDownLatch(evicts);
+        }
+
+        public void entryAdded(EntryEvent entryEvent) {
+            latchAdded.countDown();
+        }
+
+        public void entryRemoved(EntryEvent entryEvent) {
+        }
+
+        public void entryUpdated(EntryEvent entryEvent) {
+        }
+
+        public void entryEvicted(EntryEvent entryEvent) {
+            latchEvicted.countDown();
+        }
+
+        public boolean await(int seconds) throws Exception {
+            if (!latchAdded.await(seconds, TimeUnit.SECONDS)) {
+                return false;
+            }
+            if (!latchRemoved.await(seconds, TimeUnit.SECONDS)) {
+                return false;
+            }
+            if (!latchUpdated.await(seconds, TimeUnit.SECONDS)) {
+                return false;
+            }
+            if (!latchEvicted.await(seconds, TimeUnit.SECONDS)) {
+                return false;
+            }
+            return true;
         }
     }
 

@@ -857,22 +857,19 @@ public class CMap {
             return;
         }
         lastEvictionTime = now;
-        List<Data> lsKeysToEvict = null;
+        List<Record> lsRecordsToEvict = null;
         if (evictionPolicy == SortedHashMap.OrderingType.NONE) {
             if (ttl != 0 || maxIdle != 0 || ttlPerRecord) {
                 Collection<Record> values = mapRecords.values();
                 for (Record record : values) {
-                    if (record.isActive() && !record.isValid(now)) {
+                    if (ownedRecords.contains(record) && record.isActive() && !record.isValid(now)) {
                         if (record.isEvictable()) {
-                            if (lsKeysToEvict == null) {
-                                lsKeysToEvict = new ArrayList<Data>(100);
+                            if (lsRecordsToEvict == null) {
+                                lsRecordsToEvict = new ArrayList<Record>(100);
                             }
-                            markAsRemoved(record);
-                            lsKeysToEvict.add(record.getKey());
+                            lsRecordsToEvict.add(record);
                         }
-                    } else {
-                        break;
-                    }
+                    } 
                 }
             }
         } else {
@@ -881,21 +878,21 @@ public class CMap {
             int evictedCount = 0;
             loopRecords:
             for (Record record : records) {
-                if (record.isActive() && record.isEvictable()) {
-                    if (lsKeysToEvict == null) {
-                        lsKeysToEvict = new ArrayList<Data>(numberOfRecordsToEvict);
+                if (ownedRecords.contains(record) && record.isActive() && record.isEvictable()) {
+                    if (lsRecordsToEvict == null) {
+                        lsRecordsToEvict = new ArrayList<Record>(numberOfRecordsToEvict);
                     }
-                    markAsRemoved(record);
-                    lsKeysToEvict.add(record.getKey());
+                    lsRecordsToEvict.add(record);
                     if (++evictedCount >= numberOfRecordsToEvict) {
                         break loopRecords;
                     }
                 }
             }
         }
-        if (lsKeysToEvict != null && lsKeysToEvict.size() > 0) {
-            for (final Data key : lsKeysToEvict) {
-                concurrentMapManager.evictAsync(getName(), key);
+        if (lsRecordsToEvict != null && lsRecordsToEvict.size() > 0) {
+            for (final Record recordToEvict : lsRecordsToEvict) {
+                markAsRemoved(recordToEvict);
+                concurrentMapManager.evictAsync(recordToEvict.getName(), recordToEvict.getKey());
             }
         }
     }
@@ -904,9 +901,6 @@ public class CMap {
         Record record = getRecord(req.key);
         if (record != null && record.isEvictable()) {
             if (ownerForSure(record)) {
-                if (req.operation == CONCURRENT_MAP_EVICT_INTERNAL && record.isActive()) {
-                    return false;
-                }
                 concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_EVICTED, record.getKey(), record.getValue(), record.getMapListeners());
                 record.setValue(null);
                 markAsRemoved(record);
