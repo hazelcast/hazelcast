@@ -16,7 +16,7 @@
  */
 package com.hazelcast.monitor.client.handler;
 
-import com.google.gwt.user.client.ui.Hyperlink;
+import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.TreeItem;
 import com.hazelcast.monitor.client.ClusterWidgets;
 import com.hazelcast.monitor.client.InstanceWidgets;
@@ -31,7 +31,6 @@ public class InstanceDestroyedHandler implements ChangeEventHandler {
 
     public InstanceDestroyedHandler(ClusterWidgets clusterWidgets) {
         this.clusterWidgets = clusterWidgets;
-
     }
 
     public void handle(ChangeEvent e) {
@@ -43,7 +42,7 @@ public class InstanceDestroyedHandler implements ChangeEventHandler {
         }
         for (int i = 0; i < instanceWidgets.getTreeItem().getChildCount(); i++) {
             TreeItem item = instanceWidgets.getTreeItem().getChild(i);
-            Hyperlink link = (Hyperlink) item.getWidget();
+            Anchor link = (Anchor) item.getWidget();
             if (name.equals(link.getText())) {
                 System.out.println("Removing instance: " + event.getInstanceType() + ", " + name);
                 instanceWidgets.getTreeItem().removeItem(item);

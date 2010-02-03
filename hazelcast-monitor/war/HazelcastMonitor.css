@@ -20,10 +20,6 @@ h1 {
    width:1010px;
 }
 
-.link {
-    color: black;
-
-}
 .mapstatsHeader {
 /*background-color: #2062B8;*/
 /*background-color: #4C95F5;*/
@@ -119,6 +115,10 @@ h1 {
 
 .gwt-DialogBox {
     width: 400px;
+}
+
+.gwt-Hyperlink {
+
 }
 
 .dialogVPanel {

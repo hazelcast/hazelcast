@@ -16,13 +16,12 @@
  */
 package com.hazelcast.monitor.client.handler;
 
-import com.google.gwt.user.client.ui.Hyperlink;
+import com.google.gwt.user.client.ui.Widget;
 import com.hazelcast.monitor.client.ClusterWidgets;
 import com.hazelcast.monitor.client.InstanceWidgets;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.InstanceCreated;
-
-import static com.hazelcast.monitor.client.AddClusterClickHandler.getInstanceLink;
+//import static com.hazelcast.monitor.client.AddClusterClickHandler.getInstanceLink;
 
 public class InstanceCreatedHandler implements ChangeEventHandler {
     final private ClusterWidgets clusterWidgets;
@@ -31,13 +30,12 @@ public class InstanceCreatedHandler implements ChangeEventHandler {
         this.clusterWidgets = clusterWidgets;
     }
 
-
     public void handle(ChangeEvent e) {
         InstanceCreated event = (InstanceCreated) e;
         InstanceWidgets instanceWidgets = clusterWidgets.getItemMap().get(event.getInstanceType());
         String name = event.getName();
-        System.out.println("Creating " + event.getInstanceType() + " ," + name);
-        Hyperlink link = getInstanceLink(event.getClusterId(), event.getInstanceType(), event.getName());
+//        System.out.println("Creating " + event.getInstanceType() + " ," + name);
+        Widget link = clusterWidgets.getInstanceLink(event.getInstanceType(), event.getName());
         instanceWidgets.getTreeItem().addItem(link);
     }
 }

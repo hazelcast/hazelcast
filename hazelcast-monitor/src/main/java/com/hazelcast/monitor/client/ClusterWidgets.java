@@ -17,6 +17,8 @@
 
 package com.hazelcast.monitor.client;
 
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.ui.*;
 import com.hazelcast.monitor.client.event.*;
 import com.hazelcast.monitor.client.handler.InstanceCreatedHandler;
@@ -31,17 +33,24 @@ public class ClusterWidgets {
     String clusterName;
     TreeItem memberTreeItem;
     public HorizontalSplitPanel mainPanel;
-    Map<ChangeEventType, Widget> activeWidgets = new HashMap<ChangeEventType, Widget>();
+    //    Map<ChangeEventType, Widget> activeWidgets = new HashMap<ChangeEventType, Widget>();
     Map<InstanceType, InstanceWidgets> itemMap = new HashMap<InstanceType, InstanceWidgets>();
     Map<ChangeEventType, List<MonitoringPanel>> panels = new HashMap<ChangeEventType, List<MonitoringPanel>>();
 
-    public Map<ChangeEventType, List<MonitoringPanel>> getPanels() {
-        return panels;
+    final private HazelcastMonitor hazelcastMonitor;
+    final private ClusterView cv;
+    private Map<String, List<ChangeEventType>> registeredChangeEvents = new HashMap<String, List<ChangeEventType>>();
+
+    public ClusterWidgets(HazelcastMonitor hazelcastMonitor, ClusterView cv) {
+        this.hazelcastMonitor = hazelcastMonitor;
+        this.cv = cv;
+        this.clusterId = cv.getId();
+        Tree tree = addTreeItems(cv);
+        this.clusterTree = tree;
     }
 
-
-    public Map<ChangeEventType, Widget> getActiveWidgets() {
-        return activeWidgets;
+    public Map<ChangeEventType, List<MonitoringPanel>> getPanels() {
+        return panels;
     }
 
     public TreeItem getMemberTreeItem() {
@@ -62,7 +71,6 @@ public class ClusterWidgets {
             new MemberEventHandler(this).handle(changeEvent);
         } else {
             List<MonitoringPanel> list = panels.get(changeEvent.getChangeEventType());
-
             if (list == null || list.isEmpty()) {
                 System.out.println("Unknown event:" + changeEvent.getChangeEventType());
                 return;
@@ -74,19 +82,18 @@ public class ClusterWidgets {
         }
     }
 
-
     public void register(MonitoringPanel panel) {
         boolean registered = panel.register(this);
         if (registered) {
             VerticalPanel rightPanel = (VerticalPanel) mainPanel.getRightWidget();
-            rightPanel.add(panel.getDsp());
+            rightPanel.add(panel.getDisclosurePanel());
         }
     }
 
     public void deRegister(MonitoringPanel panel) {
         panel.deRegister(this);
         VerticalPanel rightPanel = (VerticalPanel) mainPanel.getRightWidget();
-        rightPanel.remove(panel.getDsp());
+        rightPanel.remove(panel.getDisclosurePanel());
     }
 
     public void deRegisterAll() {
@@ -100,5 +107,63 @@ public class ClusterWidgets {
             }
             panels.remove(key);
         }
+    }
+
+    private Tree addTreeItems(ClusterView cv) {
+        Tree tree = new Tree();
+        memberTreeItem = addTreeItem(tree, "Members", cv.getMembers(), clusterId, null);
+        itemMap.put(InstanceType.MAP, new InstanceWidgets(InstanceType.MAP,
+                addTreeItem(tree, "Maps", cv.getMaps(), clusterId, InstanceType.MAP)));
+        itemMap.put(InstanceType.QUEUE, new InstanceWidgets(InstanceType.QUEUE,
+                addTreeItem(tree, "Queues", cv.getQs(), clusterId, InstanceType.QUEUE)));
+        itemMap.put(InstanceType.LIST, new InstanceWidgets(InstanceType.LIST,
+                addTreeItem(tree, "Lists", cv.getLists(), clusterId, InstanceType.LIST)));
+        itemMap.put(InstanceType.SET, new InstanceWidgets(InstanceType.SET,
+                addTreeItem(tree, "Sets", cv.getSets(), clusterId, InstanceType.SET)));
+        itemMap.put(InstanceType.TOPIC, new InstanceWidgets(InstanceType.TOPIC,
+                addTreeItem(tree, "Topics", cv.getTopics(), clusterId, InstanceType.TOPIC)));
+        itemMap.put(InstanceType.MULTIMAP, new InstanceWidgets(InstanceType.MULTIMAP,
+                addTreeItem(tree, "MultiMaps", cv.getMultiMaps(), clusterId, InstanceType.MULTIMAP)));
+        itemMap.put(InstanceType.LOCK, new InstanceWidgets(InstanceType.LOCK,
+                addTreeItem(tree, "Locks", cv.getLocks(), clusterId, InstanceType.LOCK)));
+        return tree;
+    }
+
+    private TreeItem addTreeItem(Tree tree, String headerName, List<String> itemList, int clusterId, InstanceType type) {
+        TreeItem treeItem = new TreeItem(headerName);
+        addItems(itemList, treeItem, clusterId, type);
+        tree.addItem(treeItem);
+        return treeItem;
+    }
+
+    private void addItems(List<String> itemList, TreeItem treeItem, int clusterId, InstanceType type) {
+        for (Iterator<String> iterator = itemList.iterator(); iterator.hasNext();) {
+            String string = iterator.next();
+            Widget link = getInstanceLink(type, string);
+            treeItem.addItem(link);
+        }
+    }
+
+    public Anchor getInstanceLink(InstanceType type, String name) {
+        final String token =
+                "clusterId=" + clusterId +
+                        "&type=" + ((type == null) ? "MEMBER" : type) +
+                        "&name=" + name;
+//        Hyperlink link = new Hyperlink(name, token);
+        Anchor anchor = new Anchor(name);
+        anchor.addClickHandler(new ClickHandler() {
+            public void onClick(ClickEvent clickEvent) {
+                hazelcastMonitor.onValueChange(token);
+            }
+        });
+        return anchor;
+    }
+
+    public List<ChangeEventType> getRegisteredChangeEvents(String name) {
+        List<ChangeEventType> list = registeredChangeEvents.get(name);
+        if(list == null){
+            registeredChangeEvents.put(name, new ArrayList<ChangeEventType>());
+        }
+        return registeredChangeEvents.get(name);
     }
 }

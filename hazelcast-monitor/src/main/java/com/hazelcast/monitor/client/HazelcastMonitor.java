@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-                                           
+
 package com.hazelcast.monitor.client;
 
 import com.google.gwt.core.client.EntryPoint;
@@ -31,8 +31,7 @@ import com.hazelcast.monitor.client.event.ChangeEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.hazelcast.monitor.client.AddClusterClickHandler.createClusterWidgets;
+//import static com.hazelcast.monitor.client.AddClusterClickHandler.createClusterWidgets;
 
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
@@ -44,7 +43,6 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
     HorizontalSplitPanel mainPanel;
     DecoratedStackPanel dsPanel;
     private Timer refreshTimer;
-
 
     /**
      * Create a remote service proxy to talk to the server-side Hazelcast
@@ -59,20 +57,16 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
     public void onModuleLoad() {
         mainPanel = new HorizontalSplitPanel();
         mainPanel.setSplitPosition(LEFT_PANEL_SIZE);
-
         VerticalPanel leftPanel = new VerticalPanel();
+        leftPanel.add(new Image("images/logo_2.png"));
+        DisclosurePanel clusterAddPanel = clusterAddPanel();
+        leftPanel.add(clusterAddPanel);
         dsPanel = new DecoratedStackPanel();
         dsPanel.setWidth(LEFT_PANEL_SIZE);
-        leftPanel.add(new Image("images/logo_2.png"));
         leftPanel.add(dsPanel);
         mainPanel.setLeftWidget(leftPanel);
-
         VerticalPanel rightPanel = new VerticalPanel();
-        DisclosurePanel clusterAddPanel = clusterAddPanel();
-        rightPanel.add(clusterAddPanel);
         mainPanel.setRightWidget(rightPanel);
-
-
         RootPanel.get().add(mainPanel);
         History.addValueChangeHandler(this);
         hazelcastService.loadActiveClusterViews(new AsyncCallback<ArrayList<ClusterView>>() {
@@ -91,7 +85,6 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
     private DisclosurePanel clusterAddPanel() {
         final DisclosurePanel disclosurePanel = new DisclosurePanel(
                 "Add Cluster to Monitor");
-
         final TextBox tbGroupName = new TextBox();
         tbGroupName.setText("dev");
         final TextBox tbGroupPass = new TextBox();
@@ -100,35 +93,26 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
         tbAddresses.setText("192.168.1.3");
         final Label lbError = new Label("");
         lbError.setVisible(false);
-
         Button btAddCluster = new Button("Add Cluster");
         ClickHandler clickHandler = new AddClusterClickHandler(this, tbGroupName, tbGroupPass, tbAddresses, lbError);
         btAddCluster.addClickHandler(clickHandler);
-
         VerticalPanel vPanel = new VerticalPanel();
         vPanel.add(tbGroupName);
         vPanel.add(tbGroupPass);
         vPanel.add(tbAddresses);
         vPanel.add(btAddCluster);
         vPanel.add(lbError);
-
         disclosurePanel.add(vPanel);
         return disclosurePanel;
     }
-
     // Setup timer to refresh list automatically.
-
-    public synchronized void setupTimer() {
-        if (refreshTimer == null) {
-            refreshTimer = new RefreshTimer(this);
-            refreshTimer.scheduleRepeating(REFRESH_INTERVAL);
-        }
-
-    }
 
     public void onValueChange(final ValueChangeEvent event) {
         String token = event.getValue().toString();
-        System.out.println("ValueChanged: " + token);
+        onValueChange(token);
+    }
+
+    public void onValueChange(final String token) {
         Map<String, String> map = parseParamString(token);
         String name = map.get("name");
         int clusterId = Integer.valueOf(map.get("clusterId"));
@@ -137,26 +121,25 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
             return;
         }
         InstanceType iType = InstanceType.valueOf(type);
-
-        VerticalPanel panel = (VerticalPanel) mainPanel.getRightWidget();
-        ((DisclosurePanel) (panel.getWidget(0))).setOpen(false);
+        VerticalPanel panel = (VerticalPanel) mainPanel.getLeftWidget();
+        ((DisclosurePanel) (panel.getWidget(1))).setOpen(false);
         AsyncCallback<ChangeEvent> callBack = new RegisterEventCallBack(this);
-
         ClusterWidgets clusterWidgets = mapClusterWidgets.get(clusterId);
         deRegisterAll();
-//        clusterWidgets.deRegisterAll();
         //register different events
         if (clusterWidgets != null) {
             if (InstanceType.MAP.equals(iType)) {
-                clusterWidgets.register(new MapStatisticsPanel(name, callBack));
-            } else if (InstanceType.QUEUE.equals(iType)) {
+                MapChartPanel mapChartPanel = new MapChartPanel(name, callBack);
+                clusterWidgets.register(mapChartPanel);
+                MapStatisticsPanel mapStatisticsPanel = new MapStatisticsPanel(name, callBack);
+                clusterWidgets.register(mapStatisticsPanel);
+                MapTimesPanel mapTimesPanel = new MapTimesPanel(name, callBack);
+                clusterWidgets.register(mapTimesPanel);
 
+
+            } else if (InstanceType.QUEUE.equals(iType)) {
             }
         }
-
-//        if (InstanceType.MAP.equals(iType)) {
-//            hazelcastService.registerEvent(ChangeEventType.MAP_STATISTICS, clusterId, name, callBack);
-//        }
     }
 
     private void deRegisterAll() {
@@ -176,11 +159,18 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
     }
 
     public void createAndAddClusterWidgets(ClusterView clusterView) {
-        ClusterWidgets clusterWidgets = createClusterWidgets(clusterView);
+        ClusterWidgets clusterWidgets = new ClusterWidgets(this, clusterView);
         clusterWidgets.mainPanel = mainPanel;
         mapClusterWidgets.put(clusterWidgets.clusterId, clusterWidgets);
         clusterWidgets.clusterName = clusterView.getGroupName();
         dsPanel.add(clusterWidgets.clusterTree, clusterView.getGroupName());
         setupTimer();
+    }
+
+    public synchronized void setupTimer() {
+        if (refreshTimer == null) {
+            refreshTimer = new RefreshTimer(this);
+            refreshTimer.scheduleRepeating(REFRESH_INTERVAL);
+        }
     }
 }
