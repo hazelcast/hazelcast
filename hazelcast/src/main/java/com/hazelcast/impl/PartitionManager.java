@@ -185,19 +185,15 @@ public class PartitionManager implements Runnable, PartitionService {
             int aveBlockOwnCount = BLOCK_COUNT / (addressBlocks.size());
             for (Block blockReal : blocks) {
                 if (blockReal.getOwner() == null) {
-                    logger.log(Level.SEVERE, "Master cannot have null block owner " + blockReal);
-                    return;
-                }
-                if (blockReal.isMigrating()) {
-                    logger.log(Level.SEVERE, "Cannot have migrating block " + blockReal);
-                    return;
-                }
-                Integer countInt = addressBlocks.get(blockReal.getOwner());
-                int count = (countInt == null) ? 0 : countInt;
-                if (count >= aveBlockOwnCount) {
                     lsBlocksToRedistribute.add(new Block(blockReal));
-                } else {
-                    addressBlocks.put(blockReal.getOwner(), ++count);
+                } else if (!blockReal.isMigrating()) {
+                    Integer countInt = addressBlocks.get(blockReal.getOwner());
+                    int count = (countInt == null) ? 0 : countInt;
+                    if (count >= aveBlockOwnCount) {
+                        lsBlocksToRedistribute.add(new Block(blockReal));
+                    } else {
+                        addressBlocks.put(blockReal.getOwner(), ++count);
+                    }
                 }
             }
             Collection<Address> allAddress = addressBlocks.keySet();
@@ -397,8 +393,8 @@ public class PartitionManager implements Runnable, PartitionService {
         // equally redistribute again
         List<Block> ownableBlocks = new ArrayList<Block>();
         for (Block blockReal : blocks) {
-            if (blockReal.getOwner() == null) {
-                logger.log(Level.SEVERE, "QBR cannot have block with null owner: " + blockReal);
+            if (blockReal.getOwner() == null) {  // in case master is superClient
+                ownableBlocks.add(blockReal);
             } else if (!blockReal.isMigrating() && thisAddress.equals(blockReal.getOwner())) {
                 // i am the owner
                 // is it empty? can I give that block
