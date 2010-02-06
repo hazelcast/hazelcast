@@ -45,6 +45,7 @@ public class HazelcastClient implements HazelcastInstance {
     final ExecutorServiceManager executorServiceManager;
     final IMap mapLockProxy;
     final ClusterClientProxy clusterClientProxy;
+    final PartitionClientProxy partitionClientProxy;
     final String groupName;
 
     private HazelcastClient(String groupName, String groupPassword, boolean shuffle, InetSocketAddress[] clusterMembers, boolean automatic) {
@@ -65,6 +66,8 @@ public class HazelcastClient implements HazelcastInstance {
         mapLockProxy = getMap("__hz_Locks");
         clusterClientProxy = new ClusterClientProxy(this);
         clusterClientProxy.setOutRunnable(out);
+        partitionClientProxy = new PartitionClientProxy(this);
+        partitionClientProxy.setOutRunnable(out);
         Boolean authenticate = clusterClientProxy.authenticate(groupName, groupPassword);
         if (!authenticate) {
             this.shutdown();
@@ -165,7 +168,7 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public PartitionService getPartitionService() {
-        throw new UnsupportedOperationException();
+        return partitionClientProxy;
     }
 
     public <K, V> IMap<K, V> getMap(String name) {

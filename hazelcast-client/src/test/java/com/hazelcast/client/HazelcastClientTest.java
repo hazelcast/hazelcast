@@ -19,6 +19,8 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.*;
 import com.hazelcast.core.InstanceEvent.InstanceEventType;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionService;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -774,8 +776,35 @@ public class HazelcastClientTest {
     }
 
     @Test
-    public void newSerializer(){
+    public void newSerializer() {
         byte[] b = Serializer.toByte("Fuad");
-        assertEquals("Fuad",Serializer.toObject(b));
+        assertEquals("Fuad", Serializer.toObject(b));
     }
+
+    @Test
+    public void testGetPartitions() throws InterruptedException {
+        PartitionService partitionService = getHazelcastClient().getPartitionService();
+        for (int i = 0; i < 1000; i++) {
+            getHazelcastClient().getMap("def").put(i, i);
+        }
+        Set<Partition> partitions = partitionService.getPartitions();
+        assertEquals(271, partitions.size());
+        for (Partition partition : partitions) {
+            System.out.println("Partition id: " + partition.getPartitionId() + ", Owner: " + partition.getOwner());
+        }
+    }
+
+//    @Test
+//    public void testGetPartitionsConnected() throws InterruptedException {
+//        HazelcastClient client = HazelcastClient.newHazelcastClient("fuad-dev","dev-pass", "192.168.1.3");
+//        PartitionService partitionService = client.getPartitionService();
+//        for (int i = 0; i < 1000; i++) {
+//            client.getMap("def").put(i, i);
+//        }
+//        Set<Partition> partitions = partitionService.getPartitions();
+//        assertEquals(271, partitions.size());
+//        for (Partition partition : partitions) {
+//            System.out.println("Partition id: " + partition.getPartitionId() + ", Owner: " + partition.getOwner());
+//        }
+//    }
 }

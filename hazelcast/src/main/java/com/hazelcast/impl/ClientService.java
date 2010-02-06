@@ -27,6 +27,8 @@ import com.hazelcast.impl.base.KeyValue;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
 
 import java.util.*;
@@ -88,6 +90,7 @@ public class ClientService {
         clientOperationHandlers[ClusterOperation.CLIENT_AUTHENTICATE.getValue()] = new ClientAuthenticateHandler();
         clientOperationHandlers[ClusterOperation.CLIENT_ADD_INSTANCE_LISTENER.getValue()] = new ClientAddInstanceListenerHandler();
         clientOperationHandlers[ClusterOperation.CLIENT_ADD_MEMBERSHIP_LISTENER.getValue()] = new ClientAddMembershipListenerHandler();
+        clientOperationHandlers[ClusterOperation.CLIENT_GET_PARTITIONS.getValue()] = new GetPartitionsHandler();
     }
     // always called by InThread
 
@@ -414,6 +417,19 @@ public class ClientService {
             for (Iterator<Member> iterator = members.iterator(); iterator.hasNext();) {
                 Member member = iterator.next();
                 setData.add(toData(member));
+            }
+            Keys keys = new Keys(setData);
+            packet.value = toData(keys);
+        }
+    }
+    private class GetPartitionsHandler extends ClientOperationHandler {
+        public void processCall(Node node, Packet packet) {
+            PartitionService partitionService = node.factory.getPartitionService();
+            Set<Partition> partitions = partitionService.getPartitions();
+            Set<Data> setData = new LinkedHashSet<Data>();
+            for (Iterator<Partition> iterator = partitions.iterator(); iterator.hasNext();) {
+                Partition partition = iterator.next();
+                setData.add(toData(partition));
             }
             Keys keys = new Keys(setData);
             packet.value = toData(keys);
