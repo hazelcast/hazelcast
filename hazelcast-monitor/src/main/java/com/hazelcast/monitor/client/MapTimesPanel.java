@@ -36,10 +36,10 @@ public class MapTimesPanel extends MapPanel implements MonitoringPanel {
         FlexTable table = new FlexTable();
         table.addStyleName("table");
         table.setWidget(0, 0, new LabelWithToolTip("Members", "Members of the Cluster"));
-        table.setWidget(0, 1, new LabelWithToolTip("Last Access", "Last Access Time"));
-        table.setWidget(0, 2, new LabelWithToolTip("Last Eviction", "Last Eviction Time"));
-        table.setWidget(0, 3, new LabelWithToolTip("Last Update", "Last Update Time"));
-        table.setWidget(0, 4, new LabelWithToolTip("Creation Time", "Creation Time of the Map"));
+        table.setWidget(0, 1, new LabelWithToolTip("Last Access Time", "Last Access Time"));
+        table.setWidget(0, 2, new LabelWithToolTip("Last Eviction Time", "Last Eviction Time"));
+        table.setWidget(0, 3, new LabelWithToolTip("Last Update Time", "Last Update Time"));
+        table.setWidget(0, 4, new LabelWithToolTip("Map Creation Time", "Creation Time of the Map"));
         table.getRowFormatter().addStyleName(0, "mapstatsHeader");
         table.addStyleName("mapstats");
         return table;

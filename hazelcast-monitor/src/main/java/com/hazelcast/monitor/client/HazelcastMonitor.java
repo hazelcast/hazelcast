@@ -37,7 +37,7 @@ import java.util.Map;
  * Entry point classes define <code>onModuleLoad()</code>.
  */
 public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
-    private static final String LEFT_PANEL_SIZE = "270";
+    private static final String LEFT_PANEL_SIZE = "230";
     private static final int REFRESH_INTERVAL = 1000;
     Map<Integer, ClusterWidgets> mapClusterWidgets = new HashMap<Integer, ClusterWidgets>();
     HorizontalSplitPanel mainPanel;
@@ -58,7 +58,9 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
         mainPanel = new HorizontalSplitPanel();
         mainPanel.setSplitPosition(LEFT_PANEL_SIZE);
         VerticalPanel leftPanel = new VerticalPanel();
-        leftPanel.add(new Image("images/logo_2.png"));
+        Image image =  new Image("images/logo_3.png");
+
+        leftPanel.add(image);
         DisclosurePanel clusterAddPanel = clusterAddPanel();
         leftPanel.add(clusterAddPanel);
         dsPanel = new DecoratedStackPanel();
