@@ -200,11 +200,11 @@ public final class ReplicatedMapFactory {
             return result;
         }
 
-        public <K> Set<K> localKeySet() {
+        public Set<K> localKeySet() {
             return distributedMap.localKeySet();
         }
 
-        public <K> Set<K> localKeySet(Predicate predicate) {
+        public Set<K> localKeySet(Predicate predicate) {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 

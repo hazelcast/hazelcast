@@ -188,11 +188,11 @@ public class MapClientProxy<K, V> implements IMap<K, V>, ClientProxy, EntryHolde
         return size() == 0;
     }
 
-    public <K> Set<K> localKeySet() {
+    public Set<K> localKeySet() {
         throw new UnsupportedOperationException();
     }
 
-    public <K> Set<K> localKeySet(Predicate predicate) {
+    public Set<K> localKeySet(Predicate predicate) {
         throw new UnsupportedOperationException();
     }
 

@@ -200,7 +200,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * @param predicate query criteria
      * @return result key set of the query
      */
-    <K> Set<K> keySet(Predicate predicate);
+    Set<K> keySet(Predicate predicate);
 
     /**
      * Queries the map based on the specified predicate and
@@ -212,7 +212,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * @return result entry set of the query
      */
 
-    <K, V> Set<Map.Entry<K, V>> entrySet(Predicate predicate);
+    Set<Map.Entry<K, V>> entrySet(Predicate predicate);
 
     /**
      * Queries the map based on the specified predicate and
@@ -238,7 +238,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      *
      * @return locally owned keys.
      */
-    <K> Set<K> localKeySet();
+    Set<K> localKeySet();
 
     /**
      * Returns the keys of matching locally owned entries.
@@ -253,7 +253,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * @param predicate query criteria
      * @return keys of matching locally owned entries.
      */
-    <K> Set<K> localKeySet(Predicate predicate);
+    Set<K> localKeySet(Predicate predicate);
 
     /**
      * Adds an index to this map for the specified entries so
