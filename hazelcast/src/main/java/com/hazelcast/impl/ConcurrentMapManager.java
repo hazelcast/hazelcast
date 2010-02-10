@@ -56,6 +56,7 @@ public final class ConcurrentMapManager extends BaseManager {
     final OrderedExecutionTask[] orderedExecutionTasks;
     final PartitionManager partitionManager;
     long newRecordId = 0;
+    QueryServiceState queryServiceState;
 
     ConcurrentMapManager(Node node) {
         super(node);
@@ -95,6 +96,7 @@ public final class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_PUT_MULTI, new PutMultiOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REMOVE, new RemoveOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_EVICT, new EvictOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_EVICT_INTERNAL, new EvictOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REMOVE_IF_SAME, new RemoveOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REMOVE_ITEM, new RemoveItemOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_BACKUP_PUT, new BackupPacketProcessor());
@@ -147,19 +149,32 @@ public final class ConcurrentMapManager extends BaseManager {
     void logState() {
         long now = System.currentTimeMillis();
         if (LOG_STATE && ((now - lastLogStateTime) > 30000)) {
-            StringBuffer sbState = new StringBuffer("State[" + new Date(now));
-            sbState.append("]======================\n");
-            sbState.append(node.clusterManager);
-            sbState.append("\n");
+            StringBuffer sbState = new StringBuffer(thisAddress + " State[" + new Date(now));
+            sbState.append("]======================");
             for (Block block : blocks) {
-                sbState.append(block);
-                sbState.append("\n");
+                if (block != null && block.isMigrating()) {
+                    sbState.append("\n");
+                    sbState.append(block);
+                }
             }
             Collection<Call> calls = mapCalls.values();
             for (Call call : calls) {
-                sbState.append(call);
-                sbState.append("\n");
+                if (call.getEnqueueCount() > 11 || (now - call.getFirstEnqueueTime() > 11000)) {
+                    sbState.append("\n");
+                    sbState.append(call);
+                }
             }
+            sbState.append("\nCall Count:" + calls.size());
+            Collection<CMap> cmaps = maps.values();
+            for (CMap cmap : cmaps) {
+                cmap.appendState(sbState);
+            }
+            node.executorManager.appendState(sbState);
+            long total = Runtime.getRuntime().totalMemory() / 1024 / 1024;
+            long free = Runtime.getRuntime().freeMemory() / 1024 / 1024;
+            sbState.append("\nUsed Memory:");
+            sbState.append((total - free));
+            sbState.append("MB");
             logger.log(Level.INFO, sbState.toString());
             lastLogStateTime = now;
         }
@@ -285,23 +300,21 @@ public final class ConcurrentMapManager extends BaseManager {
             }
             return result;
         }
-
-        @Override
-        public void process() {
-            setTarget();
-            if (request.operation == CONCURRENT_MAP_EVICT_INTERNAL && !thisAddress.equals(target)) {
-                setResult(false);
-            } else {
-                super.process();
-            }
-        }
-
-        @Override
-        public void doLocalOp() {
-            CMap cmap = getOrCreateMap(request.name);
-            request.response = cmap.evict(request);
-            setResult(request.response);
-        }
+//        @Override
+//        public void process() {
+//            setTarget();
+//            if (request.operation == CONCURRENT_MAP_EVICT_INTERNAL && !thisAddress.equals(target)) {
+//                setResult(false);
+//            } else {
+//                super.process();
+//            }
+//        }
+//        @Override
+//        public void doLocalOp() {
+//            CMap cmap = getOrCreateMap(request.name);
+//            request.response = cmap.evict(request);
+//            setResult(request.response);
+//        }
     }
 
     class MMigrate extends MBackupAwareOp {
@@ -799,15 +812,21 @@ public final class ConcurrentMapManager extends BaseManager {
         public void backup(Record record) {
             request.setFromRecord(record);
             doOp();
-            getResultAsBoolean();
-            target = thisAddress;
-            backup(CONCURRENT_MAP_BACKUP_PUT);
+            boolean stillOwner = getResultAsBoolean();
+            if (stillOwner) {
+                target = thisAddress;
+                backup(CONCURRENT_MAP_BACKUP_PUT);
+            }
         }
 
         @Override
         public void process() {
             prepareForBackup();
-            setResult(Boolean.TRUE);
+            if (!thisAddress.equals(getKeyOwner(request.key))) {
+                setResult(Boolean.FALSE);
+            } else {
+                setResult(Boolean.TRUE);
+            }
         }
     }
 
@@ -1161,13 +1180,16 @@ public final class ConcurrentMapManager extends BaseManager {
         return getOrCreateBlock(getBlockId(key));
     }
 
-    void evictAsync(final String name, final Data key) {
+    void evictAsync(final CMap cmap, final String name, final Data key) {
         executeLocally(new Runnable() {
             public void run() {
                 try {
                     MEvict mEvict = new MEvict();
                     mEvict.evictInternally(name, key);
                 } catch (Exception ignored) {
+                    ignored.printStackTrace();
+                } finally {
+                    cmap.evictionCount.decrementAndGet();
                 }
             }
         });

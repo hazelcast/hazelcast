@@ -1449,7 +1449,7 @@ public class ClusterTest {
     public void testIfProperlyBackedUp() throws InterruptedException {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         int counter = 5000;
-        Map<Integer, String> map = new HashMap();
+        Map<Integer, String> map = new HashMap<Integer, String>();
         for (int i = 0; i < counter; i++) {
             map.put(i, String.valueOf(i));
         }
@@ -1464,6 +1464,8 @@ public class ClusterTest {
             if (mapStats1.getOwnedEntryCount() == counter) {
                 Thread.sleep(1000);
             }
+            System.out.println(mapStats1.getOwnedEntryCount() + " " + mapStats2.getBackupEntryCount());
+            System.out.println(mapStats2.getOwnedEntryCount() + " " + mapStats1.getBackupEntryCount());
             assertEquals(mapStats1.getOwnedEntryCount(), mapStats2.getBackupEntryCount());
             assertEquals("Migrated blocks are not backed up", mapStats2.getOwnedEntryCount(), mapStats1.getBackupEntryCount());
         }

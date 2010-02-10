@@ -17,11 +17,14 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastInstanceAwareObject;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.concurrentmap.InitialState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
@@ -86,7 +89,7 @@ public class PartitionManager implements Runnable, PartitionService {
         final BlockingQueue<Set<Partition>> responseQ = new ArrayBlockingQueue<Set<Partition>>(1);
         concurrentMapManager.enqueueAndReturn(new Processable() {
             public void process() {
-                Set<Partition> partitions = new HashSet<Partition>(BLOCK_COUNT);
+                Set<Partition> partitions = new TreeSet<Partition>();
                 for (int i = 0; i < BLOCK_COUNT; i++) {
                     Block block = blocks[i];
                     if (block == null) {
@@ -112,13 +115,16 @@ public class PartitionManager implements Runnable, PartitionService {
         return null;
     }
 
-    public static class PartitionImpl extends HazelcastInstanceAwareObject implements Partition {
+    public static class PartitionImpl implements Partition, HazelcastInstanceAware, DataSerializable, Comparable {
         int partitionId;
         MemberImpl owner;
 
         PartitionImpl(int partitionId, MemberImpl owner) {
             this.partitionId = partitionId;
             this.owner = owner;
+        }
+
+        public PartitionImpl() {
         }
 
         public int getPartitionId() {
@@ -129,8 +135,13 @@ public class PartitionManager implements Runnable, PartitionService {
             return owner;
         }
 
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            if (owner != null) {
+                owner.setHazelcastInstance(hazelcastInstance);
+            }
+        }
+
         public void writeData(DataOutput out) throws IOException {
-            super.writeData(out);
             out.writeInt(partitionId);
             boolean hasOwner = (owner != null);
             out.writeBoolean(hasOwner);
@@ -140,14 +151,32 @@ public class PartitionManager implements Runnable, PartitionService {
         }
 
         public void readData(DataInput in) throws IOException {
-            super.readData(in);
             partitionId = in.readInt();
             boolean hasOwner = in.readBoolean();
             if (hasOwner) {
                 owner = new MemberImpl();
                 owner.readData(in);
-                owner.setHazelcastInstance(hazelcastInstance);
             }
+        }
+
+        public int compareTo(Object o) {
+            PartitionImpl partition = (PartitionImpl) o;
+            Integer id = partitionId;
+            return (id.compareTo(partition.getPartitionId()));
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            PartitionImpl partition = (PartitionImpl) o;
+            if (partitionId != partition.partitionId) return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return partitionId;
         }
 
         @Override
@@ -274,15 +303,14 @@ public class PartitionManager implements Runnable, PartitionService {
                 hasMigrating = true;
             }
         }
-        if (concurrentMapManager.getMembers().size() < 2) {
-            return;
-        }
         if (lsBlocksToMigrate.size() == 0) {
             reArrangeBlocks();
         }
         if (!hasMigrating && lsBlocksToMigrate.size() > 0) {
             Block block = lsBlocksToMigrate.remove(0);
             sendBlocks(block);
+        } else {
+            sendBlocks(null);
         }
     }
 
@@ -323,7 +351,7 @@ public class PartitionManager implements Runnable, PartitionService {
             initialState.createAndAddMapState(cmap);
         }
         concurrentMapManager.sendProcessableToAll(initialState, false);
-        onMembershipChange();
+        onMembershipChange(true);
     }
 
     Map<Address, Integer> getCurrentMemberBlocks() {
@@ -420,9 +448,9 @@ public class PartitionManager implements Runnable, PartitionService {
         }
     }
 
-    public void onMembershipChange() {
+    public void onMembershipChange(boolean add) {
         lsBlocksToMigrate.clear();
-        backupIfNextOrPreviousChanged();
+        backupIfNextOrPreviousChanged(add);
         removeUnknownRecords();
         if (concurrentMapManager.isMaster()) {
             sendBlocks(null);
@@ -486,7 +514,7 @@ public class PartitionManager implements Runnable, PartitionService {
                 }
             }
         }
-        onMembershipChange();
+        onMembershipChange(false);
     }
 
     void syncForDead(Address deadAddress, Block block) {
@@ -531,8 +559,14 @@ public class PartitionManager implements Runnable, PartitionService {
         }
     }
 
-    void backupIfNextOrPreviousChanged() {
-        if (node.clusterManager.isNextOrPreviousChanged()) {
+    void backupIfNextOrPreviousChanged(boolean add) {
+        boolean shouldBackup = false;
+        if (add && node.clusterManager.isNextChanged()) {
+            shouldBackup = true;
+        } else if (!add && node.clusterManager.isPreviousChanged()) {
+            shouldBackup = true;
+        }
+        if (shouldBackup) {
             List<Record> lsOwnedRecords = new ArrayList<Record>(1000);
             Collection<CMap> cmaps = concurrentMapManager.maps.values();
             for (final CMap cmap : cmaps) {
@@ -548,7 +582,7 @@ public class PartitionManager implements Runnable, PartitionService {
                 }
             }
             for (final Record rec : lsOwnedRecords) {
-                concurrentMapManager.executeLocally(new FallThroughRunnable() {
+                node.executorManager.executeLocally(new FallThroughRunnable() {
                     public void doRun() {
                         concurrentMapManager.backupRecord(rec);
                     }
@@ -574,6 +608,7 @@ public class PartitionManager implements Runnable, PartitionService {
         if (concurrentMapManager.isSuperClient()) {
             return;
         }
+        if (blockReal.isMigrationStarted()) return;
         blockReal.setMigrationStarted(true);
         blockReal.setOwner(blockInfo.getOwner());
         blockReal.setMigrationAddress(blockInfo.getMigrationAddress());
@@ -592,12 +627,14 @@ public class PartitionManager implements Runnable, PartitionService {
                         throw new RuntimeException("Record.key is null or empty " + rec.getKey());
                     }
                     if (rec.getBlockId() == blockInfo.getBlockId()) {
-                        lsRecordsToMigrate.add(rec);
+                        Record recordCopy = rec.copy();
+                        lsRecordsToMigrate.add(recordCopy);
                         cmap.markAsRemoved(rec);
                     }
                 }
             }
         }
+        logger.log(Level.INFO, "Migrating [" + lsRecordsToMigrate.size() + "] " + blockInfo);
         final CountDownLatch latch = new CountDownLatch(lsRecordsToMigrate.size());
         for (final Record rec : lsRecordsToMigrate) {
             final CMap cmap = concurrentMapManager.getMap(rec.getName());
@@ -644,7 +681,7 @@ public class PartitionManager implements Runnable, PartitionService {
             fireMigrationEvent(false, new Block(blockReal));
             blockReal.setOwner(blockReal.getMigrationAddress());
             blockReal.setMigrationAddress(null);
-            logger.log(Level.FINEST, "Migration complete info : " + blockReal);
+            logger.log(Level.INFO, "Migration complete info : " + blockReal);
         }
     }
 

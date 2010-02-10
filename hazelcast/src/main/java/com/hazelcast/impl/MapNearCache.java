@@ -25,20 +25,25 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class MapNearCache {
+    private static final Logger logger = Logger.getLogger(MapNearCache.class.getName());    
     private final SortedHashMap<Data, Object> sortedMap;
     private final ConcurrentMap<Object, CacheEntry> cache;
     private final CMap cmap;
     private final int maxSize;        // 0 means infinite
     private final long ttl;           // 0 means never expires
     private final long maxIdleTime;   // 0 means never idle 
-    private final AtomicLong callCount = new AtomicLong();
     private final boolean invalidateOnChange;
-
+    private final int LOCAL_INVALIDATION_COUNTER = 10000;
+    private final AtomicInteger counter = new AtomicInteger();
+    private long lastEvictionTime = 0;
+        
     public MapNearCache(CMap cmap, SortedHashMap.OrderingType orderingType, int maxSize, long ttl, long maxIdleTime, boolean invalidateOnChange) {
         this.cmap = cmap;
         this.maxSize = maxSize;
@@ -55,28 +60,15 @@ public class MapNearCache {
     }
 
     public Object get(Object key) {
-        if (ttl != 0 || maxIdleTime != 0) {
-            long callCountNow = callCount.incrementAndGet();
-            if (callCountNow == 5000) {
-                callCount.addAndGet(-5000);
-                cmap.concurrentMapManager.enqueueAndReturn(new Processable() {
-                    public void process() {
-                        Collection<CacheEntry> entries = cache.values();
-                        long now = System.currentTimeMillis();
-                        for (CacheEntry entry : entries) {
-                            if (!entry.isValid(now)) {
-                                invalidate(entry.keyData);
-                            }
-                        }
-                    }
-                });
-            }
+        long now = System.currentTimeMillis();
+        if (counter.incrementAndGet() == LOCAL_INVALIDATION_COUNTER) {
+            counter.addAndGet(-(LOCAL_INVALIDATION_COUNTER));
+            evict(now, false);
         }
         CacheEntry entry = cache.get(key);
         if (entry == null) {
             return null;
         } else {
-            long now = System.currentTimeMillis();
             if (entry.isValid(now)) {
                 Object value = entry.getValue();
                 cmap.concurrentMapManager.enqueueAndReturn(entry);
@@ -84,6 +76,45 @@ public class MapNearCache {
                 return value;
             } else {
                 return null;
+            }
+        }
+    }
+
+    private List<Data> getInvalidEntries(long now) {
+        List<Data> lsKeysToInvalidate = null;
+        if (now - lastEvictionTime > 10000) {
+            if (ttl != 0 || maxIdleTime != 0) {
+                lsKeysToInvalidate = new ArrayList<Data>();
+                Collection<CacheEntry> entries = cache.values();
+                for (CacheEntry entry : entries) {
+                    if (!entry.isValid(now)) {
+                        lsKeysToInvalidate.add(entry.keyData);
+                    }
+                }
+            }
+            lastEvictionTime = now;
+        }
+        return lsKeysToInvalidate;
+    }
+
+    public void evict(long now, boolean serviceThread) {
+        if (serviceThread) {
+            checkThread();
+        }
+        final List<Data> lsKeysToInvalidate = getInvalidEntries(now);
+        if (lsKeysToInvalidate != null && lsKeysToInvalidate.size() > 0) {
+            if (serviceThread) {
+                for (Data key : lsKeysToInvalidate) {
+                    invalidate(key);
+                }
+            } else {
+                cmap.concurrentMapManager.enqueueAndReturn(new Processable() {
+                    public void process() {
+                        for (Data key : lsKeysToInvalidate) {
+                            invalidate(key);
+                        }
+                    }
+                });
             }
         }
     }
@@ -139,6 +170,11 @@ public class MapNearCache {
             throw new RuntimeException("Only ServiceThread can update the cache! "
                     + Thread.currentThread().getName());
         }
+    }
+
+    public void appendState(StringBuffer sbState) {
+        sbState.append(", n.sorted:" + sortedMap.size());
+        sbState.append(", n.cache:" + cache.size());
     }
 
     private class CacheEntry implements Processable {

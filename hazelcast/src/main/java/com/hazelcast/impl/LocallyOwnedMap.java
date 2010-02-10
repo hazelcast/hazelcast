@@ -17,10 +17,11 @@
 
 package com.hazelcast.impl;
 
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,12 +29,19 @@ import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 class LocallyOwnedMap {
-    final static Logger logger = Logger.getLogger(LocallyOwnedMap.class.getName());
-    final private ConcurrentMap<Object, Record> mapCache = new ConcurrentHashMap<Object, Record>(1000);
-    final private Queue<Record> localRecords = new ConcurrentLinkedQueue<Record>();
+    private static final Logger logger = Logger.getLogger(LocallyOwnedMap.class.getName());
+    private final ConcurrentMap<Object, Record> mapCache = new ConcurrentHashMap<Object, Record>(1000);
+    private final Queue<Record> localRecords = new ConcurrentLinkedQueue<Record>();
+    private final AtomicInteger counter = new AtomicInteger();
+    private final int LOCAL_INVALIDATION_COUNTER = 10000;
+    private long lastEvictionTime = 0;
 
     public Object get(Object key) {
         processLocalRecords();
+        if (counter.incrementAndGet() == LOCAL_INVALIDATION_COUNTER) {
+            counter.addAndGet(-LOCAL_INVALIDATION_COUNTER);
+            evict(System.currentTimeMillis());
+        }
         Record record = mapCache.get(key);
         if (record == null) {
             return OBJECT_REDO;
@@ -51,6 +59,24 @@ class LocallyOwnedMap {
                 //record is removed!
                 mapCache.remove(key);
                 return OBJECT_REDO;
+            }
+        }
+    }
+
+    public void evict(long now) {
+        if (now - lastEvictionTime > 10000) {
+            lastEvictionTime = now;
+            Set<Map.Entry<Object, Record>> entries = mapCache.entrySet();
+            List<Object> lsKeysToRemove = new ArrayList<Object>();
+            for (Map.Entry<Object, Record> entry : entries) {
+                Object key = entry.getKey();
+                Record record = entry.getValue();
+                if (!record.isActive() || !record.isValid(now)) {
+                    lsKeysToRemove.add(key);
+                }
+            }
+            for (Object key : lsKeysToRemove) {
+                mapCache.remove(key);
             }
         }
     }
@@ -77,5 +103,12 @@ class LocallyOwnedMap {
 
     public void offerToCache(Record record) {
         localRecords.offer(record);
+    }
+
+    public void appendState(StringBuffer sbState) {
+        sbState.append(", l.cache:");
+        sbState.append(mapCache.size());
+        sbState.append(", l.records:");
+        sbState.append(localRecords.size());
     }
 }

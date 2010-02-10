@@ -96,17 +96,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
 
     public long getLastWrite() {
         return lastWrite;
-    }
-
-    public boolean isDead() {
-        long now = System.currentTimeMillis();
-        if (connectionTimeoutMillis > now) {
-            return true;
-        } else if (connectionTimeoutMillis == 0) {
-            connectionTimeoutMillis = now + 10000;
-        }
-        return false;
-    }
+    } 
 
     public boolean isSuperClient() {
         return (nodeType == NodeType.SUPER_CLIENT);

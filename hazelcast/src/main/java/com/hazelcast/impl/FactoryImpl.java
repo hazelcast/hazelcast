@@ -2311,9 +2311,10 @@ public class FactoryImpl implements HazelcastInstance {
 
             public void putAll(Map map) {
                 Set<Entry> entries = map.entrySet();
+                final ExecutorService es = Executors.newFixedThreadPool(10);
                 final CountDownLatch latch = new CountDownLatch(entries.size());
                 for (final Entry entry : entries) {
-                    factory.node.executorManager.executeLocally(new Runnable() {
+                    es.execute(new Runnable() {
                         public void run() {
                             put(entry.getKey(), entry.getValue());
                             latch.countDown();
@@ -2322,6 +2323,7 @@ public class FactoryImpl implements HazelcastInstance {
                 }
                 try {
                     latch.await();
+                    es.shutdown();
                 } catch (InterruptedException ignored) {
                 }
             }

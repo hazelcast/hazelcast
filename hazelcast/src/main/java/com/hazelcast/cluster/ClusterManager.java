@@ -434,33 +434,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         timeToStartJoin = System.currentTimeMillis() + WAIT_MILLIS_BEFORE_JOIN;
     }
 
-    public class AsyncRemotelyObjectCallable extends TargetAwareOp {
-        AbstractRemotelyCallable arp = null;
-
-        public void executeProcess(Address address, AbstractRemotelyCallable arp) {
-            this.arp = arp;
-            super.target = address;
-            arp.setNode(node);
-            setLocal(ClusterOperation.REMOTELY_CALLABLE_OBJECT, "call", null, arp, 0, -1);
-            doOp();
-        }
-
-        @Override
-        public void doLocalOp() {
-            Object result;
-            try {
-                result = arp.call();
-                setResult(result);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        @Override
-        public void setTarget() {
-        }
-    }
-
     public class AsyncRemotelyBooleanCallable extends TargetAwareOp {
         AbstractRemotelyCallable<Boolean> arp = null;
 
@@ -504,26 +477,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
-
-        @Override
-        public void setTarget() {
-        }
-    }
-
-    public class ResponsiveRemoteProcess extends TargetAwareOp {
-        AbstractRemotelyProcessable arp = null;
-
-        public boolean executeProcess(Address address, AbstractRemotelyProcessable arp) {
-            this.arp = arp;
-            super.target = address;
-            return booleanCall(ClusterOperation.REMOTELY_PROCESS_AND_RESPOND, "exe", null, arp, 0, -1);
-        }
-
-        @Override
-        public void doLocalOp() {
-            arp.process();
-            setResult(Boolean.TRUE);
         }
 
         @Override

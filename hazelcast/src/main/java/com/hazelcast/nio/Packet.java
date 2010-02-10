@@ -92,7 +92,7 @@ public final class Packet {
     public Packet() {
     }
 
-    private static final Map<String, byte[]> mapStringByteCache = new ConcurrentHashMap<String, byte[]>(10000);
+    private static final Map<String, byte[]> mapStringByteCache = new ConcurrentHashMap<String, byte[]>(1000);
 
     /**
      * only ServiceThread should call

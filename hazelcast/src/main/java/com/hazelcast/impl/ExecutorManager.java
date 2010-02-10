@@ -100,7 +100,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 threadContext.setCallContext(callContext);
             }
         };
-        executorForMigrations = new ThreadPoolExecutor(1, 16, 60, TimeUnit.SECONDS,
+        executorForMigrations = new ThreadPoolExecutor(16, 16, 60, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(),
                 new ExecutorThreadFactory(node.threadGroup, node.getName() + ".internal"),
                 new RejectionHandler()) {
@@ -129,6 +129,10 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
      */
     public boolean isStarted() {
         return started;
+    }
+
+    public void appendState(StringBuffer sbState) {
+        sbState.append("\nExecutorManager ex:" + executor.getQueue().size() + ", exMig: " + executorForMigrations.getQueue().size());
     }
 
     class RejectionHandler implements RejectedExecutionHandler {

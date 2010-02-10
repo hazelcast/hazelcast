@@ -21,14 +21,12 @@ import com.hazelcast.core.Instance;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.BaseManager;
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.QueryServiceState;
 import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Data;
 
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,16 +42,23 @@ public class QueryService implements Runnable {
 
     private final Map<String, IndexRegion> regions = new HashMap<String, IndexRegion>(10);
 
+    private long lastStatePublishTime = 0;
+
     public QueryService(Node node) {
         this.node = node;
     }
 
     public void run() {
         while (running) {
-            Runnable run;
+            Runnable runnable;
             try {
-                run = queryQ.take();
-                run.run();
+                runnable = queryQ.poll(1, TimeUnit.SECONDS);
+                long now = System.currentTimeMillis();
+                if (now - lastStatePublishTime > 1000) {
+                    publishState();
+                    lastStatePublishTime = now;
+                }
+                if (runnable != null) runnable.run();
             } catch (Throwable e) {
                 e.printStackTrace();
             }
@@ -74,11 +79,32 @@ public class QueryService implements Runnable {
         } catch (InterruptedException ignored) {
         }
     }
+    
+    void publishState() {
+        QueryServiceState queryServiceState = new QueryServiceState(node.concurrentMapManager);
+        Collection<IndexRegion> colRegions = regions.values();
+        for (IndexRegion region : colRegions) {
+            QueryServiceState.IndexState[]  indexStates = null;
+            if (region.indexes != null) {
+                int size = region.indexes.length;
+                indexStates = new QueryServiceState.IndexState[size];
+                for (int i = 0; i < size; i++) {
+                    Index index = region.indexes[i];
+                    indexStates[i] = new QueryServiceState.IndexState(index.mapIndex.size());
+                }
+            }
+            QueryServiceState.IndexRegionState state = new QueryServiceState.IndexRegionState
+                    (region.name, region.ownedRecords.size(), region.mapValueIndex.size(), indexStates);
+            queryServiceState.addIndexRegionState(state);
+        }
+        node.concurrentMapManager.enqueueAndReturn(queryServiceState);
+
+    }
 
     class IndexRegion {
         final String name;
         final Set<Record> ownedRecords = new HashSet<Record>(10000);
-        final Map<Integer, Set<Record>> mapValueIndex = new HashMap(1000);
+        final Map<Integer, Set<Record>> mapValueIndex = new HashMap<Integer, Set<Record>>(1000);
         private Map<Expression, Index<MapEntry>> mapIndexes = null;
         private Index<MapEntry>[] indexes = null;
         final Instance.InstanceType instanceType;
@@ -104,6 +130,15 @@ public class QueryService implements Runnable {
                 mapValueIndex.put(newValueHash, lsRecords);
             }
             lsRecords.add(record);
+        }
+
+        @Override
+        public String toString() {
+            return "IndexRegion{" +
+                    "name='" + name + '\'' +
+                    ", ownedRecords='" + ownedRecords.size() + '\'' +
+                    ", mapValueIndexes='" + mapValueIndex.size() + '\'' +
+                    '}';
         }
 
         void updateValueIndex(int newValueHash, Record record) {
@@ -336,7 +371,7 @@ public class QueryService implements Runnable {
                     IndexRegion indexRegion = getIndexRegion(queryContext.getMapName());
                     Set<MapEntry> results = indexRegion.doQuery(queryContext);
                     if (results == null) {
-                        results = new HashSet(0);
+                        results = new HashSet<MapEntry>(0);
                     }
                     queryContext.setResults(results);
                     resultQ.offer(queryContext);

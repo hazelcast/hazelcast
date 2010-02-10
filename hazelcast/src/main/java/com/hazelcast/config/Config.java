@@ -137,8 +137,8 @@ public class Config {
                 return false;
             }
             final String secondPart = pattern.substring(index + 1);
-            final int indextSecondPart = name.indexOf(secondPart, index + 1);
-            return indextSecondPart != -1;
+            final int indexSecondPart = name.indexOf(secondPart, index + 1);
+            return indexSecondPart != -1;
         }
     }
 
