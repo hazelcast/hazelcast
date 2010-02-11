@@ -22,7 +22,7 @@ import com.hazelcast.monitor.client.handler.ChangeEventHandler;
 
 public interface MonitoringPanel extends ChangeEventHandler {
 
-    public Widget getDisclosurePanel();
+    public Widget getPanelWidget();
 
     public boolean register(ClusterWidgets clusterWidgets);
 

@@ -31,7 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class MapPanel implements MonitoringPanel {
+public abstract class MapPanel extends AbstractMapPanel implements MonitoringPanel {
     final protected String mapName;
     final protected AsyncCallback<ChangeEvent> callBack;
     DisclosurePanel disclosurePanel;
@@ -63,19 +63,12 @@ public abstract class MapPanel implements MonitoringPanel {
 
     protected abstract FlexTable createTable();
 
-    public Widget getDisclosurePanel() {
+    public Widget getPanelWidget() {
         return disclosurePanel;
     }
 
     public boolean register(ClusterWidgets clusterWidgets) {
-        List<MonitoringPanel> list = clusterWidgets.getPanels().get(ChangeEventType.MAP_STATISTICS);
-        if (list == null) {
-            list = new ArrayList<MonitoringPanel>();
-            clusterWidgets.getPanels().put(ChangeEventType.MAP_STATISTICS, list);
-        }
-        if (!list.contains(this)) {
-            list.add(this);
-        }
+        super.register(clusterWidgets, ChangeEventType.MAP_STATISTICS);
         List<ChangeEventType> registeredChangeEvents = clusterWidgets.getRegisteredChangeEvents(mapName);
         if (!registeredChangeEvents.contains(ChangeEventType.MAP_STATISTICS)) {
             hazelcastService.registerEvent(ChangeEventType.MAP_STATISTICS, clusterWidgets.clusterId, mapName, callBack);
@@ -85,12 +78,8 @@ public abstract class MapPanel implements MonitoringPanel {
     }
 
     public boolean deRegister(final ClusterWidgets clusterWidgets) {
-        List<MonitoringPanel> list = clusterWidgets.getPanels().get(ChangeEventType.MAP_STATISTICS);
-        if (list == null) {
-            return false;
-        }
-        list.remove(this);
-        if (list.isEmpty()) {
+        boolean isEmpty = super.deRegister(clusterWidgets, ChangeEventType.MAP_STATISTICS);
+        if (isEmpty) {
             hazelcastService.deRegisterEvent(ChangeEventType.MAP_STATISTICS, clusterWidgets.clusterId, mapName, new AsyncCallback<Void>() {
 
                 public void onFailure(Throwable caught) {

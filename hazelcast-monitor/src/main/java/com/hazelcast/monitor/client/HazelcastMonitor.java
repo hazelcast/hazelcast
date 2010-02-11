@@ -58,8 +58,7 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
         mainPanel = new HorizontalSplitPanel();
         mainPanel.setSplitPosition(LEFT_PANEL_SIZE);
         VerticalPanel leftPanel = new VerticalPanel();
-        Image image =  new Image("images/logo_3.png");
-
+        Image image = new Image("images/logo_3.png");
         leftPanel.add(image);
         DisclosurePanel clusterAddPanel = clusterAddPanel();
         leftPanel.add(clusterAddPanel);
@@ -92,7 +91,7 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
         final TextBox tbGroupPass = new TextBox();
         tbGroupPass.setText("dev-pass");
         final TextBox tbAddresses = new TextBox();
-        tbAddresses.setText("192.168.1.3");
+//        tbAddresses.setText("192.168.1.3");
         final Label lbError = new Label("");
         lbError.setVisible(false);
         Button btAddCluster = new Button("Add Cluster");
@@ -122,24 +121,25 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
         if ("MEMBER".equals(type)) {
             return;
         }
-        InstanceType iType = InstanceType.valueOf(type);
         VerticalPanel panel = (VerticalPanel) mainPanel.getLeftWidget();
         ((DisclosurePanel) (panel.getWidget(1))).setOpen(false);
         AsyncCallback<ChangeEvent> callBack = new RegisterEventCallBack(this);
         ClusterWidgets clusterWidgets = mapClusterWidgets.get(clusterId);
         deRegisterAll();
         //register different events
-        if (clusterWidgets != null) {
-            if (InstanceType.MAP.equals(iType)) {
-                MapChartPanel mapChartPanel = new MapChartPanel(name, callBack);
-                clusterWidgets.register(mapChartPanel);
-                MapStatisticsPanel mapStatisticsPanel = new MapStatisticsPanel(name, callBack);
-                clusterWidgets.register(mapStatisticsPanel);
-                MapTimesPanel mapTimesPanel = new MapTimesPanel(name, callBack);
-                clusterWidgets.register(mapTimesPanel);
-
-
-            } else if (InstanceType.QUEUE.equals(iType)) {
+        if ("PARTITIONS".equals(type)) {
+            PartitionsPanel partitionsPanel = new PartitionsPanel(callBack);
+            clusterWidgets.register(partitionsPanel);
+        } else {
+            InstanceType iType = InstanceType.valueOf(type);
+            if (clusterWidgets != null) {
+                if (InstanceType.MAP.equals(iType)) {
+                    MapChartPanel mapChartPanel = new MapChartPanel(name, callBack);
+                    MapStatisticsPanel mapStatisticsPanel = new MapStatisticsPanel(name, callBack);
+                    MapTimesPanel mapTimesPanel = new MapTimesPanel(name, callBack);
+                    clusterWidgets.register(mapChartPanel, mapStatisticsPanel, mapTimesPanel);
+                } else if (InstanceType.QUEUE.equals(iType)) {
+                }
             }
         }
     }

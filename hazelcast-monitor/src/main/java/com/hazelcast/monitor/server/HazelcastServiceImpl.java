@@ -26,6 +26,7 @@ import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
 import com.hazelcast.monitor.server.event.ChangeEventGenerator;
 import com.hazelcast.monitor.server.event.MapStatisticsGenerator;
+import com.hazelcast.monitor.server.event.PartitionsEventGenerator;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -87,14 +88,18 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
     public ChangeEvent registerEvent(ChangeEventType eventType, int clusterId, String instanceName) {
         SessionObject sessionObject = getSessionObject();
         ChangeEventGenerator eventGenerator = null;
-        if (eventType.equals(ChangeEventType.MAP_STATISTICS)) {
-            HazelcastClient client = sessionObject.mapOfHz.get(clusterId);
-            if (client == null) {
-                System.err.println("Client is null: Cluster id: " + clusterId + ", client map size: " + sessionObject.mapOfHz.size());
-            }
-            eventGenerator = new MapStatisticsGenerator(client, instanceName, clusterId);
-            sessionObject.eventGenerators.add(eventGenerator);
+        HazelcastClient client = sessionObject.mapOfHz.get(clusterId);
+        if (client == null) {
+            System.err.println("Client is null: Cluster id: " + clusterId + ", client map size: " + sessionObject.mapOfHz.size());
         }
+        if (eventType.equals(ChangeEventType.MAP_STATISTICS)) {
+            eventGenerator = new MapStatisticsGenerator(client, instanceName, clusterId);
+        }
+        else if(eventType.equals(ChangeEventType.PARTITIONS)){
+            eventGenerator = new PartitionsEventGenerator(client, clusterId);
+        }
+
+        sessionObject.eventGenerators.add(eventGenerator);
 
         return eventGenerator.generateEvent();
     }

@@ -44,16 +44,21 @@ public class MembershipEventGenerator implements ChangeEventGenerator {
         List<String> memberList = new ArrayList<String>();
         for (Iterator<Member> iterator = members.iterator(); iterator.hasNext();) {
             Member member = iterator.next();
-            InetSocketAddress socketAddress = member.getInetSocketAddress();
-            String memberName = null;
-            if (socketAddress != null) {
-                memberName = socketAddress.getHostName() + ":" + socketAddress.getPort();
-            }
+            String memberName = getName(member);
             memberList.add(memberName);
         }
         MemberEvent memberEvent = new MemberEvent(clusterId);
         memberEvent.setMembers(memberList);
         return memberEvent;
+    }
+
+    public static String getName(Member member) {
+        InetSocketAddress socketAddress = member.getInetSocketAddress();
+        String memberName = null;
+        if (socketAddress != null) {
+            memberName = socketAddress.getHostName() + ":" + socketAddress.getPort();
+        }
+        return memberName;
     }
 
     public ChangeEventType getChangeEventType() {

@@ -33,20 +33,19 @@ public class ClusterWidgets {
     String clusterName;
     TreeItem memberTreeItem;
     public HorizontalSplitPanel mainPanel;
-    //    Map<ChangeEventType, Widget> activeWidgets = new HashMap<ChangeEventType, Widget>();
     Map<InstanceType, InstanceWidgets> itemMap = new HashMap<InstanceType, InstanceWidgets>();
     Map<ChangeEventType, List<MonitoringPanel>> panels = new HashMap<ChangeEventType, List<MonitoringPanel>>();
+    final private ClusterView clusterView;
 
     final private HazelcastMonitor hazelcastMonitor;
-    final private ClusterView cv;
     private Map<String, List<ChangeEventType>> registeredChangeEvents = new HashMap<String, List<ChangeEventType>>();
 
     public ClusterWidgets(HazelcastMonitor hazelcastMonitor, ClusterView cv) {
         this.hazelcastMonitor = hazelcastMonitor;
-        this.cv = cv;
         this.clusterId = cv.getId();
         Tree tree = addTreeItems(cv);
         this.clusterTree = tree;
+        this.clusterView = cv;
     }
 
     public Map<ChangeEventType, List<MonitoringPanel>> getPanels() {
@@ -86,14 +85,20 @@ public class ClusterWidgets {
         boolean registered = panel.register(this);
         if (registered) {
             VerticalPanel rightPanel = (VerticalPanel) mainPanel.getRightWidget();
-            rightPanel.add(panel.getDisclosurePanel());
+            rightPanel.add(panel.getPanelWidget());
+        }
+    }
+
+    public void register(MonitoringPanel... panels) {
+        for (MonitoringPanel panel : panels) {
+            register(panel);
         }
     }
 
     public void deRegister(MonitoringPanel panel) {
         panel.deRegister(this);
         VerticalPanel rightPanel = (VerticalPanel) mainPanel.getRightWidget();
-        rightPanel.remove(panel.getDisclosurePanel());
+        rightPanel.remove(panel.getPanelWidget());
     }
 
     public void deRegisterAll() {
@@ -126,6 +131,10 @@ public class ClusterWidgets {
                 addTreeItem(tree, "MultiMaps", cv.getMultiMaps(), clusterId, InstanceType.MULTIMAP)));
         itemMap.put(InstanceType.LOCK, new InstanceWidgets(InstanceType.LOCK,
                 addTreeItem(tree, "Locks", cv.getLocks(), clusterId, InstanceType.LOCK)));
+        TreeItem treeItem = new TreeItem("Internals");
+        Anchor anchor = createLink("Partitions", "clusterId=" + clusterId + "&type=PARTITIONS");
+        treeItem.addItem(anchor);
+        tree.addItem(treeItem);
         return tree;
     }
 
@@ -149,7 +158,11 @@ public class ClusterWidgets {
                 "clusterId=" + clusterId +
                         "&type=" + ((type == null) ? "MEMBER" : type) +
                         "&name=" + name;
-//        Hyperlink link = new Hyperlink(name, token);
+        Anchor anchor = createLink(name, token);
+        return anchor;
+    }
+
+    private Anchor createLink(String name, final String token) {
         Anchor anchor = new Anchor(name);
         anchor.addClickHandler(new ClickHandler() {
             public void onClick(ClickEvent clickEvent) {
@@ -161,9 +174,13 @@ public class ClusterWidgets {
 
     public List<ChangeEventType> getRegisteredChangeEvents(String name) {
         List<ChangeEventType> list = registeredChangeEvents.get(name);
-        if(list == null){
+        if (list == null) {
             registeredChangeEvents.put(name, new ArrayList<ChangeEventType>());
         }
         return registeredChangeEvents.get(name);
+    }
+
+    public ClusterView getClusterView() {
+        return clusterView;
     }
 }

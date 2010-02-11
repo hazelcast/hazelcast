@@ -783,28 +783,34 @@ public class HazelcastClientTest {
 
     @Test
     public void testGetPartitions() throws InterruptedException {
-        PartitionService partitionService = getHazelcastClient().getPartitionService();
         for (int i = 0; i < 1000; i++) {
             getHazelcastClient().getMap("def").put(i, i);
         }
+        assertPartitionsUnique();
+    }
+
+    @Test
+    public void testGetPartitionsFromDifferentThread() throws InterruptedException {
+        for (int i = 0; i < 1000; i++) {
+            getHazelcastClient().getMap("def").put(i, i);
+        }
+
+        new Thread(new Runnable() {
+
+            public void run() {
+                assertPartitionsUnique();
+            }
+        }).start();
+    }
+
+    private void assertPartitionsUnique() {
+        Set set = new HashSet();
+        PartitionService partitionService = getHazelcastClient().getPartitionService();
         Set<Partition> partitions = partitionService.getPartitions();
         assertEquals(271, partitions.size());
         for (Partition partition : partitions) {
-            System.out.println("Partition id: " + partition.getPartitionId() + ", Owner: " + partition.getOwner());
+            assertNotNull(partition.getPartitionId());
+            assertTrue(set.add(partition.getPartitionId()));
         }
     }
-
-//    @Test
-//    public void testGetPartitionsConnected() throws InterruptedException {
-//        HazelcastClient client = HazelcastClient.newHazelcastClient("fuad-dev","dev-pass", "192.168.1.3");
-//        PartitionService partitionService = client.getPartitionService();
-//        for (int i = 0; i < 1000; i++) {
-//            client.getMap("def").put(i, i);
-//        }
-//        Set<Partition> partitions = partitionService.getPartitions();
-//        assertEquals(271, partitions.size());
-//        for (Partition partition : partitions) {
-//            System.out.println("Partition id: " + partition.getPartitionId() + ", Owner: " + partition.getOwner());
-//        }
-//    }
 }
