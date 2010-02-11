@@ -899,7 +899,7 @@ public class CMap {
             }
         }
         if (lsRecordsToEvict != null && lsRecordsToEvict.size() > 0) {
-            logger.log(Level.INFO, lsRecordsToEvict.size() + " evicting");
+            logger.log(Level.FINEST, lsRecordsToEvict.size() + " evicting");
             evictionCount.set(lsRecordsToEvict.size());
             for (final Record recordToEvict : lsRecordsToEvict) {
                 concurrentMapManager.evictAsync(this, recordToEvict.getName(), recordToEvict.getKey());

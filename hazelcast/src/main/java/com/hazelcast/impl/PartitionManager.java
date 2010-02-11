@@ -634,7 +634,7 @@ public class PartitionManager implements Runnable, PartitionService {
                 }
             }
         }
-        logger.log(Level.INFO, "Migrating [" + lsRecordsToMigrate.size() + "] " + blockInfo);
+        logger.log(Level.FINEST, "Migrating [" + lsRecordsToMigrate.size() + "] " + blockInfo);
         final CountDownLatch latch = new CountDownLatch(lsRecordsToMigrate.size());
         for (final Record rec : lsRecordsToMigrate) {
             final CMap cmap = concurrentMapManager.getMap(rec.getName());
@@ -681,7 +681,7 @@ public class PartitionManager implements Runnable, PartitionService {
             fireMigrationEvent(false, new Block(blockReal));
             blockReal.setOwner(blockReal.getMigrationAddress());
             blockReal.setMigrationAddress(null);
-            logger.log(Level.INFO, "Migration complete info : " + blockReal);
+            logger.log(Level.FINEST, "Migration complete info : " + blockReal);
         }
     }
 

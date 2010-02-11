@@ -61,6 +61,7 @@
                 <include name="**/config/**"/>
                 <include name="**/jmx/**"/>
                 <include name="**/query/**"/>
+                <include name="**/partition/**"/>
                 <exclude name="**/*.html"/>
             </fileset>
             <fileset dir="hazelcast-client/src/main/java/" defaultexcludes="true">
