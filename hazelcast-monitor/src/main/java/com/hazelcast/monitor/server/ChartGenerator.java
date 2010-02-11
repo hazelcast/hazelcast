@@ -37,6 +37,7 @@ import org.jfree.data.time.TimeSeriesCollection;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.awt.*;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
@@ -101,6 +102,8 @@ public class ChartGenerator extends HttpServlet {
         plot.setDatasetRenderingOrder(DatasetRenderingOrder.FORWARD);
         increaseRange(axis);
         NumberAxis sizeAxis = (NumberAxis) plot.getRangeAxis(0);
+        axis.setLabelFont(sizeAxis.getLabelFont());
+        axis.setLabelPaint(sizeAxis.getLabelPaint());
         increaseRange(sizeAxis);
         return chart;
     }
@@ -133,6 +136,8 @@ public class ChartGenerator extends HttpServlet {
         frame.setVisible(true);
         increaseRange(axis);
         NumberAxis sizeAxis = (NumberAxis) plot.getRangeAxis(0);
+        axis.setLabelFont(sizeAxis.getLabelFont());
+        axis.setLabelPaint(sizeAxis.getLabelPaint());
         increaseRange(sizeAxis);
     }
 

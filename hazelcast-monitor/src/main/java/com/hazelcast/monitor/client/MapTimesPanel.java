@@ -18,39 +18,43 @@ package com.hazelcast.monitor.client;
 
 import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.ui.AbsolutePanel;
+import com.google.gwt.user.client.ui.FlexTable;
+import com.google.gwt.user.client.ui.VerticalPanel;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.MapStatistics;
 
 import java.util.Collection;
 import java.util.Date;
 
+import static com.hazelcast.monitor.client.PanelUtils.createFormattedFlexTable;
+import static com.hazelcast.monitor.client.PanelUtils.formatEvenRows;
+import static com.hazelcast.monitor.client.PanelUtils.removeUnusedRows;
+
 public class MapTimesPanel extends MapPanel implements MonitoringPanel {
 
     public MapTimesPanel(String name, AsyncCallback<ChangeEvent> callBack) {
-        super(name, callBack, "Times for Map: "+ name);
+        super(name, callBack, "Times for Map: " + name);
     }
 
     @Override
     protected FlexTable createTable() {
-        FlexTable table = new FlexTable();
-        table.addStyleName("table");
+        FlexTable table = createFormattedFlexTable();
+
+//        table.addStyleName("table");
         table.setWidget(0, 0, new LabelWithToolTip("Members", "Members of the Cluster"));
         table.setWidget(0, 1, new LabelWithToolTip("Last Access Time", "Last Access Time"));
         table.setWidget(0, 2, new LabelWithToolTip("Last Eviction Time", "Last Eviction Time"));
         table.setWidget(0, 3, new LabelWithToolTip("Last Update Time", "Last Update Time"));
         table.setWidget(0, 4, new LabelWithToolTip("Map Creation Time", "Creation Time of the Map"));
-        table.getRowFormatter().addStyleName(0, "mapstatsHeader");
-        table.addStyleName("mapstats");
+//        table.getRowFormatter().addStyleName(0, "mapstatsHeader");
+//        table.addStyleName("mapstats");
         return table;
     }
 
     public void handle(ChangeEvent e) {
         MapStatistics event = (MapStatistics) e;
-        int size = event.getSize();
         VerticalPanel vPanel = (VerticalPanel) disclosurePanel.getContent();
-//        Label label = (Label) vPanel.getWidget(0);
-//        label.setText("Current Map Size: " + size);
         AbsolutePanel absTablePanel = (AbsolutePanel) vPanel.getWidget(1);
         FlexTable table = (FlexTable) absTablePanel.getWidget(0);
         int row = 1;
@@ -58,7 +62,7 @@ public class MapTimesPanel extends MapPanel implements MonitoringPanel {
         DateTimeFormat ttipFormat = DateTimeFormat.getFormat("yyyy.MM.dd HH:mm:ss");
         DateTimeFormat displayFormat = DateTimeFormat.getFormat("HH:mm:ss");
         for (MapStatistics.LocalMapStatistics localMapStatistics : collection) {
-            table.setText(row, 0, localMapStatistics.memberName);
+            table.setWidget(row, 0, clusterWidgets.getInstanceLink(null, localMapStatistics.memberName));
             addDateToTable(table, row, 1, new Date(localMapStatistics.lastAccessTime), ttipFormat, displayFormat);
             addDateToTable(table, row, 2, new Date(localMapStatistics.lastEvictionTime), ttipFormat, displayFormat);
             addDateToTable(table, row, 3, new Date(localMapStatistics.lastUpdateTime), ttipFormat, displayFormat);
@@ -68,21 +72,14 @@ public class MapTimesPanel extends MapPanel implements MonitoringPanel {
             table.getCellFormatter().addStyleName(row, 2, "mapstatsStringColumn");
             table.getCellFormatter().addStyleName(row, 3, "mapstatsStringColumn");
             table.getCellFormatter().addStyleName(row, 4, "mapstatsStringColumn");
-            if (row % 2 == 0) {
-                table.getRowFormatter().addStyleName(row, "mapstatsEvenRow");
-            }
+            formatEvenRows(row, table);
             row++;
         }
-        while (table.getRowCount() > row) {
-            table.removeRow(row);
-        }
-//        AbsolutePanel absolutePanel = (AbsolutePanel) vPanel.getWidget(2);
-//        Image image = (Image) absolutePanel.getWidget(0);
-//        image.setUrl("ChartGenerator?name=" + mapName + "&dummy = " + Math.random() * 10);
+        removeUnusedRows(row, table);
+        
     }
 
     private void addDateToTable(FlexTable table, int row, int col, Date date, DateTimeFormat ttipFormat, DateTimeFormat displayFormat) {
         table.setWidget(row, col, new MapPanel.LabelWithToolTip(displayFormat.format(date), ttipFormat.format(date)));
     }
-
 }

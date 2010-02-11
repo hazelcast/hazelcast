@@ -118,15 +118,17 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
         String name = map.get("name");
         int clusterId = Integer.valueOf(map.get("clusterId"));
         String type = map.get("type");
-        if ("MEMBER".equals(type)) {
-            return;
-        }
+
         VerticalPanel panel = (VerticalPanel) mainPanel.getLeftWidget();
         ((DisclosurePanel) (panel.getWidget(1))).setOpen(false);
         AsyncCallback<ChangeEvent> callBack = new RegisterEventCallBack(this);
         ClusterWidgets clusterWidgets = mapClusterWidgets.get(clusterId);
         deRegisterAll();
-        //register different events
+
+        if ("MEMBER".equals(type)) {
+            MembersPanel membersPanel = new MembersPanel(callBack);
+            clusterWidgets.register(membersPanel);
+        }
         if ("PARTITIONS".equals(type)) {
             PartitionsPanel partitionsPanel = new PartitionsPanel(callBack);
             clusterWidgets.register(partitionsPanel);

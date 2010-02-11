@@ -18,7 +18,9 @@
 package com.hazelcast.monitor.client;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.ui.AbsolutePanel;
+import com.google.gwt.user.client.ui.FlexTable;
+import com.google.gwt.user.client.ui.VerticalPanel;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.MapStatistics;
 
@@ -32,16 +34,13 @@ public class MapStatisticsPanel extends MapPanel implements MonitoringPanel {
 
     public void handle(ChangeEvent e) {
         MapStatistics event = (MapStatistics) e;
-        int size = event.getSize();
         VerticalPanel vPanel = (VerticalPanel) disclosurePanel.getContent();
-//        Label label = (Label) vPanel.getWidget(0);
-//        label.setText("Map Size: " + size);
         AbsolutePanel absTablePanel = (AbsolutePanel) vPanel.getWidget(1);
         FlexTable table = (FlexTable) absTablePanel.getWidget(0);
         int row = 1;
         Collection<MapStatistics.LocalMapStatistics> collection = event.getListOfLocalStats();
         for (MapStatistics.LocalMapStatistics localMapStatistics : collection) {
-            table.setText(row, 0, localMapStatistics.memberName);
+            table.setWidget(row, 0, clusterWidgets.getInstanceLink(null, localMapStatistics.memberName));
             table.setText(row, 1, "" + localMapStatistics.ownedEntryCount);
             table.setText(row, 2, "" + formatMemorySize(localMapStatistics.ownedEntryMemoryCost));
             table.setText(row, 3, "" + localMapStatistics.backupEntryCount);
@@ -69,15 +68,6 @@ public class MapStatisticsPanel extends MapPanel implements MonitoringPanel {
         while (table.getRowCount() > row) {
             table.removeRow(row);
         }
-//        if (vPanel.getWidgetCount() < 3) {
-//            AbsolutePanel absImagePanel = new AbsolutePanel();
-//            absImagePanel.addStyleName("img-shadow");
-//            absImagePanel.add(new Image());
-//            vPanel.add(absImagePanel);
-//        }
-//        AbsolutePanel absolutePanel = (AbsolutePanel) vPanel.getWidget(2);
-//        Image image = (Image) absolutePanel.getWidget(0);
-//        image.setUrl("ChartGenerator?name=" + mapName + "&dummy = " + Math.random() * 10);
     }
 
     private String formatMemorySize(long size) {

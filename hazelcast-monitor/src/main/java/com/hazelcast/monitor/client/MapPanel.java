@@ -37,6 +37,7 @@ public abstract class MapPanel extends AbstractMapPanel implements MonitoringPan
     DisclosurePanel disclosurePanel;
     protected final HazelcastServiceAsync hazelcastService = GWT
             .create(HazelcastService.class);
+    protected ClusterWidgets clusterWidgets;
 
     public MapPanel(String name, AsyncCallback<ChangeEvent> callBack, String panelLabel) {
         this.mapName = name;
@@ -68,6 +69,7 @@ public abstract class MapPanel extends AbstractMapPanel implements MonitoringPan
     }
 
     public boolean register(ClusterWidgets clusterWidgets) {
+        this.clusterWidgets = clusterWidgets;
         super.register(clusterWidgets, ChangeEventType.MAP_STATISTICS);
         List<ChangeEventType> registeredChangeEvents = clusterWidgets.getRegisteredChangeEvents(mapName);
         if (!registeredChangeEvents.contains(ChangeEventType.MAP_STATISTICS)) {

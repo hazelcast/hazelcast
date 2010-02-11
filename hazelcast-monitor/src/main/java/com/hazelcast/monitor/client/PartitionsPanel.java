@@ -23,10 +23,13 @@ import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
 import com.hazelcast.monitor.client.event.Partitions;
 
+import static com.hazelcast.monitor.client.PanelUtils.createFormattedFlexTable;
+import static com.hazelcast.monitor.client.PanelUtils.formatEvenRows;
+import static com.hazelcast.monitor.client.PanelUtils.removeUnusedRows;
+
 public class PartitionsPanel extends AbstractMapPanel implements MonitoringPanel {
 
     final private AsyncCallback<ChangeEvent> callBack;
-    //    final FlexTable table;
     final AbsolutePanel absTablePanel;
     private ClusterWidgets clusterWidgets;
     protected final HazelcastServiceAsync hazelcastService = GWT
@@ -36,13 +39,11 @@ public class PartitionsPanel extends AbstractMapPanel implements MonitoringPanel
         this.callBack = callBack;
         absTablePanel = new AbsolutePanel();
         absTablePanel.addStyleName("img-shadow");
-        FlexTable table = new FlexTable();
-        table.addStyleName("table");
-        table.addStyleName("mapstats");
+        FlexTable table = createFormattedFlexTable();
+
         table.setText(0, 0, "Member");
-        table.setText(0, 1, "Number");
+        table.setText(0, 1, "Count");
         table.setText(0, 2, "Partitions");
-        table.getRowFormatter().addStyleName(0, "mapstatsHeader");
         absTablePanel.add(table);
     }
 
@@ -60,14 +61,10 @@ public class PartitionsPanel extends AbstractMapPanel implements MonitoringPanel
             size = (size==null)?0:size;
             table.setText(row, 1, String.valueOf(size));
             table.setText(row, 2, partitionsChangeEvent.getPartitions().get(member));
-            if (row % 2 == 0) {
-                table.getRowFormatter().addStyleName(row, "mapstatsEvenRow");
-            }
+            formatEvenRows(row, table);
             row++;
         }
-        while (table.getRowCount() > row) {
-            table.removeRow(row);
-        }
+        removeUnusedRows(row, table);
     }
 
     public Widget getPanelWidget() {
