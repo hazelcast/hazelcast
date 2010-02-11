@@ -26,13 +26,12 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class MapNearCache {
-    private static final Logger logger = Logger.getLogger(MapNearCache.class.getName());    
+    private static final Logger logger = Logger.getLogger(MapNearCache.class.getName());
     private final SortedHashMap<Data, Object> sortedMap;
     private final ConcurrentMap<Object, CacheEntry> cache;
     private final CMap cmap;
@@ -43,7 +42,7 @@ public class MapNearCache {
     private final int LOCAL_INVALIDATION_COUNTER = 10000;
     private final AtomicInteger counter = new AtomicInteger();
     private long lastEvictionTime = 0;
-        
+
     public MapNearCache(CMap cmap, SortedHashMap.OrderingType orderingType, int maxSize, long ttl, long maxIdleTime, boolean invalidateOnChange) {
         this.cmap = cmap;
         this.maxSize = maxSize;
@@ -59,6 +58,23 @@ public class MapNearCache {
         return invalidateOnChange;
     }
 
+    public boolean containsKey(Object key) {
+        long now = System.currentTimeMillis();
+        if (counter.incrementAndGet() == LOCAL_INVALIDATION_COUNTER) {
+            counter.addAndGet(-(LOCAL_INVALIDATION_COUNTER));
+            evict(now, false);
+        }
+        CacheEntry entry = cache.get(key);
+        return !(entry == null || entry.isValid(now));
+    }
+
+    public void setContainsKey(Object key, Data dataKey) {
+        CacheEntry entry = cache.get(key);
+        if (entry == null) {
+            put(key, dataKey, null);
+        }  
+    }
+
     public Object get(Object key) {
         long now = System.currentTimeMillis();
         if (counter.incrementAndGet() == LOCAL_INVALIDATION_COUNTER) {
@@ -70,7 +86,7 @@ public class MapNearCache {
             return null;
         } else {
             if (entry.isValid(now)) {
-                Object value = entry.getValue();
+                Object value = entry.getValue(); 
                 cmap.concurrentMapManager.enqueueAndReturn(entry);
                 entry.touch(now);
                 return value;
@@ -101,6 +117,7 @@ public class MapNearCache {
         if (serviceThread) {
             checkThread();
         }
+        if (maxSize == Integer.MAX_VALUE) return;
         final List<Data> lsKeysToInvalidate = getInvalidEntries(now);
         if (lsKeysToInvalidate != null && lsKeysToInvalidate.size() > 0) {
             if (serviceThread) {
@@ -177,6 +194,10 @@ public class MapNearCache {
         sbState.append(", n.cache:" + cache.size());
     }
 
+    public int getMaxSize() {
+        return maxSize;
+    }
+
     private class CacheEntry implements Processable {
         final Object key;
         final Data keyData;
@@ -224,9 +245,16 @@ public class MapNearCache {
             if (value != null) {
                 return value;
             }
+            if (valueData == null) {
+                return null;
+            }
             value = toObject(valueData);
             valueData = null;
             return value;
+        }
+
+        public Data getValueData() {
+            return valueData;
         }
 
         public void process() {

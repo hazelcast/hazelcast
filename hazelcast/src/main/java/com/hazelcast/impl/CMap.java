@@ -173,7 +173,7 @@ public class CMap {
         if (evictionPolicy == SortedHashMap.OrderingType.NONE && instanceType == Instance.InstanceType.MAP) {
             locallyOwnedMap = new LocallyOwnedMap();
             concurrentMapManager.mapLocallyOwnedMaps.put(name, locallyOwnedMap);
-        } else {
+        } else {                            
             locallyOwnedMap = null;
         }
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
@@ -221,6 +221,12 @@ public class CMap {
             req.value = new Data();
         }
         Record record = toRecord(req);
+        if (req.ttl <=0 || req.timeout <=0) {
+            record.setInvalid();
+        } else {
+            record.setExpirationTime(req.ttl);
+            record.setMaxIdle(req.timeout);
+        }
         markAsActive(record);
         markAsOwned(record);
         record.setIndexes(null, null);
@@ -562,7 +568,7 @@ public class CMap {
 
     void lock(Request request) {
         Record rec = concurrentMapManager.ensureRecord(request);
-        if (request.operation == CONCURRENT_MAP_LOCK_RETURN_OLD) {
+        if (request.operation == CONCURRENT_MAP_LOCK_AND_GET_VALUE) {
             request.value = rec.getValue();
         }
         rec.lock(request.lockThreadId, request.lockAddress);

@@ -43,12 +43,12 @@ public class Record implements MapEntry {
     private final AtomicLong lastAccessTime = new AtomicLong(0);
     private final AtomicLong creationTime = new AtomicLong();
     private long lastTouchTime = 0;
-    private long expirationTime = Long.MAX_VALUE;
+    private AtomicLong expirationTime = new AtomicLong(Long.MAX_VALUE);
     private long lastUpdateTime = 0;
     private final FactoryImpl factory;
     private final String name;
     private final int blockId;
-    private final long maxIdleMillis;
+    private AtomicLong maxIdleMillis = new AtomicLong(Long.MAX_VALUE);
     private int lockThreadId = -1;
     private Address lockAddress = null;
     private int lockCount = 0;
@@ -76,7 +76,7 @@ public class Record implements MapEntry {
         this.setValue(value);
         this.setCreationTime(System.currentTimeMillis());
         this.setExpirationTime(ttl);
-        this.maxIdleMillis = (maxIdleMillis == 0) ? Long.MAX_VALUE : maxIdleMillis;
+        this.maxIdleMillis.set((maxIdleMillis == 0) ? Long.MAX_VALUE : maxIdleMillis);
         this.setLastTouchTime(getCreationTime());
         this.setVersion(0);
         recordEntry = new RecordEntry(this);
@@ -84,7 +84,7 @@ public class Record implements MapEntry {
     }
 
     public Record copy() {
-        return new Record(factory, name, blockId, key.get(), value.get(), 0, maxIdleMillis, id);
+        return new Record(factory, name, blockId, key.get(), value.get(), getRemainingTTL(), getRemainingIdle(), id);
     }
 
     public RecordEntry getRecordEntry() {
@@ -310,33 +310,55 @@ public class Record implements MapEntry {
     }
 
     public long getExpirationTime() {
-        return expirationTime;
+        return expirationTime.get();
     }
 
     public long getRemainingTTL() {
-        if (expirationTime == Long.MAX_VALUE) {
-            return -1;
+        if (expirationTime.get() == Long.MAX_VALUE) {
+            return Long.MAX_VALUE;
         } else {
-            long ttl = expirationTime - System.currentTimeMillis();
+            long ttl = expirationTime.addAndGet(-(System.currentTimeMillis()));
             return (ttl < 0) ? 1 : ttl;
         }
     }
 
-    public void setExpirationTime(long ttl) {
-        if (ttl <= 0) {
-            expirationTime = Long.MAX_VALUE;
+    public long getRemainingIdle() {
+        if (maxIdleMillis.get() == Long.MAX_VALUE) {
+            return Long.MAX_VALUE;
         } else {
-            expirationTime = getCreationTime() + ttl;
+            long lastTouch = Math.max(lastAccessTime.get(), creationTime.get());
+            long idle = System.currentTimeMillis() - lastTouch;
+            return maxIdleMillis.addAndGet(-(idle));
         }
     }
 
+    public void setMaxIdle(long idle) {
+        if (idle <= 0 || idle == Long.MAX_VALUE) {
+            maxIdleMillis.set(Long.MAX_VALUE);
+        } else {
+            maxIdleMillis.set(idle);
+        }
+    }
+
+    public void setExpirationTime(long ttl) {
+        if (ttl <= 0 || ttl == Long.MAX_VALUE) {
+            expirationTime.set(Long.MAX_VALUE);
+        } else {
+            expirationTime.set(getCreationTime() + ttl);
+        }
+    }
+
+    public void setInvalid() {
+        expirationTime.set(System.currentTimeMillis() -10);
+    }
+
     public boolean isValid(long now) {
-        if (expirationTime == Long.MAX_VALUE && maxIdleMillis == Long.MAX_VALUE) {
+        if (expirationTime.get() == Long.MAX_VALUE && maxIdleMillis.get() == Long.MAX_VALUE) {
             return true;
         }
         long lastTouch = Math.max(lastAccessTime.get(), creationTime.get());
         long idle = now - lastTouch;
-        return expirationTime > now && (maxIdleMillis > idle);
+        return expirationTime.get() > now && (maxIdleMillis.get() > idle);
     }
 
     public boolean isValid() {

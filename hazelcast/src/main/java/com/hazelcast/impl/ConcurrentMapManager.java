@@ -96,7 +96,6 @@ public final class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_PUT_MULTI, new PutMultiOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REMOVE, new RemoveOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_EVICT, new EvictOperationHandler());
-        registerPacketProcessor(CONCURRENT_MAP_EVICT_INTERNAL, new EvictOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REMOVE_IF_SAME, new RemoveOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REMOVE_ITEM, new RemoveItemOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_BACKUP_PUT, new BackupPacketProcessor());
@@ -105,7 +104,7 @@ public final class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_BACKUP_REMOVE, new BackupPacketProcessor());
         registerPacketProcessor(CONCURRENT_MAP_BACKUP_LOCK, new BackupPacketProcessor());
         registerPacketProcessor(CONCURRENT_MAP_LOCK, new LockOperationHandler());
-        registerPacketProcessor(CONCURRENT_MAP_LOCK_RETURN_OLD, new LockOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_LOCK_AND_GET_VALUE, new LockOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_UNLOCK, new UnlockOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_ITERATE_ENTRIES, new QueryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_ITERATE_VALUES, new QueryOperationHandler());
@@ -237,10 +236,9 @@ public final class ConcurrentMapManager extends BaseManager {
             return locked;
         }
 
-        public boolean lockAndReturnOld(String name, Object key, long timeout, long txnId) {
+        public boolean lockAndGetValue(String name, Object key, long timeout) {
             oldValue = null;
-            boolean locked = booleanCall(CONCURRENT_MAP_LOCK_RETURN_OLD, name, key, null, timeout,
-                    -1);
+            boolean locked = booleanCall(CONCURRENT_MAP_LOCK_AND_GET_VALUE, name, key, null, timeout, -1);
             if (locked) {
                 backup(CONCURRENT_MAP_BACKUP_LOCK);
             }
@@ -249,7 +247,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void afterGettingResult(Request request) {
-            if (request.operation == CONCURRENT_MAP_LOCK_RETURN_OLD) {
+            if (request.operation == CONCURRENT_MAP_LOCK_AND_GET_VALUE) {
                 oldValue = request.value;
             }
             super.afterGettingResult(request);
@@ -257,7 +255,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void handleNoneRedoResponse(Packet packet) {
-            if (request.operation == CONCURRENT_MAP_LOCK_RETURN_OLD) {
+            if (request.operation == CONCURRENT_MAP_LOCK_AND_GET_VALUE) {
                 oldValue = packet.value;
             }
             super.handleNoneRedoResponse(packet);
@@ -265,13 +263,42 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     class MContainsKey extends MTargetAwareOp {
+        Object key = null;
+        MapNearCache nearCache = null;
 
         public boolean containsEntry(String name, Object key, Object value) {
             return booleanCall(CONCURRENT_MAP_CONTAINS, name, key, value, 0, -1);
         }
 
         public boolean containsKey(String name, Object key) {
-            return booleanCall(CONCURRENT_MAP_CONTAINS, name, key, null, 0, -1);
+            this.key = key;
+            this.nearCache = mapCaches.get(name);
+            Data dataKey = toData(key);
+            if (nearCache != null) {
+                if (nearCache.containsKey(key)) {
+                    return true;
+                } else if (nearCache.getMaxSize() == Integer.MAX_VALUE) {
+                    return false;
+                }
+            }
+            return booleanCall(CONCURRENT_MAP_CONTAINS, name, dataKey, null, 0, -1);
+        }
+
+        @Override
+        public void reset() {
+            key = null;
+            nearCache = null;
+            super.reset();
+        }
+
+        @Override
+        protected void setResult(Object obj) {
+            if (obj != null && obj == Boolean.TRUE) {
+                if (nearCache != null) {
+                    nearCache.setContainsKey(key, request.key);
+                }
+            }
+            super.setResult(obj);
         }
 
         @Override
@@ -285,10 +312,6 @@ public final class ConcurrentMapManager extends BaseManager {
             return evict(CONCURRENT_MAP_EVICT, name, key);
         }
 
-        public boolean evictInternally(String name, Object key) {
-            return evict(CONCURRENT_MAP_EVICT_INTERNAL, name, key);
-        }
-
         public boolean evict(ClusterOperation operation, String name, Object key) {
             Data k = (key instanceof Data) ? (Data) key : toData(key);
             request.setLocal(operation, name, k, null, 0, -1, -1, thisAddress);
@@ -300,21 +323,6 @@ public final class ConcurrentMapManager extends BaseManager {
             }
             return result;
         }
-//        @Override
-//        public void process() {
-//            setTarget();
-//            if (request.operation == CONCURRENT_MAP_EVICT_INTERNAL && !thisAddress.equals(target)) {
-//                setResult(false);
-//            } else {
-//                super.process();
-//            }
-//        }
-//        @Override
-//        public void doLocalOp() {
-//            CMap cmap = getOrCreateMap(request.name);
-//            request.response = cmap.evict(request);
-//            setResult(request.response);
-//        }
     }
 
     class MMigrate extends MBackupAwareOp {
@@ -382,7 +390,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class MGet extends MTargetAwareOp {
         Object key = null;
-        MapNearCache cache = null;
+        MapNearCache nearCache = null;
 
         public Object get(String name, Object key, long timeout) {
             this.key = key;
@@ -393,9 +401,9 @@ public final class ConcurrentMapManager extends BaseManager {
                     return txn.get(name, key);
                 }
             }
-            cache = mapCaches.get(name);
-            if (cache != null) {
-                Object value = cache.get(key);
+            nearCache = mapCaches.get(name);
+            if (nearCache != null) {
+                Object value = nearCache.get(key);
                 if (value != null) {
                     return value;
                 }
@@ -415,11 +423,18 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
+        public void reset() {
+            key = null;
+            nearCache = null;
+            super.reset();
+        }
+
+        @Override
         public final void handleNoneRedoResponse(Packet packet) {
-            if (cache != null) {
+            if (nearCache != null) {
                 Data value = packet.value;
                 if (value != null && value.size() > 0) {
-                    cache.put(this.key, request.key, packet.value);
+                    nearCache.put(this.key, request.key, packet.value);
                 }
             }
             super.handleNoneRedoResponse(packet);
@@ -458,7 +473,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     if (!txn.has(name, key)) {
                         MLock mlock = new MLock();
                         locked = mlock
-                                .lockAndReturnOld(name, key, DEFAULT_TXN_TIMEOUT, txn.getId());
+                                .lockAndGetValue(name, key, DEFAULT_TXN_TIMEOUT);
                         if (!locked)
                             throwCME(key);
                         Object oldObject = null;
@@ -504,7 +519,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     if (!txn.has(name, key)) {
                         MLock mlock = new MLock();
                         boolean locked = mlock
-                                .lockAndReturnOld(name, key, DEFAULT_TXN_TIMEOUT, txn.getId());
+                                .lockAndGetValue(name, key, DEFAULT_TXN_TIMEOUT);
                         if (!locked)
                             throwCME(key);
                         Object oldObject = null;
@@ -661,7 +676,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 if (!txn.has(name, key)) {
                     MLock mlock = new MLock();
                     boolean locked = mlock
-                            .lockAndReturnOld(name, key, DEFAULT_TXN_TIMEOUT, txn.getId());
+                            .lockAndGetValue(name, key, DEFAULT_TXN_TIMEOUT);
                     if (!locked)
                         throwCME(key);
                     Object oldObject = null;
@@ -713,7 +728,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 if (!txn.has(name, key)) {
                     MLock mlock = new MLock();
                     boolean locked = mlock
-                            .lockAndReturnOld(name, key, DEFAULT_TXN_TIMEOUT, txn.getId());
+                            .lockAndGetValue(name, key, DEFAULT_TXN_TIMEOUT);
                     if (!locked)
                         throwCME(key);
                     Object oldObject = null;
@@ -1185,7 +1200,7 @@ public final class ConcurrentMapManager extends BaseManager {
             public void run() {
                 try {
                     MEvict mEvict = new MEvict();
-                    mEvict.evictInternally(name, key);
+                    mEvict.evict(name, key);
                 } catch (Exception ignored) {
                     ignored.printStackTrace();
                 } finally {

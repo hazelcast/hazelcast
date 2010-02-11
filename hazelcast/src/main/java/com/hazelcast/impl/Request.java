@@ -190,6 +190,7 @@ public class Request {
         lockCount = record.getLockCount();
         longValue = record.getCopyCount();
         ttl = record.getRemainingTTL();
+        timeout = record.getRemainingIdle();
         key = record.getKey();
         value = record.getValue();
         if (record.getIndexes() != null) {

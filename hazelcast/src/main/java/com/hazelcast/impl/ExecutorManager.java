@@ -138,7 +138,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
     class RejectionHandler implements RejectedExecutionHandler {
         public void rejectedExecution(Runnable runnable, ThreadPoolExecutor threadPoolExecutor) {
             //ignored
-            logger.log(Level.FINEST, "ExecutorService is rejecting an execution. " + runnable);
+            logger.log(Level.WARNING, "ExecutorService is rejecting an execution. " + runnable);
         }
     }
 

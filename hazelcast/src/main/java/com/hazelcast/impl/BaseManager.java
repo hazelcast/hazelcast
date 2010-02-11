@@ -843,8 +843,8 @@ public abstract class BaseManager {
 
     public void returnScheduledAsSuccess(final Request request) {
         if (request.local) {
-            final TargetAwareOp mop = (TargetAwareOp) request.attachment;
-            mop.setResult(request.response);
+            final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;
+            targetAwareOp.setResult(request.response);
         } else {
             final Packet packet = obtainPacket();
             request.setPacket(packet);

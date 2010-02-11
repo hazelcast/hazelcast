@@ -33,6 +33,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
@@ -671,8 +672,8 @@ public class ClusterTest {
             map1.put(Integer.valueOf(i), i, 5, TimeUnit.SECONDS);
             map1.put(String.valueOf(i), i, 5, TimeUnit.SECONDS);
         }
-        assertTrue(cl1.await(7));
-        assertTrue(cl2.await(7));
+        assertTrue(cl1.await(15));
+        assertTrue(cl2.await(15));
     }
 
     class CountingListener implements EntryListener {
@@ -699,6 +700,7 @@ public class ClusterTest {
         }
 
         public void entryEvicted(EntryEvent entryEvent) {
+            System.out.println("evicted " + latchEvicted.getCount());
             latchEvicted.countDown();
         }
 
@@ -1441,7 +1443,7 @@ public class ClusterTest {
         }, true);
         map1.put("1", "v1");
         assertEquals("v1", map1.get("1"));
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
         assertNull(map1.get("1"));
     }
 
