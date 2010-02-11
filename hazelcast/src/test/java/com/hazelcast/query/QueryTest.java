@@ -17,6 +17,8 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -24,6 +26,8 @@ import org.junit.After;
 import org.junit.Test;
 
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,6 +43,38 @@ public class QueryTest {
 
     HazelcastInstance newInstance() {
         return Hazelcast.newHazelcastInstance(null);
+    }
+
+    @Test
+    public void testQueryWithTTL() throws Exception {
+        Config cfg = new Config();
+        Map<String, MapConfig> mapConfigs = new HashMap<String, MapConfig>();
+        MapConfig mCfg = new MapConfig();
+        int TTL = 2;
+        mCfg.setTimeToLiveSeconds(TTL);
+        mapConfigs.put("employees", mCfg);
+        cfg.setMapMapConfigs(mapConfigs);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(cfg);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(cfg);
+        IMap imap = h1.getMap("employees");
+        imap.addIndex("name", false);
+        imap.addIndex("age", true);
+        imap.addIndex("active", false);
+        for (int i = 0; i < 1000; i++) {
+            imap.put(String.valueOf(i), new Employee("joe" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+        }
+        Collection<Employee> values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
+        for (Employee employee : values) {
+            assertTrue(employee.isActive());
+        }
+        assertEquals(6, values.size());
+        Thread.sleep((TTL + 1) * 1000);
+        assertEquals(0, imap.size());
+        values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
+        assertEquals(0, values.size());
+        Thread.sleep(5000);
+        values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
+        assertEquals(0, values.size());
     }
 
     @Test
@@ -88,7 +124,7 @@ public class QueryTest {
         IMap imap = h1.getMap("employees");
         doFunctionalSQLQueryTest(imap);
         Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and age>23"));
-        assertEquals(27, entries.size()); 
+        assertEquals(27, entries.size());
     }
 
     @Test

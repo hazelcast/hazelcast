@@ -79,7 +79,7 @@ public class QueryService implements Runnable {
         } catch (InterruptedException ignored) {
         }
     }
-    
+
     void publishState() {
         QueryServiceState queryServiceState = new QueryServiceState(node.concurrentMapManager);
         Collection<IndexRegion> colRegions = regions.values();
@@ -204,7 +204,7 @@ public class QueryService implements Runnable {
             if (indexes != null) {
                 long[] oldValues = record.getIndexes();
                 int indexCount = indexes.length;
-                if (indexCount != newValues.length) {
+                if (active && newValues != null && indexCount != newValues.length) {
                     throw new RuntimeException(indexCount + " is expected but newValues " + newValues.length);
                 }
                 for (int i = 0; i < indexCount; i++) {
