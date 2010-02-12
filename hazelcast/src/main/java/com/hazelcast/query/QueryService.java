@@ -210,15 +210,15 @@ public class QueryService implements Runnable {
                 for (int i = 0; i < indexCount; i++) {
                     Index index = indexes[i];
                     long oldValue = (oldValues == null) ? Long.MIN_VALUE : oldValues[i];
-                    if (oldValue == Long.MIN_VALUE) {
-                        index.addNewIndex(newValues[i], types[i], record);
-                    } else {
-                        if (active) {
-                            index.updateIndex(oldValue, newValues[i], types[i], record);
+                    if (active) {
+                        if (oldValue == Long.MIN_VALUE) {
+                            index.addNewIndex(newValues[i], types[i], record);
                         } else {
-                            index.removeIndex(oldValue, record);
+                            index.updateIndex(oldValue, newValues[i], types[i], record);
                         }
-                    }
+                    } else {
+                        index.removeIndex(oldValue, record);
+                    } 
                 }
                 record.setIndexes(newValues, types);
             }
