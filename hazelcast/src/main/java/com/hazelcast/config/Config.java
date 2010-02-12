@@ -54,7 +54,7 @@ public class Config {
 
     private boolean superClient = false;
 
-    private ClassLoader classLoader = null;
+    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
     private Map<String, String> properties = new HashMap<String, String>();
 

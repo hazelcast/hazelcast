@@ -24,14 +24,17 @@ public class ExecutorThreadFactory implements ThreadFactory {
     final ThreadGroup group;
     final AtomicInteger threadNumber = new AtomicInteger(1);
     final String namePrefix;
+    final ClassLoader classLoader;
 
-    public ExecutorThreadFactory(ThreadGroup threadGroup, String threadGroupName) {
+    public ExecutorThreadFactory(ThreadGroup threadGroup, String threadGroupName, ClassLoader classLoader) {
         this.group = threadGroup;
+        this.classLoader = classLoader;
         namePrefix = "hz.executor-" + threadGroupName + "-thread-";
     }
 
     public Thread newThread(Runnable r) {
         Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
+        t.setContextClassLoader(classLoader);
         if (t.isDaemon()) {
             t.setDaemon(false);
         }

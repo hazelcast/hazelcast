@@ -292,20 +292,25 @@ public class Node {
     public void start() {
         if (completelyShutdown) return;
         Thread inThread = new Thread(threadGroup, inSelector, "hz.InThread");
+        inThread.setContextClassLoader(config.getClassLoader());
         inThread.setPriority(7);
         inThread.start();
         Thread outThread = new Thread(threadGroup, outSelector, "hz.OutThread");
+        outThread.setContextClassLoader(config.getClassLoader());
         outThread.setPriority(7);
         outThread.start();
         serviceThread = new Thread(threadGroup, clusterService, "hz.ServiceThread");
+        serviceThread.setContextClassLoader(config.getClassLoader());
         serviceThread.setPriority(8);
         serviceThread.start();
         queryThread = new Thread(threadGroup, queryService, "hz.QueryThread");
+        queryThread.setContextClassLoader(config.getClassLoader());
         queryThread.setPriority(6);
         queryThread.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(threadGroup, multicastService, "hz.MulticastThread");
             multicastServiceThread.start();
+            multicastServiceThread.setContextClassLoader(config.getClassLoader());
             multicastServiceThread.setPriority(6);
         }
         setActive(true);

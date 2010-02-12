@@ -82,7 +82,7 @@ public class SerializationHelper {
         } else if (type == 8) {
             DataSerializable ds;
             try {
-                ds = (DataSerializable) Class.forName(in.readUTF()).newInstance();
+                ds = (DataSerializable) Serializer.classForName(in.readUTF()).newInstance();
             } catch (Throwable e) {
                 throw new IOException(e.getMessage());
             }

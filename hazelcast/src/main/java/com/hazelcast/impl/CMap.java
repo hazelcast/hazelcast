@@ -24,10 +24,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.impl.concurrentmap.MultiData;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.*;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Index;
 import com.hazelcast.util.SortedHashMap;
@@ -148,7 +145,7 @@ public class CMap {
             if (mapStoreConfig.isEnabled()) {
                 String mapStoreClassName = mapStoreConfig.getClassName();
                 try {
-                    Object storeInstance = Class.forName(mapStoreClassName).newInstance();
+                    Object storeInstance = Serializer.classForName(mapStoreClassName).newInstance();
                     if (storeInstance instanceof MapLoader) {
                         loaderTemp = (MapLoader) storeInstance;
                     }

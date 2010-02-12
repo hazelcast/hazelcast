@@ -24,6 +24,7 @@ import com.hazelcast.impl.ThreadContext;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectStreamClass;
 import java.math.BigInteger;
 import java.util.Date;
 
@@ -68,6 +69,19 @@ public final class Serializer {
     public Serializer() {
         bbos = new FastByteArrayOutputStream(100 * 1024);
         bbis = new FastByteArrayInputStream(new byte[10]);
+    }
+
+    public static Class<?> classForName(String className) throws ClassNotFoundException {
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            if (contextClassLoader != null) {
+                return Class.forName(className, true, contextClassLoader);
+            } else {
+                return Class.forName(className);
+            }
+        } catch (ClassNotFoundException e) {
+            throw e;
+        }
     }
 
     public Data writeObject(Object obj) throws Exception {
@@ -188,7 +202,7 @@ public final class Serializer {
         }
 
         public Class read(FastByteArrayInputStream bbis) throws Exception {
-            return Class.forName(bbis.readUTF());
+            return classForName(bbis.readUTF());
         }
 
         public void write(FastByteArrayOutputStream bbos, Class obj) throws Exception {
@@ -197,30 +211,17 @@ public final class Serializer {
     }
 
     static class StringSerializer implements TypeSerializer<String> {
-//        private static final int STRING_CHUNK_SIZE = 16 * 1024;
 
         public byte getTypeId() {
             return SERIALIZER_TYPE_STRING;
         }
 
         public String read(FastByteArrayInputStream bbis) throws Exception {
-//            StringBuilder result = new StringBuilder();
-//            while (bbis.available() > 0) {
-//                result.append(bbis.readUTF());
-//            }
-//            return result.toString();
             return bbis.readUTF();
         }
 
         public void write(FastByteArrayOutputStream bbos, String obj) throws Exception {
             bbos.writeUTF(obj);
-//            int length = obj.length();
-//            int chunkSize = length / STRING_CHUNK_SIZE + 1;
-//            for (int i = 0; i < chunkSize; i++) {
-//                int beginIndex = Math.max(0, i * STRING_CHUNK_SIZE - 1);
-//                int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
-//                bbos.writeUTF(obj.substring(beginIndex, endIndex));
-//            }
         }
     }
 
@@ -250,7 +251,7 @@ public final class Serializer {
         public DataSerializable read(FastByteArrayInputStream bbis) throws Exception {
             String className = bbis.readUTF();
             try {
-                DataSerializable ds = (DataSerializable) Class.forName(className).newInstance();
+                DataSerializable ds = (DataSerializable) classForName(className).newInstance();
                 ds.readData(bbis);
                 return ds;
             } catch (Exception e) {
@@ -273,7 +274,12 @@ public final class Serializer {
         }
 
         public Object read(FastByteArrayInputStream bbis) throws Exception {
-            ObjectInputStream in = new ObjectInputStream(bbis);
+            ObjectInputStream in = new ObjectInputStream(bbis) {
+                @Override
+                protected Class<?> resolveClass(ObjectStreamClass desc) throws ClassNotFoundException {
+                    return classForName(desc.getName());
+                }
+            };
             if (shared) {
                 return in.readObject();
             } else {

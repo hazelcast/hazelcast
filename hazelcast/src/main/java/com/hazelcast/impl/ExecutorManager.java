@@ -87,7 +87,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         }
         executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveSeconds, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(),
-                new ExecutorThreadFactory(node.threadGroup, node.getName()),
+                new ExecutorThreadFactory(node.threadGroup, node.getName(), config.getClassLoader()),
                 new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
                 ThreadContext threadContext = ThreadContext.get();
@@ -102,7 +102,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         };
         executorForMigrations = new ThreadPoolExecutor(16, 16, 60, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(),
-                new ExecutorThreadFactory(node.threadGroup, node.getName() + ".internal"),
+                new ExecutorThreadFactory(node.threadGroup, node.getName() + ".internal", config.getClassLoader()),
                 new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
                 ThreadContext threadContext = ThreadContext.get();

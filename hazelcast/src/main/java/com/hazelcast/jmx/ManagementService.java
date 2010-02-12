@@ -74,7 +74,7 @@ public class ManagementService {
         // Scheduler of the statistics collectors
         if (showDetails()) {
             if (statCollectors == null) {
-                statCollectors = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(null, "jmx"));
+                statCollectors = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(null, "jmx", null));
             }
         }
         started = true;
