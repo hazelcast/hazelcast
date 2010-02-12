@@ -30,6 +30,7 @@ public class MapStatisticsPanel extends MapPanel implements MonitoringPanel {
 
     public MapStatisticsPanel(String name, AsyncCallback<ChangeEvent> callBack) {
         super(name, callBack, "Statistics for Map: " + name);
+        disclosurePanel.setOpen(true);        
     }
 
     public void handle(ChangeEvent e) {

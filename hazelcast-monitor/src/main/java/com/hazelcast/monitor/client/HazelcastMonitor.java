@@ -42,6 +42,7 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
     Map<Integer, ClusterWidgets> mapClusterWidgets = new HashMap<Integer, ClusterWidgets>();
     HorizontalSplitPanel mainPanel;
     DecoratedStackPanel dsPanel;
+//    StackLayoutPanel dsPanel;
     private Timer refreshTimer;
 
     /**
@@ -63,6 +64,7 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
         DisclosurePanel clusterAddPanel = clusterAddPanel();
         leftPanel.add(clusterAddPanel);
         dsPanel = new DecoratedStackPanel();
+//        dsPanel = new StackLayoutPanel(Style.Unit.EM);
         dsPanel.setWidth(LEFT_PANEL_SIZE);
         leftPanel.add(dsPanel);
         mainPanel.setLeftWidget(leftPanel);
@@ -88,7 +90,7 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
                 "Add Cluster to Monitor");
         final TextBox tbGroupName = new TextBox();
         tbGroupName.setText("dev");
-        final TextBox tbGroupPass = new TextBox();
+        final TextBox tbGroupPass = new PasswordTextBox();
         tbGroupPass.setText("dev-pass");
         final TextBox tbAddresses = new TextBox();
 //        tbAddresses.setText("192.168.1.3");
@@ -104,6 +106,7 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
         vPanel.add(btAddCluster);
         vPanel.add(lbError);
         disclosurePanel.add(vPanel);
+        disclosurePanel.setOpen(true);
         return disclosurePanel;
     }
     // Setup timer to refresh list automatically.
@@ -129,17 +132,19 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
             MembersPanel membersPanel = new MembersPanel(callBack, name);
             clusterWidgets.register(membersPanel);
         }
-        if ("PARTITIONS".equals(type)) {
+        else if ("PARTITIONS".equals(type)) {
             PartitionsPanel partitionsPanel = new PartitionsPanel(callBack);
             clusterWidgets.register(partitionsPanel);
         } else {
             InstanceType iType = InstanceType.valueOf(type);
+
             if (clusterWidgets != null) {
                 if (InstanceType.MAP.equals(iType)) {
                     MapChartPanel mapChartPanel = new MapChartPanel(name, callBack);
                     MapStatisticsPanel mapStatisticsPanel = new MapStatisticsPanel(name, callBack);
+                    MapBrowserPanel mapBrowserPanel = new MapBrowserPanel(name, callBack);
                     MapTimesPanel mapTimesPanel = new MapTimesPanel(name, callBack);
-                    clusterWidgets.register(mapChartPanel, mapStatisticsPanel, mapTimesPanel);
+                    clusterWidgets.register(mapChartPanel, mapStatisticsPanel, mapTimesPanel,mapBrowserPanel);
                 } else if (InstanceType.QUEUE.equals(iType)) {
                 }
             }

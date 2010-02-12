@@ -23,6 +23,15 @@
         <url-pattern>/ChartGenerator</url-pattern>
     </servlet-mapping>
 
+    <servlet>
+        <servlet-name>com.hazelcast.monitor.Hazelcastmonitor MapService</servlet-name>
+        <servlet-class>com.hazelcast.monitor.server.MapServiceImpl</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>com.hazelcast.monitor.Hazelcastmonitor MapService</servlet-name>
+        <url-pattern>/Hazelcastmonitor/map</url-pattern>
+    </servlet-mapping>
+
     <!-- Default page to serve -->
     <welcome-file-list>
         <welcome-file>HazelcastMonitor.html</welcome-file>

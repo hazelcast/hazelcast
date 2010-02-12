@@ -30,8 +30,6 @@ public class PartitionsPanel extends AbstractMonitoringPanel implements Monitori
     final private AsyncCallback<ChangeEvent> callBack;
     final AbsolutePanel absTablePanel;
     private ClusterWidgets clusterWidgets;
-    protected final HazelcastServiceAsync hazelcastService = GWT
-            .create(HazelcastService.class);
 
     public PartitionsPanel(AsyncCallback<ChangeEvent> callBack) {
         this.callBack = callBack;
