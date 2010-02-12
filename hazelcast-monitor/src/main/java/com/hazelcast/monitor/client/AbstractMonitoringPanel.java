@@ -16,12 +16,19 @@
  */
 package com.hazelcast.monitor.client;
 
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class AbstractMapPanel implements MonitoringPanel{
+public abstract class AbstractMonitoringPanel implements MonitoringPanel{
+
+protected final HazelcastServiceAsync hazelcastService = GWT
+            .create(HazelcastService.class);
+
     /**
      * Registers the panel in ClusterWidgets;
      * If it existed before, returns false. Otherwise returns true.
@@ -45,6 +52,13 @@ public abstract class AbstractMapPanel implements MonitoringPanel{
         }
 
     }
+    public boolean register(ClusterWidgets clusterWidgets, ChangeEventType eventType, String name, AsyncCallback<ChangeEvent> callBack) {
+        boolean newEvent = register(clusterWidgets, eventType);
+        if (newEvent) {
+            hazelcastService.registerEvent(eventType, clusterWidgets.clusterId, name, callBack);
+        }
+        return true;
+    }
 
     /** De registers the panel from clusterWidgets. Returns true of there is no registered panel
      * with same ChangeEventType.
@@ -59,5 +73,22 @@ public abstract class AbstractMapPanel implements MonitoringPanel{
             list.remove(this);
         }
         return list.isEmpty();
+    }
+
+    public boolean deRegister(ClusterWidgets clusterWidgets, ChangeEventType changeEventType, String name) {
+        boolean isEmpty = deRegister(clusterWidgets, changeEventType);
+        if (isEmpty) {
+            hazelcastService.deRegisterEvent(changeEventType, clusterWidgets.clusterId, name, new AsyncCallback<Void>() {
+
+                public void onFailure(Throwable throwable) {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void onSuccess(Void aVoid) {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+            });
+        }
+        return true;
     }
 }

@@ -26,12 +26,11 @@ import com.google.gwt.user.client.ui.*;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class MapPanel extends AbstractMapPanel implements MonitoringPanel {
+public abstract class MapPanel extends AbstractMonitoringPanel implements MonitoringPanel {
     final protected String mapName;
     final protected AsyncCallback<ChangeEvent> callBack;
     DisclosurePanel disclosurePanel;

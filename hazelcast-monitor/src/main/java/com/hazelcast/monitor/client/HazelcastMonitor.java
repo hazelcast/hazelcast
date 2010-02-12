@@ -126,7 +126,7 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
         deRegisterAll();
 
         if ("MEMBER".equals(type)) {
-            MembersPanel membersPanel = new MembersPanel(callBack);
+            MembersPanel membersPanel = new MembersPanel(callBack, name);
             clusterWidgets.register(membersPanel);
         }
         if ("PARTITIONS".equals(type)) {

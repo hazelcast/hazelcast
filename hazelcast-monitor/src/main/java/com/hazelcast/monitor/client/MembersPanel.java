@@ -21,27 +21,33 @@ import com.google.gwt.user.client.ui.AbsolutePanel;
 import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.ui.Widget;
 import com.hazelcast.monitor.client.event.ChangeEvent;
+import com.hazelcast.monitor.client.event.ChangeEventType;
+import com.hazelcast.monitor.client.event.Partitions;
 
 import static com.hazelcast.monitor.client.PanelUtils.createFormattedFlexTable;
 
-public class MembersPanel implements MonitoringPanel{
+public class MembersPanel extends AbstractMonitoringPanel implements MonitoringPanel {
     final FlexTable table;
     final AbsolutePanel absTablePanel;
     final private AsyncCallback<ChangeEvent> callBack;
-    private ClusterWidgets clusterWidgets;
-    
-    public MembersPanel(AsyncCallback<ChangeEvent> callBack) {
+    final private String memberName;
+
+    public MembersPanel(AsyncCallback<ChangeEvent> callBack, String name) {
         this.callBack = callBack;
         absTablePanel = new AbsolutePanel();
         absTablePanel.addStyleName("img-shadow");
         table = createFormattedFlexTable();
-
+        this.memberName = name;
         absTablePanel.add(table);
-        table.setText(0,0,"Partitions");
+        table.setText(0, 0, "Count");
+        table.setText(0, 1, "Partitions");
     }
 
     public void handle(ChangeEvent event) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        Partitions partitionsChangeEvent = (Partitions) event;
+        String blocks = partitionsChangeEvent.getPartitions().get(memberName);
+        table.setText(1, 0, String.valueOf(partitionsChangeEvent.getCount().get(memberName)));
+        table.setText(1, 1, blocks);
     }
 
     public Widget getPanelWidget() {
@@ -49,11 +55,10 @@ public class MembersPanel implements MonitoringPanel{
     }
 
     public boolean register(ClusterWidgets clusterWidgets) {
-        this.clusterWidgets = clusterWidgets;
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return super.register(clusterWidgets, ChangeEventType.PARTITIONS, null, callBack);
     }
 
     public boolean deRegister(ClusterWidgets clusterWidgets) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return super.deRegister(clusterWidgets, ChangeEventType.PARTITIONS, null);
     }
 }

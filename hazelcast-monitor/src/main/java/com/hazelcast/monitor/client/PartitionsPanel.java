@@ -23,11 +23,9 @@ import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
 import com.hazelcast.monitor.client.event.Partitions;
 
-import static com.hazelcast.monitor.client.PanelUtils.createFormattedFlexTable;
-import static com.hazelcast.monitor.client.PanelUtils.formatEvenRows;
-import static com.hazelcast.monitor.client.PanelUtils.removeUnusedRows;
+import static com.hazelcast.monitor.client.PanelUtils.*;
 
-public class PartitionsPanel extends AbstractMapPanel implements MonitoringPanel {
+public class PartitionsPanel extends AbstractMonitoringPanel implements MonitoringPanel {
 
     final private AsyncCallback<ChangeEvent> callBack;
     final AbsolutePanel absTablePanel;
@@ -40,7 +38,6 @@ public class PartitionsPanel extends AbstractMapPanel implements MonitoringPanel
         absTablePanel = new AbsolutePanel();
         absTablePanel.addStyleName("img-shadow");
         FlexTable table = createFormattedFlexTable();
-
         table.setText(0, 0, "Member");
         table.setText(0, 1, "Count");
         table.setText(0, 2, "Partitions");
@@ -58,7 +55,7 @@ public class PartitionsPanel extends AbstractMapPanel implements MonitoringPanel
             String member = link.getText();
             table.setWidget(row, 0, clusterWidgets.getInstanceLink(null, member));
             Integer size = partitionsChangeEvent.getCount().get(member);
-            size = (size==null)?0:size;
+            size = (size == null) ? 0 : size;
             table.setText(row, 1, String.valueOf(size));
             table.setText(row, 2, partitionsChangeEvent.getPartitions().get(member));
             formatEvenRows(row, table);
@@ -72,30 +69,11 @@ public class PartitionsPanel extends AbstractMapPanel implements MonitoringPanel
     }
 
     public boolean register(ClusterWidgets clusterWidgets) {
-        if (this.clusterWidgets == null) {
-            this.clusterWidgets = clusterWidgets;
-        }
-        boolean newEvent = super.register(clusterWidgets, ChangeEventType.PARTITIONS);
-        if (newEvent) {
-            hazelcastService.registerEvent(ChangeEventType.PARTITIONS, clusterWidgets.clusterId, null, callBack);
-        }
-        return true;
+        this.clusterWidgets = clusterWidgets;
+        return super.register(clusterWidgets, ChangeEventType.PARTITIONS, null, callBack);
     }
 
     public boolean deRegister(ClusterWidgets clusterWidgets) {
-        boolean isEmpty = super.deRegister(clusterWidgets, ChangeEventType.PARTITIONS);
-        if (isEmpty) {
-            hazelcastService.deRegisterEvent(ChangeEventType.PARTITIONS, clusterWidgets.clusterId, null, new AsyncCallback<Void>() {
-
-                public void onFailure(Throwable throwable) {
-                    //To change body of implemented methods use File | Settings | File Templates.
-                }
-
-                public void onSuccess(Void aVoid) {
-                    //To change body of implemented methods use File | Settings | File Templates.
-                }
-            });
-        }
-        return true;
+        return super.deRegister(clusterWidgets, ChangeEventType.PARTITIONS, null);
     }
 }
