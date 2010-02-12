@@ -78,6 +78,28 @@ public class QueryTest {
     }
 
     @Test
+    public void testQueryAfterMigration() throws Exception {
+        Config cfg = null;
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(cfg);
+        IMap imap = h1.getMap("employees");
+        imap.addIndex("name", false);
+        imap.addIndex("age", true);
+        imap.addIndex("active", false);
+        for (int i = 0; i < 1000; i++) {
+            imap.put(String.valueOf(i), new Employee("joe" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+        }
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(cfg);
+        for (int i = 0; i < 50; i++) {
+            Collection<Employee> values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
+            for (Employee employee : values) {
+                assertTrue(employee.isActive());
+            }
+            assertEquals(6, values.size());
+            Thread.sleep(1000);
+        }
+    }
+
+    @Test
     public void testTwoNodesWithIndexes() throws Exception {
         HazelcastInstance h1 = newInstance();
         HazelcastInstance h2 = newInstance();

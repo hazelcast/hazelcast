@@ -84,7 +84,16 @@ public class Record implements MapEntry {
     }
 
     public Record copy() {
-        return new Record(factory, name, blockId, key.get(), value.get(), getRemainingTTL(), getRemainingIdle(), id);
+        Record recordCopy =  new Record(factory, name, blockId, key.get(), value.get(), getRemainingTTL(), getRemainingIdle(), id);
+        recordCopy.setIndexes(indexes, indexTypes);
+        recordCopy.setValueHash(valueHash);
+        recordCopy.setLockCount(lockCount);
+        recordCopy.setLockAddress(lockAddress);
+        recordCopy.setLockThreadId(lockThreadId);
+        recordCopy.setMultiValues(lsMultiValues);
+        recordCopy.setCopyCount(copyCount);
+        recordCopy.setVersion(getVersion());
+        return recordCopy;
     }
 
     public RecordEntry getRecordEntry() {

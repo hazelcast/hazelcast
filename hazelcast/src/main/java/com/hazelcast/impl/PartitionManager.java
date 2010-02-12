@@ -55,7 +55,7 @@ public class PartitionManager implements Runnable, PartitionService {
     final Address thisAddress;
     final List<Block> lsBlocksToMigrate = new ArrayList<Block>(100);
 
-    final long MIGRATION_INTERVAL_MILLIS = TimeUnit.SECONDS.toMillis(30);
+    final long MIGRATION_INTERVAL_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
     long nextMigrationMillis = System.currentTimeMillis() + MIGRATION_INTERVAL_MILLIS;
 
