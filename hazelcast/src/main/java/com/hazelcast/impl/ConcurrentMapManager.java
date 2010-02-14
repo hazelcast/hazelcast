@@ -56,7 +56,7 @@ public final class ConcurrentMapManager extends BaseManager {
     final OrderedExecutionTask[] orderedExecutionTasks;
     final PartitionManager partitionManager;
     long newRecordId = 0;
-    QueryServiceState queryServiceState;
+    QueryServiceState queryServiceState = new QueryServiceState(this);
 
     ConcurrentMapManager(Node node) {
         super(node);
@@ -158,21 +158,22 @@ public final class ConcurrentMapManager extends BaseManager {
             }
             Collection<Call> calls = mapCalls.values();
             for (Call call : calls) {
-                if (call.getEnqueueCount() > 11 || (now - call.getFirstEnqueueTime() > 11000)) {
+                if (call.getEnqueueCount() > 15 || (now - call.getFirstEnqueueTime() > 15000)) {
                     sbState.append("\n");
                     sbState.append(call);
                 }
             }
             sbState.append("\nCall Count:" + calls.size());
+            sbState.append("\nQueryService.queue.size:" + queryServiceState.getQueueSize());
             Collection<CMap> cmaps = maps.values();
             for (CMap cmap : cmaps) {
                 cmap.appendState(sbState);
             }
             node.executorManager.appendState(sbState);
-            long total = Runtime.getRuntime().totalMemory() / 1024 / 1024;
-            long free = Runtime.getRuntime().freeMemory() / 1024 / 1024;
+            long total = Runtime.getRuntime().totalMemory();
+            long free = Runtime.getRuntime().freeMemory(); 
             sbState.append("\nUsed Memory:");
-            sbState.append((total - free));
+            sbState.append((total - free) / 1024 / 1024);
             sbState.append("MB");
             logger.log(Level.INFO, sbState.toString());
             lastLogStateTime = now;

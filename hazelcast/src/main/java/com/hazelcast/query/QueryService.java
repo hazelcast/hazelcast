@@ -19,10 +19,7 @@ package com.hazelcast.query;
 
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.impl.BaseManager;
-import com.hazelcast.impl.Node;
-import com.hazelcast.impl.QueryServiceState;
-import com.hazelcast.impl.Record;
+import com.hazelcast.impl.*;
 import com.hazelcast.nio.Data;
 
 import java.util.*;
@@ -58,7 +55,9 @@ public class QueryService implements Runnable {
                     publishState();
                     lastStatePublishTime = now;
                 }
-                if (runnable != null) runnable.run();
+                if (runnable != null) {
+                    runnable.run();
+                }
             } catch (Throwable e) {
                 e.printStackTrace();
             }
@@ -82,6 +81,7 @@ public class QueryService implements Runnable {
 
     void publishState() {
         QueryServiceState queryServiceState = new QueryServiceState(node.concurrentMapManager);
+        queryServiceState.setQueueSize(queryQ.size());
         Collection<IndexRegion> colRegions = regions.values();
         for (IndexRegion region : colRegions) {
             QueryServiceState.IndexState[]  indexStates = null;
@@ -103,7 +103,7 @@ public class QueryService implements Runnable {
 
     class IndexRegion {
         final String name;
-        final Set<Record> ownedRecords = new HashSet<Record>(10000);
+        final Set<Record> ownedRecords = new HashSet<Record>(CMap.DEFAULT_MAP_SIZE);
         final Map<Integer, Set<Record>> mapValueIndex = new HashMap<Integer, Set<Record>>(1000);
         private Map<Expression, Index<MapEntry>> mapIndexes = null;
         private Index<MapEntry>[] indexes = null;

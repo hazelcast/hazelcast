@@ -188,6 +188,7 @@ public class Node {
             }
         } catch (Exception e) {
             e.printStackTrace();
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
         this.multicastService = mcService;
     }
@@ -254,10 +255,13 @@ public class Node {
     }
 
     public void setMasterAddress(final Address master) {
+        if (master != null)
+            logger.log(Level.FINE, "** setting master address to " + master.toString());
         masterAddress = master;
     }
 
     public void shutdown() {
+        logger.log(Level.FINE, "** we are being asked to shutdown when active = " + String.valueOf(active));
         if (isActive()) {
             // set the joined=false first so that
             // threads do not process unnecessary
@@ -265,24 +269,34 @@ public class Node {
             long start = System.currentTimeMillis();
             joined = false;
             setActive(false);
+            logger.log(Level.FINEST, "Shutting down the NIO socket selector for input");
             inSelector.shutdown();
+            logger.log(Level.FINEST, "Shutting down the NIO socket selector for output");
             outSelector.shutdown();
+            logger.log(Level.FINEST, "Shutting down the cluster service");
             clusterService.stop();
+            logger.log(Level.FINEST, "Shutting down the query service");
             queryService.stop();
             if (multicastService != null) {
                 multicastService.stop();
             }
+            logger.log(Level.FINEST, "Shutting down the connection manager");
             connectionManager.shutdown();
+            logger.log(Level.FINEST, "Shutting down the concurrentMapManager");
             concurrentMapManager.reset();
+            logger.log(Level.FINEST, "Shutting down the clientService");
             clientService.reset();
+            logger.log(Level.FINEST, "Shutting down the executorManager");
             executorManager.stop();
             masterAddress = null;
+            logger.log(Level.FINEST, "Shutting down the cluster manager");
             clusterManager.stop();
             int numThreads = threadGroup.activeCount();
             Thread[] threads = new Thread[numThreads * 2];
             numThreads = threadGroup.enumerate(threads, false);
             for (int i = 0; i < numThreads; i++) {
                 Thread thread = threads[i];
+                logger.log(Level.FINEST, "Shutting down thread " + thread.getName());
                 thread.interrupt();
             }
             logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (System.currentTimeMillis() - start) + " ms.");
@@ -290,22 +304,27 @@ public class Node {
     }
 
     public void start() {
+        logger.log(Level.FINEST, "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
         if (completelyShutdown) return;
         Thread inThread = new Thread(threadGroup, inSelector, "hz.InThread");
         inThread.setContextClassLoader(config.getClassLoader());
         inThread.setPriority(7);
+        logger.log(Level.FINEST, "Starting thread " + inThread.getName());
         inThread.start();
         Thread outThread = new Thread(threadGroup, outSelector, "hz.OutThread");
         outThread.setContextClassLoader(config.getClassLoader());
         outThread.setPriority(7);
+        logger.log(Level.FINEST, "Starting thread " + outThread.getName());
         outThread.start();
         serviceThread = new Thread(threadGroup, clusterService, "hz.ServiceThread");
         serviceThread.setContextClassLoader(config.getClassLoader());
         serviceThread.setPriority(8);
+        logger.log(Level.FINEST, "Starting thread " + serviceThread.getName());
         serviceThread.start();
         queryThread = new Thread(threadGroup, queryService, "hz.QueryThread");
         queryThread.setContextClassLoader(config.getClassLoader());
         queryThread.setPriority(6);
+        logger.log(Level.FINEST, "Starting thread " + queryThread.getName());
         queryThread.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(threadGroup, multicastService, "hz.MulticastThread");
@@ -318,6 +337,7 @@ public class Node {
             logger.log(Level.FINEST, "Adding ShutdownHook");
             Runtime.getRuntime().addShutdownHook(shutdownHookThread);
         }
+        logger.log(Level.FINEST, "finished starting threads, calling join");
         join();
     }
 
@@ -335,6 +355,8 @@ public class Node {
                     if (groupProperties.SHUTDOWNHOOK_ENABLED.getBoolean()) {
                         shutdown();
                     }
+                } else {
+                    logger.log(Level.FINEST, "shutdown hook - we are not --> active and not completely down so we are not calling shutdown");
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -421,6 +443,7 @@ public class Node {
                     for (int i = 0; i < 3; i++) {
                         final Address addrs = new Address(host, config.getPort() + i, true);
                         if (!addrs.equals(getThisAddress())) {
+                            logger.log(Level.FINEST, "adding possible member " + addrs);
                             lsPossibleAddresses.add(addrs);
                         }
                     }
@@ -439,6 +462,7 @@ public class Node {
                                 final Address addressProper = new Address(inetAddress.getAddress(),
                                         config.getPort() + i);
                                 if (!addressProper.equals(getThisAddress())) {
+                                    logger.log(Level.FINEST, "adding possible member " + addressProper);
                                     lsPossibleAddresses.add(addressProper);
                                 }
                             }
@@ -447,6 +471,7 @@ public class Node {
                 }
             } catch (final Exception e) {
                 e.printStackTrace();
+                logger.log(Level.SEVERE, e.getMessage(), e);
             }
         }
         lsPossibleAddresses.addAll(config.getNetworkConfig().getJoin().getTcpIpConfig().getAddresses());
@@ -459,7 +484,6 @@ public class Node {
         } else {
             joinWithMulticast();
         }
-        logger.log(Level.FINEST, "Join DONE");
         clusterManager.finalizeJoin();
         if (baseVariables.lsMembers.size() == 1) {
             final StringBuilder sb = new StringBuilder();
@@ -470,6 +494,7 @@ public class Node {
     }
 
     void setAsMaster() {
+        logger.log(Level.FINE, "This node is being set as the master");
         masterAddress = address;
         logger.log(Level.FINEST, "adding member myself");
         clusterManager.addMember(address, getLocalNodeType()); // add
@@ -549,18 +574,23 @@ public class Node {
                 Thread.sleep(1000);
                 numberOfSeconds++;
                 int numberOfJoinReq = 0;
+                logger.log(Level.FINE, "we are going to try to connect to each address, but no more than five times");
                 for (final Address possibleAddress : lsPossibleAddresses) {
+                    logger.log(Level.FINEST, "connection attempt " + numberOfJoinReq + " to " + possibleAddress);
                     final Connection conn = connectionManager.getOrConnect(possibleAddress);
-                    logger.log(Level.FINEST, "conn " + conn);
                     if (conn != null && numberOfJoinReq < 5) {
                         found = true;
+                        logger.log(Level.FINEST,"found and sending join request for " + possibleAddress);
                         clusterManager.sendJoinRequest(possibleAddress);
                         numberOfJoinReq++;
+                    } else {
+                        logger.log(Level.FINEST,"number of join reqests is greater than 5, no join request will be sent for " + possibleAddress);
                     }
                 }
             }
             logger.log(Level.FINEST, "FOUND " + found);
             if (!found) {
+                logger.log(Level.FINEST, "This node will assume master role since no possible member where connected to");
                 setAsMaster();
             } else {
                 while (!joined) {
@@ -569,8 +599,11 @@ public class Node {
                     for (final Address possibleAddress : lsPossibleAddresses) {
                         final Connection conn = connectionManager.getOrConnect(possibleAddress);
                         if (conn != null && numberOfJoinReq < 5) {
+                            logger.log(Level.FINEST,"sending join request for "  + possibleAddress);
                             clusterManager.sendJoinRequest(possibleAddress);
                             numberOfJoinReq++;
+                        } else {
+                            logger.log(Level.FINEST,"number of join request is greater than 5, no join request will be sent for " + possibleAddress + " the second time");
                         }
                     }
                     Thread.sleep(2000);
@@ -581,6 +614,7 @@ public class Node {
                                 masterCandidate = false;
                         }
                         if (masterCandidate) {
+                            logger.log(Level.FINEST,"I am the master candidate, setting as master");
                             setAsMaster();
                         }
                     }
@@ -590,6 +624,7 @@ public class Node {
             failedConnections.clear();
         } catch (final Exception e) {
             e.printStackTrace();
+            logger.log(Level.SEVERE,e.getMessage(),e);
         }
     }
 

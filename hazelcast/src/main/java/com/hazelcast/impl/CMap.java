@@ -44,6 +44,8 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public class CMap {
 
+    public final static int DEFAULT_MAP_SIZE = 10000;
+
     final static Logger logger = Logger.getLogger(CMap.class.getName());
 
     final ConcurrentMapManager concurrentMapManager;
@@ -56,9 +58,9 @@ public class CMap {
 
     final Address thisAddress;
 
-    final Set<Record> setRemovedRecords = new HashSet<Record>(10000);
+    final Set<Record> setRemovedRecords = new HashSet<Record>(DEFAULT_MAP_SIZE);
 
-    final Set<Record> ownedRecords = new HashSet<Record>(10000);
+    final Set<Record> ownedRecords = new HashSet<Record>(DEFAULT_MAP_SIZE);
 
     final SortedHashMap<Data, Record> mapRecords;
 
@@ -108,6 +110,8 @@ public class CMap {
 
     long lastEvictionTime = 0;
 
+    long lastRemoveTime = 0;
+
     final AtomicInteger evictionCount = new AtomicInteger();
 
     public CMap(ConcurrentMapManager concurrentMapManager, String name) {
@@ -117,7 +121,7 @@ public class CMap {
         this.node = concurrentMapManager.node;
         this.thisAddress = concurrentMapManager.thisAddress;
         this.name = name;
-        mapRecords = new SortedHashMap<Data, Record>(10000);
+        mapRecords = new SortedHashMap<Data, Record>(DEFAULT_MAP_SIZE);
         MapConfig mapConfig = null;
         String mapConfigName = name.substring(2);
         if (mapConfigName.startsWith("__hz_") || mapConfigName.startsWith("l:") || mapConfigName.startsWith("s:")) {
@@ -825,7 +829,8 @@ public class CMap {
 
     void startRemove() {
         long now = System.currentTimeMillis();
-        if (setRemovedRecords.size() > 0) {
+        if (((now - lastRemoveTime) > removeDelayMillis) && setRemovedRecords.size() > 0) {
+            lastRemoveTime = now;
             Iterator<Record> itRemovedRecords = setRemovedRecords.iterator();
             while (itRemovedRecords.hasNext()) {
                 Record record = itRemovedRecords.next();

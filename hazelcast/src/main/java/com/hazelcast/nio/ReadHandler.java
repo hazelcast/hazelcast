@@ -61,8 +61,10 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
     }
 
     public final void handle() {
-        if (!connection.live())
+        if (!connection.live()) {
+            logger.log(Level.FINEST, ">>>> We are being to asked to read, but connection is not live so we won't");
             return;
+        }
         try {
             final int readBytes = socketChannel.read(inBuffer);
             if (readBytes == -1) {

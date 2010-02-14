@@ -30,7 +30,7 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 class LocallyOwnedMap {
     private static final Logger logger = Logger.getLogger(LocallyOwnedMap.class.getName());
-    private final ConcurrentMap<Object, Record> mapCache = new ConcurrentHashMap<Object, Record>(1000);
+    private final ConcurrentMap<Object, Record> mapCache = new ConcurrentHashMap<Object, Record>(CMap.DEFAULT_MAP_SIZE);
     private final Queue<Record> localRecords = new ConcurrentLinkedQueue<Record>();
     private final AtomicInteger counter = new AtomicInteger();
     private final int LOCAL_INVALIDATION_COUNTER = 10000;

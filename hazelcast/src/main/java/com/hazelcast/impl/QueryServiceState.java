@@ -21,11 +21,21 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class QueryServiceState implements Processable {
+
     Map<String, IndexRegionState> mapRegionStats = new HashMap<String, IndexRegionState>();
     final ConcurrentMapManager concurrentMapManager;
+    private int queueSize =0;
 
     public QueryServiceState(ConcurrentMapManager concurrentMapManager) {
         this.concurrentMapManager = concurrentMapManager;
+    }
+
+    public int getQueueSize() {
+        return queueSize;
+    }
+
+    public void setQueueSize(int queueSize) {
+        this.queueSize = queueSize;
     }
 
     public void addIndexRegionState(IndexRegionState indexRegionState) {

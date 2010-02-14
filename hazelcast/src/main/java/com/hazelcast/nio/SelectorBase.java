@@ -96,8 +96,7 @@ public abstract class SelectorBase implements Runnable {
                 try {
                     selectedKeyCount = selector.select(waitTime);
                     if (Thread.interrupted()) {
-                        node.handleInterruptedException(Thread.currentThread(),
-                                new RuntimeException());
+                        node.handleInterruptedException(Thread.currentThread(), new RuntimeException());
                         return;
                     }
                 } catch (Throwable exp) {
@@ -124,6 +123,7 @@ public abstract class SelectorBase implements Runnable {
         } catch (Exception ignored) {
         } finally {
             try {
+                logger.log(Level.FINE, "closing selector " + Thread.currentThread().getName());
                 selector.close();
             } catch (final Exception ignored) {
             }

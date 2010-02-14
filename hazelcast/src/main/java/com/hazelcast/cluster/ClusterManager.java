@@ -161,7 +161,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                                 if (lsDeadAddresses == null) {
                                     lsDeadAddresses = new ArrayList<Address>();
                                 }
-                                logger.log(Level.WARNING, "NO Heartbeat! should remove " + address);
+                                logger.log(Level.WARNING, "Added " + address + " to list of dead addresses because of timeout since last read");
                                 lsDeadAddresses.add(address);
                             }
                         }
@@ -174,11 +174,13 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
+                        logger.log(Level.SEVERE, e.getMessage(), e);
                     }
                 }
             }
             if (lsDeadAddresses != null) {
                 for (Address address : lsDeadAddresses) {
+                    logger.log(Level.FINEST, "NO HEARTBEAT should remove " + address);
                     doRemoveAddress(address);
                     sendRemoveMemberToOthers(address);
                 }
@@ -190,7 +192,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 boolean removed = false;
                 if (masterMember != null) {
                     if ((now - masterMember.getLastRead()) >= (MAX_NO_HEARTBEAT_MILLIS)) {
-                        logger.log(Level.WARNING, "NO Heartbeat! should remove " + getMasterAddress());
+                        logger.log(Level.FINEST, "Master node has timed out it's heartbeat and will be removed");
                         doRemoveAddress(getMasterAddress());
                         removed = true;
                     }
@@ -211,6 +213,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                             Packet packet = obtainPacket("heartbeat", null, null,
                                     ClusterOperation.HEARTBEAT, 0);
                             sendOrReleasePacket(packet, conn);
+                        } else {
+                            logger.log(Level.FINEST, "could not connect to " + address + " to send heartbeat");
                         }
                     } else {
                         Connection conn = node.connectionManager.getConnection(address);
@@ -219,6 +223,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                                 Packet packet = obtainPacket("heartbeat", null, null,
                                         ClusterOperation.HEARTBEAT, 0);
                                 sendOrReleasePacket(packet, conn);
+                            } else {
+                                logger.log(Level.FINEST,"not sending heartbeat because connection is null or not live " + address);
                             }
                         }
                     }
