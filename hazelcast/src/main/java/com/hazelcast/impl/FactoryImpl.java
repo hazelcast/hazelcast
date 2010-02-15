@@ -92,7 +92,7 @@ public class FactoryImpl implements HazelcastInstance {
             factory = new FactoryImpl(name, config);
             FactoryImpl old = factories.put(name, factory);
             if (old != null) {
-            	throw new RuntimeException();
+                throw new RuntimeException();
             }
             if (!jmxRegistered) {
                 ManagementService.register(factory, config);
@@ -335,14 +335,14 @@ public class FactoryImpl implements HazelcastInstance {
     @Override
     public boolean equals(Object o) {
         if (this == o) {
-        	return true;
+            return true;
         }
         if (o == null || getClass() != o.getClass()) {
-        	return false;
+            return false;
         }
         FactoryImpl factory = (FactoryImpl) o;
         if (!name.equals(factory.name)) {
-        	return false;
+            return false;
         }
         return true;
     }

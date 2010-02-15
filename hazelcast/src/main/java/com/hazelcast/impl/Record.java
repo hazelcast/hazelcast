@@ -69,6 +69,7 @@ public class Record implements MapEntry {
 
     public Record(FactoryImpl factory, String name, int blockId, Data key, Data value, long ttl, long maxIdleMillis, long id) {
         super();
+        this.recordEntry = new RecordEntry(this);
         this.factory = factory;
         this.name = name;
         this.blockId = blockId;
@@ -79,12 +80,11 @@ public class Record implements MapEntry {
         this.maxIdleMillis.set((maxIdleMillis == 0) ? Long.MAX_VALUE : maxIdleMillis);
         this.setLastTouchTime(getCreationTime());
         this.setVersion(0);
-        recordEntry = new RecordEntry(this);
         this.id = id;
     }
 
     public Record copy() {
-        Record recordCopy =  new Record(factory, name, blockId, key.get(), value.get(), getRemainingTTL(), getRemainingIdle(), id);
+        Record recordCopy = new Record(factory, name, blockId, key.get(), value.get(), getRemainingTTL(), getRemainingIdle(), id);
         recordCopy.setIndexes(indexes, indexTypes);
         recordCopy.setValueHash(valueHash);
         recordCopy.setLockCount(lockCount);
@@ -169,6 +169,7 @@ public class Record implements MapEntry {
     }
 
     public void setValue(Data value) {
+        recordEntry.setValueObject(null);
         this.value.set(value);
     }
 
@@ -358,7 +359,7 @@ public class Record implements MapEntry {
     }
 
     public void setInvalid() {
-        expirationTime.set(System.currentTimeMillis() -10);
+        expirationTime.set(System.currentTimeMillis() - 10);
     }
 
     public boolean isValid(long now) {
@@ -450,6 +451,9 @@ public class Record implements MapEntry {
 
     public void setActive(boolean active) {
         this.active.set(active);
+        if (!active) {
+            this.recordEntry.setValueObject(null);
+        }
     }
 
     public String getName() {
@@ -571,6 +575,8 @@ public class Record implements MapEntry {
     public static class RecordEntry implements MapEntry {
 
         private final Record record;
+        private volatile Object keyObject;
+        private volatile Object valueObject;
 
         RecordEntry(Record record) {
             this.record = record;
@@ -581,16 +587,28 @@ public class Record implements MapEntry {
         }
 
         public Object getKey() {
-            return toObject(record.getKey());
+            if (keyObject == null) {
+                keyObject = toObject(record.getKey());
+            }
+            return keyObject;
         }
 
         public Object getValue() {
-            return toObject(record.getValue());
+            if (valueObject == null) {
+                valueObject = toObject(record.getValue());
+            }
+            return valueObject;
+        }
+
+        void setValueObject(Object valueObject) {
+            this.valueObject = valueObject;
         }
 
         public Object setValue(Object value) {
             MProxy proxy = (MProxy) record.factory.getOrCreateProxyByName(record.getName());
-            return proxy.put(getKey(), value);
+            Object oldValue = proxy.put(getKey(), value);
+            this.valueObject = value;
+            return oldValue;
         }
 
         public long getCost() {

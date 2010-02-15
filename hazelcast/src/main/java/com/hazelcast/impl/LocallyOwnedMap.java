@@ -48,7 +48,8 @@ class LocallyOwnedMap {
         } else {
             if (record.isActive() && record.isValid()) {
                 try {
-                    Object value = toObject(record.getValue());
+                    Record.RecordEntry recordEntry = record.getRecordEntry();
+                    Object value = recordEntry.getValue();
                     record.setLastAccessed();
                     return value;
                 } catch (Throwable t) {
