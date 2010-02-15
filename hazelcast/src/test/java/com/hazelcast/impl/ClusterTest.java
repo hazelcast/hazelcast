@@ -1004,6 +1004,8 @@ public class ClusterTest {
     public void testDataRecoveryAndCorrectness() throws Exception {
         final int size = 1000;
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        TestMigrationListener migrationListener1 = new TestMigrationListener(2, 2);
+        h1.getPartitionService().addMigrationListener(migrationListener1);
         assertEquals(1, h1.getCluster().getMembers().size());
         IMap map1 = h1.getMap("default");
         for (int i = 0; i < size; i++) {
@@ -1011,11 +1013,17 @@ public class ClusterTest {
         }
         assertEquals(size, map1.size());
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        TestMigrationListener migrationListener2 = new TestMigrationListener(2, 2);
+        h2.getPartitionService().addMigrationListener(migrationListener2);
         IMap map2 = h2.getMap("default");
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
+        TestMigrationListener migrationListener3 = new TestMigrationListener(2, 2);
+        h3.getPartitionService().addMigrationListener(migrationListener3);
         assertEquals(3, h3.getCluster().getMembers().size());
         IMap map3 = h3.getMap("default");
         HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
+        TestMigrationListener migrationListener4 = new TestMigrationListener(2, 2);
+        h4.getPartitionService().addMigrationListener(migrationListener4);
         IMap map4 = h4.getMap("default");
         for (int i = 0; i < 20000; i++) {
             assertEquals(size, map1.size());
@@ -1023,6 +1031,10 @@ public class ClusterTest {
             assertEquals(size, map3.size());
             assertEquals(size, map4.size());
         }
+        migrationListener1.await(3);
+        migrationListener2.await(3);
+        migrationListener3.await(3);
+        migrationListener4.await(3);
     }
 
     /**
@@ -1403,7 +1415,7 @@ public class ClusterTest {
     @Test
     public void testBackupAndMigrations() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        TestMigrationListener listener1 = new TestMigrationListener(5,5);
+        TestMigrationListener listener1 = new TestMigrationListener(5, 5);
         h1.getPartitionService().addMigrationListener(listener1);
         int counter = 5000;
         Map<Integer, String> map = new HashMap<Integer, String>();
@@ -1413,7 +1425,7 @@ public class ClusterTest {
         IMap map1 = h1.getMap("testIfProperlyBackedUp");
         map1.putAll(map);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        TestMigrationListener listener2 = new TestMigrationListener(5,5);
+        TestMigrationListener listener2 = new TestMigrationListener(5, 5);
         h2.getPartitionService().addMigrationListener(listener2);
         IMap map2 = h2.getMap("testIfProperlyBackedUp");
         Thread.sleep(1000);
