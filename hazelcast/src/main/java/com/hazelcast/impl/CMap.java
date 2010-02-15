@@ -836,7 +836,7 @@ public class CMap {
                 Record record = itRemovedRecords.next();
                 if (record.isActive()) {
                     itRemovedRecords.remove();
-                } else if (shouldRemove(record, now) && !setDirtyRecords.contains(record)) {
+                } else if (shouldRemove(record, now) && (setDirtyRecords == null || !setDirtyRecords.contains(record))) {
                     itRemovedRecords.remove();
                     removeAndPurgeRecord(record);
                 }
