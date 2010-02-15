@@ -44,4 +44,13 @@ public class MigrationEvent extends EventObject {
     public Member getNewOwner() {
         return newOwner;
     }
+
+    @Override
+    public String toString() {
+        return "MigrationEvent{" +
+                "partitionId=" + partitionId +
+                ", oldOwner=" + oldOwner +
+                ", newOwner=" + newOwner +
+                '}';
+    }
 }

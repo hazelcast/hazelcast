@@ -33,7 +33,6 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
@@ -664,8 +663,8 @@ public class ClusterTest {
         IMap map1 = h1.getMap("default");
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         IMap map2 = h2.getMap("default");
-        CountingListener cl1 = new CountingListener(100, 0, 0, 100);
-        CountingListener cl2 = new CountingListener(100, 0, 0, 100);
+        TestEntryListener cl1 = new TestEntryListener(100, 0, 0, 100);
+        TestEntryListener cl2 = new TestEntryListener(100, 0, 0, 100);
         map1.addEntryListener(cl1, true);
         map2.addEntryListener(cl2, true);
         for (int i = 0; i < 50; i++) {
@@ -674,51 +673,6 @@ public class ClusterTest {
         }
         assertTrue(cl1.await(15));
         assertTrue(cl2.await(15));
-    }
-
-    class CountingListener implements EntryListener {
-        final CountDownLatch latchAdded;
-        final CountDownLatch latchRemoved;
-        final CountDownLatch latchUpdated;
-        final CountDownLatch latchEvicted;
-
-        public CountingListener(int adds, int removes, int updates, int evicts) {
-            latchAdded = new CountDownLatch(adds);
-            latchRemoved = new CountDownLatch(removes);
-            latchUpdated = new CountDownLatch(updates);
-            latchEvicted = new CountDownLatch(evicts);
-        }
-
-        public void entryAdded(EntryEvent entryEvent) {
-            latchAdded.countDown();
-        }
-
-        public void entryRemoved(EntryEvent entryEvent) {
-        }
-
-        public void entryUpdated(EntryEvent entryEvent) {
-        }
-
-        public void entryEvicted(EntryEvent entryEvent) {
-            System.out.println("evicted " + latchEvicted.getCount());
-            latchEvicted.countDown();
-        }
-
-        public boolean await(int seconds) throws Exception {
-            if (!latchAdded.await(seconds, TimeUnit.SECONDS)) {
-                return false;
-            }
-            if (!latchRemoved.await(seconds, TimeUnit.SECONDS)) {
-                return false;
-            }
-            if (!latchUpdated.await(seconds, TimeUnit.SECONDS)) {
-                return false;
-            }
-            if (!latchEvicted.await(seconds, TimeUnit.SECONDS)) {
-                return false;
-            }
-            return true;
-        }
     }
 
     @Test(timeout = 180000)
@@ -1311,7 +1265,6 @@ public class ClusterTest {
         }
 
         public Member call() throws Exception {
-            System.out.println("key is " + key);
             if (hazelcastInstance.getMap("default").localKeySet().contains(key)) {
                 return hazelcastInstance.getCluster().getLocalMember();
             }
@@ -1448,8 +1401,10 @@ public class ClusterTest {
     }
 
     @Test
-    public void testIfProperlyBackedUp() throws InterruptedException {
+    public void testBackupAndMigrations() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        TestMigrationListener listener1 = new TestMigrationListener(5,5);
+        h1.getPartitionService().addMigrationListener(listener1);
         int counter = 5000;
         Map<Integer, String> map = new HashMap<Integer, String>();
         for (int i = 0; i < counter; i++) {
@@ -1458,7 +1413,10 @@ public class ClusterTest {
         IMap map1 = h1.getMap("testIfProperlyBackedUp");
         map1.putAll(map);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        TestMigrationListener listener2 = new TestMigrationListener(5,5);
+        h2.getPartitionService().addMigrationListener(listener2);
         IMap map2 = h2.getMap("testIfProperlyBackedUp");
+        Thread.sleep(1000);
         for (int i = 0; i < 5; i++) {
             Thread.sleep(10000);
             LocalMapStats mapStats1 = map1.getLocalMapStats();
@@ -1466,10 +1424,10 @@ public class ClusterTest {
             if (mapStats1.getOwnedEntryCount() == counter) {
                 Thread.sleep(1000);
             }
-            System.out.println(mapStats1.getOwnedEntryCount() + " " + mapStats2.getBackupEntryCount());
-            System.out.println(mapStats2.getOwnedEntryCount() + " " + mapStats1.getBackupEntryCount());
             assertEquals(mapStats1.getOwnedEntryCount(), mapStats2.getBackupEntryCount());
             assertEquals("Migrated blocks are not backed up", mapStats2.getOwnedEntryCount(), mapStats1.getBackupEntryCount());
         }
+        assertTrue(listener1.await(5));
+        assertTrue(listener2.await(5));
     }
 }
