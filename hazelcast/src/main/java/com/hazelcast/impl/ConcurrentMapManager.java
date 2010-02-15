@@ -364,7 +364,11 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class MGetMapEntry extends MTargetAwareOp {
         public MapEntry get(String name, Object key) {
-            CMap.CMapEntry mapEntry = (CMap.CMapEntry) objectCall(CONCURRENT_MAP_GET_MAP_ENTRY, name, key, null, 0, -1);
+            Object result = objectCall(CONCURRENT_MAP_GET_MAP_ENTRY, name, key, null, 0, -1);
+            if (result instanceof Data) {
+                result = toObject((Data) result);
+            }
+            CMap.CMapEntry mapEntry = (CMap.CMapEntry) result;
             if (mapEntry != null) {
                 mapEntry.set(name, key);
             }
