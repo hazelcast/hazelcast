@@ -26,6 +26,7 @@ public final class MapStoreConfig {
     private int writeDelaySeconds = DEFAULT_WRITE_DELAY_SECONDS;
 
     public static final int DEFAULT_WRITE_DELAY_SECONDS = 0;
+    private Object implementation;
 
     /**
      * Returns the name of the MapStore implementation class
@@ -79,5 +80,23 @@ public final class MapStoreConfig {
      */
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    /**
+     * Sets the map store implementation object
+     * @param implementation  implementation object
+     * @return this MapStoreConfig instance
+     */
+    public MapStoreConfig setImplementation(Object implementation) {
+        this.implementation = implementation;
+        return this;
+    }
+
+    /**
+     * Returns the map store implementation object
+     * @return map store implementation object
+     */
+    public Object getImplementation() {
+        return implementation;
     }
 }

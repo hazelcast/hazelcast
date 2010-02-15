@@ -1424,7 +1424,7 @@ public final class ConcurrentMapManager extends BaseManager {
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             Record record = cmap.getRecord(request.key);
-            if (record == null && cmap.loader != null) {
+            if ((record == null || !record.isActive()) && cmap.loader != null) {
                 executeAsync(request);
             } else {
                 doOperation(request);
@@ -1448,6 +1448,8 @@ public final class ConcurrentMapManager extends BaseManager {
                     if (record.getValue() == null) {
                         record.setValue(request.value);
                     }
+                    CMap cmap = getOrCreateMap(request.name);
+                    cmap.markAsActive(record);
                     request.response = record.getValue();
                 }
             }
@@ -1626,8 +1628,8 @@ public final class ConcurrentMapManager extends BaseManager {
             doOperation(request);
             returnResponse(request);
         }
-        //serviceThread
 
+        //serviceThread
         public void afterExecute(Request request) {
             if (request.response == null) {
                 doOperation(request);

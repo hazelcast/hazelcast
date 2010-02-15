@@ -147,19 +147,22 @@ public class CMap {
         int writeDelaySeconds = -1;
         if (mapStoreConfig != null) {
             if (mapStoreConfig.isEnabled()) {
-                String mapStoreClassName = mapStoreConfig.getClassName();
                 try {
-                    Object storeInstance = Serializer.classForName(mapStoreClassName).newInstance();
+                    Object storeInstance = mapStoreConfig.getImplementation();
+                    if (storeInstance == null) {
+                        String mapStoreClassName = mapStoreConfig.getClassName();
+                        storeInstance = Serializer.classForName(mapStoreClassName).newInstance();
+                    }
                     if (storeInstance instanceof MapLoader) {
                         loaderTemp = (MapLoader) storeInstance;
                     }
                     if (storeInstance instanceof MapStore) {
                         storeTemp = (MapStore) storeInstance;
                     }
-                    writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+                writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
             }
         }
         loader = loaderTemp;
@@ -174,7 +177,7 @@ public class CMap {
         if (evictionPolicy == SortedHashMap.OrderingType.NONE && instanceType == Instance.InstanceType.MAP) {
             locallyOwnedMap = new LocallyOwnedMap();
             concurrentMapManager.mapLocallyOwnedMaps.put(name, locallyOwnedMap);
-        } else {                            
+        } else {
             locallyOwnedMap = null;
         }
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
@@ -222,7 +225,7 @@ public class CMap {
             req.value = new Data();
         }
         Record record = toRecord(req);
-        if (req.ttl <=0 || req.timeout <=0) {
+        if (req.ttl <= 0 || req.timeout <= 0) {
             record.setInvalid();
         } else {
             record.setExpirationTime(req.ttl);
@@ -940,7 +943,7 @@ public class CMap {
             }
             mapNearCache.invalidate(record.getKey());
         }
-    } 
+    }
 
     public Record toRecord(Request req) {
         Record record = getRecord(req.key);

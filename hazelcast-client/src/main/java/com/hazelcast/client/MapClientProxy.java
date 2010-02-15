@@ -84,12 +84,12 @@ public class MapClientProxy<K, V> implements IMap<K, V>, ClientProxy, EntryHolde
         return new LightEntrySet<K, V>(keySet, this, getInstanceType());
     }
 
-    public boolean evict(K key) {
+    public boolean evict(Object key) {
         ProxyHelper.check(key);
         return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_EVICT, key, null);
     }
 
-    public MapEntry getMapEntry(K key) {
+    public MapEntry<K, V> getMapEntry(K key) {
         ProxyHelper.check(key);
         CMapEntry cMapEntry = (CMapEntry) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET_MAP_ENTRY, key, null);
         if(cMapEntry==null){

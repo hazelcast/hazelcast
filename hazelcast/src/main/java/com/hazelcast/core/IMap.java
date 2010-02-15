@@ -189,7 +189,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * @param key key to evict
      * @return <tt>true</tt> if the key is evicted, <tt>false</tt> otherwise.
      */
-    boolean evict(K key);
+    boolean evict(Object key);
 
     /**
      * Queries the map based on the specified predicate and

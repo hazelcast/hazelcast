@@ -159,11 +159,11 @@ public final class ReplicatedMapFactory {
             distributedMap.removeEntryListener(listener, key);
         }
 
-        public MapEntry getMapEntry(K key) {
+        public MapEntry<K, V> getMapEntry(K key) {
             return distributedMap.getMapEntry(key);
         }
 
-        public boolean evict(K key) {
+        public boolean evict(Object key) {
             return distributedMap.evict(key);
         }
 
@@ -205,7 +205,7 @@ public final class ReplicatedMapFactory {
         }
 
         public Set<K> localKeySet(Predicate predicate) {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return distributedMap.localKeySet(predicate);
         }
 
         public void addIndex(String attribute, boolean ordered) {
