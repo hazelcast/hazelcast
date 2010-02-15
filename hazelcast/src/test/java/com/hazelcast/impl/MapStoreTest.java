@@ -36,24 +36,21 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class MapStoreTest {
+
     @Test
-    public void testSingleInstance() throws Exception {
+    public void testOneMemberWriteThrough() throws Exception {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
-        testMapStore.insert("1", "value1");
-        Config config = new XmlConfigBuilder().build();
-        MapConfig mapConfig = config.getMapConfig("default");
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setImplementation (testMapStore);
-        mapStoreConfig.setWriteDelaySeconds(0);
-        mapConfig.setMapStoreConfig(mapStoreConfig);
+        Config config =  newConfig(testMapStore, 0);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        testMapStore.insert("1", "value1");
         IMap map = h1.getMap("default");
         assertEquals(0, map.size());
         assertEquals("value1", map.get("1"));
         assertEquals("value1", map.put("1", "value2"));
         assertEquals("value2", map.get("1"));
+        assertEquals("value2", testMapStore.getStore().get("1"));        
         assertEquals(1, map.size());
-        map.evict("1");
+        assertTrue (map.evict("1"));
         assertEquals(0, map.size());
         assertEquals(1, testMapStore.getStore().size());        
         assertEquals("value2", map.get("1"));
@@ -62,6 +59,45 @@ public class MapStoreTest {
         assertEquals(0, map.size());
         assertEquals(0, testMapStore.getStore().size());
         testMapStore.assertAwait(1);
+    }
+
+    @Test
+    public void testOneMemberWriteBehind() throws Exception {
+        TestMapStore testMapStore = new TestMapStore(1, 1, 1);
+        Config config =  newConfig(testMapStore, 2);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        testMapStore.insert("1", "value1");
+        IMap map = h1.getMap("default");
+        assertEquals(0, map.size());
+        assertEquals("value1", map.get("1"));
+        assertEquals("value1", map.put("1", "value2"));
+        assertEquals("value2", map.get("1"));
+        // store should have the old data as we will write-behind
+        assertEquals("value1", testMapStore.getStore().get("1"));
+        assertEquals(1, map.size());
+        assertTrue (map.evict("1"));
+        assertEquals("value2", testMapStore.getStore().get("1"));
+        assertEquals(0, map.size());
+        assertEquals(1, testMapStore.getStore().size());
+        assertEquals("value2", map.get("1"));
+        assertEquals(1, map.size());
+        map.remove("1");
+        // store should have the old data as we will delete-behind
+        assertEquals(1, testMapStore.getStore().size());        
+        assertEquals(0, map.size());
+        testMapStore.assertAwait(5);
+        assertEquals(0, testMapStore.getStore().size());
+
+    }
+
+    private Config newConfig(Object storeImpl, int writeDelaySeconds) {
+        Config config = new XmlConfigBuilder().build();
+        MapConfig mapConfig = config.getMapConfig("default");
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setImplementation (storeImpl);
+        mapStoreConfig.setWriteDelaySeconds(writeDelaySeconds);
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+        return config;
     }
 
     public static class TestMapStore implements MapStore, MapLoader {
@@ -96,26 +132,6 @@ public class MapStoreTest {
             assertTrue(latchDeleteAll.await(seconds, TimeUnit.SECONDS));
             assertTrue(latchLoad.await(seconds, TimeUnit.SECONDS));
             assertTrue(latchLoadAll.await(seconds, TimeUnit.SECONDS));
-
-//            if (!latchStore.await(seconds, TimeUnit.SECONDS)) {
-//                return false;
-//            }
-//            if (!latchStoreAll.await(seconds, TimeUnit.SECONDS)) {
-//                return false;
-//            }
-//            if (!latchDelete.await(seconds, TimeUnit.SECONDS)) {
-//                return false;
-//            }
-//            if (!latchDeleteAll.await(seconds, TimeUnit.SECONDS)) {
-//                return false;
-//            }
-//            if (!latchLoad.await(seconds, TimeUnit.SECONDS)) {
-//                return false;
-//            }
-//            if (!latchLoadAll.await(seconds, TimeUnit.SECONDS)) {
-//                return false;
-//            }
-//            return true;
         }
 
         Map getStore () {

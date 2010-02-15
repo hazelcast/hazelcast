@@ -145,25 +145,23 @@ public class CMap {
         MapStore storeTemp = null;
         MapLoader loaderTemp = null;
         int writeDelaySeconds = -1;
-        if (mapStoreConfig != null) {
-            if (mapStoreConfig.isEnabled()) {
-                try {
-                    Object storeInstance = mapStoreConfig.getImplementation();
-                    if (storeInstance == null) {
-                        String mapStoreClassName = mapStoreConfig.getClassName();
-                        storeInstance = Serializer.classForName(mapStoreClassName).newInstance();
-                    }
-                    if (storeInstance instanceof MapLoader) {
-                        loaderTemp = (MapLoader) storeInstance;
-                    }
-                    if (storeInstance instanceof MapStore) {
-                        storeTemp = (MapStore) storeInstance;
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+        if (mapStoreConfig != null && mapStoreConfig.isEnabled()) {
+            try {
+                Object storeInstance = mapStoreConfig.getImplementation();
+                if (storeInstance == null) {
+                    String mapStoreClassName = mapStoreConfig.getClassName();
+                    storeInstance = Serializer.classForName(mapStoreClassName).newInstance();
                 }
-                writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
+                if (storeInstance instanceof MapLoader) {
+                    loaderTemp = (MapLoader) storeInstance;
+                }
+                if (storeInstance instanceof MapStore) {
+                    storeTemp = (MapStore) storeInstance;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+            writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
         }
         loader = loaderTemp;
         store = storeTemp;
@@ -233,6 +231,7 @@ public class CMap {
         }
         markAsActive(record);
         markAsOwned(record);
+        markAsDirty(record);
         record.setIndexes(null, null);
         updateIndexes(true, req, record);
         record.setVersion(req.version);
@@ -837,7 +836,7 @@ public class CMap {
                 Record record = itRemovedRecords.next();
                 if (record.isActive()) {
                     itRemovedRecords.remove();
-                } else if (shouldRemove(record, now)) {
+                } else if (shouldRemove(record, now) && !setDirtyRecords.contains(record)) {
                     itRemovedRecords.remove();
                     removeAndPurgeRecord(record);
                 }
@@ -1109,6 +1108,7 @@ public class CMap {
         record.setMultiValues(null);
         ownedRecords.remove(record);
         node.queryService.updateIndex(getName(), null, null, record, Integer.MIN_VALUE);
+        markAsDirty(record);
     }
 
     void removeAndPurgeRecord(Record record) {

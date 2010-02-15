@@ -171,7 +171,7 @@ public final class ConcurrentMapManager extends BaseManager {
             }
             node.executorManager.appendState(sbState);
             long total = Runtime.getRuntime().totalMemory();
-            long free = Runtime.getRuntime().freeMemory(); 
+            long free = Runtime.getRuntime().freeMemory();
             sbState.append("\nUsed Memory:");
             sbState.append((total - free) / 1024 / 1024);
             sbState.append("MB");
@@ -1412,11 +1412,40 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class EvictOperationHandler extends MTargetAwareOperationHandler {
-        @Override
+    class EvictOperationHandler extends StoreAwareOperationHandler {
+        public void handle(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            Record record = cmap.getRecord(request.key);
+            if (record != null && record.isActive() && cmap.loader != null &&
+                    cmap.writeDelayMillis > 0 && record.isValid() && record.isDirty()) {
+                // if the map has write-behind and the record is dirty then
+                // we have to make sure that the entry is actually persisted
+                // before we can evict it.
+                cmap.setDirtyRecords.remove(record);
+                record.setDirty(false);
+                request.value = record.getValue();
+                executeAsync(request);
+            } else {
+                doOperation(request);
+                returnResponse(request);
+            }
+        }
+
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.evict(request);
+        }
+
+        public void afterExecute(Request request) {
+            if (request.response == Boolean.TRUE) {
+                doOperation(request);                
+            } else {
+                CMap cmap = getOrCreateMap(request.name);
+                Record record = cmap.getRecord(request.key);
+                cmap.markAsDirty(record);
+                request.response = Boolean.FALSE;
+            }
+            returnResponse(request);
         }
     }
 
@@ -1567,14 +1596,12 @@ public final class ConcurrentMapManager extends BaseManager {
 
     interface AsynchronousExecution {
         /**
-         * @param request
-         * @executorThread
+         * executorThread
          */
         void execute(Request request);
 
         /**
-         * @param request
-         * @serviceThread
+         * serviceThread
          */
         void afterExecute(Request request);
     }
@@ -1588,8 +1615,10 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     abstract class StoreAwareOperationHandler extends SchedulableOperationHandler implements AsynchronousExecution {
-        // executor thread
 
+        /**
+         * executorThread
+         */
         public void execute(Request request) {
             CMap cmap = maps.get(request.name);
             if (request.operation == CONCURRENT_MAP_GET) {
@@ -1604,6 +1633,10 @@ public final class ConcurrentMapManager extends BaseManager {
             } else if (request.operation == CONCURRENT_MAP_REMOVE) {
                 // remove the entry
                 cmap.store.delete(toObject(request.key));
+            } else if (request.operation == CONCURRENT_MAP_EVICT) {
+                //store the entry
+                cmap.store.store(toObject(request.key), toObject(request.value));
+                request.response = Boolean.TRUE;
             }
         }
 
@@ -1629,7 +1662,9 @@ public final class ConcurrentMapManager extends BaseManager {
             returnResponse(request);
         }
 
-        //serviceThread
+        /**
+         * serviceThread
+         */
         public void afterExecute(Request request) {
             if (request.response == null) {
                 doOperation(request);
