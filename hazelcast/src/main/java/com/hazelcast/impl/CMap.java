@@ -508,9 +508,7 @@ public class CMap {
 
     public CMapEntry getMapEntry(Request req) {
         Record record = getRecord(req.key);
-        if (record == null)
-            return null;
-        if (!record.isValid()) {
+        if (record == null || !record.isActive() || !record.isValid()) {
             return null;
         }
         return new CMapEntry(record.getCost(), record.getExpirationTime(), record.getLastAccessTime(), record.getLastUpdateTime(),
