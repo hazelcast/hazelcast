@@ -72,4 +72,21 @@ public 	class ClientMapEntry<K, V> implements MapEntry<K, V>{
 	public V setValue(V value) {
 		return proxy.put(key,value);
 	}
+
+    @Override
+        public String toString() {
+            final StringBuffer sb = new StringBuffer();
+            sb.append("MapEntry");
+            sb.append("{key=").append(key);
+            sb.append(", valid=").append(isValid());
+            sb.append(", hits=").append(getHits());
+            sb.append(", version=").append(getVersion());
+            sb.append(", creationTime=").append(getCreationTime());
+            sb.append(", lastUpdateTime=").append(getLastUpdateTime());
+            sb.append(", lastAccessTime=").append(getLastAccessTime());
+            sb.append(", expirationTime=").append(getExpirationTime());
+            sb.append(", cost=").append(getCost());
+            sb.append('}');
+            return sb.toString();
+        }
 }

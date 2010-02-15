@@ -120,7 +120,7 @@ public class HazelcastClientMapTest {
     }
 
     @Test
-    public void putABigObject(){
+    public void putABigObject() {
         HazelcastClient hClient = getHazelcastClient();
         Map<String, Object> clientMap = hClient.getMap("putABigObject");
         List list = new ArrayList();
@@ -134,13 +134,13 @@ public class HazelcastClientMapTest {
     }
 
     @Test
-    public void putBigObject(){
+    public void putBigObject() {
         HazelcastClient hClient = getHazelcastClient();
         Map<String, Object> clientMap = hClient.getMap("putABigObject");
         List list = new ArrayList();
         int size = 10000000;
         byte[] b = new byte[size];
-        b[size-1] = (byte) 144;
+        b[size - 1] = (byte) 144;
         list.add(b);
         clientMap.put("obj", b);
         byte[] bigB = (byte[]) clientMap.get("obj");
@@ -150,27 +150,23 @@ public class HazelcastClientMapTest {
 
     @Test
     public void putAndGetEmployeeObjects() {
-
-
         HazelcastClient hClient = getHazelcastClient();
         int counter = 1000;
         Map<String, Employee> clientMap = hClient.getMap("putAndGetEmployeeObjects");
         for (int i = 0; i < counter; i++) {
             Employee empleuyee = new Employee("name" + i, i, true, 5000 + i);
-            empleuyee.setMiddleName("middle"+i);
-            empleuyee.setFamilyName("familiy"+i);
-            clientMap.put(""+i, empleuyee);
+            empleuyee.setMiddleName("middle" + i);
+            empleuyee.setFamilyName("familiy" + i);
+            clientMap.put("" + i, empleuyee);
         }
-
-
         for (int i = 0; i < counter; i++) {
-            Employee e = clientMap.get(""+i);
-            assertEquals("name"+i, e.getName());
-            assertEquals("middle"+i, e.getMiddleName());
-            assertEquals("familiy"+i, e.getFamilyName());
+            Employee e = clientMap.get("" + i);
+            assertEquals("name" + i, e.getName());
+            assertEquals("middle" + i, e.getMiddleName());
+            assertEquals("familiy" + i, e.getFamilyName());
             assertEquals(i, e.getAge());
             assertEquals(true, e.isActive());
-            assertEquals(5000+i, e.getSalary(), 0);
+            assertEquals(5000 + i, e.getSalary(), 0);
         }
 //        }
     }
@@ -287,6 +283,7 @@ public class HazelcastClientMapTest {
         assertEquals("b", entry.setValue("c"));
         assertEquals("c", map.get("a"));
         assertEquals("c", entry.getValue());
+        System.out.println(entry);
     }
 
     @Test
@@ -635,6 +632,15 @@ public class HazelcastClientMapTest {
         imap.addIndex("age", true);
         imap.addIndex("active", false);
         doFunctionalQueryTest(imap);
+    }
+
+    @Test
+    public void testGetNullMapEntry() {
+        HazelcastClient hClient = getHazelcastClient();
+        final IMap imap = hClient.getMap("testGetNullMapEntry");
+        String key = "key";
+        MapEntry mapEntry = imap.getMapEntry(key);
+        assertNull(mapEntry);
     }
 
     public void doFunctionalQueryTest(IMap imap) {

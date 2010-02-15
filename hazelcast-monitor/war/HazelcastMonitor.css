@@ -8,6 +8,8 @@ h1 {
     text-align: center;
 }
 
+
+
 .toolTip {
     font-size: 10pt;
     color: black;
@@ -117,6 +119,18 @@ h1 {
 
 }
 
+.gwt-Anchor {
+    color:blue;
+    /*font-weight:bold;*/
+    text-decoration:none;
+}
+
+.gwt-Anchor:hover {
+    color:red;
+    text-decoration:none;
+    /*font-weight:bold;*/
+}
+
 .dialogVPanel {
     margin: 5px;
 }
@@ -136,5 +150,18 @@ body {
     padding: 0;
     font: 12px century gothic, helvetica, arial, "Trebuchet MS", Arial, Helvetica, sans-serif;
 }
+
+}
+.map_get_value {
+    width:100px;
+
+}
+
+.map_get_button{
+    width:50px;
+}
+
+.bold {
+    font-weight:bold;
 
 }

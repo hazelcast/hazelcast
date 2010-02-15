@@ -26,6 +26,8 @@ import com.hazelcast.monitor.client.event.MapStatistics;
 
 import java.util.Collection;
 
+import static com.hazelcast.monitor.client.PanelUtils.createFormattedFlexTable;
+
 public class MapStatisticsPanel extends MapPanel implements MonitoringPanel {
 
     public MapStatisticsPanel(String name, AsyncCallback<ChangeEvent> callBack) {
@@ -71,7 +73,7 @@ public class MapStatisticsPanel extends MapPanel implements MonitoringPanel {
         }
     }
 
-    private String formatMemorySize(long size) {
+    public static String formatMemorySize(long size) {
         int gb = 1024 * 1024 * 1024;
         int mb = 1024 * 1024;
         int kb = 1024;
@@ -95,8 +97,8 @@ public class MapStatisticsPanel extends MapPanel implements MonitoringPanel {
 
     @Override
     protected FlexTable createTable() {
-        FlexTable table = new FlexTable();
-        table.addStyleName("table");
+        FlexTable table = createFormattedFlexTable();
+//        table.addStyleName("table");
         table.setWidget(0, 0, new LabelWithToolTip("Members", "Members of the Cluster"));
         table.setWidget(0, 1, new LabelWithToolTip("Entries", "Number of Entries"));
         table.setWidget(0, 2, new LabelWithToolTip("Entry Memory", "Memory Size of Entries"));
@@ -107,8 +109,8 @@ public class MapStatisticsPanel extends MapPanel implements MonitoringPanel {
         table.setWidget(0, 7, new LabelWithToolTip("Locks", "Number of Locked Entries"));
         table.setWidget(0, 8, new LabelWithToolTip("Threads Waiting on Lock", "Total Number of Threads Waiting on Locked Entries"));
         table.setWidget(0, 9, new LabelWithToolTip("Total Hits", "Number of Hits"));
-        table.getRowFormatter().addStyleName(0, "mapstatsHeader");
-        table.addStyleName("mapstats");
+//        table.getRowFormatter().addStyleName(0, "mapstatsHeader");
+//        table.addStyleName("mapstats");
         return table;
     }
 }

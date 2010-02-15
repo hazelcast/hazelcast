@@ -42,18 +42,18 @@ public abstract class MapPanel extends AbstractMonitoringPanel implements Monito
         this.mapName = name;
         this.callBack = callBack;
         disclosurePanel = initPanel(panelLabel);
-        disclosurePanel.setOpen(false);        
+        disclosurePanel.setOpen(false);
     }
 
     protected DisclosurePanel initPanel(String panelHeader) {
         final DisclosurePanel disclosurePanel = new DisclosurePanel(panelHeader);
         VerticalPanel vPanel = new VerticalPanel();
         vPanel.add(new Label());
-        FlexTable table = createTable();
-        if (table != null) {
+        Widget widget = createTable();
+        if (widget != null) {
             AbsolutePanel absTablePanel = new AbsolutePanel();
             absTablePanel.addStyleName("img-shadow");
-            absTablePanel.add(table);
+            absTablePanel.add(widget);
             vPanel.add(absTablePanel);
         }
         disclosurePanel.add(vPanel);

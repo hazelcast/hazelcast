@@ -92,6 +92,9 @@ public class MapClientProxy<K, V> implements IMap<K, V>, ClientProxy, EntryHolde
     public MapEntry getMapEntry(K key) {
         ProxyHelper.check(key);
         CMapEntry cMapEntry = (CMapEntry) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET_MAP_ENTRY, key, null);
+        if(cMapEntry==null){
+            return null;
+        }
         MapEntry<K, V> mapEntry = new ClientMapEntry(cMapEntry, key, this);
         return mapEntry;
     }

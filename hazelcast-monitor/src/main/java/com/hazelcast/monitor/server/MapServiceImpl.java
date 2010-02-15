@@ -18,18 +18,36 @@ package com.hazelcast.monitor.server;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.monitor.client.MapEntry;
 import com.hazelcast.monitor.client.MapService;
-
-import java.util.Map;
 
 import static com.hazelcast.monitor.server.HazelcastServiceImpl.getSessionObject;
 
-public class MapServiceImpl extends RemoteServiceServlet implements MapService{
-    public String get(int clusterId, String name, String key) {
+public class MapServiceImpl extends RemoteServiceServlet implements MapService {
+    public MapEntry get(int clusterId, String name, String key) {
         final SessionObject sessionObject = getSessionObject(this.getThreadLocalRequest().getSession());
         HazelcastInstance hz = sessionObject.mapOfHz.get(clusterId);
-        Map map = hz.getMap(name);
-        Object value = map.get(key);
-        return (value==null)?null:value.toString();
+        IMap map = hz.getMap(name);
+        com.hazelcast.core.MapEntry mapEntry = map.getMapEntry(key);
+        return convertToMonitorMapEntry(mapEntry);
+    }
+
+    private MapEntry convertToMonitorMapEntry(com.hazelcast.core.MapEntry mapEntry) {
+        if (mapEntry == null) {
+            return null;
+        }
+        MapEntry result = new MapEntry();
+        result.setCost(mapEntry.getCost());
+        result.setCreationTime(mapEntry.getCreationTime());
+        result.setExpirationTime(mapEntry.getExpirationTime());
+        result.setHits(mapEntry.getHits());
+        result.setLastAccessTime(mapEntry.getLastAccessTime());
+        result.setLastUpdateTime(mapEntry.getLastUpdateTime());
+        result.setValid(mapEntry.isValid());
+        result.setValue(mapEntry.getValue());
+        result.setVersion(mapEntry.getVersion());
+        return result;
     }
 }
+

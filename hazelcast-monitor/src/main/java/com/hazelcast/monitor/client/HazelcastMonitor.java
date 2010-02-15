@@ -19,7 +19,6 @@ package com.hazelcast.monitor.client;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.user.client.History;
@@ -96,9 +95,8 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
 //        tbAddresses.setText("192.168.1.3");
         final Label lbError = new Label("");
         lbError.setVisible(false);
-        Button btAddCluster = new Button("Add Cluster");
-        ClickHandler clickHandler = new AddClusterClickHandler(this, tbGroupName, tbGroupPass, tbAddresses, lbError);
-        btAddCluster.addClickHandler(clickHandler);
+        final Button btAddCluster = new Button("Add Cluster");
+        btAddCluster.addClickHandler(new AddClusterClickHandler(this, tbGroupName, tbGroupPass, tbAddresses, lbError));
         VerticalPanel vPanel = new VerticalPanel();
         vPanel.add(tbGroupName);
         vPanel.add(tbGroupPass);
@@ -121,30 +119,26 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
         String name = map.get("name");
         int clusterId = Integer.valueOf(map.get("clusterId"));
         String type = map.get("type");
-
         VerticalPanel panel = (VerticalPanel) mainPanel.getLeftWidget();
         ((DisclosurePanel) (panel.getWidget(1))).setOpen(false);
         AsyncCallback<ChangeEvent> callBack = new RegisterEventCallBack(this);
         ClusterWidgets clusterWidgets = mapClusterWidgets.get(clusterId);
         deRegisterAll();
-
         if ("MEMBER".equals(type)) {
             MembersPanel membersPanel = new MembersPanel(callBack, name);
             clusterWidgets.register(membersPanel);
-        }
-        else if ("PARTITIONS".equals(type)) {
+        } else if ("PARTITIONS".equals(type)) {
             PartitionsPanel partitionsPanel = new PartitionsPanel(callBack);
             clusterWidgets.register(partitionsPanel);
         } else {
             InstanceType iType = InstanceType.valueOf(type);
-
             if (clusterWidgets != null) {
                 if (InstanceType.MAP.equals(iType)) {
                     MapChartPanel mapChartPanel = new MapChartPanel(name, callBack);
                     MapStatisticsPanel mapStatisticsPanel = new MapStatisticsPanel(name, callBack);
-                    MapBrowserPanel mapBrowserPanel = new MapBrowserPanel(name, callBack);
+                    MapBrowserPanel mapBrowserPanel = new MapBrowserPanel(name);
                     MapTimesPanel mapTimesPanel = new MapTimesPanel(name, callBack);
-                    clusterWidgets.register(mapChartPanel, mapStatisticsPanel, mapTimesPanel,mapBrowserPanel);
+                    clusterWidgets.register(mapChartPanel, mapStatisticsPanel, mapTimesPanel, mapBrowserPanel);
                 } else if (InstanceType.QUEUE.equals(iType)) {
                 }
             }
