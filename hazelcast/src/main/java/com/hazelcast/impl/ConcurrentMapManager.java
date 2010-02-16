@@ -1453,7 +1453,7 @@ public final class ConcurrentMapManager extends BaseManager {
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             Record record = cmap.getRecord(request.key);
-            if ((record == null || !record.isActive()) && cmap.loader != null) {
+            if ((record == null || !record.isActive() || record.getValue() == null) && cmap.loader != null) {
                 executeAsync(request);
             } else {
                 doOperation(request);
