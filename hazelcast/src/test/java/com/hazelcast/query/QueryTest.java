@@ -469,6 +469,14 @@ public class QueryTest {
             assertEquals(c.getAge(), 23);
             assertTrue(c.isActive());
         }
+        entries = imap.entrySet(new SqlPredicate(" (age >= " + 30 + ") AND (age <= " + 40 + ")"));
+        assertEquals(23, entries.size());
+        for (Map.Entry entry : entries) {
+            Employee c = (Employee) entry.getValue();
+            System.out.println(c);
+            assertTrue(c.getAge() >= 30);
+            assertTrue(c.getAge() <= 40);
+        }
     }
 
     public static class Employee implements Serializable {

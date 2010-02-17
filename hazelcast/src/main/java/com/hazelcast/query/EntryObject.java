@@ -76,7 +76,6 @@ public class EntryObject {
 
     private PredicateBuilder addPredicate(Predicate predicate) {
         qb.lsPredicates.add(predicate);
-        qb.exp = null;
         return qb;
     }
 }

@@ -198,12 +198,21 @@ public class Index<T> {
                 return null;
             }
         }
+        if (lessThan && equal) {
+            // treeMap.headMap(key) doesn't
+            // include the key so get and add it. 
+            Set<T> recs = treeMap.get(value);
+            if (recs != null) {
+                results.addAll(recs);
+            }
+        }
         return results;
     }
 
     /**
      * from and to should be included
      *
+     * @param queryContext query context
      * @param from from value (included)
      * @param to   to value (included
      * @return matching record set

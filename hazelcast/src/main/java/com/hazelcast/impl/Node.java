@@ -307,29 +307,29 @@ public class Node {
         logger.log(Level.FINEST, "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
         if (completelyShutdown) return;
         Thread inThread = new Thread(threadGroup, inSelector, "hz.InThread");
-        inThread.setContextClassLoader(config.getClassLoader());
+//        inThread.setContextClassLoader(config.getClassLoader());
         inThread.setPriority(7);
         logger.log(Level.FINEST, "Starting thread " + inThread.getName());
         inThread.start();
         Thread outThread = new Thread(threadGroup, outSelector, "hz.OutThread");
-        outThread.setContextClassLoader(config.getClassLoader());
+//        outThread.setContextClassLoader(config.getClassLoader());
         outThread.setPriority(7);
         logger.log(Level.FINEST, "Starting thread " + outThread.getName());
         outThread.start();
         serviceThread = new Thread(threadGroup, clusterService, "hz.ServiceThread");
-        serviceThread.setContextClassLoader(config.getClassLoader());
+//        serviceThread.setContextClassLoader(config.getClassLoader());
         serviceThread.setPriority(8);
         logger.log(Level.FINEST, "Starting thread " + serviceThread.getName());
         serviceThread.start();
         queryThread = new Thread(threadGroup, queryService, "hz.QueryThread");
-        queryThread.setContextClassLoader(config.getClassLoader());
+//        queryThread.setContextClassLoader(config.getClassLoader());
         queryThread.setPriority(6);
         logger.log(Level.FINEST, "Starting thread " + queryThread.getName());
         queryThread.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(threadGroup, multicastService, "hz.MulticastThread");
             multicastServiceThread.start();
-            multicastServiceThread.setContextClassLoader(config.getClassLoader());
+//            multicastServiceThread.setContextClassLoader(config.getClassLoader());
             multicastServiceThread.setPriority(6);
         }
         setActive(true);

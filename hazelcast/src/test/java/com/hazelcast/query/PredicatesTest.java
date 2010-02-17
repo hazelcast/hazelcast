@@ -26,6 +26,12 @@ public class PredicatesTest {
     @Test
     public void testEqual() {
         Object value = new QueryTest.Employee("abc-123-xvz", 34, true, 10D);
+        assertTrue(new SqlPredicate("(age >= " + 20 + ") AND (age <= " + 40 + ")").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("(age >= " + 20 + ") AND (age <= " + 34 + ")").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("(age >= " + 34 + ") AND (age <= " + 35 + ")").apply(createEntry("1", value)));
+//        assertTrue(new SqlPredicate(" (name LIKE 'abc-%') AND (age <= " + 40 + ")").apply(createEntry("1", value)));
+        assertFalse(new SqlPredicate("age = 33").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("age = 34").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("age > 5").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("salary > 5").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("salary > 5 and salary < 11").apply(createEntry("1", value)));
@@ -80,6 +86,15 @@ public class PredicatesTest {
         assertTrue(Predicates.like(new DummyExpression<String>("Java World"), "%World").apply(null));
         assertTrue(Predicates.like(new DummyExpression<String>("Java World"), "Java_World").apply(null));
         assertFalse(Predicates.like(new DummyExpression<String>("Java World"), "JavaWorld").apply(null));
+    }
+
+    @Test
+    public void testCriteriaAPI() {
+        Object value = new QueryTest.Employee("abc-123-xvz", 34, true, 10D);
+        EntryObject e = new PredicateBuilder().getEntryObject();
+        EntryObject e2 = e.get("age");
+        Predicate predicate = e2.greaterEqual(29).and(e2.lessEqual(36));
+        assertTrue(predicate.apply(createEntry("1", value)));
     }
 
     @Test

@@ -24,9 +24,9 @@ import org.junit.Test;
 
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
-import static org.junit.Assert.assertTrue;
+import static junit.framework.Assert.assertEquals;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
 public class CMapTest {
@@ -36,19 +36,35 @@ public class CMapTest {
         FactoryImpl mockFactory = mock(FactoryImpl.class);
         Node node = new Node(mockFactory, config);
         node.serviceThread = Thread.currentThread();
+        CMap cmap = new CMap(node.concurrentMapManager, "c:myMap");
         Object key = "1";
         Object value = "istanbul";
-        CMap cmap = new CMap(node.concurrentMapManager, "c:myMap");
-        Request putRequest = new Request();
-        putRequest.setLocal(ClusterOperation.CONCURRENT_MAP_PUT, null, toData(key), toData(value), -1, -1, -1, null);
-        cmap.put(putRequest);
+        Data dKey = toData(key);
+        Data dValue = toData(value);
+        cmap.put(newPutRequest(dKey, dValue));
         assertTrue(cmap.mapRecords.containsKey(toData(key)));
-        Request getRequest = new Request();
-        getRequest.setLocal(ClusterOperation.CONCURRENT_MAP_GET, null, toData(key), null, -1, -1, -1, null);
-        Data actualValue = cmap.get(getRequest);
+        Data actualValue = cmap.get(newGetRequest(dKey));
         assertThat(toObject(actualValue), equalTo(value));
+        assertEquals(1, cmap.ownedRecords.size());
+        Record record = cmap.getRecord(dKey);
+        assertNotNull(record);
+        assertTrue(record.isActive());
+        assertTrue(record.isValid());
     }
 
+    private Request newPutRequest(Data key, Data value) {
+        return newPutRequest(key, value, -1);
+    }
 
+    public static Request newPutRequest(Data key, Data value, long ttl) {
+        Request request = new Request();
+        request.setLocal(ClusterOperation.CONCURRENT_MAP_PUT, null, key, value, -1, -1, ttl, null);
+        return request;
+    }
 
+    public static Request newGetRequest(Data key) {
+        Request request = new Request();
+        request.setLocal(ClusterOperation.CONCURRENT_MAP_GET, null, key, null, -1, -1, -1, null);
+        return request;
+    }
 }

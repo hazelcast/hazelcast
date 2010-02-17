@@ -677,7 +677,7 @@ public class PartitionManager implements Runnable, PartitionService {
 
     void completeMigration(int blockId) {
         Block blockReal = blocks[blockId];
-        if (blockReal.isMigrating()) {
+        if (blockReal != null && blockReal.isMigrating()) {
             fireMigrationEvent(false, new Block(blockReal));
             blockReal.setOwner(blockReal.getMigrationAddress());
             blockReal.setMigrationAddress(null);
