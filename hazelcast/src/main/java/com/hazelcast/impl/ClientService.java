@@ -364,7 +364,7 @@ public class ClientService {
 
     private class ExecutorServiceHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            Future<?> future = null;
+            Future<?> future;
             ExecutorService executorService = node.factory.getExecutorService();
             Callable<Object> callable = (Callable<Object>) toObject(packet.key);
             Object result;
@@ -389,7 +389,6 @@ public class ClientService {
             } catch (InterruptedException e) {
                 return;
             } catch (ExecutionException e) {
-                e.printStackTrace();
                 packet.value = toData(e);
             }
         }

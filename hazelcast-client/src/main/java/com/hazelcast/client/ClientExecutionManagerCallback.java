@@ -39,12 +39,12 @@ public abstract class ClientExecutionManagerCallback implements ExecutionManager
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public Object get() throws InterruptedException {
+    public Object get() throws InterruptedException, ExecutionException {
         return get(-1, null);
     }
 
     //!!called by multiple threads
-    public abstract Object get(long l, TimeUnit timeUnit) throws InterruptedException;
+    public abstract Object get(long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException;
 
     protected Object handleResult(Packet packet) throws ExecutionException {
         Object o = toObject(packet.getValue());
@@ -86,11 +86,10 @@ public abstract class ClientExecutionManagerCallback implements ExecutionManager
 
     public static class MultipleResultClientExecutionManagerCallBack extends ClientExecutionManagerCallback {
         private volatile Collection<Object> result;
-        private volatile boolean done = false;
         private volatile Iterator<Object> it;
 
         @Override
-        public Object get(long l, TimeUnit timeUnit) throws InterruptedException {
+        public Object get(long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException {
             if (result == null) {
                 synchronized (this) {
                     if (result == null) {
@@ -103,7 +102,7 @@ public abstract class ClientExecutionManagerCallback implements ExecutionManager
                         try {
                             this.result = handleResult(packet);
                         } catch (ExecutionException e) {
-                            throw new RuntimeException(e);
+                            throw e;
                         }
                     }
                     if (it == null) {

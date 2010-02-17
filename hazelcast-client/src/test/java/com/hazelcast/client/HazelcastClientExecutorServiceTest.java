@@ -17,12 +17,12 @@
 
 package com.hazelcast.client;
 
-import static com.hazelcast.client.TestUtility.getHazelcastClient;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MultiTask;
+import com.hazelcast.monitor.DistributedMapStatsCallable;
+import org.junit.Test;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -34,10 +34,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import com.hazelcast.core.*;
-import com.hazelcast.core.Member;
-import com.hazelcast.monitor.DistributedMapStatsCallable;
-import org.junit.Test;
+import static com.hazelcast.client.TestUtility.getHazelcastClient;
+import static junit.framework.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class HazelcastClientExecutorServiceTest {
 
@@ -72,14 +72,12 @@ public class HazelcastClientExecutorServiceTest {
     public void testInvokeAll() throws Exception {
         Callable<String> task = new BasicTestTask();
         ExecutorService executor = getExecutorService();
-
         // Only one task
         ArrayList<Callable<String>> tasks = new ArrayList<Callable<String>>();
         tasks.add(task);
         List<Future<String>> futures = executor.invokeAll(tasks);
         assertEquals(futures.size(), 1);
         assertEquals(futures.get(0).get(), BasicTestTask.RESULT);
-
         // More tasks
         tasks.clear();
         for (int i = 0; i < COUNT; i++) {
@@ -144,7 +142,6 @@ public class HazelcastClientExecutorServiceTest {
         for (int i = 0; i < COUNT; i++) {
             Callable<String> task1 = new BasicTestTask();
             Callable<String> task2 = new BasicTestTask();
-
             Future<?> future1 = executor.submit(task1);
             Future<?> future2 = executor.submit(task2);
             assertEquals(future2.get(), BasicTestTask.RESULT);
@@ -157,7 +154,6 @@ public class HazelcastClientExecutorServiceTest {
     @Test
     public void testBasicRunnable() throws Exception {
         ExecutorService executor = getExecutorService();
-
         Future<?> future = executor.submit(new BasicRunnable());
         assertNull(future.get());
     }
@@ -169,7 +165,6 @@ public class HazelcastClientExecutorServiceTest {
     }
 
     public static class BasicTestTask implements Callable<String>, Serializable {
-
         public static String RESULT = "Task completed";
 
         public String call() throws Exception {
@@ -183,12 +178,9 @@ public class HazelcastClientExecutorServiceTest {
         Set<Member> members = getHazelcastClient().getCluster().getMembers();
         MultiTask<DistributedMapStatsCallable.MemberMapStat> task =
                 new MultiTask<DistributedMapStatsCallable.MemberMapStat>(new DistributedMapStatsCallable("default"), members);
-
         esService.submit(task);
-
         Collection<DistributedMapStatsCallable.MemberMapStat> mapStats = null;
         mapStats = task.get();
-
         for (DistributedMapStatsCallable.MemberMapStat memberMapStat : mapStats) {
             assertNotNull(memberMapStat);
         }
@@ -200,8 +192,43 @@ public class HazelcastClientExecutorServiceTest {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
         multiTaskWithOneMember();
         h.shutdown();
-
     }
 
+    @Test(expected = ExecutionException.class)
+    public void test() throws ExecutionException, InterruptedException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastClient client = getHazelcastClient(h1);
+        Set<Member> members = client.getCluster().getMembers();
+        MultiTask<String> task =
+                new MultiTask<String>(new ExceptionThrowingCallable(), members);
+        client.getExecutorService().submit(task);
+        Collection<String> result = null;
+        result = task.get();
+        assertEquals(members.size(), result.size());
+    }
 
+    public static class ExceptionThrowingCallable implements Callable<String>, Serializable {
+
+        public String call() throws Exception {
+            throw new RuntimeException("here is an exception");
+        }
+    }
+
+    @Test
+    public void testExecutorServiceWhereOneMemberDiesWhileExecution() throws ExecutionException, InterruptedException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+//        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
+//        HazelcastClient client = getHazelcastClient(h2);
+//        Set<Member> members = client.getCluster().getMembers();
+        Set<Member> members = h2.getCluster().getMembers();
+        MultiTask<Integer> task =
+                new MultiTask<Integer>(new WaitingCallable(10000), members);
+//        client.getExecutorService().submit(task);
+        h2.getExecutorService().submit(task);
+        Thread.sleep(1000);
+        h1.shutdown();
+        Collection<Integer> result = task.get();
+        assertEquals(members.size(), result.size());
+    }
 }

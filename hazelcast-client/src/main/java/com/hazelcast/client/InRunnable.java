@@ -44,7 +44,7 @@ public class InRunnable extends IORunnable implements Runnable {
                 Call call = callMap.remove(packet.getCallId());
                 if (call != null) {
                     if (call.getRequest().getOperation().equals(ClusterOperation.REMOTELY_EXECUTE)) {
-                        client.executorServiceManager.enqueue(packet);
+                        client.executorServiceManager.handleExecutionResponse(packet);
                     } else {
                         synchronized (call) {
                             //						System.out.println("Received: " + call + " " + call.getRequest().getOperation());
