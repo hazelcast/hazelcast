@@ -128,8 +128,8 @@ public final class ConcurrentMapManager extends BaseManager {
         maps.clear();
     }
 
-    public void syncForDead(Address deadAddress) {
-        partitionManager.syncForDead(deadAddress);
+    public void syncForDead(MemberImpl deadMember) {
+        partitionManager.syncForDead(deadMember);
     }
 
     public void syncForAdd() {

@@ -94,8 +94,8 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
                 newSql.append(key);
                 apoIndex = getApostropheIndex(sql, 0);
             }
+            newSql.append(sql);
             sql = newSql.toString();
-//            System.out.println("new sql " + sql);
         }
         Parser parser = new Parser();
         List<String> sqlTokens = parser.toPrefix(sql);

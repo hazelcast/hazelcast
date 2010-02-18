@@ -297,15 +297,15 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         if (conn != null) {
             node.connectionManager.remove(conn);
         }
-        MemberImpl member = getMember(deadAddress);
-        if (member != null) {
+        MemberImpl deadMember = getMember(deadAddress);
+        if (deadMember != null) {
             lsMembersBefore.clear();
             for (MemberImpl memberBefore : lsMembers) {
                 lsMembersBefore.add(memberBefore);
             }
             removeMember(deadAddress);
             node.blockingQueueManager.syncForDead(deadAddress);
-            node.concurrentMapManager.syncForDead(deadAddress);
+            node.concurrentMapManager.syncForDead(deadMember);
             node.listenerManager.syncForDead(deadAddress);
             node.topicManager.syncForDead(deadAddress);
             node.getClusterImpl().setMembers(lsMembers);

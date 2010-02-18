@@ -19,7 +19,6 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.HazelcastInstanceAwareObject;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.concurrentmap.InitialState;
 import com.hazelcast.nio.Address;
@@ -479,14 +478,15 @@ public class PartitionManager implements Runnable, PartitionService {
         }
     }
 
-    public void syncForDead(Address deadAddress) {
+    public void syncForDead(MemberImpl deadMember) {
+        Address deadAddress = deadMember.getAddress();
         if (deadAddress == null || deadAddress.equals(thisAddress)) {
             return;
         }
         Set<Integer> blocksOwnedAfterDead = new HashSet<Integer>();
         for (Block block : blocks) {
             if (block != null) {
-                syncForDead(deadAddress, block);
+                syncForDead(deadMember, block);
                 if (thisAddress.equals(block.getOwner())) {
                     blocksOwnedAfterDead.add(block.getBlockId());
                 }
@@ -517,7 +517,8 @@ public class PartitionManager implements Runnable, PartitionService {
         onMembershipChange(false);
     }
 
-    void syncForDead(Address deadAddress, Block block) {
+    void syncForDead(MemberImpl deadMember, Block block) {
+        Address deadAddress = deadMember.getAddress();
         if (deadAddress.equals(block.getOwner())) {
             MemberImpl member = concurrentMapManager.getNextMemberBeforeSync(deadAddress, true, 1);
             if (member == null) {
@@ -531,6 +532,15 @@ public class PartitionManager implements Runnable, PartitionService {
                     block.setOwner(member.getAddress());
                 } else {
                     block.setOwner(null);
+                }
+            }
+            if (!block.isMigrating()) {
+                Member currentOwner = (block.getOwner() == null) ? null : concurrentMapManager.getMember(block.getOwner());
+                if (currentOwner != null) {
+                    MigrationEvent migrationEvent = new MigrationEvent(concurrentMapManager.node,
+                            block.getBlockId(), deadMember, currentOwner);
+                    doFireMigrationEvent(true, migrationEvent);
+                    doFireMigrationEvent(false, migrationEvent);
                 }
             }
         }
@@ -739,17 +749,22 @@ public class PartitionManager implements Runnable, PartitionService {
             final MemberImpl memberOwner = concurrentMapManager.getMember(block.getOwner());
             final MemberImpl memberMigration = concurrentMapManager.getMember(block.getMigrationAddress());
             final MigrationEvent migrationEvent = new MigrationEvent(concurrentMapManager.node, block.getBlockId(), memberOwner, memberMigration);
-            for (final MigrationListener migrationListener : lsMigrationListeners) {
-                concurrentMapManager.executeLocally(new Runnable() {
-                    public void run() {
-                        if (started) {
-                            migrationListener.migrationStarted(migrationEvent);
-                        } else {
-                            migrationListener.migrationCompleted(migrationEvent);
-                        }
+            doFireMigrationEvent(started, migrationEvent);
+        }
+    }
+
+    void doFireMigrationEvent(final boolean started, final MigrationEvent migrationEvent) {
+        if (migrationEvent == null) throw new RuntimeException("MigrationEvent: " + migrationEvent);
+        for (final MigrationListener migrationListener : lsMigrationListeners) {
+            concurrentMapManager.executeLocally(new Runnable() {
+                public void run() {
+                    if (started) {
+                        migrationListener.migrationStarted(migrationEvent);
+                    } else {
+                        migrationListener.migrationCompleted(migrationEvent);
                     }
-                });
-            }
+                }
+            });
         }
     }
 }
