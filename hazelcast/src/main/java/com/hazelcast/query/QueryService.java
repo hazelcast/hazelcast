@@ -84,7 +84,7 @@ public class QueryService implements Runnable {
         queryServiceState.setQueueSize(queryQ.size());
         Collection<IndexRegion> colRegions = regions.values();
         for (IndexRegion region : colRegions) {
-            QueryServiceState.IndexState[]  indexStates = null;
+            QueryServiceState.IndexState[] indexStates = null;
             if (region.indexes != null) {
                 int size = region.indexes.length;
                 indexStates = new QueryServiceState.IndexState[size];
@@ -98,7 +98,6 @@ public class QueryService implements Runnable {
             queryServiceState.addIndexRegionState(state);
         }
         node.concurrentMapManager.enqueueAndReturn(queryServiceState);
-
     }
 
     class IndexRegion {
@@ -218,7 +217,7 @@ public class QueryService implements Runnable {
                         }
                     } else {
                         index.removeIndex(oldValue, record);
-                    } 
+                    }
                 }
                 record.setIndexes(newValues, types);
             }
@@ -265,24 +264,21 @@ public class QueryService implements Runnable {
                         List<Set<MapEntry>> lsSubResults = new ArrayList<Set<MapEntry>>(lsIndexAwarePredicates.size());
                         for (IndexAwarePredicate indexAwarePredicate : lsIndexAwarePredicates) {
                             Set<MapEntry> sub = indexAwarePredicate.filter(queryContext);
+                            System.out.println(indexAwarePredicate + " sub " + ((sub == null) ? "null" : sub.size()));
                             if (sub == null) {
                                 strong = false;
                             } else if (sub.size() == 0) {
                                 strong = true;
                                 return null;
                             } else {
-                                if (sub.size() > 100) {
-                                    strong = false;
+                                if (smallestSet == null) {
+                                    smallestSet = sub;
                                 } else {
-                                    if (smallestSet == null) {
+                                    if (sub.size() < smallestSet.size()) {
+                                        lsSubResults.add(smallestSet);
                                         smallestSet = sub;
                                     } else {
-                                        if (sub.size() < smallestSet.size()) {
-                                            lsSubResults.add(smallestSet);
-                                            smallestSet = sub;
-                                        } else {
-                                            lsSubResults.add(sub);
-                                        }
+                                        lsSubResults.add(sub);
                                     }
                                 }
                             }
@@ -308,6 +304,7 @@ public class QueryService implements Runnable {
                                 }
                             }
                         }
+                        System.out.println("results  " + results.size());
                     } else {
                         results = new HashSet<MapEntry>(ownedRecords.size());
                         for (MapEntry entry : ownedRecords) {
@@ -393,7 +390,7 @@ public class QueryService implements Runnable {
                         indexRegion.doUpdateIndex(newValues, types, record, active, valueHash);
                     } catch (Exception e) {
                         e.printStackTrace();
-                        logger.log(Level.SEVERE, "Indexing error." + e);
+                        logger.log(Level.SEVERE, "Indexing error. " + e);
                     }
                 }
             });

@@ -188,7 +188,7 @@ public abstract class BaseManager {
             remoteReq.local = false;
             if (isMigrating(remoteReq) || !isRightRemoteTarget(packet)) {
                 packet.responseType = RESPONSE_REDO;
-                sendResponse(packet); 
+                sendResponse(packet);
             } else {
                 handle(remoteReq);
                 packet.returnToContainer();
@@ -456,7 +456,7 @@ public abstract class BaseManager {
                             Connection targetConnection = null;
                             MemberImpl targetMember = null;
                             Object key = toObject(reqCopy.key);
-                            Block block = node.concurrentMapManager.getOrCreateBlock(reqCopy.key);
+                            Block block = (reqCopy.key == null) ? null : node.concurrentMapManager.getOrCreateBlock(reqCopy.key);
                             if (targetCopy != null) {
                                 targetMember = getMember(targetCopy);
                                 targetConnection = node.connectionManager.getConnection(targetCopy);
@@ -777,7 +777,7 @@ public abstract class BaseManager {
             }
             return InstanceType.MAP;
         } else {
-        	throw new RuntimeException("Unknown InstanceType " + name);
+            throw new RuntimeException("Unknown InstanceType " + name);
         }
     }
 

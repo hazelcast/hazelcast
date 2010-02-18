@@ -350,11 +350,15 @@ public class ClusterTest {
     public void testDifferentGroups() {
         Config c1 = new XmlConfigBuilder().build();
         c1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        c1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
+        c1.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
         c1.getNetworkConfig().getInterfaces().clear();
         c1.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
         c1.getNetworkConfig().getInterfaces().setEnabled(true);
         Config c2 = new XmlConfigBuilder().build();
         c2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        c2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
+        c2.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
         c2.getNetworkConfig().getInterfaces().clear();
         c2.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
         c2.getNetworkConfig().getInterfaces().setEnabled(true);

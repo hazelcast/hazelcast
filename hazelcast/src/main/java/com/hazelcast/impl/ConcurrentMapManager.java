@@ -1675,7 +1675,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class ContainsValueOperationHandler extends ExecutorServiceOperationHandler {
+    class ContainsValueOperationHandler extends ExecutedOperationHandler {
 
         @Override
         public void process(Packet packet) {
@@ -1697,7 +1697,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    abstract class ExecutorServiceOperationHandler extends ResponsiveOperationHandler {
+    abstract class ExecutedOperationHandler extends ResponsiveOperationHandler {
         public void process(Packet packet) {
             Request request = new Request();
             request.setFromPacket(packet);
@@ -1712,7 +1712,7 @@ public final class ConcurrentMapManager extends BaseManager {
         abstract Runnable createRunnable(Request request);
     }
 
-    class QueryOperationHandler extends ExecutorServiceOperationHandler {
+    class QueryOperationHandler extends ExecutedOperationHandler {
 
         Runnable createRunnable(Request request) {
             final CMap cmap = getOrCreateMap(request.name);

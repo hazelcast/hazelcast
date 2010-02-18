@@ -683,6 +683,7 @@ public class PartitionManager implements Runnable, PartitionService {
             blockReal.setMigrationAddress(null);
             logger.log(Level.FINEST, "Migration complete info : " + blockReal);
         }
+        nextMigrationMillis = System.currentTimeMillis() + MIGRATION_INTERVAL_MILLIS;
     }
 
     void handleBlocks(Blocks blockOwners) {

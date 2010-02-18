@@ -168,13 +168,7 @@ public class Index<T> {
         for (long value : values) {
             Set<T> records = mapIndex.get(value);
             if (records != null) {
-                if (queryContext.getIndexedPredicateCount() > 1 && records.size() > 100) {
-                    return null;
-                }
-                results.addAll(records);
-                if (queryContext.getIndexedPredicateCount() > 1 && results.size() > 100) {
-                    return null;
-                }
+                results.addAll(records); 
             }
         }
         return results;
@@ -189,13 +183,7 @@ public class Index<T> {
         for (Map.Entry<Long, Set<T>> entry : entries) {
             if (equal || entry.getKey() != value) {
                 Set<T> values = entry.getValue();
-                if (queryContext.getIndexedPredicateCount() > 1 && values.size() > 100) {
-                    return null;
-                }
                 results.addAll(values);
-            }
-            if (queryContext.getIndexedPredicateCount() > 1 && results.size() > 100) {
-                return null;
             }
         }
         if (lessThan && equal) {
@@ -223,13 +211,7 @@ public class Index<T> {
         Set<T> results = new HashSet<T>();
         Collection<Set<T>> sub = treeMap.subMap(from, to).values();
         for (Set<T> records : sub) {
-            if (queryContext.getIndexedPredicateCount() > 1 && sub.size() > 100) {
-                return null;
-            }
             results.addAll(records);
-            if (queryContext.getIndexedPredicateCount() > 1 && results.size() > 100) {
-                return null;
-            }
         }
         // treeMap.subMap(from, to) doesn't include the last
         // 'to' entry. so get and add it.
