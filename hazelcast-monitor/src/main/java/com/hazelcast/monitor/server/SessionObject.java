@@ -92,7 +92,9 @@ public class SessionObject {
             public void run() {
                 for (ChangeEventGenerator eventGenerator : eventGenerators) {
                     ChangeEvent event = eventGenerator.generateEvent();
-                    queue.offer(event);
+                    if (event != null) {
+                        queue.offer(event);
+                    }
                 }
             }
         };
@@ -126,8 +128,7 @@ public class SessionObject {
             String[] addresses = splitAddresses(ips);
             if (addresses.length > 0) {
                 client = HazelcastClient.newHazelcastClient(name, pass, addresses[0]);
-            }
-            else{
+            } else {
                 throw new ConnectionExceptoin("Not a valid address");
             }
         } catch (RuntimeException e) {
