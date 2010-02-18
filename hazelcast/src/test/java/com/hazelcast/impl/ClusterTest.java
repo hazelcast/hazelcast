@@ -1448,7 +1448,7 @@ public class ClusterTest {
     }
 
     @Test(timeout = 25000, expected = MemberLeftException.class)
-    public void testExecutorServiceWhereOneMemberDiesWhileExecution() throws ExecutionException, InterruptedException {
+    public void testExecutorWhenOneMemberDiesWhileExecuting() throws ExecutionException, InterruptedException {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         Set<Member> members = h2.getCluster().getMembers();
