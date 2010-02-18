@@ -119,7 +119,6 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
 //            System.out.println(tokens);
             for (int i = 0; i < tokens.size(); i++) {
                 Object tokenObj = tokens.get(i);
-//                System.out.println(tokenObj + " ... " + tokenObj.getClass());
                 if (tokenObj instanceof String && parser.isOperand((String) tokenObj)) {
                     String token = (String) tokenObj;
                     if ("=".equals(token) || "==".equals(token)) {
