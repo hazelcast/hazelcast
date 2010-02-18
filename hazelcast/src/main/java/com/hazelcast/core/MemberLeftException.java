@@ -17,6 +17,8 @@
 
 package com.hazelcast.core;
 
-public class MemberLeftException extends IllegalStateException {
+import java.util.concurrent.ExecutionException;
+
+public class MemberLeftException extends ExecutionException {
 
 }

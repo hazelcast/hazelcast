@@ -201,11 +201,11 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         }
     }
 
-    public class DistributedExecutorAction<T> implements Processable, ExecutionManagerCallback,
+    public class DistributedExecutorAction implements Processable, ExecutionManagerCallback,
             StreamResponseHandler {
-        InnerFutureTask<T> innerFutureTask = null;
+        InnerFutureTask innerFutureTask = null;
 
-        DistributedTask<T> distributedFutureTask = null;
+        DistributedTask distributedFutureTask = null;
 
         private final int expectedResultCount;
 
@@ -225,21 +225,26 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
 
         protected boolean localOnly = true;
 
-        public DistributedExecutorAction(final Long executionId,
-                                         final DistributedTask<T> distributedFutureTask, final Data task,
-                                         final Object callable) {
+        protected final ClassLoader classLoader;
+
+        public DistributedExecutorAction(Long executionId,
+                                         DistributedTask distributedFutureTask,
+                                         Data task,
+                                         Object callable,
+                                         ClassLoader classLoader) {
             if (executionId == null)
                 throw new RuntimeException("executionId cannot be null!");
             this.executionId = executionId;
             this.task = task;
             this.callable = callable;
             this.distributedFutureTask = distributedFutureTask;
-            this.innerFutureTask = (InnerFutureTask<T>) distributedFutureTask.getInner();
+            this.innerFutureTask = (InnerFutureTask) distributedFutureTask.getInner();
             if (innerFutureTask.getMembers() != null) {
                 expectedResultCount = innerFutureTask.getMembers().size();
             } else {
                 expectedResultCount = 1;
             }
+            this.classLoader = classLoader;
         }
 
         public boolean cancel(final boolean mayInterruptIfRunning) {
@@ -267,8 +272,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                         cancelled = task.get();
                     } else {
                         // members
-                        final MultiTask<Boolean> task = new MultiTask<Boolean>(callCancel,
-                                innerFutureTask.getMembers());
+                        final MultiTask<Boolean> task = new MultiTask<Boolean>(callCancel, innerFutureTask.getMembers());
                         Hazelcast.getExecutorService().execute(task);
                         final Collection<Boolean> results = task.get();
                         for (final Boolean result : results) {
@@ -297,7 +301,9 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         }
 
         public Object get(final long timeout, final TimeUnit unit) throws InterruptedException {
+            ClassLoader actualContextClassLoader = Thread.currentThread().getContextClassLoader();
             try {
+                Thread.currentThread().setContextClassLoader(classLoader);
                 final Object result = (timeout == -1) ? responseQueue.take() : responseQueue.poll(
                         timeout, unit);
                 if (result == null)
@@ -310,14 +316,16 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                     // local execution result
                     return result;
                 }
-            } catch (final InterruptedException e) {
+            } catch (InterruptedException e) {
                 // if client thread is interrupted
                 // finalize for clean interrupt..
                 finalizeTask();
                 throw e;
-            } catch (final Exception e) {
+            } catch (Exception e) {
                 // shouldn't happen..
                 e.printStackTrace();
+            } finally {
+                Thread.currentThread().setContextClassLoader(actualContextClassLoader);
             }
             return null;
         }
@@ -329,8 +337,9 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
             if (executionId == null) return;
             if (response == null)
                 response = OBJECT_NULL;
-            if (response == OBJECT_DONE || response == OBJECT_CANCELLED) {
+            if (response == OBJECT_MEMBER_LEFT || response == OBJECT_CANCELLED) {
                 responseQueue.add(response);
+                responseQueue.add(OBJECT_DONE);
                 finalizeTask();
             } else {
                 final int resultCountNow = resultCount.incrementAndGet();
@@ -479,7 +488,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
             // logger.log(Level.INFO,"finalizing.. " + executionId);
             if (executionId == null)
                 return;
-            if (innerFutureTask.getExecutionCallback() != null) {
+            if (innerFutureTask != null && innerFutureTask.getExecutionCallback() != null) {
                 innerFutureTask.getExecutionCallback().done(distributedFutureTask);
             }
             mapStreams.remove(executionId);
@@ -668,7 +677,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         final Callable callable = inner.getCallable();
         final Data callableData = toData(callable);
         final DistributedExecutorAction action =
-                new DistributedExecutorAction(executionId, task, callableData, callable);
+                new DistributedExecutorAction(executionId, task, callableData, callable, node.getConfig().getClassLoader());
         inner.setExecutionManagerCallback(action);
         return action;
     }
@@ -706,13 +715,13 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
         packet.returnToContainer();
     }
 
-    public void memberAdded(MembershipEvent membersipEvent) {
+    public void memberAdded(MembershipEvent membershipEvent) {
     }
 
-    public void memberRemoved(MembershipEvent membersipEvent) {
+    public void memberRemoved(MembershipEvent membershipEvent) {
         final Collection<DistributedExecutorAction> executionActions = mapExecutions.values();
         for (final DistributedExecutorAction distributedExecutorAction : executionActions) {
-            distributedExecutorAction.handleMemberLeft(membersipEvent.getMember());
+            distributedExecutorAction.handleMemberLeft(membershipEvent.getMember());
         }
     }
 }

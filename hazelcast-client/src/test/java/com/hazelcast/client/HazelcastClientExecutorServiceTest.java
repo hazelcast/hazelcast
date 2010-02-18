@@ -17,10 +17,8 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MultiTask;
+import com.hazelcast.core.*;
+import com.hazelcast.impl.SleepCallable;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
 import org.junit.Test;
 
@@ -214,21 +212,17 @@ public class HazelcastClientExecutorServiceTest {
         }
     }
 
-    @Test
+    @Test(timeout = 25000, expected = MemberLeftException.class)
     public void testExecutorServiceWhereOneMemberDiesWhileExecution() throws ExecutionException, InterruptedException {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-//        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
-//        HazelcastClient client = getHazelcastClient(h2);
-//        Set<Member> members = client.getCluster().getMembers();
-        Set<Member> members = h2.getCluster().getMembers();
+        HazelcastClient client = getHazelcastClient(h2);
+        Set<Member> members = client.getCluster().getMembers();
         MultiTask<Integer> task =
-                new MultiTask<Integer>(new WaitingCallable(10000), members);
-//        client.getExecutorService().submit(task);
-        h2.getExecutorService().submit(task);
-        Thread.sleep(1000);
+                new MultiTask<Integer>(new SleepCallable(10000), members);
+        client.getExecutorService().submit(task);
+        Thread.sleep(2000);
         h1.shutdown();
-        Collection<Integer> result = task.get();
-        assertEquals(members.size(), result.size());
+        task.get();
     }
 }

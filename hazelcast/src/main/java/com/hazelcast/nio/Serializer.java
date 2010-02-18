@@ -73,14 +73,10 @@ public final class Serializer {
 
     public static Class<?> classForName(String className) throws ClassNotFoundException {
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        try {
-            if (contextClassLoader != null) {
-                return Class.forName(className, true, contextClassLoader);
-            } else {
-                return Class.forName(className);
-            }
-        } catch (ClassNotFoundException e) {
-            throw e;
+        if (contextClassLoader != null) {
+            return Class.forName(className, true, contextClassLoader);
+        } else {
+            return Class.forName(className);
         }
     }
 

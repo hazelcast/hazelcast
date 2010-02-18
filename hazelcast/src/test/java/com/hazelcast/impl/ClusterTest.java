@@ -1446,4 +1446,16 @@ public class ClusterTest {
         assertTrue(listener1.await(5));
         assertTrue(listener2.await(5));
     }
+
+    @Test(timeout = 25000, expected = MemberLeftException.class)
+    public void testExecutorServiceWhereOneMemberDiesWhileExecution() throws ExecutionException, InterruptedException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        Set<Member> members = h2.getCluster().getMembers();
+        MultiTask<Integer> task = new MultiTask<Integer>(new SleepCallable(10000), members);
+        h2.getExecutorService().submit(task);
+        Thread.sleep(2000);
+        h1.shutdown();
+        task.get();
+    }
 }

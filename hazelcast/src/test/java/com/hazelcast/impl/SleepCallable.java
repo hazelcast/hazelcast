@@ -15,29 +15,23 @@
  *
  */
 
-package com.hazelcast.client;
+package com.hazelcast.impl;
 
 import java.io.Serializable;
 import java.util.concurrent.Callable;
 
-public class WaitingCallable implements Callable<Integer>, Serializable {
+public class SleepCallable implements Callable<Integer>, Serializable {
     private int time;
 
-    public WaitingCallable() {
+    public SleepCallable() {
     }
 
-    public WaitingCallable(int time) {
+    public SleepCallable(int time) {
         this.time = time;
     }
 
     public Integer call() throws InterruptedException {
-        System.out.println("Started to run");
-        try {
-            Thread.sleep(time);
-        } catch (InterruptedException e) {
-            throw e;
-        }
-        System.out.println("Ended");
+        Thread.sleep(time);
         return time;
     }
 }

@@ -85,10 +85,10 @@ public class FactoryImpl implements HazelcastInstance {
         FactoryImpl factory = null;
         boolean firstMember = false;
         synchronized (factoryLock) {
-            String name = "_hzInstance_" + nextFactoryId++;
             if (config == null) {
                 config = new XmlConfigBuilder().build();
             }
+            String name = "_hzInstance_" + nextFactoryId++ + "_" + config.getGroupConfig().getName();
             factory = new FactoryImpl(name, config);
             FactoryImpl old = factories.put(name, factory);
             if (old != null) {
