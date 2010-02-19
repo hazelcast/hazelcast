@@ -18,7 +18,7 @@
 package com.hazelcast.monitor.server;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.NoClusterMemberAvailableException;
+import com.hazelcast.client.NoMemberAvailableException;
 import com.hazelcast.core.*;
 import com.hazelcast.monitor.client.ClusterView;
 import com.hazelcast.monitor.client.ConnectionExceptoin;
@@ -95,7 +95,7 @@ public class SessionObject {
                     ChangeEvent event = null;
                     try {
                         event = eventGenerator.generateEvent();
-                    } catch (NoClusterMemberAvailableException e) {
+                    } catch (NoMemberAvailableException e) {
                         event = new ClientDisconnectedEvent();
                     }
                     if (event != null) {

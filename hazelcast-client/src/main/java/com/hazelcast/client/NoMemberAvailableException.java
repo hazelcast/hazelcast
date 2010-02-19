@@ -17,8 +17,8 @@
 
 package com.hazelcast.client;
 
-public class NoClusterMemberAvailableException extends RuntimeException{
-    public NoClusterMemberAvailableException() {
+public class NoMemberAvailableException extends RuntimeException{
+    public NoMemberAvailableException() {
         super("No cluster member available to connect");
     }
 }

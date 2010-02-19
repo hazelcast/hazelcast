@@ -465,15 +465,26 @@ public class DynamicClusterTest {
         task.get();
     }
 
-    @Test(timeout = 25000, expected = ExecutionException.class)
+    @Test
     public void shouldThowExecExcWhenConnectedClusterMemberDies() throws ExecutionException, InterruptedException {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
         HazelcastClient client = getHazelcastClient(h);
-        Future future = client.getExecutorService().submit(new SleepCallable(10000));
+        Future future1 = client.getExecutorService().submit(new SleepCallable(10000));
+        Future future2 = client.getExecutorService().submit(new SleepCallable(10000));
         Thread.sleep(2000);
         h.shutdown();
-        future.get();
-
+        CountDownLatch latch = new CountDownLatch(2);
+        try {
+            future1.get();
+        } catch (ExecutionException e) {
+            latch.countDown();
+        }
+        try {
+            future2.get();
+        } catch (ExecutionException e) {
+            latch.countDown();
+        }
+        latch.await(10, TimeUnit.SECONDS); 
     }
 
     private Map<Integer, HazelcastInstance> getMapOfClusterMembers(HazelcastInstance... h) {

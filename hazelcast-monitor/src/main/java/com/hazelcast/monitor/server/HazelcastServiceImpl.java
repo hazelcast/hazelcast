@@ -19,7 +19,7 @@ package com.hazelcast.monitor.server;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.NoClusterMemberAvailableException;
+import com.hazelcast.client.NoMemberAvailableException;
 import com.hazelcast.monitor.client.ClusterView;
 import com.hazelcast.monitor.client.ConnectionExceptoin;
 import com.hazelcast.monitor.client.HazelcastService;
@@ -44,7 +44,7 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
         ClusterView clusterView = null;
         try {
             clusterView = sessionObject.connectAndCreateClusterView(name, pass, ips);
-        } catch (NoClusterMemberAvailableException e) {
+        } catch (NoMemberAvailableException e) {
             throw new ClientDisconnectedException();
         }
         return clusterView;
@@ -58,7 +58,7 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
             ClusterView cv = null;
             try {
                 cv = sessionObject.createClusterView(clusterId);
-            } catch (NoClusterMemberAvailableException e) {
+            } catch (NoMemberAvailableException e) {
                 throw new ClientDisconnectedException();
             }
             list.add(cv);
@@ -111,7 +111,7 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
         ChangeEvent changeEvent = null;
         try {
             changeEvent = eventGenerator.generateEvent();
-        } catch (NoClusterMemberAvailableException e) {
+        } catch (NoMemberAvailableException e) {
             throw new ClientDisconnectedException();
         }
         return changeEvent;

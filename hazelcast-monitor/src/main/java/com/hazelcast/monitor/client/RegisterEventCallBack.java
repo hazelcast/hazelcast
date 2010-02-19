@@ -18,7 +18,6 @@
 package com.hazelcast.monitor.client;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.hazelcast.client.NoClusterMemberAvailableException;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 
 public class RegisterEventCallBack implements AsyncCallback<ChangeEvent> {

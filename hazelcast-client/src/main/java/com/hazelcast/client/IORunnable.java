@@ -40,7 +40,7 @@ public abstract class IORunnable extends ClientRunnable {
             Call call = iterator.next();
             synchronized (call) {
                 if (call.getRequest().getOperation().equals(ClusterOperation.REMOTELY_EXECUTE)) {
-                    client.executorServiceManager.endFutureWithException(call, new ExecutionException(new NoClusterMemberAvailableException()));
+                    client.executorServiceManager.endFutureWithException(call, new ExecutionException(new NoMemberAvailableException()));
                     iterator.remove();
                 }
                 call.notify();
