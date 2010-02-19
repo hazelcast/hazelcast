@@ -205,13 +205,6 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         }
     }
 
-    private void removeThreeAddOne(List<Object> tokens, int i, Object added) {
-        tokens.remove(i - 2);
-        tokens.remove(i - 2);
-        tokens.remove(i - 2);
-        tokens.add(i - 2, added);
-    }
-
     @Override
     public String toString() {
         return predicate.toString();

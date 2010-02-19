@@ -264,7 +264,6 @@ public class QueryService implements Runnable {
                         List<Set<MapEntry>> lsSubResults = new ArrayList<Set<MapEntry>>(lsIndexAwarePredicates.size());
                         for (IndexAwarePredicate indexAwarePredicate : lsIndexAwarePredicates) {
                             Set<MapEntry> sub = indexAwarePredicate.filter(queryContext);
-                            System.out.println(indexAwarePredicate + " sub " + ((sub == null) ? "null" : sub.size()));
                             if (sub == null) {
                                 strong = false;
                             } else if (sub.size() == 0) {
@@ -304,7 +303,6 @@ public class QueryService implements Runnable {
                                 }
                             }
                         }
-                        System.out.println("results  " + results.size());
                     } else {
                         results = new HashSet<MapEntry>(ownedRecords.size());
                         for (MapEntry entry : ownedRecords) {
