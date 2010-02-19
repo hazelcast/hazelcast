@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
@@ -462,6 +463,17 @@ public class DynamicClusterTest {
             h2.shutdown();
         }
         task.get();
+    }
+
+    @Test(timeout = 25000, expected = ExecutionException.class)
+    public void shouldThowExecExcWhenConnectedClusterMemberDies() throws ExecutionException, InterruptedException {
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        HazelcastClient client = getHazelcastClient(h);
+        Future future = client.getExecutorService().submit(new SleepCallable(10000));
+        Thread.sleep(2000);
+        h.shutdown();
+        future.get();
+
     }
 
     private Map<Integer, HazelcastInstance> getMapOfClusterMembers(HazelcastInstance... h) {
