@@ -22,6 +22,7 @@ import com.hazelcast.impl.SleepCallable;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -193,7 +194,7 @@ public class HazelcastClientExecutorServiceTest {
     }
 
     @Test(expected = ExecutionException.class)
-    public void test() throws ExecutionException, InterruptedException {
+    public void shouldThrowExExcptnWhenCallableThrowsException() throws ExecutionException, InterruptedException {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastClient client = getHazelcastClient(h1);
         Set<Member> members = client.getCluster().getMembers();
@@ -210,19 +211,5 @@ public class HazelcastClientExecutorServiceTest {
         public String call() throws Exception {
             throw new RuntimeException("here is an exception");
         }
-    }
-
-    @Test(timeout = 25000, expected = MemberLeftException.class)
-    public void testExecutorWhenOneMemberDiesWhileExecuting() throws ExecutionException, InterruptedException {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        HazelcastClient client = getHazelcastClient(h2);
-        Set<Member> members = client.getCluster().getMembers();
-        MultiTask<Integer> task =
-                new MultiTask<Integer>(new SleepCallable(10000), members);
-        client.getExecutorService().submit(task);
-        Thread.sleep(2000);
-        h1.shutdown();
-        task.get();
-    }
+    }   
 }

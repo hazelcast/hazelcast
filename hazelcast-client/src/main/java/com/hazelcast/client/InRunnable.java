@@ -17,6 +17,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.impl.ClusterOperation;
 
 import java.io.IOException;
@@ -26,6 +27,7 @@ import java.util.logging.Logger;
 public class InRunnable extends IORunnable implements Runnable {
     final PacketReader reader;
     final Logger logger = Logger.getLogger(this.getClass().getName());
+    Connection connection = null;
 
     public InRunnable(HazelcastClient client, Map<Long, Call> calls, PacketReader reader) {
         super(client, calls);
@@ -33,10 +35,13 @@ public class InRunnable extends IORunnable implements Runnable {
     }
 
     protected void customRun() {
-        Connection connection = null;
-        Packet packet = null;
+        Packet packet;
         try {
+            Connection oldConnection = connection;
             connection = client.connectionManager.getConnection();
+            if (restoredConnection(oldConnection, connection)) {
+                client.executorServiceManager.interruptExecutingTasks(new MemberLeftException());
+            }
             if (connection == null) {
                 interruptWaitingCalls();
             } else {
@@ -66,7 +71,7 @@ public class InRunnable extends IORunnable implements Runnable {
         } catch (RuntimeException re) {
             throw re;
         } catch (Exception e) {
-//            e.printStackTrace();
+            logger.info("InRunnable got an exception:" + e.getMessage());
             client.connectionManager.destroyConnection(connection);
         }
     }

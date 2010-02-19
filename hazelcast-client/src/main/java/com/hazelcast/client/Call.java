@@ -32,8 +32,6 @@ public class Call {
 	
 	private Packet response;
 
-	private Exception exception;
-	
 	public static AtomicLong callIdGen = new AtomicLong(0);
 	
 	public Packet getRequest() {
@@ -46,24 +44,13 @@ public class Call {
 	public long getId() {
 		return id;
 	}
-	public void setId(long id) {
-		this.id = id;
-		if (request!=null)
-			request.setCallId(id);
-	}
 	public Packet getResponse() {
 		return response;
 	}
 	public void setResponse(Packet response) {
 		this.response = response;
 	}
-	public void setException(Exception exception) {
-		this.exception = exception;
-	}
-	public Exception getException() {
-		return exception;
-	}
-	
+
 	@Override
 	public String toString() {
 		return "Call " + "["+id+"]";

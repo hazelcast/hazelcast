@@ -17,6 +17,8 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.core.MemberLeftException;
+
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -43,25 +45,16 @@ public class OutRunnable extends IORunnable {
             if (call == null) {
                 return;
             }
-//			System.out.println("Sending: "+call + " " + call.getRequest().getOperation());
+//            System.out.println("Sending: " + call + " " + call.getRequest().getOperation());
             callMap.put(call.getId(), call);
-            boolean oldConnectionIsNotNull = (connection != null);
-            long oldConnectionId = -1;
-            if (oldConnectionIsNotNull) {
-                oldConnectionId = connection.getVersion();
-            }
+            Connection oldConnection = connection;
             connection = client.connectionManager.getConnection();
-            if (restoredConnection(connection, oldConnectionIsNotNull, oldConnectionId)) {
-                temp.add(call);
-                queue.drainTo(temp);
-                client.listenerManager.getListenerCalls().drainTo(queue);
-                temp.drainTo(queue);
+            if (restoredConnection(oldConnection, connection)) {
+                redoUnfinishedCalls(call);
+            } else if (connection != null) {
+                writer.write(connection, call.getRequest());
             } else {
-                if (connection != null) {
-                    writer.write(connection, call.getRequest());
-                } else {
-                    interruptWaitingCalls();
-                }
+                interruptWaitingCalls();
             }
         } catch (InterruptedException e) {
             throw e;
@@ -72,8 +65,12 @@ public class OutRunnable extends IORunnable {
         }
     }
 
-    private boolean restoredConnection(Connection connection, boolean oldConnectionIsNotNull, long oldConnectionId) {
-        return oldConnectionIsNotNull && connection != null && connection.getVersion() != oldConnectionId;
+    private void redoUnfinishedCalls(Call call) {
+        temp.add(call);
+        queue.drainTo(temp);
+        client.listenerManager.getListenerCalls().drainTo(queue);
+        temp.drainTo(queue);
+        client.executorServiceManager.interruptExecutingTasks(new MemberLeftException());
     }
 
     public void enQueue(Call call) {

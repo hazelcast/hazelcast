@@ -20,6 +20,7 @@ package com.hazelcast.client;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.impl.SleepCallable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,6 +28,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
@@ -47,7 +49,6 @@ public class DynamicClusterTest {
             client.shutdown();
         }
         Hazelcast.shutdownAll();
-//        Thread.sleep(500);
     }
 
     @Test
@@ -414,6 +415,53 @@ public class DynamicClusterTest {
         Map<Integer, Integer> map = client.getMap("map");
         map.put(1, 1);
         assertEquals(Integer.valueOf(1), map.get(1));
+    }
+
+    @Test(timeout = 25000, expected = MemberLeftException.class)
+    public void shouldThrowMemberLeftExcWhenNotConnectedMemberDiesWhileExecuting() throws ExecutionException, InterruptedException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastClient client = getHazelcastClient(h2);
+        Set<Member> members = client.getCluster().getMembers();
+        MultiTask<Integer> task =
+                new MultiTask<Integer>(new SleepCallable(10000), members);
+        client.getExecutorService().submit(task);
+        Thread.sleep(2000);
+        h1.shutdown();
+        task.get();
+    }
+
+    @Test(timeout = 25000, expected = ExecutionException.class)
+    public void shouldTrowExExcptnWhenTheOnlyConnectedMemberDiesWhileExecuting() throws ExecutionException, InterruptedException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastClient client = getHazelcastClient(h2);
+        Set<Member> members = client.getCluster().getMembers();
+        MultiTask<Integer> task =
+                new MultiTask<Integer>(new SleepCallable(10000), members);
+        client.getExecutorService().submit(task);
+        Thread.sleep(2000);
+        h2.shutdown();
+        task.get();
+    }
+
+    @Test(timeout = 25000, expected = MemberLeftException.class)
+    public void shouldThrowMemberLeftExceptionWhenConnectedMemberDiesWhileExecuting() throws ExecutionException, InterruptedException, IOException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastClient client = getHazelcastClient(h1, h2);
+        Set<Member> members = client.getCluster().getMembers();
+        MultiTask<Integer> task =
+                new MultiTask<Integer>(new SleepCallable(10000), members);
+        client.getExecutorService().submit(task);
+        Thread.sleep(2000);
+        int port = client.getConnectionManager().getConnection().getAddress().getPort();
+        if (h1.getCluster().getLocalMember().getInetSocketAddress().getPort() == port) {
+            h1.shutdown();
+        } else {
+            h2.shutdown();
+        }
+        task.get();
     }
 
     private Map<Integer, HazelcastInstance> getMapOfClusterMembers(HazelcastInstance... h) {

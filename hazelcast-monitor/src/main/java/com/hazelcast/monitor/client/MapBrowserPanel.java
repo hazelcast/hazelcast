@@ -24,6 +24,8 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
+import com.hazelcast.monitor.client.event.ClientDisconnectedEvent;
+import com.hazelcast.monitor.client.exception.ClientDisconnectedException;
 
 import java.util.Date;
 
@@ -103,6 +105,9 @@ public class MapBrowserPanel extends AbstractMonitoringPanel implements Monitori
             public void onClick(ClickEvent clickEvent) {
                 mapService.get(clusterWidgets.clusterId, name, key.getText(), new AsyncCallback<MapEntry>() {
                     public void onFailure(Throwable throwable) {
+                        if (throwable instanceof ClientDisconnectedException){
+                            clusterWidgets.disconnected();     
+                        }
                         value.setText(throwable.toString());
                     }
 

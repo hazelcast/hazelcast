@@ -166,6 +166,7 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
         clusterWidgets.mainPanel = mainPanel;
         mapClusterWidgets.put(clusterWidgets.clusterId, clusterWidgets);
         clusterWidgets.clusterName = clusterView.getGroupName();
+
         dsPanel.add(clusterWidgets.clusterTree, clusterView.getGroupName());
         setupTimer();
     }

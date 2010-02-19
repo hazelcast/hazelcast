@@ -1,5 +1,5 @@
-package com.hazelcast.monitor.client.event;/*
- * Copyright (c) 2007-2008, Hazel Ltd. All Rights Reserved.
+/*
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,8 @@ package com.hazelcast.monitor.client.event;/*
  *
  */
 
-public enum ChangeEventType {
+package com.hazelcast.monitor.client.exception;
 
-    MAP_STATISTICS,
-    MEMBER_EVENT,
-    INSTANCE_DESTROYED, INSTANCE_CREATED, PARTITIONS, DISCONNECT;
+public class ClientDisconnectedException extends RuntimeException{
+
 }

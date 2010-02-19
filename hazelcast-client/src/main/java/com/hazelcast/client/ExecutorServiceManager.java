@@ -19,36 +19,34 @@ package com.hazelcast.client;
 
 import com.hazelcast.impl.ClusterOperation;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.Map;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 
-public class ExecutorServiceManager extends ClientRunnable{
+import static com.hazelcast.client.Serializer.toByte;
+
+public class ExecutorServiceManager extends ClientRunnable {
     BlockingQueue<FutureProxy> queue = new LinkedBlockingQueue<FutureProxy>();
     AtomicLong executerId = new AtomicLong(0);
     Map<Long, FutureProxy> map = new ConcurrentHashMap<Long, FutureProxy>();
+    Map<Long, Call> mapOfExecutorCalls = new ConcurrentHashMap<Long, Call>();
     private final HazelcastClient client;
 
     public ExecutorServiceManager(HazelcastClient hazelcastClient) {
         this.client = hazelcastClient;
     }
 
-
     protected void customRun() throws InterruptedException {
-		FutureProxy future = queue.poll(100, TimeUnit.MILLISECONDS);
-		if(future==null){
-			return;
-		}
+        FutureProxy future = queue.poll(100, TimeUnit.MILLISECONDS);
+        if (future == null) {
+            return;
+        }
         sendToExecute(future);
     }
 
-    public void enqueue(FutureProxy<?> future){
+    public void enqueue(FutureProxy<?> future) {
         queue.offer(future);
     }
-
 
     public void sendToExecute(FutureProxy<?> future) {
         long id = executerId.incrementAndGet();
@@ -56,14 +54,32 @@ public class ExecutorServiceManager extends ClientRunnable{
         request.setLongValue(id);
         Call c = future.proxyHelper.createCall(request);
         map.put(id, future);
+        mapOfExecutorCalls.put(id, c);
         client.out.enQueue(c);
-
     }
 
     public void handleExecutionResponse(Packet packet) {
         FutureProxy future = map.remove(packet.getLongValue());
-        if(future!=null){
+        if (future != null) {
             future.enqueue(packet);
+        }
+        Call c = mapOfExecutorCalls.remove(packet.getLongValue());
+        if (c != null) {
+            client.calls.remove(c.getId());
+        }
+    }
+
+    public void endFutureWithException(Call call, ExecutionException exception) {
+        Packet response = new Packet();
+        response.setLongValue(call.getRequest().getLongValue());
+        response.setValue(toByte(exception));
+        handleExecutionResponse(response);
+    }
+
+    public synchronized void interruptExecutingTasks(ExecutionException exception) {
+        for (Long id : mapOfExecutorCalls.keySet()) {
+            Call call = mapOfExecutorCalls.get(id);
+            endFutureWithException(call, exception);
         }
     }
 }

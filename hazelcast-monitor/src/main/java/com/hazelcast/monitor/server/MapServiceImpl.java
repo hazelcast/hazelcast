@@ -17,20 +17,26 @@
 package com.hazelcast.monitor.server;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
+import com.hazelcast.client.NoClusterMemberAvailableException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.monitor.client.MapEntry;
 import com.hazelcast.monitor.client.MapService;
+import com.hazelcast.monitor.client.exception.ClientDisconnectedException;
 
 import static com.hazelcast.monitor.server.HazelcastServiceImpl.getSessionObject;
 
 public class MapServiceImpl extends RemoteServiceServlet implements MapService {
     public MapEntry get(int clusterId, String name, String key) {
-        final SessionObject sessionObject = getSessionObject(this.getThreadLocalRequest().getSession());
-        HazelcastInstance hz = sessionObject.mapOfHz.get(clusterId);
-        IMap map = hz.getMap(name);
-        com.hazelcast.core.MapEntry mapEntry = map.getMapEntry(key);
-        return convertToMonitorMapEntry(mapEntry);
+        try {
+            final SessionObject sessionObject = getSessionObject(this.getThreadLocalRequest().getSession());
+            HazelcastInstance hz = sessionObject.mapOfHz.get(clusterId);
+            IMap map = hz.getMap(name);
+            com.hazelcast.core.MapEntry mapEntry = map.getMapEntry(key);
+            return convertToMonitorMapEntry(mapEntry);
+        } catch (NoClusterMemberAvailableException e) {
+            throw new ClientDisconnectedException();
+        }
     }
 
     private MapEntry convertToMonitorMapEntry(com.hazelcast.core.MapEntry mapEntry) {

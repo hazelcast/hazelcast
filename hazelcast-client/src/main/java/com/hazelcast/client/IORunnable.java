@@ -17,45 +17,58 @@
 
 package com.hazelcast.client;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import com.hazelcast.impl.ClusterOperation;
 
-public abstract class IORunnable extends ClientRunnable{
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 
-	protected Map<Long, Call> callMap;
-	protected final HazelcastClient client;
-	
+public abstract class IORunnable extends ClientRunnable {
 
-	public IORunnable(HazelcastClient client, Map<Long,Call> calls) {
-		this.client = client;
-		this.callMap = calls;
-	}
-    
-	public void interruptWaitingCalls() {
-		Collection<Call> cc = callMap.values();
-		List<Call> waitingCalls = new ArrayList<Call>();
-		waitingCalls.addAll(cc);
-		for (Iterator<Call> iterator = waitingCalls.iterator(); iterator.hasNext();) {
-			Call call =  iterator.next();
-			synchronized (call) {
-				call.setException(new RuntimeException("No cluster member available to connect"));
-				call.notify();
-			}
-		}
-	}
-	
-	public void run() {
-		while(running){
-			try {
-				customRun();
-			} catch (InterruptedException e) {
-				return;
-			}
-		}
-		notifyMonitor();
-	}
+    protected Map<Long, Call> callMap;
+    protected final HazelcastClient client;
 
+    public IORunnable(HazelcastClient client, Map<Long, Call> calls) {
+        this.client = client;
+        this.callMap = calls;
+    }
+
+    public void interruptWaitingCalls() {
+        Collection<Call> cc = callMap.values();
+        List<Call> waitingCalls = new ArrayList<Call>();
+        waitingCalls.addAll(cc);
+        for (Iterator<Call> iterator = waitingCalls.iterator(); iterator.hasNext();) {
+            Call call = iterator.next();
+            synchronized (call) {
+                if (call.getRequest().getOperation().equals(ClusterOperation.REMOTELY_EXECUTE)) {
+                    client.executorServiceManager.endFutureWithException(call, new ExecutionException(new NoClusterMemberAvailableException()));
+                    iterator.remove();
+                }
+                call.notify();
+            }
+        }
+    }
+
+    public void run() {
+        while (running) {
+            try {
+                customRun();
+            } catch (InterruptedException e) {
+                return;
+            }
+        }
+        notifyMonitor();
+    }
+
+    protected boolean restoredConnection(Connection connection, boolean isOldConnectonNull, long oldConnectionId) {
+        return !isOldConnectonNull && connection != null && connection.getVersion() != oldConnectionId;
+    }
+
+    protected boolean restoredConnection(Connection oldConnection, Connection newConnection) {
+        long oldConnectionId = -1;
+        boolean isOldConnectionNull = (oldConnection == null);
+        if (!isOldConnectionNull) {
+            oldConnectionId = oldConnection.getVersion();
+        }
+        return restoredConnection(newConnection, isOldConnectionNull, oldConnectionId);
+    }
 }

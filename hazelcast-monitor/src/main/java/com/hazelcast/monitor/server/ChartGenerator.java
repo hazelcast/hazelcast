@@ -37,7 +37,6 @@ import org.jfree.data.time.TimeSeriesCollection;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.awt.*;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
@@ -84,8 +83,8 @@ public class ChartGenerator extends HttpServlet {
                 memory = memory + localMapStatistics.ownedEntryMemoryCost +
                         localMapStatistics.backupEntryMemoryCost + localMapStatistics.markedAsRemovedMemoryCost;
             }
-            ts.addOrUpdate(new Second(list.get(i).getCreatedDate()), new Double(size/(double)1000));
-            tm.addOrUpdate(new Second(list.get(i).getCreatedDate()), new Double(memory/(double)(1024*1024)));
+            ts.addOrUpdate(new Second(list.get(i).getCreatedDate()), new Double(size / (double) 1000));
+            tm.addOrUpdate(new Second(list.get(i).getCreatedDate()), new Double(memory / (double) (1024 * 1024)));
         }
         TimeSeriesCollection timeDataset = new TimeSeriesCollection();
         timeDataset.addSeries(ts);
@@ -145,7 +144,7 @@ public class ChartGenerator extends HttpServlet {
         Range range = axis.getRange();
         double lower = range.getLowerBound();
         double upper = range.getUpperBound();
-        double diff = upper-lower;
-        axis.setRange(lower-diff*0.5, upper+diff*0.5);
+        double diff = upper - lower;
+        axis.setRange(lower - diff * 0.5, upper + diff * 0.5);
     }
 }

@@ -62,7 +62,10 @@ public class ClusterWidgets {
 
     public void handle(ChangeEvent changeEvent) {
 //        System.out.println("Handling event: " + changeEvent);
-        if (changeEvent instanceof InstanceCreated) {
+        if(changeEvent instanceof ClientDisconnectedEvent){
+            disconnected();    
+        }
+        else if (changeEvent instanceof InstanceCreated) {
             new InstanceCreatedHandler(this).handle(changeEvent);
         } else if (changeEvent instanceof InstanceDestroyed) {
             new InstanceDestroyedHandler(this).handle(changeEvent);
@@ -182,5 +185,13 @@ public class ClusterWidgets {
 
     public ClusterView getClusterView() {
         return clusterView;
+    }
+
+    public void disconnected() {
+        VerticalPanel leftPanel = (VerticalPanel)mainPanel.getLeftWidget();
+        DecoratedStackPanel dsPanel = (DecoratedStackPanel) leftPanel.getWidget(2);
+        int index = dsPanel.getWidgetIndex(this.clusterTree);
+
+        dsPanel.setStackText(index, clusterName + "- disconnected");
     }
 }

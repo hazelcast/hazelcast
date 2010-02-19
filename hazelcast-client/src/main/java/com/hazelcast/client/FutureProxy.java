@@ -75,10 +75,6 @@ public class FutureProxy<T> implements Future<T> {
         callback.offer(packet);
     }
 
-    public ClientExecutionManagerCallback getCallback() {
-        return callback;
-    }
-
     public void setCallback(ClientExecutionManagerCallback callback) {
         this.callback = callback;
     }

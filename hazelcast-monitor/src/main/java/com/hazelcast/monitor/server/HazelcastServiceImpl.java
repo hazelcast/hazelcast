@@ -19,11 +19,13 @@ package com.hazelcast.monitor.server;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.NoClusterMemberAvailableException;
 import com.hazelcast.monitor.client.ClusterView;
 import com.hazelcast.monitor.client.ConnectionExceptoin;
 import com.hazelcast.monitor.client.HazelcastService;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
+import com.hazelcast.monitor.client.exception.ClientDisconnectedException;
 import com.hazelcast.monitor.server.event.ChangeEventGenerator;
 import com.hazelcast.monitor.server.event.MapStatisticsGenerator;
 import com.hazelcast.monitor.server.event.PartitionsEventGenerator;
@@ -37,10 +39,14 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
     private static final long serialVersionUID = 7042401980726503097L;
     private static Object lock = new Object();
 
-
     public ClusterView connectCluster(String name, String pass, String ips) throws ConnectionExceptoin {
         final SessionObject sessionObject = getSessionObject();
-        ClusterView clusterView = sessionObject.connectAndCreateClusterView(name, pass, ips);
+        ClusterView clusterView = null;
+        try {
+            clusterView = sessionObject.connectAndCreateClusterView(name, pass, ips);
+        } catch (NoClusterMemberAvailableException e) {
+            throw new ClientDisconnectedException();
+        }
         return clusterView;
     }
 
@@ -49,7 +55,12 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
         ArrayList<ClusterView> list = new ArrayList<ClusterView>();
         for (int clusterId : sessionObject.mapOfHz.keySet()) {
             deRegisterEvent(ChangeEventType.MAP_STATISTICS, clusterId, null);
-            ClusterView cv = sessionObject.createClusterView(clusterId);
+            ClusterView cv = null;
+            try {
+                cv = sessionObject.createClusterView(clusterId);
+            } catch (NoClusterMemberAvailableException e) {
+                throw new ClientDisconnectedException();
+            }
             list.add(cv);
         }
         return list;
@@ -57,7 +68,6 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
 
     private SessionObject getSessionObject() {
         HttpServletRequest request = this.getThreadLocalRequest();
-
         HttpSession session = request.getSession();
         SessionObject sessionObject = getSessionObject(session);
         return sessionObject;
@@ -94,14 +104,17 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
         }
         if (eventType.equals(ChangeEventType.MAP_STATISTICS)) {
             eventGenerator = new MapStatisticsGenerator(client, instanceName, clusterId);
-        }
-        else if(eventType.equals(ChangeEventType.PARTITIONS)){
+        } else if (eventType.equals(ChangeEventType.PARTITIONS)) {
             eventGenerator = new PartitionsEventGenerator(client, clusterId);
         }
-
         sessionObject.eventGenerators.add(eventGenerator);
-
-        return eventGenerator.generateEvent();
+        ChangeEvent changeEvent = null;
+        try {
+            changeEvent = eventGenerator.generateEvent();
+        } catch (NoClusterMemberAvailableException e) {
+            throw new ClientDisconnectedException();
+        }
+        return changeEvent;
     }
 
     public void deRegisterEvent(ChangeEventType eventType, int clusterId, String instanceName) {
@@ -115,6 +128,5 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
         }
         sessionObject.eventGenerators.removeAll(deleted);
     }
-
 }
 

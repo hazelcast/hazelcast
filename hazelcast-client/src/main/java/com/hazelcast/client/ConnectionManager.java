@@ -41,8 +41,6 @@ public class ConnectionManager implements MembershipListener {
     private final List<InetSocketAddress> clusterMembers = new CopyOnWriteArrayList<InetSocketAddress>();
     private final Logger logger = Logger.getLogger(getClass().toString());
     private final HazelcastClient client;
-    private static final int PERIOD = 5000;
-    private volatile Boolean scheduled = false;
 
     public ConnectionManager(HazelcastClient client, InetSocketAddress[] clusterMembers, boolean shuffle) {
         this.client = client;
@@ -86,7 +84,7 @@ public class ConnectionManager implements MembershipListener {
         try {
             b = new Bind(new Address(connection.getAddress().getHostName(), connection.getSocket().getLocalPort()));
         } catch (UnknownHostException e) {
-            logger.warning(e.getMessage() +" while creating the bind package.");
+            logger.warning(e.getMessage() + " while creating the bind package.");
         }
         Packet bind = new Packet();
         bind.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, Serializer.toByte(null), Serializer.toByte(b));

@@ -18,6 +18,7 @@
 package com.hazelcast.monitor.client;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.hazelcast.client.NoClusterMemberAvailableException;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 
 public class RegisterEventCallBack implements AsyncCallback<ChangeEvent> {
@@ -28,12 +29,11 @@ public class RegisterEventCallBack implements AsyncCallback<ChangeEvent> {
     }
 
     public void onFailure(Throwable caught) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        
     }
 
     public void onSuccess(ChangeEvent result) {
         ClusterWidgets clusterWidgets = hazelcastMonitor.mapClusterWidgets.get(result.getClusterId());
-//        clusterWidgets.getActiveWidgets().clear();
         if (clusterWidgets != null) {
             clusterWidgets.handle(result);
         }
