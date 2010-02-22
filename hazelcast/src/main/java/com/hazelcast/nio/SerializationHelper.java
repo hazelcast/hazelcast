@@ -42,13 +42,13 @@ public class SerializationHelper {
         } else if (obj instanceof Boolean) {
             out.writeByte(6);
             out.writeBoolean((Boolean) obj);
-        } else if (obj instanceof Date) {
-            out.writeByte(7);
-            out.writeLong(((Date) obj).getTime());
         } else if (obj instanceof DataSerializable) {
-            out.writeByte(8);
+            out.writeByte(7);
             out.writeUTF(obj.getClass().getName());
             ((DataSerializable) obj).writeData(out);
+        } else if (obj instanceof Date) {
+            out.writeByte(8);
+            out.writeLong(((Date) obj).getTime());
         } else {
             out.writeByte(9);
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -78,8 +78,6 @@ public class SerializationHelper {
         } else if (type == 6) {
             return in.readBoolean();
         } else if (type == 7) {
-            return new Date(in.readLong());
-        } else if (type == 8) {
             DataSerializable ds;
             try {
                 ds = (DataSerializable) Serializer.classForName(in.readUTF()).newInstance();
@@ -88,11 +86,13 @@ public class SerializationHelper {
             }
             ds.readData(in);
             return ds;
+        } else if (type == 8) {
+            return new Date(in.readLong());
         } else if (type == 9) {
             int len = in.readInt();
             byte[] buf = new byte[len];
             in.readFully(buf);
-            ObjectInputStream oin = new ObjectInputStream(new ByteArrayInputStream(buf));
+            ObjectInputStream oin = Serializer.newObjectInputStream(new ByteArrayInputStream(buf));
             try {
                 return oin.readObject();
             } catch (ClassNotFoundException e) {
