@@ -1714,7 +1714,7 @@ public class FactoryImpl implements HazelcastInstance {
 
         private volatile transient MProxy dynamicProxy;
 
-        private final MapOperationStatsImpl mapOperationStats = new MapOperationStatsImpl();
+        private transient final MapOperationStatsImpl mapOperationStats = new MapOperationStatsImpl();
 
         public MProxyImpl() {
         }

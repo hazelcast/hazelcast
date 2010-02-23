@@ -30,6 +30,7 @@ import com.hazelcast.nio.Packet;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -128,7 +129,9 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
     }
 
     public void appendState(StringBuffer sbState) {
-        sbState.append("\nExecutorManager ex:" + executor.getQueue().size() + ", exMig: " + executorForMigrations.getQueue().size());
+        sbState.append("\nExecutorManager ex:" + executor.getQueue().size()
+                + ", exMig: " + executorForMigrations.getQueue().size()
+                + ", excutions:" + mapExecutions.size() + "/" + mapRemoteExecutions.size());
     }
 
     class RejectionHandler implements RejectedExecutionHandler {
@@ -333,7 +336,10 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
             if (executionId == null) return;
             if (response == null)
                 response = OBJECT_NULL;
-            if (response == OBJECT_MEMBER_LEFT || response == OBJECT_CANCELLED) {
+            if (response == OBJECT_DONE) {
+                responseQueue.add(response);
+                finalizeTask();
+            } else if (response == OBJECT_MEMBER_LEFT || response == OBJECT_CANCELLED || response instanceof Throwable) {
                 responseQueue.add(response);
                 responseQueue.add(OBJECT_DONE);
                 finalizeTask();
@@ -585,10 +591,9 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 } else if (callable instanceof Runnable) {
                     ((Runnable) callable).run();
                 }
-            } catch (final InterruptedException e) {
+            } catch (InterruptedException e) {
                 throw e;
-            } catch (final Throwable e) {
-                // executionResult = new ExceptionObject(e);
+            } catch (Throwable e) {
                 executionResult = e;
             } finally {
                 if (!local) {
@@ -623,7 +628,7 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 running = true;
                 try {
                     executionResult = call(remoteExecutionId, local, callable);
-                } catch (final InterruptedException e) {
+                } catch (InterruptedException e) {
                     cancelled = true;
                 }
                 if (cancelled)
@@ -632,13 +637,11 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 done = true; // should not be able to interrupt after this.
                 if (!local) {
                     try {
-                        sendStreamItem(remoteExecutionId.address,
-                                executionResult, remoteExecutionId.executionId);
-                    } catch (final Exception e) {
+                        sendStreamItem(remoteExecutionId.address, executionResult, remoteExecutionId.executionId);
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 } else {
-                    // action.onResponse(executionResult);
                     action.handleStreamResponse(executionResult);
                 }
             }
