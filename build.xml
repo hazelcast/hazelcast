@@ -14,6 +14,7 @@
         <mkdir dir="${core.classes.dir}"/>
         <javac destdir="${core.classes.dir}" compiler="javac1.5" debug="on" nowarn="yes">
             <src path="${core.src.dir}"/>
+            <exclude name="**/Log4jFactory.java"/>
         </javac>
         <tstamp>
             <format property="TODAY" pattern="yyyyMMdd" locale="en"/>

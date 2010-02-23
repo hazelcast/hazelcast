@@ -21,10 +21,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.ThreadContext;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.ObjectStreamClass;
+import java.io.*;
 import java.math.BigInteger;
 import java.util.Date;
 
@@ -262,6 +259,15 @@ public final class Serializer {
         }
     }
 
+    public static ObjectInputStream newObjectInputStream(InputStream in) throws IOException {
+        return new ObjectInputStream(in) {
+            @Override
+            protected Class<?> resolveClass(ObjectStreamClass desc) throws ClassNotFoundException {
+                return classForName(desc.getName());
+            }
+        };
+    }
+
     static class ObjectSerializer implements TypeSerializer<Object> {
         static final boolean shared = GroupProperties.SERIALIZER_SHARED.getBoolean();
 
@@ -270,12 +276,7 @@ public final class Serializer {
         }
 
         public Object read(FastByteArrayInputStream bbis) throws Exception {
-            ObjectInputStream in = new ObjectInputStream(bbis) {
-                @Override
-                protected Class<?> resolveClass(ObjectStreamClass desc) throws ClassNotFoundException {
-                    return classForName(desc.getName());
-                }
-            };
+            ObjectInputStream in = newObjectInputStream(bbis);
             if (shared) {
                 return in.readObject();
             } else {
