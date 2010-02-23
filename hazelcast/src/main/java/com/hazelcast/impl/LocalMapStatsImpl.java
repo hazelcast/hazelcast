@@ -35,6 +35,7 @@ public class LocalMapStatsImpl implements LocalMapStats, Serializable {
     private int hits;
     private int lockedEntryCount;
     private int lockWaitCount;
+    private MapOperationStats operationStats;
 
     public LocalMapStatsImpl() {
     }
@@ -143,6 +144,14 @@ public class LocalMapStatsImpl implements LocalMapStats, Serializable {
         this.lockWaitCount = lockWaitCount;
     }
 
+    public MapOperationStats getOperationStats() {
+        return operationStats;
+    }
+
+    public void setOperationStats(MapOperationStats operationStats) {
+        this.operationStats = operationStats;
+    }
+
     @Override
     public String toString() {
         return "LocalMapStatsImpl{" +
@@ -159,6 +168,7 @@ public class LocalMapStatsImpl implements LocalMapStats, Serializable {
                 ", hits=" + hits +
                 ", lockedEntryCount=" + lockedEntryCount +
                 ", lockWaitCount=" + lockWaitCount +
+                ", "+ operationStats +
                 '}';
     }
 }

@@ -45,7 +45,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class FactoryImpl implements HazelcastInstance {
 
@@ -1715,6 +1714,8 @@ public class FactoryImpl implements HazelcastInstance {
 
         private volatile transient MProxy dynamicProxy;
 
+        private final MapOperationStatsImpl mapOperationStats = new MapOperationStatsImpl();
+
         public MProxyImpl() {
         }
 
@@ -2074,6 +2075,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public MapEntry getMapEntry(Object key) {
                 check(key);
+                mapOperationStats.incrementGets();
                 MGetMapEntry mgetMapEntry = concurrentMapManager.new MGetMapEntry();
                 return mgetMapEntry.get(name, key);
             }
@@ -2088,6 +2090,7 @@ public class FactoryImpl implements HazelcastInstance {
             public Object put(Object key, Object value) {
                 check(key);
                 check(value);
+                mapOperationStats.incrementPuts();
                 MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
                 return mput.put(name, key, value, -1, -1);
             }
@@ -2107,6 +2110,7 @@ public class FactoryImpl implements HazelcastInstance {
             public Object put(Object key, Object value, long timeout, long ttl) {
                 check(key);
                 check(value);
+                mapOperationStats.incrementPuts();
                 MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
                 return mput.put(name, key, value, timeout, ttl);
             }
@@ -2122,6 +2126,7 @@ public class FactoryImpl implements HazelcastInstance {
                 }
                 check(key);
                 check(value);
+                mapOperationStats.incrementPuts();
                 MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
                 return mput.tryPut(name, key, value, timeout, -1);
             }
@@ -2143,18 +2148,21 @@ public class FactoryImpl implements HazelcastInstance {
             public Object putIfAbsent(Object key, Object value, long timeout, long ttl) {
                 check(key);
                 check(value);
+                mapOperationStats.incrementPuts();
                 MPut mput = concurrentMapManager.new MPut();
                 return mput.putIfAbsent(name, key, value, timeout, ttl);
             }
 
             public Object get(Object key) {
                 check(key);
+                mapOperationStats.incrementGets();
                 MGet mget = ThreadContext.get().getCallCache(factory).getMGet();
                 return mget.get(name, key, -1);
             }
 
             public Object remove(Object key) {
                 check(key);
+                mapOperationStats.incrementRemoves();
                 MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
                 return mremove.remove(name, key, -1);
             }
@@ -2181,6 +2189,7 @@ public class FactoryImpl implements HazelcastInstance {
             public boolean remove(Object key, Object value) {
                 check(key);
                 check(value);
+                mapOperationStats.incrementRemoves();
                 MRemove mremove = concurrentMapManager.new MRemove();
                 return (mremove.removeIfSame(name, key, value, -1) != null);
             }
@@ -2229,7 +2238,9 @@ public class FactoryImpl implements HazelcastInstance {
 
             public LocalMapStats getLocalMapStats() {
                 MLocalMapStats mLocalMapStats = concurrentMapManager.new MLocalMapStats();
-                return mLocalMapStats.getLocalMapStats(name);
+                LocalMapStatsImpl localMapStats = (LocalMapStatsImpl) mLocalMapStats.getLocalMapStats(name);
+                localMapStats.setOperationStats(mapOperationStats.getPublishedStats());
+                return localMapStats;
             }
 
             public void addGenericListener(Object listener, Object key, boolean includeValue,
@@ -2345,6 +2356,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public boolean removeKey(Object key) {
                 check(key);
+                mapOperationStats.incrementRemoves();
                 MRemoveItem mRemoveItem = concurrentMapManager.new MRemoveItem();
                 return mRemoveItem.removeItem(name, key);
             }

@@ -17,6 +17,8 @@
 
 package com.hazelcast.monitor;
 
+import com.hazelcast.impl.MapOperationStats;
+
 /**
  * Local map statistics. As everything is partitioned in Hazelcast,
  * each member owns 1/N (N being the number of members in the cluster)
@@ -126,4 +128,11 @@ public interface LocalMapStats {
      * @return number of threads waiting for locks.
      */
     int getLockWaitCount();
+
+    /**
+     * Returns the Operation Statistics, like number of puts, gets and etc.
+     *
+     * @return
+     */
+    MapOperationStats getOperationStats();
 }
