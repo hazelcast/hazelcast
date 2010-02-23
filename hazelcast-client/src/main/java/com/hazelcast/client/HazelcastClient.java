@@ -20,6 +20,7 @@ package com.hazelcast.client;
 import com.hazelcast.client.impl.ListenerManager;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.partition.PartitionService;
 
 import java.io.IOException;
@@ -169,6 +170,10 @@ public class HazelcastClient implements HazelcastInstance {
 
     public PartitionService getPartitionService() {
         return partitionClientProxy;
+    }
+
+    public LoggingService getLoggingService() {
+        throw new UnsupportedOperationException();
     }
 
     public <K, V> IMap<K, V> getMap(String name) {

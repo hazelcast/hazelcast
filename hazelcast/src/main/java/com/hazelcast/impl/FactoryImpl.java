@@ -28,6 +28,7 @@ import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.impl.concurrentmap.AddMapIndex;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.SerializationHelper;
@@ -196,6 +197,10 @@ public class FactoryImpl implements HazelcastInstance {
 
         public PartitionService getPartitionService() {
             return hazelcastInstance.getPartitionService();
+        }
+
+        public LoggingService getLoggingService() {
+            return hazelcastInstance.getLoggingService();
         }
     }
 
@@ -404,6 +409,10 @@ public class FactoryImpl implements HazelcastInstance {
 
     public PartitionService getPartitionService() {
         return node.concurrentMapManager.partitionManager;
+    }
+
+    public LoggingService getLoggingService() {
+        return node.loggingService;
     }
 
     public <K, V> IMap<K, V> getMap(String name) {
