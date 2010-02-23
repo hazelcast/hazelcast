@@ -19,6 +19,7 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.impl.*;
 import com.hazelcast.impl.base.PacketProcessor;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 
 import java.util.Queue;
@@ -29,7 +30,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public final class ClusterService implements Runnable, Constants {
-    private final Logger logger = Logger.getLogger(ClusterService.class.getName());
+    private final ILogger logger;
 
     private final long PERIODIC_CHECK_INTERVAL_MILLIS = TimeUnit.SECONDS.toMillis(1);
 
@@ -59,6 +60,7 @@ public final class ClusterService implements Runnable, Constants {
 
     public ClusterService(Node node) {
         this.node = node;
+        this.logger = node.getLogger(ClusterService.class.getName());
         MAX_IDLE_MILLIS = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
         RESTART_ON_MAX_IDLE = node.groupProperties.RESTART_ON_MAX_IDLE.getBoolean();
     }

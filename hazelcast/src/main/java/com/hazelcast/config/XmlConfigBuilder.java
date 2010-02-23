@@ -18,6 +18,8 @@
 package com.hazelcast.config;
 
 import com.hazelcast.impl.Util;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import org.w3c.dom.*;
 
@@ -29,11 +31,10 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class XmlConfigBuilder implements ConfigBuilder {
 
-    private final static Logger logger = Logger.getLogger(XmlConfigBuilder.class.getName());
+    private final ILogger logger = Logger.getLogger(XmlConfigBuilder.class.getName());
     private boolean domLevel3 = true;
     private Config config;
     private InputStream in;
@@ -54,7 +55,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
         public Iterator<Node> iterator() {
             return new Iterator<Node>() {
 
-                private int index = 0;
+                private int index = 0;          
 
                 public boolean hasNext() {
                     return (index < maximum);

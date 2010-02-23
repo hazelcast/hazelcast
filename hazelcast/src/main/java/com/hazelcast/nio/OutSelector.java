@@ -18,6 +18,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.impl.Node;
+import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -27,8 +28,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public final class OutSelector extends SelectorBase {
-
-    protected final Logger logger = Logger.getLogger(OutSelector.class.getName());
 
     public OutSelector(Node node) {
         super(node, 1);

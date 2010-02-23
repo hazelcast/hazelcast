@@ -110,7 +110,7 @@ public class Connection {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        logger.log(Level.INFO, "Connection lost " + endPoint);
+        logger.log(Level.FINE, "Connection lost " + endPoint);
         connectionManager.remove(this);
         AddOrRemoveConnection addOrRemoveConnection = new AddOrRemoveConnection(endPoint, false);
         addOrRemoveConnection.setNode(connectionManager.node);

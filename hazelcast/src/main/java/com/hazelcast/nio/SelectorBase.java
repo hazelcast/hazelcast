@@ -18,6 +18,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.impl.Node;
+import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -34,7 +35,7 @@ import java.util.logging.Logger;
 
 public abstract class SelectorBase implements Runnable {
 
-    protected final Logger logger = Logger.getLogger(this.getClass().getName());
+    protected final ILogger logger;
 
     protected final Selector selector;
 
@@ -50,6 +51,7 @@ public abstract class SelectorBase implements Runnable {
 
     public SelectorBase(Node node, int waitTime) {
         this.node = node;
+        logger = node.getLogger(this.getClass().getName());
         this.waitTime = waitTime;
         Selector selectorTemp = null;
         try {

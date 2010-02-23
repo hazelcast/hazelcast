@@ -22,6 +22,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.base.*;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
 
 import java.util.*;
@@ -43,8 +44,6 @@ public abstract class BaseManager {
 
     public static final int EVENT_QUEUE_COUNT = 100;
 
-    protected final Logger logger = Logger.getLogger(BaseManager.class.getName());
-
     protected final LinkedList<MemberImpl> lsMembers;
 
     protected final Map<Address, MemberImpl> mapMembers;
@@ -63,6 +62,8 @@ public abstract class BaseManager {
 
     protected final Node node;
 
+    protected final ILogger logger;
+
     protected BaseManager(Node node) {
         this.node = node;
         lsMembers = node.baseVariables.lsMembers;
@@ -73,6 +74,7 @@ public abstract class BaseManager {
         thisAddress = node.baseVariables.thisAddress;
         thisMember = node.baseVariables.thisMember;
         this.localIdGen = node.baseVariables.localIdGen;
+        this.logger = node.getLogger(this.getClass().getName());
     }
 
     public LinkedList<MemberImpl> getMembers() {

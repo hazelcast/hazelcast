@@ -27,6 +27,7 @@ import com.hazelcast.impl.BlockingQueueManager.QIterator;
 import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.impl.concurrentmap.AddMapIndex;
 import com.hazelcast.jmx.ManagementService;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.SerializationHelper;
@@ -46,8 +47,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class FactoryImpl implements HazelcastInstance {
-
-    private static final Logger logger = Logger.getLogger(FactoryImpl.class.getName());
 
     private final ConcurrentMap<String, HazelcastInstanceAwareInstance> proxiesByName = new ConcurrentHashMap<String, HazelcastInstanceAwareInstance>(1000);
 
@@ -277,6 +276,7 @@ public class FactoryImpl implements HazelcastInstance {
     public FactoryImpl(String name, Config config) {
         this.name = name;
         node = new Node(this, config);
+        final ILogger logger = node.getLogger(FactoryImpl.class.getName());
         executorServiceImpl = new ExecutorServiceProxy(node);
         transactionFactory = new TransactionFactory(this);
         hazelcastInstanceProxy = new HazelcastInstanceProxy(this);
@@ -1697,7 +1697,6 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public static class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSerializable {
-        static final Logger logger = Logger.getLogger(MProxyImpl.class.getName());
 
         private transient MProxy mproxyReal = null;
 
@@ -1716,7 +1715,6 @@ public class FactoryImpl implements HazelcastInstance {
                 try {
                     return method.invoke(mproxyReal, args);
                 } catch (Throwable e) {
-                    logger.log(Level.FINEST, "Call failed", e);
                     if (factory.restarted) {
                         return invoke(proxy, method, args);
                     } else if (e instanceof RuntimeException) {
@@ -1761,7 +1759,6 @@ public class FactoryImpl implements HazelcastInstance {
             try {
                 return mproxyReal.get(key);
             } catch (Throwable e) {
-                logger.log(Level.FINEST, "Call failed", e);
                 if (factory.restarted) {
                     return get(key);
                 } else if (e instanceof RuntimeException) {
@@ -1783,7 +1780,6 @@ public class FactoryImpl implements HazelcastInstance {
             try {
                 return mproxyReal.put(key, value, ttl, timeunit);
             } catch (Throwable e) {
-                logger.log(Level.FINEST, "Call failed", e);
                 if (factory.restarted) {
                     return put(key, value);
                 } else if (e instanceof RuntimeException) {
@@ -1800,7 +1796,6 @@ public class FactoryImpl implements HazelcastInstance {
             try {
                 return mproxyReal.remove(key);
             } catch (Throwable e) {
-                logger.log(Level.FINEST, "Call failed", e);
                 if (factory.restarted) {
                     return remove(key);
                 } else if (e instanceof RuntimeException) {

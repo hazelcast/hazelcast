@@ -74,17 +74,13 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
                 handleStream(packet);
             }
         });
-        if (logger.isLoggable(Level.FINEST)) {
-            logger.log(Level.FINEST, "Starting ExecutorManager");
-        }
+        logger.log(Level.FINEST, "Starting ExecutorManager");
         Config config = node.getConfig();
         final int corePoolSize = config.getExecutorConfig().getCorePoolSize();
         final int maxPoolSize = config.getExecutorConfig().getMaxPoolSize();
         final long keepAliveSeconds = config.getExecutorConfig().getKeepAliveSeconds();
-        if (logger.isLoggable(Level.FINEST)) {
-            logger.log(Level.FINEST, "Executor core:" + corePoolSize + ", max:"
-                    + maxPoolSize + ", keepAlive:" + keepAliveSeconds);
-        }
+        logger.log(Level.FINEST, "Executor core:" + corePoolSize + ", max:"
+                + maxPoolSize + ", keepAlive:" + keepAliveSeconds);
         executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveSeconds, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(),
                 new ExecutorThreadFactory(node.threadGroup, node.getName(), config.getClassLoader()),

@@ -24,6 +24,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.impl.concurrentmap.MultiData;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Index;
@@ -46,7 +47,7 @@ public class CMap {
 
     public final static int DEFAULT_MAP_SIZE = 10000;
 
-    final static Logger logger = Logger.getLogger(CMap.class.getName());
+    final ILogger logger;
 
     final ConcurrentMapManager concurrentMapManager;
 
@@ -116,6 +117,7 @@ public class CMap {
 
     public CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
+        this.logger = concurrentMapManager.node.getLogger(CMap.class.getName());
         this.BLOCK_COUNT = concurrentMapManager.BLOCK_COUNT;
         this.blocks = concurrentMapManager.blocks;
         this.node = concurrentMapManager.node;

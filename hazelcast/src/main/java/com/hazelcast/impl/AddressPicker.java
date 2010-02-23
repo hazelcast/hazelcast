@@ -18,6 +18,8 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 
 import java.net.*;
@@ -26,12 +28,17 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class AddressPicker {
-    protected static final Logger logger = Logger.getLogger(AddressPicker.class.getName());
 
-    public AddressPicker() {
+    final Node node;
+    final ServerSocketChannel serverSocketChannel;
+    final ILogger logger;
+
+    public AddressPicker(Node node, ServerSocketChannel serverSocketChannel) {
+        this.node = node;
+        this.logger = Logger.getLogger(AddressPicker.class.getName());
+        this.serverSocketChannel = serverSocketChannel;
     }
 
     public static boolean matchAddress(final String address, final Collection<String> interfaces) {
@@ -77,7 +84,7 @@ public class AddressPicker {
         return true;
     }
 
-    public Address pickAddress(Node node, final ServerSocketChannel serverSocketChannel)
+    public Address pickAddress()
             throws Exception {
         String currentAddress = null;
         try {

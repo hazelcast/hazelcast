@@ -17,6 +17,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.nio.DataSerializable;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
@@ -26,7 +28,7 @@ import java.net.InetSocketAddress;
  * @see Cluster
  * @see MembershipListener
  */
-public interface Member {
+public interface Member extends DataSerializable{
 
     /**
      * Returns if this member is the local member.

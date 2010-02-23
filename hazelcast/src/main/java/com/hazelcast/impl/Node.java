@@ -21,6 +21,8 @@ import com.hazelcast.cluster.*;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.Interfaces;
 import com.hazelcast.config.Join;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.*;
 import com.hazelcast.query.QueryService;
 
@@ -32,10 +34,9 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Node {
-    private final Logger logger = Logger.getLogger(Node.class.getName());
+    private final ILogger logger;
 
     private volatile boolean joined = false;
 
@@ -101,13 +102,15 @@ public class Node {
 
     private final int buildNumber;
 
+    public final LoggingServiceImpl loggingService;
+
     public Node(FactoryImpl factory, Config config) {
         this.threadGroup = new ThreadGroup(factory.getName());
         this.factory = factory;
         this.config = config;
         this.groupProperties = new GroupProperties(config);
-        superClient = config.isSuperClient();
-        localNodeType = (superClient) ? NodeType.SUPER_CLIENT : NodeType.MEMBER;
+        this.superClient = config.isSuperClient();
+        this.localNodeType = (superClient) ? NodeType.SUPER_CLIENT : NodeType.MEMBER;
         String version = "unknown";
         String build = "unknown";
         try {
@@ -137,17 +140,19 @@ public class Node {
             if (preferIPv6Address == null && preferIPv4Stack == null) {
                 System.setProperty("java.net.preferIPv4Stack", "true");
             }
-            AddressPicker addressPicker = new AddressPicker();
             serverSocketChannel = ServerSocketChannel.open();
-            localAddress = addressPicker.pickAddress(this, serverSocketChannel);
+            AddressPicker addressPicker = new AddressPicker(this, serverSocketChannel);
+            localAddress = addressPicker.pickAddress();
             localAddress.setThisAddress(true);
-        } catch (final Throwable e) {
+        } catch (Throwable e) {
             throw new RuntimeException(e);
         }
         address = localAddress;
         localMember = new MemberImpl(address, true, localNodeType);
         clusterImpl = new ClusterImpl(this);
         baseVariables = new NodeBaseVariables(address, localMember);
+        this.loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), localMember);
+        this.logger = loggingService.getLogger(Node.class.getName());
         //initialize managers..
         clusterService = new ClusterService(this);
         clusterService.start();
@@ -163,7 +168,7 @@ public class Node {
         topicManager = new TopicManager(this);
         clusterManager.addMember(localMember);
         executorManager = new ExecutorManager(this);
-        Logger systemLogger = Logger.getLogger("com.hazelcast.system");
+        ILogger systemLogger = getLogger("com.hazelcast.system");
         systemLogger.log(Level.INFO, "Hazelcast " + version + " ("
                 + build + ") starting at " + address);
         systemLogger.log(Level.INFO, "Copyright (C) 2008-2010 Hazelcast.com");
@@ -193,7 +198,7 @@ public class Node {
         this.multicastService = mcService;
     }
 
-    public void failedConnection(final Address address) {
+    public void failedConnection(Address address) {
         failedConnections.add(address);
     }
 
@@ -217,7 +222,7 @@ public class Node {
         return factory.getName();
     }
 
-    public void handleInterruptedException(final Thread thread, final Exception e) {
+    public void handleInterruptedException(Thread thread, Exception e) {
         logger.log(Level.FINEST, thread.getName() + " is interrupted ", e);
     }
 
@@ -339,6 +344,10 @@ public class Node {
         }
         logger.log(Level.FINEST, "finished starting threads, calling join");
         join();
+    }
+
+    public ILogger getLogger(String name) {
+        return loggingService.getLogger(name);
     }
 
     public class NodeShutdownHookThread extends Thread {
@@ -580,11 +589,11 @@ public class Node {
                     final Connection conn = connectionManager.getOrConnect(possibleAddress);
                     if (conn != null && numberOfJoinReq < 5) {
                         found = true;
-                        logger.log(Level.FINEST,"found and sending join request for " + possibleAddress);
+                        logger.log(Level.FINEST, "found and sending join request for " + possibleAddress);
                         clusterManager.sendJoinRequest(possibleAddress);
                         numberOfJoinReq++;
                     } else {
-                        logger.log(Level.FINEST,"number of join reqests is greater than 5, no join request will be sent for " + possibleAddress);
+                        logger.log(Level.FINEST, "number of join reqests is greater than 5, no join request will be sent for " + possibleAddress);
                     }
                 }
             }
@@ -599,11 +608,11 @@ public class Node {
                     for (final Address possibleAddress : lsPossibleAddresses) {
                         final Connection conn = connectionManager.getOrConnect(possibleAddress);
                         if (conn != null && numberOfJoinReq < 5) {
-                            logger.log(Level.FINEST,"sending join request for "  + possibleAddress);
+                            logger.log(Level.FINEST, "sending join request for " + possibleAddress);
                             clusterManager.sendJoinRequest(possibleAddress);
                             numberOfJoinReq++;
                         } else {
-                            logger.log(Level.FINEST,"number of join request is greater than 5, no join request will be sent for " + possibleAddress + " the second time");
+                            logger.log(Level.FINEST, "number of join request is greater than 5, no join request will be sent for " + possibleAddress + " the second time");
                         }
                     }
                     Thread.sleep(2000);
@@ -614,7 +623,7 @@ public class Node {
                                 masterCandidate = false;
                         }
                         if (masterCandidate) {
-                            logger.log(Level.FINEST,"I am the master candidate, setting as master");
+                            logger.log(Level.FINEST, "I am the master candidate, setting as master");
                             setAsMaster();
                         }
                     }
@@ -624,7 +633,7 @@ public class Node {
             failedConnections.clear();
         } catch (final Exception e) {
             e.printStackTrace();
-            logger.log(Level.SEVERE,e.getMessage(),e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
     }
 

@@ -18,6 +18,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.impl.Node;
+import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -28,8 +29,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public final class InSelector extends SelectorBase {
-
-    final Logger logger = Logger.getLogger(InSelector.class.getName());
 
     final ServerSocketChannel serverSocketChannel;
 
