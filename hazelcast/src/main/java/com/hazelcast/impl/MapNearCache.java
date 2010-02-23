@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Data;
 import com.hazelcast.util.SortedHashMap;
 
@@ -26,12 +27,11 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class MapNearCache {
-    private static final Logger logger = Logger.getLogger(MapNearCache.class.getName());
+    private final ILogger logger;
     private final SortedHashMap<Data, Object> sortedMap;
     private final ConcurrentMap<Object, CacheEntry> cache;
     private final CMap cmap;
@@ -45,6 +45,7 @@ public class MapNearCache {
 
     public MapNearCache(CMap cmap, SortedHashMap.OrderingType orderingType, int maxSize, long ttl, long maxIdleTime, boolean invalidateOnChange) {
         this.cmap = cmap;
+        this.logger = cmap.concurrentMapManager.node.getLogger(MapNearCache.class.getName());
         this.maxSize = maxSize;
         this.ttl = ttl;
         this.maxIdleTime = maxIdleTime;
@@ -72,7 +73,7 @@ public class MapNearCache {
         CacheEntry entry = cache.get(key);
         if (entry == null) {
             put(key, dataKey, null);
-        }  
+        }
     }
 
     public Object get(Object key) {
@@ -86,7 +87,7 @@ public class MapNearCache {
             return null;
         } else {
             if (entry.isValid(now)) {
-                Object value = entry.getValue(); 
+                Object value = entry.getValue();
                 cmap.concurrentMapManager.enqueueAndReturn(entry);
                 entry.touch(now);
                 return value;

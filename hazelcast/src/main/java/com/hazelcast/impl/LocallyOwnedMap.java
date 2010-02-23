@@ -22,14 +22,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 class LocallyOwnedMap {
-    private static final Logger logger = Logger.getLogger(LocallyOwnedMap.class.getName());
     private final ConcurrentMap<Object, Record> mapCache = new ConcurrentHashMap<Object, Record>(CMap.DEFAULT_MAP_SIZE);
     private final Queue<Record> localRecords = new ConcurrentLinkedQueue<Record>();
     private final AtomicInteger counter = new AtomicInteger();
@@ -47,15 +45,10 @@ class LocallyOwnedMap {
             return OBJECT_REDO;
         } else {
             if (record.isActive() && record.isValid()) {
-                try {
-                    Record.RecordEntry recordEntry = record.getRecordEntry();
-                    Object value = recordEntry.getValue();
-                    record.setLastAccessed();
-                    return value;
-                } catch (Throwable t) {
-                    logger.log(Level.FINEST, "Exception when reading object ", t);
-                    return OBJECT_REDO;
-                }
+                Record.RecordEntry recordEntry = record.getRecordEntry();
+                Object value = recordEntry.getValue();
+                record.setLastAccessed();
+                return value;
             } else {
                 //record is removed!
                 mapCache.remove(key);
