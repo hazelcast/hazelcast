@@ -29,7 +29,7 @@ public class MultiTask<V> extends DistributedTask {
     }
 
     @Override
-    public void set(Object result) {
+    public void onResult(Object result) {
         results.add((V) result);
     }
 

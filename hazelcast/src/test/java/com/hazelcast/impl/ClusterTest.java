@@ -235,6 +235,7 @@ public class ClusterTest {
         assertEquals(map2.getLocalMapStats().getBackupEntryCount(), map1.getLocalMapStats().getOwnedEntryCount());
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
         IMap map3 = h3.getMap("default");
+        Thread.sleep(1000);
         assertEquals(map2.getLocalMapStats().getBackupEntryCount(), map1.getLocalMapStats().getOwnedEntryCount());
         assertEquals(map1.getLocalMapStats().getBackupEntryCount(), map3.getLocalMapStats().getOwnedEntryCount());
         assertEquals(map3.getLocalMapStats().getBackupEntryCount(), map2.getLocalMapStats().getOwnedEntryCount());
@@ -1223,6 +1224,29 @@ public class ClusterTest {
         }
     }
 
+    @Test(timeout = 30000)
+    public void testExecutorServiceDeadLock() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        Member target1 = h1.getCluster().getLocalMember();
+        Member target2 = h2.getCluster().getLocalMember();
+        int executionCount = 20;
+        List<DistributedTask<Long>> lsTasks = new ArrayList<DistributedTask<Long>>(executionCount);
+        for (int i = 0; i < executionCount; i++) {
+            DistributedTask<Long> t1 = new DistributedTask<Long> (new SleepCallable(1000), target1);
+            lsTasks.add (t1);
+            h2.getExecutorService().execute(t1);
+            DistributedTask<Long> t2 = new DistributedTask<Long> (new SleepCallable(2000), target2);
+            lsTasks.add (t2);
+            h1.getExecutorService().execute(t2);
+        }
+        Thread.sleep(7000);
+        for (DistributedTask<Long> task : lsTasks) {
+            Long result = task.get(1, TimeUnit.SECONDS);
+            assertTrue(result == 1000  || result == 2000);
+        }
+    } 
+
     /**
      * Test for issue 157
      */
@@ -1452,8 +1476,8 @@ public class ClusterTest {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         Set<Member> members = h2.getCluster().getMembers();
-        MultiTask<Integer> task = new MultiTask<Integer>(new SleepCallable(10000), members);
-        h2.getExecutorService().submit(task);
+        MultiTask<Long> task = new MultiTask<Long>(new SleepCallable(10000), members);
+        h2.getExecutorService().execute(task);
         Thread.sleep(2000);
         h1.shutdown();
         task.get();

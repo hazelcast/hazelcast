@@ -25,6 +25,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.EventListener;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.client.Serializer.toByte;
 import static com.hazelcast.client.Serializer.toObject;
@@ -33,6 +34,7 @@ public class ProxyHelper {
     OutRunnable out;
     protected String name = "";
     final protected HazelcastClient client;
+    private static AtomicLong callIdGen = new AtomicLong(0);
 
     public ProxyHelper(String name, HazelcastClient client) {
         if (name != null) {
@@ -55,26 +57,24 @@ public class ProxyHelper {
     }
 
     protected Packet doCall(Call c) {
-        synchronized (c) {
-            try {
-                out.enQueue(c);
-                c.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        if(c.getRuntimeException()!=null){
-            throw c.getRuntimeException();
-        }
-
-        Packet response = c.getResponse();
-        return response;
+        sendCall(c);
+        return (Packet) c.getResponse();
     }
 
-    protected Call createCall(Packet request) {
-        Call c = new Call();
-        c.setRequest(request);
-        return c;
+    public void sendCall(Call c) {
+        if (c == null) {
+            throw new NullPointerException();
+        }
+        client.getOutRunnable().enQueue(c);
+    } 
+
+    public static Call createCall(Packet request) {
+        long id = newCallId();
+        return new Call(id, request);
+    }
+    
+    public static long newCallId() {
+        return callIdGen.incrementAndGet();
     }
 
     private Packet createRequestPacket() {
@@ -84,7 +84,7 @@ public class ProxyHelper {
         return request;
     }
 
-    protected Packet createRequestPacket(ClusterOperation operation, byte[] key, byte[] value) {
+    public Packet createRequestPacket(ClusterOperation operation, byte[] key, byte[] value) {
         Packet request = createRequestPacket();
         request.setOperation(operation);
         request.setKey(key);
@@ -113,7 +113,7 @@ public class ProxyHelper {
     }
 
     protected Object getValue(Packet response) {
-        if (response != null && response.getValue() != null) {
+        if (response.getValue() != null) {
             return toObject(response.getValue());
         }
         return null;
@@ -129,7 +129,7 @@ public class ProxyHelper {
     }
 
     static void check(Object obj) {
-        if (obj == null) {                                 
+        if (obj == null) {
             throw new NullPointerException("Object cannot be null.");
         }
         if (!(obj instanceof Serializable)) {

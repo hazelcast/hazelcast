@@ -20,7 +20,7 @@ package com.hazelcast.impl.base;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class EventQueue extends ConcurrentLinkedQueue<Runnable> implements Runnable {
+public class OrderedRunnablesQueue extends ConcurrentLinkedQueue<Runnable> implements Runnable {
     private AtomicInteger size = new AtomicInteger();
 
     public int offerRunnable(Runnable runnable) {

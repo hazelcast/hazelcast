@@ -31,9 +31,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
 /**
- * Hazelcast Client enables you to do all Hazelcast operations wihtout being a member of the cluster. It connects to one of the
- * cluster members and delegates all cluster wide operations to it. When the relied cluster member
- * dies, client will transparently switch to another live member.
+ * Hazelcast Client enables you to do all Hazelcast operations without
+ * being a member of the cluster. It connects to one of the
+ * cluster members and delegates all cluster wide operations to it.
+ * When the relied cluster member dies, client will
+ * transparently switch to another live member.
  */
 public class HazelcastClient implements HazelcastInstance {
 
@@ -43,7 +45,6 @@ public class HazelcastClient implements HazelcastInstance {
     final InRunnable in;
     final ConnectionManager connectionManager;
     final Map<Object, ClientProxy> mapProxies = new ConcurrentHashMap<Object, ClientProxy>(100);
-    final ExecutorServiceManager executorServiceManager;
     final IMap mapLockProxy;
     final ClusterClientProxy clusterClientProxy;
     final PartitionClientProxy partitionClientProxy;
@@ -62,8 +63,6 @@ public class HazelcastClient implements HazelcastInstance {
         new Thread(in, "hz.client.InThread").start();
         listenerManager = new ListenerManager(this);
         new Thread(listenerManager, "hz.client.Listener").start();
-        executorServiceManager = new ExecutorServiceManager(this);
-        new Thread(executorServiceManager, "hz.client.executorManager").start();
         mapLockProxy = getMap("__hz_Locks");
         clusterClientProxy = new ClusterClientProxy(this);
         clusterClientProxy.setOutRunnable(out);
@@ -82,6 +81,10 @@ public class HazelcastClient implements HazelcastInstance {
             this.getCluster().addMembershipListener(connectionManager);
             connectionManager.updateMembers();
         }
+    }
+
+    public OutRunnable getOutRunnable() {
+        return out;
     }
 
     private HazelcastClient(String groupName, String groupPassword, InetSocketAddress address) {
@@ -229,7 +232,6 @@ public class HazelcastClient implements HazelcastInstance {
         out.shutdown();
         listenerManager.shutdown();
         in.shutdown();
-        executorServiceManager.shutdown();
     }
 
     public void addInstanceListener(InstanceListener instanceListener) {

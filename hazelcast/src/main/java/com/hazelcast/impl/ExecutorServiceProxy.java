@@ -50,9 +50,11 @@ import java.util.concurrent.*;
 public class ExecutorServiceProxy implements ExecutorService {
 
     final Node node;
+    final String name;
 
-    public ExecutorServiceProxy(Node node) {
+    public ExecutorServiceProxy(Node node, String name) {
         this.node = node;
+        this.name = name;
     }
 
     /**
@@ -150,26 +152,14 @@ public class ExecutorServiceProxy implements ExecutorService {
     }
 
     public <T> Future<T> submit(Callable<T> task) {
-        check(task);
-        DistributedTask dtask = new DistributedTask(task);
-        Processable action = node.executorManager.createNewExecutionAction(dtask);
-        ClusterService clusterService = node.clusterService;
-        clusterService.enqueueAndReturn(action);
-        return dtask;
+        if (task instanceof DistributedTask) {
+            return submit ((Runnable) task, null);
+        }
+        return submit (new DistributedTask(task), null);
     }
 
     public Future<?> submit(Runnable task) {
-        DistributedTask dtask;
-        if (task instanceof DistributedTask) {
-            dtask = (DistributedTask) task;
-        } else {
-            check(task);
-            dtask = new DistributedTask(task, null);
-        }
-        Processable action = node.executorManager.createNewExecutionAction(dtask);
-        ClusterService clusterService = node.clusterService;
-        clusterService.enqueueAndReturn(action);
-        return dtask;
+        return submit (task, null);
     }
 
     public <T> Future<T> submit(Runnable task, T result) {
@@ -177,39 +167,13 @@ public class ExecutorServiceProxy implements ExecutorService {
         if (task instanceof DistributedTask) {
             dtask = (DistributedTask) task;
         } else {
-            check(task);
             dtask = new DistributedTask(task, result);
         }
-        Processable action = node.executorManager.createNewExecutionAction(dtask);
-        ClusterService clusterService = node.clusterService;
-        clusterService.enqueueAndReturn(action);
+        node.executorManager.call(name, dtask);
         return dtask;
     }
 
     public void execute(Runnable command) {
-        DistributedTask dtask;
-        if (command instanceof DistributedTask) {
-            dtask = (DistributedTask) command;
-        } else {
-            check(command);
-            dtask = new DistributedTask(command, null);
-        }
-        Processable action = node.executorManager.createNewExecutionAction(dtask);
-        node.clusterService.enqueueAndReturn(action);
-    }
-
-    /**
-     * Check precodintion before submit a task
-     */
-    private void check(Object obj) {
-        if (!node.executorManager.isStarted()) {
-            throw new RejectedExecutionException("Hazelcast halted");
-        }
-        if (obj == null) {
-            throw new NullPointerException("Object cannot be null.");
-        }
-        if (!(obj instanceof Serializable)) {
-            throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
-        }
-    }
+        submit(command, null);
+    } 
 }

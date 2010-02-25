@@ -191,7 +191,7 @@ public class PartitionManager implements Runnable, PartitionService {
         final Data keyData = toData(key);
         concurrentMapManager.enqueueAndReturn(new Processable() {
             public void process() {
-                Block block = blocks[concurrentMapManager.getBlockId(keyData)];
+                Block block = concurrentMapManager.getOrCreateBlock(keyData);
                 MemberImpl memberOwner = (block.getOwner() == null) ? null : concurrentMapManager.getMember(block.getOwner());
                 responseQ.offer(new PartitionImpl(block.getBlockId(), memberOwner));
             }

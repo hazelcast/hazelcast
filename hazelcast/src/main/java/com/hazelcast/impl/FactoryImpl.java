@@ -281,7 +281,7 @@ public class FactoryImpl implements HazelcastInstance {
         this.name = name;
         node = new Node(this, config);
         final ILogger logger = node.getLogger(FactoryImpl.class.getName());
-        executorServiceImpl = new ExecutorServiceProxy(node);
+        executorServiceImpl = new ExecutorServiceProxy(node, "default");
         transactionFactory = new TransactionFactory(this);
         hazelcastInstanceProxy = new HazelcastInstanceProxy(this);
         node.start();
@@ -1714,7 +1714,7 @@ public class FactoryImpl implements HazelcastInstance {
 
         private volatile transient MProxy dynamicProxy;
 
-        private final MapOperationsCounter mapOperationStats = new MapOperationsCounter();
+        private final transient MapOperationsCounter mapOperationStats = new MapOperationsCounter();
 
         public MProxyImpl() {
         }

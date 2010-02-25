@@ -200,7 +200,6 @@ public class HazelcastClientMapTest {
         assertNull(map.put("a", "b"));
         assertEquals("b", map.get("a"));
         assertTrue(map.evict("a"));
-        assertFalse(map.evict("a"));
         assertNull(map.get("a"));
     }
 

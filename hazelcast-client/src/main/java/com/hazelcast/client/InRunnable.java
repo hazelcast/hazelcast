@@ -17,10 +17,12 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.impl.ClusterOperation;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -40,23 +42,17 @@ public class InRunnable extends IORunnable implements Runnable {
             Connection oldConnection = connection;
             connection = client.connectionManager.getConnection();
             if (restoredConnection(oldConnection, connection)) {
-                client.executorServiceManager.interruptExecutingTasks(new MemberLeftException());
+                onDisconnect(oldConnection);
             }
             if (connection == null) {
                 interruptWaitingCalls();
+                Thread.sleep(1000);
             } else {
                 packet = reader.readPacket(connection);
+//                System.out.println(packet.getOperation() + " Reading response " + packet.getCallId());
                 Call call = callMap.remove(packet.getCallId());
                 if (call != null) {
-                    if (call.getRequest().getOperation().equals(ClusterOperation.REMOTELY_EXECUTE)) {
-                        client.executorServiceManager.handleExecutionResponse(packet);
-                    } else {
-                        synchronized (call) {
-                            //						System.out.println("Received: " + call + " " + call.getRequest().getOperation());
-                            call.setResponse(packet);
-                            call.notify();
-                        }
-                    }
+                    call.setResponse(packet);
                 } else {
                     if (packet.getOperation().equals(ClusterOperation.EVENT)) {
                         client.listenerManager.enqueue(packet);

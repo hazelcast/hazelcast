@@ -24,7 +24,7 @@ public interface ExecutionManagerCallback {
 
     boolean cancel(boolean mayInterruptIfRunning);
 
-    public Object get() throws InterruptedException, ExecutionException;
+    void get() throws InterruptedException, ExecutionException;
 
-    public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException;
+    void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException;
 }

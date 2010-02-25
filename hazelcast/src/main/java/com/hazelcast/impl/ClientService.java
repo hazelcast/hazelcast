@@ -83,7 +83,7 @@ public class ClientService {
         clientOperationHandlers[ClusterOperation.GET_ID.getValue()] = new GetIdHandler();
         clientOperationHandlers[ClusterOperation.ADD_INDEX.getValue()] = new AddIndexHandler();
         clientOperationHandlers[ClusterOperation.NEW_ID.getValue()] = new NewIdHandler();
-        clientOperationHandlers[ClusterOperation.REMOTELY_EXECUTE.getValue()] = new ExecutorServiceHandler();
+        clientOperationHandlers[ClusterOperation.EXECUTE.getValue()] = new ExecutorServiceHandler();
         clientOperationHandlers[ClusterOperation.GET_INSTANCES.getValue()] = new GetInstancesHandler();
         clientOperationHandlers[ClusterOperation.GET_MEMBERS.getValue()] = new GetMembersHandler();
         clientOperationHandlers[ClusterOperation.GET_CLUSTER_TIME.getValue()] = new GetClusterTimeHandler();
@@ -99,7 +99,7 @@ public class ClientService {
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
         ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext, clientOperationHandlers);
         if (!packet.operation.equals(ClusterOperation.CONCURRENT_MAP_UNLOCK)) {
-            node.clusterManager.enqueueEvent(clientEndpoint.hashCode(), clientRequestHandler);
+            node.executorManager.getDefaultExecutorService().executeOrderedRunnable(clientEndpoint.hashCode(), clientRequestHandler);
         } else {
             node.executorManager.executeMigrationTask(clientRequestHandler);
         }
@@ -364,27 +364,23 @@ public class ClientService {
 
     private class ExecutorServiceHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            Future<?> future;
             ExecutorService executorService = node.factory.getExecutorService();
-            Callable<Object> callable = (Callable<Object>) toObject(packet.key);
-            Object result;
             try {
-                if (callable instanceof ClientDistributedTask) {
-                    DistributedTask task = null;
-                    ClientDistributedTask cdt = (ClientDistributedTask) callable;
-                    if (cdt.getKey() != null) {
-                        task = new DistributedTask(cdt.getCallable(), cdt.getKey());
-                    } else if (cdt.getMember() != null) {
-                        task = new DistributedTask(cdt.getCallable(), cdt.getMember());
-                    } else if (cdt.getMembers() != null) {
-                        task = new MultiTask(cdt.getCallable(), cdt.getMembers());
-                    }
-                    executorService.submit(task);
-                    result = task.get();
+                ClientDistributedTask cdt = (ClientDistributedTask) toObject(packet.key);
+                Object result;
+                DistributedTask task = null; 
+                if (cdt.getKey() != null) {
+                    task = new DistributedTask(cdt.getCallable(), cdt.getKey());
+                } else if (cdt.getMember() != null) {
+                    task = new DistributedTask(cdt.getCallable(), cdt.getMember());
+                } else if (cdt.getMembers() != null) {
+                    task = new MultiTask(cdt.getCallable(), cdt.getMembers());
                 } else {
-                    future = executorService.submit(callable);
-                    result = future.get();
+                    task = new DistributedTask(cdt.getCallable());
                 }
+                InnerFutureTask inner = (InnerFutureTask) task.getInner();
+                executorService.execute(task);
+                result = task.get();
                 packet.value = toData(result);
             } catch (InterruptedException e) {
                 return;

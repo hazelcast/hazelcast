@@ -20,5 +20,13 @@ package com.hazelcast.core;
 import java.util.concurrent.ExecutionException;
 
 public class MemberLeftException extends ExecutionException {
+    final Member member;
 
+    public MemberLeftException(Member member) {
+        this.member = member;
+    }
+
+    public Member getMember() {
+        return member;
+    }
 }

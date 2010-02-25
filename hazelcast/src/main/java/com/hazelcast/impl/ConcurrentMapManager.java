@@ -925,22 +925,6 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    abstract class MTargetAwareOp extends TargetAwareOp {
-
-        @Override
-        public void doOp() {
-            target = null;
-            super.doOp();
-        }
-
-        @Override
-        public void setTarget() {
-            if (target == null) {
-                target = getKeyOwner(request.key);
-            }
-        }
-    }
-
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
                       final int eventType, final Record record) {
         checkServiceThread();
@@ -1221,6 +1205,9 @@ public final class ConcurrentMapManager extends BaseManager {
         if (block == null) {
             block = new Block(blockId, null);
             blocks[blockId] = block;
+            if (isMaster() && !isSuperClient()) {
+                block.setOwner(thisAddress);
+            }
         }
         return block;
     }
@@ -1438,7 +1425,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
         public void afterExecute(Request request) {
             if (request.response == Boolean.TRUE) {
-                doOperation(request);                
+                doOperation(request);
             } else {
                 CMap cmap = getOrCreateMap(request.name);
                 Record record = cmap.getRecord(request.key);
@@ -1610,7 +1597,7 @@ public final class ConcurrentMapManager extends BaseManager {
         OrderedExecutionTask orderedExecutionTask = orderedExecutionTasks[getBlockId(request.key)];
         int size = orderedExecutionTask.offer(request);
         if (size == 1) {
-            executeLocally(orderedExecutionTask);
+            node.executorManager.executeStoreTask(orderedExecutionTask);
         }
     }
 
@@ -1706,7 +1693,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public void handle(final Request request) {
-            executeLocally(createRunnable(request));
+            node.executorManager.executeQueryTask(createRunnable(request));
         }
 
         abstract Runnable createRunnable(Request request);

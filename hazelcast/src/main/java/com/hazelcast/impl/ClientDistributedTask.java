@@ -42,7 +42,7 @@ public class ClientDistributedTask<V> implements Serializable, Callable {
     }
 
     public Object call() throws Exception {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null; 
     }
 
     public Callable<V> getCallable() {

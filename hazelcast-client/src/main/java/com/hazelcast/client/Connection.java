@@ -17,6 +17,10 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.core.Member;
+import com.hazelcast.impl.MemberImpl;
+import com.hazelcast.nio.Address;
+
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -97,5 +101,9 @@ public class Connection {
 
     public DataInputStream getInputStream(){
         return dis;
+    }
+
+    public Member getMember() {
+        return new MemberImpl(new Address(address), false);
     }
 }

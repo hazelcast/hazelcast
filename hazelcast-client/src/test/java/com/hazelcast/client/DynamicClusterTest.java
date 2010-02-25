@@ -345,7 +345,7 @@ public class DynamicClusterTest {
     }
 
     @Test
-    public void retreiveDataSerializableClass() throws InterruptedException {
+    public void retrieveDataSerializableClass() throws InterruptedException {
         Config conf = new Config();
         HazelcastInstance h = Hazelcast.newHazelcastInstance(conf);
         HazelcastClient client = HazelcastClient.newHazelcastClient(conf.getGroupConfig().getName(), conf.getGroupConfig().getPassword(), false, h.getCluster().getLocalMember().getInetSocketAddress());
@@ -367,15 +367,12 @@ public class DynamicClusterTest {
             }
 
             public void entryRemoved(EntryEvent entryEvent) {
-                //To change body of implemented methods use File | Settings | File Templates.
             }
 
             public void entryUpdated(EntryEvent entryEvent) {
-                //To change body of implemented methods use File | Settings | File Templates.
             }
 
             public void entryEvicted(EntryEvent entryEvent) {
-                //To change body of implemented methods use File | Settings | File Templates.
             }
         };
         clientMap.addEntryListener(listener, true);
@@ -424,8 +421,8 @@ public class DynamicClusterTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         HazelcastClient client = getHazelcastClient(h2);
         Set<Member> members = client.getCluster().getMembers();
-        MultiTask<Integer> task =
-                new MultiTask<Integer>(new SleepCallable(10000), members);
+        MultiTask<Long> task =
+                new MultiTask<Long>(new SleepCallable(10000), members);
         client.getExecutorService().submit(task);
         Thread.sleep(2000);
         h1.shutdown();
@@ -433,13 +430,13 @@ public class DynamicClusterTest {
     }
 
     @Test(timeout = 25000, expected = ExecutionException.class)
-    public void shouldTrowExExcptnWhenTheOnlyConnectedMemberDiesWhileExecuting() throws ExecutionException, InterruptedException {
+    public void shouldThrowExExcptnWhenTheOnlyConnectedMemberDiesWhileExecuting() throws ExecutionException, InterruptedException {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         HazelcastClient client = getHazelcastClient(h2);
         Set<Member> members = client.getCluster().getMembers();
-        MultiTask<Integer> task =
-                new MultiTask<Integer>(new SleepCallable(10000), members);
+        MultiTask<Long> task =
+                new MultiTask<Long>(new SleepCallable(10000), members);
         client.getExecutorService().submit(task);
         Thread.sleep(2000);
         h2.shutdown();
@@ -452,8 +449,8 @@ public class DynamicClusterTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         HazelcastClient client = getHazelcastClient(h1, h2);
         Set<Member> members = client.getCluster().getMembers();
-        MultiTask<Integer> task =
-                new MultiTask<Integer>(new SleepCallable(10000), members);
+        MultiTask<Long> task =
+                new MultiTask<Long>(new SleepCallable(10000), members);
         client.getExecutorService().submit(task);
         Thread.sleep(2000);
         int port = client.getConnectionManager().getConnection().getAddress().getPort();
@@ -466,7 +463,7 @@ public class DynamicClusterTest {
     }
 
     @Test
-    public void shouldThowExecExcWhenConnectedClusterMemberDies() throws ExecutionException, InterruptedException {
+    public void shouldThrowExecExcWhenConnectedClusterMemberDies() throws ExecutionException, InterruptedException {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
         HazelcastClient client = getHazelcastClient(h);
         Future future1 = client.getExecutorService().submit(new SleepCallable(10000));

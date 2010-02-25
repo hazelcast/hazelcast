@@ -36,19 +36,18 @@ public abstract class ClientExecutionManagerCallback implements ExecutionManager
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
-    public Object get() throws InterruptedException, ExecutionException {
-        return get(-1, null);
+    public void get() throws InterruptedException, ExecutionException {
+        get(-1, null);
     }
 
     //!!called by multiple threads
-    public abstract Object get(long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException;
+    public abstract void get(long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException;
 
     protected Object handleResult(Packet packet) throws ExecutionException {
-        Object o = toObject(packet.getValue());
-        return o;
+        return toObject(packet.getValue());
     }
 
     public void offer(Packet packet) {
@@ -60,27 +59,27 @@ public abstract class ClientExecutionManagerCallback implements ExecutionManager
         private volatile boolean done = false;
 
         @Override
-        public Object get(long l, TimeUnit timeUnit) throws InterruptedException {
-            if (done) {
-                return result;
-            }
-            synchronized (this) {
-                if (!done) {
-                    Packet packet;
-                    if (l < 0) {
-                        packet = queue.take();
-                    } else {
-                        packet = queue.poll(l, timeUnit);
-                    }
-                    try {
-                        this.result = handleResult(packet);
-                    } catch (ExecutionException e) {
-                        throw new RuntimeException(e);
-                    }
-                    done = true;
-                }
-                return result;
-            }
+        public void get(long l, TimeUnit timeUnit) throws InterruptedException {
+//            if (done) {
+//                return result;
+//            }
+//            synchronized (this) {
+//                if (!done) {
+//                    Packet packet;
+//                    if (l < 0) {
+//                        packet = queue.take();
+//                    } else {
+//                        packet = queue.poll(l, timeUnit);
+//                    }
+//                    try {
+//                        this.result = handleResult(packet);
+//                    } catch (ExecutionException e) {
+//                        throw new RuntimeException(e);
+//                    }
+//                    done = true;
+//                }
+//                return result;
+//            }
         }
     }
 
@@ -89,32 +88,32 @@ public abstract class ClientExecutionManagerCallback implements ExecutionManager
         private volatile Iterator<Object> it;
 
         @Override
-        public Object get(long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException {
-            if (result == null) {
-                synchronized (this) {
-                    if (result == null) {
-                        Packet packet;
-                        if (l < 0) {
-                            packet = queue.take();
-                        } else {
-                            packet = queue.poll(l, timeUnit);
-                        }
-                        try {
-                            this.result = handleResult(packet);
-                        } catch (ExecutionException e) {
-                            throw e;
-                        }
-                    }
-                    if (it == null) {
-                        it = result.iterator();
-                    }
-                }
-            }
-            if (it.hasNext()) {
-                return it.next();
-            } else {
-                return OBJECT_DONE;
-            }
+        public void get(long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException {
+//            if (result == null) {
+//                synchronized (this) {
+//                    if (result == null) {
+//                        Packet packet;
+//                        if (l < 0) {
+//                            packet = queue.take();
+//                        } else {
+//                            packet = queue.poll(l, timeUnit);
+//                        }
+//                        try {
+//                            this.result = handleResult(packet);
+//                        } catch (ExecutionException e) {
+//                            throw e;
+//                        }
+//                    }
+//                    if (it == null) {
+//                        it = result.iterator();
+//                    }
+//                }
+//            }
+//            if (it.hasNext()) {
+//                return it.next();
+//            } else {
+//                return OBJECT_DONE;
+//            }
         }
 
         protected Collection<Object> handleResult(Packet packet) throws ExecutionException {

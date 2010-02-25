@@ -19,13 +19,18 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.MultiTask;
 import com.hazelcast.impl.ClientDistributedTask;
+import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.impl.ExecutionManagerCallback;
 import com.hazelcast.impl.InnerFutureTask;
 
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
+
+import static com.hazelcast.client.Serializer.toObject;
 
 public class ExecutorServiceClientProxy implements ClientProxy, ExecutorService {
 
@@ -57,20 +62,28 @@ public class ExecutorServiceClientProxy implements ClientProxy, ExecutorService 
     }
 
     public boolean awaitTermination(long l, TimeUnit timeUnit) throws InterruptedException {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
-    public <T> Future<T> submit(Callable<T> tCallable) {
-        check(tCallable);
-        ClientExecutionManagerCallback callback = new ClientExecutionManagerCallback.SingleResultClientExecutionManagerCallBack();
-        return innerExecute(tCallable, callback);
+    public <T> Future<T> submit(Callable<T> callable) {
+        return submit(new DistributedTask(callable));
     }
 
-    private <T> Future<T> innerExecute(Callable<T> tCallable, ClientExecutionManagerCallback callback) {
-        FutureProxy<T> future = new FutureProxy(proxyHelper, tCallable);
-        future.setCallback(callback);
-        client.executorServiceManager.enqueue(future);
-        return future;
+    private <T> Future<T> submit(DistributedTask dt) {
+        ClientDistributedTask cdt = null;
+        InnerFutureTask inner = (InnerFutureTask) dt.getInner();
+        check(inner.getCallable());
+        if (dt instanceof MultiTask) {
+            if (inner.getMembers() == null) {
+                Set<Member> set = new HashSet<Member>();
+                set.add(inner.getMember());
+                cdt = new ClientDistributedTask(inner.getCallable(), null, set, null);
+            }
+        }
+        if (cdt == null) {
+            cdt = new ClientDistributedTask(inner.getCallable(), inner.getMember(), inner.getMembers(), inner.getKey());
+        }
+        return submit(dt, cdt);
     }
 
     private <T> void check(Object o) {
@@ -82,35 +95,79 @@ public class ExecutorServiceClientProxy implements ClientProxy, ExecutorService 
         }
     }
 
-    public <T> Future<T> submit(Runnable runnable, T t) {
-        Callable adapter = null;
-        ClientExecutionManagerCallback callback = null;
-        if (runnable instanceof DistributedTask) {
-            DistributedTask dt = (DistributedTask) runnable;
-            InnerFutureTask inner = (InnerFutureTask) dt.getInner();
-            check(inner.getCallable());
-            if (runnable instanceof MultiTask) {
-                if (inner.getMembers() == null) {
-                    Set<Member> set = new HashSet<Member>();
-                    set.add(inner.getMember());
-                    adapter = new ClientDistributedTask(inner.getCallable(), null, set, null);
+    private Future submit(final DistributedTask dt, final ClientDistributedTask cdt) {
+        final Packet request = proxyHelper.prepareRequest(ClusterOperation.EXECUTE, cdt, null);
+        final InnerFutureTask inner = (InnerFutureTask) dt.getInner();
+        final Call call = new Call(ProxyHelper.newCallId(), request) {
+            public void onDisconnect(final Member member) {
+                setResponse(new MemberLeftException(member));
+            }
+        };
+        inner.setExecutionManagerCallback(new ExecutionManagerCallback() {
+            public boolean cancel(boolean mayInterruptIfRunning) {
+                return false;
+            }
+
+            public void get() throws InterruptedException, ExecutionException {
+                try {
+                    Object response = call.getResponse();
+                    handle(response);
+                } catch (Throwable e) {
+                    handle(e);
                 }
-                callback = new ClientExecutionManagerCallback.MultipleResultClientExecutionManagerCallBack();
-            } else {
-                callback = new ClientExecutionManagerCallback.SingleResultClientExecutionManagerCallBack();
             }
-            if(adapter==null){
-                adapter = new ClientDistributedTask(inner.getCallable(), inner.getMember(), inner.getMembers(), inner.getKey());
+
+            public void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException {
+                try {
+                    Object response = call.getResponse(timeout, unit);
+                    handle(response);
+                } catch (Throwable e) {
+                    handle(e);
+                }
             }
-            inner.setExecutionManagerCallback(callback);
+
+            private void handle(Object response) {
+                Object result = response;
+                if (response == null) {
+                    inner.innerSetException(new TimeoutException());
+                } else {
+                    if (response instanceof Packet) {
+                        Packet responsePacket = (Packet) response;
+                        result = toObject(responsePacket.getValue());
+                    }
+                    if (result instanceof MemberLeftException) {
+                        MemberLeftException memberLeftException = (MemberLeftException) result;
+                        inner.innerSetMemberLeft(memberLeftException.getMember());
+                    } else if (result instanceof Throwable) {
+                        inner.innerSetException((Throwable) result);
+                    } else {
+                        if (dt instanceof MultiTask) {
+                            if (result != null) {
+                                Collection colResults = (Collection) result;
+                                for (Object obj : colResults) {
+                                    inner.innerSet(obj);
+                                }
+                            } else {
+                                inner.innerSet(result);
+                            }
+                        } else {
+                            inner.innerSet(result);
+                        }
+                    }
+                }
+                inner.innerDone();
+            }
+        });
+        proxyHelper.sendCall(call);
+        return dt;
+    }
+
+    public <T> Future<T> submit(Runnable runnable, T t) {
+        if (runnable instanceof DistributedTask) {
+            return submit((DistributedTask) runnable);
         } else {
-            check(runnable);
-            adapter = new DistributedTask.DistributedRunnableAdapterImpl(runnable, t);
+            return submit(DistributedTask.callable(runnable, t));
         }
-        if (callback == null) {
-            callback = new ClientExecutionManagerCallback.SingleResultClientExecutionManagerCallBack();
-        }
-        return innerExecute(adapter, callback);
     }
 
     public Future<?> submit(Runnable runnable) {

@@ -17,8 +17,9 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.core.Member;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -45,12 +46,12 @@ public class OutRunnable extends IORunnable {
             if (call == null) {
                 return;
             }
-//            System.out.println("Sending: " + call + " " + call.getRequest().getOperation());
+//            System.out.println("Sending: " + call);
             callMap.put(call.getId(), call);
             Connection oldConnection = connection;
             connection = client.connectionManager.getConnection();
             if (restoredConnection(oldConnection, connection)) {
-                redoUnfinishedCalls(call);
+                redoUnfinishedCalls(call, oldConnection);
             } else if (connection != null) {
                 writer.write(connection, call.getRequest());
             } else {
@@ -65,13 +66,15 @@ public class OutRunnable extends IORunnable {
         }
     }
 
-    private void redoUnfinishedCalls(Call call) {
+    private void redoUnfinishedCalls(Call call, Connection oldConnection) {
         temp.add(call);
         queue.drainTo(temp);
         client.listenerManager.getListenerCalls().drainTo(queue);
         temp.drainTo(queue);
-        client.executorServiceManager.interruptExecutingTasks(new MemberLeftException());
+        onDisconnect(oldConnection);
     }
+
+    
 
     public void enQueue(Call call) {
         try {

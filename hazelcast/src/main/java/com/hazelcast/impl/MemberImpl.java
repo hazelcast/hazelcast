@@ -40,6 +40,10 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     public MemberImpl() {
     }
 
+    public MemberImpl(Address address, boolean localMember) {
+        this (address, localMember, NodeType.MEMBER);
+    }
+
     public MemberImpl(Address address, boolean localMember, NodeType nodeType) {
         super();
         this.nodeType = nodeType;

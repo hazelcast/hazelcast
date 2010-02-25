@@ -789,7 +789,7 @@ public class CMap {
         final int entriesToStoreSize = entriesToStore.size();
         final int keysToDeleteSize = keysToDelete.size();
         if (entriesToStoreSize > 0 || keysToDeleteSize > 0) {
-            concurrentMapManager.executeLocally(new Runnable() {
+            concurrentMapManager.node.executorManager.executeStoreTask(new Runnable() {
                 public void run() {
                     if (keysToDeleteSize > 0) {
                         if (keysToDeleteSize == 1) {

@@ -45,13 +45,13 @@ public class FutureProxy<T> implements Future<T> {
     }
 
     public T get() throws InterruptedException, ExecutionException {
-        Object result = callback.get();
+        callback.get();
         return handleResult(result);
     }
 
     public T get(long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
-
-        return handleResult(callback.get(l, timeUnit));
+        callback.get(l, timeUnit);
+        return handleResult(result);
     }
 
     private T handleResult(Object result) throws ExecutionException {

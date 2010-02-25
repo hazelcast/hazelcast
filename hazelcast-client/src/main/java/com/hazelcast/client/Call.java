@@ -17,52 +17,69 @@
 
 package com.hazelcast.client;
 
-import java.util.concurrent.atomic.AtomicLong;
+import com.hazelcast.core.Member;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 public class Call {
-	
-	public Call() {
-		this.id = Call.callIdGen.incrementAndGet();
-	}
-	
-	private Packet request;
-	
-	private long id;
-	
-	private Packet response;
 
-	public static AtomicLong callIdGen = new AtomicLong(0);
+    private final long id;
 
-    private RuntimeException runtimeException = null;
-	
-	public Packet getRequest() {
-		return request;
-	}
-	public void setRequest(Packet request) {
-		this.request = request;
-		request.setCallId(id);
-	}
-	public long getId() {
-		return id;
-	}
-	public Packet getResponse() {
-		return response;
-	}
-	public void setResponse(Packet response) {
-		this.response = response;
-	}
+    private final Packet request;
 
-    public void setRuntimeException(RuntimeException runtimeException) {
-        this.runtimeException = runtimeException;
+    private final BlockingQueue<Object> responseQueue = new LinkedBlockingQueue<Object>();
+
+    public Call(long id, Packet request) {
+        this.id = id;
+        this.request = request;
+        this.request.setCallId(id);
     }
 
-    public RuntimeException getRuntimeException() {
-        return runtimeException;
+    public Packet getRequest() {
+        return request;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public Object getResponse() {
+        try {
+            return handleResponse(responseQueue.take());
+        } catch (InterruptedException ignored) {
+            return null;
+        }
+    }
+
+    public Object handleResponse(Object response) {
+        if (response == null) {
+            return null;
+        } else if (response instanceof RuntimeException) {
+            throw (RuntimeException) response;
+        } else {
+            return response;
+        }
+    }
+
+    public Object getResponse(long timeout, TimeUnit unit) {
+        try {
+            return handleResponse(responseQueue.poll(timeout, unit));
+        } catch (InterruptedException ignored) {
+            return null;
+        }
+    }
+
+    public void onDisconnect(Member member) {
+    }
+
+    public void setResponse(Object response) {
+        responseQueue.offer(response);
     }
 
     @Override
-	public String toString() {
-		return "Call " + "["+id+"]";
-	}
+    public String toString() {
+        return "Call " + "[" + id + "] operation=" + request.getOperation();
+    }
 }

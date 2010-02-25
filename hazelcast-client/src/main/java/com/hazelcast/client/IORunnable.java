@@ -17,10 +17,9 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.core.Member;
 
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 public abstract class IORunnable extends ClientRunnable {
 
@@ -33,21 +32,11 @@ public abstract class IORunnable extends ClientRunnable {
     }
 
     public void interruptWaitingCalls() {
-        Collection<Call> cc = callMap.values();
-        List<Call> waitingCalls = new ArrayList<Call>();
-        waitingCalls.addAll(cc);
-        for (Iterator<Call> iterator = waitingCalls.iterator(); iterator.hasNext();) {
-            Call call = iterator.next();
-            synchronized (call) {
-                RuntimeException exception = new NoMemberAvailableException();
-                if (call.getRequest().getOperation().equals(ClusterOperation.REMOTELY_EXECUTE)) {
-                    client.executorServiceManager.endFutureWithException(call, new ExecutionException(exception));
-                    iterator.remove();
-                }
-                call.setRuntimeException(exception);
-                call.notify();
-            }
+        Collection<Call> calls = callMap.values();
+        for (Call call : calls) {
+            call.setResponse(new NoMemberAvailableException());
         }
+        calls.clear();
     }
 
     public void run() {
@@ -59,6 +48,14 @@ public abstract class IORunnable extends ClientRunnable {
             }
         }
         notifyMonitor();
+    }
+
+    protected void onDisconnect(Connection oldConnection) {
+        Member memberLeft = oldConnection.getMember();
+        Collection<Call> calls = callMap.values();
+        for (Call call : calls) {
+            call.onDisconnect(memberLeft);
+        }
     }
 
     protected boolean restoredConnection(Connection connection, boolean isOldConnectonNull, long oldConnectionId) {

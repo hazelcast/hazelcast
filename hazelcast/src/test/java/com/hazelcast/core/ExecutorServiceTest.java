@@ -45,7 +45,7 @@ public class ExecutorServiceTest {
         assertNotNull(executor);
     }
 
-    static class BasicTestTask implements Callable<String>, Serializable {
+    public static class BasicTestTask implements Callable<String>, Serializable {
 
         public static String RESULT = "Task completed";
 

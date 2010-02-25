@@ -26,8 +26,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.*;
 
-import static com.hazelcast.impl.Constants.Objects.*;
-
 /**
  * A cancellable asynchronous distributed computation.
  * <p/>
@@ -47,13 +45,19 @@ public class DistributedTask<V> extends FutureTask<V> {
 
     private volatile boolean cancelled = false;
 
-    private volatile boolean memberLeft = false;
+    private volatile MemberLeftException memberLeftException = null;
 
     private DistributedTask(Callable<V> callable, Member member, Set<Member> members, Object key) {
         super(callable);
         if (callable instanceof DistributedRunnableAdapter) {
             DistributedRunnableAdapter<V> dra = (DistributedRunnableAdapter<V>) callable;
+            check(dra.getRunnable());
             this.result = dra.getResult();
+        } else {
+            check(callable);
+        }
+        if (key != null) {
+            check(key);
         }
         if (members != null) {
             if (members instanceof ISet) {
@@ -71,6 +75,15 @@ public class DistributedTask<V> extends FutureTask<V> {
             }
         }
         inner = new Inner(callable, member, members, key);
+    }
+
+    private void check(Object obj) {
+        if (obj == null) {
+            throw new NullPointerException("Cannot be null.");
+        }
+        if (!(obj instanceof Serializable)) {
+            throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
+        }
     }
 
     public DistributedTask(Callable<V> callable) {
@@ -94,27 +107,34 @@ public class DistributedTask<V> extends FutureTask<V> {
     }
 
     @Override
-    public V get() throws InterruptedException, ExecutionException, MemberLeftException {
-        inner.get();
-        if (cancelled)
+    public V get() throws InterruptedException, ExecutionException {
+        if (!done) {
+            inner.get();
+        }
+        if (cancelled) {
             throw new CancellationException();
-        if (exception != null)
+        } else if (memberLeftException != null) {
+            throw memberLeftException;
+        } else if (exception != null) {
             throw new ExecutionException(exception);
-        if (memberLeft)
-            throw new MemberLeftException();
+        }
         return result;
     }
 
     @Override
-    public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException,
-            TimeoutException, MemberLeftException {
-        inner.get(timeout, unit);
+    public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        if (!done) {
+            inner.get(timeout, unit);
+        }
         if (cancelled)
             throw new CancellationException();
+        if (memberLeftException != null)
+            throw memberLeftException;
         if (exception != null)
             throw new ExecutionException(exception);
-        if (memberLeft)
-            throw new MemberLeftException();
+        if (!done) {
+            throw new TimeoutException();
+        }
         return result;
     }
 
@@ -144,20 +164,6 @@ public class DistributedTask<V> extends FutureTask<V> {
         return cancelled;
     }
 
-    @Override
-    protected void done() {
-    }
-
-    @Override
-    protected void set(V result) {
-        this.result = result;
-    }
-
-    @Override
-    protected void setException(Throwable throwable) {
-        this.exception = throwable;
-    }
-
     protected void setMemberLeft(Member member) {
     }
 
@@ -169,7 +175,11 @@ public class DistributedTask<V> extends FutureTask<V> {
         return new DistributedRunnableAdapterImpl<V>(task, result);
     }
 
-    private class Inner implements InnerFutureTask<V> {
+    protected void onResult(V result) {
+        this.result = result;
+    }
+
+    protected class Inner implements InnerFutureTask<V> {
         private final Callable<V> callable;
 
         private final Member member;
@@ -179,15 +189,14 @@ public class DistributedTask<V> extends FutureTask<V> {
         private final Object key;
 
         /**
-         * A clalback to the ExecutionManager running the task.
+         * A callback to the ExecutionManager running the task.
          * When nulled after set/cancel, indicates that
          * the results are accessible.
          * Declared volatile to ensure visibility upon completion.
          */
         private volatile ExecutionManagerCallback executionManagerCallback;
-
-        private ExecutionCallback<V> executionCallback = null; // user
-        // executioncallback
+        // user execution callback
+        private ExecutionCallback<V> executionCallback = null;
 
         public Inner(Callable<V> callable, Member member, Set<Member> members, Object key) {
             super();
@@ -197,81 +206,39 @@ public class DistributedTask<V> extends FutureTask<V> {
             this.members = members;
         }
 
+        public void get() throws InterruptedException, ExecutionException {
+            executionManagerCallback.get();
+        }
+
+        public void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException,
+                TimeoutException {
+            executionManagerCallback.get(timeout, unit);
+        }
+
         public void innerDone() {
             done = true;
             done();
         }
 
-        public V get() throws InterruptedException, ExecutionException {
-            if (executionManagerCallback == null) {
-                return null;
-            }
-            Object r = null;
-            while ((r = executionManagerCallback.get()) != OBJECT_DONE) {
-                if (r == OBJECT_DONE) {
-                    // nothing to do
-                } else if (r == OBJECT_CANCELLED) {
-                    cancelled = true;
-                } else if (r == OBJECT_MEMBER_LEFT) {
-                    memberLeft = true;
-                } else if (r instanceof Throwable) {
-                    innerSetException((Throwable) r);
-                } else {
-                    if (r == OBJECT_NULL) {
-                        innerSet(null);
-                    } else {
-                        innerSet((V) r);
-                    }
-                }
-            }
-            executionManagerCallback = null;
-            return null;
-        }
-
-        public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException,
-                TimeoutException {
-            if (executionManagerCallback == null) {
-                return null;
-            }
-            long timeoutMillis = unit.toMillis(timeout);
-            long start = System.currentTimeMillis();
-            long timeLeft = timeoutMillis;
-            Object r = null;
-            while ((r = executionManagerCallback.get(timeLeft, TimeUnit.MILLISECONDS)) != OBJECT_DONE) {
-                if (r == null) {
-                    throw new TimeoutException();
-                } else if (r == OBJECT_DONE) {
-                    // nothing to do
-                } else if (r == OBJECT_CANCELLED) {
-                    cancelled = true;
-                } else if (r instanceof Throwable) {
-                    innerSetException((Throwable) r);
-                } else {
-                    if (r == OBJECT_NULL) {
-                        innerSet(null);
-                    } else {
-                        innerSet((V) r);
-                    }
-                }
-                timeLeft = timeoutMillis - (System.currentTimeMillis() - start);
-            }
-            executionManagerCallback = null;
-            return null;
+        public boolean isDone() {
+            return done;
         }
 
         public void innerSet(V value) {
             set(value);
-            innerDone();
+            onResult(value);
         }
 
         public void innerSetException(Throwable throwable) {
-            setException(throwable);
             innerDone();
+            exception = throwable;
+            setException(throwable);
         }
 
         public void innerSetMemberLeft(Member member) {
-            setMemberLeft(member);
             innerDone();
+            memberLeftException = new MemberLeftException(member);
+            setMemberLeft(member);
         }
 
         public Callable<V> getCallable() {
@@ -317,7 +284,7 @@ public class DistributedTask<V> extends FutureTask<V> {
     public static class DistributedRunnableAdapterImpl<V> implements DistributedRunnableAdapter,
             Serializable, Callable<V> {
 
-        private static final long serialVersionUID = -2297288043381543510L;
+        private static final long serialVersionUID = -4;
 
         private Runnable task;
 

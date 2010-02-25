@@ -93,7 +93,7 @@ public class ClusterImpl implements Cluster {
         members.set(setNew);
         // send notifications now
         for (Runnable notification : notifications) {
-            node.executorManager.executeLocally(notification);
+            node.executorManager.getEventExecutorService().execute(notification);
         }
     }
 

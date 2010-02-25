@@ -23,11 +23,33 @@ public class ExecutorConfig {
     public final static int DEFAULT_MAX_POOL_SIZE = 50;
     public final static int DEFAULT_KEEPALIVE_SECONDS = 60;
 
+    private String name = "default";
+
     private int corePoolSize = DEFAULT_CORE_POOL_SIZE;
 
     private int maxPoolSize = DEFAULT_MAX_POOL_SIZE;
 
     private int keepAliveSeconds = DEFAULT_KEEPALIVE_SECONDS;
+
+
+    public ExecutorConfig() {
+    }
+
+    public ExecutorConfig(String name, int corePoolSize, int maxPoolSize, int keepAliveSeconds) {
+        this.name = name;
+        this.corePoolSize = corePoolSize;
+        this.maxPoolSize = maxPoolSize;
+        this.keepAliveSeconds = keepAliveSeconds;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public ExecutorConfig setName(String name) {
+        this.name = name;
+        return this;
+    }
 
     /**
      * @return the corePoolSize

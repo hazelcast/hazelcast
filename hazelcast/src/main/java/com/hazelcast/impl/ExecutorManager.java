@@ -17,106 +17,122 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.AbstractNodeAware;
-import com.hazelcast.cluster.NodeAware;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
-import com.hazelcast.impl.base.PacketProcessor;
+import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.core.DistributedTask;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.partition.Partition;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
-import static com.hazelcast.impl.Constants.Objects.*;
-import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TIMEOUT;
+import static com.hazelcast.impl.ClusterOperation.EXECUTE;
+import static com.hazelcast.impl.Constants.Objects.OBJECT_MEMBER_LEFT;
+import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class ExecutorManager extends BaseManager implements MembershipListener {
+public class ExecutorManager extends BaseManager {
 
-    private final ThreadPoolExecutor executor;
+    private final ConcurrentMap<String, NamedExecutorService> mapExecutors = new ConcurrentHashMap<String, NamedExecutorService>(10);
 
-    private final ThreadPoolExecutor executorForMigrations;
+    private final ConcurrentMap<Thread, CallContext> mapThreadCallContexts = new ConcurrentHashMap<Thread, CallContext>(100);
 
-    private final Map<RemoteExecutionId, SimpleExecution> mapRemoteExecutions = new ConcurrentHashMap<RemoteExecutionId, SimpleExecution>(
-            1000);
-
-    private final Map<Long, DistributedExecutorAction> mapExecutions = new ConcurrentHashMap<Long, DistributedExecutorAction>(
-            100);
-
-    private final BlockingQueue<Long> executionIds = new ArrayBlockingQueue<Long>(100);
-
-    private final Map<Thread, CallContext> mapThreadCallContexts = new ConcurrentHashMap<Thread, CallContext>(100);
-
+    private final NamedExecutorService defaultExecutorService;
+    private final NamedExecutorService migrationExecutorService;
+    private final NamedExecutorService queryExecutorService;
+    private final NamedExecutorService storeExecutorService;
+    private final NamedExecutorService eventExecutorService;
     private volatile boolean started = false;
+
+    private static final String MIGRATION_EXECUTOR_SERVICE = "x:hz.migration";
+    private static final String QUERY_EXECUTOR_SERVICE = "x:hz.query";
+    private static final String STORE_EXECUTOR_SERVICE = "x:hz.store";
+    private static final String EVENT_EXECUTOR_SERVICE = "x:hz.events";
 
     ExecutorManager(final Node node) {
         super(node);
-        registerPacketProcessor(ClusterOperation.REMOTELY_EXECUTE,
-                new PacketProcessor() {
-                    public void process(Packet packet) {
-                        handleRemoteExecution(packet);
-                    }
-                });
-        registerPacketProcessor(ClusterOperation.STREAM, new PacketProcessor() {
-            public void process(Packet packet) {
-                handleStream(packet);
-            }
-        });
         logger.log(Level.FINEST, "Starting ExecutorManager");
         Config config = node.getConfig();
-        final int corePoolSize = config.getExecutorConfig().getCorePoolSize();
-        final int maxPoolSize = config.getExecutorConfig().getMaxPoolSize();
-        final long keepAliveSeconds = config.getExecutorConfig().getKeepAliveSeconds();
-        logger.log(Level.FINEST, "Executor core:" + corePoolSize + ", max:"
-                + maxPoolSize + ", keepAlive:" + keepAliveSeconds);
-        executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveSeconds, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>(),
-                new ExecutorThreadFactory(node.threadGroup, node.getName(), config.getClassLoader()),
-                new RejectionHandler()) {
-            protected void beforeExecute(Thread t, Runnable r) {
-                ThreadContext threadContext = ThreadContext.get();
-                CallContext callContext = mapThreadCallContexts.get(t);
-                if (callContext == null) {
-                    callContext = new CallContext(threadContext.createNewThreadId(), false);
-                    mapThreadCallContexts.put(t, callContext);
-                }
-                threadContext.setCurrentFactory(node.factory);
-                threadContext.setCallContext(callContext);
-            }
-        };
-        executorForMigrations = new ThreadPoolExecutor(16, 16, 60, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>(),
-                new ExecutorThreadFactory(node.threadGroup, node.getName() + ".internal", config.getClassLoader()),
-                new RejectionHandler()) {
-            protected void beforeExecute(Thread t, Runnable r) {
-                ThreadContext threadContext = ThreadContext.get();
-                CallContext callContext = mapThreadCallContexts.get(t);
-                if (callContext == null) {
-                    callContext = new CallContext(threadContext.createNewThreadId(), false);
-                    mapThreadCallContexts.put(t, callContext);
-                }
-                threadContext.setCurrentFactory(node.factory);
-                threadContext.setCallContext(callContext);
-            }
-        };
-        node.getClusterImpl().addMembershipListener(this);
-        for (int i = 0; i < 100; i++) {
-            executionIds.add((long) i);
-        }
+        ClassLoader classLoader = config.getClassLoader();
+        defaultExecutorService = newNamedExecutorService(classLoader, config.getExecutorConfig());
+        migrationExecutorService = newNamedExecutorService(classLoader, new ExecutorConfig(MIGRATION_EXECUTOR_SERVICE, 10, 10, 600));
+        queryExecutorService = newNamedExecutorService(classLoader, new ExecutorConfig(QUERY_EXECUTOR_SERVICE, 10, 10, 600));
+        storeExecutorService = newNamedExecutorService(classLoader, new ExecutorConfig(STORE_EXECUTOR_SERVICE, 10, 10, 600));
+        eventExecutorService = newNamedExecutorService(classLoader, new ExecutorConfig(EVENT_EXECUTOR_SERVICE, 10, 10, 600));
+        registerPacketProcessor(EXECUTE, new ExecutionOperationHandler());
         started = true;
+    }
+
+    NamedExecutorService newNamedExecutorService(ClassLoader classLoader, ExecutorConfig executorConfig) {
+        ThreadPoolExecutor threadPoolExecutor
+                = new ThreadPoolExecutor(
+                executorConfig.getCorePoolSize(),
+                executorConfig.getMaxPoolSize(),
+                executorConfig.getKeepAliveSeconds(),
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>(),
+                new ExecutorThreadFactory(node.threadGroup, node.getName() + "." + executorConfig.getName(), classLoader),
+                new RejectionHandler()) {
+            protected void beforeExecute(Thread t, Runnable r) {
+                ThreadContext threadContext = ThreadContext.get();
+                CallContext callContext = mapThreadCallContexts.get(t);
+                if (callContext == null) {
+                    callContext = new CallContext(threadContext.createNewThreadId(), false);
+                    mapThreadCallContexts.put(t, callContext);
+                }
+                threadContext.setCurrentFactory(node.factory);
+                threadContext.setCallContext(callContext);
+            }
+        };
+        String name = executorConfig.getName();
+        NamedExecutorService es = new NamedExecutorService(classLoader, executorConfig, threadPoolExecutor);
+        mapExecutors.put(name, es);
+        return es;
+    }
+
+    class ExecutionOperationHandler extends AbstractOperationHandler {
+        void doOperation(Request request) {
+            NamedExecutorService namedExecutorService = mapExecutors.get(request.name);
+            namedExecutorService.execute(new RequestExecutor(request));
+        }
+
+        public void handle(Request request) {
+            doOperation(request);
+        }
+    }
+
+    class RequestExecutor implements Runnable {
+        final Request request;
+
+        RequestExecutor(Request request) {
+            this.request = request;
+        }
+
+        public void run() {
+            Object result = null;
+            try {
+                Callable callable = (Callable) toObject(request.value);
+                result = callable.call();
+                result = toData(result);
+            } catch (Throwable e) {
+                result = e;
+            } finally {
+                request.clearForResponse();
+                request.response = result;
+                enqueueAndReturn(new Processable() {
+                    public void process() {
+                        returnResponse(request);
+                    }
+                });
+            }
+        }
     }
 
     /**
@@ -129,9 +145,11 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
     }
 
     public void appendState(StringBuffer sbState) {
-        sbState.append("\nExecutorManager ex:" + executor.getQueue().size()
-                + ", exMig: " + executorForMigrations.getQueue().size()
-                + ", excutions:" + mapExecutions.size() + "/" + mapRemoteExecutions.size());
+        Set<String> names = mapExecutors.keySet();
+        for (String name : names) {
+            NamedExecutorService namedExecutorService = mapExecutors.get(name);
+            namedExecutorService.appendState(sbState);
+        }
     }
 
     class RejectionHandler implements RejectedExecutionHandler {
@@ -143,584 +161,214 @@ public class ExecutorManager extends BaseManager implements MembershipListener {
 
     public void stop() {
         if (!started) return;
-        executionIds.clear();
-        if (executor != null) {
-            try {
-                executor.shutdown();
-                executor.awaitTermination(5, TimeUnit.SECONDS);
-            } catch (InterruptedException ignored) {
-            }
-        }
-        if (executorForMigrations != null) {
-            try {
-                executorForMigrations.shutdown();
-                executorForMigrations.awaitTermination(5, TimeUnit.SECONDS);
-            } catch (InterruptedException ignored) {
-            }
+        Collection<NamedExecutorService> executors = mapExecutors.values();
+        for (NamedExecutorService namedExecutorService : executors) {
+            namedExecutorService.stop();
         }
         started = false;
     }
 
-    public static class CancelationTask extends AbstractNodeAware implements Callable<Boolean>, DataSerializable, NodeAware {
-        long executionId = -1;
-
-        Address address = null;
-
-        boolean mayInterruptIfRunning = false;
-
-        public CancelationTask() {
-            super();
-        }
-
-        public CancelationTask(final long executionId, final Address address,
-                               final boolean mayInterruptIfRunning) {
-            super();
-            this.executionId = executionId;
-            this.address = address;
-            this.mayInterruptIfRunning = mayInterruptIfRunning;
-        }
-
-        public Boolean call() {
-            final SimpleExecution simpleExecution = getNode().executorManager.mapRemoteExecutions
-                    .remove(executionId);
-            return simpleExecution != null && simpleExecution.cancel(mayInterruptIfRunning);
-        }
-
-        public void readData(final DataInput in) throws IOException {
-            executionId = in.readLong();
-            address = new Address();
-            address.readData(in);
-            mayInterruptIfRunning = in.readBoolean();
-        }
-
-        public void writeData(final DataOutput out) throws IOException {
-            out.writeLong(executionId);
-            address.writeData(out);
-            out.writeBoolean(mayInterruptIfRunning);
-        }
+    public NamedExecutorService getDefaultExecutorService() {
+        return defaultExecutorService;
     }
 
-    public class DistributedExecutorAction implements Processable, ExecutionManagerCallback,
-            StreamResponseHandler {
-        InnerFutureTask innerFutureTask = null;
-
-        DistributedTask distributedFutureTask = null;
-
-        private final int expectedResultCount;
-
-        private final AtomicInteger resultCount = new AtomicInteger();
-
-        protected volatile Data task = null;
-
-        protected volatile Object callable = null;
-
-        protected Address randomTarget = null;
-
-        protected SimpleExecution simpleExecution = null; // for local tasks
-
-        protected volatile Long executionId = null;
-
-        protected final BlockingQueue responseQueue = new LinkedBlockingQueue();
-
-        protected boolean localOnly = true;
-
-        protected final ClassLoader classLoader;
-
-        public DistributedExecutorAction(Long executionId,
-                                         DistributedTask distributedFutureTask,
-                                         Data task,
-                                         Object callable,
-                                         ClassLoader classLoader) {
-            if (executionId == null)
-                throw new RuntimeException("executionId cannot be null!");
-            this.executionId = executionId;
-            this.task = task;
-            this.callable = callable;
-            this.distributedFutureTask = distributedFutureTask;
-            this.innerFutureTask = (InnerFutureTask) distributedFutureTask.getInner();
-            if (innerFutureTask.getMembers() != null) {
-                expectedResultCount = innerFutureTask.getMembers().size();
-            } else {
-                expectedResultCount = 1;
-            }
-            this.classLoader = classLoader;
-        }
-
-        public boolean cancel(final boolean mayInterruptIfRunning) {
-            if (localOnly) {
-                // local
-                return simpleExecution.cancel(mayInterruptIfRunning);
-            } else {
-                // remote
-                boolean cancelled = false;
-                try {
-                    final Callable<Boolean> callCancel = new CancelationTask(executionId
-                            , thisAddress, mayInterruptIfRunning);
-                    if (innerFutureTask.getMembers() == null) {
-                        DistributedTask<Boolean> task;
-                        if (innerFutureTask.getKey() != null) {
-                            task = new DistributedTask<Boolean>(callCancel, innerFutureTask
-                                    .getKey());
-                        } else if (innerFutureTask.getMember() != null) {
-                            task = new DistributedTask<Boolean>(callCancel, innerFutureTask
-                                    .getMember());
-                        } else {
-                            task = new DistributedTask<Boolean>(callCancel, randomTarget);
-                        }
-                        Hazelcast.getExecutorService().execute(task);
-                        cancelled = task.get();
-                    } else {
-                        // members
-                        final MultiTask<Boolean> task = new MultiTask<Boolean>(callCancel, innerFutureTask.getMembers());
-                        Hazelcast.getExecutorService().execute(task);
-                        final Collection<Boolean> results = task.get();
-                        for (final Boolean result : results) {
-                            if (result)
-                                cancelled = true;
-                        }
-                    }
-                } catch (final Throwable t) {
-                    cancelled = true;
-                } finally {
-                    if (cancelled) {
-                        handleStreamResponse(OBJECT_CANCELLED);
-                    }
-                }
-                return cancelled;
-            }
-        }
-
-        public void executeLocal() {
-            simpleExecution = new SimpleExecution(null, executor, this, task, callable, true);
-            executor.execute(simpleExecution);
-        }
-
-        public Object get() throws InterruptedException {
-            return get(-1, null);
-        }
-
-        public Object get(final long timeout, final TimeUnit unit) throws InterruptedException {
-            ClassLoader actualContextClassLoader = Thread.currentThread().getContextClassLoader();
-            try {
-                Thread.currentThread().setContextClassLoader(classLoader);
-                final Object result = (timeout == -1) ? responseQueue.take() : responseQueue.poll(
-                        timeout, unit);
-                if (result == null)
-                    return null;
-                if (result instanceof Data) {
-                    // returning the remote result
-                    // on the client thread
-                    return toObject((Data) result);
-                } else {
-                    // local execution result
-                    return result;
-                }
-            } catch (InterruptedException e) {
-                // if client thread is interrupted
-                // finalize for clean interrupt..
-                finalizeTask();
-                throw e;
-            } catch (Exception e) {
-                // shouldn't happen..
-                e.printStackTrace();
-            } finally {
-                Thread.currentThread().setContextClassLoader(actualContextClassLoader);
-            }
-            return null;
-        }
-
-        /**
-         * !! Called by multiple threads.
-         */
-        public void handleStreamResponse(Object response) {
-            if (executionId == null) return;
-            if (response == null)
-                response = OBJECT_NULL;
-            if (response == OBJECT_DONE) {
-                responseQueue.add(response);
-                finalizeTask();
-            } else if (response == OBJECT_MEMBER_LEFT || response == OBJECT_CANCELLED || response instanceof Throwable) {
-                responseQueue.add(response);
-                responseQueue.add(OBJECT_DONE);
-                finalizeTask();
-            } else {
-                final int resultCountNow = resultCount.incrementAndGet();
-                if (resultCountNow >= expectedResultCount) {
-                    try {
-                        if (response != null) {
-                            responseQueue.add(response);
-                        }
-                        responseQueue.add(OBJECT_DONE);
-                    } catch (final Exception e) {
-                        e.printStackTrace();
-                    }
-                    finalizeTask();
-                } else {
-                    responseQueue.add(response);
-                }
-            }
-        }
-
-        public void invoke() {
-            enqueueAndReturn(DistributedExecutorAction.this);
-        }
-
-        public void process() {
-            mapExecutions.put(executionId, this);
-            mapStreams.put(executionId, this);
-            if (innerFutureTask.getMembers() == null) {
-                final Address target = getTarget();
-                if (thisAddress.equals(target)) {
-                    executeLocal();
-                } else {
-                    localOnly = false;
-                    final Packet packet = obtainPacket("m:exe", null, task,
-                            ClusterOperation.REMOTELY_EXECUTE, DEFAULT_TIMEOUT);
-                    packet.timeout = DEFAULT_TIMEOUT;
-                    packet.longValue = executionId;
-                    final boolean sent = send(packet, target);
-                    if (!sent) {
-                        packet.returnToContainer();
-                        final Member m = getMember(target);
-                        executeLocally(new Runnable() {
-                            public void run() {
-                                handleMemberLeft(m);
-                            }
-                        });
-                    }
-                }
-            } else {
-                final Set<Member> members = innerFutureTask.getMembers();
-                for (final Member member : members) {
-                    MemberImpl memberImpl = (MemberImpl) member;
-                    memberImpl.setHazelcastInstance(node.factory);
-                    if (member.localMember()) {
-                        executeLocal();
-                    } else {
-                        localOnly = false;
-                        final Packet packet = obtainPacket("m:exe", null, task,
-                                ClusterOperation.REMOTELY_EXECUTE, DEFAULT_TIMEOUT);
-                        packet.timeout = DEFAULT_TIMEOUT;
-                        packet.longValue = executionId;
-                        final boolean sent = send(packet, ((MemberImpl) member).getAddress());
-                        if (!sent) {
-                            packet.returnToContainer();
-                            executeLocally(new Runnable() {
-                                public void run() {
-                                    handleMemberLeft(member);
-                                }
-                            });
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-
-        @Override
-        public String toString() {
-            return "ExecutorAction [" + executionId + "] expectedResultCount="
-                    + expectedResultCount + ", resultCount=" + resultCount;
-        }
-
-        protected Address getTarget() {
-            Address target;
-            if (innerFutureTask.getKey() != null) {
-                Data keyData = null;
-                try {
-                    keyData = ThreadContext.get().toData(innerFutureTask.getKey());
-                } catch (final Exception e) {
-                    e.printStackTrace();
-                }
-                target = getKeyOwner(keyData);
-            } else if (innerFutureTask.getMember() != null) {
-                final MemberImpl mem = (MemberImpl) innerFutureTask.getMember();
-                target = mem.getAddress();
-                logger.log(Level.FINEST, " Target " + target);
-            } else {
-                Set<Member> members = node.getClusterImpl().getMembers();
-                final int random = (int) (Math.random() * 1000);
-                final int randomIndex = random % members.size();
-                MemberImpl randomClusterMember = (MemberImpl) members.toArray()[randomIndex];
-                target = randomClusterMember.getAddress();
-                randomTarget = target;
-            }
-            if (target == null)
-                return thisAddress;
-            else
-                return target;
-        }
-
-        void handleMemberLeft(final Member dead) {
-            boolean found = false;
-            final MemberImpl deadMember = (MemberImpl) dead;
-            if (innerFutureTask.getKey() != null) {
-                final Data keyData = toData(innerFutureTask.getKey());
-                final Address target = getKeyOwner(keyData);
-                found = (deadMember.getAddress().equals(target));
-            } else if (innerFutureTask.getMember() != null) {
-                final MemberImpl targetMember = (MemberImpl) innerFutureTask.getMember();
-                found = (targetMember.getAddress().equals(deadMember.getAddress()));
-            } else if (innerFutureTask.getMembers() != null) {
-                final Set<Member> members = innerFutureTask.getMembers();
-                for (final Member m : members) {
-                    MemberImpl targetMember = (MemberImpl) m;
-                    if (targetMember.getAddress().equals(deadMember.getAddress())) {
-                        found = true;
-                        break;
-                    }
-                }
-            } else {
-                found = (deadMember.getAddress().equals(randomTarget));
-            }
-            if (found) {
-                logger.log(Level.FINEST, "Terminating task. Member left " + dead);
-                innerFutureTask.innerSetMemberLeft(dead);
-                handleStreamResponse(OBJECT_MEMBER_LEFT);
-                finalizeTask();
-            }
-        }
-
-        /**
-         * !! Called by multiple threads.
-         */
-        private void finalizeTask() {
-            if (innerFutureTask != null)
-                innerFutureTask.innerDone();
-            // logger.log(Level.INFO,"finalizing.. " + executionId);
-            if (executionId == null)
-                return;
-            if (innerFutureTask != null && innerFutureTask.getExecutionCallback() != null) {
-                innerFutureTask.getExecutionCallback().done(distributedFutureTask);
-            }
-            mapStreams.remove(executionId);
-            final Object action = mapExecutions.remove(executionId);
-            // logger.log(Level.INFO,"finalizing action  " + action);
-            if (action != null) {
-                final boolean offered = executionIds.offer(executionId);
-                if (!offered)
-                    throw new RuntimeException("Couldn't offer the executionId " + executionId);
-            }
-            executionId = null;
-        }
-    }
-
-    public class RemoteExecutionId {
-        public long executionId;
-
-        public Address address;
-
-        public RemoteExecutionId(final Address address, final long executionId) {
-            super();
-            this.address = address;
-            this.executionId = executionId;
-        }
-
-        @Override
-        public boolean equals(final Object obj) {
-            if (this == obj)
-                return true;
-            if (obj == null)
-                return false;
-            if (getClass() != obj.getClass())
-                return false;
-            final RemoteExecutionId other = (RemoteExecutionId) obj;
-            if (address == null) {
-                if (other.address != null)
-                    return false;
-            } else if (!address.equals(other.address))
-                return false;
-            return executionId == other.executionId;
-        }
-
-        @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + ((address == null) ? 0 : address.hashCode());
-            result = prime * result + (int) (executionId ^ (executionId >>> 32));
-            return result;
-        }
-    }
-
-    private class SimpleExecution implements Runnable {
-
-        protected Logger logger = Logger.getLogger(SimpleExecution.class.getName());
-
-        Data value = null;
-
-        Object callable = null;
-
-        ExecutorService executor = null;
-
-        volatile boolean cancelled = false;
-
-        volatile boolean done = false; // if done, don't interrupt
-
-        volatile boolean running = false;
-
-        Thread runningThread = null;
-
-        DistributedExecutorAction action = null;
-
-        boolean local = false;
-
-        RemoteExecutionId remoteExecutionId;
-
-        public SimpleExecution(final RemoteExecutionId remoteExecutionId,
-                               final ExecutorService executor, final DistributedExecutorAction action,
-                               final Data value, final Object callable, final boolean local) {
-            super();
-            this.value = value;
-            this.callable = callable;
-            this.executor = executor;
-            this.action = action;
-            this.local = local;
-            this.remoteExecutionId = remoteExecutionId;
-        }
-
-        public Object call(final RemoteExecutionId remoteExecutionId, final boolean local,
-                           final Object callable) throws InterruptedException {
-            Object executionResult = null;
-            try {
-                if (callable instanceof HazelcastInstanceAware) {
-                    ((HazelcastInstanceAware) callable).setHazelcastInstance(node.factory);
-                }
-                if (callable instanceof Callable) {
-                    executionResult = ((Callable) callable).call();
-                } else if (callable instanceof Runnable) {
-                    ((Runnable) callable).run();
-                }
-            } catch (InterruptedException e) {
-                throw e;
-            } catch (Throwable e) {
-                executionResult = e;
-            } finally {
-                if (!local) {
-                    mapRemoteExecutions.remove(remoteExecutionId);
-                }
-            }
-            return executionResult;
-        }
-
-        public boolean cancel(final boolean mayInterruptIfRunning) {
-            if (done || cancelled)
-                return false;
-            if (running && mayInterruptIfRunning)
-                runningThread.interrupt();
-            cancelled = true;
-            return true;
-        }
-
-        public void run() {
-            if (cancelled)
-                return;
-            Object executionResult = null;
-            if (callable == null) {
-                callable = toObject(value);
-                if (callable instanceof NodeAware) {
-                    NodeAware nodeAware = (NodeAware) callable;
-                    nodeAware.setNode(node);
-                }
-                executor.execute(this);
-            } else {
-                runningThread = Thread.currentThread();
-                running = true;
-                try {
-                    executionResult = call(remoteExecutionId, local, callable);
-                } catch (InterruptedException e) {
-                    cancelled = true;
-                }
-                if (cancelled)
-                    return;
-                running = false;
-                done = true; // should not be able to interrupt after this.
-                if (!local) {
-                    try {
-                        sendStreamItem(remoteExecutionId.address, executionResult, remoteExecutionId.executionId);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    action.handleStreamResponse(executionResult);
-                }
-            }
-        }
-    }
-
-    public void sendStreamItem(final Address address, final Object value, final long streamId) {
-        try {
-            final Packet packet = obtainPacket("exe", null, value,
-                    ClusterOperation.STREAM, DEFAULT_TIMEOUT);
-            packet.longValue = streamId;
-            enqueueAndReturn(new Processable() {
-                public void process() {
-                    send(packet, address);
-                }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public Processable createNewExecutionAction(final DistributedTask task) {
-        if (task == null)
-            throw new RuntimeException("task cannot be null");
-        Long executionId = null;
-        try {
-            executionId = executionIds.take();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        final InnerFutureTask inner = (InnerFutureTask) task.getInner();
-        final Callable callable = inner.getCallable();
-        final Data callableData = toData(callable);
-        final DistributedExecutorAction action =
-                new DistributedExecutorAction(executionId, task, callableData, callable, node.getConfig().getClassLoader());
-        inner.setExecutionManagerCallback(action);
-        return action;
+    public NamedExecutorService getEventExecutorService() {
+        return eventExecutorService;
     }
 
     public void executeLocally(Runnable runnable) {
-        executor.execute(runnable);
+        defaultExecutorService.execute(runnable);
     }
 
     public void executeMigrationTask(Runnable runnable) {
-        executorForMigrations.execute(runnable);
+        migrationExecutorService.execute(runnable);
     }
 
-    public void handleStream(Packet packet) {
-        final StreamResponseHandler streamResponseHandler = mapStreams.get(packet.longValue);
-        if (streamResponseHandler != null) {
-            final Data value = packet.value;
-            executor.execute(new Runnable() {
-                public void run() {
-                    streamResponseHandler.handleStreamResponse(value);
-                }
-            });
+    public void executeQueryTask(Runnable runnable) {
+        queryExecutorService.execute(runnable);
+    }
+
+    public void executeStoreTask(Runnable runnable) {
+        storeExecutorService.execute(runnable);
+    }
+
+    public void call(String name, DistributedTask dtask) {
+        NamedExecutorService namedExecutorService = mapExecutors.get(name);
+        InnerFutureTask inner = (InnerFutureTask) dtask.getInner();
+        Data callable = toData(inner.getCallable());
+        if (inner.getMembers() != null) {
+            Set<Member> members = inner.getMembers();
+            if (members.size() == 1) {
+                MemberCall memberCall = new MemberCall(name, (MemberImpl) members.iterator().next(), callable, inner, true);
+                inner.setExecutionManagerCallback(memberCall);
+                memberCall.call();
+            } else {
+                MembersCall membersCall = new MembersCall(name, members, callable, inner);
+                inner.setExecutionManagerCallback(membersCall);
+                membersCall.call();
+            }
+        } else if (inner.getMember() != null) {
+            MemberCall memberCall = new MemberCall(name, (MemberImpl) inner.getMember(), callable, inner, true);
+            inner.setExecutionManagerCallback(memberCall);
+            memberCall.call();
+        } else if (inner.getKey() != null) {
+            Partition partition = node.factory.getPartitionService().getPartition(inner.getKey());
+            Member target = partition.getOwner();
+            if (target == null) {
+                target = node.factory.getCluster().getMembers().iterator().next();
+            }
+            MemberCall memberCall = new MemberCall(name, (MemberImpl) target, callable, inner, true);
+            inner.setExecutionManagerCallback(memberCall);
+            memberCall.call();
+        } else {
+            MemberImpl target = (MemberImpl) namedExecutorService.getExecutionLoadBalancer().getTarget(node.factory);
+            MemberCall memberCall = new MemberCall(name, target, callable, inner, true);
+            inner.setExecutionManagerCallback(memberCall);
+            memberCall.call();
         }
-        packet.returnToContainer();
     }
 
-    public void handleRemoteExecution(Packet packet) {
-        logger.log(Level.FINEST, "Remote handling packet " + packet);
-        final Data callableData = packet.value;
-        final RemoteExecutionId remoteExecutionId = new RemoteExecutionId(packet.conn.getEndPoint(),
-                packet.longValue);
-        final SimpleExecution se = new SimpleExecution(remoteExecutionId, executor, null,
-                callableData, null, false);
-        mapRemoteExecutions.put(remoteExecutionId, se);
-        executeLocally(se);
-        packet.returnToContainer();
+    class MembersCall implements ExecutionManagerCallback {
+        final String name;
+        final Set<Member> members;
+        final Data callable;
+        final InnerFutureTask innerFutureTask;
+        final List<MemberCall> lsMemberCalls = new ArrayList<MemberCall>();
+
+        MembersCall(String name, Set<Member> members, Data callable, InnerFutureTask innerFutureTask) {
+            this.name = name;
+            this.members = members;
+            this.callable = callable;
+            this.innerFutureTask = innerFutureTask;
+        }
+
+        void call() {
+            for (Member member : members) {
+                MemberCall memberCall = new MemberCall(name, (MemberImpl) member, callable, innerFutureTask, false);
+                lsMemberCalls.add(memberCall);
+                memberCall.call();
+            }
+        }
+
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            throw new UnsupportedOperationException();
+        }
+
+        public void get() throws InterruptedException, ExecutionException {
+            doGet(-1);
+        }
+
+        public void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException {
+            doGet(unit.toMillis(timeout));
+        }
+
+        void doGet(long timeoutMillis) {
+            long remainingMillis = timeoutMillis;
+            try {
+                for (MemberCall memberCall : lsMemberCalls) {
+                    long now = System.currentTimeMillis();
+                    if (timeoutMillis == -1) {
+                        memberCall.get();
+                    } else {
+                        if (remainingMillis < 0) {
+                            innerFutureTask.innerSetException(new TimeoutException());
+                            return;
+                        }
+                        memberCall.get(remainingMillis, TimeUnit.MILLISECONDS);
+                    }
+                    remainingMillis -= (System.currentTimeMillis() - now);
+                    if (innerFutureTask.isDone()) {
+                        return;
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                innerFutureTask.innerSetException(e);
+            } finally {
+                innerFutureTask.innerDone();
+            }
+        }
     }
 
-    public void memberAdded(MembershipEvent membershipEvent) {
-    }
+    class MemberCall extends TargetAwareOp implements ExecutionManagerCallback {
+        final String name;
+        final MemberImpl member;
+        final Data callable;
+        final InnerFutureTask innerFutureTask;
+        final boolean singleTask;
 
-    public void memberRemoved(MembershipEvent membershipEvent) {
-        final Collection<DistributedExecutorAction> executionActions = mapExecutions.values();
-        for (final DistributedExecutorAction distributedExecutorAction : executionActions) {
-            distributedExecutorAction.handleMemberLeft(membershipEvent.getMember());
+        MemberCall(String name, MemberImpl member, Data callable, InnerFutureTask innerFutureTask, boolean singleTask) {
+            this.name = name;
+            this.member = member;
+            this.callable = callable;
+            this.innerFutureTask = innerFutureTask;
+            this.singleTask = singleTask;
+            this.target = member.getAddress();
+        }
+
+        public void call() {
+            request.setLocal(EXECUTE, name, null, callable, -1, -1, -1, thisAddress);
+            doOp();
+        }
+
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            throw new UnsupportedOperationException();
+        }
+
+        public void get() throws InterruptedException {
+            get(-1, null);
+        }
+
+        public void get(long time, TimeUnit unit) throws InterruptedException {
+            try {
+                Object result = doGetResult((time == -1) ? -1 : unit.toMillis(time));
+                if (result == OBJECT_MEMBER_LEFT) {
+                    innerFutureTask.innerSetMemberLeft(member);
+                } else if (result instanceof Throwable) {
+                    innerFutureTask.innerSetException((Throwable) result);
+                } else {
+                    innerFutureTask.innerSet(result);
+                }
+            } catch (Exception e) {
+                innerFutureTask.innerSetException(e);
+            } finally {
+                if (singleTask) {
+                    innerFutureTask.innerDone();
+                }
+            }
+        }
+
+        public Object doGetResult(long timeoutMillis) throws InterruptedException {
+            Object result = (timeoutMillis == -1) ? getResult() : getResult(timeoutMillis, TimeUnit.MILLISECONDS);
+            if (result == null) {
+                result = new TimeoutException();
+            }
+            if (result == OBJECT_NULL) {
+                result = null;
+            } else {
+                if (result instanceof Data) {
+                    final Data data = (Data) result;
+                    if (data.size() == 0) {
+                        result = null;
+                    } else {
+                        result = toObject(data);
+                    }
+                }
+            }
+            afterGettingResult(request);
+            return result;
+        }
+
+        @Override
+        public void onDisconnect(final Address dead) {
+            if (dead.equals(target)) {
+                setResult(OBJECT_MEMBER_LEFT);
+            }
+        }
+
+        @Override
+        public void setTarget() {
+            this.target = member.getAddress();
         }
     }
 }

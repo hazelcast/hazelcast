@@ -45,4 +45,6 @@ public interface InnerFutureTask<V> {
     void setExecutionManagerCallback(ExecutionManagerCallback action);
 
     ExecutionCallback<V> getExecutionCallback();
+
+    boolean isDone();
 }

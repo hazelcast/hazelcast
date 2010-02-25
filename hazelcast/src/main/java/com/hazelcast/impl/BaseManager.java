@@ -29,7 +29,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static com.hazelcast.core.Instance.InstanceType;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
@@ -42,17 +41,11 @@ public abstract class BaseManager {
 
     protected final static boolean zeroBackup = false;
 
-    public static final int EVENT_QUEUE_COUNT = 100;
-
     protected final LinkedList<MemberImpl> lsMembers;
 
     protected final Map<Address, MemberImpl> mapMembers;
 
     protected final Map<Long, Call> mapCalls;
-
-    protected final EventQueue[] eventQueues;
-
-    protected final Map<Long, StreamResponseHandler> mapStreams;
 
     protected final AtomicLong localIdGen;
 
@@ -69,8 +62,6 @@ public abstract class BaseManager {
         lsMembers = node.baseVariables.lsMembers;
         mapMembers = node.baseVariables.mapMembers;
         mapCalls = node.baseVariables.mapCalls;
-        eventQueues = node.baseVariables.eventQueues;
-        mapStreams = node.baseVariables.mapStreams;
         thisAddress = node.baseVariables.thisAddress;
         thisMember = node.baseVariables.thisMember;
         this.localIdGen = node.baseVariables.localIdGen;
@@ -221,45 +212,45 @@ public abstract class BaseManager {
                 packet.returnToContainer();
             }
         }
+    }
 
-        public void returnResponse(Request request) {
-            if (request.local) {
-                final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;
-                targetAwareOp.setResult(request.response);
-            } else {
-                Packet packet = obtainPacket();
-                request.setPacket(packet);
-                packet.operation = ClusterOperation.RESPONSE;
-                packet.responseType = RESPONSE_SUCCESS;
-                packet.longValue = request.longValue;
-                if (request.value != null) {
-                    packet.value = request.value;
-                }
-                if (request.response == OBJECT_REDO) {
-                    packet.lockAddress = null;
-                    packet.responseType = RESPONSE_REDO;
-                } else if (request.response != null) {
-                    if (request.response instanceof Boolean) {
-                        if (request.response == Boolean.FALSE) {
-                            packet.responseType = RESPONSE_FAILURE;
-                        }
-                    } else if (request.response instanceof Long) {
-                        packet.longValue = (Long) request.response;
+    public void returnResponse(Request request) {
+        if (request.local) {
+            final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;
+            targetAwareOp.setResult(request.response);
+        } else {
+            Packet packet = obtainPacket();
+            request.setPacket(packet);
+            packet.operation = ClusterOperation.RESPONSE;
+            packet.responseType = RESPONSE_SUCCESS;
+            packet.longValue = request.longValue;
+            if (request.value != null) {
+                packet.value = request.value;
+            }
+            if (request.response == OBJECT_REDO) {
+                packet.lockAddress = null;
+                packet.responseType = RESPONSE_REDO;
+            } else if (request.response != null) {
+                if (request.response instanceof Boolean) {
+                    if (request.response == Boolean.FALSE) {
+                        packet.responseType = RESPONSE_FAILURE;
+                    }
+                } else if (request.response instanceof Long) {
+                    packet.longValue = (Long) request.response;
+                } else {
+                    Data data;
+                    if (request.response instanceof Data) {
+                        data = (Data) request.response;
                     } else {
-                        Data data;
-                        if (request.response instanceof Data) {
-                            data = (Data) request.response;
-                        } else {
-                            data = toData(request.response);
-                        }
-                        if (data != null && data.size() > 0) {
-                            packet.value = data;
-                        }
+                        data = toData(request.response);
+                    }
+                    if (data != null && data.size() > 0) {
+                        packet.value = data;
                     }
                 }
-                sendResponse(packet, request.caller);
-                request.reset();
             }
+            sendResponse(packet, request.caller);
+            request.reset();
         }
     }
 
@@ -417,6 +408,10 @@ public abstract class BaseManager {
             }
         }
 
+        public Object getResult(long time, TimeUnit unit) throws InterruptedException {
+            return responses.poll(time, unit);
+        }
+
         public Object waitAndGetResult() {
             while (true) {
                 try {
@@ -564,6 +559,22 @@ public abstract class BaseManager {
                 responses.add(OBJECT_NULL);
             } else {
                 responses.add(obj);
+            }
+        }
+    }
+
+    abstract class MTargetAwareOp extends TargetAwareOp {
+
+        @Override
+        public void doOp() {
+            target = null;
+            super.doOp();
+        }
+
+        @Override
+        public void setTarget() {
+            if (target == null) {
+                target = getKeyOwner(request.key);
             }
         }
     }
@@ -1102,14 +1113,7 @@ public abstract class BaseManager {
         } else {
             hash = from.hashCode();
         }
-        enqueueEvent(hash, eventTask);
-    }
-
-    public void enqueueEvent(int hash, Runnable runnable) {
-        int index = Math.abs(hash % EVENT_QUEUE_COUNT);
-        final EventQueue eventQueue = eventQueues[index];
-        final int size = eventQueue.offerRunnable(runnable);
-        if (size == 1) executeLocally(eventQueue);
+        node.executorManager.getEventExecutorService().executeOrderedRunnable(hash, eventTask);
     }
 
     class EventTask extends EntryEvent implements Runnable {

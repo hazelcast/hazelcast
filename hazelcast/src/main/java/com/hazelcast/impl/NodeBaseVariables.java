@@ -18,7 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.impl.base.Call;
-import com.hazelcast.impl.base.EventQueue;
+import com.hazelcast.impl.base.OrderedRunnablesQueue;
 import com.hazelcast.nio.Address;
 
 import java.util.HashMap;
@@ -34,10 +34,6 @@ public class NodeBaseVariables {
 
     final Map<Long, Call> mapCalls = new ConcurrentHashMap<Long, Call>();
 
-    final EventQueue[] eventQueues = new EventQueue[BaseManager.EVENT_QUEUE_COUNT];
-
-    final Map<Long, StreamResponseHandler> mapStreams = new ConcurrentHashMap<Long, StreamResponseHandler>();
-
     final AtomicLong localIdGen = new AtomicLong(0);
 
     final Address thisAddress;
@@ -47,8 +43,5 @@ public class NodeBaseVariables {
     NodeBaseVariables(Address thisAddress, MemberImpl thisMember) {
         this.thisAddress = thisAddress;
         this.thisMember = thisMember;
-        for (int i = 0; i < BaseManager.EVENT_QUEUE_COUNT; i++) {
-            eventQueues[i] = new EventQueue();
-        }
     }
 }
