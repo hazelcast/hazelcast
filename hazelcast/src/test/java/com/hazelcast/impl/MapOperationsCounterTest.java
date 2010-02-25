@@ -17,18 +17,25 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.nio.DataSerializable;
 import org.junit.Test;
 
 import java.io.*;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.*;
 
-public class MapOperationStatsImplTest {
+public class MapOperationsCounterTest {
 
     @Test
     public void noOperation() throws Exception {
-        MapOperationStatsImpl mapOperationStats = new MapOperationStatsImpl(100);
+        MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
         Thread.sleep(10);
         MapOperationStats stats = mapOperationStats.getPublishedStats();
         assertThat(stats.getNumberOfGets(), equalTo((long) 0));
@@ -39,7 +46,7 @@ public class MapOperationStatsImplTest {
 
     @Test
     public void callGetPublishedStatsTwice() {
-        MapOperationStatsImpl mapOperationStats = new MapOperationStatsImpl(100);
+        MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
         MapOperationStats stats1 = mapOperationStats.getPublishedStats();
         MapOperationStats stats2 = mapOperationStats.getPublishedStats();
         assertTrue(stats1 == stats2);
@@ -47,7 +54,7 @@ public class MapOperationStatsImplTest {
 
     @Test
     public void doAllOperations() {
-        MapOperationStatsImpl mapOperationStats = new MapOperationStatsImpl(100);
+        MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
         for (int i = 0; i < 10; i++) {
             mapOperationStats.incrementPuts();
             mapOperationStats.incrementGets();
@@ -60,7 +67,7 @@ public class MapOperationStatsImplTest {
 
     @Test
     public void testTotal() {
-        MapOperationStatsImpl mapOperationStats = new MapOperationStatsImpl(100);
+        MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
         for (int i = 0; i < 10; i++) {
             mapOperationStats.incrementPuts();
             mapOperationStats.incrementGets();
@@ -74,7 +81,7 @@ public class MapOperationStatsImplTest {
 
     @Test
     public void putInLessThanSubInterval() throws InterruptedException {
-        MapOperationStatsImpl mapOperationStats = new MapOperationStatsImpl(100);
+        MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
         long start = System.currentTimeMillis();
         long counter = 0;
         boolean run = true;
@@ -89,12 +96,11 @@ public class MapOperationStatsImplTest {
         MapOperationStats stats = mapOperationStats.getPublishedStats();
         assertEquals(counter, stats.getNumberOfPuts());
         long interval = stats.getPeriodEnd() - stats.getPeriodStart();
-        assertTrue(interval < 50);
     }
 
     @Test
     public void putInHalfOfInterval() throws InterruptedException {
-        MapOperationStatsImpl mapOperationStats = new MapOperationStatsImpl(100);
+        MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
         long start = System.currentTimeMillis();
         long counter = 0;
         boolean run = true;
@@ -114,12 +120,11 @@ public class MapOperationStatsImplTest {
         double totalTps = counter / (System.currentTimeMillis() - start);
         assertTrue(statTps < totalTps + 5);
         assertTrue(statTps > totalTps - 5);
-        assertTrue(interval < 100);
     }
 
     @Test
     public void putLittleLessThanInterval() throws InterruptedException {
-        MapOperationStatsImpl mapOperationStats = new MapOperationStatsImpl(100);
+        MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
         long start = System.currentTimeMillis();
         long counter = 0;
         boolean run = true;
@@ -139,12 +144,11 @@ public class MapOperationStatsImplTest {
         double totalTps = counter / (System.currentTimeMillis() - start);
         assertTrue(statTps < totalTps + 5);
         assertTrue(statTps > totalTps - 5);
-//        assertTrue(interval < 99);
     }
 
     @Test
     public void putLittleMoreThanInterval() throws InterruptedException {
-        MapOperationStatsImpl mapOperationStats = new MapOperationStatsImpl(100);
+        MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
         long start = System.currentTimeMillis();
         long counter = 0;
         boolean run = true;
@@ -164,12 +168,11 @@ public class MapOperationStatsImplTest {
         double totalTps = counter / (System.currentTimeMillis() - start);
         assertTrue(statTps < totalTps + 5);
         assertTrue(statTps > totalTps - 5);
-//        assertEquals(100, interval);
     }
 
     @Test
     public void putWayMoreThanInterval() throws InterruptedException {
-        MapOperationStatsImpl mapOperationStats = new MapOperationStatsImpl(100);
+        MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
         long start = System.currentTimeMillis();
         long counter = 0;
         boolean run = true;
@@ -189,30 +192,23 @@ public class MapOperationStatsImplTest {
         double totalTps = counter / (System.currentTimeMillis() - start);
         assertTrue(statTps < totalTps + 5);
         assertTrue(statTps > totalTps - 5);
-//        assertEquals(100, interval);
-    }
-
-    @Test
-    public void testToString() {
-        MapOperationStatsImpl mapOperationStats = new MapOperationStatsImpl(100);
-        String str = mapOperationStats.toString();
     }
 
     @Test
     public void testDataSerializable() throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         DataOutputStream dout = new DataOutputStream(bos);
-        MapOperationStatsImpl mapOperationStats = new MapOperationStatsImpl(100);
+        MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
         mapOperationStats.incrementPuts();
         mapOperationStats.incrementGets();
         mapOperationStats.incrementRemoves();
-        mapOperationStats.writeData(dout);
+        ((DataSerializable) mapOperationStats.getPublishedStats()).writeData(dout);
         MapOperationStatsImpl newStat = new MapOperationStatsImpl();
         ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
-
         newStat.readData(new DataInputStream(bis));
-        assertEquals(mapOperationStats.getNumberOfGets(), newStat.getNumberOfGets());
-        assertEquals(mapOperationStats.getNumberOfPuts(), newStat.getNumberOfPuts());
-        assertEquals(mapOperationStats.getNumberOfRemoves(), newStat.getNumberOfRemoves());
+        assertEquals(mapOperationStats.getPublishedStats().getNumberOfGets(), newStat.getNumberOfGets());
+        assertEquals(mapOperationStats.getPublishedStats().getNumberOfPuts(), newStat.getNumberOfPuts());
+        assertEquals(mapOperationStats.getPublishedStats().getNumberOfRemoves(), newStat.getNumberOfRemoves());
+        String str = newStat.toString();
     }
 }

@@ -484,7 +484,27 @@ public class DynamicClusterTest {
         } catch (ExecutionException e) {
             latch.countDown();
         }
-        latch.await(10, TimeUnit.SECONDS); 
+        latch.await(10, TimeUnit.SECONDS);
+    }
+
+    @Test(expected = NoMemberAvailableException.class)
+    public void getClusterInFailOver() throws InterruptedException {
+        final HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        final HazelcastClient client = getHazelcastClient(h);
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                }
+                h.shutdown();
+            }
+        }).start();
+        while (true) {
+            Set<Member> members = client.getCluster().getMembers();
+            System.out.println("Members Size: " + members.size());
+        }
     }
 
     private Map<Integer, HazelcastInstance> getMapOfClusterMembers(HazelcastInstance... h) {

@@ -17,14 +17,12 @@
 
 package com.hazelcast.impl;
 
-import java.io.Serializable;
-
 /**
  * Map Operation Statistics returns number of map operations in bounded period. The period
  * has start and end times. Given the number of operations in that period, one can calculate the number of
  * operations per second. Start and End times are given in milliseconds.
  */
-public interface MapOperationStats extends Serializable {
+public interface MapOperationStats {
 
     /**
      * Gets the start time of the period in milliseconds.
@@ -61,6 +59,12 @@ public interface MapOperationStats extends Serializable {
      * @return
      */
     public long getNumberOfRemoves();
+
+    /**
+     * Total Number of Other/Rest Operations
+     * @return
+     */
+    public long getNumberOfOtherOperations();
 
     /**
      * Returns number of total operations

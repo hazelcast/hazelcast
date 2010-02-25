@@ -22,154 +22,69 @@ import com.hazelcast.nio.DataSerializable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class MapOperationStatsImpl implements DataSerializable, MapOperationStats {
-    private AtomicLong mapPuts = new AtomicLong();
-    private AtomicLong mapGets = new AtomicLong();
-    private AtomicLong mapRemoves = new AtomicLong();
-    private long startTime = now();
-    private long endTime = Long.MAX_VALUE;
-    private transient MapOperationStatsImpl published = null;
-    private List<MapOperationStatsImpl> listOfSubStats = new ArrayList<MapOperationStatsImpl>();
-    final private Object lock = new Object();
 
-    final private long interval;
-
-    public MapOperationStatsImpl() {
-        this(10000);
-    }
-
-    public MapOperationStatsImpl(long interval) {
-        this.interval = interval;
-    }
+    long periodStart;
+    long periodEnd;
+    long numberOfPuts;
+    long numberOfGets;
+    long numberOfRemoves;
+    long numberOfOtherOperations;
 
     public void writeData(DataOutput out) throws IOException {
-        out.writeLong(mapPuts.get());
-        out.writeLong(mapGets.get());
-        out.writeLong(mapRemoves.get());
-        out.writeLong(startTime);
-        out.writeLong(endTime);
+        out.writeLong(numberOfPuts);
+        out.writeLong(numberOfGets);
+        out.writeLong(numberOfRemoves);
+        out.writeLong(numberOfOtherOperations);
+        out.writeLong(periodStart);
+        out.writeLong(periodEnd);
     }
 
     public void readData(DataInput in) throws IOException {
-        mapPuts.set(in.readLong());
-        mapGets.set(in.readLong());
-        mapRemoves.set(in.readLong());
-        startTime = in.readLong();
-        endTime = in.readLong();
-    }
-
-    private MapOperationStatsImpl getAndReset() {
-        long mapPutsNow = mapPuts.getAndSet(0);
-        long mapGetsNow = mapGets.getAndSet(0);
-        long mapRemovesNow = mapRemoves.getAndSet(0);
-        MapOperationStatsImpl newOne = new MapOperationStatsImpl();
-        newOne.mapPuts.set(mapPutsNow);
-        newOne.mapGets.set(mapGetsNow);
-        newOne.mapRemoves.set(mapRemovesNow);
-        newOne.startTime = this.startTime;
-        newOne.endTime = now();
-        this.startTime = newOne.endTime;
-        return newOne;
-    }
-
-    public MapOperationStatsImpl getPublishedStats() {
-        if (published == null) {
-            synchronized (lock) {
-                if (published == null) {
-                    published = getThis();
-                }
-            }
-        }
-        return published;
-    }
-
-    public void incrementPuts() {
-        mapPuts.incrementAndGet();
-        publishSubResult();
-    }
-
-    public void incrementGets() {
-        mapGets.incrementAndGet();
-        publishSubResult();
-    }
-
-    public void incrementRemoves() {
-        mapRemoves.incrementAndGet();
-        publishSubResult();
-    }
-
-    long now() {
-        return System.currentTimeMillis();
-    }
-
-    private void publishSubResult() {
-        long subInterval = interval / 10;
-        if (now() - startTime > subInterval) {
-            synchronized (lock) {
-                if (now() - startTime >= subInterval) {
-                    MapOperationStatsImpl copy = getAndReset();
-                    if (listOfSubStats.size() == 10) {
-                        listOfSubStats.remove(0);
-                    }
-                    listOfSubStats.add(copy);
-                    this.published = aggregate(listOfSubStats);
-                }
-            }
-        }
-    }
-
-    private MapOperationStatsImpl aggregate(List<MapOperationStatsImpl> list) {
-        MapOperationStatsImpl stats = new MapOperationStatsImpl();
-        stats.startTime = list.get(0).startTime;
-        for (int i = 0; i < list.size(); i++) {
-            MapOperationStatsImpl sub = list.get(i);
-            stats.mapGets.addAndGet(sub.mapGets.get());
-            stats.mapPuts.addAndGet(sub.mapPuts.get());
-            stats.mapRemoves.addAndGet(sub.mapRemoves.get());
-            stats.endTime = sub.getPeriodEnd();
-        }
-        return stats;
-    }
-
-    private MapOperationStatsImpl getThis() {
-        this.endTime = now();
-        return this;
+        numberOfPuts = in.readLong();
+        numberOfGets = in.readLong();
+        numberOfRemoves = in.readLong();
+        numberOfOtherOperations = in.readLong();
+        periodStart = in.readLong();
+        periodEnd = in.readLong();
     }
 
     public long total() {
-        return mapPuts.get() + mapGets.get() + mapRemoves.get();
+        return numberOfPuts + numberOfGets + numberOfRemoves + numberOfOtherOperations;
     }
 
     public String toString() {
         return "MapOperationStats{" +
                 "total= " + total() +
-                ", puts:" + mapPuts.get() +
-                ", gets:" + mapGets.get() +
-                ", removes:" + mapRemoves.get() +
+                ", puts:" + numberOfPuts +
+                ", gets:" + numberOfGets +
+                ", removes:" + numberOfRemoves +
+                ", others: " + numberOfOtherOperations +
                 "}";
     }
 
     public long getPeriodStart() {
-        return startTime;
+        return periodStart;
     }
 
     public long getPeriodEnd() {
-        return endTime;
+        return periodEnd;
     }
 
     public long getNumberOfPuts() {
-        return mapPuts.get();
+        return numberOfPuts;
     }
 
     public long getNumberOfGets() {
-        return mapGets.get();
+        return numberOfGets;
     }
 
     public long getNumberOfRemoves() {
-        return mapRemoves.get();
+        return numberOfRemoves;
+    }
+
+    public long getNumberOfOtherOperations() {
+        return numberOfOtherOperations;
     }
 }

@@ -63,6 +63,10 @@ public class ProxyHelper {
                 e.printStackTrace();
             }
         }
+        if(c.getRuntimeException()!=null){
+            throw c.getRuntimeException();
+        }
+
         Packet response = c.getResponse();
         return response;
     }
@@ -109,7 +113,7 @@ public class ProxyHelper {
     }
 
     protected Object getValue(Packet response) {
-        if (response.getValue() != null) {
+        if (response != null && response.getValue() != null) {
             return toObject(response.getValue());
         }
         return null;
@@ -125,7 +129,7 @@ public class ProxyHelper {
     }
 
     static void check(Object obj) {
-        if (obj == null) {
+        if (obj == null) {                                 
             throw new NullPointerException("Object cannot be null.");
         }
         if (!(obj instanceof Serializable)) {

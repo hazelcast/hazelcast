@@ -60,8 +60,11 @@ public class SimpleMapTest {
                                 + Hazelcast.getCluster().getMembers().size());
                         IMap<String, byte[]> map = Hazelcast.getMap("default");
                         MapOperationStats mapOpStats = map.getLocalMapStats().getOperationStats();
-                        System.out.println(mapOpStats);
                         long period = ((mapOpStats.getPeriodEnd() - mapOpStats.getPeriodStart()) / 1000);
+                        if(period==0){
+                            continue;
+                        }
+                        System.out.println(mapOpStats);
                         System.out.println("Operations per Second : " + mapOpStats.total()
                                 / period);
                     } catch (Exception e) {

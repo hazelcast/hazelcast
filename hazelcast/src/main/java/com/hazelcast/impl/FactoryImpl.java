@@ -1714,7 +1714,7 @@ public class FactoryImpl implements HazelcastInstance {
 
         private volatile transient MProxy dynamicProxy;
 
-        private transient final MapOperationStatsImpl mapOperationStats = new MapOperationStatsImpl();
+        private final MapOperationsCounter mapOperationStats = new MapOperationsCounter();
 
         public MProxyImpl() {
         }
@@ -2168,12 +2168,14 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public int size() {
+                mapOperationStats.incrementOtherOperations();
                 MSize msize = concurrentMapManager.new MSize(name);
                 return msize.getSize();
             }
 
             public int valueCount(Object key) {
                 int count;
+                mapOperationStats.incrementOtherOperations();
                 MValueCount mcount = concurrentMapManager.new MValueCount();
                 count = ((Number) mcount.count(name, key, -1)).intValue();
                 return count;
@@ -2197,6 +2199,7 @@ public class FactoryImpl implements HazelcastInstance {
             public Object replace(Object key, Object value) {
                 check(key);
                 check(value);
+                mapOperationStats.incrementPuts();
                 MPut mput = concurrentMapManager.new MPut();
                 return mput.replace(name, key, value, -1, -1);
             }
@@ -2205,18 +2208,21 @@ public class FactoryImpl implements HazelcastInstance {
                 check(key);
                 check(oldValue);
                 check(newValue);
+                mapOperationStats.incrementPuts();
                 MPut mput = concurrentMapManager.new MPut();
                 return mput.replace(name, key, oldValue, newValue, -1);
             }
 
             public void lock(Object key) {
                 check(key);
+                mapOperationStats.incrementOtherOperations();
                 MLock mlock = concurrentMapManager.new MLock();
                 mlock.lock(name, key, -1);
             }
 
             public boolean tryLock(Object key) {
                 check(key);
+                mapOperationStats.incrementOtherOperations();
                 MLock mlock = concurrentMapManager.new MLock();
                 return mlock.lock(name, key, 0);
             }
@@ -2225,18 +2231,22 @@ public class FactoryImpl implements HazelcastInstance {
                 check(key);
                 if (time < 0)
                     throw new IllegalArgumentException("Time cannot be negative. time = " + time);
+
+                mapOperationStats.incrementOtherOperations();
                 MLock mlock = concurrentMapManager.new MLock();
                 return mlock.lock(name, key, timeunit.toMillis(time));
             }
 
             public void unlock(Object key) {
                 check(key);
+                mapOperationStats.incrementOtherOperations();
                 MLock mlock = concurrentMapManager.new MLock();
                 boolean unlocked = mlock.unlock(name, key, 0);
 //                if (! unlocked) throw new IllegalMonitorStateException();
             }
 
             public LocalMapStats getLocalMapStats() {
+                mapOperationStats.incrementOtherOperations();
                 MLocalMapStats mLocalMapStats = concurrentMapManager.new MLocalMapStats();
                 LocalMapStatsImpl localMapStats = (LocalMapStatsImpl) mLocalMapStats.getLocalMapStats(name);
                 localMapStats.setOperationStats(mapOperationStats.getPublishedStats());
@@ -2285,6 +2295,7 @@ public class FactoryImpl implements HazelcastInstance {
             public boolean containsEntry(Object key, Object value) {
                 check(key);
                 check(value);
+                mapOperationStats.incrementOtherOperations();
                 TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
                 if (txn != null) {
                     if (txn.has(name, key)) {
@@ -2298,6 +2309,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public boolean containsKey(Object key) {
                 check(key);
+                mapOperationStats.incrementOtherOperations();
                 TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
                 if (txn != null) {
                     if (txn.has(name, key)) {
@@ -2311,6 +2323,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public boolean containsValue(Object value) {
                 check(value);
+                mapOperationStats.incrementOtherOperations();
                 TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
                 if (txn != null) {
                     if (txn.containsValue(name, value))
@@ -2373,6 +2386,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public Set localKeySet(Predicate predicate) {
+                mapOperationStats.incrementOtherOperations();
                 MIterateLocal miterate = concurrentMapManager.new MIterateLocal(name, predicate);
                 return miterate.iterate();
             }
@@ -2406,6 +2420,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             private Collection iterate(ClusterOperation iteratorType, Predicate predicate) {
+                mapOperationStats.incrementOtherOperations();
                 MIterate miterate = concurrentMapManager.new MIterate(iteratorType, name, predicate);
                 return (Collection) miterate.call();
             }
@@ -2415,6 +2430,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public boolean evict(Object key) {
+                mapOperationStats.incrementOtherOperations();
                 MEvict mevict = ThreadContext.get().getCallCache(factory).getMEvict();
                 return mevict.evict(name, key);
             }

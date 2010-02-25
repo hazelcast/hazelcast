@@ -413,14 +413,17 @@ public class ClientService {
             Cluster cluster = node.factory.getCluster();
             Set<Member> members = cluster.getMembers();
             Set<Data> setData = new LinkedHashSet<Data>();
-            for (Iterator<Member> iterator = members.iterator(); iterator.hasNext();) {
-                Member member = iterator.next();
-                setData.add(toData(member));
+            if (members != null) {
+                for (Iterator<Member> iterator = members.iterator(); iterator.hasNext();) {
+                    Member member = iterator.next();
+                    setData.add(toData(member));
+                }
+                Keys keys = new Keys(setData);
+                packet.value = toData(keys);
             }
-            Keys keys = new Keys(setData);
-            packet.value = toData(keys);
         }
     }
+
     private class GetPartitionsHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
             PartitionService partitionService = node.factory.getPartitionService();

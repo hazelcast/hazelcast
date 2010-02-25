@@ -33,6 +33,8 @@ public class Call {
 	private Packet response;
 
 	public static AtomicLong callIdGen = new AtomicLong(0);
+
+    private RuntimeException runtimeException = null;
 	
 	public Packet getRequest() {
 		return request;
@@ -51,7 +53,15 @@ public class Call {
 		this.response = response;
 	}
 
-	@Override
+    public void setRuntimeException(RuntimeException runtimeException) {
+        this.runtimeException = runtimeException;
+    }
+
+    public RuntimeException getRuntimeException() {
+        return runtimeException;
+    }
+
+    @Override
 	public String toString() {
 		return "Call " + "["+id+"]";
 	}
