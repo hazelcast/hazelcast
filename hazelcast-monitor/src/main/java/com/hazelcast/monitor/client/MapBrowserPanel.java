@@ -16,7 +16,6 @@
  */
 package com.hazelcast.monitor.client;
 
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.i18n.client.DateTimeFormat;
@@ -24,24 +23,27 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
-import com.hazelcast.monitor.client.event.ClientDisconnectedEvent;
 import com.hazelcast.monitor.client.exception.ClientDisconnectedException;
 
 import java.util.Date;
 
-import static com.hazelcast.monitor.client.MapStatisticsPanel.formatMemorySize;
+import static com.hazelcast.monitor.client.MapEntryOwnerShipPanel.formatMemorySize;
 
 public class MapBrowserPanel extends AbstractMonitoringPanel implements MonitoringPanel {
-    final private String name;
-    final private DisclosurePanel disclosurePanel;
-    final private VerticalPanel verticalPanel;
+    private DisclosurePanel disclosurePanel;
+    private VerticalPanel verticalPanel;
     private ClusterWidgets clusterWidgets;
+    private String name;
 
-    protected final MapServiceAsync mapService = GWT
-            .create(MapService.class);
+    protected final MapServiceAsync mapService;
 
-    public MapBrowserPanel(final String name) {
+    public MapBrowserPanel(final String name, AsyncCallback<ChangeEvent> callBack, ServicesFactory servicesFactory) {
+        super(servicesFactory.getHazelcastService());
+        mapService = servicesFactory.getMapServiceAsync();
         this.name = name;
+    }
+
+    private void initPanel() {
         disclosurePanel = new DisclosurePanel("Map Browser");
         verticalPanel = new VerticalPanel();
         AbsolutePanel absolutePanel = new AbsolutePanel();
@@ -97,16 +99,14 @@ public class MapBrowserPanel extends AbstractMonitoringPanel implements Monitori
         resultTable.setWidget(5, 1, lastAcessTime);
         resultTable.setWidget(6, 1, lastUpdateTime);
         resultTable.setWidget(7, 1, creationTime);
-
-
         final DateTimeFormat dateFormatter = DateTimeFormat.getFormat("yyyy.MM.dd HH:mm:ss");
         button.addClickHandler(new ClickHandler() {
 
             public void onClick(ClickEvent clickEvent) {
                 mapService.get(clusterWidgets.clusterId, name, key.getText(), new AsyncCallback<MapEntry>() {
                     public void onFailure(Throwable throwable) {
-                        if (throwable instanceof ClientDisconnectedException){
-                            clusterWidgets.disconnected();     
+                        if (throwable instanceof ClientDisconnectedException) {
+                            clusterWidgets.disconnected();
                         }
                         value.setText(throwable.toString());
                     }
@@ -127,14 +127,12 @@ public class MapBrowserPanel extends AbstractMonitoringPanel implements Monitori
     }
 
     private String format(DateTimeFormat dateFormatter, Date date) {
-        if(date.getTime()==0){
+        if (date.getTime() == 0) {
             return "";
-        }
-        else if(date.getTime()==Long.MAX_VALUE){
+        } else if (date.getTime() == Long.MAX_VALUE) {
             return "";
         }
         return dateFormatter.format(date);
-
     }
 
     public void handle(ChangeEvent event) {
@@ -142,6 +140,13 @@ public class MapBrowserPanel extends AbstractMonitoringPanel implements Monitori
     }
 
     public Widget getPanelWidget() {
+        if (disclosurePanel == null) {
+            synchronized (name) {
+                if (disclosurePanel == null) {
+                    initPanel();
+                }
+            }
+        }
         return disclosurePanel;
     }
 

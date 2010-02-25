@@ -39,7 +39,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -48,6 +47,7 @@ import static com.hazelcast.monitor.server.HazelcastServiceImpl.getSessionObject
 public class ChartGenerator extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse response) throws javax.servlet.ServletException, java.io.IOException {
         String name = req.getParameter("name");
+        String type = req.getParameter("type");
         SessionObject sessionObject = getSessionObject(req.getSession());
         List<MapStatistics> list = null;
         for (ChangeEventGenerator eventGenerator : sessionObject.eventGenerators) {
@@ -62,37 +62,64 @@ public class ChartGenerator extends HttpServlet {
         if (list == null) {
             return;
         }
-        JFreeChart chart = generateChart(list);
+        JFreeChart chart;
+        if ("size".equals(type)) {
+            chart = generateSizeChart(list);
+        } else {
+            chart = generateOperationStatsChart(list);
+        }
         try {
             OutputStream out = response.getOutputStream();
             response.setContentType("image/png");
-            ChartUtilities.writeChartAsPNG(out, chart, 800, 300);
+            ChartUtilities.writeChartAsPNG(out, chart, 390, 250);
         } catch (IOException ignore) {
         }
     }
 
-    public JFreeChart generateChart(List<MapStatistics> list) {
+    public JFreeChart generateOperationStatsChart(List<MapStatistics> list) {
+        TimeSeries ts = new TimeSeries("operations per second", Second.class);
+        for (int i = 0; i < list.size(); i++) {
+            MapStatistics mapStatistics = list.get(i);
+            double totalTps = 0;
+            for (MapStatistics.LocalMapStatistics stats : mapStatistics.getListOfLocalStats()) {
+                if (stats.periodEnd - stats.periodStart == 0) {
+                    continue;
+                }
+                totalTps += (stats.numberOfGetsInSec + stats.numberOfPutsInSec + stats.numberOfRemovesInSec);
+            }
+            ts.addOrUpdate(new Second(list.get(i).getCreatedDate()), totalTps / 1000);
+        }
+        TimeSeriesCollection timeDataset = new TimeSeriesCollection();
+        timeDataset.addSeries(ts);
+        JFreeChart chart =
+                ChartFactory.createTimeSeriesChart(null, "time", "throughput (x1000)", timeDataset, true, true, true);
+        XYPlot plot = (XYPlot) chart.getPlot();
+        increaseRange((NumberAxis) plot.getRangeAxis(0));
+        return chart;
+    }
+
+    public JFreeChart generateSizeChart(List<MapStatistics> list) {
         TimeSeries ts = new TimeSeries("size", Second.class);
         TimeSeries tm = new TimeSeries("memory", Second.class);
         for (int i = 0; i < list.size(); i++) {
             MapStatistics mapStatistics = list.get(i);
             double size = mapStatistics.getSize();
             double memory = 0;
-            Collection<MapStatistics.LocalMapStatistics> localMapStatses = mapStatistics.getListOfLocalStats();
-            for (MapStatistics.LocalMapStatistics localMapStatistics : localMapStatses) {
+            for (MapStatistics.LocalMapStatistics localMapStatistics : mapStatistics.getListOfLocalStats()) {
                 memory = memory + localMapStatistics.ownedEntryMemoryCost +
                         localMapStatistics.backupEntryMemoryCost + localMapStatistics.markedAsRemovedMemoryCost;
             }
+            double mem = new Double(memory / (double) (1024 * 1024));
             ts.addOrUpdate(new Second(list.get(i).getCreatedDate()), new Double(size / (double) 1000));
-            tm.addOrUpdate(new Second(list.get(i).getCreatedDate()), new Double(memory / (double) (1024 * 1024)));
+            tm.addOrUpdate(new Second(list.get(i).getCreatedDate()), mem);
         }
         TimeSeriesCollection timeDataset = new TimeSeriesCollection();
         timeDataset.addSeries(ts);
-        NumberAxis axis = new NumberAxis("Memory (MB)");
+        NumberAxis axis = new NumberAxis("memory (MB)");
         axis.setAutoRange(true);
         axis.setAutoRangeIncludesZero(false);
         JFreeChart chart =
-                ChartFactory.createTimeSeriesChart(null, "Time", "Size (X1000)", timeDataset, true, true, true);
+                ChartFactory.createTimeSeriesChart(null, "time", "size (x1000)", timeDataset, true, true, true);
         XYPlot plot = (XYPlot) chart.getPlot();
         plot.setDataset(1, new TimeSeriesCollection(tm));
         plot.setRangeAxis(1, axis);
@@ -123,7 +150,7 @@ public class ChartGenerator extends HttpServlet {
         axis.setAutoRange(true);
         axis.setAutoRangeIncludesZero(false);
         JFreeChart chart =
-                ChartFactory.createTimeSeriesChart("Map: ", "Time", "Size", timeDataset, true, true, true);
+                ChartFactory.createTimeSeriesChart(null, "Time", "Size", timeDataset, true, false, true);
         XYPlot plot = (XYPlot) chart.getPlot();
         plot.setDataset(1, new TimeSeriesCollection(tm));
         plot.setRangeAxis(1, axis);
@@ -145,6 +172,6 @@ public class ChartGenerator extends HttpServlet {
         double lower = range.getLowerBound();
         double upper = range.getUpperBound();
         double diff = upper - lower;
-        axis.setRange(lower - diff * 0.5, upper + diff * 0.5);
+        axis.setRange(lower - diff * 0.3, upper + diff * 0.3);
     }
 }

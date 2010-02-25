@@ -22,9 +22,9 @@ import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.MapStatistics;
 
 public class MapChartPanel extends MapPanel implements MonitoringPanel {
-    public MapChartPanel(String name, AsyncCallback<ChangeEvent> callBack) {
-        super(name, callBack, "Charts for Map: "+ name);
-        disclosurePanel.setOpen(true);
+    public MapChartPanel(String name, AsyncCallback<ChangeEvent> callBack, ServicesFactory servicesFactory) {
+        super(name, callBack, "Charts for Map: " + name, servicesFactory.getHazelcastService());
+//        disclosurePanel.setOpen(true);
     }
 
     public void handle(ChangeEvent e) {
@@ -34,14 +34,24 @@ public class MapChartPanel extends MapPanel implements MonitoringPanel {
         Label label = (Label) vPanel.getWidget(0);
         label.setText("Map Size: " + size);
         if (vPanel.getWidgetCount() < 2) {
-            AbsolutePanel absImagePanel = new AbsolutePanel();
-            absImagePanel.addStyleName("img-shadow");
-            absImagePanel.add(new Image());
-            vPanel.add(absImagePanel);
+            HorizontalPanel horizontalPanel = new HorizontalPanel();
+            horizontalPanel.add(createAbsPanelWithImage());
+            horizontalPanel.add(createAbsPanelWithImage());
+            horizontalPanel.setBorderWidth(0);
+            vPanel.add(horizontalPanel);
         }
-        AbsolutePanel absolutePanel = (AbsolutePanel) vPanel.getWidget(1);
-        Image image = (Image) absolutePanel.getWidget(0);
-        image.setUrl("ChartGenerator?name=" + mapName + "&random=" + Math.random() * 10);
+        HorizontalPanel horizontalPanel = (HorizontalPanel) vPanel.getWidget(1);
+        Image sizeChart = (Image) ((AbsolutePanel) horizontalPanel.getWidget(0)).getWidget(0);
+        sizeChart.setUrl("ChartGenerator?name=" + mapName + "&type=size&random=" + Math.random() * 10);
+        Image opsChart = (Image) ((AbsolutePanel) horizontalPanel.getWidget(1)).getWidget(0);
+        opsChart.setUrl("ChartGenerator?name=" + mapName + "&type=ops&random=" + Math.random() * 10);
+    }
+
+    private AbsolutePanel createAbsPanelWithImage() {
+        AbsolutePanel absImagePanel = new AbsolutePanel();
+        absImagePanel.addStyleName("img-shadow");
+        absImagePanel.add(new Image());
+        return absImagePanel;
     }
 
     @Override

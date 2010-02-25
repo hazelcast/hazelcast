@@ -16,7 +16,6 @@
  */
 package com.hazelcast.monitor.client;
 
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.MouseOutEvent;
 import com.google.gwt.event.dom.client.MouseOutHandler;
 import com.google.gwt.event.dom.client.MouseOverEvent;
@@ -34,15 +33,16 @@ public abstract class MapPanel extends AbstractMonitoringPanel implements Monito
     final protected String mapName;
     final protected AsyncCallback<ChangeEvent> callBack;
     DisclosurePanel disclosurePanel;
-    protected final HazelcastServiceAsync hazelcastService = GWT
-            .create(HazelcastService.class);
     protected ClusterWidgets clusterWidgets;
+    final private String panelHeader;
+    final HazelcastServiceAsync hazelcastService;
 
-    public MapPanel(String name, AsyncCallback<ChangeEvent> callBack, String panelLabel) {
+    public MapPanel(String name, AsyncCallback<ChangeEvent> callBack, String panelLabel, HazelcastServiceAsync hazelcastService) {
+        super(hazelcastService);
         this.mapName = name;
         this.callBack = callBack;
-        disclosurePanel = initPanel(panelLabel);
-        disclosurePanel.setOpen(false);
+        panelHeader = panelLabel;
+        this.hazelcastService = hazelcastService;
     }
 
     protected DisclosurePanel initPanel(String panelHeader) {
@@ -57,41 +57,35 @@ public abstract class MapPanel extends AbstractMonitoringPanel implements Monito
             vPanel.add(absTablePanel);
         }
         disclosurePanel.add(vPanel);
-        disclosurePanel.setOpen(true);
+        disclosurePanel.setOpen(false);
         return disclosurePanel;
     }
 
     protected abstract FlexTable createTable();
 
     public Widget getPanelWidget() {
+        if (disclosurePanel == null) {
+            synchronized (mapName) {
+                if (disclosurePanel == null) {
+                    disclosurePanel = initPanel(panelHeader);
+                }
+            }
+        }
         return disclosurePanel;
     }
 
     public boolean register(ClusterWidgets clusterWidgets) {
         this.clusterWidgets = clusterWidgets;
-        super.register(clusterWidgets, ChangeEventType.MAP_STATISTICS);
-        List<ChangeEventType> registeredChangeEvents = clusterWidgets.getRegisteredChangeEvents(mapName);
-        if (!registeredChangeEvents.contains(ChangeEventType.MAP_STATISTICS)) {
-            hazelcastService.registerEvent(ChangeEventType.MAP_STATISTICS, clusterWidgets.clusterId, mapName, callBack);
-            registeredChangeEvents.add(ChangeEventType.MAP_STATISTICS);
+        boolean isNew = super.register(clusterWidgets, ChangeEventType.MAP_STATISTICS);
+        if (isNew) {
+            this.hazelcastService.registerEvent(ChangeEventType.MAP_STATISTICS, clusterWidgets.clusterId, mapName, callBack);
         }
+        super.register(clusterWidgets, ChangeEventType.MAP_STATISTICS, mapName, callBack);
         return true;
     }
 
     public boolean deRegister(final ClusterWidgets clusterWidgets) {
-        boolean isEmpty = super.deRegister(clusterWidgets, ChangeEventType.MAP_STATISTICS);
-        if (isEmpty) {
-            hazelcastService.deRegisterEvent(ChangeEventType.MAP_STATISTICS, clusterWidgets.clusterId, mapName, new AsyncCallback<Void>() {
-
-                public void onFailure(Throwable caught) {
-                }
-
-                public void onSuccess(Void result) {
-                    clusterWidgets.getRegisteredChangeEvents(mapName).remove(ChangeEventType.MAP_STATISTICS);
-                }
-            });
-        }
-        return true;
+        return super.deRegister(clusterWidgets, ChangeEventType.MAP_STATISTICS, mapName);
     }
 
     public static class LabelWithToolTip extends Label {

@@ -32,7 +32,8 @@ public class MembersPanel extends AbstractMonitoringPanel implements MonitoringP
     final private AsyncCallback<ChangeEvent> callBack;
     final private String memberName;
 
-    public MembersPanel(AsyncCallback<ChangeEvent> callBack, String name) {
+    public MembersPanel(AsyncCallback<ChangeEvent> callBack, String name, ServicesFactory servicesFactory) {
+        super(servicesFactory.getHazelcastService());
         this.callBack = callBack;
         absTablePanel = new AbsolutePanel();
         absTablePanel.addStyleName("img-shadow");

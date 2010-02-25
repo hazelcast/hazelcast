@@ -21,6 +21,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiTask;
+import com.hazelcast.impl.MapOperationStats;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
@@ -92,6 +93,16 @@ public class MapStatisticsGenerator implements ChangeEventGenerator {
             stat.lastEvictionTime = memberMapStat.getLocalMapStats().getLastEvictionTime();
             stat.memberName = memberMapStat.getMember().getInetSocketAddress().getHostName() + ":"
                     + memberMapStat.getMember().getInetSocketAddress().getPort();
+            MapOperationStats mapOpStats = memberMapStat.getLocalMapStats().getOperationStats();
+            stat.periodStart = mapOpStats.getPeriodStart();
+            stat.periodEnd = mapOpStats.getPeriodEnd();
+            long periodInSec = (stat.periodEnd - stat.periodStart) / 1000;
+            if (periodInSec != 0) {
+                stat.numberOfPutsInSec = mapOpStats.getNumberOfPuts()/periodInSec;
+                stat.numberOfGetsInSec = mapOpStats.getNumberOfGets()/periodInSec;
+                stat.numberOfRemovesInSec = mapOpStats.getNumberOfRemoves()/periodInSec;
+                stat.numberOfOthersInSec = mapOpStats.getNumberOfOtherOperations()/periodInSec;
+            }
             listOfStats.add(stat);
         }
         MapStatistics event = new MapStatistics(clusterId);
@@ -117,5 +128,22 @@ public class MapStatisticsGenerator implements ChangeEventGenerator {
 
     public String getName() {
         return map.getName();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MapStatisticsGenerator that = (MapStatisticsGenerator) o;
+        if (clusterId != that.clusterId) return false;
+        if (mapName != null ? !mapName.equals(that.mapName) : that.mapName != null) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = clusterId;
+        result = 31 * result + (mapName != null ? mapName.hashCode() : 0);
+        return result;
     }
 }

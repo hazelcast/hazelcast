@@ -31,7 +31,8 @@ public class PartitionsPanel extends AbstractMonitoringPanel implements Monitori
     final AbsolutePanel absTablePanel;
     private ClusterWidgets clusterWidgets;
 
-    public PartitionsPanel(AsyncCallback<ChangeEvent> callBack) {
+    public PartitionsPanel(AsyncCallback<ChangeEvent> callBack, ServicesFactory servicesFactory) {
+        super(servicesFactory.getHazelcastService());
         this.callBack = callBack;
         absTablePanel = new AbsolutePanel();
         absTablePanel.addStyleName("img-shadow");

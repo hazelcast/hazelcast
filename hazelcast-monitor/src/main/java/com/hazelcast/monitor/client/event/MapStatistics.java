@@ -81,6 +81,16 @@ public class MapStatistics implements ChangeEvent, Serializable {
         public int lockedEntryCount;
         public int lockWaitCount;
         public String memberName;
+        public long periodStart;
+        public long periodEnd;
+        public long numberOfPutsInSec;
+        public long numberOfGetsInSec;
+        public long numberOfRemovesInSec;
+        public long numberOfOthersInSec;
+
+        public long totalOperationsInSec() {
+            return numberOfGetsInSec + numberOfPutsInSec + numberOfRemovesInSec + numberOfOthersInSec;
+        }
     }
 
 }

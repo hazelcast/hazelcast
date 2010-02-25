@@ -16,7 +16,6 @@
  */
 package com.hazelcast.monitor.client;
 
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
@@ -24,10 +23,13 @@ import com.hazelcast.monitor.client.event.ChangeEventType;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class AbstractMonitoringPanel implements MonitoringPanel{
+public abstract class AbstractMonitoringPanel implements MonitoringPanel {
 
-protected final HazelcastServiceAsync hazelcastService = GWT
-            .create(HazelcastService.class);
+    private final HazelcastServiceAsync hazelcastService;
+
+    protected AbstractMonitoringPanel(HazelcastServiceAsync hazelcastService) {
+        this.hazelcastService = hazelcastService;
+    }
 
     /**
      * Registers the panel in ClusterWidgets;
@@ -37,21 +39,19 @@ protected final HazelcastServiceAsync hazelcastService = GWT
      * @param changeEventType
      * @return
      */
-    protected boolean register(ClusterWidgets clusterWidgets, ChangeEventType changeEventType){
+    protected boolean register(ClusterWidgets clusterWidgets, ChangeEventType changeEventType) {
         List<MonitoringPanel> list = clusterWidgets.getPanels().get(changeEventType);
+        boolean result;
         if (list == null) {
             list = new ArrayList<MonitoringPanel>();
             clusterWidgets.getPanels().put(changeEventType, list);
         }
-        if (!list.contains(this)) {
-            list.add(this);
-            return true;
-        }
-        else{
-            return false;
-        }
+        result = list.isEmpty();
+        list.add(this);
+        return result;
 
     }
+
     public boolean register(ClusterWidgets clusterWidgets, ChangeEventType eventType, String name, AsyncCallback<ChangeEvent> callBack) {
         boolean newEvent = register(clusterWidgets, eventType);
         if (newEvent) {
@@ -60,14 +60,15 @@ protected final HazelcastServiceAsync hazelcastService = GWT
         return true;
     }
 
-    /** De registers the panel from clusterWidgets. Returns true of there is no registered panel
+    /**
+     * De registers the panel from clusterWidgets. Returns true of there is no registered panel
      * with same ChangeEventType.
      *
      * @param clusterWidgets
      * @param changeEventType
      * @return
      */
-    protected boolean deRegister(ClusterWidgets clusterWidgets, ChangeEventType changeEventType){
+    protected boolean deRegister(ClusterWidgets clusterWidgets, ChangeEventType changeEventType) {
         List<MonitoringPanel> list = clusterWidgets.getPanels().get(changeEventType);
         if (list != null) {
             list.remove(this);

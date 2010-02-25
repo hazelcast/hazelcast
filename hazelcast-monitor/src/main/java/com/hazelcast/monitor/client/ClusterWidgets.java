@@ -29,7 +29,7 @@ import java.util.*;
 
 public class ClusterWidgets {
     int clusterId;
-    Tree clusterTree;
+    private Tree clusterTree;
     String clusterName;
     TreeItem memberTreeItem;
     public HorizontalSplitPanel mainPanel;
@@ -38,13 +38,10 @@ public class ClusterWidgets {
     final private ClusterView clusterView;
 
     final private HazelcastMonitor hazelcastMonitor;
-    private Map<String, List<ChangeEventType>> registeredChangeEvents = new HashMap<String, List<ChangeEventType>>();
 
     public ClusterWidgets(HazelcastMonitor hazelcastMonitor, ClusterView cv) {
         this.hazelcastMonitor = hazelcastMonitor;
         this.clusterId = cv.getId();
-        Tree tree = addTreeItems(cv);
-        this.clusterTree = tree;
         this.clusterView = cv;
     }
 
@@ -60,12 +57,18 @@ public class ClusterWidgets {
         return itemMap;
     }
 
+    public Tree getClusterTree() {
+        if (this.clusterTree == null) {
+            clusterTree = addTreeItems(clusterView);
+        }
+        return clusterTree;
+    }
+
     public void handle(ChangeEvent changeEvent) {
 //        System.out.println("Handling event: " + changeEvent);
-        if(changeEvent instanceof ClientDisconnectedEvent){
-            disconnected();    
-        }
-        else if (changeEvent instanceof InstanceCreated) {
+        if (changeEvent instanceof ClientDisconnectedEvent) {
+            disconnected();
+        } else if (changeEvent instanceof InstanceCreated) {
             new InstanceCreatedHandler(this).handle(changeEvent);
         } else if (changeEvent instanceof InstanceDestroyed) {
             new InstanceDestroyedHandler(this).handle(changeEvent);
@@ -74,7 +77,7 @@ public class ClusterWidgets {
         } else {
             List<MonitoringPanel> list = panels.get(changeEvent.getChangeEventType());
             if (list == null || list.isEmpty()) {
-                System.out.println("Unknown event:" + changeEvent.getChangeEventType());
+//                System.out.println("Unknown event:" + changeEvent.getChangeEventType());
                 return;
             }
             for (Iterator<MonitoringPanel> iterator = list.iterator(); iterator.hasNext();) {
@@ -87,8 +90,7 @@ public class ClusterWidgets {
     public void register(MonitoringPanel panel) {
         boolean registered = panel.register(this);
         if (registered) {
-            VerticalPanel rightPanel = (VerticalPanel) mainPanel.getRightWidget();
-            rightPanel.add(panel.getPanelWidget());
+            hazelcastMonitor.addToRightPanel(panel.getPanelWidget());
         }
     }
 
@@ -169,29 +171,16 @@ public class ClusterWidgets {
         Anchor anchor = new Anchor(name);
         anchor.addClickHandler(new ClickHandler() {
             public void onClick(ClickEvent clickEvent) {
-                hazelcastMonitor.onValueChange(token);
+                hazelcastMonitor.onValueChangeHandler.handle(token);
             }
         });
         return anchor;
     }
 
-    public List<ChangeEventType> getRegisteredChangeEvents(String name) {
-        List<ChangeEventType> list = registeredChangeEvents.get(name);
-        if (list == null) {
-            registeredChangeEvents.put(name, new ArrayList<ChangeEventType>());
-        }
-        return registeredChangeEvents.get(name);
-    }
-
-    public ClusterView getClusterView() {
-        return clusterView;
-    }
-
     public void disconnected() {
-        VerticalPanel leftPanel = (VerticalPanel)mainPanel.getLeftWidget();
+        VerticalPanel leftPanel = (VerticalPanel) mainPanel.getLeftWidget();
         DecoratedStackPanel dsPanel = (DecoratedStackPanel) leftPanel.getWidget(2);
         int index = dsPanel.getWidgetIndex(this.clusterTree);
-
         dsPanel.setStackText(index, clusterName + "- disconnected");
     }
 }

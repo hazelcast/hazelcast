@@ -27,8 +27,7 @@ import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
 import com.hazelcast.monitor.client.exception.ClientDisconnectedException;
 import com.hazelcast.monitor.server.event.ChangeEventGenerator;
-import com.hazelcast.monitor.server.event.MapStatisticsGenerator;
-import com.hazelcast.monitor.server.event.PartitionsEventGenerator;
+import com.hazelcast.monitor.server.event.ChangeEventGeneratorFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -38,6 +37,8 @@ import java.util.List;
 public class HazelcastServiceImpl extends RemoteServiceServlet implements HazelcastService {
     private static final long serialVersionUID = 7042401980726503097L;
     private static Object lock = new Object();
+    ChangeEventGeneratorFactory changeEventGeneratorFactory = new ChangeEventGeneratorFactory();
+    SessionObject sessionObject;
 
     public ClusterView connectCluster(String name, String pass, String ips) throws ConnectionExceptoin {
         final SessionObject sessionObject = getSessionObject();
@@ -67,9 +68,15 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
     }
 
     private SessionObject getSessionObject() {
-        HttpServletRequest request = this.getThreadLocalRequest();
-        HttpSession session = request.getSession();
-        SessionObject sessionObject = getSessionObject(session);
+        if (sessionObject == null) {
+            synchronized (lock) {
+                if (sessionObject == null) {
+                    HttpServletRequest request = this.getThreadLocalRequest();
+                    HttpSession session = request.getSession();
+                    sessionObject = getSessionObject(session);
+                }
+            }
+        }
         return sessionObject;
     }
 
@@ -97,18 +104,15 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
 
     public ChangeEvent registerEvent(ChangeEventType eventType, int clusterId, String instanceName) {
         SessionObject sessionObject = getSessionObject();
-        ChangeEventGenerator eventGenerator = null;
-        HazelcastClient client = sessionObject.mapOfHz.get(clusterId);
+        HazelcastClient client = sessionObject.getHazelcastClientMap().get(clusterId);
         if (client == null) {
             System.err.println("Client is null: Cluster id: " + clusterId + ", client map size: " + sessionObject.mapOfHz.size());
         }
-        if (eventType.equals(ChangeEventType.MAP_STATISTICS)) {
-            eventGenerator = new MapStatisticsGenerator(client, instanceName, clusterId);
-        } else if (eventType.equals(ChangeEventType.PARTITIONS)) {
-            eventGenerator = new PartitionsEventGenerator(client, clusterId);
+        ChangeEventGenerator eventGenerator = changeEventGeneratorFactory.createEventGenerator(eventType, clusterId, instanceName, client);
+        if (!sessionObject.getEventGenerators().contains(eventGenerator)) {
+            sessionObject.getEventGenerators().add(eventGenerator);
         }
-        sessionObject.eventGenerators.add(eventGenerator);
-        ChangeEvent changeEvent = null;
+        ChangeEvent changeEvent;
         try {
             changeEvent = eventGenerator.generateEvent();
         } catch (NoMemberAvailableException e) {
@@ -120,13 +124,13 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
     public void deRegisterEvent(ChangeEventType eventType, int clusterId, String instanceName) {
         SessionObject sessionObject = getSessionObject();
         List<ChangeEventGenerator> deleted = new ArrayList<ChangeEventGenerator>();
-        for (int i = 0; i < sessionObject.eventGenerators.size(); i++) {
-            ChangeEventGenerator eventGenerator = sessionObject.eventGenerators.get(i);
+        for (int i = 0; i < sessionObject.getEventGenerators().size(); i++) {
+            ChangeEventGenerator eventGenerator = sessionObject.getEventGenerators().get(i);
             if (eventGenerator.getChangeEventType().equals(eventType) && eventGenerator.getClusterId() == clusterId) {
                 deleted.add(eventGenerator);
             }
         }
-        sessionObject.eventGenerators.removeAll(deleted);
+        sessionObject.getEventGenerators().removeAll(deleted);
     }
 }
 

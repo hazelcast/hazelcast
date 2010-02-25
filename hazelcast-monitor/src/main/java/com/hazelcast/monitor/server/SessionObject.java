@@ -52,6 +52,14 @@ public class SessionObject {
         initTimer(session);
     }
 
+    public Map<Integer, HazelcastClient> getHazelcastClientMap(){
+        return mapOfHz;
+    }
+
+    public List<ChangeEventGenerator> getEventGenerators() {
+        return eventGenerators;
+    }
+
     private String getName(Instance instance) {
         if (Instance.InstanceType.MAP.equals(instance.getInstanceType())) {
             return ((IMap) instance).getName();
@@ -94,9 +102,12 @@ public class SessionObject {
                 for (ChangeEventGenerator eventGenerator : eventGenerators) {
                     ChangeEvent event = null;
                     try {
+//                        System.out.println("Generating event "+eventGenerator.getClass()+" for cluster id: " + eventGenerator.getClusterId());
                         event = eventGenerator.generateEvent();
                     } catch (NoMemberAvailableException e) {
-                        event = new ClientDisconnectedEvent();
+                        event = new ClientDisconnectedEvent(eventGenerator.getClusterId());
+                        cleareEventGenerators(eventGenerator.getClusterId());
+                    } catch (Exception ignored) {
                     }
                     if (event != null) {
                         queue.offer(event);
@@ -105,6 +116,18 @@ public class SessionObject {
             }
         };
         timer.schedule(task, new Date(), 5000);
+    }
+
+    private void cleareEventGenerators(int clusterId){
+        List<ChangeEventGenerator> list = new ArrayList<ChangeEventGenerator>();
+        for(Iterator<ChangeEventGenerator> it = eventGenerators.iterator();it.hasNext();){
+            ChangeEventGenerator changeEventGenerator = it.next();
+            if(changeEventGenerator.getClusterId() == clusterId){
+                list.add(changeEventGenerator);
+            }
+        }
+
+        eventGenerators.removeAll(list);
     }
 
     private Timer getTimerFromServletContext(HttpSession session) {
