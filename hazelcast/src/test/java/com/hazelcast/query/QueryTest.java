@@ -53,7 +53,7 @@ public class QueryTest {
         int TTL = 2;
         mCfg.setTimeToLiveSeconds(TTL);
         mapConfigs.put("employees", mCfg);
-        cfg.setMapMapConfigs(mapConfigs);
+        cfg.setMapConfigs(mapConfigs);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(cfg);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");

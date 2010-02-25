@@ -51,7 +51,7 @@ public class ExecutorConfigTest {
     @Test
     public void testGetKeepAliveSeconds() {
         ExecutorConfig executorConfig = new ExecutorConfig();
-        assertTrue(executorConfig.getKeepAliveSeconds() == ExecutorConfig.DEFAULT_KEEPALIVE_SECONDS);
+        assertTrue(executorConfig.getKeepAliveSeconds() == ExecutorConfig.DEFAULT_KEEP_ALIVE_SECONDS);
     }
 
     @Test

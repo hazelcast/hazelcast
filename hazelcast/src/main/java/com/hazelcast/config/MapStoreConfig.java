@@ -42,8 +42,9 @@ public final class MapStoreConfig {
      *
      * @param className the name of the MapStore implementation class to set
      */
-    public void setClassName(String className) {
+    public MapStoreConfig setClassName(String className) {
         this.className = className;
+        return this;
     }
 
     /**
@@ -60,8 +61,9 @@ public final class MapStoreConfig {
      *
      * @param writeDelaySeconds the number of seconds to delay
      */
-    public void setWriteDelaySeconds(int writeDelaySeconds) {
+    public MapStoreConfig setWriteDelaySeconds(int writeDelaySeconds) {
         this.writeDelaySeconds = writeDelaySeconds;
+        return this;
     }
 
     /**
@@ -78,13 +80,15 @@ public final class MapStoreConfig {
      *
      * @param enabled
      */
-    public void setEnabled(boolean enabled) {
+    public MapStoreConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
+        return this;
     }
 
     /**
      * Sets the map store implementation object
-     * @param implementation  implementation object
+     *
+     * @param implementation implementation object
      * @return this MapStoreConfig instance
      */
     public MapStoreConfig setImplementation(Object implementation) {
@@ -94,6 +98,7 @@ public final class MapStoreConfig {
 
     /**
      * Returns the map store implementation object
+     *
      * @return map store implementation object
      */
     public Object getImplementation() {

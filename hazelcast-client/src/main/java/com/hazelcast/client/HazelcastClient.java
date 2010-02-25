@@ -28,6 +28,7 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -39,12 +40,13 @@ import java.util.concurrent.ExecutorService;
  */
 public class HazelcastClient implements HazelcastInstance {
 
-	final Map<Long, Call> calls = new ConcurrentHashMap<Long, Call>();
+    final Map<Long, Call> calls = new ConcurrentHashMap<Long, Call>();
     final ListenerManager listenerManager;
     final OutRunnable out;
     final InRunnable in;
     final ConnectionManager connectionManager;
     final Map<Object, ClientProxy> mapProxies = new ConcurrentHashMap<Object, ClientProxy>(100);
+    final ConcurrentMap<String, ExecutorServiceClientProxy> mapExecutors = new ConcurrentHashMap<String, ExecutorServiceClientProxy>(2);
     final IMap mapLockProxy;
     final ClusterClientProxy clusterClientProxy;
     final PartitionClientProxy partitionClientProxy;
@@ -243,7 +245,21 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public ExecutorService getExecutorService() {
-        return new ExecutorServiceClientProxy(this);
+        return getExecutorService("default");
+    }
+
+    public ExecutorService getExecutorService(String name) {
+        if (name == null) throw new IllegalArgumentException("ExecutorService name cannot be null");
+        name = "x:" + name;
+        ExecutorServiceClientProxy executorServiceProxy = mapExecutors.get(name);
+        if (executorServiceProxy == null) {
+            executorServiceProxy = new ExecutorServiceClientProxy(this, name);
+            ExecutorServiceClientProxy old = mapExecutors.putIfAbsent(name, executorServiceProxy);
+            if (old != null) {
+                executorServiceProxy = old;
+            }
+        }
+        return executorServiceProxy;
     }
 
     public IdGenerator getIdGenerator(String name) {

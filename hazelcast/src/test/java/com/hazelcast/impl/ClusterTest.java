@@ -334,7 +334,7 @@ public class ClusterTest {
 
     private Config configTTLForMap(String mapName, int ttl) {
         Config myConfig = new Config();
-        Map<String, MapConfig> myHazelcastMapConfigs = myConfig.getMapMapConfigs();
+        Map<String, MapConfig> myHazelcastMapConfigs = myConfig.getMapConfigs();
         MapConfig myMapConfig = myHazelcastMapConfigs.get(mapName);
         if (myMapConfig == null) {
             myMapConfig = new MapConfig();
@@ -645,7 +645,7 @@ public class ClusterTest {
         MapConfig mapConfig = new MapConfig();
         mapConfig.setEvictionPolicy("LRU");
         mapConfig.setMaxSize(3);
-        c.getMapMapConfigs().put("default", mapConfig);
+        c.getMapConfigs().put("default", mapConfig);
         HazelcastInstance h = Hazelcast.newHazelcastInstance(c);
         IMap map = h.getMap("default");
         for (int i = 0; i < 10; i++) {
@@ -1414,7 +1414,7 @@ public class ClusterTest {
         MapConfig mCfg = new MapConfig();
         mCfg.setTimeToLiveSeconds(3);
         mapConfigs.put("testMapEvictionWithTTL", mCfg);
-        cfg.setMapMapConfigs(mapConfigs);
+        cfg.setMapConfigs(mapConfigs);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(cfg);
         IMap map1 = h1.getMap("testMapEvictionWithTTL");
         final CountDownLatch latch = new CountDownLatch(1);

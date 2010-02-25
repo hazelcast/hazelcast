@@ -55,19 +55,34 @@ public class ExecutorManager extends BaseManager {
     private static final String QUERY_EXECUTOR_SERVICE = "x:hz.query";
     private static final String STORE_EXECUTOR_SERVICE = "x:hz.store";
     private static final String EVENT_EXECUTOR_SERVICE = "x:hz.events";
+    private final Object CREATE_LOCK = new Object();
 
     ExecutorManager(final Node node) {
         super(node);
         logger.log(Level.FINEST, "Starting ExecutorManager");
         Config config = node.getConfig();
         ClassLoader classLoader = config.getClassLoader();
-        defaultExecutorService = newNamedExecutorService(classLoader, config.getExecutorConfig());
+        defaultExecutorService = newNamedExecutorService(classLoader, config.getExecutorConfig("default"));
         migrationExecutorService = newNamedExecutorService(classLoader, new ExecutorConfig(MIGRATION_EXECUTOR_SERVICE, 10, 10, 600));
         queryExecutorService = newNamedExecutorService(classLoader, new ExecutorConfig(QUERY_EXECUTOR_SERVICE, 10, 10, 600));
         storeExecutorService = newNamedExecutorService(classLoader, new ExecutorConfig(STORE_EXECUTOR_SERVICE, 10, 10, 600));
         eventExecutorService = newNamedExecutorService(classLoader, new ExecutorConfig(EVENT_EXECUTOR_SERVICE, 10, 10, 600));
         registerPacketProcessor(EXECUTE, new ExecutionOperationHandler());
         started = true;
+    }
+
+    public NamedExecutorService getOrCreateNamedExecutorService(String name) {
+        NamedExecutorService namedExecutorService = mapExecutors.get(name);
+        if (namedExecutorService == null) {
+            synchronized (CREATE_LOCK) {
+                namedExecutorService = mapExecutors.get(name);
+                if (namedExecutorService == null) {
+                    ExecutorConfig executorConfig = node.getConfig().getExecutorConfig(name.substring(2));
+                    namedExecutorService = newNamedExecutorService(node.getConfig().getClassLoader(), executorConfig);
+                }
+            }
+        }
+        return namedExecutorService;
     }
 
     NamedExecutorService newNamedExecutorService(ClassLoader classLoader, ExecutorConfig executorConfig) {
@@ -99,7 +114,7 @@ public class ExecutorManager extends BaseManager {
 
     class ExecutionOperationHandler extends AbstractOperationHandler {
         void doOperation(Request request) {
-            NamedExecutorService namedExecutorService = mapExecutors.get(request.name);
+            NamedExecutorService namedExecutorService = getOrCreateNamedExecutorService(request.name);
             namedExecutorService.execute(new RequestExecutor(request));
         }
 
@@ -193,7 +208,7 @@ public class ExecutorManager extends BaseManager {
     }
 
     public void call(String name, DistributedTask dtask) {
-        NamedExecutorService namedExecutorService = mapExecutors.get(name);
+        NamedExecutorService namedExecutorService = getOrCreateNamedExecutorService(name);
         InnerFutureTask inner = (InnerFutureTask) dtask.getInner();
         Data callable = toData(inner.getCallable());
         if (inner.getMembers() != null) {

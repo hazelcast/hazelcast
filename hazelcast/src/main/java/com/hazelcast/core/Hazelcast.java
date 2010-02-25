@@ -172,14 +172,25 @@ public final class Hazelcast {
     }
 
     /**
-     * Returns the distributed executor service. This executor
+     * Returns the default distributed executor service. Executor
      * service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
      * on the Hazelcast cluster.
      *
-     * @return distrubuted executor service of this Hazelcast instance
+     * @return distributed executor service of this Hazelcast instance
      */
     public static ExecutorService getExecutorService() {
         return getDefaultInstance().getExecutorService();
+    }
+
+    /**
+     * Returns the distributed executor service for the given
+     * name.
+     *
+     * @param name name of the executor service
+     * @return executor service for the given name
+     */
+    public static ExecutorService getExecutorService(String name) {
+        return getDefaultInstance().getExecutorService(name);
     }
 
     /**

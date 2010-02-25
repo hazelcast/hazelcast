@@ -58,7 +58,7 @@ public class FactoryImpl implements HazelcastInstance {
 
     private final MProxyImpl globalProxies;
 
-    private final ExecutorServiceProxy executorServiceImpl;
+    private final ConcurrentMap<String, ExecutorServiceProxy> executorServiceProxies = new ConcurrentHashMap<String, ExecutorServiceProxy>(2);
 
     private final CopyOnWriteArrayList<InstanceListener> lsInstanceListeners = new CopyOnWriteArrayList<InstanceListener>();
 
@@ -140,6 +140,10 @@ public class FactoryImpl implements HazelcastInstance {
 
         public ExecutorService getExecutorService() {
             return hazelcastInstance.getExecutorService();
+        }
+
+        public ExecutorService getExecutorService(String name) {
+            return hazelcastInstance.getExecutorService(name);
         }
 
         public Cluster getCluster() {
@@ -281,7 +285,6 @@ public class FactoryImpl implements HazelcastInstance {
         this.name = name;
         node = new Node(this, config);
         final ILogger logger = node.getLogger(FactoryImpl.class.getName());
-        executorServiceImpl = new ExecutorServiceProxy(node, "default");
         transactionFactory = new TransactionFactory(this);
         hazelcastInstanceProxy = new HazelcastInstanceProxy(this);
         node.start();
@@ -383,7 +386,22 @@ public class FactoryImpl implements HazelcastInstance {
 
     public ExecutorService getExecutorService() {
         initialChecks();
-        return executorServiceImpl;
+        return getExecutorService("default");
+    }
+
+    public ExecutorService getExecutorService(String name) {
+        if (name == null) throw new IllegalArgumentException("ExecutorService name cannot be null");
+        initialChecks();
+        name = "x:" + name;
+        ExecutorServiceProxy executorServiceProxy = executorServiceProxies.get(name);
+        if (executorServiceProxy == null) {
+            executorServiceProxy = new ExecutorServiceProxy(node, name);
+            ExecutorServiceProxy old = executorServiceProxies.putIfAbsent(name, executorServiceProxy);
+            if (old != null) {
+                executorServiceProxy = old;
+            }
+        }
+        return executorServiceProxy;
     }
 
     public ClusterImpl getCluster() {
@@ -2231,7 +2249,6 @@ public class FactoryImpl implements HazelcastInstance {
                 check(key);
                 if (time < 0)
                     throw new IllegalArgumentException("Time cannot be negative. time = " + time);
-
                 mapOperationStats.incrementOtherOperations();
                 MLock mlock = concurrentMapManager.new MLock();
                 return mlock.lock(name, key, timeunit.toMillis(time));
@@ -2578,7 +2595,7 @@ public class FactoryImpl implements HazelcastInstance {
             private Long getNewMillion() {
                 try {
                     DistributedTask<Long> task = new DistributedTask<Long>(new IncrementTask(name, factory), name);
-                    factory.executorServiceImpl.execute(task);
+                    factory.getExecutorService("default").execute(task);
                     return task.get();
                 } catch (Exception e) {
                     e.printStackTrace();

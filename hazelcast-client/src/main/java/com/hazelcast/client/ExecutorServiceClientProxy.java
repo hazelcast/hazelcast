@@ -35,11 +35,13 @@ import static com.hazelcast.client.Serializer.toObject;
 public class ExecutorServiceClientProxy implements ClientProxy, ExecutorService {
 
     final ProxyHelper proxyHelper;
-    final private HazelcastClient client;
+    private final HazelcastClient client;
+    private final String name;
 
-    public ExecutorServiceClientProxy(HazelcastClient client) {
+    public ExecutorServiceClientProxy(HazelcastClient client, String name) {
         this.client = client;
-        proxyHelper = new ProxyHelper("", client);
+        this.name = name;
+        proxyHelper = new ProxyHelper(name, client);
     }
 
     public void setOutRunnable(OutRunnable out) {

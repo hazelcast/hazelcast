@@ -159,7 +159,7 @@ public class HazelcastClientExecutorServiceTest {
 
     public static class BasicRunnable implements Runnable, Serializable {
         public void run() {
-            System.out.println("I am running: Hazelcast rocks in Thread: -> " + Thread.currentThread().getName());
+            System.out.println("I am running: Hazelcast rocks. in Thread: -> " + Thread.currentThread().getName());
         }
     }
 

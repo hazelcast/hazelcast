@@ -272,19 +272,22 @@ public class XmlConfigBuilder implements ConfigBuilder {
         }
     }
 
-    private void handleExecutor(final org.w3c.dom.Node node) {
+    private void handleExecutor(final org.w3c.dom.Node node) throws Exception{
         final ExecutorConfig executorConfig = config.getExecutorConfig();
-        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
-            final String name = n.getNodeName().toLowerCase();
-            final String value = getTextContent(n).trim();
-            if ("core-pool-size".equals(name)) {
-                executorConfig.setCorePoolSize(getIntegerValue("core-pool-size", value, ExecutorConfig.DEFAULT_CORE_POOL_SIZE));
-            } else if ("max-pool-size".equals(name)) {
-                executorConfig.setMaxPoolSize(getIntegerValue("max-pool-size", value, ExecutorConfig.DEFAULT_MAX_POOL_SIZE));
-            } else if ("keep-alive-seconds".equals(name)) {
-                executorConfig.setKeepAliveSeconds(getIntegerValue("keep-alive-seconds", value, ExecutorConfig.DEFAULT_KEEPALIVE_SECONDS));
-            }
-        }
+        handleViaReflection(node, config, executorConfig);
+//        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+//            final String name = n.getNodeName().toLowerCase();
+//            final String value = getTextContent(n).trim();
+//            if ("name".equals(name)) {
+//                executorConfig.setName(name)
+//            } else if ("core-pool-size".equals(name)) {
+//                executorConfig.setCorePoolSize(getIntegerValue("core-pool-size", value, ExecutorConfig.DEFAULT_CORE_POOL_SIZE));
+//            } else if ("max-pool-size".equals(name)) {
+//                executorConfig.setMaxPoolSize(getIntegerValue("max-pool-size", value, ExecutorConfig.DEFAULT_MAX_POOL_SIZE));
+//            } else if ("keep-alive-seconds".equals(name)) {
+//                executorConfig.setKeepAliveSeconds(getIntegerValue("keep-alive-seconds", value, ExecutorConfig.DEFAULT_KEEPALIVE_SECONDS));
+//            }
+//        }
     }
 
     private void handleGroup(final org.w3c.dom.Node node) {
@@ -461,7 +464,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
                 qConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value, QueueConfig.DEFAULT_TTL_SECONDS));
             }
         }
-        this.config.getMapQConfigs().put(name, qConfig);
+        this.config.getQConfigs().put(name, qConfig);
     }
 
     private void handleMap(final org.w3c.dom.Node node) throws Exception {
@@ -498,7 +501,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
                 handleViaReflection(n, mapConfig, new NearCacheConfig());
             }
         }
-        this.config.getMapMapConfigs().put(name, mapConfig);
+        this.config.getMapConfigs().put(name, mapConfig);
     }
 
     private MapStoreConfig createMapStoreConfig(final org.w3c.dom.Node node) {
@@ -600,7 +603,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
                 tConfig.setGlobalOrderingEnabled(checkTrue(value));
             }
         }
-        config.getMapTopicConfigs().put(name, tConfig);
+        config.getTopicConfigs().put(name, tConfig);
     }
 
     private boolean hasTextContent(final Node child) {

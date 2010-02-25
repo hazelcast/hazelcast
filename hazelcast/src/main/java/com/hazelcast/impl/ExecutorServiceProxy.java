@@ -59,7 +59,7 @@ public class ExecutorServiceProxy implements ExecutorService {
 
     /**
      * Hazelcast ExecutorService cannot be really shut down.
-     * The method return always false immeditely.
+     * The method return always false immediately.
      *
      * @return always false
      */

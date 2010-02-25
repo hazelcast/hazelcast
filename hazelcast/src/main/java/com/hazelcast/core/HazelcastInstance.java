@@ -38,7 +38,7 @@ public interface HazelcastInstance {
      *
      * @return name of this Hazelcast instance
      */
-    public String getName();
+    String getName();
 
     /**
      * Returns the distributed queue instance with the specified name.
@@ -46,7 +46,7 @@ public interface HazelcastInstance {
      * @param name name of the distributed queue
      * @return distributed queue instance with the specified name
      */
-    public <E> IQueue<E> getQueue(String name);
+    <E> IQueue<E> getQueue(String name);
 
     /**
      * Returns the distributed topic instance with the specified name.
@@ -54,7 +54,7 @@ public interface HazelcastInstance {
      * @param name name of the distributed topic
      * @return distributed topic instance with the specified name
      */
-    public <E> ITopic<E> getTopic(String name);
+    <E> ITopic<E> getTopic(String name);
 
     /**
      * Returns the distributed set instance with the specified name.
@@ -62,7 +62,7 @@ public interface HazelcastInstance {
      * @param name name of the distributed set
      * @return distributed set instance with the specified name
      */
-    public <E> ISet<E> getSet(String name);
+    <E> ISet<E> getSet(String name);
 
     /**
      * Returns the distributed list instance with the specified name.
@@ -71,7 +71,7 @@ public interface HazelcastInstance {
      * @param name name of the distributed list
      * @return distributed list instance with the specified name
      */
-    public <E> IList<E> getList(String name);
+    <E> IList<E> getList(String name);
 
     /**
      * Returns the distributed map instance with the specified name.
@@ -79,7 +79,7 @@ public interface HazelcastInstance {
      * @param name name of the distributed map
      * @return distributed map instance with the specified name
      */
-    public <K, V> IMap<K, V> getMap(String name);
+    <K, V> IMap<K, V> getMap(String name);
 
     /**
      * Returns the distributed multimap instance with the specified name.
@@ -87,7 +87,7 @@ public interface HazelcastInstance {
      * @param name name of the distributed multimap
      * @return distributed multimap instance with the specified name
      */
-    public <K, V> MultiMap<K, V> getMultiMap(String name);
+    <K, V> MultiMap<K, V> getMultiMap(String name);
 
     /**
      * Returns the distributed lock instance for the specified key object.
@@ -114,7 +114,7 @@ public interface HazelcastInstance {
      * @param key key of the lock instance
      * @return distributed lock instance for the specified key.
      */
-    public ILock getLock(Object key);
+    ILock getLock(Object key);
 
     /**
      * Returns the Cluster that this Hazelcast instance is part of.
@@ -124,16 +124,25 @@ public interface HazelcastInstance {
      *
      * @return cluster that this Hazelcast instance is part of
      */
-    public Cluster getCluster();
+    Cluster getCluster();
 
     /**
-     * Returns the distributed executor service. This executor
+     * Returns the default distributed executor service. Executor
      * service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
      * on the Hazelcast cluster.
      *
-     * @return distrubuted executor service of this Hazelcast instance
+     * @return distributed executor service of this Hazelcast instance
      */
-    public ExecutorService getExecutorService();
+    ExecutorService getExecutorService();
+
+    /**
+     * Returns the distributed executor service for the given
+     * name.
+     *
+     * @param name name of the executor service
+     * @return executor service for the given name
+     */
+    ExecutorService getExecutorService(String name);
 
     /**
      * Returns the transaction instance associated with the current thread,
@@ -171,7 +180,7 @@ public interface HazelcastInstance {
      *
      * @return transaction for the current thread
      */
-    public Transaction getTransaction();
+    Transaction getTransaction();
 
     /**
      * Creates cluster-wide unique IDs. Generated IDs are long type primitive values
@@ -182,20 +191,20 @@ public interface HazelcastInstance {
      * @param name name of the IdGenerator
      * @return IdGenerator for the given name
      */
-    public IdGenerator getIdGenerator(String name);
+    IdGenerator getIdGenerator(String name);
 
     /**
      * Detaches this member from the cluster.
      * It doesn't shutdown the entire cluster, it shuts down
      * this local member only.
      */
-    public void shutdown();
+    void shutdown();
 
     /**
      * Detaches this member from the cluster first and then restarts it
      * as a new member.
      */
-    public void restart();
+    void restart();
 
     /**
      * Returns all queue, map, set, list, topic, lock, multimap
@@ -203,7 +212,7 @@ public interface HazelcastInstance {
      *
      * @return the collection of instances created by Hazelcast.
      */
-    public Collection<Instance> getInstances();
+    Collection<Instance> getInstances();
 
     /**
      * Add a instance listener which will be notified when a
@@ -212,7 +221,7 @@ public interface HazelcastInstance {
      *
      * @param instanceListener instance listener
      */
-    public void addInstanceListener(InstanceListener instanceListener);
+    void addInstanceListener(InstanceListener instanceListener);
 
     /**
      * Removes the specified instance listener. Returns silently
@@ -220,14 +229,14 @@ public interface HazelcastInstance {
      *
      * @param instanceListener instance listener to remove
      */
-    public void removeInstanceListener(InstanceListener instanceListener);
+    void removeInstanceListener(InstanceListener instanceListener);
 
     /**
      * Returns the configuration of this Hazelcast instance.
      *
      * @return configuration of this Hazelcast instance
      */
-    public Config getConfig();
+    Config getConfig();
 
     /**
      * Returns the partition service of this Hazelcast instance.
@@ -236,7 +245,7 @@ public interface HazelcastInstance {
      *
      * @return partition service
      */
-    public PartitionService getPartitionService();
+    PartitionService getPartitionService();
 
     /**
      * Returns the logging service of this Hazelcast instance.
@@ -246,5 +255,5 @@ public interface HazelcastInstance {
      *
      * @return logging service
      */
-    public LoggingService getLoggingService();
+    LoggingService getLoggingService();
 }

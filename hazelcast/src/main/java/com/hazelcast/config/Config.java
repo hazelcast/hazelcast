@@ -19,6 +19,7 @@ package com.hazelcast.config;
 
 import java.io.File;
 import java.net.URL;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -40,11 +41,13 @@ public class Config {
 
     private ExecutorConfig executorConfig = new ExecutorConfig();
 
+    private Map<String, ExecutorConfig> mapExecutors = new ConcurrentHashMap<String, ExecutorConfig>();
+
     private Map<String, TopicConfig> mapTopicConfigs = new ConcurrentHashMap<String, TopicConfig>();
 
     private Map<String, QueueConfig> mapQueueConfigs = new ConcurrentHashMap<String, QueueConfig>();
 
-    private Map<String, MapConfig> mapMapConfigs = new ConcurrentHashMap<String, MapConfig>();
+    private Map<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
 
     private URL configurationUrl;
 
@@ -99,13 +102,13 @@ public class Config {
     }
 
     public MapConfig getMapConfig(final String name) {
-        final Set<String> qNames = mapMapConfigs.keySet();
+        final Set<String> qNames = mapConfigs.keySet();
         for (final String pattern : qNames) {
             if (nameMatches(name, pattern)) {
-                return mapMapConfigs.get(pattern);
+                return mapConfigs.get(pattern);
             }
         }
-        MapConfig defaultConfig = mapMapConfigs.get("default");
+        MapConfig defaultConfig = mapConfigs.get("default");
         if (defaultConfig == null) {
             defaultConfig = new MapConfig();
         }
@@ -216,6 +219,7 @@ public class Config {
 
     /**
      * @return the executorConfig
+     * @deprecated use getExecutorConfig (name) instead
      */
     public ExecutorConfig getExecutorConfig() {
         return executorConfig;
@@ -223,23 +227,68 @@ public class Config {
 
     /**
      * @param executorConfig the executorConfig to set
+     * @deprecated use addExecutorConfig instead
      */
     public Config setExecutorConfig(ExecutorConfig executorConfig) {
-        this.executorConfig = executorConfig;
+        addExecutorConfig(executorConfig);
         return this;
+    }
+
+    /**
+     * Adds a new ExecutorConfig by name
+     *
+     * @param executorConfig executor config to add
+     * @return this config instance
+     */
+    public Config addExecutorConfig(ExecutorConfig executorConfig) {
+        this.mapExecutors.put(executorConfig.getName(), executorConfig);
+        return this;
+    }
+
+    /**
+     * Returns the ExecutorConfig for the given name
+     *
+     * @param name name of the executor config
+     * @return ExecutorConfig
+     */
+    public ExecutorConfig getExecutorConfig(String name) {
+        ExecutorConfig ec = this.mapExecutors.get(name);
+        if (ec == null) {
+            ExecutorConfig defaultConfig = mapExecutors.get("default");
+            if (defaultConfig != null) {
+                ec = new ExecutorConfig(name,
+                        defaultConfig.getCorePoolSize(),
+                        defaultConfig.getMaxPoolSize(),
+                        defaultConfig.getKeepAliveSeconds());
+            }
+        }
+        if (ec == null) {
+            ec = new ExecutorConfig(name);
+            mapExecutors.put(name, ec);
+        }
+        return ec;
+    }
+
+    /**
+     * Returns the collection of executor configs.
+     *
+     * @return collection of executor configs.
+     */
+    public Collection<ExecutorConfig> getExecutorConfigs() {
+        return mapExecutors.values();
     }
 
     /**
      * @return the mapTopicConfigs
      */
-    public Map<String, TopicConfig> getMapTopicConfigs() {
+    public Map<String, TopicConfig> getTopicConfigs() {
         return mapTopicConfigs;
     }
 
     /**
      * @param mapTopicConfigs the mapTopicConfigs to set
      */
-    public Config setMapTopicConfigs(Map<String, TopicConfig> mapTopicConfigs) {
+    public Config setTopicConfigs(Map<String, TopicConfig> mapTopicConfigs) {
         this.mapTopicConfigs = mapTopicConfigs;
         return this;
     }
@@ -247,7 +296,7 @@ public class Config {
     /**
      * @return the mapQConfigs
      */
-    public Map<String, QueueConfig> getMapQConfigs() {
+    public Map<String, QueueConfig> getQConfigs() {
         return mapQueueConfigs;
     }
 
@@ -260,17 +309,17 @@ public class Config {
     }
 
     /**
-     * @return the mapMapConfigs
+     * @return the mapConfigs
      */
-    public Map<String, MapConfig> getMapMapConfigs() {
-        return mapMapConfigs;
+    public Map<String, MapConfig> getMapConfigs() {
+        return mapConfigs;
     }
 
     /**
-     * @param mapMapConfigs the mapMapConfigs to set
+     * @param mapConfigs the mapConfigs to set
      */
-    public Config setMapMapConfigs(Map<String, MapConfig> mapMapConfigs) {
-        this.mapMapConfigs = mapMapConfigs;
+    public Config setMapConfigs(Map<String, MapConfig> mapConfigs) {
+        this.mapConfigs = this.mapConfigs;
         return this;
     }
 
