@@ -351,7 +351,7 @@ public class ExecutorManager extends BaseManager {
                     if (data.size() == 0) {
                         result = null;
                     } else {
-                        result = toObject(data);
+                        result = toObjectWithConfigClassLoader(data);
                     }
                 }
             }
@@ -369,6 +369,16 @@ public class ExecutorManager extends BaseManager {
         @Override
         public void setTarget() {
             this.target = member.getAddress();
+        }
+    }
+
+    Object toObjectWithConfigClassLoader(Data data) {
+        ClassLoader actualContextClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(node.getConfig().getClassLoader());
+            return toObject(data);
+        } finally {
+            Thread.currentThread().setContextClassLoader(actualContextClassLoader);
         }
     }
 }
