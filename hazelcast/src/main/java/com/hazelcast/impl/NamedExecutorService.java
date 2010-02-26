@@ -26,13 +26,15 @@ import java.util.concurrent.TimeUnit;
 public class NamedExecutorService {
 
     private static final int ORDERED_QUEUE_COUNT = 100;
+    final String name;
     final ClassLoader classLoader;
     final ExecutorConfig executorConfig;
     final ThreadPoolExecutor threadPoolExecutor;
     final OrderedRunnablesQueue[] orderedRunnablesQueues = new OrderedRunnablesQueue[ORDERED_QUEUE_COUNT];
     final ExecutionLoadBalancer executionLoadBalancer;
 
-    public NamedExecutorService(ClassLoader classLoader, ExecutorConfig executorConfig, ThreadPoolExecutor threadPoolExecutor) {
+    public NamedExecutorService(String name, ClassLoader classLoader, ExecutorConfig executorConfig, ThreadPoolExecutor threadPoolExecutor) {
+        this.name = name;
         this.classLoader = classLoader;
         this.executorConfig = executorConfig;
         this.threadPoolExecutor = threadPoolExecutor;
@@ -43,11 +45,7 @@ public class NamedExecutorService {
     }
 
     public void appendState(StringBuffer sbState) {
-        sbState.append("\nExecutor." + getName() + ".size=" + threadPoolExecutor.getQueue().size());
-    }
-
-    public String getName() {
-        return executorConfig.getName();
+        sbState.append("\nExecutor." + name + ".size=" + threadPoolExecutor.getQueue().size());
     }
 
     public void stop() {
