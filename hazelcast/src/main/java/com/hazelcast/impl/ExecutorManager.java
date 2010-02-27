@@ -85,7 +85,7 @@ public class ExecutorManager extends BaseManager {
         return namedExecutorService;
     }
 
-    NamedExecutorService newNamedExecutorService(String name, ExecutorConfig executorConfig) {
+    private NamedExecutorService newNamedExecutorService(String name, ExecutorConfig executorConfig) {
         ClassLoader classLoader = node.getConfig().getClassLoader();
         logger.log(Level.FINEST, "creating new named executor service " + name);
         ThreadPoolExecutor threadPoolExecutor
@@ -138,7 +138,7 @@ public class ExecutorManager extends BaseManager {
                 result = callable.call();
                 result = toData(result);
             } catch (Throwable e) {
-                result = e;
+                result = toData(e);
             } finally {
                 request.clearForResponse();
                 request.response = result;

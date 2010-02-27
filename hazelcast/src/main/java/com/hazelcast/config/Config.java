@@ -319,7 +319,7 @@ public class Config {
      * @param mapConfigs the mapConfigs to set
      */
     public Config setMapConfigs(Map<String, MapConfig> mapConfigs) {
-        this.mapConfigs = this.mapConfigs;
+        this.mapConfigs = mapConfigs;
         return this;
     }
 

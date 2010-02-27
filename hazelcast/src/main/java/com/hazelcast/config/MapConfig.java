@@ -221,4 +221,20 @@ public class MapConfig {
         this.nearCacheConfig = nearCacheConfig;
         return this;
     }
+
+    @Override
+    public String toString() {
+        return "MapConfig{" +
+                "name='" + name + '\'' +
+                ", backupCount=" + backupCount +
+                ", evictionPercentage=" + evictionPercentage +
+                ", timeToLiveSeconds=" + timeToLiveSeconds +
+                ", maxIdleSeconds=" + maxIdleSeconds +
+                ", evictionDelaySeconds=" + evictionDelaySeconds +
+                ", maxSize=" + maxSize +
+                ", evictionPolicy='" + evictionPolicy + '\'' +
+                ", mapStoreConfig=" + mapStoreConfig +
+                ", nearCacheConfig=" + nearCacheConfig +
+                '}';
+    }
 }
