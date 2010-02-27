@@ -30,10 +30,12 @@ public class OrderedRunnablesQueue extends ConcurrentLinkedQueue<Runnable> imple
 
     public void run() {
         while (true) {
-            final Runnable eventTask = poll();
-            if (eventTask != null) {
-                eventTask.run();
-                size.decrementAndGet();
+            final Runnable runnable = poll();
+            if (runnable != null) {
+                runnable.run();
+                if (size.decrementAndGet() == 0) {
+                    return;
+                }
             } else {
                 return;
             }
