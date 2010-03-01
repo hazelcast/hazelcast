@@ -72,12 +72,12 @@ public class AddressPicker {
                 final int start = Integer.parseInt(mask.substring(0, dashIndex).trim());
                 final int end = Integer.parseInt(mask.substring(dashIndex + 1).trim());
                 if (ipa < start || ipa > end) {
-                	return false;
+                    return false;
                 }
             } else {
                 final int x = Integer.parseInt(mask);
                 if (x != ipa) {
-                	return false;
+                    return false;
                 }
             }
         }

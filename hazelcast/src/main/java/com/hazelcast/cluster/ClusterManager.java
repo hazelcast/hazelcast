@@ -68,7 +68,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         });
         registerPacketProcessor(ClusterOperation.HEARTBEAT, new PacketProcessor() {
             public void process(Packet packet) {
-                packet.returnToContainer();
+                releasePacket(packet);
             }
         });
         registerPacketProcessor(ClusterOperation.REMOTELY_PROCESS_AND_RESPOND,
@@ -90,7 +90,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                         rp.setConnection(packet.conn);
                         rp.setNode(node);
                         rp.process();
-                        packet.returnToContainer();
+                        releasePacket(packet);
                     }
                 });
         registerPacketProcessor(ClusterOperation.REMOTELY_CALLABLE_BOOLEAN,
@@ -224,7 +224,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                                         ClusterOperation.HEARTBEAT, 0);
                                 sendOrReleasePacket(packet, conn);
                             } else {
-                                logger.log(Level.FINEST,"not sending heartbeat because connection is null or not live " + address);
+                                logger.log(Level.FINEST, "not sending heartbeat because connection is null or not live " + address);
                             }
                         }
                     }
@@ -430,7 +430,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         Packet packet = createRemotelyProcessablePacket(rp);
         boolean sent = send(packet, conn);
         if (!sent) {
-            packet.returnToContainer();
+            releasePacket(packet);
         }
     }
 

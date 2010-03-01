@@ -35,6 +35,7 @@ import com.hazelcast.nio.SerializationHelper;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.*;
 import java.lang.reflect.InvocationHandler;
@@ -713,12 +714,12 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     Object createInstanceClusterwide(final ProxyKey proxyKey) {
-        final BlockingQueue result = new ArrayBlockingQueue(1);
+        final BlockingQueue<Object> result = ResponseQueueFactory.newResponseQueue();
         node.clusterService.enqueueAndReturn(new Processable() {
             public void process() {
                 try {
                     result.put(createProxy(proxyKey));
-                } catch (InterruptedException e) {
+                } catch (InterruptedException ignored) {
                 }
             }
         });
@@ -740,7 +741,7 @@ public class FactoryImpl implements HazelcastInstance {
                 idGeneratorMapProxy.remove(name);
             }
             globalProxies.remove(proxyKey);
-            final BlockingQueue result = new ArrayBlockingQueue(1);
+            final BlockingQueue<Object> result = ResponseQueueFactory.newResponseQueue();
             node.clusterService.enqueueAndReturn(new Processable() {
                 public void process() {
                     try {

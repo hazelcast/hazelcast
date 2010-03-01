@@ -349,7 +349,7 @@ public class BlockingQueueManager extends BaseManager {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            packet.returnToContainer();
+            releasePacket(packet);
         }
     }
 
@@ -362,7 +362,7 @@ public class BlockingQueueManager extends BaseManager {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            packet.returnToContainer();
+            releasePacket(packet);
         }
     }
 
@@ -379,7 +379,7 @@ public class BlockingQueueManager extends BaseManager {
             Q q = getQ(name);
             doFullBlock(q, packet.blockId, packet.conn.getEndPoint());
         }
-        packet.returnToContainer();
+        releasePacket(packet);
     }
 
     final void doFullBlock(Q q, int fullBlockId, Address originalFuller) {
@@ -402,7 +402,7 @@ public class BlockingQueueManager extends BaseManager {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            packet.returnToContainer();
+            releasePacket(packet);
         }
     }
 
@@ -438,7 +438,7 @@ public class BlockingQueueManager extends BaseManager {
                     sendResponseFailure(packet);
                 }
             } else {
-                packet.returnToContainer();
+                releasePacket(packet);
             }
             request.reset();
         }
@@ -474,7 +474,7 @@ public class BlockingQueueManager extends BaseManager {
                 }
                 sendResponse(packet);
             } else {
-                packet.returnToContainer();
+                releasePacket(packet);
             }
             request.reset();
         }
@@ -538,7 +538,7 @@ public class BlockingQueueManager extends BaseManager {
                 packet.txnId = txnId;
                 boolean sent = send(packet, next);
                 if (!sent) {
-                    packet.returnToContainer();
+                    releasePacket(packet);
                 }
             }
         }
@@ -732,7 +732,7 @@ public class BlockingQueueManager extends BaseManager {
 
         public void handleResponse(Packet packet) {
             setResponse();
-            packet.returnToContainer();
+            releasePacket(packet);
         }
 
         @Override
@@ -761,7 +761,7 @@ public class BlockingQueueManager extends BaseManager {
                     sent = send(packet, target);
                 }
                 if (target == null || !sent) {
-                    packet.returnToContainer();
+                    releasePacket(packet);
                     responses.add(OBJECT_NULL);
                 }
             }
@@ -808,7 +808,7 @@ public class BlockingQueueManager extends BaseManager {
             int indexRead = (int) packet.longValue;
             setResponse(value, indexRead);
             removeCall(getCallId());
-            packet.returnToContainer();
+            releasePacket(packet);
         }
 
         @Override
@@ -836,7 +836,7 @@ public class BlockingQueueManager extends BaseManager {
                 packet.longValue = index;
                 boolean sent = send(packet, target);
                 if (!sent) {
-                    packet.returnToContainer();
+                    releasePacket(packet);
                     onDisconnect(target);
                 }
             }
@@ -1100,7 +1100,7 @@ public class BlockingQueueManager extends BaseManager {
         Address master = getMasterAddress();
         boolean sent = send(packet, master);
         if (!sent)
-            packet.returnToContainer();
+            releasePacket(packet);
     }
 
     public class Q {
@@ -1472,7 +1472,7 @@ public class BlockingQueueManager extends BaseManager {
             packet.txnId = txnId;
             boolean sent = send(packet, address);
             if (!sent) {
-                packet.returnToContainer();
+                releasePacket(packet);
             }
             return sent;
         }
@@ -1495,7 +1495,7 @@ public class BlockingQueueManager extends BaseManager {
                 packet.longValue = addIndex;
                 boolean sent = send(packet, getNextMemberAfter(thisAddress, true, 1).getAddress());
                 if (!sent) {
-                    packet.returnToContainer();
+                    releasePacket(packet);
                 }
                 return sent;
             } else {

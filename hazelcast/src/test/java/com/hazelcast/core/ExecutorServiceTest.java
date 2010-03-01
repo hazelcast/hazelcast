@@ -54,6 +54,14 @@ public class ExecutorServiceTest {
         }
     }
 
+    public static class NestedExecutorTask implements Callable<String>, Serializable {
+
+        public String call() throws Exception {
+            Future future = Hazelcast.getExecutorService().submit(new BasicTestTask());
+            return (String) future.get();
+        }
+    }
+
     /**
      * Submit a null task must raise a NullPointerException
      */
@@ -97,8 +105,53 @@ public class ExecutorServiceTest {
     }
 
     /**
+     * Test the Execution Callback
+     */
+    @Test
+    public void testExecutionCallback() throws Exception {
+        Callable<String> task = new BasicTestTask();
+        ExecutorService executor = Hazelcast.getExecutorService();
+        DistributedTask dtask = new DistributedTask(task);
+        final CountDownLatch latch = new CountDownLatch(1);
+        dtask.setExecutionCallback(new ExecutionCallback() {
+            public void done(Future future) {
+                assertTrue(future.isDone());
+                try {
+                    assertEquals(future.get(), BasicTestTask.RESULT);
+                    latch.countDown();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        Future future = executor.submit(dtask);
+        assertTrue(latch.await(2, TimeUnit.SECONDS));
+        assertTrue(future.isDone());
+        assertEquals(future.get(), BasicTestTask.RESULT);
+        assertTrue(future.isDone());
+    }
+
+    /**
+     * Execute a task that is executing
+     * something else inside. Nested Execution.
+     */
+    @Test(timeout = 10000)
+    public void testNestedExecution() {
+        Callable<String> task = new NestedExecutorTask();
+        ExecutorService executor = Hazelcast.getExecutorService();
+        Future future = executor.submit(task);
+        try {
+            future.get();
+            fail("Should throw ExecutionException:RejectedExecutionExcepiton");
+        } catch (InterruptedException e) {
+        } catch (ExecutionException e) {
+            assertTrue(e.getCause() instanceof RejectedExecutionException);
+        }
+    }
+
+    /**
      * Test for the issue 129.
-     * Repeadetly runs tasks and check for isDone() status after
+     * Repeatedly runs tasks and check for isDone() status after
      * get().
      */
     @Test
@@ -108,7 +161,7 @@ public class ExecutorServiceTest {
             Callable<String> task1 = new BasicTestTask();
             Callable<String> task2 = new BasicTestTask();
             Future future1 = executor.submit(task1);
-            Future future2 = executor.submit(task1);
+            Future future2 = executor.submit(task2);
             assertEquals(future2.get(), BasicTestTask.RESULT);
             assertTrue(future2.isDone());
             assertEquals(future1.get(), BasicTestTask.RESULT);
@@ -117,7 +170,7 @@ public class ExecutorServiceTest {
     }
 
     /**
-     * Test multiple Future.get() invokation
+     * Test multiple Future.get() invocation
      */
     @Test
     public void isTwoGetFromFuture() throws Exception {
@@ -173,15 +226,14 @@ public class ExecutorServiceTest {
         // Fresh instance, is not shutting down
         assertFalse(executor.isShutdown());
         assertFalse(executor.isTerminated());
-        // shutdown() should be ignored
         executor.shutdown();
-        assertFalse(executor.isShutdown());
-        assertFalse(executor.isTerminated());
+        assertTrue(executor.isShutdown());
+        assertTrue(executor.isTerminated());
         // shutdownNow() should return an empty list and be ignored
         List<Runnable> pending = executor.shutdownNow();
         assertTrue(pending.isEmpty());
-        assertFalse(executor.isShutdown());
-        assertFalse(executor.isTerminated());
+        assertTrue(executor.isShutdown());
+        assertTrue(executor.isTerminated());
         // awaitTermination() should return immediately false
         try {
             boolean terminated = executor.awaitTermination(60L, TimeUnit.SECONDS);
@@ -190,8 +242,8 @@ public class ExecutorServiceTest {
         catch (InterruptedException ie) {
             fail("InterruptedException");
         }
-        assertFalse(executor.isShutdown());
-        assertFalse(executor.isTerminated());
+        assertTrue(executor.isShutdown());
+        assertTrue(executor.isTerminated());
     }
 
     /**

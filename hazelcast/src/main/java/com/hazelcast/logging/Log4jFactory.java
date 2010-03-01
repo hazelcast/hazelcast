@@ -118,7 +118,7 @@ public class Log4jFactory implements LoggerFactory {
             }
             String message = logRecord.getMessage();
             Throwable throwable = logRecord.getThrown();
-            logger.callAppenders(new LoggingEvent(name, logger, level, message, throwable ));
+            logger.callAppenders(new LoggingEvent(name, logger, level, message, throwable));
         }
     }
 }

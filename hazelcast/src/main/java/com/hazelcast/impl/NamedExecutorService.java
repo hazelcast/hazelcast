@@ -62,9 +62,13 @@ public class NamedExecutorService {
 
     public void executeOrderedRunnable(int hash, Runnable runnable) {
         int index = Math.abs(hash % ORDERED_QUEUE_COUNT);
-        final OrderedRunnablesQueue eventQueue = orderedRunnablesQueues[index];
-        final int size = eventQueue.offerRunnable(runnable);
-        if (size == 1) execute(eventQueue);
+        OrderedRunnablesQueue eventQueue = orderedRunnablesQueues[index];
+        long size = eventQueue.offerRunnable(runnable);
+        if (size == 0) {
+            throw new RuntimeException("Cannot be zero!");
+        } else if (size == 1) {
+            execute(eventQueue);
+        }
     }
 
     public ExecutionLoadBalancer getExecutionLoadBalancer() {

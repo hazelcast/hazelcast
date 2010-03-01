@@ -936,7 +936,7 @@ public class CMap {
                         packet.operation = ClusterOperation.CONCURRENT_MAP_INVALIDATE;
                         boolean sent = concurrentMapManager.send(packet, member.getAddress());
                         if (!sent) {
-                            packet.returnToContainer();
+                            concurrentMapManager.releasePacket(packet);
                         }
                     }
                 }

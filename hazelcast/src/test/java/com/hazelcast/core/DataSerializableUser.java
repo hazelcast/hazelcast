@@ -22,7 +22,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class DataSerializableUser implements DataSerializable{
+public class DataSerializableUser implements DataSerializable {
     private String name = "";
     private String familyName = "";
     private int age;
@@ -61,7 +61,6 @@ public class DataSerializableUser implements DataSerializable{
     }
 
     public void writeData(DataOutput out) throws IOException {
-
 //        out.writeInt(name.getBytes().length);
 //        out.write(name.getBytes());
         out.writeUTF(name);
@@ -88,7 +87,7 @@ public class DataSerializableUser implements DataSerializable{
         address.readData(in);
     }
 
-    public static class Address implements DataSerializable{
+    public static class Address implements DataSerializable {
         public String getAddress() {
             return address;
         }
@@ -98,6 +97,7 @@ public class DataSerializableUser implements DataSerializable{
         }
 
         private String address = "";
+
         public void writeData(DataOutput out) throws IOException {
 //            out.writeInt(address.getBytes().length);
 //            out.write(address.getBytes());

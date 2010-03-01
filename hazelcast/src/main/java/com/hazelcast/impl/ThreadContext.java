@@ -20,13 +20,8 @@ package com.hazelcast.impl;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.ConcurrentMapManager.MEvict;
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.Serializer;
-import com.hazelcast.util.SimpleBoundedQueue;
 
-import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -45,46 +40,12 @@ public final class ThreadContext {
 
     private FactoryImpl currentFactory = null;
 
-    private final ObjectPool<Packet> packetCache;
-
-    private final static ConcurrentMap<String, BlockingQueue> mapGlobalPools = new ConcurrentHashMap<String, BlockingQueue>();
-
     private final ConcurrentMap<FactoryImpl, CallCache> mapCallCacheForFactories = new ConcurrentHashMap<FactoryImpl, CallCache>();
 
     private final static AtomicInteger newThreadId = new AtomicInteger();
 
-    static {
-        mapGlobalPools.put("PacketCache", new ArrayBlockingQueue(2000));
-    }
-
     private ThreadContext() {
         setCallContext(new CallContext(createNewThreadId(), false));
-        int packetCacheSize = 0;
-        String threadName = Thread.currentThread().getName();
-        if (threadName.startsWith("hz.")) {
-            if ("hz.InThread".equals(threadName)) {
-                packetCacheSize = 100;
-            } else if ("hz.OutThread".equals(threadName)) {
-                packetCacheSize = 0;
-            } else if ("hz.ServiceThread".equals(threadName)) {
-                packetCacheSize = 100;
-            }
-        }
-        packetCache = new ObjectPool<Packet>("PacketCache", packetCacheSize) {
-            public Packet createNew() {
-                return new Packet();
-            }
-
-            public void onRelease(Packet packet) {
-                packet.reset();
-                packet.released = true;
-            }
-
-            public void onObtain(Packet packet) {
-                packet.reset();
-                packet.released = false;
-            }
-        };
     }
 
     public static ThreadContext get() {
@@ -94,10 +55,6 @@ public final class ThreadContext {
             threadLocal.set(threadContext);
         }
         return threadContext;
-    }
-
-    public ObjectPool<Packet> getPacketPool() {
-        return packetCache;
     }
 
     public void finalizeTxn() {
@@ -200,78 +157,6 @@ public final class ThreadContext {
         public MEvict getMEvict() {
             mevict.reset();
             return mevict;
-        }
-    }
-
-    public abstract class ObjectPool<E> {
-        private final String name;
-        private final int maxSize;
-        private final Queue<E> localPool;
-        private final BlockingQueue<E> objectQueue;
-        private int zero = 0;
-
-        public ObjectPool(String name, int maxSize) {
-            super();
-            this.name = name;
-            this.maxSize = maxSize;
-            this.objectQueue = mapGlobalPools.get(name);
-            if (maxSize > 0) {
-                this.localPool = new SimpleBoundedQueue<E>(maxSize);
-            } else {
-                this.localPool = null;
-            }
-        }
-
-        public abstract E createNew();
-
-        public abstract void onRelease(E e);
-
-        public abstract void onObtain(E e);
-
-        public String getName() {
-            return name;
-        }
-
-        public void release(E obj) {
-            onRelease(obj);
-            if (localPool == null) {
-                objectQueue.offer(obj);
-            } else if (!localPool.add(obj)) {
-                objectQueue.offer(obj);
-            }
-        }
-
-        public E obtain() {
-            E value;
-            if (localPool == null) {
-                value = objectQueue.poll();
-                if (value == null) {
-                    value = createNew();
-                }
-            } else {
-                value = localPool.poll();
-                if (value == null) {
-                    int totalDrained = objectQueue.drainTo(localPool, maxSize);
-                    if (totalDrained == 0) {
-                        if (++zero % 10000 == 0) {
-                            logger.log(Level.FINEST, "ObjectPool [" + name + "] : "
-                                    + Thread.currentThread().getName()
-                                    + " DRAINED " + totalDrained + "  size:" + objectQueue.size()
-                                    + ", zeroCount:" + zero);
-                            zero = 0;
-                        }
-                        for (int i = 0; i < 4; i++) {
-                            localPool.add(createNew());
-                        }
-                    }
-                    value = localPool.poll();
-                    if (value == null) {
-                        value = createNew();
-                    }
-                }
-            }
-            onObtain(value);
-            return value;
         }
     }
 

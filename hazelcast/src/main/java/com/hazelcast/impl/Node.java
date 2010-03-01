@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.*;
 import com.hazelcast.query.QueryService;
+import com.hazelcast.util.NoneStrictObjectPool;
 
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -104,6 +105,8 @@ public class Node {
 
     public final LoggingServiceImpl loggingService;
 
+    private final NoneStrictObjectPool<Packet> packetPool;
+
     public Node(FactoryImpl factory, Config config) {
         this.threadGroup = new ThreadGroup(factory.getName());
         this.factory = factory;
@@ -149,6 +152,22 @@ public class Node {
         }
         address = localAddress;
         localMember = new MemberImpl(address, true, localNodeType);
+        packetPool = new NoneStrictObjectPool<Packet>(2000) {
+            @Override
+            public void onRelease(Packet packet) {
+                packet.reset();
+                packet.released = true;
+            }
+
+            @Override
+            public void onObtain(Packet packet) {
+                packet.released = false;
+            }
+
+            public Packet createNew() {
+                return new Packet();
+            }
+        };
         clusterImpl = new ClusterImpl(this);
         baseVariables = new NodeBaseVariables(address, localMember);
         this.loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), localMember);
@@ -348,6 +367,10 @@ public class Node {
 
     public ILogger getLogger(String name) {
         return loggingService.getLogger(name);
+    }
+
+    public NoneStrictObjectPool<Packet> getPacketPool() {
+        return packetPool;
     }
 
     public class NodeShutdownHookThread extends Thread {

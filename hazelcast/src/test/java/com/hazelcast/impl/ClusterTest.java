@@ -1233,19 +1233,19 @@ public class ClusterTest {
         int executionCount = 20;
         List<DistributedTask<Long>> lsTasks = new ArrayList<DistributedTask<Long>>(executionCount);
         for (int i = 0; i < executionCount; i++) {
-            DistributedTask<Long> t1 = new DistributedTask<Long> (new SleepCallable(1000), target1);
-            lsTasks.add (t1);
+            DistributedTask<Long> t1 = new DistributedTask<Long>(new SleepCallable(1000), target1);
+            lsTasks.add(t1);
             h2.getExecutorService().execute(t1);
-            DistributedTask<Long> t2 = new DistributedTask<Long> (new SleepCallable(2000), target2);
-            lsTasks.add (t2);
+            DistributedTask<Long> t2 = new DistributedTask<Long>(new SleepCallable(2000), target2);
+            lsTasks.add(t2);
             h1.getExecutorService().execute(t2);
         }
         Thread.sleep(7000);
         for (DistributedTask<Long> task : lsTasks) {
             Long result = task.get(1, TimeUnit.SECONDS);
-            assertTrue(result == 1000  || result == 2000);
+            assertTrue(result == 1000 || result == 2000);
         }
-    } 
+    }
 
     /**
      * Test for issue 157

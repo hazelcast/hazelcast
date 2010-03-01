@@ -1271,7 +1271,7 @@ public final class ConcurrentMapManager extends BaseManager {
         public void process(Packet packet) {
             Blocks blocks = (Blocks) toObject(packet.value);
             partitionManager.handleBlocks(blocks);
-            packet.returnToContainer();
+            releasePacket(packet);
         }
     }
 
@@ -1289,7 +1289,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
-            packet.returnToContainer();
+            releasePacket(packet);
         }
     }
 
@@ -1327,7 +1327,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     mapNearCache.invalidate(packet.key);
                 }
             }
-            packet.returnToContainer();
+            releasePacket(packet);
         }
     }
 

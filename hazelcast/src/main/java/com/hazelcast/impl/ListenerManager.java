@@ -61,7 +61,7 @@ public class ListenerManager extends BaseManager {
         Data value = packet.value;
         String name = packet.name;
         Address from = packet.conn.getEndPoint();
-        packet.returnToContainer();
+        releasePacket(packet);
         enqueueEvent(eventType, name, key, value, from);
     }
 
@@ -70,7 +70,7 @@ public class ListenerManager extends BaseManager {
         boolean returnValue = (packet.longValue == 1);
         String name = packet.name;
         Address address = packet.conn.getEndPoint();
-        packet.returnToContainer();
+        releasePacket(packet);
         handleListenerRegistrations(add, name, key, address, returnValue);
     }
 
@@ -180,35 +180,35 @@ public class ListenerManager extends BaseManager {
 
         public void process() {
             if (key != null) {
-            	processWithKey();
+                processWithKey();
             } else {
-            	processWithoutKey();
+                processWithoutKey();
             }
         }
-        
+
         private void processWithKey() {
-        	Address owner = node.concurrentMapManager.getKeyOwner(key);
-        	if (owner.equals(thisAddress)) {
-        		handleListenerRegistrations(true, name, key, thisAddress, includeValue);
-        	} else {
-        		Packet packet = obtainPacket();
-        		packet.set(name, ADD_LISTENER_NO_RESPONSE, key, null);
-        		packet.longValue = (includeValue) ? 1 : 0;
-        		boolean sent = send(packet, owner);
-        		if (!sent) {
-        			packet.returnToContainer();
-        		}
-        	}
+            Address owner = node.concurrentMapManager.getKeyOwner(key);
+            if (owner.equals(thisAddress)) {
+                handleListenerRegistrations(true, name, key, thisAddress, includeValue);
+            } else {
+                Packet packet = obtainPacket();
+                packet.set(name, ADD_LISTENER_NO_RESPONSE, key, null);
+                packet.longValue = (includeValue) ? 1 : 0;
+                boolean sent = send(packet, owner);
+                if (!sent) {
+                    releasePacket(packet);
+                }
+            }
         }
-        
+
         private void processWithoutKey() {
-        	for (MemberImpl member : lsMembers) {
-        		if (member.localMember()) {
-        			handleListenerRegistrations(true, name, null, thisAddress, includeValue);
-        		} else {
-        			sendAddListener(member.getAddress(), name, null, includeValue);
-        		}
-        	}
+            for (MemberImpl member : lsMembers) {
+                if (member.localMember()) {
+                    handleListenerRegistrations(true, name, null, thisAddress, includeValue);
+                } else {
+                    sendAddListener(member.getAddress(), name, null, includeValue);
+                }
+            }
         }
     }
 
@@ -225,7 +225,7 @@ public class ListenerManager extends BaseManager {
         packet.longValue = (includeValue) ? 1 : 0;
         boolean sent = send(packet, toAddress);
         if (!sent) {
-            packet.returnToContainer();
+            releasePacket(packet);
         }
     }
 

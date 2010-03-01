@@ -42,7 +42,7 @@ public class ClientDistributedTask<V> implements Serializable, Callable {
     }
 
     public Object call() throws Exception {
-        return null; 
+        return null;
     }
 
     public Callable<V> getCallable() {

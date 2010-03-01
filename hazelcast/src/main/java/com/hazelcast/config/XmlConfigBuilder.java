@@ -55,7 +55,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
         public Iterator<Node> iterator() {
             return new Iterator<Node>() {
 
-                private int index = 0;          
+                private int index = 0;
 
                 public boolean hasNext() {
                     return (index < maximum);
@@ -272,7 +272,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
         }
     }
 
-    private void handleExecutor(final org.w3c.dom.Node node) throws Exception{
+    private void handleExecutor(final org.w3c.dom.Node node) throws Exception {
         final ExecutorConfig executorConfig = config.getExecutorConfig();
         handleViaReflection(node, config, executorConfig);
 //        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {

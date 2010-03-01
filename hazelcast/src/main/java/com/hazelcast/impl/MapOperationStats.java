@@ -62,6 +62,7 @@ public interface MapOperationStats {
 
     /**
      * Total Number of Other/Rest Operations
+     *
      * @return
      */
     public long getNumberOfOtherOperations();

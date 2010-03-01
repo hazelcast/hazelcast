@@ -17,10 +17,8 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.DistributedTask;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -51,6 +49,7 @@ public class ExecutorServiceProxy implements ExecutorService {
 
     final Node node;
     final String name;
+    volatile boolean active = true;
 
     public ExecutorServiceProxy(Node node, String name) {
         this.node = node;
@@ -119,7 +118,7 @@ public class ExecutorServiceProxy implements ExecutorService {
      * @return the status of the current node
      */
     public boolean isShutdown() {
-        return !node.executorManager.isStarted();
+        return !active;
     }
 
     /**
@@ -129,7 +128,7 @@ public class ExecutorServiceProxy implements ExecutorService {
      * @return the status of the current node
      */
     public boolean isTerminated() {
-        return !node.executorManager.isStarted();
+        return !active;
     }
 
     /**
@@ -139,6 +138,7 @@ public class ExecutorServiceProxy implements ExecutorService {
      * @link com.hazelcast.Hazelcast#shutdown
      */
     public void shutdown() {
+        active = false;
     }
 
     /**
@@ -153,16 +153,23 @@ public class ExecutorServiceProxy implements ExecutorService {
 
     public <T> Future<T> submit(Callable<T> task) {
         if (task instanceof DistributedTask) {
-            return submit ((Runnable) task, null);
+            return submit((Runnable) task, null);
         }
-        return submit (new DistributedTask(task), null);
+        return submit(new DistributedTask(task), null);
     }
 
     public Future<?> submit(Runnable task) {
-        return submit (task, null);
+        return submit(task, null);
     }
 
     public <T> Future<T> submit(Runnable task, T result) {
+        String threadName = Thread.currentThread().getName();
+        if (threadName.startsWith("hz.executor.")) {
+            if (threadName.indexOf(name) != -1) {
+                throw new RejectedExecutionException("Nested Executions are not allowed. " + threadName);
+            }
+        }
+        if (!active) throw new RejectedExecutionException("ExecutorService[" + name + "] is not active");
         DistributedTask dtask;
         if (task instanceof DistributedTask) {
             dtask = (DistributedTask) task;
@@ -175,5 +182,5 @@ public class ExecutorServiceProxy implements ExecutorService {
 
     public void execute(Runnable command) {
         submit(command, null);
-    } 
+    }
 }

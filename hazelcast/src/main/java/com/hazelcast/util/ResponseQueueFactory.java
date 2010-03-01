@@ -15,15 +15,12 @@
  *
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.util;
 
-import com.hazelcast.query.QueryService;
+import java.util.concurrent.BlockingQueue;
 
-public class NodeFactory {
-    Node newNode(FactoryImpl factory) {
-        ConcurrentMapManager concurrentMapManager;
-        QueryService queryService;
-        BlockingQueueManager blockingQueueManager;
-        return null;
+public class ResponseQueueFactory {
+    public static BlockingQueue newResponseQueue() {
+        return new SimpleResponseQueue();
     }
 }

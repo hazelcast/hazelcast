@@ -18,7 +18,6 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.impl.base.Call;
-import com.hazelcast.impl.base.OrderedRunnablesQueue;
 import com.hazelcast.nio.Address;
 
 import java.util.HashMap;

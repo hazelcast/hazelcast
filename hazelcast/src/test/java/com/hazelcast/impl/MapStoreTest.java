@@ -50,9 +50,9 @@ public class MapStoreTest {
         testMapStore.insert("1", "value1");
         IMap map = h1.getMap("default");
         assertEquals(0, map.size());
-        assertTrue (map.tryLock("1", 1, TimeUnit.SECONDS));
+        assertTrue(map.tryLock("1", 1, TimeUnit.SECONDS));
         assertEquals("value1", map.get("1"));
-        map.unlock ("1");
+        map.unlock("1");
         assertEquals("value1", map.put("1", "value2"));
         assertEquals("value2", map.get("1"));
         assertEquals("value2", testMapStore.getStore().get("1"));

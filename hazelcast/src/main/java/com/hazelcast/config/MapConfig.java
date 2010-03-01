@@ -51,7 +51,7 @@ public class MapConfig {
 
     private MapStoreConfig mapStoreConfig = null;
 
-    private NearCacheConfig nearCacheConfig = null;  
+    private NearCacheConfig nearCacheConfig = null;
 
     /**
      * @return the name

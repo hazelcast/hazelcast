@@ -21,9 +21,13 @@ import com.hazelcast.core.Instance;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.*;
 import com.hazelcast.nio.Data;
+import com.hazelcast.util.ResponseQueueFactory;
+import com.hazelcast.util.UnboundedBlockingQueue;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,7 +39,7 @@ public class QueryService implements Runnable {
 
     private final Node node;
 
-    private final BlockingQueue<Runnable> queryQ = new LinkedBlockingQueue<Runnable>();
+    private final BlockingQueue<Runnable> queryQ = new UnboundedBlockingQueue<Runnable>();
 
     private final Map<String, IndexRegion> regions = new HashMap<String, IndexRegion>(10);
 
@@ -345,7 +349,7 @@ public class QueryService implements Runnable {
 
     public boolean containsValue(final String name, final Data value) {
         try {
-            final BlockingQueue<Boolean> resultQ = new ArrayBlockingQueue<Boolean>(1);
+            final BlockingQueue<Boolean> resultQ = ResponseQueueFactory.newResponseQueue();
             queryQ.put(new Runnable() {
                 public void run() {
                     IndexRegion indexRegion = getIndexRegion(name);
@@ -360,7 +364,7 @@ public class QueryService implements Runnable {
 
     public QueryContext query(final QueryContext queryContext) {
         try {
-            final BlockingQueue<QueryContext> resultQ = new ArrayBlockingQueue<QueryContext>(1);
+            final BlockingQueue<QueryContext> resultQ = ResponseQueueFactory.newResponseQueue();
             queryQ.put(new Runnable() {
                 public void run() {
                     IndexRegion indexRegion = getIndexRegion(queryContext.getMapName());

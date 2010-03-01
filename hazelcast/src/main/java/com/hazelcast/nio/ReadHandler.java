@@ -17,8 +17,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.ThreadContext;
-
 import javax.crypto.Cipher;
 import javax.crypto.ShortBufferException;
 import java.nio.ByteBuffer;
@@ -77,7 +75,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
             }
         } catch (final Exception e) {
             if (packet != null) {
-                packet.returnToContainer();
+                node.getPacketPool().release(packet);
                 packet = null;
             }
             handleSocketException(e);
@@ -249,7 +247,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
     }
 
     public Packet obtainReadable() {
-        final Packet packet = ThreadContext.get().getPacketPool().obtain();
+        final Packet packet = node.getPacketPool().obtain();
         packet.reset();
         packet.local = false;
         return packet;

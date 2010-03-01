@@ -99,7 +99,7 @@ public class ClientService {
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
         ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext, clientOperationHandlers);
         if (!packet.operation.equals(ClusterOperation.CONCURRENT_MAP_UNLOCK)) {
-            node.executorManager.getDefaultExecutorService().executeOrderedRunnable(clientEndpoint.hashCode(), clientRequestHandler);
+            node.executorManager.getClientExecutorService().executeOrderedRunnable(clientEndpoint.hashCode(), clientRequestHandler);
         } else {
             node.executorManager.executeMigrationTask(clientRequestHandler);
         }
@@ -368,7 +368,7 @@ public class ClientService {
             try {
                 ClientDistributedTask cdt = (ClientDistributedTask) toObject(packet.key);
                 Object result;
-                DistributedTask task = null; 
+                DistributedTask task = null;
                 if (cdt.getKey() != null) {
                     task = new DistributedTask(cdt.getCallable(), cdt.getKey());
                 } else if (cdt.getMember() != null) {

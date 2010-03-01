@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.config.Config;
 import com.hazelcast.nio.Address;
+import com.hazelcast.util.UnboundedBlockingQueue;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -28,7 +29,6 @@ import java.net.MulticastSocket;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class MulticastService implements Runnable {
 
@@ -40,7 +40,7 @@ public class MulticastService implements Runnable {
     private int bufferSize = 1024;
     private volatile boolean running = true;
     final Node node;
-    private final BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
+    private final BlockingQueue<Runnable> queue = new UnboundedBlockingQueue<Runnable>();
 
     public MulticastService(Node node, MulticastSocket multicastSocket) throws Exception {
         this.node = node;

@@ -30,7 +30,7 @@ public class ExecutorConfig {
     private int maxPoolSize = DEFAULT_MAX_POOL_SIZE;
 
     private int keepAliveSeconds = DEFAULT_KEEP_ALIVE_SECONDS;
- 
+
     public ExecutorConfig() {
     }
 

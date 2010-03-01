@@ -168,7 +168,7 @@ public class Index<T> {
         for (long value : values) {
             Set<T> records = mapIndex.get(value);
             if (records != null) {
-                results.addAll(records); 
+                results.addAll(records);
             }
         }
         return results;
@@ -201,8 +201,8 @@ public class Index<T> {
      * from and to should be included
      *
      * @param queryContext query context
-     * @param from from value (included)
-     * @param to   to value (included
+     * @param from         from value (included)
+     * @param to           to value (included
      * @return matching record set
      */
     Set<T> getSubRecordsBetween(QueryContext queryContext, long from, long to) {

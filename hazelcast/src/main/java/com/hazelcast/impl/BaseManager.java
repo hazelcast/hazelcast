@@ -21,12 +21,18 @@ import com.hazelcast.cluster.RemotelyProcessable;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Prefix;
-import com.hazelcast.impl.base.*;
+import com.hazelcast.impl.base.AddressAwareException;
+import com.hazelcast.impl.base.Call;
+import com.hazelcast.impl.base.PacketProcessor;
+import com.hazelcast.impl.base.RequestHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
+import com.hazelcast.util.ResponseQueueFactory;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
@@ -184,7 +190,7 @@ public abstract class BaseManager {
                 sendResponse(packet);
             } else {
                 handle(remoteReq);
-                packet.returnToContainer();
+                releasePacket(packet);
             }
         }
     }
@@ -196,7 +202,7 @@ public abstract class BaseManager {
             request.setFromPacket(packet);
             request.local = false;
             handle(request);
-            packet.returnToContainer();
+            releasePacket(packet);
         }
 
         public void processMigrationAware(Packet packet) {
@@ -209,7 +215,7 @@ public abstract class BaseManager {
                 sendResponse(packet);
             } else {
                 handle(remoteReq);
-                packet.returnToContainer();
+                releasePacket(packet);
             }
         }
     }
@@ -269,25 +275,16 @@ public abstract class BaseManager {
     }
 
     abstract class QueueBasedCall extends AbstractCall {
-        final protected BlockingQueue responses;
+        final protected BlockingQueue<Object> responses = ResponseQueueFactory.newResponseQueue();
 
         public QueueBasedCall() {
-            this(true);
-        }
-
-        public QueueBasedCall(final boolean limited) {
-            if (limited) {
-                responses = new ArrayBlockingQueue(1);
-            } else {
-                responses = new LinkedBlockingQueue();
-            }
         }
 
         @Override
         public void redo() {
             removeCall(getCallId());
             responses.clear();
-            responses.add(OBJECT_REDO);
+            responses.offer(OBJECT_REDO);
         }
     }
 
@@ -391,7 +388,7 @@ public abstract class BaseManager {
 
     public abstract class ResponseQueueCall extends RequestBasedCall {
 
-        private final BlockingQueue responses = new ArrayBlockingQueue(1);
+        private final BlockingQueue<Object> responses = ResponseQueueFactory.newResponseQueue();
 
         public ResponseQueueCall() {
         }
@@ -507,7 +504,6 @@ public abstract class BaseManager {
                 removeCall(getCallId());
             }
             super.reset();
-            responses.clear();
         }
 
         private void handleBooleanNoneRedoResponse(final Packet packet) {
@@ -556,9 +552,9 @@ public abstract class BaseManager {
 
         protected void setResult(final Object obj) {
             if (obj == null) {
-                responses.add(OBJECT_NULL);
+                responses.offer(OBJECT_NULL);
             } else {
-                responses.add(obj);
+                responses.offer(obj);
             }
         }
     }
@@ -592,7 +588,7 @@ public abstract class BaseManager {
             } else {
                 handleNoneRedoResponse(packet);
             }
-            packet.returnToContainer();
+            releasePacket(packet);
         }
 
         @Override
@@ -636,9 +632,13 @@ public abstract class BaseManager {
             final boolean sent = send(packet, target);
             if (!sent) {
                 logger.log(Level.FINEST, TargetAwareOp.this + " Packet cannot be sent to " + target);
-                packet.returnToContainer();
-                redo();
+                releasePacket(packet);
+                packetNotSent();
             }
+        }
+
+        protected void packetNotSent() {
+            redo();
         }
 
         public void doLocalOp() {
@@ -896,7 +896,7 @@ public abstract class BaseManager {
                     packet.longValue = eventType;
                     final boolean sent = send(packet, address);
                     if (!sent)
-                        packet.returnToContainer();
+                        releasePacket(packet);
                 }
             }
         }
@@ -908,7 +908,7 @@ public abstract class BaseManager {
         packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
         final boolean sent = send(packet, address);
         if (!sent) {
-            packet.returnToContainer();
+            releasePacket(packet);
         }
     }
 
@@ -924,7 +924,7 @@ public abstract class BaseManager {
                 packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
                 boolean sent = send(packet, member.getAddress());
                 if (!sent) {
-                    packet.returnToContainer();
+                    releasePacket(packet);
                 }
             }
         }
@@ -1044,7 +1044,11 @@ public abstract class BaseManager {
     }
 
     protected Packet obtainPacket() {
-        return ThreadContext.get().getPacketPool().obtain();
+        return node.getPacketPool().obtain();
+    }
+
+    protected boolean releasePacket(Packet packet) {
+        return node.getPacketPool().release(packet);
     }
 
     protected boolean send(final String name, final ClusterOperation operation, final DataSerializable ds,
@@ -1053,7 +1057,7 @@ public abstract class BaseManager {
         packet.set(name, operation, null, ds);
         boolean sent = send(packet, address);
         if (!sent)
-            packet.returnToContainer();
+            releasePacket(packet);
         return sent;
     }
 
@@ -1073,7 +1077,7 @@ public abstract class BaseManager {
         }
         final boolean sent = send(packet, packet.conn);
         if (!sent) {
-            packet.returnToContainer();
+            releasePacket(packet);
         }
         return sent;
     }
@@ -1089,7 +1093,7 @@ public abstract class BaseManager {
         packet.responseType = RESPONSE_FAILURE;
         final boolean sent = send(packet, packet.conn);
         if (!sent) {
-            packet.returnToContainer();
+            releasePacket(packet);
         }
         return sent;
     }
@@ -1222,7 +1226,7 @@ public abstract class BaseManager {
             call.handleResponse(packetResponse);
         } else {
             logger.log(Level.FINEST, packetResponse.operation + " No call for callId " + packetResponse.callId);
-            packetResponse.returnToContainer();
+            releasePacket(packetResponse);
         }
     }
 
@@ -1242,7 +1246,7 @@ public abstract class BaseManager {
                 return true;
             }
         }
-        packet.returnToContainer();
+        releasePacket(packet);
         return false;
     }
 

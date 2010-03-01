@@ -18,14 +18,12 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.impl.Node;
-import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public final class OutSelector extends SelectorBase {
 

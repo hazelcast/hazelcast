@@ -17,13 +17,13 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.Partition;
+import com.hazelcast.util.UnboundedBlockingQueue;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,6 +45,7 @@ public class ExecutorManager extends BaseManager {
     private final ConcurrentMap<Thread, CallContext> mapThreadCallContexts = new ConcurrentHashMap<Thread, CallContext>(100);
 
     private final NamedExecutorService defaultExecutorService;
+    private final NamedExecutorService clientExecutorService;
     private final NamedExecutorService migrationExecutorService;
     private final NamedExecutorService queryExecutorService;
     private final NamedExecutorService storeExecutorService;
@@ -52,6 +53,7 @@ public class ExecutorManager extends BaseManager {
     private volatile boolean started = false;
 
     private static final String DEFAULT_EXECUTOR_SERVICE = "x:default";
+    private static final String CLIENT_EXECUTOR_SERVICE = "x:hz.client";
     private static final String MIGRATION_EXECUTOR_SERVICE = "x:hz.migration";
     private static final String QUERY_EXECUTOR_SERVICE = "x:hz.query";
     private static final String STORE_EXECUTOR_SERVICE = "x:hz.store";
@@ -61,8 +63,8 @@ public class ExecutorManager extends BaseManager {
     ExecutorManager(final Node node) {
         super(node);
         logger.log(Level.FINEST, "Starting ExecutorManager");
-        Config config = node.getConfig();
         defaultExecutorService = getOrCreateNamedExecutorService(DEFAULT_EXECUTOR_SERVICE);
+        clientExecutorService = getOrCreateNamedExecutorService(CLIENT_EXECUTOR_SERVICE);
         migrationExecutorService = getOrCreateNamedExecutorService(MIGRATION_EXECUTOR_SERVICE);
         queryExecutorService = getOrCreateNamedExecutorService(QUERY_EXECUTOR_SERVICE);
         storeExecutorService = getOrCreateNamedExecutorService(STORE_EXECUTOR_SERVICE);
@@ -85,6 +87,10 @@ public class ExecutorManager extends BaseManager {
         return namedExecutorService;
     }
 
+    public String getThreadNamePrefix(String executorServiceName) {
+        return "hz.executor." + node.getName() + "." + executorServiceName + ".thread-";
+    }
+
     private NamedExecutorService newNamedExecutorService(String name, ExecutorConfig executorConfig) {
         ClassLoader classLoader = node.getConfig().getClassLoader();
         logger.log(Level.FINEST, "creating new named executor service " + name);
@@ -94,8 +100,8 @@ public class ExecutorManager extends BaseManager {
                 executorConfig.getMaxPoolSize(),
                 executorConfig.getKeepAliveSeconds(),
                 TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>(),
-                new ExecutorThreadFactory(node.threadGroup, node.getName() + "." + executorConfig.getName(), classLoader),
+                new UnboundedBlockingQueue<Runnable>(),
+                new ExecutorThreadFactory(node.threadGroup, getThreadNamePrefix(name), classLoader),
                 new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
                 ThreadContext threadContext = ThreadContext.get();
@@ -188,6 +194,10 @@ public class ExecutorManager extends BaseManager {
         return defaultExecutorService;
     }
 
+    public NamedExecutorService getClientExecutorService() {
+        return clientExecutorService;
+    }
+
     public NamedExecutorService getEventExecutorService() {
         return eventExecutorService;
     }
@@ -215,16 +225,16 @@ public class ExecutorManager extends BaseManager {
         if (inner.getMembers() != null) {
             Set<Member> members = inner.getMembers();
             if (members.size() == 1) {
-                MemberCall memberCall = new MemberCall(name, (MemberImpl) members.iterator().next(), callable, inner, true);
+                MemberCall memberCall = new MemberCall(name, (MemberImpl) members.iterator().next(), callable, dtask);
                 inner.setExecutionManagerCallback(memberCall);
                 memberCall.call();
             } else {
-                MembersCall membersCall = new MembersCall(name, members, callable, inner);
+                MembersCall membersCall = new MembersCall(name, members, callable, dtask);
                 inner.setExecutionManagerCallback(membersCall);
                 membersCall.call();
             }
         } else if (inner.getMember() != null) {
-            MemberCall memberCall = new MemberCall(name, (MemberImpl) inner.getMember(), callable, inner, true);
+            MemberCall memberCall = new MemberCall(name, (MemberImpl) inner.getMember(), callable, dtask);
             inner.setExecutionManagerCallback(memberCall);
             memberCall.call();
         } else if (inner.getKey() != null) {
@@ -233,36 +243,58 @@ public class ExecutorManager extends BaseManager {
             if (target == null) {
                 target = node.factory.getCluster().getMembers().iterator().next();
             }
-            MemberCall memberCall = new MemberCall(name, (MemberImpl) target, callable, inner, true);
+            MemberCall memberCall = new MemberCall(name, (MemberImpl) target, callable, dtask);
             inner.setExecutionManagerCallback(memberCall);
             memberCall.call();
         } else {
             MemberImpl target = (MemberImpl) namedExecutorService.getExecutionLoadBalancer().getTarget(node.factory);
-            MemberCall memberCall = new MemberCall(name, target, callable, inner, true);
+            MemberCall memberCall = new MemberCall(name, target, callable, dtask);
             inner.setExecutionManagerCallback(memberCall);
             memberCall.call();
         }
     }
 
-    class MembersCall implements ExecutionManagerCallback {
+    void notifyCompletion(final DistributedTask dtask) {
+        final InnerFutureTask innerFutureTask = (InnerFutureTask) dtask.getInner();
+        getEventExecutorService().execute(new Runnable() {
+            public void run() {
+                innerFutureTask.innerDone();
+                if (innerFutureTask.getExecutionCallback() != null) {
+                    innerFutureTask.getExecutionCallback().done(dtask);
+                }
+            }
+        });
+    }
+
+    class MembersCall implements ExecutionManagerCallback, ExecutionListener {
+        final DistributedTask dtask;
         final String name;
         final Set<Member> members;
         final Data callable;
         final InnerFutureTask innerFutureTask;
         final List<MemberCall> lsMemberCalls = new ArrayList<MemberCall>();
+        int responseCount = 0;
 
-        MembersCall(String name, Set<Member> members, Data callable, InnerFutureTask innerFutureTask) {
+        MembersCall(String name, Set<Member> members, Data callable, DistributedTask dtask) {
             this.name = name;
             this.members = members;
             this.callable = callable;
-            this.innerFutureTask = innerFutureTask;
+            this.dtask = dtask;
+            this.innerFutureTask = (InnerFutureTask) dtask.getInner();
         }
 
         void call() {
             for (Member member : members) {
-                MemberCall memberCall = new MemberCall(name, (MemberImpl) member, callable, innerFutureTask, false);
+                MemberCall memberCall = new MemberCall(name, (MemberImpl) member, callable, dtask, false, this);
                 lsMemberCalls.add(memberCall);
                 memberCall.call();
+            }
+        }
+
+        public void onResponse(Object result) {
+            responseCount++;
+            if (result == OBJECT_MEMBER_LEFT || responseCount >= lsMemberCalls.size()) {
+                notifyCompletion(dtask);
             }
         }
 
@@ -306,20 +338,32 @@ public class ExecutorManager extends BaseManager {
         }
     }
 
+    interface ExecutionListener {
+        void onResponse(Object result);
+    }
+
     class MemberCall extends TargetAwareOp implements ExecutionManagerCallback {
         final String name;
         final MemberImpl member;
         final Data callable;
+        final DistributedTask dtask;
         final InnerFutureTask innerFutureTask;
         final boolean singleTask;
+        final ExecutionListener executionListener;
 
-        MemberCall(String name, MemberImpl member, Data callable, InnerFutureTask innerFutureTask, boolean singleTask) {
+        MemberCall(String name, MemberImpl member, Data callable, DistributedTask dtask) {
+            this(name, member, callable, dtask, true, null);
+        }
+
+        MemberCall(String name, MemberImpl member, Data callable, DistributedTask dtask, boolean singleTask, ExecutionListener executionListener) {
             this.name = name;
             this.member = member;
             this.callable = callable;
-            this.innerFutureTask = innerFutureTask;
+            this.dtask = dtask;
+            this.innerFutureTask = (InnerFutureTask) dtask.getInner();
             this.singleTask = singleTask;
             this.target = member.getAddress();
+            this.executionListener = executionListener;
         }
 
         public void call() {
@@ -380,6 +424,26 @@ public class ExecutorManager extends BaseManager {
             if (dead.equals(target)) {
                 setResult(OBJECT_MEMBER_LEFT);
             }
+        }
+
+        @Override
+        public void packetNotSent() {
+            setResult(OBJECT_MEMBER_LEFT);
+        }
+
+        public void onResponse(Object response) {
+            if (singleTask) {
+                notifyCompletion(dtask);
+            }
+        }
+
+        @Override
+        public void setResult(Object result) {
+            super.setResult(result);
+            if (executionListener != null) {
+                executionListener.onResponse(result);
+            }
+            onResponse(result);
         }
 
         @Override

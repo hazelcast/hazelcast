@@ -49,5 +49,5 @@ public class GeneralTest {
         assertTrue(hardCopy.key.size() > 0);
         assertTrue(hardCopy.value.size() > 0);
         assertEquals("value", toObject(hardCopy.value));
-    } 
+    }
 }

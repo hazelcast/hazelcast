@@ -370,10 +370,6 @@ public final class Packet {
         return false;
     }
 
-    public void returnToContainer() {
-        ThreadContext.get().getPacketPool().release(this);
-    }
-
     public void set(String name, ClusterOperation operation, Object objKey, Object objValue) {
         this.threadId = ThreadContext.get().getThreadId();
         this.name = name;

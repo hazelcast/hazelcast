@@ -50,14 +50,14 @@ public class Address implements DataSerializable {
         this.ip = new byte[4];
     }
 
-    public Address (InetSocketAddress inetSocketAddress) {
+    public Address(InetSocketAddress inetSocketAddress) {
         this.ip = inetSocketAddress.getAddress().getAddress();
         this.port = inetSocketAddress.getPort();
         this.inetSocketAddress = inetSocketAddress;
     }
 
     public Address(InetAddress inetAddress, int port) {
-        this (new InetSocketAddress(inetAddress, port));
+        this(new InetSocketAddress(inetAddress, port));
     }
 
     public Address(Address address) {

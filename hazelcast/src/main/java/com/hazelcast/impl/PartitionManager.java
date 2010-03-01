@@ -28,12 +28,12 @@ import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -85,7 +85,7 @@ public class PartitionManager implements Runnable, PartitionService {
     }
 
     public Set<Partition> getPartitions() {
-        final BlockingQueue<Set<Partition>> responseQ = new ArrayBlockingQueue<Set<Partition>>(1);
+        final BlockingQueue<Set<Partition>> responseQ = ResponseQueueFactory.newResponseQueue();
         concurrentMapManager.enqueueAndReturn(new Processable() {
             public void process() {
                 Set<Partition> partitions = new TreeSet<Partition>();
@@ -187,7 +187,7 @@ public class PartitionManager implements Runnable, PartitionService {
     }
 
     public Partition getPartition(Object key) {
-        final BlockingQueue<Partition> responseQ = new ArrayBlockingQueue<Partition>(1);
+        final BlockingQueue<Partition> responseQ = ResponseQueueFactory.newResponseQueue();
         final Data keyData = toData(key);
         concurrentMapManager.enqueueAndReturn(new Processable() {
             public void process() {

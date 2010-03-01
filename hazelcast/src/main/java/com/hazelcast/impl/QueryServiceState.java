@@ -24,7 +24,7 @@ public class QueryServiceState implements Processable {
 
     Map<String, IndexRegionState> mapRegionStats = new HashMap<String, IndexRegionState>();
     final ConcurrentMapManager concurrentMapManager;
-    private int queueSize =0;
+    private int queueSize = 0;
 
     public QueryServiceState(ConcurrentMapManager concurrentMapManager) {
         this.concurrentMapManager = concurrentMapManager;
@@ -47,7 +47,7 @@ public class QueryServiceState implements Processable {
     }
 
     public void appendState(String name, StringBuffer sbState) {
-        IndexRegionState region = mapRegionStats.get (name);
+        IndexRegionState region = mapRegionStats.get(name);
         if (region != null) {
             region.appendState(sbState);
         }

@@ -26,10 +26,10 @@ public class ExecutorThreadFactory implements ThreadFactory {
     final String namePrefix;
     final ClassLoader classLoader;
 
-    public ExecutorThreadFactory(ThreadGroup threadGroup, String threadGroupName, ClassLoader classLoader) {
+    public ExecutorThreadFactory(ThreadGroup threadGroup, String threadNamePrefix, ClassLoader classLoader) {
         this.group = threadGroup;
         this.classLoader = classLoader;
-        namePrefix = "hz.executor-" + threadGroupName + "-thread-";
+        this.namePrefix = threadNamePrefix;
     }
 
     public Thread newThread(Runnable r) {

@@ -43,6 +43,8 @@ public class DistributedTask<V> extends FutureTask<V> {
 
     private volatile boolean done = false;
 
+    private volatile boolean passed = false;
+
     private volatile boolean cancelled = false;
 
     private volatile MemberLeftException memberLeftException = null;
@@ -108,8 +110,9 @@ public class DistributedTask<V> extends FutureTask<V> {
 
     @Override
     public V get() throws InterruptedException, ExecutionException {
-        if (!done) {
+        if (!done || !passed) {
             inner.get();
+            passed = true;
         }
         if (cancelled) {
             throw new CancellationException();
@@ -123,8 +126,9 @@ public class DistributedTask<V> extends FutureTask<V> {
 
     @Override
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        if (!done) {
+        if (!done || !passed) {
             inner.get(timeout, unit);
+            passed = true;
         }
         if (cancelled)
             throw new CancellationException();
@@ -266,9 +270,9 @@ public class DistributedTask<V> extends FutureTask<V> {
                 return false;
             }
             cancelled = executionManagerCallback.cancel(mayInterruptIfRunning);
-            if (cancelled)
+            if (cancelled) {
                 innerDone();
-            // executionManagerCallback = null; Should be restartable?
+            }
             return cancelled;
         }
 

@@ -41,7 +41,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     }
 
     public MemberImpl(Address address, boolean localMember) {
-        this (address, localMember, NodeType.MEMBER);
+        this(address, localMember, NodeType.MEMBER);
     }
 
     public MemberImpl(Address address, boolean localMember, NodeType nodeType) {
@@ -100,7 +100,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
 
     public long getLastWrite() {
         return lastWrite;
-    } 
+    }
 
     public boolean isSuperClient() {
         return (nodeType == NodeType.SUPER_CLIENT);

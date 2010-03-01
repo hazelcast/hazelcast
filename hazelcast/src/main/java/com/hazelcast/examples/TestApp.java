@@ -351,7 +351,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handlePartitions (String[] args) {
+    private void handlePartitions(String[] args) {
         Set<Partition> partitions = hazelcast.getPartitionService().getPartitions();
         for (Partition partition : partitions) {
             System.out.println(partition);

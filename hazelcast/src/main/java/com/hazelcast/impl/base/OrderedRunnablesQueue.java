@@ -18,12 +18,12 @@
 package com.hazelcast.impl.base;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class OrderedRunnablesQueue extends ConcurrentLinkedQueue<Runnable> implements Runnable {
-    private AtomicInteger size = new AtomicInteger();
+    private final AtomicLong size = new AtomicLong();
 
-    public int offerRunnable(Runnable runnable) {
+    public long offerRunnable(Runnable runnable) {
         offer(runnable);
         return size.incrementAndGet();
     }
@@ -33,7 +33,10 @@ public class OrderedRunnablesQueue extends ConcurrentLinkedQueue<Runnable> imple
             final Runnable runnable = poll();
             if (runnable != null) {
                 runnable.run();
-                if (size.decrementAndGet() == 0) {
+                long left = size.decrementAndGet();
+                if (left < 0) {
+                    throw new RuntimeException("Cannot be negative.");
+                } else if (left == 0) {
                     return;
                 }
             } else {

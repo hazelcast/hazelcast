@@ -95,7 +95,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                 if (lastPacket != null) {
                     boolean packetDone = packetWriter.writePacket(lastPacket);
                     if (packetDone) {
-                        lastPacket.returnToContainer();
+                        node.getPacketPool().release(lastPacket);
                         lastPacket = null;
                     } else {
                         if (socketBB.hasRemaining()) {
@@ -111,7 +111,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                 int written = socketChannel.write(socketBB);
             } catch (final Exception e) {
                 if (lastPacket != null) {
-                    lastPacket.returnToContainer();
+                    node.getPacketPool().release(lastPacket);
                     lastPacket = null;
                 }
                 handleSocketException(e);
@@ -367,7 +367,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     public void shutdown() {
         Packet packet = (Packet) writeQueue.poll();
         while (packet != null) {
-            packet.returnToContainer();
+            node.getPacketPool().release(lastPacket);
             packet = (Packet) writeQueue.poll();
         }
         writeQueue.clear();

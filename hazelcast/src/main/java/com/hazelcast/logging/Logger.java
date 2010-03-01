@@ -46,7 +46,7 @@ public class Logger {
                                 }
                             } else if ("none".equals(loggerType)) {
                                 loggerFactory = new NoLogFactory();
-                            } 
+                            }
                         }
                     }
                     if (loggerFactory == null) {

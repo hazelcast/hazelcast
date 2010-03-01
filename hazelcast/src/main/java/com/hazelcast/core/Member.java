@@ -28,7 +28,7 @@ import java.net.InetSocketAddress;
  * @see Cluster
  * @see MembershipListener
  */
-public interface Member extends DataSerializable{
+public interface Member extends DataSerializable {
 
     /**
      * Returns if this member is the local member.

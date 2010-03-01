@@ -17,6 +17,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.util.ResponseQueueFactory;
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -653,7 +654,7 @@ public class TransactionTest {
 
         public Object invoke(final Object o, final Method method, final Object[] objects) throws Throwable {
             final String name = method.getName();
-            final BlockingQueue resultQ = new ArrayBlockingQueue(1);
+            final BlockingQueue<Object> resultQ = ResponseQueueFactory.newResponseQueue();
             if (name.equals("begin") || name.equals("commit") || name.equals("rollback")) {
                 es.execute(new Runnable() {
                     public void run() {

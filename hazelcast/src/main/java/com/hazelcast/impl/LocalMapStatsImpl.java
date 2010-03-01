@@ -168,7 +168,7 @@ public class LocalMapStatsImpl implements LocalMapStats, Serializable {
                 ", hits=" + hits +
                 ", lockedEntryCount=" + lockedEntryCount +
                 ", lockWaitCount=" + lockWaitCount +
-                ", "+ operationStats +
+                ", " + operationStats +
                 '}';
     }
 }
