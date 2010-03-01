@@ -193,9 +193,6 @@ public class HazelcastClientSetTest {
         	assertFalse(set.remove((Object)i));
         }
 
-        for(int i=0;i<count;i++){
-        	assertFalse(set.remove((Object)i));
-        }
         
     }
     
