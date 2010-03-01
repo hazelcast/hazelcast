@@ -83,6 +83,8 @@ public class HazelcastClient implements HazelcastInstance {
             this.getCluster().addMembershipListener(connectionManager);
             connectionManager.updateMembers();
         }
+
+        ThreadContext.get().setClient(this);
     }
 
     public OutRunnable getOutRunnable() {

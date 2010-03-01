@@ -19,14 +19,12 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.Transaction;
 
-
-
 public final class ThreadContext {
     private final static ThreadLocal<ThreadContext> threadLocal = new ThreadLocal<ThreadContext>();
-    TransactionClientProxy transactionProxy = new TransactionClientProxy(null, null);
-	boolean transaction;
-	
-	
+    private HazelcastClient client;
+    TransactionClientProxy transactionProxy;
+    final private Object lock = new Object();
+
     public static ThreadContext get() {
         ThreadContext threadContext = threadLocal.get();
         if (threadContext == null) {
@@ -36,9 +34,18 @@ public final class ThreadContext {
         return threadContext;
     }
 
+    public Transaction getTransaction() {
+        if (transactionProxy == null) {
+            synchronized (lock) {
+                if (transactionProxy == null) {
+                    transactionProxy = new TransactionClientProxy(null, client);
+                }
+            }
+        }
+        return transactionProxy;
+    }
 
-	public Transaction getTransaction() {
-		return transactionProxy;
-	}
-
+    public void setClient(HazelcastClient hazelcastClient) {
+        this.client = hazelcastClient;
+    }
 }
