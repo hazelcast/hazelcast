@@ -179,9 +179,6 @@ public class HazelcastClientListTest {
         }
         assertTrue(list.isEmpty());
 
-        for(int i=0;i<count;i++){
-            assertFalse(list.remove((Object)i));
-        }
 
 
         for(int i=count;i<2*count;i++){
