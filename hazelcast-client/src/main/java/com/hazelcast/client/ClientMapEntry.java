@@ -20,73 +20,75 @@ package com.hazelcast.client;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.CMap.CMapEntry;
 
-public 	class ClientMapEntry<K, V> implements MapEntry<K, V>{
-	private final CMapEntry mapEntry;
-	private final K key;
-	private final MapClientProxy<K, V> proxy;
-	public ClientMapEntry(CMapEntry mapEntry, K key, MapClientProxy<K, V> proxy) {
-		this.mapEntry = mapEntry;
-		this.key = key;
-		this.proxy = proxy;
-	}
-	public long getCost() {
-		return mapEntry.getCost();
-	}
+public class ClientMapEntry<K, V> implements MapEntry<K, V> {
+    private final CMapEntry mapEntry;
+    private final K key;
+    private final MapClientProxy<K, V> proxy;
 
-	public long getCreationTime() {
-		return mapEntry.getCreationTime();
-	}
+    public ClientMapEntry(CMapEntry mapEntry, K key, MapClientProxy<K, V> proxy) {
+        this.mapEntry = mapEntry;
+        this.key = key;
+        this.proxy = proxy;
+    }
 
-	public long getExpirationTime() {
-		return mapEntry.getExpirationTime();
-	}
+    public long getCost() {
+        return mapEntry.getCost();
+    }
 
-	public int getHits() {
-		return mapEntry.getHits();
-	}
+    public long getCreationTime() {
+        return mapEntry.getCreationTime();
+    }
 
-	public long getLastAccessTime() {
-		return mapEntry.getLastAccessTime();
-	}
+    public long getExpirationTime() {
+        return mapEntry.getExpirationTime();
+    }
 
-	public long getLastUpdateTime() {
-		return mapEntry.getLastUpdateTime();
-	}
+    public int getHits() {
+        return mapEntry.getHits();
+    }
 
-	public long getVersion() {
-		return mapEntry.getVersion();
-	}
+    public long getLastAccessTime() {
+        return mapEntry.getLastAccessTime();
+    }
 
-	public boolean isValid() {
-		return mapEntry.isValid();
-	}
+    public long getLastUpdateTime() {
+        return mapEntry.getLastUpdateTime();
+    }
 
-	public K getKey() {
-		return key;
-	}
+    public long getVersion() {
+        return mapEntry.getVersion();
+    }
 
-	public V getValue() {
-		return proxy.get(key);
-	}
+    public boolean isValid() {
+        return mapEntry.isValid();
+    }
 
-	public V setValue(V value) {
-		return proxy.put(key,value);
-	}
+    public K getKey() {
+        return key;
+    }
+
+    public V getValue() {
+        return proxy.get(key);
+    }
+
+    public V setValue(V value) {
+        return proxy.put(key, value);
+    }
 
     @Override
-        public String toString() {
-            final StringBuffer sb = new StringBuffer();
-            sb.append("MapEntry");
-            sb.append("{key=").append(key);
-            sb.append(", valid=").append(isValid());
-            sb.append(", hits=").append(getHits());
-            sb.append(", version=").append(getVersion());
-            sb.append(", creationTime=").append(getCreationTime());
-            sb.append(", lastUpdateTime=").append(getLastUpdateTime());
-            sb.append(", lastAccessTime=").append(getLastAccessTime());
-            sb.append(", expirationTime=").append(getExpirationTime());
-            sb.append(", cost=").append(getCost());
-            sb.append('}');
-            return sb.toString();
-        }
+    public String toString() {
+        final StringBuffer sb = new StringBuffer();
+        sb.append("MapEntry");
+        sb.append("{key=").append(key);
+        sb.append(", valid=").append(isValid());
+        sb.append(", hits=").append(getHits());
+        sb.append(", version=").append(getVersion());
+        sb.append(", creationTime=").append(getCreationTime());
+        sb.append(", lastUpdateTime=").append(getLastUpdateTime());
+        sb.append(", lastAccessTime=").append(getLastAccessTime());
+        sb.append(", expirationTime=").append(getExpirationTime());
+        sb.append(", cost=").append(getCost());
+        sb.append('}');
+        return sb.toString();
+    }
 }

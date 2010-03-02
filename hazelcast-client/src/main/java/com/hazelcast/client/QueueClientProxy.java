@@ -20,13 +20,14 @@ package com.hazelcast.client;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.impl.ClusterOperation;
-import static com.hazelcast.client.ProxyHelper.check;
 
-import java.util.concurrent.TimeUnit;
 import java.util.Collection;
 import java.util.NoSuchElementException;
+import java.util.concurrent.TimeUnit;
 
-public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQueue<E>, ClientProxy {
+import static com.hazelcast.client.ProxyHelper.check;
+
+public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQueue<E> {
     public QueueClientProxy(HazelcastClient hazelcastClient, String name) {
         super(hazelcastClient, name);
     }
@@ -40,10 +41,10 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
     }
 
     @Override
-    public boolean add(E e){
+    public boolean add(E e) {
         check(e);
         boolean result = offer(e);
-        if(!result){
+        if (!result) {
             throw new IllegalStateException("no space is currently available");
         }
         return true;
@@ -56,7 +57,6 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
                 '}';
     }
 
-
     public boolean offer(E e) {
         check(e);
         return innerOffer(e, 0);
@@ -67,15 +67,15 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
     }
 
     public E remove() {
-        return (E)proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_REMOVE, null, null);
+        return (E) proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_REMOVE, null, null);
     }
 
     public E peek() {
-        return (E)proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_PEEK, null, null);
+        return (E) proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_PEEK, null, null);
     }
 
     public E element() {
-        if(this.size()==0){
+        if (this.size() == 0) {
             throw new NoSuchElementException();
         }
         return peek();
@@ -84,26 +84,26 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
     public boolean offer(E e, long l, TimeUnit timeUnit) throws InterruptedException {
         check(e);
         ProxyHelper.checkTime(l, timeUnit);
-        l = (l<0)?0:l;
-        if(e==null){
+        l = (l < 0) ? 0 : l;
+        if (e == null) {
             throw new NullPointerException();
         }
         return innerOffer(e, timeUnit.toMillis(l));
     }
 
-    private boolean innerOffer(E e, long millis){
-        return (Boolean)proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_OFFER, e, millis);
+    private boolean innerOffer(E e, long millis) {
+        return (Boolean) proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_OFFER, e, millis);
     }
 
     public E poll(long l, TimeUnit timeUnit) throws InterruptedException {
         ProxyHelper.checkTime(l, timeUnit);
-        l = (l<0)?0:l;
+        l = (l < 0) ? 0 : l;
         return innerPoll(timeUnit.toMillis(l));
     }
-    private E innerPoll(long millis){
-        return (E)proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_POLL, null, millis);
-    }
 
+    private E innerPoll(long millis) {
+        return (E) proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_POLL, null, millis);
+    }
 
     public E take() throws InterruptedException {
         return innerPoll(-1);
@@ -127,13 +127,13 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
         if (i < 0) throw new IllegalArgumentException("Negative maxElements:" + i);
         if (i == 0) return 0;
         if (objects instanceof IQueue) {
-           if(((IQueue)objects).getName().equals(getName())){
-                throw new IllegalArgumentException("Cannot drainTo self!");     
-           }
+            if (((IQueue) objects).getName().equals(getName())) {
+                throw new IllegalArgumentException("Cannot drainTo self!");
+            }
         }
         E e;
         int counter = 0;
-        while((e=poll())!=null && counter<i){
+        while ((e = poll()) != null && counter < i) {
             objects.add(e);
             counter++;
         }
@@ -141,36 +141,39 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
     }
 
     @Override
-	public int size() {
-		return (Integer)proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_SIZE, null, null);
-	}
+    public int size() {
+        return (Integer) proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_SIZE, null, null);
+    }
 
     @Override
-    public boolean equals(Object o){
-        if(o instanceof IQueue && o!=null){
-            return getName().equals(((IQueue)o).getName());
-        }
-        else{
+    public boolean equals(Object o) {
+        if (o instanceof IQueue && o != null) {
+            return getName().equals(((IQueue) o).getName());
+        } else {
             return false;
         }
     }
 
     @Override
-    public void clear(){
+    public void clear() {
         throw new UnsupportedOperationException();
     }
+
     @Override
-    public boolean containsAll(java.util.Collection<?> objects){
+    public boolean containsAll(java.util.Collection<?> objects) {
         throw new UnsupportedOperationException();
     }
+
     @Override
-    public boolean removeAll(java.util.Collection<?> objects){
+    public boolean removeAll(java.util.Collection<?> objects) {
         throw new UnsupportedOperationException();
     }
+
     @Override
-    public java.util.Iterator<E> iterator(){
+    public java.util.Iterator<E> iterator() {
         throw new UnsupportedOperationException();
     }
+
     @Override
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {
         throw new UnsupportedOperationException();

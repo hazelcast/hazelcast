@@ -17,8 +17,9 @@
 
 package com.hazelcast.client;
 
-import static com.hazelcast.client.TestUtility.getHazelcastClient;
-import static org.junit.Assert.assertEquals;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -26,18 +27,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.Test;
-
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
+import static com.hazelcast.client.TestUtility.getHazelcastClient;
+import static org.junit.Assert.assertEquals;
 
 public class HazelcastClientPerformanceTest {
-
 
     @Test
     public void putAndget100000RecordsWith1ClusterMember() {
         HazelcastClient hClient = getHazelcastClient();
-
         Map<String, String> map = hClient.getMap("putAndget100000RecordsWith1ClusterMember");
         putAndGet(map, 100000);
     }
@@ -66,37 +63,30 @@ public class HazelcastClientPerformanceTest {
     public void putFromMultipleThreads() throws InterruptedException {
         final HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
         final AtomicInteger counter = new AtomicInteger(0);
-
-        class Putter implements Runnable{
+        class Putter implements Runnable {
             volatile Boolean run = true;
+
             public void run() {
                 HazelcastClient hClient = getHazelcastClient(h);
-                while(run){
+                while (run) {
                     Map<String, String> clientMap = hClient.getMap("putFromMultipleThreads");
                     clientMap.put(String.valueOf(counter.incrementAndGet()), String.valueOf(counter.get()));
                 }
             }
-        };
-
+        }
+        ;
         List<Putter> list = new ArrayList<Putter>();
-
-        for(int i =0;i<10;i++){
+        for (int i = 0; i < 10; i++) {
             Putter p = new Putter();
             list.add(p);
             new Thread(p).start();
         }
-
         Thread.sleep(5000);
-
-        for(Iterator<Putter> it = list.iterator(); it.hasNext();){
+        for (Iterator<Putter> it = list.iterator(); it.hasNext();) {
             Putter p = it.next();
             p.run = false;
         }
-
         Thread.sleep(100);
         assertEquals(counter.get(), h.getMap("putFromMultipleThreads").size());
-
-
-
     }
 }

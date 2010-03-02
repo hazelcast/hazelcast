@@ -20,32 +20,30 @@ package com.hazelcast.client;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.ClusterOperation;
 
-public class TransactionClientProxy implements Transaction, ClientProxy{
-	final ProxyHelper proxyHelper;
+public class TransactionClientProxy implements Transaction {
+    final ProxyHelper proxyHelper;
 
-	public TransactionClientProxy(String name, HazelcastClient client) {
-		proxyHelper = new ProxyHelper(name, client);
-	}
+    public TransactionClientProxy(String name, HazelcastClient client) {
+        proxyHelper = new ProxyHelper(name, client);
+    }
 
-	public void begin() throws IllegalStateException {
-		proxyHelper.doOp(ClusterOperation.TRANSACTION_BEGIN, null, null);
-	}
+    public void begin() throws IllegalStateException {
+        proxyHelper.doOp(ClusterOperation.TRANSACTION_BEGIN, null, null);
+    }
 
-	public void commit() throws IllegalStateException {
-		proxyHelper.doOp(ClusterOperation.TRANSACTION_COMMIT, null, null);
-		
-	}
+    public void commit() throws IllegalStateException {
+        proxyHelper.doOp(ClusterOperation.TRANSACTION_COMMIT, null, null);
+        ThreadContext threadContext = ThreadContext.get();
+        threadContext.removeTransaction();
+    }
 
-	public int getStatus() {
-		return 0;
-	}
+    public int getStatus() {
+        return 0;
+    }
 
-	public void rollback() throws IllegalStateException {
-		proxyHelper.doOp(ClusterOperation.TRANSACTION_ROLLBACK, null, null);
-	}
-
-	public void setOutRunnable(OutRunnable out) {
-		proxyHelper.setOutRunnable(out);
-	}
-
+    public void rollback() throws IllegalStateException {
+        proxyHelper.doOp(ClusterOperation.TRANSACTION_ROLLBACK, null, null);
+        ThreadContext threadContext = ThreadContext.get();
+        threadContext.removeTransaction();
+    }
 }

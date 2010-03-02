@@ -19,15 +19,13 @@ package com.hazelcast.client;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.net.Socket;
 
-public class PacketReader extends PacketHandler{
+public class PacketReader extends PacketHandler {
 
-	public Packet readPacket(Connection connection) throws IOException {
-		DataInputStream dis = connection.getInputStream();
+    public Packet readPacket(Connection connection) throws IOException {
+        DataInputStream dis = connection.getInputStream();
         Packet response = new Packet();
         response.readFrom(dis);
-		return response;
-	}
-
+        return response;
+    }
 }

@@ -21,38 +21,39 @@ import java.util.AbstractCollection;
 import java.util.Iterator;
 import java.util.Set;
 
-public class LightKeySet<E> extends AbstractCollection<E> implements Set<E>{
-	final Set<E> realSet;
-	final EntryHolder<?,?> proxy;
-	public LightKeySet(EntryHolder<?,?> proxy, Set<E> set) {
-		this.proxy = proxy;
-		this.realSet = set;
-	}
+public class LightKeySet<E> extends AbstractCollection<E> implements Set<E> {
+    final Set<E> realSet;
+    final EntryHolder<?, ?> proxy;
 
-	@Override
-	public Iterator<E> iterator() {
-		final Iterator<E> iterator = realSet.iterator();
-		return new Iterator<E>(){
-			volatile E lastEntry;
+    public LightKeySet(EntryHolder<?, ?> proxy, Set<E> set) {
+        this.proxy = proxy;
+        this.realSet = set;
+    }
 
-			public boolean hasNext() {
-				return iterator.hasNext();
-			}
+    @Override
+    public Iterator<E> iterator() {
+        final Iterator<E> iterator = realSet.iterator();
+        return new Iterator<E>() {
+            volatile E lastEntry;
 
-			public E next() {
-				lastEntry = iterator.next();
-				return lastEntry;
-			}
+            public boolean hasNext() {
+                return iterator.hasNext();
+            }
 
-			public void remove() {
-				iterator.remove();
-				proxy.remove(lastEntry);
-			}
-		};
-	}
-	
-	@Override
-	public int size() {
-		return realSet.size();
-	}
+            public E next() {
+                lastEntry = iterator.next();
+                return lastEntry;
+            }
+
+            public void remove() {
+                iterator.remove();
+                proxy.remove(lastEntry);
+            }
+        };
+    }
+
+    @Override
+    public int size() {
+        return realSet.size();
+    }
 }

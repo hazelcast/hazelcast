@@ -45,7 +45,7 @@ public class HazelcastClient implements HazelcastInstance {
     final OutRunnable out;
     final InRunnable in;
     final ConnectionManager connectionManager;
-    final Map<Object, ClientProxy> mapProxies = new ConcurrentHashMap<Object, ClientProxy>(100);
+    final Map<Object, Object> mapProxies = new ConcurrentHashMap<Object, Object>(100);
     final ConcurrentMap<String, ExecutorServiceClientProxy> mapExecutors = new ConcurrentHashMap<String, ExecutorServiceClientProxy>(2);
     final IMap mapLockProxy;
     final ClusterClientProxy clusterClientProxy;
@@ -67,9 +67,7 @@ public class HazelcastClient implements HazelcastInstance {
         new Thread(listenerManager, "hz.client.Listener").start();
         mapLockProxy = getMap("__hz_Locks");
         clusterClientProxy = new ClusterClientProxy(this);
-        clusterClientProxy.setOutRunnable(out);
         partitionClientProxy = new PartitionClientProxy(this);
-        partitionClientProxy.setOutRunnable(out);
         Boolean authenticate = clusterClientProxy.authenticate(groupName, groupPassword);
         if (!authenticate) {
             this.shutdown();
@@ -83,8 +81,6 @@ public class HazelcastClient implements HazelcastInstance {
             this.getCluster().addMembershipListener(connectionManager);
             connectionManager.updateMembers();
         }
-
-        ThreadContext.get().setClient(this);
     }
 
     public OutRunnable getOutRunnable() {
@@ -187,8 +183,8 @@ public class HazelcastClient implements HazelcastInstance {
         return (IMap<K, V>) getClientProxy(Prefix.MAP + name);
     }
 
-    public <K, V, E> ClientProxy getClientProxy(Object o) {
-        ClientProxy proxy = mapProxies.get(o);
+    public <K, V, E> Object getClientProxy(Object o) {
+        Object proxy = mapProxies.get(o);
         if (proxy == null) {
             synchronized (mapProxies) {
                 proxy = mapProxies.get(o);
@@ -212,7 +208,6 @@ public class HazelcastClient implements HazelcastInstance {
                         } else {
                             proxy = new LockClientProxy(o, this);
                         }
-                        proxy.setOutRunnable(out);
                         mapProxies.put(o, proxy);
                     }
                 }
@@ -223,8 +218,7 @@ public class HazelcastClient implements HazelcastInstance {
 
     public com.hazelcast.core.Transaction getTransaction() {
         ThreadContext trc = ThreadContext.get();
-        TransactionClientProxy proxy = (TransactionClientProxy) trc.getTransaction();
-        proxy.setOutRunnable(out);
+        TransactionClientProxy proxy = (TransactionClientProxy) trc.getTransaction(this);
         return proxy;
     }
 

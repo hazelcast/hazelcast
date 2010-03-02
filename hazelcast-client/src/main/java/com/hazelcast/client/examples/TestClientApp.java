@@ -23,7 +23,6 @@ import com.hazelcast.examples.TestApp;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
-
 public class TestClientApp {
 
     HazelcastClient hz;
@@ -38,7 +37,6 @@ public class TestClientApp {
         final BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         message();
         while (true) {
-
             System.out.print("client > ");
             try {
                 final String command = in.readLine();
@@ -76,7 +74,6 @@ public class TestClientApp {
         System.out.println("Make sure you started Hazelcast server first.");
         System.out.println("You should connect first by typing 'connect <hazelcast-server-ip> <group-name> <group-dev>'");
         System.out.println("If group-name is 'dev' and password is 'dev-pass', 'connect <hazelcast-server-ip>' will be enough ");
-
     }
 
     private void connect(String[] args) {

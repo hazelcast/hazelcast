@@ -17,34 +17,31 @@
 
 package com.hazelcast.client;
 
-import static com.hazelcast.client.TestUtility.getHazelcastClient;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.MessageListener;
+import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
-
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.MessageListener;
+import static com.hazelcast.client.TestUtility.getHazelcastClient;
+import static org.junit.Assert.*;
 
 public class HazelcastClientTopicTest {
 
-    @Test (expected = NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void testAddNull() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
         ITopic<?> topic = hClient.getTopic("testAddNull");
         topic.publish(null);
-
     }
+
     @Test
-    public void testName(){
+    public void testName() {
         HazelcastClient hClient = getHazelcastClient();
         System.out.println("1");
-    	ITopic<?> topic = hClient.getTopic("testName");
-    	assertEquals("testName", topic.getName());
+        ITopic<?> topic = hClient.getTopic("testName");
+        assertEquals("testName", topic.getName());
     }
 
     @Test
@@ -53,74 +50,60 @@ public class HazelcastClientTopicTest {
         System.out.println("2");
         ITopic<String> topic = hClient.getTopic("addMessageListener");
         final CountDownLatch latch = new CountDownLatch(1);
-        final String message =  "Hazelcast Rocks!";
-
-        topic.addMessageListener(new MessageListener<String>()
-        {
+        final String message = "Hazelcast Rocks!";
+        topic.addMessageListener(new MessageListener<String>() {
             public void onMessage(String msg) {
-                if(msg.equals(message)){
+                if (msg.equals(message)) {
                     latch.countDown();
                 }
                 System.out.println(msg);
             }
         });
-
         topic.publish(message);
-
         assertTrue(latch.await(10, TimeUnit.MILLISECONDS));
     }
 
     @Test
     public void addTwoMessageListener() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
-    	ITopic<String> topic = hClient.getTopic("addTwoMessageListener");
+        ITopic<String> topic = hClient.getTopic("addTwoMessageListener");
         final CountDownLatch latch = new CountDownLatch(2);
-        final String message =  "Hazelcast Rocks!";
-
-
+        final String message = "Hazelcast Rocks!";
         topic.addMessageListener(new MessageListener<String>() {
             public void onMessage(String msg) {
-                if(msg.equals(message)){
+                if (msg.equals(message)) {
                     latch.countDown();
                 }
             }
         });
-
         topic.addMessageListener(new MessageListener<String>() {
             public void onMessage(String msg) {
-                if(msg.equals(message)){
+                if (msg.equals(message)) {
                     latch.countDown();
                 }
             }
         });
-
         topic.publish(message);
-
         assertTrue(latch.await(100, TimeUnit.MILLISECONDS));
-   }
-    
-   @Test
-   public void removeMessageListener() throws InterruptedException {
-        HazelcastClient hClient = getHazelcastClient();
-    	ITopic<String> topic = hClient.getTopic("removeMessageListener");
-        final CountDownLatch latch = new CountDownLatch(2);
-        final String message =  "Hazelcast Rocks!";
+    }
 
+    @Test
+    public void removeMessageListener() throws InterruptedException {
+        HazelcastClient hClient = getHazelcastClient();
+        ITopic<String> topic = hClient.getTopic("removeMessageListener");
+        final CountDownLatch latch = new CountDownLatch(2);
+        final String message = "Hazelcast Rocks!";
         MessageListener<String> messageListener = new MessageListener<String>() {
             public void onMessage(String msg) {
-                if(msg.equals(message)){
+                if (msg.equals(message)) {
                     latch.countDown();
                 }
             }
         };
-
         topic.addMessageListener(messageListener);
         topic.publish(message);
-
         topic.removeMessageListener(messageListener);
-
         topic.publish(message);
-
         assertFalse(latch.await(100, TimeUnit.MILLISECONDS));
     }
 }

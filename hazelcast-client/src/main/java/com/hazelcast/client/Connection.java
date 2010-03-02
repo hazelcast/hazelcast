@@ -21,85 +21,82 @@ import com.hazelcast.core.Member;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.nio.Address;
 
+import javax.net.SocketFactory;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-import javax.net.SocketFactory;
-
 /**
  * Holds the socket to one of the members of Hazelcast Clustor.
- * 
- * 
- * @author fuad-malikov
  *
+ * @author fuad-malikov
  */
 public class Connection {
-	private static final int BUFFER_SIZE = 1*1024;
-	private Socket socket;
-	private InetSocketAddress address;
-	private int id = -1;
-	private DataOutputStream dos;
+    private static final int BUFFER_SIZE = 1 * 1024;
+    private Socket socket;
+    private InetSocketAddress address;
+    private int id = -1;
+    private DataOutputStream dos;
     private DataInputStream dis;
 
     /**
-	 * Creates the Socket to the given host and port
-	 * 
-	 * @param host ip address of the host
-	 * @param port port of the host
-	 * @throws UnknownHostException
-	 * @throws IOException
-	 */
-	public Connection(String host, int port,int id){
-		try {
-			setSocket(SocketFactory.getDefault().createSocket(host, port));
-			socket.setKeepAlive(true);
-			dos = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(),BUFFER_SIZE));
+     * Creates the Socket to the given host and port
+     *
+     * @param host ip address of the host
+     * @param port port of the host
+     * @throws UnknownHostException
+     * @throws IOException
+     */
+    public Connection(String host, int port, int id) {
+        try {
+            setSocket(SocketFactory.getDefault().createSocket(host, port));
+            socket.setKeepAlive(true);
+            dos = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), BUFFER_SIZE));
             dis = new DataInputStream(new BufferedInputStream(socket.getInputStream(), BUFFER_SIZE));
-			this.id = id;
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}	
-	}
-
-	public Connection(InetSocketAddress address,int version) {
-		this(address.getAddress().getHostAddress(), address.getPort(),version);
-		this.address = address;
-	}
-
-	public void setSocket(Socket socket) {
-		this.socket = socket;
-	}
-
-	public Socket getSocket() {
-		return socket;
-	}
-	
-	public InetSocketAddress getAddress() {
-		return address;
-	}
-
-	public void setVersion(int version) {
-		this.id = version;
-	}
-
-	public int getVersion() {
-		return id;
-	}
-	@Override
-	public String toString() {
-		
-		return "Connection ["+id+"]" + " ["+address+"]"; 
-	}
-
-	public DataOutputStream getOutputStream() {
-		return dos;
+            this.id = id;
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public DataInputStream getInputStream(){
+    public Connection(InetSocketAddress address, int version) {
+        this(address.getAddress().getHostAddress(), address.getPort(), version);
+        this.address = address;
+    }
+
+    public void setSocket(Socket socket) {
+        this.socket = socket;
+    }
+
+    public Socket getSocket() {
+        return socket;
+    }
+
+    public InetSocketAddress getAddress() {
+        return address;
+    }
+
+    public void setVersion(int version) {
+        this.id = version;
+    }
+
+    public int getVersion() {
+        return id;
+    }
+
+    @Override
+    public String toString() {
+        return "Connection [" + id + "]" + " [" + address + "]";
+    }
+
+    public DataOutputStream getOutputStream() {
+        return dos;
+    }
+
+    public DataInputStream getInputStream() {
         return dis;
     }
 

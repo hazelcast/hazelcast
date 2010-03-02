@@ -55,10 +55,10 @@ public class FutureProxy<T> implements Future<T> {
     }
 
     private T handleResult(Object result) throws ExecutionException {
-        if(exception!=null){
+        if (exception != null) {
             throw this.exception;
         }
-        if(isDone){
+        if (isDone) {
             return this.result;
         }
         if (result instanceof ExecutionException) {
@@ -66,7 +66,7 @@ public class FutureProxy<T> implements Future<T> {
             throw this.exception;
         } else {
             isDone = true;
-            this.result = (T)result;
+            this.result = (T) result;
             return this.result;
         }
     }

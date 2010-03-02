@@ -18,21 +18,19 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.ILock;
-import static com.hazelcast.client.ProxyHelper.check;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
-public class LockClientProxy implements ILock, ClientProxy{
+public class LockClientProxy implements ILock {
     final ProxyHelper proxyHelper;
     final Object lockObject;
     final HazelcastClient client;
 
-    public LockClientProxy(Object object, HazelcastClient client){
-        proxyHelper = new ProxyHelper("",client);
+    public LockClientProxy(Object object, HazelcastClient client) {
+        proxyHelper = new ProxyHelper("", client);
         lockObject = object;
         this.client = client;
-        
     }
 
     public Object getLockObject() {
@@ -44,7 +42,6 @@ public class LockClientProxy implements ILock, ClientProxy{
     }
 
     public void lockInterruptibly() throws InterruptedException {
-
     }
 
     public boolean tryLock() {
@@ -64,8 +61,6 @@ public class LockClientProxy implements ILock, ClientProxy{
         return null;
     }
 
-    
-
     public InstanceType getInstanceType() {
         return InstanceType.LOCK;
     }
@@ -78,21 +73,17 @@ public class LockClientProxy implements ILock, ClientProxy{
         return lockObject;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void setOutRunnable(OutRunnable out) {
-        proxyHelper.setOutRunnable(out);
-    }
-
-     @Override
-    public boolean equals(Object o){
-        if(o instanceof ILock && o!=null){
-            return getId().equals(((ILock)o).getId());
-        }
-        else{
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof ILock && o != null) {
+            return getId().equals(((ILock) o).getId());
+        } else {
             return false;
         }
     }
+
     @Override
-    public int hashCode(){
+    public int hashCode() {
         return getId().hashCode();
     }
 }

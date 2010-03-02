@@ -17,8 +17,8 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.util.ByteUtil;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.util.ByteUtil;
 
 import java.io.*;
 

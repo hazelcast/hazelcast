@@ -17,13 +17,13 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.Instance;
 import com.hazelcast.client.impl.Values;
+import com.hazelcast.core.Instance;
 
 import java.util.Iterator;
 import java.util.Map;
 
-public class MultiMapEntryIterator extends MapEntryIterator{
+public class MultiMapEntryIterator extends MapEntryIterator {
     private volatile Iterator currentValueIterator;
     private volatile Object lastKey;
     protected volatile Map.Entry lastEntry;
@@ -33,25 +33,25 @@ public class MultiMapEntryIterator extends MapEntryIterator{
     }
 
     public boolean hasNext() {
-        if(currentValueIterator==null){
+        if (currentValueIterator == null) {
             return it.hasNext();
         }
-		return currentValueIterator.hasNext() || it.hasNext();
-	}
+        return currentValueIterator.hasNext() || it.hasNext();
+    }
 
-	public Map.Entry next() {
-        if(currentValueIterator==null || !currentValueIterator.hasNext()){
+    public Map.Entry next() {
+        if (currentValueIterator == null || !currentValueIterator.hasNext()) {
             lastKey = it.next();
-            Values value = (Values)proxy.get(lastKey);
-            if(value==null){
+            Values value = (Values) proxy.get(lastKey);
+            if (value == null) {
                 return next();
             }
             currentValueIterator = value.iterator();
         }
-        if(currentValueIterator==null || !currentValueIterator.hasNext())  {
+        if (currentValueIterator == null || !currentValueIterator.hasNext()) {
             return next();
         }
         lastEntry = new MapEntry(lastKey, currentValueIterator.next(), proxy);
         return lastEntry;
-	}
+    }
 }

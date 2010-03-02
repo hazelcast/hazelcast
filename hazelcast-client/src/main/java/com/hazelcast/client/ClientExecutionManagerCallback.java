@@ -27,7 +27,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.Serializer.toObject;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_DONE;
 
 public abstract class ClientExecutionManagerCallback implements ExecutionManagerCallback {
     final BlockingQueue<Packet> queue = new LinkedBlockingQueue<Packet>();
@@ -118,10 +117,9 @@ public abstract class ClientExecutionManagerCallback implements ExecutionManager
 
         protected Collection<Object> handleResult(Packet packet) throws ExecutionException {
             Object o = toObject(packet.getValue());
-            if(o instanceof ExecutionException){
-                ExecutionException e = (ExecutionException)o;
+            if (o instanceof ExecutionException) {
+                ExecutionException e = (ExecutionException) o;
                 throw e;
-
             }
             if (o instanceof Collection) {
                 return (Collection) o;

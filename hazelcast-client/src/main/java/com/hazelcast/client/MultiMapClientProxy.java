@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.client.ProxyHelper.check;
 import static com.hazelcast.client.Serializer.toByte;
 
-public class MultiMapClientProxy<K, V> implements ClientProxy, MultiMap<K, V>, EntryHolder {
+public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
     private final String name;
     private final ProxyHelper proxyHelper;
     private final HazelcastClient client;
@@ -39,10 +39,6 @@ public class MultiMapClientProxy<K, V> implements ClientProxy, MultiMap<K, V>, E
         this.name = name;
         this.proxyHelper = new ProxyHelper(name, client);
         this.client = client;
-    }
-
-    public void setOutRunnable(OutRunnable out) {
-        proxyHelper.setOutRunnable(out);
     }
 
     public String getName() {

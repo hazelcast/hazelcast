@@ -17,22 +17,19 @@
 
 package com.hazelcast.client;
 
-import static com.hazelcast.client.TestUtility.getHazelcastClient;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import com.hazelcast.core.ILock;
+import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
-
-import com.hazelcast.core.ILock;
+import static com.hazelcast.client.TestUtility.getHazelcastClient;
+import static org.junit.Assert.*;
 
 public class HazelcastClientLockTest {
 
-    @Test (expected = NullPointerException.class)
-    public void testLockNull(){
+    @Test(expected = NullPointerException.class)
+    public void testLockNull() {
         HazelcastClient hClient = getHazelcastClient();
         final ILock lock = hClient.getLock(null);
         lock.lock();
@@ -41,41 +38,32 @@ public class HazelcastClientLockTest {
     @Test
     public void testLockUnlock() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
-
         final ILock lock = hClient.getLock("testLockUnlock");
         lock.lock();
         final CountDownLatch latch = new CountDownLatch(1);
-
-        new Thread(new Runnable(){
+        new Thread(new Runnable() {
 
             public void run() {
                 assertFalse(lock.tryLock());
                 lock.lock();
                 latch.countDown();
-
             }
         }).start();
-
         Thread.sleep(100);
         assertEquals(1, latch.getCount());
-
         lock.unlock();
         Thread.sleep(100);
-
         assertTrue(latch.await(100, TimeUnit.MILLISECONDS));
     }
-
 
     @Test
     public void testTryLock() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
-
         final ILock lock = hClient.getLock("testTryLock");
         assertTrue(lock.tryLock());
         lock.lock();
         final CountDownLatch latch = new CountDownLatch(1);
-
-        new Thread(new Runnable(){
+        new Thread(new Runnable() {
 
             public void run() {
                 assertFalse(lock.tryLock());
@@ -85,18 +73,13 @@ public class HazelcastClientLockTest {
                     throw new RuntimeException(e);
                 }
                 latch.countDown();
-
             }
         }).start();
-
         Thread.sleep(100);
         assertEquals(1, latch.getCount());
-
         lock.unlock();
         lock.unlock();
-
         Thread.sleep(100);
         assertTrue(latch.await(100, TimeUnit.MILLISECONDS));
     }
-
 }

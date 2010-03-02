@@ -21,7 +21,9 @@ import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.FastByteArrayInputStream;
 import com.hazelcast.nio.FastByteArrayOutputStream;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.util.Date;
 
@@ -113,8 +115,8 @@ public class Serializer {
                 int size = dis.readInt();
                 byte[] b = new byte[size];
                 int redSize = dis.read(b);
-                if (size!=0 && size != redSize) {
-                    throw new RuntimeException("Couldn't read all of the data Size: "+ size + ", But I red:"+redSize);
+                if (size != 0 && size != redSize) {
+                    throw new RuntimeException("Couldn't read all of the data Size: " + size + ", But I red:" + redSize);
                 }
                 return b;
             } else if (type == SERIALIZER_TYPE_INTEGER) {

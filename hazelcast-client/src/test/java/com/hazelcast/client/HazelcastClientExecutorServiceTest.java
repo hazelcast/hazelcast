@@ -17,7 +17,10 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MultiTask;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
 import org.junit.Test;
 
@@ -209,5 +212,5 @@ public class HazelcastClientExecutorServiceTest {
         public String call() throws Exception {
             throw new RuntimeException("here is an exception");
         }
-    }   
+    }
 }

@@ -17,90 +17,81 @@
 
 package com.hazelcast.client;
 
-import static com.hazelcast.client.TestUtility.getHazelcastClient;
-import static junit.framework.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import com.hazelcast.client.impl.Values;
+import com.hazelcast.core.Instance;
+import com.hazelcast.core.MultiMap;
+import org.junit.Assert;
+import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Assert;
-import org.junit.Test;
-
-import com.hazelcast.client.impl.Values;
-import com.hazelcast.core.Instance;
-import com.hazelcast.core.MultiMap;
+import static com.hazelcast.client.TestUtility.getHazelcastClient;
+import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class HazelcastClientMultiMapTest {
 
     @Test(expected = NullPointerException.class)
-    public void testPutNull(){
+    public void testPutNull() {
         HazelcastClient hClient = getHazelcastClient();
         final MultiMap<Integer, String> map = hClient.getMultiMap("testPutNull");
         map.put(1, null);
     }
 
-
     @Test
-    public void putToMultiMap(){
+    public void putToMultiMap() {
         HazelcastClient hClient = getHazelcastClient();
         MultiMap<String, Integer> multiMap = hClient.getMultiMap("putToMultiMap");
-        assertTrue(multiMap.put("a",1));
-    }
-    @Test
-    public void removeFromMultiMap(){
-        HazelcastClient hClient = getHazelcastClient();
-        MultiMap<String, Integer> multiMap = hClient.getMultiMap("removeFromMultiMap");
-        assertTrue(multiMap.put("a",1));
-        assertTrue(multiMap.remove("a",1));
+        assertTrue(multiMap.put("a", 1));
     }
 
     @Test
-    public void containsKey(){
+    public void removeFromMultiMap() {
+        HazelcastClient hClient = getHazelcastClient();
+        MultiMap<String, Integer> multiMap = hClient.getMultiMap("removeFromMultiMap");
+        assertTrue(multiMap.put("a", 1));
+        assertTrue(multiMap.remove("a", 1));
+    }
+
+    @Test
+    public void containsKey() {
         HazelcastClient hClient = getHazelcastClient();
         MultiMap<String, Integer> multiMap = hClient.getMultiMap("containsKey");
         assertFalse(multiMap.containsKey("a"));
-        assertTrue(multiMap.put("a",1));
+        assertTrue(multiMap.put("a", 1));
         assertTrue(multiMap.containsKey("a"));
-
     }
+
     @Test
-    public void containsValue(){
+    public void containsValue() {
         HazelcastClient hClient = getHazelcastClient();
         MultiMap<String, Integer> multiMap = hClient.getMultiMap("containsValue");
         assertFalse(multiMap.containsValue(1));
-        assertTrue(multiMap.put("a",1));
+        assertTrue(multiMap.put("a", 1));
         assertTrue(multiMap.containsValue(1));
     }
+
     @Test
-    public void containsEntry(){
+    public void containsEntry() {
         HazelcastClient hClient = getHazelcastClient();
         MultiMap<String, Integer> multiMap = hClient.getMultiMap("containsEntry");
-        assertFalse(multiMap.containsEntry("a",1));
-        assertTrue(multiMap.put("a",1));
-        assertTrue(multiMap.containsEntry("a",1));
-        assertFalse(multiMap.containsEntry("a",2));
+        assertFalse(multiMap.containsEntry("a", 1));
+        assertTrue(multiMap.put("a", 1));
+        assertTrue(multiMap.containsEntry("a", 1));
+        assertFalse(multiMap.containsEntry("a", 2));
     }
+
     @Test
-    public void size(){
+    public void size() {
         HazelcastClient hClient = getHazelcastClient();
         MultiMap<String, Integer> multiMap = hClient.getMultiMap("size");
         assertEquals(0, multiMap.size());
-        assertTrue(multiMap.put("a",1));
+        assertTrue(multiMap.put("a", 1));
         assertEquals(1, multiMap.size());
-
-        assertTrue(multiMap.put("a",2));
+        assertTrue(multiMap.put("a", 2));
         assertEquals(2, multiMap.size());
     }
 
@@ -108,16 +99,16 @@ public class HazelcastClientMultiMapTest {
     public void get() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
         MultiMap<String, Integer> multiMap = hClient.getMultiMap("get");
-        assertTrue(multiMap.put("a",1));
-        assertTrue(multiMap.put("a",2));
+        assertTrue(multiMap.put("a", 1));
+        assertTrue(multiMap.put("a", 2));
         Map<Integer, CountDownLatch> map = new HashMap<Integer, CountDownLatch>();
         map.put(1, new CountDownLatch(1));
         map.put(2, new CountDownLatch(1));
         Collection<Integer> collection = multiMap.get("a");
         assertEquals(Values.class, collection.getClass());
         assertEquals(2, collection.size());
-        for(Iterator<Integer> it = collection.iterator();it.hasNext();){
-        	Integer o = it.next();
+        for (Iterator<Integer> it = collection.iterator(); it.hasNext();) {
+            Integer o = it.next();
             map.get(o).countDown();
         }
         assertTrue(map.get(1).await(10, TimeUnit.MILLISECONDS));
@@ -128,69 +119,65 @@ public class HazelcastClientMultiMapTest {
     public void removeKey() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
         MultiMap<String, Integer> multiMap = hClient.getMultiMap("removeKey");
-        assertTrue(multiMap.put("a",1));
-        assertTrue(multiMap.put("a",2));
+        assertTrue(multiMap.put("a", 1));
+        assertTrue(multiMap.put("a", 2));
         Map<Integer, CountDownLatch> map = new HashMap<Integer, CountDownLatch>();
         map.put(1, new CountDownLatch(1));
         map.put(2, new CountDownLatch(1));
         Collection<Integer> collection = multiMap.remove("a");
         assertEquals(Values.class, collection.getClass());
         assertEquals(2, collection.size());
-        for(Iterator<Integer> it = collection.iterator();it.hasNext();){
+        for (Iterator<Integer> it = collection.iterator(); it.hasNext();) {
             Object o = it.next();
-            map.get((Integer)o).countDown();
+            map.get((Integer) o).countDown();
         }
         assertTrue(map.get(1).await(10, TimeUnit.MILLISECONDS));
         assertTrue(map.get(2).await(10, TimeUnit.MILLISECONDS));
     }
+
     @Test
     public void keySet() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
         MultiMap<String, String> multiMap = hClient.getMultiMap("keySet");
-        int count =100;
-        for (int i=0;i<count;i++){
-            for(int j=0;j<=i;j++){
-                multiMap.put(String.valueOf(i),String.valueOf(j));
+        int count = 100;
+        for (int i = 0; i < count; i++) {
+            for (int j = 0; j <= i; j++) {
+                multiMap.put(String.valueOf(i), String.valueOf(j));
             }
         }
-
-        assertEquals(count*(count+1)/2, multiMap.size());
-
+        assertEquals(count * (count + 1) / 2, multiMap.size());
         Set<String> set = multiMap.keySet();
         assertEquals(count, set.size());
         Set<String> s = new HashSet<String>();
-        for(int i=0;i<count;i++){
+        for (int i = 0; i < count; i++) {
             s.add(String.valueOf(i));
         }
         assertEquals(s, set);
     }
+
     @Test
     public void entrySet() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
         MultiMap<String, String> multiMap = hClient.getMultiMap("entrySet");
         Map<String, List<String>> keyValueListMap = new HashMap<String, List<String>>();
-        int count =100;
-        for (int i=0;i<count;i++){
-            for(int j=0;j<=i;j++){
+        int count = 100;
+        for (int i = 0; i < count; i++) {
+            for (int j = 0; j <= i; j++) {
                 String key = String.valueOf(i);
                 String value = String.valueOf(j);
-                multiMap.put(key,value);
-                if(keyValueListMap.get(key)==null){
+                multiMap.put(key, value);
+                if (keyValueListMap.get(key) == null) {
                     keyValueListMap.put(key, new ArrayList<String>());
                 }
                 keyValueListMap.get(key).add(value);
-
             }
         }
-
-        assertEquals(count*(count+1)/2, multiMap.size());
-
+        assertEquals(count * (count + 1) / 2, multiMap.size());
         Set<Entry<String, String>> set = multiMap.entrySet();
-        assertEquals(count*(count+1)/2, set.size());
-
+        assertEquals(count * (count + 1) / 2, set.size());
         for (Iterator<Entry<String, String>> iterator = set.iterator(); iterator.hasNext();) {
-        	Entry<String, String> o =  iterator.next();
-            assertTrue(Integer.valueOf(o.getValue())<count);
+            Entry<String, String> o = iterator.next();
+            assertTrue(Integer.valueOf(o.getValue()) < count);
             assertTrue(keyValueListMap.get(o.getKey()).contains(o.getValue()));
         }
     }
@@ -200,39 +187,32 @@ public class HazelcastClientMultiMapTest {
         HazelcastClient hClient = getHazelcastClient();
         MultiMap<String, String> multiMap = hClient.getMultiMap("entrySet");
         Map<String, List<String>> valueKeyListMap = new HashMap<String, List<String>>();
-        int count =100;
-        for (int i=0;i<count;i++){
-            for(int j=0;j<=i;j++){
+        int count = 100;
+        for (int i = 0; i < count; i++) {
+            for (int j = 0; j <= i; j++) {
                 String key = String.valueOf(i);
                 String value = String.valueOf(j);
-                multiMap.put(key,value);
-                if(valueKeyListMap.get(value)==null){
+                multiMap.put(key, value);
+                if (valueKeyListMap.get(value) == null) {
                     valueKeyListMap.put(value, new ArrayList<String>());
                 }
                 valueKeyListMap.get(value).add(key);
-
             }
         }
-
-        assertEquals(count*(count+1)/2, multiMap.size());
-
+        assertEquals(count * (count + 1) / 2, multiMap.size());
         Collection<String> collection = multiMap.values();
-        assertEquals(count*(count+1)/2, collection.size());
+        assertEquals(count * (count + 1) / 2, collection.size());
         Iterator<String> iterator = collection.iterator();
         System.out.println(iterator.getClass());
-
-
         for (; iterator.hasNext();) {
-            String value =  iterator.next();
+            String value = iterator.next();
             assertNotNull(valueKeyListMap.get(value).remove(0));
-            if(valueKeyListMap.get(value).size()==0){
+            if (valueKeyListMap.get(value).size() == 0) {
                 valueKeyListMap.remove(value);
             }
         }
-
         assertTrue(valueKeyListMap.isEmpty());
     }
-
 
     @Test
     public void testMultiMapPutAndGet() {

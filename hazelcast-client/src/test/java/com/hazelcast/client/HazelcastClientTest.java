@@ -794,7 +794,6 @@ public class HazelcastClientTest {
         for (int i = 0; i < 1000; i++) {
             getHazelcastClient().getMap("def").put(i, i);
         }
-
         new Thread(new Runnable() {
 
             public void run() {

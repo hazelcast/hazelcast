@@ -17,10 +17,10 @@
 
 package com.hazelcast.client;
 
-import static com.hazelcast.client.TestUtility.getHazelcastClient;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.Transaction;
+import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
@@ -29,17 +29,14 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
-
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.Transaction;
+import static com.hazelcast.client.TestUtility.getHazelcastClient;
+import static org.junit.Assert.*;
 
 public class HazelcastClientTransactionTest {
 
     @Test
     public void rollbackTransactionMap() {
-    	HazelcastInstance hClient = getHazelcastClient();
+        HazelcastInstance hClient = getHazelcastClient();
         Transaction transaction = hClient.getTransaction();
         transaction.begin();
         Map<String, String> map = hClient.getMap("rollbackTransactionMap");
@@ -51,7 +48,7 @@ public class HazelcastClientTransactionTest {
 
     @Test
     public void commitTransactionMap() {
-    	HazelcastInstance hClient = getHazelcastClient();
+        HazelcastInstance hClient = getHazelcastClient();
         Transaction transaction = hClient.getTransaction();
         transaction.begin();
         Map<String, String> map = hClient.getMap("commitTransactionMap");
@@ -71,33 +68,28 @@ public class HazelcastClientTransactionTest {
         final IMap<String, String> map = hClient.getMap("testTransactionVisibilityFromDifferentThreads");
         map.put("1", "A");
         assertEquals("A", map.get("1"));
-
-
-        new Thread(new Runnable(){
+        new Thread(new Runnable() {
             public void run() {
                 assertNull(map.get("1"));
-                if(!map.containsKey("1")){
+                if (!map.containsKey("1")) {
                     latch.countDown();
                 }
-                synchronized (o){
+                synchronized (o) {
                     o.notify();
                 }
             }
         }).start();
-
-        synchronized (o){
+        synchronized (o) {
             o.wait();
         }
         transaction.rollback();
         assertNull(map.get("1"));
-
         assertTrue(latch.await(1, TimeUnit.MICROSECONDS));
     }
 
     @Test
     public void rollbackTransactionList() {
         HazelcastInstance hClient = getHazelcastClient();
-
         Transaction transaction = hClient.getTransaction();
         transaction.begin();
         List<String> list = hClient.getList("rollbackTransactionList");
@@ -109,7 +101,6 @@ public class HazelcastClientTransactionTest {
     @Test
     public void commitTransactionList() {
         HazelcastInstance hClient = getHazelcastClient();
-
         Transaction transaction = hClient.getTransaction();
         transaction.begin();
         List<String> list = hClient.getList("commitTransactionList");
@@ -121,7 +112,6 @@ public class HazelcastClientTransactionTest {
     @Test
     public void rollbackTransactionSet() {
         HazelcastInstance hClient = getHazelcastClient();
-
         Transaction transaction = hClient.getTransaction();
         transaction.begin();
         Set<String> set = hClient.getSet("rollbackTransactionSet");
@@ -133,7 +123,6 @@ public class HazelcastClientTransactionTest {
     @Test
     public void commitTransactionSet() {
         HazelcastInstance hClient = getHazelcastClient();
-
         Transaction transaction = hClient.getTransaction();
         transaction.begin();
         Set<String> set = hClient.getSet("commitTransactionSet");
@@ -142,10 +131,9 @@ public class HazelcastClientTransactionTest {
         assertTrue(set.contains("Istanbul"));
     }
 
-     @Test
+    @Test
     public void rollbackTransactionQueue() {
         HazelcastInstance hClient = getHazelcastClient();
-
         Transaction transaction = hClient.getTransaction();
         transaction.begin();
         Queue<String> q = hClient.getQueue("rollbackTransactionQueue");
@@ -157,7 +145,6 @@ public class HazelcastClientTransactionTest {
     @Test
     public void commitTransactionQueue() {
         HazelcastInstance hClient = getHazelcastClient();
-
         Transaction transaction = hClient.getTransaction();
         transaction.begin();
         Queue<String> q = hClient.getQueue("commitTransactionQueue");

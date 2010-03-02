@@ -17,7 +17,6 @@
 
 package com.hazelcast.client;
 
-
 public interface Constants {
 
     interface Objects {
@@ -30,15 +29,12 @@ public interface Constants {
         public static final Object OBJECT_MEMBER_LEFT = new Object();
 
         public static final Object OBJECT_REDO = new Object();
-
     }
 
     interface IO {
 
         public static final int BYTE_BUFFER_SIZE = 1024;
-
     }
-
 
     interface Timeouts {
 
@@ -56,6 +52,5 @@ public interface Constants {
         public static final byte RESPONSE_FAILURE = 4;
 
         public static final byte RESPONSE_REDO = 5;
-
     }
 }

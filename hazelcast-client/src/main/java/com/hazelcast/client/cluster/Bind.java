@@ -17,25 +17,25 @@
 
 package com.hazelcast.client.cluster;
 
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.DataSerializable;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.DataSerializable;
+public class Bind implements DataSerializable {
+    /**
+     *
+     */
+    private static final long serialVersionUID = -4416340802339479954L;
+    Address address;
 
-public class Bind implements DataSerializable{
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -4416340802339479954L;
-	Address address;
-	
     public Bind() {
     }
 
     public Bind(Address localAddress) {
-      address = localAddress;
+        address = localAddress;
     }
 
     public String toString() {
@@ -46,12 +46,11 @@ public class Bind implements DataSerializable{
         address = new Address();
         address.readData(in);
     }
-
     /* (non-Javadoc)
-     * @see com.hazelcast.cluster.AbstractRemotelyProcessable#writeData(java.io.DataOutput)
-     */
+    * @see com.hazelcast.cluster.AbstractRemotelyProcessable#writeData(java.io.DataOutput)
+    */
+
     public void writeData(final DataOutput out) throws IOException {
         address.writeData(out);
     }
-    
 }

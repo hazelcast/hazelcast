@@ -20,7 +20,7 @@ package com.hazelcast.client;
 public interface EntryHolder<K, V> {
 
     V remove(Object arg0);
-    
+
     V get(K key);
 
     boolean remove(Object key, Object value);

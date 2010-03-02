@@ -17,12 +17,9 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.impl.ClusterOperation;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Map;
 import java.util.logging.Logger;
 

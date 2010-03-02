@@ -25,22 +25,21 @@ import com.hazelcast.partition.PartitionService;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-public class PartitionClientProxy implements PartitionService, ClientProxy{
-    final private HazelcastClient client;
+public class PartitionClientProxy implements PartitionService {
     final private ProxyHelper proxyHelper;
-    public PartitionClientProxy(HazelcastClient client) {
-        this.client = client;
-        proxyHelper = new ProxyHelper("",client);
 
+    public PartitionClientProxy(HazelcastClient client) {
+        proxyHelper = new ProxyHelper("", client);
     }
 
     public Set<Partition> getPartitions() {
-        CollectionWrapper<Partition> partitions = (CollectionWrapper<Partition>) proxyHelper.doOp(ClusterOperation.CLIENT_GET_PARTITIONS, null, null);
-        return new LinkedHashSet<Partition>(partitions.getKeys());  //To change body of implemented methods use File | Settings | File Templates.
+        CollectionWrapper<Partition> partitions =
+                (CollectionWrapper<Partition>) proxyHelper.doOp(ClusterOperation.CLIENT_GET_PARTITIONS, null, null);
+        return new LinkedHashSet<Partition>(partitions.getKeys());  
     }
 
     public Partition getPartition(Object key) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public void addMigrationListener(MigrationListener migrationListener) {
@@ -49,9 +48,5 @@ public class PartitionClientProxy implements PartitionService, ClientProxy{
 
     public void removeMigrationListener(MigrationListener migrationListener) {
         throw new UnsupportedOperationException();
-    }
-
-    public void setOutRunnable(OutRunnable out) {
-        proxyHelper.setOutRunnable(out);
     }
 }

@@ -32,7 +32,7 @@ import java.util.concurrent.*;
 
 import static com.hazelcast.client.Serializer.toObject;
 
-public class ExecutorServiceClientProxy implements ClientProxy, ExecutorService {
+public class ExecutorServiceClientProxy implements ExecutorService {
 
     final ProxyHelper proxyHelper;
     private final HazelcastClient client;
@@ -42,10 +42,6 @@ public class ExecutorServiceClientProxy implements ClientProxy, ExecutorService 
         this.client = client;
         this.name = name;
         proxyHelper = new ProxyHelper(name, client);
-    }
-
-    public void setOutRunnable(OutRunnable out) {
-        proxyHelper.setOutRunnable(out);
     }
 
     public void shutdown() {

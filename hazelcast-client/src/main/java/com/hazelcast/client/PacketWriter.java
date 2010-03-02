@@ -20,16 +20,15 @@ package com.hazelcast.client;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+public class PacketWriter extends PacketHandler {
 
-public class PacketWriter extends PacketHandler{
+    public void write(Packet request) throws IOException {
+        write(getConnection(), request);
+    }
 
-	public void write(Packet request) throws IOException {
-		write(getConnection(),request);
-	}
-	public void write(Connection connection, Packet request) throws IOException {
-		DataOutputStream dos= connection.getOutputStream();
-		request.writeTo(dos);
-		dos.flush();
-	}
-
+    public void write(Connection connection, Packet request) throws IOException {
+        DataOutputStream dos = connection.getOutputStream();
+        request.writeTo(dos);
+        dos.flush();
+    }
 }

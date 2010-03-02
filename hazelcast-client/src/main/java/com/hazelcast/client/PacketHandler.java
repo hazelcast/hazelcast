@@ -19,15 +19,13 @@ package com.hazelcast.client;
 
 public class PacketHandler {
 
-	private Connection connection;
+    private Connection connection;
 
-	public Connection getConnection() {
-		return connection;
-	}
+    public Connection getConnection() {
+        return connection;
+    }
 
-	public void setConnection(Connection connection) {
-		this.connection = connection;
-		
-	}
-
+    public void setConnection(Connection connection) {
+        this.connection = connection;
+    }
 }

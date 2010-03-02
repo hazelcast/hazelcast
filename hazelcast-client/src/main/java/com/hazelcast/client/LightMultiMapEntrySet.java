@@ -19,28 +19,28 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.Instance;
 
-import java.util.Map;
 import java.util.AbstractCollection;
-import java.util.Set;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 public class LightMultiMapEntrySet<K, V> extends AbstractCollection<Map.Entry<K, V>> implements Set<Map.Entry<K, V>> {
 
-	private final Set<K> keySet;
-	private final MultiMapClientProxy proxy;
+    private final Set<K> keySet;
+    private final MultiMapClientProxy proxy;
     private final Instance.InstanceType instanceType;
-	public LightMultiMapEntrySet(Set<K> set, MultiMapClientProxy proxy, Instance.InstanceType instanceType) {
-		this.keySet = set;
-		this.proxy = proxy;
+
+    public LightMultiMapEntrySet(Set<K> set, MultiMapClientProxy proxy, Instance.InstanceType instanceType) {
+        this.keySet = set;
+        this.proxy = proxy;
         this.instanceType = instanceType;
-	}
+    }
 
-	public Iterator<Map.Entry<K, V>> iterator() {
+    public Iterator<Map.Entry<K, V>> iterator() {
         return new MultiMapEntryIterator(keySet.iterator(), proxy, instanceType);
-	}
+    }
 
-	public int size() {
-		return proxy.size();
-	}
-
+    public int size() {
+        return proxy.size();
+    }
 }

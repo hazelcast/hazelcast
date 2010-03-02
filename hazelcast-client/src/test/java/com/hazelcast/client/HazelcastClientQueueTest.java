@@ -17,64 +17,52 @@
 
 package com.hazelcast.client;
 
-import static com.hazelcast.client.TestUtility.getHazelcastClient;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.Test;
-
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
+import org.junit.Test;
+
+import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.client.TestUtility.getHazelcastClient;
+import static org.junit.Assert.*;
 
 public class HazelcastClientQueueTest {
 
-    @Test (expected = NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void testPutNull() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
         IQueue<?> queue = hClient.getQueue("testPutNull");
         queue.put(null);
-
     }
 
     @Test
-    public void testQueueName(){
+    public void testQueueName() {
         HazelcastClient hClient = getHazelcastClient();
-
-    	IQueue<?> queue = hClient.getQueue("testQueueName");
-    	assertEquals("testQueueName", queue.getName());
+        IQueue<?> queue = hClient.getQueue("testQueueName");
+        assertEquals("testQueueName", queue.getName());
     }
 
     @Test
     public void testQueueOffer() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
-
-    	IQueue<String> queue = hClient.getQueue("testQueueOffer");
+        IQueue<String> queue = hClient.getQueue("testQueueOffer");
         assertTrue(queue.offer("a"));
         assertTrue(queue.offer("b", 10, TimeUnit.MILLISECONDS));
         assertEquals("a", queue.poll());
         assertEquals("b", queue.poll());
-
     }
 
     @Test
     public void testQueuePoll() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
-
         final CountDownLatch cl = new CountDownLatch(1);
         final IQueue<String> queue = hClient.getQueue("testQueuePoll");
         assertTrue(queue.offer("a"));
         assertEquals("a", queue.poll());
-        new Thread(new Runnable(){
+        new Thread(new Runnable() {
 
             public void run() {
                 try {
@@ -92,91 +80,79 @@ public class HazelcastClientQueueTest {
     }
 
     @Test
-    public void testQueueRemove(){
+    public void testQueueRemove() {
         HazelcastClient hClient = getHazelcastClient();
-
-    	IQueue<String> queue = hClient.getQueue("testQueueRemove");
+        IQueue<String> queue = hClient.getQueue("testQueueRemove");
         assertTrue(queue.offer("a"));
         assertEquals("a", queue.remove());
     }
 
     @Test
-    public void testQueuePeek(){
+    public void testQueuePeek() {
         HazelcastClient hClient = getHazelcastClient();
-
-    	IQueue<String> queue = hClient.getQueue("testQueuePeek");
+        IQueue<String> queue = hClient.getQueue("testQueuePeek");
         assertTrue(queue.offer("a"));
         assertEquals("a", queue.peek());
     }
 
     @Test
-    public void element(){
+    public void element() {
         HazelcastClient hClient = getHazelcastClient();
-
-    	IQueue<String> queue = hClient.getQueue("element");
+        IQueue<String> queue = hClient.getQueue("element");
         assertTrue(queue.offer("a"));
         assertEquals("a", queue.element());
     }
 
     @Test
-
-    public void addAll(){
+    public void addAll() {
         HazelcastClient hClient = getHazelcastClient();
-
-    	IQueue<String> queue = hClient.getQueue("addAll");
+        IQueue<String> queue = hClient.getQueue("addAll");
         List<String> list = new ArrayList<String>();
         list.add("a");
         list.add("b");
-
         assertTrue(queue.addAll(list));
         assertEquals("a", queue.poll());
         assertEquals("b", queue.poll());
-
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void clear(){
+    public void clear() {
         HazelcastClient hClient = getHazelcastClient();
-
-    	IQueue<String> queue = hClient.getQueue("clear");
+        IQueue<String> queue = hClient.getQueue("clear");
         List<String> list = new ArrayList<String>();
         list.add("a");
         list.add("b");
-        assertTrue(queue.size()==0);
+        assertTrue(queue.size() == 0);
         assertTrue(queue.addAll(list));
-        assertTrue(queue.size()==2);
+        assertTrue(queue.size() == 2);
         queue.clear();
-        assertTrue(queue.size()==0);
+        assertTrue(queue.size() == 0);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void containsAll(){
+    public void containsAll() {
         HazelcastClient hClient = getHazelcastClient();
-
         IQueue<String> queue = hClient.getQueue("containsAll");
         List<String> list = new ArrayList<String>();
         list.add("a");
         list.add("b");
-        assertTrue(queue.size()==0);
+        assertTrue(queue.size() == 0);
         assertTrue(queue.addAll(list));
-        assertTrue(queue.size()==2);
+        assertTrue(queue.size() == 2);
         assertTrue(queue.containsAll(list));
     }
 
     @Test
-
-    public void equals(){
+    public void equals() {
         HazelcastClient hClient = getHazelcastClient();
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-
         IQueue<String> queue = hClient.getQueue("equals");
         assertEquals(queue, h.getQueue("equals"));
-
     }
-    @Test
-    public void isEmpty(){
-        HazelcastClient hClient = getHazelcastClient();
 
+    @Test
+    public void isEmpty() {
+        HazelcastClient hClient = getHazelcastClient();
         IQueue<String> queue = hClient.getQueue("isEmpty");
         assertTrue(queue.isEmpty());
         queue.offer("asd");
@@ -184,49 +160,42 @@ public class HazelcastClientQueueTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void iterator(){
+    public void iterator() {
         HazelcastClient hClient = getHazelcastClient();
-
         IQueue<String> queue = hClient.getQueue("iterator");
         assertTrue(queue.isEmpty());
         int count = 100;
         Map<Integer, Integer> map = new HashMap<Integer, Integer>();
-        for(int i=0;i<count;i++){
-            queue.offer(""+i);
-            map.put(i,1);
+        for (int i = 0; i < count; i++) {
+            queue.offer("" + i);
+            map.put(i, 1);
         }
         Iterator<String> it = queue.iterator();
-        while(it.hasNext()){
+        while (it.hasNext()) {
             String o = it.next();
-            map.put(Integer.valueOf(o), map.get(Integer.valueOf(o))-1);
+            map.put(Integer.valueOf(o), map.get(Integer.valueOf(o)) - 1);
         }
-
-        for(int i=0;i<count;i++){
-            assertTrue(map.get(i)==0);
+        for (int i = 0; i < count; i++) {
+            assertTrue(map.get(i) == 0);
         }
     }
-    @Test(expected = UnsupportedOperationException.class)
-    public void removeAll(){
-        HazelcastClient hClient = getHazelcastClient();
 
+    @Test(expected = UnsupportedOperationException.class)
+    public void removeAll() {
+        HazelcastClient hClient = getHazelcastClient();
         IQueue<String> queue = hClient.getQueue("removeAll");
         assertTrue(queue.isEmpty());
         int count = 100;
         Map<Integer, Integer> map = new HashMap<Integer, Integer>();
-        for(int i=0;i<count;i++){
-            queue.offer(""+i);
-            map.put(i,1);
+        for (int i = 0; i < count; i++) {
+            queue.offer("" + i);
+            map.put(i, 1);
         }
         List<String> list = new ArrayList<String>();
-        for(int i=0;i<count/2;i++){
+        for (int i = 0; i < count / 2; i++) {
             list.add(String.valueOf(i));
         }
-
         queue.removeAll(list);
-        assertTrue(queue.size()==count/2);
+        assertTrue(queue.size() == count / 2);
     }
-
-
-
-
 }

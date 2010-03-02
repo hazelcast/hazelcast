@@ -19,7 +19,8 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.Member;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
 
 public abstract class IORunnable extends ClientRunnable {
 

@@ -17,9 +17,6 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.Member;
-
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -73,8 +70,6 @@ public class OutRunnable extends IORunnable {
         temp.drainTo(queue);
         onDisconnect(oldConnection);
     }
-
-    
 
     public void enQueue(Call call) {
         try {

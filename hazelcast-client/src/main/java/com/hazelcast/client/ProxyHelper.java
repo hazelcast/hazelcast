@@ -31,20 +31,13 @@ import static com.hazelcast.client.Serializer.toByte;
 import static com.hazelcast.client.Serializer.toObject;
 
 public class ProxyHelper {
-    OutRunnable out;
-    protected String name = "";
-    final protected HazelcastClient client;
-    private static AtomicLong callIdGen = new AtomicLong(0);
+    private final static AtomicLong callIdGen = new AtomicLong(0);
+    private final String name;
+    private final HazelcastClient client;
 
     public ProxyHelper(String name, HazelcastClient client) {
-        if (name != null) {
-            this.name = name;
-        }
+        this.name = (name == null) ? "" : name;
         this.client = client;
-    }
-
-    public void setOutRunnable(OutRunnable out) {
-        this.out = out;
     }
 
     public String getName() {
@@ -66,13 +59,13 @@ public class ProxyHelper {
             throw new NullPointerException();
         }
         client.getOutRunnable().enQueue(c);
-    } 
+    }
 
     public static Call createCall(Packet request) {
         long id = newCallId();
         return new Call(id, request);
     }
-    
+
     public static long newCallId() {
         return callIdGen.incrementAndGet();
     }
@@ -150,5 +143,9 @@ public class ProxyHelper {
         if (timeunit == null) {
             throw new NullPointerException("TimeUnit can not be null.");
         }
+    }
+
+    public HazelcastClient getHazelcastClient() {
+        return client;
     }
 }
