@@ -148,11 +148,7 @@ public class ExecutorManager extends BaseManager {
             } finally {
                 request.clearForResponse();
                 request.response = result;
-                enqueueAndReturn(new Processable() {
-                    public void process() {
-                        returnResponse(request);
-                    }
-                });
+                enqueueAndReturn(new ReturnResponseProcess(request));
             }
         }
     }

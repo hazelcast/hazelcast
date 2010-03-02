@@ -39,7 +39,7 @@ public class DistributedTask<V> extends FutureTask<V> {
 
     private volatile Throwable exception = null;
 
-    private Inner inner = null;
+    private final Inner inner;
 
     private volatile boolean done = false;
 

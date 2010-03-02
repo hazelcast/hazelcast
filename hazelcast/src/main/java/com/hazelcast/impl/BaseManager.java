@@ -220,6 +220,18 @@ public abstract class BaseManager {
         }
     }
 
+    public class ReturnResponseProcess implements Processable {
+        private final Request request;
+
+        public ReturnResponseProcess(Request request) {
+            this.request = request;
+        }
+
+        public void process() {
+            returnResponse(request);
+        }
+    }
+
     public void returnResponse(Request request) {
         if (request.local) {
             final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;

@@ -225,20 +225,22 @@ public class Request {
     }
 
     public void clearForResponse() {
-        this.name = null;
-        this.key = null;
-        this.value = null;
-        this.blockId = DEFAULT_BLOCK_ID;
-        this.timeout = DEFAULT_TIMEOUT;
-        this.ttl = DEFAULT_TTL;
-        this.txnId = DEFAULT_TXN_ID;
-        this.lockThreadId = DEFAULT_LOCK_THREAD_ID;
-        this.lockAddress = null;
-        this.lockCount = DEFAULT_LOCK_COUNT;
-        this.longValue = Long.MIN_VALUE;
-        this.version = DEFAULT_VERSION;
-        this.indexes = null;
-        this.indexTypes = null;
+        if (!this.local) {
+            this.name = null;
+            this.key = null;
+            this.value = null;
+            this.blockId = DEFAULT_BLOCK_ID;
+            this.timeout = DEFAULT_TIMEOUT;
+            this.ttl = DEFAULT_TTL;
+            this.txnId = DEFAULT_TXN_ID;
+            this.lockThreadId = DEFAULT_LOCK_THREAD_ID;
+            this.lockAddress = null;
+            this.lockCount = DEFAULT_LOCK_COUNT;
+            this.longValue = Long.MIN_VALUE;
+            this.version = DEFAULT_VERSION;
+            this.indexes = null;
+            this.indexTypes = null;
+        }
     }
 
     public void setLongRequest() {
