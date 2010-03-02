@@ -21,6 +21,7 @@ import com.hazelcast.cluster.*;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.Interfaces;
 import com.hazelcast.config.Join;
+import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.*;
@@ -543,7 +544,14 @@ public class Node {
                 if (masterAddress == null) {
                     masterAddress = findMaster();
                     if (masterAddress == null || masterAddress.equals(address)) {
-                        setAsMaster();
+                        TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
+                        if (tcpIpConfig != null && tcpIpConfig.isEnabled()) {
+                            masterAddress = null;
+                            logger.log (Level.FINEST, "Multicast couldn't find cluster. Trying TCP/IP");
+                            joinWithTCP();
+                        } else {
+                            setAsMaster();
+                        }
                         return;
                     }
                 }
