@@ -26,7 +26,6 @@ import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public abstract class MapPanel extends AbstractMonitoringPanel implements MonitoringPanel {
@@ -76,12 +75,8 @@ public abstract class MapPanel extends AbstractMonitoringPanel implements Monito
 
     public boolean register(ClusterWidgets clusterWidgets) {
         this.clusterWidgets = clusterWidgets;
-        boolean isNew = super.register(clusterWidgets, ChangeEventType.MAP_STATISTICS);
-        if (isNew) {
-            this.hazelcastService.registerEvent(ChangeEventType.MAP_STATISTICS, clusterWidgets.clusterId, mapName, callBack);
-        }
-        super.register(clusterWidgets, ChangeEventType.MAP_STATISTICS, mapName, callBack);
-        return true;
+        Boolean result = super.register(clusterWidgets, ChangeEventType.MAP_STATISTICS, mapName, callBack);
+        return result;
     }
 
     public boolean deRegister(final ClusterWidgets clusterWidgets) {
