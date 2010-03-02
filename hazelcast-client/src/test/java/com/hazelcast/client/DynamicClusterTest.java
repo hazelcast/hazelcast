@@ -19,6 +19,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.SleepCallable;
 import org.junit.After;
@@ -510,5 +511,23 @@ public class DynamicClusterTest {
             memberMap.put(hazelcastInstance.getCluster().getLocalMember().getPort(), hazelcastInstance);
         }
         return memberMap;
+    }
+
+    @Test
+    public void twoClientsAndTransaction() {
+        Config config1 = new XmlConfigBuilder().build();
+        Config config2 = new XmlConfigBuilder().build();
+        GroupConfig gConfig1 = new GroupConfig("g1", "pg1");
+        GroupConfig gConfig2 = new GroupConfig("g2", "pg2");
+        config1.setGroupConfig(gConfig1);
+        config2.setGroupConfig(gConfig2);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
+        HazelcastInstance client1 = getHazelcastClient(h1);
+        HazelcastInstance client2 = getHazelcastClient(h2);
+        Transaction t1 = client1.getTransaction();
+        Transaction t2 = client2.getTransaction();
+        t1.begin();
+        client1.getMap("map").put(1,4);
     }
 }

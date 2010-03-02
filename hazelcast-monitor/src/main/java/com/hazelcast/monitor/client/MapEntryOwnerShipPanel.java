@@ -25,7 +25,7 @@ import com.hazelcast.monitor.client.event.MapStatistics;
 public class MapEntryOwnerShipPanel extends MapStatsPanel implements MonitoringPanel {
 
     public MapEntryOwnerShipPanel(String name, AsyncCallback<ChangeEvent> callBack, ServicesFactory servicesFactory) {
-        super(name, callBack, "Statistics for Map: " + name, servicesFactory.getHazelcastService());
+        super(name, callBack, "Size & Memory Details", servicesFactory.getHazelcastService());
     }
 
     @Override

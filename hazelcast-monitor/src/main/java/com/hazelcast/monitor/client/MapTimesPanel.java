@@ -27,7 +27,7 @@ import java.util.Date;
 public class MapTimesPanel extends MapStatsPanel implements MonitoringPanel {
 
     public MapTimesPanel(String name, AsyncCallback<ChangeEvent> callBack, ServicesFactory servicesFactory) {
-        super(name, callBack, "Times for Map: " + name, servicesFactory.getHazelcastService());
+        super(name, callBack, "Time Details", servicesFactory.getHazelcastService());
     }
 
     @Override

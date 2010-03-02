@@ -23,7 +23,7 @@ import com.hazelcast.monitor.client.event.MapStatistics;
 
 public class MapChartPanel extends MapPanel implements MonitoringPanel {
     public MapChartPanel(String name, AsyncCallback<ChangeEvent> callBack, ServicesFactory servicesFactory) {
-        super(name, callBack, "Charts for Map: " + name, servicesFactory.getHazelcastService());
+        super(name, callBack, "Charts", servicesFactory.getHazelcastService());
 //        disclosurePanel.setOpen(true);
     }
 
