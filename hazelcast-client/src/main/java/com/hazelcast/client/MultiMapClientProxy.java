@@ -106,6 +106,15 @@ public class MultiMapClientProxy<K, V> implements ClientProxy, MultiMap<K, V>, E
         proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_UNLOCK, key, null);
     }
 
+    public boolean lockMap(long time, TimeUnit timeunit) {
+        ProxyHelper.checkTime(time, timeunit);
+        return (Boolean) doLock(ClusterOperation.CONCURRENT_MAP_LOCK_MAP, null, time, timeunit);
+    }
+
+    public void unlockMap() {
+        doLock(ClusterOperation.CONCURRENT_MAP_UNLOCK_MAP, null, -1, null);
+    }
+
     public boolean put(K key, V value) {
         check(key);
         check(value);

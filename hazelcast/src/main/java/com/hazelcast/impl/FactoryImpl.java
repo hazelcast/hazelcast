@@ -1605,6 +1605,16 @@ public class FactoryImpl implements HazelcastInstance {
             base.unlock(key);
         }
 
+        public boolean lockMap(long time, TimeUnit timeunit) {
+            ensure();
+            return base.lockMap(time, timeunit);
+        }
+
+        public void unlockMap() {
+            ensure();
+            base.unlockMap();
+        }
+
         class MultiMapBase implements MultiMap, IGetAwareProxy {
             final MProxy mapProxy;
 
@@ -1710,6 +1720,14 @@ public class FactoryImpl implements HazelcastInstance {
 
             public void unlock(Object key) {
                 mapProxy.unlock(key);
+            }
+
+            public boolean lockMap(long time, TimeUnit timeunit) {
+                return mapProxy.lockMap(time, timeunit);
+            }
+
+            public void unlockMap() {
+                mapProxy.unlockMap();
             }
         }
     }

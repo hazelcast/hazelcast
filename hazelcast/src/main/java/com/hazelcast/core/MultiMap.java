@@ -230,4 +230,29 @@ public interface MultiMap<K, V> extends Instance {
      * @param key key to lock.
      */
     void unlock(K key);
+
+    /**
+     * Tries to acquire the lock for the entire map.
+     * The thread that locks the map can do all the operations
+     * but other threads in the cluster cannot operate on the map.
+     * <p>If the lock is not available then
+     * the current thread becomes disabled for thread scheduling
+     * purposes and lies dormant until one of two things happens:
+     * <ul>
+     * <li>The lock is acquired by the current thread; or
+     * <li>The specified waiting time elapses
+     * </ul>
+     *
+     * @param time     the maximum time to wait for the lock
+     * @param timeunit the time unit of the <tt>time</tt> argument.
+     * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
+     *         if the waiting time elapsed before the lock was acquired.
+     */
+    boolean lockMap(long time, TimeUnit timeunit);
+
+    /**
+     * Unlocks the map. It never blocks and
+     * returns immediately.
+     */
+    void unlockMap();
 }
