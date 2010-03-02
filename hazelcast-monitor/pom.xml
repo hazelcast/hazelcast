@@ -13,7 +13,16 @@
 
     <name>hazelcast-monitor</name>
     <artifactId>hazelcast-monitor</artifactId>
-    <packaging>jar</packaging>
+    <packaging>war</packaging>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- convenience to define GWT version in one place -->
+        <gwt.version>2.0.0</gwt.version>
+        <!--  tell the compiler we can use 1.5 -->
+        <maven.compiler.source>1.5</maven.compiler.source>
+        <maven.compiler.target>1.5</maven.compiler.target>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -55,5 +64,49 @@
             <version>1.0.12</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <outputDirectory>war/WEB-INF/classes</outputDirectory>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>gwt-maven-plugin</artifactId>
+                <version>1.2-SNAPSHOT</version>
+                <configuration>
+                    <disableCastChecking>true</disableCastChecking>
+                    <disableClassMetadata>true</disableClassMetadata>
+                    <runTarget>/HazelcastMonitor.html</runTarget>
+                    <extraJvmArgs>-Xmx1024m</extraJvmArgs>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>compile</goal>
+                            <!--goal>generateAsync</goal-->
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.0.2</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>codehaus-snapshots-repository</id>
+            <name>codehaus snapshots repository</name>
+            <url>http://snapshots.repository.codehaus.org</url>
+        </pluginRepository>
+    </pluginRepositories>
 
 </project>
