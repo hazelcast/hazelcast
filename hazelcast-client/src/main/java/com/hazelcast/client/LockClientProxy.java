@@ -52,7 +52,7 @@ public class LockClientProxy implements ILock, ClientProxy{
     }
 
     public boolean tryLock(long l, TimeUnit timeUnit) throws InterruptedException {
-        check(l, timeUnit);
+        ProxyHelper.checkTime(l, timeUnit);
         return client.mapLockProxy.tryLock(lockObject, l, timeUnit);
     }
 

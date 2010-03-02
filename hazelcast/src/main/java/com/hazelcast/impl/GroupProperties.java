@@ -28,7 +28,7 @@ public class GroupProperties {
     public static final String PROP_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.max.no.heartbeat.seconds";
     public static final String PROP_FIRST_MEMBER_WAIT_SECONDS = "hazelcast.first.member.wait.seconds";
     public static final String PROP_RESTART_ON_MAX_IDLE = "hazelcast.restart.on.max.idle";
-    public static final String PROP_CONCURRENT_MAP_BLOCK_COUNT = "hazelcast.map.block.count";
+    public static final String PROP_CONCURRENT_MAP_BLOCK_COUNT = "hazelcast.map.block.lockCount";
     public static final String PROP_BLOCKING_QUEUE_BLOCK_SIZE = "hazelcast.queue.block.size";
     public static final String PROP_REMOVE_DELAY_SECONDS = "hazelcast.map.remove.delay.seconds";
     public static final String PROP_LOG_STATE = "hazelcast.log.state";

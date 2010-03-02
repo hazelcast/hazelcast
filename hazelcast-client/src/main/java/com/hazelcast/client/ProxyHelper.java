@@ -143,7 +143,7 @@ public class ProxyHelper {
         }
     }
 
-    static void check(long time, TimeUnit timeunit) {
+    static void checkTime(long time, TimeUnit timeunit) {
         if (time < 0) {
             throw new IllegalArgumentException("Time can not be less than 0.");
         }

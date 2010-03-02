@@ -18,11 +18,9 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.*;
-import com.hazelcast.impl.SleepCallable;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -132,7 +130,7 @@ public class HazelcastClientExecutorServiceTest {
 
     /**
      * Test for the issue 129.
-     * Repeadetly runs tasks and check for isDone() status after
+     * Repeadetly runs tasks and checkTime for isDone() status after
      * get().
      */
     @Test

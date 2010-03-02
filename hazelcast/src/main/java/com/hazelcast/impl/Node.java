@@ -280,7 +280,7 @@ public class Node {
 
     public void setMasterAddress(final Address master) {
         if (master != null)
-            logger.log(Level.FINE, "** setting master address to " + master.toString());
+            logger.log(Level.FINE, "** setting master lockAddress to " + master.toString());
         masterAddress = master;
     }
 
@@ -468,7 +468,7 @@ public class Node {
         final List<String> lsJoinMembers = join.getTcpIpConfig().getMembers();
         final List<Address> lsPossibleAddresses = new ArrayList<Address>();
         for (final String host : lsJoinMembers) {
-            // check if host is hostname of ip address
+            // check if host is hostname of ip lockAddress
             final boolean ip = isIP(host);
             try {
                 if (ip) {
@@ -606,7 +606,7 @@ public class Node {
                 Thread.sleep(1000);
                 numberOfSeconds++;
                 int numberOfJoinReq = 0;
-                logger.log(Level.FINE, "we are going to try to connect to each address, but no more than five times");
+                logger.log(Level.FINE, "we are going to try to connect to each lockAddress, but no more than five times");
                 for (final Address possibleAddress : lsPossibleAddresses) {
                     logger.log(Level.FINEST, "connection attempt " + numberOfJoinReq + " to " + possibleAddress);
                     final Connection conn = connectionManager.getOrConnect(possibleAddress);

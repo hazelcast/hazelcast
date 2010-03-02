@@ -19,8 +19,6 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.core.Instance;
-import com.hazelcast.core.IList;
 import com.hazelcast.impl.ClusterOperation;
 import static com.hazelcast.client.ProxyHelper.check;
 
@@ -85,7 +83,7 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
 
     public boolean offer(E e, long l, TimeUnit timeUnit) throws InterruptedException {
         check(e);
-        check(l, timeUnit);
+        ProxyHelper.checkTime(l, timeUnit);
         l = (l<0)?0:l;
         if(e==null){
             throw new NullPointerException();
@@ -98,7 +96,7 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
     }
 
     public E poll(long l, TimeUnit timeUnit) throws InterruptedException {
-        check(l, timeUnit);
+        ProxyHelper.checkTime(l, timeUnit);
         l = (l<0)?0:l;
         return innerPoll(timeUnit.toMillis(l));
     }

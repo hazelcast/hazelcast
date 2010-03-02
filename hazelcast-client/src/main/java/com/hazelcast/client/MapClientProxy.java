@@ -105,6 +105,15 @@ public class MapClientProxy<K, V> implements IMap<K, V>, ClientProxy, EntryHolde
         return set;
     }
 
+    public boolean lockMap(long time, TimeUnit timeunit) {
+        ProxyHelper.checkTime(time, timeunit);
+        return (Boolean) doLock(ClusterOperation.CONCURRENT_MAP_LOCK_MAP, null, time, timeunit);
+    }
+
+    public void unlockMap() {
+        doLock(ClusterOperation.CONCURRENT_MAP_UNLOCK_MAP, null, -1, null);
+    }
+
     public void lock(K key) {
         ProxyHelper.check(key);
         doLock(ClusterOperation.CONCURRENT_MAP_LOCK, key, -1, null);
@@ -117,7 +126,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, ClientProxy, EntryHolde
 
     public boolean tryLock(K key, long time, TimeUnit timeunit) {
         check(key);
-        check(time, timeunit);
+        ProxyHelper.checkTime(time, timeunit);
         return (Boolean) doLock(ClusterOperation.CONCURRENT_MAP_LOCK, key, time, timeunit);
     }
 

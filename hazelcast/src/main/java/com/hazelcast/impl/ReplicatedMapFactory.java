@@ -139,6 +139,14 @@ public final class ReplicatedMapFactory {
             distributedMap.unlock(key);
         }
 
+        public boolean lockMap(long time, TimeUnit timeunit) {
+            return distributedMap.lockMap(time,timeunit);
+        }
+
+        public void unlockMap() {
+            distributedMap.unlockMap();
+        }
+
         public LocalMapStats getLocalMapStats() {
             return distributedMap.getLocalMapStats();
         }

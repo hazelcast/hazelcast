@@ -853,7 +853,9 @@ public class ClusterTest {
             es.execute(new Runnable() {
                 public void run() {
                     latchStart.countDown();
+                    long start = System.currentTimeMillis();
                     mapWaiter.put(key, "value");
+                    assertTrue((System.currentTimeMillis() - start) >= 1000);
                     latchEnd.countDown();
                 }
             });
@@ -861,6 +863,47 @@ public class ClusterTest {
         assertTrue(latchStart.await(1, TimeUnit.SECONDS));
         Thread.sleep(1000); // extra second so that map2.put can actually start
         mapLocker.unlock(key);
+        assertTrue(latchEnd.await(10, TimeUnit.SECONDS));
+        es.shutdown();
+    }
+
+    @Test(timeout = 60000)
+    public void testMapLock() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        final IMap map1 = h1.getMap("default");
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        final IMap map2 = h2.getMap("default");
+        testMapLockWaiters(map1, map2, 1);
+        testMapLockWaiters(map2, map2, 2);
+        testMapLockWaiters(map1, map1, 3);
+        testMapLockWaiters(map2, map1, 4);
+        assertTrue(map1.lockMap(10, TimeUnit.SECONDS));
+        assertNull(map1.put (5, "value5"));
+        assertEquals("value5", map1.put (5, "value55"));
+        assertEquals("value55", map1.get(5));
+        map1.unlockMap();
+    }
+
+    private void testMapLockWaiters(final IMap mapLocker, final IMap mapWaiter, final Object key) throws Exception {
+        assertTrue(mapLocker.lockMap(10, TimeUnit.SECONDS));
+        final int count = 10;
+        final CountDownLatch latchStart = new CountDownLatch(count);
+        final CountDownLatch latchEnd = new CountDownLatch(count);
+        ExecutorService es = Executors.newFixedThreadPool(count);
+        for (int i = 0; i < count; i++) {
+            es.execute(new Runnable() {
+                public void run() {
+                    latchStart.countDown();
+                    long start = System.currentTimeMillis();
+                    mapWaiter.put(key, "value");
+                    assertTrue((System.currentTimeMillis() - start) >= 1000);
+                    latchEnd.countDown();
+                }
+            });
+        }
+        assertTrue(latchStart.await(1, TimeUnit.SECONDS));
+        Thread.sleep(1000); // extra second so that map2.put can actually start
+        mapLocker.unlockMap();
         assertTrue(latchEnd.await(10, TimeUnit.SECONDS));
         es.shutdown();
     }

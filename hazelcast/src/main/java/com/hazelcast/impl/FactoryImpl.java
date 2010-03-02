@@ -1975,6 +1975,14 @@ public class FactoryImpl implements HazelcastInstance {
             return name.substring(2);
         }
 
+        public boolean lockMap(long time, TimeUnit timeunit) {
+            return dynamicProxy.lockMap(time, timeunit);
+        }
+
+        public void unlockMap() {
+            dynamicProxy.unlockMap();
+        }
+
         public void lock(Object key) {
             dynamicProxy.lock(key);
         }
@@ -2232,6 +2240,17 @@ public class FactoryImpl implements HazelcastInstance {
                 return mput.replace(name, key, oldValue, newValue, -1);
             }
 
+            public boolean lockMap(long time, TimeUnit timeunit) {
+                long timeoutMillis = timeunit.toMillis(time);
+                MLockMap mLockMap = concurrentMapManager.new MLockMap(name, true, timeoutMillis);
+                return mLockMap.call();
+            }
+
+            public void unlockMap() {
+                MLockMap mLockMap = concurrentMapManager.new MLockMap(name, false, 0);
+                mLockMap.call();
+            }
+
             public void lock(Object key) {
                 check(key);
                 mapOperationStats.incrementOtherOperations();
@@ -2251,16 +2270,16 @@ public class FactoryImpl implements HazelcastInstance {
                 if (time < 0)
                     throw new IllegalArgumentException("Time cannot be negative. time = " + time);
                 mapOperationStats.incrementOtherOperations();
+                long timeoutMillis = timeunit.toMillis(time);
                 MLock mlock = concurrentMapManager.new MLock();
-                return mlock.lock(name, key, timeunit.toMillis(time));
+                return mlock.lock(name, key, timeoutMillis);
             }
 
             public void unlock(Object key) {
                 check(key);
                 mapOperationStats.incrementOtherOperations();
                 MLock mlock = concurrentMapManager.new MLock();
-                boolean unlocked = mlock.unlock(name, key, 0);
-//                if (! unlocked) throw new IllegalMonitorStateException();
+                mlock.unlock(name, key, 0);
             }
 
             public LocalMapStats getLocalMapStats() {

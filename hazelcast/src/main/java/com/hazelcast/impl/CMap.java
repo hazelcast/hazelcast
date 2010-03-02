@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import static com.hazelcast.impl.ClusterOperation.*;
+import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -113,6 +114,8 @@ public class CMap {
     long lastRemoveTime = 0;
 
     final AtomicInteger evictionCount = new AtomicInteger();
+
+    Lock lockEntireMap = null;
 
     public CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
@@ -192,6 +195,110 @@ public class CMap {
             concurrentMapManager.mapCaches.put(name, mapNearCache);
         }
         this.creationTime = System.currentTimeMillis();
+    }
+
+    public boolean checkLock(Request request) {
+        return (lockEntireMap == null
+                || !lockEntireMap.isLocked()
+                || lockEntireMap.isLockedBy(request.lockAddress, request.lockThreadId));
+    }
+
+    public void lockMap(Request request) {
+        if (request.operation == CONCURRENT_MAP_LOCK_MAP) {
+            if (lockEntireMap == null) {
+                lockEntireMap = new Lock();
+            }
+            boolean locked = lockEntireMap.lock(request.lockAddress, request.lockThreadId);
+            request.clearForResponse();
+            if (!locked) {
+                if (request.timeout == 0) {
+                    request.response = Boolean.FALSE;
+                } else {
+                    request.response = OBJECT_REDO;
+                }
+            } else {
+                request.response = Boolean.TRUE;
+            }
+        } else if (request.operation == CONCURRENT_MAP_UNLOCK_MAP) {
+            if (lockEntireMap != null) {
+                request.response = lockEntireMap.unlock(request.lockAddress, request.lockThreadId);
+            } else {
+                request.response = Boolean.TRUE;
+            }
+        }
+    }
+
+    class Lock {
+        Address lockAddress = null;
+        int lockThreadId = -1;
+        int lockCount;
+
+        Lock() {
+        }
+
+        Lock(Address address, int threadId) {
+            this.lockAddress = address;
+            this.lockThreadId = threadId;
+            this.lockCount = 1;
+        }
+
+        boolean isLocked() {
+            return lockCount > 0;
+        }
+
+        boolean isLockedBy(Address address, int threadId) {
+            return (this.lockThreadId == threadId && this.lockAddress.equals(address));
+        }
+
+        boolean lock(Address address, int threadId) {
+            if (this.lockCount == 0) {
+                this.lockAddress = address;
+                this.lockThreadId = threadId;
+                this.lockCount++;
+                return true;
+            } else if (isLockedBy(address, threadId)) {
+                this.lockCount++;
+                return true;
+            }
+            return false;
+        }
+
+        boolean unlock(Address address, int threadId) {
+            if (lockCount == 0) {
+                return false;
+            } else {
+                if (isLockedBy(address, threadId)) {
+                    this.lockCount--;
+                    if (lockCount == 0) {
+                        this.lockAddress = null;
+                        this.lockThreadId = -1;
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public Address getLockAddress() {
+            return lockAddress;
+        }
+
+        public int getLockThreadId() {
+            return lockThreadId;
+        }
+
+        public int getLockCount() {
+            return lockCount;
+        }
+
+        @Override
+        public String toString() {
+            return "Lock{" +
+                    "lockAddress=" + lockAddress +
+                    ", lockThreadId=" + lockThreadId +
+                    ", lockCount=" + lockCount +
+                    '}';
+        }
     }
 
     public void addIndex(Expression expression, boolean ordered) {

@@ -106,6 +106,8 @@ public final class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_LOCK, new LockOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_LOCK_AND_GET_VALUE, new LockOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_UNLOCK, new UnlockOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_LOCK_MAP, new LockMapOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_UNLOCK_MAP, new LockMapOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_ITERATE_ENTRIES, new QueryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_ITERATE_VALUES, new QueryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_ITERATE_KEYS, new QueryOperationHandler());
@@ -957,7 +959,7 @@ public final class ConcurrentMapManager extends BaseManager {
             contains = false;
         }
 
-        Object returnResult() {
+        Boolean returnResult() {
             return contains;
         }
 
@@ -971,42 +973,38 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    public class MBlockMigrationCheck extends MultiCall<Boolean> {
-        boolean contains = false;
+    public class MLockMap extends MultiCall<Boolean> {
+        private final String name;
+        private final long timeout;
+        private final ClusterOperation operation;
 
-        public MBlockMigrationCheck() {
+        public MLockMap(String name, boolean lock, long timeout) {
+            this.name = name;
+            this.operation = (lock) ? CONCURRENT_MAP_LOCK_MAP : CONCURRENT_MAP_UNLOCK_MAP;
+            this.timeout = timeout;
         }
 
         TargetAwareOp createNewTargetAwareOp(Address target) {
-            return new MGetBlockMigrationCheck(target);
+            return new MTargetLockMap(target);
         }
 
         boolean onResponse(Object response) {
-            if (response == Boolean.TRUE) {
-                this.contains = true;
-                return false;
-            }
             return true;
         }
 
         void onCall() {
-            contains = false;
         }
 
-        Object returnResult() {
-            return contains;
+        Boolean returnResult() {
+            return true;
         }
 
-        class MGetBlockMigrationCheck extends TargetAwareOp {
-            public MGetBlockMigrationCheck(Address target) {
+        class MTargetLockMap extends MMigrationAwareTargetedCall {
+            public MTargetLockMap(Address target) {
                 this.target = target;
                 request.reset();
-                setLocal(CONCURRENT_MAP_BLOCK_MIGRATION_CHECK, null, null, null, 0, -1);
+                setLocal(operation, name, null, null, timeout, -1);
                 request.setBooleanRequest();
-            }
-
-            @Override
-            public void setTarget() {
             }
         }
     }
@@ -1041,7 +1039,7 @@ public final class ConcurrentMapManager extends BaseManager {
             size = 0;
         }
 
-        Object returnResult() {
+        Integer returnResult() {
             return size;
         }
 
@@ -1308,6 +1306,13 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    class LockMapOperationHandler extends MigrationAwareOperationHandler {
+        void doOperation(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            cmap.lockMap(request);
+        }
+    }
+
     class BackupPacketProcessor extends AbstractOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
@@ -1334,7 +1339,7 @@ public final class ConcurrentMapManager extends BaseManager {
     abstract class MTargetAwareOperationHandler extends TargetAwareOperationHandler {
         boolean isRightRemoteTarget(Packet packet) {
             return rightRemoteTarget(packet);
-        }
+        } 
     }
 
     class RemoveItemOperationHandler extends StoreAwareOperationHandler {
@@ -1401,19 +1406,24 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class EvictOperationHandler extends StoreAwareOperationHandler {
         public void handle(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            Record record = cmap.getRecord(request.key);
-            if (record != null && record.isActive() && cmap.loader != null &&
-                    cmap.writeDelayMillis > 0 && record.isValid() && record.isDirty()) {
-                // if the map has write-behind and the record is dirty then
-                // we have to make sure that the entry is actually persisted
-                // before we can evict it.
-                cmap.setDirtyRecords.remove(record);
-                record.setDirty(false);
-                request.value = record.getValue();
-                executeAsync(request);
+            if (checkMapLock(request)) {
+                CMap cmap = getOrCreateMap(request.name);
+                Record record = cmap.getRecord(request.key);
+                if (record != null && record.isActive() && cmap.loader != null &&
+                        cmap.writeDelayMillis > 0 && record.isValid() && record.isDirty()) {
+                    // if the map has write-behind and the record is dirty then
+                    // we have to make sure that the entry is actually persisted
+                    // before we can evict it.
+                    cmap.setDirtyRecords.remove(record);
+                    record.setDirty(false);
+                    request.value = record.getValue();
+                    executeAsync(request);
+                } else {
+                    doOperation(request);
+                    returnResponse(request);
+                }
             } else {
-                doOperation(request);
+                request.response = OBJECT_REDO;
                 returnResponse(request);
             }
         }
@@ -1438,12 +1448,17 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class GetOperationHandler extends StoreAwareOperationHandler {
         public void handle(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            Record record = cmap.getRecord(request.key);
-            if (cmap.loader != null && (record == null || !record.isActive() || record.getValue() == null)) {
-                executeAsync(request);
+            if (checkMapLock(request)) {
+                CMap cmap = getOrCreateMap(request.name);
+                Record record = cmap.getRecord(request.key);
+                if (cmap.loader != null && (record == null || !record.isActive() || record.getValue() == null)) {
+                    executeAsync(request);
+                } else {
+                    doOperation(request);
+                    returnResponse(request);
+                }
             } else {
-                doOperation(request);
+                request.response = OBJECT_REDO;
                 returnResponse(request);
             }
         }
@@ -1513,7 +1528,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     request.lockCount = record.getLockCount();
                     cmap.fireScheduledActions(record);
                 }
-                logger.log(Level.FINEST, unlocked + " now lock count " + record.getLockCount() + " lockThreadId " + record.getLockThreadId());
+                logger.log(Level.FINEST, unlocked + " now lock lockCount " + record.getLockCount() + " lockThreadId " + record.getLockThreadId());
             }
             if (unlocked) {
                 request.response = Boolean.TRUE;
@@ -1633,20 +1648,25 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         public void handle(Request request) {
-            if (shouldSchedule(request)) {
-                if (request.hasEnoughTimeToSchedule()) {
-                    schedule(request);
-                } else {
-                    onNoTimeToSchedule(request);
+            if (checkMapLock(request)) {
+                if (shouldSchedule(request)) {
+                    if (request.hasEnoughTimeToSchedule()) {
+                        schedule(request);
+                    } else {
+                        onNoTimeToSchedule(request);
+                    }
+                    return;
                 }
-                return;
+                if (shouldExecuteAsync(request)) {
+                    executeAsync(request);
+                    return;
+                }
+                doOperation(request);
+                returnResponse(request);
+            } else {
+                request.response = OBJECT_REDO;
+                returnResponse(request);
             }
-            if (shouldExecuteAsync(request)) {
-                executeAsync(request);
-                return;
-            }
-            doOperation(request);
-            returnResponse(request);
         }
 
         /**
@@ -1699,7 +1719,22 @@ public final class ConcurrentMapManager extends BaseManager {
         abstract Runnable createRunnable(Request request);
     }
 
+    public boolean checkMapLock(Request request) {
+        CMap cmap = getOrCreateMap(request.name);
+        return cmap.checkLock(request);
+    }
+
     class QueryOperationHandler extends ExecutedOperationHandler {
+
+        @Override
+        public void handle(Request request) {
+            if (checkMapLock(request)) {
+                super.handle(request);
+            } else {
+                request.response = OBJECT_REDO;
+                returnResponse(request);
+            }
+        }
 
         Runnable createRunnable(Request request) {
             final CMap cmap = getOrCreateMap(request.name);

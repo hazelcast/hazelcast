@@ -232,7 +232,7 @@ public class ListenerManager extends BaseManager {
     public void addListener(String name, Object listener, Object key, boolean includeValue,
                             Instance.InstanceType instanceType) {
         /**
-         * check if already registered send this address to the key owner as a
+         * check if already registered send this lockAddress to the key owner as a
          * listener add this listener to the local listeners map
          */
         boolean remotelyRegister = true;
@@ -270,7 +270,7 @@ public class ListenerManager extends BaseManager {
 
     public synchronized void removeListener(String name, Object listener, Object key) {
         /**
-         * send this address to the key owner as a listener add this listener to
+         * send this lockAddress to the key owner as a listener add this listener to
          * the local listeners map
          */
         Iterator<ListenerItem> it = listeners.iterator();

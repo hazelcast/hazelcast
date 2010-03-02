@@ -90,7 +90,7 @@ public class MultiMapClientProxy<K, V> implements ClientProxy, MultiMap<K, V>, E
 
     public boolean tryLock(K key, long time, TimeUnit timeunit) {
         check(key);
-        check(time, timeunit);
+        ProxyHelper.checkTime(time, timeunit);
         return (Boolean) doLock(ClusterOperation.CONCURRENT_MAP_LOCK, key, time, timeunit);
     }
 
