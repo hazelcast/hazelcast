@@ -27,6 +27,7 @@ import org.mockito.Matchers;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
@@ -46,7 +47,7 @@ public class MapStatsPanelTest {
         ClusterWidgets clusterWidgets = new ClusterWidgets(hazelcastMonitor, clusterView);
         monitoringPanel.register(clusterWidgets);
         List<MonitoringPanel> list = clusterWidgets.getPanels().get(ChangeEventType.MAP_STATISTICS);
-        assertTrue(list.size() == 1);
+        assertEquals(1, list.size());
         assertTrue(list.contains(monitoringPanel));
         verify(mockHazelcastServiceAsync, times(1)).registerEvent(ChangeEventType.MAP_STATISTICS, 1, name,
                 mockCallBack);
