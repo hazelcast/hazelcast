@@ -290,7 +290,7 @@ public class Node {
         if (isActive()) {
             // set the joined=false first so that
             // threads do not process unnecessary
-            // events, such as removeaddress
+            // events, such as remove address
             long start = System.currentTimeMillis();
             joined = false;
             setActive(false);
@@ -325,6 +325,7 @@ public class Node {
                 thread.interrupt();
             }
             logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (System.currentTimeMillis() - start) + " ms.");
+            packetPool.clear();
         }
     }
 

@@ -54,4 +54,8 @@ public abstract class NoneStrictObjectPool<T> {
     public abstract void onRelease(T t);
 
     public abstract void onObtain(T t);
+
+    public void clear() {
+        queue.clear();
+    }
 }

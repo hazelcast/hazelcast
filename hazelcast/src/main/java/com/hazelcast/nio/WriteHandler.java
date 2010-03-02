@@ -365,11 +365,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     @Override
     public void shutdown() {
-        Packet packet = (Packet) writeQueue.poll();
-        while (packet != null) {
-            node.getPacketPool().release(lastPacket);
-            packet = (Packet) writeQueue.poll();
-        }
         writeQueue.clear();
     }
 }
