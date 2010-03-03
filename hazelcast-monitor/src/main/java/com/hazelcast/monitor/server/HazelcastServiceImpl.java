@@ -38,11 +38,10 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
     private static final long serialVersionUID = 7042401980726503097L;
     private static Object lock = new Object();
     ChangeEventGeneratorFactory changeEventGeneratorFactory = new ChangeEventGeneratorFactory();
-    SessionObject sessionObject;
 
     public ClusterView connectCluster(String name, String pass, String ips) throws ConnectionExceptoin {
         final SessionObject sessionObject = getSessionObject();
-        ClusterView clusterView = null;
+        ClusterView clusterView;
         try {
             clusterView = sessionObject.connectAndCreateClusterView(name, pass, ips);
         } catch (NoMemberAvailableException e) {
@@ -56,7 +55,7 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
         ArrayList<ClusterView> list = new ArrayList<ClusterView>();
         for (int clusterId : sessionObject.mapOfHz.keySet()) {
             deRegisterEvent(ChangeEventType.MAP_STATISTICS, clusterId, null);
-            ClusterView cv = null;
+            ClusterView cv;
             try {
                 cv = sessionObject.createClusterView(clusterId);
             } catch (NoMemberAvailableException e) {
@@ -67,16 +66,10 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
         return list;
     }
 
-    private SessionObject getSessionObject() {
-        if (sessionObject == null) {
-            synchronized (lock) {
-                if (sessionObject == null) {
-                    HttpServletRequest request = this.getThreadLocalRequest();
-                    HttpSession session = request.getSession();
-                    sessionObject = getSessionObject(session);
-                }
-            }
-        }
+    protected SessionObject getSessionObject() {
+        HttpServletRequest request = this.getThreadLocalRequest();
+        HttpSession session = request.getSession();
+        SessionObject sessionObject = getSessionObject(session);
         return sessionObject;
     }
 

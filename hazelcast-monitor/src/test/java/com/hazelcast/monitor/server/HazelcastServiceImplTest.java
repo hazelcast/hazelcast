@@ -50,14 +50,19 @@ public class HazelcastServiceImplTest {
 
     @Test
     public void testRegisterMapStatisticsEvent() throws Exception {
-        HazelcastServiceImpl hazelcastService = new HazelcastServiceImpl();
-        SessionObject sessionObject = mock(SessionObject.class);
+        final SessionObject sessionObject = mock(SessionObject.class);
+        HazelcastServiceImpl hazelcastService = new HazelcastServiceImpl() {
+            @Override
+            public SessionObject getSessionObject() {
+                return sessionObject;
+            }
+        };
         HazelcastClient hazelcastClient = mock(HazelcastClient.class);
         ChangeEventGeneratorFactory changeEventGeneratorFactory = mock(ChangeEventGeneratorFactory.class);
         ConcurrentHashMap<Integer, HazelcastClient> hazelcastClientMap = new ConcurrentHashMap<Integer, HazelcastClient>();
         hazelcastClientMap.put(0, hazelcastClient);
         List<ChangeEventGenerator> eventGenerators = new CopyOnWriteArrayList<ChangeEventGenerator>();
-        hazelcastService.sessionObject = sessionObject;
+//        hazelcastService.sessionObject = sessionObject;
         hazelcastService.changeEventGeneratorFactory = changeEventGeneratorFactory;
         when(sessionObject.getHazelcastClientMap()).thenReturn(hazelcastClientMap);
         when(sessionObject.getEventGenerators()).thenReturn(eventGenerators);
@@ -73,14 +78,18 @@ public class HazelcastServiceImplTest {
 
     @Test
     public void testRegisterMapStatisticsEventTwice() throws Exception {
-        HazelcastServiceImpl hazelcastService = new HazelcastServiceImpl();
-        SessionObject sessionObject = mock(SessionObject.class);
+        final SessionObject sessionObject = mock(SessionObject.class);
+        HazelcastServiceImpl hazelcastService = new HazelcastServiceImpl() {
+            @Override
+            public SessionObject getSessionObject() {
+                return sessionObject;
+            }
+        };
         HazelcastClient hazelcastClient = mock(HazelcastClient.class);
         ChangeEventGeneratorFactory changeEventGeneratorFactory = mock(ChangeEventGeneratorFactory.class);
         ConcurrentHashMap<Integer, HazelcastClient> hazelcastClientMap = new ConcurrentHashMap<Integer, HazelcastClient>();
         hazelcastClientMap.put(0, hazelcastClient);
         List<ChangeEventGenerator> eventGenerators = new CopyOnWriteArrayList<ChangeEventGenerator>();
-        hazelcastService.sessionObject = sessionObject;
         hazelcastService.changeEventGeneratorFactory = changeEventGeneratorFactory;
         when(sessionObject.getHazelcastClientMap()).thenReturn(hazelcastClientMap);
         when(sessionObject.getEventGenerators()).thenReturn(eventGenerators);
@@ -92,19 +101,21 @@ public class HazelcastServiceImplTest {
         ChangeEvent changeEvent = hazelcastService.registerEvent(ChangeEventType.MAP_STATISTICS, 0, "myMap");
         assertEquals(mapStatistics, changeEvent);
         assertTrue(eventGenerators.contains(mapStatisticsGenerator));
-
         hazelcastService.registerEvent(ChangeEventType.MAP_STATISTICS, 0, "myMap");
-
         assertTrue(eventGenerators.size() == 1);
     }
 
     @Test
     public void testDeRegisterMapStatisticsEvent() throws Exception {
-        HazelcastServiceImpl hazelcastService = new HazelcastServiceImpl();
-        SessionObject sessionObject = mock(SessionObject.class);
+        final SessionObject sessionObject = mock(SessionObject.class);
+        HazelcastServiceImpl hazelcastService = new HazelcastServiceImpl() {
+            @Override
+            public SessionObject getSessionObject() {
+                return sessionObject;
+            }
+        };
         ChangeEventGeneratorFactory changeEventGeneratorFactory = mock(ChangeEventGeneratorFactory.class);
         List<ChangeEventGenerator> eventGenerators = new CopyOnWriteArrayList<ChangeEventGenerator>();
-        hazelcastService.sessionObject = sessionObject;
         hazelcastService.changeEventGeneratorFactory = changeEventGeneratorFactory;
         when(sessionObject.getEventGenerators()).thenReturn(eventGenerators);
         hazelcastService.deRegisterEvent(ChangeEventType.MAP_STATISTICS, 0, "myMap");
