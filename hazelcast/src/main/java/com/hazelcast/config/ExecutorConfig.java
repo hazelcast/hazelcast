@@ -19,9 +19,9 @@ package com.hazelcast.config;
 
 public class ExecutorConfig {
 
-    public final static int DEFAULT_CORE_POOL_SIZE = 10;
-    public final static int DEFAULT_MAX_POOL_SIZE = 50;
-    public final static int DEFAULT_KEEP_ALIVE_SECONDS = 60;
+    public final static int DEFAULT_CORE_POOL_SIZE = 40;
+    public final static int DEFAULT_MAX_POOL_SIZE = 40;
+    public final static int DEFAULT_KEEP_ALIVE_SECONDS = 300;
 
     private String name = "default";
 

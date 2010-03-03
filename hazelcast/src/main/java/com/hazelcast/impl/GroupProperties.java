@@ -31,6 +31,12 @@ public class GroupProperties {
     public static final String PROP_CONCURRENT_MAP_BLOCK_COUNT = "hazelcast.map.block.lockCount";
     public static final String PROP_BLOCKING_QUEUE_BLOCK_SIZE = "hazelcast.queue.block.size";
     public static final String PROP_REMOVE_DELAY_SECONDS = "hazelcast.map.remove.delay.seconds";
+    public static final String PROP_EXECUTOR_DEFAULT_THREAD_COUNT = "hazelcast.executor.default.thread.count";
+    public static final String PROP_EXECUTOR_QUERY_THREAD_COUNT = "hazelcast.executor.query.thread.count";
+    public static final String PROP_EXECUTOR_EVENT_THREAD_COUNT = "hazelcast.executor.event.thread.count";
+    public static final String PROP_EXECUTOR_MIGRATION_THREAD_COUNT = "hazelcast.executor.migration.thread.count";
+    public static final String PROP_EXECUTOR_CLIENT_THREAD_COUNT = "hazelcast.executor.client.thread.count";
+    public static final String PROP_EXECUTOR_STORE_THREAD_COUNT = "hazelcast.executor.store.thread.count";
     public static final String PROP_LOG_STATE = "hazelcast.log.state";
 
     public static final GroupProperty SERIALIZER_SHARED = new GroupProperty(null, PROP_SERIALIZER_SHARED, "false");
@@ -53,6 +59,16 @@ public class GroupProperties {
 
     public final GroupProperty REMOVE_DELAY_SECONDS;
 
+    public final GroupProperty EXECUTOR_QUERY_THREAD_COUNT;
+
+    public final GroupProperty EXECUTOR_EVENT_THREAD_COUNT;
+
+    public final GroupProperty EXECUTOR_MIGRATION_THREAD_COUNT;
+
+    public final GroupProperty EXECUTOR_CLIENT_THREAD_COUNT;
+
+    public final GroupProperty EXECUTOR_STORE_THREAD_COUNT;
+
     public final GroupProperty LOG_STATE;
 
     public GroupProperties(Config config) {
@@ -64,6 +80,11 @@ public class GroupProperties {
         CONCURRENT_MAP_BLOCK_COUNT = new GroupProperty(config, PROP_CONCURRENT_MAP_BLOCK_COUNT, "271");
         BLOCKING_QUEUE_BLOCK_SIZE = new GroupProperty(config, PROP_BLOCKING_QUEUE_BLOCK_SIZE, "1000");
         REMOVE_DELAY_SECONDS = new GroupProperty(config, PROP_REMOVE_DELAY_SECONDS, "5");
+        EXECUTOR_QUERY_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_QUERY_THREAD_COUNT, "16");
+        EXECUTOR_EVENT_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_EVENT_THREAD_COUNT, "16");
+        EXECUTOR_MIGRATION_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_MIGRATION_THREAD_COUNT, "20");
+        EXECUTOR_CLIENT_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_CLIENT_THREAD_COUNT, "16");
+        EXECUTOR_STORE_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_STORE_THREAD_COUNT, "16");
         LOG_STATE = new GroupProperty(config, PROP_LOG_STATE, "false");
     }
 

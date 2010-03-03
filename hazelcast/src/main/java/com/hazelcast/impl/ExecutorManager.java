@@ -24,7 +24,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.util.SimpleBlockingQueue;
-import com.hazelcast.util.UnboundedBlockingQueue;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -64,23 +63,32 @@ public class ExecutorManager extends BaseManager {
     ExecutorManager(final Node node) {
         super(node);
         logger.log(Level.FINEST, "Starting ExecutorManager");
+        GroupProperties gp = node.groupProperties;
         defaultExecutorService = getOrCreateNamedExecutorService(DEFAULT_EXECUTOR_SERVICE);
-        clientExecutorService = getOrCreateNamedExecutorService(CLIENT_EXECUTOR_SERVICE);
-        migrationExecutorService = getOrCreateNamedExecutorService(MIGRATION_EXECUTOR_SERVICE);
-        queryExecutorService = getOrCreateNamedExecutorService(QUERY_EXECUTOR_SERVICE);
-        storeExecutorService = getOrCreateNamedExecutorService(STORE_EXECUTOR_SERVICE);
-        eventExecutorService = getOrCreateNamedExecutorService(EVENT_EXECUTOR_SERVICE);
+        clientExecutorService = getOrCreateNamedExecutorService(CLIENT_EXECUTOR_SERVICE, gp.EXECUTOR_CLIENT_THREAD_COUNT);
+        migrationExecutorService = getOrCreateNamedExecutorService(MIGRATION_EXECUTOR_SERVICE, gp.EXECUTOR_MIGRATION_THREAD_COUNT);
+        queryExecutorService = getOrCreateNamedExecutorService(QUERY_EXECUTOR_SERVICE, gp.EXECUTOR_QUERY_THREAD_COUNT);
+        storeExecutorService = getOrCreateNamedExecutorService(STORE_EXECUTOR_SERVICE, gp.EXECUTOR_STORE_THREAD_COUNT);
+        eventExecutorService = getOrCreateNamedExecutorService(EVENT_EXECUTOR_SERVICE, gp.EXECUTOR_EVENT_THREAD_COUNT);
         registerPacketProcessor(EXECUTE, new ExecutionOperationHandler());
         started = true;
     }
 
     public NamedExecutorService getOrCreateNamedExecutorService(String name) {
+        return getOrCreateNamedExecutorService(name, null);
+    }
+
+    private NamedExecutorService getOrCreateNamedExecutorService(String name, GroupProperties.GroupProperty groupProperty) {
         NamedExecutorService namedExecutorService = mapExecutors.get(name);
         if (namedExecutorService == null) {
             synchronized (CREATE_LOCK) {
                 namedExecutorService = mapExecutors.get(name);
                 if (namedExecutorService == null) {
                     ExecutorConfig executorConfig = node.getConfig().getExecutorConfig(name.substring(2));
+                    if (groupProperty != null) {
+                        executorConfig.setCorePoolSize(groupProperty.getInteger());
+                        executorConfig.setMaxPoolSize(groupProperty.getInteger());
+                    }
                     namedExecutorService = newNamedExecutorService(name, executorConfig);
                 }
             }
