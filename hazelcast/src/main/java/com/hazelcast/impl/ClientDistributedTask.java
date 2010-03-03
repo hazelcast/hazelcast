@@ -60,4 +60,14 @@ public class ClientDistributedTask<V> implements Serializable, Callable {
     public Object getKey() {
         return key;
     }
+
+    @Override
+    public String toString() {
+        return "ClientDistributedTask{" +
+                "callable=" + callable +
+                ", member=" + member +
+                ", members=" + members +
+                ", key=" + key +
+                '}';
+    }
 }

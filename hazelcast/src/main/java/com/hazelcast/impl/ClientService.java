@@ -368,7 +368,7 @@ public class ClientService {
             try {
                 ClientDistributedTask cdt = (ClientDistributedTask) toObject(packet.key);
                 Object result;
-                DistributedTask task = null;
+                DistributedTask task;
                 if (cdt.getKey() != null) {
                     task = new DistributedTask(cdt.getCallable(), cdt.getKey());
                 } else if (cdt.getMember() != null) {
@@ -378,9 +378,10 @@ public class ClientService {
                 } else {
                     task = new DistributedTask(cdt.getCallable());
                 }
-                InnerFutureTask inner = (InnerFutureTask) task.getInner();
                 executorService.execute(task);
                 result = task.get();
+                if(result instanceof Collection){
+                }
                 packet.value = toData(result);
             } catch (InterruptedException e) {
                 return;

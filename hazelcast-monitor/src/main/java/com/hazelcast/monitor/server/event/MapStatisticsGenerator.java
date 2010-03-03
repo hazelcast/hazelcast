@@ -67,6 +67,10 @@ public class MapStatisticsGenerator implements ChangeEventGenerator {
         if (mapStats == null) {
             return null;
         }
+        if (members.size() != mapStats.size()) {
+            return null;
+        }
+
         List<DistributedMapStatsCallable.MemberMapStat> lsMapStats = new ArrayList(mapStats);
         Collections.sort(lsMapStats, new Comparator<DistributedMapStatsCallable.MemberMapStat>() {
             public int compare(DistributedMapStatsCallable.MemberMapStat o1, DistributedMapStatsCallable.MemberMapStat o2) {
@@ -75,6 +79,7 @@ public class MapStatisticsGenerator implements ChangeEventGenerator {
                 return i1 - i2;
             }
         });
+
         List<MapStatistics.LocalMapStatistics> listOfStats = new ArrayList<MapStatistics.LocalMapStatistics>();
         for (DistributedMapStatsCallable.MemberMapStat memberMapStat : lsMapStats) {
             MapStatistics.LocalMapStatistics stat = new MapStatistics.LocalMapStatistics();
@@ -98,10 +103,10 @@ public class MapStatisticsGenerator implements ChangeEventGenerator {
             stat.periodEnd = mapOpStats.getPeriodEnd();
             long periodInSec = (stat.periodEnd - stat.periodStart) / 1000;
             if (periodInSec != 0) {
-                stat.numberOfPutsInSec = mapOpStats.getNumberOfPuts()/periodInSec;
-                stat.numberOfGetsInSec = mapOpStats.getNumberOfGets()/periodInSec;
-                stat.numberOfRemovesInSec = mapOpStats.getNumberOfRemoves()/periodInSec;
-                stat.numberOfOthersInSec = mapOpStats.getNumberOfOtherOperations()/periodInSec;
+                stat.numberOfPutsInSec = mapOpStats.getNumberOfPuts() / periodInSec;
+                stat.numberOfGetsInSec = mapOpStats.getNumberOfGets() / periodInSec;
+                stat.numberOfRemovesInSec = mapOpStats.getNumberOfRemoves() / periodInSec;
+                stat.numberOfOthersInSec = mapOpStats.getNumberOfOtherOperations() / periodInSec;
             }
             listOfStats.add(stat);
         }

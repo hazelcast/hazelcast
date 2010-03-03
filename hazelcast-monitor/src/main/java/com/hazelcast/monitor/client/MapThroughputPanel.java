@@ -29,10 +29,6 @@ public class MapThroughputPanel extends MapStatsPanel {
 
     @Override
     protected void handleRow(FlexTable table, int row, MapStatistics.LocalMapStatistics localMapStatistics) {
-        long periodInSec = (localMapStatistics.periodEnd - localMapStatistics.periodStart) / 1000;
-        if (periodInSec == 0) {
-            return;
-        }
         table.setWidget(row, 0, clusterWidgets.getInstanceLink(null, localMapStatistics.memberName));
         table.setText(row, 1, "" + localMapStatistics.totalOperationsInSec());
         table.setText(row, 2, "" + localMapStatistics.numberOfGetsInSec);

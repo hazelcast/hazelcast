@@ -55,8 +55,8 @@ h1 {
 
 .img-shadow {
     float: left;
-    background: url(../src/main/webapp/images/shadowAlpha.png) no-repeat bottom right !important;
-    background: url(../src/main/webapp/images/shadow.gif) no-repeat bottom right;
+    background: url(./images/shadowAlpha.png) no-repeat bottom right !important;
+    background: url(./images/shadow.gif) no-repeat bottom right;
     margin: 10px 0 0 10px !important;
     margin: 10px 0 0 5px;
 

@@ -33,7 +33,6 @@ public class SimpleMapTest {
     public static int PUT_PERCENTAGE = 40;
 
     public static void main(String[] args) {
-        System.out.println("Args length:" + args.length);
         if (args.length > 0) {
             ENTRY_COUNT = Integer.valueOf(args[0]);
         }
@@ -50,9 +49,6 @@ public class SimpleMapTest {
                     while (true) {
                         int key = (int) (Math.random() * ENTRY_COUNT);
                         int operation = ((int) (Math.random() * 100));
-                        System.out.println("Op" + operation);
-                        System.out.println(GET_PERCENTAGE);
-                        System.out.println(PUT_PERCENTAGE);
                         if (operation < GET_PERCENTAGE) {
                             map.get(String.valueOf(key));
                         } else if (operation < GET_PERCENTAGE + PUT_PERCENTAGE) {
