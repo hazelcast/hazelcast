@@ -24,13 +24,13 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
-public class UnboundedBlockingQueue<T> extends AbstractQueue<T> implements BlockingQueue<T> {
+public class UnboundedBlockingQueue<E> extends AbstractQueue<E> implements BlockingQueue<E> {
 
     private final Object lock = new Object();
-    private final ConcurrentLinkedQueue<T> queue = new ConcurrentLinkedQueue<T>();
+    private final ConcurrentLinkedQueue<E> queue = new ConcurrentLinkedQueue<E>();
 
-    public boolean offer(T t) {
-        put(t);
+    public boolean offer(E e) {
+        put(e);
         return true;
     }
 
@@ -38,75 +38,75 @@ public class UnboundedBlockingQueue<T> extends AbstractQueue<T> implements Block
         return queue.remove(obj);
     }
 
-    public void put(T t) {
-        queue.add(t);
+    public void put(E e) {
+        queue.add(e);
         synchronized (lock) {
             lock.notify();
         }
     }
 
-    public T take() throws InterruptedException {
+    public E take() throws InterruptedException {
         return poll(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
     }
 
-    public T poll() {
+    public E poll() {
         return queue.poll();
     }
 
-    public T poll(long timeout, TimeUnit unit) throws InterruptedException {
-        T t = queue.poll();
+    public E poll(long timeout, TimeUnit unit) throws InterruptedException {
+        E e = queue.poll();
         long timeLeft = unit.toMillis(timeout);
         synchronized (lock) {
-            while (t == null && timeLeft > 0) {
+            while (e == null && timeLeft > 0) {
                 long now = System.currentTimeMillis();
                 lock.wait(Math.min(100, timeLeft));
                 timeLeft -= (System.currentTimeMillis() - now);
-                t = queue.poll();
+                e = queue.poll();
             }
         }
-        return t;
+        return e;
     }
 
     public void clear() {
         queue.clear();
     }
 
-    public boolean offer(T t, long timeout, TimeUnit unit) throws InterruptedException {
-        return offer(t);
+    public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
+        return offer(e);
     }
 
     public int remainingCapacity() {
         return Integer.MAX_VALUE;
     }
 
-    public int drainTo(Collection<? super T> c) {
-        T t = queue.poll();
+    public int drainTo(Collection<? super E> c) {
+        E e = queue.poll();
         int count = 0;
-        while (t != null) {
-            c.add(t);
+        while (e != null) {
+            c.add(e);
             count++;
-            t = queue.poll();
+            e = queue.poll();
         }
         return count;
     }
 
-    public int drainTo(Collection<? super T> c, int maxElements) {
-        T t = queue.poll();
+    public int drainTo(Collection<? super E> c, int maxElements) {
+        E e = queue.poll();
         int count = 0;
-        while (t != null && count < maxElements) {
-            c.add(t);
+        while (e != null && count < maxElements) {
+            c.add(e);
             count++;
-            t = queue.poll();
+            e = queue.poll();
         }
         return count;
     }
 
-    public T peek() {
+    public E peek() {
         return queue.peek();
     }
 
     @Override
-    public Iterator<T> iterator() {
+    public Iterator<E> iterator() {
         return queue.iterator();
     }
 

@@ -46,6 +46,8 @@ public class SimpleMapTest {
             es.submit(new Runnable() {
                 public void run() {
                     IMap<String, byte[]> map = Hazelcast.getMap("default");
+                    int a = 0;
+                    long start = System.currentTimeMillis();
                     while (true) {
                         int key = (int) (Math.random() * ENTRY_COUNT);
                         int operation = ((int) (Math.random() * 100));
@@ -55,6 +57,13 @@ public class SimpleMapTest {
                             map.put(String.valueOf(key), new byte[VALUE_SIZE]);
                         } else {
                             map.remove(String.valueOf(key));
+                        }
+                        a++;
+                        if (a == ENTRY_COUNT) {
+                            a = 0;
+                            long now = System.currentTimeMillis();
+                            System.out.println("took " + (now - start));
+                            start = now;
                         }
                     }
                 }

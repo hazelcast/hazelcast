@@ -35,7 +35,7 @@ public class GroupProperties {
 
     public static final GroupProperty SERIALIZER_SHARED = new GroupProperty(null, PROP_SERIALIZER_SHARED, "false");
 
-    public static final GroupProperty PACKET_VERSION = new GroupProperty(null, PROP_PACKET_VERSION, "3");
+    public static final GroupProperty PACKET_VERSION = new GroupProperty(null, PROP_PACKET_VERSION, "4");
 
     public final GroupProperty SHUTDOWNHOOK_ENABLED;
 

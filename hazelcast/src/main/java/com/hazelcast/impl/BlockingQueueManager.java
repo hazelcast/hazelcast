@@ -54,8 +54,7 @@ public class BlockingQueueManager extends BaseManager {
                 try {
                     handlePoll(packet);
                 } catch (Throwable t) {
-                    Request req = new Request();
-                    req.setFromPacket(packet);
+                    Request req = Request.copy(packet);
                     printState(req, false, packet.conn.getEndPoint(), 1);
                     t.printStackTrace();
                 }
@@ -427,8 +426,7 @@ public class BlockingQueueManager extends BaseManager {
 
     final void handleOffer(Packet packet) {
         if (rightRemoteOfferTarget(packet)) {
-            Request request = new Request();
-            request.setFromPacket(packet);
+            Request request = Request.copy(packet);
             doOffer(request);
             packet.longValue = request.longValue;
             if (!request.scheduled) {
@@ -440,7 +438,6 @@ public class BlockingQueueManager extends BaseManager {
             } else {
                 releasePacket(packet);
             }
-            request.reset();
         }
     }
 
@@ -464,8 +461,7 @@ public class BlockingQueueManager extends BaseManager {
 
     final void handlePoll(Packet packet) {
         if (rightRemotePollTarget(packet)) {
-            Request request = new Request();
-            request.setFromPacket(packet);
+            Request request = Request.copy(packet);
             doPoll(request);
             if (!request.scheduled) {
                 Data oldValue = (Data) request.response;
@@ -476,7 +472,6 @@ public class BlockingQueueManager extends BaseManager {
             } else {
                 releasePacket(packet);
             }
-            request.reset();
         }
     }
 
@@ -1027,7 +1022,6 @@ public class BlockingQueueManager extends BaseManager {
             return;
         }
         q.offer(req);
-        req.value = null;
         req.response = Boolean.TRUE;
     }
 
@@ -1186,8 +1180,6 @@ public class BlockingQueueManager extends BaseManager {
                 if (valid) {
                     Data value = poll(request);
                     request.response = value;
-                    request.key = null;
-                    request.value = null;
                     returnScheduledAsSuccess(request);
                     return true;
                 } else {
@@ -1199,8 +1191,6 @@ public class BlockingQueueManager extends BaseManager {
             @Override
             public void onExpire() {
                 request.response = null;
-                request.key = null;
-                request.value = null;
                 returnScheduledAsSuccess(request);
             }
         }
@@ -1219,8 +1209,6 @@ public class BlockingQueueManager extends BaseManager {
                 if (valid) {
                     offer(request);
                     request.response = Boolean.TRUE;
-                    request.key = null;
-                    request.value = null;
                     returnScheduledAsBoolean(request);
                     return true;
                 } else {

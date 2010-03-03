@@ -182,8 +182,7 @@ public abstract class BaseManager {
 
         @Override
         public void process(Packet packet) {
-            Request remoteReq = new Request();
-            remoteReq.setFromPacket(packet);
+            Request remoteReq = Request.copy(packet);
             remoteReq.local = false;
             if (isMigrating(remoteReq) || !isRightRemoteTarget(packet)) {
                 packet.responseType = RESPONSE_REDO;
@@ -198,16 +197,14 @@ public abstract class BaseManager {
     abstract class ResponsiveOperationHandler implements PacketProcessor, RequestHandler {
 
         public void processSimple(Packet packet) {
-            Request request = new Request();
-            request.setFromPacket(packet);
+            Request request = Request.copy(packet);
             request.local = false;
             handle(request);
             releasePacket(packet);
         }
 
         public void processMigrationAware(Packet packet) {
-            Request remoteReq = new Request();
-            remoteReq.setFromPacket(packet);
+            Request remoteReq = Request.copy(packet);
             remoteReq.local = false;
             if (isMigrating(remoteReq)) {
                 packet.responseType = RESPONSE_REDO;
@@ -268,7 +265,6 @@ public abstract class BaseManager {
                 }
             }
             sendResponse(packet, request.caller);
-            request.reset();
         }
     }
 
@@ -313,7 +309,6 @@ public abstract class BaseManager {
 
         public void reset() {
             super.reset();
-            request.reset();
         }
 
         public boolean getResultAsBoolean() {
@@ -346,7 +341,6 @@ public abstract class BaseManager {
         }
 
         protected void afterGettingResult(Request request) {
-            request.reset();
         }
 
         public Object objectCall() {
@@ -428,14 +422,12 @@ public abstract class BaseManager {
                     if (obj != null) {
                         return obj;
                     } else if (node.factory.restarted) {
-                        reset();
                         throw new RuntimeException();
                     } else if (!node.isActive()) {
                         throw new IllegalStateException("Hazelcast Instance is not active!");
                     }
                 } catch (InterruptedException e) {
                     if (node.factory.restarted) {
-                        reset();
                         throw new RuntimeException();
                     }
                 }

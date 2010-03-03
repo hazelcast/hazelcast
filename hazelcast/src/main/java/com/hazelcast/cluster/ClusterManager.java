@@ -23,6 +23,7 @@ import com.hazelcast.impl.base.Call;
 import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.nio.*;
+import com.hazelcast.util.Prioritized;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -223,9 +224,9 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                                 Packet packet = obtainPacket("heartbeat", null, null,
                                         ClusterOperation.HEARTBEAT, 0);
                                 sendOrReleasePacket(packet, conn);
-                            } else {
-                                logger.log(Level.FINEST, "not sending heartbeat because connection is null or not live " + address);
                             }
+                        } else {
+                            logger.log(Level.FINEST, "not sending heartbeat because connection is null or not live " + address);
                         }
                     }
                 }
@@ -504,6 +505,57 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
     }
 
+    class JoinRunnable implements Runnable, Prioritized {
+
+        final MembersUpdateCall membersUpdate;
+
+        JoinRunnable(MembersUpdateCall membersUpdate) {
+            this.membersUpdate = membersUpdate;
+        }
+
+        public void run() {
+            Collection<MemberInfo> lsMemberInfos = membersUpdate.getMemberInfos();
+            List<Address> newMemberList = new ArrayList<Address>(lsMemberInfos.size());
+            for (final MemberInfo memberInfo : lsMemberInfos) {
+                newMemberList.add(memberInfo.address);
+            }
+            List<AsyncRemotelyBooleanCallable> calls = new ArrayList<AsyncRemotelyBooleanCallable>(lsMemberInfos.size());
+            for (final Address target : newMemberList) {
+                AsyncRemotelyBooleanCallable rrp = new AsyncRemotelyBooleanCallable();
+                rrp.executeProcess(target, membersUpdate);
+                calls.add(rrp);
+            }
+            for (AsyncRemotelyBooleanCallable call : calls) {
+                if (call.getResultAsBoolean() == Boolean.FALSE) {
+                    newMemberList.remove(call.getTarget());
+                }
+            }
+            calls.clear();
+            for (final Address target : newMemberList) {
+                AsyncRemotelyBooleanCallable call = new AsyncRemotelyBooleanCallable();
+                call.executeProcess(target, new SyncProcess());
+                calls.add(call);
+            }
+            for (AsyncRemotelyBooleanCallable call : calls) {
+                if (call.getResultAsBoolean() == Boolean.FALSE) {
+                    newMemberList.remove(call.getTarget());
+                }
+            }
+            calls.clear();
+            AbstractRemotelyCallable<Boolean> connCheckCallable = new ConnectionCheckCall();
+            for (final Address target : newMemberList) {
+                AsyncRemotelyBooleanCallable call = new AsyncRemotelyBooleanCallable();
+                call.executeProcess(target, connCheckCallable);
+                calls.add(call);
+            }
+            for (AsyncRemotelyBooleanCallable call : calls) {
+                if (call.getResultAsBoolean() == Boolean.FALSE) {
+                    newMemberList.remove(call.getTarget());
+                }
+            }
+        }
+    }
+
     void startJoin() {
         joinInProgress = true;
         final MembersUpdateCall membersUpdate = new MembersUpdateCall(lsMembers, node.getClusterImpl().getClusterTime());
@@ -512,49 +564,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 membersUpdate.addMemberInfo(memberJoined);
             }
         }
-        executeLocally(new Runnable() {
-            public void run() {
-                Collection<MemberInfo> lsMemberInfos = membersUpdate.getMemberInfos();
-                List<Address> newMemberList = new ArrayList<Address>(lsMemberInfos.size());
-                for (final MemberInfo memberInfo : lsMemberInfos) {
-                    newMemberList.add(memberInfo.address);
-                }
-                List<AsyncRemotelyBooleanCallable> calls = new ArrayList<AsyncRemotelyBooleanCallable>(lsMemberInfos.size());
-                for (final Address target : newMemberList) {
-                    AsyncRemotelyBooleanCallable rrp = new AsyncRemotelyBooleanCallable();
-                    rrp.executeProcess(target, membersUpdate);
-                    calls.add(rrp);
-                }
-                for (AsyncRemotelyBooleanCallable call : calls) {
-                    if (call.getResultAsBoolean() == Boolean.FALSE) {
-                        newMemberList.remove(call.getTarget());
-                    }
-                }
-                calls.clear();
-                for (final Address target : newMemberList) {
-                    AsyncRemotelyBooleanCallable call = new AsyncRemotelyBooleanCallable();
-                    call.executeProcess(target, new SyncProcess());
-                    calls.add(call);
-                }
-                for (AsyncRemotelyBooleanCallable call : calls) {
-                    if (call.getResultAsBoolean() == Boolean.FALSE) {
-                        newMemberList.remove(call.getTarget());
-                    }
-                }
-                calls.clear();
-                AbstractRemotelyCallable<Boolean> connCheckCallable = new ConnectionCheckCall();
-                for (final Address target : newMemberList) {
-                    AsyncRemotelyBooleanCallable call = new AsyncRemotelyBooleanCallable();
-                    call.executeProcess(target, connCheckCallable);
-                    calls.add(call);
-                }
-                for (AsyncRemotelyBooleanCallable call : calls) {
-                    if (call.getResultAsBoolean() == Boolean.FALSE) {
-                        newMemberList.remove(call.getTarget());
-                    }
-                }
-            }
-        });
+        node.executorManager.executeMigrationTask(new JoinRunnable(membersUpdate));
     }
 
     void updateMembers(Collection<MemberInfo> lsMemberInfos) {

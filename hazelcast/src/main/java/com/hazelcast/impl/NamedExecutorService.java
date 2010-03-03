@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.impl.base.OrderedRunnablesQueue;
+import com.hazelcast.util.SimpleBlockingQueue;
 
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -32,6 +33,7 @@ public class NamedExecutorService {
     final ThreadPoolExecutor threadPoolExecutor;
     final OrderedRunnablesQueue[] orderedRunnablesQueues = new OrderedRunnablesQueue[ORDERED_QUEUE_COUNT];
     final ExecutionLoadBalancer executionLoadBalancer;
+    final SimpleBlockingQueue<Runnable> underlyingQueue;
 
     public NamedExecutorService(String name, ClassLoader classLoader, ExecutorConfig executorConfig, ThreadPoolExecutor threadPoolExecutor) {
         this.name = name;
@@ -41,11 +43,12 @@ public class NamedExecutorService {
         for (int i = 0; i < ORDERED_QUEUE_COUNT; i++) {
             orderedRunnablesQueues[i] = new OrderedRunnablesQueue();
         }
-        executionLoadBalancer = new RoundRobinLoadBalancer();
+        this.executionLoadBalancer = new RoundRobinLoadBalancer();
+        this.underlyingQueue = (SimpleBlockingQueue<Runnable>) threadPoolExecutor.getQueue();
     }
 
     public void appendState(StringBuffer sbState) {
-        sbState.append("\nExecutor." + name + ".size=" + threadPoolExecutor.getQueue().size());
+        sbState.append("\nExecutor." + name + ".size=" + underlyingQueue.size());
     }
 
     public void stop() {

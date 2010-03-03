@@ -119,7 +119,6 @@ public class Record implements MapEntry {
                     } else if (bo.getVersion() == getVersion() + 1) {
                         bo.run();
                         setVersion(bo.getVersion());
-                        bo.request.reset();
                         it.remove();
                     } else {
                         return;
@@ -147,7 +146,6 @@ public class Record implements MapEntry {
             VersionedBackupOp v = it.next();
             v.run();
             setVersion(v.getVersion());
-            v.request.reset();
             it.remove();
         }
     }

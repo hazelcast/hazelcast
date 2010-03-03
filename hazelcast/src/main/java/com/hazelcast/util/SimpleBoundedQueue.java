@@ -20,6 +20,10 @@ package com.hazelcast.util;
 import java.util.AbstractQueue;
 import java.util.Iterator;
 
+/**
+ * Not Thread-Safe
+ * @param <E>
+ */
 public final class SimpleBoundedQueue<E> extends AbstractQueue<E> {
     final int maxSize;
     final E[] objects;

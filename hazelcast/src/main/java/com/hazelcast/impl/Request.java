@@ -94,14 +94,14 @@ public class Request {
         this.lockCount = DEFAULT_LOCK_COUNT;
         this.caller = null;
         this.longValue = Long.MIN_VALUE;
+        this.version = DEFAULT_VERSION;
         this.response = null;
         this.scheduled = false;
         this.attachment = null;
-        this.version = DEFAULT_VERSION;
         this.redoCount = DEFAULT_REDO_COUNT;
         this.indexes = null;
         this.indexTypes = null;
-        responseType = ResponseType.OBJECT;
+        this.responseType = ResponseType.OBJECT;
     }
 
     public void setIndexes(long[] newIndexes, byte[] indexTypes) {
@@ -113,11 +113,11 @@ public class Request {
         }
     }
 
-    public void set(final boolean local, final ClusterOperation operation, final String name,
-                    final Data key, final Data value, final int blockId, final long timeout, long ttl,
-                    final long txnId, final long callId, final int lockThreadId,
-                    final Address lockAddress, final int lockCount, final Address caller,
-                    final long longValue, final long version) {
+    private void set(final boolean local, final ClusterOperation operation, final String name,
+                     final Data key, final Data value, final int blockId, final long timeout, long ttl,
+                     final long txnId, final long callId, final int lockThreadId,
+                     final Address lockAddress, final int lockCount, final Address caller,
+                     final long longValue, final long version) {
         this.local = local;
         this.operation = operation;
         this.name = name;
@@ -139,7 +139,15 @@ public class Request {
     public void setLocal(final ClusterOperation operation, final String name, final Data key,
                          final Data value, final int blockId, final long timeout, final long ttl,
                          final Address thisAddress) {
-        reset();
+        //set the defaults here//
+        this.response = null;
+        this.scheduled = false;
+        this.attachment = null;
+        this.redoCount = DEFAULT_REDO_COUNT;
+        this.indexes = null;
+        this.indexTypes = null;
+        this.responseType = ResponseType.OBJECT;
+        // set the values //
         set(true,
                 operation,
                 name,
@@ -159,7 +167,6 @@ public class Request {
     }
 
     public void setFromRequest(Request req) {
-        reset();
         set(req.local, req.operation, req.name, req.key, req.value, req.blockId, req.timeout, req.ttl,
                 req.txnId, req.callId, req.lockThreadId, req.lockAddress, req.lockCount,
                 req.caller, req.longValue, req.version);
@@ -170,14 +177,15 @@ public class Request {
         indexTypes = req.indexTypes;
     }
 
-    public void setFromPacket(final Packet packet) {
-        reset();
-        set(false, packet.operation, packet.name, packet.key, packet.value,
+    public static Request copy(Packet packet) {
+        final Request copy = new Request();
+        copy.set(false, packet.operation, packet.name, packet.key, packet.value,
                 packet.blockId, packet.timeout, packet.ttl, packet.txnId, packet.callId, packet.threadId,
                 packet.lockAddress, packet.lockCount, packet.conn.getEndPoint(), packet.longValue,
                 packet.version);
-        indexes = packet.indexes;
-        indexTypes = packet.indexTypes;
+        copy.indexes = packet.indexes;
+        copy.indexTypes = packet.indexTypes;
+        return copy;
     }
 
     public void setFromRecord(Record record) {

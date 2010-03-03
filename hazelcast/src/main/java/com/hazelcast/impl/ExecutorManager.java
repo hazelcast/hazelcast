@@ -23,6 +23,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.Partition;
+import com.hazelcast.util.SimpleBlockingQueue;
 import com.hazelcast.util.UnboundedBlockingQueue;
 
 import java.util.ArrayList;
@@ -100,7 +101,7 @@ public class ExecutorManager extends BaseManager {
                 executorConfig.getMaxPoolSize(),
                 executorConfig.getKeepAliveSeconds(),
                 TimeUnit.SECONDS,
-                new UnboundedBlockingQueue<Runnable>(),
+                new SimpleBlockingQueue<Runnable>(true),
                 new ExecutorThreadFactory(node.threadGroup, getThreadNamePrefix(name), classLoader),
                 new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
@@ -321,9 +322,6 @@ public class ExecutorManager extends BaseManager {
                         memberCall.get(remainingMillis, TimeUnit.MILLISECONDS);
                     }
                     remainingMillis -= (System.currentTimeMillis() - now);
-                    if (innerFutureTask.isDone()) {
-                        return;
-                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();

@@ -142,6 +142,11 @@ public class DistributedTask<V> extends FutureTask<V> {
         return result;
     }
 
+    @Override
+    protected void set(V value) {
+
+    }
+
     public void setExecutionCallback(ExecutionCallback<V> executionCallback) {
         inner.setExecutionCallback(executionCallback);
     }

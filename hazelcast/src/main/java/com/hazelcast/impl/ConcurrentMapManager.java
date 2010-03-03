@@ -562,10 +562,6 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class MAdd extends MBackupAndMigrationAwareOp {
         boolean addToList(String name, Object value) {
-//            Data key = ThreadContext.get().toData(value);
-//            boolean result = booleanCall(CONCURRENT_MAP_ADD_TO_LIST, name, key, null, 0, -1);
-//            backup(CONCURRENT_MAP_BACKUP_ADD);
-//            return result;
             ThreadContext threadContext = ThreadContext.get();
             TransactionImpl txn = threadContext.getCallContext().getTransaction();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
@@ -796,8 +792,7 @@ public final class ConcurrentMapManager extends BaseManager {
         protected Address owner = null;
         protected int distance = 0;
 
-        public void sendBackup(ClusterOperation operation, Address owner, boolean hardCopy,
-                               int distance, Request reqBackup) {
+        public void sendBackup(ClusterOperation operation, Address owner, int distance, Request reqBackup) {
             reset();
             this.owner = owner;
             this.distance = distance;
@@ -855,7 +850,6 @@ public final class ConcurrentMapManager extends BaseManager {
     abstract class MBackupAwareOp extends MTargetAwareOp {
         protected final MBackup[] backupOps = new MBackup[3];
         protected volatile int backupCount = 0;
-        protected final Request reqBackup = new Request();
 
         protected void backup(ClusterOperation operation) {
             if (backupCount > 0) {
@@ -866,7 +860,10 @@ public final class ConcurrentMapManager extends BaseManager {
                         backupOp = new MBackup();
                         backupOps[i] = backupOp;
                     }
-                    backupOp.sendBackup(operation, target, (distance < backupCount), distance, reqBackup);
+                    if (request.key == null || request.key.size() == 0) {
+                        throw new RuntimeException("Key is null! " + request.key);  
+                    }
+                    backupOp.sendBackup(operation, target, distance, request);
                 }
                 for (int i = 0; i < backupCount; i++) {
                     MBackup backupOp = backupOps[i];
@@ -876,15 +873,11 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         void prepareForBackup() {
-            reqBackup.reset();
             backupCount = 0;
             if (lsMembers.size() > 1) {
                 CMap map = getOrCreateMap(request.name);
                 backupCount = map.getBackupCount();
                 backupCount = Math.min(backupCount, lsMembers.size());
-                if (backupCount > 0) {
-                    reqBackup.setFromRequest(request);
-                }
             }
         }
 
@@ -895,26 +888,16 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         @Override
-        protected void setResult(Object obj) {
-            if (reqBackup.local) {
-                reqBackup.version = request.version;
-                reqBackup.lockCount = request.lockCount;
-                reqBackup.longValue = request.longValue;
-            }
-            super.setResult(obj);
-        }
-
-        @Override
         public void handleNoneRedoResponse(Packet packet) {
             handleRemoteResponse(packet);
             super.handleNoneRedoResponse(packet);
         }
 
         public void handleRemoteResponse(Packet packet) {
-            reqBackup.local = false;
-            reqBackup.version = packet.version;
-            reqBackup.lockCount = packet.lockCount;
-            reqBackup.longValue = packet.longValue;
+            request.local = true;
+            request.version = packet.version;
+            request.lockCount = packet.lockCount;
+            request.longValue = packet.longValue;
         }
     }
 
@@ -1374,7 +1357,6 @@ public final class ConcurrentMapManager extends BaseManager {
         @Override
         protected void onNoTimeToSchedule(Request request) {
             request.response = null;
-            request.value = null;
             if (request.operation == CONCURRENT_MAP_TRY_PUT) {
                 request.response = Boolean.FALSE;
             }
@@ -1540,7 +1522,6 @@ public final class ConcurrentMapManager extends BaseManager {
 
     class LockOperationHandler extends SchedulableOperationHandler {
         protected void onNoTimeToSchedule(Request request) {
-            request.value = null;
             request.response = Boolean.FALSE;
             returnResponse(request);
         }
@@ -1559,7 +1540,6 @@ public final class ConcurrentMapManager extends BaseManager {
 
         protected void onNoTimeToSchedule(Request request) {
             request.response = null;
-            request.value = null;
             returnResponse(request);
         }
 
@@ -1706,8 +1686,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     abstract class ExecutedOperationHandler extends ResponsiveOperationHandler {
         public void process(Packet packet) {
-            Request request = new Request();
-            request.setFromPacket(packet);
+            Request request = Request.copy(packet);
             request.local = false;
             handle(request);
         }
@@ -1860,8 +1839,6 @@ public final class ConcurrentMapManager extends BaseManager {
         Record record = cmap.getRecord(req.key);
         if (record == null) {
             record = cmap.createNewRecord(req.key, req.value);
-            req.key = null;
-            req.value = null;
         }
         return record;
     }

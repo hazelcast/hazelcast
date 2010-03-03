@@ -21,6 +21,6 @@ import java.util.concurrent.BlockingQueue;
 
 public class ResponseQueueFactory {
     public static BlockingQueue newResponseQueue() {
-        return new SimpleResponseQueue();
+        return new SimpleBlockingQueue();
     }
 }

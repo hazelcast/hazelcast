@@ -22,11 +22,13 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
+import com.hazelcast.monitor.DistributedMapStatsCallable;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.Partition;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.Serializable;
@@ -347,7 +349,7 @@ public class ClusterTest {
         return myConfig;
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 20000)
     public void testDifferentGroups() {
         Config c1 = new XmlConfigBuilder().build();
         c1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
@@ -878,8 +880,8 @@ public class ClusterTest {
         testMapLockWaiters(map1, map1, 3);
         testMapLockWaiters(map2, map1, 4);
         assertTrue(map1.lockMap(10, TimeUnit.SECONDS));
-        assertNull(map1.put (5, "value5"));
-        assertEquals("value5", map1.put (5, "value55"));
+        assertNull(map1.put(5, "value5"));
+        assertEquals("value5", map1.put(5, "value55"));
         assertEquals("value55", map1.get(5));
         map1.unlockMap();
     }
@@ -1083,6 +1085,24 @@ public class ClusterTest {
         migrationListener2.await(3);
         migrationListener3.await(3);
         migrationListener4.await(3);
+    }
+
+    @Test(timeout = 240000)
+    public void testExecutorServiceMultiTask() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
+        MultiTask multitask = new MultiTask(new DistributedMapStatsCallable("default"), h1.getCluster().getMembers());
+        ExecutorService es = h1.getExecutorService();
+        for (int i = 0; i < 100; i++) {
+            es.execute(multitask);
+            Collection results = multitask.get();
+            assertEquals("iteration count " + i, 4, results.size());
+            for (Object result : results) {
+                assertTrue(result instanceof DistributedMapStatsCallable.MemberMapStat);
+            }
+        }
     }
 
     /**

@@ -392,10 +392,7 @@ public class CMap {
         if (record != null) {
             record.setActive();
             if (req.version > record.getVersion() + 1) {
-                Request reqCopy = new Request();
-                reqCopy.setFromRequest(req);
-                req.key = null;
-                req.value = null;
+                Request reqCopy = req.hardCopy();
                 record.addBackupOp(new VersionedBackupOp(this, reqCopy));
                 return true;
             } else if (req.version <= record.getVersion()) {
@@ -651,9 +648,6 @@ public class CMap {
                 returnValue = toData(values);
             }
         }
-        if (returnValue != null) {
-            req.key = null;
-        }
         return returnValue;
     }
 
@@ -661,7 +655,6 @@ public class CMap {
         Record record = getRecord(req.key);
         if (record == null) {
             record = createNewRecord(req.key, null);
-            req.key = null;
         } else {
             if (record.isActive() && req.operation == CONCURRENT_MAP_ADD_TO_SET) {
                 return false;
@@ -773,7 +766,6 @@ public class CMap {
         boolean added = true;
         if (record == null) {
             record = createNewRecord(req.key, null);
-            req.key = null;
         } else {
             if (!record.isActive()) {
                 markAsActive(record);
@@ -1081,7 +1073,6 @@ public class CMap {
 
     public boolean removeItem(Request req) {
         Record record = mapRecords.get(req.key);
-        req.key = null;
         if (record == null) {
             return false;
         }
@@ -1155,9 +1146,6 @@ public class CMap {
         req.clearForResponse();
         req.version = record.getVersion();
         req.longValue = record.getCopyCount();
-        if (oldValue != null) {
-            req.key = null;
-        }
         req.response = oldValue;
     }
 
