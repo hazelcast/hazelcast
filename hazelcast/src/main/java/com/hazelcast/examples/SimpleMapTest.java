@@ -26,11 +26,21 @@ import java.util.concurrent.Executors;
 
 public class SimpleMapTest {
 
-    public static final int ENTRY_COUNT = 10 * 1000;
-    public static final int VALUE_SIZE = 1000;
-    public static final int STATS_SECONDS = 10;
+    public static int ENTRY_COUNT = 10 * 1000;
+    public static int VALUE_SIZE = 1000;
+    public static int STATS_SECONDS = 10;
+    public static int GET_PERCENTAGE = 40;
+    public static int PUT_PERCENTAGE = 40;
 
     public static void main(String[] args) {
+        System.out.println("Args length:" + args.length);
+        if (args.length > 0) {
+            ENTRY_COUNT = Integer.valueOf(args[0]);
+        }
+        if (args.length > 2) {
+            GET_PERCENTAGE = Integer.valueOf(args[1]);
+            PUT_PERCENTAGE = Integer.valueOf(args[2]);
+        }
         int threadCount = 40;
         ExecutorService es = Executors.newFixedThreadPool(threadCount);
         for (int i = 0; i < threadCount; i++) {
@@ -39,11 +49,14 @@ public class SimpleMapTest {
                     IMap<String, byte[]> map = Hazelcast.getMap("default");
                     while (true) {
                         int key = (int) (Math.random() * ENTRY_COUNT);
-                        int operation = ((int) (Math.random() * 100)) % 10;
-                        if (operation < 4) {
-                            map.put(String.valueOf(key), new byte[VALUE_SIZE]);
-                        } else if (operation < 8) {
+                        int operation = ((int) (Math.random() * 100));
+                        System.out.println("Op" + operation);
+                        System.out.println(GET_PERCENTAGE);
+                        System.out.println(PUT_PERCENTAGE);
+                        if (operation < GET_PERCENTAGE) {
                             map.get(String.valueOf(key));
+                        } else if (operation < GET_PERCENTAGE + PUT_PERCENTAGE) {
+                            map.put(String.valueOf(key), new byte[VALUE_SIZE]);
                         } else {
                             map.remove(String.valueOf(key));
                         }
