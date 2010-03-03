@@ -1225,9 +1225,7 @@ public class CMap {
                 throw new RuntimeException(node.getName() + ": indexCount=" + indexCount + " but expected " + getMapIndexes().size());
             }
             long[] newIndexes = request.indexes;
-            request.indexes = null;
             byte[] indexTypes = request.indexTypes;
-            request.indexTypes = null;
             if (newIndexes.length != indexTypes.length) {
                 throw new RuntimeException();
             }

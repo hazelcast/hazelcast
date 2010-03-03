@@ -27,7 +27,7 @@ import java.util.concurrent.Executors;
 public class SimpleMapTest {
 
     public static int THREAD_COUNT = 40;
-    public static int ENTRY_COUNT = 1000;
+    public static int ENTRY_COUNT = 10 * 1000;
     public static int VALUE_SIZE = 1000;
     public static int STATS_SECONDS = 10;
     public static int GET_PERCENTAGE = 40;
@@ -95,8 +95,7 @@ public class SimpleMapTest {
                         }
                         System.out.println(mapOpStats);
                         System.out.println("Operations per Second : " + mapOpStats.total() / period);
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                    } catch (Exception ignored) {
                     }
                 }
             }
