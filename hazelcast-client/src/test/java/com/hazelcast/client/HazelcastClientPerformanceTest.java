@@ -19,16 +19,16 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class HazelcastClientPerformanceTest {
 
@@ -47,7 +47,7 @@ public class HazelcastClientPerformanceTest {
             }
             map.put("key_" + i, String.valueOf(i));
         }
-        System.out.println(System.currentTimeMillis() - beginTime);
+//        System.out.println(System.currentTimeMillis() - beginTime);
         beginTime = System.currentTimeMillis();
         for (int i = 0; i < counter; i++) {
             if (i % 10000 == 0) {
@@ -56,7 +56,7 @@ public class HazelcastClientPerformanceTest {
             assertEquals(String.valueOf(i), map.get("key_" + i));
         }
 //    	assertEquals(String.valueOf(i), map.get("key_"+i));
-        System.out.println(System.currentTimeMillis() - beginTime);
+//        System.out.println(System.currentTimeMillis() - beginTime);
     }
 
     @Test
@@ -88,5 +88,28 @@ public class HazelcastClientPerformanceTest {
         }
         Thread.sleep(100);
         assertEquals(counter.get(), h.getMap("putFromMultipleThreads").size());
+    }
+
+    @Test
+    public void putBigObject() {
+        HazelcastClient hClient = getHazelcastClient();
+        Map<String, Object> clientMap = hClient.getMap("putABigObject");
+        List list = new ArrayList();
+        int size = 10000000;
+        byte[] b = new byte[size];
+        b[size - 1] = (byte) 144;
+        list.add(b);
+        clientMap.put("obj", b);
+        byte[] bigB = (byte[]) clientMap.get("obj");
+        assertTrue(Arrays.equals(b, bigB));
+        assertEquals(size, bigB.length);
+    }
+
+    @AfterClass
+    @BeforeClass
+    public static void shutdown() {
+        getHazelcastClient().shutdown();
+        Hazelcast.shutdownAll();
+        TestUtility.client = null;
     }
 }

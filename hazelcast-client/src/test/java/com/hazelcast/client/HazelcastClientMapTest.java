@@ -23,6 +23,7 @@ import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
+import org.junit.AfterClass;
 import org.junit.Test;
 
 import java.io.DataInput;
@@ -61,7 +62,7 @@ public class HazelcastClientMapTest {
         final IMap map = hClient.getMap("lockMap");
         final CountDownLatch latch = new CountDownLatch(1);
         map.put("a", "b");
-        Thread.sleep(1000);
+        Thread.sleep(10);
         map.lock("a");
         new Thread(new Runnable() {
             public void run() {
@@ -69,7 +70,7 @@ public class HazelcastClientMapTest {
                 latch.countDown();
             }
         }).start();
-        Thread.sleep(100);
+        Thread.sleep(10);
         assertEquals(1, latch.getCount());
         map.unlock("a");
         assertTrue(latch.await(2000, TimeUnit.MILLISECONDS));
@@ -117,35 +118,6 @@ public class HazelcastClientMapTest {
         assertEquals(1, clientMap.size());
         result = clientMap.put("1", "B");
         assertEquals("CBDEF", result);
-    }
-
-    @Test
-    public void putABigObject() {
-        HazelcastClient hClient = getHazelcastClient();
-        Map<String, Object> clientMap = hClient.getMap("putABigObject");
-        List list = new ArrayList();
-        int size = 10000000;
-        byte[] b = new byte[size];
-        list.add(b);
-        clientMap.put("obj", list);
-        List lReturned = (List) clientMap.get("obj");
-        byte[] bigB = (byte[]) lReturned.get(0);
-        assertEquals(size, bigB.length);
-    }
-
-    @Test
-    public void putBigObject() {
-        HazelcastClient hClient = getHazelcastClient();
-        Map<String, Object> clientMap = hClient.getMap("putABigObject");
-        List list = new ArrayList();
-        int size = 10000000;
-        byte[] b = new byte[size];
-        b[size - 1] = (byte) 144;
-        list.add(b);
-        clientMap.put("obj", b);
-        byte[] bigB = (byte[]) clientMap.get("obj");
-        assertTrue(Arrays.equals(b, bigB));
-        assertEquals(size, bigB.length);
     }
 
     @Test
@@ -282,7 +254,6 @@ public class HazelcastClientMapTest {
         assertEquals("b", entry.setValue("c"));
         assertEquals("c", map.get("a"));
         assertEquals("c", entry.getValue());
-        System.out.println(entry);
     }
 
     @Test
@@ -736,5 +707,9 @@ public class HazelcastClientMapTest {
             sb.append('}');
             return sb.toString();
         }
+    }
+
+    @AfterClass
+    public static void shutdown() {
     }
 }

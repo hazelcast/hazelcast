@@ -17,11 +17,10 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiTask;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
+import org.junit.AfterClass;
 import org.junit.Test;
 
 import java.io.Serializable;
@@ -160,7 +159,7 @@ public class HazelcastClientExecutorServiceTest {
 
     public static class BasicRunnable implements Runnable, Serializable {
         public void run() {
-            System.out.println("I am running: Hazelcast rocks. in Thread: -> " + Thread.currentThread().getName());
+//            System.out.println("I am running: Hazelcast rocks. in Thread: -> " + Thread.currentThread().getName());
         }
     }
 
@@ -187,30 +186,7 @@ public class HazelcastClientExecutorServiceTest {
         assertEquals(members.size(), mapStats.size());
     }
 
-    @Test
-    public void multiTaskWithTwoMember() throws ExecutionException, InterruptedException {
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        multiTaskWithOneMember();
-        h.shutdown();
-    }
-
-    @Test(expected = ExecutionException.class)
-    public void shouldThrowExExcptnWhenCallableThrowsException() throws ExecutionException, InterruptedException {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastClient client = getHazelcastClient(h1);
-        Set<Member> members = client.getCluster().getMembers();
-        MultiTask<String> task =
-                new MultiTask<String>(new ExceptionThrowingCallable(), members);
-        client.getExecutorService().submit(task);
-        Collection<String> result = null;
-        result = task.get();
-        assertEquals(members.size(), result.size());
-    }
-
-    public static class ExceptionThrowingCallable implements Callable<String>, Serializable {
-
-        public String call() throws Exception {
-            throw new RuntimeException("here is an exception");
-        }
+    @AfterClass
+    public static void shutdownAll() {
     }
 }

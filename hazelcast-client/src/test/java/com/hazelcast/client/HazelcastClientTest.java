@@ -21,6 +21,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.core.InstanceEvent.InstanceEventType;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
+import org.junit.AfterClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -552,158 +553,6 @@ public class HazelcastClientTest {
     }
 
     @Test
-    public void testMultiMapPutAndGet() {
-        MultiMap<String, String> map = getHazelcastClient().getMultiMap("testMultiMapPutAndGet");
-        map.put("Hello", "World");
-        Collection<String> values = map.get("Hello");
-        assertEquals("World", values.iterator().next());
-        map.put("Hello", "Europe");
-        map.put("Hello", "America");
-        map.put("Hello", "Asia");
-        map.put("Hello", "Africa");
-        map.put("Hello", "Antartica");
-        map.put("Hello", "Australia");
-        values = map.get("Hello");
-        assertEquals(7, values.size());
-    }
-
-    @Test
-    public void testMultiMapGetNameAndType() {
-        MultiMap<String, String> map = getHazelcastClient().getMultiMap("testMultiMapGetNameAndType");
-        assertEquals("testMultiMapGetNameAndType", map.getName());
-        Instance.InstanceType type = map.getInstanceType();
-        assertEquals(Instance.InstanceType.MULTIMAP, type);
-    }
-
-    @Test
-    public void testMultiMapClear() {
-        MultiMap<String, String> map = getHazelcastClient().getMultiMap("testMultiMapClear");
-        map.put("Hello", "World");
-        assertEquals(1, map.size());
-        map.clear();
-        assertEquals(0, map.size());
-    }
-
-    @Test
-    public void testMultiMapContainsKey() {
-        MultiMap<String, String> map = getHazelcastClient().getMultiMap("testMultiMapContainsKey");
-        map.put("Hello", "World");
-        assertTrue(map.containsKey("Hello"));
-    }
-
-    @Test
-    public void testMultiMapContainsValue() {
-        MultiMap<String, String> map = getHazelcastClient().getMultiMap("testMultiMapContainsValue");
-        map.put("Hello", "World");
-        assertTrue(map.containsValue("World"));
-    }
-
-    @Test
-    public void testMultiMapContainsEntry() {
-        MultiMap<String, String> map = getHazelcastClient().getMultiMap("testMultiMapContainsEntry");
-        map.put("Hello", "World");
-        assertTrue(map.containsEntry("Hello", "World"));
-    }
-
-    @Test
-    public void testMultiMapKeySet() {
-        MultiMap<String, String> map = getHazelcastClient().getMultiMap("testMultiMapKeySet");
-        map.put("Hello", "World");
-        map.put("Hello", "Europe");
-        map.put("Hello", "America");
-        map.put("Hello", "Asia");
-        map.put("Hello", "Africa");
-        map.put("Hello", "Antartica");
-        map.put("Hello", "Australia");
-        Set<String> keys = map.keySet();
-        assertEquals(1, keys.size());
-    }
-
-    @Test
-    public void testMultiMapValues() {
-        MultiMap<String, String> map = getHazelcastClient().getMultiMap("testMultiMapValues");
-        map.put("Hello", "World");
-        map.put("Hello", "Europe");
-        map.put("Hello", "America");
-        map.put("Hello", "Asia");
-        map.put("Hello", "Africa");
-        map.put("Hello", "Antartica");
-        map.put("Hello", "Australia");
-        Collection<String> values = map.values();
-        assertEquals(7, values.size());
-    }
-
-    @Test
-    public void testMultiMapRemove() {
-        MultiMap<String, String> map = getHazelcastClient().getMultiMap("testMultiMapRemove");
-        map.put("Hello", "World");
-        map.put("Hello", "Europe");
-        map.put("Hello", "America");
-        map.put("Hello", "Asia");
-        map.put("Hello", "Africa");
-        map.put("Hello", "Antartica");
-        map.put("Hello", "Australia");
-        assertEquals(7, map.size());
-        assertEquals(1, map.keySet().size());
-        Collection<String> values = map.remove("Hello");
-        assertEquals(7, values.size());
-        assertEquals(0, map.size());
-        assertEquals(0, map.keySet().size());
-        map.put("Hello", "World");
-        assertEquals(1, map.size());
-        assertEquals(1, map.keySet().size());
-    }
-
-    @Test
-    public void testMultiMapRemoveEntries() {
-        MultiMap<String, String> map = getHazelcastClient().getMultiMap("testMultiMapRemoveEntries");
-        map.put("Hello", "World");
-        map.put("Hello", "Europe");
-        map.put("Hello", "America");
-        map.put("Hello", "Asia");
-        map.put("Hello", "Africa");
-        map.put("Hello", "Antartica");
-        map.put("Hello", "Australia");
-        boolean removed = map.remove("Hello", "World");
-        assertTrue(removed);
-        assertEquals(6, map.size());
-    }
-
-    @Test
-    public void testMultiMapEntrySet() {
-        MultiMap<String, String> map = getHazelcastClient().getMultiMap("testMultiMapEntrySet");
-        map.put("Hello", "World");
-        map.put("Hello", "Europe");
-        map.put("Hello", "America");
-        map.put("Hello", "Asia");
-        map.put("Hello", "Africa");
-        map.put("Hello", "Antartica");
-        map.put("Hello", "Australia");
-        Set<Map.Entry<String, String>> entries = map.entrySet();
-        assertEquals(7, entries.size());
-        int itCount = 0;
-        for (Map.Entry<String, String> entry : entries) {
-            assertEquals("Hello", entry.getKey());
-            itCount++;
-        }
-        assertEquals(7, itCount);
-    }
-
-    @Test
-    public void testMultiMapValueCount() {
-        MultiMap<Integer, String> map = getHazelcastClient().getMultiMap("testMultiMapValueCount");
-        map.put(1, "World");
-        map.put(2, "Africa");
-        map.put(1, "America");
-        map.put(2, "Antartica");
-        map.put(1, "Asia");
-        map.put(1, "Europe");
-        map.put(2, "Australia");
-        assertEquals(4, map.valueCount(1));
-        assertEquals(3, map.valueCount(2));
-    }
-
-    @Test
     public void testIdGenerator() {
         IdGenerator id = getHazelcastClient().getIdGenerator("testIdGenerator");
         assertEquals(1, id.newId());
@@ -811,5 +660,9 @@ public class HazelcastClientTest {
             assertNotNull(partition.getPartitionId());
             assertTrue(set.add(partition.getPartitionId()));
         }
+    }
+
+    @AfterClass
+    public static void shutdown() {
     }
 }

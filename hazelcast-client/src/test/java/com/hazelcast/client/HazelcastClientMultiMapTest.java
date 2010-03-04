@@ -20,6 +20,7 @@ package com.hazelcast.client;
 import com.hazelcast.client.impl.Values;
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.MultiMap;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -376,5 +377,9 @@ public class HazelcastClientMultiMapTest {
         map.put(2, "Australia");
         assertEquals(4, map.valueCount(1));
         assertEquals(3, map.valueCount(2));
+    }
+
+    @AfterClass
+    public static void shutdown() {
     }
 }

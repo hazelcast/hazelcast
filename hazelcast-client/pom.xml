@@ -41,9 +41,14 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <includes>
-                        <include>**/HazelcastClientTest.java</include>
-                    </includes>
+                    <!--<includes>-->
+                    <!--<include>**/HazelcastClientTest.java</include>-->
+                    <!--</includes>-->
+                    <excludes>
+                        <exclude>**/HazelcastClientPerformanceTest.java</exclude>
+                        <exclude>**/DynamicClusterTest.java</exclude>
+                        <exclude>**/TestUtility.java</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
         </plugins>

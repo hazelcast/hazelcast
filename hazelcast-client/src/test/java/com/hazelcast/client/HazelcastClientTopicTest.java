@@ -19,6 +19,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MessageListener;
+import org.junit.AfterClass;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -39,7 +40,6 @@ public class HazelcastClientTopicTest {
     @Test
     public void testName() {
         HazelcastClient hClient = getHazelcastClient();
-        System.out.println("1");
         ITopic<?> topic = hClient.getTopic("testName");
         assertEquals("testName", topic.getName());
     }
@@ -47,7 +47,6 @@ public class HazelcastClientTopicTest {
     @Test
     public void addMessageListener() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
-        System.out.println("2");
         ITopic<String> topic = hClient.getTopic("addMessageListener");
         final CountDownLatch latch = new CountDownLatch(1);
         final String message = "Hazelcast Rocks!";
@@ -56,7 +55,6 @@ public class HazelcastClientTopicTest {
                 if (msg.equals(message)) {
                     latch.countDown();
                 }
-                System.out.println(msg);
             }
         });
         topic.publish(message);
@@ -105,5 +103,9 @@ public class HazelcastClientTopicTest {
         topic.removeMessageListener(messageListener);
         topic.publish(message);
         assertFalse(latch.await(100, TimeUnit.MILLISECONDS));
+    }
+
+    @AfterClass
+    public static void shutdown() {
     }
 }

@@ -19,6 +19,8 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
+import org.junit.AfterClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
@@ -44,6 +46,7 @@ public class HazelcastClientListTest {
     }
 
     @Test
+    @Ignore
     public void addRemoveItemListener() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
         final IList<String> list = hClient.getList("addRemoveItemListener");
@@ -84,7 +87,7 @@ public class HazelcastClientListTest {
     public void add() {
         HazelcastClient hClient = getHazelcastClient();
         IList<Integer> list = hClient.getList("add");
-        int count = 10000;
+        int count = 100;
         for (int i = 0; i < count; i++) {
             assertTrue(list.add(i));
         }
@@ -94,7 +97,7 @@ public class HazelcastClientListTest {
     public void contains() {
         HazelcastClient hClient = getHazelcastClient();
         IList<Integer> list = hClient.getList("contains");
-        int count = 10000;
+        int count = 100;
         for (int i = 0; i < count; i++) {
             list.add(i);
         }
@@ -219,5 +222,9 @@ public class HazelcastClientListTest {
         assertEquals(Integer.valueOf(0), counter.get(2));
         assertEquals(Integer.valueOf(0), counter.get(3));
         assertTrue(list.isEmpty());
+    }
+
+    @AfterClass
+    public static void shutdown() {
     }
 }

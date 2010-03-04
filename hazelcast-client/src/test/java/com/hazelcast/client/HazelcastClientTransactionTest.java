@@ -20,6 +20,7 @@ package com.hazelcast.client;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Transaction;
+import org.junit.AfterClass;
 import org.junit.Test;
 
 import java.util.List;
@@ -151,5 +152,9 @@ public class HazelcastClientTransactionTest {
         q.offer("Istanbul");
         transaction.commit();
         assertEquals("Istanbul", q.poll());
+    }
+
+    @AfterClass
+    public static void shutdown() {
     }
 }

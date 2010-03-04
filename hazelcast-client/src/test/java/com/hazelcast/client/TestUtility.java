@@ -24,10 +24,12 @@ import java.net.InetSocketAddress;
 
 public class TestUtility {
     static HazelcastClient client;
+    static HazelcastInstance hz;
 
     public static HazelcastClient getHazelcastClient() {
         if (client == null) {
-            client = getHazelcastClient(Hazelcast.newHazelcastInstance(null));
+            hz = Hazelcast.newHazelcastInstance(null);
+            client = getHazelcastClient(hz);
         }
         return client;
     }

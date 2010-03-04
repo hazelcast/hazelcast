@@ -19,6 +19,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ItemListener;
+import org.junit.AfterClass;
 import org.junit.Test;
 
 import java.util.*;
@@ -87,7 +88,7 @@ public class HazelcastClientSetTest {
     public void add() {
         HazelcastClient hClient = getHazelcastClient();
         ISet<Integer> set = hClient.getSet("add");
-        int count = 10000;
+        int count = 100;
         for (int i = 0; i < count; i++) {
             assertTrue(set.add(i));
         }
@@ -101,7 +102,7 @@ public class HazelcastClientSetTest {
     public void contains() {
         HazelcastClient hClient = getHazelcastClient();
         ISet<Integer> set = hClient.getSet("contains");
-        int count = 10000;
+        int count = 100;
         for (int i = 0; i < count; i++) {
             set.add(i);
         }
@@ -226,5 +227,9 @@ public class HazelcastClientSetTest {
         assertEquals(Integer.valueOf(0), counter.get(2));
         assertEquals(Integer.valueOf(0), counter.get(3));
         assertTrue(set.isEmpty());
+    }
+
+    @AfterClass
+    public static void shutdown() {
     }
 }

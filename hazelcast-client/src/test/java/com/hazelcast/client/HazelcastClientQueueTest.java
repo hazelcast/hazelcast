@@ -17,9 +17,8 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
+import org.junit.AfterClass;
 import org.junit.Test;
 
 import java.util.*;
@@ -143,14 +142,6 @@ public class HazelcastClientQueueTest {
     }
 
     @Test
-    public void equals() {
-        HazelcastClient hClient = getHazelcastClient();
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        IQueue<String> queue = hClient.getQueue("equals");
-        assertEquals(queue, h.getQueue("equals"));
-    }
-
-    @Test
     public void isEmpty() {
         HazelcastClient hClient = getHazelcastClient();
         IQueue<String> queue = hClient.getQueue("isEmpty");
@@ -197,5 +188,9 @@ public class HazelcastClientQueueTest {
         }
         queue.removeAll(list);
         assertTrue(queue.size() == count / 2);
+    }
+
+    @AfterClass
+    public static void shutdown() {
     }
 }
