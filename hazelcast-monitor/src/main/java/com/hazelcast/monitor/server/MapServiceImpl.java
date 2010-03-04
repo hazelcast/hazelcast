@@ -31,8 +31,13 @@ public class MapServiceImpl extends RemoteServiceServlet implements MapService {
         try {
             final SessionObject sessionObject = getSessionObject(this.getThreadLocalRequest().getSession());
             HazelcastInstance hz = sessionObject.mapOfHz.get(clusterId);
-            IMap map = hz.getMap(name);
-            com.hazelcast.core.MapEntry mapEntry = map.getMapEntry(key);
+            com.hazelcast.core.MapEntry mapEntry;
+            if (hz == null) {
+                mapEntry = null;
+            } else {
+                IMap map = hz.getMap(name);
+                mapEntry = map.getMapEntry(key);
+            }
             return convertToMonitorMapEntry(mapEntry);
         } catch (NoMemberAvailableException e) {
             throw new ClientDisconnectedException();
