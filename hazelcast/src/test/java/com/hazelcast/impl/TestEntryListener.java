@@ -19,10 +19,12 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import org.junit.Ignore;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+@Ignore 
 public class TestEntryListener implements EntryListener {
     final CountDownLatch latchAdded;
     final CountDownLatch latchRemoved;

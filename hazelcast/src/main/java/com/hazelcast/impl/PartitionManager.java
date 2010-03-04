@@ -84,6 +84,17 @@ public class PartitionManager implements Runnable, PartitionService {
         });
     }
 
+    public void run() {
+        removeUnknownRecords();
+        long now = System.currentTimeMillis();
+        if (now > nextMigrationMillis) {
+            nextMigrationMillis = now + MIGRATION_INTERVAL_MILLIS;
+            if (!concurrentMapManager.isMaster()) return;
+            if (concurrentMapManager.getMembers().size() < 2) return;
+            initiateMigration();
+        }
+    }
+
     public Set<Partition> getPartitions() {
         final BlockingQueue<Set<Partition>> responseQ = ResponseQueueFactory.newResponseQueue();
         concurrentMapManager.enqueueAndReturn(new Processable() {
@@ -277,17 +288,6 @@ public class PartitionManager implements Runnable, PartitionService {
             }
         }
         return false;
-    }
-
-    public void run() {
-        removeUnknownRecords();
-        long now = System.currentTimeMillis();
-        if (now > nextMigrationMillis) {
-            nextMigrationMillis = now + MIGRATION_INTERVAL_MILLIS;
-            if (!concurrentMapManager.isMaster()) return;
-            if (concurrentMapManager.getMembers().size() < 2) return;
-            initiateMigration();
-        }
     }
 
     void initiateMigration() {
@@ -576,6 +576,7 @@ public class PartitionManager implements Runnable, PartitionService {
         } else if (!add && node.clusterManager.isPreviousChanged()) {
             shouldBackup = true;
         }
+        //todo  should we check member size. if <=1 we should skip this
         if (shouldBackup) {
             List<Record> lsOwnedRecords = new ArrayList<Record>(1000);
             Collection<CMap> cmaps = concurrentMapManager.maps.values();

@@ -100,10 +100,10 @@ public class FactoryImpl implements HazelcastInstance {
             }
             firstMember = (factory.node.getClusterImpl().getMembers().size() == 1);
         }
-        int firstMemberWaitSeconds = factory.node.groupProperties.FIRST_MEMBER_WAIT_SECONDS.getInteger();
-        if (firstMemberWaitSeconds > 0 && firstMember) {
+        int initialWaitSeconds = factory.node.groupProperties.INITIAL_WAIT_SECONDS.getInteger();
+        if (initialWaitSeconds > 0) {
             try {
-                Thread.sleep(firstMemberWaitSeconds * 1000);
+                Thread.sleep(initialWaitSeconds * 1000);
             } catch (InterruptedException e) {
             }
         }

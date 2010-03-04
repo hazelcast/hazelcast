@@ -26,12 +26,11 @@ public class GroupProperties {
     public static final String PROP_SHUTDOWNHOOK_ENABLED = "hazelcast.shutdownhook.enabled";
     public static final String PROP_WAIT_SECONDS_BEFORE_JOIN = "hazelcast.wait.seconds.before.join";
     public static final String PROP_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.max.no.heartbeat.seconds";
-    public static final String PROP_FIRST_MEMBER_WAIT_SECONDS = "hazelcast.first.member.wait.seconds";
+    public static final String PROP_INITIAL_WAIT_SECONDS = "hazelcast.initial.wait.seconds";
     public static final String PROP_RESTART_ON_MAX_IDLE = "hazelcast.restart.on.max.idle";
     public static final String PROP_CONCURRENT_MAP_BLOCK_COUNT = "hazelcast.map.block.lockCount";
     public static final String PROP_BLOCKING_QUEUE_BLOCK_SIZE = "hazelcast.queue.block.size";
     public static final String PROP_REMOVE_DELAY_SECONDS = "hazelcast.map.remove.delay.seconds";
-    public static final String PROP_EXECUTOR_DEFAULT_THREAD_COUNT = "hazelcast.executor.default.thread.count";
     public static final String PROP_EXECUTOR_QUERY_THREAD_COUNT = "hazelcast.executor.query.thread.count";
     public static final String PROP_EXECUTOR_EVENT_THREAD_COUNT = "hazelcast.executor.event.thread.count";
     public static final String PROP_EXECUTOR_MIGRATION_THREAD_COUNT = "hazelcast.executor.migration.thread.count";
@@ -49,7 +48,7 @@ public class GroupProperties {
 
     public final GroupProperty MAX_NO_HEARTBEAT_SECONDS;
 
-    public final GroupProperty FIRST_MEMBER_WAIT_SECONDS;
+    public final GroupProperty INITIAL_WAIT_SECONDS;
 
     public final GroupProperty RESTART_ON_MAX_IDLE;
 
@@ -75,7 +74,7 @@ public class GroupProperties {
         SHUTDOWNHOOK_ENABLED = new GroupProperty(config, PROP_SHUTDOWNHOOK_ENABLED, "true");
         WAIT_SECONDS_BEFORE_JOIN = new GroupProperty(config, PROP_WAIT_SECONDS_BEFORE_JOIN, "5");
         MAX_NO_HEARTBEAT_SECONDS = new GroupProperty(config, PROP_MAX_NO_HEARTBEAT_SECONDS, "300");
-        FIRST_MEMBER_WAIT_SECONDS = new GroupProperty(config, PROP_FIRST_MEMBER_WAIT_SECONDS, "0");
+        INITIAL_WAIT_SECONDS = new GroupProperty(config, PROP_INITIAL_WAIT_SECONDS, "0");
         RESTART_ON_MAX_IDLE = new GroupProperty(config, PROP_RESTART_ON_MAX_IDLE, "false");
         CONCURRENT_MAP_BLOCK_COUNT = new GroupProperty(config, PROP_CONCURRENT_MAP_BLOCK_COUNT, "271");
         BLOCKING_QUEUE_BLOCK_SIZE = new GroupProperty(config, PROP_BLOCKING_QUEUE_BLOCK_SIZE, "1000");

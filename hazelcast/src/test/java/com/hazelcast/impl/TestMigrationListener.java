@@ -19,10 +19,12 @@ package com.hazelcast.impl;
 
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
+import org.junit.Ignore;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+@Ignore 
 class TestMigrationListener implements MigrationListener {
     final CountDownLatch latchStarted;
     final CountDownLatch latchCompleted;

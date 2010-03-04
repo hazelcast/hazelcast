@@ -61,27 +61,37 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <includes>
-                        <include>**/ExecutorConfigTest.java</include>
-                        <include>**/InterfacesTest.java</include>
-                        <include>**/TopicConfigTest.java</include>
-                        <include>**/MapConfigTest.java</include>
-                        <include>**/IterableNodeListTest.java</include>
-                        <include>**/HazelcastTest.java</include>
-                        <include>**/TransactionTest.java</include>
-                        <include>**/GeneralTest.java</include>
-                        <include>**/IOTest.java</include>
-                        <include>**/ParserTest.java</include>
-                        <include>**/PredicatesTest.java</include>
-                        <include>**/GroupConfigTest.java</include>
-                        <include>**/QueueConfigTest.java</include>
-                        <include>**/SortedHashMapTest.java</include>
-                        <include>**/ByteUtilTest.java</include>
-                    </includes>
+                    <excludes>
+                        <exclude>**/ClusterTest.java</exclude>
+                        <exclude>**/QueryTest.java</exclude>
+                        <exclude>**/MapStoreTest.java</exclude>
+                        <exclude>**/PerformanceTest.java</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
+
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>all</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <argLine>-Xmx512m -XX:MaxPermSize=128M</argLine>
+                            <excludes>
+                                <exclude>**/PerformanceTest.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
     <dependencies>
         <dependency>

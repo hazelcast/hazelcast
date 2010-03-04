@@ -28,7 +28,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.partition.Partition;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.Serializable;
@@ -95,7 +94,7 @@ public class ClusterTest {
     @Test
     public void testFirstNodeWait() throws Exception {
         final Config config = new XmlConfigBuilder().build();
-        config.setProperty(GroupProperties.PROP_FIRST_MEMBER_WAIT_SECONDS, "7");
+        config.setProperty(GroupProperties.PROP_INITIAL_WAIT_SECONDS, "7");
         final CountDownLatch latch = new CountDownLatch(2);
         for (int j = 0; j < 2; j++) {
             new Thread(new Runnable() {

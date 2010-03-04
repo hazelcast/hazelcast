@@ -66,7 +66,6 @@ public class SimpleMapTest {
             es.submit(new Runnable() {
                 public void run() {
                     IMap<String, byte[]> map = Hazelcast.getMap("default");
-                    long start = System.currentTimeMillis();
                     while (true) {
                         int key = (int) (Math.random() * ENTRY_COUNT);
                         int operation = ((int) (Math.random() * 100));
