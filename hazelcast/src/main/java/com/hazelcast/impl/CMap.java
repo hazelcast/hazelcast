@@ -120,7 +120,7 @@ public class CMap {
     public CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
         this.logger = concurrentMapManager.node.getLogger(CMap.class.getName());
-        this.BLOCK_COUNT = concurrentMapManager.BLOCK_COUNT;
+        this.BLOCK_COUNT = concurrentMapManager.PARTITION_COUNT;
         this.blocks = concurrentMapManager.blocks;
         this.node = concurrentMapManager.node;
         this.thisAddress = concurrentMapManager.thisAddress;
@@ -548,7 +548,7 @@ public class CMap {
                 }
             }
         }
-//        for (int i = 0; i < BLOCK_COUNT; i++) {
+//        for (int i = 0; i < PARTITION_COUNT; i++) {
 //            System.out.println(blocks[i]);
 //        }
 //        System.out.println(size + " is size.. backup.size " + backupSize() + " ownedEntryCount:" + ownedRecords.size());

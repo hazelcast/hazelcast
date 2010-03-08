@@ -28,7 +28,7 @@ public class GroupProperties {
     public static final String PROP_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.max.no.heartbeat.seconds";
     public static final String PROP_INITIAL_WAIT_SECONDS = "hazelcast.initial.wait.seconds";
     public static final String PROP_RESTART_ON_MAX_IDLE = "hazelcast.restart.on.max.idle";
-    public static final String PROP_CONCURRENT_MAP_BLOCK_COUNT = "hazelcast.map.block.lockCount";
+    public static final String PROP_CONCURRENT_MAP_PARTITION_COUNT = "hazelcast.map.partition.count";
     public static final String PROP_BLOCKING_QUEUE_BLOCK_SIZE = "hazelcast.queue.block.size";
     public static final String PROP_REMOVE_DELAY_SECONDS = "hazelcast.map.remove.delay.seconds";
     public static final String PROP_EXECUTOR_QUERY_THREAD_COUNT = "hazelcast.executor.query.thread.count";
@@ -52,7 +52,7 @@ public class GroupProperties {
 
     public final GroupProperty RESTART_ON_MAX_IDLE;
 
-    public final GroupProperty CONCURRENT_MAP_BLOCK_COUNT;
+    public final GroupProperty CONCURRENT_MAP_PARTITION_COUNT;
 
     public final GroupProperty BLOCKING_QUEUE_BLOCK_SIZE;
 
@@ -76,7 +76,7 @@ public class GroupProperties {
         MAX_NO_HEARTBEAT_SECONDS = new GroupProperty(config, PROP_MAX_NO_HEARTBEAT_SECONDS, "300");
         INITIAL_WAIT_SECONDS = new GroupProperty(config, PROP_INITIAL_WAIT_SECONDS, "0");
         RESTART_ON_MAX_IDLE = new GroupProperty(config, PROP_RESTART_ON_MAX_IDLE, "false");
-        CONCURRENT_MAP_BLOCK_COUNT = new GroupProperty(config, PROP_CONCURRENT_MAP_BLOCK_COUNT, "271");
+        CONCURRENT_MAP_PARTITION_COUNT = new GroupProperty(config, PROP_CONCURRENT_MAP_PARTITION_COUNT, "271");
         BLOCKING_QUEUE_BLOCK_SIZE = new GroupProperty(config, PROP_BLOCKING_QUEUE_BLOCK_SIZE, "1000");
         REMOVE_DELAY_SECONDS = new GroupProperty(config, PROP_REMOVE_DELAY_SECONDS, "5");
         EXECUTOR_QUERY_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_QUERY_THREAD_COUNT, "16");

@@ -63,7 +63,7 @@ public class PartitionManager implements Runnable, PartitionService {
     public PartitionManager(ConcurrentMapManager concurrentMapManager) {
         this.concurrentMapManager = concurrentMapManager;
         this.node = concurrentMapManager.node;
-        this.BLOCK_COUNT = concurrentMapManager.BLOCK_COUNT;
+        this.BLOCK_COUNT = concurrentMapManager.PARTITION_COUNT;
         this.blocks = concurrentMapManager.blocks;
         this.thisAddress = concurrentMapManager.thisAddress;
     }

@@ -45,7 +45,7 @@ import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public final class ConcurrentMapManager extends BaseManager {
-    final int BLOCK_COUNT;
+    final int PARTITION_COUNT;
     final long GLOBAL_REMOVE_DELAY_MILLIS;
     final boolean LOG_STATE;
     long lastLogStateTime = System.currentTimeMillis();
@@ -60,16 +60,16 @@ public final class ConcurrentMapManager extends BaseManager {
 
     ConcurrentMapManager(Node node) {
         super(node);
-        BLOCK_COUNT = node.groupProperties.CONCURRENT_MAP_BLOCK_COUNT.getInteger();
+        PARTITION_COUNT = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         GLOBAL_REMOVE_DELAY_MILLIS = node.groupProperties.REMOVE_DELAY_SECONDS.getLong() * 1000L;
         LOG_STATE = node.groupProperties.LOG_STATE.getBoolean();
-        blocks = new Block[BLOCK_COUNT];
+        blocks = new Block[PARTITION_COUNT];
         maps = new ConcurrentHashMap<String, CMap>(10);
         mapLocallyOwnedMaps = new ConcurrentHashMap<String, LocallyOwnedMap>(10);
         mapCaches = new ConcurrentHashMap<String, MapNearCache>(10);
-        orderedExecutionTasks = new OrderedExecutionTask[BLOCK_COUNT];
+        orderedExecutionTasks = new OrderedExecutionTask[PARTITION_COUNT];
         partitionManager = new PartitionManager(this);
-        for (int i = 0; i < BLOCK_COUNT; i++) {
+        for (int i = 0; i < PARTITION_COUNT; i++) {
             orderedExecutionTasks[i] = new OrderedExecutionTask();
         }
         node.clusterService.registerPeriodicRunnable(new Runnable() {
@@ -140,7 +140,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     public int hashBlocks() {
         int hash = 1;
-        for (int i = 0; i < BLOCK_COUNT; i++) {
+        for (int i = 0; i < PARTITION_COUNT; i++) {
             Block block = blocks[i];
             hash = (hash * 31) + ((block == null) ? 0 : block.customHash());
         }
@@ -1154,7 +1154,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     public int getBlockId(Data key) {
         int hash = key.hashCode();
-        return Math.abs(hash) % BLOCK_COUNT;
+        return Math.abs(hash) % PARTITION_COUNT;
     }
 
     public long newRecordId() {
@@ -1231,7 +1231,7 @@ public final class ConcurrentMapManager extends BaseManager {
 
     String printBlocks() {
         StringBuilder sb = new StringBuilder("======== BLOCKS =========");
-        for (int i = 0; i < BLOCK_COUNT; i++) {
+        for (int i = 0; i < PARTITION_COUNT; i++) {
             sb.append("\n\t");
             sb.append(blocks[i]);
         }
