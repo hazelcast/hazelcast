@@ -1356,7 +1356,7 @@ public final class ConcurrentMapManager extends BaseManager {
     class AddOperationHandler extends MTargetAwareOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            request.response = cmap.add(request);
+            request.response = cmap.add(request, false);
         }
     }
 

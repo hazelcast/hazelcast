@@ -449,7 +449,7 @@ public class CMap {
                 rec.setVersion(req.version);
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_ADD) {
-            add(req);
+            add(req, true);
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE_MULTI) {
             Record record = getRecord(req.key);
             if (record != null) {
@@ -648,7 +648,7 @@ public class CMap {
         return returnValue;
     }
 
-    public boolean add(Request req) {
+    public boolean add(Request req, boolean backup) {
         Record record = getRecord(req.key);
         if (record == null) {
             record = createNewRecord(req.key, null);
@@ -658,10 +658,12 @@ public class CMap {
             }
         }
         record.setActive(true);
-        node.queryService.updateIndex(getName(), null, null, record, Integer.MIN_VALUE);
         record.setVersion(record.getVersion() + 1);
         record.incrementCopyCount();
-        concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record);
+        if (!backup) {
+            node.queryService.updateIndex(getName(), null, null, record, Integer.MIN_VALUE);
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record);
+        }
         return true;
     }
 
