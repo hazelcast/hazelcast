@@ -139,6 +139,12 @@ public class MapConfig {
     }
 
     /**
+     * Maximum number of seconds for each entry to stay in the map. Entries that are
+     * older than timeToLiveSeconds will get automatically evicted from the map.
+     * Updates on the entry don't change the eviction time.
+     * Any integer between 0 and Integer.MAX_VALUE.
+     * 0 means infinite. Default is 0.
+     *
      * @param timeToLiveSeconds the timeToLiveSeconds to set
      */
     public MapConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
@@ -154,6 +160,13 @@ public class MapConfig {
     }
 
     /**
+     * Maximum number of seconds for each entry to stay idle in the map. Entries that are
+     * idle(not touched) for more than maxIdleSeconds will get
+     * automatically evicted from the map. Entry is touched if get, put or
+     * containsKey is called.
+     * Any integer between 0 and Integer.MAX_VALUE.
+     * 0 means infinite. Default is 0.
+     *
      * @param maxIdleSeconds the maxIdleSeconds to set
      */
     public MapConfig setMaxIdleSeconds(int maxIdleSeconds) {

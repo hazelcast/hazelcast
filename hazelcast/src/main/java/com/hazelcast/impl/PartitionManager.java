@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.concurrentmap.InitialState;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
@@ -45,11 +46,11 @@ import static com.hazelcast.nio.IOUtil.toData;
 
 public class PartitionManager implements Runnable, PartitionService {
 
-    final Logger logger = Logger.getLogger(PartitionManager.class.getName());
+    final ILogger logger;
 
     final ConcurrentMapManager concurrentMapManager;
     final Node node;
-    final int BLOCK_COUNT;
+    final int PARTITION_COUNT;
     final Block[] blocks;
     final Address thisAddress;
     final List<Block> lsBlocksToMigrate = new ArrayList<Block>(100);
@@ -58,12 +59,17 @@ public class PartitionManager implements Runnable, PartitionService {
 
     long nextMigrationMillis = System.currentTimeMillis() + MIGRATION_INTERVAL_MILLIS;
 
+    long lastCleanup = System.currentTimeMillis();
+
+    boolean dirty = false;
+
     final List<MigrationListener> lsMigrationListeners = new LinkedList<MigrationListener>();
 
     public PartitionManager(ConcurrentMapManager concurrentMapManager) {
+        this.logger = concurrentMapManager.node.getLogger(PartitionManager.class.getName());
         this.concurrentMapManager = concurrentMapManager;
         this.node = concurrentMapManager.node;
-        this.BLOCK_COUNT = concurrentMapManager.PARTITION_COUNT;
+        this.PARTITION_COUNT = concurrentMapManager.PARTITION_COUNT;
         this.blocks = concurrentMapManager.blocks;
         this.thisAddress = concurrentMapManager.thisAddress;
     }
@@ -86,8 +92,12 @@ public class PartitionManager implements Runnable, PartitionService {
 
     public void run() {
         long now = System.currentTimeMillis();
-        if (now > nextMigrationMillis) {
+        if (dirty && (now - lastCleanup) > 60000) {
+            logger.log(Level.FINEST, "PM is cleaning up");
             removeUnknownRecords();
+            lastCleanup = now;
+        }
+        if (now > nextMigrationMillis) {
             nextMigrationMillis = now + MIGRATION_INTERVAL_MILLIS;
             if (!concurrentMapManager.isMaster()) return;
             if (concurrentMapManager.getMembers().size() < 2) return;
@@ -100,7 +110,7 @@ public class PartitionManager implements Runnable, PartitionService {
         concurrentMapManager.enqueueAndReturn(new Processable() {
             public void process() {
                 Set<Partition> partitions = new TreeSet<Partition>();
-                for (int i = 0; i < BLOCK_COUNT; i++) {
+                for (int i = 0; i < PARTITION_COUNT; i++) {
                     Block block = blocks[i];
                     if (block == null) {
                         block = concurrentMapManager.getOrCreateBlock(i);
@@ -221,7 +231,7 @@ public class PartitionManager implements Runnable, PartitionService {
                 return;
             }
             List<Block> lsBlocksToRedistribute = new ArrayList<Block>();
-            int aveBlockOwnCount = BLOCK_COUNT / (addressBlocks.size());
+            int aveBlockOwnCount = PARTITION_COUNT / (addressBlocks.size());
             for (Block blockReal : blocks) {
                 if (blockReal.getOwner() == null) {
                     lsBlocksToRedistribute.add(new Block(blockReal));
@@ -292,7 +302,7 @@ public class PartitionManager implements Runnable, PartitionService {
 
     void initiateMigration() {
         boolean hasMigrating = false;
-        for (int i = 0; i < BLOCK_COUNT; i++) {
+        for (int i = 0; i < PARTITION_COUNT; i++) {
             Block block = blocks[i];
             if (block == null) {
                 block = concurrentMapManager.getOrCreateBlock(i);
@@ -323,7 +333,7 @@ public class PartitionManager implements Runnable, PartitionService {
                     }
                 }
                 if (nonSuperMember != null) {
-                    for (int i = 0; i < BLOCK_COUNT; i++) {
+                    for (int i = 0; i < PARTITION_COUNT; i++) {
                         Block block = blocks[i];
                         if (block == null) {
                             block = concurrentMapManager.getOrCreateBlock(i);
@@ -335,7 +345,7 @@ public class PartitionManager implements Runnable, PartitionService {
                 }
             }
             // make sue that all blocks are actually created
-            for (int i = 0; i < BLOCK_COUNT; i++) {
+            for (int i = 0; i < PARTITION_COUNT; i++) {
                 Block block = blocks[i];
                 if (block == null) {
                     block = concurrentMapManager.getOrCreateBlock(i);
@@ -368,7 +378,7 @@ public class PartitionManager implements Runnable, PartitionService {
         if (blockInfo != null && blockInfo.isMigrating() && blockInfo.getMigrationAddress().equals(blockInfo.getOwner())) {
             blockInfo.setMigrationAddress(null);
         }
-        for (int i = 0; i < BLOCK_COUNT; i++) {
+        for (int i = 0; i < PARTITION_COUNT; i++) {
             Block block = blocks[i];
             if (block == null) {
                 block = concurrentMapManager.getOrCreateBlock(i);
@@ -400,7 +410,7 @@ public class PartitionManager implements Runnable, PartitionService {
 
     private void quickBlockRearrangement() {
         //create all blocks
-        for (int i = 0; i < BLOCK_COUNT; i++) {
+        for (int i = 0; i < PARTITION_COUNT; i++) {
             Block block = blocks[i];
             if (block == null) {
                 block = concurrentMapManager.getOrCreateBlock(i);
@@ -434,7 +444,7 @@ public class PartitionManager implements Runnable, PartitionService {
             int count = (countInt == null) ? 0 : countInt;
             addressBlocks.put(blockReal.getOwner(), ++count);
         }
-        int aveBlockOwnCount = BLOCK_COUNT / (addressBlocks.size());
+        int aveBlockOwnCount = PARTITION_COUNT / (addressBlocks.size());
         Set<Address> allAddress = addressBlocks.keySet();
         for (Address address : allAddress) {
             Integer countInt = addressBlocks.get(address);
@@ -450,7 +460,6 @@ public class PartitionManager implements Runnable, PartitionService {
     public void onMembershipChange(boolean add) {
         lsBlocksToMigrate.clear();
         backupIfNextOrPreviousChanged(add);
-        removeUnknownRecords();
         if (concurrentMapManager.isMaster()) {
             sendBlocks(null);
         }
@@ -459,18 +468,24 @@ public class PartitionManager implements Runnable, PartitionService {
 
     private void removeUnknownRecords() {
         Collection<CMap> cmaps = concurrentMapManager.maps.values();
+        Map<Address, Integer> mapMemberDistances = new HashMap<Address,Integer>();
         for (CMap cmap : cmaps) {
             Collection<Record> records = cmap.mapRecords.values();
             for (Record record : records) {
-                if (record != null) {
-                    if (record.isActive()) {
-                        Block block = blocks[record.getBlockId()];
-                        Address owner = (block.isMigrating()) ? block.getMigrationAddress() : block.getOwner();
-                        if (!thisAddress.equals(owner)) {
-                            int distance = concurrentMapManager.getDistance(owner, thisAddress);
-                            if (distance > cmap.getBackupCount()) {
-                                cmap.markAsRemoved(record);
-                            }
+                if (record != null && record.isActive()) {
+                    Block block = blocks[record.getBlockId()];
+                    Address owner = (block.isMigrating()) ? block.getMigrationAddress() : block.getOwner();
+                    if (owner != null && !thisAddress.equals(owner)) {
+                        int distance;
+                        Integer d = mapMemberDistances.get(owner);
+                        if (d == null) {
+                            distance = concurrentMapManager.getDistance(owner, thisAddress);
+                            mapMemberDistances.put(owner, distance);
+                        } else {
+                            distance = d;
+                        }
+                        if (distance > cmap.getBackupCount()) {
+                            cmap.markAsRemoved(record);
                         }
                     }
                 }
@@ -687,6 +702,7 @@ public class PartitionManager implements Runnable, PartitionService {
     }
 
     void completeMigration(int blockId) {
+        dirty = true;
         Block blockReal = blocks[blockId];
         if (blockReal != null && blockReal.isMigrating()) {
             fireMigrationEvent(false, new Block(blockReal));

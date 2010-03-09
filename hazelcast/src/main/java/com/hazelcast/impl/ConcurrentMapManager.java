@@ -1166,8 +1166,8 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     void evictAsync(final CMap cmap, final String name, final Data key) {
-        executeLocally(new Runnable() {
-            public void run() {
+        executeLocally(new FallThroughRunnable() {
+            public void doRun() {
                 try {
                     MEvict mEvict = new MEvict();
                     mEvict.evict(name, key);
