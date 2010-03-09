@@ -475,18 +475,6 @@ public class CMap {
         }
     }
 
-    public int backupSize() {
-        int size = 0;
-        Collection<Record> records = mapRecords.values();
-        for (Record record : records) {
-            Block block = blocks[record.getBlockId()];
-            if (!thisAddress.equals(block.getOwner())) {
-                size += record.valueCount();
-            }
-        }
-        return size;
-    }
-
     public LocalMapStatsImpl getLocalMapStats() {
         long now = System.currentTimeMillis();
         int ownedEntryCount = 0;
@@ -500,6 +488,7 @@ public class CMap {
         ClusterImpl clusterImpl = node.getClusterImpl();
         LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
         Collection<Record> records = mapRecords.values();
+        Map<Address, Integer> mapMemberDistances = new HashMap<Address, Integer>();
         for (Record record : records) {
             if (record.isActive() && record.isValid(now)) {
                 Block block = blocks[record.getBlockId()];
@@ -514,8 +503,21 @@ public class CMap {
                         lockWaitCount += record.getScheduledActionCount();
                     }
                 } else {
-                    backupEntryCount += record.valueCount();
-                    backupEntryMemoryCost += record.getCost();
+                    Address owner = (block.isMigrating()) ? block.getMigrationAddress() : block.getOwner();
+                    int distance;
+                    Integer d = mapMemberDistances.get(owner);
+                    if (d == null) {
+                        distance = concurrentMapManager.getDistance(owner, thisAddress);
+                        mapMemberDistances.put(owner, distance);
+                    } else {
+                        distance = d;
+                    }
+                    if (distance > getBackupCount()) {
+                        markAsRemoved(record);
+                    } else {
+                        backupEntryCount += record.valueCount();
+                        backupEntryMemoryCost += record.getCost();
+                    }
                 }
             }
         }
@@ -548,11 +550,6 @@ public class CMap {
                 }
             }
         }
-//        for (int i = 0; i < PARTITION_COUNT; i++) {
-//            System.out.println(blocks[i]);
-//        }
-//        System.out.println(size + " is size.. backup.size " + backupSize() + " ownedEntryCount:" + ownedRecords.size());
-//        System.out.println(size + " map size " + mapRecords.size() +  " @ " + node.getThisAddress());
         return size;
     }
 
@@ -1574,7 +1571,7 @@ public class CMap {
 
     @Override
     public String toString() {
-        return "CMap [" + getName() + "] size=" + size() + ", backup-size=" + backupSize();
+        return "CMap [" + getName() + "] size=" + size();
     }
 
     /**

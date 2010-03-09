@@ -229,7 +229,7 @@ public class ClusterTest {
         assertEquals("value2", h.getMap("default").get("1"));
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testBackupCount() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
