@@ -247,9 +247,6 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
     }
 
     public Packet obtainReadable() {
-        final Packet packet = node.getPacketPool().obtain();
-        packet.reset();
-        packet.local = false;
-        return packet;
+        return node.getPacketPool().obtain();
     }
 }

@@ -23,6 +23,7 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Collection;
@@ -36,6 +37,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class MapStoreTest {
+
+    @BeforeClass
+    public static void init() throws Exception {
+        Hazelcast.shutdownAll();
+    }
 
     @After
     public void cleanup() throws Exception {

@@ -23,6 +23,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.Serializable;
@@ -35,6 +36,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class QueryTest {
+
+    @BeforeClass
+    public static void init() throws Exception {
+        Hazelcast.shutdownAll();
+    }
 
     @After
     public void cleanUp() {

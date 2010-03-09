@@ -156,12 +156,15 @@ public class Node {
         packetPool = new NoneStrictObjectPool<Packet>(2000) {
             @Override
             public void onRelease(Packet packet) {
-                packet.reset();
+                if (packet.released) {
+                    throw new RuntimeException("Packet is already released!");
+                }
                 packet.released = true;
             }
 
             @Override
             public void onObtain(Packet packet) {
+                packet.reset();
                 packet.released = false;
             }
 

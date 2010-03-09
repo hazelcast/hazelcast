@@ -17,6 +17,7 @@
 
 package com.hazelcast.core;
 
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -30,6 +31,12 @@ import static junit.framework.Assert.fail;
 import static org.junit.Assert.*;
 
 public class HazelcastTest {
+
+    @BeforeClass
+    public static void init() throws Exception {
+        Hazelcast.shutdownAll();
+    }
+
     @Test
     @Ignore
     public void testGetInstances() {

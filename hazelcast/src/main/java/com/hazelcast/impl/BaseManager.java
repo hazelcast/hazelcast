@@ -178,19 +178,19 @@ public abstract class BaseManager {
 
     abstract class TargetAwareOperationHandler extends MigrationAwareOperationHandler {
 
-        abstract boolean isRightRemoteTarget(Packet packet);
+        abstract boolean isRightRemoteTarget(Request request);
 
         @Override
         public void process(Packet packet) {
             Request remoteReq = Request.copy(packet);
-            remoteReq.local = false;
-            if (isMigrating(remoteReq) || !isRightRemoteTarget(packet)) {
-                packet.responseType = RESPONSE_REDO;
-                sendResponse(packet);
+            if (isMigrating(remoteReq) || !isRightRemoteTarget(remoteReq)) {
+                remoteReq.clearForResponse();
+                remoteReq.response = OBJECT_REDO;
+                returnResponse(remoteReq);
             } else {
                 handle(remoteReq);
-                releasePacket(packet);
             }
+            releasePacket(packet);            
         }
     }
 
@@ -198,22 +198,20 @@ public abstract class BaseManager {
 
         public void processSimple(Packet packet) {
             Request request = Request.copy(packet);
-            request.local = false;
             handle(request);
             releasePacket(packet);
         }
 
         public void processMigrationAware(Packet packet) {
             Request remoteReq = Request.copy(packet);
-            remoteReq.local = false;
             if (isMigrating(remoteReq)) {
-                packet.responseType = RESPONSE_REDO;
-                packet.lockAddress = null;
-                sendResponse(packet);
+                remoteReq.clearForResponse();
+                remoteReq.response = OBJECT_REDO;
+                returnResponse(remoteReq);
             } else {
                 handle(remoteReq);
-                releasePacket(packet);
             }
+            releasePacket(packet);            
         }
     }
 
@@ -895,7 +893,6 @@ public abstract class BaseManager {
                     }
                 } else {
                     final Packet packet = obtainPacket();
-                    packet.reset();
                     packet.set(name, ClusterOperation.EVENT, key, (includeValue) ? value : null);
                     packet.longValue = eventType;
                     final boolean sent = send(packet, address);
@@ -1072,7 +1069,6 @@ public abstract class BaseManager {
     }
 
     protected boolean sendResponse(final Packet packet) {
-        packet.local = false;
         packet.operation = ClusterOperation.RESPONSE;
         if (packet.responseType == RESPONSE_NONE) {
             packet.responseType = RESPONSE_SUCCESS;
@@ -1092,7 +1088,6 @@ public abstract class BaseManager {
     }
 
     protected boolean sendResponseFailure(final Packet packet) {
-        packet.local = false;
         packet.operation = ClusterOperation.RESPONSE;
         packet.responseType = RESPONSE_FAILURE;
         final boolean sent = send(packet, packet.conn);

@@ -28,6 +28,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.partition.Partition;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.Serializable;
@@ -44,6 +45,11 @@ import static org.junit.Assert.*;
  * -Xms512m -Xmx512m
  */
 public class ClusterTest {
+
+    @BeforeClass
+    public static void init() throws Exception {
+        Hazelcast.shutdownAll();
+    }
 
     @After
     public void cleanup() throws Exception {

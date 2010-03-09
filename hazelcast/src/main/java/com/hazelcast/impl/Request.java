@@ -213,7 +213,6 @@ public class Request {
     }
 
     public void setPacket(Packet packet) {
-        packet.local = false;
         packet.operation = operation;
         packet.name = name;
         packet.key = key;

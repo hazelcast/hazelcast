@@ -29,6 +29,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 public final class ClusterService implements Runnable, Constants {
+
+    private static final int PACKET_BULK_SIZE = 64;
+
+    private static final int PROCESSABLE_BULK_SIZE = 64;
+
     private final ILogger logger;
 
     private final long PERIODIC_CHECK_INTERVAL_MILLIS = TimeUnit.SECONDS.toMillis(1);
@@ -38,24 +43,22 @@ public final class ClusterService implements Runnable, Constants {
     private final boolean RESTART_ON_MAX_IDLE;
 
     private final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<Packet>();
+
     private final Queue<Processable> processableQueue = new ConcurrentLinkedQueue<Processable>();
 
-    private volatile boolean running = true;
-
     private final Object notEmptyLock = new Object();
-
-    private static final int PACKET_BULK_SIZE = 64;
-    private static final int PROCESSABLE_BULK_SIZE = 64;
-
-    private long lastPeriodicCheck = 0;
-
-    private long lastCheck = 0;
 
     private final PacketProcessor[] packetProcessors = new PacketProcessor[ClusterOperation.OPERATION_COUNT];
 
     private final Runnable[] periodicRunnables = new Runnable[4];
 
     private final Node node;
+
+    private long lastPeriodicCheck = 0;
+
+    private long lastCheck = 0;
+
+    private boolean running = true;
 
     public ClusterService(Node node) {
         this.node = node;

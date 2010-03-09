@@ -59,8 +59,6 @@ public final class Packet {
 
     public long ttl = -1;
 
-    public boolean local = true;
-
     public int currentCallCount = 0;
 
     public int blockId = -1;
@@ -77,7 +75,7 @@ public final class Packet {
 
     public int totalSize = 0;
 
-    public boolean released = false;
+    public volatile boolean released = false;
 
     boolean sizeRead = false;
 
@@ -265,7 +263,6 @@ public final class Packet {
         ttl = -1;
         txnId = -1;
         responseType = Constants.ResponseTypes.RESPONSE_NONE;
-        local = true;
         currentCallCount = 0;
         blockId = -1;
         longValue = Long.MIN_VALUE;
@@ -305,7 +302,7 @@ public final class Packet {
     public String toString() {
         int keySize = (key == null) ? 0 : key.size();
         int valueSize = (value == null) ? 0 : value.size();
-        return "Packet [" + operation + "] name=" + name + ",local=" + local + ",blockId="
+        return "Packet [" + operation + "] name=" + name + ",blockId="
                 + blockId + ", keySize=" + keySize + ", valueSize=" + valueSize
                 + " client=" + client;
     }

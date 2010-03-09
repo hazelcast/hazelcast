@@ -85,9 +85,9 @@ public class PartitionManager implements Runnable, PartitionService {
     }
 
     public void run() {
-        removeUnknownRecords();
         long now = System.currentTimeMillis();
         if (now > nextMigrationMillis) {
+            removeUnknownRecords();
             nextMigrationMillis = now + MIGRATION_INTERVAL_MILLIS;
             if (!concurrentMapManager.isMaster()) return;
             if (concurrentMapManager.getMembers().size() < 2) return;

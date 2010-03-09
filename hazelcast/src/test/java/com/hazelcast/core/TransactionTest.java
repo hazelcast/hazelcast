@@ -19,6 +19,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.util.ResponseQueueFactory;
 import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -34,6 +35,12 @@ import java.util.concurrent.*;
 import static org.junit.Assert.*;
 
 public class TransactionTest {
+
+    @BeforeClass
+    public static void init() throws Exception {
+        Hazelcast.shutdownAll();
+    }
+
     @Test
     public void testMapPutSimple() {
         TransactionalMap txnMap = newTransactionalMapProxy("testMapPutSimple");

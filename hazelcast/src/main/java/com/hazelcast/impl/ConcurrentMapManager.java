@@ -113,7 +113,7 @@ public final class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_ITERATE_KEYS, new QueryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_ITERATE_KEYS_ALL, new QueryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_MIGRATE_RECORD, new MigrationOperationHandler());
-        registerPacketProcessor(CONCURRENT_MAP_REMOVE_MULTI, new RemoveMultiOperationHander());
+        registerPacketProcessor(CONCURRENT_MAP_REMOVE_MULTI, new RemoveMultiOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_ADD_TO_LIST, new AddOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_ADD_TO_SET, new AddOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_SIZE, new SizeOperationHandler());
@@ -1209,7 +1209,6 @@ public final class ConcurrentMapManager extends BaseManager {
 
     void checkServiceThread() {
         if (Thread.currentThread() != node.serviceThread) {
-            new Error("Only ServiceThread can access this method1. " + Thread.currentThread()).printStackTrace();
             throw new Error("Only ServiceThread can access this method. " + Thread.currentThread());
         }
     }
@@ -1227,16 +1226,6 @@ public final class ConcurrentMapManager extends BaseManager {
 
     boolean sendBlockInfo(Block block, Address address) {
         return send("mapblock", CONCURRENT_MAP_BLOCK_INFO, block, address);
-    }
-
-    String printBlocks() {
-        StringBuilder sb = new StringBuilder("======== BLOCKS =========");
-        for (int i = 0; i < PARTITION_COUNT; i++) {
-            sb.append("\n\t");
-            sb.append(blocks[i]);
-        }
-        sb.append("\n==============================");
-        return sb.toString();
     }
 
     class BlockMigrationCheckHandler extends AbstractOperationHandler {
@@ -1272,14 +1261,6 @@ public final class ConcurrentMapManager extends BaseManager {
             }
             releasePacket(packet);
         }
-    }
-
-    boolean rightRemoteTarget(Packet packet) {
-        boolean right = thisAddress.equals(getKeyOwner(packet.key));
-        if (!right) {
-            sendRedoResponse(packet);
-        }
-        return right;
     }
 
     class SizeOperationHandler extends MigrationAwareOperationHandler {
@@ -1320,8 +1301,8 @@ public final class ConcurrentMapManager extends BaseManager {
     }
 
     abstract class MTargetAwareOperationHandler extends TargetAwareOperationHandler {
-        boolean isRightRemoteTarget(Packet packet) {
-            return rightRemoteTarget(packet);
+        boolean isRightRemoteTarget(Request request) {
+            return thisAddress.equals(getKeyOwner(request.key));
         } 
     }
 
@@ -1339,7 +1320,7 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class RemoveMultiOperationHander extends SchedulableOperationHandler {
+    class RemoveMultiOperationHandler extends SchedulableOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.removeMulti(request);
@@ -1803,27 +1784,6 @@ public final class ConcurrentMapManager extends BaseManager {
             request.longValue = pairs.size();
             request.response = dataEntries;
         }
-    }
-
-    abstract class AsyncMigrationAwareOperationHandler extends MigrationAwareOperationHandler {
-
-        abstract void handleAsync(Request request);
-
-        abstract boolean shouldExecuteAsync(Request request);
-
-        @Override
-        public void handle(Request request) {
-            if (shouldExecuteAsync(request)) {
-                handleAsync(request);
-            } else {
-                super.handle(request);
-            }
-        }
-    }
-
-    final void doContains(Request request) {
-        CMap cmap = getOrCreateMap(request.name);
-        request.response = cmap.contains(request);
     }
 
     Record recordExist(Request req) {

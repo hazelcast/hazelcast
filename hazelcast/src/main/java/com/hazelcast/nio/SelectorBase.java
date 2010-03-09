@@ -42,11 +42,11 @@ public abstract class SelectorBase implements Runnable {
 
     protected final Node node;
 
-    protected volatile boolean live = true;
+    protected final AtomicInteger size = new AtomicInteger();
 
     private final int waitTime;
 
-    protected final AtomicInteger size = new AtomicInteger();
+    protected boolean live = true;
 
     public SelectorBase(Node node, int waitTime) {
         this.node = node;

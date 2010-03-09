@@ -35,8 +35,6 @@ public class QueryService implements Runnable {
 
     private final Logger logger = Logger.getLogger(QueryService.class.getName());
 
-    private volatile boolean running = true;
-
     private final Node node;
 
     private final BlockingQueue<Runnable> queryQ = new UnboundedBlockingQueue<Runnable>();
@@ -44,6 +42,8 @@ public class QueryService implements Runnable {
     private final Map<String, IndexRegion> regions = new HashMap<String, IndexRegion>(10);
 
     private long lastStatePublishTime = 0;
+
+    private boolean running = true;
 
     public QueryService(Node node) {
         this.node = node;

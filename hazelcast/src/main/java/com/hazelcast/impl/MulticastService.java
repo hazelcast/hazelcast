@@ -32,15 +32,15 @@ import java.util.concurrent.CountDownLatch;
 
 public class MulticastService implements Runnable {
 
+    private final BlockingQueue<Runnable> queue = new UnboundedBlockingQueue<Runnable>();
     private final MulticastSocket multicastSocket;
     private final DatagramPacket datagramPacketSend;
     private final DatagramPacket datagramPacketReceive;
     private final Object sendLock = new Object();
     private final Object receiveLock = new Object();
-    private int bufferSize = 1024;
-    private volatile boolean running = true;
     final Node node;
-    private final BlockingQueue<Runnable> queue = new UnboundedBlockingQueue<Runnable>();
+    private int bufferSize = 1024;
+    private boolean running = true;
 
     public MulticastService(Node node, MulticastSocket multicastSocket) throws Exception {
         this.node = node;

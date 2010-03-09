@@ -76,7 +76,7 @@ public class LongRunningTest {
                 }
             }
             try {
-                int nextSeconds = random(60, 160);
+                int nextSeconds = random(60, 260);
                 log("Next Action after " + nextSeconds + " seconds.");
                 log("members:" + nodes.size() + ", starts: " + starts + ", stops:" + stops + ", restart:" + restarts);
                 Thread.sleep(nextSeconds * 1000);

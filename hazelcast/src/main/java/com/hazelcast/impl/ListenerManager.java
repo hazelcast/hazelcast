@@ -95,8 +95,8 @@ public class ListenerManager extends BaseManager {
     }
 
     class AddRemoveListenerOperationHandler extends TargetAwareOperationHandler {
-        boolean isRightRemoteTarget(Packet packet) {
-            return (null == packet.key) || thisAddress.equals(getKeyOwner(packet.key));
+        boolean isRightRemoteTarget(Request request) {
+            return (null == request.key) || thisAddress.equals(getKeyOwner(request.key));
         }
 
         void doOperation(Request request) {
