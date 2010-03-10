@@ -136,7 +136,7 @@ public class ClusterTest {
         map.put("1", "value");
     }
 
-    @Test(timeout = 20000)
+    @Test(timeout = 40000)
     public void testSuperClientPartitionOwnership() {
         Config config = new XmlConfigBuilder().build();
         config.setSuperClient(true);

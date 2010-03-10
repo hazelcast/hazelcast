@@ -1154,7 +1154,11 @@ public final class ConcurrentMapManager extends BaseManager {
 
     public int getBlockId(Data key) {
         int hash = key.hashCode();
-        return Math.abs(hash) % PARTITION_COUNT;
+        int result =  Math.abs(hash) % PARTITION_COUNT;
+        if (result < 0) {
+            result = 0;
+        }
+        return result;
     }
 
     public long newRecordId() {

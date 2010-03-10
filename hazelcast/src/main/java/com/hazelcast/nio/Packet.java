@@ -39,9 +39,9 @@ public final class Packet {
 
     public ByteBuffer bbHeader = ByteBuffer.allocate(500);
 
-    public Data key = new Data();
+    public Data key = null;
 
-    public Data value = new Data();
+    public Data value = null;
 
     public long[] indexes = null;
 
