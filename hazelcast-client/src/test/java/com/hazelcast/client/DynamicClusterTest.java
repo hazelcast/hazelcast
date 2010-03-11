@@ -110,9 +110,9 @@ public class DynamicClusterTest {
         map.put("hello", "world");
         map.put("hello", "new world");
         map.remove("hello");
-        assertTrue(entryAddLatch.await(10, TimeUnit.MILLISECONDS));
-        assertTrue(entryUpdatedLatch.await(10, TimeUnit.MILLISECONDS));
-        assertTrue(entryRemovedLatch.await(10, TimeUnit.MILLISECONDS));
+        assertTrue(entryAddLatch.await(10, TimeUnit.SECONDS));
+        assertTrue(entryUpdatedLatch.await(10, TimeUnit.SECONDS));
+        assertTrue(entryRemovedLatch.await(10, TimeUnit.SECONDS));
     }
 
     @Test

@@ -284,9 +284,9 @@ public class HazelcastClientTest {
         map.put("hello", "new world");
         map.remove("hello");
         try {
-            assertTrue(latchAdded.await(5000, TimeUnit.MILLISECONDS));
-            assertTrue(latchUpdated.await(10, TimeUnit.MILLISECONDS));
-            assertTrue(latchRemoved.await(10, TimeUnit.MILLISECONDS));
+            assertTrue(latchAdded.await(5, TimeUnit.SECONDS));
+            assertTrue(latchUpdated.await(10, TimeUnit.SECONDS));
+            assertTrue(latchRemoved.await(10, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
             assertFalse(e.getMessage(), true);

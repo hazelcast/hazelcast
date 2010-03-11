@@ -112,8 +112,8 @@ public class HazelcastClientMultiMapTest {
             Integer o = it.next();
             map.get(o).countDown();
         }
-        assertTrue(map.get(1).await(10, TimeUnit.MILLISECONDS));
-        assertTrue(map.get(2).await(10, TimeUnit.MILLISECONDS));
+        assertTrue(map.get(1).await(10, TimeUnit.SECONDS));
+        assertTrue(map.get(2).await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -132,8 +132,8 @@ public class HazelcastClientMultiMapTest {
             Object o = it.next();
             map.get((Integer) o).countDown();
         }
-        assertTrue(map.get(1).await(10, TimeUnit.MILLISECONDS));
-        assertTrue(map.get(2).await(10, TimeUnit.MILLISECONDS));
+        assertTrue(map.get(1).await(10, TimeUnit.SECONDS));
+        assertTrue(map.get(2).await(10, TimeUnit.SECONDS));
     }
 
     @Test

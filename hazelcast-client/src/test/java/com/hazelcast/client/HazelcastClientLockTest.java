@@ -54,7 +54,7 @@ public class HazelcastClientLockTest {
         assertEquals(1, latch.getCount());
         lock.unlock();
         Thread.sleep(100);
-        assertTrue(latch.await(100, TimeUnit.MILLISECONDS));
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -69,7 +69,7 @@ public class HazelcastClientLockTest {
             public void run() {
                 assertFalse(lock.tryLock());
                 try {
-                    assertTrue(lock.tryLock(200, TimeUnit.MILLISECONDS));
+                    assertTrue(lock.tryLock(10, TimeUnit.SECONDS));
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -81,7 +81,7 @@ public class HazelcastClientLockTest {
         lock.unlock();
         lock.unlock();
         Thread.sleep(100);
-        assertTrue(latch.await(100, TimeUnit.MILLISECONDS));
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @AfterClass

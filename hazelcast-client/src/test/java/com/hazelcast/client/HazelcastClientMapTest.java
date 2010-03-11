@@ -73,7 +73,7 @@ public class HazelcastClientMapTest {
         Thread.sleep(10);
         assertEquals(1, latch.getCount());
         map.unlock("a");
-        assertTrue(latch.await(2000, TimeUnit.MILLISECONDS));
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -325,7 +325,7 @@ public class HazelcastClientMapTest {
                 }
             }
         }).start();
-        assertTrue(latch.await(100, TimeUnit.MILLISECONDS));
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -344,9 +344,9 @@ public class HazelcastClientMapTest {
         map.put("hello", "new world");
         assertEquals("new world", map.get("hello"));
         map.remove("hello");
-        assertTrue(entryAddLatch.await(10, TimeUnit.MILLISECONDS));
-        assertTrue(entryUpdatedLatch.await(10, TimeUnit.MILLISECONDS));
-        assertTrue(entryRemovedLatch.await(10, TimeUnit.MILLISECONDS));
+        assertTrue(entryAddLatch.await(10, TimeUnit.SECONDS));
+        assertTrue(entryUpdatedLatch.await(10, TimeUnit.SECONDS));
+        assertTrue(entryRemovedLatch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
