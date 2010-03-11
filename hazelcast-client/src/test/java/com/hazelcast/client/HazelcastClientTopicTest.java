@@ -58,7 +58,7 @@ public class HazelcastClientTopicTest {
             }
         });
         topic.publish(message);
-        assertTrue(latch.await(10, TimeUnit.MILLISECONDS));
+        assertTrue(latch.await(10000, TimeUnit.MILLISECONDS));
     }
 
     @Test
