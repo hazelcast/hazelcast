@@ -31,12 +31,14 @@ public class MapOperationStatsImpl implements DataSerializable, MapOperationStat
     long numberOfGets;
     long numberOfRemoves;
     long numberOfOtherOperations;
+    long numberOfEvents;
 
     public void writeData(DataOutput out) throws IOException {
         out.writeLong(numberOfPuts);
         out.writeLong(numberOfGets);
         out.writeLong(numberOfRemoves);
         out.writeLong(numberOfOtherOperations);
+        out.writeLong(numberOfEvents);
         out.writeLong(periodStart);
         out.writeLong(periodEnd);
     }
@@ -46,6 +48,7 @@ public class MapOperationStatsImpl implements DataSerializable, MapOperationStat
         numberOfGets = in.readLong();
         numberOfRemoves = in.readLong();
         numberOfOtherOperations = in.readLong();
+        numberOfEvents = in.readLong();
         periodStart = in.readLong();
         periodEnd = in.readLong();
     }
@@ -61,6 +64,7 @@ public class MapOperationStatsImpl implements DataSerializable, MapOperationStat
                 ", gets:" + numberOfGets +
                 ", removes:" + numberOfRemoves +
                 ", others: " + numberOfOtherOperations +
+                ", received events: " + numberOfEvents +
                 "}";
     }
 
@@ -86,5 +90,9 @@ public class MapOperationStatsImpl implements DataSerializable, MapOperationStat
 
     public long getNumberOfOtherOperations() {
         return numberOfOtherOperations;
+    }
+
+    public long getNumberOfEvents() {
+        return numberOfEvents;
     }
 }

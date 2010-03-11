@@ -39,4 +39,6 @@ public interface MProxy extends IMap, IRemoveAwareProxy, IGetAwareProxy {
     int valueCount(Object key);
 
     Set allKeys();
+
+    MapOperationsCounter getMapOperationStats();
 }

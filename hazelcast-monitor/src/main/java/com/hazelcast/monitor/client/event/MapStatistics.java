@@ -28,6 +28,8 @@ public class MapStatistics implements ChangeEvent, Serializable {
 
     private int size;
 
+    private String mapName;
+
     public MapStatistics() {
 
     }
@@ -65,6 +67,14 @@ public class MapStatistics implements ChangeEvent, Serializable {
         this.listOfLocalStats = listOfLocalStats;
     }
 
+    public void setMapName(String mapName) {
+        this.mapName = mapName;
+    }
+
+    public String getMapName() {
+        return mapName;
+    }
+
     public static class LocalMapStatistics implements Serializable{
 
         public int ownedEntryCount;
@@ -87,6 +97,7 @@ public class MapStatistics implements ChangeEvent, Serializable {
         public long numberOfGetsInSec;
         public long numberOfRemovesInSec;
         public long numberOfOthersInSec;
+        public long numberOfEventsInSec;
 
         public long totalOperationsInSec() {
             return numberOfGetsInSec + numberOfPutsInSec + numberOfRemovesInSec + numberOfOthersInSec;

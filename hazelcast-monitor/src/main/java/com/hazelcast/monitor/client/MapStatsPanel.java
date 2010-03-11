@@ -37,7 +37,11 @@ public abstract class MapStatsPanel extends MapPanel implements MonitoringPanel 
     }
 
     public void handle(ChangeEvent e) {
+
         MapStatistics event = (MapStatistics) e;
+        if(super.mapName==null || !super.mapName.equals(event.getMapName())){
+            return;
+        }
         VerticalPanel vPanel = (VerticalPanel) disclosurePanel.getContent();
         AbsolutePanel absTablePanel = (AbsolutePanel) vPanel.getWidget(1);
         FlexTable table = (FlexTable) absTablePanel.getWidget(0);

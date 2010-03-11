@@ -29,6 +29,9 @@ public class MapChartPanel extends MapPanel implements MonitoringPanel {
 
     public void handle(ChangeEvent e) {
         MapStatistics event = (MapStatistics) e;
+        if(super.mapName==null || !super.mapName.equals(event.getMapName())){
+            return;
+        }
         int size = event.getSize();
         VerticalPanel vPanel = (VerticalPanel) disclosurePanel.getContent();
         Label label = (Label) vPanel.getWidget(0);

@@ -62,7 +62,6 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
         clusterAddPanel = createClusterAddPanel();
         leftPanel.add(clusterAddPanel);
         dsPanel = new DecoratedStackPanel();
-//        dsPanel = new StackLayoutPanel(Style.Unit.EM);
         dsPanel.setWidth(LEFT_PANEL_SIZE);
         leftPanel.add(dsPanel);
         mainPanel.setLeftWidget(leftPanel);

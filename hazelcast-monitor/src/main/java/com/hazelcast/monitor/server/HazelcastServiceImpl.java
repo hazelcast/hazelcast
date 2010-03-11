@@ -33,17 +33,21 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class HazelcastServiceImpl extends RemoteServiceServlet implements HazelcastService {
     private static final long serialVersionUID = 7042401980726503097L;
-    private static Object lock = new Object();
+    private static final Object lock = new Object();
+    private static final Timer timer = new Timer();
+    private static final AtomicInteger idGen = new AtomicInteger(0);
     ChangeEventGeneratorFactory changeEventGeneratorFactory = new ChangeEventGeneratorFactory();
 
     public ClusterView connectCluster(String name, String pass, String ips) throws ConnectionExceptoin {
         final SessionObject sessionObject = getSessionObject();
         ClusterView clusterView;
         try {
-            clusterView = sessionObject.connectAndCreateClusterView(name, pass, ips);
+            clusterView = sessionObject.connectAndCreateClusterView(name, pass, ips, idGen.getAndIncrement());
         } catch (NoMemberAvailableException e) {
             throw new ClientDisconnectedException();
         }
@@ -52,18 +56,16 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
 
     public ArrayList<ClusterView> loadActiveClusterViews() {
         final SessionObject sessionObject = getSessionObject();
-        ArrayList<ClusterView> list = new ArrayList<ClusterView>();
-        for (int clusterId : sessionObject.mapOfHz.keySet()) {
+        for
+
+
+                (int clusterId : sessionObject.mapOfHz.keySet()) {
             deRegisterEvent(ChangeEventType.MAP_STATISTICS, clusterId, null);
-            ClusterView cv;
-            try {
-                cv = sessionObject.createClusterView(clusterId);
-            } catch (NoMemberAvailableException e) {
-                throw new ClientDisconnectedException();
-            }
-            list.add(cv);
+            sessionObject.mapOfHz.get(clusterId).shutdown();
+            sessionObject.cleareEventGenerators(clusterId);
         }
-        return list;
+        sessionObject.mapOfHz.clear();
+        return new ArrayList<ClusterView>();
     }
 
     protected SessionObject getSessionObject() {
@@ -79,7 +81,7 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
         if (sessionObject == null) {
             synchronized (lock) {
                 if (sessionObject == null) {
-                    sessionObject = new SessionObject(session);
+                    sessionObject = new SessionObject(session, timer);
                     session.setAttribute(key, sessionObject);
                 }
             }
@@ -98,10 +100,9 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
     public ChangeEvent registerEvent(ChangeEventType eventType, int clusterId, String instanceName) {
         SessionObject sessionObject = getSessionObject();
         HazelcastClient client = sessionObject.getHazelcastClientMap().get(clusterId);
-        if (client == null) {
-            System.err.println("Client is null: Cluster id: " + clusterId + ", client map size: " + sessionObject.mapOfHz.size());
-        }
         ChangeEventGenerator eventGenerator = changeEventGeneratorFactory.createEventGenerator(eventType, clusterId, instanceName, client);
+        System.out.println("created event generator " + eventGenerator);
+        System.out.println(sessionObject.getEventGenerators().contains(eventGenerator));
         if (!sessionObject.getEventGenerators().contains(eventGenerator)) {
             sessionObject.getEventGenerators().add(eventGenerator);
         }
@@ -109,9 +110,16 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
         try {
             changeEvent = eventGenerator.generateEvent();
         } catch (NoMemberAvailableException e) {
-            throw new ClientDisconnectedException();
+            return handleNoMemberAvailableException(clusterId, sessionObject);
         }
         return changeEvent;
+    }
+
+    private ChangeEvent handleNoMemberAvailableException(int clusterId, SessionObject sessionObject) {
+        sessionObject.mapOfHz.get(clusterId).shutdown();
+        sessionObject.mapOfHz.remove(clusterId);
+        sessionObject.cleareEventGenerators(clusterId);
+        throw new ClientDisconnectedException();
     }
 
     public void deRegisterEvent(ChangeEventType eventType, int clusterId, String instanceName) {

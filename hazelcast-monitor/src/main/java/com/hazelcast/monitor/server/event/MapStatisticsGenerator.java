@@ -107,10 +107,12 @@ public class MapStatisticsGenerator implements ChangeEventGenerator {
                 stat.numberOfGetsInSec = mapOpStats.getNumberOfGets() / periodInSec;
                 stat.numberOfRemovesInSec = mapOpStats.getNumberOfRemoves() / periodInSec;
                 stat.numberOfOthersInSec = mapOpStats.getNumberOfOtherOperations() / periodInSec;
+                stat.numberOfEventsInSec = mapOpStats.getNumberOfEvents() / periodInSec;
             }
             listOfStats.add(stat);
         }
         MapStatistics event = new MapStatistics(clusterId);
+        event.setMapName(this.mapName);
         event.setSize(map.size());
         event.setListOfLocalStats(listOfStats);
         if (!list.isEmpty() && list.get(list.size() - 1).equals(event)) {

@@ -34,10 +34,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class SessionObject {
-    final static AtomicInteger idGen = new AtomicInteger(0);
     final HttpSession session;
     final static Map<Instance.InstanceType, InstanceType> instanceTypeMatchMap = fillMatchMap();
     final BlockingQueue<ChangeEvent> queue = new LinkedBlockingQueue<ChangeEvent>();
@@ -47,12 +45,12 @@ public class SessionObject {
     final private Object lock = new Object();
     private TimerTask task;
 
-    public SessionObject(HttpSession session) {
+    public SessionObject(HttpSession session, Timer timer) {
         this.session = session;
-        initTimer(session);
+        initTimer(timer);
     }
 
-    public Map<Integer, HazelcastClient> getHazelcastClientMap(){
+    public Map<Integer, HazelcastClient> getHazelcastClientMap() {
         return mapOfHz;
     }
 
@@ -94,18 +92,22 @@ public class SessionObject {
         return map;
     }
 
-    private void initTimer(final HttpSession session) {
-        Timer timer = getTimerFromServletContext(session);
+    void initTimer(final Timer timer) {
         task = new TimerTask() {
             @Override
             public void run() {
                 for (ChangeEventGenerator eventGenerator : eventGenerators) {
+                    if(!mapOfHz.containsKey(eventGenerator.getClusterId())){
+                        continue;
+                    }
                     ChangeEvent event = null;
                     try {
-//                        System.out.println("Generating event "+eventGenerator.getClass()+" for cluster id: " + eventGenerator.getClusterId());
+//                        System.out.println("Generating event " + eventGenerator.getClass() + " for cluster id: " + eventGenerator.getClusterId());
                         event = eventGenerator.generateEvent();
                     } catch (NoMemberAvailableException e) {
                         event = new ClientDisconnectedEvent(eventGenerator.getClusterId());
+                        mapOfHz.get(eventGenerator.getClusterId()).shutdown();
+                        mapOfHz.remove(eventGenerator.getClusterId());
                         cleareEventGenerators(eventGenerator.getClusterId());
                     } catch (Exception ignored) {
                     }
@@ -118,37 +120,28 @@ public class SessionObject {
         timer.schedule(task, new Date(), 5000);
     }
 
-    private void cleareEventGenerators(int clusterId){
+    void cleareEventGenerators(int clusterId) {
         List<ChangeEventGenerator> list = new ArrayList<ChangeEventGenerator>();
-        for(Iterator<ChangeEventGenerator> it = eventGenerators.iterator();it.hasNext();){
+        for (Iterator<ChangeEventGenerator> it = eventGenerators.iterator(); it.hasNext();) {
             ChangeEventGenerator changeEventGenerator = it.next();
-            if(changeEventGenerator.getClusterId() == clusterId){
+            if (changeEventGenerator.getClusterId() == clusterId) {
                 list.add(changeEventGenerator);
             }
         }
-
         eventGenerators.removeAll(list);
     }
 
-    private Timer getTimerFromServletContext(HttpSession session) {
-        Timer timer = (Timer) session.getServletContext().getAttribute("timer");
-        if (timer == null) {
-            synchronized (lock) {
-                timer = (Timer) session.getServletContext().getAttribute("timer");
-                if (timer == null) {
-                    timer = new Timer();
-                    session.getServletContext().setAttribute("timer", timer);
-                }
-            }
-        }
-        return timer;
-    }
-
-    public ClusterView connectAndCreateClusterView(String name, String pass, String ips) throws ConnectionExceptoin {
-        final int id = idGen.getAndIncrement();
+    public ClusterView connectAndCreateClusterView(String name, String pass, String ips, int id) throws ConnectionExceptoin {
         HazelcastClient client = newHazelcastClient(name, pass, ips, id);
         mapOfHz.put(id, client);
-        return createClusterView(id);
+        ClusterView cv;
+        try {
+            cv = createClusterView(id);
+            return cv;
+        } catch (NoMemberAvailableException e) {
+            client.shutdown();
+            throw e;
+        }
     }
 
     private HazelcastClient newHazelcastClient(String name, String pass, String ips, final int id) throws ConnectionExceptoin {
@@ -200,7 +193,8 @@ public class SessionObject {
         for (Iterator<Instance> iterator = instances.iterator(); iterator.hasNext();) {
             Instance instance = iterator.next();
             if (Instance.InstanceType.MAP.equals(instance.getInstanceType())) {
-                clusterView.getMaps().add(((IMap) instance).getName());
+                IMap imap = (IMap) instance;
+                clusterView.getMaps().add(imap.getName());
             } else if (Instance.InstanceType.QUEUE.equals(instance.getInstanceType())) {
                 clusterView.getQs().add(((IQueue) instance).getName());
             } else if (Instance.InstanceType.SET.equals(instance.getInstanceType())) {

@@ -301,6 +301,12 @@ public class ListenerManager extends BaseManager {
     private void callListener(ListenerItem listenerItem, EntryEvent event) {
         Object listener = listenerItem.listener;
         EntryEventType entryEventType = event.getEventType();
+        if (listenerItem.instanceType == Instance.InstanceType.MAP) {
+            if (!listenerItem.name.startsWith("c:__hz_")) {
+                MProxy mProxy = (MProxy) node.factory.getOrCreateProxyByName(listenerItem.name);
+                mProxy.getMapOperationStats().incrementReceivedEvents();
+            }
+        }
         switch (listenerItem.instanceType) {
             case MAP:
             case MULTIMAP:

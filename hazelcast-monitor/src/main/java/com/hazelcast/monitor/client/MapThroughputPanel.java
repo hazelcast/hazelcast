@@ -35,7 +35,8 @@ public class MapThroughputPanel extends MapStatsPanel {
         table.setText(row, 3, "" + localMapStatistics.numberOfPutsInSec);
         table.setText(row, 4, "" + localMapStatistics.numberOfRemovesInSec);
         table.setText(row, 5, "" + localMapStatistics.numberOfOthersInSec);
-        table.setText(row, 6, "" + localMapStatistics.hits);
+        table.setText(row, 6, "" + localMapStatistics.numberOfEventsInSec);
+        table.setText(row, 7, "" + localMapStatistics.hits);
         table.getColumnFormatter().addStyleName(0, "mapstatsStringColumn");
         table.getCellFormatter().addStyleName(row, 1, "mapstatsNumericColumn");
         table.getCellFormatter().addStyleName(row, 2, "mapstatsNumericColumn");
@@ -43,6 +44,7 @@ public class MapThroughputPanel extends MapStatsPanel {
         table.getCellFormatter().addStyleName(row, 4, "mapstatsNumericColumn");
         table.getCellFormatter().addStyleName(row, 5, "mapstatsNumericColumn");
         table.getCellFormatter().addStyleName(row, 6, "mapstatsNumericColumn");
+        table.getCellFormatter().addStyleName(row, 7, "mapstatsNumericColumn");
     }
 
     @Override
@@ -53,6 +55,7 @@ public class MapThroughputPanel extends MapStatsPanel {
         table.setWidget(0, 3, new LabelWithToolTip("Puts", "Number of Put operations PS"));
         table.setWidget(0, 4, new LabelWithToolTip("Removes", "Number of Remove operations PS"));
         table.setWidget(0, 5, new LabelWithToolTip("Other Operations", "All other operations PS"));
-        table.setWidget(0, 6, new LabelWithToolTip("Total Hits", "Number of Hits"));
+        table.setWidget(0, 6, new LabelWithToolTip("Events Received", "Total Number of Entry Events Received"));
+        table.setWidget(0, 7, new LabelWithToolTip("Total Hits", "Number of Hits"));
     }
 }

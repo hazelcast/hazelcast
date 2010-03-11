@@ -22,10 +22,11 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class MapOperationsCounter {
-    private AtomicLong mapPuts = new AtomicLong();
-    private AtomicLong mapGets = new AtomicLong();
-    private AtomicLong mapRemoves = new AtomicLong();
-    private AtomicLong mapOthers = new AtomicLong();
+    private AtomicLong puts = new AtomicLong();
+    private AtomicLong gets = new AtomicLong();
+    private AtomicLong removes = new AtomicLong();
+    private AtomicLong others = new AtomicLong();
+    private AtomicLong events = new AtomicLong();
     private long startTime = now();
     private long endTime = Long.MAX_VALUE;
     private transient MapOperationStats published = null;
@@ -43,15 +44,15 @@ public class MapOperationsCounter {
     }
 
     private MapOperationsCounter getAndReset() {
-        long mapPutsNow = mapPuts.getAndSet(0);
-        long mapGetsNow = mapGets.getAndSet(0);
-        long mapRemovesNow = mapRemoves.getAndSet(0);
-        long mapOthersNow = mapOthers.getAndSet(0);
+        long mapPutsNow = puts.getAndSet(0);
+        long mapGetsNow = gets.getAndSet(0);
+        long mapRemovesNow = removes.getAndSet(0);
+        long mapOthersNow = others.getAndSet(0);
         MapOperationsCounter newOne = new MapOperationsCounter();
-        newOne.mapPuts.set(mapPutsNow);
-        newOne.mapGets.set(mapGetsNow);
-        newOne.mapRemoves.set(mapRemovesNow);
-        newOne.mapOthers.set(mapOthersNow);
+        newOne.puts.set(mapPutsNow);
+        newOne.gets.set(mapGetsNow);
+        newOne.removes.set(mapRemovesNow);
+        newOne.others.set(mapOthersNow);
         newOne.startTime = this.startTime;
         newOne.endTime = now();
         this.startTime = newOne.endTime;
@@ -70,22 +71,27 @@ public class MapOperationsCounter {
     }
 
     public void incrementPuts() {
-        mapPuts.incrementAndGet();
+        puts.incrementAndGet();
         publishSubResult();
     }
 
     public void incrementGets() {
-        mapGets.incrementAndGet();
+        gets.incrementAndGet();
         publishSubResult();
     }
 
     public void incrementRemoves() {
-        mapRemoves.incrementAndGet();
+        removes.incrementAndGet();
         publishSubResult();
     }
 
     public void incrementOtherOperations() {
-        mapOthers.incrementAndGet();
+        others.incrementAndGet();
+        publishSubResult();
+    }
+
+    public void incrementReceivedEvents() {
+        events.incrementAndGet();
         publishSubResult();
     }
 
@@ -114,10 +120,12 @@ public class MapOperationsCounter {
         stats.periodStart = list.get(0).startTime;
         for (int i = 0; i < list.size(); i++) {
             MapOperationsCounter sub = list.get(i);
-            stats.numberOfGets += sub.mapGets.get();
-            stats.numberOfPuts += sub.mapPuts.get();
-            stats.numberOfRemoves += sub.mapRemoves.get();
-            stats.numberOfOtherOperations += sub.mapOthers.get();
+            stats.numberOfGets += sub.gets.get();
+            stats.numberOfPuts += sub.puts.get();
+            stats.numberOfRemoves += sub.removes.get();
+            stats.numberOfOtherOperations += sub.others.get();
+            stats.numberOfEvents += sub.events.get(); 
+
             stats.periodEnd = sub.endTime;
         }
         return stats;
@@ -126,9 +134,9 @@ public class MapOperationsCounter {
     private MapOperationStats getThis() {
         MapOperationStatsImpl stats = new MapOperationStatsImpl();
         stats.periodStart = this.startTime;
-        stats.numberOfGets = this.mapGets.get();
-        stats.numberOfPuts = this.mapPuts.get();
-        stats.numberOfRemoves = this.mapRemoves.get();
+        stats.numberOfGets = this.gets.get();
+        stats.numberOfPuts = this.puts.get();
+        stats.numberOfRemoves = this.removes.get();
         stats.periodEnd = now();
         return stats;
     }

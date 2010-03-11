@@ -1751,8 +1751,6 @@ public class FactoryImpl implements HazelcastInstance {
 
         private volatile transient MProxy dynamicProxy;
 
-        private final transient MapOperationsCounter mapOperationStats = new MapOperationsCounter();
-
         public MProxyImpl() {
         }
 
@@ -1779,6 +1777,10 @@ public class FactoryImpl implements HazelcastInstance {
             setName(name);
             setHazelcastInstance(factory);
             mproxyReal = new MProxyReal();
+        }
+
+        public MapOperationsCounter getMapOperationStats() {
+            return mproxyReal.getMapOperationStats();
         }
 
         @Override
@@ -2067,6 +2069,8 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         private class MProxyReal implements MProxy {
+            private final transient MapOperationsCounter mapOperationStats = new MapOperationsCounter();
+            
 
             public MProxyReal() {
                 super();
@@ -2468,6 +2472,10 @@ public class FactoryImpl implements HazelcastInstance {
 
             public Set allKeys() {
                 return (Set) iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS_ALL, null);
+            }
+
+            public MapOperationsCounter getMapOperationStats() {
+                return mapOperationStats;
             }
 
             public Collection values() {

@@ -34,13 +34,15 @@ public class MapBrowserPanel extends AbstractMonitoringPanel implements Monitori
     private VerticalPanel verticalPanel;
     private ClusterWidgets clusterWidgets;
     private String name;
-
+    private AsyncCallback<ChangeEvent> callBack;
+    
     protected final MapServiceAsync mapService;
 
     public MapBrowserPanel(final String name, AsyncCallback<ChangeEvent> callBack, ServicesFactory servicesFactory) {
         super(servicesFactory.getHazelcastService());
         mapService = servicesFactory.getMapServiceAsync();
         this.name = name;
+        this.callBack = callBack;
     }
 
     private void initPanel() {

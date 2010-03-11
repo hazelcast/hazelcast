@@ -28,8 +28,8 @@ import static com.hazelcast.monitor.server.HazelcastServiceImpl.getSessionObject
 
 public class MapServiceImpl extends RemoteServiceServlet implements MapService {
     public MapEntry get(int clusterId, String name, String key) {
+        final SessionObject sessionObject = getSessionObject(this.getThreadLocalRequest().getSession());
         try {
-            final SessionObject sessionObject = getSessionObject(this.getThreadLocalRequest().getSession());
             HazelcastInstance hz = sessionObject.mapOfHz.get(clusterId);
             com.hazelcast.core.MapEntry mapEntry;
             if (hz == null) {
@@ -40,6 +40,8 @@ public class MapServiceImpl extends RemoteServiceServlet implements MapService {
             }
             return convertToMonitorMapEntry(mapEntry);
         } catch (NoMemberAvailableException e) {
+            sessionObject.mapOfHz.get(clusterId).shutdown();
+            sessionObject.mapOfHz.remove(clusterId);
             throw new ClientDisconnectedException();
         }
     }

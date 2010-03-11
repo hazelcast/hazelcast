@@ -61,6 +61,14 @@ public interface MapOperationStats {
     public long getNumberOfRemoves();
 
     /**
+     * Number of Events Received
+     *
+     * @return
+     */
+    public long getNumberOfEvents();
+
+
+    /**
      * Total Number of Other/Rest Operations
      *
      * @return
