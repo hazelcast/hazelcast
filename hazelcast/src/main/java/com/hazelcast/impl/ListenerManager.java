@@ -303,8 +303,11 @@ public class ListenerManager extends BaseManager {
         EntryEventType entryEventType = event.getEventType();
         if (listenerItem.instanceType == Instance.InstanceType.MAP) {
             if (!listenerItem.name.startsWith("c:__hz_")) {
-                MProxy mProxy = (MProxy) node.factory.getOrCreateProxyByName(listenerItem.name);
-                mProxy.getMapOperationStats().incrementReceivedEvents();
+                Object proxy = node.factory.getOrCreateProxyByName(listenerItem.name);
+                if (proxy instanceof MProxy) {
+                    MProxy mProxy = (MProxy) proxy;
+                    mProxy.getMapOperationStats().incrementReceivedEvents();
+                }
             }
         }
         switch (listenerItem.instanceType) {
