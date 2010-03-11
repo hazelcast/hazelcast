@@ -82,7 +82,7 @@ public class HazelcastClientTopicTest {
             }
         });
         topic.publish(message);
-        assertTrue(latch.await(100, TimeUnit.MILLISECONDS));
+        assertTrue(latch.await(10000, TimeUnit.MILLISECONDS));
     }
 
     @Test
@@ -102,7 +102,7 @@ public class HazelcastClientTopicTest {
         topic.publish(message);
         topic.removeMessageListener(messageListener);
         topic.publish(message);
-        assertFalse(latch.await(100, TimeUnit.MILLISECONDS));
+        assertFalse(latch.await(10000, TimeUnit.MILLISECONDS));
     }
 
     @AfterClass
