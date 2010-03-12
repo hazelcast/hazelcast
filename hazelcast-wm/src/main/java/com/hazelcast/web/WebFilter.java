@@ -413,6 +413,10 @@ public class WebFilter implements Filter {
         }
 
         private String encodeURL(final String url, final String sessionURLPhrase) {
+            if(url==null){
+                throw new NullPointerException("URL can not be null");
+            }
+
             // should not encode if cookies in evidence
             if (url != null || req == null || req.isRequestedSessionIdFromCookie()) {
                 final int prefix = url.indexOf(sessionURLPhrase);
