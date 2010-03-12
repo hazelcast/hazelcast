@@ -26,7 +26,7 @@ import java.util.Map;
 public class MultiMapEntryIterator extends MapEntryIterator {
     private volatile Iterator currentValueIterator;
     private volatile Object lastKey;
-    protected volatile Map.Entry lastEntry;
+    protected volatile Map.Entry lastMultiMapEntry;
 
     public MultiMapEntryIterator(Iterator it, EntryHolder proxy, Instance.InstanceType instanceType) {
         super(it, proxy, instanceType);
@@ -51,7 +51,7 @@ public class MultiMapEntryIterator extends MapEntryIterator {
         if (currentValueIterator == null || !currentValueIterator.hasNext()) {
             return next();
         }
-        lastEntry = new MapEntry(lastKey, currentValueIterator.next(), proxy);
-        return lastEntry;
+        lastMultiMapEntry = new MapEntry(lastKey, currentValueIterator.next(), proxy);
+        return lastMultiMapEntry;
     }
 }
