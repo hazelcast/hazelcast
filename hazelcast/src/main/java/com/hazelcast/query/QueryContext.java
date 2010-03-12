@@ -18,6 +18,7 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.query.MapIndex;
 
 import java.util.Map;
 import java.util.Set;
@@ -28,7 +29,7 @@ public class QueryContext {
     String mapName;
     Set<MapEntry> results = null;
     int indexedPredicateCount = 0;
-    Map<Expression, Index<MapEntry>> mapIndexes = null;
+    Map<Expression, MapIndex> mapIndexes = null;
 
     public QueryContext(String mapName, Predicate predicate) {
         this.mapName = mapName;
@@ -75,11 +76,11 @@ public class QueryContext {
         this.results = results;
     }
 
-    public void setMapIndexes(Map<Expression, Index<MapEntry>> mapIndexes) {
+    public void setMapIndexes(Map<Expression, MapIndex> mapIndexes) {
         this.mapIndexes = mapIndexes;
     }
 
-    public Map<Expression, Index<MapEntry>> getMapIndexes() {
+    public Map<Expression, MapIndex> getMapIndexes() {
         return mapIndexes;
     }
 }

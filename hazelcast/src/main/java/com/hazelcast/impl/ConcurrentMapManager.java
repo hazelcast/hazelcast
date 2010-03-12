@@ -26,7 +26,6 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.query.Index;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryContext;
 
@@ -612,39 +611,21 @@ public final class ConcurrentMapManager extends BaseManager {
 
     boolean isMapIndexed(String name) {
         CMap cmap = getMap(name);
-        return cmap != null && (cmap.getMapIndexes().size() > 0);
+        return cmap != null && (cmap.getMapIndexService().hasIndexedAttributes());
     }
 
     void setIndexValues(Request request, Object value) {
         CMap cmap = getMap(request.name);
         if (cmap != null) {
-            int indexCount = cmap.getMapIndexes().size();
-            if (indexCount > 0) {
-                Index[] indexes = cmap.getIndexes();
-                byte[] indexTypes = cmap.indexTypes;
-                long[] newIndexes = new long[indexCount];
-                boolean typesNew = false;
-                if (indexTypes == null) {
-                    indexTypes = new byte[indexCount];
-                    typesNew = true;
-                }
-                for (int i = 0; i < indexes.length; i++) {
-                    Index index = indexes[i];
-                    if (index != null) {
-                        Object realValue = value;
-                        if (realValue instanceof Data) {
-                            realValue = toObject((Data) value);
-                        }
-                        newIndexes[i] = index.extractLongValue(realValue);
-                        if (typesNew) {
-                            indexTypes[i] = index.getIndexType();
-                        }
+            long[] indexes = cmap.getMapIndexService().getIndexValues(value);
+            if (indexes != null) {
+                byte[] indexTypes = cmap.getMapIndexService().getIndexTypes();
+                request.setIndexes(indexes, indexTypes);
+                for (byte b : indexTypes) {
+                    if (b == -1) {
+                        throw new RuntimeException("Index type cannot be -1: " + b);
                     }
                 }
-                if (typesNew) {
-                    cmap.indexTypes = indexTypes;
-                }
-                request.setIndexes(newIndexes, indexTypes);
             }
         }
     }
@@ -861,7 +842,7 @@ public final class ConcurrentMapManager extends BaseManager {
                         backupOps[i] = backupOp;
                     }
                     if (request.key == null || request.key.size() == 0) {
-                        throw new RuntimeException("Key is null! " + request.key);  
+                        throw new RuntimeException("Key is null! " + request.key);
                     }
                     backupOp.sendBackup(operation, target, distance, request);
                 }
@@ -1155,7 +1136,7 @@ public final class ConcurrentMapManager extends BaseManager {
     public int getBlockId(Data key) {
         int hash = key.hashCode();
         return (hash==Integer.MIN_VALUE)?0:Math.abs(hash) % PARTITION_COUNT;
-    }
+    }    
 
     public long newRecordId() {
         return newRecordId++;
@@ -1303,7 +1284,7 @@ public final class ConcurrentMapManager extends BaseManager {
     abstract class MTargetAwareOperationHandler extends TargetAwareOperationHandler {
         boolean isRightRemoteTarget(Request request) {
             return thisAddress.equals(getKeyOwner(request.key));
-        } 
+        }
     }
 
     class RemoveItemOperationHandler extends StoreAwareOperationHandler {
@@ -1654,7 +1635,7 @@ public final class ConcurrentMapManager extends BaseManager {
             final CMap cmap = getOrCreateMap(request.name);
             return new Runnable() {
                 public void run() {
-                    request.response = node.queryService.containsValue(cmap.getName(), request.value);
+                    request.response = cmap.getMapIndexService().containsValue(request.value);
                     enqueueAndReturn(new Processable() {
                         public void process() {
                             returnResponse(request);
@@ -1716,10 +1697,9 @@ public final class ConcurrentMapManager extends BaseManager {
                     predicate = (Predicate) toObject(request.value);
                 }
                 QueryContext queryContext = new QueryContext(cmap.getName(), predicate);
-                node.queryService.query(queryContext);
-                Set<MapEntry> results = queryContext.getResults();
+                Set<MapEntry> results = cmap.getMapIndexService().doQuery(queryContext);
                 if (predicate != null) {
-                    if (!queryContext.isStrong()) {
+                    if (results != null && !queryContext.isStrong()) {
                         Iterator<MapEntry> it = results.iterator();
                         while (it.hasNext()) {
                             Record record = (Record) it.next();
@@ -1749,30 +1729,32 @@ public final class ConcurrentMapManager extends BaseManager {
 
         void createEntries(Request request, Collection<MapEntry> colRecords) {
             Pairs pairs = new Pairs();
-            long now = System.currentTimeMillis();
-            for (MapEntry mapEntry : colRecords) {
-                Record record = (Record) mapEntry;
-                if (record.isActive() && record.isValid(now)) {
-                    if (record.getKey() == null || record.getKey().size() == 0) {
-                        throw new RuntimeException("Key cannot be null or zero-size: " + record.getKey());
-                    }
-                    Block block = blocks[record.getBlockId()];
-                    if (thisAddress.equals(block.getOwner())) {
-                        if (record.getValue() != null || request.operation == CONCURRENT_MAP_ITERATE_KEYS_ALL) {
-                            pairs.addKeyValue(new KeyValue(record.getKey(), null));
-                        } else if (record.getCopyCount() > 0) {
-                            for (int i = 0; i < record.getCopyCount(); i++) {
+            if (colRecords != null) {
+                long now = System.currentTimeMillis();
+                for (MapEntry mapEntry : colRecords) {
+                    Record record = (Record) mapEntry;
+                    if (record.isActive() && record.isValid(now)) {
+                        if (record.getKey() == null || record.getKey().size() == 0) {
+                            throw new RuntimeException("Key cannot be null or zero-size: " + record.getKey());
+                        }
+                        Block block = blocks[record.getBlockId()];
+                        if (thisAddress.equals(block.getOwner())) {
+                            if (record.getValue() != null || request.operation == CONCURRENT_MAP_ITERATE_KEYS_ALL) {
                                 pairs.addKeyValue(new KeyValue(record.getKey(), null));
-                            }
-                        } else if (record.getMultiValues() != null) {
-                            int size = record.getMultiValues().size();
-                            if (size > 0) {
-                                if (request.operation == CONCURRENT_MAP_ITERATE_KEYS) {
+                            } else if (record.getCopyCount() > 0) {
+                                for (int i = 0; i < record.getCopyCount(); i++) {
                                     pairs.addKeyValue(new KeyValue(record.getKey(), null));
-                                } else {
-                                    Set<Data> values = record.getMultiValues();
-                                    for (Data value : values) {
-                                        pairs.addKeyValue(new KeyValue(record.getKey(), value));
+                                }
+                            } else if (record.getMultiValues() != null) {
+                                int size = record.getMultiValues().size();
+                                if (size > 0) {
+                                    if (request.operation == CONCURRENT_MAP_ITERATE_KEYS) {
+                                        pairs.addKeyValue(new KeyValue(record.getKey(), null));
+                                    } else {
+                                        Set<Data> values = record.getMultiValues();
+                                        for (Data value : values) {
+                                            pairs.addKeyValue(new KeyValue(record.getKey(), value));
+                                        }
                                     }
                                 }
                             }

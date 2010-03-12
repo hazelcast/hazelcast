@@ -30,30 +30,40 @@ public class AddMapIndex extends AbstractRemotelyProcessable {
     String mapName;
     private Expression expression;
     private boolean ordered;
+    private int attributeIndex = -1;
 
     public AddMapIndex() {
     }
 
     public AddMapIndex(String mapName, Expression expression, boolean ordered) {
         this.mapName = mapName;
+        this.expression = expression;
+        this.ordered = ordered;
+    }
+
+    public AddMapIndex(String mapName, Expression expression, boolean ordered, int attributeIndex) {
+        this.mapName = mapName;
+        this.attributeIndex = attributeIndex;
         this.setExpression(expression);
         this.setOrdered(ordered);
     }
 
     public void process() {
         CMap cmap = getNode().concurrentMapManager.getOrCreateMap(mapName);
-        cmap.addIndex(getExpression(), isOrdered());
+        cmap.addIndex(getExpression(), isOrdered(), attributeIndex);
     }
 
     public void writeData(DataOutput out) throws IOException {
         out.writeUTF(mapName);
         out.writeBoolean(isOrdered());
+        out.writeInt(attributeIndex);
         writeObject(out, getExpression());
     }
 
     public void readData(DataInput in) throws IOException {
         mapName = in.readUTF();
         setOrdered(in.readBoolean());
+        attributeIndex = in.readInt();
         setExpression((Expression) readObject(in));
     }
 
@@ -83,5 +93,13 @@ public class AddMapIndex extends AbstractRemotelyProcessable {
      */
     public Expression getExpression() {
         return expression;
+    }
+
+    public int getAttributeIndex() {
+        return attributeIndex;
+    }
+
+    public void setAttributeIndex(int attributeIndex) {
+        this.attributeIndex = attributeIndex;
     }
 }

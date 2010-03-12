@@ -39,7 +39,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_BLOCKS;
 import static com.hazelcast.nio.IOUtil.toData;
@@ -521,10 +520,10 @@ public class PartitionManager implements Runnable, PartitionService {
                         long[] indexes = record.getIndexes();
                         byte[] indexTypes = record.getIndexTypes();
                         // set the indexes to null, (new record)
-                        record.setValueHash(Integer.MIN_VALUE);
-                        record.setIndexes(null, null);
+//                        record.setValueHash(Integer.MIN_VALUE);
+//                        record.setIndexes(null, null);
                         // now update the index
-                        node.queryService.updateIndex(cmap.getName(), indexes, indexTypes, record, valueHash);
+                        cmap.updateIndexes(record);
                     }
                 }
             }

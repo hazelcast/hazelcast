@@ -18,6 +18,7 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.query.MapIndex;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +33,7 @@ public class PredicateBuilder implements Predicate, IndexAwarePredicate {
         return lsPredicates.get(0).apply(mapEntry);
     }
 
-    public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index<MapEntry>> mapIndexes) {
+    public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, MapIndex> mapIndexes) {
         boolean strong = true;
         Predicate predicate = lsPredicates.get(0);
         if (predicate instanceof IndexAwarePredicate) {
@@ -50,7 +51,7 @@ public class PredicateBuilder implements Predicate, IndexAwarePredicate {
         return null;
     }
 
-    public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index<MapEntry>> mapIndexes) {
+    public void collectAppliedIndexes(Set<MapIndex> setAppliedIndexes, Map<Expression, MapIndex> mapIndexes) {
         Predicate predicate = lsPredicates.get(0);
         if (predicate instanceof IndexAwarePredicate) {
             IndexAwarePredicate p = (IndexAwarePredicate) predicate;

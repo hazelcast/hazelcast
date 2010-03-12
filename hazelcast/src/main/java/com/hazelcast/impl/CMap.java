@@ -27,14 +27,13 @@ import com.hazelcast.impl.concurrentmap.MultiData;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
 import com.hazelcast.query.Expression;
-import com.hazelcast.query.Index;
+import com.hazelcast.query.MapIndexService;
 import com.hazelcast.util.SortedHashMap;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -95,7 +94,7 @@ public class CMap {
 
     final long evictionDelayMillis;
 
-    final Map<Expression, Index<MapEntry>> mapIndexes = new ConcurrentHashMap<Expression, Index<MapEntry>>(10);
+    final MapIndexService mapIndexService = new MapIndexService();
 
     final LocallyOwnedMap locallyOwnedMap;
 
@@ -104,8 +103,6 @@ public class CMap {
     final long creationTime;
 
     boolean ttlPerRecord = false;
-
-    private volatile Index<MapEntry>[] indexes = null;
 
     volatile byte[] indexTypes = null;
 
@@ -301,18 +298,8 @@ public class CMap {
         }
     }
 
-    public void addIndex(Expression expression, boolean ordered) {
-        if (!getMapIndexes().containsKey(expression)) {
-            Index<MapEntry> index = new Index<MapEntry>(expression, ordered);
-            getMapIndexes().put(expression, index);
-            Index<MapEntry>[] newIndexes = new Index[getMapIndexes().size()];
-            if (getIndexes() != null) {
-                System.arraycopy(getIndexes(), 0, newIndexes, 0, getIndexes().length);
-            }
-            setIndexes(newIndexes);
-            getIndexes()[getMapIndexes().size() - 1] = index;
-            node.queryService.setIndexes(getName(), getIndexes(), getMapIndexes());
-        }
+    public void addIndex(Expression expression, boolean ordered, int attributeIndex) {
+        mapIndexService.addIndex(expression, ordered, attributeIndex);
     }
 
     public Record getRecord(Data key) {
@@ -340,8 +327,7 @@ public class CMap {
         markAsActive(record);
         markAsOwned(record);
         markAsDirty(record);
-        record.setIndexes(null, null);
-        updateIndexes(true, req, record);
+        updateIndexes(record);
         record.setVersion(req.version);
     }
 
@@ -661,7 +647,7 @@ public class CMap {
         record.setVersion(record.getVersion() + 1);
         record.incrementCopyCount();
         if (!backup) {
-            node.queryService.updateIndex(getName(), null, null, record, Integer.MIN_VALUE);
+            updateIndexes(record);
             concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record);
         }
         return true;
@@ -775,7 +761,7 @@ public class CMap {
         }
         if (added) {
             Data value = req.value;
-            node.queryService.updateIndex(getName(), null, null, record, Integer.MIN_VALUE);
+            updateIndexes(record);
             record.addValue(value);
             record.setVersion(record.getVersion() + 1);
             touch(record);
@@ -854,7 +840,8 @@ public class CMap {
         if (req.txnId != -1) {
             unlock(record);
         }
-        updateIndexes(created, req, record);
+        record.setIndexes(req.indexes, req.indexTypes);
+        updateIndexes(record);
         markAsDirty(record);
         req.clearForResponse();
         req.version = record.getVersion();
@@ -1061,6 +1048,7 @@ public class CMap {
                 }
             }
         }
+        record.setIndexes(req.indexes, req.indexTypes);
         record.setCopyCount((int) req.longValue);
         if (req.lockCount >= 0) {
             record.setLockAddress(req.lockAddress);
@@ -1158,7 +1146,6 @@ public class CMap {
             setDirtyRecords.clear();
         }
         setRemovedRecords.clear();
-        node.queryService.reset(getName());
     }
 
     void scheduleForEviction(Record record) {
@@ -1202,7 +1189,7 @@ public class CMap {
         record.setValue(null);
         record.setMultiValues(null);
         ownedRecords.remove(record);
-        node.queryService.updateIndex(getName(), null, null, record, Integer.MIN_VALUE);
+        updateIndexes(record);
         markAsDirty(record);
     }
 
@@ -1214,24 +1201,9 @@ public class CMap {
         ownedRecords.add(record);
     }
 
-    void updateIndexes(boolean created, Request request, Record record) {
-        int valueHash = (record.getValue() != null) ? record.getValue().hashCode() : Integer.MIN_VALUE;
-        if (request.indexes != null) {
-            int indexCount = request.indexes.length;
-            if (indexCount == 0)
-                throw new RuntimeException(node.getName() + " request contains no index " + request.indexes);
-            if (getMapIndexes().size() > indexCount) {
-                throw new RuntimeException(node.getName() + ": indexCount=" + indexCount + " but expected " + getMapIndexes().size());
-            }
-            long[] newIndexes = request.indexes;
-            byte[] indexTypes = request.indexTypes;
-            if (newIndexes.length != indexTypes.length) {
-                throw new RuntimeException();
-            }
-            node.queryService.updateIndex(getName(), newIndexes, indexTypes, record, valueHash);
-        } else if (created || record.getValueHash() != valueHash) {
-            node.queryService.updateIndex(getName(), null, null, record, valueHash);
-        }
+    void updateIndexes(Record record) {
+        mapIndexService.index(record);
+//        node.queryService.updateIndex(mapIndexService, record);
     }
 
     Record createNewRecord(Data key, Data value) {
@@ -1583,24 +1555,7 @@ public class CMap {
         return name;
     }
 
-    /**
-     * @return the mapIndexes
-     */
-    public Map<Expression, Index<MapEntry>> getMapIndexes() {
-        return mapIndexes;
-    }
-
-    /**
-     * @param indexes the indexes to set
-     */
-    public void setIndexes(Index<MapEntry>[] indexes) {
-        this.indexes = indexes;
-    }
-
-    /**
-     * @return the indexes
-     */
-    public Index<MapEntry>[] getIndexes() {
-        return indexes;
+    public MapIndexService getMapIndexService() {
+        return mapIndexService;
     }
 }

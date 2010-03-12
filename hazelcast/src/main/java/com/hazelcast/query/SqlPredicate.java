@@ -18,6 +18,7 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.query.MapIndex;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -42,7 +43,7 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         return predicate.apply(mapEntry);
     }
 
-    public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index<MapEntry>> mapIndexes) {
+    public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, MapIndex> mapIndexes) {
         if (predicate instanceof IndexAwarePredicate) {
             return ((IndexAwarePredicate) predicate).collectIndexAwarePredicates(lsIndexPredicates, mapIndexes);
         }
@@ -53,7 +54,7 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         return ((IndexAwarePredicate) predicate).filter(queryContext);
     }
 
-    public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index<MapEntry>> mapIndexes) {
+    public void collectAppliedIndexes(Set<MapIndex> setAppliedIndexes, Map<Expression, MapIndex> mapIndexes) {
         if (predicate instanceof IndexAwarePredicate) {
             ((IndexAwarePredicate) predicate).collectAppliedIndexes(setAppliedIndexes, mapIndexes);
         }

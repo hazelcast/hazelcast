@@ -20,7 +20,7 @@ package com.hazelcast.impl.concurrentmap;
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.impl.CMap;
 import com.hazelcast.impl.FactoryImpl;
-import com.hazelcast.query.Index;
+import com.hazelcast.query.MapIndex;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -36,11 +36,12 @@ public class InitialState extends AbstractRemotelyProcessable {
 
     public void createAndAddMapState(CMap cmap) {
         MapState mapState = new MapState(cmap.getName());
-        int indexCount = cmap.getMapIndexes().size();
-        for (int i = 0; i < indexCount; i++) {
-            Index index = cmap.getIndexes()[i];
-            AddMapIndex mi = new AddMapIndex(cmap.getName(), index.getExpression(), index.isOrdered());
-            mapState.addMapIndex(mi);
+        MapIndex[] indexes = cmap.getMapIndexService().getIndexesInOrder();
+        if (indexes != null) {
+            for (MapIndex index : indexes) {
+                AddMapIndex mi = new AddMapIndex(cmap.getName(), index.getExpression(), index.isOrdered(), index.getAttributeIndex());
+                mapState.addMapIndex(mi);
+            }
         }
         lsMapStates.add(mapState);
     }
@@ -51,7 +52,7 @@ public class InitialState extends AbstractRemotelyProcessable {
             for (MapState mapState : lsMapStates) {
                 CMap cmap = factory.node.concurrentMapManager.getOrCreateMap(mapState.name);
                 for (AddMapIndex mapIndex : mapState.lsMapIndexes) {
-                    cmap.addIndex(mapIndex.getExpression(), mapIndex.isOrdered());
+                    cmap.addIndex(mapIndex.getExpression(), mapIndex.isOrdered(), mapIndex.getAttributeIndex());
                 }
             }
         }
