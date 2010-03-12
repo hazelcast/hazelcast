@@ -88,7 +88,7 @@ public class ServletBase extends HttpServlet {
 
     }
 
-    protected static Logger logger = Logger.getLogger(ServletBase.class.getName());
+    protected static final Logger logger = Logger.getLogger(ServletBase.class.getName());
 
     private static final boolean DEBUG = true;
 

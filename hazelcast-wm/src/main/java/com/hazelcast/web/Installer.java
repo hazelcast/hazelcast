@@ -36,7 +36,7 @@ import java.util.zip.ZipOutputStream;
 
 public class Installer {
 
-    protected static Logger logger = Logger.getLogger(Installer.class.getName());
+    protected static final Logger logger = Logger.getLogger(Installer.class.getName());
 
     private static final boolean DEBUG = false;
 

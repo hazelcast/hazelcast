@@ -378,6 +378,9 @@ public class WebFilter implements Filter {
 
         @Override
         public String encodeURL(final String url) {
+            if(url == null){
+                throw new NullPointerException("URL can not be null");
+            }
             if (!context.urlRewriteEnabled()) {
                 return url;
             }
