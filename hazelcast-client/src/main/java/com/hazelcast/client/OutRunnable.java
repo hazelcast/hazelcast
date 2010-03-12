@@ -46,7 +46,7 @@ public class OutRunnable extends IORunnable {
 //            System.out.println("Sending: " + call);
             callMap.put(call.getId(), call);
             Connection oldConnection = connection;
-            connection = client.connectionManager.getConnection();
+            connection = client.getConnectionManager().getConnection();
             if (restoredConnection(oldConnection, connection)) {
                 redoUnfinishedCalls(call, oldConnection);
             } else if (connection != null) {
@@ -59,7 +59,7 @@ public class OutRunnable extends IORunnable {
         } catch (Throwable io) {
             logger.info("OutRunnable got an exception:" + io.getMessage());
             enQueue(call);
-            client.connectionManager.destroyConnection(connection);
+            client.getConnectionManager().destroyConnection(connection);
         }
     }
 

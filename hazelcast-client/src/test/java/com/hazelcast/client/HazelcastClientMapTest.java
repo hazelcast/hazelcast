@@ -449,6 +449,19 @@ public class HazelcastClientMapTest {
     }
 
     @Test
+    public void putIfAbsentWithTtl() throws InterruptedException {
+        HazelcastClient hClient = getHazelcastClient();
+        IMap<String, String> map = hClient.getMap("putIfAbsent");
+        String result = map.put("1", "CBDEF");
+        assertNull(result);
+        assertNull(map.putIfAbsent("2", "C", 100, TimeUnit.MILLISECONDS));
+        assertEquals(2, map.size());
+        assertEquals("C", map.putIfAbsent("2", "D", 100, TimeUnit.MILLISECONDS));
+        Thread.sleep(100);
+        assertEquals(1, map.size());
+    }
+
+    @Test
     public void remove() {
         HazelcastClient hClient = getHazelcastClient();
         IMap<String, String> map = hClient.getMap("remove");

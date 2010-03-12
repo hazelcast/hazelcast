@@ -380,7 +380,7 @@ public class ClientService {
                 }
                 executorService.execute(task);
                 result = task.get();
-                if(result instanceof Collection){
+                if (result instanceof Collection) {
                 }
                 packet.value = toData(result);
             } catch (InterruptedException e) {
@@ -492,14 +492,26 @@ public class ClientService {
         }
     }
 
-    private class MapPutIfAbsentHandler extends ClientMapOperationHandler {
-        public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+    private class MapPutIfAbsentHandler extends ClientOperationHandler {
+        public Data processMapOp(IMap<Object, Object> map, Data key, Data value, long ttl) {
             MProxy mproxy = (MProxy) map;
+            Object v = value;
             if (node.concurrentMapManager.isMapIndexed(mproxy.getLongName())) {
-                return (Data) map.putIfAbsent(key, toObject(value));
-            } else {
-                return (Data) map.putIfAbsent(key, value);
+                v = toObject(value);
             }
+            if (ttl < 0) {
+                return (Data) map.putIfAbsent(key, v);
+            } else {
+                return (Data) map.putIfAbsent(key, v, ttl, TimeUnit.MILLISECONDS);
+            }
+        }
+
+        public void processCall(Node node, Packet packet) {
+            IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+            long ttl = packet.timeout;
+            Data value = processMapOp(map, packet.key, packet.value, ttl);
+            packet.clearForResponse();
+            packet.value = value;
         }
     }
 
