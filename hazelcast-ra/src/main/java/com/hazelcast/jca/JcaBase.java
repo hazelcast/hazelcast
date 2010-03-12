@@ -21,7 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class JcaBase {
-    protected static Logger logger = Logger.getLogger(JcaBase.class.getName());
+    protected static final Logger logger = Logger.getLogger(JcaBase.class.getName());
 
     public void log(final Object caller, final Object msg) {
         logger.log(Level.FINEST, caller + " : " + msg);
