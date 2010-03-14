@@ -37,6 +37,16 @@ public class Index {
     volatile boolean strong = false;
     volatile boolean checkedStrength = false;
 
+    private static final int TYPE_STRING = 101;
+    private static final int TYPE_INT = 102;
+    private static final int TYPE_LONG = 103;
+    private static final int TYPE_BOOLEAN = 104;
+    private static final int TYPE_DOUBLE = 105;
+    private static final int TYPE_FLOAT = 106;
+    private static final int TYPE_BYTE = 107;
+    private static final int TYPE_CLASS = 108;
+    private static final int TYPE_UNKNOWN = 109;
+
     Index(Expression expression, boolean ordered, int attributeIndex) {
         this.expression = expression;
         this.ordered = ordered;
@@ -90,7 +100,7 @@ public class Index {
         long recordId = record.getId();
         ConcurrentMap<Long, Record> records = mapRecords.get(newValue);
         if (records == null) {
-            records = new ConcurrentHashMap<Long, Record>(100, 0.75f, 1);
+            records = new ConcurrentHashMap<Long, Record>(1, 0.75f, 1);
             mapRecords.put(newValue, records);
             invalidateOrder();
         }
@@ -119,24 +129,29 @@ public class Index {
     }
 
     class SingleResultSet extends AbstractSet<MapEntry> {
-        private Collection<? extends MapEntry> records;
+        private final ConcurrentMap<Long, ? extends MapEntry> records;
 
-        SingleResultSet(Collection<Record> records) {
+        public SingleResultSet(ConcurrentMap<Long, Record> records) {
             this.records = records;
         }
 
-        public void setResultSet(Collection<? extends MapEntry> resultSet) {
-            this.records = resultSet;
+        @Override
+        public boolean contains(Object mapEntry) {
+            return records != null && records.containsKey(((Record) mapEntry).getId());
         }
 
         @Override
         public Iterator<MapEntry> iterator() {
-            return (Iterator<MapEntry>) records.iterator();
+            if (records == null) {
+                return new HashSet<MapEntry>().iterator();
+            } else {
+                return (Iterator<MapEntry>) records.values().iterator();
+            }
         }
 
         @Override
         public int size() {
-            return records.size();
+            return (records == null) ? 0 : records.size();
         }
     }
 
@@ -209,30 +224,30 @@ public class Index {
     }
 
     public Set<MapEntry> getRecords(long[] values) {
-        Set<MapEntry> results = new HashSet<MapEntry>();
+        MultiResultSet results = new MultiResultSet();
         for (Long value : values) {
             ConcurrentMap<Long, Record> records = mapRecords.get(value);
             if (records != null) {
-                results.addAll(records.values());
+                results.addResultSet(value, records.values());
             }
         }
         return results;
     }
 
     public Set<MapEntry> getSubRecordsBetween(long from, long to) {
-        Set<MapEntry> results = new HashSet<MapEntry>();
+        MultiResultSet results = new MultiResultSet();
         if (valueOrder != null) {
             Set<Long> values = valueOrder.subSet(from, to);
             for (Long value : values) {
                 ConcurrentMap<Long, Record> records = mapRecords.get(value);
                 if (records != null) {
-                    results.addAll(records.values());
+                    results.addResultSet(value, records.values());
                 }
             }
             // to wasn't included so include now
             ConcurrentMap<Long, Record> records = mapRecords.get(to);
             if (records != null) {
-                results.addAll(records.values());
+                results.addResultSet(to, records.values());
             }
             return results;
         } else {
@@ -241,7 +256,7 @@ public class Index {
                 if (value >= from && value <= to) {
                     ConcurrentMap<Long, Record> records = mapRecords.get(value);
                     if (records != null) {
-                        results.addAll(records.values());
+                        results.addResultSet(value, records.values());
                     }
                 }
             }
@@ -250,54 +265,7 @@ public class Index {
     }
 
     public Set<MapEntry> getRecords(long value) {
-        Set<MapEntry> results = new HashSet<MapEntry>();
-        ConcurrentMap<Long, Record> records = mapRecords.get(value);
-        if (records != null) {
-            results.addAll(records.values());
-        }
-        return results;
-    }
-
-    public Set<MapEntry> getRecords2(long value) {
-        SingleResultSet results = new SingleResultSet(null);
-        ConcurrentMap<Long, Record> records = mapRecords.get(value);
-        if (records != null) {
-            results.setResultSet(records.values());
-        }
-        return results;
-    }
-
-    public Set<MapEntry> getSubRecords2(boolean equal, boolean lessThan, long searchedValue) {
-        Set<MapEntry> results = new HashSet<MapEntry>();
-        if (valueOrder != null) {
-            Set<Long> values = (lessThan) ? valueOrder.headSet(searchedValue) : valueOrder.tailSet(searchedValue);
-            if (lessThan && equal) {
-                values.add(searchedValue);
-            }
-            for (Long value : values) {
-                ConcurrentMap<Long, Record> records = mapRecords.get(value);
-                if (records != null) {
-                    results.addAll(records.values());
-                }
-            }
-        } else {
-            Set<Long> values = mapRecords.keySet();
-            for (Long value : values) {
-                boolean valid;
-                if (lessThan) {
-                    valid = (equal) ? (value <= searchedValue) : (value < searchedValue);
-                } else {
-                    valid = (equal) ? (value >= searchedValue) : (value > searchedValue);
-                }
-                if (valid) {
-                    ConcurrentMap<Long, Record> records = mapRecords.get(value);
-                    if (records != null) {
-                        results.addAll(records.values());
-                    }
-                }
-            }
-        }
-        return results;
+        return new SingleResultSet(mapRecords.get(value));
     }
 
     public Set<MapEntry> getSubRecords(boolean equal, boolean lessThan, long searchedValue) {
@@ -362,23 +330,23 @@ public class Index {
 
     public byte getIndexType(Class klass) {
         if (klass == String.class) {
-            return 1;
+            return TYPE_STRING;
         } else if (klass == int.class || klass == Integer.class) {
-            return 2;
+            return TYPE_INT;
         } else if (klass == long.class || klass == Long.class) {
-            return 3;
+            return TYPE_LONG;
         } else if (klass == boolean.class || klass == Boolean.class) {
-            return 4;
+            return TYPE_BOOLEAN;
         } else if (klass == double.class || klass == Double.class) {
-            return 5;
+            return TYPE_DOUBLE;
         } else if (klass == float.class || klass == Float.class) {
-            return 6;
+            return TYPE_FLOAT;
         } else if (klass == byte.class || klass == Byte.class) {
-            return 7;
+            return TYPE_BYTE;
         } else if (klass == char.class || klass == Character.class) {
-            return 8;
+            return TYPE_CLASS;
         } else {
-            return 9;
+            return TYPE_UNKNOWN;
         }
     }
 
@@ -397,7 +365,7 @@ public class Index {
             if (str.length() == 0) {
                 return 0;
             } else {
-                return Character.toUpperCase(str.charAt(0));
+                return str.charAt(0);
             }
         } else {
             return value.hashCode();
@@ -410,19 +378,19 @@ public class Index {
         if (valueType != returnType) {
             if (value instanceof String) {
                 String str = (String) value;
-                if (returnType == 2) {
+                if (returnType == TYPE_INT) {
                     value = Integer.valueOf(str);
-                } else if (returnType == 3) {
+                } else if (returnType == TYPE_LONG) {
                     value = Long.valueOf(str);
-                } else if (returnType == 4) {
+                } else if (returnType == TYPE_BOOLEAN) {
                     value = Boolean.valueOf(str);
-                } else if (returnType == 5) {
+                } else if (returnType == TYPE_DOUBLE) {
                     value = Double.valueOf(str);
-                } else if (returnType == 6) {
+                } else if (returnType == TYPE_FLOAT) {
                     value = Float.valueOf(str);
-                } else if (returnType == 7) {
+                } else if (returnType == TYPE_BYTE) {
                     value = Byte.valueOf(str);
-                } else if (returnType == 8) {
+                } else if (returnType == TYPE_CLASS) {
                     value = Character.valueOf(str.charAt(0));
                 }
             }

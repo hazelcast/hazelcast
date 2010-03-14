@@ -61,7 +61,7 @@ public class MapIndexServiceTest extends TestUtil {
 //        assertEquals(2, indexes.size());
         assertTrue(mapIndexService.hasIndexedAttributes());
         for (int i = 0; i < 200000; i++) {
-            Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
+            Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + i);
             Record record = newRecord(i, "key" + i, employee);
             record.setIndexes(mapIndexService.getIndexValues(employee), mapIndexService.getIndexTypes());
             mapIndexService.index(record);
@@ -70,10 +70,9 @@ public class MapIndexServiceTest extends TestUtil {
         long total = Runtime.getRuntime().totalMemory();
         long free = Runtime.getRuntime().freeMemory();
         System.out.println("Used Memory:" + ((total - free) / 1024 / 1024));
-        Thread.sleep(1000000);
         for (int i = 0; i < 10000; i++) {
             long start = System.currentTimeMillis();
-            QueryContext queryContext = new QueryContext("default", new SqlPredicate("salary =121 and age > 20 and age <23"));
+            QueryContext queryContext = new QueryContext("default", new SqlPredicate("salary = 121 and age between 20 and 23"));
             Set<MapEntry> results = mapIndexService.doQuery(queryContext);
             System.out.println("result size " + results.size() + " took " + (System.currentTimeMillis() - start));
         }

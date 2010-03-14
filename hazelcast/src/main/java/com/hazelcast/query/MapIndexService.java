@@ -169,13 +169,6 @@ public class MapIndexService {
                     if (smallestSet == null) {
                         return null;
                     }
-//                    results = new HashSet<MapEntry>(smallestSet.size());
-//                    for (MapEntry entry : smallestSet) {
-//                        Record record = (Record) entry;
-//                        if (record.isActive()) {
-//                            results.add(record);
-//                        }
-//                    }
                     results = new HashSet<MapEntry>(smallestSet.size());
                     Iterator<MapEntry> it = smallestSet.iterator();
                     smallestLoop:
