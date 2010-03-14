@@ -25,7 +25,6 @@ import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.*;
-import com.hazelcast.query.QueryService;
 import com.hazelcast.util.NoneStrictObjectPool;
 
 import java.io.InputStream;
@@ -80,8 +79,6 @@ public class Node {
 
     public final ConnectionManager connectionManager;
 
-    public final QueryService queryService;
-
     public final ClientService clientService;
 
     public final Config config;
@@ -97,8 +94,6 @@ public class Node {
     volatile Address masterAddress = null;
 
     volatile Thread serviceThread = null;
-
-    volatile Thread queryThread = null;
 
     public final FactoryImpl factory;
 
@@ -183,7 +178,6 @@ public class Node {
         outSelector = new OutSelector(this);
         connectionManager = new ConnectionManager(this);
         clientService = new ClientService(this);
-        queryService = new QueryService(this);
         clusterManager = new ClusterManager(this);
         concurrentMapManager = new ConcurrentMapManager(this);
         blockingQueueManager = new BlockingQueueManager(this);
@@ -304,7 +298,6 @@ public class Node {
             logger.log(Level.FINEST, "Shutting down the cluster service");
             clusterService.stop();
             logger.log(Level.FINEST, "Shutting down the query service");
-            queryService.stop();
             if (multicastService != null) {
                 multicastService.stop();
             }
@@ -350,11 +343,6 @@ public class Node {
         serviceThread.setPriority(8);
         logger.log(Level.FINEST, "Starting thread " + serviceThread.getName());
         serviceThread.start();
-        queryThread = new Thread(threadGroup, queryService, "hz.QueryThread");
-//        queryThread.setContextClassLoader(config.getClassLoader());
-        queryThread.setPriority(6);
-        logger.log(Level.FINEST, "Starting thread " + queryThread.getName());
-        queryThread.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(threadGroup, multicastService, "hz.MulticastThread");
             multicastServiceThread.start();

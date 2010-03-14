@@ -55,7 +55,6 @@ public final class ConcurrentMapManager extends BaseManager {
     final OrderedExecutionTask[] orderedExecutionTasks;
     final PartitionManager partitionManager;
     long newRecordId = 0;
-    QueryServiceState queryServiceState = new QueryServiceState(this);
 
     ConcurrentMapManager(Node node) {
         super(node);
@@ -165,7 +164,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
             }
             sbState.append("\nCall Count:" + calls.size());
-            sbState.append("\nQueryService.queue.size:" + queryServiceState.getQueueSize());
             Collection<CMap> cmaps = maps.values();
             for (CMap cmap : cmaps) {
                 cmap.appendState(sbState);
@@ -1135,8 +1133,8 @@ public final class ConcurrentMapManager extends BaseManager {
 
     public int getBlockId(Data key) {
         int hash = key.hashCode();
-        return (hash==Integer.MIN_VALUE)?0:Math.abs(hash) % PARTITION_COUNT;
-    }    
+        return (hash == Integer.MIN_VALUE) ? 0 : Math.abs(hash) % PARTITION_COUNT;
+    }
 
     public long newRecordId() {
         return newRecordId++;

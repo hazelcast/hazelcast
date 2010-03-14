@@ -29,12 +29,12 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public class MapIndexService {
     private final ConcurrentMap<Long, Record> records = new ConcurrentHashMap<Long, Record>(10000);
-    private final MapIndex indexValue = new MapIndex(null, false, -1);
-    private final Map<Expression, MapIndex> mapIndexes = new ConcurrentHashMap<Expression, MapIndex>(6);
+    private final Index indexValue = new Index(null, false, -1);
+    private final Map<Expression, Index> mapIndexes = new ConcurrentHashMap<Expression, Index>(6);
     private volatile boolean hasIndexedAttributes = false;
     private volatile byte[] indexTypes = null;
     private final Object indexTypesLock = new Object();
-    private Collection<MapIndex> indexesInOrder;
+    private Collection<Index> indexesInOrder;
 
     public void index(Record record) {
         final long recordId = record.getId();
@@ -50,8 +50,8 @@ public class MapIndexService {
             if (indexTypes == null || indexValues.length != indexTypes.length) {
                 throw new IllegalArgumentException("index and types don't match " + indexTypes);
             }
-            Collection<MapIndex> indexes = mapIndexes.values();
-            for (MapIndex index : indexes) {
+            Collection<Index> indexes = mapIndexes.values();
+            for (Index index : indexes) {
                 if (indexValues.length > index.getAttributeIndex()) {
                     long newValue = indexValues[index.getAttributeIndex()];
                     index.index(newValue, record);
@@ -67,18 +67,18 @@ public class MapIndexService {
             if (value instanceof Data) {
                 value = toObject((Data) value);
             }
-            Collection<MapIndex> indexes = mapIndexes.values();
-            for (MapIndex mapIndex : indexes) {
-                int attributedIndex = mapIndex.getAttributeIndex();
-                newIndexes[attributedIndex] = mapIndex.extractLongValue(value);
+            Collection<Index> indexes = mapIndexes.values();
+            for (Index index : indexes) {
+                int attributedIndex = index.getAttributeIndex();
+                newIndexes[attributedIndex] = index.extractLongValue(value);
             }
             if (indexTypes == null || indexTypes.length != indexCount) {
                 synchronized (indexTypesLock) {
                     if (indexTypes == null || indexTypes.length != indexCount) {
                         indexTypes = new byte[indexCount];
-                        for (MapIndex mapIndex : indexes) {
-                            int attributedIndex = mapIndex.getAttributeIndex();
-                            indexTypes[attributedIndex] = mapIndex.getIndexType();
+                        for (Index index : indexes) {
+                            int attributedIndex = index.getAttributeIndex();
+                            indexTypes[attributedIndex] = index.getIndexType();
                         }
                     }
                 }
@@ -92,13 +92,13 @@ public class MapIndexService {
         return indexTypes;
     }
 
-    public MapIndex addIndex(Expression expression, boolean ordered, int attributeIndex) {
-        MapIndex index = mapIndexes.get(expression);
+    public Index addIndex(Expression expression, boolean ordered, int attributeIndex) {
+        Index index = mapIndexes.get(expression);
         if (index == null) {
             if (attributeIndex == -1) {
                 attributeIndex = mapIndexes.size();
             }
-            index = new MapIndex(expression, ordered, attributeIndex);
+            index = new Index(expression, ordered, attributeIndex);
             mapIndexes.put(expression, index);
             indexTypes = null;
             //todo build the indexes
@@ -118,10 +118,10 @@ public class MapIndexService {
                 IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
                 strong = iap.collectIndexAwarePredicates(lsIndexAwarePredicates, mapIndexes);
                 if (strong) {
-                    Set<MapIndex> setAppliedIndexes = new HashSet<MapIndex>(1);
+                    Set<Index> setAppliedIndexes = new HashSet<Index>(1);
                     iap.collectAppliedIndexes(setAppliedIndexes, mapIndexes);
                     if (setAppliedIndexes.size() > 0) {
-                        for (MapIndex index : setAppliedIndexes) {
+                        for (Index index : setAppliedIndexes) {
                             if (strong) {
                                 strong = index.isStrong();
                             }
@@ -169,23 +169,24 @@ public class MapIndexService {
                     if (smallestSet == null) {
                         return null;
                     }
+//                    results = new HashSet<MapEntry>(smallestSet.size());
+//                    for (MapEntry entry : smallestSet) {
+//                        Record record = (Record) entry;
+//                        if (record.isActive()) {
+//                            results.add(record);
+//                        }
+//                    }
                     results = new HashSet<MapEntry>(smallestSet.size());
-                    for (MapEntry entry : smallestSet) {
-                        Record record = (Record) entry;
-                        if (record.isActive()) {
-                            results.add(record);
-                        }
-                    }
-                    Iterator<MapEntry> it = results.iterator();
+                    Iterator<MapEntry> it = smallestSet.iterator();
                     smallestLoop:
                     while (it.hasNext()) {
                         MapEntry entry = it.next();
                         for (Set<MapEntry> sub : lsSubResults) {
                             if (!sub.contains(entry)) {
-                                it.remove();
                                 continue smallestLoop;
                             }
                         }
+                        results.add(entry);
                     }
                 } else {
                     results = new HashSet<MapEntry>(records.size());
@@ -213,7 +214,7 @@ public class MapIndexService {
         return results;
     }
 
-    public Map<Expression, MapIndex> getIndexes() {
+    public Map<Expression, Index> getIndexes() {
         return mapIndexes;
     }
 
@@ -221,7 +222,7 @@ public class MapIndexService {
         return hasIndexedAttributes;
     }
 
-    MapIndex getIndexValue() {
+    Index getIndexValue() {
         return indexValue;
     }
 
@@ -233,12 +234,20 @@ public class MapIndexService {
         return false;
     }
 
-    public MapIndex[] getIndexesInOrder() {
-        if (mapIndexes.size() ==0) return null;
-        MapIndex[] indexes = new MapIndex[mapIndexes.size()];
-        for (MapIndex index  : mapIndexes.values()) {
+    public Index[] getIndexesInOrder() {
+        if (mapIndexes.size() == 0) return null;
+        Index[] indexes = new Index[mapIndexes.size()];
+        for (Index index : mapIndexes.values()) {
             indexes[index.getAttributeIndex()] = index;
         }
         return indexes;
+    }
+
+    public void appendState(StringBuffer sbState) {
+        sbState.append("\nIndex- records: " + records.size() + ", mapIndexes:"
+                + mapIndexes.size() + ", indexTypes:" + ((indexTypes == null)? 0 : indexTypes.length));
+        for (Index index : mapIndexes.values()) {
+            index.appendState(sbState);
+        }
     }
 }

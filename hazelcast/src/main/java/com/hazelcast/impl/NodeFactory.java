@@ -17,12 +17,9 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.query.QueryService;
-
 public class NodeFactory {
     Node newNode(FactoryImpl factory) {
         ConcurrentMapManager concurrentMapManager;
-        QueryService queryService;
         BlockingQueueManager blockingQueueManager;
         return null;
     }

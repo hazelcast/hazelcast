@@ -18,16 +18,16 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.query.MapIndex;
+import com.hazelcast.query.Index;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public interface IndexAwarePredicate extends Predicate {
-    boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexAwarePredicates, Map<Expression, MapIndex> mapIndexes);
+    boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexAwarePredicates, Map<Expression, Index> mapIndexes);
 
-    void collectAppliedIndexes(Set<MapIndex> setAppliedIndexes, Map<Expression, MapIndex> mapIndexes);
+    void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index> mapIndexes);
 
     Set<MapEntry> filter(QueryContext queryContext);
 }

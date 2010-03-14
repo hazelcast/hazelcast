@@ -78,6 +78,13 @@ public class QueryService implements Runnable {
             return ((Number) value).longValue();
         } else if (value instanceof Boolean) {
             return (Boolean.TRUE.equals(value)) ? 1 : -1;
+        } else if (value instanceof String) {
+            String str = (String) value;
+            if (str.length() == 0) {
+                return 0;
+            } else {
+                return Character.toUpperCase(str.charAt(0));
+            }
         } else {
             return value.hashCode();
         }

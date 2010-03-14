@@ -1266,9 +1266,7 @@ public class CMap {
         if (mapNearCache != null) {
             mapNearCache.appendState(sbState);
         }
-        if (concurrentMapManager.queryServiceState != null) {
-            concurrentMapManager.queryServiceState.appendState(name, sbState);
-        }
+        mapIndexService.appendState(sbState);
     }
 
     public static class Values implements Collection, DataSerializable {

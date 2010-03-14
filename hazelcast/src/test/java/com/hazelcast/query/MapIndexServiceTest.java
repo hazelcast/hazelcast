@@ -17,6 +17,7 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.Record;
 import org.junit.Test;
@@ -24,12 +25,29 @@ import org.junit.Test;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class MapIndexServiceTest extends TestUtil {
+
+    @Test
+    public void testMap() throws Exception {
+        Map map = Hazelcast.getMap("default");
+        for (int i = 0; i < 200000; i++) {
+            Employee employee = new Employee("Name" + i, i % 80, (i % 2 == 0), 100 + (i % 1000));
+            map.put(i, employee);
+        }
+        System.out.println("done");
+        long total = Runtime.getRuntime().totalMemory();
+        long free = Runtime.getRuntime().freeMemory();
+        System.out.println("Used Memory:" + ((total - free) / 1024 / 1024));
+        Thread.sleep(1000000);
+    }
+
     @Test
     public void testIndex() throws Exception {
         MapIndexService mapIndexService = new MapIndexService();
+        Map<Expression, Index> indexes = mapIndexService.getIndexes();
         assertFalse(mapIndexService.hasIndexedAttributes());
         Expression nameExpression = Predicates.get("name");
         Expression ageExpression = Predicates.get("age");
@@ -37,22 +55,27 @@ public class MapIndexServiceTest extends TestUtil {
         mapIndexService.addIndex(nameExpression, false, 0);
         mapIndexService.addIndex(ageExpression, true, 1);
         mapIndexService.addIndex(salaryExpression, true, 2);
-        Map<Expression, MapIndex> indexes = mapIndexService.getIndexes();
         assertTrue(indexes.containsKey(nameExpression));
         assertTrue(indexes.containsKey(ageExpression));
-        assertEquals(3, indexes.size());
+        assertTrue(indexes.containsKey(salaryExpression));
+//        assertEquals(2, indexes.size());
         assertTrue(mapIndexService.hasIndexedAttributes());
-        for (int i = 0; i < 100; i++) {
-            Employee employee = new Employee("Name" + i, i % 80, true, 100 + i);
+        for (int i = 0; i < 200000; i++) {
+            Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
             Record record = newRecord(i, "key" + i, employee);
             record.setIndexes(mapIndexService.getIndexValues(employee), mapIndexService.getIndexTypes());
             mapIndexService.index(record);
         }
-        QueryContext queryContext = new QueryContext("default", new SqlPredicate ("age >=10 and age <=20"));
-        Set<MapEntry> results = mapIndexService.doQuery(queryContext);
-        System.out.println("result size " + results.size());
-        for (MapEntry entry : results) {
-            System.out.println(entry.getValue());
+        System.out.println("done");
+        long total = Runtime.getRuntime().totalMemory();
+        long free = Runtime.getRuntime().freeMemory();
+        System.out.println("Used Memory:" + ((total - free) / 1024 / 1024));
+        Thread.sleep(1000000);
+        for (int i = 0; i < 10000; i++) {
+            long start = System.currentTimeMillis();
+            QueryContext queryContext = new QueryContext("default", new SqlPredicate("salary =121 and age > 20 and age <23"));
+            Set<MapEntry> results = mapIndexService.doQuery(queryContext);
+            System.out.println("result size " + results.size() + " took " + (System.currentTimeMillis() - start));
         }
     }
 

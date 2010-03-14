@@ -18,7 +18,7 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.query.MapIndex;
+import com.hazelcast.query.Index;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.SerializationHelper;
 
@@ -63,7 +63,7 @@ public class Predicates {
         }
 
         public Set<MapEntry> filter(QueryContext queryContext) {
-            MapIndex index = queryContext.getMapIndexes().get(first);
+            Index index = queryContext.getMapIndexes().get(first);
             return index.getSubRecords(equal, less, index.getLongValue(second));
         }
 
@@ -111,7 +111,7 @@ public class Predicates {
         }
 
         public Set<MapEntry> filter(QueryContext queryContext) {
-            MapIndex index = queryContext.getMapIndexes().get(first);
+            Index index = queryContext.getMapIndexes().get(first);
             return index.getSubRecordsBetween(index.getLongValue(second), index.getLongValue(to));
         }
 
@@ -234,9 +234,9 @@ public class Predicates {
             return false;
         }
 
-        public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, MapIndex> mapIndexes) {
+        public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index> mapIndexes) {
             if (first instanceof GetExpression) {
-                MapIndex index = mapIndexes.get(first);
+                Index index = mapIndexes.get(first);
                 if (index != null) {
                     lsIndexPredicates.add(this);
                 } else {
@@ -246,15 +246,15 @@ public class Predicates {
             return true;
         }
 
-        public void collectAppliedIndexes(Set<MapIndex> setAppliedIndexes, Map<Expression, MapIndex> mapIndexes) {
-            MapIndex index = mapIndexes.get(first);
+        public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index> mapIndexes) {
+            Index index = mapIndexes.get(first);
             if (index != null) {
                 setAppliedIndexes.add(index);
             }
         }
 
         public Set<MapEntry> filter(QueryContext queryContext) {
-            MapIndex index = queryContext.getMapIndexes().get(first);
+            Index index = queryContext.getMapIndexes().get(first);
             if (index != null) {
                 long[] longValues = new long[values.length];
                 for (int i = 0; i < values.length; i++) {
@@ -411,9 +411,9 @@ public class Predicates {
             return first.equals(second);
         }
 
-        public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, MapIndex> mapIndexes) {
+        public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index> mapIndexes) {
             if (!secondIsExpression && first instanceof GetExpression) {
-                MapIndex index = mapIndexes.get(first);
+                Index index = mapIndexes.get(first);
                 if (index != null) {
                     lsIndexPredicates.add(this);
                 } else {
@@ -423,15 +423,15 @@ public class Predicates {
             return true;
         }
 
-        public void collectAppliedIndexes(Set<MapIndex> setAppliedIndexes, Map<Expression, MapIndex> mapIndexes) {
-            MapIndex index = mapIndexes.get(first);
+        public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index> mapIndexes) {
+            Index index = mapIndexes.get(first);
             if (index != null) {
                 setAppliedIndexes.add(index);
             }
         }
 
         public Set<MapEntry> filter(QueryContext queryContext) {
-            MapIndex index = queryContext.getMapIndexes().get(first);
+            Index index = queryContext.getMapIndexes().get(first);
             if (index != null) {
                 return index.getRecords(index.getLongValue(second));
             } else {
@@ -517,7 +517,7 @@ public class Predicates {
             return and;
         }
 
-        public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, MapIndex> mapIndexes) {
+        public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index> mapIndexes) {
             boolean strong = and;
             if (and) {
                 for (Predicate predicate : predicates) {
@@ -538,7 +538,7 @@ public class Predicates {
             return null;
         }
 
-        public void collectAppliedIndexes(Set<MapIndex> setAppliedIndexes, Map<Expression, MapIndex> mapIndexes) {
+        public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index> mapIndexes) {
             if (and) {
                 for (Predicate predicate : predicates) {
                     if (predicate instanceof IndexAwarePredicate) {

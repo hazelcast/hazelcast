@@ -20,7 +20,7 @@ package com.hazelcast.impl.concurrentmap;
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.impl.CMap;
 import com.hazelcast.impl.FactoryImpl;
-import com.hazelcast.query.MapIndex;
+import com.hazelcast.query.Index;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -36,9 +36,9 @@ public class InitialState extends AbstractRemotelyProcessable {
 
     public void createAndAddMapState(CMap cmap) {
         MapState mapState = new MapState(cmap.getName());
-        MapIndex[] indexes = cmap.getMapIndexService().getIndexesInOrder();
+        Index[] indexes = cmap.getMapIndexService().getIndexesInOrder();
         if (indexes != null) {
-            for (MapIndex index : indexes) {
+            for (Index index : indexes) {
                 AddMapIndex mi = new AddMapIndex(cmap.getName(), index.getExpression(), index.isOrdered(), index.getAttributeIndex());
                 mapState.addMapIndex(mi);
             }

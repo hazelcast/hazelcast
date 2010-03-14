@@ -17,83 +17,58 @@
 
 package com.hazelcast.query;
 
-import java.util.*;
+import com.hazelcast.core.MapEntry;
+import com.hazelcast.impl.Record;
 
-public class Index<T> {
-    final Map<Long, Set<T>> mapIndex;
-    final Expression expression;
-    final boolean ordered;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+public class Index {
+    // recordId -- indexValue
+    private final ConcurrentMap<Long, Long> recordValues = new ConcurrentHashMap<Long, Long>(10000, 0.75f, 1);
+    // indexValue -- Map<recordId, Record>
+    private final ConcurrentMap<Long, ConcurrentMap<Long, Record>> mapRecords = new ConcurrentHashMap<Long, ConcurrentMap<Long, Record>>(100, 0.75f, 1);
+    private final Expression expression;
+    private final boolean ordered;
+    private final int attributeIndex;
+    private volatile TreeSet<Long> valueOrder = null;
+    private volatile byte returnType = -1;
     volatile boolean strong = false;
     volatile boolean checkedStrength = false;
-    volatile byte returnType = -1;
 
-    public Index(Expression expression, boolean ordered) {
-        this.ordered = ordered;
+    Index(Expression expression, boolean ordered, int attributeIndex) {
         this.expression = expression;
-        this.mapIndex = (ordered) ? new TreeMap<Long, Set<T>>() : new HashMap<Long, Set<T>>(1000);
+        this.ordered = ordered;
+        this.attributeIndex = attributeIndex;
     }
 
-    public Map<Long, Set<T>> getMapIndex() {
-        return mapIndex;
-    }
-
-    public Expression getExpression() {
-        return expression;
-    }
-
-    public boolean isOrdered() {
-        return ordered;
-    }
-
-    public boolean isStrong() {
-        return strong;
-    }
-
-    public void setStrong(boolean strong) {
-        this.strong = strong;
-    }
-
-    void addNewIndex(long value, byte type, T record) {
-        if (returnType == -1) {
-            returnType = type;
-        } else if (returnType != type) {
-            throw new RuntimeException("Index types are not the same. Found:" + returnType + " New:" + type);
+    public void index(long newValue, Record record) {
+        if (expression != null && returnType == -1) {
+            returnType = record.getIndexTypes()[attributeIndex];
         }
-        Set<T> setRecords = mapIndex.get(value);
-        if (setRecords == null) {
-            setRecords = new LinkedHashSet<T>();
-            mapIndex.put(value, setRecords);
-        }
-        setRecords.add(record);
-    }
-
-    void updateIndex(long oldValue, long newValue, byte type, T record) {
-        if (oldValue == Long.MIN_VALUE) {
-            addNewIndex(newValue, type, record);
+        final long recordId = record.getId();
+        Long oldValue = recordValues.get(recordId);
+        if (record.isActive()) {
+            // add or update
+            if (oldValue == null) {
+                // record is new
+                newRecordIndex(newValue, record);
+            } else if (!oldValue.equals(newValue)) {
+                // record is updated
+                removeRecordIndex(oldValue, recordId);
+                newRecordIndex(newValue, record);
+            }
         } else {
-            if (oldValue != newValue) {
-                removeIndex(oldValue, record);
-                addNewIndex(newValue, type, record);
+            // remove the index
+            if (oldValue != null) {
+                removeRecordIndex(oldValue, recordId);
             }
+            recordValues.remove(recordId);
         }
-    }
-
-    void removeIndex(long value, T record) {
-        Set<T> setRecords = mapIndex.get(value);
-        if (setRecords != null && setRecords.size() > 0) {
-            setRecords.remove(record);
-            if (setRecords.size() == 0) {
-                mapIndex.remove(value);
-            }
+        if (ordered && valueOrder == null) {
+//                orderValues();
         }
-    }
-
-    public byte getIndexType() {
-        if (returnType == -1) {
-            Predicates.GetExpressionImpl ex = (Predicates.GetExpressionImpl) expression;
-            returnType = getIndexType(ex.getter.getReturnType());
-        }
-        return returnType;
     }
 
     public long extractLongValue(Object value) {
@@ -107,8 +82,282 @@ public class Index<T> {
                 }
                 checkedStrength = true;
             }
-            return QueryService.getLongValue(extractedValue);
+            return getLongValueByType(extractedValue);
         }
+    }
+
+    private void newRecordIndex(long newValue, Record record) {
+        long recordId = record.getId();
+        ConcurrentMap<Long, Record> records = mapRecords.get(newValue);
+        if (records == null) {
+            records = new ConcurrentHashMap<Long, Record>(100, 0.75f, 1);
+            mapRecords.put(newValue, records);
+            invalidateOrder();
+        }
+        records.put(recordId, record);
+        recordValues.put(recordId, newValue);
+    }
+
+    private void removeRecordIndex(long oldValue, long recordId) {
+        recordValues.remove(recordId);
+        ConcurrentMap<Long, Record> records = mapRecords.get(oldValue);
+        if (records != null) {
+            records.remove(recordId);
+            if (records.size() == 0) {
+                mapRecords.remove(oldValue);
+                invalidateOrder();
+            }
+        }
+    }
+
+    private void invalidateOrder() {
+        valueOrder = null;
+    }
+
+    public void appendState(StringBuffer sbState) {
+        sbState.append("\nexp:" + expression + ", recordValues:" + recordValues.size() + ", valueRecords: " + mapRecords.size());
+    }
+
+    class SingleResultSet extends AbstractSet<MapEntry> {
+        private Collection<? extends MapEntry> records;
+
+        SingleResultSet(Collection<Record> records) {
+            this.records = records;
+        }
+
+        public void setResultSet(Collection<? extends MapEntry> resultSet) {
+            this.records = resultSet;
+        }
+
+        @Override
+        public Iterator<MapEntry> iterator() {
+            return (Iterator<MapEntry>) records.iterator();
+        }
+
+        @Override
+        public int size() {
+            return records.size();
+        }
+    }
+
+    class MultiResultSet extends AbstractSet<MapEntry> {
+        private List<Collection<Record>> resultSets = new ArrayList<Collection<Record>>();
+        private Set<Long> indexValues = new HashSet<Long>();
+
+        MultiResultSet() {
+        }
+
+        public void addResultSet(Long indexValue, Collection<Record> resultSet) {
+            resultSets.add(resultSet);
+            indexValues.add(indexValue);
+        }
+
+        @Override
+        public Iterator<MapEntry> iterator() {
+            return new It();
+        }
+
+        @Override
+        public boolean contains(Object mapEntry) {
+            Long indexValue = recordValues.get(((Record) mapEntry).getId());
+            if (indexValue == null) return false;
+            else return indexValues.contains(indexValue);
+        }
+
+        class It implements Iterator<MapEntry> {
+            int currentIndex = 0;
+            Iterator<Record> currentIterator;
+
+            public boolean hasNext() {
+//                if (true) throw new RuntimeException();
+                if (resultSets.size() == 0) return false;
+                if (currentIterator != null && currentIterator.hasNext()) {
+                    return true;
+                }
+                while (currentIndex < resultSets.size()) {
+                    currentIterator = resultSets.get(currentIndex++).iterator();
+                    if (currentIterator.hasNext()) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            public MapEntry next() {
+                if (resultSets.size() == 0) return null;
+                return currentIterator.next();
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        }
+
+        @Override
+        public boolean add(MapEntry obj) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int size() {
+            int size = 0;
+            for (Collection<Record> resultSet : resultSets) {
+                size += resultSet.size();
+            }
+            return size;
+        }
+    }
+
+    public Set<MapEntry> getRecords(long[] values) {
+        Set<MapEntry> results = new HashSet<MapEntry>();
+        for (Long value : values) {
+            ConcurrentMap<Long, Record> records = mapRecords.get(value);
+            if (records != null) {
+                results.addAll(records.values());
+            }
+        }
+        return results;
+    }
+
+    public Set<MapEntry> getSubRecordsBetween(long from, long to) {
+        Set<MapEntry> results = new HashSet<MapEntry>();
+        if (valueOrder != null) {
+            Set<Long> values = valueOrder.subSet(from, to);
+            for (Long value : values) {
+                ConcurrentMap<Long, Record> records = mapRecords.get(value);
+                if (records != null) {
+                    results.addAll(records.values());
+                }
+            }
+            // to wasn't included so include now
+            ConcurrentMap<Long, Record> records = mapRecords.get(to);
+            if (records != null) {
+                results.addAll(records.values());
+            }
+            return results;
+        } else {
+            Set<Long> values = mapRecords.keySet();
+            for (Long value : values) {
+                if (value >= from && value <= to) {
+                    ConcurrentMap<Long, Record> records = mapRecords.get(value);
+                    if (records != null) {
+                        results.addAll(records.values());
+                    }
+                }
+            }
+        }
+        return results;
+    }
+
+    public Set<MapEntry> getRecords(long value) {
+        Set<MapEntry> results = new HashSet<MapEntry>();
+        ConcurrentMap<Long, Record> records = mapRecords.get(value);
+        if (records != null) {
+            results.addAll(records.values());
+        }
+        return results;
+    }
+
+    public Set<MapEntry> getRecords2(long value) {
+        SingleResultSet results = new SingleResultSet(null);
+        ConcurrentMap<Long, Record> records = mapRecords.get(value);
+        if (records != null) {
+            results.setResultSet(records.values());
+        }
+        return results;
+    }
+
+    public Set<MapEntry> getSubRecords2(boolean equal, boolean lessThan, long searchedValue) {
+        Set<MapEntry> results = new HashSet<MapEntry>();
+        if (valueOrder != null) {
+            Set<Long> values = (lessThan) ? valueOrder.headSet(searchedValue) : valueOrder.tailSet(searchedValue);
+            if (lessThan && equal) {
+                values.add(searchedValue);
+            }
+            for (Long value : values) {
+                ConcurrentMap<Long, Record> records = mapRecords.get(value);
+                if (records != null) {
+                    results.addAll(records.values());
+                }
+            }
+        } else {
+            Set<Long> values = mapRecords.keySet();
+            for (Long value : values) {
+                boolean valid;
+                if (lessThan) {
+                    valid = (equal) ? (value <= searchedValue) : (value < searchedValue);
+                } else {
+                    valid = (equal) ? (value >= searchedValue) : (value > searchedValue);
+                }
+                if (valid) {
+                    ConcurrentMap<Long, Record> records = mapRecords.get(value);
+                    if (records != null) {
+                        results.addAll(records.values());
+                    }
+                }
+            }
+        }
+        return results;
+    }
+
+    public Set<MapEntry> getSubRecords(boolean equal, boolean lessThan, long searchedValue) {
+        MultiResultSet results = new MultiResultSet();
+        if (valueOrder != null) {
+            Set<Long> values = (lessThan) ? valueOrder.headSet(searchedValue) : valueOrder.tailSet(searchedValue);
+            for (Long value : values) {
+                // exclude from when you have '>'
+                // because from is included
+                if (lessThan || equal || !value.equals(searchedValue)) {
+                    ConcurrentMap<Long, Record> records = mapRecords.get(value);
+                    if (records != null) {
+                        results.addResultSet(value, records.values());
+                    }
+                }
+            }
+            if (lessThan && equal) {
+                // to wasn't included so include now
+                ConcurrentMap<Long, Record> records = mapRecords.get(searchedValue);
+                if (records != null) {
+                    results.addResultSet(searchedValue, records.values());
+                }
+            }
+        } else {
+            Set<Long> values = mapRecords.keySet();
+            for (Long value : values) {
+                boolean valid;
+                if (lessThan) {
+                    valid = (equal) ? (value <= searchedValue) : (value < searchedValue);
+                } else {
+                    valid = (equal) ? (value >= searchedValue) : (value > searchedValue);
+                }
+                if (valid) {
+                    ConcurrentMap<Long, Record> records = mapRecords.get(value);
+                    if (records != null) {
+                        results.addResultSet(value, records.values());
+                    }
+                }
+            }
+        }
+        return results;
+    }
+
+    private void orderValues() {
+        if (ordered) {
+            TreeSet<Long> ordered = new TreeSet<Long>();
+            Set<Long> values = mapRecords.keySet();
+            for (Long value : values) {
+                ordered.add(value);
+            }
+            valueOrder = ordered;
+        }
+    }
+
+    public byte getIndexType() {
+        if (returnType == -1) {
+            Predicates.GetExpressionImpl ex = (Predicates.GetExpressionImpl) expression;
+            returnType = getIndexType(ex.getter.getReturnType());
+        }
+        return returnType;
     }
 
     public byte getIndexType(Class klass) {
@@ -130,6 +379,28 @@ public class Index<T> {
             return 8;
         } else {
             return 9;
+        }
+    }
+
+    private static long getLongValueByType(Object value) {
+        if (value == null) return Long.MAX_VALUE;
+        if (value instanceof Double) {
+            return Double.doubleToLongBits((Double) value);
+        } else if (value instanceof Float) {
+            return Float.floatToIntBits((Float) value);
+        } else if (value instanceof Number) {
+            return ((Number) value).longValue();
+        } else if (value instanceof Boolean) {
+            return (Boolean.TRUE.equals(value)) ? 1 : -1;
+        } else if (value instanceof String) {
+            String str = (String) value;
+            if (str.length() == 0) {
+                return 0;
+            } else {
+                return Character.toUpperCase(str.charAt(0));
+            }
+        } else {
+            return value.hashCode();
         }
     }
 
@@ -156,70 +427,31 @@ public class Index<T> {
                 }
             }
         }
-        return QueryService.getLongValue(value);
+        return getLongValueByType(value);
     }
 
-    Set<T> getRecords(long value) {
-        return mapIndex.get(value);
+    public int getAttributeIndex() {
+        return attributeIndex;
     }
 
-    Set<T> getRecords(QueryContext queryContext, long[] values) {
-        Set<T> results = new HashSet<T>();
-        for (long value : values) {
-            Set<T> records = mapIndex.get(value);
-            if (records != null) {
-                results.addAll(records);
-            }
-        }
-        return results;
+    ConcurrentMap<Long, Long> getRecordValues() {
+        return recordValues;
     }
 
-    Set<T> getSubRecords(QueryContext queryContext, boolean equal, boolean lessThan, long value) {
-        if (mapIndex instanceof HashSet) return null;
-        TreeMap<Long, Set<T>> treeMap = (TreeMap<Long, Set<T>>) mapIndex;
-        Set<T> results = new HashSet<T>();
-        Map<Long, Set<T>> sub = (lessThan) ? treeMap.headMap(value) : treeMap.tailMap(value);
-        Set<Map.Entry<Long, Set<T>>> entries = sub.entrySet();
-        for (Map.Entry<Long, Set<T>> entry : entries) {
-            if (equal || entry.getKey() != value) {
-                Set<T> values = entry.getValue();
-                results.addAll(values);
-            }
-        }
-        if (lessThan && equal) {
-            // treeMap.headMap(key) doesn't
-            // include the key so get and add it. 
-            Set<T> recs = treeMap.get(value);
-            if (recs != null) {
-                results.addAll(recs);
-            }
-        }
-        return results;
+    ConcurrentMap<Long, ConcurrentMap<Long, Record>> getMapRecords() {
+        return mapRecords;
     }
 
-    /**
-     * from and to should be included
-     *
-     * @param queryContext query context
-     * @param from         from value (included)
-     * @param to           to value (included
-     * @return matching record set
-     */
-    Set<T> getSubRecordsBetween(QueryContext queryContext, long from, long to) {
-        if (mapIndex instanceof HashSet) return null;
-        TreeMap<Long, Set<T>> treeMap = (TreeMap<Long, Set<T>>) mapIndex;
-        Set<T> results = new HashSet<T>();
-        Collection<Set<T>> sub = treeMap.subMap(from, to).values();
-        for (Set<T> records : sub) {
-            results.addAll(records);
-        }
-        // treeMap.subMap(from, to) doesn't include the last
-        // 'to' entry. so get and add it.
-        Set<T> lastSet = treeMap.get(to);
-        if (lastSet != null) {
-            results.addAll(lastSet);
-        }
-        return results;
+    public Expression getExpression() {
+        return expression;
+    }
+
+    public boolean isOrdered() {
+        return ordered;
+    }
+
+    public boolean isStrong() {
+        return strong;
     }
 
     @Override
@@ -238,11 +470,12 @@ public class Index<T> {
     @Override
     public String toString() {
         final StringBuffer sb = new StringBuffer();
-        sb.append("Index");
-        sb.append("{size='").append(mapIndex.size()).append('\'');
+        sb.append("Index{");
+        sb.append("indexValues=").append(mapRecords.size());
+        sb.append(", recordValues=").append(recordValues.size());
         sb.append(", ordered=").append(ordered);
         sb.append(", strong=").append(strong);
-        sb.append(", expression=").append(expression.getClass());
+        sb.append(", expression=").append(expression);
         sb.append('}');
         return sb.toString();
     }
