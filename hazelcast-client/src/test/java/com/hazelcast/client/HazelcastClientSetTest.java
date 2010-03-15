@@ -61,7 +61,7 @@ public class HazelcastClientSetTest {
         set.add("hello");
         set.remove("hello");
         set.remove("hello");
-        Thread.sleep(100);
+        Thread.sleep(1000);
         assertEquals(3, addLatch.getCount());
         assertEquals(3, removeLatch.getCount());
     }
