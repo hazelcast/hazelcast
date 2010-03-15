@@ -61,7 +61,7 @@ public class MapIndexServiceTest extends TestUtil {
             long start = System.currentTimeMillis();
             QueryContext queryContext = new QueryContext("default", new SqlPredicate("salary=121 and age >20 and age <23"));
             Set<MapEntry> results = mapIndexService.doQuery(queryContext);
-            System.out.println("result size " + results.size() + " took " + (System.currentTimeMillis() - start));
+//            System.out.println("result size " + results.size() + " took " + (System.currentTimeMillis() - start));
         }
     }
 }

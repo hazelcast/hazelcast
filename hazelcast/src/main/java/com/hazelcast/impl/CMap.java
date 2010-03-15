@@ -62,6 +62,8 @@ public class CMap {
 
     final Set<Record> ownedRecords = new HashSet<Record>(DEFAULT_MAP_SIZE);
 
+    final Set<Record> setDirtyRecords;
+
     final SortedHashMap<Data, Record> mapRecords;
 
     final String name;
@@ -87,8 +89,6 @@ public class CMap {
     final MapStore store;
 
     final long writeDelayMillis;
-
-    final Set<Record> setDirtyRecords;
 
     final long removeDelayMillis;
 
