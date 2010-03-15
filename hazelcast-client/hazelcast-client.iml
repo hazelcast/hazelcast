@@ -20,6 +20,5 @@
     <orderEntry type="library" scope="PROVIDED" name="Maven: xerces:xmlParserAPIs:2.6.2" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.mockito:mockito-all:1.8.2" level="project" />
   </component>
-  
 </module>
 
