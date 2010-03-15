@@ -20,6 +20,7 @@ package com.hazelcast.query;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.Record;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Map;
@@ -29,19 +30,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class MapIndexServiceTest extends TestUtil {
-
-    @Test
-    public void testMap() throws Exception {
-        Map map = Hazelcast.getMap("default");
-        for (int i = 0; i < 200000; i++) {
-            Employee employee = new Employee("Name" + i, i % 80, (i % 2 == 0), 100 + (i % 1000));
-            map.put(i, employee);
-        }
-        System.out.println("done");
-        long total = Runtime.getRuntime().totalMemory();
-        long free = Runtime.getRuntime().freeMemory();
-        System.out.println("Used Memory:" + ((total - free) / 1024 / 1024));
-    }
 
     @Test
     public void testIndex() throws Exception {
@@ -71,37 +59,9 @@ public class MapIndexServiceTest extends TestUtil {
         System.out.println("Used Memory:" + ((total - free) / 1024 / 1024));
         for (int i = 0; i < 10000; i++) {
             long start = System.currentTimeMillis();
-            QueryContext queryContext = new QueryContext("default", new SqlPredicate("active and age >20 and age <23"));
+            QueryContext queryContext = new QueryContext("default", new SqlPredicate("salary=121 and age >20 and age <23"));
             Set<MapEntry> results = mapIndexService.doQuery(queryContext);
             System.out.println("result size " + results.size() + " took " + (System.currentTimeMillis() - start));
-        }
-    }
-
-    class ExpressionImpl<T> implements Expression<T> {
-        final String name;
-        final T value;
-
-        ExpressionImpl(String name, T value) {
-            this.value = value;
-            this.name = name;
-        }
-
-        public T getValue(Object obj) {
-            return value;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            ExpressionImpl that = (ExpressionImpl) o;
-            if (name != null ? !name.equals(that.name) : that.name != null) return false;
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            return name != null ? name.hashCode() : 0;
         }
     }
 }

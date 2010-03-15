@@ -597,7 +597,24 @@ public class CMap {
     }
 
     public void containsValue(Request request) {
-        request.response = mapIndexService.containsValue(request.value);
+        if (isMultiMap()) {
+            boolean found = false;
+            Collection<Record> records = mapRecords.values();
+            for (Record record : records) {
+                long now = System.currentTimeMillis();
+                if (record.isActive() && record.isValid(now)) {
+                    Block block = blocks[record.getBlockId()];
+                    if (thisAddress.equals(block.getOwner())) {
+                        if (record.containsValue(request.value)) {
+                            found = true;
+                        }
+                    }
+                }
+            }
+            request.response = found;
+        } else {
+            request.response = mapIndexService.containsValue(request.value);
+        }
     }
 
     public CMapEntry getMapEntry(Request req) {
