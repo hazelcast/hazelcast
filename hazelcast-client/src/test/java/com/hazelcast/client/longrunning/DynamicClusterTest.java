@@ -15,8 +15,12 @@
  *
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.longrunning;
 
+import com.hazelcast.client.CountDownLatchEntryListener;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.NoMemberAvailableException;
+import com.hazelcast.client.TestUtility;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.XmlConfigBuilder;
@@ -34,7 +38,6 @@ import java.util.concurrent.locks.Lock;
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static org.junit.Assert.*;
 
-@Ignore
 public class DynamicClusterTest {
     HazelcastClient client;
 

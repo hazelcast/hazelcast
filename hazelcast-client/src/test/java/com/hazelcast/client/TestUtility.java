@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import java.net.InetSocketAddress;
 
 public class TestUtility {
-    static HazelcastClient client;
+    public static HazelcastClient client;
     static HazelcastInstance hz;
 
     public static HazelcastClient getHazelcastClient() {

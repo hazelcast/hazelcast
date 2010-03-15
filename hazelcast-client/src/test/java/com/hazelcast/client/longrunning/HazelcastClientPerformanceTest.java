@@ -15,12 +15,15 @@
  *
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.longrunning;
 
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.TestUtility;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
@@ -29,7 +32,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-
 public class HazelcastClientPerformanceTest {
 
     @Test
