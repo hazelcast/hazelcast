@@ -241,6 +241,7 @@ public class DynamicClusterTest {
 
     //ok to fail due to lock
     @Test
+    @Ignore
     public void testGetInstancesCreatedFromCluster() {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
         List list = h.getList("testGetInstancesCreatedFromCluster");
