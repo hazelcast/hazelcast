@@ -7,7 +7,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>1.8.2</version>
+    <version>1.8.3-SNAPSHOT</version>
     <name>Hazelcast Root</name>
 
     <modules>
@@ -143,7 +143,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
-            <version>1.8.2</version>
+            <version>1.8.3-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
 

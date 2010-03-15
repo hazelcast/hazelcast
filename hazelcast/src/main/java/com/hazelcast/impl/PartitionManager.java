@@ -515,14 +515,6 @@ public class PartitionManager implements Runnable, PartitionService {
                     if (record.isActive() && blocksOwnedAfterDead.contains(record.getBlockId())) {
                         cmap.markAsOwned(record);
                         // you have to update the indexes
-                        // as if this record is new so extract the values first
-                        int valueHash = record.getValueHash();
-                        long[] indexes = record.getIndexes();
-                        byte[] indexTypes = record.getIndexTypes();
-                        // set the indexes to null, (new record)
-//                        record.setValueHash(Integer.MIN_VALUE);
-//                        record.setIndexes(null, null);
-                        // now update the index
                         cmap.updateIndexes(record);
                     }
                 }

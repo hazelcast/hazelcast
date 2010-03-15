@@ -1622,25 +1622,17 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class ContainsValueOperationHandler extends ExecutedOperationHandler {
+    class ContainsValueOperationHandler extends AbstractOperationHandler {
 
         @Override
         public void process(Packet packet) {
             processMigrationAware(packet);
         }
 
-        Runnable createRunnable(final Request request) {
-            final CMap cmap = getOrCreateMap(request.name);
-            return new Runnable() {
-                public void run() {
-                    request.response = cmap.getMapIndexService().containsValue(request.value);
-                    enqueueAndReturn(new Processable() {
-                        public void process() {
-                            returnResponse(request);
-                        }
-                    });
-                }
-            };
+        @Override
+        void doOperation(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            cmap.containsValue(request);            
         }
     }
 

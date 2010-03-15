@@ -1,5 +1,5 @@
 <project basedir="." name="hazelcast" default="jar">
-    <property name="version" value="1.8.1"/>
+    <property name="version" value="1.8.3-SNAPSHOT"/>
 
     <property name="core.src.dir" value="hazelcast/src/main/java"/>
     <property name="core.classes.dir" value="hazelcast/target/classes"/>
@@ -30,6 +30,7 @@
                 <attribute name="Main-Class" value="com.hazelcast.examples.TestApp"/>
             </manifest>
         </jar>
+        <copy  file="${core.jar.name}" todir="files/web/files"/>
     </target>
 
     <target name="client">

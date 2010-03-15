@@ -65,7 +65,6 @@ public class Record implements MapEntry {
     private final long id;
     private long[] indexes; // indexes of the current value; only used by QueryThread
     private byte[] indexTypes; // index types of the current value; only used by QueryThread
-    private volatile int valueHash = Integer.MIN_VALUE; // hash of the current value; read by ServiceThread, updated by QueryThread
 
     public Record(FactoryImpl factory, String name, int blockId, Data key, Data value, long ttl, long maxIdleMillis, long id) {
         super();
@@ -86,7 +85,6 @@ public class Record implements MapEntry {
     public Record copy() {
         Record recordCopy = new Record(factory, name, blockId, key.get(), value.get(), getRemainingTTL(), getRemainingIdle(), id);
         recordCopy.setIndexes(indexes, indexTypes);
-        recordCopy.setValueHash(valueHash);
         recordCopy.setLockCount(lockCount);
         recordCopy.setLockAddress(lockAddress);
         recordCopy.setLockThreadId(lockThreadId);
@@ -98,14 +96,6 @@ public class Record implements MapEntry {
 
     public RecordEntry getRecordEntry() {
         return recordEntry;
-    }
-
-    public int getValueHash() {
-        return valueHash;
-    }
-
-    public void setValueHash(int valueHash) {
-        this.valueHash = valueHash;
     }
 
     public void runBackupOps() {

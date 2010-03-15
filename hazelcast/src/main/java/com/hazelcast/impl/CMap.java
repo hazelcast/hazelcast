@@ -596,6 +596,10 @@ public class CMap {
         return false;
     }
 
+    public void containsValue(Request request) {
+        request.response = mapIndexService.containsValue(request.value);
+    }
+
     public CMapEntry getMapEntry(Request req) {
         Record record = getRecord(req.key);
         if (record == null || !record.isActive() || !record.isValid()) {

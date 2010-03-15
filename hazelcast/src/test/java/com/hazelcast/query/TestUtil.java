@@ -37,7 +37,7 @@ public class TestUtil {
         return record;
     }
 
-
+    @Ignore
     public static class Employee implements Serializable {
         String name;
         int age;

@@ -43,7 +43,9 @@ public class MapIndexService {
         } else {
             records.put(recordId, record);
         }
-        indexValue.index(record.getValueHash(), record);
+        if (record.getValue() != null) {
+            indexValue.index(record.getValue().hashCode(), record);
+        }
         long[] indexValues = record.getIndexes();
         byte[] indexTypes = record.getIndexTypes();
         if (indexValues != null && hasIndexedAttributes) {
@@ -224,6 +226,14 @@ public class MapIndexService {
     }
 
     public boolean containsValue(Data value) {
+        Set<MapEntry> results = indexValue.getRecords(value.hashCode());
+        if (results == null || results.size() == 0) return false;
+        for (MapEntry entry : results) {
+            Record record = (Record) entry;
+            if (record.containsValue(value)) {
+                return true;
+            }
+        }
         return false;
     }
 
