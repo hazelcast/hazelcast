@@ -20,6 +20,7 @@ package com.hazelcast.client;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ItemListener;
 import org.junit.AfterClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
@@ -73,6 +74,7 @@ public class HazelcastClientSetTest {
     }
 
     @Test
+    @Ignore
     public void TenTimesAddRemoveItemListener() throws InterruptedException {
         ExecutorService ex = Executors.newFixedThreadPool(1);
         final int count = 10;
