@@ -201,15 +201,16 @@ public class DynamicClusterTest {
 
     @Test
     public void testGetInstancesCreatedFromClient() {
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        List list = getHazelcastClient(h).getList("testGetInstancesCreatedFromClient");
-        Map map = getHazelcastClient(h).getMap("testGetInstancesCreatedFromClient");
-        MultiMap mmap = getHazelcastClient(h).getMultiMap("testGetInstancesCreatedFromClient");
-        Queue q = getHazelcastClient(h).getQueue("testGetInstancesCreatedFromClient");
-        Set set = getHazelcastClient(h).getSet("testGetInstancesCreatedFromClient");
-        ITopic topic = getHazelcastClient(h).getTopic("testGetInstancesCreatedFromClient");
-        Lock lock = getHazelcastClient(h).getLock("testGetInstancesCreatedFromClient");
-        Collection<Instance> caches = getHazelcastClient(h).getInstances();
+//        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        client = getHazelcastClient();
+        List list = client.getList("testGetInstancesCreatedFromClient");
+        Map map = client.getMap("testGetInstancesCreatedFromClient");
+        MultiMap mmap = client.getMultiMap("testGetInstancesCreatedFromClient");
+        Queue q = client.getQueue("testGetInstancesCreatedFromClient");
+        Set set = client.getSet("testGetInstancesCreatedFromClient");
+        ITopic topic = client.getTopic("testGetInstancesCreatedFromClient");
+        Lock lock = client.getLock("testGetInstancesCreatedFromClient");
+        Collection<Instance> caches = client.getInstances();
         assertEquals(0, caches.size());
         List listOfInstances = new ArrayList();
         listOfInstances.add(list);
@@ -221,22 +222,22 @@ public class DynamicClusterTest {
         listOfInstances.add(lock);
         list.add("List");
         map.put("key", "value");
-        assertEquals(2, getHazelcastClient(h).getInstances().size());
+        assertEquals(2, client.getInstances().size());
         mmap.put("key", "value1");
         q.offer("Element");
-        assertEquals(4, getHazelcastClient(h).getInstances().size());
+        assertEquals(4, client.getInstances().size());
         set.add("element");
         topic.publish("Message");
 //        assertEquals(7, getHazelcastClient(h).getInstances().size());
-        caches = getHazelcastClient(h).getInstances();
+        caches = client.getInstances();
         for (Iterator<Instance> instanceIterator = caches.iterator(); instanceIterator.hasNext();) {
             Instance instance = instanceIterator.next();
-            System.out.println("INstance id:" + instance.getId().toString());
+//            System.out.println("Instance id:" + instance.getId().toString());
             assertTrue(instance.getId().toString().endsWith("testGetInstancesCreatedFromClient"));
             assertTrue(listOfInstances.contains(instance));
             instance.destroy();
         }
-        h.shutdown();
+//        h.shutdown();
     }
 
     //ok to fail due to lock
@@ -259,7 +260,8 @@ public class DynamicClusterTest {
         listOfInstances.add(set);
         listOfInstances.add(topic);
         listOfInstances.add(lock);
-        Collection<Instance> caches = getHazelcastClient(h).getInstances();
+        client = getHazelcastClient(h);
+        Collection<Instance> caches = client.getInstances();
         assertEquals(listOfInstances.size(), caches.size());
         for (Iterator<Instance> instanceIterator = caches.iterator(); instanceIterator.hasNext();) {
             Instance instance = instanceIterator.next();
@@ -282,6 +284,8 @@ public class DynamicClusterTest {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(conf);
         client = HazelcastClient.newHazelcastClient(grName, grPass, true, h.getCluster().getLocalMember().getInetSocketAddress().getAddress().getCanonicalHostName() + ":" + h.getCluster().getLocalMember().getInetSocketAddress().getPort());
         Map map = client.getMap("aasd");
+        client.shutdown();
+        h.shutdown();
     }
 
     @Test
@@ -296,6 +300,8 @@ public class DynamicClusterTest {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(conf);
         client = HazelcastClient.newHazelcastClient(grName, "", true, h.getCluster().getLocalMember().getInetSocketAddress().getAddress().getCanonicalHostName() + ":" + h.getCluster().getLocalMember().getInetSocketAddress().getPort());
         Map map = client.getMap("aasd");
+        client.shutdown();
+        h.shutdown();
     }
 
     @Test(expected = RuntimeException.class)
@@ -310,19 +316,14 @@ public class DynamicClusterTest {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(conf);
         client = HazelcastClient.newHazelcastClient(grName, "wrong-pass", true, h.getCluster().getLocalMember().getInetSocketAddress().getAddress().getCanonicalHostName() + ":" + h.getCluster().getLocalMember().getInetSocketAddress().getPort());
         Map map = client.getMap("aasd");
+        client.shutdown();
+        h.shutdown();
     }
 
     @Test
     public void addMemberShipListener() throws InterruptedException {
-        String grName = "dev";
-        String grPass = "pass";
-        Config conf = new Config();
-        GroupConfig gc = new GroupConfig();
-        gc.setName(grName);
-        gc.setPassword(grPass);
-        conf.setGroupConfig(gc);
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(conf);
-        client = HazelcastClient.newHazelcastClient(grName, grPass, true, h.getCluster().getLocalMember().getInetSocketAddress().getAddress().getCanonicalHostName() + ":" + h.getCluster().getLocalMember().getInetSocketAddress().getPort());
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        client = getHazelcastClient(h);
         final CountDownLatch added = new CountDownLatch(1);
         final CountDownLatch removed = new CountDownLatch(1);
         final Map<String, Member> map = new HashMap<String, Member>();
@@ -337,7 +338,7 @@ public class DynamicClusterTest {
                 map.put("Removed", membershipEvent.getMember());
             }
         });
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(conf);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         Member member = h2.getCluster().getLocalMember();
         h2.shutdown();
         assertTrue(added.await(10, TimeUnit.SECONDS));
@@ -348,9 +349,9 @@ public class DynamicClusterTest {
 
     @Test
     public void retrieveDataSerializableClass() throws InterruptedException {
-        Config conf = new Config();
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(conf);
-        client = HazelcastClient.newHazelcastClient(conf.getGroupConfig().getName(), conf.getGroupConfig().getPassword(), false, h.getCluster().getLocalMember().getInetSocketAddress());
+        System.out.println("Start");
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        client = getHazelcastClient(h);
         IMap<Integer, DataSerializableUser> clientMap = client.getMap("retreiveDataSerializableClass");
         final DataSerializableUser user = new DataSerializableUser();
         user.setName("name");
@@ -393,14 +394,14 @@ public class DynamicClusterTest {
     public void clientWithAutoMemberListUpdate() throws InterruptedException {
         Config conf = new Config();
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(conf);
-        client = HazelcastClient.newHazelcastClient(conf.getGroupConfig().getName(), conf.getGroupConfig().getPassword(),
-                h1.getCluster().getLocalMember().getInetSocketAddress().toString().substring(1));
+        client = getAutoUpdatingClient(conf, h1);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(conf);
         Thread.sleep(1000);
         h1.shutdown();
         Map<Integer, Integer> map = client.getMap("map");
         map.put(1, 1);
         assertEquals(Integer.valueOf(1), map.get(1));
+        
     }
 
     @Test
@@ -408,13 +409,18 @@ public class DynamicClusterTest {
         Config conf = new Config();
         HazelcastInstance h = Hazelcast.newHazelcastInstance(conf);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(conf);
-        client = HazelcastClient.newHazelcastClient(conf.getGroupConfig().getName(), conf.getGroupConfig().getPassword(),
-                h1.getCluster().getLocalMember().getInetSocketAddress().toString().substring(1));
+        client = getAutoUpdatingClient(conf, h1);
         Thread.sleep(1000);
         h1.shutdown();
         Map<Integer, Integer> map = client.getMap("map");
         map.put(1, 1);
         assertEquals(Integer.valueOf(1), map.get(1));
+    }
+
+    private HazelcastClient getAutoUpdatingClient(Config conf, HazelcastInstance h1) {
+        HazelcastClient client = HazelcastClient.newHazelcastClient(conf.getGroupConfig().getName(), conf.getGroupConfig().getPassword(),
+                h1.getCluster().getLocalMember().getInetSocketAddress().toString().substring(1));
+        return client;
     }
 
     @Test(timeout = 25000, expected = MemberLeftException.class)
@@ -532,14 +538,16 @@ public class DynamicClusterTest {
         client1.getMap("map").put(1, 4);
         client1.shutdown();
         client2.shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test
     public void multiTaskWithTwoMember() throws ExecutionException, InterruptedException {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        HazelcastClient hClient = getHazelcastClient();
-        ExecutorService esService = hClient.getExecutorService();
-        Set<Member> members = getHazelcastClient().getCluster().getMembers();
+        client = getHazelcastClient();
+        ExecutorService esService = client.getExecutorService();
+        Set<Member> members = client.getCluster().getMembers();
         MultiTask<DistributedMapStatsCallable.MemberMapStat> task =
                 new MultiTask<DistributedMapStatsCallable.MemberMapStat>(new DistributedMapStatsCallable("default"), members);
         esService.submit(task);
@@ -549,13 +557,12 @@ public class DynamicClusterTest {
             assertNotNull(memberMapStat);
         }
         assertEquals(members.size(), mapStats.size());
-        h.shutdown();
     }
 
     @Test(expected = ExecutionException.class)
     public void shouldThrowExExcptnWhenCallableThrowsException() throws ExecutionException, InterruptedException {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastClient client = getHazelcastClient(h1);
+        client = getHazelcastClient(h1);
         Set<Member> members = client.getCluster().getMembers();
         MultiTask<String> task =
                 new MultiTask<String>(new ExceptionThrowingCallable(), members);
@@ -567,9 +574,9 @@ public class DynamicClusterTest {
 
     @Test
     public void twoQueueInstancesEqual() {
-        HazelcastClient hClient = getHazelcastClient();
+        client = getHazelcastClient();
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        IQueue<String> queue = hClient.getQueue("equals");
+        IQueue<String> queue = client.getQueue("equals");
         assertEquals(queue, h.getQueue("equals"));
     }
 
@@ -583,6 +590,7 @@ public class DynamicClusterTest {
     @AfterClass
     @BeforeClass
     public static void shutdownAll() {
+        System.out.println("Before and After Class");
         getHazelcastClient().shutdown();
         Hazelcast.shutdownAll();
         TestUtility.client = null;

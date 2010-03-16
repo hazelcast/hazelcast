@@ -43,7 +43,6 @@ public class MemberEventHandler implements ChangeEventHandler {
         TreeItem memberTreeItem = clusterWidgets.getMemberTreeItem();
         for (int i = 0; i < memberTreeItem.getChildCount(); i++) {
             TreeItem treeItem = memberTreeItem.getChild(i);
-//            Hyperlink link = (Hyperlink) treeItem.getWidget();
             Anchor link = (Anchor) treeItem.getWidget();
             String member = link.getText();
             if (!currentMembers.contains(member)) {
@@ -58,7 +57,6 @@ public class MemberEventHandler implements ChangeEventHandler {
     private void addNewMembers(List<String> currentMembers, TreeItem memberTreeItem) {
         for (Iterator<String> iterator = currentMembers.iterator(); iterator.hasNext();) {
             String string = iterator.next();
-//            Hyperlink link = new Hyperlink(string, string);
             Anchor link = clusterWidgets.getInstanceLink(null, string);
             memberTreeItem.addItem(link);
         }

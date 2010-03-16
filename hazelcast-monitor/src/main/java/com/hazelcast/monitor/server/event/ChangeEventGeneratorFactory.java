@@ -22,13 +22,16 @@ import com.hazelcast.monitor.client.event.ChangeEventType;
 
 public class ChangeEventGeneratorFactory {
 
-    public ChangeEventGenerator createEventGenerator(ChangeEventType eventType, int clusterId, String instanceName, HazelcastClient client) {
+    public ChangeEventGenerator createEventGenerator(ChangeEventType eventType, int clusterId, String name, HazelcastClient client) {
         ChangeEventGenerator eventGenerator = null;
         if (eventType.equals(ChangeEventType.MAP_STATISTICS)) {
-            eventGenerator = new MapStatisticsGenerator(client, instanceName, clusterId);
+            eventGenerator = new MapStatisticsGenerator(client, name, clusterId);
         } else if (eventType.equals(ChangeEventType.PARTITIONS)) {
             eventGenerator = new PartitionsEventGenerator(client, clusterId);
+        } else if (eventType.equals(ChangeEventType.MEMBER_INFO)) {
+            eventGenerator = new MemberInfoEventGenerator(client, clusterId, name);
         }
+
         return eventGenerator;
     }
 }

@@ -17,9 +17,11 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiTask;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
+import com.hazelcast.monitor.DistributedMemberInfoCallable;
 import org.junit.AfterClass;
 import org.junit.Test;
 
@@ -184,6 +186,28 @@ public class HazelcastClientExecutorServiceTest {
             assertNotNull(memberMapStat);
         }
         assertEquals(members.size(), mapStats.size());
+    }
+
+    @Test
+    public void DistributedTaskOnMember() throws ExecutionException, InterruptedException {
+        ExecutorService ex = getExecutorService();
+        Member member = getHazelcastClient().getCluster().getMembers().iterator().next();
+        DistributedTask task = new DistributedTask(new BasicTestTask(), member);
+        ex.execute(task);
+        Object resul = task.get();
+        assertEquals(BasicTestTask.RESULT, resul);
+    }
+
+    @Test
+    public void DistributedTaskGetMemberInfo() throws ExecutionException, InterruptedException {
+        ExecutorService esService = getExecutorService();
+        Member member = getHazelcastClient().getCluster().getMembers().iterator().next();
+        DistributedTask<DistributedMemberInfoCallable.MemberInfo> task =
+                new DistributedTask<DistributedMemberInfoCallable.MemberInfo>(new DistributedMemberInfoCallable(), member);
+        esService.execute(task);
+        DistributedMemberInfoCallable.MemberInfo result;
+        result = task.get();
+        assertNotNull(result);
     }
 
     @AfterClass

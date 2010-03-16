@@ -27,7 +27,7 @@ import java.util.concurrent.Callable;
 
 public class DistributedMapStatsCallable implements Callable<DistributedMapStatsCallable.MemberMapStat>, Serializable, HazelcastInstanceAware {
     private String mapName;
-    private HazelcastInstance hzInstance;
+    private transient HazelcastInstance hzInstance;
 
     public DistributedMapStatsCallable(String mapName) {
         this.mapName = mapName;

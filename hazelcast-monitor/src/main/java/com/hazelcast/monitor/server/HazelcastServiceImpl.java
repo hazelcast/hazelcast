@@ -97,10 +97,10 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
         return changes;
     }
 
-    public ChangeEvent registerEvent(ChangeEventType eventType, int clusterId, String instanceName) {
+    public ChangeEvent registerEvent(ChangeEventType eventType, int clusterId, String name) {
         SessionObject sessionObject = getSessionObject();
         HazelcastClient client = sessionObject.getHazelcastClientMap().get(clusterId);
-        ChangeEventGenerator eventGenerator = changeEventGeneratorFactory.createEventGenerator(eventType, clusterId, instanceName, client);
+        ChangeEventGenerator eventGenerator = changeEventGeneratorFactory.createEventGenerator(eventType, clusterId, name, client);
         System.out.println("created event generator " + eventGenerator);
         System.out.println(sessionObject.getEventGenerators().contains(eventGenerator));
         if (!sessionObject.getEventGenerators().contains(eventGenerator)) {

@@ -22,7 +22,7 @@ import com.hazelcast.monitor.client.event.ChangeEvent;
 
 public class MembersPageBuilder implements PageBuilder {
     public void buildPage(ClusterWidgets clusterWidgets, String name, AsyncCallback<ChangeEvent> callBack, ServicesFactory servicesFactory) {
-        MembersPanel membersPanel = new MembersPanel(callBack, name, servicesFactory);
+        MemberPanel membersPanel = new MemberPanel(callBack, name, servicesFactory);
         clusterWidgets.register(membersPanel);
     }
 }

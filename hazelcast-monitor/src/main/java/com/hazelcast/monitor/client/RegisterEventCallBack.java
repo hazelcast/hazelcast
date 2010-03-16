@@ -28,14 +28,15 @@ public class RegisterEventCallBack implements AsyncCallback<ChangeEvent> {
     }
 
     public void onFailure(Throwable caught) {
-        
     }
 
     public void onSuccess(ChangeEvent result) {
+        if (result == null) {
+            return;
+        }
         ClusterWidgets clusterWidgets = hazelcastMonitor.mapClusterWidgets.get(result.getClusterId());
         if (clusterWidgets != null) {
             clusterWidgets.handle(result);
         }
     }
-
 }
