@@ -23,7 +23,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -35,36 +34,40 @@ import static com.hazelcast.nio.IOUtil.toObject;
 public class Record implements MapEntry {
     private static final Logger logger = Logger.getLogger(Record.class.getName());
 
+    private final RecordEntry recordEntry;
+
+    private final FactoryImpl factory;
+    private final long id;
+    private final String name;
+    private final int blockId;
     private final AtomicReference<Data> key = new AtomicReference<Data>();
     private final AtomicReference<Data> value = new AtomicReference<Data>();
     private final AtomicLong version = new AtomicLong();
     private final AtomicInteger hits = new AtomicInteger(0);
-    private final AtomicBoolean active = new AtomicBoolean(true);
-    private final AtomicLong lastAccessTime = new AtomicLong(0);
-    private final AtomicLong creationTime = new AtomicLong();
-    private long lastTouchTime = 0;
-    private AtomicLong expirationTime = new AtomicLong(Long.MAX_VALUE);
-    private long lastUpdateTime = 0;
-    private final FactoryImpl factory;
-    private final String name;
-    private final int blockId;
-    private AtomicLong maxIdleMillis = new AtomicLong(Long.MAX_VALUE);
-    private int lockThreadId = -1;
+
+    private volatile boolean active = true;
+    private volatile long maxIdleMillis = Long.MAX_VALUE;
+    private volatile long writeTime = -1;
+    private volatile long removeTime;
+    private volatile long lastAccessTime = 0;
+    private volatile long creationTime = 0;
+    private volatile long lastTouchTime = 0;
+    private volatile long expirationTime = Long.MAX_VALUE;
+    private volatile long lastUpdateTime = 0;
+    private volatile boolean dirty = false;
+    private volatile int copyCount = 0;
+
+    private long[] indexes; // indexes of the current value;
+    private byte[] indexTypes; // index types of the current value;
+
     private Address lockAddress = null;
+    private int lockThreadId = -1;
     private int lockCount = 0;
     private List<ScheduledAction> lsScheduledActions = null;
     private Map<Address, Boolean> mapListeners = null;
-    private int copyCount = 0;
     private Set<Data> lsMultiValues = null; // multimap values
-    private SortedSet<VersionedBackupOp> backupOps = null;
-    private boolean dirty = false;
-    private long writeTime = -1;
-    private long removeTime;
 
-    private final RecordEntry recordEntry;
-    private final long id;
-    private long[] indexes; // indexes of the current value; only used by QueryThread
-    private byte[] indexTypes; // index types of the current value; only used by QueryThread
+    private SortedSet<VersionedBackupOp> backupOps = null;
 
     public Record(FactoryImpl factory, String name, int blockId, Data key, Data value, long ttl, long maxIdleMillis, long id) {
         super();
@@ -76,7 +79,7 @@ public class Record implements MapEntry {
         this.setValue(value);
         this.setCreationTime(System.currentTimeMillis());
         this.setExpirationTime(ttl);
-        this.maxIdleMillis.set((maxIdleMillis == 0) ? Long.MAX_VALUE : maxIdleMillis);
+        this.maxIdleMillis = (maxIdleMillis == 0) ? Long.MAX_VALUE : maxIdleMillis;
         this.setLastTouchTime(getCreationTime());
         this.setVersion(0);
         this.id = id;
@@ -180,8 +183,8 @@ public class Record implements MapEntry {
             count = 1;
         } else if (getMultiValues() != null) {
             count = getMultiValues().size();
-        } else if (getCopyCount() > 0) {
-            count += getCopyCount();
+        } else if (copyCount > 0) {
+            count += copyCount;
         }
         return count;
     }
@@ -190,15 +193,15 @@ public class Record implements MapEntry {
         long cost = 0;
         if (getValue() != null) {
             cost = getValue().size();
-            if (getCopyCount() > 0) {
-                cost *= getCopyCount();
+            if (copyCount > 0) {
+                cost *= copyCount;
             }
         } else if (getMultiValues() != null) {
             for (Data data : getMultiValues()) {
                 cost += data.size();
             }
         }
-        return cost + getKey().size();
+        return cost + getKey().size() + 250;
     }
 
     public boolean containsValue(Data value) {
@@ -285,13 +288,11 @@ public class Record implements MapEntry {
     }
 
     public void incrementCopyCount() {
-        setCopyCount(getCopyCount() + 1);
+        copyCount += 1;
     }
 
     public void decrementCopyCount() {
-        if (getCopyCount() > 0) {
-            setCopyCount(getCopyCount() - 1);
-        }
+        copyCount -= 1;
     }
 
     public int getCopyCount() {
@@ -308,55 +309,55 @@ public class Record implements MapEntry {
     }
 
     public long getExpirationTime() {
-        return expirationTime.get();
+        return expirationTime;
     }
 
     public long getRemainingTTL() {
-        if (expirationTime.get() == Long.MAX_VALUE) {
+        if (expirationTime == Long.MAX_VALUE) {
             return Long.MAX_VALUE;
         } else {
-            long ttl = expirationTime.addAndGet(-(System.currentTimeMillis()));
+            long ttl = expirationTime - System.currentTimeMillis();
             return (ttl < 0) ? 1 : ttl;
         }
     }
 
     public long getRemainingIdle() {
-        if (maxIdleMillis.get() == Long.MAX_VALUE) {
+        if (maxIdleMillis == Long.MAX_VALUE) {
             return Long.MAX_VALUE;
         } else {
-            long lastTouch = Math.max(lastAccessTime.get(), creationTime.get());
+            long lastTouch = Math.max(lastAccessTime, creationTime);
             long idle = System.currentTimeMillis() - lastTouch;
-            return maxIdleMillis.addAndGet(-(idle));
+            return maxIdleMillis - idle;
         }
     }
 
     public void setMaxIdle(long idle) {
         if (idle <= 0 || idle == Long.MAX_VALUE) {
-            maxIdleMillis.set(Long.MAX_VALUE);
+            maxIdleMillis = Long.MAX_VALUE;
         } else {
-            maxIdleMillis.set(idle);
+            maxIdleMillis = idle;
         }
     }
 
     public void setExpirationTime(long ttl) {
         if (ttl <= 0 || ttl == Long.MAX_VALUE) {
-            expirationTime.set(Long.MAX_VALUE);
+            expirationTime = Long.MAX_VALUE;
         } else {
-            expirationTime.set(getCreationTime() + ttl);
+            expirationTime = getCreationTime() + ttl;
         }
     }
 
     public void setInvalid() {
-        expirationTime.set(System.currentTimeMillis() - 10);
+        expirationTime = (System.currentTimeMillis() - 10);
     }
 
     public boolean isValid(long now) {
-        if (expirationTime.get() == Long.MAX_VALUE && maxIdleMillis.get() == Long.MAX_VALUE) {
+        if (expirationTime == Long.MAX_VALUE && maxIdleMillis == Long.MAX_VALUE) {
             return true;
         }
-        long lastTouch = Math.max(lastAccessTime.get(), creationTime.get());
+        long lastTouch = Math.max(lastAccessTime, creationTime);
         long idle = now - lastTouch;
-        return expirationTime.get() > now && (maxIdleMillis.get() > idle);
+        return expirationTime > now && (maxIdleMillis > idle);
     }
 
     public boolean isValid() {
@@ -402,19 +403,19 @@ public class Record implements MapEntry {
     }
 
     public long getCreationTime() {
-        return creationTime.get();
+        return creationTime;
     }
 
     public void setCreationTime(long newValue) {
-        creationTime.set(newValue);
+        creationTime = newValue;
     }
 
     public long getLastAccessTime() {
-        return lastAccessTime.get();
+        return lastAccessTime;
     }
 
     public void setLastAccessTime(long lastAccessTime) {
-        this.lastAccessTime.set(lastAccessTime);
+        this.lastAccessTime = lastAccessTime;
     }
 
     public long getLastUpdateTime() {
@@ -434,11 +435,11 @@ public class Record implements MapEntry {
     }
 
     public boolean isActive() {
-        return active.get();
+        return active;
     }
 
     public void setActive(boolean active) {
-        this.active.set(active);
+        this.active = active;
         if (!active) {
             this.recordEntry.setValueObject(null);
         }

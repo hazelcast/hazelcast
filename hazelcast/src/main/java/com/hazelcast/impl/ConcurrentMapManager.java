@@ -73,14 +73,19 @@ public final class ConcurrentMapManager extends BaseManager {
         node.clusterService.registerPeriodicRunnable(new Runnable() {
             public void run() {
                 logState();
-                Collection<CMap> cmaps = maps.values();
-                for (CMap cmap : cmaps) {
-                    cmap.startRemove();
-                    cmap.startEviction(false);
-                    if (cmap.writeDelayMillis > 0) {
-                        cmap.startAsyncStoreWrite();
+                executeLocally(new Runnable() {
+                    public void run() {
+                        Collection<CMap> cmaps = maps.values();
+                        for (CMap cmap : cmaps) {
+//                    cmap.startRemove();
+//                    cmap.startEviction(false);
+//                    if (cmap.writeDelayMillis > 0) {
+//                        cmap.startAsyncStoreWrite();
+//                    }
+                            cmap.startCleanup();
+                        }
                     }
-                }
+                });
             }
         });
         node.clusterService.registerPeriodicRunnable(partitionManager);
@@ -1350,13 +1355,12 @@ public final class ConcurrentMapManager extends BaseManager {
         public void handle(Request request) {
             if (checkMapLock(request)) {
                 CMap cmap = getOrCreateMap(request.name);
-                Record record = cmap.getRecord(request.key);
+                Record record = cmap.getOwnedRecord(request.key);
                 if (record != null && record.isActive() && cmap.loader != null &&
                         cmap.writeDelayMillis > 0 && record.isValid() && record.isDirty()) {
                     // if the map has write-behind and the record is dirty then
                     // we have to make sure that the entry is actually persisted
                     // before we can evict it.
-                    cmap.setDirtyRecords.remove(record);
                     record.setDirty(false);
                     request.value = record.getValue();
                     executeAsync(request);
@@ -1380,7 +1384,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 doOperation(request);
             } else {
                 CMap cmap = getOrCreateMap(request.name);
-                Record record = cmap.getRecord(request.key);
+                Record record = cmap.getOwnedRecord(request.key);
                 cmap.markAsDirty(record);
                 request.response = Boolean.FALSE;
             }
@@ -1392,7 +1396,7 @@ public final class ConcurrentMapManager extends BaseManager {
         public void handle(Request request) {
             if (checkMapLock(request)) {
                 CMap cmap = getOrCreateMap(request.name);
-                Record record = cmap.getRecord(request.key);
+                Record record = cmap.getOwnedRecord(request.key);
                 if (cmap.loader != null && (record == null || !record.isActive() || record.getValue() == null)) {
                     executeAsync(request);
                 } else {
@@ -1632,7 +1636,7 @@ public final class ConcurrentMapManager extends BaseManager {
         @Override
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            cmap.containsValue(request);            
+            cmap.containsValue(request);
         }
     }
 
@@ -1762,15 +1766,16 @@ public final class ConcurrentMapManager extends BaseManager {
         CMap cmap = maps.get(req.name);
         if (cmap == null)
             return null;
-        return cmap.getRecord(req.key);
+        return cmap.getOwnedRecord(req.key);
     }
 
     Record ensureRecord(Request req) {
         checkServiceThread();
         CMap cmap = getOrCreateMap(req.name);
-        Record record = cmap.getRecord(req.key);
+        Record record = cmap.getOwnedRecord(req.key);
         if (record == null) {
             record = cmap.createNewRecord(req.key, req.value);
+            cmap.mapOwnedRecords.put(req.key, record);
         }
         return record;
     }

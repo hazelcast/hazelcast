@@ -469,7 +469,7 @@ public class PartitionManager implements Runnable, PartitionService {
         Collection<CMap> cmaps = concurrentMapManager.maps.values();
         Map<Address, Integer> mapMemberDistances = new HashMap<Address,Integer>();
         for (CMap cmap : cmaps) {
-            Collection<Record> records = cmap.mapRecords.values();
+            Collection<Record> records = cmap.mapBackupRecords.values();
             for (Record record : records) {
                 if (record != null && record.isActive()) {
                     Block block = blocks[record.getBlockId()];
@@ -508,12 +508,13 @@ public class PartitionManager implements Runnable, PartitionService {
         }
         Collection<CMap> cmaps = concurrentMapManager.maps.values();
         for (CMap cmap : cmaps) {
-            Collection<Record> records = cmap.mapRecords.values();
-            for (Record record : records) {
+            Object[] records = cmap.mapBackupRecords.values().toArray();
+            for (Object recordObject : records) {
+                Record record = (Record) recordObject;
                 if (record != null) {
                     cmap.onDisconnect(record, deadAddress);
                     if (record.isActive() && blocksOwnedAfterDead.contains(record.getBlockId())) {
-                        cmap.markAsOwned(record);
+                        cmap.own(record);
                         // you have to update the indexes
                         cmap.updateIndexes(record);
                     }
@@ -587,9 +588,7 @@ public class PartitionManager implements Runnable, PartitionService {
             List<Record> lsOwnedRecords = new ArrayList<Record>(1000);
             Collection<CMap> cmaps = concurrentMapManager.maps.values();
             for (final CMap cmap : cmaps) {
-                final Object[] records = cmap.ownedRecords.toArray();
-                for (Object recObj : records) {
-                    final Record rec = (Record) recObj;
+                for (Record rec : cmap.mapOwnedRecords.values()) {
                     if (rec.isActive()) {
                         if (rec.getKey() == null || rec.getKey().size() == 0) {
                             throw new RuntimeException("Record.key is null or empty " + rec.getKey());
@@ -636,9 +635,7 @@ public class PartitionManager implements Runnable, PartitionService {
             if (cmap.locallyOwnedMap != null) {
                 cmap.locallyOwnedMap.reset();
             }
-            final Object[] records = cmap.ownedRecords.toArray();
-            for (Object recObj : records) {
-                final Record rec = (Record) recObj;
+            for (Record rec : cmap.mapOwnedRecords.values()) {
                 if (rec.isActive()) {
                     if (rec.getKey() == null || rec.getKey().size() == 0) {
                         throw new RuntimeException("Record.key is null or empty " + rec.getKey());

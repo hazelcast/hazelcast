@@ -31,7 +31,7 @@ import static org.mockito.Mockito.mock;
 
 public class CMapTest {
     @Test
-    public void testPut() {
+    public void testPut() throws Exception {
         Config config = new XmlConfigBuilder().build();
         FactoryImpl mockFactory = mock(FactoryImpl.class);
         Node node = new Node(mockFactory, config);
@@ -42,14 +42,28 @@ public class CMapTest {
         Data dKey = toData(key);
         Data dValue = toData(value);
         cmap.put(newPutRequest(dKey, dValue));
-        assertTrue(cmap.mapRecords.containsKey(toData(key)));
+        assertTrue(cmap.mapOwnedRecords.containsKey(toData(key)));
         Data actualValue = cmap.get(newGetRequest(dKey));
         assertThat(toObject(actualValue), equalTo(value));
-        assertEquals(1, cmap.ownedRecords.size());
-        Record record = cmap.getRecord(dKey);
+        assertEquals(1, cmap.mapOwnedRecords.size());
+        Record record = cmap.getOwnedRecord(dKey);
         assertNotNull(record);
         assertTrue(record.isActive());
         assertTrue(record.isValid());
+        assertEquals(1, cmap.size());
+        cmap.remove(newRemoveRequest(dKey));
+        assertEquals(1, cmap.mapOwnedRecords.size());
+        record = cmap.getOwnedRecord(dKey);
+        assertNotNull(record);
+        assertFalse(record.isActive());
+        assertTrue(record.isValid());
+        assertEquals(0, cmap.size());
+        cmap.put(newPutRequest(dKey, dValue, 1000));
+        assertTrue(cmap.mapOwnedRecords.containsKey(toData(key)));
+        Thread.sleep(1000);
+        assertEquals(0, cmap.size());
+        assertFalse(cmap.contains(newContainsRequest(dKey, null)));
+        
     }
 
     private Request newPutRequest(Data key, Data value) {
@@ -62,9 +76,21 @@ public class CMapTest {
         return request;
     }
 
+    public static Request newRemoveRequest(Data key) {
+        Request request = new Request();
+        request.setLocal(ClusterOperation.CONCURRENT_MAP_REMOVE, null, key, null, -1, -1, -1, null);
+        return request;
+    }
+
     public static Request newGetRequest(Data key) {
         Request request = new Request();
         request.setLocal(ClusterOperation.CONCURRENT_MAP_GET, null, key, null, -1, -1, -1, null);
+        return request;
+    }
+
+    public static Request newContainsRequest(Data key, Data value) {
+        Request request = new Request();
+        request.setLocal(ClusterOperation.CONCURRENT_MAP_CONTAINS, null, key, value, -1, -1, -1, null);
         return request;
     }
 }

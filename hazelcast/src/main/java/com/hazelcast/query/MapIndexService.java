@@ -36,16 +36,20 @@ public class MapIndexService {
     private final Object indexTypesLock = new Object();
     private Collection<Index> indexesInOrder;
 
+    public void remove(Record record) {
+        records.remove(record.getId());
+    }
+
     public void index(Record record) {
         final long recordId = record.getId();
-        if (!record.isActive()) {
-            records.remove(recordId);
-        } else {
-            records.put(recordId, record);
+        if (record.isActive()) {
+            records.putIfAbsent(recordId, record);
         }
-        if (record.getValue() != null) {
-            indexValue.index(record.getValue().hashCode(), record);
+        int newValueIndex = -1;
+        if (record.isActive() && record.getValue() != null) {
+            newValueIndex = record.getValue().hashCode();
         }
+        indexValue.index(newValueIndex, record);
         long[] indexValues = record.getIndexes();
         byte[] indexTypes = record.getIndexTypes();
         if (indexValues != null && hasIndexedAttributes) {
@@ -60,6 +64,10 @@ public class MapIndexService {
                 }
             }
         }
+    }
+
+    public Collection<Record> getOwnedRecords() {
+        return records.values();
     }
 
     public long[] getIndexValues(Object value) {
@@ -248,9 +256,17 @@ public class MapIndexService {
 
     public void appendState(StringBuffer sbState) {
         sbState.append("\nIndex- records: " + records.size() + ", mapIndexes:"
-                + mapIndexes.size() + ", indexTypes:" + ((indexTypes == null)? 0 : indexTypes.length));
+                + mapIndexes.size() + ", indexTypes:" + ((indexTypes == null) ? 0 : indexTypes.length));
         for (Index index : mapIndexes.values()) {
             index.appendState(sbState);
         }
+    }
+
+    public void clear() {
+        //todo
+    }
+
+    public int size() {
+        return indexValue.getRecordValues().size();
     }
 }
