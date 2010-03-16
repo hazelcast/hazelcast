@@ -41,22 +41,26 @@ public class TopicClientProxy<T> implements ITopic {
         proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_PUBLISH, message, null);
     }
 
-    public void addMessageListener(MessageListener messageListener) {
+    public synchronized void addMessageListener(MessageListener messageListener) {
         check(messageListener);
-        if (proxyHelper.getHazelcastClient().listenerManager.messageListenerManager.noMessageListenerRegistered(name)) {
-            Packet request = proxyHelper.prepareRequest(ClusterOperation.ADD_LISTENER, null, null);
-            proxyHelper.callAndGetResult(request);
-            Call c = proxyHelper.createCall(request);
-            proxyHelper.getHazelcastClient().listenerManager.addListenerCall(c);
-            proxyHelper.doCall(c);
+        boolean shouldCall = proxyHelper.getHazelcastClient().getListenerManager().getMessageListenerManager().noMessageListenerRegistered(name);
+        proxyHelper.getHazelcastClient().getListenerManager().getMessageListenerManager().registerMessageListener(name, messageListener);
+        if (shouldCall) {
+            doAddListenerCall(messageListener);
         }
-        proxyHelper.getHazelcastClient().listenerManager.messageListenerManager.registerMessageListener(name, messageListener);
     }
 
-    public void removeMessageListener(MessageListener messageListener) {
+    private void doAddListenerCall(MessageListener messageListener) {
+        Packet request = proxyHelper.prepareRequest(ClusterOperation.ADD_LISTENER, null, null);
+        Call c = proxyHelper.createCall(request);
+        proxyHelper.getHazelcastClient().getListenerManager().addListenerCall(c);
+        proxyHelper.doCall(c);
+    }
+
+    public synchronized void removeMessageListener(MessageListener messageListener) {
         check(messageListener);
-        proxyHelper.getHazelcastClient().listenerManager.messageListenerManager.removeMessageListener(name, messageListener);
-        if (proxyHelper.getHazelcastClient().listenerManager.messageListenerManager.noMessageListenerRegistered(name)) {
+        proxyHelper.getHazelcastClient().getListenerManager().getMessageListenerManager().removeMessageListener(name, messageListener);
+        if (proxyHelper.getHazelcastClient().getListenerManager().getMessageListenerManager().noMessageListenerRegistered(name)) {
             proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, null, null);
         }
     }

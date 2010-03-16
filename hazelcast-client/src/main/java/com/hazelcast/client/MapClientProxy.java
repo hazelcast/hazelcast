@@ -49,27 +49,27 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         check(listener);
-        if (proxyHelper.getHazelcastClient().listenerManager.entryListenerManager.noEntryListenerRegistered(key, name)) {
+        if (proxyHelper.getHazelcastClient().getListenerManager().getEntryListenerManager().noEntryListenerRegistered(key, name)) {
             Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, toByte(key), null);
             request.setLongValue(includeValue ? 1 : 0);
             Call c = proxyHelper.createCall(request);
-            proxyHelper.getHazelcastClient().listenerManager.addListenerCall(c);
+            proxyHelper.getHazelcastClient().getListenerManager().addListenerCall(c);
             proxyHelper.doCall(c);
         }
-        proxyHelper.getHazelcastClient().listenerManager.entryListenerManager.registerEntryListener(name, key, listener);
+        proxyHelper.getHazelcastClient().getListenerManager().getEntryListenerManager().registerEntryListener(name, key, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener) {
         check(listener);
         proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, null, null);
-        proxyHelper.getHazelcastClient().listenerManager.entryListenerManager.removeEntryListener(name, null, listener);
+        proxyHelper.getHazelcastClient().getListenerManager().getEntryListenerManager().removeEntryListener(name, null, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener, K key) {
         check(listener);
         check(key);
         proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
-        proxyHelper.getHazelcastClient().listenerManager.entryListenerManager.removeEntryListener(name, key, listener);
+        proxyHelper.getHazelcastClient().getListenerManager().getEntryListenerManager().removeEntryListener(name, key, listener);
     }
 
     public Set<java.util.Map.Entry<K, V>> entrySet(Predicate predicate) {

@@ -52,7 +52,7 @@ public class InRunnable extends IORunnable implements Runnable {
                     call.setResponse(packet);
                 } else {
                     if (packet.getOperation().equals(ClusterOperation.EVENT)) {
-                        client.listenerManager.enqueue(packet);
+                        client.getListenerManager().enqueue(packet);
                     }
                     if (packet.getCallId() == -1) {
                         //ignore

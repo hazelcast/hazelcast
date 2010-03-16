@@ -23,10 +23,14 @@ import org.junit.AfterClass;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class HazelcastClientTopicTest {
 
@@ -90,19 +94,43 @@ public class HazelcastClientTopicTest {
         HazelcastClient hClient = getHazelcastClient();
         ITopic<String> topic = hClient.getTopic("removeMessageListener");
         final CountDownLatch latch = new CountDownLatch(2);
+        final CountDownLatch cp = new CountDownLatch(1);
         final String message = "Hazelcast Rocks!";
         MessageListener<String> messageListener = new MessageListener<String>() {
             public void onMessage(String msg) {
-                if (msg.equals(message)) {
+                if (msg.startsWith(message)) {
+//                    System.out.println("Received "+msg+" at "+ this);
                     latch.countDown();
+                    cp.countDown();
                 }
             }
         };
         topic.addMessageListener(messageListener);
-        topic.publish(message);
+        topic.publish(message + "1");
+        cp.await();
+        Thread.sleep(50);
         topic.removeMessageListener(messageListener);
-        topic.publish(message);
-        assertFalse(latch.await(1, TimeUnit.SECONDS));
+        topic.publish(message + "2");
+        assertEquals(1, latch.getCount());
+    }
+
+    @Test
+    public void test10TimesRemoveMessageListener() throws InterruptedException {
+        ExecutorService ex = Executors.newFixedThreadPool(1);
+        final CountDownLatch latch = new CountDownLatch(10);
+        ex.execute(new Runnable() {
+            public void run() {
+                for (int i = 0; i < 10; i++) {
+                    try {
+                        removeMessageListener();
+                        latch.countDown();
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                }
+            }
+        });
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
     }
 
     @AfterClass

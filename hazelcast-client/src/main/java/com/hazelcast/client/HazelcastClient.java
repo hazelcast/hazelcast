@@ -41,8 +41,9 @@ import java.util.concurrent.ExecutorService;
 public class HazelcastClient implements HazelcastInstance {
 
     final Map<Long, Call> calls = new ConcurrentHashMap<Long, Call>();
-    final ListenerManager listenerManager;
-    final OutRunnable out;
+
+    final private ListenerManager listenerManager;
+    final private OutRunnable out;
     final InRunnable in;
     final ConnectionManager connectionManager;
     final Map<Object, Object> mapProxies = new ConcurrentHashMap<Object, Object>(100);
@@ -85,6 +86,10 @@ public class HazelcastClient implements HazelcastInstance {
 
     public OutRunnable getOutRunnable() {
         return out;
+    }
+
+    ListenerManager getListenerManager() {
+        return listenerManager;
     }
 
     private HazelcastClient(String groupName, String groupPassword, InetSocketAddress address) {

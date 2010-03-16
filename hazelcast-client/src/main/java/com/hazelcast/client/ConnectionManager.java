@@ -89,8 +89,8 @@ public class ConnectionManager implements MembershipListener {
         Packet bind = new Packet();
         bind.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, Serializer.toByte(null), Serializer.toByte(b));
         Call cBind = ProxyHelper.createCall(bind);
-        client.out.callMap.put(cBind.getId(), cBind);
-        client.out.writer.write(connection, bind);
+        client.getOutRunnable().callMap.put(cBind.getId(), cBind);
+        client.getOutRunnable().writer.write(connection, bind);
         try {
             Thread.sleep(10);
         } catch (InterruptedException e) {

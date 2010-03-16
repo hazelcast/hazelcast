@@ -51,27 +51,27 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
 
     public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         check(listener);
-        if (client.listenerManager.entryListenerManager.noEntryListenerRegistered(key, name)) {
+        if (client.getListenerManager().getEntryListenerManager().noEntryListenerRegistered(key, name)) {
             Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, toByte(key), null);
             request.setLongValue(includeValue ? 1 : 0);
             Call c = proxyHelper.createCall(request);
-            client.listenerManager.addListenerCall(c);
+            client.getListenerManager().addListenerCall(c);
             proxyHelper.doCall(c);
         }
-        client.listenerManager.entryListenerManager.registerEntryListener(name, key, listener);
+        client.getListenerManager().getEntryListenerManager().registerEntryListener(name, key, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener) {
         check(listener);
         proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, null, null);
-        client.listenerManager.entryListenerManager.removeEntryListener(name, null, listener);
+        client.getListenerManager().getEntryListenerManager().removeEntryListener(name, null, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener, K key) {
         check(listener);
         check(key);
         proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
-        client.listenerManager.entryListenerManager.removeEntryListener(name, key, listener);
+        client.getListenerManager().getEntryListenerManager().removeEntryListener(name, key, listener);
     }
 
     public void lock(K key) {

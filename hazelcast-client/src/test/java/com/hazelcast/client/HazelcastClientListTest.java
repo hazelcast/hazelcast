@@ -49,7 +49,7 @@ public class HazelcastClientListTest {
     @Ignore
     public void addRemoveItemListener() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
-        final IList<String> list = hClient.getList("addRemoveItemListener");
+        final IList<String> list = hClient.getList("addRemoveItemListenerList");
         final CountDownLatch addLatch = new CountDownLatch(4);
         final CountDownLatch removeLatch = new CountDownLatch(4);
         ItemListener<String> listener = new CountDownItemListener<String>(addLatch, removeLatch);

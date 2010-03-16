@@ -53,17 +53,17 @@ public class ClusterClientProxy implements Cluster {
 
     public void addMembershipListener(MembershipListener listener) {
         check(listener);
-        if (client.listenerManager.membershipListenerManager.noMembershipListenerRegistered()) {
+        if (client.getListenerManager().getMembershipListenerManager().noMembershipListenerRegistered()) {
             Packet request = proxyHelper.createRequestPacket(ClusterOperation.CLIENT_ADD_MEMBERSHIP_LISTENER, null, null);
             Call c = proxyHelper.createCall(request);
-            client.listenerManager.addListenerCall(c);
+            client.getListenerManager().addListenerCall(c);
             proxyHelper.doCall(c);
         }
-        client.listenerManager.membershipListenerManager.registerMembershipListener(listener);
+        client.getListenerManager().getMembershipListenerManager().registerMembershipListener(listener);
     }
 
     public void removeMembershipListener(MembershipListener listener) {
-        client.listenerManager.membershipListenerManager.removeMembershipListener(listener);
+        client.getListenerManager().getMembershipListenerManager().removeMembershipListener(listener);
     }
 
     public Set<Member> getMembers() {
@@ -86,20 +86,17 @@ public class ClusterClientProxy implements Cluster {
 
     public void addInstanceListener(InstanceListener listener) {
         check(listener);
-//        if(client.listenerManager.noInstanceListenerRegistered()){
-        if (client.listenerManager.instanceListenerManager.noInstanceListenerRegistered()) {
+        if (client.getListenerManager().getInstanceListenerManager().noInstanceListenerRegistered()) {
             Packet request = proxyHelper.createRequestPacket(ClusterOperation.CLIENT_ADD_INSTANCE_LISTENER, null, null);
             Call c = proxyHelper.createCall(request);
-            client.listenerManager.addListenerCall(c);
+            client.getListenerManager().addListenerCall(c);
             proxyHelper.doCall(c);
         }
-//	    client.listenerManager.registerInstanceListener(listener);
-        client.listenerManager.instanceListenerManager.registerInstanceListener(listener);
+        client.getListenerManager().getInstanceListenerManager().registerInstanceListener(listener);
     }
 
     public void removeInstanceListener(InstanceListener instanceListener) {
         check(instanceListener);
-//		client.listenerManager.removeInstanceListener(instanceListener);
-        client.listenerManager.instanceListenerManager.removeInstanceListener(instanceListener);
+        client.getListenerManager().getInstanceListenerManager().removeInstanceListener(instanceListener);
     }
 }

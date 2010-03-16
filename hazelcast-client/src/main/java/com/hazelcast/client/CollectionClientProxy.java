@@ -35,6 +35,11 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E> {
         proxyHelper = new ProxyHelper(name, hazelcastClient);
     }
 
+    public CollectionClientProxy(ProxyHelper proxyHelper, String name) {
+        this.name = name;
+        this.proxyHelper = proxyHelper;
+    }
+
     public void destroy() {
         proxyHelper.destroy();
     }
@@ -74,19 +79,22 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E> {
                 '}';
     }
 
-    public void addItemListener(ItemListener<E> listener, boolean includeValue) {
+    public synchronized void addItemListener(ItemListener<E> listener, boolean includeValue) {
         check(listener);
         Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
         request.setLongValue(includeValue ? 1 : 0);
         Call c = proxyHelper.createCall(request);
-        proxyHelper.getHazelcastClient().listenerManager.addListenerCall(c);
+        proxyHelper.getHazelcastClient().getListenerManager().addListenerCall(c);
+        proxyHelper.getHazelcastClient().getListenerManager().getItemListenerManager().registerItemListener(name, listener);
         proxyHelper.doCall(c);
-        proxyHelper.getHazelcastClient().listenerManager.itemListenerManager.registerItemListener(name, listener);
     }
 
-    public void removeItemListener(ItemListener<E> listener) {
+    public synchronized void removeItemListener(ItemListener<E> listener) {
         check(listener);
-        proxyHelper.getHazelcastClient().listenerManager.itemListenerManager.removeItemListener(name, listener);
+        proxyHelper.getHazelcastClient().getListenerManager().getItemListenerManager().removeItemListener(name, listener);
+        Packet request = proxyHelper.createRequestPacket(ClusterOperation.REMOVE_LISTENER, null, null);
+        Call c = proxyHelper.createCall(request);
+        proxyHelper.doCall(c);
     }
 
     @Override

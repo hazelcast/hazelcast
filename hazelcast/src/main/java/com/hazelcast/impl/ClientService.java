@@ -775,7 +775,8 @@ public class ClientService {
                 }
             } else if (getInstanceType(packet.name).equals(InstanceType.TOPIC)) {
                 ITopic topic = (ITopic) node.factory.getOrCreateProxyByName(packet.name);
-                topic.removeMessageListener(clientEndpoint.messageListeners.remove(packet.name));
+                MessageListener listener =  clientEndpoint.messageListeners.remove(packet.name);
+                topic.removeMessageListener(listener);
             }
         }
     }

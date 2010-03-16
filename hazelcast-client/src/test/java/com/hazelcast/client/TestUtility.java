@@ -26,7 +26,7 @@ public class TestUtility {
     public static HazelcastClient client;
     static HazelcastInstance hz;
 
-    public static HazelcastClient getHazelcastClient() {
+    public synchronized  static HazelcastClient getHazelcastClient() {
         if (client == null) {
             hz = Hazelcast.newHazelcastInstance(null);
             client = getHazelcastClient(hz);
@@ -34,7 +34,7 @@ public class TestUtility {
         return client;
     }
 
-    public static HazelcastClient getHazelcastClient(HazelcastInstance... h) {
+    public synchronized static HazelcastClient getHazelcastClient(HazelcastInstance... h) {
         InetSocketAddress[] addresses = new InetSocketAddress[h.length];
         for (int i = 0; i < h.length; i++) {
             addresses[i] = h[i].getCluster().getLocalMember().getInetSocketAddress();

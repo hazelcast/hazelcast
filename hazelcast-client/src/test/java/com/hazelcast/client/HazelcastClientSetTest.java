@@ -24,6 +24,9 @@ import org.junit.Test;
 
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static org.junit.Assert.*;
@@ -47,23 +50,47 @@ public class HazelcastClientSetTest {
     @Test
     public void addRemoveItemListener() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
-        final ISet<String> set = hClient.getSet("addRemoveItemListener");
-        final CountDownLatch addLatch = new CountDownLatch(4);
-        final CountDownLatch removeLatch = new CountDownLatch(4);
+        final ISet<String> set = hClient.getSet("addRemoveItemListenerSet");
+        final CountDownLatch addLatch = new CountDownLatch(2);
+        final CountDownLatch removeLatch = new CountDownLatch(2);
         ItemListener<String> listener = new CountDownItemListener<String>(addLatch, removeLatch);
         set.addItemListener(listener, true);
         set.add("hello");
         set.add("hello");
         set.remove("hello");
         set.remove("hello");
+        while(removeLatch.getCount() != 1){
+            Thread.sleep(50);
+        }
         set.removeItemListener(listener);
         set.add("hello");
         set.add("hello");
         set.remove("hello");
         set.remove("hello");
-        Thread.sleep(1000);
-        assertEquals(3, addLatch.getCount());
-        assertEquals(3, removeLatch.getCount());
+        Thread.sleep(50);
+        assertEquals(1, addLatch.getCount());
+        assertEquals(1, removeLatch.getCount());
+    }
+
+    @Test
+    public void TenTimesAddRemoveItemListener() throws InterruptedException {
+        ExecutorService ex = Executors.newFixedThreadPool(1);
+        final int count = 10;
+        final CountDownLatch latch = new CountDownLatch(count);
+        ex.execute(new Runnable() {
+            public void run() {
+                for (int i = 0; i < count; i++) {
+                    try {
+                        System.out.println("i: " + i);
+                        addRemoveItemListener();
+                        latch.countDown();
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                }
+            }
+        });
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
     }
 
     @Test

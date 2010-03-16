@@ -17,6 +17,8 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.impl.ClusterOperation;
+
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -66,7 +68,7 @@ public class OutRunnable extends IORunnable {
     private void redoUnfinishedCalls(Call call, Connection oldConnection) {
         temp.add(call);
         queue.drainTo(temp);
-        client.listenerManager.getListenerCalls().drainTo(queue);
+        client.getListenerManager().getListenerCalls().drainTo(queue);
         temp.drainTo(queue);
         onDisconnect(oldConnection);
     }
