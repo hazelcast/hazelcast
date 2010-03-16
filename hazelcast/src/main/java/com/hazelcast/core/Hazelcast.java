@@ -40,13 +40,14 @@ public final class Hazelcast {
     }
 
     /**
-     * Initilizes this Hazelcast instance with the specified configuration.
-     * This method should be called before calling any other methods otherwise
+     * Initializes the default Hazelcast instance with the specified configuration.
+     * This method should be called before calling any other methods.
      *
      * @param config configuration for this Hazelcast instance.
-     * @throws IllegalStateException if this instance is already initilized
+     * @return the default instance
+     * @throws IllegalStateException if this instance is already initialized
      */
-    public static void init(Config config) {
+    public static HazelcastInstance init(Config config) {
         if (defaultInstance != null) {
             throw new IllegalStateException("Default Hazelcast instance is already initilized.");
         }
@@ -56,9 +57,16 @@ public final class Hazelcast {
             }
             defaultInstance = com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(config);
         }
+        return defaultInstance;
     }
 
-    private static HazelcastInstance getDefaultInstance() {
+    /**
+     * Returns the default Hazelcast instance, starts it with the default
+     * configuration, if not already started.
+     * 
+     * @return the default Hazelacst instance
+     */
+    public static HazelcastInstance getDefaultInstance() {
         if (defaultInstance == null) {
             synchronized (initLock) {
                 if (defaultInstance == null) {

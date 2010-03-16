@@ -69,6 +69,9 @@ public final class Serializer {
     }
 
     public static Class<?> classForName(String className) throws ClassNotFoundException {
+        if (className != null && className.startsWith("com.hazelcast")) {
+            return Class.forName(className, true, Serializer.class.getClassLoader());
+        }
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         if (contextClassLoader != null) {
             return Class.forName(className, true, contextClassLoader);
