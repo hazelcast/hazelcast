@@ -127,22 +127,34 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
                 "Add Cluster to Monitor");
         final TextBox tbGroupName = new TextBox();
         tbGroupName.setText("dev");
+        tbGroupName.setWidth("100px");
         final TextBox tbGroupPass = new PasswordTextBox();
         tbGroupPass.setText("dev-pass");
+        tbGroupPass.setWidth("100px");
         final TextBox tbAddresses = new TextBox();
+        tbAddresses.setWidth("100px");
 //        tbAddresses.setText("192.168.1.3");
         final Label lbError = new Label("");
         lbError.setVisible(false);
         final Button btAddCluster = new Button("Add Cluster");
         btAddCluster.addClickHandler(new AddClusterClickHandler(this, tbGroupName, tbGroupPass, tbAddresses, lbError));
-        VerticalPanel vPanel = new VerticalPanel();
-        vPanel.add(tbGroupName);
-        vPanel.add(tbGroupPass);
-        vPanel.add(tbAddresses);
-        vPanel.add(btAddCluster);
-        vPanel.add(lbError);
-        disclosurePanel.add(vPanel);
+        FlexTable table = new FlexTable();
+        table.setWidget(0,0,new Label("Group Name:"));
+        table.setWidget(1,0,new Label("Password:"));
+        table.setWidget(2,0,new Label("Address:"));
+        table.setWidget(0,1,tbGroupName);
+        table.setWidget(1,1,tbGroupPass);
+        table.setWidget(2,1,tbAddresses);
+        table.setWidget(3,1, btAddCluster);
+        table.setWidget(4,0, lbError);
+        table.getFlexCellFormatter().setColSpan(4,0,2);
+        table.getCellFormatter().setHorizontalAlignment(0,0, HasHorizontalAlignment.ALIGN_RIGHT);
+        table.getCellFormatter().setHorizontalAlignment(1,0, HasHorizontalAlignment.ALIGN_RIGHT);
+        table.getCellFormatter().setHorizontalAlignment(2,0, HasHorizontalAlignment.ALIGN_RIGHT);
+//        disclosurePanel.add(vPanel);
+        disclosurePanel.add(table);
         disclosurePanel.setOpen(true);
         return disclosurePanel;
+
     }
 }
