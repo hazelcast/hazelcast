@@ -1148,7 +1148,7 @@ public final class ConcurrentMapManager extends BaseManager {
             public void doRun() {
                 try {
                     MEvict mEvict = new MEvict();
-                    mEvict.evict(name, key);
+                    boolean result = mEvict.evict(name, key);
                 } catch (Exception ignored) {
                     ignored.printStackTrace();
                 } finally {
@@ -1456,7 +1456,7 @@ public final class ConcurrentMapManager extends BaseManager {
                 unlocked = record.unlock(request.lockThreadId, request.lockAddress);
                 if (unlocked) {
                     CMap cmap = getOrCreateMap(record.getName());
-                    record.setVersion(record.getVersion() + 1);
+                    record.incrementVersion();
                     request.version = record.getVersion();
                     request.lockCount = record.getLockCount();
                     cmap.fireScheduledActions(record);

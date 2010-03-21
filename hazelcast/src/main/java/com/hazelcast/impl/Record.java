@@ -384,7 +384,7 @@ public class Record implements MapEntry {
 
     @Override
     public int hashCode() {
-        return (int) (getId() ^ (getId() >>> 32));
+        return (int) (id ^ (id >>> 32));
     }
 
     public String toString() {
