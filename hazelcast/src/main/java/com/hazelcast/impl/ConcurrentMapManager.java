@@ -22,8 +22,8 @@ import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.concurrentmap.MultiData;
-import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.query.Predicate;
@@ -55,6 +55,7 @@ public final class ConcurrentMapManager extends BaseManager {
     final OrderedExecutionTask[] orderedExecutionTasks;
     final PartitionManager partitionManager;
     long newRecordId = 0;
+    volatile long nextCleanup = 0;
 
     ConcurrentMapManager(Node node) {
         super(node);
@@ -73,19 +74,19 @@ public final class ConcurrentMapManager extends BaseManager {
         node.clusterService.registerPeriodicRunnable(new Runnable() {
             public void run() {
                 logState();
-                executeLocally(new Runnable() {
-                    public void run() {
-                        Collection<CMap> cmaps = maps.values();
-                        for (CMap cmap : cmaps) {
-//                    cmap.startRemove();
-//                    cmap.startEviction(false);
-//                    if (cmap.writeDelayMillis > 0) {
-//                        cmap.startAsyncStoreWrite();
-//                    }
-                            cmap.startCleanup();
+                long now = System.currentTimeMillis();
+                if (now > nextCleanup) {
+                    nextCleanup = Long.MAX_VALUE;
+                    executeLocally(new Runnable() {
+                        public void run() {
+                            Collection<CMap> cmaps = maps.values();
+                            for (CMap cmap : cmaps) {
+                                cmap.startCleanup();
+                            }
+                            nextCleanup = System.currentTimeMillis() + GLOBAL_REMOVE_DELAY_MILLIS;
                         }
-                    }
-                });
+                    });
+                }
             }
         });
         node.clusterService.registerPeriodicRunnable(partitionManager);
@@ -1020,27 +1021,20 @@ public final class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    public class MLocalMapStats extends TargetAwareOp {
-        public LocalMapStats getLocalMapStats(String name) {
-            request.name = name;
-            doOp();
-            return (LocalMapStats) getResultAsObject();
+    public LocalMapStatsImpl getLocalMapStats(String name) {
+        CMap cmap = getMap(name);
+        if (cmap == null) {
+            return new LocalMapStatsImpl();
         }
-
-        @Override
-        public void setTarget() {
-            target = thisAddress;
-        }
-
-        @Override
-        public void doLocalOp() {
-            if (isMigrating(request)) {
-                setResult(OBJECT_REDO);
-            } else {
-                CMap cmap = getOrCreateMap(request.name);
-                setResult(cmap.getLocalMapStats());
+        int tryCount = 0;
+        while (tryCount++ < 10 && partitionManager.partitionServiceImpl.isMigrating()) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
         }
+        return cmap.getLocalMapStats();
     }
 
     public class MIterateLocal extends MGetEntries {
@@ -1244,13 +1238,6 @@ public final class ConcurrentMapManager extends BaseManager {
                 }
             }
             releasePacket(packet);
-        }
-    }
-
-    class SizeOperationHandler extends MigrationAwareOperationHandler {
-        void doOperation(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            request.response = (long) cmap.size();
         }
     }
 
@@ -1659,6 +1646,20 @@ public final class ConcurrentMapManager extends BaseManager {
         return cmap.checkLock(request);
     }
 
+    class SizeOperationHandler extends ExecutedOperationHandler {
+        @Override
+        Runnable createRunnable(final Request request) {
+            final Connection conn = (request.local) ? null : node.connectionManager.getConnection(request.caller);
+            final CMap cmap = getOrCreateMap(request.name);
+            return new Runnable() {
+                public void run() {
+                    request.response = (long) cmap.size();
+                    returnResponse(request, conn);
+                }
+            };
+        }
+    }
+
     class QueryOperationHandler extends ExecutedOperationHandler {
 
         @Override
@@ -1672,17 +1673,20 @@ public final class ConcurrentMapManager extends BaseManager {
         }
 
         Runnable createRunnable(Request request) {
+            final Connection conn = (request.local) ? null : node.connectionManager.getConnection(request.caller);
             final CMap cmap = getOrCreateMap(request.name);
-            return new QueryTask(cmap, request);
+            return new QueryTask(cmap, request, conn);
         }
 
         class QueryTask implements Runnable {
             final CMap cmap;
             final Request request;
+            final Connection conn;
 
-            QueryTask(CMap cmap, Request request) {
+            QueryTask(CMap cmap, Request request, Connection conn) {
                 this.cmap = cmap;
                 this.request = request;
+                this.conn = conn;
             }
 
             public void run() {
@@ -1713,11 +1717,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     }
                 }
                 createEntries(request, results);
-                enqueueAndReturn(new Processable() {
-                    public void process() {
-                        returnResponse(request);
-                    }
-                });
+                returnResponse(request, conn);
             }
         }
 

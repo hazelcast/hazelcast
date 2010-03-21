@@ -25,9 +25,9 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public class Block implements DataSerializable {
-    private int blockId;
-    private Address owner;
-    private Address migrationAddress;
+    private volatile int blockId;
+    private volatile Address owner;
+    private volatile Address migrationAddress;
     private int hash = Integer.MIN_VALUE;
     private boolean migrationStarted = false;
 

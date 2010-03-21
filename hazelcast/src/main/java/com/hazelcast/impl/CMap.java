@@ -34,6 +34,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -58,9 +59,9 @@ public class CMap {
 
     final Address thisAddress;
 
-    final Map<Data, Record> mapOwnedRecords = new HashMap<Data, Record>(10000);
+    final Map<Data, Record> mapOwnedRecords = new ConcurrentHashMap<Data, Record>(10000);
 
-    final Map<Data, Record> mapBackupRecords = new HashMap<Data, Record>(10000);
+    final Map<Data, Record> mapBackupRecords = new ConcurrentHashMap<Data, Record>(10000);
 
     final String name;
 
@@ -98,15 +99,15 @@ public class CMap {
 
     final long creationTime;
 
-    boolean ttlPerRecord = false;
+    final AtomicInteger evictionCount = new AtomicInteger();
+
+    volatile boolean ttlPerRecord = false;
 
     volatile byte[] indexTypes = null;
 
-    long lastEvictionTime = 0;
+    volatile long lastEvictionTime = 0;
 
-    long lastRemoveTime = 0;
-
-    final AtomicInteger evictionCount = new AtomicInteger();
+    volatile long lastRemoveTime = 0;
 
     Lock lockEntireMap = null;
 
@@ -505,27 +506,10 @@ public class CMap {
             }
         }
         records = mapBackupRecords.values();
-        Map<Address, Integer> mapMemberDistances = new HashMap<Address, Integer>();
         for (Record record : records) {
             if (record.isActive() && record.isValid(now)) {
-                Block block = blocks[record.getBlockId()];
-                if (!thisAddress.equals(block.getOwner())) {
-                    Address owner = (block.isMigrating()) ? block.getMigrationAddress() : block.getOwner();
-                    int distance;
-                    Integer d = mapMemberDistances.get(owner);
-                    if (d == null) {
-                        distance = concurrentMapManager.getDistance(owner, thisAddress);
-                        mapMemberDistances.put(owner, distance);
-                    } else {
-                        distance = d;
-                    }
-                    if (distance > getBackupCount()) {
-                        markAsRemoved(record);
-                    } else {
-                        backupEntryCount += record.valueCount();
-                        backupEntryMemoryCost += record.getCost();
-                    }
-                }
+                backupEntryCount += record.valueCount();
+                backupEntryMemoryCost += record.getCost();
             } else {
                 removedEntryCount++;
                 markedAsRemovedMemoryCost += record.getCost();
@@ -540,8 +524,8 @@ public class CMap {
         localMapStats.setBackupEntryCount(backupEntryCount);
         localMapStats.setOwnedEntryMemoryCost(ownedEntryMemoryCost);
         localMapStats.setBackupEntryMemoryCost(backupEntryMemoryCost);
-        localMapStats.setLastEvictionTime(clusterImpl.getClusterTimeFor(this.lastEvictionTime));
-        localMapStats.setCreationTime(clusterImpl.getClusterTimeFor(this.creationTime));
+        localMapStats.setLastEvictionTime(clusterImpl.getClusterTimeFor(lastEvictionTime));
+        localMapStats.setCreationTime(clusterImpl.getClusterTimeFor(creationTime));
         return localMapStats;
     }
 
@@ -946,64 +930,63 @@ public class CMap {
 
     void startCleanup() {
         final long now = System.currentTimeMillis();
-        if (((now - lastRemoveTime) > removeDelayMillis)) {
-            lastRemoveTime = now;
-            final Map<Data, Data> entriesToStore = new HashMap<Data, Data>();
-            final Collection<Data> keysToDelete = new HashSet<Data>();
-            final Set<Record> recordsToPurge = new HashSet<Record>();
-            final Set<Record> recordsToEvict = new HashSet<Record>();
-            final Set<Record> sortedRecords = new TreeSet<Record>(new LRUComparator());
-            final Collection<Record> ownedRecords = mapIndexService.getOwnedRecords();
-            for (Record record : ownedRecords) {
-                if (store != null && record.isDirty()) {
-                    if (record.getWriteTime() > now) {
-                        if (record.getValue() != null) {
-                            entriesToStore.put(record.getKey(), record.getValue());
-                        } else {
-                            keysToDelete.add(record.getKey());
-                        }
-                        record.setDirty(false);
+        final Map<Data, Data> entriesToStore = new HashMap<Data, Data>();
+        final Collection<Data> keysToDelete = new HashSet<Data>();
+        final Set<Record> recordsToPurge = new HashSet<Record>();
+        final Set<Record> recordsToEvict = new HashSet<Record>();
+        final Set<Record> sortedRecords = new TreeSet<Record>(new LRUComparator());
+        final Collection<Record> ownedRecords = mapIndexService.getOwnedRecords();
+        final boolean evictionAware = evictionPolicy != SortedHashMap.OrderingType.NONE && maxSize > 0;
+        for (Record record : ownedRecords) {
+            if (store != null && record.isDirty()) {
+                if (record.getWriteTime() > now) {
+                    if (record.getValue() != null) {
+                        entriesToStore.put(record.getKey(), record.getValue());
+                    } else {
+                        keysToDelete.add(record.getKey());
                     }
-                } else if (shouldPurgeRecord(record, now)) {
-                    recordsToPurge.add(record);  // removed records
-                } else if (record.isActive() && !record.isValid(now)) {
-                    recordsToEvict.add(record);  // expired records
-                } else if (record.isActive() && record.isEvictable()) {
-                    sortedRecords.add(record);   // sorting for eviction
+                    record.setDirty(false);
+                }
+            } else if (shouldPurgeRecord(record, now)) {
+                recordsToPurge.add(record);  // removed records
+            } else if (record.isActive() && !record.isValid(now)) {
+                recordsToEvict.add(record);  // expired records
+            } else if (evictionAware && record.isActive() && record.isEvictable()) {
+                sortedRecords.add(record);   // sorting for eviction
+            }
+        }
+        int recordsLeft = ownedRecords.size() - (keysToDelete.size() + recordsToEvict.size() + recordsToPurge.size());
+        if (evictionAware && maxSize < recordsLeft) {
+            int numberOfRecordsToEvict = (int) (recordsLeft * evictionRate);
+            int evictedCount = 0;
+            for (Record record : sortedRecords) {
+                if (record.isActive() && record.isEvictable()) {
+                    recordsToEvict.add(record);
+                    if (++evictedCount >= numberOfRecordsToEvict) {
+                        break;
+                    }
                 }
             }
-            int recordsLeft = ownedRecords.size() - (keysToDelete.size() + recordsToEvict.size() + recordsToPurge.size());
-            if (evictionPolicy != SortedHashMap.OrderingType.NONE && maxSize > 0 && maxSize < recordsLeft) {
-                int numberOfRecordsToEvict = (int) (recordsLeft * evictionRate);
-                int evictedCount = 0;
-                for (Record record : sortedRecords) {
-                    if (record.isActive() && record.isEvictable()) {
-                        recordsToEvict.add(record);
-                        if (++evictedCount >= numberOfRecordsToEvict) {
-                            break;
+        }
+        logger.log(Level.FINEST, "Cleanup "
+                + ", store:" + entriesToStore.size()
+                + ", delete:" + keysToDelete.size()
+                + ", purge:" + recordsToPurge.size()
+                + ", evict:" + recordsToEvict.size()
+        );
+        executeStoreUpdate(entriesToStore, keysToDelete);
+        executeEviction(recordsToEvict);
+        if (recordsToPurge.size() > 0) {
+            concurrentMapManager.enqueueAndReturn(new Processable() {
+                public void process() {
+                    final long now = System.currentTimeMillis();
+                    for (Record recordToPurge : recordsToPurge) {
+                        if (shouldPurgeRecord(recordToPurge, now)) {
+                            removeAndPurgeRecord(recordToPurge);
                         }
                     }
                 }
-            }
-            System.out.println("Cleanup "
-                    + ", store:" + entriesToStore.size()
-                    + ", delete:" + keysToDelete.size()
-                    + ", purge:" + recordsToPurge.size()
-                    + ", evict:" + recordsToEvict.size()
-            );
-            executeStoreUpdate(entriesToStore, keysToDelete);
-            executeEviction(recordsToEvict);
-            if (recordsToPurge.size() > 0) {
-                concurrentMapManager.enqueueAndReturn(new Processable() {
-                    public void process() {
-                        for (Record recordToPurge : recordsToPurge) {
-                            if (shouldPurgeRecord(recordToPurge, now)) {
-                                removeAndPurgeRecord(recordToPurge);
-                            }
-                        }
-                    }
-                });
-            }
+            });
         }
     }
 

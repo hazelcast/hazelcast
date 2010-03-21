@@ -370,6 +370,7 @@ public class Record implements MapEntry {
     }
 
     public void setActive() {
+        setRemoveTime(0);
         setActive(true);
     }
 

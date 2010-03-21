@@ -190,7 +190,7 @@ public abstract class BaseManager {
             } else {
                 handle(remoteReq);
             }
-            releasePacket(packet);            
+            releasePacket(packet);
         }
     }
 
@@ -211,7 +211,7 @@ public abstract class BaseManager {
             } else {
                 handle(remoteReq);
             }
-            releasePacket(packet);            
+            releasePacket(packet);
         }
     }
 
@@ -228,6 +228,10 @@ public abstract class BaseManager {
     }
 
     public void returnResponse(Request request) {
+        returnResponse(request, null);
+    }
+
+    public void returnResponse(Request request, Connection conn) {
         if (request.local) {
             final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;
             targetAwareOp.setResult(request.response);
@@ -262,7 +266,11 @@ public abstract class BaseManager {
                     }
                 }
             }
-            sendResponse(packet, request.caller);
+            if (conn != null) {
+                conn.getWriteHandler().enqueuePacket(packet);
+            } else {
+                sendResponse(packet, request.caller);
+            }
         }
     }
 

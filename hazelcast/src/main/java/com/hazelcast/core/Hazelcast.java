@@ -64,7 +64,7 @@ public final class Hazelcast {
      * Returns the default Hazelcast instance, starts it with the default
      * configuration, if not already started.
      * 
-     * @return the default Hazelacst instance
+     * @return the default Hazelcast instance
      */
     public static HazelcastInstance getDefaultInstance() {
         if (defaultInstance == null) {

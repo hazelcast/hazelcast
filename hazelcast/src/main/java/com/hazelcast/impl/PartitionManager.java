@@ -26,9 +26,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.partition.MigrationEvent;
-import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.partition.PartitionService;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.DataInput;
@@ -43,11 +41,12 @@ import java.util.logging.Level;
 import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_BLOCKS;
 import static com.hazelcast.nio.IOUtil.toData;
 
-public class PartitionManager implements Runnable, PartitionService {
+public class PartitionManager implements Runnable {
 
     final ILogger logger;
 
     final ConcurrentMapManager concurrentMapManager;
+    final PartitionServiceImpl partitionServiceImpl;
     final Node node;
     final int PARTITION_COUNT;
     final Block[] blocks;
@@ -62,8 +61,6 @@ public class PartitionManager implements Runnable, PartitionService {
 
     boolean dirty = false;
 
-    final List<MigrationListener> lsMigrationListeners = new LinkedList<MigrationListener>();
-
     public PartitionManager(ConcurrentMapManager concurrentMapManager) {
         this.logger = concurrentMapManager.node.getLogger(PartitionManager.class.getName());
         this.concurrentMapManager = concurrentMapManager;
@@ -71,22 +68,7 @@ public class PartitionManager implements Runnable, PartitionService {
         this.PARTITION_COUNT = concurrentMapManager.PARTITION_COUNT;
         this.blocks = concurrentMapManager.blocks;
         this.thisAddress = concurrentMapManager.thisAddress;
-    }
-
-    public void addMigrationListener(final MigrationListener migrationListener) {
-        concurrentMapManager.enqueueAndReturn(new Processable() {
-            public void process() {
-                lsMigrationListeners.add(migrationListener);
-            }
-        });
-    }
-
-    public void removeMigrationListener(final MigrationListener migrationListener) {
-        concurrentMapManager.enqueueAndReturn(new Processable() {
-            public void process() {
-                lsMigrationListeners.remove(migrationListener);
-            }
-        });
+        this.partitionServiceImpl = new PartitionServiceImpl(concurrentMapManager);
     }
 
     public void run() {
@@ -467,7 +449,7 @@ public class PartitionManager implements Runnable, PartitionService {
 
     private void removeUnknownRecords() {
         Collection<CMap> cmaps = concurrentMapManager.maps.values();
-        Map<Address, Integer> mapMemberDistances = new HashMap<Address,Integer>();
+        Map<Address, Integer> mapMemberDistances = new HashMap<Address, Integer>();
         for (CMap cmap : cmaps) {
             Collection<Record> records = cmap.mapBackupRecords.values();
             for (Record record : records) {
@@ -546,8 +528,8 @@ public class PartitionManager implements Runnable, PartitionService {
                 if (currentOwner != null) {
                     MigrationEvent migrationEvent = new MigrationEvent(concurrentMapManager.node,
                             block.getBlockId(), deadMember, currentOwner);
-                    doFireMigrationEvent(true, migrationEvent);
-                    doFireMigrationEvent(false, migrationEvent);
+                    partitionServiceImpl.doFireMigrationEvent(true, migrationEvent);
+                    partitionServiceImpl.doFireMigrationEvent(false, migrationEvent);
                 }
             }
         }
@@ -750,26 +732,9 @@ public class PartitionManager implements Runnable, PartitionService {
     }
 
     void fireMigrationEvent(final boolean started, Block block) {
-        if (lsMigrationListeners.size() > 0) {
-            final MemberImpl memberOwner = concurrentMapManager.getMember(block.getOwner());
-            final MemberImpl memberMigration = concurrentMapManager.getMember(block.getMigrationAddress());
-            final MigrationEvent migrationEvent = new MigrationEvent(concurrentMapManager.node, block.getBlockId(), memberOwner, memberMigration);
-            doFireMigrationEvent(started, migrationEvent);
-        }
-    }
-
-    void doFireMigrationEvent(final boolean started, final MigrationEvent migrationEvent) {
-        if (migrationEvent == null) throw new RuntimeException("MigrationEvent: " + migrationEvent);
-        for (final MigrationListener migrationListener : lsMigrationListeners) {
-            concurrentMapManager.executeLocally(new Runnable() {
-                public void run() {
-                    if (started) {
-                        migrationListener.migrationStarted(migrationEvent);
-                    } else {
-                        migrationListener.migrationCompleted(migrationEvent);
-                    }
-                }
-            });
-        }
+        final MemberImpl memberOwner = concurrentMapManager.getMember(block.getOwner());
+        final MemberImpl memberMigration = concurrentMapManager.getMember(block.getMigrationAddress());
+        final MigrationEvent migrationEvent = new MigrationEvent(concurrentMapManager.node, block.getBlockId(), memberOwner, memberMigration);
+        partitionServiceImpl.doFireMigrationEvent(started, migrationEvent);
     }
 }

@@ -426,7 +426,7 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public PartitionService getPartitionService() {
-        return node.concurrentMapManager.partitionManager;
+        return node.concurrentMapManager.partitionManager.partitionServiceImpl;
     }
 
     public LoggingService getLoggingService() {
@@ -2070,7 +2070,6 @@ public class FactoryImpl implements HazelcastInstance {
 
         private class MProxyReal implements MProxy {
             private final transient MapOperationsCounter mapOperationStats = new MapOperationsCounter();
-            
 
             public MProxyReal() {
                 super();
@@ -2306,8 +2305,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public LocalMapStats getLocalMapStats() {
                 mapOperationStats.incrementOtherOperations();
-                MLocalMapStats mLocalMapStats = concurrentMapManager.new MLocalMapStats();
-                LocalMapStatsImpl localMapStats = (LocalMapStatsImpl) mLocalMapStats.getLocalMapStats(name);
+                LocalMapStatsImpl localMapStats = concurrentMapManager.getLocalMapStats(name);
                 localMapStats.setOperationStats(mapOperationStats.getPublishedStats());
                 return localMapStats;
             }
