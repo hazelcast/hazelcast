@@ -52,6 +52,7 @@ public class CMapTest {
         assertTrue(record.isValid());
         assertEquals(1, cmap.size());
         cmap.remove(newRemoveRequest(dKey));
+        assertTrue(System.currentTimeMillis() - record.getRemoveTime() < 100);
         assertEquals(1, cmap.mapOwnedRecords.size());
         record = cmap.getOwnedRecord(dKey);
         assertNotNull(record);
@@ -59,6 +60,7 @@ public class CMapTest {
         assertTrue(record.isValid());
         assertEquals(0, cmap.size());
         cmap.put(newPutRequest(dKey, dValue, 1000));
+        assertEquals(0, record.getRemoveTime());
         assertTrue(cmap.mapOwnedRecords.containsKey(toData(key)));
         Thread.sleep(1000);
         assertEquals(0, cmap.size());

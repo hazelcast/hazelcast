@@ -184,7 +184,6 @@ public class Index {
             Iterator<Record> currentIterator;
 
             public boolean hasNext() {
-//                if (true) throw new RuntimeException();
                 if (resultSets.size() == 0) return false;
                 if (currentIterator != null && currentIterator.hasNext()) {
                     return true;
