@@ -425,17 +425,19 @@ public class Node {
                 buildNumber == joinRequest.buildNumber;
     }
 
-    private Address getAddressFor(final String host) {
+    private Address getAddressFor(String host) {
         int port = config.getPort();
         final int indexColon = host.indexOf(':');
         if (indexColon != -1) {
             port = Integer.parseInt(host.substring(indexColon + 1));
+            host = host.substring(0, indexColon);
         }
         final boolean ip = isIP(host);
         try {
             if (ip) {
                 return new Address(host, port, true);
             } else {
+
                 final InetAddress[] allAddresses = InetAddress.getAllByName(host);
                 for (final InetAddress inetAddress : allAddresses) {
                     boolean shouldCheck = true;

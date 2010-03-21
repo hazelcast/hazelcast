@@ -47,6 +47,8 @@ public final class Serializer {
 
     private static TypeSerializer[] typeSerializer = new TypeSerializer[9];
 
+    private static int OUTPUT_STREAM_BUFFER_SIZE = 100 * 1024;
+
     static {
         registerTypeSerializer(new ObjectSerializer());
         registerTypeSerializer(new LongSerializer());
@@ -64,7 +66,7 @@ public final class Serializer {
     final FastByteArrayInputStream bbis;
 
     public Serializer() {
-        bbos = new FastByteArrayOutputStream(100 * 1024);
+        bbos = new FastByteArrayOutputStream(OUTPUT_STREAM_BUFFER_SIZE);
         bbis = new FastByteArrayInputStream(new byte[10]);
     }
 
@@ -108,6 +110,9 @@ public final class Serializer {
         bbos.flush();
         Data data = new Data(bbos.getBytes(), bbos.size());
         data.postRead();
+        if (bbos.size() > OUTPUT_STREAM_BUFFER_SIZE) {
+            bbos.set(new byte[OUTPUT_STREAM_BUFFER_SIZE]);
+        }
         return data;
     }
 

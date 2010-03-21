@@ -75,6 +75,10 @@ public final class FastByteArrayOutputStream extends ByteArrayOutputStream imple
         out.write(buf, 0, count);
     }
 
+    public void set(byte[] buffer) {
+        this.buf = buffer;
+    }
+
     @Override
     public void reset() {
         count = 0;

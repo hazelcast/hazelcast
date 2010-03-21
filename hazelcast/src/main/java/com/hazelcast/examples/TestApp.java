@@ -233,6 +233,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                     + "M "
                     + (int) (Runtime.getRuntime().freeMemory() * 100 / Runtime.getRuntime()
                     .maxMemory()) + "%");
+            long total = Runtime.getRuntime().totalMemory();
+            long free = Runtime.getRuntime().freeMemory();
+            System.out.println("Used Memory:" + ((total - free) / 1024 / 1024) + "MB"); 
             System.out.println("# procs: " + Runtime.getRuntime().availableProcessors());
             System.out.println("OS info: " + ManagementFactory.getOperatingSystemMXBean().getArch()
                     + " " + ManagementFactory.getOperatingSystemMXBean().getName() + " "
