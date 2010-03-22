@@ -127,12 +127,12 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
                 "Add Cluster to Monitor");
         final TextBox tbGroupName = new TextBox();
         tbGroupName.setText("dev");
-        tbGroupName.setWidth("100px");
+        tbGroupName.setWidth("120px");
         final TextBox tbGroupPass = new PasswordTextBox();
         tbGroupPass.setText("dev-pass");
-        tbGroupPass.setWidth("100px");
+        tbGroupPass.setWidth("120px");
         final TextBox tbAddresses = new TextBox();
-        tbAddresses.setWidth("100px");
+        tbAddresses.setWidth("120px");
 //        tbAddresses.setText("192.168.1.3");
         final Label lbError = new Label("");
         lbError.setVisible(false);

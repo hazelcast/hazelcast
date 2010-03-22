@@ -37,6 +37,9 @@ public abstract class MapStatsPanel extends MapPanel implements MonitoringPanel 
     }
 
     public void handle(ChangeEvent e) {
+        if(!disclosurePanel.isOpen()) {
+            return;
+        }
 
         MapStatistics event = (MapStatistics) e;
         if(super.mapName==null || !super.mapName.equals(event.getMapName())){
