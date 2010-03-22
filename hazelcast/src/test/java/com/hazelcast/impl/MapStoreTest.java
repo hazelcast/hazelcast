@@ -98,7 +98,7 @@ public class MapStoreTest {
         // store should have the old data as we will delete-behind
         assertEquals(1, testMapStore.getStore().size());
         assertEquals(0, map.size());
-        testMapStore.assertAwait(5);
+        testMapStore.assertAwait(10);
         assertEquals(0, testMapStore.getStore().size());
     }
 

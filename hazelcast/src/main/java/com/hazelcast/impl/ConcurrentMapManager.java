@@ -46,6 +46,7 @@ import static com.hazelcast.nio.IOUtil.toObject;
 public final class ConcurrentMapManager extends BaseManager {
     final int PARTITION_COUNT;
     final long GLOBAL_REMOVE_DELAY_MILLIS;
+    final long CLEANUP_DELAY_MILLIS;
     final boolean LOG_STATE;
     long lastLogStateTime = System.currentTimeMillis();
     final Block[] blocks;
@@ -61,6 +62,7 @@ public final class ConcurrentMapManager extends BaseManager {
         super(node);
         PARTITION_COUNT = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         GLOBAL_REMOVE_DELAY_MILLIS = node.groupProperties.REMOVE_DELAY_SECONDS.getLong() * 1000L;
+        CLEANUP_DELAY_MILLIS = node.groupProperties.CLEANUP_DELAY_SECONDS.getLong() * 1000L;
         LOG_STATE = node.groupProperties.LOG_STATE.getBoolean();
         blocks = new Block[PARTITION_COUNT];
         maps = new ConcurrentHashMap<String, CMap>(10);
@@ -83,7 +85,7 @@ public final class ConcurrentMapManager extends BaseManager {
                             for (CMap cmap : cmaps) {
                                 cmap.startCleanup();
                             }
-                            nextCleanup = System.currentTimeMillis() + GLOBAL_REMOVE_DELAY_MILLIS;
+                            nextCleanup = System.currentTimeMillis() + CLEANUP_DELAY_MILLIS;
                         }
                     });
                 }
@@ -221,6 +223,11 @@ public final class ConcurrentMapManager extends BaseManager {
                 logger.log(Level.FINEST, "Migration failed " + rec.getKey());
             }
         }
+    }
+
+    public boolean isOwned(Record record) {
+        Block block = getOrCreateBlock(record.getBlockId());
+        return thisAddress.equals(block.getOwner());
     }
 
     class MLock extends MBackupAndMigrationAwareOp {
@@ -1151,8 +1158,6 @@ public final class ConcurrentMapManager extends BaseManager {
                     mEvict.evict(name, key);
                 } catch (Exception ignored) {
                     ignored.printStackTrace();
-                } finally {
-                    cmap.evictionCount.decrementAndGet();
                 }
             }
         });
@@ -1779,7 +1784,7 @@ public final class ConcurrentMapManager extends BaseManager {
         Record record = cmap.getOwnedRecord(req.key);
         if (record == null) {
             record = cmap.createNewRecord(req.key, req.value);
-            cmap.mapOwnedRecords.put(req.key, record);
+            cmap.mapRecords.put(req.key, record);
         }
         return record;
     }

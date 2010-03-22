@@ -42,10 +42,10 @@ public class CMapTest {
         Data dKey = toData(key);
         Data dValue = toData(value);
         cmap.put(newPutRequest(dKey, dValue));
-        assertTrue(cmap.mapOwnedRecords.containsKey(toData(key)));
+        assertTrue(cmap.mapRecords.containsKey(toData(key)));
         Data actualValue = cmap.get(newGetRequest(dKey));
         assertThat(toObject(actualValue), equalTo(value));
-        assertEquals(1, cmap.mapOwnedRecords.size());
+        assertEquals(1, cmap.mapRecords.size());
         Record record = cmap.getOwnedRecord(dKey);
         assertNotNull(record);
         assertTrue(record.isActive());
@@ -53,7 +53,7 @@ public class CMapTest {
         assertEquals(1, cmap.size());
         cmap.remove(newRemoveRequest(dKey));
         assertTrue(System.currentTimeMillis() - record.getRemoveTime() < 100);
-        assertEquals(1, cmap.mapOwnedRecords.size());
+        assertEquals(1, cmap.mapRecords.size());
         record = cmap.getOwnedRecord(dKey);
         assertNotNull(record);
         assertFalse(record.isActive());
@@ -61,7 +61,7 @@ public class CMapTest {
         assertEquals(0, cmap.size());
         cmap.put(newPutRequest(dKey, dValue, 1000));
         assertEquals(0, record.getRemoveTime());
-        assertTrue(cmap.mapOwnedRecords.containsKey(toData(key)));
+        assertTrue(cmap.mapRecords.containsKey(toData(key)));
         Thread.sleep(1000);
         assertEquals(0, cmap.size());
         assertFalse(cmap.contains(newContainsRequest(dKey, null)));

@@ -17,6 +17,7 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.Record;
 import org.junit.Ignore;
 
@@ -35,6 +36,141 @@ public class TestUtil {
         record.setKey(toData(key));
         record.setValue(toData(value));
         return record;
+    }
+
+    public static class EmptyMapEntry implements MapEntry {
+        private long cost;
+        private long creationTime;
+        private long expirationTime;
+        private int hits;
+        private long lastAccessTime;
+        private long lastUpdateTime;
+        private int version;
+        private boolean valid;
+        private Object key;
+        private Object value;
+        private long id;
+
+        public EmptyMapEntry(long id) {
+            this.id = id;
+        }
+
+        public long getCost() {
+            return cost;
+        }
+
+        public long getCreationTime() {
+            return creationTime;
+        }
+
+        public long getExpirationTime() {
+            return expirationTime;
+        }
+
+        public int getHits() {
+            return hits;
+        }
+
+        public long getLastAccessTime() {
+            return lastAccessTime;
+        }
+
+        public long getLastUpdateTime() {
+            return lastUpdateTime;
+        }
+
+        public long getVersion() {
+            return version;
+        }
+
+        public boolean isValid() {
+            return valid;
+        }
+
+        public Object getKey() {
+            return key;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+
+        public Object setValue(Object value) {
+            Object oldValue = this.value;
+            this.value = value;
+            return oldValue;
+        }
+
+        public void setCost(long cost) {
+            this.cost = cost;
+        }
+
+        public void setCreationTime(long creationTime) {
+            this.creationTime = creationTime;
+        }
+
+        public void setExpirationTime(long expirationTime) {
+            this.expirationTime = expirationTime;
+        }
+
+        public void setHits(int hits) {
+            this.hits = hits;
+        }
+
+        public void setKey(Object key) {
+            this.key = key;
+        }
+
+        public void setLastAccessTime(long lastAccessTime) {
+            this.lastAccessTime = lastAccessTime;
+        }
+
+        public void setLastUpdateTime(long lastUpdateTime) {
+            this.lastUpdateTime = lastUpdateTime;
+        }
+
+        public void setValid(boolean valid) {
+            this.valid = valid;
+        }
+
+        public void setVersion(int version) {
+            this.version = version;
+        }
+
+        public long getId() {
+            return id;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            EmptyMapEntry that = (EmptyMapEntry) o;
+            if (id != that.id) return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return (int) (id ^ (id >>> 32));
+        }
+
+        @Override
+        public String toString() {
+            return "EmptyMapEntry{" +
+                    "id=" + id +
+                    ", expirationTime=" + expirationTime +
+                    ", hits=" + hits +
+                    ", lastAccessTime=" + lastAccessTime +
+                    ", lastUpdateTime=" + lastUpdateTime +
+                    ", key=" + key +
+                    ", value=" + value +
+                    ", valid=" + valid +
+                    ", creationTime=" + creationTime +
+                    ", cost=" + cost +
+                    ", version=" + version +
+                    '}';
+        }
     }
 
     @Ignore
