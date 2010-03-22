@@ -486,11 +486,17 @@ public class CMap {
         int hits = 0;
         int lockedEntryCount = 0;
         int lockWaitCount = 0;
+        PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
         ClusterImpl clusterImpl = node.getClusterImpl();
         LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
-        Collection<Record> records = mapOwnedRecords.values();
-        for (Record record : records) {
-            if (record.isActive() && record.isValid(now)) {
+        Map<Data, Record> allRecords = new HashMap<Data, Record>();
+        allRecords.putAll(mapOwnedRecords);
+        allRecords.putAll(mapBackupRecords);
+        for (Record record : allRecords.values()) {
+            if (isBackup(record, partitionService, now)) {
+                backupEntryCount += record.valueCount();
+                backupEntryMemoryCost += record.getCost();
+            } else if (isOwned(record, partitionService, now)) {
                 ownedEntryCount += record.valueCount();
                 ownedEntryMemoryCost += record.getCost();
                 localMapStats.setLastAccessTime(clusterImpl.getClusterTimeFor(record.getLastAccessTime()));
@@ -500,19 +506,6 @@ public class CMap {
                     lockedEntryCount++;
                     lockWaitCount += record.getScheduledActionCount();
                 }
-            } else {
-                removedEntryCount++;
-                markedAsRemovedMemoryCost += record.getCost();
-            }
-        }
-        records = mapBackupRecords.values();
-        for (Record record : records) {
-            if (record.isActive() && record.isValid(now)) {
-                backupEntryCount += record.valueCount();
-                backupEntryMemoryCost += record.getCost();
-            } else {
-                removedEntryCount++;
-                markedAsRemovedMemoryCost += record.getCost();
             }
         }
         localMapStats.setMarkedAsRemovedEntryCount(removedEntryCount);
@@ -527,6 +520,23 @@ public class CMap {
         localMapStats.setLastEvictionTime(clusterImpl.getClusterTimeFor(lastEvictionTime));
         localMapStats.setCreationTime(clusterImpl.getClusterTimeFor(creationTime));
         return localMapStats;
+    }
+
+    private boolean isOwned(Record record, PartitionServiceImpl partitionService, long now) {
+        PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
+        Member owner = partition.getOwner();
+        return (owner != null && owner.localMember() && record.isActive() && record.isValid(now));
+    }
+
+    private boolean isBackup(Record record, PartitionServiceImpl partitionService, long now) {
+        PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
+        Member ownerNow = partition.getOwner(); 
+        Member ownerEventual = partition.getEventualOwner();
+        if (ownerEventual != null && ownerNow != null && !ownerNow.localMember()) {
+            int distance = node.getClusterImpl().getDistanceFrom(ownerEventual);
+            return (distance != -1 && distance <= getBackupCount() && record.isActive() && record.isValid(now));
+        }
+        return false;
     }
 
     public int size() {

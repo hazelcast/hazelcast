@@ -34,11 +34,47 @@ public class ClusterImpl implements Cluster {
     final AtomicReference<Set<Member>> members = new AtomicReference<Set<Member>>();
     final AtomicReference<Member> localMember = new AtomicReference<Member>();
     final Map<Member, Member> clusterMembers = new ConcurrentHashMap<Member, Member>();
+    final Map<Member, Integer> distances = new ConcurrentHashMap<Member, Integer>();
     volatile long clusterTimeDiff = Long.MAX_VALUE;
     final Node node;
 
     public ClusterImpl(Node node) {
         this.node = node;
+    }
+
+    public int getDistanceFrom(Member member) {
+        if (member.localMember()) {
+            return 0;
+        }
+        Integer distance = distances.get(member);
+        if (distance != null) {
+            return distance;
+        }
+        Set<Member> currentMembers = members.get();
+        int size = currentMembers.size();
+        Member localMember = getLocalMember();
+        int index = 0;
+        int toIndex = getIndexOf(localMember, currentMembers);
+        for (Member m : currentMembers) {
+            if (!m.equals(localMember)) {
+                distance = ((toIndex - index) + size) % size;
+                distances.put(m, distance);
+            }
+            index++;
+        }
+        Integer d = distances.get(member);
+        return (d == null) ? -1 : d;
+    }
+
+    private int getIndexOf(Member member, Set<Member> memberSet) {
+        int count = 0;
+        for (Member m : memberSet) {
+            if (m.equals(member)) {
+                return count;
+            }
+            count++;
+        }
+        return count;
     }
 
     public void setMembers(List<MemberImpl> lsMembers) {
@@ -91,6 +127,7 @@ public class ClusterImpl implements Cluster {
             clusterMembers.put(member, member);
         }
         members.set(setNew);
+        distances.clear();
         // send notifications now
         for (Runnable notification : notifications) {
             node.executorManager.getEventExecutorService().execute(notification);

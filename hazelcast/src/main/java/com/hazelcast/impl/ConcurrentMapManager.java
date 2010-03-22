@@ -1148,7 +1148,7 @@ public final class ConcurrentMapManager extends BaseManager {
             public void doRun() {
                 try {
                     MEvict mEvict = new MEvict();
-                    boolean result = mEvict.evict(name, key);
+                    mEvict.evict(name, key);
                 } catch (Exception ignored) {
                     ignored.printStackTrace();
                 } finally {
@@ -1414,6 +1414,7 @@ public final class ConcurrentMapManager extends BaseManager {
                     }
                     CMap cmap = getOrCreateMap(request.name);
                     cmap.markAsActive(record);
+                    cmap.updateIndexes(record);
                     request.response = record.getValue();
                 }
             }
@@ -1654,6 +1655,9 @@ public final class ConcurrentMapManager extends BaseManager {
             return new Runnable() {
                 public void run() {
                     request.response = (long) cmap.size();
+                    if (partitionManager.partitionServiceImpl.isMigrating()) {
+                        request.response = OBJECT_REDO;
+                    }
                     returnResponse(request, conn);
                 }
             };

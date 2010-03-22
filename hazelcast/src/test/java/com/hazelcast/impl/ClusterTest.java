@@ -138,10 +138,10 @@ public class ClusterTest {
 
     @Test(timeout = 40000)
     public void testSuperClientPartitionOwnership() {
-        Config config = new XmlConfigBuilder().build();
-        config.setSuperClient(true);
+        Config configSuperClient = new XmlConfigBuilder().build();
+        configSuperClient.setSuperClient(true);
         HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(null);
-        final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(configSuperClient);
         Map map = hSuper.getMap("default");
         assertNull(map.put("1", "value"));
         hNormal.shutdown();
@@ -1532,6 +1532,9 @@ public class ClusterTest {
             if (mapStats1.getOwnedEntryCount() == counter) {
                 Thread.sleep(1000);
             }
+            Thread.sleep(1000);
+            System.out.println(mapStats1);
+            System.out.println(mapStats2);
             assertEquals(mapStats1.getOwnedEntryCount(), mapStats2.getBackupEntryCount());
             assertEquals("Migrated blocks are not backed up", mapStats2.getOwnedEntryCount(), mapStats1.getBackupEntryCount());
         }
