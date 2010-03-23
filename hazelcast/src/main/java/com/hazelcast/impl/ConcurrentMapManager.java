@@ -43,7 +43,7 @@ import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public final class ConcurrentMapManager extends BaseManager {
+public class ConcurrentMapManager extends BaseManager {
     final int PARTITION_COUNT;
     final long GLOBAL_REMOVE_DELAY_MILLIS;
     final long CLEANUP_DELAY_MILLIS;
@@ -228,6 +228,14 @@ public final class ConcurrentMapManager extends BaseManager {
     public boolean isOwned(Record record) {
         Block block = getOrCreateBlock(record.getBlockId());
         return thisAddress.equals(block.getOwner());
+    }
+
+    public int getPartitionCount() {
+        return PARTITION_COUNT;
+    }
+
+    public Block[] getBlocks() {
+        return blocks;
     }
 
     class MLock extends MBackupAndMigrationAwareOp {

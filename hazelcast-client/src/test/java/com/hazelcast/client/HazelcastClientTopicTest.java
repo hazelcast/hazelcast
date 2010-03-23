@@ -133,6 +133,43 @@ public class HazelcastClientTopicTest {
         assertTrue(latch.await(20, TimeUnit.SECONDS));
     }
 
+    @Test
+    public void add2listenerAndRemoveOne() throws InterruptedException {
+        HazelcastClient hClient = getHazelcastClient();
+        ITopic<String> topic = hClient.getTopic("removeMessageListener");
+        final CountDownLatch latch = new CountDownLatch(4);
+        final CountDownLatch cp = new CountDownLatch(2);
+        final String message = "Hazelcast Rocks!";
+        MessageListener<String> messageListener1 = new MessageListener<String>() {
+            public void onMessage(String msg) {
+                if (msg.startsWith(message)) {
+//                    System.out.println("Received "+msg+" at "+ this);
+                    latch.countDown();
+                    cp.countDown();
+                }
+            }
+        };
+
+        MessageListener<String> messageListener2 = new MessageListener<String>() {
+            public void onMessage(String msg) {
+                if (msg.startsWith(message)) {
+//                    System.out.println("Received "+msg+" at "+ this);
+                    latch.countDown();
+                    cp.countDown();
+                }
+            }
+        };
+        topic.addMessageListener(messageListener1);
+        topic.addMessageListener(messageListener2);
+        topic.publish(message + "1");
+        Thread.sleep(50);
+        topic.removeMessageListener(messageListener1);
+        cp.await();
+        topic.publish(message + "2");
+        Thread.sleep(100);
+        assertEquals(1, latch.getCount());
+    }
+
     @AfterClass
     public static void shutdown() {
     }

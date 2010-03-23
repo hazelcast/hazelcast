@@ -82,6 +82,10 @@ public abstract class BaseManager {
         return thisAddress;
     }
 
+    public Node getNode() {
+        return node;
+    }
+
     public static Map.Entry createSimpleEntry(final FactoryImpl factory, final String name, final Object key, final Object value) {
         return new Map.Entry() {
             public Object getKey() {

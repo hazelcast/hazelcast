@@ -62,12 +62,12 @@ public class PartitionManager implements Runnable {
     boolean dirty = false;
 
     public PartitionManager(ConcurrentMapManager concurrentMapManager) {
-        this.logger = concurrentMapManager.node.getLogger(PartitionManager.class.getName());
+        this.logger = concurrentMapManager.getNode().getLogger(PartitionManager.class.getName());
         this.concurrentMapManager = concurrentMapManager;
-        this.node = concurrentMapManager.node;
-        this.PARTITION_COUNT = concurrentMapManager.PARTITION_COUNT;
-        this.blocks = concurrentMapManager.blocks;
-        this.thisAddress = concurrentMapManager.thisAddress;
+        this.node = concurrentMapManager.getNode();
+        this.PARTITION_COUNT = concurrentMapManager.getPartitionCount();
+        this.blocks = concurrentMapManager.getBlocks();
+        this.thisAddress = concurrentMapManager.getThisAddress();
         this.partitionServiceImpl = new PartitionServiceImpl(concurrentMapManager);
     }
 
@@ -93,11 +93,10 @@ public class PartitionManager implements Runnable {
                 return;
             }
             List<Block> lsBlocksToRedistribute = new ArrayList<Block>();
+            Map<Address, Integer> tobeOwnCount = new HashMap<Address, Integer>();
             int aveBlockOwnCount = PARTITION_COUNT / (addressBlocks.size());
             for (Block blockReal : blocks) {
-                if (blockReal.getOwner() == null) {
-                    lsBlocksToRedistribute.add(new Block(blockReal));
-                } else if (!blockReal.isMigrating()) {
+                if (!blockReal.isMigrating()) {
                     Integer countInt = addressBlocks.get(blockReal.getOwner());
                     int count = (countInt == null) ? 0 : countInt;
                     if (count >= aveBlockOwnCount) {
@@ -107,21 +106,32 @@ public class PartitionManager implements Runnable {
                     }
                 }
             }
-            Collection<Address> allAddress = addressBlocks.keySet();
             lsBlocksToMigrate.clear();
-            for (Address address : allAddress) {
+            for (Address address : addressBlocks.keySet()) {
                 Integer countInt = addressBlocks.get(address);
                 int count = (countInt == null) ? 0 : countInt;
                 while (count < aveBlockOwnCount && lsBlocksToRedistribute.size() > 0) {
                     Block blockToMigrate = lsBlocksToRedistribute.remove(0);
-                    if (!blockToMigrate.getOwner().equals(address)) {
-                        blockToMigrate.setMigrationAddress(address);
-                        lsBlocksToMigrate.add(blockToMigrate);
-                    }
+                    addBlockToMigrate(blockToMigrate, address);
                     count++;
                 }
             }
+            lsBlocksToRedistribute.removeAll(lsBlocksToMigrate);
+            for (MemberImpl member : concurrentMapManager.getMembers()) {
+                if (lsBlocksToRedistribute.size() == 0) {
+                    break;
+                }
+                Block blockToMigrate = lsBlocksToRedistribute.remove(0);
+                addBlockToMigrate(blockToMigrate, member.getAddress());
+            }
             Collections.shuffle(lsBlocksToMigrate);
+        }
+    }
+
+    private void addBlockToMigrate(Block blockToMigrate, Address address) {
+        if (!blockToMigrate.getOwner().equals(address)) {
+            blockToMigrate.setMigrationAddress(address);
+            lsBlocksToMigrate.add(blockToMigrate);
         }
     }
 
@@ -226,7 +236,7 @@ public class PartitionManager implements Runnable {
     }
 
     Map<Address, Integer> getCurrentMemberBlocks() {
-        List<MemberImpl> lsMembers = concurrentMapManager.lsMembers;
+        List<MemberImpl> lsMembers = concurrentMapManager.getMembers();
         Map<Address, Integer> addressBlocks = new HashMap<Address, Integer>();
         for (MemberImpl member : lsMembers) {
             if (!member.isSuperClient()) {

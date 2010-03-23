@@ -18,6 +18,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.DistributedTask;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiTask;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
@@ -212,5 +213,7 @@ public class HazelcastClientExecutorServiceTest {
 
     @AfterClass
     public static void shutdownAll() {
+        getHazelcastClient().shutdown();
+        Hazelcast.shutdownAll();
     }
 }
