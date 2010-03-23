@@ -1122,7 +1122,6 @@ public class CMap {
         if (record == null) {
             return false;
         }
-        //The record set as removable, also it is not "really" removed yet. It should be considered as removed
         if (req.txnId != -1) {
             unlock(record);
         }

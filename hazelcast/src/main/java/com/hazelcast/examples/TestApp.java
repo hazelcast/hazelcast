@@ -235,7 +235,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                     .maxMemory()) + "%");
             long total = Runtime.getRuntime().totalMemory();
             long free = Runtime.getRuntime().freeMemory();
-            System.out.println("Used Memory:" + ((total - free) / 1024 / 1024) + "MB"); 
+            System.out.println("Used Memory:" + ((total - free) / 1024 / 1024) + "MB");
             System.out.println("# procs: " + Runtime.getRuntime().availableProcessors());
             System.out.println("OS info: " + ManagementFactory.getOperatingSystemMXBean().getArch()
                     + " " + ManagementFactory.getOperatingSystemMXBean().getName() + " "
@@ -356,8 +356,22 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private void handlePartitions(String[] args) {
         Set<Partition> partitions = hazelcast.getPartitionService().getPartitions();
+        Map<Member, Integer> partitionCounts = new HashMap<Member, Integer>();
         for (Partition partition : partitions) {
+            Member owner = partition.getOwner();
+            if (owner != null) {
+                Integer count = partitionCounts.get(owner);
+                int newCount = 1;
+                if (count != null) {
+                    newCount = count + 1;
+                }
+                partitionCounts.put(owner, newCount);
+            }
             System.out.println(partition);
+        }
+        Set<Map.Entry<Member, Integer>> entries = partitionCounts.entrySet();
+        for (Map.Entry<Member, Integer> entry : entries) {
+            System.out.println(entry.getKey() + ":" + entry.getValue());
         }
     }
 

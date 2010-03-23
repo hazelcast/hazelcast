@@ -83,7 +83,6 @@ public class FactoryImpl implements HazelcastInstance {
 
     public static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config) {
         FactoryImpl factory = null;
-        boolean firstMember = false;
         synchronized (factoryLock) {
             if (config == null) {
                 config = new XmlConfigBuilder().build();
@@ -98,13 +97,23 @@ public class FactoryImpl implements HazelcastInstance {
                 ManagementService.register(factory, config);
                 jmxRegistered = true;
             }
-            firstMember = (factory.node.getClusterImpl().getMembers().size() == 1);
         }
+        boolean firstMember = (factory.node.getClusterImpl().getMembers().iterator().next().localMember());
         int initialWaitSeconds = factory.node.groupProperties.INITIAL_WAIT_SECONDS.getInteger();
         if (initialWaitSeconds > 0) {
             try {
                 Thread.sleep(initialWaitSeconds * 1000);
-            } catch (InterruptedException e) {
+                if (firstMember) {
+                    final ConcurrentMapManager concurrentMapManager = factory.node.concurrentMapManager;
+                    concurrentMapManager.enqueueAndReturn(new Processable() {
+                        public void process() {
+                            concurrentMapManager.partitionManager.quickBlockRearrangement();
+                        }
+                    });
+                } else {
+                    Thread.sleep(2 * 1000);
+                }
+            } catch (InterruptedException ignored) {
             }
         }
         return factory.hazelcastInstanceProxy;

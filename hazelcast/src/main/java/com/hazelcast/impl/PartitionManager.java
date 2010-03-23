@@ -198,15 +198,19 @@ public class PartitionManager implements Runnable {
                     }
                 }
             }
-            // make sue that all blocks are actually created
+            // make sure that all blocks are actually created
             for (int i = 0; i < PARTITION_COUNT; i++) {
                 Block block = blocks[i];
                 if (block == null) {
                     block = concurrentMapManager.getOrCreateBlock(i);
                 }
             }
-            quickBlockRearrangement();
-            sendBlocks(null);
+            if (node.groupProperties.INITIAL_WAIT_SECONDS.getInteger() == 0) {
+                quickBlockRearrangement();
+            } else {
+                createAllBlocks();
+                sendBlocks(null);
+            }
         }
         InitialState initialState = new InitialState();
         Collection<CMap> cmaps = concurrentMapManager.maps.values();
@@ -262,17 +266,9 @@ public class PartitionManager implements Runnable {
         }
     }
 
-    private void quickBlockRearrangement() {
-        //create all blocks
-        for (int i = 0; i < PARTITION_COUNT; i++) {
-            Block block = blocks[i];
-            if (block == null) {
-                block = concurrentMapManager.getOrCreateBlock(i);
-            }
-            if (block.getOwner() == null && !concurrentMapManager.isSuperClient()) {
-                block.setOwner(thisAddress);
-            }
-        }
+    void quickBlockRearrangement() {
+        if (!concurrentMapManager.isMaster()) return;
+        createAllBlocks();
         // find storage enabled members
         Map<Address, Integer> addressBlocks = getCurrentMemberBlocks();
         if (addressBlocks.size() == 0) {
@@ -307,6 +303,20 @@ public class PartitionManager implements Runnable {
                 Block ownableBlock = ownableBlocks.remove(0);
                 ownableBlock.setOwner(address);
                 count++;
+            }
+        }
+        sendBlocks(null);        
+    }
+
+    private void createAllBlocks() {
+        //create all blocks
+        for (int i = 0; i < PARTITION_COUNT; i++) {
+            Block block = blocks[i];
+            if (block == null) {
+                block = concurrentMapManager.getOrCreateBlock(i);
+            }
+            if (block.getOwner() == null && !concurrentMapManager.isSuperClient()) {
+                block.setOwner(thisAddress);
             }
         }
     }
