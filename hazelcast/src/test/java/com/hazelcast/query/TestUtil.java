@@ -38,6 +38,7 @@ public class TestUtil {
         return record;
     }
 
+    @Ignore
     public static class EmptyMapEntry implements MapEntry {
         private long cost;
         private long creationTime;

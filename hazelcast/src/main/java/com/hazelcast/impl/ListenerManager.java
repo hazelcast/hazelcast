@@ -277,16 +277,25 @@ public class ListenerManager extends BaseManager {
         for (; it.hasNext();) {
             ListenerItem listenerItem = it.next();
             if (listener == listenerItem.listener) {
-                if (key == null) {
-                    if (listenerItem.key == null) {
-                        registerListener(name, null, false, false);
-                        listeners.remove(listenerItem);
-                    }
-                } else if (key.equals(listenerItem.key)) {
-                    registerListener(name, key, false, false);
+                if (key == null && listenerItem.key == null) {
+                    listeners.remove(listenerItem);
+                } else if (key != null && key.equals(listenerItem.key)) {
                     listeners.remove(listenerItem);
                 }
             }
+        }
+        it = listeners.iterator();
+        boolean left = false;
+        for (; it.hasNext();) {
+            ListenerItem listenerItem = it.next();
+            if (key == null && listenerItem.key == null) {
+                left = true;
+            } else if (key != null && key.equals(listenerItem.key)) {
+                left = true;
+            }
+        }
+        if (!left) {
+            registerListener(name, key, false, false);
         }
     }
 

@@ -26,11 +26,15 @@ import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl.CollectionProxyReal;
 import com.hazelcast.impl.base.KeyValue;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -428,10 +432,81 @@ public class ClientService {
             Set<Data> setData = new LinkedHashSet<Data>();
             for (Iterator<Partition> iterator = partitions.iterator(); iterator.hasNext();) {
                 Partition partition = iterator.next();
-                setData.add(toData(partition));
+                setData.add(toData(new PartitionImpl(partition.getPartitionId(), (MemberImpl) partition.getOwner())));
             }
             Keys keys = new Keys(setData);
             packet.value = toData(keys);
+        }
+    }
+
+    public static class PartitionImpl implements Partition, HazelcastInstanceAware, DataSerializable, Comparable {
+        int partitionId;
+        MemberImpl owner;
+
+        PartitionImpl(int partitionId, MemberImpl owner) {
+            this.partitionId = partitionId;
+            this.owner = owner;
+        }
+
+        public PartitionImpl() {
+        }
+
+        public int getPartitionId() {
+            return partitionId;
+        }
+
+        public Member getOwner() {
+            return owner;
+        }
+
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            if (owner != null) {
+                owner.setHazelcastInstance(hazelcastInstance);
+            }
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeInt(partitionId);
+            boolean hasOwner = (owner != null);
+            out.writeBoolean(hasOwner);
+            if (hasOwner) {
+                owner.writeData(out);
+            }
+        }
+
+        public void readData(DataInput in) throws IOException {
+            partitionId = in.readInt();
+            boolean hasOwner = in.readBoolean();
+            if (hasOwner) {
+                owner = new MemberImpl();
+                owner.readData(in);
+            }
+        }
+
+        public int compareTo(Object o) {
+            PartitionImpl partition = (PartitionImpl) o;
+            Integer id = partitionId;
+            return (id.compareTo(partition.getPartitionId()));
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            PartitionImpl partition = (PartitionImpl) o;
+            return partitionId == partition.partitionId;
+        }
+
+        @Override
+        public int hashCode() {
+            return partitionId;
+        }
+
+        @Override
+        public String toString() {
+            return "Partition [" +
+                    +partitionId +
+                    "], owner=" + owner;
         }
     }
 
@@ -775,8 +850,7 @@ public class ClientService {
                 }
             } else if (getInstanceType(packet.name).equals(InstanceType.TOPIC)) {
                 ITopic topic = (ITopic) node.factory.getOrCreateProxyByName(packet.name);
-                MessageListener listener =  clientEndpoint.messageListeners.remove(packet.name);
-                topic.removeMessageListener(listener);
+                topic.removeMessageListener(clientEndpoint.messageListeners.remove(packet.name));
             }
         }
     }
