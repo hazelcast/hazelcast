@@ -71,12 +71,22 @@ public final class Serializer {
     }
 
     public static Class<?> classForName(String className) throws ClassNotFoundException {
-        if (className != null && className.startsWith("com.hazelcast")) {
+        return classForName (null, className);
+    }
+
+    public static Class<?> classForName(ClassLoader classLoader, String className) throws ClassNotFoundException {
+        if (className == null) {
+            throw new IllegalArgumentException("ClassName cannot be null!");
+        }
+        if (className.startsWith("com.hazelcast")) {
             return Class.forName(className, true, Serializer.class.getClassLoader());
         }
-        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        if (contextClassLoader != null) {
-            return Class.forName(className, true, contextClassLoader);
+        ClassLoader theClassLoader = classLoader;
+        if (theClassLoader == null) {
+            theClassLoader = Thread.currentThread().getContextClassLoader();
+        }
+        if (theClassLoader != null) {
+            return Class.forName(className, true, theClassLoader);
         } else {
             return Class.forName(className);
         }

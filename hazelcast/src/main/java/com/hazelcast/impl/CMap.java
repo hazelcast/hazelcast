@@ -157,7 +157,7 @@ public class CMap {
                 Object storeInstance = mapStoreConfig.getImplementation();
                 if (storeInstance == null) {
                     String mapStoreClassName = mapStoreConfig.getClassName();
-                    storeInstance = Serializer.classForName(mapStoreClassName).newInstance();
+                    storeInstance = Serializer.classForName(node.getConfig().getClassLoader(),  mapStoreClassName).newInstance();
                 }
                 if (storeInstance instanceof MapLoader) {
                     loaderTemp = (MapLoader) storeInstance;

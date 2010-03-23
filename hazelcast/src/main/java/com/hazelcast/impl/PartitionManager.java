@@ -93,7 +93,6 @@ public class PartitionManager implements Runnable {
                 return;
             }
             List<Block> lsBlocksToRedistribute = new ArrayList<Block>();
-            Map<Address, Integer> tobeOwnCount = new HashMap<Address, Integer>();
             int aveBlockOwnCount = PARTITION_COUNT / (addressBlocks.size());
             for (Block blockReal : blocks) {
                 if (!blockReal.isMigrating()) {
