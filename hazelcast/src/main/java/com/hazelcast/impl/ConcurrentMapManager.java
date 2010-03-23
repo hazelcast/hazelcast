@@ -1158,14 +1158,13 @@ public class ConcurrentMapManager extends BaseManager {
         return getOrCreateBlock(getBlockId(key));
     }
 
-    void evictAsync(final CMap cmap, final String name, final Data key) {
+    void evictAsync(final String name, final Data key) {
         executeLocally(new FallThroughRunnable() {
             public void doRun() {
                 try {
                     MEvict mEvict = new MEvict();
                     mEvict.evict(name, key);
                 } catch (Exception ignored) {
-                    ignored.printStackTrace();
                 }
             }
         });
@@ -1355,7 +1354,7 @@ public class ConcurrentMapManager extends BaseManager {
         public void handle(Request request) {
             if (checkMapLock(request)) {
                 CMap cmap = getOrCreateMap(request.name);
-                Record record = cmap.getOwnedRecord(request.key);
+                Record record = cmap.getRecord(request.key);
                 if (record != null && record.isActive() && cmap.loader != null &&
                         cmap.writeDelayMillis > 0 && record.isValid() && record.isDirty()) {
                     // if the map has write-behind and the record is dirty then
@@ -1384,7 +1383,7 @@ public class ConcurrentMapManager extends BaseManager {
                 doOperation(request);
             } else {
                 CMap cmap = getOrCreateMap(request.name);
-                Record record = cmap.getOwnedRecord(request.key);
+                Record record = cmap.getRecord(request.key);
                 cmap.markAsDirty(record);
                 request.response = Boolean.FALSE;
             }
@@ -1396,7 +1395,7 @@ public class ConcurrentMapManager extends BaseManager {
         public void handle(Request request) {
             if (checkMapLock(request)) {
                 CMap cmap = getOrCreateMap(request.name);
-                Record record = cmap.getOwnedRecord(request.key);
+                Record record = cmap.getRecord(request.key);
                 if (cmap.loader != null && (record == null || !record.isActive() || record.getValue() == null)) {
                     executeAsync(request);
                 } else {
@@ -1783,13 +1782,13 @@ public class ConcurrentMapManager extends BaseManager {
         CMap cmap = maps.get(req.name);
         if (cmap == null)
             return null;
-        return cmap.getOwnedRecord(req.key);
+        return cmap.getRecord(req.key);
     }
 
     Record ensureRecord(Request req) {
         checkServiceThread();
         CMap cmap = getOrCreateMap(req.name);
-        Record record = cmap.getOwnedRecord(req.key);
+        Record record = cmap.getRecord(req.key);
         if (record == null) {
             record = cmap.createNewRecord(req.key, req.value);
             cmap.mapRecords.put(req.key, record);

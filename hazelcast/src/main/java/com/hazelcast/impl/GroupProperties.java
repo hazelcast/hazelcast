@@ -82,7 +82,7 @@ public class GroupProperties {
         CONCURRENT_MAP_PARTITION_COUNT = new GroupProperty(config, PROP_CONCURRENT_MAP_PARTITION_COUNT, "271");
         BLOCKING_QUEUE_BLOCK_SIZE = new GroupProperty(config, PROP_BLOCKING_QUEUE_BLOCK_SIZE, "1000");
         REMOVE_DELAY_SECONDS = new GroupProperty(config, PROP_REMOVE_DELAY_SECONDS, "5");
-        CLEANUP_DELAY_SECONDS = new GroupProperty(config, PROP_CLEANUP_DELAY_SECONDS, "7");
+        CLEANUP_DELAY_SECONDS = new GroupProperty(config, PROP_CLEANUP_DELAY_SECONDS, "10");
         EXECUTOR_QUERY_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_QUERY_THREAD_COUNT, "16");
         EXECUTOR_EVENT_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_EVENT_THREAD_COUNT, "16");
         EXECUTOR_MIGRATION_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_MIGRATION_THREAD_COUNT, "20");

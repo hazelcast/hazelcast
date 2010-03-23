@@ -48,7 +48,7 @@ public class Record implements MapEntry {
     private volatile boolean active = true;
     private volatile long maxIdleMillis = Long.MAX_VALUE;
     private volatile long writeTime = -1;
-    private volatile long removeTime;
+    private volatile long removeTime =0;
     private volatile long lastAccessTime = 0;
     private volatile long creationTime = 0;
     private volatile long lastTouchTime = 0;

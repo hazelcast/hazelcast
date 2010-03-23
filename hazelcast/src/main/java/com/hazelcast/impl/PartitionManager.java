@@ -17,29 +17,19 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.concurrentmap.InitialState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.partition.MigrationEvent;
-import com.hazelcast.partition.Partition;
-import com.hazelcast.util.ResponseQueueFactory;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_BLOCKS;
-import static com.hazelcast.nio.IOUtil.toData;
 
 public class PartitionManager implements Runnable {
 
@@ -57,8 +47,6 @@ public class PartitionManager implements Runnable {
 
     long nextMigrationMillis = System.currentTimeMillis() + MIGRATION_INTERVAL_MILLIS;
 
-    long lastCleanup = System.currentTimeMillis();
-
     boolean dirty = false;
 
     public PartitionManager(ConcurrentMapManager concurrentMapManager) {
@@ -73,11 +61,6 @@ public class PartitionManager implements Runnable {
 
     public void run() {
         long now = System.currentTimeMillis();
-        if (dirty && (now - lastCleanup) > 60000) {
-            logger.log(Level.FINEST, "PM is cleaning up");
-            removeUnknownRecords();
-            lastCleanup = now;
-        }
         if (now > nextMigrationMillis) {
             nextMigrationMillis = now + MIGRATION_INTERVAL_MILLIS;
             if (!concurrentMapManager.isMaster()) return;
@@ -335,33 +318,6 @@ public class PartitionManager implements Runnable {
             sendBlocks(null);
         }
         nextMigrationMillis = System.currentTimeMillis() + MIGRATION_INTERVAL_MILLIS;
-    }
-
-    private void removeUnknownRecords() {
-        Collection<CMap> cmaps = concurrentMapManager.maps.values();
-        Map<Address, Integer> mapMemberDistances = new HashMap<Address, Integer>();
-        for (CMap cmap : cmaps) {
-            Collection<Record> records = cmap.mapRecords.values();
-            for (Record record : records) {
-                if (record != null && record.isActive() && !concurrentMapManager.isOwned(record)) {
-                    Block block = blocks[record.getBlockId()];
-                    Address owner = (block.isMigrating()) ? block.getMigrationAddress() : block.getOwner();
-                    if (owner != null && !thisAddress.equals(owner)) {
-                        int distance;
-                        Integer d = mapMemberDistances.get(owner);
-                        if (d == null) {
-                            distance = concurrentMapManager.getDistance(owner, thisAddress);
-                            mapMemberDistances.put(owner, distance);
-                        } else {
-                            distance = d;
-                        }
-                        if (distance > cmap.getBackupCount()) {
-                            cmap.markAsRemoved(record);
-                        }
-                    }
-                }
-            }
-        }
     }
 
     public void syncForDead(MemberImpl deadMember) {

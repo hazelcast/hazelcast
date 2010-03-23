@@ -157,7 +157,7 @@ public class CMap {
                 Object storeInstance = mapStoreConfig.getImplementation();
                 if (storeInstance == null) {
                     String mapStoreClassName = mapStoreConfig.getClassName();
-                    storeInstance = Serializer.classForName(node.getConfig().getClassLoader(),  mapStoreClassName).newInstance();
+                    storeInstance = Serializer.classForName(node.getConfig().getClassLoader(), mapStoreClassName).newInstance();
                 }
                 if (storeInstance instanceof MapLoader) {
                     loaderTemp = (MapLoader) storeInstance;
@@ -307,11 +307,7 @@ public class CMap {
         mapIndexService.addIndex(expression, ordered, attributeIndex);
     }
 
-    public Record getOwnedRecord(Data key) {
-        return mapRecords.get(key);
-    }
-
-    public Record getBackupRecord(Data key) {
+    public Record getRecord(Data key) {
         return mapRecords.get(key);
     }
 
@@ -374,7 +370,7 @@ public class CMap {
      * @return
      */
     private boolean backupOneValue(Request req) {
-        Record record = getBackupRecord(req.key);
+        Record record = getRecord(req.key);
         if (record != null && record.isActive() && req.version < record.getVersion()) {
             return false;
         }
@@ -394,7 +390,7 @@ public class CMap {
      * @return
      */
     private boolean backupMultiValue(Request req) {
-        Record record = getBackupRecord(req.key);
+        Record record = getRecord(req.key);
         if (record != null) {
             record.setActive();
             if (req.version > record.getVersion() + 1) {
@@ -434,7 +430,7 @@ public class CMap {
                 record.setIndexes(req.indexes, req.indexTypes);
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE) {
-            Record record = getBackupRecord(req.key);
+            Record record = getRecord(req.key);
             if (record != null) {
                 if (record.getCopyCount() > 0) {
                     record.decrementCopyCount();
@@ -449,7 +445,7 @@ public class CMap {
         } else if (req.operation == CONCURRENT_MAP_BACKUP_ADD) {
             add(req, true);
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE_MULTI) {
-            Record record = getBackupRecord(req.key);
+            Record record = getRecord(req.key);
             if (record != null) {
                 if (req.value == null) {
                     markAsRemoved(record);
@@ -484,15 +480,14 @@ public class CMap {
         int hits = 0;
         int lockedEntryCount = 0;
         int lockWaitCount = 0;
-        PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
         ClusterImpl clusterImpl = node.getClusterImpl();
         LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
         for (Record record : mapRecords.values()) {
-            if (!record.isActive()) {
+            if (!record.isActive() || !record.isValid(now)) {
                 markedAsRemovedEntryCount += record.valueCount();
                 markedAsRemovedMemoryCost += record.getCost();
             } else {
-                if (isOwned(record, partitionService, now)) {
+                if (isOwned(record)) {
                     ownedEntryCount += record.valueCount();
                     ownedEntryMemoryCost += record.getCost();
                     localMapStats.setLastAccessTime(clusterImpl.getClusterTimeFor(record.getLastAccessTime()));
@@ -502,9 +497,12 @@ public class CMap {
                         lockedEntryCount++;
                         lockWaitCount += record.getScheduledActionCount();
                     }
-                } else if (isBackup(record, partitionService, now)) {
+                } else if (isBackup(record)) {
                     backupEntryCount += record.valueCount();
                     backupEntryMemoryCost += record.getCost();
+                } else {
+                    markedAsRemovedEntryCount += record.valueCount();
+                    markedAsRemovedMemoryCost += record.getCost();
                 }
             }
         }
@@ -522,19 +520,45 @@ public class CMap {
         return localMapStats;
     }
 
-    private boolean isOwned(Record record, PartitionServiceImpl partitionService, long now) {
-        PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
-        Member owner = partition.getOwner();
-        return (owner != null && owner.localMember() && record.isActive() && record.isValid(now));
+    private void purgeIfNotOwnedOrBackup(Collection<Record> records) {
+        Map<Address, Integer> mapMemberDistances = new HashMap<Address, Integer>();
+        for (Record record : records) {
+            Block block = blocks[record.getBlockId()];
+            boolean owned = thisAddress.equals(block.getOwner());
+            if (!owned && !block.isMigrating()) {
+                Address owner = (block.isMigrating()) ? block.getMigrationAddress() : block.getOwner();
+                if (owner != null && !thisAddress.equals(owner)) {
+                    int distance;
+                    Integer d = mapMemberDistances.get(owner);
+                    if (d == null) {
+                        distance = concurrentMapManager.getDistance(owner, thisAddress);
+                        mapMemberDistances.put(owner, distance);
+                    } else {
+                        distance = d;
+                    }
+                    if (distance > getBackupCount()) {
+                        mapRecords.remove(record.getKey());
+                    }
+                }
+            }
+        }
     }
 
-    private boolean isBackup(Record record, PartitionServiceImpl partitionService, long now) {
+    private boolean isOwned(Record record) {
+        PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
+        PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
+        Member owner = partition.getOwner();
+        return (owner != null && owner.localMember());
+    }
+
+    private boolean isBackup(Record record) {
+        PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
         PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
         Member ownerNow = partition.getOwner();
         Member ownerEventual = partition.getEventualOwner();
         if (ownerEventual != null && ownerNow != null && !ownerNow.localMember()) {
             int distance = node.getClusterImpl().getDistanceFrom(ownerEventual);
-            return (distance != -1 && distance <= getBackupCount() && record.isActive() && record.isValid(now));
+            return (distance != -1 && distance <= getBackupCount());
         }
         return false;
     }
@@ -579,7 +603,7 @@ public class CMap {
         Data key = req.key;
         Data value = req.value;
         if (key != null) {
-            Record record = getOwnedRecord(req.key);
+            Record record = getRecord(req.key);
             if (record == null) {
                 return false;
             } else {
@@ -631,7 +655,7 @@ public class CMap {
     }
 
     public CMapEntry getMapEntry(Request req) {
-        Record record = getOwnedRecord(req.key);
+        Record record = getRecord(req.key);
         if (record == null || !record.isActive() || !record.isValid()) {
             return null;
         }
@@ -640,7 +664,7 @@ public class CMap {
     }
 
     public Data get(Request req) {
-        Record record = getOwnedRecord(req.key);
+        Record record = getRecord(req.key);
         if (record == null)
             return null;
         if (!record.isActive()) return null;
@@ -668,7 +692,7 @@ public class CMap {
     }
 
     public boolean add(Request req, boolean backup) {
-        Record record = getOwnedRecord(req.key);
+        Record record = getRecord(req.key);
         if (record == null) {
             record = toRecord(req);
         } else {
@@ -750,7 +774,7 @@ public class CMap {
     }
 
     public boolean removeMulti(Request req) {
-        Record record = getOwnedRecord(req.key);
+        Record record = getRecord(req.key);
         if (record == null) return false;
         boolean removed = false;
         if (req.value == null) {
@@ -780,7 +804,7 @@ public class CMap {
     }
 
     public boolean putMulti(Request req) {
-        Record record = getOwnedRecord(req.key);
+        Record record = getRecord(req.key);
         boolean added = true;
         if (record == null) {
             record = toRecord(req);
@@ -817,7 +841,7 @@ public class CMap {
         if (req.value == null) {
             req.value = new Data();
         }
-        Record record = getOwnedRecord(req.key);
+        Record record = getRecord(req.key);
         if (req.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
             if (record != null && record.isActive() && record.isValid(now) && record.getValue() != null) {
                 req.clearForResponse();
@@ -930,32 +954,58 @@ public class CMap {
         final long now = System.currentTimeMillis();
         final Map<Data, Data> entriesToStore = new HashMap<Data, Data>();
         final Collection<Data> keysToDelete = new HashSet<Data>();
+        final Set<Record> recordsUnknown = new HashSet<Record>();
         final Set<Record> recordsToPurge = new HashSet<Record>();
         final Set<Record> recordsToEvict = new HashSet<Record>();
         final Set<Record> sortedRecords = new TreeSet<Record>(evictionComparator);
-        final Collection<Record> ownedRecords = mapIndexService.getOwnedRecords();
+        final Collection<Record> records = mapRecords.values();
         final boolean evictionAware = evictionComparator != null && maxSize > 0;
-        for (Record record : ownedRecords) {
-            if (store != null && record.isDirty()) {
-                if (now > record.getWriteTime()) {
-                    if (record.getValue() != null) {
-                        entriesToStore.put(record.getKey(), record.getValue());
+        final PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
+        int recordsStillOwned = 0;
+        for (Record record : records) {
+            PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
+            Member owner = partition.getOwner();
+            if (owner != null && !partition.isMigrating()) {
+                boolean owned = owner.localMember();
+                if (owned) {
+                    if (store != null && record.isDirty()) {
+                        if (now > record.getWriteTime()) {
+                            if (record.getValue() != null) {
+                                entriesToStore.put(record.getKey(), record.getValue());
+                            } else {
+                                keysToDelete.add(record.getKey());
+                            }
+                            record.setDirty(false);
+                        }
+                    } else if (shouldPurgeRecord(record, now)) {
+                        recordsToPurge.add(record);  // removed records
+                    } else if (record.isActive() && !record.isValid(now)) {
+                        recordsToEvict.add(record);  // expired records
+                    } else if (evictionAware && record.isActive() && record.isEvictable()) {
+                        sortedRecords.add(record);   // sorting for eviction
+                        recordsStillOwned++;
                     } else {
-                        keysToDelete.add(record.getKey());
+                        recordsStillOwned++;
                     }
-                    record.setDirty(false);
+                } else {
+                    Member ownerEventual = partition.getEventualOwner();
+                    boolean backup = false;
+                    if (ownerEventual != null && owner != null && !owner.localMember()) {
+                        int distance = node.getClusterImpl().getDistanceFrom(ownerEventual);
+                        backup = (distance != -1 && distance <= getBackupCount());
+                    }
+                    if (backup) {
+                        if (shouldPurgeRecord(record, now)) {
+                            recordsToPurge.add(record);
+                        }
+                    } else {
+                        recordsUnknown.add(record);
+                    }
                 }
-            } else if (shouldPurgeRecord(record, now)) {
-                recordsToPurge.add(record);  // removed records
-            } else if (record.isActive() && !record.isValid(now)) {
-                recordsToEvict.add(record);  // expired records
-            } else if (evictionAware && record.isActive() && record.isEvictable()) {
-                sortedRecords.add(record);   // sorting for eviction
             }
         }
-        int recordsLeft = ownedRecords.size() - (keysToDelete.size() + recordsToEvict.size() + recordsToPurge.size());
-        if (evictionAware && maxSize < recordsLeft) {
-            int numberOfRecordsToEvict = (int) (recordsLeft * evictionRate);
+        if (evictionAware && maxSize < recordsStillOwned) {
+            int numberOfRecordsToEvict = (int) (recordsStillOwned * evictionRate);
             int evictedCount = 0;
             for (Record record : sortedRecords) {
                 if (record.isActive() && record.isEvictable()) {
@@ -971,9 +1021,25 @@ public class CMap {
                 + ", delete:" + keysToDelete.size()
                 + ", purge:" + recordsToPurge.size()
                 + ", evict:" + recordsToEvict.size()
+                + ", unknown:" + recordsUnknown.size()
         );
         executeStoreUpdate(entriesToStore, keysToDelete);
         executeEviction(recordsToEvict);
+        executePurge(recordsToPurge);
+        executePurgeUnknowns(recordsUnknown);
+    }
+
+    private void executePurgeUnknowns(final Set<Record> recordsUnknown) {
+        if (recordsUnknown.size() > 0) {
+            concurrentMapManager.enqueueAndReturn(new Processable() {
+                public void process() {
+                    purgeIfNotOwnedOrBackup(recordsUnknown);
+                }
+            });
+        }
+    }
+
+    private void executePurge(final Set<Record> recordsToPurge) {
         if (recordsToPurge.size() > 0) {
             concurrentMapManager.enqueueAndReturn(new Processable() {
                 public void process() {
@@ -997,7 +1063,7 @@ public class CMap {
             logger.log(Level.FINEST, lsRecordsToEvict.size() + " evicting");
             for (final Record recordToEvict : lsRecordsToEvict) {
                 lastEvictionTime = System.currentTimeMillis();
-                concurrentMapManager.evictAsync(this, recordToEvict.getName(), recordToEvict.getKey());
+                concurrentMapManager.evictAsync(recordToEvict.getName(), recordToEvict.getKey());
             }
         }
     }
@@ -1080,7 +1146,7 @@ public class CMap {
     }
 
     boolean evict(Request req) {
-        Record record = getOwnedRecord(req.key);
+        Record record = getRecord(req.key);
         if (record != null && record.isEvictable()) {
             fireInvalidation(record);
             concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_EVICTED, record.getKey(), record.getValue(), record.getMapListeners());
@@ -1198,7 +1264,7 @@ public class CMap {
         if (key == null || key.size() == 0) {
             mapListeners.put(address, includeValue);
         } else {
-            Record rec = getOwnedRecord(key);
+            Record rec = getRecord(key);
             if (rec == null) {
                 rec = createNewRecord(key, null);
                 mapRecords.put(key, rec);
@@ -1211,7 +1277,7 @@ public class CMap {
         if (key == null || key.size() == 0) {
             mapListeners.remove(address);
         } else {
-            Record rec = getOwnedRecord(key);
+            Record rec = getRecord(key);
             if (rec != null) {
                 rec.removeListener(address);
             }
