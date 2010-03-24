@@ -29,33 +29,36 @@ public class MapThroughputPanel extends MapStatsPanel {
 
     @Override
     protected void handleRow(FlexTable table, int row, MapStatistics.LocalMapStatistics localMapStatistics) {
-        table.setWidget(row, 0, clusterWidgets.getInstanceLink(null, localMapStatistics.memberName));
-        table.setText(row, 1, "" + localMapStatistics.totalOperationsInSec());
-        table.setText(row, 2, "" + localMapStatistics.numberOfGetsInSec);
-        table.setText(row, 3, "" + localMapStatistics.numberOfPutsInSec);
-        table.setText(row, 4, "" + localMapStatistics.numberOfRemovesInSec);
-        table.setText(row, 5, "" + localMapStatistics.numberOfOthersInSec);
-        table.setText(row, 6, "" + localMapStatistics.numberOfEventsInSec);
-        table.setText(row, 7, "" + localMapStatistics.hits);
-        table.getColumnFormatter().addStyleName(0, "mapstatsStringColumn");
-        table.getCellFormatter().addStyleName(row, 1, "mapstatsNumericColumn");
+        table.setText(row, 0, ""+row);
+        table.setWidget(row, 1, clusterWidgets.getInstanceLink(null, localMapStatistics.memberName));
+        table.setText(row, 2, "" + localMapStatistics.totalOperationsInSec());
+        table.setText(row, 3, "" + localMapStatistics.numberOfGetsInSec);
+        table.setText(row, 4, "" + localMapStatistics.numberOfPutsInSec);
+        table.setText(row, 5, "" + localMapStatistics.numberOfRemovesInSec);
+        table.setText(row, 6, "" + localMapStatistics.numberOfOthersInSec);
+        table.setText(row, 7, "" + localMapStatistics.numberOfEventsInSec);
+        table.setText(row, 8, "" + localMapStatistics.hits);
+        table.getColumnFormatter().addStyleName(0, "mapstatsNumericColumn");
+        table.getColumnFormatter().addStyleName(1, "mapstatsStringColumn");
         table.getCellFormatter().addStyleName(row, 2, "mapstatsNumericColumn");
         table.getCellFormatter().addStyleName(row, 3, "mapstatsNumericColumn");
         table.getCellFormatter().addStyleName(row, 4, "mapstatsNumericColumn");
         table.getCellFormatter().addStyleName(row, 5, "mapstatsNumericColumn");
         table.getCellFormatter().addStyleName(row, 6, "mapstatsNumericColumn");
         table.getCellFormatter().addStyleName(row, 7, "mapstatsNumericColumn");
+        table.getCellFormatter().addStyleName(row, 8, "mapstatsNumericColumn");
     }
 
     @Override
     protected void createColumns(FlexTable table) {
-        table.setWidget(0, 0, new LabelWithToolTip("Members", "Members of the Cluster"));
-        table.setWidget(0, 1, new LabelWithToolTip("Total Throughput", "Number of total operations PS"));
-        table.setWidget(0, 2, new LabelWithToolTip("Gets", "Number of Get operations PS"));
-        table.setWidget(0, 3, new LabelWithToolTip("Puts", "Number of Put operations PS"));
-        table.setWidget(0, 4, new LabelWithToolTip("Removes", "Number of Remove operations PS"));
-        table.setWidget(0, 5, new LabelWithToolTip("Other Operations", "All other operations PS"));
-        table.setWidget(0, 6, new LabelWithToolTip("Events Received", "Total Number of Entry Events Received"));
-        table.setWidget(0, 7, new LabelWithToolTip("Total Hits", "Number of Hits"));
+        table.setWidget(0, 0, new LabelWithToolTip("#", ""));
+        table.setWidget(0, 1, new LabelWithToolTip("Members", "Members of the Cluster"));
+        table.setWidget(0, 2, new LabelWithToolTip("Total Throughput", "Number of total operations PS"));
+        table.setWidget(0, 3, new LabelWithToolTip("Gets", "Number of Get operations PS"));
+        table.setWidget(0, 4, new LabelWithToolTip("Puts", "Number of Put operations PS"));
+        table.setWidget(0, 5, new LabelWithToolTip("Removes", "Number of Remove operations PS"));
+        table.setWidget(0, 6, new LabelWithToolTip("Other Operations", "All other operations PS"));
+        table.setWidget(0, 7, new LabelWithToolTip("Events Received", "Total Number of Entry Events Received"));
+        table.setWidget(0, 8, new LabelWithToolTip("Total Hits", "Number of Hits"));
     }
 }

@@ -32,27 +32,30 @@ public class MapTimesPanel extends MapStatsPanel implements MonitoringPanel {
 
     @Override
     protected void createColumns(FlexTable table) {
-        table.setWidget(0, 0, new LabelWithToolTip("Members", "Members of the Cluster"));
-        table.setWidget(0, 1, new LabelWithToolTip("Last Access Time", "Last Access Time"));
-        table.setWidget(0, 2, new LabelWithToolTip("Last Eviction Time", "Last Eviction Time"));
-        table.setWidget(0, 3, new LabelWithToolTip("Last Update Time", "Last Update Time"));
-        table.setWidget(0, 4, new LabelWithToolTip("Map Creation Time", "Creation Time of the Map"));
+        table.setWidget(0, 0, new LabelWithToolTip("#", ""));
+        table.setWidget(0, 1, new LabelWithToolTip("Members", "Members of the Cluster"));
+        table.setWidget(0, 2, new LabelWithToolTip("Last Access Time", "Last Access Time"));
+        table.setWidget(0, 3, new LabelWithToolTip("Last Eviction Time", "Last Eviction Time"));
+        table.setWidget(0, 4, new LabelWithToolTip("Last Update Time", "Last Update Time"));
+        table.setWidget(0, 5, new LabelWithToolTip("Map Creation Time", "Creation Time of the Map"));
     }
 
     @Override
     protected void handleRow(FlexTable table, int row, MapStatistics.LocalMapStatistics localMapStatistics) {
         DateTimeFormat ttipFormat = DateTimeFormat.getFormat("yyyy.MM.dd HH:mm:ss");
         DateTimeFormat displayFormat = DateTimeFormat.getFormat("HH:mm:ss");
-        table.setWidget(row, 0, clusterWidgets.getInstanceLink(null, localMapStatistics.memberName));
-        addDateToTable(table, row, 1, new Date(localMapStatistics.lastAccessTime), ttipFormat, displayFormat);
-        addDateToTable(table, row, 2, new Date(localMapStatistics.lastEvictionTime), ttipFormat, displayFormat);
-        addDateToTable(table, row, 3, new Date(localMapStatistics.lastUpdateTime), ttipFormat, displayFormat);
-        addDateToTable(table, row, 4, new Date(localMapStatistics.creationTime), ttipFormat, displayFormat);
-        table.getColumnFormatter().addStyleName(0, "mapstatsStringColumn");
-        table.getCellFormatter().addStyleName(row, 1, "mapstatsStringColumn");
+        table.setText(row, 0, ""+row);
+        table.setWidget(row, 1, clusterWidgets.getInstanceLink(null, localMapStatistics.memberName));
+        addDateToTable(table, row, 2, new Date(localMapStatistics.lastAccessTime), ttipFormat, displayFormat);
+        addDateToTable(table, row, 3, new Date(localMapStatistics.lastEvictionTime), ttipFormat, displayFormat);
+        addDateToTable(table, row, 4, new Date(localMapStatistics.lastUpdateTime), ttipFormat, displayFormat);
+        addDateToTable(table, row, 5, new Date(localMapStatistics.creationTime), ttipFormat, displayFormat);
+        table.getColumnFormatter().addStyleName(0, "mapstatsNumericColumn");
+        table.getColumnFormatter().addStyleName(1, "mapstatsStringColumn");
         table.getCellFormatter().addStyleName(row, 2, "mapstatsStringColumn");
         table.getCellFormatter().addStyleName(row, 3, "mapstatsStringColumn");
         table.getCellFormatter().addStyleName(row, 4, "mapstatsStringColumn");
+        table.getCellFormatter().addStyleName(row, 5, "mapstatsStringColumn");
     }
 
     private void addDateToTable(FlexTable table, int row, int col, Date date, DateTimeFormat ttipFormat, DateTimeFormat displayFormat) {

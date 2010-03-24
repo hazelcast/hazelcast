@@ -56,10 +56,7 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
 
     public ArrayList<ClusterView> loadActiveClusterViews() {
         final SessionObject sessionObject = getSessionObject();
-        for
-
-
-                (int clusterId : sessionObject.mapOfHz.keySet()) {
+        for (int clusterId : sessionObject.mapOfHz.keySet()) {
             deRegisterEvent(ChangeEventType.MAP_STATISTICS, clusterId, null);
             sessionObject.mapOfHz.get(clusterId).shutdown();
             sessionObject.cleareEventGenerators(clusterId);
@@ -93,7 +90,6 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
         SessionObject sessionObject = getSessionObject();
         ArrayList<ChangeEvent> changes = new ArrayList<ChangeEvent>();
         sessionObject.queue.drainTo(changes);
-//        System.out.println("Size of the change list is:"+changes.size()+": "+this.hashCode());
         return changes;
     }
 
@@ -101,8 +97,6 @@ public class HazelcastServiceImpl extends RemoteServiceServlet implements Hazelc
         SessionObject sessionObject = getSessionObject();
         HazelcastClient client = sessionObject.getHazelcastClientMap().get(clusterId);
         ChangeEventGenerator eventGenerator = changeEventGeneratorFactory.createEventGenerator(eventType, clusterId, name, client);
-        System.out.println("created event generator " + eventGenerator);
-        System.out.println(sessionObject.getEventGenerators().contains(eventGenerator));
         if (!sessionObject.getEventGenerators().contains(eventGenerator)) {
             sessionObject.getEventGenerators().add(eventGenerator);
         }

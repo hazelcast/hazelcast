@@ -40,6 +40,7 @@ public class MemberEventHandler implements ChangeEventHandler {
         }
         MemberEvent memberEvent = (MemberEvent) event;
         List<String> currentMembers = memberEvent.getMembers();
+        int memberSize = memberEvent.getMembers().size();
         TreeItem memberTreeItem = clusterWidgets.getMemberTreeItem();
         for (int i = 0; i < memberTreeItem.getChildCount(); i++) {
             TreeItem treeItem = memberTreeItem.getChild(i);
@@ -52,6 +53,9 @@ public class MemberEventHandler implements ChangeEventHandler {
             }
         }
         addNewMembers(currentMembers, memberTreeItem);
+        String headerText = "Members (" + memberSize + ")";
+        clusterWidgets.getMemberTreeItem().setText(headerText);
+
     }
 
     private void addNewMembers(List<String> currentMembers, TreeItem memberTreeItem) {
