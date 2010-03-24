@@ -35,6 +35,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
 
+import static com.hazelcast.client.HazelcastClientMapTest.getAllThreads;
+import static com.hazelcast.client.HazelcastClientMapTest.printThreads;
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static org.junit.Assert.*;
 
@@ -585,6 +587,24 @@ public class DynamicClusterTest {
         public String call() throws Exception {
             throw new RuntimeException("here is an exception");
         }
+    }
+
+    @Test
+    public void shutdownClientOnNoMemberAvailable() throws InterruptedException {
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        HazelcastClient client = getHazelcastClient(h);
+        client.getCluster().getMembers();
+        h.shutdown();
+        Thread.sleep(1000);
+        Thread[] threads = getAllThreads();
+        for (int i = 0; i < threads.length; i++) {
+            Thread t = threads[i];
+            if (t != null) {
+                assertFalse(t.getName().startsWith("hz."));
+            }
+        }
+
+
     }
 
     @AfterClass

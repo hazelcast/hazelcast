@@ -577,7 +577,9 @@ public class HazelcastClientMapTest {
         Thread[] threads = getAllThreads();
         for (int i = 0; i < threads.length; i++) {
             Thread t = threads[i];
-            System.out.println(t.getName());
+            if (t != null) {
+                System.out.println(t.getName());
+            }
         }
     }
 

@@ -30,6 +30,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Hazelcast Client enables you to do all Hazelcast operations without
@@ -52,6 +54,8 @@ public class HazelcastClient implements HazelcastInstance {
     final ClusterClientProxy clusterClientProxy;
     final PartitionClientProxy partitionClientProxy;
     final String groupName;
+    final static Logger logger = Logger.getLogger(HazelcastClient.class.toString());
+    private volatile boolean shutdownInProgress = false;
 
     private HazelcastClient(String groupName, String groupPassword, boolean shuffle, InetSocketAddress[] clusterMembers, boolean automatic) {
         if (automatic) {
@@ -232,9 +236,16 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public void shutdown() {
-        out.shutdown();
-        listenerManager.shutdown();
-        in.shutdown();
+        if (!shutdownInProgress) {
+            shutdownInProgress = true;
+            long begin = System.currentTimeMillis();
+            out.shutdown();
+            listenerManager.shutdown();
+            in.shutdown();
+            long time = System.currentTimeMillis() - begin;
+            logger.log(Level.INFO, "HazelcastClient shutdown completed in " + time + " ms.");
+            shutdownInProgress = false;
+        }
     }
 
     public void addInstanceListener(InstanceListener instanceListener) {

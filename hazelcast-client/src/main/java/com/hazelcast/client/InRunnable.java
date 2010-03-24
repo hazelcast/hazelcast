@@ -43,7 +43,7 @@ public class InRunnable extends IORunnable implements Runnable {
             }
             if (connection == null) {
                 interruptWaitingCalls();
-                Thread.sleep(1000);
+                Thread.sleep(50);
             } else {
                 packet = reader.readPacket(connection);
 //                System.out.println(packet.getOperation() + " Reading response " + packet.getCallId());

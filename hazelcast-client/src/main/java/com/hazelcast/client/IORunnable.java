@@ -38,6 +38,11 @@ public abstract class IORunnable extends ClientRunnable {
             call.setResponse(new NoMemberAvailableException());
         }
         calls.clear();
+        new Thread(new Runnable() {
+            public void run() {
+                client.shutdown();
+            }
+        }).start();
     }
 
     public void run() {
