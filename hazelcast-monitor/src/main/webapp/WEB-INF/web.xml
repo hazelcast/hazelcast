@@ -6,30 +6,30 @@
          version="2.5">
 
     <servlet>
-        <servlet-name>Hazelcastmonitor</servlet-name>
+        <servlet-name>hzmon</servlet-name>
         <servlet-class>com.hazelcast.monitor.server.HazelcastServiceImpl</servlet-class>
     </servlet>
     <servlet-mapping>
-        <servlet-name>Hazelcastmonitor</servlet-name>
-        <url-pattern>/Hazelcastmonitor/serve</url-pattern>
+        <servlet-name>hzmon</servlet-name>
+        <url-pattern>/hazelcastmonitor/serve</url-pattern>
     </servlet-mapping>
 
     <servlet>
-        <servlet-name>ChartGenerator</servlet-name>
+        <servlet-name>hzchart</servlet-name>
         <servlet-class>com.hazelcast.monitor.server.ChartGenerator</servlet-class>
     </servlet>
     <servlet-mapping>
-        <servlet-name>ChartGenerator</servlet-name>
+        <servlet-name>hzchart</servlet-name>
         <url-pattern>/ChartGenerator</url-pattern>
     </servlet-mapping>
 
     <servlet>
-        <servlet-name>com.hazelcast.monitor.Hazelcastmonitor MapService</servlet-name>
+        <servlet-name>hzmap</servlet-name>
         <servlet-class>com.hazelcast.monitor.server.MapServiceImpl</servlet-class>
     </servlet>
     <servlet-mapping>
-        <servlet-name>com.hazelcast.monitor.Hazelcastmonitor MapService</servlet-name>
-        <url-pattern>/Hazelcastmonitor/map</url-pattern>
+        <servlet-name>hzmap</servlet-name>
+        <url-pattern>/hazelcastmonitor/map</url-pattern>
     </servlet-mapping>
 
     <!-- Default page to serve -->
