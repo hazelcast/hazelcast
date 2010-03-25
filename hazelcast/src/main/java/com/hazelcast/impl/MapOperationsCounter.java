@@ -36,7 +36,7 @@ public class MapOperationsCounter {
     final private long interval;
 
     public MapOperationsCounter() {
-        this(10000);
+        this(5000);
     }
 
     public MapOperationsCounter(long interval) {
@@ -44,15 +44,17 @@ public class MapOperationsCounter {
     }
 
     private MapOperationsCounter getAndReset() {
-        long mapPutsNow = puts.getAndSet(0);
-        long mapGetsNow = gets.getAndSet(0);
-        long mapRemovesNow = removes.getAndSet(0);
-        long mapOthersNow = others.getAndSet(0);
+        long putsNow = puts.getAndSet(0);
+        long getsNow = gets.getAndSet(0);
+        long removesNow = removes.getAndSet(0);
+        long othersNow = others.getAndSet(0);
+        long eventsNow = events.getAndSet(0);
         MapOperationsCounter newOne = new MapOperationsCounter();
-        newOne.puts.set(mapPutsNow);
-        newOne.gets.set(mapGetsNow);
-        newOne.removes.set(mapRemovesNow);
-        newOne.others.set(mapOthersNow);
+        newOne.puts.set(putsNow);
+        newOne.gets.set(getsNow);
+        newOne.removes.set(removesNow);
+        newOne.others.set(othersNow);
+        newOne.events.set(eventsNow);
         newOne.startTime = this.startTime;
         newOne.endTime = now();
         this.startTime = newOne.endTime;
@@ -100,12 +102,12 @@ public class MapOperationsCounter {
     }
 
     private void publishSubResult() {
-        long subInterval = interval / 10;
+        long subInterval = interval / 5;
         if (now() - startTime > subInterval) {
             synchronized (lock) {
                 if (now() - startTime >= subInterval) {
                     MapOperationsCounter copy = getAndReset();
-                    if (listOfSubStats.size() == 10) {
+                    if (listOfSubStats.size() == 5) {
                         listOfSubStats.remove(0);
                     }
                     listOfSubStats.add(copy);
@@ -124,8 +126,7 @@ public class MapOperationsCounter {
             stats.numberOfPuts += sub.puts.get();
             stats.numberOfRemoves += sub.removes.get();
             stats.numberOfOtherOperations += sub.others.get();
-            stats.numberOfEvents += sub.events.get(); 
-
+            stats.numberOfEvents += sub.events.get();
             stats.periodEnd = sub.endTime;
         }
         return stats;
@@ -137,6 +138,7 @@ public class MapOperationsCounter {
         stats.numberOfGets = this.gets.get();
         stats.numberOfPuts = this.puts.get();
         stats.numberOfRemoves = this.removes.get();
+        stats.numberOfEvents = this.events.get();
         stats.periodEnd = now();
         return stats;
     }
