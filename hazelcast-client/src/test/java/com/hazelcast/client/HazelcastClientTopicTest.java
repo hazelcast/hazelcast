@@ -95,22 +95,24 @@ public class HazelcastClientTopicTest {
         ITopic<String> topic = hClient.getTopic("removeMessageListener");
         final CountDownLatch latch = new CountDownLatch(2);
         final CountDownLatch cp = new CountDownLatch(1);
-        final String message = "Hazelcast Rocks!";
+//        final String message = "Hazelcast Rocks!";
+
         MessageListener<String> messageListener = new MessageListener<String>() {
             public void onMessage(String msg) {
-                if (msg.startsWith(message)) {
-//                    System.out.println("Received "+msg+" at "+ this);
+//                if (msg.startsWith(message)) {
+                    System.out.println("Received "+msg+" at "+ this);
                     latch.countDown();
                     cp.countDown();
-                }
+//                }
             }
         };
+        final String message = "message_"+messageListener.hashCode()+"_";
         topic.addMessageListener(messageListener);
         topic.publish(message + "1");
         cp.await();
-        Thread.sleep(50);
         topic.removeMessageListener(messageListener);
         topic.publish(message + "2");
+        Thread.sleep(50);
         assertEquals(1, latch.getCount());
     }
 
