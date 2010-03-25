@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.nio.Address;
 import org.junit.Test;
@@ -80,6 +81,9 @@ public class PartitionManagerTest {
         ConcurrentMapManager concurrentMapManager = mock(ConcurrentMapManager.class);
         Node node = mock(Node.class);
         when(node.getLogger(PartitionManager.class.getName())).thenReturn(new NoLogFactory().getLogger("test"));
+        Config config = new Config();
+        GroupProperties group = new GroupProperties(config);
+        when(node.getGroupProperties()).thenReturn(group);
         when(concurrentMapManager.getNode()).thenReturn(node);
         when(concurrentMapManager.getPartitionCount()).thenReturn(BLOCK_COUNT);
         when(concurrentMapManager.getBlocks()).thenReturn(createBlocks(BLOCK_COUNT, thisAddress));
@@ -88,7 +92,9 @@ public class PartitionManagerTest {
         when(concurrentMapManager.isMaster()).thenReturn(true);
         PartitionManager partitionManager = new PartitionManager(concurrentMapManager);
         partitionManager.reArrangeBlocks();
-        assertEquals(BLOCK_COUNT * (NODE_COUNT - 1) / NODE_COUNT, partitionManager.lsBlocksToMigrate.size());
+        int expected = BLOCK_COUNT * (NODE_COUNT - 1) / NODE_COUNT;
+        int found = partitionManager.lsBlocksToMigrate.size();
+        assertTrue(found == expected || found == expected +1);
         Block[] blocks = concurrentMapManager.getBlocks();
         for (Block block : blocks) {
             assertEquals(thisAddress, block.getOwner());
@@ -96,6 +102,13 @@ public class PartitionManagerTest {
         for (Block block : partitionManager.lsBlocksToMigrate) {
             assertTrue(listOfAddresses.contains(block.getMigrationAddress()));
         }
+        for (Block blockMig : partitionManager.lsBlocksToMigrate) {
+            blocks[blockMig.getBlockId()].setOwner(blockMig.getMigrationAddress());
+            blocks[blockMig.getBlockId()].setMigrationAddress(null);
+        }
+        partitionManager.lsBlocksToMigrate.clear();
+        partitionManager.reArrangeBlocks();
+        assertEquals(0, partitionManager.lsBlocksToMigrate.size());
     }
 
     private Block[] createBlocks(int blockSize, Address address) throws UnknownHostException {

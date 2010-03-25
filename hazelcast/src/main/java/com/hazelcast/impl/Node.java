@@ -366,6 +366,10 @@ public class Node {
         return packetPool;
     }
 
+    public GroupProperties getGroupProperties() {
+        return groupProperties;
+    }
+
     public class NodeShutdownHookThread extends Thread {
 
         NodeShutdownHookThread(String name) {
