@@ -402,7 +402,13 @@ public class ClientService {
             int counter = 0;
             for (Iterator<Instance> instanceIterator = instances.iterator(); instanceIterator.hasNext();) {
                 Instance instance = instanceIterator.next();
-                instanceIds[counter] = instance.getId();
+                Object id = instance.getId();
+                if (id instanceof FactoryImpl.ProxyKey) {
+                    Object key = ((FactoryImpl.ProxyKey) id).getKey();
+                    if (key instanceof Instance)
+                        id = key.toString();
+                }
+                instanceIds[counter] = id;
                 counter++;
             }
             packet.value = toData(instanceIds);

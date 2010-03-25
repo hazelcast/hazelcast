@@ -36,7 +36,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.client.HazelcastClientMapTest.getAllThreads;
-import static com.hazelcast.client.HazelcastClientMapTest.printThreads;
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static org.junit.Assert.*;
 
@@ -244,7 +243,6 @@ public class DynamicClusterTest {
 
     //ok to fail due to lock
     @Test
-    @Ignore
     public void testGetInstancesCreatedFromCluster() {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
         List list = h.getList("testGetInstancesCreatedFromCluster");
@@ -403,7 +401,6 @@ public class DynamicClusterTest {
         Map<Integer, Integer> map = client.getMap("map");
         map.put(1, 1);
         assertEquals(Integer.valueOf(1), map.get(1));
-        
     }
 
     @Test
@@ -603,8 +600,24 @@ public class DynamicClusterTest {
                 assertFalse(t.getName().startsWith("hz."));
             }
         }
+    }
 
-
+    @Test
+    public void lockIMapAndGetInstancesFromClient() throws InterruptedException {
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        final IMap iMap = h.getMap("map");
+        iMap.put("key", "value");
+        ILock lock = h.getLock(iMap);
+        lock.lock();
+        final HazelcastClient client = getHazelcastClient(h);
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            public void run() {
+                client.getInstances();
+                latch.countDown();
+            }
+        }).start();
+        assertTrue("Couldnot get instances from client", latch.await(1, TimeUnit.SECONDS));
     }
 
     @AfterClass

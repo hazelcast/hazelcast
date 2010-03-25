@@ -218,6 +218,8 @@ public class HazelcastClient implements HazelcastInstance {
                             proxy = new LockClientProxy(o, this);
                         }
                         mapProxies.put(o, proxy);
+                    } else{
+                        proxy = new LockClientProxy(o, this);
                     }
                 }
             }
