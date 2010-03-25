@@ -125,8 +125,7 @@ public class Block implements DataSerializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Block block = (Block) o;
-        if (blockId != block.blockId) return false;
-        return true;
+        return blockId == block.blockId;
     }
 
     @Override
