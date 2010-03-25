@@ -305,7 +305,7 @@ public class PartitionManager implements Runnable {
                 count++;
             }
         }
-        sendBlocks(null);        
+        sendBlocks(null);
     }
 
     private void createAllBlocks() {
@@ -534,8 +534,12 @@ public class PartitionManager implements Runnable {
             blockReal.setOwner(blockReal.getMigrationAddress());
             blockReal.setMigrationAddress(null);
             logger.log(Level.FINEST, "Migration complete info : " + blockReal);
+            nextMigrationMillis = System.currentTimeMillis() + MIGRATION_INTERVAL_MILLIS;
+            Collection<CMap> cmaps = concurrentMapManager.maps.values();
+            for (final CMap cmap : cmaps) {
+                cmap.resetLocalMapStats();
+            }
         }
-        nextMigrationMillis = System.currentTimeMillis() + MIGRATION_INTERVAL_MILLIS;
     }
 
     void handleBlocks(Blocks blockOwners) {

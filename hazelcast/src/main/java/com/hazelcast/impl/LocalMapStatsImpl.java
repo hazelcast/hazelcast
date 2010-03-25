@@ -20,8 +20,12 @@ package com.hazelcast.impl;
 import com.hazelcast.monitor.LocalMapStats;
 
 import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class LocalMapStatsImpl implements LocalMapStats, Serializable {
+    private final AtomicLong lastAccessTime = new AtomicLong();
+    private final AtomicInteger hits = new AtomicInteger();
     private int ownedEntryCount;
     private int backupEntryCount;
     private int markedAsRemovedEntryCount;
@@ -29,15 +33,64 @@ public class LocalMapStatsImpl implements LocalMapStats, Serializable {
     private int backupEntryMemoryCost;
     private int markedAsRemovedMemoryCost;
     private long creationTime;
-    private long lastAccessTime;
     private long lastUpdateTime;
     private long lastEvictionTime;
-    private int hits;
     private int lockedEntryCount;
     private int lockWaitCount;
     private MapOperationStats operationStats;
 
+    public void incrementHit() {
+        hits.incrementAndGet();
+        lastAccessTime.set(System.currentTimeMillis());
+    }
+
+    enum Op {
+        CREATE,
+        READ,
+        UPDATE,
+        REMOVE,
+        LOCK,
+        UNLOCK,
+        ADD_LOCK_WAIT,
+        REMOVE_LOCK_WAIT
+    }
+
     public LocalMapStatsImpl() {
+    }
+
+    public void update(Op op, Record record, boolean owned, long updateCost) {
+        if (owned) {
+            if (op == Op.READ) {
+                hits.incrementAndGet();
+            } else if (op == Op.UPDATE) {
+                lastUpdateTime = System.currentTimeMillis();
+                ownedEntryMemoryCost += updateCost;
+            } else if (op == Op.CREATE) {
+                ownedEntryCount++;
+                ownedEntryMemoryCost += record.getCost();
+            } else if (op == Op.REMOVE) {
+                ownedEntryCount--;
+                ownedEntryMemoryCost -= record.getCost();
+            } else if (op == Op.LOCK) {
+                lockedEntryCount++;
+            } else if (op == Op.UNLOCK) {
+                lockedEntryCount--;
+            } else if (op == Op.ADD_LOCK_WAIT) {
+                lockWaitCount++;
+            } else if (op == Op.REMOVE_LOCK_WAIT) {
+                lockWaitCount--;
+            }
+        } else {
+            if (op == Op.CREATE) {
+                backupEntryCount++;
+                backupEntryMemoryCost += record.getCost();
+            } else if (op == Op.UPDATE) {
+                backupEntryMemoryCost += updateCost;
+            } else if (op == Op.REMOVE) {
+                backupEntryCount--;
+                backupEntryMemoryCost -= record.getCost();
+            }
+        }
     }
 
     public int getOwnedEntryCount() {
@@ -97,11 +150,11 @@ public class LocalMapStatsImpl implements LocalMapStats, Serializable {
     }
 
     public long getLastAccessTime() {
-        return lastAccessTime;
+        return lastAccessTime.get();
     }
 
     public void setLastAccessTime(long lastAccessTime) {
-        this.lastAccessTime = Math.max(this.lastAccessTime, lastAccessTime);
+        this.lastAccessTime.set(Math.max(this.lastAccessTime.get(), lastAccessTime));
     }
 
     public long getLastUpdateTime() {
@@ -121,11 +174,11 @@ public class LocalMapStatsImpl implements LocalMapStats, Serializable {
     }
 
     public int getHits() {
-        return hits;
+        return hits.get();
     }
 
     public void setHits(int hits) {
-        this.hits = hits;
+        this.hits.set(hits);
     }
 
     public int getLockedEntryCount() {
@@ -162,10 +215,10 @@ public class LocalMapStatsImpl implements LocalMapStats, Serializable {
                 ", backupEntryMemoryCost=" + backupEntryMemoryCost +
                 ", markedAsRemovedMemoryCost=" + markedAsRemovedMemoryCost +
                 ", creationTime=" + creationTime +
-                ", lastAccessTime=" + lastAccessTime +
+                ", lastAccessTime=" + lastAccessTime.get() +
                 ", lastUpdateTime=" + lastUpdateTime +
                 ", lastEvictionTime=" + lastEvictionTime +
-                ", hits=" + hits +
+                ", hits=" + hits.get() +
                 ", lockedEntryCount=" + lockedEntryCount +
                 ", lockWaitCount=" + lockWaitCount +
                 ", " + operationStats +

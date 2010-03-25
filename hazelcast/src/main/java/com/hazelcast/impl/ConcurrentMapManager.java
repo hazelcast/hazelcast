@@ -28,8 +28,10 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryContext;
+import com.hazelcast.util.ResponseQueueFactory;
 
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -40,6 +42,7 @@ import static com.hazelcast.core.Instance.InstanceType;
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
+import static com.hazelcast.impl.LocalMapStatsImpl.Op.UNLOCK;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -1037,7 +1040,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     public LocalMapStatsImpl getLocalMapStats(String name) {
-        CMap cmap = getMap(name);
+        final CMap cmap = getMap(name);
         if (cmap == null) {
             return new LocalMapStatsImpl();
         }
@@ -1049,7 +1052,17 @@ public class ConcurrentMapManager extends BaseManager {
                 throw new RuntimeException(e);
             }
         }
-        return cmap.getLocalMapStats();
+        final BlockingQueue responseQ = ResponseQueueFactory.newResponseQueue();
+        enqueueAndReturn(new Processable() {
+            public void process() {
+                responseQ.offer(cmap.getLocalMapStats());
+            }
+        });
+        try {
+            return (LocalMapStatsImpl) responseQ.take();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public class MIterateLocal extends MGetEntries {
@@ -1099,8 +1112,11 @@ public class ConcurrentMapManager extends BaseManager {
             Pairs pairs = null;
             if (response instanceof Data) {
                 pairs = (Pairs) toObject((Data) response);
-            } else {
+            } else if (response instanceof Pairs) {
                 pairs = (Pairs) response;
+            } else {
+                // null
+                return true;
             }
             entries.addEntries(pairs);
             return true;
@@ -1473,6 +1489,7 @@ public class ConcurrentMapManager extends BaseManager {
                     request.version = record.getVersion();
                     request.lockCount = record.getLockCount();
                     cmap.fireScheduledActions(record);
+                    cmap.updateStats(UNLOCK, record, true, null);
                 }
                 logger.log(Level.FINEST, unlocked + " now lock lockCount " + record.getLockCount() + " lockThreadId " + record.getLockThreadId());
             }
@@ -1508,20 +1525,24 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         protected void schedule(Request request) {
-            Record record = ensureRecord(request);
+            final CMap cmap = getOrCreateMap(request.name);
+            final Record record = ensureRecord(request);
             request.scheduled = true;
             ScheduledAction scheduledAction = new ScheduledAction(request) {
                 @Override
                 public boolean consume() {
+                    cmap.decrementLockWaits(record);
                     handle(request);
                     return true;
                 }
 
                 @Override
                 public void onExpire() {
+                    cmap.decrementLockWaits(record);
                     onNoTimeToSchedule(request);
                 }
             };
+            cmap.incrementLockWaits(record);
             record.addScheduledAction(scheduledAction);
             node.clusterManager.registerScheduledAction(scheduledAction);
         }
@@ -1772,9 +1793,8 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
-            Data dataEntries = toData(pairs);
             request.longValue = pairs.size();
-            request.response = dataEntries;
+            request.response = (pairs.size() > 0) ? ((request.local) ? pairs : toData(pairs)) : null;
         }
     }
 
@@ -1875,6 +1895,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         public void addEntries(Pairs pairs) {
+            if (pairs == null) return;
             if (pairs.getLsKeyValues() == null) return;
             TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
             for (KeyValue entry : pairs.getLsKeyValues()) {

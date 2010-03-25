@@ -111,7 +111,7 @@ public class FactoryImpl implements HazelcastInstance {
                         }
                     });
                 } else {
-                    Thread.sleep(2 * 1000);
+                    Thread.sleep(4 * 1000);
                 }
             } catch (InterruptedException ignored) {
             }
