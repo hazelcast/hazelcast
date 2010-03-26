@@ -62,7 +62,7 @@ public class ConnectionManager implements MembershipListener {
                 if (currentConnection == null) {
                     connection = searchForAvailableConnection();
                     if (connection != null) {
-                        logger.info("Client is connecting to " + connection);
+                        logger.fine("Client is connecting to " + connection);
                         bind(connection);
                         currentConnection = connection;
                     }

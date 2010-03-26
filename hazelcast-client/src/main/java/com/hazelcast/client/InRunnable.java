@@ -64,7 +64,7 @@ public class InRunnable extends IORunnable implements Runnable {
         } catch (RuntimeException re) {
             throw re;
         } catch (Exception e) {
-            logger.info("InRunnable got an exception:" + e.toString());
+            logger.finest("InRunnable got an exception:" + e.toString());
             client.connectionManager.destroyConnection(connection);
         }
     }

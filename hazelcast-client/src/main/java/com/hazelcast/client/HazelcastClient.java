@@ -245,7 +245,7 @@ public class HazelcastClient implements HazelcastInstance {
             listenerManager.shutdown();
             in.shutdown();
             long time = System.currentTimeMillis() - begin;
-            logger.log(Level.INFO, "HazelcastClient shutdown completed in " + time + " ms.");
+            logger.fine("HazelcastClient shutdown completed in " + time + " ms.");
             shutdownInProgress = false;
         }
     }
