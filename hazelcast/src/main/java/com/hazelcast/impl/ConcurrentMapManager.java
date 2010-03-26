@@ -158,7 +158,7 @@ public class ConcurrentMapManager extends BaseManager {
 
     void logState() {
         long now = System.currentTimeMillis();
-        if (LOG_STATE && ((now - lastLogStateTime) > 30000)) {
+        if (LOG_STATE && ((now - lastLogStateTime) > 15000)) {
             StringBuffer sbState = new StringBuffer(thisAddress + " State[" + new Date(now));
             sbState.append("]======================");
             for (Block block : blocks) {
@@ -179,6 +179,7 @@ public class ConcurrentMapManager extends BaseManager {
             for (CMap cmap : cmaps) {
                 cmap.appendState(sbState);
             }
+            node.blockingQueueManager.appendState(sbState);
             node.executorManager.appendState(sbState);
             long total = Runtime.getRuntime().totalMemory();
             long free = Runtime.getRuntime().freeMemory();

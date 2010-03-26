@@ -265,6 +265,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleQPoll(args);
         } else if ("q.peek".equals(first)) {
             handleQPeek(args);
+        } else if ("q.capacity".equals(first)) {
+            handleQCapacity(args);
         } else if ("q.offermany".equals(first)) {
             handleQOfferMany(args);
         } else if ("q.pollmany".equals(first)) {
@@ -840,6 +842,10 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private void handleQPeek(String[] args) {
         print(queue.peek());
+    }
+
+    private void handleQCapacity(String[] args) {
+        print(queue.remainingCapacity());
     }
 
     private void execute(String[] args) {

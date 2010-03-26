@@ -1370,7 +1370,16 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public int remainingCapacity() {
-                throw new UnsupportedOperationException();
+                BlockingQueueManager.Q q = blockingQueueManager.getQ(name);
+                int maxSizePerJVM = q.getMaxSizePerJVM();
+                if (maxSizePerJVM <= 0) {
+                    return Integer.MAX_VALUE;
+                } else {
+                    int size = size();
+                    int numberOfMembers = factory.node.getClusterImpl().getMembers().size();
+                    int totalCapacity = numberOfMembers * maxSizePerJVM;
+                    return totalCapacity - size;
+                }
             }
 
             @Override
@@ -1418,15 +1427,17 @@ public class FactoryImpl implements HazelcastInstance {
                         throw new IllegalArgumentException("Cannot drainTo self!");
                     }
                 }
-                Object value = poll();
                 int added = 0;
-                while (added < maxElements && value != null) {
-                    if (!c.add(value)) {
-                        throw new RuntimeException("drainTo util is not able to add!");
-                    }
-                    added++;
+                Object value = null;
+                do {
                     value = poll();
-                }
+                    if (value != null) {
+                        if (!c.add(value)) {
+                            throw new RuntimeException("drainTo is not able to add!");
+                        }
+                        added++;
+                    }
+                } while (added < maxElements && value != null);
                 return added;
             }
 

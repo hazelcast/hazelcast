@@ -34,6 +34,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
 import static com.hazelcast.impl.ClusterOperation.BLOCKING_QUEUE_SIZE;
@@ -42,7 +43,7 @@ import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 
 public class BlockingQueueManager extends BaseManager {
     private final int BLOCK_SIZE;
-    private final Map<String, Q> mapQueues = new HashMap<String, Q>(10);
+    private final Map<String, Q> mapQueues = new ConcurrentHashMap<String, Q>(10);
     private final Map<Long, List<Data>> mapTxnPolledElements = new HashMap<Long, List<Data>>(10);
     private int nextIndex = 0;
 
@@ -454,7 +455,7 @@ public class BlockingQueueManager extends BaseManager {
         Q q = getQ(packet.name);
         boolean valid = q.rightTakeTarget(packet.blockId);
         if (!valid) {
-            sendRedoResponse(packet);
+            boolean sent = sendRedoResponse(packet);
         }
         return (valid);
     }
@@ -1033,13 +1034,12 @@ public class BlockingQueueManager extends BaseManager {
         if (!q.blCurrentTake.containsValidItem() && !q.blCurrentTake.isFull()) {
             if (req.hasEnoughTimeToSchedule()) {
                 req.scheduled = true;
-                final Request reqScheduled = (req.local) ? req : req.hardCopy();
-                if (reqScheduled.local) {
-                    if (reqScheduled.attachment == null) {
-                        throw new RuntimeException("Scheduled local but attachement is null");
+                if (req.local) {
+                    if (req.attachment == null) {
+                        throw new RuntimeException("Scheduled local but attachment is null");
                     }
                 }
-                q.schedulePoll(reqScheduled);
+                q.schedulePoll(req);
             } else {
                 req.response = null;
             }
@@ -1097,6 +1097,13 @@ public class BlockingQueueManager extends BaseManager {
             releasePacket(packet);
     }
 
+    public void appendState(StringBuffer sb) {
+        Collection<Q> queues = mapQueues.values();
+        for (Q queue : queues) {
+            queue.appendState(sb);
+        }
+    }
+
     public class Q {
         String name;
         List<Block> lsBlocks = new ArrayList<Block>(10);
@@ -1105,8 +1112,7 @@ public class BlockingQueueManager extends BaseManager {
         int latestAddedBlock = -1;
 
         List<ScheduledPollAction> lsScheduledPollActions = new ArrayList<ScheduledPollAction>(100);
-        List<ScheduledOfferAction> lsScheduledOfferActions = new ArrayList<ScheduledOfferAction>(
-                100);
+        List<ScheduledOfferAction> lsScheduledOfferActions = new ArrayList<ScheduledOfferAction>(100);
         final int maxSizePerJVM;
 
         Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(2);
@@ -1121,7 +1127,7 @@ public class BlockingQueueManager extends BaseManager {
             logger.log(Level.FINEST, name + ".maxAge=" + maxAge);
             this.name = name;
             Address master = getMasterAddress();
-            if (master.isThisAddress()) {
+            if (master != null && master.isThisAddress()) {
                 Block block = createBlock(master, 0);
                 addBlock(block);
                 sendAddBlockMessageToOthers(block, -1, null, true);
@@ -1132,6 +1138,18 @@ public class BlockingQueueManager extends BaseManager {
                     addBlock(block);
                     sendAddBlockMessageToOthers(block, -1, null, true);
                 }
+            }
+        }
+
+        public void appendState(StringBuffer sb) {
+            sb.append("\nQ.name: " + name + " this:" + thisAddress);
+            sb.append("\n\tlatestAdded:" + latestAddedBlock);
+            sb.append(" put:" + blCurrentPut);
+            sb.append(" take:" + blCurrentTake);
+            sb.append(" s.polls:" + lsScheduledPollActions.size());
+            sb.append(", s.offers:" + lsScheduledOfferActions.size());
+            for (Block block : lsBlocks) {
+                sb.append("\n\t" + block.blockId + ":" + block.size() + " " + block.address);
             }
         }
 
@@ -1167,6 +1185,10 @@ public class BlockingQueueManager extends BaseManager {
             node.clusterManager.registerScheduledAction(action);
         }
 
+        public int getMaxSizePerJVM() {
+            return maxSizePerJVM;
+        }
+
         public class ScheduledPollAction extends ScheduledAction {
 
             public ScheduledPollAction(Request request) {
@@ -1178,12 +1200,12 @@ public class BlockingQueueManager extends BaseManager {
                 Q q = getQ(request.name);
                 valid = rightTakeTarget(request.blockId);
                 if (valid) {
-                    Data value = poll(request);
-                    request.response = value;
+                    request.response = poll(request);
                     returnScheduledAsSuccess(request);
                     return true;
                 } else {
-                    onExpire();
+                    request.response = OBJECT_REDO;
+                    returnResponse(request);
                     return false;
                 }
             }
@@ -1212,7 +1234,8 @@ public class BlockingQueueManager extends BaseManager {
                     returnScheduledAsBoolean(request);
                     return true;
                 } else {
-                    onExpire();
+                    request.response = OBJECT_REDO;
+                    returnResponse(request);
                     return false;
                 }
             }
@@ -1331,13 +1354,12 @@ public class BlockingQueueManager extends BaseManager {
             Block block = getBlock(blockId);
             packet.longValue = -1;
             if (block != null) {
-                blockLoop:
                 for (int i = index; i < BLOCK_SIZE; i++) {
                     Data data = block.get(i);
                     if (data != null) {
                         packet.value = data;
                         packet.longValue = i;
-                        break blockLoop;
+                        break;
                     }
                 }
             }
@@ -1376,9 +1398,9 @@ public class BlockingQueueManager extends BaseManager {
                 boolean consumed = false;
                 while (!consumed && lsScheduledPollActions.size() > 0) {
                     ScheduledAction pollAction = lsScheduledPollActions.remove(0);
-                    node.clusterManager.deregisterScheduledAction(pollAction);
                     if (!pollAction.expired()) {
                         consumed = pollAction.consume();
+                        node.clusterManager.deregisterScheduledAction(pollAction);
                     }
                 }
             }
@@ -1410,13 +1432,16 @@ public class BlockingQueueManager extends BaseManager {
                     blCurrentTake = null;
                 }
                 return value;
+            } catch (Throwable t) {
+                t.printStackTrace();
+                return null;
             } finally {
                 boolean consumed = false;
                 while (!consumed && lsScheduledOfferActions.size() > 0) {
                     ScheduledOfferAction offerAction = lsScheduledOfferActions.remove(0);
-                    node.clusterManager.deregisterScheduledAction(offerAction);
                     if (!offerAction.expired()) {
                         consumed = offerAction.consume();
+                        node.clusterManager.deregisterScheduledAction(offerAction);
                     }
                 }
             }

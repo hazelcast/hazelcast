@@ -277,8 +277,9 @@ public class Node {
     }
 
     public void setMasterAddress(final Address master) {
-        if (master != null)
+        if (master != null) {
             logger.log(Level.FINE, "** setting master lockAddress to " + master.toString());
+        }
         masterAddress = master;
     }
 

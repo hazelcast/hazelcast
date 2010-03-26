@@ -1074,10 +1074,10 @@ public abstract class BaseManager {
         return sent;
     }
 
-    protected void sendRedoResponse(final Packet packet) {
+    protected boolean sendRedoResponse(final Packet packet) {
         packet.responseType = RESPONSE_REDO;
         packet.lockAddress = null;
-        sendResponse(packet);
+        return sendResponse(packet);
     }
 
     protected boolean sendResponse(final Packet packet) {
