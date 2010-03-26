@@ -1683,15 +1683,20 @@ public class ConcurrentMapManager extends BaseManager {
     class SizeOperationHandler extends ExecutedOperationHandler {
         @Override
         Runnable createRunnable(final Request request) {
-            final Connection conn = (request.local) ? null : node.connectionManager.getConnection(request.caller);
             final CMap cmap = getOrCreateMap(request.name);
             return new Runnable() {
                 public void run() {
                     request.response = (long) cmap.size();
-                    if (partitionManager.partitionServiceImpl.isMigrating()) {
-                        request.response = OBJECT_REDO;
-                    }
-                    returnResponse(request, conn);
+                    enqueueAndReturn(new Processable() {
+                        public void process() {
+                            int callerPartitionHash = request.blockId;
+                            int myPartitionHashNow = hashBlocks();
+                            if (callerPartitionHash != myPartitionHashNow) {
+                                request.response = OBJECT_REDO;
+                            }
+                            returnResponse(request);
+                        }
+                    });
                 }
             };
         }
@@ -1754,7 +1759,16 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                 }
                 createEntries(request, results);
-                returnResponse(request, conn);
+                enqueueAndReturn(new Processable() {
+                    public void process() {
+                        int callerPartitionHash = request.blockId;
+                        int myPartitionHashNow = hashBlocks();
+                        if (callerPartitionHash != myPartitionHashNow) {
+                            request.response = OBJECT_REDO;
+                        }
+                        returnResponse(request);
+                    }
+                });
             }
         }
 

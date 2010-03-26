@@ -32,6 +32,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.nio.IOUtil.toData;
 
@@ -40,6 +41,7 @@ public class PartitionServiceImpl implements PartitionService {
     private final ConcurrentMap<Integer, PartitionProxy> mapPartitions = new ConcurrentHashMap<Integer, PartitionProxy>();
     private final List<MigrationListener> lsMigrationListeners = new CopyOnWriteArrayList<MigrationListener>();
     private final ConcurrentMapManager concurrentMapManager;
+    private final AtomicLong partitionVersion = new AtomicLong();
 
     public PartitionServiceImpl(ConcurrentMapManager concurrentMapManager) {
         this.concurrentMapManager = concurrentMapManager;
@@ -100,6 +102,7 @@ public class PartitionServiceImpl implements PartitionService {
     }
 
     void doFireMigrationEvent(final boolean started, final MigrationEvent migrationEvent) {
+        partitionVersion.incrementAndGet();
         if (migrationEvent == null) throw new RuntimeException("MigrationEvent: " + migrationEvent);
         Member owner = (started) ? migrationEvent.getOldOwner() : migrationEvent.getNewOwner();
         Member migrationMember = (started) ? migrationEvent.getNewOwner() : null;

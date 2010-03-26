@@ -91,24 +91,46 @@ public class QueryTest extends TestUtil {
     }
 
     @Test
-    public void testQueryAfterMigration() throws Exception {
+    public void testQueryDuringAndAfterMigrationWithIndex() throws Exception {
         Config cfg = null;
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
         imap.addIndex("name", false);
         imap.addIndex("age", true);
         imap.addIndex("active", false);
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 10000; i++) {
             imap.put(String.valueOf(i), new Employee("joe" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
         }
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(cfg);
-        for (int i = 0; i < 50; i++) {
-            Collection<Employee> values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(cfg);
+        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(cfg);
+        long startNow = System.currentTimeMillis();
+        while ((System.currentTimeMillis() - startNow) < 50000) {
+            Collection<Employee> values = imap.values();
             for (Employee employee : values) {
                 assertTrue(employee.isActive());
             }
-            assertEquals(6, values.size());
-            Thread.sleep(1000);
+            assertEquals(56, values.size());
+        }
+    }
+
+
+    @Test
+    public void testQueryDuringAndAfterMigration() throws Exception {
+        Config cfg = null;
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(cfg);
+        int count = 100000;
+        IMap imap = h1.getMap("values");
+        for (int i = 0; i < count; i++) {
+            imap.put(i, i);
+        }
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(cfg);
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(cfg);
+        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(cfg);
+        long startNow = System.currentTimeMillis();
+        while ((System.currentTimeMillis() - startNow) < 50000) {
+            Collection<Employee> values = imap.values();
+            assertEquals(count, values.size());
         }
     }
 
