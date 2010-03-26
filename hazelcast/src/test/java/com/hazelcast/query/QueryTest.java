@@ -106,7 +106,7 @@ public class QueryTest extends TestUtil {
         HazelcastInstance h4 = Hazelcast.newHazelcastInstance(cfg);
         long startNow = System.currentTimeMillis();
         while ((System.currentTimeMillis() - startNow) < 50000) {
-            Collection<Employee> values = imap.values();
+            Collection<Employee> values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
             for (Employee employee : values) {
                 assertTrue(employee.isActive());
             }

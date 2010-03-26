@@ -525,7 +525,7 @@ public class ClusterTest {
         allMapListenerTest(map2, "5", map1);
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 80000)
     public void testListeners2() throws Exception {
         final CountDownLatch latchAdded = new CountDownLatch(1);
         final CountDownLatch latchUpdated = new CountDownLatch(1);
@@ -561,10 +561,11 @@ public class ClusterTest {
         assertEquals("value5", mapSource.remove(key));
         map.removeEntryListener(listener, key);
         assertTrue(mapSource.evict(key));
-        assertTrue(latchAdded.await(5, TimeUnit.SECONDS));
-        assertTrue(latchUpdated.await(5, TimeUnit.SECONDS));
-        assertTrue(latchRemoved.await(5, TimeUnit.SECONDS));
-        assertTrue(latchEvicted.await(5, TimeUnit.SECONDS));
+        int waitSeconds = 10;
+        assertTrue(latchAdded.await(waitSeconds, TimeUnit.SECONDS));
+        assertTrue(latchUpdated.await(waitSeconds, TimeUnit.SECONDS));
+        assertTrue(latchRemoved.await(waitSeconds, TimeUnit.SECONDS));
+        assertTrue(latchEvicted.await(waitSeconds, TimeUnit.SECONDS));
     }
 
     @Test(timeout = 60000)
@@ -683,8 +684,8 @@ public class ClusterTest {
             map1.put(Integer.valueOf(i), i, 5, TimeUnit.SECONDS);
             map1.put(String.valueOf(i), i, 5, TimeUnit.SECONDS);
         }
-        assertTrue(cl1.await(15));
-        assertTrue(cl2.await(15));
+        assertTrue(cl1.await(30));
+        assertTrue(cl2.await(30));
     }
 
     @Test(timeout = 180000)
@@ -1086,10 +1087,11 @@ public class ClusterTest {
             assertEquals(size, map3.size());
             assertEquals(size, map4.size());
         }
-        migrationListener1.await(3);
-        migrationListener2.await(3);
-        migrationListener3.await(3);
-        migrationListener4.await(3);
+        int waitSeconds = 10;
+        migrationListener1.await(waitSeconds);
+        migrationListener2.await(waitSeconds);
+        migrationListener3.await(waitSeconds);
+        migrationListener4.await(waitSeconds);
     }
 
     @Test(timeout = 240000)
