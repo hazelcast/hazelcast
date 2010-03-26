@@ -24,6 +24,7 @@ import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
 import com.hazelcast.impl.base.PacketProcessor;
+import com.hazelcast.impl.base.RuntimeInterruptedException;
 import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
@@ -847,19 +848,23 @@ public class BlockingQueueManager extends BaseManager {
 
         int doCount = 1;
 
-        public boolean offer(String name, Object value, long timeout) {
+        public boolean offer(String name, Object value, long timeout) throws InterruptedException {
             return offer(name, value, timeout, true);
         }
 
-        public boolean offer(String name, Object value, long timeout, boolean transactional) {
-            ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.getCallContext().getTransaction();
-            if (transactional && txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-                txn.attachPutOp(name, null, value, true);
-            } else {
-                return booleanCall(ClusterOperation.BLOCKING_QUEUE_OFFER, name, null, value, timeout, -1);
+        public boolean offer(String name, Object value, long timeout, boolean transactional) throws InterruptedException {
+            try {
+                ThreadContext threadContext = ThreadContext.get();
+                TransactionImpl txn = threadContext.getCallContext().getTransaction();
+                if (transactional && txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                    txn.attachPutOp(name, null, value, true);
+                } else {
+                    return booleanCall(ClusterOperation.BLOCKING_QUEUE_OFFER, name, null, value, timeout, -1);
+                }
+                return true;
+            } catch (RuntimeInterruptedException e) {
+                throw new InterruptedException();
             }
-            return true;
         }
 
         @Override
@@ -930,14 +935,18 @@ public class BlockingQueueManager extends BaseManager {
             return objectCall(ClusterOperation.BLOCKING_QUEUE_PEEK, name, null, null, 0, -1);
         }
 
-        public Object poll(String name, long timeout) {
-            Object value = objectCall(ClusterOperation.BLOCKING_QUEUE_POLL, name, null, null, timeout, -1);
-            ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.getCallContext().getTransaction();
-            if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-                txn.attachRemoveOp(name, null, value, false);
+        public Object poll(String name, long timeout) throws InterruptedException {
+            try {
+                Object value = objectCall(ClusterOperation.BLOCKING_QUEUE_POLL, name, null, null, timeout, -1);
+                ThreadContext threadContext = ThreadContext.get();
+                TransactionImpl txn = threadContext.getCallContext().getTransaction();
+                if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                    txn.attachRemoveOp(name, null, value, false);
+                }
+                return value;
+            } catch (RuntimeInterruptedException rie) {
+                throw new InterruptedException();
             }
-            return value;
         }
 
         @Override
@@ -1197,7 +1206,6 @@ public class BlockingQueueManager extends BaseManager {
 
             @Override
             public boolean consume() {
-                Q q = getQ(request.name);
                 valid = rightTakeTarget(request.blockId);
                 if (valid) {
                     request.response = poll(request);
@@ -1226,8 +1234,7 @@ public class BlockingQueueManager extends BaseManager {
             @Override
             public boolean consume() {
                 // didn't expire but is it valid?
-                Q q = getQ(request.name);
-                valid = q.rightPutTarget(request.blockId);
+                valid = rightPutTarget(request.blockId);
                 if (valid) {
                     offer(request);
                     request.response = Boolean.TRUE;

@@ -21,10 +21,7 @@ import com.hazelcast.cluster.RemotelyProcessable;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Prefix;
-import com.hazelcast.impl.base.AddressAwareException;
-import com.hazelcast.impl.base.Call;
-import com.hazelcast.impl.base.PacketProcessor;
-import com.hazelcast.impl.base.RequestHandler;
+import com.hazelcast.impl.base.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
 import com.hazelcast.util.ResponseQueueFactory;
@@ -429,6 +426,9 @@ public abstract class BaseManager {
             while (true) {
                 try {
                     Object obj = responses.poll(5, TimeUnit.SECONDS);
+                    if (Thread.interrupted()) {
+                        throw new RuntimeInterruptedException();
+                    }
                     if (obj != null) {
                         return obj;
                     } else if (node.factory.restarted) {
@@ -439,6 +439,8 @@ public abstract class BaseManager {
                 } catch (InterruptedException e) {
                     if (node.factory.restarted) {
                         throw new RuntimeException();
+                    } else {
+                        throw new RuntimeInterruptedException();
                     }
                 }
             }

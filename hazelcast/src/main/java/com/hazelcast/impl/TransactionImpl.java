@@ -350,7 +350,10 @@ class TransactionImpl implements Transaction {
 
         private void offerAgain() {
             final Offer offer = factory.node.blockingQueueManager.new Offer();
-            offer.offer(name, value, 0, false);
+            try {
+                offer.offer(name, value, 0, false);
+            } catch (InterruptedException ignored) {
+            }
         }
     }
 }

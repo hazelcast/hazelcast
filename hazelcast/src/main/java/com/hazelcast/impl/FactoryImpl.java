@@ -25,6 +25,7 @@ import com.hazelcast.impl.BlockingQueueManager.Offer;
 import com.hazelcast.impl.BlockingQueueManager.Poll;
 import com.hazelcast.impl.BlockingQueueManager.QIterator;
 import com.hazelcast.impl.ConcurrentMapManager.*;
+import com.hazelcast.impl.base.RuntimeInterruptedException;
 import com.hazelcast.impl.concurrentmap.AddMapIndex;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
@@ -1328,7 +1329,11 @@ public class FactoryImpl implements HazelcastInstance {
             public boolean offer(Object obj) {
                 check(obj);
                 Offer offer = blockingQueueManager.new Offer();
-                return offer.offer(name, obj, 0);
+                try {
+                    return offer.offer(name, obj, 0);
+                } catch (InterruptedException e) {
+                    return false;
+                }
             }
 
             public boolean offer(Object obj, long timeout, TimeUnit unit) throws InterruptedException {
@@ -1353,15 +1358,19 @@ public class FactoryImpl implements HazelcastInstance {
 
             public Object poll() {
                 Poll poll = blockingQueueManager.new Poll();
-                return poll.poll(name, 0);
+                try {
+                    return poll.poll(name, 0);
+                } catch (InterruptedException e) {
+                    return null;
+                }
             }
 
             public Object poll(long timeout, TimeUnit unit) throws InterruptedException {
-                if (timeout < 0) {
-                    timeout = 0;
-                }
-                Poll poll = blockingQueueManager.new Poll();
-                return poll.poll(name, unit.toMillis(timeout));
+                    if (timeout < 0) {
+                        timeout = 0;
+                    }
+                    Poll poll = blockingQueueManager.new Poll();
+                    return poll.poll(name, unit.toMillis(timeout));
             }
 
             public Object take() throws InterruptedException {
