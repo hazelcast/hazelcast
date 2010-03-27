@@ -1538,8 +1538,8 @@ public class ClusterTest {
             assertEquals(mapStats1.getOwnedEntryCount(), mapStats2.getBackupEntryCount());
             assertEquals("Migrated blocks are not backed up", mapStats2.getOwnedEntryCount(), mapStats1.getBackupEntryCount());
         }
-        assertTrue(listener1.await(5));
-        assertTrue(listener2.await(5));
+        assertTrue(listener1.await(15));
+        assertTrue(listener2.await(15));
     }
 
     @Test(timeout = 25000, expected = MemberLeftException.class)

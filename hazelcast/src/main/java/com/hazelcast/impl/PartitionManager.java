@@ -562,6 +562,7 @@ public class PartitionManager implements Runnable {
             fireMigrationEvent(false, new Block(blockReal));
             blockReal.setOwner(blockReal.getMigrationAddress());
             blockReal.setMigrationAddress(null);
+            removeUnknownsAndResetStats();
             logger.log(Level.FINEST, "Migration complete info : " + blockReal);
             nextMigrationMillis = System.currentTimeMillis() + MIGRATION_INTERVAL_MILLIS;
         }
