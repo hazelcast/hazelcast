@@ -335,6 +335,20 @@ public class PartitionManager implements Runnable {
         }
     }
 
+    private void removeUnknownsAndResetStats() {
+        Map<Address, Integer> distances = new HashMap<Address, Integer>();
+        for (MemberImpl member : concurrentMapManager.lsMembers) {
+            Address address = member.getAddress();
+            int distance = concurrentMapManager.getDistance(address, thisAddress);
+            distances.put(address, distance);
+
+        }
+        Collection<CMap> cmaps = concurrentMapManager.maps.values();
+        for (CMap cmap : cmaps) {
+            cmap.resetLocalMapStats(distances);
+        }
+    }
+
     public void onMembershipChange(boolean add) {
         lsBlocksToMigrate.clear();
         backupIfNextOrPreviousChanged(add);
@@ -342,6 +356,7 @@ public class PartitionManager implements Runnable {
             sendBlocks(null);
         }
         nextMigrationMillis = System.currentTimeMillis() + MIGRATION_INTERVAL_MILLIS;
+        removeUnknownsAndResetStats();
     }
 
     public void syncForDead(MemberImpl deadMember) {
@@ -549,10 +564,6 @@ public class PartitionManager implements Runnable {
             blockReal.setMigrationAddress(null);
             logger.log(Level.FINEST, "Migration complete info : " + blockReal);
             nextMigrationMillis = System.currentTimeMillis() + MIGRATION_INTERVAL_MILLIS;
-            Collection<CMap> cmaps = concurrentMapManager.maps.values();
-            for (final CMap cmap : cmaps) {
-                cmap.resetLocalMapStats();
-            }
         }
     }
 

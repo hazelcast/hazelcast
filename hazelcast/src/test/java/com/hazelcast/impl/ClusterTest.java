@@ -26,10 +26,7 @@ import com.hazelcast.monitor.DistributedMapStatsCallable;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.Partition;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.Serializable;
 import java.util.*;
@@ -647,6 +644,7 @@ public class ClusterTest {
         System.setProperty("hazelcast.build", "t");
     }
 
+    @Ignore 
     @Test(timeout = 60000)
     public void testMapMaxSize() throws Exception {
         Config c = new XmlConfigBuilder().build();

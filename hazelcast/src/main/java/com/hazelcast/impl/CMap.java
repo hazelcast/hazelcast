@@ -511,7 +511,7 @@ public class CMap {
         return stats;
     }
 
-    void resetLocalMapStats() {
+    void resetLocalMapStats(Map<Address, Integer> distances) {
         long now = System.currentTimeMillis();
         int ownedEntryCount = 0;
         int backupEntryCount = 0;
@@ -528,7 +528,9 @@ public class CMap {
                 markedAsRemovedEntryCount++;
                 markedAsRemovedMemoryCost += record.getCost();
             } else {
-                if (concurrentMapManager.isOwned(record)) {
+                Block block = concurrentMapManager.getOrCreateBlock(record.getBlockId());
+                boolean owned = thisAddress.equals(block.getOwner());
+                if (owned) {
                     ownedEntryCount += record.valueCount();
                     ownedEntryMemoryCost += record.getCost();
                     localMapStats.setLastAccessTime(record.getLastAccessTime());
@@ -539,8 +541,22 @@ public class CMap {
                         lockWaitCount += record.getScheduledActionCount();
                     }
                 } else {
-                    backupEntryCount += record.valueCount();
-                    backupEntryMemoryCost += record.getCost();
+                    boolean unknown = false;
+                    Address eventualOwner = (block.isMigrating()) ? block.getMigrationAddress() : block.getOwner();
+                    if (!thisAddress.equals(eventualOwner)) {
+                        Integer distance = distances.get(eventualOwner);
+                        if (distance != null && distance > getBackupCount()) {
+                            unknown = true;
+                        }
+                    }
+                    if (unknown) {
+                        markedAsRemovedEntryCount++;
+                        markedAsRemovedMemoryCost += record.getCost();
+                        markAsRemoved(record);
+                    } else {
+                        backupEntryCount += record.valueCount();
+                        backupEntryMemoryCost += record.getCost();
+                    }
                 }
             }
         }
@@ -1113,7 +1129,7 @@ public class CMap {
                 }
             }
         }
-        Level levelLog =  (concurrentMapManager.LOG_STATE) ? Level.INFO : Level.FINEST;
+        Level levelLog = (concurrentMapManager.LOG_STATE) ? Level.INFO : Level.FINEST;
         logger.log(levelLog, "Cleanup "
                 + ", store:" + entriesToStore.size()
                 + ", delete:" + keysToDelete.size()
