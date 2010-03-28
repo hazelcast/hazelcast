@@ -50,6 +50,8 @@ public class Installer {
 
     private boolean wrapServletAndJSP = true;
 
+    private String version = "1.8.3";
+
     public static void main(final String[] args) {
         final Installer installer = new Installer();
         installer.install(args);
@@ -84,12 +86,10 @@ public class Installer {
     }
 
     public final void modify(final File src, final File dest) {
-
         try {
             final ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(
                     new FileOutputStream(dest)));
             final ZipFile zipFile = new ZipFile(src);
-
             final Enumeration entries = zipFile.entries();
             String jarLocation = null;
             if (src.getName().endsWith("war"))
@@ -98,12 +98,10 @@ public class Installer {
                 final ZipEntry entry = (ZipEntry) entries.nextElement();
                 log("entry name " + entry.getName());
                 out.putNextEntry(new ZipEntry(entry.getName()));
-
                 if (entry.isDirectory()) {
                     continue;
                 }
                 final String name = entry.getName();
-
                 if (jarLocation == null) {
                     if (name.endsWith(".jar")) {
                         final int slashIndex = name.lastIndexOf('/');
@@ -114,7 +112,6 @@ public class Installer {
                         }
                     }
                 }
-
                 final InputStream in = zipFile.getInputStream(entry);
                 if (name.endsWith(".war")) {
                     modifyWar(in, out);
@@ -129,22 +126,26 @@ public class Installer {
             }
             if (jarLocation == null)
                 jarLocation = "";
-
             if (isAddHazellib()) {
                 log("Jar Location " + jarLocation);
-                final ZipEntry hazelcastZip = new ZipEntry(jarLocation + "hazelcast.jar");
-                out.putNextEntry(hazelcastZip);
-                final InputStream in = new FileInputStream("hazelcast.jar");
-                Util.copyStream(in, out);
-                in.close();
-
+                String hazelcastJarName = "hazelcast-" + version + ".jar";
+                String hazelcastWMJarName = "hazelcast-wm-" + version + ".jar";
+                addFileToZipStream(("../lib/" + hazelcastJarName), (jarLocation +  hazelcastJarName), out);
+                addFileToZipStream(("../lib/" + hazelcastWMJarName), (jarLocation +  hazelcastWMJarName), out);
             }
             out.flush();
             out.close();
-
         } catch (final Exception e) {
             e.printStackTrace();
         }
+    }
+
+    void addFileToZipStream(String fileName, String zipFilePath, ZipOutputStream out) throws Exception {
+        final ZipEntry hazelcastZip = new ZipEntry(zipFilePath);
+        out.putNextEntry(hazelcastZip);
+        final InputStream in = new FileInputStream(fileName);
+        Util.copyStream(in, out);
+        in.close();
     }
 
     public Document modifyWebXml(final Document doc) {
@@ -203,7 +204,6 @@ public class Installer {
                             } catch (final Exception e) {
                                 e.printStackTrace();
                             }
-
                         }
                     }
                 }
@@ -215,15 +215,12 @@ public class Installer {
         final Element filter = doc.createElement("filter");
         append(doc, filter, "filter-name", "hazel-filter");
         append(doc, filter, "filter-class", "com.hazelcast.web.WebFilter");
-
         Node initParam = append(doc, filter, "init-param", null);
         append(doc, initParam, "param-name", "listener-count");
         append(doc, initParam, "param-value", String.valueOf(lsListeners.size()));
-
         initParam = append(doc, filter, "init-param", null);
         append(doc, initParam, "param-name", "apps-sharing-sessions");
         append(doc, initParam, "param-value", String.valueOf(appsSharingSessions));
-
         if (sessionTimeout != sessionTimeoutDefault) {
             initParam = append(doc, filter, "init-param", null);
             append(doc, initParam, "param-name", "session-timeout");
@@ -244,20 +241,15 @@ public class Installer {
         if (first == null) {
             first = docElement.getFirstChild();
         }
-
         docElement.insertBefore(filter, first);
         final Element filterMapping = doc.createElement("filter-mapping");
         append(doc, filterMapping, "filter-name", "hazel-filter");
         append(doc, filterMapping, "url-pattern", "/*");
-
         final Element contextListener = doc.createElement("listener");
         append(doc, contextListener, "listener-class",
                 "com.hazelcast.web.WebFilter$ContextListener");
-
         docElement.insertBefore(filterMapping, after(docElement, "filter"));
-
         docElement.insertBefore(contextListener, after(docElement, "filter-mapping"));
-
         return doc;
     }
 
@@ -307,7 +299,6 @@ public class Installer {
                 in.close();
                 out.close();
             }
-
             zipFile.close();
         } catch (final IOException ioe) {
             ioe.printStackTrace();
@@ -346,7 +337,6 @@ public class Installer {
             print("No application is specified!");
             printHelp();
         }
-
         final Set<String> setApps = new HashSet<String>();
         if (args != null) {
             for (final String arg : args) {
@@ -354,17 +344,17 @@ public class Installer {
                     if (arg.equals("-apps-sharing-sessions")) {
                         appsSharingSessions = true;
                         addHazellib = false;
+                    } else if (arg.startsWith("-version")) {
+                        version = arg.substring(arg.indexOf("-version") + 8);
                     }
                 } else {
                     setApps.add(arg);
                 }
             }
         }
-
         for (final String appFilename : setApps) {
             processApp(appFilename);
         }
-
         logger.log(Level.INFO, "Done!");
     }
 
@@ -394,7 +384,6 @@ public class Installer {
 
     private void modifyWar(final InputStream in, final OutputStream os) {
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-
         final ZipOutputStream out = new ZipOutputStream(bos);
         final ZipInputStream zin = new ZipInputStream(in);
         try {
@@ -411,7 +400,6 @@ public class Installer {
                     final ByteArrayOutputStream bosWebXml = new ByteArrayOutputStream();
                     Util.copyStream(zin, bosWebXml);
                     bosWebXml.flush();
-
                     final byte[] webxmlBytes = bosWebXml.toByteArray();
                     bosWebXml.close();
                     final ByteArrayInputStream binWebXml = new ByteArrayInputStream(webxmlBytes);
@@ -424,7 +412,6 @@ public class Installer {
                 }
                 out.flush();
             }
-
         } catch (final Exception e) {
             e.printStackTrace();
             if (DEBUG)
@@ -452,9 +439,7 @@ public class Installer {
         final File file = new File(appFilename);
         final String clusteredFileName = clusteredFilePrefix + file.getName();
         final File fileOriginal = new File(file.getParentFile(), clusteredFileName);
-
         modify(file, fileOriginal);
-
         if (isReplaceOld()) {
             final boolean success = file.renameTo(fileOriginal);
             if (success) {

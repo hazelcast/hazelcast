@@ -161,7 +161,6 @@ public class WebFilter implements Filter {
             this.original = req;
             this.original.setAttribute(HAZELCAST_REQUEST, this);
             creationTime = System.nanoTime();
-
             final Cookie[] cookies = req.getCookies();
             if (cookies != null) {
                 for (final Cookie cookie : cookies) {
@@ -242,7 +241,6 @@ public class WebFilter implements Filter {
                             log("pathInfo " + getPathInfo());
                             log("pathtranslated " + getPathTranslated());
                             log("requesturi " + getRequestURI());
-
                         }
                         if (mapSession != null) {
                             final Set<Map.Entry> entries = mapSession.entrySet();
@@ -378,25 +376,22 @@ public class WebFilter implements Filter {
 
         @Override
         public String encodeURL(final String url) {
-            if(url == null){
+            if (url == null) {
                 throw new NullPointerException("URL can not be null");
             }
             if (!context.urlRewriteEnabled()) {
                 return url;
             }
             return encodeURL(url, SESSION_URL_PHRASE);
-
         }
 
         public String extractSessionId(final String url) {
-
             final int prefix = url.indexOf(SESSION_URL_PHRASE);
             if (prefix != -1) {
                 final int start = prefix + SESSION_URL_PHRASE.length();
                 int suffix = url.indexOf("?", start);
                 if (suffix < 0)
                     suffix = url.indexOf("#", start);
-
                 if (suffix <= prefix)
                     return url.substring(start);
                 return url.substring(start, suffix);
@@ -413,10 +408,9 @@ public class WebFilter implements Filter {
         }
 
         private String encodeURL(final String url, final String sessionURLPhrase) {
-            if(url==null){
+            if (url == null) {
                 throw new NullPointerException("URL can not be null");
             }
-
             // should not encode if cookies in evidence
             if (url != null || req == null || req.isRequestedSessionIdFromCookie()) {
                 final int prefix = url.indexOf(sessionURLPhrase);
@@ -424,34 +418,28 @@ public class WebFilter implements Filter {
                     int suffix = url.indexOf("?", prefix);
                     if (suffix < 0)
                         suffix = url.indexOf("#", prefix);
-
                     if (suffix <= prefix)
                         return url.substring(0, prefix);
                     return url.substring(0, prefix) + url.substring(suffix);
                 }
                 return url;
             }
-
             final HazelSession session = req.getSession(false);
             if (session == null)
                 return url;
             if (!session.valid.get())
                 return url;
-
             final String id = session.getId();
-
             final int prefix = url.indexOf(sessionURLPhrase);
             if (prefix != -1) {
                 int suffix = url.indexOf("?", prefix);
                 if (suffix < 0)
                     suffix = url.indexOf("#", prefix);
-
                 if (suffix <= prefix)
                     return url.substring(0, prefix + sessionURLPhrase.length()) + id;
                 return url.substring(0, prefix + sessionURLPhrase.length()) + id
                         + url.substring(suffix);
             }
-
             // edit the session
             int suffix = url.indexOf('?');
             if (suffix < 0)
@@ -460,7 +448,6 @@ public class WebFilter implements Filter {
                 return url + sessionURLPhrase + id;
             return url.substring(0, suffix) + sessionURLPhrase + id + url.substring(suffix);
         }
-
     }
 
     private static class AppContext implements Context {
@@ -515,7 +502,6 @@ public class WebFilter implements Filter {
                 }
                 lsSnapshotListeners.add(snapshotListener);
             }
-
         }
 
         public void destroy() {
@@ -701,7 +687,6 @@ public class WebFilter implements Filter {
             if (create && session == null) {
                 session = new HazelSession(this, sessionId);
                 session.setMaxInactiveInterval(maxInactiveInterval * 60);
-
                 final HazelSession oldSessionInfo = mapSessions.putIfAbsent(sessionId, session);
                 if (oldSessionInfo != null) {
                     session = oldSessionInfo;
@@ -736,7 +721,6 @@ public class WebFilter implements Filter {
             if (DEBUG) {
                 log(lsSnapshotListeners.size() + " FireSnapshotEvent " + snapshotEvent);
             }
-
             synchronized (lsSnapshotListeners) {
                 for (final SnapshotListener listener : lsSnapshotListeners) {
                     executor.execute(new Runnable() {
@@ -746,9 +730,7 @@ public class WebFilter implements Filter {
                     });
                 }
             }
-
         }
-
     } // END of AppContext
 
     private static class Controller implements Runnable {
@@ -840,7 +822,6 @@ public class WebFilter implements Filter {
                 });
             }
             context.getSnapshot().createdSessions.incrementAndGet();
-
         }
 
         public boolean expired(final long currentTime) {
@@ -910,7 +891,7 @@ public class WebFilter implements Filter {
             md.digest(data.buffer.array());
             return md.digest();
         }
- 
+
         public void invalidate() {
             checkState();
             context.destroySession(this);
@@ -1125,7 +1106,6 @@ public class WebFilter implements Filter {
                     .get();
             final long maxReqT = (maxRequestTime.get() == Long.MIN_VALUE) ? 0 : maxRequestTime
                     .get();
-
             return new SnapshotEvent(context.getOriginalServletContext(), createdSessions.get(),
                     destroyedSessions.get(), minReqT, maxReqT, aveRequestTime.get(),
                     numberOfRequests.get());
@@ -1157,15 +1137,11 @@ public class WebFilter implements Filter {
                 final long temReqTime = tempTotalReqTime.get();
                 final long aveReqTime = aveRequestTime.get();
                 final long reqs = numberOfRequests.get();
-
                 final long totalTime = ((aveReqTime * reqs) + temReqTime);
                 final long totalReqCount = reqs + tempReqCount;
-
                 final long newAve = totalTime / totalReqCount;
-
                 aveRequestTime.set(newAve);
                 numberOfRequests.set(totalReqCount);
-
                 tempNumberOfRequests.set(0);
                 tempTotalReqTime.set(0);
             }
@@ -1180,7 +1156,7 @@ public class WebFilter implements Filter {
 
     public static final String HAZELCAST_REQUEST = "*hazelcast-request";
 
-    private static ConcurrentMap<String, AppContext> mapApps = new ConcurrentHashMap<String, AppContext>(
+    private static final ConcurrentMap<String, AppContext> mapApps = new ConcurrentHashMap<String, AppContext>(
             10);
 
     private AppContext app = null;
@@ -1204,35 +1180,36 @@ public class WebFilter implements Filter {
     }
 
     public static synchronized AppContext ensureServletContext(final ServletContext servletContext) {
-        AppContext app = getAppContext(servletContext.getServletContextName());
+        AppContext app = getAppContext(servletContext);
         if (app == null) {
             app = new AppContext(servletContext);
-            setAppContext(servletContext.getServletContextName(), app);
+            setAppContext(app);
         }
         return app;
     }
 
-    public static synchronized AppContext getAppContext(String servletContextName) {
-        if (appsSharingSessions) {
-            servletContextName = "_hz_shared_app";
-        }
-        return mapApps.get(servletContextName);
-    }
-
     public static synchronized ServletContext getServletContext(final ServletContext original) {
-        final AppContext app = getAppContext(original.getServletContextName());
+        final AppContext app = getAppContext(original);
         if (app == null)
             return original;
         return app.getOriginalServletContext();
     }
 
-    public static synchronized AppContext setAppContext(String servletContextName,
-                                                        final AppContext app) {
-        if (appsSharingSessions) {
-            servletContextName = "_hz_shared_app";
+    static String getAppName (ServletContext servletContext) {
+        String name = servletContext.getContextPath();
+        if (name.equals("")) {
+            name = "_rootWebapp";
         }
-        log(appsSharingSessions + " PUTTING.. " + servletContextName + " appobj " + app);
-        return mapApps.put(servletContextName, app);
+        return name;
+    }
+
+    public static synchronized AppContext setAppContext(final AppContext app) {
+        String appName = getAppName(app.getOriginalServletContext());
+        if (appsSharingSessions) {
+            appName = "_hz_shared_app";
+        }
+        log(appsSharingSessions + " PUTTING.. " + appName + " appObj " + app);
+        return mapApps.put(appName, app);
     }
 
     static void log(final Object obj) {
@@ -1263,7 +1240,6 @@ public class WebFilter implements Filter {
                 } else
                     sb.append(c);
             }
-
         }
         id = "HZ" + sb.toString();
         if (DEBUG) {
@@ -1273,7 +1249,11 @@ public class WebFilter implements Filter {
     }
 
     private static AppContext getAppContext(final ServletContext servletContext) {
-        return getAppContext(servletContext.getServletContextName());
+        String appName = getAppName(servletContext);
+        if (appsSharingSessions) {
+            appName = "_hz_shared_app";
+        }
+        return mapApps.get(appName);
     }
 
     private static void removeCookieForSession(final RequestWrapper req, final String sessionId) {
@@ -1306,7 +1286,6 @@ public class WebFilter implements Filter {
         log("doFILTER");
         if (DEBUG) {
             log(appsSharingSessions + " FILTERING %%55555.. " + req.getClass().getName());
-
         }
         if (!(req instanceof HttpServletRequest)) {
             chain.doFilter(req, res);
@@ -1337,7 +1316,6 @@ public class WebFilter implements Filter {
             final ResponseWrapper resWrapper = new ResponseWrapper(app, (HttpServletResponse) res);
             final RequestWrapper reqWrapper = new RequestWrapper(app, httpReq, resWrapper);
             resWrapper.setRequest(reqWrapper);
-
             final ServletRequestEvent event = (app.lsRequestListeners.size() == 0) ? null
                     : new ServletRequestEvent(app.getOriginalServletContext(), reqWrapper);
             if (event != null) {
@@ -1352,14 +1330,11 @@ public class WebFilter implements Filter {
             req = null;
             res = null;
             httpReq = null;
-
             HazelSession session = null;
             String sessionId = null;
-
             session = reqWrapper.getSession(false);
             if (session != null)
                 sessionId = session.getId();
-
             if (session != null) {
                 if (session.expired(System.currentTimeMillis())) {
                     if (DEBUG) {
@@ -1370,11 +1345,9 @@ public class WebFilter implements Filter {
             }
             chain.doFilter(reqWrapper, resWrapper);
             req = null; // for easy debugging. reqWrapper should be used
-
             session = reqWrapper.getSession(false);
             if (session != null)
                 sessionId = session.getId();
-
             if (session != null) {
                 if (!session.valid.get()) {
                     if (DEBUG) {
@@ -1396,10 +1369,8 @@ public class WebFilter implements Filter {
                     }
                 }
                 boolean sessionChanged = false;
-
                 Data data = session.writeObject(mapData);
                 sessionChanged = session.sessionChanged(data);
-
                 if (sessionChanged) {
                     if (data == null) {
                         mapData = new HashMap<String, Object>();
@@ -1439,14 +1410,11 @@ public class WebFilter implements Filter {
     }
 
     public void init(final FilterConfig config) throws ServletException {
-
         int maxInactiveInterval = 30; // minutes
-
         final String appsSharingSessionsValue = config.getInitParameter("apps-sharing-sessions");
         if (appsSharingSessionsValue != null) {
             appsSharingSessions = Boolean.valueOf(appsSharingSessionsValue.trim());
         }
-
         final String sessionTimeoutValue = config.getInitParameter("session-timeout");
         if (sessionTimeoutValue != null) {
             maxInactiveInterval = Integer.parseInt(sessionTimeoutValue.trim());
@@ -1467,19 +1435,15 @@ public class WebFilter implements Filter {
                 if (listener instanceof HttpSessionAttributeListener) {
                     app.lsSessionAttListeners.add((HttpSessionAttributeListener) listener);
                 }
-
                 if (listener instanceof ServletContextListener) {
                     app.lsContextListeners.add((ServletContextListener) listener);
                 }
-
                 if (listener instanceof ServletContextAttributeListener) {
                     app.lsContextAttListeners.add((ServletContextAttributeListener) listener);
                 }
-
                 if (listener instanceof ServletRequestListener) {
                     app.lsRequestListeners.add((ServletRequestListener) listener);
                 }
-
                 if (listener instanceof ServletRequestAttributeListener) {
                     app.lsRequestAttListeners.add((ServletRequestAttributeListener) listener);
                 }
@@ -1489,6 +1453,5 @@ public class WebFilter implements Filter {
         }
         app.setReady();
     }
-
 }// END of WebFilter
 
