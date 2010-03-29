@@ -156,7 +156,7 @@ public class CMap {
         MapStore storeTemp = null;
         MapLoader loaderTemp = null;
         int writeDelaySeconds = -1;
-        if (mapStoreConfig != null && mapStoreConfig.isEnabled()) {
+        if (!node.isSuperClient() && mapStoreConfig != null && mapStoreConfig.isEnabled()) {
             try {
                 Object storeInstance = mapStoreConfig.getImplementation();
                 if (storeInstance == null) {
@@ -174,20 +174,20 @@ public class CMap {
             }
             writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
         }
-        loader = loaderTemp;
-        store = storeTemp;
+        if (!node.isSuperClient() && evictionPolicy == EvictionPolicy.NONE && instanceType == Instance.InstanceType.MAP) {
+            locallyOwnedMap = new LocallyOwnedMap(localMapStats);
+            concurrentMapManager.mapLocallyOwnedMaps.put(name, locallyOwnedMap);
+        } else {
+            locallyOwnedMap = null;
+        }
         writeDelayMillis = (writeDelaySeconds == -1) ? -1L : writeDelaySeconds * 1000L;
         if (writeDelaySeconds > 0) {
             removeDelayMillis = concurrentMapManager.GLOBAL_REMOVE_DELAY_MILLIS + writeDelaySeconds;
         } else {
             removeDelayMillis = concurrentMapManager.GLOBAL_REMOVE_DELAY_MILLIS;
         }
-        if (evictionPolicy == EvictionPolicy.NONE && instanceType == Instance.InstanceType.MAP) {
-            locallyOwnedMap = new LocallyOwnedMap(localMapStats);
-            concurrentMapManager.mapLocallyOwnedMaps.put(name, locallyOwnedMap);
-        } else {
-            locallyOwnedMap = null;
-        }
+        loader = loaderTemp;
+        store = storeTemp;
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
         if (nearCacheConfig == null) {
             mapNearCache = null;
