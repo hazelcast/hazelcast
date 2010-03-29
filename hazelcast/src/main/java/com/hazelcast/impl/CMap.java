@@ -25,6 +25,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.impl.concurrentmap.LFUMapEntryComparator;
 import com.hazelcast.impl.concurrentmap.LRUMapEntryComparator;
+import com.hazelcast.impl.concurrentmap.MapStoreWrapper;
 import com.hazelcast.impl.concurrentmap.MultiData;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
@@ -153,8 +154,7 @@ public class CMap {
         evictionRate = mapConfig.getEvictionPercentage() / 100f;
         instanceType = ConcurrentMapManager.getInstanceType(name);
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
-        MapStore storeTemp = null;
-        MapLoader loaderTemp = null;
+        MapStoreWrapper mapStoreWrapper = null;
         int writeDelaySeconds = -1;
         if (!node.isSuperClient() && mapStoreConfig != null && mapStoreConfig.isEnabled()) {
             try {
@@ -163,12 +163,10 @@ public class CMap {
                     String mapStoreClassName = mapStoreConfig.getClassName();
                     storeInstance = Serializer.classForName(node.getConfig().getClassLoader(), mapStoreClassName).newInstance();
                 }
-                if (storeInstance instanceof MapLoader) {
-                    loaderTemp = (MapLoader) storeInstance;
-                }
-                if (storeInstance instanceof MapStore) {
-                    storeTemp = (MapStore) storeInstance;
-                }
+                mapStoreWrapper = new MapStoreWrapper(storeInstance,
+                        node.factory.getHazelcastInstanceProxy(),
+                        mapStoreConfig.getProperties(),
+                        mapConfigName);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -186,8 +184,8 @@ public class CMap {
         } else {
             removeDelayMillis = concurrentMapManager.GLOBAL_REMOVE_DELAY_MILLIS;
         }
-        loader = loaderTemp;
-        store = storeTemp;
+        loader = (mapStoreWrapper == null || !mapStoreWrapper.isMapLoader()) ? null : mapStoreWrapper;
+        store = (mapStoreWrapper == null || !mapStoreWrapper.isMapStore()) ? null : mapStoreWrapper;
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
         if (nearCacheConfig == null) {
             mapNearCache = null;

@@ -19,10 +19,7 @@ package com.hazelcast.config;
 
 import java.io.File;
 import java.net.URL;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Config {
@@ -59,7 +56,7 @@ public class Config {
 
     private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
-    private Map<String, String> properties = new HashMap<String, String>();
+    private Properties properties = new Properties();
 
     public Config() {
         final String superClientProp = System.getProperty("hazelcast.super.client");
@@ -79,12 +76,17 @@ public class Config {
         return this;
     }
 
-    public void setProperty(String name, String value) {
+    public Config setProperty(String name, String value) {
         properties.put(name, value);
+        return this;
+    }
+
+    public Properties getProperties() {
+        return properties;
     }
 
     public String getProperty(String name) {
-        return properties.get(name);
+        return properties.getProperty(name);
     }
 
     public QueueConfig getQueueConfig(final String name) {

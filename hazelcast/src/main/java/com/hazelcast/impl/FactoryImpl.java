@@ -120,6 +120,10 @@ public class FactoryImpl implements HazelcastInstance {
         return factory.hazelcastInstanceProxy;
     }
 
+    public HazelcastInstanceProxy getHazelcastInstanceProxy() {
+        return hazelcastInstanceProxy;
+    }
+
     public static class HazelcastInstanceProxy extends HazelcastInstanceAwareObject implements HazelcastInstance {
 
         public HazelcastInstanceProxy() {

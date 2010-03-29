@@ -17,16 +17,22 @@
 
 package com.hazelcast.config;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+
 /**
  * MapStore configuration
  */
 public final class MapStoreConfig {
+    public static final int DEFAULT_WRITE_DELAY_SECONDS = 0;
+
     private boolean enabled = true;
     private String className = null;
     private int writeDelaySeconds = DEFAULT_WRITE_DELAY_SECONDS;
-
-    public static final int DEFAULT_WRITE_DELAY_SECONDS = 0;
     private Object implementation;
+    private Properties properties = new Properties();
+
 
     /**
      * Returns the name of the MapStore implementation class
@@ -103,5 +109,29 @@ public final class MapStoreConfig {
      */
     public Object getImplementation() {
         return implementation;
+    }
+
+    public MapStoreConfig setProperty(String name, String value) {
+        properties.put(name, value);
+        return this;
+    }
+
+    public Properties getProperties() {
+        return properties;
+    }
+
+    public String getProperty(String name) {
+        return properties.getProperty(name);
+    }
+
+    @Override
+    public String toString() {
+        return "MapStoreConfig{" +
+                "className='" + className + '\'' +
+                ", enabled=" + enabled +
+                ", writeDelaySeconds=" + writeDelaySeconds +
+                ", implementation=" + implementation +
+                ", properties=" + properties +
+                '}';
     }
 }

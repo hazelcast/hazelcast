@@ -29,12 +29,15 @@ import org.junit.Test;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class MapStoreTest {
 
@@ -46,6 +49,62 @@ public class MapStoreTest {
     @After
     public void cleanup() throws Exception {
         Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void testOneMemberWriteThroughTxnalFailingStore() throws Exception {
+        FailAwareMapStore testMapStore = new FailAwareMapStore();
+        testMapStore.setFail(false);        
+        Config config = newConfig(testMapStore, 0);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap map = h1.getMap("default");
+        Transaction txn = h1.getTransaction();
+        txn.begin();
+        assertEquals(0, map.size());
+        assertEquals(0, testMapStore.dbSize());
+        map.put("1", "value1");
+        map.put("2", "value2");
+        txn.commit();
+        assertEquals(2, map.size());
+        assertEquals(2, testMapStore.dbSize());
+        txn = h1.getTransaction();
+        txn.begin();
+        assertEquals(2, map.size());
+        assertEquals(2, testMapStore.dbSize());
+        map.put("3", "value3");
+        assertEquals(3, map.size());
+        assertEquals(2, testMapStore.dbSize());
+        testMapStore.setFail(true);
+        map.put("4", "value4");
+        try {
+            txn.commit();
+            fail("Should not commit the txn");
+        } catch (Exception e) {
+        }
+        assertEquals(2, map.size());
+        assertEquals(2, testMapStore.dbSize());
+    }
+
+    @Test
+    public void testOneMemberWriteThroughFailingStore() throws Exception {
+        FailAwareMapStore testMapStore = new FailAwareMapStore();
+        testMapStore.setFail(true);
+        Config config = newConfig(testMapStore, 0);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap map = h1.getMap("default");
+        assertEquals(0, map.size());
+        try {
+            map.get("1");
+            fail("should have thrown exception");
+        } catch (Exception e) {
+        }
+        assertEquals(1, testMapStore.loads.get());
+        try {
+            map.get("1");
+            fail("should have thrown exception");
+        } catch (Exception e) {
+        }
+        assertEquals(2, testMapStore.loads.get());
     }
 
     @Test
@@ -72,6 +131,9 @@ public class MapStoreTest {
         assertEquals(0, map.size());
         assertEquals(0, testMapStore.getStore().size());
         testMapStore.assertAwait(1);
+        assertEquals(1, testMapStore.getInitCount());
+        assertEquals("default", testMapStore.getMapName());
+        assertEquals(h1, testMapStore.getHazelcastInstance());
     }
 
     @Test
@@ -112,7 +174,7 @@ public class MapStoreTest {
         return config;
     }
 
-    public static class TestMapStore implements MapStore, MapLoader {
+    public static class TestMapStore extends AbstractMapStore implements MapLoader {
 
         Map store = new ConcurrentHashMap();
 
@@ -122,6 +184,10 @@ public class MapStoreTest {
         final CountDownLatch latchDeleteAll;
         final CountDownLatch latchLoad;
         final CountDownLatch latchLoadAll;
+        final AtomicInteger initCount = new AtomicInteger();
+        private HazelcastInstance hazelcastInstance;
+        private Properties properties;
+        private String mapName;
 
         public TestMapStore(int expectedStore, int expectedDelete, int expectedLoad) {
             this(expectedStore, 0, expectedDelete, 0, expectedLoad, 0);
@@ -135,6 +201,30 @@ public class MapStoreTest {
             latchDeleteAll = new CountDownLatch(expectedDeleteAll);
             latchLoad = new CountDownLatch(expectedLoad);
             latchLoadAll = new CountDownLatch(expectedLoadAll);
+        }
+
+        @Override
+        public void init(HazelcastInstance hazelcastInstance, Properties properties, String mapName) {
+            this.hazelcastInstance = hazelcastInstance;
+            this.properties = properties;
+            this.mapName = mapName;
+            initCount.incrementAndGet();
+        }
+
+        public int getInitCount() {
+            return initCount.get();
+        }
+
+        public HazelcastInstance getHazelcastInstance() {
+            return hazelcastInstance;
+        }
+
+        public String getMapName() {
+            return mapName;
+        }
+
+        public Properties getProperties() {
+            return properties;
         }
 
         public void assertAwait(int seconds) throws Exception {
@@ -191,6 +281,97 @@ public class MapStoreTest {
                 store.remove(key);
             }
             latchDeleteAll.countDown();
+        }
+    }
+
+    public static class FailAwareMapStore implements MapStore, MapLoader {
+        Map db = new ConcurrentHashMap();
+
+        AtomicLong deletes = new AtomicLong();
+        AtomicLong deleteAlls = new AtomicLong();
+        AtomicLong stores = new AtomicLong();
+        AtomicLong storeAlls = new AtomicLong();
+        AtomicLong loads = new AtomicLong();
+        AtomicLong loadAlls = new AtomicLong();
+        AtomicBoolean shouldFail = new AtomicBoolean(false);
+
+        public void delete(Object key) {
+            deletes.incrementAndGet();
+            if (shouldFail.get()) {
+                throw new RuntimeException();
+            } else {
+                db.remove(key);
+            }
+        }
+
+        public void setFail(boolean shouldFail) {
+            this.shouldFail.set(shouldFail);
+        }
+
+        public int dbSize() {
+            return db.size();
+        }
+
+        public boolean dbContainsKey(Object key) {
+            return db.containsKey(key);
+        }
+
+        public Object dbGetValue(Object key) {
+            return db.get(key);
+        }
+
+        public void store(Object key, Object value) {
+            stores.incrementAndGet();
+            if (shouldFail.get()) {
+                throw new RuntimeException();
+            } else {
+                db.put(key, value);
+            }
+        }
+
+        public Object load(Object key) {
+            loads.incrementAndGet();
+            if (shouldFail.get()) {
+                throw new RuntimeException();
+            } else {
+                return db.get(key);
+            }
+        }
+
+        public void storeAll(Map map) {
+            storeAlls.incrementAndGet();
+            if (shouldFail.get()) {
+                throw new RuntimeException();
+            } else {
+                db.putAll(map);
+            }
+        }
+
+        public Map loadAll(Collection keys) {
+            loadAlls.incrementAndGet();
+            if (shouldFail.get()) {
+                throw new RuntimeException();
+            } else {
+                Map results = new HashMap();
+                for (Object key : keys) {
+                    Object value = db.get(key);
+                    if (value != null) {
+                        results.put(key, value);
+                    }
+                }
+                return results;
+            }
+        }
+
+        public void deleteAll(Collection keys) {
+            deleteAlls.incrementAndGet();
+            if (shouldFail.get()) {
+                throw new RuntimeException();
+            } else {
+                for (Object key : keys) {
+                    db.remove(key);
+                }
+            }
         }
     }
 }

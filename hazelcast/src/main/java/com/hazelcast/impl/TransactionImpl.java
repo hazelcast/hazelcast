@@ -101,8 +101,10 @@ class TransactionImpl implements Transaction {
             for (final TransactionRecord transactionRecord : transactionRecords) {
                 transactionRecord.commit();
             }
+        } catch (final RuntimeException e) {
+            throw e;
         } catch (final Exception e) {
-            e.printStackTrace();
+           throw new RuntimeException(e);
         } finally {
             finalizeTxn();
             status = TXN_STATUS_COMMITTED;
