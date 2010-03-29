@@ -522,7 +522,7 @@ public class ClusterTest {
         allMapListenerTest(map2, "5", map1);
     }
 
-    @Test(timeout = 80000)
+    @Test(timeout = 120000)
     public void testListeners2() throws Exception {
         final CountDownLatch latchAdded = new CountDownLatch(1);
         final CountDownLatch latchUpdated = new CountDownLatch(1);
@@ -558,7 +558,7 @@ public class ClusterTest {
         assertEquals("value5", mapSource.remove(key));
         map.removeEntryListener(listener, key);
         assertTrue(mapSource.evict(key));
-        int waitSeconds = 10;
+        int waitSeconds = 20;
         assertTrue(latchAdded.await(waitSeconds, TimeUnit.SECONDS));
         assertTrue(latchUpdated.await(waitSeconds, TimeUnit.SECONDS));
         assertTrue(latchRemoved.await(waitSeconds, TimeUnit.SECONDS));
@@ -1054,7 +1054,7 @@ public class ClusterTest {
      * as the target's block-owners hash value, then request will
      * be re-done.
      */
-    @Test(timeout = 240000)
+    @Test(timeout = 360000)
     public void testDataRecoveryAndCorrectness() throws Exception {
         final int size = 1000;
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
@@ -1085,7 +1085,7 @@ public class ClusterTest {
             assertEquals(size, map3.size());
             assertEquals(size, map4.size());
         }
-        int waitSeconds = 10;
+        int waitSeconds = 20;
         migrationListener1.await(waitSeconds);
         migrationListener2.await(waitSeconds);
         migrationListener3.await(waitSeconds);
