@@ -4,6 +4,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: hazelcast
 Bundle-SymbolicName: hazelcast
 Bundle-Version: 1.8.3
+Import-Package: javax.xml.parsers, javax.xml.transform
 Export-Package: com.hazelcast.cluster;
  uses:="com.hazelcast.impl.base,
   com.hazelcast.nio,
