@@ -52,7 +52,7 @@ public class MapStoreTest {
     }
 
     @Test
-    public void testOneMemberWriteThroughTxnalFailingStore() throws Exception {
+    public void testOneMemberWriteThroughTxnalFailingStore() {
         FailAwareMapStore testMapStore = new FailAwareMapStore();
         testMapStore.setFail(false);        
         Config config = newConfig(testMapStore, 0);
@@ -316,7 +316,7 @@ public class MapStoreTest {
             return db.containsKey(key);
         }
 
-        public Object dbGetValue(Object key) {
+        public Object dbGet(Object key) {
             return db.get(key);
         }
 

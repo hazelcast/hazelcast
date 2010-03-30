@@ -1134,10 +1134,6 @@ public class ConcurrentMapManager extends BaseManager {
             request.reset();
             setLocal(operation, name, null, predicate, -1, -1);
         }
-
-        @Override
-        public void onDisconnect(final Address dead) {
-        }
     }
 
     public Address getKeyOwner(Data key) {
