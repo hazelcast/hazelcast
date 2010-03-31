@@ -32,51 +32,51 @@ public class Pairs implements DataSerializable {
     }
 
     public void addKeyValue(KeyValue keyValue) {
-        if (getLsKeyValues() == null) {
-            setLsKeyValues(new ArrayList<KeyValue>());
+        if (getKeyValues() == null) {
+            setKeyValues(new ArrayList<KeyValue>());
         }
-        getLsKeyValues().add(keyValue);
+        getKeyValues().add(keyValue);
     }
 
     public void writeData(DataOutput out) throws IOException {
-        int size = (getLsKeyValues() == null) ? 0 : getLsKeyValues().size();
+        int size = (getKeyValues() == null) ? 0 : getKeyValues().size();
         out.writeInt(size);
         for (int i = 0; i < size; i++) {
-            getLsKeyValues().get(i).writeData(out);
+            getKeyValues().get(i).writeData(out);
         }
     }
 
     public void readData(DataInput in) throws IOException {
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
-            if (getLsKeyValues() == null) {
-                setLsKeyValues(new ArrayList<KeyValue>());
+            if (getKeyValues() == null) {
+                setKeyValues(new ArrayList<KeyValue>());
             }
             KeyValue kv = new KeyValue();
             kv.readData(in);
-            getLsKeyValues().add(kv);
+            getKeyValues().add(kv);
         }
     }
 
     public int size() {
-        return (getLsKeyValues() == null) ? 0 : getLsKeyValues().size();
+        return (getKeyValues() == null) ? 0 : getKeyValues().size();
     }
 
     public KeyValue getEntry(int i) {
-        return (getLsKeyValues() == null) ? null : getLsKeyValues().get(i);
+        return (getKeyValues() == null) ? null : getKeyValues().get(i);
     }
 
     /**
      * @param lsKeyValues the lsKeyValues to set
      */
-    public void setLsKeyValues(List<KeyValue> lsKeyValues) {
+    public void setKeyValues(List<KeyValue> lsKeyValues) {
         this.lsKeyValues = lsKeyValues;
     }
 
     /**
      * @return the lsKeyValues
      */
-    public List<KeyValue> getLsKeyValues() {
+    public List<KeyValue> getKeyValues() {
         return lsKeyValues;
     }
 }

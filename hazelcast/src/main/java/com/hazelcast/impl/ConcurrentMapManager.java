@@ -1779,24 +1779,26 @@ public class ConcurrentMapManager extends BaseManager {
                         if (record.getKey() == null || record.getKey().size() == 0) {
                             throw new RuntimeException("Key cannot be null or zero-size: " + record.getKey());
                         }
-                        Block block = blocks[record.getBlockId()];
-                        if (thisAddress.equals(block.getOwner())) {
-                            if (record.getValue() != null || request.operation == CONCURRENT_MAP_ITERATE_KEYS_ALL) {
-                                pairs.addKeyValue(new KeyValue(record.getKey(), null));
-                            } else if (record.getCopyCount() > 0) {
-                                for (int i = 0; i < record.getCopyCount(); i++) {
-                                    pairs.addKeyValue(new KeyValue(record.getKey(), null));
+                        if (record.getValue() != null || request.operation == CONCURRENT_MAP_ITERATE_KEYS_ALL) {
+                            pairs.addKeyValue(new KeyValue(record.getKey(), null));
+                        } else if (record.getCopyCount() > 0) {
+                            for (int i = 0; i < record.getCopyCount(); i++) {
+                                Data key = record.getKey();
+                                Data value = null;
+                                if (request.operation != CONCURRENT_MAP_ITERATE_KEYS) {
+                                    value = record.getValue();
                                 }
-                            } else if (record.getMultiValues() != null) {
-                                int size = record.getMultiValues().size();
-                                if (size > 0) {
-                                    if (request.operation == CONCURRENT_MAP_ITERATE_KEYS) {
-                                        pairs.addKeyValue(new KeyValue(record.getKey(), null));
-                                    } else {
-                                        Set<Data> values = record.getMultiValues();
-                                        for (Data value : values) {
-                                            pairs.addKeyValue(new KeyValue(record.getKey(), value));
-                                        }
+                                pairs.addKeyValue(new KeyValue(key, value));
+                            }
+                        } else if (record.getMultiValues() != null) {
+                            int size = record.getMultiValues().size();
+                            if (size > 0) {
+                                if (request.operation == CONCURRENT_MAP_ITERATE_KEYS) {
+                                    pairs.addKeyValue(new KeyValue(record.getKey(), null));
+                                } else {
+                                    Set<Data> values = record.getMultiValues();
+                                    for (Data value : values) {
+                                        pairs.addKeyValue(new KeyValue(record.getKey(), value));
                                     }
                                 }
                             }
@@ -1907,9 +1909,9 @@ public class ConcurrentMapManager extends BaseManager {
 
         public void addEntries(Pairs pairs) {
             if (pairs == null) return;
-            if (pairs.getLsKeyValues() == null) return;
+            if (pairs.getKeyValues() == null) return;
             TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
-            for (KeyValue entry : pairs.getLsKeyValues()) {
+            for (KeyValue entry : pairs.getKeyValues()) {
                 if (txn != null) {
                     Object key = entry.getKey();
                     if (txn.has(name, key)) {
