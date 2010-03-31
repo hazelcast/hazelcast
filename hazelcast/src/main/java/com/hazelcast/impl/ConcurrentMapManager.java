@@ -183,6 +183,7 @@ public class ConcurrentMapManager extends BaseManager {
             node.executorManager.appendState(sbState);
             long total = Runtime.getRuntime().totalMemory();
             long free = Runtime.getRuntime().freeMemory();
+            sbState.append("\nCluster Size:" + lsMembers.size());
             sbState.append("\nUsed Memory:");
             sbState.append((total - free) / 1024 / 1024);
             sbState.append("MB");
@@ -1729,43 +1730,46 @@ public class ConcurrentMapManager extends BaseManager {
             }
 
             public void run() {
-                Predicate predicate = null;
-                if (request.value != null) {
-                    predicate = (Predicate) toObject(request.value);
-                }
-                QueryContext queryContext = new QueryContext(cmap.getName(), predicate);
-                Set<MapEntry> results = cmap.getMapIndexService().doQuery(queryContext);
-                if (predicate != null) {
-                    if (results != null && !queryContext.isStrong()) {
-                        Iterator<MapEntry> it = results.iterator();
-                        while (it.hasNext()) {
-                            Record record = (Record) it.next();
-                            if (record.isActive()) {
-                                try {
-                                    if (!predicate.apply(record.getRecordEntry())) {
+                try {
+                    Predicate predicate = null;
+                    if (request.value != null) {
+                        predicate = (Predicate) toObject(request.value);
+                    }
+                    QueryContext queryContext = new QueryContext(cmap.getName(), predicate);
+                    Set<MapEntry> results = cmap.getMapIndexService().doQuery(queryContext);
+                    if (predicate != null) {
+                        if (results != null && !queryContext.isStrong()) {
+                            Iterator<MapEntry> it = results.iterator();
+                            while (it.hasNext()) {
+                                Record record = (Record) it.next();
+                                if (record.isActive()) {
+                                    try {
+                                        if (!predicate.apply(record.getRecordEntry())) {
+                                            it.remove();
+                                        }
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
                                         it.remove();
                                     }
-                                } catch (Exception e) {
-                                    e.printStackTrace();
+                                } else {
                                     it.remove();
                                 }
-                            } else {
-                                it.remove();
                             }
                         }
                     }
-                }
-                createEntries(request, results);
-                enqueueAndReturn(new Processable() {
-                    public void process() {
-                        int callerPartitionHash = request.blockId;
-                        int myPartitionHashNow = hashBlocks();
-                        if (callerPartitionHash != myPartitionHashNow) {
-                            request.response = OBJECT_REDO;
+                    createEntries(request, results);
+                    enqueueAndReturn(new Processable() {
+                        public void process() {
+                            int callerPartitionHash = request.blockId; 
+                            if (partitionManager.containsMigratingBlock() || callerPartitionHash != hashBlocks()) {
+                                request.response = OBJECT_REDO;
+                            }
+                            returnResponse(request);
                         }
-                        returnResponse(request);
-                    }
-                });
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
 
@@ -1779,8 +1783,8 @@ public class ConcurrentMapManager extends BaseManager {
                         if (record.getKey() == null || record.getKey().size() == 0) {
                             throw new RuntimeException("Key cannot be null or zero-size: " + record.getKey());
                         }
-                        boolean onlyKeys = (request.operation == CONCURRENT_MAP_ITERATE_KEYS_ALL || 
-                                            request.operation == CONCURRENT_MAP_ITERATE_KEYS);
+                        boolean onlyKeys = (request.operation == CONCURRENT_MAP_ITERATE_KEYS_ALL ||
+                                request.operation == CONCURRENT_MAP_ITERATE_KEYS);
                         Data key = record.getKey();
                         if (record.getValue() != null) {
                             Data value = (onlyKeys) ? null : record.getValue();
@@ -1851,7 +1855,7 @@ public class ConcurrentMapManager extends BaseManager {
                         AsynchronousExecution ae = (AsynchronousExecution) getPacketProcessor(request.operation);
                         ae.execute(request);
                     } catch (Exception e) {
-                        logger.log(Level.FINEST, "Store throwed exception for " + request.operation, e);
+                        logger.log(Level.FINEST, "Store thrown exception for " + request.operation, e);
                         request.response = toData(new AddressAwareException(e, thisAddress));
                     }
                     offerSize.decrementAndGet();
