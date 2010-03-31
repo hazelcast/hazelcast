@@ -1779,26 +1779,25 @@ public class ConcurrentMapManager extends BaseManager {
                         if (record.getKey() == null || record.getKey().size() == 0) {
                             throw new RuntimeException("Key cannot be null or zero-size: " + record.getKey());
                         }
-                        if (record.getValue() != null || request.operation == CONCURRENT_MAP_ITERATE_KEYS_ALL) {
-                            pairs.addKeyValue(new KeyValue(record.getKey(), null));
+                        boolean onlyKeys = (request.operation == CONCURRENT_MAP_ITERATE_KEYS_ALL || 
+                                            request.operation == CONCURRENT_MAP_ITERATE_KEYS);
+                        Data key = record.getKey();
+                        if (record.getValue() != null) {
+                            Data value = (onlyKeys) ? null : record.getValue();
+                            pairs.addKeyValue(new KeyValue(key, value));
                         } else if (record.getCopyCount() > 0) {
                             for (int i = 0; i < record.getCopyCount(); i++) {
-                                Data key = record.getKey();
-                                Data value = null;
-                                if (request.operation != CONCURRENT_MAP_ITERATE_KEYS) {
-                                    value = record.getValue();
-                                }
-                                pairs.addKeyValue(new KeyValue(key, value));
+                                pairs.addKeyValue(new KeyValue(key, null));
                             }
                         } else if (record.getMultiValues() != null) {
                             int size = record.getMultiValues().size();
                             if (size > 0) {
                                 if (request.operation == CONCURRENT_MAP_ITERATE_KEYS) {
-                                    pairs.addKeyValue(new KeyValue(record.getKey(), null));
+                                    pairs.addKeyValue(new KeyValue(key, null));
                                 } else {
                                     Set<Data> values = record.getMultiValues();
                                     for (Data value : values) {
-                                        pairs.addKeyValue(new KeyValue(record.getKey(), value));
+                                        pairs.addKeyValue(new KeyValue(key, value));
                                     }
                                 }
                             }
