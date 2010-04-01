@@ -1713,7 +1713,6 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         Runnable createRunnable(Request request) {
-            final Connection conn = (request.local) ? null : node.connectionManager.getConnection(request.caller);
             final CMap cmap = getOrCreateMap(request.name);
             return new QueryTask(cmap, request);
         }
@@ -1785,7 +1784,7 @@ public class ConcurrentMapManager extends BaseManager {
                                 request.operation == CONCURRENT_MAP_ITERATE_KEYS);
                         Data key = record.getKey();
                         if (record.getValue() != null) {
-                            Data value = null; //(onlyKeys) ? null : record.getValue();
+                            Data value = (onlyKeys) ? null : record.getValue();
                             pairs.addKeyValue(new KeyValue(key, value));
                         } else if (record.getCopyCount() > 0) {
                             for (int i = 0; i < record.getCopyCount(); i++) {

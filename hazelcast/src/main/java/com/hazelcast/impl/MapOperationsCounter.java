@@ -32,6 +32,7 @@ public class MapOperationsCounter {
     private transient MapOperationStats published = null;
     private List<MapOperationsCounter> listOfSubStats = new ArrayList<MapOperationsCounter>();
     final private Object lock = new Object();
+    final private MapOperationStats empty = new MapOperationStatsImpl();
 
     final private long interval;
 
@@ -68,6 +69,9 @@ public class MapOperationsCounter {
                     published = getThis();
                 }
             }
+        }
+        if(published.getPeriodEnd() < now() - interval){
+            return empty;
         }
         return published;
     }
