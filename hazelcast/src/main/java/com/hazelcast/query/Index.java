@@ -20,7 +20,7 @@ package com.hazelcast.query;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.Record;
 
-import java.util.*;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -28,11 +28,10 @@ public class Index {
     // recordId -- indexValue
     private final ConcurrentMap<Long, Long> recordValues = new ConcurrentHashMap<Long, Long>(10000, 0.75f, 1);
     // indexValue -- Map<recordId, Record>
-    private final ConcurrentMap<Long, ConcurrentMap<Long, Record>> mapRecords = new ConcurrentHashMap<Long, ConcurrentMap<Long, Record>>(100, 0.75f, 1);
+    private final IndexStore indexStore;
     private final Expression expression;
     private final boolean ordered;
     private final int attributeIndex;
-    private volatile TreeSet<Long> valueOrder = null;
     private volatile byte returnType = -1;
     volatile boolean strong = false;
     volatile boolean checkedStrength = false;
@@ -51,6 +50,11 @@ public class Index {
         this.expression = expression;
         this.ordered = ordered;
         this.attributeIndex = attributeIndex;
+        if (ordered) {
+            indexStore = new SortedIndexStore();
+        } else {
+            indexStore = new UnsortedIndexStore();
+        }
     }
 
     public void index(long newValue, Record record) {
@@ -76,9 +80,6 @@ public class Index {
             }
             recordValues.remove(recordId);
         }
-        if (ordered && valueOrder == null) {
-//                orderValues();
-        }
     }
 
     public long extractLongValue(Object value) {
@@ -98,225 +99,39 @@ public class Index {
 
     private void newRecordIndex(long newValue, Record record) {
         long recordId = record.getId();
-        ConcurrentMap<Long, Record> records = mapRecords.get(newValue);
-        if (records == null) {
-            records = new ConcurrentHashMap<Long, Record>(1, 0.75f, 1);
-            mapRecords.put(newValue, records);
-            invalidateOrder();
-        }
-        records.put(recordId, record);
+        indexStore.newRecordIndex(newValue, record);
         recordValues.put(recordId, newValue);
     }
 
     private void removeRecordIndex(long oldValue, long recordId) {
         recordValues.remove(recordId);
-        ConcurrentMap<Long, Record> records = mapRecords.get(oldValue);
-        if (records != null) {
-            records.remove(recordId);
-            if (records.size() == 0) {
-                mapRecords.remove(oldValue);
-                invalidateOrder();
-            }
-        }
-    }
-
-    private void invalidateOrder() {
-        valueOrder = null;
+        indexStore.removeRecordIndex(oldValue, recordId);
     }
 
     public void appendState(StringBuffer sbState) {
-        sbState.append("\nexp:" + expression + ", recordValues:" + recordValues.size() + ", valueRecords: " + mapRecords.size());
-    }
-
-    class SingleResultSet extends AbstractSet<MapEntry> {
-        private final ConcurrentMap<Long, ? extends MapEntry> records;
-
-        public SingleResultSet(ConcurrentMap<Long, Record> records) {
-            this.records = records;
-        }
-
-        @Override
-        public boolean contains(Object mapEntry) {
-            return records != null && records.containsKey(((Record) mapEntry).getId());
-        }
-
-        @Override
-        public Iterator<MapEntry> iterator() {
-            if (records == null) {
-                return new HashSet<MapEntry>().iterator();
-            } else {
-                return (Iterator<MapEntry>) records.values().iterator();
-            }
-        }
-
-        @Override
-        public int size() {
-            return (records == null) ? 0 : records.size();
-        }
-    }
-
-    class MultiResultSet extends AbstractSet<MapEntry> {
-        private List<Collection<Record>> resultSets = new ArrayList<Collection<Record>>();
-        private Set<Long> indexValues = new HashSet<Long>();
-
-        MultiResultSet() {
-        }
-
-        public void addResultSet(Long indexValue, Collection<Record> resultSet) {
-            resultSets.add(resultSet);
-            indexValues.add(indexValue);
-        }
-
-        @Override
-        public Iterator<MapEntry> iterator() {
-            return new It();
-        }
-
-        @Override
-        public boolean contains(Object mapEntry) {
-            Long indexValue = recordValues.get(((Record) mapEntry).getId());
-            if (indexValue == null) return false;
-            else return indexValues.contains(indexValue);
-        }
-
-        class It implements Iterator<MapEntry> {
-            int currentIndex = 0;
-            Iterator<Record> currentIterator;
-
-            public boolean hasNext() {
-                if (resultSets.size() == 0) return false;
-                if (currentIterator != null && currentIterator.hasNext()) {
-                    return true;
-                }
-                while (currentIndex < resultSets.size()) {
-                    currentIterator = resultSets.get(currentIndex++).iterator();
-                    if (currentIterator.hasNext()) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-
-            public MapEntry next() {
-                if (resultSets.size() == 0) return null;
-                return currentIterator.next();
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        }
-
-        @Override
-        public boolean add(MapEntry obj) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int size() {
-            int size = 0;
-            for (Collection<Record> resultSet : resultSets) {
-                size += resultSet.size();
-            }
-            return size;
-        }
+        sbState.append("\nexp:" + expression + ", recordValues:" + recordValues.size() + ", " + indexStore);
     }
 
     public Set<MapEntry> getRecords(long[] values) {
-        MultiResultSet results = new MultiResultSet();
-        for (Long value : values) {
-            ConcurrentMap<Long, Record> records = mapRecords.get(value);
-            if (records != null) {
-                results.addResultSet(value, records.values());
-            }
-        }
-        return results;
-    }
-
-    public Set<MapEntry> getSubRecordsBetween(long from, long to) {
-        MultiResultSet results = new MultiResultSet();
-        if (valueOrder != null) {
-            Set<Long> values = valueOrder.subSet(from, to);
-            for (Long value : values) {
-                ConcurrentMap<Long, Record> records = mapRecords.get(value);
-                if (records != null) {
-                    results.addResultSet(value, records.values());
-                }
-            }
-            // to wasn't included so include now
-            ConcurrentMap<Long, Record> records = mapRecords.get(to);
-            if (records != null) {
-                results.addResultSet(to, records.values());
-            }
-            return results;
-        } else {
-            Set<Long> values = mapRecords.keySet();
-            for (Long value : values) {
-                if (value >= from && value <= to) {
-                    ConcurrentMap<Long, Record> records = mapRecords.get(value);
-                    if (records != null) {
-                        results.addResultSet(value, records.values());
-                    }
-                }
-            }
-        }
+        MultiResultSet results = new MultiResultSet(recordValues);
+        indexStore.getRecords(results, values);
         return results;
     }
 
     public Set<MapEntry> getRecords(long value) {
-        return new SingleResultSet(mapRecords.get(value));
+        return indexStore.getRecords(value);
     }
 
-    public Set<MapEntry> getSubRecords(boolean equal, boolean lessThan, long searchedValue) {
-        MultiResultSet results = new MultiResultSet();
-        if (valueOrder != null) {
-            Set<Long> values = (lessThan) ? valueOrder.headSet(searchedValue) : valueOrder.tailSet(searchedValue);
-            for (Long value : values) {
-                // exclude from when you have '>'
-                // because from is included
-                if (lessThan || equal || !value.equals(searchedValue)) {
-                    ConcurrentMap<Long, Record> records = mapRecords.get(value);
-                    if (records != null) {
-                        results.addResultSet(value, records.values());
-                    }
-                }
-            }
-            if (lessThan && equal) {
-                // to wasn't included so include now
-                ConcurrentMap<Long, Record> records = mapRecords.get(searchedValue);
-                if (records != null) {
-                    results.addResultSet(searchedValue, records.values());
-                }
-            }
-        } else {
-            Set<Long> values = mapRecords.keySet();
-            for (Long value : values) {
-                boolean valid;
-                if (lessThan) {
-                    valid = (equal) ? (value <= searchedValue) : (value < searchedValue);
-                } else {
-                    valid = (equal) ? (value >= searchedValue) : (value > searchedValue);
-                }
-                if (valid) {
-                    ConcurrentMap<Long, Record> records = mapRecords.get(value);
-                    if (records != null) {
-                        results.addResultSet(value, records.values());
-                    }
-                }
-            }
-        }
+    public Set<MapEntry> getSubRecordsBetween(long from, long to) {
+        MultiResultSet results = new MultiResultSet(recordValues);
+        indexStore.getSubRecordsBetween(results, from, to);
         return results;
     }
 
-    private void orderValues() {
-        if (ordered) {
-            TreeSet<Long> ordered = new TreeSet<Long>();
-            Set<Long> values = mapRecords.keySet();
-            for (Long value : values) {
-                ordered.add(value);
-            }
-            valueOrder = ordered;
-        }
+    public Set<MapEntry> getSubRecords(boolean equal, boolean lessThan, long searchedValue) {
+        MultiResultSet results = new MultiResultSet(recordValues);
+        indexStore.getSubRecords(results, equal, lessThan, searchedValue);
+        return results;
     }
 
     public byte getIndexType() {
@@ -406,7 +221,7 @@ public class Index {
     }
 
     ConcurrentMap<Long, ConcurrentMap<Long, Record>> getMapRecords() {
-        return mapRecords;
+        return indexStore.getMapRecords();
     }
 
     public Expression getExpression() {
@@ -438,8 +253,8 @@ public class Index {
     public String toString() {
         final StringBuffer sb = new StringBuffer();
         sb.append("Index{");
-        sb.append("indexValues=").append(mapRecords.size());
-        sb.append(", recordValues=").append(recordValues.size());
+        sb.append("recordValues=").append(recordValues.size());
+        sb.append(", ").append(indexStore);
         sb.append(", ordered=").append(ordered);
         sb.append(", strong=").append(strong);
         sb.append(", expression=").append(expression);
