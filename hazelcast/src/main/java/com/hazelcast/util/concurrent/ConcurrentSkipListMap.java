@@ -502,11 +502,11 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
          *
          * @return new entry or null
          */
-        AbstractMap.SimpleImmutableEntry<K, V> createSnapshot() {
+        SimpleImmutableEntry<K, V> createSnapshot() {
             V v = getValidValue();
             if (v == null)
                 return null;
-            return new AbstractMap.SimpleImmutableEntry<K, V>(key, v);
+            return new SimpleImmutableEntry<K, V>(key, v);
         }
     }
     /* ---------------- Indexing -------------- */
@@ -1189,7 +1189,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
             if (!n.appendMarker(f) || !b.casNext(n, f))
                 findFirst(); // retry
             clearIndexToFirst();
-            return new AbstractMap.SimpleImmutableEntry<K, V>(n.key, (V) v);
+            return new SimpleImmutableEntry<K, V>(n.key, (V) v);
         }
     }
 
@@ -1334,7 +1334,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
                     if (head.right == null)
                         tryReduceLevel();
                 }
-                return new AbstractMap.SimpleImmutableEntry<K, V>(key, (V) v);
+                return new SimpleImmutableEntry<K, V>(key, (V) v);
             }
         }
     }
@@ -1389,12 +1389,12 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      * @param rel the relation -- OR'ed combination of EQ, LT, GT
      * @return Entry fitting relation, or null if no such
      */
-    AbstractMap.SimpleImmutableEntry<K, V> getNear(K key, int rel) {
+    SimpleImmutableEntry<K, V> getNear(K key, int rel) {
         for (; ;) {
             Node<K, V> n = findNear(key, rel);
             if (n == null)
                 return null;
-            AbstractMap.SimpleImmutableEntry<K, V> e = n.createSnapshot();
+            SimpleImmutableEntry<K, V> e = n.createSnapshot();
             if (e != null)
                 return e;
         }
@@ -2149,7 +2149,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
             Node<K, V> n = findFirst();
             if (n == null)
                 return null;
-            AbstractMap.SimpleImmutableEntry<K, V> e = n.createSnapshot();
+            SimpleImmutableEntry<K, V> e = n.createSnapshot();
             if (e != null)
                 return e;
         }
@@ -2166,7 +2166,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
             Node<K, V> n = findLast();
             if (n == null)
                 return null;
-            AbstractMap.SimpleImmutableEntry<K, V> e = n.createSnapshot();
+            SimpleImmutableEntry<K, V> e = n.createSnapshot();
             if (e != null)
                 return e;
         }
@@ -2281,7 +2281,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
             Node<K, V> n = next;
             V v = nextValue;
             advance();
-            return new AbstractMap.SimpleImmutableEntry<K, V>(n.key, v);
+            return new SimpleImmutableEntry<K, V>(n.key, v);
         }
     }
     // Factory methods for iterators needed by ConcurrentSkipListSet etc
@@ -2742,7 +2742,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
                     return null;
                 V v = m.doRemove(k, null);
                 if (v != null)
-                    return new AbstractMap.SimpleImmutableEntry<K, V>(k, v);
+                    return new SimpleImmutableEntry<K, V>(k, v);
             }
         }
 
@@ -2756,7 +2756,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
                     return null;
                 V v = m.doRemove(k, null);
                 if (v != null)
-                    return new AbstractMap.SimpleImmutableEntry<K, V>(k, v);
+                    return new SimpleImmutableEntry<K, V>(k, v);
             }
         }
 
@@ -2781,7 +2781,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
                 K k = n.key;
                 V v = n.getValidValue();
                 if (v != null)
-                    return new AbstractMap.SimpleImmutableEntry<K, V>(k, v);
+                    return new SimpleImmutableEntry<K, V>(k, v);
             }
         }
         // Almost the same as getNearEntry, except for keys
@@ -3196,7 +3196,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
                 Node<K, V> n = next;
                 V v = nextValue;
                 advance();
-                return new AbstractMap.SimpleImmutableEntry<K, V>(n.key, v);
+                return new SimpleImmutableEntry<K, V>(n.key, v);
             }
         }
     }
