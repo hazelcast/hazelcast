@@ -7,7 +7,6 @@
 package com.hazelcast.util;
 
 import java.util.Map;
-import java.util.NavigableSet;
 import java.util.SortedMap;
 
 /**

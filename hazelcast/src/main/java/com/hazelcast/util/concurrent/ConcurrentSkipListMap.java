@@ -6,6 +6,9 @@
 
 package com.hazelcast.util.concurrent;
 
+import com.hazelcast.util.NavigableSet;
+import com.hazelcast.util.SimpleImmutableEntry;
+
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 

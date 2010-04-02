@@ -6,6 +6,9 @@
 
 package com.hazelcast.util.concurrent;
 
+import com.hazelcast.util.NavigableMap;
+import com.hazelcast.util.NavigableSet;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 
