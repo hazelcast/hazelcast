@@ -1123,7 +1123,11 @@ public abstract class BaseManager {
 
     void enqueueEvent(final int eventType, final String name, final Data eventKey,
                       final Data eventValue, final Address from) {
-        final EventTask eventTask = new EventTask(eventType, name, eventKey, eventValue);
+        Member member = getMember(from);
+        if (member == null) {
+            member = new MemberImpl (from, false);
+        }
+        final EventTask eventTask = new EventTask(member, eventType, name, eventKey, eventValue);
         int hash;
         if (eventKey != null) {
             hash = eventKey.hashCode();
@@ -1138,9 +1142,9 @@ public abstract class BaseManager {
 
         protected final Data dataValue;
 
-        public EventTask(final int eventType, final String name, final Data dataKey,
-                         final Data dataValue) {
-            super(name, eventType, null, null);
+        public EventTask(final Member from, final int eventType, final String name,
+                         final Data dataKey, final Data dataValue) {
+            super(name, from, eventType, null, null);
             this.dataKey = dataKey;
             this.dataValue = dataValue;
         }

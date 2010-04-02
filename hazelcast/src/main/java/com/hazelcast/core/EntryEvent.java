@@ -45,6 +45,8 @@ public class EntryEvent<K, V> extends EventObject {
 
     protected V value;
 
+    protected Member member;
+
     protected final String name;
 
     protected boolean collection;
@@ -55,8 +57,9 @@ public class EntryEvent<K, V> extends EventObject {
         collection = !(name.startsWith("c:") || name.startsWith("m:u:"));
     }
 
-    public EntryEvent(Object source, int eventType, K key, V value) {
+    public EntryEvent(Object source, Member member, int eventType, K key, V value) {
         this(source);
+        this.member = member;
         this.key = key;
         this.value = value;
         this.entryEventType = entryEventType.getByType(eventType);
@@ -83,6 +86,14 @@ public class EntryEvent<K, V> extends EventObject {
      */
     public V getValue() {
         return value;
+    }
+
+    /**
+     * Returns the member fired this event.
+     * @return the member fired this event.
+     */
+    public Member getMember() {
+        return member;
     }
 
     /**
