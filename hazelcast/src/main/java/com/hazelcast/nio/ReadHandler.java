@@ -70,9 +70,6 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
                 connection.close();
                 return;
             }
-            if (readBytes <= 0) {
-                return;
-            }
         } catch (final Exception e) {
             if (packet != null) {
                 node.getPacketPool().release(packet);

@@ -60,8 +60,7 @@ public class JoinInfo extends JoinRequest {
     }
 
     public void readFromPacket(DatagramPacket packet) {
-        ByteArrayInputStream bis = new ByteArrayInputStream(packet.getData(), 0, packet
-                .getLength());
+        ByteArrayInputStream bis = new ByteArrayInputStream(packet.getData(), 0, packet.getLength());
         DataInputStream dis = new DataInputStream(bis);
         try {
             setRequest(dis.readBoolean());
@@ -76,13 +75,6 @@ public class JoinInfo extends JoinRequest {
         }
     }
 
-    @Override
-    public String toString() {
-        return "JoinInfo{" +
-                "request=" + isRequest() + "  " + super.toString() +
-                '}';
-    }
-
     /**
      * @param request the request to set
      */
@@ -95,5 +87,12 @@ public class JoinInfo extends JoinRequest {
      */
     public boolean isRequest() {
         return request;
+    }
+
+    @Override
+    public String toString() {
+        return "JoinInfo{" +
+                "request=" + isRequest() + "  " + super.toString() +
+                '}';
     }
 }
