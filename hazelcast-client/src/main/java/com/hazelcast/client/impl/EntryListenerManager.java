@@ -31,75 +31,75 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static com.hazelcast.client.Serializer.toObject;
 
 public class EntryListenerManager {
-        final private Map<String, Map<Object, List<EntryListener<?, ?>>>> entryListeners = new ConcurrentHashMap<String, Map<Object, List<EntryListener<?, ?>>>>();
+    final private Map<String, Map<Object, List<EntryListener<?, ?>>>> entryListeners = new ConcurrentHashMap<String, Map<Object, List<EntryListener<?, ?>>>>();
 
-        public synchronized void registerEntryListener(String name, Object key, EntryListener<?, ?> entryListener) {
-            if (!entryListeners.containsKey(name)) {
-                entryListeners.put(name, new HashMap<Object, List<EntryListener<?, ?>>>());
-            }
-            if (!entryListeners.get(name).containsKey(key)) {
-                entryListeners.get(name).put(key, new CopyOnWriteArrayList<EntryListener<?, ?>>());
-            }
-            entryListeners.get(name).get(key).add(entryListener);
+    public synchronized void registerEntryListener(String name, Object key, EntryListener<?, ?> entryListener) {
+        if (!entryListeners.containsKey(name)) {
+            entryListeners.put(name, new HashMap<Object, List<EntryListener<?, ?>>>());
         }
+        if (!entryListeners.get(name).containsKey(key)) {
+            entryListeners.get(name).put(key, new CopyOnWriteArrayList<EntryListener<?, ?>>());
+        }
+        entryListeners.get(name).get(key).add(entryListener);
+    }
 
-        public synchronized void removeEntryListener(String name, Object key, EntryListener<?, ?> entryListener) {
-            Map<Object, List<EntryListener<?, ?>>> m = entryListeners.get(name);
-            if (m != null) {
-                List<EntryListener<?, ?>> list = m.get(key);
-                if (list != null) {
-                    list.remove(entryListener);
-                    if (m.get(key).size() == 0) {
-                        m.remove(key);
-                    }
-                }
-                if (m.size() == 0) {
-                    entryListeners.remove(name);
+    public synchronized void removeEntryListener(String name, Object key, EntryListener<?, ?> entryListener) {
+        Map<Object, List<EntryListener<?, ?>>> m = entryListeners.get(name);
+        if (m != null) {
+            List<EntryListener<?, ?>> list = m.get(key);
+            if (list != null) {
+                list.remove(entryListener);
+                if (m.get(key).size() == 0) {
+                    m.remove(key);
                 }
             }
-        }
-
-        public synchronized boolean noEntryListenerRegistered(Object key, String name) {
-            return !(entryListeners.get(name) != null &&
-                    entryListeners.get(name).get(key) != null &&
-                    entryListeners.get(name).get(key).size() > 0);
-        }
-
-        public void notifyEntryListeners(Packet packet) {
-            EntryEvent event = new EntryEvent(packet.getName(), (int) packet.getLongValue(), toObject(packet.getKey()), toObject(packet.getValue()));
-            String name = event.getName();
-            Object key = event.getKey();
-            if (entryListeners.get(name) != null) {
-                notifyEntryListeners(event, entryListeners.get(name).get(null));
-                notifyEntryListeners(event, entryListeners.get(name).get(key));
-            }
-        }
-
-        private void notifyEntryListeners(EntryEvent event, Collection<EntryListener<?, ?>> collection) {
-            if (collection == null) {
-                return;
-            }
-            switch (event.getEventType()) {
-                case ADDED:
-                    for (EntryListener<?, ?> entryListener : collection) {
-                        entryListener.entryAdded(event);
-                    }
-                    break;
-                case UPDATED:
-                    for (EntryListener<?, ?> entryListener : collection) {
-                        entryListener.entryUpdated(event);
-                    }
-                    break;
-                case REMOVED:
-                    for (EntryListener<?, ?> entryListener : collection) {
-                        entryListener.entryRemoved(event);
-                    }
-                    break;
-                case EVICTED:
-                    for (EntryListener<?, ?> entryListener : collection) {
-                        entryListener.entryEvicted(event);
-                    }
-                    break;
+            if (m.size() == 0) {
+                entryListeners.remove(name);
             }
         }
     }
+
+    public synchronized boolean noEntryListenerRegistered(Object key, String name) {
+        return !(entryListeners.get(name) != null &&
+                entryListeners.get(name).get(key) != null &&
+                entryListeners.get(name).get(key).size() > 0);
+    }
+
+    public void notifyEntryListeners(Packet packet) {
+        EntryEvent event = new EntryEvent(packet.getName(), null, (int) packet.getLongValue(), toObject(packet.getKey()), toObject(packet.getValue()));
+        String name = event.getName();
+        Object key = event.getKey();
+        if (entryListeners.get(name) != null) {
+            notifyEntryListeners(event, entryListeners.get(name).get(null));
+            notifyEntryListeners(event, entryListeners.get(name).get(key));
+        }
+    }
+
+    private void notifyEntryListeners(EntryEvent event, Collection<EntryListener<?, ?>> collection) {
+        if (collection == null) {
+            return;
+        }
+        switch (event.getEventType()) {
+            case ADDED:
+                for (EntryListener<?, ?> entryListener : collection) {
+                    entryListener.entryAdded(event);
+                }
+                break;
+            case UPDATED:
+                for (EntryListener<?, ?> entryListener : collection) {
+                    entryListener.entryUpdated(event);
+                }
+                break;
+            case REMOVED:
+                for (EntryListener<?, ?> entryListener : collection) {
+                    entryListener.entryRemoved(event);
+                }
+                break;
+            case EVICTED:
+                for (EntryListener<?, ?> entryListener : collection) {
+                    entryListener.entryEvicted(event);
+                }
+                break;
+        }
+    }
+}
