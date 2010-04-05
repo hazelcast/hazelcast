@@ -74,8 +74,6 @@ public class Request {
                 "name='" + name + '\'' +
                 "," + operation +
                 ", redoCount='" + redoCount + '\'' +
-                ", local='" + local + '\'' +
-                ", caller='" + caller + '\'' +
                 ", lockThreadId='" + lockThreadId + '\'' +
                 '}';
     }

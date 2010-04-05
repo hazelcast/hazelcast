@@ -81,10 +81,6 @@ public class Block implements DataSerializable {
         return (getMigrationAddress() != null);
     }
 
-    public Address getRealOwner() {
-        return (getMigrationAddress() != null) ? getMigrationAddress() : getOwner();
-    }
-
     public void readOwnership(DataInput in) throws IOException {
         this.blockId = in.readInt();
         boolean owned = in.readBoolean();

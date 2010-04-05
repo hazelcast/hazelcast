@@ -59,7 +59,7 @@ public class MapIndexServiceTest extends TestUtil {
         System.out.println("Used Memory:" + ((total - free) / 1024 / 1024));
         for (int i = 0; i < 10000; i++) {
             long start = System.currentTimeMillis();
-            QueryContext queryContext = new QueryContext("default", new SqlPredicate("age >20 and age <23"));
+            QueryContext queryContext = new QueryContext("default", new SqlPredicate("active and age >20 and age <23"));
             Set<MapEntry> results = mapIndexService.doQuery(queryContext);
             System.out.println("result size " + results.size() + " took " + (System.currentTimeMillis() - start));
         }

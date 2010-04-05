@@ -1680,6 +1680,16 @@ public class ConcurrentMapManager extends BaseManager {
 
     class SizeOperationHandler extends ExecutedOperationHandler {
         @Override
+        public void handle(Request request) {
+            if (checkMapLock(request) && !isMigrating(request)) {
+                super.handle(request);
+            } else {
+                request.response = OBJECT_REDO;
+                returnResponse(request);
+            }
+        }
+
+        @Override
         Runnable createRunnable(final Request request) {
             final CMap cmap = getOrCreateMap(request.name);
             return new Runnable() {
@@ -1692,7 +1702,12 @@ public class ConcurrentMapManager extends BaseManager {
                             if (callerPartitionHash != myPartitionHashNow) {
                                 request.response = OBJECT_REDO;
                             }
-                            returnResponse(request);
+                            boolean sent = returnResponse(request);
+                            if (!sent) {
+                                Connection conn = node.connectionManager.getConnection(request.caller);
+                                logger.log(Level.WARNING, request + " !! response cannot be sent to "
+                                        + request.caller + " conn:" + conn);
+                            }
                         }
                     });
                 }
@@ -1704,7 +1719,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void handle(Request request) {
-            if (checkMapLock(request)) {
+            if (checkMapLock(request) && !isMigrating(request)) {
                 super.handle(request);
             } else {
                 request.response = OBJECT_REDO;
@@ -1734,43 +1749,29 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                     QueryContext queryContext = new QueryContext(cmap.getName(), predicate);
                     Set<MapEntry> results = cmap.getMapIndexService().doQuery(queryContext);
-                    if (predicate != null) {
-                        if (results != null && !queryContext.isStrong()) {
-                            Iterator<MapEntry> it = results.iterator();
-                            while (it.hasNext()) {
-                                Record record = (Record) it.next();
-                                if (record.isActive()) {
-                                    try {
-                                        if (!predicate.apply(record.getRecordEntry())) {
-                                            it.remove();
-                                        }
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                        it.remove();
-                                    }
-                                } else {
-                                    it.remove();
-                                }
-                            }
-                        }
-                    }
-                    createEntries(request, results);
+                    boolean evaluateValues = (predicate != null && !queryContext.isStrong());
+                    createResultPairs(request, results, evaluateValues, predicate);
                     enqueueAndReturn(new Processable() {
                         public void process() {
-                            int callerPartitionHash = request.blockId; 
+                            int callerPartitionHash = request.blockId;
                             if (partitionManager.containsMigratingBlock() || callerPartitionHash != hashBlocks()) {
                                 request.response = OBJECT_REDO;
                             }
-                            returnResponse(request);
+                            boolean sent = returnResponse(request);
+                            if (!sent) {
+                                Connection conn = node.connectionManager.getConnection(request.caller);
+                                logger.log(Level.WARNING, request + " !! response cannot be sent to "
+                                        + request.caller + " conn:" + conn);
+                            }
                         }
                     });
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     logger.log(Level.SEVERE, request.toString(), e);
                 }
             }
         }
 
-        void createEntries(Request request, Collection<MapEntry> colRecords) {
+        void createResultPairs(Request request, Collection<MapEntry> colRecords, boolean evaluateEntries, Predicate predicate) {
             Pairs pairs = new Pairs();
             if (colRecords != null) {
                 long now = System.currentTimeMillis();
@@ -1780,25 +1781,28 @@ public class ConcurrentMapManager extends BaseManager {
                         if (record.getKey() == null || record.getKey().size() == 0) {
                             throw new RuntimeException("Key cannot be null or zero-size: " + record.getKey());
                         }
-                        boolean onlyKeys =  (request.operation == CONCURRENT_MAP_ITERATE_KEYS_ALL ||
-                                request.operation == CONCURRENT_MAP_ITERATE_KEYS);
-                        Data key = record.getKey();
-                        if (record.getValue() != null) {
-                            Data value = (onlyKeys) ? null : record.getValue();
-                            pairs.addKeyValue(new KeyValue(key, value));
-                        } else if (record.getCopyCount() > 0) {
-                            for (int i = 0; i < record.getCopyCount(); i++) {
-                                pairs.addKeyValue(new KeyValue(key, null));
-                            }
-                        } else if (record.getMultiValues() != null) {
-                            int size = record.getMultiValues().size();
-                            if (size > 0) {
-                                if (request.operation == CONCURRENT_MAP_ITERATE_KEYS) {
+                        boolean match = (!evaluateEntries) || predicate.apply(record.getRecordEntry());
+                        if (match) {
+                            boolean onlyKeys = (request.operation == CONCURRENT_MAP_ITERATE_KEYS_ALL ||
+                                    request.operation == CONCURRENT_MAP_ITERATE_KEYS);
+                            Data key = record.getKey();
+                            if (record.getValue() != null) {
+                                Data value = (onlyKeys) ? null : record.getValue();
+                                pairs.addKeyValue(new KeyValue(key, value));
+                            } else if (record.getCopyCount() > 0) {
+                                for (int i = 0; i < record.getCopyCount(); i++) {
                                     pairs.addKeyValue(new KeyValue(key, null));
-                                } else {
-                                    Set<Data> values = record.getMultiValues();
-                                    for (Data value : values) {
-                                        pairs.addKeyValue(new KeyValue(key, value));
+                                }
+                            } else if (record.getMultiValues() != null) {
+                                int size = record.getMultiValues().size();
+                                if (size > 0) {
+                                    if (request.operation == CONCURRENT_MAP_ITERATE_KEYS) {
+                                        pairs.addKeyValue(new KeyValue(key, null));
+                                    } else {
+                                        Set<Data> values = record.getMultiValues();
+                                        for (Data value : values) {
+                                            pairs.addKeyValue(new KeyValue(key, value));
+                                        }
                                     }
                                 }
                             }
@@ -1806,7 +1810,6 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
-            request.longValue = pairs.size();
             request.response = (pairs.size() > 0) ? ((request.local) ? pairs : toData(pairs)) : null;
         }
     }

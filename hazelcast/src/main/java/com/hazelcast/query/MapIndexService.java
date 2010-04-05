@@ -34,7 +34,6 @@ public class MapIndexService {
     private volatile boolean hasIndexedAttributes = false;
     private volatile byte[] indexTypes = null;
     private final Object indexTypesLock = new Object();
-    private Collection<Index> indexesInOrder;
 
     public void remove(Record record) {
         records.remove(record.getId());
@@ -44,6 +43,8 @@ public class MapIndexService {
         final long recordId = record.getId();
         if (record.isActive()) {
             records.putIfAbsent(recordId, record);
+        } else {
+            remove(record);
         }
         int newValueIndex = -1;
         if (record.isActive() && record.getValue() != null) {
@@ -192,24 +193,10 @@ public class MapIndexService {
                         results.add(entry);
                     }
                 } else {
-                    results = new HashSet<MapEntry>(records.size());
-                    Collection<Record> colRecords = records.values();
-                    for (MapEntry entry : colRecords) {
-                        Record record = (Record) entry;
-                        if (record.isActive()) {
-                            results.add(record);
-                        }
-                    }
+                    results = new SingleResultSet(records);
                 }
             } else {
-                results = new HashSet<MapEntry>(records.size());
-                Collection<Record> colRecords = records.values();
-                for (MapEntry entry : colRecords) {
-                    Record record = (Record) entry;
-                    if (record.isActive()) {
-                        results.add(record);
-                    }
-                }
+                results = new SingleResultSet(records);
             }
         } finally {
             queryContext.setStrong(strong);

@@ -228,11 +228,11 @@ public abstract class BaseManager {
         }
     }
 
-    public void returnResponse(Request request) {
-        returnResponse(request, null);
+    public boolean returnResponse(Request request) {
+        return returnResponse(request, null);
     }
 
-    public void returnResponse(Request request, Connection conn) {
+    public boolean returnResponse(Request request, Connection conn) {
         if (request.local) {
             final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;
             targetAwareOp.setResult(request.response);
@@ -270,9 +270,10 @@ public abstract class BaseManager {
             if (conn != null) {
                 conn.getWriteHandler().enqueuePacket(packet);
             } else {
-                sendResponse(packet, request.caller);
+                return sendResponse(packet, request.caller);
             }
         }
+        return true;
     }
 
     abstract class AbstractOperationHandler extends ResponsiveOperationHandler {

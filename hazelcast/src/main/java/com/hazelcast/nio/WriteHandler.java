@@ -31,7 +31,11 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     private final Queue<Packet> writeQueue = new ConcurrentLinkedQueue<Packet>();
 
+    private final AtomicBoolean informSelector = new AtomicBoolean(true);
+
     private final ByteBuffer socketBB = ByteBuffer.allocateDirect(SEND_SOCKET_BUFFER_SIZE);
+
+    private boolean ready = false;
 
     private Packet lastPacket = null;
 
@@ -65,13 +69,22 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     public void enqueuePacket(final Packet packet) {
         packet.write();
         writeQueue.offer(packet);
-        outSelector.addTask(this);
-        if (packet.currentCallCount < 2) {
-            outSelector.selector.wakeup();
+        if (informSelector.compareAndSet(true, false)) {
+            outSelector.addTask(this);
+            if (packet.currentCallCount < 2) {
+                outSelector.selector.wakeup();
+            }
         }
     }
 
     public void handle() {
+        if (lastPacket == null) {
+            lastPacket = writeQueue.poll();
+            if (lastPacket == null && socketBB.position() == 0) {
+                ready = true;
+                return;
+            }
+        }
         if (!connection.live())
             return;
         try {
@@ -112,11 +125,20 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         } catch (final Throwable t) {
             logger.log(Level.SEVERE, "Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
             t.printStackTrace();
-        } 
+        } finally {
+            ready = false;
+            registerWrite();
+        }
     }
 
     public void run() {
-        registerWrite();
+        informSelector.set(true);
+        if (ready) {
+            handle();
+        } else {
+            registerWrite();
+        }
+        ready = false;
     }
 
     interface PacketWriter {

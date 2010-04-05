@@ -210,11 +210,8 @@ public class PartitionManager implements Runnable {
             Block block = concurrentMapManager.getOrCreateBlock(req.key);
             return block.isMigrating();
         } else {
-            for (Block block : blocks) {
-                if (block != null && block.isMigrating()) return true;
-            }
+            return containsMigratingBlock();
         }
-        return false;
     }
 
     void initiateMigration() {
