@@ -54,7 +54,8 @@ public class AddClusterClickHandler implements ClickHandler {
 
     private void connectToCluster() {
         try {
-            hazelcastService.connectCluster(groupName.getText(), pass.getText(), addresses.getText(), new AsyncCallback<ClusterView>() {
+            hazelcastService.connectCluster(groupName.getText().trim(), pass.getText().trim(),
+                    addresses.getText().trim(), new AsyncCallback<ClusterView>() {
                 public void onSuccess(ClusterView clusterView) {
                     hazelcastMonitor.createAndAddClusterWidgets(clusterView);
                 }
