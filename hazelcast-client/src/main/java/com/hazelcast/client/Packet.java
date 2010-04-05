@@ -66,7 +66,7 @@ public class Packet {
 
     private byte[] indexTypes = new byte[10];
 
-    private static final byte PACKET_VERSION = 4;
+    private static final byte PACKET_VERSION = 5;
 
     public Packet() {
     }

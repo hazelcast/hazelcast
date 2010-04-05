@@ -93,4 +93,11 @@ public class UnsortedIndexStore implements IndexStore {
     public ConcurrentMap<Long, ConcurrentMap<Long, Record>> getMapRecords() {
         return mapRecords;
     }
+
+    @Override
+    public String toString() {
+        return "UnsortedIndexStore{" +
+                "mapRecords=" + mapRecords.size() +
+                '}';
+    }
 }

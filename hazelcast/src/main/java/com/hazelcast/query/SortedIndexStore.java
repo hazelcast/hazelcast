@@ -104,4 +104,11 @@ public class SortedIndexStore implements IndexStore {
     public ConcurrentMap<Long, ConcurrentMap<Long, Record>> getMapRecords() {
         return mapRecords;
     }
+
+    @Override
+    public String toString() {
+        return "SortedIndexStore{" +
+                "mapRecords=" + mapRecords.size() +
+                '}';
+    }
 }
