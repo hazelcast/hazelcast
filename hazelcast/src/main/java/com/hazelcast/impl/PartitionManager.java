@@ -83,10 +83,10 @@ public class PartitionManager implements Runnable {
             }
             List<Block> lsBlocksToRedistribute = new ArrayList<Block>();
             int aveBlockOwnCount = PARTITION_COUNT / (addressBlocks.size());
-            int membersWithMorePartitionsThanAvarage = PARTITION_COUNT - addressBlocks.keySet().size()*aveBlockOwnCount;
+            int membersWithMorePartitionsThanAvarage = PARTITION_COUNT - addressBlocks.keySet().size() * aveBlockOwnCount;
             for (Address address : addressBlocks.keySet()) {
                 List<Block> blocks = addressBlocks.get(address);
-                if (membersWithMorePartitionsThanAvarage !=0 && blocks.size() == aveBlockOwnCount + 1) {
+                if (membersWithMorePartitionsThanAvarage != 0 && blocks.size() == aveBlockOwnCount + 1) {
                     membersWithMorePartitionsThanAvarage--;
                     continue;
                 }
@@ -111,7 +111,7 @@ public class PartitionManager implements Runnable {
                 if (lsBlocksToRedistribute.size() == 0) {
                     break;
                 }
-                if (addressBlocks.get(address).size() != aveBlockOwnCount+1) {
+                if (addressBlocks.get(address).size() != aveBlockOwnCount + 1) {
                     Block blockToMigrate = lsBlocksToRedistribute.remove(0);
                     addBlockToMigrate(blockToMigrate, address);
                 }

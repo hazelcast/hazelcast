@@ -109,7 +109,6 @@ public class PartitionManagerTest {
         }
         int partitionsPerMember = BLOCK_COUNT / NODE_COUNT;
         for (Address addres : counter.keySet()) {
-            System.out.println(addres + " " + counter.get(addres));
             int c = counter.get(addres);
             assertTrue(c == partitionsPerMember || c == (partitionsPerMember + 1));
         }
@@ -121,7 +120,7 @@ public class PartitionManagerTest {
     public void testRandomlyAssignBlocksAndRearrange() throws UnknownHostException {
         int blockCount = 271;
         int NODE_COUNT = 0;
-        while(NODE_COUNT ==0){
+        while (NODE_COUNT == 0) {
             NODE_COUNT = (int) (Math.random() * blockCount) / 3;
         }
         LinkedList<MemberImpl> members = createMembers(NODE_COUNT);
@@ -131,7 +130,6 @@ public class PartitionManagerTest {
         partitionManager.reArrangeBlocks();
         migrate(blocks, partitionManager.lsBlocksToMigrate);
         Map<Address, Integer> counter = countPartitionsPerMember(blocks);
-
         int partitionsPerMember = blockCount / NODE_COUNT;
         for (Address addres : counter.keySet()) {
             int c = counter.get(addres);
@@ -139,13 +137,12 @@ public class PartitionManagerTest {
         }
         partitionManager.reArrangeBlocks();
         migrate(blocks, partitionManager.lsBlocksToMigrate);
-
         assertEquals(0, partitionManager.lsBlocksToMigrate.size());
     }
 
     @Test
     public void thousandTimesRandomlyAssignBlocksAndReAarange() throws UnknownHostException {
-        for(int i=0;i<1000;i++){
+        for (int i = 0; i < 1000; i++) {
             testRandomlyAssignBlocksAndRearrange();
         }
     }
