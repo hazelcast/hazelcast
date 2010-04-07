@@ -77,7 +77,7 @@
     </dependencies>
 
     <build>
-        <outputDirectory>/src/webapp/WEB-INF/classes</outputDirectory>
+        <outputDirectory>${basedir}/src/webapp/WEB-INF/classes</outputDirectory>
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
