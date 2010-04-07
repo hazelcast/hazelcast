@@ -83,9 +83,11 @@ public class PartitionManager implements Runnable {
             }
             List<Block> lsBlocksToRedistribute = new ArrayList<Block>();
             int aveBlockOwnCount = PARTITION_COUNT / (addressBlocks.size());
+            int membersWithMorePartitionsThanAvarage = PARTITION_COUNT - addressBlocks.keySet().size()*aveBlockOwnCount;
             for (Address address : addressBlocks.keySet()) {
                 List<Block> blocks = addressBlocks.get(address);
-                if (blocks.size() == aveBlockOwnCount + 1) {
+                if (membersWithMorePartitionsThanAvarage !=0 && blocks.size() == aveBlockOwnCount + 1) {
+                    membersWithMorePartitionsThanAvarage--;
                     continue;
                 }
                 int diff = (blocks.size() - aveBlockOwnCount);
@@ -109,8 +111,10 @@ public class PartitionManager implements Runnable {
                 if (lsBlocksToRedistribute.size() == 0) {
                     break;
                 }
-                Block blockToMigrate = lsBlocksToRedistribute.remove(0);
-                addBlockToMigrate(blockToMigrate, address);
+                if (addressBlocks.get(address).size() != aveBlockOwnCount+1) {
+                    Block blockToMigrate = lsBlocksToRedistribute.remove(0);
+                    addBlockToMigrate(blockToMigrate, address);
+                }
             }
             Collections.shuffle(lsBlocksToMigrate);
         }
@@ -338,7 +342,6 @@ public class PartitionManager implements Runnable {
             Address address = member.getAddress();
             int distance = concurrentMapManager.getDistance(address, thisAddress);
             distances.put(address, distance);
-
         }
         Collection<CMap> cmaps = concurrentMapManager.maps.values();
         for (CMap cmap : cmaps) {
