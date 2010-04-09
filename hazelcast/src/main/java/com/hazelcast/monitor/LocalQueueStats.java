@@ -19,7 +19,6 @@ package com.hazelcast.monitor;
 
 /**
  * Local queue statistics.
- * 
  */
 public interface LocalQueueStats {
     /**
@@ -44,12 +43,23 @@ public interface LocalQueueStats {
     long getMinAge();
 
     /**
-     * Returns the
-     * @return
+     * Returns the max age of the items in this member.
+     *
+     * @return max age
      */
     long getMaxAge();
 
+    /**
+     * Returns the average age of the items in this member.
+     *
+     * @return average age
+     */
     long getAveAge();
 
-    LocalQueueOperationStats getQueueOperationStats();
+    /**
+     * Returns the operation stats for this member.
+     *
+     * @return operation stats
+     */
+    LocalQueueOperationStats getOperationStats();
 }

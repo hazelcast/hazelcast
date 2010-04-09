@@ -59,7 +59,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats, Serializable {
         return aveAge;
     }
 
-    public LocalQueueOperationStats getQueueOperationStats() {
+    public LocalQueueOperationStats getOperationStats() {
         return queueOperationStats;
     }
 
