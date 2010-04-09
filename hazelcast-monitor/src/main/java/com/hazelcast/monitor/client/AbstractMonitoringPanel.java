@@ -16,12 +16,19 @@
  */
 package com.hazelcast.monitor.client;
 
+import com.google.gwt.event.dom.client.MouseOutEvent;
+import com.google.gwt.event.dom.client.MouseOutHandler;
+import com.google.gwt.event.dom.client.MouseOverEvent;
+import com.google.gwt.event.dom.client.MouseOverHandler;
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.ui.Label;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public abstract class AbstractMonitoringPanel implements MonitoringPanel {
 
@@ -91,5 +98,29 @@ public abstract class AbstractMonitoringPanel implements MonitoringPanel {
             });
         }
         return true;
+    }
+    public static class LabelWithToolTip extends Label {
+        public LabelWithToolTip(final String label, final String toolTip) {
+            super(label);
+            final Map<Integer, ToolTip> map = new HashMap();
+            this.addMouseOverHandler(new MouseOverHandler() {
+                public void onMouseOver(MouseOverEvent event) {
+                    String tip = toolTip;
+                    if (tip == null || tip.equals("")) {
+                        tip = label;
+                    }
+                    ToolTip ttip = new ToolTip(tip, event.getClientX(), event.getClientY());
+                    map.put(1, ttip);
+                }
+            });
+            this.addMouseOutHandler(new MouseOutHandler() {
+                public void onMouseOut(MouseOutEvent event) {
+                    ToolTip tip = map.remove(1);
+                    if (tip != null) {
+                        tip.hide();
+                    }
+                }
+            });
+        }
     }
 }

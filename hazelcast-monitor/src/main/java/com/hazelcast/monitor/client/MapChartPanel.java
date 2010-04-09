@@ -19,17 +19,18 @@ package com.hazelcast.monitor.client;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import com.hazelcast.monitor.client.event.ChangeEvent;
+import com.hazelcast.monitor.client.event.ChangeEventType;
 import com.hazelcast.monitor.client.event.MapStatistics;
 
 public class MapChartPanel extends MapPanel implements MonitoringPanel {
     public MapChartPanel(String name, AsyncCallback<ChangeEvent> callBack, ServicesFactory servicesFactory) {
-        super(name, callBack, "Charts", servicesFactory.getHazelcastService());
+        super(name, callBack, "Charts", servicesFactory.getHazelcastService(), ChangeEventType.MAP_STATISTICS);
 //        disclosurePanel.setOpen(true);
     }
 
     public void handle(ChangeEvent e) {
         MapStatistics event = (MapStatistics) e;
-        if(super.mapName==null || !super.mapName.equals(event.getMapName())){
+        if(super.name ==null || !super.name.equals(event.getMapName())){
             return;
         }
         int size = event.getSize();
@@ -45,9 +46,9 @@ public class MapChartPanel extends MapPanel implements MonitoringPanel {
         }
         HorizontalPanel horizontalPanel = (HorizontalPanel) vPanel.getWidget(1);
         Image sizeChart = (Image) ((AbsolutePanel) horizontalPanel.getWidget(0)).getWidget(0);
-        sizeChart.setUrl("ChartGenerator?name=" + mapName + "&type=size&random=" + Math.random() * 10);
+        sizeChart.setUrl("ChartGenerator?name=" + name + "&type=size&random=" + Math.random() * 10);
         Image opsChart = (Image) ((AbsolutePanel) horizontalPanel.getWidget(1)).getWidget(0);
-        opsChart.setUrl("ChartGenerator?name=" + mapName + "&type=ops&random=" + Math.random() * 10);
+        opsChart.setUrl("ChartGenerator?name=" + name + "&type=ops&random=" + Math.random() * 10);
     }
 
     private AbsolutePanel createAbsPanelWithImage() {

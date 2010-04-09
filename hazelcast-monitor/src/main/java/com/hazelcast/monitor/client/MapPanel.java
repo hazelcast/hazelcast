@@ -16,32 +16,28 @@
  */
 package com.hazelcast.monitor.client;
 
-import com.google.gwt.event.dom.client.MouseOutEvent;
-import com.google.gwt.event.dom.client.MouseOutHandler;
-import com.google.gwt.event.dom.client.MouseOverEvent;
-import com.google.gwt.event.dom.client.MouseOverHandler;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public abstract class MapPanel extends AbstractMonitoringPanel implements MonitoringPanel {
-    final protected String mapName;
+    final protected String name;
     final protected AsyncCallback<ChangeEvent> callBack;
     DisclosurePanel disclosurePanel;
     protected ClusterWidgets clusterWidgets;
     final private String panelHeader;
     final HazelcastServiceAsync hazelcastService;
+    private ChangeEventType changeEventType;
 
-    public MapPanel(String name, AsyncCallback<ChangeEvent> callBack, String panelLabel, HazelcastServiceAsync hazelcastService) {
+    public MapPanel(String name, AsyncCallback<ChangeEvent> callBack, String panelLabel,
+                    HazelcastServiceAsync hazelcastService, ChangeEventType changeEventType) {
         super(hazelcastService);
-        this.mapName = name;
+        this.name = name;
         this.callBack = callBack;
         panelHeader = panelLabel;
         this.hazelcastService = hazelcastService;
+        this.changeEventType = changeEventType;
     }
 
     protected DisclosurePanel initPanel(String panelHeader) {
@@ -64,7 +60,7 @@ public abstract class MapPanel extends AbstractMonitoringPanel implements Monito
 
     public Widget getPanelWidget() {
         if (disclosurePanel == null) {
-            synchronized (mapName) {
+            synchronized (name) {
                 if (disclosurePanel == null) {
                     disclosurePanel = initPanel(panelHeader);
                 }
@@ -75,36 +71,10 @@ public abstract class MapPanel extends AbstractMonitoringPanel implements Monito
 
     public boolean register(ClusterWidgets clusterWidgets) {
         this.clusterWidgets = clusterWidgets;
-        Boolean result = super.register(clusterWidgets, ChangeEventType.MAP_STATISTICS, mapName, callBack);
-        return result;
+        return super.register(clusterWidgets, changeEventType, name, callBack);
     }
 
-    public boolean deRegister(final ClusterWidgets clusterWidgets) {
-        return super.deRegister(clusterWidgets, ChangeEventType.MAP_STATISTICS, mapName);
-    }
-
-    public static class LabelWithToolTip extends Label {
-        public LabelWithToolTip(final String label, final String toolTip) {
-            super(label);
-            final Map<Integer, ToolTip> map = new HashMap();
-            this.addMouseOverHandler(new MouseOverHandler() {
-                public void onMouseOver(MouseOverEvent event) {
-                    String tip = toolTip;
-                    if (tip == null || tip.equals("")) {
-                        tip = label;
-                    }
-                    ToolTip ttip = new ToolTip(tip, event.getClientX(), event.getClientY());
-                    map.put(1, ttip);
-                }
-            });
-            this.addMouseOutHandler(new MouseOutHandler() {
-                public void onMouseOut(MouseOutEvent event) {
-                    ToolTip tip = map.remove(1);
-                    if (tip != null) {
-                        tip.hide();
-                    }
-                }
-            });
-        }
+    public boolean deRegister(ClusterWidgets clusterWidgets) {
+        return super.deRegister(clusterWidgets, changeEventType, name);
     }
 }

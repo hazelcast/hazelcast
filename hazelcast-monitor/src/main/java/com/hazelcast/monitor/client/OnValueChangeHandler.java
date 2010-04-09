@@ -64,5 +64,6 @@ public class OnValueChangeHandler {
         mapPageBuilders.put("MEMBER", new MembersPageBuilder());
         mapPageBuilders.put("PARTITIONS", new PartitionsPageBuilder());
         mapPageBuilders.put(InstanceType.MAP.toString(), new MapPageBuilder());
+        mapPageBuilders.put(InstanceType.QUEUE.toString(), new QueuePageBuilder());
     }
 }

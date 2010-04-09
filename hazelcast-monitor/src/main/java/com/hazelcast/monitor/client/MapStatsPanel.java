@@ -22,6 +22,7 @@ import com.google.gwt.user.client.ui.AbsolutePanel;
 import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.hazelcast.monitor.client.event.ChangeEvent;
+import com.hazelcast.monitor.client.event.ChangeEventType;
 import com.hazelcast.monitor.client.event.MapStatistics;
 
 import java.util.Collection;
@@ -33,7 +34,7 @@ import static com.hazelcast.monitor.client.PanelUtils.removeUnusedRows;
 public abstract class MapStatsPanel extends MapPanel implements MonitoringPanel {
 
     public MapStatsPanel(String name, AsyncCallback<ChangeEvent> callBack, String panelLabel, HazelcastServiceAsync hazelcastServiceAsync) {
-        super(name, callBack, panelLabel, hazelcastServiceAsync);
+        super(name, callBack, panelLabel, hazelcastServiceAsync, ChangeEventType.MAP_STATISTICS);
     }
 
     public void handle(ChangeEvent e) {
@@ -42,7 +43,7 @@ public abstract class MapStatsPanel extends MapPanel implements MonitoringPanel 
         }
 
         MapStatistics event = (MapStatistics) e;
-        if(super.mapName==null || !super.mapName.equals(event.getMapName())){
+        if(super.name ==null || !super.name.equals(event.getMapName())){
             return;
         }
         VerticalPanel vPanel = (VerticalPanel) disclosurePanel.getContent();

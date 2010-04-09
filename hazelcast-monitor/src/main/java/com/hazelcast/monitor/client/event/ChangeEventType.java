@@ -23,5 +23,6 @@ public enum ChangeEventType {
     INSTANCE_CREATED,
     PARTITIONS,
     DISCONNECT,
-    MEMBER_INFO;
+    MEMBER_INFO,
+    QUEUE_STATISTICS;
 }

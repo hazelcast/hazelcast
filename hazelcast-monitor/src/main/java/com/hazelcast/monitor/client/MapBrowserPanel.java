@@ -29,29 +29,32 @@ import java.util.Date;
 
 import static com.hazelcast.monitor.client.MapEntryOwnerShipPanel.formatMemorySize;
 
-public class MapBrowserPanel extends AbstractMonitoringPanel implements MonitoringPanel {
-    private DisclosurePanel disclosurePanel;
-    private VerticalPanel verticalPanel;
-    private ClusterWidgets clusterWidgets;
+public class MapBrowserPanel extends MapPanel implements MonitoringPanel {
     private String name;
-    private AsyncCallback<ChangeEvent> callBack;
-    
+
     protected final MapServiceAsync mapService;
 
     public MapBrowserPanel(final String name, AsyncCallback<ChangeEvent> callBack, ServicesFactory servicesFactory) {
-        super(servicesFactory.getHazelcastService());
+        super(name, callBack, "Map Browser", servicesFactory.getHazelcastService(), ChangeEventType.MAP_STATISTICS);
         mapService = servicesFactory.getMapServiceAsync();
         this.name = name;
-        this.callBack = callBack;
     }
 
-    private void initPanel() {
-        disclosurePanel = new DisclosurePanel("Map Browser");
-        verticalPanel = new VerticalPanel();
-        AbsolutePanel absolutePanel = new AbsolutePanel();
-        verticalPanel.add(absolutePanel);
-        absolutePanel.addStyleName("img-shadow");
-        absolutePanel.addStyleName("table");
+    private String format(DateTimeFormat dateFormatter, Date date) {
+        if (date.getTime() == 0) {
+            return "";
+        } else if (date.getTime() == Long.MAX_VALUE) {
+            return "";
+        }
+        return dateFormatter.format(date);
+    }
+
+    public void handle(ChangeEvent event) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    protected FlexTable createTable() {
         FlexTable table = new FlexTable();
         table.addStyleName("table");
         table.addStyleName("mapstats");
@@ -59,8 +62,6 @@ public class MapBrowserPanel extends AbstractMonitoringPanel implements Monitori
         table.setWidget(0, 0, new Label(""));
         table.getFlexCellFormatter().setColSpan(0, 0, 2);
         table.setWidget(1, 1, getTable);
-        absolutePanel.add(table);
-        disclosurePanel.add(verticalPanel);
         final TextBox key = new TextBox();
         getTable.setWidget(0, 0, new Label("Key: "));
         getTable.setWidget(0, 1, key);
@@ -126,40 +127,6 @@ public class MapBrowserPanel extends AbstractMonitoringPanel implements Monitori
                 });
             }
         });
-    }
-
-    private String format(DateTimeFormat dateFormatter, Date date) {
-        if (date.getTime() == 0) {
-            return "";
-        } else if (date.getTime() == Long.MAX_VALUE) {
-            return "";
-        }
-        return dateFormatter.format(date);
-    }
-
-    public void handle(ChangeEvent event) {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public Widget getPanelWidget() {
-        if (disclosurePanel == null) {
-            synchronized (name) {
-                if (disclosurePanel == null) {
-                    initPanel();
-                }
-            }
-        }
-        return disclosurePanel;
-    }
-
-    public boolean register(ClusterWidgets clusterWidgets) {
-        this.clusterWidgets = clusterWidgets;
-        super.register(clusterWidgets, ChangeEventType.MAP_STATISTICS);
-        return true;
-    }
-
-    public boolean deRegister(ClusterWidgets clusterWidgets) {
-        super.deRegister(clusterWidgets, ChangeEventType.MAP_STATISTICS);
-        return true;
+        return table;
     }
 }
