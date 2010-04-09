@@ -25,12 +25,12 @@ import com.hazelcast.impl.BlockingQueueManager.Offer;
 import com.hazelcast.impl.BlockingQueueManager.Poll;
 import com.hazelcast.impl.BlockingQueueManager.QIterator;
 import com.hazelcast.impl.ConcurrentMapManager.*;
-import com.hazelcast.impl.base.RuntimeInterruptedException;
 import com.hazelcast.impl.concurrentmap.AddMapIndex;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.SerializationHelper;
 import com.hazelcast.partition.PartitionService;
@@ -1240,6 +1240,11 @@ public class FactoryImpl implements HazelcastInstance {
             readData(in);
         }
 
+        public LocalQueueStats getLocalQueueStats() {
+            ensure();
+            return qproxyReal.getLocalQueueStats();
+        }
+
         public Iterator iterator() {
             ensure();
             return qproxyReal.iterator();
@@ -1326,15 +1331,28 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         private class QProxyReal extends AbstractQueue implements QProxy {
+            private final QueueOperationsCounter operationsCounter = new QueueOperationsCounter();
 
             public QProxyReal() {
+            }
+
+            public LocalQueueStats getLocalQueueStats() {
+                operationsCounter.incrementOtherOperations();
+                LocalQueueStatsImpl localQueueStats = blockingQueueManager.getQ(name).getQueueStats();
+                localQueueStats.setOperationStats(operationsCounter.getPublishedStats());
+                return localQueueStats;
             }
 
             public boolean offer(Object obj) {
                 check(obj);
                 Offer offer = blockingQueueManager.new Offer();
                 try {
-                    return offer.offer(name, obj, 0);
+                    boolean result = offer.offer(name, obj, 0);
+                    if (!result) {
+                        operationsCounter.incrementRejectedOffers();
+                    }
+                    operationsCounter.incrementOffers();
+                    return result;
                 } catch (InterruptedException e) {
                     return false;
                 }
@@ -1346,16 +1364,23 @@ public class FactoryImpl implements HazelcastInstance {
                     timeout = 0;
                 }
                 Offer offer = blockingQueueManager.new Offer();
-                return offer.offer(name, obj, unit.toMillis(timeout));
+                boolean result = offer.offer(name, obj, unit.toMillis(timeout));
+                if (!result) {
+                    operationsCounter.incrementRejectedOffers();
+                }
+                operationsCounter.incrementOffers();
+                return result;
             }
 
             public void put(Object obj) throws InterruptedException {
                 check(obj);
                 Offer offer = blockingQueueManager.new Offer();
                 offer.offer(name, obj, -1);
+                operationsCounter.incrementOffers();
             }
 
             public Object peek() {
+                operationsCounter.incrementOtherOperations();
                 Poll poll = blockingQueueManager.new Poll();
                 return poll.peek(name);
             }
@@ -1363,26 +1388,42 @@ public class FactoryImpl implements HazelcastInstance {
             public Object poll() {
                 Poll poll = blockingQueueManager.new Poll();
                 try {
-                    return poll.poll(name, 0);
+                    Object result = poll.poll(name, 0);
+                    if (result == null) {
+                        operationsCounter.incrementEmptyPolls();
+                    }
+                    operationsCounter.incrementPolls();
+                    return result;
                 } catch (InterruptedException e) {
                     return null;
                 }
             }
 
             public Object poll(long timeout, TimeUnit unit) throws InterruptedException {
-                    if (timeout < 0) {
-                        timeout = 0;
-                    }
-                    Poll poll = blockingQueueManager.new Poll();
-                    return poll.poll(name, unit.toMillis(timeout));
+                if (timeout < 0) {
+                    timeout = 0;
+                }
+                Poll poll = blockingQueueManager.new Poll();
+                Object result = poll.poll(name, unit.toMillis(timeout));
+                if (result == null) {
+                    operationsCounter.incrementEmptyPolls();
+                }
+                operationsCounter.incrementPolls();
+                return result;
             }
 
             public Object take() throws InterruptedException {
                 Poll poll = blockingQueueManager.new Poll();
-                return poll.poll(name, -1);
+                Object result = poll.poll(name, -1);
+                if (result == null) {
+                    operationsCounter.incrementEmptyPolls();
+                }
+                operationsCounter.incrementPolls();
+                return result;
             }
 
             public int remainingCapacity() {
+                operationsCounter.incrementOtherOperations();
                 BlockingQueueManager.Q q = blockingQueueManager.getQ(name);
                 int maxSizePerJVM = q.getMaxSizePerJVM();
                 if (maxSizePerJVM <= 0) {
@@ -1397,6 +1438,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             @Override
             public Iterator iterator() {
+                operationsCounter.incrementOtherOperations();
                 QIterator iterator = blockingQueueManager.new QIterator();
                 iterator.set(name);
                 return iterator;
@@ -1404,6 +1446,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             @Override
             public int size() {
+                operationsCounter.incrementOtherOperations();
                 BlockingQueueManager.QSize qsize = blockingQueueManager.new QSize(name);
                 return qsize.getSize();
             }
@@ -1440,6 +1483,7 @@ public class FactoryImpl implements HazelcastInstance {
                         throw new IllegalArgumentException("Cannot drainTo self!");
                     }
                 }
+                operationsCounter.incrementOtherOperations();
                 int added = 0;
                 Object value = null;
                 do {
@@ -1455,6 +1499,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public void destroy() {
+                operationsCounter.incrementOtherOperations();                
                 factory.destroyInstanceClusterwide(name, null);
             }
 

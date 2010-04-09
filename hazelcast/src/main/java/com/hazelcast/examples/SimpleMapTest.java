@@ -19,7 +19,7 @@ package com.hazelcast.examples;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
-import com.hazelcast.impl.MapOperationStats;
+import com.hazelcast.monitor.LocalMapOperationStats;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -88,7 +88,7 @@ public class SimpleMapTest {
                         System.out.println("cluster size:"
                                 + Hazelcast.getCluster().getMembers().size());
                         IMap<String, byte[]> map = Hazelcast.getMap("default");
-                        MapOperationStats mapOpStats = map.getLocalMapStats().getOperationStats();
+                        LocalMapOperationStats mapOpStats = map.getLocalMapStats().getOperationStats();
                         long period = ((mapOpStats.getPeriodEnd() - mapOpStats.getPeriodStart()) / 1000);
                         if (period == 0) {
                             continue;

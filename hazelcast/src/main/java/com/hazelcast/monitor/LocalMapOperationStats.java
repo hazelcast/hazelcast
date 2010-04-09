@@ -15,21 +15,20 @@
  *
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.monitor;
 
 /**
- * Map Operation Statistics returns number of map operations in bounded period. The period
+ * Local Map Operation Statistics returns number of map operations in bounded period. The period
  * has start and end times. Given the number of operations in that period, one can calculate the number of
- * operations per second. Start and End times are given in milliseconds.
+ * operations per second. 
  */
-public interface MapOperationStats {
+public interface LocalMapOperationStats {
 
     /**
      * Gets the start time of the period in milliseconds.
      *
      * @return start time in milliseconds.
      */
-
     public long getPeriodStart();
 
     /**
@@ -40,45 +39,44 @@ public interface MapOperationStats {
     public long getPeriodEnd();
 
     /**
-     * Number of put operations
+     * Returns the number of put operations
      *
-     * @return
+     * @return number of put operations
      */
     public long getNumberOfPuts();
 
     /**
-     * Number of get operations
+     * Returns the number of get operations
      *
-     * @return
+     * @return number of get operations
      */
     public long getNumberOfGets();
 
     /**
-     * Number of Remove operations
+     * Returns the number of Remove operations
      *
-     * @return
+     * @return number of remove operations
      */
     public long getNumberOfRemoves();
 
     /**
-     * Number of Events Received
+     * Returns the number of Events Received
      *
-     * @return
+     * @return number of events received
      */
     public long getNumberOfEvents();
 
-
     /**
-     * Total Number of Other/Rest Operations
+     * Returns the total number of Other Operations
      *
-     * @return
+     * @return number of other operations
      */
     public long getNumberOfOtherOperations();
 
     /**
-     * Returns number of total operations
+     * Returns the total number of total operations
      *
-     * @return
+     * @return number of total operations
      */
     public long total();
 }

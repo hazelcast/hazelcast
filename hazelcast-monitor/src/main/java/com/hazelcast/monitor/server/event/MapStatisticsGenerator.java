@@ -21,7 +21,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiTask;
-import com.hazelcast.impl.MapOperationStats;
+import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
@@ -98,7 +98,7 @@ public class MapStatisticsGenerator implements ChangeEventGenerator {
             stat.lastEvictionTime = memberMapStat.getLocalMapStats().getLastEvictionTime();
             stat.memberName = memberMapStat.getMember().getInetSocketAddress().getHostName() + ":"
                     + memberMapStat.getMember().getInetSocketAddress().getPort();
-            MapOperationStats mapOpStats = memberMapStat.getLocalMapStats().getOperationStats();
+            LocalMapOperationStats mapOpStats = memberMapStat.getLocalMapStats().getOperationStats();
             stat.periodStart = mapOpStats.getPeriodStart();
             stat.periodEnd = mapOpStats.getPeriodEnd();
             long periodInSec = (stat.periodEnd - stat.periodStart) / 1000;

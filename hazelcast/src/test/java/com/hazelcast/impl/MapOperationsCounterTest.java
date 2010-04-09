@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.nio.DataSerializable;
 import org.junit.Test;
 
@@ -31,7 +32,7 @@ public class MapOperationsCounterTest {
     public void noOperation() throws Exception {
         MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
         Thread.sleep(10);
-        MapOperationStats stats = mapOperationStats.getPublishedStats();
+        LocalMapOperationStats stats = mapOperationStats.getPublishedStats();
         assertThat(stats.getNumberOfGets(), equalTo((long) 0));
         assertThat(stats.getNumberOfPuts(), equalTo((long) 0));
         assertThat(stats.getNumberOfRemoves(), equalTo((long) 0));
@@ -41,8 +42,8 @@ public class MapOperationsCounterTest {
     @Test
     public void callGetPublishedStatsTwice() {
         MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
-        MapOperationStats stats1 = mapOperationStats.getPublishedStats();
-        MapOperationStats stats2 = mapOperationStats.getPublishedStats();
+        LocalMapOperationStats stats1 = mapOperationStats.getPublishedStats();
+        LocalMapOperationStats stats2 = mapOperationStats.getPublishedStats();
         assertTrue(stats1 == stats2);
     }
 
@@ -87,7 +88,7 @@ public class MapOperationsCounterTest {
                 run = false;
             }
         }
-        MapOperationStats stats = mapOperationStats.getPublishedStats();
+        LocalMapOperationStats stats = mapOperationStats.getPublishedStats();
         assertEquals(counter, stats.getNumberOfPuts());
         long interval = stats.getPeriodEnd() - stats.getPeriodStart();
     }
@@ -108,7 +109,7 @@ public class MapOperationsCounterTest {
         }
         mapOperationStats.incrementPuts();
         counter++;
-        MapOperationStats stats = mapOperationStats.getPublishedStats();
+        LocalMapOperationStats stats = mapOperationStats.getPublishedStats();
         long interval = stats.getPeriodEnd() - stats.getPeriodStart();
         double statTps = stats.getNumberOfPuts() / interval;
         double totalTps = counter / (System.currentTimeMillis() - start);
@@ -132,7 +133,7 @@ public class MapOperationsCounterTest {
         }
         mapOperationStats.incrementPuts();
         counter++;
-        MapOperationStats stats = mapOperationStats.getPublishedStats();
+        LocalMapOperationStats stats = mapOperationStats.getPublishedStats();
         long interval = stats.getPeriodEnd() - stats.getPeriodStart();
         double statTps = stats.getNumberOfPuts() / interval;
         double totalTps = counter / (System.currentTimeMillis() - start);
@@ -156,7 +157,7 @@ public class MapOperationsCounterTest {
         }
         mapOperationStats.incrementPuts();
         counter++;
-        MapOperationStats stats = mapOperationStats.getPublishedStats();
+        LocalMapOperationStats stats = mapOperationStats.getPublishedStats();
         long interval = stats.getPeriodEnd() - stats.getPeriodStart();
         double statTps = stats.getNumberOfPuts() / interval;
         double totalTps = counter / (System.currentTimeMillis() - start);
@@ -180,7 +181,7 @@ public class MapOperationsCounterTest {
         }
         mapOperationStats.incrementPuts();
         counter++;
-        MapOperationStats stats = mapOperationStats.getPublishedStats();
+        LocalMapOperationStats stats = mapOperationStats.getPublishedStats();
         long interval = stats.getPeriodEnd() - stats.getPeriodStart();
         double statTps = stats.getNumberOfPuts() / interval;
         double totalTps = counter / (System.currentTimeMillis() - start);

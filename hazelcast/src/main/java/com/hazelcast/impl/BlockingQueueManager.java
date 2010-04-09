@@ -1150,6 +1150,33 @@ public class BlockingQueueManager extends BaseManager {
             }
         }
 
+        public LocalQueueStatsImpl getQueueStats() {
+            long now = System.currentTimeMillis();
+            int ownedCount = 0;
+            int backupCount = 0;
+            long minAge = Long.MAX_VALUE;
+            long maxAge = Long.MIN_VALUE;
+            long totalAge = 0;
+            for (Block block : lsBlocks) {
+                if (thisAddress.equals(block.address)) {
+                    Data[] values = block.getValues();
+                    for (Data value : values) {
+                        if (value != null) {
+                            ownedCount++;
+                            long age = (now - value.createDate);
+                            minAge = Math.min(minAge, age);
+                            maxAge = Math.max(maxAge, age);
+                            totalAge += age;
+                        }
+                    }
+                } else {
+                    backupCount += block.size();
+                }
+            }
+            long aveAge = (ownedCount == 0) ? 0 : (totalAge / ownedCount);
+            return new LocalQueueStatsImpl(ownedCount, backupCount, minAge, maxAge, aveAge);
+        }
+
         public void appendState(StringBuffer sb) {
             sb.append("\nQ.name: " + name + " this:" + thisAddress);
             sb.append("\n\tlatestAdded:" + latestAddedBlock);
@@ -1672,6 +1699,10 @@ public class BlockingQueueManager extends BaseManager {
                 }
             }
             return null;
+        }
+
+        public Data[] getValues() {
+            return values;
         }
 
         public Data get(int index) {

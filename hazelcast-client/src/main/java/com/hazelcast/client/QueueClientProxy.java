@@ -20,6 +20,7 @@ package com.hazelcast.client;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.monitor.LocalQueueStats;
 
 import java.util.Collection;
 import java.util.NoSuchElementException;
@@ -55,6 +56,10 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
         return "Queue{" +
                 "name='" + name + '\'' +
                 '}';
+    }
+
+    public LocalQueueStats getLocalQueueStats() {
+        throw new UnsupportedOperationException();
     }
 
     public boolean offer(E e) {

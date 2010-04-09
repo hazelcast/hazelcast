@@ -17,27 +17,29 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.monitor.LocalMapOperationStats;
+import com.hazelcast.monitor.LocalQueueOperationStats;
 import com.hazelcast.nio.DataSerializable;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class MapOperationStatsImpl implements DataSerializable, LocalMapOperationStats {
+public class LocalQueueOperationStatsImpl implements DataSerializable, LocalQueueOperationStats {
 
     long periodStart;
     long periodEnd;
-    long numberOfPuts;
-    long numberOfGets;
-    long numberOfRemoves;
+    long numberOfOffers;
+    long numberOfRejectedOffers;
+    long numberOfPolls;
+    long numberOfEmptyPolls;
     long numberOfOtherOperations;
     long numberOfEvents;
 
     public void writeData(DataOutput out) throws IOException {
-        out.writeLong(numberOfPuts);
-        out.writeLong(numberOfGets);
-        out.writeLong(numberOfRemoves);
+        out.writeLong(numberOfOffers);
+        out.writeLong(numberOfPolls);
+        out.writeLong(numberOfRejectedOffers);
+        out.writeLong(numberOfEmptyPolls);
         out.writeLong(numberOfOtherOperations);
         out.writeLong(numberOfEvents);
         out.writeLong(periodStart);
@@ -45,9 +47,10 @@ public class MapOperationStatsImpl implements DataSerializable, LocalMapOperatio
     }
 
     public void readData(DataInput in) throws IOException {
-        numberOfPuts = in.readLong();
-        numberOfGets = in.readLong();
-        numberOfRemoves = in.readLong();
+        numberOfOffers = in.readLong();
+        numberOfPolls = in.readLong();
+        numberOfRejectedOffers = in.readLong();
+        numberOfEmptyPolls = in.readLong();
         numberOfOtherOperations = in.readLong();
         numberOfEvents = in.readLong();
         periodStart = in.readLong();
@@ -55,7 +58,7 @@ public class MapOperationStatsImpl implements DataSerializable, LocalMapOperatio
     }
 
     public long total() {
-        return numberOfPuts + numberOfGets + numberOfRemoves + numberOfOtherOperations;
+        return numberOfOffers + numberOfPolls + numberOfOtherOperations;
     }
 
     public long getPeriodStart() {
@@ -66,16 +69,20 @@ public class MapOperationStatsImpl implements DataSerializable, LocalMapOperatio
         return periodEnd;
     }
 
-    public long getNumberOfPuts() {
-        return numberOfPuts;
+    public long getNumberOfOffers() {
+        return numberOfOffers;
     }
 
-    public long getNumberOfGets() {
-        return numberOfGets;
+    public long getNumberOfRejectedOffers() {
+        return numberOfRejectedOffers;
     }
 
-    public long getNumberOfRemoves() {
-        return numberOfRemoves;
+    public long getNumberOfPolls() {
+        return numberOfPolls;
+    }
+
+    public long getNumberOfEmptyPolls() {
+        return numberOfEmptyPolls;
     }
 
     public long getNumberOfOtherOperations() {
@@ -87,11 +94,12 @@ public class MapOperationStatsImpl implements DataSerializable, LocalMapOperatio
     }
 
     public String toString() {
-        return "LocalMapOperationStats{" +
+        return "LocalQueueOperationStats{" +
                 "total= " + total() +
-                ", puts:" + numberOfPuts +
-                ", gets:" + numberOfGets +
-                ", removes:" + numberOfRemoves +
+                ", offers:" + numberOfOffers +
+                ", polls:" + numberOfPolls +
+                ", rejectedOffers:" + numberOfRejectedOffers +
+                ", emptyPolls:" + numberOfEmptyPolls +
                 ", others: " + numberOfOtherOperations +
                 ", received events: " + numberOfEvents +
                 "}";

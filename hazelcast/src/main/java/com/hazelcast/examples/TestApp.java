@@ -458,6 +458,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         } else if (iteratorStr.startsWith("m.")) {
             print(map.getLocalMapStats());
         } else if (iteratorStr.startsWith("q.")) {
+            print(queue.getLocalQueueStats());
         } else if (iteratorStr.startsWith("l.")) {
         }
     }

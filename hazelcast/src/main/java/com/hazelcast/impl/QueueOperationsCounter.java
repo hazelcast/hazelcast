@@ -17,54 +17,51 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.monitor.LocalMapOperationStats;
+import com.hazelcast.monitor.LocalQueueOperationStats;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class MapOperationsCounter {
-    private AtomicLong puts = new AtomicLong();
-    private AtomicLong gets = new AtomicLong();
-    private AtomicLong removes = new AtomicLong();
+public class QueueOperationsCounter {
+    private AtomicLong offers = new AtomicLong();
+    private AtomicLong rejectedOffers = new AtomicLong();
+    private AtomicLong polls = new AtomicLong();
+    private AtomicLong emptyPolls = new AtomicLong();
     private AtomicLong others = new AtomicLong();
     private AtomicLong events = new AtomicLong();
     private long startTime = now();
     private long endTime = Long.MAX_VALUE;
-    private transient LocalMapOperationStats published = null;
-    private List<MapOperationsCounter> listOfSubStats = new ArrayList<MapOperationsCounter>();
+    private transient LocalQueueOperationStats published = null;
+    private List<QueueOperationsCounter> listOfSubStats = new ArrayList<QueueOperationsCounter>();
     final private Object lock = new Object();
-    final private LocalMapOperationStats empty = new MapOperationStatsImpl();
+    final private LocalQueueOperationStats empty = new LocalQueueOperationStatsImpl();
 
     final private long interval;
 
-    public MapOperationsCounter() {
+    public QueueOperationsCounter() {
         this(5000);
     }
 
-    public MapOperationsCounter(long interval) {
+    public QueueOperationsCounter(long interval) {
         this.interval = interval;
     }
 
-    private MapOperationsCounter getAndReset() {
-        long putsNow = puts.getAndSet(0);
-        long getsNow = gets.getAndSet(0);
-        long removesNow = removes.getAndSet(0);
-        long othersNow = others.getAndSet(0);
-        long eventsNow = events.getAndSet(0);
-        MapOperationsCounter newOne = new MapOperationsCounter();
-        newOne.puts.set(putsNow);
-        newOne.gets.set(getsNow);
-        newOne.removes.set(removesNow);
-        newOne.others.set(othersNow);
-        newOne.events.set(eventsNow);
+    private QueueOperationsCounter getAndReset() {
+        QueueOperationsCounter newOne = new QueueOperationsCounter();
+        newOne.offers.set(offers.getAndSet(0));
+        newOne.polls.set(polls.getAndSet(0));
+        newOne.rejectedOffers.set(rejectedOffers.getAndSet(0));
+        newOne.emptyPolls.set(emptyPolls.getAndSet(0));
+        newOne.others.set(others.getAndSet(0));
+        newOne.events.set(events.getAndSet(0));
         newOne.startTime = this.startTime;
         newOne.endTime = now();
         this.startTime = newOne.endTime;
         return newOne;
     }
 
-    public LocalMapOperationStats getPublishedStats() {
+    public LocalQueueOperationStats getPublishedStats() {
         if (published == null) {
             synchronized (lock) {
                 if (published == null) {
@@ -72,24 +69,29 @@ public class MapOperationsCounter {
                 }
             }
         }
-        if(published.getPeriodEnd() < now() - interval){
+        if (published.getPeriodEnd() < now() - interval) {
             return empty;
         }
         return published;
     }
 
-    public void incrementPuts() {
-        puts.incrementAndGet();
+    public void incrementOffers() {
+        offers.incrementAndGet();
         publishSubResult();
     }
 
-    public void incrementGets() {
-        gets.incrementAndGet();
+    public void incrementRejectedOffers() {
+        rejectedOffers.incrementAndGet();
         publishSubResult();
     }
 
-    public void incrementRemoves() {
-        removes.incrementAndGet();
+    public void incrementPolls() {
+        polls.incrementAndGet();
+        publishSubResult();
+    }
+
+    public void incrementEmptyPolls() {
+        emptyPolls.incrementAndGet();
         publishSubResult();
     }
 
@@ -112,7 +114,7 @@ public class MapOperationsCounter {
         if (now() - startTime > subInterval) {
             synchronized (lock) {
                 if (now() - startTime >= subInterval) {
-                    MapOperationsCounter copy = getAndReset();
+                    QueueOperationsCounter copy = getAndReset();
                     if (listOfSubStats.size() == 5) {
                         listOfSubStats.remove(0);
                     }
@@ -123,14 +125,15 @@ public class MapOperationsCounter {
         }
     }
 
-    private LocalMapOperationStats aggregate(List<MapOperationsCounter> list) {
-        MapOperationStatsImpl stats = new MapOperationStatsImpl();
+    private LocalQueueOperationStats aggregate(List<QueueOperationsCounter> list) {
+        LocalQueueOperationStatsImpl stats = new LocalQueueOperationStatsImpl();
         stats.periodStart = list.get(0).startTime;
         for (int i = 0; i < list.size(); i++) {
-            MapOperationsCounter sub = list.get(i);
-            stats.numberOfGets += sub.gets.get();
-            stats.numberOfPuts += sub.puts.get();
-            stats.numberOfRemoves += sub.removes.get();
+            QueueOperationsCounter sub = list.get(i);
+            stats.numberOfPolls += sub.polls.get();
+            stats.numberOfOffers += sub.offers.get();
+            stats.numberOfRejectedOffers += sub.rejectedOffers.get();
+            stats.numberOfEmptyPolls += sub.emptyPolls.get();
             stats.numberOfOtherOperations += sub.others.get();
             stats.numberOfEvents += sub.events.get();
             stats.periodEnd = sub.endTime;
@@ -138,12 +141,13 @@ public class MapOperationsCounter {
         return stats;
     }
 
-    private LocalMapOperationStats getThis() {
-        MapOperationStatsImpl stats = new MapOperationStatsImpl();
+    private LocalQueueOperationStats getThis() {
+        LocalQueueOperationStatsImpl stats = new LocalQueueOperationStatsImpl();
         stats.periodStart = this.startTime;
-        stats.numberOfGets = this.gets.get();
-        stats.numberOfPuts = this.puts.get();
-        stats.numberOfRemoves = this.removes.get();
+        stats.numberOfPolls = this.polls.get();
+        stats.numberOfOffers = this.offers.get();
+        stats.numberOfEmptyPolls = this.emptyPolls.get();
+        stats.numberOfRejectedOffers = this.rejectedOffers.get();
         stats.numberOfEvents = this.events.get();
         stats.periodEnd = now();
         return stats;

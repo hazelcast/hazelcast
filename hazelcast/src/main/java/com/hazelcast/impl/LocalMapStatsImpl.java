@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.monitor.LocalMapStats;
 
 import java.io.Serializable;
@@ -37,7 +38,7 @@ public class LocalMapStatsImpl implements LocalMapStats, Serializable {
     private long lastEvictionTime;
     private int lockedEntryCount;
     private int lockWaitCount;
-    private MapOperationStats operationStats;
+    private LocalMapOperationStats operationStats;
 
     public void incrementHit() {
         hits.incrementAndGet();
@@ -197,11 +198,11 @@ public class LocalMapStatsImpl implements LocalMapStats, Serializable {
         this.lockWaitCount = lockWaitCount;
     }
 
-    public MapOperationStats getOperationStats() {
+    public LocalMapOperationStats getOperationStats() {
         return operationStats;
     }
 
-    public void setOperationStats(MapOperationStats operationStats) {
+    public void setOperationStats(LocalMapOperationStats operationStats) {
         this.operationStats = operationStats;
     }
 
