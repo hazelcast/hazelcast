@@ -31,7 +31,7 @@ import static com.hazelcast.monitor.client.PanelUtils.createFormattedFlexTable;
 import static com.hazelcast.monitor.client.PanelUtils.formatEvenRows;
 import static com.hazelcast.monitor.client.PanelUtils.removeUnusedRows;
 
-public abstract class MapStatsPanel extends MapPanel implements MonitoringPanel {
+public abstract class MapStatsPanel extends InstancePanel implements MonitoringPanel {
 
     public MapStatsPanel(String name, AsyncCallback<ChangeEvent> callBack, String panelLabel, HazelcastServiceAsync hazelcastServiceAsync) {
         super(name, callBack, panelLabel, hazelcastServiceAsync, ChangeEventType.MAP_STATISTICS);

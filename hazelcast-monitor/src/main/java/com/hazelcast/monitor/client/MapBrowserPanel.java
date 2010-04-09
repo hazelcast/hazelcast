@@ -29,7 +29,7 @@ import java.util.Date;
 
 import static com.hazelcast.monitor.client.MapEntryOwnerShipPanel.formatMemorySize;
 
-public class MapBrowserPanel extends MapPanel implements MonitoringPanel {
+public class MapBrowserPanel extends InstancePanel implements MonitoringPanel {
     private String name;
 
     protected final MapServiceAsync mapService;

@@ -21,7 +21,7 @@ import com.google.gwt.user.client.ui.*;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
 
-public abstract class MapPanel extends AbstractMonitoringPanel implements MonitoringPanel {
+public abstract class InstancePanel extends AbstractMonitoringPanel implements MonitoringPanel {
     final protected String name;
     final protected AsyncCallback<ChangeEvent> callBack;
     DisclosurePanel disclosurePanel;
@@ -30,7 +30,7 @@ public abstract class MapPanel extends AbstractMonitoringPanel implements Monito
     final HazelcastServiceAsync hazelcastService;
     private ChangeEventType changeEventType;
 
-    public MapPanel(String name, AsyncCallback<ChangeEvent> callBack, String panelLabel,
+    public InstancePanel(String name, AsyncCallback<ChangeEvent> callBack, String panelLabel,
                     HazelcastServiceAsync hazelcastService, ChangeEventType changeEventType) {
         super(hazelcastService);
         this.name = name;

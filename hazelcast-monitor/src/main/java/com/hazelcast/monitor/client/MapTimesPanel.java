@@ -59,6 +59,6 @@ public class MapTimesPanel extends MapStatsPanel implements MonitoringPanel {
     }
 
     private void addDateToTable(FlexTable table, int row, int col, Date date, DateTimeFormat ttipFormat, DateTimeFormat displayFormat) {
-        table.setWidget(row, col, new MapPanel.LabelWithToolTip(displayFormat.format(date), ttipFormat.format(date)));
+        table.setWidget(row, col, new InstancePanel.LabelWithToolTip(displayFormat.format(date), ttipFormat.format(date)));
     }
 }
