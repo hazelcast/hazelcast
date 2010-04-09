@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ConnectionManager implements MembershipListener {
@@ -72,9 +73,10 @@ public class ConnectionManager implements MembershipListener {
         return currentConnection;
     }
 
-    public synchronized void destroyConnection(Connection connection) {
+    public synchronized void destroyConnection(Connection connection, boolean gracefully) {
         if (currentConnection != null && currentConnection.getVersion() == connection.getVersion()) {
-            logger.warning("Connection to " + currentConnection + " is lost");
+            Level level = gracefully?Level.INFO:Level.WARNING;
+            logger.log(level, "Connection to " + currentConnection + " is lost");
             currentConnection = null;
         }
     }
