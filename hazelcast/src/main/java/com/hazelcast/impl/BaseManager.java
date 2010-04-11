@@ -427,9 +427,6 @@ public abstract class BaseManager {
             while (true) {
                 try {
                     Object obj = responses.poll(5, TimeUnit.SECONDS);
-                    if (Thread.interrupted()) {
-                        throw new RuntimeInterruptedException();
-                    }
                     if (obj != null) {
                         return obj;
                     } else if (node.factory.restarted) {
