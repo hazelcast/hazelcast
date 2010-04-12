@@ -59,7 +59,7 @@ public abstract class AbstractMonitoringPanel implements MonitoringPanel {
 
     }
 
-    public boolean register(ClusterWidgets clusterWidgets, ChangeEventType eventType, String name, AsyncCallback<ChangeEvent> callBack) {
+    public boolean register(ClusterWidgets clusterWidgets, ChangeEventType eventType, String name, AsyncCallback<? extends ChangeEvent> callBack) {
         boolean newEvent = register(clusterWidgets, eventType);
         if (newEvent) {
             hazelcastService.registerEvent(eventType, clusterWidgets.clusterId, name, callBack);

@@ -30,7 +30,7 @@ public interface HazelcastServiceAsync {
 
     void getChange(AsyncCallback<ArrayList<ChangeEvent>> async);
 
-    void registerEvent(ChangeEventType eventType, int clusterId, String instanceName, AsyncCallback<ChangeEvent> async);
+    void registerEvent(ChangeEventType eventType, int clusterId, String instanceName, AsyncCallback<? extends ChangeEvent> async);
 
     void deRegisterEvent(ChangeEventType eventType, int clusterId, String instanceName, AsyncCallback<Void> async);
 

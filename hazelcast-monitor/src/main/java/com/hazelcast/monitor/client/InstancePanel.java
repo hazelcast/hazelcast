@@ -23,14 +23,14 @@ import com.hazelcast.monitor.client.event.ChangeEventType;
 
 public abstract class InstancePanel extends AbstractMonitoringPanel implements MonitoringPanel {
     final protected String name;
-    final protected AsyncCallback<ChangeEvent> callBack;
+    final protected AsyncCallback<? extends ChangeEvent> callBack;
     DisclosurePanel disclosurePanel;
     protected ClusterWidgets clusterWidgets;
     final private String panelHeader;
     final HazelcastServiceAsync hazelcastService;
     private ChangeEventType changeEventType;
 
-    public InstancePanel(String name, AsyncCallback<ChangeEvent> callBack, String panelLabel,
+    public InstancePanel(String name, AsyncCallback<? extends ChangeEvent> callBack, String panelLabel,
                     HazelcastServiceAsync hazelcastService, ChangeEventType changeEventType) {
         super(hazelcastService);
         this.name = name;
@@ -76,5 +76,27 @@ public abstract class InstancePanel extends AbstractMonitoringPanel implements M
 
     public boolean deRegister(ClusterWidgets clusterWidgets) {
         return super.deRegister(clusterWidgets, changeEventType, name);
+    }
+
+    static String formatMemorySize(long size) {
+        int gb = 1024 * 1024 * 1024;
+        int mb = 1024 * 1024;
+        int kb = 1024;
+        double result;
+        if ((result = (double) size / gb) >= 1) {
+            return toPrecision(result) + " GB";
+        } else if ((result = (double) size / mb) >= 1) {
+            return Math.round(result) + " MB";
+        } else if ((result = (double) size / kb) >= 1) {
+            return Math.round(result) + " KB";
+        } else {
+            return size + " Bytes";
+        }
+    }
+
+    static String toPrecision(double dbl) {
+        int ix = (int) (dbl * 100.0); // scale it
+        double dbl2 = ((double) ix) / 100.0;
+        return String.valueOf(dbl2);
     }
 }

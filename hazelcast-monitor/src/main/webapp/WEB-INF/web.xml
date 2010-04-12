@@ -15,12 +15,21 @@
     </servlet-mapping>
 
     <servlet>
-        <servlet-name>hzchart</servlet-name>
-        <servlet-class>com.hazelcast.monitor.server.ChartGenerator</servlet-class>
+        <servlet-name>mchart</servlet-name>
+        <servlet-class>com.hazelcast.monitor.server.MChartGenerator</servlet-class>
     </servlet>
     <servlet-mapping>
-        <servlet-name>hzchart</servlet-name>
-        <url-pattern>/ChartGenerator</url-pattern>
+        <servlet-name>mchart</servlet-name>
+        <url-pattern>/MChartGenerator</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>qchart</servlet-name>
+        <servlet-class>com.hazelcast.monitor.server.QChartGenerator</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>qchart</servlet-name>
+        <url-pattern>/QChartGenerator</url-pattern>
     </servlet-mapping>
 
     <servlet>

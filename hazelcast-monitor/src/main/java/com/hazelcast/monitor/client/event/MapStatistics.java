@@ -18,45 +18,20 @@ package com.hazelcast.monitor.client.event;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.Date;
 
-public class MapStatistics implements ChangeEvent, Serializable {
-    private int clusterId;
-    private Date date;
+public class MapStatistics extends InstanceStatistics implements ChangeEvent, Serializable {
 
     Collection<LocalMapStatistics> listOfLocalStats;
 
-    private int size;
-
-    private String mapName;
-
     public MapStatistics() {
-
     }
 
     public MapStatistics(int clusterId) {
-        this.clusterId = clusterId;
-        this.date = new Date();
+        super(clusterId);
     }
 
     public ChangeEventType getChangeEventType() {
         return ChangeEventType.MAP_STATISTICS;
-    }
-
-    public int getClusterId() {
-        return clusterId;
-    }
-
-    public Date getCreatedDate() {
-        return date;
-    }
-
-    public int getSize() {
-        return size;
-    }
-
-    public void setSize(int size) {
-        this.size = size;
     }
 
     public Collection<LocalMapStatistics> getListOfLocalStats() {
@@ -65,17 +40,15 @@ public class MapStatistics implements ChangeEvent, Serializable {
 
     public void setListOfLocalStats(Collection<LocalMapStatistics> listOfLocalStats) {
         this.listOfLocalStats = listOfLocalStats;
+        int tops = 0;
+        for (MapStatistics.LocalMapStatistics l : listOfLocalStats) {
+            tops += l.totalOperationsInSec();
+            size += l.ownedEntryCount;
+        }
+        totalOPS = tops;
     }
 
-    public void setMapName(String mapName) {
-        this.mapName = mapName;
-    }
-
-    public String getMapName() {
-        return mapName;
-    }
-
-    public static class LocalMapStatistics implements Serializable{
+    public static class LocalMapStatistics implements Serializable, LocalInstanceStatistics {
 
         public int ownedEntryCount;
         public int backupEntryCount;
@@ -103,5 +76,4 @@ public class MapStatistics implements ChangeEvent, Serializable {
             return numberOfGetsInSec + numberOfPutsInSec + numberOfRemovesInSec + numberOfOthersInSec;
         }
     }
-
 }

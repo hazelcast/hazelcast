@@ -17,49 +17,16 @@
 package com.hazelcast.monitor.client;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.google.gwt.user.client.ui.*;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
-import com.hazelcast.monitor.client.event.MapStatistics;
 
-public class MapChartPanel extends InstancePanel implements MonitoringPanel {
+public class MapChartPanel extends InstanceChartPanel implements MonitoringPanel {
     public MapChartPanel(String name, AsyncCallback<ChangeEvent> callBack, ServicesFactory servicesFactory) {
-        super(name, callBack, "Charts", servicesFactory.getHazelcastService(), ChangeEventType.MAP_STATISTICS);
-//        disclosurePanel.setOpen(true);
-    }
-
-    public void handle(ChangeEvent e) {
-        MapStatistics event = (MapStatistics) e;
-        if(super.name ==null || !super.name.equals(event.getMapName())){
-            return;
-        }
-        int size = event.getSize();
-        VerticalPanel vPanel = (VerticalPanel) disclosurePanel.getContent();
-        Label label = (Label) vPanel.getWidget(0);
-        label.setText("Map Size: " + size);
-        if (vPanel.getWidgetCount() < 2) {
-            HorizontalPanel horizontalPanel = new HorizontalPanel();
-            horizontalPanel.add(createAbsPanelWithImage());
-            horizontalPanel.add(createAbsPanelWithImage());
-            horizontalPanel.setBorderWidth(0);
-            vPanel.add(horizontalPanel);
-        }
-        HorizontalPanel horizontalPanel = (HorizontalPanel) vPanel.getWidget(1);
-        Image sizeChart = (Image) ((AbsolutePanel) horizontalPanel.getWidget(0)).getWidget(0);
-        sizeChart.setUrl("ChartGenerator?name=" + name + "&type=size&random=" + Math.random() * 10);
-        Image opsChart = (Image) ((AbsolutePanel) horizontalPanel.getWidget(1)).getWidget(0);
-        opsChart.setUrl("ChartGenerator?name=" + name + "&type=ops&random=" + Math.random() * 10);
-    }
-
-    private AbsolutePanel createAbsPanelWithImage() {
-        AbsolutePanel absImagePanel = new AbsolutePanel();
-        absImagePanel.addStyleName("img-shadow");
-        absImagePanel.add(new Image());
-        return absImagePanel;
+        super(name, callBack, servicesFactory, ChangeEventType.MAP_STATISTICS);
     }
 
     @Override
-    protected FlexTable createTable() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public String getServletName() {
+        return "MChartGenerator";
     }
 }

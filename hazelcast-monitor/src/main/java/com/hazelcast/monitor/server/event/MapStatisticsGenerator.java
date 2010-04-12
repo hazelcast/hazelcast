@@ -31,30 +31,20 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
-public class MapStatisticsGenerator implements ChangeEventGenerator {
-    private int clusterId;
-    private IMap map;
-    private List<MapStatistics> list = new ArrayList();
-    private HazelcastClient client;
-    private String mapName;
+public class MapStatisticsGenerator extends InstanceStatisticsGenerator {
 
     public MapStatisticsGenerator(HazelcastClient client, String instanceName, int clusterId) {
-        this.clusterId = clusterId;
-        this.client = client;
-        this.mapName = instanceName;
-        map = client.getMap(mapName);
+        super(instanceName, client, clusterId);
     }
 
-    public List<MapStatistics> getPastMapStatistics() {
-        return list;
-    }
+
 
     public synchronized ChangeEvent generateEvent() {
         ExecutorService esService = client.getExecutorService();
         Set<Member> members = client.getCluster().getMembers();
         final List<Member> lsMembers = new ArrayList<Member>(members);
         MultiTask<DistributedMapStatsCallable.MemberMapStat> task =
-                new MultiTask<DistributedMapStatsCallable.MemberMapStat>(new DistributedMapStatsCallable(mapName), members);
+                new MultiTask<DistributedMapStatsCallable.MemberMapStat>(new DistributedMapStatsCallable(name), members);
         esService.execute(task);
         Collection<DistributedMapStatsCallable.MemberMapStat> mapStats;
         try {
@@ -112,29 +102,14 @@ public class MapStatisticsGenerator implements ChangeEventGenerator {
             listOfStats.add(stat);
         }
         MapStatistics event = new MapStatistics(clusterId);
-        event.setMapName(this.mapName);
-        event.setSize(map.size());
+        event.setName(this.name);
         event.setListOfLocalStats(listOfStats);
-        if (!list.isEmpty() && list.get(list.size() - 1).equals(event)) {
-            list.remove(list.size() - 1);
-        }
-        list.add(event);
-        while (list.size() > 100) {
-            list.remove(0);
-        }
+        storeEvent(event);
         return event;
     }
 
     public ChangeEventType getChangeEventType() {
         return ChangeEventType.MAP_STATISTICS;
-    }
-
-    public int getClusterId() {
-        return clusterId;
-    }
-
-    public String getName() {
-        return map.getName();
     }
 
     @Override
@@ -143,14 +118,14 @@ public class MapStatisticsGenerator implements ChangeEventGenerator {
         if (o == null || getClass() != o.getClass()) return false;
         MapStatisticsGenerator that = (MapStatisticsGenerator) o;
         if (clusterId != that.clusterId) return false;
-        if (mapName != null ? !mapName.equals(that.mapName) : that.mapName != null) return false;
+        if (name != null ? !name.equals(that.name) : that.name != null) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
         int result = clusterId;
-        result = 31 * result + (mapName != null ? mapName.hashCode() : 0);
+        result = 31 * result + (name != null ? name.hashCode() : 0);
         return result;
     }
 }

@@ -38,15 +38,9 @@ public class MapThroughputPanel extends MapStatsPanel {
         table.setText(row, 6, "" + localMapStatistics.numberOfOthersInSec);
         table.setText(row, 7, "" + localMapStatistics.numberOfEventsInSec);
         table.setText(row, 8, "" + localMapStatistics.hits);
-        table.getColumnFormatter().addStyleName(0, "mapstatsNumericColumn");
-        table.getColumnFormatter().addStyleName(1, "mapstatsStringColumn");
-        table.getCellFormatter().addStyleName(row, 2, "mapstatsNumericColumn");
-        table.getCellFormatter().addStyleName(row, 3, "mapstatsNumericColumn");
-        table.getCellFormatter().addStyleName(row, 4, "mapstatsNumericColumn");
-        table.getCellFormatter().addStyleName(row, 5, "mapstatsNumericColumn");
-        table.getCellFormatter().addStyleName(row, 6, "mapstatsNumericColumn");
-        table.getCellFormatter().addStyleName(row, 7, "mapstatsNumericColumn");
-        table.getCellFormatter().addStyleName(row, 8, "mapstatsNumericColumn");
+       for(int i=2;i<9;i++){
+            table.getCellFormatter().addStyleName(row, i, "mapstatsNumericColumn");
+        }
     }
 
     @Override
