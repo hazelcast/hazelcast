@@ -75,8 +75,7 @@ public class ConnectionManager implements MembershipListener {
 
     public synchronized void destroyConnection(Connection connection, boolean gracefully) {
         if (currentConnection != null && currentConnection.getVersion() == connection.getVersion()) {
-            Level level = gracefully?Level.INFO:Level.WARNING;
-            logger.log(level, "Connection to " + currentConnection + " is lost");
+            logger.warning("Connection to " + currentConnection + " is lost");
             currentConnection = null;
         }
     }
