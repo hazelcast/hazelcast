@@ -1372,7 +1372,7 @@ public class CMap {
     }
 
     void updateIndexes(Record record) {
-//        mapIndexService.index(record);
+        mapIndexService.index(record);
     }
 
     Record createNewRecord(Data key, Data value) {
