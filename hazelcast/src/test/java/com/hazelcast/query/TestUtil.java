@@ -28,7 +28,7 @@ import static com.hazelcast.nio.IOUtil.toData;
 @Ignore
 public class TestUtil {
     public static Record newRecord(long recordId) {
-        return new Record(null, "default", 1, null, null, 0, 0, recordId);
+        return new Record(null, 1, null, null, 0, 0, recordId);
     }
 
     public static Record newRecord(long recordId, Object key, Object value) {

@@ -710,7 +710,6 @@ public class CMap {
                 return false;
             } else {
                 if (record.isActive() && record.isValid()) {
-                    touch(record);
                     updateStats(READ, record, true, null);
                     if (value == null) {
                         return record.valueCount() > 0;
@@ -780,7 +779,6 @@ public class CMap {
             locallyOwnedMap.offerToCache(record);
         }
         record.setLastAccessed();
-        touch(record);
         updateStats(READ, record, true, null);
         Data data = record.getValue();
         Data returnValue = null;
@@ -926,7 +924,6 @@ public class CMap {
             updateIndexes(record);
             record.addValue(value);
             record.incrementVersion();
-            touch(record);
             concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKey(), value, record.getMapListeners());
         }
         if (req.txnId != -1) {
@@ -988,7 +985,6 @@ public class CMap {
             oldValue = (record.isValid(now)) ? record.getValue() : null;
             record.setValue(req.value);
             record.incrementVersion();
-            touch(record);
             record.setLastUpdated();
         }
         if (req.ttl > 0) {
@@ -1339,11 +1335,7 @@ public class CMap {
         mapRecords.clear();
         mapIndexService.clear();
     }
-
-    void touch(Record record) {
-        record.setLastTouchTime(System.currentTimeMillis());
-    }
-
+    
     void markAsDirty(Record record) {
         if (!record.isDirty()) {
             record.setDirty(true);
@@ -1380,7 +1372,7 @@ public class CMap {
     }
 
     void updateIndexes(Record record) {
-        mapIndexService.index(record);
+//        mapIndexService.index(record);
     }
 
     Record createNewRecord(Data key, Data value) {
@@ -1388,7 +1380,7 @@ public class CMap {
             throw new RuntimeException("Cannot create record from a 0 size key: " + key);
         }
         int blockId = concurrentMapManager.getBlockId(key);
-        return new Record(node.factory, getName(), blockId, key, value, ttl, maxIdle, concurrentMapManager.newRecordId());
+        return new Record(this, blockId, key, value, ttl, maxIdle, concurrentMapManager.newRecordId());
     }
 
     public void addListener(Data key, Address address, boolean includeValue) {

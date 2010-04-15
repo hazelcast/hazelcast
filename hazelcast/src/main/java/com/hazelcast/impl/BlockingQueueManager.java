@@ -1510,6 +1510,7 @@ public class BlockingQueueManager extends BaseManager {
                     return false;
                 }
             }
+
             return true;
         }
 
@@ -1786,11 +1787,14 @@ public class BlockingQueueManager extends BaseManager {
                 }
             }
             return false;
-        }
+        } 
 
         public int size() {
             int s = 0;
-            for (int i = removeIndex; i < addIndex; i++) {
+            boolean owner = (thisAddress.equals(address));
+            int start = (owner) ? removeIndex : 0;
+            int end = (owner) ? addIndex : BLOCK_SIZE;
+            for (int i = start ; i < end; i++) {
                 if (values[i] != null) {
                     Data value = values[i];
                     long age = System.currentTimeMillis() - value.createDate;

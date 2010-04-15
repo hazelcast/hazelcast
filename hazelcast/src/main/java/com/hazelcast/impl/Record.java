@@ -36,9 +36,8 @@ public class Record implements MapEntry {
 
     private final RecordEntry recordEntry;
 
-    private final FactoryImpl factory;
+    private final CMap cmap;
     private final long id;
-    private final String name;
     private final int blockId;
     private final AtomicReference<Data> key = new AtomicReference<Data>();
     private final AtomicReference<Data> value = new AtomicReference<Data>();
@@ -51,7 +50,6 @@ public class Record implements MapEntry {
     private volatile long removeTime =0;
     private volatile long lastAccessTime = 0;
     private volatile long creationTime = 0;
-    private volatile long lastTouchTime = 0;
     private volatile long expirationTime = Long.MAX_VALUE;
     private volatile long lastUpdateTime = 0;
     private volatile boolean dirty = false;
@@ -69,24 +67,22 @@ public class Record implements MapEntry {
 
     private SortedSet<VersionedBackupOp> backupOps = null;
 
-    public Record(FactoryImpl factory, String name, int blockId, Data key, Data value, long ttl, long maxIdleMillis, long id) {
+    public Record(CMap cmap, int blockId, Data key, Data value, long ttl, long maxIdleMillis, long id) {
         super();
         this.recordEntry = new RecordEntry(this);
-        this.factory = factory;
-        this.name = name;
+        this.cmap = cmap;
         this.blockId = blockId;
         this.setKey(key);
         this.setValue(value);
         this.setCreationTime(System.currentTimeMillis());
         this.setExpirationTime(ttl);
         this.maxIdleMillis = (maxIdleMillis == 0) ? Long.MAX_VALUE : maxIdleMillis;
-        this.setLastTouchTime(getCreationTime());
         this.setVersion(0);
         this.id = id;
     }
 
     public Record copy() {
-        Record recordCopy = new Record(factory, name, blockId, key.get(), value.get(), getRemainingTTL(), getRemainingIdle(), id);
+        Record recordCopy = new Record(cmap, blockId, key.get(), value.get(), getRemainingTTL(), getRemainingIdle(), id);
         recordCopy.setIndexes(indexes, indexTypes);
         recordCopy.setLockCount(lockCount);
         recordCopy.setLockAddress(lockAddress);
@@ -447,7 +443,7 @@ public class Record implements MapEntry {
     }
 
     public String getName() {
-        return name;
+        return cmap.name;
     }
 
     public int getBlockId() {
@@ -526,14 +522,6 @@ public class Record implements MapEntry {
         return id;
     }
 
-    public long getLastTouchTime() {
-        return lastTouchTime;
-    }
-
-    public void setLastTouchTime(long lastTouchTime) {
-        this.lastTouchTime = lastTouchTime;
-    }
-
     public List<ScheduledAction> getScheduledActions() {
         return lsScheduledActions;
     }
@@ -595,7 +583,7 @@ public class Record implements MapEntry {
         }
 
         public Object setValue(Object value) {
-            MProxy proxy = (MProxy) record.factory.getOrCreateProxyByName(record.getName());
+            MProxy proxy = (MProxy) record.cmap.concurrentMapManager.node.factory.getOrCreateProxyByName(record.getName());
             Object oldValue = proxy.put(getKey(), value);
             this.valueObject = value;
             return oldValue;
