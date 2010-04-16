@@ -73,12 +73,12 @@ public class QueueStatisticsGenerator extends InstanceStatisticsGenerator {
             stat.maxAge = memberQStat.getLocalQueueStats().getMaxAge();
             stat.minAge = memberQStat.getLocalQueueStats().getMinAge();
             stat.aveAge = memberQStat.getLocalQueueStats().getAveAge();
-            stat.periodEnd = memberQStat.getLocalQueueStats().getQueueOperationStats().getPeriodEnd();
-            stat.periodStart = memberQStat.getLocalQueueStats().getQueueOperationStats().getPeriodStart();
+            stat.periodEnd = memberQStat.getLocalQueueStats().getOperationStats().getPeriodEnd();
+            stat.periodStart = memberQStat.getLocalQueueStats().getOperationStats().getPeriodStart();
             stat.memberName = memberQStat.getMember().getInetSocketAddress().getHostName() + ":"
                     + memberQStat.getMember().getInetSocketAddress().getPort();
             long periodInSec = (stat.periodEnd - stat.periodStart) / 1000;
-            LocalQueueOperationStats localQueueOperationStats = memberQStat.getLocalQueueStats().getQueueOperationStats();
+            LocalQueueOperationStats localQueueOperationStats = memberQStat.getLocalQueueStats().getOperationStats();
             stat.numberOfEmptyPollsInSec = localQueueOperationStats.getNumberOfEmptyPolls() / periodInSec;
             stat.numberOfOffersInSec = localQueueOperationStats.getNumberOfOffers() / periodInSec;
             stat.numberOfPollsInSec = localQueueOperationStats.getNumberOfPolls() / periodInSec;
