@@ -384,8 +384,6 @@ public class ClientService {
                 }
                 executorService.execute(task);
                 result = task.get();
-                if (result instanceof Collection) {
-                }
                 packet.value = toData(result);
             } catch (InterruptedException e) {
                 return;
@@ -826,7 +824,6 @@ public class ClientService {
                 CollectionProxyImpl collectionProxy = (CollectionProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
                 IMap map = ((CollectionProxyReal) collectionProxy.getBase()).mapProxy;
                 clientEndpoint.addThisAsListener(map, null, includeValue);
-            } else if (getInstanceType(packet.name).equals(InstanceType.LIST)) {
             } else if (getInstanceType(packet.name).equals(InstanceType.TOPIC)) {
                 ITopic<Object> topic = (ITopic) node.factory.getOrCreateProxyByName(packet.name);
                 final String packetName = packet.name;
