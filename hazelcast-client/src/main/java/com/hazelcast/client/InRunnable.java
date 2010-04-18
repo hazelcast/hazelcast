@@ -54,9 +54,7 @@ public class InRunnable extends IORunnable implements Runnable {
                     if (packet.getOperation().equals(ClusterOperation.EVENT)) {
                         client.getListenerManager().enqueue(packet);
                     }
-                    if (packet.getCallId() == -1) {
-                        //ignore
-                    } else {
+                    if (packet.getCallId() != -1) {
                         throw new RuntimeException("In Thread can not handle: " + packet.getOperation() + " : " + packet.getCallId());
                     }
                 }
@@ -66,7 +64,7 @@ public class InRunnable extends IORunnable implements Runnable {
         } catch (Exception e) {
             logger.finest("InRunnable got an exception:" + e.toString());
             boolean gracefully = !running;
-            client.connectionManager.destroyConnection(connection, gracefully);
+            client.connectionManager.destroyConnection(connection);
         }
     }
 

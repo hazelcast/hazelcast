@@ -18,6 +18,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.impl.CollectionWrapper;
+import com.hazelcast.core.Member;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.query.Predicate;
 
@@ -26,6 +27,7 @@ import java.util.Collection;
 import java.util.EventListener;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Logger;
 
 import static com.hazelcast.client.Serializer.toByte;
 import static com.hazelcast.client.Serializer.toObject;
@@ -34,6 +36,9 @@ public class ProxyHelper {
     private final static AtomicLong callIdGen = new AtomicLong(0);
     private final String name;
     private final HazelcastClient client;
+
+    Logger logger = Logger.getLogger(this.getClass().toString());
+
 
     public ProxyHelper(String name, HazelcastClient client) {
         this.name = (name == null) ? "" : name;
@@ -61,9 +66,15 @@ public class ProxyHelper {
         client.getOutRunnable().enQueue(c);
     }
 
-    public static Call createCall(Packet request) {
-        long id = newCallId();
-        return new Call(id, request);
+    public Call createCall(Packet request) {
+        final long id = newCallId();
+        return new Call(id, request){
+            @Override
+            public void onDisconnect(Member member) {
+                logger.fine("Re sendind Call " + this);
+                client.getOutRunnable().enQueue(this);
+            }
+        };
     }
 
     public static long newCallId() {

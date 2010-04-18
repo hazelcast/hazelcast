@@ -63,6 +63,8 @@ public class HazelcastClient implements HazelcastInstance {
         } else {
             this.connectionManager = new ConnectionManager(this, clusterMembers, shuffle);
         }
+
+        this.connectionManager.setBinder(new DefaultClientBinder(this));
         this.groupName = groupName;
         out = new OutRunnable(this, calls, new PacketWriter());
         new Thread(out, "hz.client.OutThread").start();

@@ -53,7 +53,7 @@ public class Call {
         }
     }
 
-    public Object handleResponse(Object response) {
+    private Object handleResponse(Object response) {
         if (response == null) {
             return null;
         } else if (response instanceof RuntimeException) {
@@ -72,6 +72,7 @@ public class Call {
     }
 
     public void onDisconnect(Member member) {
+
     }
 
     public void setResponse(Object response) {

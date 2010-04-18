@@ -62,7 +62,7 @@ public class OutRunnable extends IORunnable {
             logger.finest("OutRunnable got an exception:" + io.getMessage());
             enQueue(call);
             boolean gracefully = !running;
-            client.getConnectionManager().destroyConnection(connection, gracefully);
+            client.getConnectionManager().destroyConnection(connection);
         }
     }
 

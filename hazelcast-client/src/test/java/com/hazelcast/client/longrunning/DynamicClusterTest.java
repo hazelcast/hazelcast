@@ -393,14 +393,24 @@ public class DynamicClusterTest {
     @Test
     public void clientWithAutoMemberListUpdate() throws InterruptedException {
         Config conf = new Config();
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(conf);
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(conf);
         client = getAutoUpdatingClient(conf, h1);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(conf);
         Thread.sleep(1000);
-        h1.shutdown();
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread(new Runnable() {
+
+            public void run() {
+                h1.shutdown();
+                latch.countDown();
+            }
+        }).start();
         Map<Integer, Integer> map = client.getMap("map");
         map.put(1, 1);
         assertEquals(Integer.valueOf(1), map.get(1));
+        latch.await();
+        map.put(2,2);
+        assertEquals(Integer.valueOf(2), map.get(2));
     }
 
     @Test

@@ -17,23 +17,18 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.cluster.Bind;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.impl.ClusterOperation;
-import com.hazelcast.nio.Address;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ConnectionManager implements MembershipListener {
@@ -42,6 +37,8 @@ public class ConnectionManager implements MembershipListener {
     private final List<InetSocketAddress> clusterMembers = new CopyOnWriteArrayList<InetSocketAddress>();
     private final Logger logger = Logger.getLogger(getClass().toString());
     private final HazelcastClient client;
+    private volatile int lastDisconnectedConnectionId = -1;
+    private ClientBinder binder;
 
     public ConnectionManager(HazelcastClient client, InetSocketAddress[] clusterMembers, boolean shuffle) {
         this.client = client;
@@ -64,7 +61,7 @@ public class ConnectionManager implements MembershipListener {
                     connection = searchForAvailableConnection();
                     if (connection != null) {
                         logger.fine("Client is connecting to " + connection);
-                        bind(connection);
+                        binder.bind(connection);
                         currentConnection = connection;
                     }
                 }
@@ -73,29 +70,10 @@ public class ConnectionManager implements MembershipListener {
         return currentConnection;
     }
 
-    public synchronized void destroyConnection(Connection connection, boolean gracefully) {
+    public synchronized void destroyConnection(Connection connection) {
         if (currentConnection != null && currentConnection.getVersion() == connection.getVersion()) {
             logger.warning("Connection to " + currentConnection + " is lost");
             currentConnection = null;
-        }
-    }
-
-    private void bind(Connection connection) throws IOException {
-        Bind b = null;
-        try {
-            b = new Bind(new Address(connection.getAddress().getHostName(), connection.getSocket().getLocalPort()));
-        } catch (UnknownHostException e) {
-            logger.warning(e.getMessage() + " while creating the bind package.");
-        }
-        Packet bind = new Packet();
-        bind.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, Serializer.toByte(null), Serializer.toByte(b));
-        Call cBind = ProxyHelper.createCall(bind);
-        client.getOutRunnable().callMap.put(cBind.getId(), cBind);
-        client.getOutRunnable().writer.write(connection, bind);
-        try {
-            Thread.sleep(10);
-        } catch (InterruptedException e) {
-            return;
         }
     }
 
@@ -120,7 +98,7 @@ public class ConnectionManager implements MembershipListener {
         return connection;
     }
 
-    private Connection getNextConnection() {
+    protected Connection getNextConnection() {
         InetSocketAddress address = clusterMembers.get(0);
         Connection connection = new Connection(address, connectionIdGenerator.incrementAndGet());
         return connection;
@@ -140,7 +118,24 @@ public class ConnectionManager implements MembershipListener {
         Set<Member> members = client.getCluster().getMembers();
         clusterMembers.clear();
         for (Member member : members) {
+
             clusterMembers.add(member.getInetSocketAddress());
         }
+    }
+
+    public synchronized boolean shouldExecuteOnDisconnect(Connection connection) {
+        if (lastDisconnectedConnectionId >= connection.getVersion()) {
+            return false;
+        }
+        lastDisconnectedConnectionId = connection.getVersion();
+        return true;
+    }
+
+    public void setBinder(ClientBinder binder) {
+        this.binder = binder;
+    }
+
+    List<InetSocketAddress> getClusterMembers() {
+        return clusterMembers;
     }
 }

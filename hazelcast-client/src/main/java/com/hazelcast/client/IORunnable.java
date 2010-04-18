@@ -57,10 +57,17 @@ public abstract class IORunnable extends ClientRunnable {
     }
 
     protected void onDisconnect(Connection oldConnection) {
+        boolean shouldExecuteOnDisconnect = client.getConnectionManager().shouldExecuteOnDisconnect(oldConnection);
+        if(!shouldExecuteOnDisconnect){
+            return;
+        }
         Member memberLeft = oldConnection.getMember();
         Collection<Call> calls = callMap.values();
         for (Call call : calls) {
-            call.onDisconnect(memberLeft);
+            Call removed = callMap.remove(call.getId());
+            if(removed!=null){
+                removed.onDisconnect(memberLeft);
+            }
         }
     }
 
