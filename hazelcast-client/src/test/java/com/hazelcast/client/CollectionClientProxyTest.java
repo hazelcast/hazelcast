@@ -50,6 +50,7 @@ public class CollectionClientProxyTest {
         Packet request = new Packet();
         request.setName(name);
         request.setOperation(ClusterOperation.ADD_LISTENER);
+        when(proxyHelper.createCall(request)).thenReturn(new Call(1, request));
         when(proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null)).thenReturn(request);
         CollectionClientProxy proxy = new SetClientProxy(proxyHelper, name);
         ItemListener listener = new ItemListener() {
