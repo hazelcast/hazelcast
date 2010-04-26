@@ -1810,6 +1810,9 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
+            if (!request.local) {
+                request.value = null;
+            }
             request.response = (pairs.size() > 0) ? ((request.local) ? pairs : toData(pairs)) : null;
         }
     }
