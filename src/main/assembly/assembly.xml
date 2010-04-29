@@ -68,7 +68,7 @@
                 <include>*.bat</include>
                 <include>*.sh</include> 
                 <include>keystore</include>
-                <include>hazelcast.xml</include>
+                <include>hazelcast-default.xml</include>
             </includes>
         </fileSet>
         <fileSet>

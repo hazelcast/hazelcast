@@ -21,7 +21,7 @@
         </tstamp>
         <echo file="${core.classes.dir}/hazelcast-runtime.properties"
               message="hazelcast.build=${TODAY}${line.separator}hazelcast.version=${version}"/>
-        <copy file="hazelcast/src/main/resources/hazelcast.xml" todir="${core.classes.dir}"/>
+        <copy file="hazelcast/src/main/resources/hazelcast-default.xml" todir="${core.classes.dir}"/>
         <jar jarfile="${core.jar.name}">
             <fileset dir="${core.src.dir}"/>
             <fileset dir="${core.classes.dir}"/>
