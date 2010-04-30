@@ -17,15 +17,18 @@
 
 package com.hazelcast.hibernate.provider;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.IdGenerator;
-import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
+import java.util.Properties;
+import java.util.logging.Level;
+
 import org.hibernate.cache.Cache;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.CacheProvider;
 
-import java.util.Properties;
-import java.util.logging.Logger;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.IdGenerator;
+import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 /**
  * Implementation of (deprecated) Hibernate <code>CacheProvider</code> interface for compatibility with pre-Hibernate
@@ -40,7 +43,7 @@ import java.util.logging.Logger;
  */
 public final class HazelcastCacheProvider implements CacheProvider {
 
-    private static final Logger LOG = Logger.getLogger(HazelcastCacheProvider.class.getName());
+    private static final ILogger LOG = Logger.getLogger(HazelcastCacheProvider.class.getName());
     private final IdGenerator idGenerator;
 
     public HazelcastCacheProvider() {
@@ -74,14 +77,14 @@ public final class HazelcastCacheProvider implements CacheProvider {
     }
 
     public void start(final Properties arg0) throws CacheException {
-        LOG.info("Starting up HazelcastCacheProvider...");
+        LOG.log(Level.INFO, "Starting up HazelcastCacheProvider...");
     }
 
     /**
      * Calls <code>{@link Hazelcast#shutdown()}</code>.
      */
     public void stop() {
-        LOG.info("Shutting down HazelcastCacheProvider...");
+        LOG.log(Level.INFO, "Shutting down HazelcastCacheProvider...");
         Hazelcast.shutdown();
     }
 }

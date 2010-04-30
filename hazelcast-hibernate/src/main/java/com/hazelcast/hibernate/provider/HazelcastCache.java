@@ -17,16 +17,19 @@
 
 package com.hazelcast.hibernate.provider;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEntry;
-import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
+import java.util.Map;
+import java.util.logging.Level;
+
 import org.hibernate.cache.Cache;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.Timestamper;
 
-import java.util.Map;
-import java.util.logging.Logger;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEntry;
+import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 /**
  * Implementation of (deprecated) Hibernate <code>Cache</code> interface for compatibility with pre-Hibernate 3.3.x
@@ -38,12 +41,12 @@ import java.util.logging.Logger;
  */
 public final class HazelcastCache implements Cache {
 
-    private static final Logger LOG = Logger.getLogger(HazelcastCache.class.getName());
+    private static final ILogger LOG = Logger.getLogger(HazelcastCache.class.getName());
     private final IMap cache;
     private final String regionName;
 
     public HazelcastCache(final String regionName) {
-        LOG.info("Creating new HazelcastCache with region name: " + regionName);
+        LOG.log(Level.INFO, "Creating new HazelcastCache with region name: " + regionName);
         cache = Hazelcast.getMap(regionName);
         this.regionName = regionName;
     }

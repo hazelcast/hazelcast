@@ -17,11 +17,15 @@
 
 package com.hazelcast.hibernate.access;
 
-import com.hazelcast.hibernate.region.HazelcastRegion;
+import java.util.logging.Level;
+
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.access.SoftLock;
 
-import java.util.logging.Logger;
+import com.hazelcast.hibernate.region.HazelcastRegion;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
 
 /**
  * @author Leo Kim (lkim@limewire.com)
@@ -29,7 +33,7 @@ import java.util.logging.Logger;
 
 public class ReadOnlyAccessDelegate<T extends HazelcastRegion> extends NonStrictReadWriteAccessDelegate<T> {
 
-    private static final Logger LOG = Logger.getLogger(ReadOnlyAccessDelegate.class.getName());
+    private static final ILogger LOG = Logger.getLogger(ReadOnlyAccessDelegate.class.getName());
 
     public ReadOnlyAccessDelegate(final T hazelcastRegion) {
         super(hazelcastRegion);
@@ -68,7 +72,7 @@ public class ReadOnlyAccessDelegate<T extends HazelcastRegion> extends NonStrict
      */
     @Override
     public void unlockItem(final Object key, final SoftLock lock) throws CacheException {
-        LOG.warning("Attempting to unlock an item from a read-only cache region");
+        LOG.log(Level.WARNING, "Attempting to unlock an item from a read-only cache region");
     }
 
     /**
@@ -76,7 +80,7 @@ public class ReadOnlyAccessDelegate<T extends HazelcastRegion> extends NonStrict
      */
     @Override
     public void unlockRegion(final SoftLock lock) throws CacheException {
-        LOG.warning("Attempting to unlock a read-only cache region");
+        LOG.log(Level.WARNING, "Attempting to unlock a read-only cache region");
     }
 
     /**

@@ -17,29 +17,38 @@
 
 package com.hazelcast.hibernate;
 
+import java.util.Properties;
+import java.util.logging.Level;
+
+import org.hibernate.cache.CacheDataDescription;
+import org.hibernate.cache.CacheException;
+import org.hibernate.cache.CollectionRegion;
+import org.hibernate.cache.EntityRegion;
+import org.hibernate.cache.QueryResultsRegion;
+import org.hibernate.cache.RegionFactory;
+import org.hibernate.cache.TimestampsRegion;
+import org.hibernate.cfg.Settings;
+
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.hibernate.collection.HazelcastCollectionRegion;
 import com.hazelcast.hibernate.entity.HazelcastEntityRegion;
 import com.hazelcast.hibernate.query.HazelcastQueryResultsRegion;
 import com.hazelcast.hibernate.timestamp.HazelcastTimestampsRegion;
-import org.hibernate.cache.*;
-import org.hibernate.cfg.Settings;
-
-import java.util.Properties;
-import java.util.logging.Logger;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
  */
 public class HazelcastCacheRegionFactory implements RegionFactory {
 
-    private static final Logger LOG = Logger.getLogger(HazelcastCacheRegionFactory.class.getName());
+    private static final ILogger LOG = Logger.getLogger(HazelcastCacheRegionFactory.class.getName());
 
     private final IdGenerator idGenerator;
 
     public HazelcastCacheRegionFactory() {
-        LOG.info("Initializing HazelcastCacheRegionFactory...");
+        LOG.log(Level.INFO, "Initializing HazelcastCacheRegionFactory...");
         idGenerator = Hazelcast.getIdGenerator("HazelcastCacheRegionFactoryTimestampIdGenerator");
     }
 
@@ -87,14 +96,14 @@ public class HazelcastCacheRegionFactory implements RegionFactory {
     }
 
     public void start(final Settings settings, final Properties properties) throws CacheException {
-        LOG.info("Starting up HazelcastCacheRegionFactory...");
+        LOG.log(Level.INFO, "Starting up HazelcastCacheRegionFactory...");
     }
 
     /**
      * Calls <code>{@link Hazelcast#shutdown()}</code>.
      */
     public void stop() {
-        LOG.info("Shutting down HazelcastCacheRegionFactory...");
+        LOG.log(Level.INFO, "Shutting down HazelcastCacheRegionFactory...");
         Hazelcast.shutdown();
     }
 }
