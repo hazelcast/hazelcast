@@ -20,98 +20,46 @@ package com.hazelcast.nio;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public final class Data implements DataSerializable {
 
-    private static final long serialVersionUID = 5382795596398809726L;
-
-    public ByteBuffer buffer = null;
-
-    public int size = 0;
-
-    public int hash = Integer.MIN_VALUE;
-
-    public long createDate = -1;
+    public byte[] buffer = null;
 
     public Data() {
     }
 
-    public Data(int size) {
-        this.size = size;
-        if (size > 0) {
-            this.buffer = ByteBuffer.allocate(size);
-        }
-    }
-
-    public Data(byte[] bytes, int size) {
-        this.size = size;
-        if (size > 0) {
-            this.buffer = ByteBuffer.allocate(size);
-            System.arraycopy(bytes, 0, buffer.array(), 0, size);
-        }
-    }
-
-    public Data(ByteBuffer bb) {
-        this.size = bb.array().length;
-        this.buffer = bb;
-    }
-
-    public Data(Data data) {
-        this.size = data.size();
-        if (size > 0) {
-            this.buffer = ByteBuffer.allocate(size);
-            System.arraycopy(data.buffer.array(), 0, buffer.array(), 0, size);
-        }
-        this.hash = data.hash;
-    }
-
-    public boolean shouldRead() {
-        return (size > 0 && buffer != null && buffer.hasRemaining());
-    }
-
-    public void read(ByteBuffer src) {
-        IOUtil.copyToHeapBuffer(src, buffer);
-    }
-
-    public void postRead() {
-        if (buffer != null) {
-            buffer.flip();
-        }
+    public Data(byte[] bytes) {
+        this.buffer = bytes;
     }
 
     public int size() {
-        return size;
+        return (buffer == null) ? 0 : buffer.length;
     }
 
     public void readData(DataInput in) throws IOException {
-        this.size = in.readInt();
+        int size = in.readInt();
         if (size > 0) {
-            byte[] bytes = new byte[size];
-            in.readFully(bytes);
-            this.buffer = ByteBuffer.wrap(bytes);
-            postRead();
+            buffer = new byte[size];
+            in.readFully(buffer);
         }
     }
 
     public void writeData(DataOutput out) throws IOException {
-        out.writeInt(size);
-        out.write(buffer.array());
+        out.writeInt(size());
+        if (size() > 0) {
+            out.write(buffer);
+        }
     }
 
     @Override
     public int hashCode() {
         if (buffer == null) return Integer.MIN_VALUE;
-        if (hash == Integer.MIN_VALUE) {
-            int h = 1;
-            byte[] b = buffer.array();
-            for (int i = 0; i < b.length; i++) {
-                h = 31 * h + b[i];
-            }
-            hash = h;
+        int h = 1;
+        for (int i = 0; i < size(); i++) {
+            h = 31 * h + buffer[i];
         }
-        return hash;
+        return h;
     }
 
     @Override
@@ -121,14 +69,14 @@ public final class Data implements DataSerializable {
         if (this == obj)
             return true;
         Data data = (Data) obj;
-        if (data.size != size)
+        if (size() != data.size())
             return false;
-        if (size == 0) return (data.buffer == null);
-        return Arrays.equals(data.buffer.array(), buffer.array());
+        if (size() == 0) return (data.buffer == null);
+        return Arrays.equals(buffer, data.buffer);
     }
 
     @Override
     public String toString() {
-        return "Data size = " + size;
+        return "Data size = " + size();
     }
 }

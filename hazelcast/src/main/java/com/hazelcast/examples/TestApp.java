@@ -261,6 +261,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleTopicPublish(args);
         } else if ("q.offer".equals(first)) {
             handleQOffer(args);
+        } else if ("q.take".equals(first)) {
+            handleQTake(args);
         } else if ("q.poll".equals(first)) {
             handleQPoll(args);
         } else if ("q.peek".equals(first)) {
@@ -780,6 +782,14 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         try {
             boolean offered = queue.offer(args[1], timeout, TimeUnit.SECONDS);
             print(offered);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void handleQTake(String[] args) {
+        try {
+            print(queue.take());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

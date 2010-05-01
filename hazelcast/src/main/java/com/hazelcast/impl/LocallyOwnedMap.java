@@ -49,7 +49,7 @@ class LocallyOwnedMap {
             return OBJECT_REDO;
         } else {
             if (record.isActive() && record.isValid()) {
-                Record.RecordEntry recordEntry = record.getRecordEntry();
+                RecordEntry recordEntry = record.getRecordEntry();
                 Object value = recordEntry.getValue();
                 record.setLastAccessed();
                 localMapStats.incrementHit();

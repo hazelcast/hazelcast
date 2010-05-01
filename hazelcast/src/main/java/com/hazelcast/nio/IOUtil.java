@@ -62,9 +62,9 @@ public final class IOUtil {
         return ThreadContext.get().toObject(data);
     }
 
-    public static Data doHardCopy(Data from) {
-        if (from == null || from.size == 0)
-            return null;
-        return new Data(from);
+    public static Object toObject(DataHolder dataHolder) {
+        return toObject(dataHolder.toData());
     }
+
+    
 }

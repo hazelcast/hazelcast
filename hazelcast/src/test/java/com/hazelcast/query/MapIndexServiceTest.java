@@ -33,7 +33,7 @@ public class MapIndexServiceTest extends TestUtil {
 
     @Test
     public void testIndex() throws Exception {
-        MapIndexService mapIndexService = new MapIndexService();
+        MapIndexService mapIndexService = new MapIndexService(false);
         Map<Expression, Index> indexes = mapIndexService.getIndexes();
         assertFalse(mapIndexService.hasIndexedAttributes());
         Expression nameExpression = Predicates.get("name");

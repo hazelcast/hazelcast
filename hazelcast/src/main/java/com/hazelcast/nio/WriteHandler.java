@@ -237,11 +237,11 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             }
             packet.totalWritten += encryptAndWriteToSocket(packet.bbSizes);
             packet.totalWritten += encryptAndWriteToSocket(packet.bbHeader);
-            if (packet.key != null && packet.key.size() > 0 && socketBB.hasRemaining()) {
-                packet.totalWritten += encryptAndWriteToSocket(packet.key.buffer);
+            if (packet.getKey() != null && packet.getKey().size() > 0 && socketBB.hasRemaining()) {
+                packet.totalWritten += encryptAndWriteToSocket(packet.getKey().buffer);
             }
-            if (packet.value != null && packet.value.size() > 0 && socketBB.hasRemaining()) {
-                packet.totalWritten += encryptAndWriteToSocket(packet.value.buffer);
+            if (packet.getValue() != null && packet.getValue().size() > 0 && socketBB.hasRemaining()) {
+                packet.totalWritten += encryptAndWriteToSocket(packet.getValue().buffer);
             }
             return packet.totalWritten >= packet.totalSize;
         }
@@ -310,11 +310,11 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             }
             packet.totalWritten += encryptAndWriteToSocket(packet.bbSizes);
             packet.totalWritten += encryptAndWriteToSocket(packet.bbHeader);
-            if (packet.key != null && packet.key.size() > 0 && socketBB.hasRemaining()) {
-                packet.totalWritten += encryptAndWriteToSocket(packet.key.buffer);
+            if (packet.getKey() != null && packet.getKey().size() > 0 && socketBB.hasRemaining()) {
+                packet.totalWritten += encryptAndWriteToSocket(packet.getKey().buffer);
             }
-            if (packet.value != null && packet.value.size() > 0 && socketBB.hasRemaining()) {
-                packet.totalWritten += encryptAndWriteToSocket(packet.value.buffer);
+            if (packet.getValue() != null && packet.getValue().size() > 0 && socketBB.hasRemaining()) {
+                packet.totalWritten += encryptAndWriteToSocket(packet.getValue().buffer);
             }
             boolean complete = packet.totalWritten >= packet.totalSize;
             if (complete) {

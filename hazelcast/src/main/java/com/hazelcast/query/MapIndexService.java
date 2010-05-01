@@ -29,11 +29,15 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public class MapIndexService {
     private final ConcurrentMap<Long, Record> records = new ConcurrentHashMap<Long, Record>(10000);
-    private final Index indexValue = new Index(null, false, -1);
-    private final Map<Expression, Index> mapIndexes = new ConcurrentHashMap<Expression, Index>(6);
+    private final Index indexValue;
+    private final Map<Expression, Index> mapIndexes = new ConcurrentHashMap<Expression, Index>(2);
     private volatile boolean hasIndexedAttributes = false;
     private volatile byte[] indexTypes = null;
     private final Object indexTypesLock = new Object();
+
+    public MapIndexService(boolean valueIndexed) {
+        indexValue = (valueIndexed) ? new Index(null, false, -1) : null;
+    }
 
     public void remove(Record record) {
         records.remove(record.getId());
@@ -50,7 +54,9 @@ public class MapIndexService {
         if (record.isActive() && record.getValue() != null) {
             newValueIndex = record.getValue().hashCode();
         }
-        indexValue.index(newValueIndex, record);
+        if (indexValue != null) {
+            indexValue.index(newValueIndex, record);
+        }
         long[] indexValues = record.getIndexes();
         byte[] indexTypes = record.getIndexTypes();
         if (indexValues != null && hasIndexedAttributes) {
@@ -212,21 +218,21 @@ public class MapIndexService {
         return hasIndexedAttributes;
     }
 
-    Index getIndexValue() {
-        return indexValue;
-    }
-
-    public Map<Long, Record> getRecords() {
-        return records;
-    }
-
     public boolean containsValue(Data value) {
-        Set<MapEntry> results = indexValue.getRecords(value.hashCode());
-        if (results == null || results.size() == 0) return false;
-        for (MapEntry entry : results) {
-            Record record = (Record) entry;
-            if (record.containsValue(value)) {
-                return true;
+        if (indexValue != null) {
+            Set<MapEntry> results = indexValue.getRecords(value.hashCode());
+            if (results == null || results.size() == 0) return false;
+            for (MapEntry entry : results) {
+                Record record = (Record) entry;
+                if (record.containsValue(value)) {
+                    return true;
+                }
+            }
+        } else {
+            for (Record record : records.values()) {
+                if (record.containsValue(value)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -254,6 +260,6 @@ public class MapIndexService {
     }
 
     public int size() {
-        return indexValue.getRecordValues().size();
+        return records.size(); //indexValue.getRecordValues().size();
     }
 }

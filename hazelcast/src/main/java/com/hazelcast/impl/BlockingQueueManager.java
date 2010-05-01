@@ -178,9 +178,9 @@ public class BlockingQueueManager extends BaseManager {
 
         private Data next() {
             while (true) {
-                Data data = block.get(index);
+                QData data = block.get(index);
                 if (data != null) {
-                    return data;
+                    return data.data;
                 }
                 index++;
                 if (index > indexUpto)
@@ -320,7 +320,7 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     final void handleTxnBackupPoll(Packet packet) {
-        doTxnBackupPoll(packet.txnId, packet.value);
+        doTxnBackupPoll(packet.txnId, packet.getValueData());
     }
 
     final void handleTxnCommit(Packet packet) {
@@ -342,7 +342,7 @@ public class BlockingQueueManager extends BaseManager {
             int blockId = packet.blockId;
             Q q = getQ(name);
             if (packet.operation == ClusterOperation.BLOCKING_QUEUE_BACKUP_ADD) {
-                Data data = packet.value;
+                Data data = packet.getValueData();
                 q.doBackup(true, data, blockId, (int) packet.longValue);
             } else if (packet.operation == ClusterOperation.BLOCKING_QUEUE_BACKUP_REMOVE) {
                 q.doBackup(false, null, blockId, 0);
@@ -356,7 +356,7 @@ public class BlockingQueueManager extends BaseManager {
 
     final void handleRemoveBlock(Packet packet) {
         try {
-            BlockUpdate addRemove = (BlockUpdate) ThreadContext.get().toObject(packet.value);
+            BlockUpdate addRemove = (BlockUpdate) ThreadContext.get().toObject(packet.getValueData());
             String name = packet.name;
             Q q = getQ(name);
             doRemoveBlock(q, packet.conn.getEndPoint(), addRemove.removeBlockId);
@@ -394,7 +394,7 @@ public class BlockingQueueManager extends BaseManager {
 
     final void handleAddBlock(Packet packet) {
         try {
-            BlockUpdate addRemove = (BlockUpdate) ThreadContext.get().toObject(packet.value);
+            BlockUpdate addRemove = (BlockUpdate) ThreadContext.get().toObject(packet.getValueData());
             String name = packet.name;
             int blockId = addRemove.addBlockId;
             Address addressOwner = addRemove.addAddress;
@@ -468,7 +468,7 @@ public class BlockingQueueManager extends BaseManager {
             if (!request.scheduled) {
                 Data oldValue = (Data) request.response;
                 if (oldValue != null && oldValue.size() > 0) {
-                    packet.value = oldValue;
+                    packet.setValue(oldValue);
                 }
                 sendResponse(packet);
             } else {
@@ -801,7 +801,7 @@ public class BlockingQueueManager extends BaseManager {
         }
 
         public void handleResponse(Packet packet) {
-            Data value = packet.value;
+            Data value = packet.getValueData();
             int indexRead = (int) packet.longValue;
             setResponse(value, indexRead);
             removeCall(getCallId());
@@ -982,7 +982,7 @@ public class BlockingQueueManager extends BaseManager {
                 if (!zeroBackup) {
                     if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(
                             packet.conn.getEndPoint())) {
-                        if (packet.value != null) {
+                        if (packet.getValueData() != null) {
                             Q q = getQ(packet.name);
                             q.doBackup(false, null, request.blockId, 0);
                         }
@@ -1159,8 +1159,8 @@ public class BlockingQueueManager extends BaseManager {
             long totalAge = 0;
             for (Block block : lsBlocks) {
                 if (thisAddress.equals(block.address)) {
-                    Data[] values = block.getValues();
-                    for (Data value : values) {
+                    QData[] values = block.getValues();
+                    for (QData value : values) {
                         if (value != null) {
                             ownedCount++;
                             long age = (now - value.createDate);
@@ -1373,9 +1373,9 @@ public class BlockingQueueManager extends BaseManager {
                 return;
             }
             for (int i = read.index; i < BLOCK_SIZE; i++) {
-                Data data = block.get(i);
+                QData data = block.get(i);
                 if (data != null) {
-                    read.setResponse(data, i);
+                    read.setResponse(data.data, i);
                     return;
                 }
             }
@@ -1389,9 +1389,9 @@ public class BlockingQueueManager extends BaseManager {
             packet.longValue = -1;
             if (block != null) {
                 for (int i = index; i < BLOCK_SIZE; i++) {
-                    Data data = block.get(i);
+                    QData data = block.get(i);
                     if (data != null) {
-                        packet.value = data;
+                        packet.setValue(data.data);
                         packet.longValue = i;
                         break;
                     }
@@ -1443,7 +1443,8 @@ public class BlockingQueueManager extends BaseManager {
         public Data poll(Request request) {
             try {
                 setCurrentTake();
-                Data value = blCurrentTake.remove();
+                QData qdata = blCurrentTake.remove();
+                Data value = (qdata == null) ? null : qdata.data;
                 if (request.txnId != -1) {
                     MemberImpl backup = null;
                     if (request.caller.equals(thisAddress)) {
@@ -1485,11 +1486,11 @@ public class BlockingQueueManager extends BaseManager {
             setCurrentTake();
             if (blCurrentTake == null)
                 return null;
-            Data value = blCurrentTake.peek();
+            QData value = blCurrentTake.peek();
             if (value == null) {
                 return null;
             }
-            return value;
+            return value.data;
         }
 
         boolean doBackup(boolean add, Data data, int blockId, int addIndex) {
@@ -1666,16 +1667,26 @@ public class BlockingQueueManager extends BaseManager {
                 System.out.println(block);
             }
             System.out.println("--------------------");
-            System.out.println("CurrenTake " + blCurrentTake);
+            System.out.println("CurrentTake " + blCurrentTake);
             System.out.println("CurrentPut " + blCurrentPut);
             System.out.println("== " + new Date() + " ==");
+        }
+    }
+
+    class QData {
+        final Data data;
+        final long createDate;
+
+        QData(Data data) {
+            this.data = data;
+            this.createDate = System.currentTimeMillis();
         }
     }
 
     class Block {
         final int blockId;
         final String name;
-        final Data[] values;
+        final QData[] values;
         final long maxAge;
         Address address;
         int addIndex = 0;
@@ -1688,13 +1699,13 @@ public class BlockingQueueManager extends BaseManager {
             this.blockId = blockId;
             this.maxAge = maxAge;
             this.name = name;
-            this.values = new Data[BLOCK_SIZE];
+            this.values = new QData[BLOCK_SIZE];
         }
 
-        public Data peek() {
+        public QData peek() {
             for (int i = removeIndex; i < BLOCK_SIZE; i++) {
                 if (values[i] != null) {
-                    Data value = values[i];
+                    QData value = values[i];
                     removeIndex = i;
                     return value;
                 }
@@ -1702,11 +1713,11 @@ public class BlockingQueueManager extends BaseManager {
             return null;
         }
 
-        public Data[] getValues() {
+        public QData[] getValues() {
             return values;
         }
 
-        public Data get(int index) {
+        public QData get(int index) {
             return values[index];
         }
 
@@ -1725,8 +1736,8 @@ public class BlockingQueueManager extends BaseManager {
             index = 0;
         }
 
-        public int add(Data data) {
-            data.createDate = System.currentTimeMillis();
+        public int add(Data item) {
+            QData data = new QData(item);
             if (values != null) {
                 if (values[addIndex] != null)
                     return -1;
@@ -1740,8 +1751,8 @@ public class BlockingQueueManager extends BaseManager {
             return addedCurrentIndex;
         }
 
-        public boolean add(int index, Data data) {
-            data.createDate = System.currentTimeMillis();
+        public boolean add(int index, Data item) {
+            QData data = new QData(item);
             if (values[index] != null)
                 return false;
             values[index] = data;
@@ -1756,16 +1767,16 @@ public class BlockingQueueManager extends BaseManager {
             this.full = full;
         }
 
-        public Data remove(int index) {
-            Data value = values[index];
+        public QData remove(int index) {
+            QData value = values[index];
             values[index] = null;
             return value;
         }
 
-        public Data remove() {
+        public QData remove() {
             for (int i = removeIndex; i < addIndex; i++) {
                 if (values[i] != null) {
-                    Data value = values[i];
+                    QData value = values[i];
                     values[i] = null;
                     removeIndex = i + 1;
                     return value;
@@ -1777,7 +1788,7 @@ public class BlockingQueueManager extends BaseManager {
         public boolean containsValidItem() {
             for (int i = removeIndex; i < addIndex; i++) {
                 if (values[i] != null) {
-                    Data value = values[i];
+                    QData value = values[i];
                     long age = System.currentTimeMillis() - value.createDate;
                     if (age > maxAge) {
                         values[i] = null;
@@ -1796,7 +1807,7 @@ public class BlockingQueueManager extends BaseManager {
             int end = (owner) ? addIndex : BLOCK_SIZE;
             for (int i = start ; i < end; i++) {
                 if (values[i] != null) {
-                    Data value = values[i];
+                    QData value = values[i];
                     long age = System.currentTimeMillis() - value.createDate;
                     if (age > maxAge) {
                         values[i] = null;

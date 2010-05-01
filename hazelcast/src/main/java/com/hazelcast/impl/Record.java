@@ -18,36 +18,30 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class Record implements MapEntry {
     private static final Logger logger = Logger.getLogger(Record.class.getName());
 
-    private final RecordEntry recordEntry;
-
     private final CMap cmap;
     private final long id;
     private final int blockId;
-    private final AtomicReference<Data> key = new AtomicReference<Data>();
-    private final AtomicReference<Data> value = new AtomicReference<Data>();
-    private final AtomicLong version = new AtomicLong();
-    private final AtomicInteger hits = new AtomicInteger(0);
+    private final Data key;
 
+    private volatile Data value;
     private volatile boolean active = true;
+    private volatile int hits = 0;
+    private volatile long version = 0;
     private volatile long maxIdleMillis = Long.MAX_VALUE;
     private volatile long writeTime = -1;
-    private volatile long removeTime =0;
+    private volatile long removeTime = 0;
     private volatile long lastAccessTime = 0;
     private volatile long creationTime = 0;
     private volatile long expirationTime = Long.MAX_VALUE;
@@ -55,46 +49,41 @@ public class Record implements MapEntry {
     private volatile boolean dirty = false;
     private volatile int copyCount = 0;
 
-    private long[] indexes; // indexes of the current value;
-    private byte[] indexTypes; // index types of the current value;
+    private DistributedLock lock = null;
 
-    private Address lockAddress = null;
-    private int lockThreadId = -1;
-    private int lockCount = 0;
-    private List<ScheduledAction> lsScheduledActions = null;
-    private Map<Address, Boolean> mapListeners = null;
-    private Set<Data> lsMultiValues = null; // multimap values
-
-    private SortedSet<VersionedBackupOp> backupOps = null;
+    private OptionalInfo optionalInfo = null;
 
     public Record(CMap cmap, int blockId, Data key, Data value, long ttl, long maxIdleMillis, long id) {
         super();
-        this.recordEntry = new RecordEntry(this);
+        this.id = id;
         this.cmap = cmap;
         this.blockId = blockId;
-        this.setKey(key);
-        this.setValue(value);
+        this.key = key;
+        this.value = value;
         this.setCreationTime(System.currentTimeMillis());
         this.setExpirationTime(ttl);
         this.maxIdleMillis = (maxIdleMillis == 0) ? Long.MAX_VALUE : maxIdleMillis;
         this.setVersion(0);
-        this.id = id;
     }
 
     public Record copy() {
-        Record recordCopy = new Record(cmap, blockId, key.get(), value.get(), getRemainingTTL(), getRemainingIdle(), id);
-        recordCopy.setIndexes(indexes, indexTypes);
-        recordCopy.setLockCount(lockCount);
-        recordCopy.setLockAddress(lockAddress);
-        recordCopy.setLockThreadId(lockThreadId);
-        recordCopy.setMultiValues(lsMultiValues);
+        Record recordCopy = new Record(cmap, blockId, key, value, getRemainingTTL(), getRemainingIdle(), id);
+        recordCopy.setIndexes(getOptionalInfo().indexes, getOptionalInfo().indexTypes);
+        if (lock != null) {
+            recordCopy.setLock(new DistributedLock(lock));
+        }
+        recordCopy.setMultiValues(getOptionalInfo().lsMultiValues);
         recordCopy.setCopyCount(copyCount);
         recordCopy.setVersion(getVersion());
         return recordCopy;
     }
 
     public RecordEntry getRecordEntry() {
-        return recordEntry;
+        return cmap.getRecordEntry(this);
+    }
+
+    public CMap getCMap() {
+        return cmap;
     }
 
     public void runBackupOps() {
@@ -140,15 +129,11 @@ public class Record implements MapEntry {
     }
 
     public Data getKey() {
-        return key.get();
-    }
-
-    public void setKey(Data key) {
-        this.key.set(key);
+        return key;
     }
 
     public Data getValue() {
-        return value.get();
+        return value;
     }
 
     public Object setValue(Object value) {
@@ -156,21 +141,25 @@ public class Record implements MapEntry {
     }
 
     public void setValue(Data value) {
-        recordEntry.setValueObject(null);
-        this.value.set(value);
+        cmap.invalidateRecordEntryValue(this);
+        this.value = value;
     }
 
     public long[] getIndexes() {
-        return indexes;
+        if (optionalInfo == null) return null;
+        return getOptionalInfo().indexes;
     }
 
     public byte[] getIndexTypes() {
-        return indexTypes;
+        if (optionalInfo == null) return null;
+        return getOptionalInfo().indexTypes;
     }
 
     public void setIndexes(long[] indexes, byte[] indexTypes) {
-        this.indexes = indexes;
-        this.indexTypes = indexTypes;
+        if (indexes != null) {
+            this.getOptionalInfo().indexes = indexes;
+            this.getOptionalInfo().indexTypes = indexTypes;
+        }
     }
 
     public int valueCount() {
@@ -220,35 +209,19 @@ public class Record implements MapEntry {
     }
 
     public boolean unlock(int threadId, Address address) {
-        if (threadId == -1 || address == null)
-            throw new IllegalArgumentException();
-        if (lockCount == 0)
-            return true;
-        if (getLockThreadId() != threadId || !address.equals(getLockAddress())) {
-            return false;
-        }
-        if (lockCount > 0) {
-            lockCount--;
-        }
-        return true;
+        return lock == null || lock.unlock(address, threadId);
     }
 
     public boolean testLock(int threadId, Address address) {
-        return lockCount == 0 || getLockThreadId() == threadId && getLockAddress().equals(address);
+        return lock == null || lock.testLock(threadId, address);
     }
 
     public boolean lock(int threadId, Address address) {
-        if (lockCount == 0) {
-            setLockThreadId(threadId);
-            setLockAddress(address);
-            lockCount++;
+        if (lock == null) {
+            lock = new DistributedLock(address, threadId);
             return true;
         }
-        if (getLockThreadId() == threadId && getLockAddress().equals(address)) {
-            lockCount++;
-            return true;
-        }
-        return false;
+        return lock.lock(address, threadId);
     }
 
     public void addScheduledAction(ScheduledAction scheduledAction) {
@@ -264,7 +237,7 @@ public class Record implements MapEntry {
     }
 
     public boolean isEvictable() {
-        return (lockCount == 0 && !hasListener() && (getScheduledActionCount() == 0));
+        return (getLockCount() == 0 && !hasListener() && (getScheduledActionCount() == 0));
     }
 
     public boolean hasListener() {
@@ -388,15 +361,15 @@ public class Record implements MapEntry {
     }
 
     public long getVersion() {
-        return version.get();
+        return version;
     }
 
     public void setVersion(long version) {
-        this.version.set(version);
+        this.version = version;
     }
 
     public void incrementVersion() {
-        this.version.incrementAndGet();
+        this.version++;
     }
 
     public long getCreationTime() {
@@ -424,11 +397,11 @@ public class Record implements MapEntry {
     }
 
     public int getHits() {
-        return hits.get();
+        return hits;
     }
 
     public void incrementHits() {
-        this.hits.incrementAndGet();
+        hits++;
     }
 
     public boolean isActive() {
@@ -438,7 +411,7 @@ public class Record implements MapEntry {
     public void setActive(boolean active) {
         this.active = active;
         if (!active) {
-            this.recordEntry.setValueObject(null);
+            cmap.invalidateRecordEntryValue(this);
         }
     }
 
@@ -450,48 +423,35 @@ public class Record implements MapEntry {
         return blockId;
     }
 
-    public int getLockThreadId() {
-        return lockThreadId;
+    public DistributedLock getLock() {
+        return lock;
     }
 
-    public void setLockThreadId(int lockThreadId) {
-        this.lockThreadId = lockThreadId;
-    }
-
-    public int getLockCount() {
-        return lockCount;
-    }
-
-    public void setLockCount(int lockCount) {
-        this.lockCount = lockCount;
-    }
-
-    public Address getLockAddress() {
-        return lockAddress;
-    }
-
-    public void setLockAddress(Address lockAddress) {
-        this.lockAddress = lockAddress;
+    public void setLock(DistributedLock lock) {
+        this.lock = lock;
     }
 
     public Set<Data> getMultiValues() {
-        return lsMultiValues;
+        if (optionalInfo == null) return null;
+        return getOptionalInfo().lsMultiValues;
     }
 
     public void setMultiValues(Set<Data> lsValues) {
-        this.lsMultiValues = lsValues;
+        if (lsValues != null || optionalInfo != null) {
+            this.getOptionalInfo().lsMultiValues = lsValues;
+        }         
     }
 
     public int getBackupOpCount() {
-        return (backupOps == null) ? 0 : backupOps.size();
+        return (getOptionalInfo().backupOps == null) ? 0 : getOptionalInfo().backupOps.size();
     }
 
     public SortedSet<VersionedBackupOp> getBackupOps() {
-        return backupOps;
+        return getOptionalInfo().backupOps;
     }
 
     public void setBackupOps(SortedSet<VersionedBackupOp> backupOps) {
-        this.backupOps = backupOps;
+        this.getOptionalInfo().backupOps = backupOps;
     }
 
     public boolean isDirty() {
@@ -523,19 +483,21 @@ public class Record implements MapEntry {
     }
 
     public List<ScheduledAction> getScheduledActions() {
-        return lsScheduledActions;
+        if (optionalInfo == null) return null;
+        return getOptionalInfo().lsScheduledActions;
     }
 
     public void setScheduledActions(List<ScheduledAction> lsScheduledActions) {
-        this.lsScheduledActions = lsScheduledActions;
+        this.getOptionalInfo().lsScheduledActions = lsScheduledActions;
     }
 
     public Map<Address, Boolean> getMapListeners() {
-        return mapListeners;
+        if (optionalInfo == null) return null;
+        return getOptionalInfo().mapListeners;
     }
 
     public void setMapListeners(Map<Address, Boolean> mapListeners) {
-        this.mapListeners = mapListeners;
+        this.getOptionalInfo().mapListeners = mapListeners;
     }
 
     public void setCopyCount(int copyCount) {
@@ -543,78 +505,44 @@ public class Record implements MapEntry {
     }
 
     public boolean isLocked() {
-        return lockCount > 0;
+        return lock != null && lock.isLocked();
     }
 
     public int getScheduledActionCount() {
-        return (lsScheduledActions == null) ? 0 : lsScheduledActions.size();
+        if (optionalInfo == null) return 0;
+        return (getOptionalInfo().lsScheduledActions == null) ? 0 : getOptionalInfo().lsScheduledActions.size();
     }
 
-    public static class RecordEntry implements MapEntry {
+    public int getLockCount() {
 
-        private final Record record;
-        private volatile Object keyObject;
-        private volatile Object valueObject;
+        return (lock == null) ? 0 : lock.getLockCount();
+    }
 
-        RecordEntry(Record record) {
-            this.record = record;
+    public void clearLock() {
+        if (lock != null) {
+            lock.clear();
         }
+    }
 
-        public boolean isValid() {
-            return record.isActive();
-        }
+    public Address getLockAddress() {
+        return (lock == null) ? null : lock.getLockAddress();
+    }
 
-        public Object getKey() {
-            if (keyObject == null) {
-                keyObject = toObject(record.getKey());
-            }
-            return keyObject;
+    public OptionalInfo getOptionalInfo() {
+//        if (true) throw new RuntimeException();
+        if (optionalInfo == null) {
+            optionalInfo = new OptionalInfo();
         }
+        return optionalInfo;
+    }
 
-        public Object getValue() {
-            if (valueObject == null) {
-                valueObject = toObject(record.getValue());
-            }
-            return valueObject;
-        }
+    class OptionalInfo {
+        private long[] indexes; // indexes of the current value;
+        private byte[] indexTypes; // index types of the current value;
+        private List<ScheduledAction> lsScheduledActions = null;
+        private Map<Address, Boolean> mapListeners = null;
+        private Set<Data> lsMultiValues = null; // multimap values
 
-        void setValueObject(Object valueObject) {
-            this.valueObject = valueObject;
-        }
-
-        public Object setValue(Object value) {
-            MProxy proxy = (MProxy) record.cmap.concurrentMapManager.node.factory.getOrCreateProxyByName(record.getName());
-            Object oldValue = proxy.put(getKey(), value);
-            this.valueObject = value;
-            return oldValue;
-        }
-
-        public long getCost() {
-            return record.getCost();
-        }
-
-        public long getExpirationTime() {
-            return record.getExpirationTime();
-        }
-
-        public long getVersion() {
-            return record.getVersion();
-        }
-
-        public long getCreationTime() {
-            return record.getCreationTime();
-        }
-
-        public long getLastAccessTime() {
-            return record.getLastAccessTime();
-        }
-
-        public long getLastUpdateTime() {
-            return record.getLastUpdateTime();
-        }
-
-        public int getHits() {
-            return record.getHits();
-        }
+        private SortedSet<VersionedBackupOp> backupOps = null;
     }
 }

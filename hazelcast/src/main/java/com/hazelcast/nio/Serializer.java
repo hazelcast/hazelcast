@@ -117,9 +117,7 @@ public final class Serializer {
         }
         bbos.writeByte(typeId);
         typeSerializer[typeId].write(bbos, obj);
-        bbos.flush();
-        Data data = new Data(bbos.getBytes(), bbos.size());
-        data.postRead();
+        Data data = new Data(bbos.toByteArray());
         if (bbos.size() > OUTPUT_STREAM_BUFFER_SIZE) {
             bbos.set(new byte[OUTPUT_STREAM_BUFFER_SIZE]);
         }
@@ -130,7 +128,7 @@ public final class Serializer {
         if (data == null || data.size() == 0)
             return null;
         try {
-            bbis.set(data.buffer.array(), data.size());
+            bbis.set(data.buffer, data.size());
             byte typeId = bbis.readByte();
             Object obj = typeSerializer[typeId].read(bbis);
             if (obj instanceof HazelcastInstanceAware) {

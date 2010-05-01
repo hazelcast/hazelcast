@@ -39,9 +39,9 @@ public final class Packet {
 
     public ByteBuffer bbHeader = ByteBuffer.allocate(500);
 
-    public Data key = null;
+    private DataHolder key = null;
 
-    public Data value = null;
+    private DataHolder value = null;
 
     public long[] indexes = null;
 
@@ -132,12 +132,6 @@ public final class Packet {
     public void write() {
         bbSizes.clear();
         bbHeader.clear();
-        if (key != null && key.size > 0) {
-            key = new Data(ByteBuffer.wrap(key.buffer.array()));
-        }
-        if (value != null && value.size > 0) {
-            value = new Data(ByteBuffer.wrap(value.buffer.array()));
-        }
         bbHeader.put(operation.getValue());
         bbHeader.putInt(blockId);
         bbHeader.putInt(threadId);
@@ -301,7 +295,7 @@ public final class Packet {
     @Override
     public String toString() {
         int keySize = (key == null) ? 0 : key.size();
-        int valueSize = (value == null) ? 0 : value.size();
+        int valueSize = (getValueData() == null) ? 0 : getValueData().size();
         return "Packet [" + operation + "] name=" + name + ",blockId="
                 + blockId + ", keySize=" + keySize + ", valueSize=" + valueSize
                 + " client=" + client;
@@ -318,7 +312,7 @@ public final class Packet {
         if (key != null && key.size() > 0) {
             totalWritten += IOUtil.copyToDirectBuffer(key.buffer, dest);
         }
-        if (value != null && value.size() > 0) {
+        if (getValueData() != null && getValueData().size() > 0) {
             totalWritten += IOUtil.copyToDirectBuffer(value.buffer, dest);
         }
         return totalWritten >= totalSize;
@@ -334,8 +328,8 @@ public final class Packet {
             bbHeader.limit(bbSizes.getInt());
             int keySize = bbSizes.getInt();
             int valueSize = bbSizes.getInt();
-            if (keySize > 0) key = new Data(keySize);
-            if (valueSize > 0) value = new Data(valueSize);
+            if (keySize > 0) key = new DataHolder(keySize);
+            if (valueSize > 0) value = new DataHolder(valueSize);
             if (bbHeader.limit() == 0) {
                 throw new RuntimeException("read.bbHeader size cannot be 0");
             }
@@ -354,7 +348,7 @@ public final class Packet {
             while (key != null && bb.hasRemaining() && key.shouldRead()) {
                 key.read(bb);
             }
-            while (value != null && bb.hasRemaining() && value.shouldRead()) {
+            while (getValueData() != null && bb.hasRemaining() && value.shouldRead()) {
                 value.read(bb);
             }
         }
@@ -372,10 +366,10 @@ public final class Packet {
         this.name = name;
         this.operation = operation;
         if (objKey != null) {
-            key = ThreadContext.get().toData(objKey);
+            key = new DataHolder(ThreadContext.get().toData(objKey));
         }
         if (objValue != null) {
-            value = ThreadContext.get().toData(objValue);
+            value = new DataHolder(ThreadContext.get().toData(objValue));
         }
     }
 
@@ -385,4 +379,29 @@ public final class Packet {
             lockAddress = conn.getEndPoint();
         }
     }
+
+    public DataHolder getKey() {
+        return key;
+    }
+
+    public DataHolder getValue() {
+        return value;
+    }
+
+    public Data getKeyData() {
+        return (key == null) ? null : key.toData();
+    }
+
+    public Data getValueData() {
+        return (value == null) ? null : value.toData();
+    }
+
+    public void setKey(Data key) {
+        this.key = (key == null || key.size() == 0) ? null : new DataHolder(key);
+    }
+
+    public void setValue(Data value) {
+        this.value = (value == null || value.size() ==0) ? null : new DataHolder(value);
+    }
+
 }

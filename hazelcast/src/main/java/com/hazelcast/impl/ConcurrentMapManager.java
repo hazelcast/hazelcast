@@ -244,7 +244,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     class MLock extends MBackupAndMigrationAwareOp {
-        Data oldValue = null;
+        volatile Data oldValue = null;
 
         public boolean unlock(String name, Object key, long timeout) {
             boolean unlocked = booleanCall(CONCURRENT_MAP_UNLOCK, name, key, null, timeout, -1);
@@ -263,8 +263,11 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         public boolean lockAndGetValue(String name, Object key, long timeout) {
-            oldValue = null;
-            boolean locked = booleanCall(CONCURRENT_MAP_LOCK_AND_GET_VALUE, name, key, null, timeout, -1);
+            return lockAndGetValue(name, key, null, timeout);
+        }
+
+        public boolean lockAndGetValue(String name, Object key, Object value, long timeout) {
+            boolean locked = booleanCall(CONCURRENT_MAP_LOCK_AND_GET_VALUE, name, key, value, timeout, -1);
             if (locked) {
                 backup(CONCURRENT_MAP_BACKUP_LOCK);
             }
@@ -274,7 +277,9 @@ public class ConcurrentMapManager extends BaseManager {
         @Override
         public void afterGettingResult(Request request) {
             if (request.operation == CONCURRENT_MAP_LOCK_AND_GET_VALUE) {
-                oldValue = request.value;
+                if (oldValue == null) {
+                    oldValue = request.value;
+                }
             }
             super.afterGettingResult(request);
         }
@@ -282,7 +287,7 @@ public class ConcurrentMapManager extends BaseManager {
         @Override
         public void handleNoneRedoResponse(Packet packet) {
             if (request.operation == CONCURRENT_MAP_LOCK_AND_GET_VALUE) {
-                oldValue = packet.value;
+                oldValue = packet.getValueData();
             }
             super.handleNoneRedoResponse(packet);
         }
@@ -462,9 +467,9 @@ public class ConcurrentMapManager extends BaseManager {
         @Override
         public final void handleNoneRedoResponse(Packet packet) {
             if (nearCache != null) {
-                Data value = packet.value;
+                Data value = packet.getValueData();
                 if (value != null && value.size() > 0) {
-                    nearCache.put(this.key, request.key, packet.value);
+                    nearCache.put(this.key, request.key, packet.getValueData());
                 }
             }
             super.handleNoneRedoResponse(packet);
@@ -545,27 +550,31 @@ public class ConcurrentMapManager extends BaseManager {
             ThreadContext threadContext = ThreadContext.get();
             TransactionImpl txn = threadContext.getCallContext().getTransaction();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-                try {
-                    if (!txn.has(name, key)) {
-                        MLock mlock = new MLock();
-                        boolean locked = mlock
-                                .lockAndGetValue(name, key, DEFAULT_TXN_TIMEOUT);
-                        if (!locked)
-                            throwCME(key);
-                        Object oldObject = null;
-                        Data oldValue = mlock.oldValue;
-                        if (oldValue != null) {
-                            oldObject = threadContext.toObject(oldValue);
-                        }
-                        txn.attachRemoveOp(name, key, value, (oldObject == null));
-                        return oldObject;
-                    } else {
-                        return txn.attachRemoveOp(name, key, value, false);
+                if (!txn.has(name, key)) {
+                    MLock mlock = new MLock();
+                    boolean locked = mlock
+                            .lockAndGetValue(name, key, DEFAULT_TXN_TIMEOUT);
+                    if (!locked)
+                        throwCME(key);
+                    Object oldObject = null;
+                    Data oldValue = mlock.oldValue;
+                    if (oldValue != null) {
+                        oldObject = threadContext.toObject(oldValue);
                     }
-                } catch (Exception e1) {
-                    e1.printStackTrace();
+                    int removedValueCount = 0;
+                    if (oldObject != null) {
+                        if (oldObject instanceof CMap.Values) {
+                            CMap.Values values =  (CMap.Values) oldObject;
+                            removedValueCount = (values == null) ? 0 : values.size();
+                        } else {
+                            removedValueCount = 1;
+                        }
+                    }
+                    txn.attachRemoveOp(name, key, value, (oldObject == null), removedValueCount);
+                    return oldObject;
+                } else {
+                    return txn.attachRemoveOp(name, key, value, false);
                 }
-                return null;
             } else {
                 Object oldValue = objectCall(operation, name, key, value, timeout, -1);
                 if (oldValue != null) {
@@ -625,11 +634,30 @@ public class ConcurrentMapManager extends BaseManager {
     class MPutMulti extends MBackupAndMigrationAwareOp {
 
         boolean put(String name, Object key, Object value) {
-            boolean result = booleanCall(CONCURRENT_MAP_PUT_MULTI, name, key, value, 0, -1);
-            if (result) {
-                backup(CONCURRENT_MAP_BACKUP_PUT);
+            ThreadContext threadContext = ThreadContext.get();
+            TransactionImpl txn = threadContext.getCallContext().getTransaction();
+            if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                if (!txn.has(name, key, value)) {
+                    MLock mlock = new MLock();
+                    boolean locked = mlock
+                            .lockAndGetValue(name, key, value, DEFAULT_TXN_TIMEOUT);
+                    if (!locked)
+                        throwCME(key);
+                    boolean added = (mlock.oldValue == null);
+                    if (added) {
+                        txn.attachPutOp(name, key, value, true);
+                    }
+                    return added;
+                } else {
+                    return false;
+                }
+            } else {
+                boolean result = booleanCall(CONCURRENT_MAP_PUT_MULTI, name, key, value, 0, -1);
+                if (result) {
+                    backup(CONCURRENT_MAP_BACKUP_PUT);
+                }
+                return result;
             }
-            return result;
         }
     }
 
@@ -778,11 +806,30 @@ public class ConcurrentMapManager extends BaseManager {
     class MRemoveMulti extends MBackupAndMigrationAwareOp {
 
         boolean remove(String name, Object key, Object value) {
-            boolean result = booleanCall(CONCURRENT_MAP_REMOVE_MULTI, name, key, value, 0, -1);
-            if (result) {
-                backup(CONCURRENT_MAP_BACKUP_REMOVE_MULTI);
+            ThreadContext threadContext = ThreadContext.get();
+            TransactionImpl txn = threadContext.getCallContext().getTransaction();
+            if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                if (!txn.has(name, key)) {
+                    MLock mlock = new MLock();
+                    boolean locked = mlock.lockAndGetValue(name, key, value, DEFAULT_TXN_TIMEOUT);
+                    if (!locked) throwCME(key);
+                    Data oldValue = mlock.oldValue;
+                    boolean existingRecord = (oldValue != null);
+                    txn.attachRemoveOp(name, key, value, !existingRecord);
+                    return existingRecord;
+                } else {
+                    MContainsKey mContainsKey = new MContainsKey();
+                    boolean containsEntry = mContainsKey.containsEntry(name, key, value);
+                    txn.attachRemoveOp(name, key, value, !containsEntry);
+                    return containsEntry;
+                }
+            } else {
+                boolean result = booleanCall(CONCURRENT_MAP_REMOVE_MULTI, name, key, value, 0, -1);
+                if (result) {
+                    backup(CONCURRENT_MAP_BACKUP_REMOVE_MULTI);
+                }
+                return result;
             }
-            return result;
         }
     }
 
@@ -1243,7 +1290,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void process(Packet packet) {
-            Blocks blocks = (Blocks) toObject(packet.value);
+            Blocks blocks = (Blocks) toObject(packet.getValueData());
             partitionManager.handleBlocks(blocks);
             releasePacket(packet);
         }
@@ -1252,7 +1299,7 @@ public class ConcurrentMapManager extends BaseManager {
     class BlockInfoOperationHandler implements PacketProcessor {
 
         public void process(Packet packet) {
-            Block blockInfo = (Block) toObject(packet.value);
+            Block blockInfo = (Block) toObject(packet.getValueData());
             partitionManager.completeMigration(blockInfo.getBlockId());
             if (isMaster() && !blockInfo.isMigrating()) {
                 for (MemberImpl member : lsMembers) {
@@ -1290,7 +1337,7 @@ public class ConcurrentMapManager extends BaseManager {
             if (cmap != null) {
                 MapNearCache mapNearCache = cmap.mapNearCache;
                 if (mapNearCache != null) {
-                    mapNearCache.invalidate(packet.key);
+                    mapNearCache.invalidate(packet.getKeyData());
                 }
             }
             releasePacket(packet);
@@ -1489,7 +1536,7 @@ public class ConcurrentMapManager extends BaseManager {
                     cmap.fireScheduledActions(record);
                     cmap.updateStats(UNLOCK, record, true, null);
                 }
-                logger.log(Level.FINEST, unlocked + " now lock lockCount " + record.getLockCount() + " lockThreadId " + record.getLockThreadId());
+                logger.log(Level.FINEST, unlocked + " now lock " + record.getLock());
             }
             if (unlocked) {
                 request.response = Boolean.TRUE;

@@ -243,7 +243,7 @@ public abstract class BaseManager {
             packet.responseType = RESPONSE_SUCCESS;
             packet.longValue = request.longValue;
             if (request.value != null) {
-                packet.value = request.value;
+                packet.setValue(request.value);
             }
             if (request.response == OBJECT_REDO) {
                 packet.lockAddress = null;
@@ -263,7 +263,7 @@ public abstract class BaseManager {
                         data = toData(request.response);
                     }
                     if (data != null && data.size() > 0) {
-                        packet.value = data;
+                        packet.setValue(data);
                     }
                 }
             }
@@ -539,7 +539,7 @@ public abstract class BaseManager {
 
         private void handleObjectNoneRedoResponse(final Packet packet) {
             if (packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
-                final Data oldValue = packet.value;
+                final Data oldValue = packet.getValueData();
                 if (oldValue == null || oldValue.size() == 0) {
                     setResult(OBJECT_NULL);
                 } else {
@@ -880,7 +880,7 @@ public abstract class BaseManager {
                 if (result instanceof Data) {
                     final Data data = (Data) result;
                     if (data.size() > 0) {
-                        packet.value = data;
+                        packet.setValue(data);
                     }
                 }
             }
@@ -896,13 +896,7 @@ public abstract class BaseManager {
                 final Address address = listener.getKey();
                 final boolean includeValue = listener.getValue();
                 if (address.isThisAddress()) {
-                    try {
-                        enqueueEvent(eventType, name,
-                                key, (includeValue) ? value : null,
-                                address);
-                    } catch (final Exception e) {
-                        e.printStackTrace();
-                    }
+                    enqueueEvent(eventType, name, key, (includeValue) ? value : null, address);
                 } else {
                     final Packet packet = obtainPacket();
                     packet.set(name, ClusterOperation.EVENT, key, (includeValue) ? value : null);
@@ -1123,7 +1117,7 @@ public abstract class BaseManager {
                       final Data eventValue, final Address from) {
         Member member = getMember(from);
         if (member == null) {
-            member = new MemberImpl (from, false);
+            member = new MemberImpl(from, false);
         }
         final EventTask eventTask = new EventTask(member, eventType, name, eventKey, eventValue);
         int hash;

@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
@@ -179,7 +180,7 @@ public class Request {
 
     public static Request copy(Packet packet) {
         final Request copy = new Request();
-        copy.set(false, packet.operation, packet.name, packet.key, packet.value,
+        copy.set(false, packet.operation, packet.name, packet.getKeyData(), packet.getValueData(),
                 packet.blockId, packet.timeout, packet.ttl, packet.txnId, packet.callId, packet.threadId,
                 packet.lockAddress, packet.lockCount, packet.conn.getEndPoint(), packet.longValue,
                 packet.version);
@@ -193,9 +194,12 @@ public class Request {
         name = record.getName();
         version = record.getVersion();
         blockId = record.getBlockId();
-        lockThreadId = record.getLockThreadId();
-        lockAddress = record.getLockAddress();
-        lockCount = record.getLockCount();
+        DistributedLock lock = record.getLock();
+        if (lock != null) {
+            lockThreadId = lock.getLockThreadId();
+            lockAddress = lock.getLockAddress();
+            lockCount = lock.getLockCount();
+        }
         longValue = record.getCopyCount();
         ttl = record.getRemainingTTL();
         timeout = record.getRemainingIdle();
@@ -215,8 +219,8 @@ public class Request {
     public void setPacket(Packet packet) {
         packet.operation = operation;
         packet.name = name;
-        packet.key = key;
-        packet.value = value;
+        packet.setKey(key);
+        packet.setValue(value);
         packet.blockId = blockId;
         packet.timeout = timeout;
         packet.ttl = ttl;

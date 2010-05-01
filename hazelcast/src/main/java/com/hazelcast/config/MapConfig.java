@@ -49,6 +49,8 @@ public class MapConfig {
 
     private String evictionPolicy = DEFAULT_EVICTION_POLICY;
 
+    private boolean valueIndexed = false;
+
     private MapStoreConfig mapStoreConfig = null;
 
     private NearCacheConfig nearCacheConfig = null;
@@ -66,6 +68,30 @@ public class MapConfig {
     public MapConfig setName(String name) {
         this.name = name;
         return this;
+    }
+
+    /**
+     * Returns if the value of the mapEntry should be indexed for
+     * faster containsValue(obj) operations.
+     * <p/>
+     * Default is false.
+     *
+     * @return true if value is indexed, false otherwise
+     */
+    public boolean isValueIndexed() {
+        return valueIndexed;
+    }
+
+    /**
+     * Sets if the value of the map entries should be indexed for
+     * faster containsValue(obj) operations.
+     * <p/>
+     * Default is false.
+     *
+     * @param valueIndexed 
+     */
+    public void setValueIndexed(boolean valueIndexed) {
+        this.valueIndexed = valueIndexed;
     }
 
     /**

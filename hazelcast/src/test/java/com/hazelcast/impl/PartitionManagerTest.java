@@ -141,7 +141,7 @@ public class PartitionManagerTest {
     }
 
     @Test
-    public void thousandTimesRandomlyAssignBlocksAndReAarange() throws UnknownHostException {
+    public void thousandTimesRandomlyAssignBlocksAndReArrange() throws UnknownHostException {
         for (int i = 0; i < 1000; i++) {
             testRandomlyAssignBlocksAndRearrange();
         }

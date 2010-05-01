@@ -22,6 +22,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.impl.concurrentmap.LFUMapEntryComparator;
 import com.hazelcast.impl.concurrentmap.LRUMapEntryComparator;
@@ -38,6 +39,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
 import static com.hazelcast.impl.ClusterOperation.*;
@@ -72,7 +74,9 @@ public class CMap {
 
     final Address thisAddress;
 
-    final Map<Data, Record> mapRecords = new ConcurrentHashMap<Data, Record>(10000);
+    final ConcurrentMap<Data, Record> mapRecords = new ConcurrentHashMap<Data, Record>(10000);
+
+    final ConcurrentMap<Long, RecordEntry> mapRecordEntries = new ConcurrentHashMap<Long, RecordEntry>(1000);
 
     final String name;
 
@@ -104,7 +108,7 @@ public class CMap {
 
     final long evictionDelayMillis;
 
-    final MapIndexService mapIndexService = new MapIndexService();
+    final MapIndexService mapIndexService;
 
     final LocallyOwnedMap locallyOwnedMap;
 
@@ -116,7 +120,7 @@ public class CMap {
 
     volatile long lastEvictionTime = 0;
 
-    Lock lockEntireMap = null;
+    DistributedLock lockEntireMap = null;
 
     final LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
 
@@ -135,6 +139,7 @@ public class CMap {
         } else {
             mapConfig = node.getConfig().getMapConfig(mapConfigName);
         }
+        this.mapIndexService = new MapIndexService(mapConfig.isValueIndexed());
         this.backupCount = mapConfig.getBackupCount();
         ttl = mapConfig.getTimeToLiveSeconds() * 1000L;
         evictionDelayMillis = mapConfig.getEvictionDelaySeconds() * 1000L;
@@ -207,10 +212,29 @@ public class CMap {
                 || lockEntireMap.isLockedBy(request.lockAddress, request.lockThreadId));
     }
 
+    public RecordEntry getRecordEntry(Record record) {
+        RecordEntry recordEntry = mapRecordEntries.get(record.getId());
+        if (recordEntry == null) {
+            recordEntry = new RecordEntry(record);
+            RecordEntry found = mapRecordEntries.putIfAbsent(record.getId(), recordEntry);
+            if (found != null) {
+                recordEntry = found;
+            }
+        }
+        return recordEntry;
+    }
+
+    public void invalidateRecordEntryValue(Record record) {
+        RecordEntry recordEntry = mapRecordEntries.get(record.getId());
+        if (recordEntry != null) {
+            recordEntry.setValueObject(null);
+        }
+    }
+
     public void lockMap(Request request) {
         if (request.operation == CONCURRENT_MAP_LOCK_MAP) {
             if (lockEntireMap == null) {
-                lockEntireMap = new Lock();
+                lockEntireMap = new DistributedLock();
             }
             boolean locked = lockEntireMap.lock(request.lockAddress, request.lockThreadId);
             request.clearForResponse();
@@ -229,79 +253,6 @@ public class CMap {
             } else {
                 request.response = Boolean.TRUE;
             }
-        }
-    }
-
-    class Lock {
-        Address lockAddress = null;
-        int lockThreadId = -1;
-        int lockCount;
-
-        Lock() {
-        }
-
-        Lock(Address address, int threadId) {
-            this.lockAddress = address;
-            this.lockThreadId = threadId;
-            this.lockCount = 1;
-        }
-
-        boolean isLocked() {
-            return lockCount > 0;
-        }
-
-        boolean isLockedBy(Address address, int threadId) {
-            return (this.lockThreadId == threadId && this.lockAddress.equals(address));
-        }
-
-        boolean lock(Address address, int threadId) {
-            if (this.lockCount == 0) {
-                this.lockAddress = address;
-                this.lockThreadId = threadId;
-                this.lockCount++;
-                return true;
-            } else if (isLockedBy(address, threadId)) {
-                this.lockCount++;
-                return true;
-            }
-            return false;
-        }
-
-        boolean unlock(Address address, int threadId) {
-            if (lockCount == 0) {
-                return false;
-            } else {
-                if (isLockedBy(address, threadId)) {
-                    this.lockCount--;
-                    if (lockCount == 0) {
-                        this.lockAddress = null;
-                        this.lockThreadId = -1;
-                    }
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public Address getLockAddress() {
-            return lockAddress;
-        }
-
-        public int getLockThreadId() {
-            return lockThreadId;
-        }
-
-        public int getLockCount() {
-            return lockCount;
-        }
-
-        @Override
-        public String toString() {
-            return "Lock{" +
-                    "lockAddress=" + lockAddress +
-                    ", lockThreadId=" + lockThreadId +
-                    ", lockCount=" + lockCount +
-                    '}';
         }
     }
 
@@ -813,9 +764,24 @@ public class CMap {
     }
 
     void lock(Request request) {
+        Data reqValue = request.value;
+        request.value = null;
         Record rec = concurrentMapManager.ensureRecord(request);
         if (request.operation == CONCURRENT_MAP_LOCK_AND_GET_VALUE) {
-            request.value = rec.getValue();
+            if (reqValue == null) {
+                request.value = rec.getValue();
+                if (rec.getMultiValues() != null) {
+                    Values values = new Values(rec.getMultiValues());
+                    request.value = toData(values);
+                }
+            } else {
+                // multimap txn put operation
+                if (!rec.containsValue(reqValue)) {
+                    request.value = null;
+                } else {
+                    request.value = reqValue;
+                }
+            }
         }
         rec.lock(request.lockThreadId, request.lockAddress);
         rec.incrementVersion();
@@ -827,17 +793,14 @@ public class CMap {
     }
 
     void unlock(Record record) {
-        record.setLockThreadId(-1);
-        record.setLockCount(0);
-        record.setLockAddress(null);
+        record.clearLock();
         fireScheduledActions(record);
     }
 
     void fireScheduledActions(Record record) {
         concurrentMapManager.checkServiceThread();
         if (record.getLockCount() == 0) {
-            record.setLockThreadId(-1);
-            record.setLockAddress(null);
+            record.clearLock();
             if (record.getScheduledActions() != null) {
                 while (record.getScheduledActions().size() > 0) {
                     ScheduledAction sa = record.getScheduledActions().remove(0);
@@ -896,6 +859,9 @@ public class CMap {
                     }
                 }
             }
+        }
+        if (req.txnId != -1) {
+            unlock(record);
         }
         if (removed) {
             record.incrementVersion();
@@ -970,7 +936,6 @@ public class CMap {
                 return;
             }
         }
-        req.value.hash = (int) req.longValue;
         Data oldValue = null;
         Op op = UPDATE;
         if (record == null) {
@@ -1182,7 +1147,7 @@ public class CMap {
                     if (member.getAddress() != null) {
                         Packet packet = concurrentMapManager.obtainPacket();
                         packet.name = getName();
-                        packet.key = record.getKey();
+                        packet.setKey(record.getKey());
                         packet.operation = ClusterOperation.CONCURRENT_MAP_INVALIDATE;
                         boolean sent = concurrentMapManager.send(packet, member.getAddress());
                         if (!sent) {
@@ -1217,9 +1182,8 @@ public class CMap {
         record.setIndexes(req.indexes, req.indexTypes);
         record.setCopyCount((int) req.longValue);
         if (req.lockCount >= 0) {
-            record.setLockAddress(req.lockAddress);
-            record.setLockThreadId(req.lockThreadId);
-            record.setLockCount(req.lockCount);
+            DistributedLock lock = new DistributedLock(req.lockAddress, req.lockThreadId, req.lockCount);
+            record.setLock(lock);
         }
         return record;
     }
@@ -1335,7 +1299,7 @@ public class CMap {
         mapRecords.clear();
         mapIndexService.clear();
     }
-    
+
     void markAsDirty(Record record) {
         if (!record.isDirty()) {
             record.setDirty(true);
@@ -1367,6 +1331,7 @@ public class CMap {
     }
 
     void removeAndPurgeRecord(Record record) {
+        mapRecordEntries.remove(record.getId());
         mapRecords.remove(record.getKey());
         mapIndexService.remove(record);
     }

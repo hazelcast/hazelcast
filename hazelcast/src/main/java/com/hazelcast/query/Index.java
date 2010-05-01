@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class Index {
     // recordId -- indexValue
-    private final ConcurrentMap<Long, Long> recordValues = new ConcurrentHashMap<Long, Long>(10000, 0.75f, 1);
+    private final ConcurrentMap<Long, Long> recordValues = new ConcurrentHashMap<Long, Long>(100, 0.75f, 1);
     // indexValue -- Map<recordId, Record>
     private final IndexStore indexStore;
     private final Expression expression;

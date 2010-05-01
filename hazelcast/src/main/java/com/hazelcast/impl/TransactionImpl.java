@@ -43,38 +43,44 @@ class TransactionImpl implements Transaction {
         this.factory = factory;
     }
 
-    public Object attachAddOp(final String name, final Object key) {
+    public Object attachAddOp(String name, Object key) {
         TransactionRecord rec = findTransactionRecord(name, key);
         if (rec == null) {
             rec = new TransactionRecord(name, key, 1, true);
             transactionRecords.add(rec);
             return null;
         } else {
-            final Object old = rec.value;
+            Object old = rec.value;
             rec.value = ((Integer) rec.value) + 1;
             rec.removed = false;
             return old;
         }
     }
 
-    public Object attachPutOp(final String name, final Object key, final Object value,
-                              final boolean newRecord) {
-        TransactionRecord rec = findTransactionRecord(name, key);
+    public Object attachPutOp(String name, Object key, Object value, boolean newRecord) {
+        Instance.InstanceType instanceType = ConcurrentMapManager.getInstanceType(name);
+        Object matchValue = (instanceType.isMultiMap()) ? value : null;
+        TransactionRecord rec = findTransactionRecord(name, key, matchValue);
         if (rec == null) {
             rec = new TransactionRecord(name, key, value, newRecord);
             transactionRecords.add(rec);
             return null;
         } else {
-            final Object old = rec.value;
+            Object old = rec.value;
             rec.value = value;
             rec.removed = false;
             return old;
         }
     }
 
-    public Object attachRemoveOp(final String name, final Object key, final Object value,
-                                 final boolean newRecord) {
-        TransactionRecord rec = findTransactionRecord(name, key);
+    public Object attachRemoveOp(String name, Object key, Object value, boolean newRecord) {
+        return attachRemoveOp(name, key, value, newRecord, 1);
+    }
+
+    public Object attachRemoveOp(String name, Object key, Object value, boolean newRecord, int valueCount) {
+        Instance.InstanceType instanceType = ConcurrentMapManager.getInstanceType(name);
+        Object matchValue = (instanceType.isMultiMap()) ? value : null;
+        TransactionRecord rec = findTransactionRecord(name, key, matchValue);
         Object oldValue = null;
         if (rec == null) {
             rec = new TransactionRecord(name, key, value, newRecord);
@@ -83,6 +89,7 @@ class TransactionImpl implements Transaction {
             oldValue = rec.value;
             rec.value = value;
         }
+        rec.valueCount = valueCount;
         rec.removed = true;
         return oldValue;
     }
@@ -98,21 +105,21 @@ class TransactionImpl implements Transaction {
             throw new IllegalStateException("Transaction is not active");
         status = TXN_STATUS_COMMITTING;
         try {
-            for (final TransactionRecord transactionRecord : transactionRecords) {
+            for (TransactionRecord transactionRecord : transactionRecords) {
                 transactionRecord.commit();
             }
-        } catch (final RuntimeException e) {
+        } catch (RuntimeException e) {
             throw e;
-        } catch (final Exception e) {
-           throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         } finally {
             finalizeTxn();
             status = TXN_STATUS_COMMITTED;
         }
     }
 
-    public boolean containsValue(final String name, final Object value) {
-        for (final TransactionRecord transactionRecord : transactionRecords) {
+    public boolean containsValue(String name, Object value) {
+        for (TransactionRecord transactionRecord : transactionRecords) {
             if (transactionRecord.name.equals(name)) {
                 if (!transactionRecord.removed) {
                     if (value.equals(transactionRecord.value))
@@ -123,20 +130,27 @@ class TransactionImpl implements Transaction {
         return false;
     }
 
-    public TransactionRecord findTransactionRecord(final String name, final Object key) {
-        for (final TransactionRecord transactionRecord : transactionRecords) {
+    public TransactionRecord findTransactionRecord(String name, Object key) {
+        return findTransactionRecord(name, key, null);
+    }
+
+    public TransactionRecord findTransactionRecord(String name, Object key, Object value) {
+        for (TransactionRecord transactionRecord : transactionRecords) {
             if (transactionRecord.name.equals(name)) {
                 if (transactionRecord.key != null) {
-                    if (transactionRecord.key.equals(key))
-                        return transactionRecord;
+                    if (transactionRecord.key.equals(key)) {
+                        if (value == null || value.equals(transactionRecord.value)) {
+                            return transactionRecord;
+                        }
+                    }
                 }
             }
         }
         return null;
     }
 
-    public Object get(final String name, final Object key) {
-        final TransactionRecord rec = findTransactionRecord(name, key);
+    public Object get(String name, Object key) {
+        TransactionRecord rec = findTransactionRecord(name, key);
         if (rec == null)
             return null;
         if (rec.removed)
@@ -153,18 +167,21 @@ class TransactionImpl implements Transaction {
         return status;
     }
 
-    public boolean has(final String name, final Object key) {
-        final TransactionRecord rec = findTransactionRecord(name, key);
-        return rec != null;
+    public boolean has(String name, Object key) {
+        return findTransactionRecord(name, key) != null;
     }
 
-    public boolean isNew(final String name, final Object key) {
-        final TransactionRecord rec = findTransactionRecord(name, key);
+    public boolean has(String name, Object key, Object value) {
+        return findTransactionRecord(name, key, value) != null;
+    }
+
+    public boolean isNew(String name, Object key) {
+        TransactionRecord rec = findTransactionRecord(name, key);
         return (rec != null && !rec.removed && rec.newRecord);
     }
 
-    public boolean isRemoved(final String name, final Object key) {
-        final TransactionRecord rec = findTransactionRecord(name, key);
+    public boolean isRemoved(String name, Object key) {
+        TransactionRecord rec = findTransactionRecord(name, key);
         return (rec != null && rec.removed);
     }
 
@@ -175,10 +192,10 @@ class TransactionImpl implements Transaction {
                     + status);
         status = TXN_STATUS_ROLLING_BACK;
         try {
-            for (final TransactionRecord transactionRecord : transactionRecords) {
+            for (TransactionRecord transactionRecord : transactionRecords) {
                 transactionRecord.rollback();
             }
-        } catch (final Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             finalizeTxn();
@@ -186,20 +203,20 @@ class TransactionImpl implements Transaction {
         }
     }
 
-    public int size(final String name) {
+    public int size(String name) {
         int size = 0;
-        for (final TransactionRecord transactionRecord : transactionRecords) {
+        for (TransactionRecord transactionRecord : transactionRecords) {
             if (transactionRecord.name.equals(name)) {
                 if (transactionRecord.removed) {
-                    if (transactionRecord.name.startsWith("m:s:")) {
+                    if (transactionRecord.instanceType.isSet()) {
                         size--;
                     } else if (!transactionRecord.newRecord) {
-                        if (transactionRecord.instanceType != Instance.InstanceType.QUEUE) {
-                            size--;
+                        if (!transactionRecord.instanceType.isQueue()) {
+                            size -= transactionRecord.valueCount;
                         }
                     }
                 } else if (transactionRecord.newRecord) {
-                    if (transactionRecord.instanceType == Instance.InstanceType.LIST) {
+                    if (transactionRecord.instanceType.isList()) {
                         size += (Integer) transactionRecord.value;
                     } else {
                         size++;
@@ -210,9 +227,9 @@ class TransactionImpl implements Transaction {
         return size;
     }
 
-    public List newValues(final String name) {
+    public List newValues(String name) {
         List lsValues = null;
-        for (final TransactionRecord transactionRecord : transactionRecords) {
+        for (TransactionRecord transactionRecord : transactionRecords) {
             if (transactionRecord.name.equals(name)) {
                 if (!transactionRecord.removed) {
                     if (transactionRecord.value != null) {
@@ -229,9 +246,9 @@ class TransactionImpl implements Transaction {
         return lsValues;
     }
 
-    public List<Map.Entry> newEntries(final String name) {
+    public List<Map.Entry> newEntries(String name) {
         List<Map.Entry> lsEntries = null;
-        for (final TransactionRecord transactionRecord : transactionRecords) {
+        for (TransactionRecord transactionRecord : transactionRecords) {
             if (transactionRecord.name.equals(name)) {
                 if (!transactionRecord.removed) {
                     if (transactionRecord.value != null) {
@@ -274,13 +291,14 @@ class TransactionImpl implements Transaction {
 
         public long lastAccess = -1;
 
-        public TransactionRecord(final String name, final Object key, final Object value,
-                                 final boolean newRecord) {
+        public int valueCount = 1;
+
+        public TransactionRecord(String name, Object key, Object value, boolean newRecord) {
             this.name = name;
             this.key = key;
             this.value = value;
             this.newRecord = newRecord;
-            instanceType = factory.node.concurrentMapManager.getInstanceType(name);
+            instanceType = ConcurrentMapManager.getInstanceType(name);
         }
 
         public void commit() {
@@ -292,20 +310,26 @@ class TransactionImpl implements Transaction {
 
         public void commitMap() {
             if (removed) {
-                if (name.startsWith("m:s:")) {
+                if (instanceType.isSet()) {
                     ConcurrentMapManager.MRemoveItem mRemoveItem = factory.node.concurrentMapManager.new MRemoveItem();
                     mRemoveItem.removeItem(name, key);
                 } else if (!newRecord) {
-                    factory.node.concurrentMapManager.new MRemove().remove(name, key, -1);
+                    if (instanceType.isMap()) {
+                        factory.node.concurrentMapManager.new MRemove().remove(name, key, -1);
+                    } else if (instanceType.isMultiMap()) {
+                        factory.node.concurrentMapManager.new MRemoveMulti().remove(name, key, value);
+                    }
                 } else {
                     factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
                 }
             } else {
-                if (instanceType == Instance.InstanceType.LIST) {
+                if (instanceType.isList()) {
                     int count = (Integer) value;
                     for (int i = 0; i < count; i++) {
                         factory.node.concurrentMapManager.new MAdd().addToList(name, key);
                     }
+                } else if (instanceType.isMultiMap()) {
+                    factory.node.concurrentMapManager.new MPutMulti().put(name, key, value);
                 } else {
                     factory.node.concurrentMapManager.new MPut().put(name, key, value, -1, -1);
                 }
@@ -330,7 +354,7 @@ class TransactionImpl implements Transaction {
 
         public void rollbackMap() {
             MProxy mapProxy = null;
-            final Object proxy = factory.getOrCreateProxyByName(name);
+            Object proxy = factory.getOrCreateProxyByName(name);
             if (proxy instanceof MProxy) {
                 mapProxy = (MProxy) proxy;
             }
@@ -346,16 +370,30 @@ class TransactionImpl implements Transaction {
         }
 
         private void commitPoll() {
-            final CommitPoll commitPoll = factory.node.blockingQueueManager.new CommitPoll();
+            CommitPoll commitPoll = factory.node.blockingQueueManager.new CommitPoll();
             commitPoll.commitPoll(name);
         }
 
         private void offerAgain() {
-            final Offer offer = factory.node.blockingQueueManager.new Offer();
+            Offer offer = factory.node.blockingQueueManager.new Offer();
             try {
                 offer.offer(name, value, 0, false);
             } catch (InterruptedException ignored) {
             }
+        }
+
+        @Override
+        public String toString() {
+            return "TransactionRecord{" +
+                    "instanceType=" + instanceType +
+                    ", name='" + name + '\'' +
+                    ", key=" + key +
+                    ", value=" + value +
+                    ", removed=" + removed +
+                    ", newRecord=" + newRecord +
+                    ", lastAccess=" + lastAccess +
+                    ", valueCount=" + valueCount +
+                    '}';
         }
     }
 }

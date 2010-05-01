@@ -26,10 +26,7 @@ import org.junit.Test;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 
 import static org.junit.Assert.*;
@@ -243,12 +240,21 @@ public class TransactionTest {
 
     @Test
     public void testMapRemoveWithTwoTxn() {
-        Hazelcast.getMap("testMapRemoveWithTwoTxn").put("1", "value");
+        IMap map = Hazelcast.getMap("testMapRemoveWithTwoTxn");
+        map.put("1", "value");
         TransactionalMap txnMap = newTransactionalMapProxy("testMapRemoveWithTwoTxn");
         TransactionalMap txnMap2 = newTransactionalMapProxy("testMapRemoveWithTwoTxn");
         txnMap.begin();
-        txnMap.remove("1");
+        assertEquals("value", txnMap.remove("1"));
+        assertEquals(0, txnMap.size());
+        assertEquals(1, map.size());
+        assertFalse(txnMap.containsKey("1"));
+        assertTrue(map.containsKey("1"));
         txnMap.commit();
+        assertEquals(0, txnMap.size());
+        assertEquals(0, map.size());
+        assertFalse(txnMap.containsKey("1"));
+        assertFalse(map.containsKey("1"));
         txnMap2.begin();
         txnMap2.remove("1");
         txnMap2.commit();
@@ -368,6 +374,53 @@ public class TransactionTest {
         txnMap2.commit();
         assertEquals(0, txnMap.size());
         assertEquals(0, txnMap2.size());
+    }
+
+    @Test
+    public void testMultiMapPutWithTwoTxn() {
+        TransactionalMultiMap txnMMap = newTransactionalMultiMapProxy("testMultiMapPutWithTwoTxn");
+        TransactionalMultiMap txnMMap2 = newTransactionalMultiMapProxy("testMultiMapPutWithTwoTxn");
+        txnMMap.begin();
+        assertTrue(txnMMap.put("1", "value1"));
+        assertEquals(1, txnMMap.size());
+        assertEquals(0, txnMMap2.size());
+        txnMMap.commit();
+        assertEquals(1, txnMMap.size());
+        assertEquals(1, txnMMap2.size());
+        txnMMap2.begin();
+        assertTrue(txnMMap2.put("1", "value2"));
+        assertEquals(1, txnMMap.size());
+        assertEquals(2, txnMMap2.size());
+        txnMMap2.commit();
+        assertEquals(2, txnMMap.size());
+        assertEquals(2, txnMMap2.size());
+        assertEquals(2, txnMMap.valueCount("1"));
+        assertEquals(2, txnMMap2.valueCount("1"));
+    }
+
+    @Test
+    public void testMultiMapRemoveWithTwoTxn() {
+        MultiMap mmap = Hazelcast.getMultiMap("testMultiMapRemoveWithTwoTxn");
+        assertTrue(mmap.put("1", "value1"));
+        assertTrue(mmap.put("1", "value2"));
+        assertTrue(mmap.put("1", "value3"));
+        TransactionalMultiMap txnMMap = newTransactionalMultiMapProxy("testMultiMapRemoveWithTwoTxn");
+        TransactionalMultiMap txnMMap2 = newTransactionalMultiMapProxy("testMultiMapRemoveWithTwoTxn");
+        assertEquals(3, mmap.size());
+        txnMMap.begin();
+        assertTrue(txnMMap.remove("1", "value2"));
+        assertFalse(txnMMap.remove("1", "value5"));
+        assertEquals(2, txnMMap.size());
+        assertEquals(3, txnMMap2.size());
+        txnMMap.commit();
+        assertEquals(2, mmap.size());
+        txnMMap2.begin();
+        Collection values = txnMMap2.remove("1");
+        assertEquals(2, values.size());
+        assertEquals(2, txnMMap.size());
+        assertEquals(0, txnMMap2.size());
+        txnMMap2.commit();
+        assertEquals(0, mmap.size());
     }
 
     @Test
@@ -588,6 +641,10 @@ public class TransactionTest {
         return (TransactionalMap) newTransactionalProxy(Hazelcast.getMap(name), TransactionalMap.class);
     }
 
+    TransactionalMultiMap newTransactionalMultiMapProxy(String name) {
+        return (TransactionalMultiMap) newTransactionalProxy(Hazelcast.getMultiMap(name), TransactionalMultiMap.class);
+    }
+
     TransactionalQueue newTransactionalQueueProxy(String name) {
         return (TransactionalQueue) newTransactionalProxy(Hazelcast.getQueue(name), TransactionalQueue.class);
     }
@@ -616,6 +673,14 @@ public class TransactionTest {
         IMap proxy = (IMap) Proxy.newProxyInstance(classLoader, interfaces, new ThreadBoundInvocationHandler(imap));
         mapsUsed.add(proxy);
         return proxy;
+    }
+
+    interface TransactionalMultiMap extends MultiMap {
+        void begin();
+
+        void commit();
+
+        void rollback();
     }
 
     interface TransactionalMap extends IMap {

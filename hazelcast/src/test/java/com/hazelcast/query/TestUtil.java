@@ -18,24 +18,29 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.impl.CMap;
 import com.hazelcast.impl.Record;
+import com.hazelcast.nio.Data;
 import org.junit.Ignore;
 
 import java.io.Serializable;
 
 import static com.hazelcast.nio.IOUtil.toData;
+import static org.mockito.Mockito.mock;
 
 @Ignore
 public class TestUtil {
-    public static Record newRecord(long recordId) {
-        return new Record(null, 1, null, null, 0, 0, recordId);
+    public static Record newRecord(long recordId, Data key, Data value) {
+        CMap cmap = mock(CMap.class);
+        return new Record(cmap, 1, null, null, 0, 0, recordId);
     }
 
     public static Record newRecord(long recordId, Object key, Object value) {
-        Record record = newRecord(recordId);
-        record.setKey(toData(key));
-        record.setValue(toData(value));
-        return record;
+        return newRecord(recordId, toData(key), toData(value));
+    }
+
+    public static Record newRecord(long recordId) {
+        return newRecord(recordId, null, null);
     }
 
     @Ignore

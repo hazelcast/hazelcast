@@ -18,8 +18,6 @@
 package com.hazelcast.query;
 
 import com.hazelcast.impl.Record;
-import com.hazelcast.query.TestUtil;
-import com.hazelcast.query.Index;
 import org.junit.Test;
 
 import java.util.concurrent.ConcurrentMap;
@@ -39,7 +37,7 @@ public class IndexTest extends TestUtil {
         assertEquals(0, index.getRecords(0).size());
         assertEquals(0, index.getSubRecordsBetween(0, 1000).size());
         Record record5 = newRecord(5L);
-        assertEquals(5L, record5.getId());
+        assertEquals(5L, (Object) record5.getId());
         index.index(55, record5);
         assertEquals(1, index.getRecordValues().size());
         assertEquals(new Long(55L), index.getRecordValues().get(5L));
@@ -47,7 +45,7 @@ public class IndexTest extends TestUtil {
         assertNotNull(records);
         assertEquals(record5, records.get(5L));
         Record record6 = newRecord(6L);
-        assertEquals(6L, record6.getId());
+        assertEquals(6L, (Object) record6.getId());
         index.index(66, record6);
         assertEquals(2, index.getRecordValues().size());
         assertEquals(new Long(66L), index.getRecordValues().get(6L));
@@ -86,8 +84,8 @@ public class IndexTest extends TestUtil {
         assertEquals(2, index.getSubRecords(false, false, 66).size());
         assertEquals(3, index.getSubRecords(true, false, 66).size());
         assertEquals(3, index.getSubRecords(true, false, 61).size());
-        assertEquals(3, index.getRecords(new long[] {66, 555, 34234}).size());
-        assertEquals(2, index.getRecords(new long[] {555, 34234}).size());
+        assertEquals(3, index.getRecords(new long[]{66, 555, 34234}).size());
+        assertEquals(2, index.getRecords(new long[]{555, 34234}).size());
         record5.setActive(false);
         index.index(-1, record5);
         assertEquals(2, index.getRecordValues().size());
@@ -130,6 +128,4 @@ public class IndexTest extends TestUtil {
         assertEquals(0, index.getSubRecordsBetween(66, 555).size());
         assertEquals(0, index.getSubRecordsBetween(555, 555).size());
     }
-
-
 }
