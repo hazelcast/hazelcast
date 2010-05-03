@@ -888,7 +888,7 @@ public class WebFilter implements Filter {
             if (data == null)
                 return null;
             md.reset();
-            md.digest(data.buffer.array());
+            md.digest(data.buffer);
             return md.digest();
         }
 

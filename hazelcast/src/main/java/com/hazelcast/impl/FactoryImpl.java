@@ -1499,7 +1499,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public void destroy() {
-                operationsCounter.incrementOtherOperations();                
+                operationsCounter.incrementOtherOperations();
                 factory.destroyInstanceClusterwide(name, null);
             }
 
@@ -1832,7 +1832,7 @@ public class FactoryImpl implements HazelcastInstance {
         public MProxyImpl() {
         }
 
-        class Invoker implements InvocationHandler {
+        class DynamicInvoker implements InvocationHandler {
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                 beforeCall();
                 try {
@@ -1840,10 +1840,8 @@ public class FactoryImpl implements HazelcastInstance {
                 } catch (Throwable e) {
                     if (factory.restarted) {
                         return invoke(proxy, method, args);
-                    } else if (e instanceof RuntimeException) {
-                        throw (RuntimeException) e;
                     } else {
-                        throw new RuntimeException(e);
+                        throw (RuntimeException) e;
                     }
                 } finally {
                     afterCall();
@@ -1867,7 +1865,7 @@ public class FactoryImpl implements HazelcastInstance {
             this.concurrentMapManager = factory.node.concurrentMapManager;
             this.listenerManager = factory.node.listenerManager;
             ClassLoader cl = MProxy.class.getClassLoader();
-            dynamicProxy = (MProxy) Proxy.newProxyInstance(cl, new Class[]{MProxy.class}, new Invoker());
+            dynamicProxy = (MProxy) Proxy.newProxyInstance(cl, new Class[]{MProxy.class}, new DynamicInvoker());
         }
 
         private void beforeCall() {
@@ -1888,10 +1886,8 @@ public class FactoryImpl implements HazelcastInstance {
             } catch (Throwable e) {
                 if (factory.restarted) {
                     return get(key);
-                } else if (e instanceof RuntimeException) {
-                    throw (RuntimeException) e;
                 } else {
-                    throw new RuntimeException(e);
+                    throw (RuntimeException) e;
                 }
             } finally {
                 afterCall();
@@ -1909,10 +1905,8 @@ public class FactoryImpl implements HazelcastInstance {
             } catch (Throwable e) {
                 if (factory.restarted) {
                     return put(key, value);
-                } else if (e instanceof RuntimeException) {
-                    throw (RuntimeException) e;
                 } else {
-                    throw new RuntimeException(e);
+                    throw (RuntimeException) e;
                 }
             } finally {
                 afterCall();
@@ -1925,10 +1919,8 @@ public class FactoryImpl implements HazelcastInstance {
             } catch (Throwable e) {
                 if (factory.restarted) {
                     return remove(key);
-                } else if (e instanceof RuntimeException) {
-                    throw (RuntimeException) e;
                 } else {
-                    throw new RuntimeException(e);
+                    throw (RuntimeException) e;
                 }
             } finally {
                 afterCall();
