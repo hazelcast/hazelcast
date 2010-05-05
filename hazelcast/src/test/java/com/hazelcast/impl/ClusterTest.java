@@ -522,7 +522,7 @@ public class ClusterTest {
         allMapListenerTest(map2, "5", map1);
     }
 
-    @Test(timeout = 120000)
+    @Test(timeout = 1200000)
     public void testListeners2() throws Exception {
         final CountDownLatch latchAdded = new CountDownLatch(1);
         final CountDownLatch latchUpdated = new CountDownLatch(1);
@@ -1054,7 +1054,7 @@ public class ClusterTest {
      * as the target's block-owners hash value, then request will
      * be re-done.
      */
-    @Test(timeout = 360000)
+    @Test(timeout = 3600000)
     public void testDataRecoveryAndCorrectness() throws Exception {
         final int size = 1000;
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
