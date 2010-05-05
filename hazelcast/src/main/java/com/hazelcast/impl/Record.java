@@ -357,7 +357,8 @@ public class Record implements MapEntry {
     }
 
     public String toString() {
-        return "Record key=" + getKey() + ", removable=" + isRemovable();
+        return "Record key=" + getKey() + ", active=" + isActive()
+                + ", version=" + getVersion() + ", removable=" + isRemovable();
     }
 
     public long getVersion() {

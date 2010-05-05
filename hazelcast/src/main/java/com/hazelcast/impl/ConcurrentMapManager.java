@@ -200,7 +200,7 @@ public class ConcurrentMapManager extends BaseManager {
             for (Data value : values) {
                 Record record = rec.copy();
                 record.setValue(value);
-                record.setVersion(version++);
+                record.setVersion(++version);
                 MBackupOp backupOp = new MBackupOp();
                 backupOp.backup(record);
             }
@@ -565,7 +565,7 @@ public class ConcurrentMapManager extends BaseManager {
                     if (oldObject != null) {
                         if (oldObject instanceof CMap.Values) {
                             CMap.Values values =  (CMap.Values) oldObject;
-                            removedValueCount = (values == null) ? 0 : values.size();
+                            removedValueCount = values.size();
                         } else {
                             removedValueCount = 1;
                         }
