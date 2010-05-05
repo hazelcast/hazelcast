@@ -270,10 +270,23 @@ public class TransactionTest {
         assertFalse(txnMap2.tryLock("1", 2, TimeUnit.SECONDS));
         long end = System.currentTimeMillis();
         long took = (end - start);
+        System.out.println("Took " + took);
         assertTrue((took > 1000) ? (took < 4000) : false);
         assertFalse(txnMap2.tryLock("1"));
         txnMap.unlock("1");
         assertTrue(txnMap2.tryLock("1", 2, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testTryLock2() throws Exception {
+        Hazelcast.getMap("testTryLock").put("1", "value");
+        TransactionalMap txnMap = newTransactionalMapProxy("testTryLock");
+        final TransactionalMap txnMap2 = newTransactionalMapProxy("testTryLock");
+        txnMap.lock("1");
+        Future f = txnMap2.async("tryLock", "1", 101, TimeUnit.MILLISECONDS);
+        Thread.sleep(110);
+        txnMap.unlock("1");
+        assertFalse((Boolean) f.get(3, TimeUnit.SECONDS));
     }
 
     @Test
@@ -684,6 +697,9 @@ public class TransactionTest {
     }
 
     interface TransactionalMap extends IMap {
+
+        Future async(String methodName, Object... arg);
+
         void begin();
 
         void commit();
@@ -724,10 +740,12 @@ public class TransactionTest {
             this.target = target;
         }
 
-        public Object invoke(final Object o, final Method method, final Object[] objects) throws Throwable {
+        public Object invoke(final Object o, final Method method, final Object[] args) throws Throwable {
             final String name = method.getName();
             final BlockingQueue<Object> resultQ = ResponseQueueFactory.newResponseQueue();
-            if (name.equals("begin") || name.equals("commit") || name.equals("rollback")) {
+            if (name.equals("async")) {
+                return invokeAsync(args);
+            } else if (name.equals("begin") || name.equals("commit") || name.equals("rollback")) {
                 es.execute(new Runnable() {
                     public void run() {
                         try {
@@ -752,7 +770,7 @@ public class TransactionTest {
                 es.execute(new Runnable() {
                     public void run() {
                         try {
-                            Object result = method.invoke(target, objects);
+                            Object result = method.invoke(target, args);
                             resultQ.put((result == null) ? NULL_OBJECT : result);
                         } catch (Exception e) {
                             try {
@@ -772,6 +790,30 @@ public class TransactionTest {
                 throw ((Throwable) result);
             }
             return (result == NULL_OBJECT) ? null : result;
+        }
+
+        public Future invokeAsync(final Object[] args) throws Exception {
+            String methodName = (String) args[0];
+            final Object[] newArgs = (args.length == 1) ? null : (Object[]) args[1];
+            int len = (newArgs == null) ? 0 : newArgs.length;
+            final Method method = findMethod(methodName, len);
+            return es.submit(new Callable () {
+                public Object call() throws Exception {
+                    return method.invoke(target, newArgs);
+                }
+            });
+        }
+
+        private Method findMethod (String name, int argLen) {
+            Method[] methods = target.getClass().getMethods();
+            for (Method method : methods) {
+                if (method.getName().equals(name)) {
+                    if (argLen == method.getParameterTypes().length) {
+                        return method;
+                    }
+                }
+            }
+            return null;
         }
     }
 }

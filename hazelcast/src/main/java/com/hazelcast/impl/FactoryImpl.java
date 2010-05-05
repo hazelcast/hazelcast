@@ -1840,8 +1840,10 @@ public class FactoryImpl implements HazelcastInstance {
                 } catch (Throwable e) {
                     if (factory.restarted) {
                         return invoke(proxy, method, args);
-                    } else {
+                    } else if (e instanceof RuntimeException) {
                         throw (RuntimeException) e;
+                    } else {
+                        throw new RuntimeException(e);
                     }
                 } finally {
                     afterCall();

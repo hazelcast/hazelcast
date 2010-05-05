@@ -810,6 +810,8 @@ public class CMap {
                         if (record.isLocked()) {
                             return;
                         }
+                    } else {
+                        sa.onExpire();
                     }
                 }
             }

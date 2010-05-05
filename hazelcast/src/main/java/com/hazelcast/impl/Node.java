@@ -561,6 +561,8 @@ public class Node {
                     sb.append("\n");
                     sb.append("Couldn't connect to discovered master! tryCount: " + tryCount);
                     sb.append("\n");
+                    sb.append("thisAddress: " + address);
+                    sb.append("\n");
                     sb.append("masterAddress: " + masterAddress);
                     sb.append("\n");
                     sb.append("connection: " + connectionManager.getConnection(masterAddress));

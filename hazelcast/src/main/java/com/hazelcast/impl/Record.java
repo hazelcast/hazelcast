@@ -32,7 +32,7 @@ public class Record implements MapEntry {
 
     private final CMap cmap;
     private final long id;
-    private final int blockId;
+    private final short blockId;
     private final Data key;
 
     private volatile Data value;
@@ -57,7 +57,7 @@ public class Record implements MapEntry {
         super();
         this.id = id;
         this.cmap = cmap;
-        this.blockId = blockId;
+        this.blockId = (short) blockId;
         this.key = key;
         this.value = value;
         this.setCreationTime(System.currentTimeMillis());
