@@ -32,6 +32,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
@@ -1552,5 +1553,49 @@ public class ClusterTest {
         Thread.sleep(2000);
         h1.shutdown();
         task.get();
+    }
+
+    /**
+     * Test case for issue 265.
+     * Lock should invalidate the locally owned cache.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testConcurrentLockPrimitive() throws Exception {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(new Config());
+        int threads = 3;
+        final IMap<Object, Object> testMap = instance.getMap("testConcurrentLockPrimitive");
+        assertNull(testMap.putIfAbsent(1L, 0L));
+        assertEquals(0L, testMap.get(1L));
+        final AtomicLong count = new AtomicLong(0);
+        ExecutorService pool = Executors.newFixedThreadPool(threads);
+        final int total = 50000;
+        final CountDownLatch countDownLatch = new CountDownLatch(total);
+        for (int i = 0; i < threads; i++) {
+            pool.execute(new Runnable() {
+                public void run() {
+                    while (count.incrementAndGet() < total + 1) {
+                        // comment until --end and this passes
+                        Long v = (Long) testMap.get(1L);
+                        assertNotNull(v);
+                        testMap.lock(1L);
+                        try {
+                            Long value = (Long) testMap.get(1L);
+                            assertNotNull(value);
+                            testMap.put(1L, value.longValue() + 1);
+                        } finally {
+                            testMap.unlock(1L);
+                            countDownLatch.countDown();
+                        }
+                    }
+                }
+            });
+        }
+        countDownLatch.await();
+        pool.shutdown();
+        pool.awaitTermination(1, TimeUnit.SECONDS);
+        Long value = (Long) testMap.get(1L);
+        assertEquals(Long.valueOf(total), value);
     }
 }

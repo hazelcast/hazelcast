@@ -49,11 +49,7 @@ public class RecordEntry implements MapEntry {
             valueObject = toObject(record.getValue());
         }
         return valueObject;
-    }
-
-    void setValueObject(Object valueObject) {
-        this.valueObject = valueObject;
-    }
+    } 
 
     public Object setValue(Object value) {
         MProxy proxy = (MProxy) record.getCMap().concurrentMapManager.node.factory.getOrCreateProxyByName(record.getName());

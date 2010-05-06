@@ -483,6 +483,10 @@ public class Record implements MapEntry {
         return id;
     }
 
+    public boolean hasScheduledAction() {
+        return optionalInfo != null && optionalInfo.lsScheduledActions != null && optionalInfo.lsScheduledActions.size() > 0;
+    }
+
     public List<ScheduledAction> getScheduledActions() {
         if (optionalInfo == null) return null;
         return getOptionalInfo().lsScheduledActions;

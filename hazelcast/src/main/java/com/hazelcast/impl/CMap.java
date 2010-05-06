@@ -225,10 +225,7 @@ public class CMap {
     }
 
     public void invalidateRecordEntryValue(Record record) {
-        RecordEntry recordEntry = mapRecordEntries.get(record.getId());
-        if (recordEntry != null) {
-            recordEntry.setValueObject(null);
-        }
+        mapRecordEntries.remove (record.getId());
     }
 
     public void lockMap(Request request) {
@@ -726,9 +723,6 @@ public class CMap {
                 return null;
             }
         }
-        if (req.local && locallyOwnedMap != null) {
-            locallyOwnedMap.offerToCache(record);
-        }
         record.setLastAccessed();
         updateStats(READ, record, true, null);
         Data data = record.getValue();
@@ -740,6 +734,9 @@ public class CMap {
                 Values values = new Values(record.getMultiValues());
                 returnValue = toData(values);
             }
+        }
+        if (req.local && locallyOwnedMap != null && returnValue != null) {
+            locallyOwnedMap.offerToCache(record);
         }
         return returnValue;
     }
@@ -785,6 +782,7 @@ public class CMap {
         }
         rec.lock(request.lockThreadId, request.lockAddress);
         rec.incrementVersion();
+        mapRecordEntries.remove(rec.getId());
         request.version = rec.getVersion();
         request.lockCount = rec.getLockCount();
         updateStats(LOCK, rec, true, null);
@@ -801,18 +799,16 @@ public class CMap {
         concurrentMapManager.checkServiceThread();
         if (record.getLockCount() == 0) {
             record.clearLock();
-            if (record.getScheduledActions() != null) {
-                while (record.getScheduledActions().size() > 0) {
-                    ScheduledAction sa = record.getScheduledActions().remove(0);
-                    node.clusterManager.deregisterScheduledAction(sa);
-                    if (!sa.expired()) {
-                        sa.consume();
-                        if (record.isLocked()) {
-                            return;
-                        }
-                    } else {
-                        sa.onExpire();
+            while (record.hasScheduledAction()) {
+                ScheduledAction sa = record.getScheduledActions().remove(0);
+                node.clusterManager.deregisterScheduledAction(sa);
+                if (!sa.expired()) {
+                    sa.consume();
+                    if (record.isLocked()) {
+                        return;
                     }
+                } else {
+                    sa.onExpire();
                 }
             }
         }
@@ -1325,6 +1321,7 @@ public class CMap {
     void markAsRemoved(Record record) {
         if (record.isActive()) {
             record.markRemoved();
+            mapRecordEntries.remove(record.getId());
         }
         record.setValue(null);
         record.setMultiValues(null);

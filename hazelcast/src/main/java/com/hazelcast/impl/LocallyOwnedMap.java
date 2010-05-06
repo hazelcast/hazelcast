@@ -51,14 +51,15 @@ class LocallyOwnedMap {
             if (record.isActive() && record.isValid()) {
                 RecordEntry recordEntry = record.getRecordEntry();
                 Object value = recordEntry.getValue();
-                record.setLastAccessed();
-                localMapStats.incrementHit();
-                return value;
-            } else {
-                //record is removed!
-                mapCache.remove(key);
-                return OBJECT_REDO;
+                if (value != null) {
+                    record.setLastAccessed();
+                    localMapStats.incrementHit();
+                    return value;
+                }
             }
+            //record is not valid!
+            mapCache.remove(key);
+            return OBJECT_REDO;
         }
     }
 
@@ -70,8 +71,7 @@ class LocallyOwnedMap {
             for (Map.Entry<Object, Record> entry : entries) {
                 Object key = entry.getKey();
                 Record record = entry.getValue();
-                if (!record.isActive() || !record.
-                        isValid(now)) {
+                if (!record.isActive() || !record.isValid(now)) {
                     lsKeysToRemove.add(key);
                 }
             }
