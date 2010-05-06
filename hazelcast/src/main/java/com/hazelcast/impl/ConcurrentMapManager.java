@@ -751,6 +751,7 @@ public class ConcurrentMapManager extends BaseManager {
                     rethrowException(operation, (AddressAwareException) returnObject);
                 }
                 if (returnObject != Boolean.FALSE) {
+                    request.value = dataNew;
                     backup(CONCURRENT_MAP_BACKUP_PUT);
                 }
                 return returnObject;

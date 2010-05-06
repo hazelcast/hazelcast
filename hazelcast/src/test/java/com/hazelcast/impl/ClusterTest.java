@@ -226,7 +226,7 @@ public class ClusterTest {
         assertEquals("value2", h.getMap("default").get("1"));
     }
 
-    @Test(timeout = 120000)
+    @Test(timeout = 160000)
     public void testBackupCount() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
@@ -239,7 +239,7 @@ public class ClusterTest {
         assertEquals(map2.getLocalMapStats().getBackupEntryCount(), map1.getLocalMapStats().getOwnedEntryCount());
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
         IMap map3 = h3.getMap("default");
-        Thread.sleep(2000);
+        Thread.sleep(12000);
         assertEquals(map2.getLocalMapStats().getBackupEntryCount(), map1.getLocalMapStats().getOwnedEntryCount());
         assertEquals(map1.getLocalMapStats().getBackupEntryCount(), map3.getLocalMapStats().getOwnedEntryCount());
         assertEquals(map3.getLocalMapStats().getBackupEntryCount(), map2.getLocalMapStats().getOwnedEntryCount());
