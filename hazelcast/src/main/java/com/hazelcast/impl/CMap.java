@@ -196,7 +196,7 @@ public class CMap {
             mapNearCache = null;
         } else {
             mapNearCache = new MapNearCache(this,
-                    SortedHashMap.getOrderingTypeByName(mapConfig.getEvictionPolicy()),
+                    SortedHashMap.getOrderingTypeByName(nearCacheConfig.getEvictionPolicy()),
                     nearCacheConfig.getMaxSize(),
                     nearCacheConfig.getTimeToLiveSeconds() * 1000L,
                     nearCacheConfig.getMaxIdleSeconds() * 1000L,
@@ -955,10 +955,10 @@ public class CMap {
             ttlPerRecord = true;
         }
         if (oldValue == null) {
-//            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record);
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record);
         } else {
             fireInvalidation(record);
-//            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_UPDATED, record);
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_UPDATED, record);
         }
         if (req.txnId != -1) {
             unlock(record);

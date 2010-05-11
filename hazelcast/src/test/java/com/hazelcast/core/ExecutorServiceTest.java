@@ -50,7 +50,6 @@ public class ExecutorServiceTest {
         public static String RESULT = "Task completed";
 
         public String call() throws Exception {
-            System.out.println("callin.....");
             return RESULT;
         }
     }
@@ -59,10 +58,7 @@ public class ExecutorServiceTest {
 
         public String call() throws Exception {
             Future future = Hazelcast.getExecutorService().submit(new BasicTestTask());
-            System.out.println("returni..");
-            String result =  (String) future.get();
-            System.out.println("done.");
-            return result;
+            return (String) future.get();
         }
     }
 
@@ -146,8 +142,10 @@ public class ExecutorServiceTest {
         Future future = executor.submit(task);
         try {
             future.get();
-        } catch (Exception e) {
-            fail("Should not throw");
+            fail("Should throw ExecutionException:RejectedExecutionExcepiton");
+        } catch (InterruptedException e) {
+        } catch (ExecutionException e) {
+            assertTrue(e.getCause() instanceof RejectedExecutionException);
         }
     }
 
