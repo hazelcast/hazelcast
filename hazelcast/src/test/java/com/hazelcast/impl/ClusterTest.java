@@ -1559,7 +1559,6 @@ public class ClusterTest {
      * Test case for issue 265.
      * Lock should invalidate the locally owned cache.
      *
-     * @throws Exception
      */
     @Test
     public void testConcurrentLockPrimitive() throws Exception {
@@ -1576,7 +1575,6 @@ public class ClusterTest {
             pool.execute(new Runnable() {
                 public void run() {
                     while (count.incrementAndGet() < total + 1) {
-                        // comment until --end and this passes
                         Long v = (Long) testMap.get(1L);
                         assertNotNull(v);
                         testMap.lock(1L);

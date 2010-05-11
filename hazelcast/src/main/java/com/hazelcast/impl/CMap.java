@@ -955,10 +955,10 @@ public class CMap {
             ttlPerRecord = true;
         }
         if (oldValue == null) {
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record);
+//            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record);
         } else {
             fireInvalidation(record);
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_UPDATED, record);
+//            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_UPDATED, record);
         }
         if (req.txnId != -1) {
             unlock(record);

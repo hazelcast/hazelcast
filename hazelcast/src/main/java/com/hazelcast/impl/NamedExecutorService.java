@@ -17,61 +17,34 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.impl.base.OrderedRunnablesQueue;
-import com.hazelcast.util.SimpleBlockingQueue;
-
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import com.hazelcast.impl.executor.ParallelExecutor;
 
 public class NamedExecutorService {
 
-    private static final int ORDERED_QUEUE_COUNT = 100;
-    final String name;
-    final ClassLoader classLoader;
-    final ExecutorConfig executorConfig;
-    final ThreadPoolExecutor threadPoolExecutor;
-    final OrderedRunnablesQueue[] orderedRunnablesQueues = new OrderedRunnablesQueue[ORDERED_QUEUE_COUNT];
-    final ExecutionLoadBalancer executionLoadBalancer;
-    final SimpleBlockingQueue<Runnable> underlyingQueue;
+    private final String name;
+    private final ParallelExecutor parallelExecutor;
+    private final ExecutionLoadBalancer executionLoadBalancer;
 
-    public NamedExecutorService(String name, ClassLoader classLoader, ExecutorConfig executorConfig, ThreadPoolExecutor threadPoolExecutor) {
+    public NamedExecutorService(String name, ParallelExecutor parallelExecutor) {
         this.name = name;
-        this.classLoader = classLoader;
-        this.executorConfig = executorConfig;
-        this.threadPoolExecutor = threadPoolExecutor;
-        for (int i = 0; i < ORDERED_QUEUE_COUNT; i++) {
-            orderedRunnablesQueues[i] = new OrderedRunnablesQueue();
-        }
+        this.parallelExecutor = parallelExecutor;
         this.executionLoadBalancer = new RoundRobinLoadBalancer();
-        this.underlyingQueue = (SimpleBlockingQueue<Runnable>) threadPoolExecutor.getQueue();
     }
 
     public void appendState(StringBuffer sbState) {
-        sbState.append("\nExecutor." + name + ".size=" + underlyingQueue.size());
+        sbState.append("\nExecutor." + name + ".size=" + parallelExecutor.getPoolSize());
     }
 
     public void stop() {
-        try {
-            threadPoolExecutor.shutdown();
-            threadPoolExecutor.awaitTermination(5, TimeUnit.SECONDS);
-        } catch (InterruptedException ignored) {
-        }
+        parallelExecutor.shutdown();
     }
 
     public void execute(Runnable runnable) {
-        threadPoolExecutor.execute(runnable);
+        parallelExecutor.execute(runnable);
     }
 
     public void executeOrderedRunnable(int hash, Runnable runnable) {
-        int index = Math.abs(hash % ORDERED_QUEUE_COUNT);
-        OrderedRunnablesQueue eventQueue = orderedRunnablesQueues[index];
-        long size = eventQueue.offerRunnable(runnable);
-        if (size == 0) {
-            throw new RuntimeException("Cannot be zero!");
-        } else if (size == 1) {
-            execute(eventQueue);
-        }
+        parallelExecutor.execute(runnable, hash);
     }
 
     public ExecutionLoadBalancer getExecutionLoadBalancer() {

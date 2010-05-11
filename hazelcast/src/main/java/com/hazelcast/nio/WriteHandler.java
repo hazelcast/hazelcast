@@ -71,7 +71,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         writeQueue.offer(packet);
         if (informSelector.compareAndSet(true, false)) {
             outSelector.addTask(this);
-            if (packet.currentCallCount < 2) {
+            if (true || packet.currentCallCount < 2) {
                 outSelector.selector.wakeup();
             }
         }

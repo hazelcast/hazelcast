@@ -20,6 +20,8 @@ package com.hazelcast.impl;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
+import com.hazelcast.impl.executor.ParallelExecutor;
+import com.hazelcast.impl.executor.ParallelExecutorService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.Partition;
@@ -59,11 +61,32 @@ public class ExecutorManager extends BaseManager {
     private static final String STORE_EXECUTOR_SERVICE = "x:hz.store";
     private static final String EVENT_EXECUTOR_SERVICE = "x:hz.events";
     private final Object CREATE_LOCK = new Object();
+    private final ParallelExecutorService parallelExecutorService;
 
     ExecutorManager(final Node node) {
         super(node);
         logger.log(Level.FINEST, "Starting ExecutorManager");
         GroupProperties gp = node.groupProperties;
+        ClassLoader classLoader = node.getConfig().getClassLoader();
+        ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
+                0, Integer.MAX_VALUE,
+                60L,
+                TimeUnit.SECONDS,
+                new SimpleBlockingQueue<Runnable>(true),
+                new ExecutorThreadFactory(node.threadGroup, getThreadNamePrefix("cached"), classLoader),
+                new RejectionHandler()) {
+            protected void beforeExecute(Thread t, Runnable r) {
+                ThreadContext threadContext = ThreadContext.get();
+                CallContext callContext = mapThreadCallContexts.get(t);
+                if (callContext == null) {
+                    callContext = new CallContext(threadContext.createNewThreadId(), false);
+                    mapThreadCallContexts.put(t, callContext);
+                }
+                threadContext.setCurrentFactory(node.factory);
+                threadContext.setCallContext(callContext);
+            }
+        };
+        parallelExecutorService = new ParallelExecutorService(threadPoolExecutor);
         defaultExecutorService = getOrCreateNamedExecutorService(DEFAULT_EXECUTOR_SERVICE);
         clientExecutorService = getOrCreateNamedExecutorService(CLIENT_EXECUTOR_SERVICE, gp.EXECUTOR_CLIENT_THREAD_COUNT);
         migrationExecutorService = getOrCreateNamedExecutorService(MIGRATION_EXECUTOR_SERVICE, gp.EXECUTOR_MIGRATION_THREAD_COUNT);
@@ -101,29 +124,11 @@ public class ExecutorManager extends BaseManager {
     }
 
     private NamedExecutorService newNamedExecutorService(String name, ExecutorConfig executorConfig) {
-        ClassLoader classLoader = node.getConfig().getClassLoader();
         logger.log(Level.FINEST, "creating new named executor service " + name);
-        ThreadPoolExecutor threadPoolExecutor
-                = new ThreadPoolExecutor(
-                executorConfig.getCorePoolSize(),
-                executorConfig.getMaxPoolSize(),
-                executorConfig.getKeepAliveSeconds(),
-                TimeUnit.SECONDS,
-                new SimpleBlockingQueue<Runnable>(true),
-                new ExecutorThreadFactory(node.threadGroup, getThreadNamePrefix(name), classLoader),
-                new RejectionHandler()) {
-            protected void beforeExecute(Thread t, Runnable r) {
-                ThreadContext threadContext = ThreadContext.get();
-                CallContext callContext = mapThreadCallContexts.get(t);
-                if (callContext == null) {
-                    callContext = new CallContext(threadContext.createNewThreadId(), false);
-                    mapThreadCallContexts.put(t, callContext);
-                }
-                threadContext.setCurrentFactory(node.factory);
-                threadContext.setCallContext(callContext);
-            }
-        };
-        NamedExecutorService es = new NamedExecutorService(name, classLoader, executorConfig, threadPoolExecutor);
+        int concurrencyLevel = (name.startsWith("x:hz.")) ? executorConfig.getMaxPoolSize() : 0;
+        ParallelExecutor parallelExecutor = parallelExecutorService.newParallelExecutor(concurrencyLevel);
+        System.out.println(name + " " + parallelExecutor);
+        NamedExecutorService es = new NamedExecutorService(name, parallelExecutor);
         mapExecutors.put(name, es);
         return es;
     }
