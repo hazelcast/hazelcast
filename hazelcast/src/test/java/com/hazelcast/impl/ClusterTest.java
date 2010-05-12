@@ -169,6 +169,23 @@ public class ClusterTest {
         map.put("1", "value");
     }
 
+    @Test
+    public void testSuperBeingMaster() throws Exception {
+        Config config = new XmlConfigBuilder().build();
+        config.setSuperClient(true);
+        final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance hSuper2 = Hazelcast.newHazelcastInstance(config);
+        Thread.sleep(11000);
+        HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(null);
+        Map map = hSuper.getMap("default");
+        map.put("1", "value");
+        assertEquals("value", hNormal.getMap("default").get("1"));
+        Thread.sleep(10000);
+        assertEquals("value", hNormal.getMap("default").get("1"));
+        assertEquals("value", map.get("1"));
+
+    }
+
     @Test(timeout = 30000)
     public void testSuperClientPutAfterBeforeNormalMember() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
@@ -645,7 +662,7 @@ public class ClusterTest {
         System.setProperty("hazelcast.build", "t");
     }
 
-    @Ignore 
+    @Ignore
     @Test(timeout = 60000)
     public void testMapMaxSize() throws Exception {
         Config c = new XmlConfigBuilder().build();
@@ -1558,7 +1575,6 @@ public class ClusterTest {
     /**
      * Test case for issue 265.
      * Lock should invalidate the locally owned cache.
-     *
      */
     @Test
     public void testConcurrentLockPrimitive() throws Exception {

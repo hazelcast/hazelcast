@@ -88,11 +88,11 @@ public class PartitionManager implements Runnable {
             }
             List<Block> lsBlocksToRedistribute = new ArrayList<Block>();
             int aveBlockOwnCount = PARTITION_COUNT / (addressBlocks.size());
-            int membersWithMorePartitionsThanAvarage = PARTITION_COUNT - addressBlocks.keySet().size() * aveBlockOwnCount;
+            int membersWithMorePartitionsThanAverage = PARTITION_COUNT - addressBlocks.keySet().size() * aveBlockOwnCount;
             for (Address address : addressBlocks.keySet()) {
                 List<Block> blocks = addressBlocks.get(address);
-                if (membersWithMorePartitionsThanAvarage != 0 && blocks.size() == aveBlockOwnCount + 1) {
-                    membersWithMorePartitionsThanAvarage--;
+                if (membersWithMorePartitionsThanAverage != 0 && blocks.size() == aveBlockOwnCount + 1) {
+                    membersWithMorePartitionsThanAverage--;
                     continue;
                 }
                 int diff = (blocks.size() - aveBlockOwnCount);
@@ -229,7 +229,6 @@ public class PartitionManager implements Runnable {
             Block block = blocks[i];
             if (block == null) {
                 block = concurrentMapManager.getOrCreateBlock(i);
-                block.setOwner(thisAddress);
             }
             if (block.isMigrating()) {
                 hasMigrating = true;
@@ -298,10 +297,12 @@ public class PartitionManager implements Runnable {
                 addressBlocks.put(member.getAddress(), new ArrayList<Block>());
             }
         }
-        for (Block blockReal : blocks) {
-            if (!blockReal.isMigrating()) {
-                List<Block> ownedBlocks = addressBlocks.get(blockReal.getOwner());
-                ownedBlocks.add(new Block(blockReal));
+        if (addressBlocks.size() > 0) {
+            for (Block blockReal : blocks) {
+                if (blockReal != null && !blockReal.isMigrating()) {
+                    List<Block> ownedBlocks = addressBlocks.get(blockReal.getOwner());
+                    ownedBlocks.add(new Block(blockReal));
+                }
             }
         }
         return addressBlocks;
@@ -538,6 +539,8 @@ public class PartitionManager implements Runnable {
                 try {
                     logger.log(Level.FINEST, "migrate blockInfo " + blockInfo + " await ");
                     latch.await(10, TimeUnit.SECONDS);
+                } catch (InterruptedException ignored) {
+                } finally {
                     concurrentMapManager.enqueueAndReturn(new Processable() {
                         public void process() {
                             blockInfo.setOwner(blockInfo.getMigrationAddress());
@@ -546,7 +549,6 @@ public class PartitionManager implements Runnable {
                             sendCompletionInfo(blockInfo);
                         }
                     });
-                } catch (InterruptedException ignored) {
                 }
             }
         });
