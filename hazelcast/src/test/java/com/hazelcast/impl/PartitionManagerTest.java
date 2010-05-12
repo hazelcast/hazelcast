@@ -206,6 +206,10 @@ public class PartitionManagerTest {
         ConcurrentMapManager concurrentMapManager = mock(ConcurrentMapManager.class);
         Node node = mock(Node.class);
         when(node.getLogger(PartitionManager.class.getName())).thenReturn(new NoLogFactory().getLogger("test"));
+        ExecutorManager executorManager = mock(ExecutorManager.class);
+        when(node.getExecutorManager()).thenReturn(executorManager);
+        when(executorManager.newParallelExecutor(20)).thenReturn(null);
+        when(executorManager.newParallelExecutor(12)).thenReturn(null);
         Config config = new Config();
         GroupProperties group = new GroupProperties(config);
         when(node.getGroupProperties()).thenReturn(group);

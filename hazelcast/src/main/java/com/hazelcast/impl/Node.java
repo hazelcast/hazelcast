@@ -717,6 +717,10 @@ public class Node {
         return buildNumber;
     }
 
+    public ExecutorManager getExecutorManager() {
+        return executorManager;
+    }
+
     public String toString() {
         return "Node[" + getName() + "]";
     }
