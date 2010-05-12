@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.concurrentmap.InitialState;
+import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
@@ -42,6 +43,8 @@ public class PartitionManager implements Runnable {
     final Block[] blocks;
     final Address thisAddress;
     final List<Block> lsBlocksToMigrate = new ArrayList<Block>(100);
+    final ParallelExecutor parallelExecutorMigration;
+    final ParallelExecutor parallelExecutorBackups;
 
     final long MIGRATION_INTERVAL_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
@@ -60,6 +63,8 @@ public class PartitionManager implements Runnable {
         this.thisAddress = concurrentMapManager.getThisAddress();
         this.partitionServiceImpl = new PartitionServiceImpl(concurrentMapManager);
         this.timeToInitiateMigration = System.currentTimeMillis() + node.getGroupProperties().INITIAL_WAIT_SECONDS.getInteger() * 1000 + MIGRATION_INTERVAL_MILLIS;
+        this.parallelExecutorMigration = node.executorManager.newParallelExecutor(20);
+        this.parallelExecutorBackups = node.executorManager.newParallelExecutor(12);
     }
 
     public void run() {
@@ -464,7 +469,7 @@ public class PartitionManager implements Runnable {
                 }
             }
             for (final Record rec : lsOwnedRecords) {
-                node.executorManager.executeLocally(new FallThroughRunnable() {
+                parallelExecutorBackups.execute(new FallThroughRunnable() {
                     public void doRun() {
                         concurrentMapManager.backupRecord(rec);
                     }
@@ -518,7 +523,7 @@ public class PartitionManager implements Runnable {
         final CountDownLatch latch = new CountDownLatch(lsRecordsToMigrate.size());
         for (final Record rec : lsRecordsToMigrate) {
             final CMap cmap = concurrentMapManager.getMap(rec.getName());
-            node.executorManager.executeMigrationTask(new FallThroughRunnable() {
+            parallelExecutorMigration.execute(new FallThroughRunnable() {
                 public void doRun() {
                     try {
                         concurrentMapManager.migrateRecord(cmap, rec);
@@ -528,7 +533,7 @@ public class PartitionManager implements Runnable {
                 }
             });
         }
-        node.executorManager.executeMigrationTask(new FallThroughRunnable() {
+        parallelExecutorMigration.execute(new FallThroughRunnable() {
             public void doRun() {
                 try {
                     logger.log(Level.FINEST, "migrate blockInfo " + blockInfo + " await ");

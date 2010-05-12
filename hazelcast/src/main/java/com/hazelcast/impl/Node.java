@@ -179,12 +179,12 @@ public class Node {
         connectionManager = new ConnectionManager(this);
         clientService = new ClientService(this);
         clusterManager = new ClusterManager(this);
+        executorManager = new ExecutorManager(this);
         concurrentMapManager = new ConcurrentMapManager(this);
         blockingQueueManager = new BlockingQueueManager(this);
         listenerManager = new ListenerManager(this);
         topicManager = new TopicManager(this);
         clusterManager.addMember(localMember);
-        executorManager = new ExecutorManager(this);
         ILogger systemLogger = getLogger("com.hazelcast.system");
         systemLogger.log(Level.INFO, "Hazelcast " + version + " ("
                 + build + ") starting at " + address);

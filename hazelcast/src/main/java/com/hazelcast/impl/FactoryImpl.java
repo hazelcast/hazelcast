@@ -83,41 +83,46 @@ public class FactoryImpl implements HazelcastInstance {
     private static boolean jmxRegistered = false;
 
     public static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config) {
-        FactoryImpl factory = null;
-        synchronized (factoryLock) {
-            if (config == null) {
-                config = new XmlConfigBuilder().build();
-            }
-            String name = "_hzInstance_" + nextFactoryId++ + "_" + config.getGroupConfig().getName();
-            factory = new FactoryImpl(name, config);
-            FactoryImpl old = factories.put(name, factory);
-            if (old != null) {
-                throw new RuntimeException();
-            }
-            if (!jmxRegistered) {
-                ManagementService.register(factory, config);
-                jmxRegistered = true;
-            }
-        }
-        boolean firstMember = (factory.node.getClusterImpl().getMembers().iterator().next().localMember());
-        int initialWaitSeconds = factory.node.groupProperties.INITIAL_WAIT_SECONDS.getInteger();
-        if (initialWaitSeconds > 0) {
-            try {
-                Thread.sleep(initialWaitSeconds * 1000);
-                if (firstMember) {
-                    final ConcurrentMapManager concurrentMapManager = factory.node.concurrentMapManager;
-                    concurrentMapManager.enqueueAndReturn(new Processable() {
-                        public void process() {
-                            concurrentMapManager.partitionManager.quickBlockRearrangement();
-                        }
-                    });
-                } else {
-                    Thread.sleep(4 * 1000);
+        try {
+            FactoryImpl factory = null;
+            synchronized (factoryLock) {
+                if (config == null) {
+                    config = new XmlConfigBuilder().build();
                 }
-            } catch (InterruptedException ignored) {
+                String name = "_hzInstance_" + nextFactoryId++ + "_" + config.getGroupConfig().getName();
+                factory = new FactoryImpl(name, config);
+                FactoryImpl old = factories.put(name, factory);
+                if (old != null) {
+                    throw new RuntimeException();
+                }
+                if (!jmxRegistered) {
+                    ManagementService.register(factory, config);
+                    jmxRegistered = true;
+                }
             }
+            boolean firstMember = (factory.node.getClusterImpl().getMembers().iterator().next().localMember());
+            int initialWaitSeconds = factory.node.groupProperties.INITIAL_WAIT_SECONDS.getInteger();
+            if (initialWaitSeconds > 0) {
+                try {
+                    Thread.sleep(initialWaitSeconds * 1000);
+                    if (firstMember) {
+                        final ConcurrentMapManager concurrentMapManager = factory.node.concurrentMapManager;
+                        concurrentMapManager.enqueueAndReturn(new Processable() {
+                            public void process() {
+                                concurrentMapManager.partitionManager.quickBlockRearrangement();
+                            }
+                        });
+                    } else {
+                        Thread.sleep(4 * 1000);
+                    }
+                } catch (InterruptedException ignored) {
+                }
+            }
+            return factory.hazelcastInstanceProxy;
+        } catch (Throwable t) {
+            t.printStackTrace();
+            return null;
         }
-        return factory.hazelcastInstanceProxy;
     }
 
     public HazelcastInstanceProxy getHazelcastInstanceProxy() {

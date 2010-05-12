@@ -136,17 +136,11 @@ public class ExecutorServiceTest {
      * something else inside. Nested Execution.
      */
     @Test(timeout = 10000)
-    public void testNestedExecution() {
+    public void testNestedExecution() throws Exception{
         Callable<String> task = new NestedExecutorTask();
         ExecutorService executor = Hazelcast.getExecutorService();
         Future future = executor.submit(task);
-        try {
-            future.get();
-            fail("Should throw ExecutionException:RejectedExecutionExcepiton");
-        } catch (InterruptedException e) {
-        } catch (ExecutionException e) {
-            assertTrue(e.getCause() instanceof RejectedExecutionException);
-        }
+        future.get();
     }
 
     /**

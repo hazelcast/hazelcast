@@ -18,12 +18,12 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.partition.PartitionService;
 
 import java.util.Collection;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Factory for all of the Hazelcast data and execution components such as
@@ -33,7 +33,8 @@ import java.util.concurrent.ExecutorService;
  * automatically if any of the functions is called on Hazelcast.
  */
 public final class Hazelcast {
-    private static volatile HazelcastInstance defaultInstance = null;
+    private static final AtomicReference<HazelcastInstance> defaultInstance = new AtomicReference<HazelcastInstance>();
+//    private static volatile HazelcastInstance defaultInstance = null;
     private final static Object initLock = new Object();
 
     private Hazelcast() {
@@ -48,33 +49,33 @@ public final class Hazelcast {
      * @throws IllegalStateException if this instance is already initialized
      */
     public static HazelcastInstance init(Config config) {
-        if (defaultInstance != null) {
+        if (defaultInstance.get() != null) {
             throw new IllegalStateException("Default Hazelcast instance is already initilized.");
         }
         synchronized (initLock) {
-            if (defaultInstance != null) {
+            if (defaultInstance.get() != null) {
                 throw new IllegalStateException("Default Hazelcast instance is already initilized.");
             }
-            defaultInstance = com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(config);
+            defaultInstance.set(com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(config));
         }
-        return defaultInstance;
+        return defaultInstance.get();
     }
 
     /**
      * Returns the default Hazelcast instance, starts it with the default
      * configuration, if not already started.
-     * 
+     *
      * @return the default Hazelcast instance
      */
     public static HazelcastInstance getDefaultInstance() {
-        if (defaultInstance == null) {
+        if (defaultInstance.get() == null) {
             synchronized (initLock) {
-                if (defaultInstance == null) {
-                    defaultInstance = com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(null);
+                if (defaultInstance.get() == null) {
+                    defaultInstance.set(com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(null));
                 }
             }
         }
-        return defaultInstance;
+        return defaultInstance.get();
     }
 
     /**
@@ -263,7 +264,7 @@ public final class Hazelcast {
         synchronized (initLock) {
             if (defaultInstance != null) {
                 getDefaultInstance().shutdown();
-                defaultInstance = null;
+                defaultInstance.set(null);
             }
         }
     }
@@ -277,7 +278,7 @@ public final class Hazelcast {
      */
     public static void shutdownAll() {
         com.hazelcast.impl.FactoryImpl.shutdownAll();
-        defaultInstance = null;
+        defaultInstance.set(null);
     }
 
     /**
@@ -287,7 +288,7 @@ public final class Hazelcast {
     public static void restart() {
         synchronized (initLock) {
             if (defaultInstance != null) {
-                defaultInstance = com.hazelcast.impl.FactoryImpl.restart((FactoryImpl.HazelcastInstanceProxy) defaultInstance);
+//                defaultInstance.set(com.hazelcast.impl.FactoryImpl.restart((FactoryImpl.HazelcastInstanceProxy) defaultInstance));
             } else {
                 getDefaultInstance();
             }
@@ -306,7 +307,7 @@ public final class Hazelcast {
 
     /**
      * Add a instance listener which will be notified when a
-     * new instance such as map, queue, multima, topic, lock is
+     * new instance such as map, queue, multimap, topic, lock is
      * added or removed.
      *
      * @param instanceListener instance listener

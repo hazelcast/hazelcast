@@ -163,12 +163,6 @@ public class ExecutorServiceProxy implements ExecutorService {
     }
 
     public <T> Future<T> submit(Runnable task, T result) {
-        String threadName = Thread.currentThread().getName();
-        if (threadName.startsWith("hz.executor.")) {
-            if (threadName.indexOf(name) != -1) {
-                throw new RejectedExecutionException("Nested Executions are not allowed. " + threadName);
-            }
-        }
         if (!active) throw new RejectedExecutionException("ExecutorService[" + name + "] is not active");
         DistributedTask dtask;
         if (task instanceof DistributedTask) {

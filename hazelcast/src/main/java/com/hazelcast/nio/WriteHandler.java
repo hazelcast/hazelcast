@@ -23,6 +23,7 @@ import java.nio.channels.SelectionKey;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import static com.hazelcast.nio.IOUtil.copyToDirectBuffer;
@@ -40,7 +41,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     private Packet lastPacket = null;
 
     private final PacketWriter packetWriter;
-
+    
     WriteHandler(final Connection connection) {
         super(connection);
         boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(node);
@@ -70,10 +71,12 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         packet.write();
         writeQueue.offer(packet);
         if (informSelector.compareAndSet(true, false)) {
+            // we don't have to call wake up if this WriteHandler is
+            // already in the task queue.
+            // we can have a counter to check this later on.
+            // for now, wake up regardless.
             outSelector.addTask(this);
-            if (true || packet.currentCallCount < 2) {
-                outSelector.selector.wakeup();
-            }
+            outSelector.selector.wakeup();
         }
     }
 

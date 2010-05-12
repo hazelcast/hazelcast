@@ -72,7 +72,7 @@ public class ExecutorManager extends BaseManager {
                 0, Integer.MAX_VALUE,
                 60L,
                 TimeUnit.SECONDS,
-                new SimpleBlockingQueue<Runnable>(true),
+                new SynchronousQueue(),
                 new ExecutorThreadFactory(node.threadGroup, getThreadNamePrefix("cached"), classLoader),
                 new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
@@ -125,12 +125,15 @@ public class ExecutorManager extends BaseManager {
 
     private NamedExecutorService newNamedExecutorService(String name, ExecutorConfig executorConfig) {
         logger.log(Level.FINEST, "creating new named executor service " + name);
-        int concurrencyLevel = (name.startsWith("x:hz.")) ? executorConfig.getMaxPoolSize() : 0;
+        int concurrencyLevel = executorConfig.getMaxPoolSize();
         ParallelExecutor parallelExecutor = parallelExecutorService.newParallelExecutor(concurrencyLevel);
-        System.out.println(name + " " + parallelExecutor);
         NamedExecutorService es = new NamedExecutorService(name, parallelExecutor);
         mapExecutors.put(name, es);
         return es;
+    }
+
+    public ParallelExecutor newParallelExecutor(int concurrencyLevel) {
+        return parallelExecutorService.newParallelExecutor(concurrencyLevel);
     }
 
     class ExecutionOperationHandler extends AbstractOperationHandler {

@@ -60,13 +60,14 @@ public class ParallelExecutorService {
         ParallelExecutorImpl(int concurrencyLevel) {
             this.executionSegments = new ExecutionSegment[concurrencyLevel];
             for (int i = 0; i < concurrencyLevel; i++) {
-                executionSegments[i] = new ExecutionSegment();
+                executionSegments[i] = new ExecutionSegment(i);
             }
         }
 
         public void execute(Runnable runnable) {
-            int index = offerIndex.incrementAndGet();
-            ExecutionSegment segment = executionSegments[index % executionSegments.length];
+            int hash = offerIndex.incrementAndGet();
+            int index = (hash == Integer.MIN_VALUE) ? 0 : Math.abs(hash) % executionSegments.length;
+            ExecutionSegment segment = executionSegments[index];
             segment.offer(runnable);
             if (index >= 1000000) {
                 offerIndex.set(0);
@@ -74,7 +75,8 @@ public class ParallelExecutorService {
         }
 
         public void execute(Runnable runnable, int hash) {
-            ExecutionSegment segment = executionSegments[hash % executionSegments.length];
+            int index = (hash == Integer.MIN_VALUE) ? 0 : Math.abs(hash) % executionSegments.length;
+            ExecutionSegment segment = executionSegments[index];
             segment.offer(runnable);
         }
 
@@ -95,6 +97,11 @@ public class ParallelExecutorService {
         class ExecutionSegment implements Runnable {
             final ConcurrentLinkedQueue<Runnable> q = new ConcurrentLinkedQueue<Runnable>();
             final AtomicInteger size = new AtomicInteger();
+            final int segmentIndex;
+
+            ExecutionSegment(int segmentIndex) {
+                this.segmentIndex = segmentIndex;
+            }
 
             public void offer(Runnable e) {
                 q.offer(e);

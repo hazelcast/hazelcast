@@ -82,12 +82,12 @@ public class SimpleMapTest {
         }
         Executors.newSingleThreadExecutor().submit(new Runnable() {
             public void run() {
+                IMap<String, byte[]> map = Hazelcast.getMap("default");
                 while (true) {
                     try {
                         Thread.sleep(STATS_SECONDS * 1000);
                         System.out.println("cluster size:"
                                 + Hazelcast.getCluster().getMembers().size());
-                        IMap<String, byte[]> map = Hazelcast.getMap("default");
                         LocalMapOperationStats mapOpStats = map.getLocalMapStats().getOperationStats();
                         long period = ((mapOpStats.getPeriodEnd() - mapOpStats.getPeriodStart()) / 1000);
                         if (period == 0) {
