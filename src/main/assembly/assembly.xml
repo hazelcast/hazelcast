@@ -39,6 +39,15 @@
                 <include>hazelcast-${project.version}.jar</include>
             </includes>
         </fileSet>
+
+        <fileSet>
+            <directory>hazelcast-all/target/</directory>
+            <outputDirectory>/lib</outputDirectory>
+            <includes>
+                <include>hazelcast-all-${project.version}.jar</include>
+            </includes>
+        </fileSet>
+
         <fileSet>
             <directory>hazelcast-monitor/target/</directory>
             <outputDirectory>/</outputDirectory>
@@ -46,6 +55,7 @@
                 <include>hazelcast-monitor-${project.version}.war</include>
             </includes>
         </fileSet>
+
         <fileSet>
             <directory>javadoc</directory>
             <outputDirectory>/javadoc</outputDirectory>
@@ -66,7 +76,7 @@
             <outputDirectory>/bin/</outputDirectory>
             <includes>
                 <include>*.bat</include>
-                <include>*.sh</include> 
+                <include>*.sh</include>
                 <include>keystore</include>
                 <include>hazelcast-default.xml</include>
             </includes>

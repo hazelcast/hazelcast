@@ -17,6 +17,7 @@
         <module>hazelcast-ra</module>
         <module>hazelcast-client</module>
         <module>hazelcast-monitor</module>
+        <module>hazelcast-all</module>
     </modules>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -29,7 +30,7 @@
         <url>http://code.google.com/p/hazelcast/issues</url>
     </issueManagement>
     <organization>
-        <name>Hazelcast Ltd.</name>
+        <name>Hazel Bilisim Ltd.</name>
         <url>http://www.hazelcast.com/</url>
     </organization>
 
@@ -107,7 +108,7 @@
                     </descriptors>
                 </configuration>
             </plugin>
-            <plugin>
+            <plugin> 
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>
                 <version>2.0.1</version>
