@@ -160,7 +160,10 @@ public class XmlConfigBuilder implements ConfigBuilder {
     }
 
     public Config build() {
-        Config config = new Config();
+        return build(new Config());
+    }
+    
+    Config build(Config config) {
         try {
             parse(config);
         } catch (Exception e) {
