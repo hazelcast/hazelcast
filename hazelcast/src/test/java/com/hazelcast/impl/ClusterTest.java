@@ -183,7 +183,6 @@ public class ClusterTest {
         Thread.sleep(10000);
         assertEquals("value", hNormal.getMap("default").get("1"));
         assertEquals("value", map.get("1"));
-
     }
 
     @Test(timeout = 30000)
@@ -1012,6 +1011,79 @@ public class ClusterTest {
             assertTrue(latch2.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException ignored) {
         }
+    }
+
+    @Test
+    public void testTTLAndMemoryLeak() throws Exception {
+        Config config = new XmlConfigBuilder().build();
+        MapConfig mapConfig = config.getMapConfig("default");
+        mapConfig.setTimeToLiveSeconds(5);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(config);
+        IMap map1 = h1.getMap("default");
+        final int size = 20000;
+        for (int i = 0; i < size; i++) {
+            map1.put(i, new byte[10000]);
+        }
+        long usedMemoryStart = getUsedMemoryAsMB();
+        assertTrue(usedMemoryStart > 400);
+        Thread.sleep(40000);
+        Runtime.getRuntime().gc();
+        Thread.sleep(5000);
+        long usedMemoryEnd = getUsedMemoryAsMB();
+        assertTrue(usedMemoryEnd < 30);
+    }
+
+    @Test
+    public void testTTLAndMemoryLeak2() throws Exception {
+        Config config = new XmlConfigBuilder().build();
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(config);
+        IMap map1 = h1.getMap("default");
+        final int size = 20000;
+        for (int i = 0; i < size; i++) {
+            map1.put(i, new byte[10000], 5, TimeUnit.SECONDS);
+        }
+        long usedMemoryStart = getUsedMemoryAsMB();
+        assertTrue(usedMemoryStart > 400);
+        Thread.sleep(40000);
+        Runtime.getRuntime().gc();
+        Thread.sleep(5000);
+        long usedMemoryEnd = getUsedMemoryAsMB();
+        assertTrue(usedMemoryEnd < 30);
+    }
+
+    @Test
+    public void testMaxIdleAndMemoryLeak() throws Exception {
+        Config config = new XmlConfigBuilder().build();
+        MapConfig mapConfig = config.getMapConfig("default");
+        mapConfig.setMaxIdleSeconds(5);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(config);
+        IMap map1 = h1.getMap("default");
+        final int size = 20000;
+        for (int i = 0; i < size; i++) {
+            map1.put(i, new byte[10000]);
+        }
+        long usedMemoryStart = getUsedMemoryAsMB();
+        assertTrue(usedMemoryStart > 400);
+        Thread.sleep(40000);
+        Runtime.getRuntime().gc();
+        Thread.sleep(5000);
+        long usedMemoryEnd = getUsedMemoryAsMB();
+        assertTrue(usedMemoryEnd < 30);
+    }
+
+    long getUsedMemoryAsMB() {
+        long total = Runtime.getRuntime().totalMemory();
+        long free = Runtime.getRuntime().freeMemory();
+        return (total - free) / 1024 / 1024;
     }
 
     /**

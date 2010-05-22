@@ -99,6 +99,7 @@ public class Config {
         QueueConfig defaultConfig = mapQueueConfigs.get("default");
         if (defaultConfig == null) {
             defaultConfig = new QueueConfig();
+            mapQueueConfigs.put("default", defaultConfig);
         }
         return defaultConfig;
     }
@@ -113,6 +114,7 @@ public class Config {
         MapConfig defaultConfig = mapConfigs.get("default");
         if (defaultConfig == null) {
             defaultConfig = new MapConfig();
+            mapConfigs.put("default", defaultConfig);
         }
         return defaultConfig;
     }
@@ -127,6 +129,7 @@ public class Config {
         TopicConfig defaultConfig = mapTopicConfigs.get("default");
         if (defaultConfig == null) {
             defaultConfig = new TopicConfig();
+            mapTopicConfigs.put("default", defaultConfig);
         }
         return defaultConfig;
     }
