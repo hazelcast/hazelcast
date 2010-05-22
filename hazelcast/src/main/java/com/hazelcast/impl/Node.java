@@ -625,7 +625,7 @@ public class Node {
                         clusterManager.sendJoinRequest(possibleAddress);
                         numberOfJoinReq++;
                     } else {
-                        logger.log(Level.FINEST, "number of join reqests is greater than 5, no join request will be sent for " + possibleAddress);
+                        logger.log(Level.FINEST, "number of join requests is greater than 5, no join request will be sent for " + possibleAddress);
                     }
                 }
             }

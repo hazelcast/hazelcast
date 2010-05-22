@@ -25,11 +25,8 @@ import com.hazelcast.impl.BlockingQueueManager.Offer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 class TransactionImpl implements Transaction {
-
-    protected static Logger logger = Logger.getLogger(TransactionImpl.class.getName());
 
     private final long id;
     private final FactoryImpl factory;

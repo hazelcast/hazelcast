@@ -24,6 +24,8 @@ import com.hazelcast.impl.ThreadContext;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.Date;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public final class Serializer {
 
@@ -49,6 +51,8 @@ public final class Serializer {
 
     private static int OUTPUT_STREAM_BUFFER_SIZE = 100 * 1024;
 
+    private static final boolean gzipEnabled = Boolean.getBoolean("hazelcast.serializer.gzip.enabled");
+
     static {
         registerTypeSerializer(new ObjectSerializer());
         registerTypeSerializer(new LongSerializer());
@@ -71,7 +75,7 @@ public final class Serializer {
     }
 
     public static Class<?> classForName(String className) throws ClassNotFoundException {
-        return classForName (null, className);
+        return classForName(null, className);
     }
 
     public static Class<?> classForName(ClassLoader classLoader, String className) throws ClassNotFoundException {
@@ -292,6 +296,32 @@ public final class Serializer {
         }
 
         public Object read(FastByteArrayInputStream bbis) throws Exception {
+            if (gzipEnabled) {
+                return readGZip(bbis);
+            } else {
+                return readNormal(bbis);
+            }
+        }
+
+        public void write(FastByteArrayOutputStream bbos, Object obj) throws Exception {
+            if (gzipEnabled) {
+                writeGZip(bbos, obj);
+            } else {
+                writeNormal(bbos, obj);
+            }
+        }
+
+        private Object readGZip(FastByteArrayInputStream bbis) throws Exception {
+            GZIPInputStream zis = new GZIPInputStream(bbis);
+            ObjectInputStream in = newObjectInputStream(zis);
+            if (shared) {
+                return in.readObject();
+            } else {
+                return in.readUnshared();
+            }
+        }
+
+        private Object readNormal(FastByteArrayInputStream bbis) throws Exception {
             ObjectInputStream in = newObjectInputStream(bbis);
             if (shared) {
                 return in.readObject();
@@ -300,13 +330,27 @@ public final class Serializer {
             }
         }
 
-        public void write(FastByteArrayOutputStream bbos, Object obj) throws Exception {
+        private void writeGZip(FastByteArrayOutputStream bbos, Object obj) throws Exception {
+            GZIPOutputStream zos = new GZIPOutputStream(bbos);
+            ObjectOutputStream os = new ObjectOutputStream(zos);
+            if (shared) {
+                os.writeObject(obj);
+            } else {
+                os.writeUnshared(obj);
+            }
+            os.flush();
+            os.close();
+        }
+
+        private void writeNormal(FastByteArrayOutputStream bbos, Object obj) throws Exception {
             ObjectOutputStream os = new ObjectOutputStream(bbos);
             if (shared) {
                 os.writeObject(obj);
             } else {
                 os.writeUnshared(obj);
             }
+            os.flush();
+            os.close();
         }
     }
 

@@ -18,10 +18,10 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.cluster.AddOrRemoveConnection;
+import com.hazelcast.logging.ILogger;
 
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Connection {
     final SocketChannel socketChannel;
@@ -36,9 +36,10 @@ public class Connection {
 
     Address endPoint = null;
 
-    private final static Logger logger = Logger.getLogger(Connection.class.getName());
+    private final ILogger logger;
 
     public Connection(ConnectionManager connectionManager, SocketChannel socketChannel) {
+        this.logger = connectionManager.node.getLogger(Connection.class.getName());
         this.connectionManager = connectionManager;
         this.socketChannel = socketChannel;
         this.writeHandler = new WriteHandler(this);

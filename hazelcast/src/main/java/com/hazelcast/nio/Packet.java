@@ -27,7 +27,6 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public final class Packet {
 
@@ -85,8 +84,6 @@ public final class Packet {
 
     public static final byte PACKET_VERSION = GroupProperties.PACKET_VERSION.getByte();
 
-    private static final Logger logger = Logger.getLogger(Packet.class.getName());
-
     public Packet() {
     }
 
@@ -104,7 +101,7 @@ public final class Packet {
                 bytes = str.getBytes();
                 if (mapStringByteCache.size() >= 10000) {
                     mapStringByteCache.clear();
-                    logger.log(Level.WARNING, "So many different names!");
+                    throw new RuntimeException("So many different names!");
                 }
                 mapStringByteCache.put(str, bytes);
             }
@@ -337,7 +334,6 @@ public final class Packet {
             if (packetVersion != PACKET_VERSION) {
                 String msg = "Packet versions are not the same. Expected " + PACKET_VERSION
                         + " Found: " + packetVersion;
-                logger.log(Level.WARNING, msg);
                 throw new RuntimeException(msg);
             }
         }
@@ -401,7 +397,6 @@ public final class Packet {
     }
 
     public void setValue(Data value) {
-        this.value = (value == null || value.size() ==0) ? null : new DataHolder(value);
+        this.value = (value == null || value.size() == 0) ? null : new DataHolder(value);
     }
-
 }

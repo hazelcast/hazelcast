@@ -153,7 +153,12 @@ public class AddressPicker {
             int port = config.getPort();
             for (int i = 0; i < 100; i++) {
                 try {
-                    isa = new InetSocketAddress(inetAddress, port);
+                    boolean bindAny = node.getGroupProperties().SOCKET_BIND_ANY.getBoolean();
+                    if (bindAny) {
+                        isa = new InetSocketAddress(port);
+                    } else {
+                        isa = new InetSocketAddress(inetAddress, port);
+                    }
                     serverSocket.bind(isa, 100);
                     break;
                 } catch (final Exception e) {

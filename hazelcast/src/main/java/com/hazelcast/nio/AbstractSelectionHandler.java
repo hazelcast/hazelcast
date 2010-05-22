@@ -19,22 +19,22 @@ package com.hazelcast.nio;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.impl.Node;
+import com.hazelcast.logging.ILogger;
 
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
 
 abstract class AbstractSelectionHandler implements SelectionHandler {
 
-    protected static Logger logger = Logger.getLogger(AbstractSelectionHandler.class.getName());
-
     public static final int RECEIVE_SOCKET_BUFFER_SIZE = 32 * BYTE_BUFFER_SIZE;
 
     public static final int SEND_SOCKET_BUFFER_SIZE = 32 * BYTE_BUFFER_SIZE;
+
+    protected final ILogger logger;
 
     protected final SocketChannel socketChannel;
 
@@ -55,6 +55,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
         this.connection = connection;
         this.socketChannel = connection.getSocketChannel();
         this.node = connection.connectionManager.node;
+        this.logger = node.getLogger(AbstractSelectionHandler.class.getName());
         this.inSelector = node.inSelector;
         this.outSelector = node.outSelector;
         this.clusterService = node.clusterService;
@@ -64,8 +65,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
     }
 
     final void handleSocketException(final Exception e) {
-        logger.log(Level.FINEST,
-                Thread.currentThread().getName() + " Closing Socket. cause:  ", e);
+        logger.log(Level.FINEST, Thread.currentThread().getName() + " Closing Socket. cause:  ", e);
         if (sk != null)
             sk.cancel();
         connection.close();

@@ -20,15 +20,14 @@ package com.hazelcast.impl;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.impl.base.ScheduledAction;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 
 public class Record implements MapEntry {
-    private static final Logger logger = Logger.getLogger(Record.class.getName());
 
     private final CMap cmap;
     private final long id;
@@ -112,7 +111,6 @@ public class Record implements MapEntry {
         }
         getBackupOps().add(bo);
         if (getBackupOps().size() > 4) {
-            logger.log(Level.FINEST, " Forcing backup.run version " + getVersion());
             forceBackupOps();
         }
     }
@@ -229,7 +227,6 @@ public class Record implements MapEntry {
             setScheduledActions(new LinkedList<ScheduledAction>());
         }
         getScheduledActions().add(scheduledAction);
-        logger.log(Level.FINEST, scheduledAction.getRequest().operation + " scheduling " + scheduledAction);
     }
 
     public boolean isRemovable() {

@@ -899,6 +899,15 @@ public class CMap {
         return added;
     }
 
+    public void addAndGet(Request req) {
+        Record record = getRecord(req.key);
+        
+    }
+
+    public void getAndAdd(Request req) {
+
+    }
+
     public void put(Request req) {
         long now = System.currentTimeMillis();
         if (mapRecords.size() >= maxSize) {

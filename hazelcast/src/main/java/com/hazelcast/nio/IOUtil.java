@@ -58,6 +58,19 @@ public final class IOUtil {
         return ThreadContext.get().toData(obj);
     }
 
+
+    public static Data addDelta(Data longData, long delta) {
+        byte[] b = longData.buffer;
+        ByteBuffer current = ByteBuffer.wrap(b);
+        byte type = current.get();
+        long value = current.getLong();
+        value += delta;
+        ByteBuffer newLong = ByteBuffer.allocate(b.length);
+        newLong.put(type);
+        newLong.putLong(value);
+        return new Data (newLong.array());        
+    }
+
     public static Object toObject(Data data) {
         return ThreadContext.get().toObject(data);
     }

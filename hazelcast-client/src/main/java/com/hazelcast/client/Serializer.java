@@ -21,11 +21,11 @@ import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.FastByteArrayInputStream;
 import com.hazelcast.nio.FastByteArrayOutputStream;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.math.BigInteger;
 import java.util.Date;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class Serializer {
     private static final byte SERIALIZER_TYPE_DATA = 0;
@@ -45,6 +45,8 @@ public class Serializer {
     private static final byte SERIALIZER_TYPE_DATE = 7;
 
     private static final byte SERIALIZER_TYPE_BIG_INTEGER = 8;
+
+    private static final boolean gzipEnabled = Boolean.getBoolean("hazelcast.serializer.client.gzip.enabled");
 
     public static byte[] toByte(Object object) {
         FastByteArrayOutputStream dos = new FastByteArrayOutputStream();
@@ -83,10 +85,8 @@ public class Serializer {
                 dos.write(bytes);
             } else {
                 dos.writeByte(SERIALIZER_TYPE_OBJECT);
-                ObjectOutputStream os = new ObjectOutputStream(dos);
-                os.writeObject(object);
-                os.flush();
-                os.close();
+                if (gzipEnabled) writeGZip(dos, object);
+                else writeNormal(dos, object);
             }
             dos.close();
         } catch (IOException e) {
@@ -132,15 +132,43 @@ public class Serializer {
                 dis.read(intBytes);
                 return new BigInteger(intBytes);
             } else if (type == SERIALIZER_TYPE_OBJECT) {
-                ObjectInputStream os = new ObjectInputStream(dis);
-                Object o = os.readObject();
-                os.close();
-                return o;
+                if (gzipEnabled) return readGZip(dis);
+                else return readNormal(dis);
             }
             dis.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private static void writeGZip(OutputStream out, Object object) throws IOException {
+        GZIPOutputStream zos = new GZIPOutputStream(out);
+        ObjectOutputStream os = new ObjectOutputStream(zos);
+        os.writeObject(object);
+        os.flush();
+        os.close();
+    }
+
+    private static void writeNormal(OutputStream out, Object object) throws IOException {
+        ObjectOutputStream os = new ObjectOutputStream(out);
+        os.writeObject(object);
+        os.flush();
+        os.close();
+    }
+
+    private static Object readGZip(InputStream is) throws Exception {
+        GZIPInputStream zis = new GZIPInputStream(is);
+        ObjectInputStream in = new ObjectInputStream(zis);
+        Object o = in.readObject();
+        in.close();
+        return o;
+    }
+
+    private static Object readNormal(InputStream is) throws Exception {
+        ObjectInputStream in = new ObjectInputStream(is);
+        Object o = in.readObject();
+        in.close();
+        return o;
     }
 }

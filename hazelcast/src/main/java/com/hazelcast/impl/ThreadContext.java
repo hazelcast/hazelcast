@@ -26,11 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public final class ThreadContext {
-
-    private final static Logger logger = Logger.getLogger(ThreadContext.class.getName());
 
     private final static ThreadLocal<ThreadContext> threadLocal = new ThreadLocal<ThreadContext>();
 
@@ -89,7 +86,7 @@ public final class ThreadContext {
         try {
             return serializer.writeObject(obj);
         } catch (final Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }

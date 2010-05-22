@@ -20,6 +20,7 @@ package com.hazelcast.nio;
 import com.hazelcast.cluster.Bind;
 import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.impl.Node;
+import com.hazelcast.logging.ILogger;
 
 import java.nio.channels.SocketChannel;
 import java.util.Map;
@@ -27,11 +28,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ConnectionManager {
 
-    protected final Logger logger = Logger.getLogger(ConnectionManager.class.getName());
+    protected final ILogger logger;
 
     private final Map<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(100);
 
@@ -47,6 +47,7 @@ public class ConnectionManager {
 
     public ConnectionManager(Node node) {
         this.node = node;
+        logger = node.getLogger(ConnectionManager.class.getName());
     }
 
     public void addConnectionListener(ConnectionListener listener) {

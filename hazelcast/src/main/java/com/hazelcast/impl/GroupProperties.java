@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 
 public class GroupProperties {
 
+    public static final String PROP_SOCKET_BIND_ANY = "hazelcast.socket.bind.any";
     public static final String PROP_SERIALIZER_SHARED = "hazelcast.serializer.shared";
     public static final String PROP_PACKET_VERSION = "hazelcast.packet.version";
     public static final String PROP_SHUTDOWNHOOK_ENABLED = "hazelcast.shutdownhook.enabled";
@@ -42,6 +43,8 @@ public class GroupProperties {
     public static final GroupProperty SERIALIZER_SHARED = new GroupProperty(null, PROP_SERIALIZER_SHARED, "false");
 
     public static final GroupProperty PACKET_VERSION = new GroupProperty(null, PROP_PACKET_VERSION, "5");
+
+    public final GroupProperty SOCKET_BIND_ANY;
 
     public final GroupProperty SHUTDOWNHOOK_ENABLED;
 
@@ -74,6 +77,7 @@ public class GroupProperties {
     public final GroupProperty LOG_STATE;
 
     public GroupProperties(Config config) {
+        SOCKET_BIND_ANY = new GroupProperty(config, PROP_SOCKET_BIND_ANY, "true");
         SHUTDOWNHOOK_ENABLED = new GroupProperty(config, PROP_SHUTDOWNHOOK_ENABLED, "true");
         WAIT_SECONDS_BEFORE_JOIN = new GroupProperty(config, PROP_WAIT_SECONDS_BEFORE_JOIN, "5");
         MAX_NO_HEARTBEAT_SECONDS = new GroupProperty(config, PROP_MAX_NO_HEARTBEAT_SECONDS, "300");
