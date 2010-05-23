@@ -24,8 +24,10 @@ import com.hazelcast.impl.ThreadContext;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.Date;
+import java.util.zip.Deflater;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import java.util.zip.Inflater;
 
 public final class Serializer {
 
@@ -147,6 +149,16 @@ public final class Serializer {
 
     private static void registerTypeSerializer(TypeSerializer ts) {
         typeSerializer[ts.getTypeId()] = ts;
+    }
+
+    static class Compressor {
+        final Deflater deflater = new Deflater(Deflater.BEST_SPEED);
+
+        final Inflater inflater = new Inflater();
+
+        final byte[] buffer = new byte[1024 * 1024];
+
+        
     }
 
     static class LongSerializer implements TypeSerializer<Long> {
@@ -312,26 +324,32 @@ public final class Serializer {
         }
 
         private Object readGZip(FastByteArrayInputStream bbis) throws Exception {
-            GZIPInputStream zis = new GZIPInputStream(bbis);
+            InputStream zis = new BufferedInputStream(new GZIPInputStream(bbis));
             ObjectInputStream in = newObjectInputStream(zis);
+            Object result;
             if (shared) {
-                return in.readObject();
+                result = in.readObject();
             } else {
-                return in.readUnshared();
+                result = in.readUnshared();
             }
+            in.close();
+            return result;
         }
 
         private Object readNormal(FastByteArrayInputStream bbis) throws Exception {
             ObjectInputStream in = newObjectInputStream(bbis);
+            Object result;
             if (shared) {
-                return in.readObject();
+                result = in.readObject();
             } else {
-                return in.readUnshared();
+                result = in.readUnshared();
             }
+            in.close();
+            return result;
         }
 
         private void writeGZip(FastByteArrayOutputStream bbos, Object obj) throws Exception {
-            GZIPOutputStream zos = new GZIPOutputStream(bbos);
+            OutputStream zos = new BufferedOutputStream(new GZIPOutputStream(bbos));
             ObjectOutputStream os = new ObjectOutputStream(zos);
             if (shared) {
                 os.writeObject(obj);

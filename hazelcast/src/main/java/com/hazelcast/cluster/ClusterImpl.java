@@ -26,11 +26,12 @@ import com.hazelcast.impl.Node;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ClusterImpl implements Cluster {
 
-    final AtomicReference<Set<MembershipListener>> listeners = new AtomicReference<Set<MembershipListener>>();
+    final CopyOnWriteArraySet<MembershipListener> listeners = new CopyOnWriteArraySet<MembershipListener>();
     final AtomicReference<Set<Member>> members = new AtomicReference<Set<Member>>();
     final AtomicReference<Member> localMember = new AtomicReference<Member>();
     final Map<Member, Member> clusterMembers = new ConcurrentHashMap<Member, Member>();
@@ -78,7 +79,6 @@ public class ClusterImpl implements Cluster {
     }
 
     public void setMembers(List<MemberImpl> lsMembers) {
-        final Set<MembershipListener> listenerSet = listeners.get();
         Set<Member> setNew = new LinkedHashSet<Member>(lsMembers.size());
         ArrayList<Runnable> notifications = new ArrayList<Runnable>();
         for (MemberImpl member : lsMembers) {
@@ -86,12 +86,12 @@ public class ClusterImpl implements Cluster {
             Member clusterMember = clusterMembers.get(dummy);
             if (clusterMember == null) {
                 clusterMember = dummy;
-                if (listenerSet != null && listenerSet.size() > 0) {
+                if (listeners.size() > 0) {
                     notifications.add(new Runnable() {
                         public void run() {
                             MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
                                     dummy, MembershipEvent.MEMBER_ADDED);
-                            for (MembershipListener listener : listenerSet) {
+                            for (MembershipListener listener : listeners) {
                                 listener.memberAdded(membershipEvent);
                             }
                         }
@@ -103,7 +103,7 @@ public class ClusterImpl implements Cluster {
             }
             setNew.add(clusterMember);
         }
-        if (listenerSet != null && listenerSet.size() > 0) {
+        if (listeners.size() > 0) {
             Set<Member> it = clusterMembers.keySet();
             // build a list of notifications but send them AFTER
             // removal
@@ -114,7 +114,7 @@ public class ClusterImpl implements Cluster {
                         public void run() {
                             MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
                                     member, MembershipEvent.MEMBER_REMOVED);
-                            for (MembershipListener listener : listenerSet) {
+                            for (MembershipListener listener : listeners) {
                                 listener.memberRemoved(membershipEvent);
                             }
                         }
@@ -135,30 +135,11 @@ public class ClusterImpl implements Cluster {
     }
 
     public void addMembershipListener(MembershipListener listener) {
-        Set<MembershipListener> oldListeners = listeners.get();
-        int size = (oldListeners == null) ? 1 : oldListeners.size() + 1;
-        Set<MembershipListener> newListeners = new LinkedHashSet<MembershipListener>(size);
-        if (oldListeners != null) {
-            for (MembershipListener existingListener : oldListeners) {
-                newListeners.add(existingListener);
-            }
-        }
-        newListeners.add(listener);
-        listeners.set(newListeners);
+        listeners.add(listener);
     }
 
     public void removeMembershipListener(MembershipListener listener) {
-        Set<MembershipListener> oldListeners = listeners.get();
-        if (oldListeners == null || oldListeners.size() == 0)
-            return;
-        int size = oldListeners.size() - 1;
-        Set<MembershipListener> newListeners = new LinkedHashSet<MembershipListener>(size);
-        for (MembershipListener existingListener : oldListeners) {
-            if (!existingListener.equals(listener)) {
-                newListeners.add(existingListener);
-            }
-        }
-        listeners.set(newListeners);
+        listeners.remove(listener);
     }
 
     public Member getLocalMember() {
