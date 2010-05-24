@@ -26,7 +26,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static org.junit.Assert.assertEquals;
@@ -96,17 +95,16 @@ public class HazelcastClientTopicTest {
         final CountDownLatch latch = new CountDownLatch(2);
         final CountDownLatch cp = new CountDownLatch(1);
 //        final String message = "Hazelcast Rocks!";
-
         MessageListener<String> messageListener = new MessageListener<String>() {
             public void onMessage(String msg) {
 //                if (msg.startsWith(message)) {
-                    System.out.println("Received "+msg+" at "+ this);
-                    latch.countDown();
-                    cp.countDown();
+                System.out.println("Received " + msg + " at " + this);
+                latch.countDown();
+                cp.countDown();
 //                }
             }
         };
-        final String message = "message_"+messageListener.hashCode()+"_";
+        final String message = "message_" + messageListener.hashCode() + "_";
         topic.addMessageListener(messageListener);
         topic.publish(message + "1");
         cp.await();
@@ -151,7 +149,6 @@ public class HazelcastClientTopicTest {
                 }
             }
         };
-
         MessageListener<String> messageListener2 = new MessageListener<String>() {
             public void onMessage(String msg) {
                 if (msg.startsWith(message)) {

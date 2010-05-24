@@ -82,7 +82,5 @@ public class ClientRunnableTest {
         clientRunnable.notifyMonitor();
         assertTrue(latchShutDown.await(5, TimeUnit.SECONDS));
         assertFalse(clientRunnable.running);
-
-
     }
 }

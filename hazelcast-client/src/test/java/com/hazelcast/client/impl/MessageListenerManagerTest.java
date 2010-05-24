@@ -86,7 +86,6 @@ public class MessageListenerManagerTest {
                 manager.notifyMessageListeners(packet);
             }
         }).start();
-
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 }

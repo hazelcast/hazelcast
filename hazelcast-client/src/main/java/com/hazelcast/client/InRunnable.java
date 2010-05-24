@@ -18,14 +18,16 @@
 package com.hazelcast.client;
 
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public class InRunnable extends IORunnable implements Runnable {
     final PacketReader reader;
-    final Logger logger = Logger.getLogger(this.getClass().getName());
+    final ILogger logger = Logger.getLogger(this.getClass().getName());
     Connection connection = null;
 
     public InRunnable(HazelcastClient client, Map<Long, Call> calls, PacketReader reader) {
@@ -46,7 +48,7 @@ public class InRunnable extends IORunnable implements Runnable {
                 Thread.sleep(50);
             } else {
                 packet = reader.readPacket(connection);
-//                System.out.println(packet.getOperation() + " Reading response " + packet.getCallId());
+                logger.log(Level.FINEST, "Reading " + packet.getOperation() + " Call id: " + packet.getCallId());
                 Call call = callMap.remove(packet.getCallId());
                 if (call != null) {
                     call.setResponse(packet);
@@ -62,8 +64,7 @@ public class InRunnable extends IORunnable implements Runnable {
         } catch (RuntimeException re) {
             throw re;
         } catch (Exception e) {
-            logger.finest("InRunnable got an exception:" + e.toString());
-            boolean gracefully = !running;
+            logger.log(Level.FINE, "InRunnable got an exception:" + e.toString());
             client.connectionManager.destroyConnection(connection);
         }
     }

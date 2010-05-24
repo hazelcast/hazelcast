@@ -19,7 +19,6 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IdGenerator;
-import org.junit.After;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -32,7 +31,6 @@ import static org.junit.Assert.assertNull;
 public class HazelcastClientIdGeneratorTest {
 
     private HazelcastClient hClient;
-
 
     @Test
     public void idGenerator() {

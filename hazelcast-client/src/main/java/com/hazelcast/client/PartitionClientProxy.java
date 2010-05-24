@@ -35,7 +35,7 @@ public class PartitionClientProxy implements PartitionService {
     public Set<Partition> getPartitions() {
         CollectionWrapper<Partition> partitions =
                 (CollectionWrapper<Partition>) proxyHelper.doOp(ClusterOperation.CLIENT_GET_PARTITIONS, null, null);
-        return new LinkedHashSet<Partition>(partitions.getKeys());  
+        return new LinkedHashSet<Partition>(partitions.getKeys());
     }
 
     public Partition getPartition(Object key) {

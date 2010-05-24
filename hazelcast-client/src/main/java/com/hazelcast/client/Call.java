@@ -72,7 +72,6 @@ public class Call {
     }
 
     public void onDisconnect(Member member) {
-
     }
 
     public void setResponse(Object response) {

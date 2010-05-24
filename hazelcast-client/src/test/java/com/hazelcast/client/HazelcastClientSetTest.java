@@ -60,7 +60,7 @@ public class HazelcastClientSetTest {
         set.add("hello");
         set.remove("hello");
         set.remove("hello");
-        while(removeLatch.getCount() != 1){
+        while (removeLatch.getCount() != 1) {
             Thread.sleep(50);
         }
         set.removeItemListener(listener);

@@ -28,9 +28,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class ConnectionManagerTest {
@@ -136,7 +134,6 @@ public class ConnectionManagerTest {
         assertEquals(2, connectionManager.getClusterMembers().size());
     }
 
-
     @Test
     public void testMemberRemoved() throws Exception {
         HazelcastClient client = mock(HazelcastClient.class);
@@ -155,7 +152,6 @@ public class ConnectionManagerTest {
         MembershipEvent membershipEvent = new MembershipEvent(cluster, member, MembershipEvent.MEMBER_REMOVED);
         connectionManager.memberRemoved(membershipEvent);
         assertEquals(0, connectionManager.getClusterMembers().size());
-
     }
 
     @Test
@@ -176,7 +172,6 @@ public class ConnectionManagerTest {
         members.add(member1);
         members.add(member2);
         members.add(member3);
-
         when(cluster.getMembers()).thenReturn(members);
         InetSocketAddress inetSocketAddress = new InetSocketAddress("localhost", 5701);
         final Connection connection = mock(Connection.class);

@@ -18,14 +18,19 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.logging.Level;
 
-public abstract class IORunnable extends ClientRunnable {
+public abstract class
+        IORunnable extends ClientRunnable {
 
     protected Map<Long, Call> callMap;
     protected final HazelcastClient client;
+    final ILogger logger = Logger.getLogger(this.getClass().getName());
 
     public IORunnable(HazelcastClient client, Map<Long, Call> calls) {
         this.client = client;
@@ -45,33 +50,25 @@ public abstract class IORunnable extends ClientRunnable {
         }).start();
     }
 
-    public void run() {
-        while (running) {
-            try {
-                customRun();
-            } catch (InterruptedException e) {
-                return;
-            }
-        }
-        notifyMonitor();
-    }
-
-    protected void onDisconnect(Connection oldConnection) {
+    protected synchronized void onDisconnect(Connection oldConnection) {
         boolean shouldExecuteOnDisconnect = client.getConnectionManager().shouldExecuteOnDisconnect(oldConnection);
-        if(!shouldExecuteOnDisconnect){
+        if (!shouldExecuteOnDisconnect) {
             return;
         }
-        Member memberLeft = oldConnection.getMember();
+        Member leftMember = oldConnection.getMember();
         Collection<Call> calls = callMap.values();
         for (Call call : calls) {
             Call removed = callMap.remove(call.getId());
-            if(removed!=null){
-                removed.onDisconnect(memberLeft);
+            if (removed != null) {
+                if (!client.getOutRunnable().queue.contains(removed)) {
+                    logger.log(Level.FINE, Thread.currentThread() + ": Calling on disconnect " + leftMember);
+                    removed.onDisconnect(leftMember);
+                }
             }
         }
     }
 
-    protected boolean restoredConnection(Connection connection, boolean isOldConnectonNull, long oldConnectionId) {
+    private boolean restoredConnection(Connection connection, boolean isOldConnectonNull, long oldConnectionId) {
         return !isOldConnectonNull && connection != null && connection.getVersion() != oldConnectionId;
     }
 

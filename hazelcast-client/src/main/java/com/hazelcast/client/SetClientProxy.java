@@ -27,6 +27,7 @@ public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<
     public SetClientProxy(HazelcastClient client, String name) {
         super(client, name);
     }
+
     public SetClientProxy(ProxyHelper proxyHelper, String name) {
         super(proxyHelper, name);
     }

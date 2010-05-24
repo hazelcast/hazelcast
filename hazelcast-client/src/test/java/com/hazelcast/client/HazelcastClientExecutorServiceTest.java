@@ -17,11 +17,13 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.DistributedTask;
+import com.hazelcast.core.ExecutorServiceTest;
+import com.hazelcast.core.ExecutorServiceTest.BasicTestTask;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MultiTask;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
 import com.hazelcast.monitor.DistributedMemberInfoCallable;
-import org.junit.AfterClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.Serializable;
@@ -38,9 +40,6 @@ import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static junit.framework.Assert.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-
-import com.hazelcast.core.ExecutorServiceTest.BasicTestTask;
-
 
 public class HazelcastClientExecutorServiceTest {
 
@@ -203,7 +202,6 @@ public class HazelcastClientExecutorServiceTest {
         result = task.get();
         assertNotNull(result);
     }
-
 //    @AfterClass
 //    public static void shutdownAll() {
 //        getHazelcastClient().shutdown();

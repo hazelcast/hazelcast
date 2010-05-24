@@ -17,8 +17,10 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.impl.GroupProperties;
 
 import java.net.InetSocketAddress;
 
@@ -26,12 +28,20 @@ public class TestUtility {
     public static HazelcastClient client;
     static HazelcastInstance hz;
 
-    public synchronized  static HazelcastClient getHazelcastClient() {
+    public synchronized static HazelcastClient getHazelcastClient() {
         if (client == null) {
-            hz = Hazelcast.newHazelcastInstance(null);
+            Config config = new Config();
+            config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
+            hz = Hazelcast.newHazelcastInstance(config);
             client = getHazelcastClient(hz);
         }
         return client;
+    }
+
+    public synchronized static void shutdownHazelcastClient() {
+        if (client != null) {
+            client.shutdown();
+        }
     }
 
     public synchronized static HazelcastClient getHazelcastClient(HazelcastInstance... h) {

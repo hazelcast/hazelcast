@@ -19,5 +19,4 @@ import java.io.IOException;/*
 
 public interface ClientBinder {
     public void bind(Connection connection) throws IOException;
-
 }

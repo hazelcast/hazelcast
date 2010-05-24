@@ -662,8 +662,6 @@ public class HazelcastClientTest {
         }
     }
 
-
-
     @AfterClass
     public static void shutdown() {
     }

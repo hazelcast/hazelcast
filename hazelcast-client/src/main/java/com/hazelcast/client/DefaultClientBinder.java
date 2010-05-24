@@ -42,9 +42,6 @@ public class DefaultClientBinder implements ClientBinder {
         }
         Packet bind = new Packet();
         bind.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, Serializer.toByte(null), Serializer.toByte(b));
-        long id = ProxyHelper.newCallId();
-        Call cBind = new Call(id, bind);
-        client.getOutRunnable().callMap.put(cBind.getId(), cBind);
         client.getOutRunnable().writer.write(connection, bind);
         try {
             Thread.sleep(10);

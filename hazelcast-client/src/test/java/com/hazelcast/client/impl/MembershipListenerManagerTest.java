@@ -85,7 +85,6 @@ public class MembershipListenerManagerTest {
     }
 
     private void notifyMembershipListener(final int type) throws InterruptedException {
-
         HazelcastClient client = mock(HazelcastClient.class);
         Cluster cluster = mock(Cluster.class);
         when(client.getCluster()).thenReturn(cluster);
@@ -114,9 +113,9 @@ public class MembershipListenerManagerTest {
                 membershipListenerManager.notifyMembershipListeners(packet);
             }
         }).start();
-        if(type == MembershipEvent.MEMBER_ADDED){
+        if (type == MembershipEvent.MEMBER_ADDED) {
             assertTrue(memberAdded.await(5, TimeUnit.SECONDS));
-        }else{
+        } else {
             assertTrue(memberRemoved.await(5, TimeUnit.SECONDS));
         }
     }

@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -63,7 +62,6 @@ public class HazelcastClient implements HazelcastInstance {
         } else {
             this.connectionManager = new ConnectionManager(this, clusterMembers, shuffle);
         }
-
         this.connectionManager.setBinder(new DefaultClientBinder(this));
         this.groupName = groupName;
         out = new OutRunnable(this, calls, new PacketWriter());
@@ -220,7 +218,7 @@ public class HazelcastClient implements HazelcastInstance {
                             proxy = new LockClientProxy(o, this);
                         }
                         mapProxies.put(o, proxy);
-                    } else{
+                    } else {
                         proxy = new LockClientProxy(o, this);
                     }
                 }

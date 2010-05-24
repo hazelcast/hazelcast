@@ -17,21 +17,24 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 public class OutRunnable extends IORunnable {
     final PacketWriter writer;
-    final BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
+    public final BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
     final BlockingQueue<Call> temp = new LinkedBlockingQueue<Call>();
     private Connection connection = null;
+    AtomicInteger counter = new AtomicInteger(0);
 
-    Logger logger = Logger.getLogger(this.getClass().toString());
+    ILogger logger = Logger.getLogger(this.getClass().toString());
 
     public OutRunnable(final HazelcastClient client, final Map<Long, Call> calls, final PacketWriter writer) {
         super(client, calls);
@@ -45,13 +48,14 @@ public class OutRunnable extends IORunnable {
             if (call == null) {
                 return;
             }
-//            System.out.println("Sending: " + call);
+            counter.incrementAndGet();
             callMap.put(call.getId(), call);
             Connection oldConnection = connection;
             connection = client.getConnectionManager().getConnection();
             if (restoredConnection(oldConnection, connection)) {
                 redoUnfinishedCalls(call, oldConnection);
             } else if (connection != null) {
+                logger.log(Level.FINEST, "Sending: " + call);
                 writer.write(connection, call.getRequest());
             } else {
                 interruptWaitingCalls();
@@ -59,9 +63,9 @@ public class OutRunnable extends IORunnable {
         } catch (InterruptedException e) {
             throw e;
         } catch (Throwable io) {
-            logger.finest("OutRunnable got an exception:" + io.getMessage());
+            logger.log(Level.FINE, "OutRunnable got an exception:" + io.getMessage());
+            io.printStackTrace();
             enQueue(call);
-            boolean gracefully = !running;
             client.getConnectionManager().destroyConnection(connection);
         }
     }
@@ -76,6 +80,7 @@ public class OutRunnable extends IORunnable {
 
     public void enQueue(Call call) {
         try {
+            logger.log(Level.FINEST, "Enquing: " + call);
             queue.put(call);
         } catch (InterruptedException e) {
             e.printStackTrace();

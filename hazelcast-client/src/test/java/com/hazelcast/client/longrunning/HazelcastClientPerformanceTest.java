@@ -17,21 +17,29 @@
 
 package com.hazelcast.client.longrunning;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.TestUtility;
+import com.hazelcast.client.*;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.impl.ClusterOperation;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 public class HazelcastClientPerformanceTest {
 
     @Test
@@ -43,22 +51,49 @@ public class HazelcastClientPerformanceTest {
 
     private void putAndGet(Map<String, String> map, int counter) {
         long beginTime = System.currentTimeMillis();
-        for (int i = 0; i < counter; i++) {
-            if (i % 10000 == 0) {
+        for (int i = 1; i <= counter; i++) {
+            if (i % (counter / 10) == 0) {
                 System.out.println(i + ": " + (System.currentTimeMillis() - beginTime) + " ms");
             }
             map.put("key_" + i, String.valueOf(i));
         }
-//        System.out.println(System.currentTimeMillis() - beginTime);
         beginTime = System.currentTimeMillis();
-        for (int i = 0; i < counter; i++) {
-            if (i % 10000 == 0) {
+        for (int i = 1; i <= counter; i++) {
+            if (i % (counter / 10) == 0) {
                 System.out.println(i + ": " + (System.currentTimeMillis() - beginTime) + " ms");
             }
             assertEquals(String.valueOf(i), map.get("key_" + i));
         }
-//    	assertEquals(String.valueOf(i), map.get("key_"+i));
-//        System.out.println(System.currentTimeMillis() - beginTime);
+    }
+
+    @Test
+    public void putAndget100000RecordsWith1ClusterMemberFrom10Threads() throws InterruptedException {
+        HazelcastClient hClient = getHazelcastClient();
+        final Map<String, String> map = hClient.getMap("putAndget100000RecordsWith1ClusterMemberFrom10Threads");
+        int count = 100000;
+        int threads = 16;
+        final AtomicInteger getCounter = new AtomicInteger(count);
+        final AtomicInteger putCounter = new AtomicInteger(count);
+        ExecutorService executorService = Executors.newFixedThreadPool(threads);
+        final long beginTime = System.currentTimeMillis();
+        final CountDownLatch latch = new CountDownLatch(threads);
+        for (int i = 0; i < threads; i++) {
+            executorService.execute(new Runnable() {
+                public void run() {
+                    int i;
+                    while ((i = putCounter.getAndDecrement()) > 0) {
+                        map.put("key_" + i, String.valueOf(i));
+                    }
+                    while ((i = getCounter.getAndDecrement()) > 0) {
+                        map.get("key_" + i);
+                    }
+                    latch.countDown();
+                }
+            });
+        }
+        latch.await();
+        System.out.println(threads + " Threads made in total " + count +
+                " puts and gets in " + (System.currentTimeMillis() - beginTime) + " ms");
     }
 
     @Test
@@ -107,11 +142,90 @@ public class HazelcastClientPerformanceTest {
         assertEquals(size, bigB.length);
     }
 
+    @Test
+    @Ignore
+    public void testOutThreadPerformance() throws IOException, InterruptedException {
+        new Thread(new Runnable() {
+            public void run() {
+                ServerSocket serverSocket = null;
+                try {
+                    serverSocket = new ServerSocket(5799);
+                } catch (IOException e) {
+                    System.out.println("Could not listen on port: 4444");
+                    System.exit(-1);
+                }
+                Socket clientSocket = null;
+                try {
+                    clientSocket = serverSocket.accept();
+                    byte[] bytes = new byte[1000000];
+                    while (true) {
+                        clientSocket.getInputStream().read(bytes);
+                    }
+                } catch (IOException e) {
+                    System.out.println("Accept failed: 4444");
+                    System.exit(-1);
+                }
+            }
+        }).start();
+        HazelcastClient client = mock(HazelcastClient.class);
+        ConnectionManager connectionManager = mock(ConnectionManager.class);
+        when(client.getConnectionManager()).thenReturn(connectionManager);
+        Connection connection = new Connection("localhost", 5799, 1);
+        when(connectionManager.getConnection()).thenReturn(connection);
+        PacketWriter packetWriter = new PacketWriter();
+        packetWriter.setConnection(connection);
+        final OutRunnable outRunnable = new OutRunnable(client, new HashMap<Long, Call>(), packetWriter);
+        new Thread(outRunnable).start();
+        final AtomicLong callCounter = new AtomicLong();
+        final long start = System.currentTimeMillis();
+        ExecutorService executorService = Executors.newFixedThreadPool(20);
+        final BlockingQueue<Object> queue = new LinkedBlockingQueue<Object>();
+        final Object object = new Object();
+        for (int i = 0; i < 16; i++) {
+            executorService.execute(new Runnable() {
+
+                public void run() {
+                    for (; ;) {
+                        try {
+                            queue.take();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                        }
+                        Packet packet = new Packet();
+                        packet.set("c:default", ClusterOperation.CONCURRENT_MAP_GET, new byte[30], null);
+                        Call call = new Call(callCounter.incrementAndGet(), packet);
+                        outRunnable.enQueue(call);
+                    }
+                }
+            });
+        }
+        Executors.newSingleThreadExecutor().submit(new Runnable() {
+            public void run() {
+                int numberOfTasks = 10000;
+//                int numberOfTasks = 11000;
+                while (true) {
+                    try {
+                        for (int i = 0; i < numberOfTasks; i++) {
+                            queue.offer(object);
+                        }
+//                        numberOfTasks = numberOfTasks + numberOfTasks/10;
+                        Thread.sleep(1 * 1000);
+                        System.out.println("Operations per millisecond : " + callCounter.get() / (System.currentTimeMillis() - start));
+                        System.out.println("out runnable Queue size: " + outRunnable.queue.size());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+        Thread.sleep(1000000);
+    }
+
     @AfterClass
     @BeforeClass
     public static void shutdown() {
-        getHazelcastClient().shutdown();
-        Hazelcast.shutdownAll();
-        TestUtility.client = null;
+//        getHazelcastClient().shutdown();
+//        Hazelcast.shutdownAll();
+//        TestUtility.client = null;
     }
 }

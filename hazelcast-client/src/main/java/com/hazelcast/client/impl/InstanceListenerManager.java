@@ -30,36 +30,36 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static com.hazelcast.client.Serializer.toObject;
 
 public class InstanceListenerManager {
-        final private List<InstanceListener> instanceListeners = new CopyOnWriteArrayList<InstanceListener>();
-        final private HazelcastClient client;
+    final private List<InstanceListener> instanceListeners = new CopyOnWriteArrayList<InstanceListener>();
+    final private HazelcastClient client;
 
-        public InstanceListenerManager(HazelcastClient client) {
-            this.client = client;
-        }
+    public InstanceListenerManager(HazelcastClient client) {
+        this.client = client;
+    }
 
-        public void registerInstanceListener(InstanceListener listener) {
-            this.instanceListeners.add(listener);
-        }
+    public void registerInstanceListener(InstanceListener listener) {
+        this.instanceListeners.add(listener);
+    }
 
-        public void removeInstanceListener(InstanceListener instanceListener) {
-            this.instanceListeners.remove(instanceListener);
-        }
+    public void removeInstanceListener(InstanceListener instanceListener) {
+        this.instanceListeners.remove(instanceListener);
+    }
 
-        public synchronized boolean noInstanceListenerRegistered() {
-            return instanceListeners.isEmpty();
-        }
+    public synchronized boolean noInstanceListenerRegistered() {
+        return instanceListeners.isEmpty();
+    }
 
-        public void notifyInstanceListeners(Packet packet) {
-            String id = (String) toObject(packet.getKey());
-            InstanceEvent.InstanceEventType instanceEventType = (InstanceEvent.InstanceEventType) toObject(packet.getValue());
-            InstanceEvent event = new InstanceEvent(instanceEventType, (Instance) client.getClientProxy(id));
-            for (Iterator<InstanceListener> it = instanceListeners.iterator(); it.hasNext();) {
-                InstanceListener listener = it.next();
-                if (InstanceEvent.InstanceEventType.CREATED.equals(event.getEventType())) {
-                    listener.instanceCreated(event);
-                } else if (InstanceEvent.InstanceEventType.DESTROYED.equals(event.getEventType())) {
-                    listener.instanceDestroyed(event);
-                }
+    public void notifyInstanceListeners(Packet packet) {
+        String id = (String) toObject(packet.getKey());
+        InstanceEvent.InstanceEventType instanceEventType = (InstanceEvent.InstanceEventType) toObject(packet.getValue());
+        InstanceEvent event = new InstanceEvent(instanceEventType, (Instance) client.getClientProxy(id));
+        for (Iterator<InstanceListener> it = instanceListeners.iterator(); it.hasNext();) {
+            InstanceListener listener = it.next();
+            if (InstanceEvent.InstanceEventType.CREATED.equals(event.getEventType())) {
+                listener.instanceCreated(event);
+            } else if (InstanceEvent.InstanceEventType.DESTROYED.equals(event.getEventType())) {
+                listener.instanceDestroyed(event);
             }
         }
     }
+}

@@ -20,6 +20,8 @@ package com.hazelcast.client;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -29,13 +31,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public class ConnectionManager implements MembershipListener {
     private volatile Connection currentConnection;
     private final AtomicInteger connectionIdGenerator = new AtomicInteger(-1);
     private final List<InetSocketAddress> clusterMembers = new CopyOnWriteArrayList<InetSocketAddress>();
-    private final Logger logger = Logger.getLogger(getClass().toString());
+    private final ILogger logger = Logger.getLogger(getClass().toString());
     private final HazelcastClient client;
     private volatile int lastDisconnectedConnectionId = -1;
     private ClientBinder binder;
@@ -60,7 +62,7 @@ public class ConnectionManager implements MembershipListener {
                 if (currentConnection == null) {
                     connection = searchForAvailableConnection();
                     if (connection != null) {
-                        logger.fine("Client is connecting to " + connection);
+                        logger.log(Level.FINE, "Client is connecting to " + connection);
                         binder.bind(connection);
                         currentConnection = connection;
                     }
@@ -72,7 +74,7 @@ public class ConnectionManager implements MembershipListener {
 
     public synchronized void destroyConnection(Connection connection) {
         if (currentConnection != null && currentConnection.getVersion() == connection.getVersion()) {
-            logger.warning("Connection to " + currentConnection + " is lost");
+            logger.log(Level.WARNING, "Connection to " + currentConnection + " is lost");
             currentConnection = null;
         }
     }
@@ -118,7 +120,6 @@ public class ConnectionManager implements MembershipListener {
         Set<Member> members = client.getCluster().getMembers();
         clusterMembers.clear();
         for (Member member : members) {
-
             clusterMembers.add(member.getInetSocketAddress());
         }
     }

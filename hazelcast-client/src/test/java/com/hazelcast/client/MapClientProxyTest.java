@@ -52,12 +52,12 @@ public class MapClientProxyTest {
         final TimeUnit timeunit = TimeUnit.MILLISECONDS;
         final String key = "1";
         final String value = "value";
-        new Thread(new Runnable(){
+        new Thread(new Runnable() {
 
             public void run() {
                 latch.countDown();
                 String oldValue = imap.putIfAbsent(key, value, ttl, timeunit);
-                if(oldValue.equals("key")){
+                if (oldValue.equals("key")) {
                     correct.countDown();
                 }
             }
@@ -68,14 +68,12 @@ public class MapClientProxyTest {
         Call call = callMap.values().iterator().next();
         Packet request = call.getRequest();
         long timeout = request.getTimeout();
-
         assertEquals(timeout, timeunit.toMillis(ttl));
         assertEquals(key, toObject(request.getKey()));
         assertEquals(value, toObject(request.getValue()));
         Packet packet = new Packet();
         packet.setValue(toByte("key"));
         call.setResponse(packet);
-
         assertTrue("", correct.await(1, TimeUnit.SECONDS));
     }
 }

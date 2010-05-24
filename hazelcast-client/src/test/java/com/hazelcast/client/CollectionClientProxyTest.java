@@ -67,19 +67,19 @@ public class CollectionClientProxyTest {
         verify(listenerManager).addListenerCall(argThat(new CallMatcher()));
         verify(itemListenerManager).registerItemListener(name, listener);
         verify(proxyHelper).doCall(argThat(new CallMatcher()));
-
-
     }
 
     class CallMatcher extends BaseMatcher<Call> {
-            public void describeTo(Description description) {
-                //To change body of implemented methods use File | Settings | File Templates.
-            }
+        public void describeTo(Description description) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
 
-            public boolean matches(Object o) {
-                return (o instanceof Call);
-            }
-        };
+        public boolean matches(Object o) {
+            return (o instanceof Call);
+        }
+    }
+
+    ;
 
     @Test
     public void testRemoveItemListener() throws Exception {

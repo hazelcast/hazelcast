@@ -20,6 +20,7 @@ package com.hazelcast.client;
 import com.hazelcast.client.impl.CollectionWrapper;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.query.Predicate;
 
 import java.io.Serializable;
@@ -27,7 +28,7 @@ import java.util.Collection;
 import java.util.EventListener;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import static com.hazelcast.client.Serializer.toByte;
 import static com.hazelcast.client.Serializer.toObject;
@@ -37,8 +38,7 @@ public class ProxyHelper {
     private final String name;
     private final HazelcastClient client;
 
-    Logger logger = Logger.getLogger(this.getClass().toString());
-
+    final ILogger logger = com.hazelcast.logging.Logger.getLogger(this.getClass().getName());
 
     public ProxyHelper(String name, HazelcastClient client) {
         this.name = (name == null) ? "" : name;
@@ -68,11 +68,13 @@ public class ProxyHelper {
 
     public Call createCall(Packet request) {
         final long id = newCallId();
-        return new Call(id, request){
+        return new Call(id, request) {
             @Override
             public void onDisconnect(Member member) {
-                logger.fine("Re sendind Call " + this);
-                client.getOutRunnable().enQueue(this);
+                logger.log(Level.FINE, "Re enqueue " + this);
+                if (!client.getOutRunnable().queue.contains(this)) {
+                    client.getOutRunnable().enQueue(this);
+                }
             }
         };
     }

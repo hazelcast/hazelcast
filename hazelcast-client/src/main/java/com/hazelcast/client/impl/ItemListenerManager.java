@@ -25,38 +25,38 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ItemListenerManager {
-        final Map<ItemListener, EntryListener> itemListener2EntryListener = new ConcurrentHashMap<ItemListener, EntryListener>();
+    final Map<ItemListener, EntryListener> itemListener2EntryListener = new ConcurrentHashMap<ItemListener, EntryListener>();
 
-        final private EntryListenerManager entryListenerManager;
+    final private EntryListenerManager entryListenerManager;
 
-        public ItemListenerManager(EntryListenerManager entryListenerManager) {
-            this.entryListenerManager = entryListenerManager;
-        }
-
-        public <E, V> void registerItemListener(String name, final ItemListener<E> itemListener) {
-            EntryListener<E, V> e = new EntryListener<E, V>() {
-                public void entryAdded(EntryEvent<E, V> event) {
-                    itemListener.itemAdded((E) event.getKey());
-                }
-
-                public void entryEvicted(EntryEvent<E, V> event) {
-                    // TODO Auto-generated method stub
-                }
-
-                public void entryRemoved(EntryEvent<E, V> event) {
-                    itemListener.itemRemoved((E) event.getKey());
-                }
-
-                public void entryUpdated(EntryEvent<E, V> event) {
-                    // TODO Auto-generated method stub
-                }
-            };
-            entryListenerManager.registerEntryListener(name, null, e);
-            itemListener2EntryListener.put(itemListener, e);
-        }
-
-        public void removeItemListener(String name, ItemListener itemListener) {
-            EntryListener entryListener = itemListener2EntryListener.remove(itemListener);
-            entryListenerManager.removeEntryListener(name, null, entryListener);
-        }
+    public ItemListenerManager(EntryListenerManager entryListenerManager) {
+        this.entryListenerManager = entryListenerManager;
     }
+
+    public <E, V> void registerItemListener(String name, final ItemListener<E> itemListener) {
+        EntryListener<E, V> e = new EntryListener<E, V>() {
+            public void entryAdded(EntryEvent<E, V> event) {
+                itemListener.itemAdded((E) event.getKey());
+            }
+
+            public void entryEvicted(EntryEvent<E, V> event) {
+                // TODO Auto-generated method stub
+            }
+
+            public void entryRemoved(EntryEvent<E, V> event) {
+                itemListener.itemRemoved((E) event.getKey());
+            }
+
+            public void entryUpdated(EntryEvent<E, V> event) {
+                // TODO Auto-generated method stub
+            }
+        };
+        entryListenerManager.registerEntryListener(name, null, e);
+        itemListener2EntryListener.put(itemListener, e);
+    }
+
+    public void removeItemListener(String name, ItemListener itemListener) {
+        EntryListener entryListener = itemListener2EntryListener.remove(itemListener);
+        entryListenerManager.removeEntryListener(name, null, entryListener);
+    }
+}

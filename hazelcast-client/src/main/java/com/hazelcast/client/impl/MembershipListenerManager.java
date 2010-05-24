@@ -29,37 +29,37 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static com.hazelcast.client.Serializer.toObject;
 
 public class MembershipListenerManager {
-        final private List<MembershipListener> memberShipListeners = new CopyOnWriteArrayList<MembershipListener>();
-        final private HazelcastClient client;
+    final private List<MembershipListener> memberShipListeners = new CopyOnWriteArrayList<MembershipListener>();
+    final private HazelcastClient client;
 
-        public MembershipListenerManager(HazelcastClient client) {
-            this.client = client;
-        }
+    public MembershipListenerManager(HazelcastClient client) {
+        this.client = client;
+    }
 
-        public void registerMembershipListener(MembershipListener listener) {
-            this.memberShipListeners.add(listener);
-        }
+    public void registerMembershipListener(MembershipListener listener) {
+        this.memberShipListeners.add(listener);
+    }
 
-        public void removeMembershipListener(MembershipListener listener) {
-            this.memberShipListeners.remove(listener);
-        }
+    public void removeMembershipListener(MembershipListener listener) {
+        this.memberShipListeners.remove(listener);
+    }
 
-        public synchronized boolean noMembershipListenerRegistered() {
-            return memberShipListeners.isEmpty();
-        }
+    public synchronized boolean noMembershipListenerRegistered() {
+        return memberShipListeners.isEmpty();
+    }
 
-        public void notifyMembershipListeners(Packet packet) {
-            Member member = (Member) toObject(packet.getKey());
-            Integer type = (Integer) toObject(packet.getValue());
-            MembershipEvent event = new MembershipEvent(client.getCluster(), member, type);
-            if (type.equals(MembershipEvent.MEMBER_ADDED)) {
-                for (MembershipListener membershipListener : memberShipListeners) {
-                    membershipListener.memberAdded(event);
-                }
-            } else {
-                for (MembershipListener membershipListener : memberShipListeners) {
-                    membershipListener.memberRemoved(event);
-                }
+    public void notifyMembershipListeners(Packet packet) {
+        Member member = (Member) toObject(packet.getKey());
+        Integer type = (Integer) toObject(packet.getValue());
+        MembershipEvent event = new MembershipEvent(client.getCluster(), member, type);
+        if (type.equals(MembershipEvent.MEMBER_ADDED)) {
+            for (MembershipListener membershipListener : memberShipListeners) {
+                membershipListener.memberAdded(event);
+            }
+        } else {
+            for (MembershipListener membershipListener : memberShipListeners) {
+                membershipListener.memberRemoved(event);
             }
         }
     }
+}

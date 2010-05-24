@@ -144,11 +144,9 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         ProxyHelper.checkTime(ttl, timeunit);
         long micros = timeunit.toMillis(ttl);
         Packet request = proxyHelper.prepareRequest(ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT, key, value);
-
         request.setTimeout(micros);
         Packet response = proxyHelper.callAndGetResult(request);
-        return (V)proxyHelper.getValue(response);
-
+        return (V) proxyHelper.getValue(response);
     }
 
     public V putIfAbsent(K key, V value) {
