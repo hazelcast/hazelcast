@@ -1015,6 +1015,8 @@ public class ClusterTest {
 
     @Test
     public void testTTLAndMemoryLeak() throws Exception {
+        Runtime.getRuntime().gc();
+        long initialUsedMemory = getUsedMemoryAsMB();
         Config config = new XmlConfigBuilder().build();
         MapConfig mapConfig = config.getMapConfig("default");
         mapConfig.setTimeToLiveSeconds(5);
@@ -1033,11 +1035,13 @@ public class ClusterTest {
         Runtime.getRuntime().gc();
         Thread.sleep(5000);
         long usedMemoryEnd = getUsedMemoryAsMB();
-        assertTrue(usedMemoryEnd < 30);
+        assertTrue(initialUsedMemory + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - initialUsedMemory) < 30);
     }
 
     @Test
     public void testTTLAndMemoryLeak2() throws Exception {
+        Runtime.getRuntime().gc();
+        long initialUsedMemory = getUsedMemoryAsMB();
         Config config = new XmlConfigBuilder().build();
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
@@ -1054,11 +1058,13 @@ public class ClusterTest {
         Runtime.getRuntime().gc();
         Thread.sleep(5000);
         long usedMemoryEnd = getUsedMemoryAsMB();
-        assertTrue(usedMemoryEnd < 30);
+        assertTrue(initialUsedMemory + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - initialUsedMemory) < 30);
     }
 
     @Test
     public void testMaxIdleAndMemoryLeak() throws Exception {
+        Runtime.getRuntime().gc();
+        long initialUsedMemory = getUsedMemoryAsMB();
         Config config = new XmlConfigBuilder().build();
         MapConfig mapConfig = config.getMapConfig("default");
         mapConfig.setMaxIdleSeconds(5);
@@ -1077,7 +1083,7 @@ public class ClusterTest {
         Runtime.getRuntime().gc();
         Thread.sleep(5000);
         long usedMemoryEnd = getUsedMemoryAsMB();
-        assertTrue(usedMemoryEnd < 30);
+        assertTrue(initialUsedMemory + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - initialUsedMemory) < 30);
     }
 
     long getUsedMemoryAsMB() {
