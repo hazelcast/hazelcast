@@ -17,6 +17,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.FastByteArrayInputStream;
 import com.hazelcast.nio.FastByteArrayOutputStream;
@@ -46,7 +47,7 @@ public class Serializer {
 
     private static final byte SERIALIZER_TYPE_BIG_INTEGER = 8;
 
-    private static final boolean gzipEnabled = Boolean.getBoolean("hazelcast.serializer.client.gzip.enabled");
+    private static final boolean gzipEnabled = GroupProperties.SERIALIZER_GZIP_ENABLED.getBoolean();
 
     public static byte[] toByte(Object object) {
         FastByteArrayOutputStream dos = new FastByteArrayOutputStream();
@@ -143,7 +144,7 @@ public class Serializer {
     }
 
     private static void writeGZip(OutputStream out, Object object) throws IOException {
-        GZIPOutputStream zos = new GZIPOutputStream(out);
+        OutputStream zos = new BufferedOutputStream(new GZIPOutputStream(out));
         ObjectOutputStream os = new ObjectOutputStream(zos);
         os.writeObject(object);
         os.flush();
@@ -158,7 +159,7 @@ public class Serializer {
     }
 
     private static Object readGZip(InputStream is) throws Exception {
-        GZIPInputStream zis = new GZIPInputStream(is);
+        InputStream zis = new BufferedInputStream(new GZIPInputStream(is));
         ObjectInputStream in = new ObjectInputStream(zis);
         Object o = in.readObject();
         in.close();

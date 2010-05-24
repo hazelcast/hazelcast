@@ -22,6 +22,7 @@ import com.hazelcast.config.Config;
 public class GroupProperties {
 
     public static final String PROP_SOCKET_BIND_ANY = "hazelcast.socket.bind.any";
+    public static final String PROP_SERIALIZER_GZIP_ENABLED = "hazelcast.serializer.gzip.enabled";
     public static final String PROP_SERIALIZER_SHARED = "hazelcast.serializer.shared";
     public static final String PROP_PACKET_VERSION = "hazelcast.packet.version";
     public static final String PROP_SHUTDOWNHOOK_ENABLED = "hazelcast.shutdownhook.enabled";
@@ -39,6 +40,8 @@ public class GroupProperties {
     public static final String PROP_EXECUTOR_CLIENT_THREAD_COUNT = "hazelcast.executor.client.thread.count";
     public static final String PROP_EXECUTOR_STORE_THREAD_COUNT = "hazelcast.executor.store.thread.count";
     public static final String PROP_LOG_STATE = "hazelcast.log.state";
+
+    public static final GroupProperty SERIALIZER_GZIP_ENABLED = new GroupProperty(null, PROP_SERIALIZER_GZIP_ENABLED, "false");
 
     public static final GroupProperty SERIALIZER_SHARED = new GroupProperty(null, PROP_SERIALIZER_SHARED, "false");
 

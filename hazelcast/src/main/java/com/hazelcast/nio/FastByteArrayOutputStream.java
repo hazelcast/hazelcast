@@ -84,6 +84,10 @@ public final class FastByteArrayOutputStream extends ByteArrayOutputStream imple
         count = 0;
     }
 
+    public int getCount() {
+        return count;
+    }
+
     @Override
     public byte toByteArray()[] {
         byte newbuf[] = new byte[count];

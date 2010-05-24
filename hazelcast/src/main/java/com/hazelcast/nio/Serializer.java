@@ -1,12 +1,12 @@
-/* 
+/*
  * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at 
- * 
+ * You may obtain a copy of the License at
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,10 +24,8 @@ import com.hazelcast.impl.ThreadContext;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.Date;
-import java.util.zip.Deflater;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-import java.util.zip.Inflater;
 
 public final class Serializer {
 
@@ -53,7 +51,7 @@ public final class Serializer {
 
     private static int OUTPUT_STREAM_BUFFER_SIZE = 100 * 1024;
 
-    private static final boolean gzipEnabled = Boolean.getBoolean("hazelcast.serializer.gzip.enabled");
+    private static final boolean gzipEnabled = GroupProperties.SERIALIZER_GZIP_ENABLED.getBoolean();
 
     static {
         registerTypeSerializer(new ObjectSerializer());
@@ -149,16 +147,6 @@ public final class Serializer {
 
     private static void registerTypeSerializer(TypeSerializer ts) {
         typeSerializer[ts.getTypeId()] = ts;
-    }
-
-    static class Compressor {
-        final Deflater deflater = new Deflater(Deflater.BEST_SPEED);
-
-        final Inflater inflater = new Inflater();
-
-        final byte[] buffer = new byte[1024 * 1024];
-
-        
     }
 
     static class LongSerializer implements TypeSerializer<Long> {
