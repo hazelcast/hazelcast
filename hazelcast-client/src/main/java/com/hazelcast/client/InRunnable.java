@@ -57,7 +57,7 @@ public class InRunnable extends IORunnable implements Runnable {
                         client.getListenerManager().enqueue(packet);
                     }
                     if (packet.getCallId() != -1) {
-                        throw new RuntimeException("In Thread can not handle: " + packet.getOperation() + " : " + packet.getCallId());
+                        logger.log(Level.SEVERE, "In Thread can not handle: " + packet.getOperation() + " : " + packet.getCallId());
                     }
                 }
             }
