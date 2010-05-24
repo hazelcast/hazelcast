@@ -91,7 +91,7 @@ public abstract class InstanceChartGenerator extends HttpServlet {
         TimeSeries ts = new TimeSeries("operations per second");
         for (int i = 0; i < list.size(); i++) {
             InstanceStatistics instanceStatistics = (InstanceStatistics) list.get(i);
-            ts.addOrUpdate(new Second(instanceStatistics.getCreatedDate()), instanceStatistics.getTotalOPS() / 1000);
+            ts.addOrUpdate(new Second(instanceStatistics.getCreatedDate()), (double)instanceStatistics.getTotalOPS() / 1000);
         }
         TimeSeriesCollection timeDataset = new TimeSeriesCollection();
         timeDataset.addSeries(ts);
