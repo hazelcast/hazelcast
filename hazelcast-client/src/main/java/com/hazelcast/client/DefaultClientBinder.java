@@ -19,15 +19,17 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.cluster.Bind;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public class DefaultClientBinder implements ClientBinder {
     private HazelcastClient client;
-    private final Logger logger = Logger.getLogger(getClass().toString());
+    private final ILogger logger = Logger.getLogger(getClass().toString());
 
     public DefaultClientBinder(HazelcastClient client) {
         this.client = client;
@@ -38,7 +40,7 @@ public class DefaultClientBinder implements ClientBinder {
         try {
             b = new Bind(new Address(connection.getAddress().getHostName(), connection.getSocket().getLocalPort()));
         } catch (UnknownHostException e) {
-            logger.warning(e.getMessage() + " while creating the bind package.");
+            logger.log(Level.WARNING, e.getMessage() + " while creating the bind package.");
         }
         Packet bind = new Packet();
         bind.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, Serializer.toByte(null), Serializer.toByte(b));

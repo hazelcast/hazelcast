@@ -20,6 +20,8 @@ package com.hazelcast.client;
 import com.hazelcast.client.impl.ListenerManager;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.partition.PartitionService;
 
@@ -30,7 +32,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
-import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Hazelcast Client enables you to do all Hazelcast operations without
@@ -53,7 +55,7 @@ public class HazelcastClient implements HazelcastInstance {
     final ClusterClientProxy clusterClientProxy;
     final PartitionClientProxy partitionClientProxy;
     final String groupName;
-    final static Logger logger = Logger.getLogger(HazelcastClient.class.toString());
+    final static ILogger logger = Logger.getLogger(HazelcastClient.class.toString());
     private volatile boolean shutdownInProgress = false;
 
     private HazelcastClient(String groupName, String groupPassword, boolean shuffle, InetSocketAddress[] clusterMembers, boolean automatic) {
@@ -245,7 +247,7 @@ public class HazelcastClient implements HazelcastInstance {
             listenerManager.shutdown();
             in.shutdown();
             long time = System.currentTimeMillis() - begin;
-            logger.fine("HazelcastClient shutdown completed in " + time + " ms.");
+            logger.log(Level.FINE, "HazelcastClient shutdown completed in " + time + " ms.");
             shutdownInProgress = false;
         }
     }
