@@ -115,7 +115,6 @@ public class MemberInfo implements ChangeEvent, Serializable {
         return "MemberInfo{" +
                 "clusterID=" + clusterID +
                 ", date=" + date +
-                ", partitions=" + partitions +
                 ", time=" + time +
                 ", totalMemory=" + totalMemory +
                 ", freeMemory=" + freeMemory +
