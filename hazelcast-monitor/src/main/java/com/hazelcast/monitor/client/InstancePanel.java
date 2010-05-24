@@ -79,11 +79,14 @@ public abstract class InstancePanel extends AbstractMonitoringPanel implements M
     }
 
     static String formatMemorySize(long size) {
-        int gb = 1024 * 1024 * 1024;
-        int mb = 1024 * 1024;
-        int kb = 1024;
+        long tb = 1024l * 1024l * 1024l * 1024l;
+        long gb = 1024 * 1024 * 1024;
+        long mb = 1024 * 1024;
+        long kb = 1024;
         double result;
-        if ((result = (double) size / gb) >= 1) {
+        if ((result = (double) size / tb) >= 1) {
+            return toPrecision(result) + " TB";
+        } else if ((result = (double) size / gb) >= 1) {
             return toPrecision(result) + " GB";
         } else if ((result = (double) size / mb) >= 1) {
             return Math.round(result) + " MB";

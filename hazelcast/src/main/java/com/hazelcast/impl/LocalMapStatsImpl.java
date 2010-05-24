@@ -26,18 +26,18 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class LocalMapStatsImpl implements LocalMapStats, Serializable {
     private final AtomicLong lastAccessTime = new AtomicLong();
-    private final AtomicInteger hits = new AtomicInteger();
-    private int ownedEntryCount;
-    private int backupEntryCount;
-    private int markedAsRemovedEntryCount;
-    private int ownedEntryMemoryCost;
-    private int backupEntryMemoryCost;
-    private int markedAsRemovedMemoryCost;
+    private final AtomicLong hits = new AtomicLong();
+    private long ownedEntryCount;
+    private long backupEntryCount;
+    private long markedAsRemovedEntryCount;
+    private long ownedEntryMemoryCost;
+    private long backupEntryMemoryCost;
+    private long markedAsRemovedMemoryCost;
     private long creationTime;
     private long lastUpdateTime;
     private long lastEvictionTime;
-    private int lockedEntryCount;
-    private int lockWaitCount;
+    private long lockedEntryCount;
+    private long lockWaitCount;
     private LocalMapOperationStats operationStats;
 
     public void incrementHit() {
@@ -94,51 +94,51 @@ public class LocalMapStatsImpl implements LocalMapStats, Serializable {
         }
     }
 
-    public int getOwnedEntryCount() {
+    public long getOwnedEntryCount() {
         return ownedEntryCount;
     }
 
-    public void setOwnedEntryCount(int ownedEntryCount) {
+    public void setOwnedEntryCount(long ownedEntryCount) {
         this.ownedEntryCount = ownedEntryCount;
     }
 
-    public int getBackupEntryCount() {
+    public long getBackupEntryCount() {
         return backupEntryCount;
     }
 
-    public void setBackupEntryCount(int backupEntryCount) {
+    public void setBackupEntryCount(long backupEntryCount) {
         this.backupEntryCount = backupEntryCount;
     }
 
-    public int getMarkedAsRemovedEntryCount() {
+    public long getMarkedAsRemovedEntryCount() {
         return markedAsRemovedEntryCount;
     }
 
-    public void setMarkedAsRemovedEntryCount(int markedAsRemovedEntryCount) {
+    public void setMarkedAsRemovedEntryCount(long markedAsRemovedEntryCount) {
         this.markedAsRemovedEntryCount = markedAsRemovedEntryCount;
     }
 
-    public int getOwnedEntryMemoryCost() {
+    public long getOwnedEntryMemoryCost() {
         return ownedEntryMemoryCost;
     }
 
-    public void setOwnedEntryMemoryCost(int ownedEntryMemoryCost) {
+    public void setOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
         this.ownedEntryMemoryCost = ownedEntryMemoryCost;
     }
 
-    public int getBackupEntryMemoryCost() {
+    public long getBackupEntryMemoryCost() {
         return backupEntryMemoryCost;
     }
 
-    public void setBackupEntryMemoryCost(int backupEntryMemoryCost) {
+    public void setBackupEntryMemoryCost(long backupEntryMemoryCost) {
         this.backupEntryMemoryCost = backupEntryMemoryCost;
     }
 
-    public int getMarkedAsRemovedMemoryCost() {
+    public long getMarkedAsRemovedMemoryCost() {
         return markedAsRemovedMemoryCost;
     }
 
-    public void setMarkedAsRemovedMemoryCost(int markedAsRemovedMemoryCost) {
+    public void setMarkedAsRemovedMemoryCost(long markedAsRemovedMemoryCost) {
         this.markedAsRemovedMemoryCost = markedAsRemovedMemoryCost;
     }
 
@@ -174,27 +174,27 @@ public class LocalMapStatsImpl implements LocalMapStats, Serializable {
         this.lastEvictionTime = lastEvictionTime;
     }
 
-    public int getHits() {
+    public long getHits() {
         return hits.get();
     }
 
-    public void setHits(int hits) {
+    public void setHits(long hits) {
         this.hits.set(hits);
     }
 
-    public int getLockedEntryCount() {
+    public long getLockedEntryCount() {
         return lockedEntryCount;
     }
 
-    public void setLockedEntryCount(int lockedEntryCount) {
+    public void setLockedEntryCount(long lockedEntryCount) {
         this.lockedEntryCount = lockedEntryCount;
     }
 
-    public int getLockWaitCount() {
+    public long getLockWaitCount() {
         return lockWaitCount;
     }
 
-    public void setLockWaitCount(int lockWaitCount) {
+    public void setLockWaitCount(long lockWaitCount) {
         this.lockWaitCount = lockWaitCount;
     }
 

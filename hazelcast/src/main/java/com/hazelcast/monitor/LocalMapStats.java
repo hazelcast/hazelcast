@@ -35,14 +35,14 @@ public interface LocalMapStats {
      *
      * @return number of entries owned by this member.
      */
-    int getOwnedEntryCount();
+    long getOwnedEntryCount();
 
     /**
      * Returns the number of backup entries hold by this member.
      *
      * @return number of backup entries hold by this member.
      */
-    int getBackupEntryCount();
+    long getBackupEntryCount();
 
     /**
      * Returns the number of marked as removed entries in this member.
@@ -53,21 +53,21 @@ public interface LocalMapStats {
      *
      * @return number of entries marked as removed.
      */
-    int getMarkedAsRemovedEntryCount();
+    long getMarkedAsRemovedEntryCount();
 
     /**
      * Returns memory cost (number of bytes) of owned entries in this member.
      *
      * @return memory cost (number of bytes) of owned entries in this member.
      */
-    int getOwnedEntryMemoryCost();
+    long getOwnedEntryMemoryCost();
 
     /**
      * Returns memory cost (number of bytes) of backup entries in this member.
      *
      * @return memory cost (number of bytes) of backup entries in this member.
      */
-    int getBackupEntryMemoryCost();
+    long getBackupEntryMemoryCost();
 
     /**
      * Returns memory cost (number of bytes) of marked as
@@ -75,7 +75,7 @@ public interface LocalMapStats {
      *
      * @return memory cost (number of bytes) of marked as removed entries.
      */
-    int getMarkedAsRemovedMemoryCost();
+    long getMarkedAsRemovedMemoryCost();
 
     /**
      * Returns the creation time of this map on this member.
@@ -110,14 +110,14 @@ public interface LocalMapStats {
      *
      * @return number of hits (reads).
      */
-    int getHits();
+    long getHits();
 
     /**
      * Returns the number of currently locked locally owned keys.
      *
      * @return number of locked entries.
      */
-    int getLockedEntryCount();
+    long getLockedEntryCount();
 
     /**
      * Returns the number of cluster-wide threads waiting
@@ -125,7 +125,7 @@ public interface LocalMapStats {
      *
      * @return number of threads waiting for locks.
      */
-    int getLockWaitCount();
+    long getLockWaitCount();
 
     /**
      * Returns the Operation Statistics, like number of puts, gets and etc.

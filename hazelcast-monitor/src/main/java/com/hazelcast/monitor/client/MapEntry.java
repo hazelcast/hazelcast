@@ -30,7 +30,7 @@ public class MapEntry implements Map.Entry, IsSerializable, Serializable {
     private Date lastUpdateTime;
     private Date creationTime;
     private long version = 0;
-    private int hits = 0;
+    private long hits = 0;
     private boolean valid = true;
     private String key = null;
     private String value = null;
@@ -97,11 +97,11 @@ public class MapEntry implements Map.Entry, IsSerializable, Serializable {
         this.version = version;
     }
 
-    public int getHits() {
+    public long getHits() {
         return hits;
     }
 
-    public void setHits(int hits) {
+    public void setHits(long hits) {
         this.hits = hits;
     }
 

@@ -50,19 +50,19 @@ public class MapStatistics extends InstanceStatistics implements ChangeEvent, Se
 
     public static class LocalMapStatistics implements Serializable, LocalInstanceStatistics {
 
-        public int ownedEntryCount;
-        public int backupEntryCount;
-        public int markedAsRemovedEntryCount;
-        public int ownedEntryMemoryCost;
-        public int backupEntryMemoryCost;
-        public int markedAsRemovedMemoryCost;
+        public long ownedEntryCount;
+        public long backupEntryCount;
+        public long markedAsRemovedEntryCount;
+        public long ownedEntryMemoryCost;
+        public long backupEntryMemoryCost;
+        public long markedAsRemovedMemoryCost;
         public long creationTime;
         public long lastAccessTime;
         public long lastUpdateTime;
         public long lastEvictionTime;
-        public int hits;
-        public int lockedEntryCount;
-        public int lockWaitCount;
+        public long hits;
+        public long lockedEntryCount;
+        public long lockWaitCount;
         public String memberName;
         public long periodStart;
         public long periodEnd;
