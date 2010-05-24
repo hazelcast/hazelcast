@@ -20,6 +20,7 @@ package com.hazelcast.logging;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 public class StandardLoggerFactory implements LoggerFactory {
@@ -46,15 +47,18 @@ public class StandardLoggerFactory implements LoggerFactory {
         }
 
         public void log(Level level, String message) {
-            logger.log(level, message);
+            log (level, message, null);
         }
 
         public void log(Level level, String message, Throwable thrown) {
-            logger.log(level, message, thrown);
+            LogRecord logRecord = new LogRecord(level, message);
+            logRecord.setLoggerName(logger.getName());
+            logRecord.setThrown(thrown);
+            logRecord.setSourceClassName(logger.getName());
+            logger.log(logRecord);
         }
 
         public void log(LogEvent logEvent) {
-            Logger logger = Logger.getLogger(logEvent.getLogRecord().getLoggerName());
             logger.log(logEvent.getLogRecord());
         }
 

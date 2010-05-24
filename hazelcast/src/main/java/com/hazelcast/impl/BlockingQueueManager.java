@@ -42,7 +42,8 @@ import static com.hazelcast.impl.ClusterOperation.BLOCKING_QUEUE_SIZE;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 
-public class BlockingQueueManager extends BaseManager {
+public class
+        BlockingQueueManager extends BaseManager {
     private final int BLOCK_SIZE;
     private final Map<String, Q> mapQueues = new ConcurrentHashMap<String, Q>(10);
     private final Map<Long, List<Data>> mapTxnPolledElements = new HashMap<Long, List<Data>>(10);
@@ -1498,7 +1499,7 @@ public class BlockingQueueManager extends BaseManager {
             Block block = getBlock(blockId);
             if (block == null)
                 return false;
-            if (block.address.equals(thisAddress)) {
+            if (thisAddress.equals(block.address)) {
                 return false;
             }
             if (add) {
@@ -1526,13 +1527,13 @@ public class BlockingQueueManager extends BaseManager {
             return sent;
         }
 
-        boolean sendBackup(boolean add, Address packetoker, Data data, int blockId, int addIndex) {
+        boolean sendBackup(boolean add, Address caller, Data data, int blockId, int addIndex) {
             if (zeroBackup)
                 return true;
             if (addIndex == -1)
                 throw new RuntimeException("addIndex cannot be -1");
             if (lsMembers.size() > 1) {
-                if (getNextMemberAfter(thisAddress, true, 1).getAddress().equals(packetoker)) {
+                if (getNextMemberAfter(thisAddress, true, 1).getAddress().equals(caller)) {
                     return true;
                 }
                 ClusterOperation operation = ClusterOperation.BLOCKING_QUEUE_BACKUP_REMOVE;
