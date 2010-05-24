@@ -225,7 +225,7 @@ public class CMap {
     }
 
     public void invalidateRecordEntryValue(Record record) {
-        mapRecordEntries.remove (record.getId());
+        mapRecordEntries.remove(record.getId());
     }
 
     public void lockMap(Request request) {
@@ -432,8 +432,10 @@ public class CMap {
                             }
                         }
                     }
+                    if (record.valueCount() == 0) {
+                        markAsRemoved(record);
+                    }
                 }
-                markAsRemoved(record);
             }
         } else {
             logger.log(Level.SEVERE, "Unknown backup operation " + req.operation);
@@ -867,6 +869,9 @@ public class CMap {
             logger.log(Level.FINEST, record.getValue() + " RemoveMulti " + record.getMultiValues());
         }
         req.version = record.getVersion();
+        if (record.valueCount() == 0) {
+            markAsRemoved(record);
+        }
         return removed;
     }
 
@@ -901,11 +906,9 @@ public class CMap {
 
     public void addAndGet(Request req) {
         Record record = getRecord(req.key);
-        
     }
 
     public void getAndAdd(Request req) {
-
     }
 
     public void put(Request req) {
