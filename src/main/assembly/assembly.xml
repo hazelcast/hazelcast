@@ -78,7 +78,20 @@
                 <include>*.bat</include>
                 <include>*.sh</include>
                 <include>keystore</include>
-                <include>hazelcast-default.xml</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>hazelcast/target/</directory>
+            <outputDirectory>/bin/</outputDirectory>
+            <includes>
+                <include>hazelcast.xml</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>hazelcast/src/main/resources/</directory>
+            <outputDirectory>/bin/</outputDirectory>
+            <includes>
+                <include>keystore</include>
             </includes>
         </fileSet>
         <fileSet>

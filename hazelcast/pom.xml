@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>1.8.4-RC1</version>
+        <version>1.8.4</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -49,6 +49,8 @@
                                 </tstamp>
                                 <echo file="${basedir}/target/filter.properties"
                                       message="timestamp=${timestamp}"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-default.xml"
+                                      tofile="${basedir}/target/hazelcast.xml"/>
                             </tasks>
                         </configuration>
                     </execution>

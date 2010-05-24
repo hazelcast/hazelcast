@@ -46,6 +46,7 @@ public class ClusterTest {
 
     @BeforeClass
     public static void init() throws Exception {
+        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         Hazelcast.shutdownAll();
     }
 
@@ -1031,11 +1032,11 @@ public class ClusterTest {
         }
         long usedMemoryStart = getUsedMemoryAsMB();
         assertTrue(usedMemoryStart > 400);
-        Thread.sleep(40000);
+        Thread.sleep(50000);
         Runtime.getRuntime().gc();
         Thread.sleep(5000);
         long usedMemoryEnd = getUsedMemoryAsMB();
-        assertTrue(initialUsedMemory + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - initialUsedMemory) < 30);
+        assertTrue(initialUsedMemory + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - initialUsedMemory) < 50);
     }
 
     @Test
@@ -1054,11 +1055,11 @@ public class ClusterTest {
         }
         long usedMemoryStart = getUsedMemoryAsMB();
         assertTrue(usedMemoryStart > 400);
-        Thread.sleep(40000);
+        Thread.sleep(50000);
         Runtime.getRuntime().gc();
         Thread.sleep(5000);
         long usedMemoryEnd = getUsedMemoryAsMB();
-        assertTrue(initialUsedMemory + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - initialUsedMemory) < 30);
+        assertTrue(initialUsedMemory + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - initialUsedMemory) < 50);
     }
 
     @Test
@@ -1079,11 +1080,11 @@ public class ClusterTest {
         }
         long usedMemoryStart = getUsedMemoryAsMB();
         assertTrue(usedMemoryStart > 400);
-        Thread.sleep(40000);
+        Thread.sleep(50000);
         Runtime.getRuntime().gc();
         Thread.sleep(5000);
         long usedMemoryEnd = getUsedMemoryAsMB();
-        assertTrue(initialUsedMemory + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - initialUsedMemory) < 30);
+        assertTrue(initialUsedMemory + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - initialUsedMemory) < 50);
     }
 
     long getUsedMemoryAsMB() {
