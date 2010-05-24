@@ -25,7 +25,6 @@ public class ClusterView implements Serializable {
 
     private static final long serialVersionUID = -1447660859278549091L;
 
-
     private List<String> maps = new ArrayList<String>();
     private List<String> qs = new ArrayList<String>();
     private List<String> lists = new ArrayList<String>();

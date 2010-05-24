@@ -19,7 +19,7 @@ package com.hazelcast.monitor.client;
 import com.google.gwt.user.client.ui.FlexTable;
 
 public class PanelUtils {
-    public static FlexTable createFormattedFlexTable(){
+    public static FlexTable createFormattedFlexTable() {
         FlexTable table = new FlexTable();
         table.addStyleName("table");
         table.addStyleName("mapstats");
@@ -27,10 +27,10 @@ public class PanelUtils {
         return table;
     }
 
-    public static void formatEvenRows(int row, FlexTable table){
+    public static void formatEvenRows(int row, FlexTable table) {
         if (row % 2 == 0) {
-                table.getRowFormatter().addStyleName(row, "mapstatsEvenRow");
-            }
+            table.getRowFormatter().addStyleName(row, "mapstatsEvenRow");
+        }
     }
 
     public static void removeUnusedRows(int row, FlexTable table) {

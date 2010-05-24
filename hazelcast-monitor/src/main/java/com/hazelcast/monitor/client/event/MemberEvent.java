@@ -52,4 +52,13 @@ public class MemberEvent implements ChangeEvent, Serializable {
     public Date getCreatedDate() {
         return date;
     }
+
+    @Override
+    public String toString() {
+        return "MemberEvent{" +
+                "clusterId=" + clusterId +
+                ", members=" + members +
+                ", date=" + date +
+                '}';
+    }
 }

@@ -28,7 +28,6 @@ public abstract class InstanceEvent implements ChangeEvent {
     private Date date;
 
     public InstanceEvent() {
-
     }
 
     public InstanceEvent(int clusterId, InstanceType instanceType, String name) {
@@ -53,5 +52,16 @@ public abstract class InstanceEvent implements ChangeEvent {
     public Date getCreatedDate() {
         return date;
     }
+
+    @Override
+    public String toString() {
+        return "{" +
+                "name='" + name + '\'' +
+                ", instanceType=" + instanceType +
+                ", clusterId=" + clusterId +
+                ", date=" + date +
+                '}';
+    }
 }
+
 

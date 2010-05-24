@@ -19,7 +19,6 @@ package com.hazelcast.monitor.client;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.AbsolutePanel;
 import com.google.gwt.user.client.ui.FlexTable;
-import com.google.gwt.user.client.ui.HasHorizontalAlignment;
 import com.google.gwt.user.client.ui.Widget;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
@@ -54,7 +53,7 @@ public class MemberPanel extends AbstractMonitoringPanel implements MonitoringPa
         table.setText(5, 0, "Used Memory");
         table.setText(6, 0, "Free Memory");
         table.setText(7, 0, "Available Processors");
-        table.getFlexCellFormatter().setColSpan(0,0,2);
+        table.getFlexCellFormatter().setColSpan(0, 0, 2);
         table.setWidth("1000px");
     }
 
@@ -84,8 +83,8 @@ public class MemberPanel extends AbstractMonitoringPanel implements MonitoringPa
                 i++;
                 table.setText(i, 0, String.valueOf(key));
                 String value = String.valueOf(props.get(key));
-                if(value.length() > 100){
-                    String newValue = value.replaceAll(":",": ");
+                if (value.length() > 100) {
+                    String newValue = value.replaceAll(":", ": ");
                     value = newValue;
                 }
                 table.setText(i, 1, value);

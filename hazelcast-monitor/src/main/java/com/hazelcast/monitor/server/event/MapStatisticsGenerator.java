@@ -18,11 +18,10 @@
 package com.hazelcast.monitor.server.event;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiTask;
-import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
+import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
 import com.hazelcast.monitor.client.event.MapStatistics;
@@ -36,8 +35,6 @@ public class MapStatisticsGenerator extends InstanceStatisticsGenerator {
     public MapStatisticsGenerator(HazelcastClient client, String instanceName, int clusterId) {
         super(instanceName, client, clusterId);
     }
-
-
 
     public synchronized ChangeEvent generateEvent() {
         ExecutorService esService = client.getExecutorService();
@@ -60,7 +57,6 @@ public class MapStatisticsGenerator extends InstanceStatisticsGenerator {
         if (members.size() != mapStats.size()) {
             return null;
         }
-
         List<DistributedMapStatsCallable.MemberMapStat> lsMapStats = new ArrayList(mapStats);
         Collections.sort(lsMapStats, new Comparator<DistributedMapStatsCallable.MemberMapStat>() {
             public int compare(DistributedMapStatsCallable.MemberMapStat o1, DistributedMapStatsCallable.MemberMapStat o2) {
@@ -69,7 +65,6 @@ public class MapStatisticsGenerator extends InstanceStatisticsGenerator {
                 return i1 - i2;
             }
         });
-
         List<MapStatistics.LocalMapStatistics> listOfStats = new ArrayList<MapStatistics.LocalMapStatistics>();
         for (DistributedMapStatsCallable.MemberMapStat memberMapStat : lsMapStats) {
             MapStatistics.LocalMapStatistics stat = new MapStatistics.LocalMapStatistics();

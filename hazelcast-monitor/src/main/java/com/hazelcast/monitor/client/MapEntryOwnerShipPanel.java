@@ -30,7 +30,7 @@ public class MapEntryOwnerShipPanel extends MapStatsPanel implements MonitoringP
 
     @Override
     protected void handleRow(FlexTable table, int row, MapStatistics.LocalMapStatistics localMapStatistics) {
-        table.setText(row, 0, ""+row);
+        table.setText(row, 0, "" + row);
         table.setWidget(row, 1, clusterWidgets.getInstanceLink(null, localMapStatistics.memberName));
         table.setText(row, 2, "" + localMapStatistics.ownedEntryCount);
         table.setText(row, 3, "" + formatMemorySize(localMapStatistics.ownedEntryMemoryCost));

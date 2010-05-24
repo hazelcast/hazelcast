@@ -49,7 +49,6 @@ public class ToolTip extends PopupPanel {
         this.setStyleName("toolTip");
         this.show();
     }
-
 //    public boolean onEventPreview(Event event) {
 //        int type = DOM.eventGetType(event);
 //        switch (type) {

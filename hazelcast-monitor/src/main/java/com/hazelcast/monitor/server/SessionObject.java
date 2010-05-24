@@ -97,7 +97,7 @@ public class SessionObject {
             @Override
             public void run() {
                 for (ChangeEventGenerator eventGenerator : eventGenerators) {
-                    if(!mapOfHz.containsKey(eventGenerator.getClusterId())){
+                    if (!mapOfHz.containsKey(eventGenerator.getClusterId())) {
                         continue;
                     }
                     ChangeEvent event = null;

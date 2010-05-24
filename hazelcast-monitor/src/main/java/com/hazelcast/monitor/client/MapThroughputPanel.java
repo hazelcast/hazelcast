@@ -29,7 +29,7 @@ public class MapThroughputPanel extends MapStatsPanel {
 
     @Override
     protected void handleRow(FlexTable table, int row, MapStatistics.LocalMapStatistics localMapStatistics) {
-        table.setText(row, 0, ""+row);
+        table.setText(row, 0, "" + row);
         table.setWidget(row, 1, clusterWidgets.getInstanceLink(null, localMapStatistics.memberName));
         table.setText(row, 2, "" + localMapStatistics.totalOperationsInSec());
         table.setText(row, 3, "" + localMapStatistics.numberOfGetsInSec);
@@ -38,7 +38,7 @@ public class MapThroughputPanel extends MapStatsPanel {
         table.setText(row, 6, "" + localMapStatistics.numberOfOthersInSec);
         table.setText(row, 7, "" + localMapStatistics.numberOfEventsInSec);
         table.setText(row, 8, "" + localMapStatistics.hits);
-       for(int i=2;i<9;i++){
+        for (int i = 2; i < 9; i++) {
             table.getCellFormatter().addStyleName(row, i, "mapstatsNumericColumn");
         }
     }

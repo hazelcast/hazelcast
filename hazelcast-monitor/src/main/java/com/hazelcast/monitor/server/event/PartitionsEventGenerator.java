@@ -37,7 +37,6 @@ public class PartitionsEventGenerator implements ChangeEventGenerator {
     public ChangeEvent generateEvent() {
         Partitions event = new Partitions(clusterId);
         Set<com.hazelcast.partition.Partition> partitions = client.getPartitionService().getPartitions();
-
         Map<String, List<Integer>> map = new HashMap<String, List<Integer>>();
         for (com.hazelcast.partition.Partition partition : partitions) {
             String name = getName(partition.getOwner());
@@ -48,16 +47,15 @@ public class PartitionsEventGenerator implements ChangeEventGenerator {
             }
             blocks.add(partition.getPartitionId());
         }
-        for(String owner: map.keySet()){
+        for (String owner : map.keySet()) {
             List<Integer> list = map.get(owner);
             Collections.sort(list);
             StringBuilder blocks = new StringBuilder();
-            for(int i: list){
+            for (int i : list) {
                 blocks.append(i).append(", ");
             }
-
             String value = blocks.toString();
-            event.getPartitions().put(owner, value.substring(0, value.length()-2));
+            event.getPartitions().put(owner, value.substring(0, value.length() - 2));
             event.getCount().put(owner, list.size());
         }
         return event;

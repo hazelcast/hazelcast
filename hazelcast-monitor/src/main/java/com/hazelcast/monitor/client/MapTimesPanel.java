@@ -44,7 +44,7 @@ public class MapTimesPanel extends MapStatsPanel implements MonitoringPanel {
     protected void handleRow(FlexTable table, int row, MapStatistics.LocalMapStatistics localMapStatistics) {
         DateTimeFormat ttipFormat = DateTimeFormat.getFormat("yyyy.MM.dd HH:mm:ss");
         DateTimeFormat displayFormat = DateTimeFormat.getFormat("HH:mm:ss");
-        table.setText(row, 0, ""+row);
+        table.setText(row, 0, "" + row);
         table.setWidget(row, 1, clusterWidgets.getInstanceLink(null, localMapStatistics.memberName));
         addDateToTable(table, row, 2, new Date(localMapStatistics.lastAccessTime), ttipFormat, displayFormat);
         addDateToTable(table, row, 3, new Date(localMapStatistics.lastEvictionTime), ttipFormat, displayFormat);

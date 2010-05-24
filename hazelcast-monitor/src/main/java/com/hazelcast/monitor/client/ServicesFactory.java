@@ -20,19 +20,18 @@ package com.hazelcast.monitor.client;
 import com.google.gwt.core.client.GWT;
 
 public class ServicesFactory {
-    
+
     private final HazelcastServiceAsync hazelcastService = GWT
             .create(HazelcastService.class);
 
     protected final MapServiceAsync mapService = GWT
             .create(MapService.class);
 
-    public HazelcastServiceAsync getHazelcastService(){
+    public HazelcastServiceAsync getHazelcastService() {
         return hazelcastService;
     }
 
-    public MapServiceAsync getMapServiceAsync(){
+    public MapServiceAsync getMapServiceAsync() {
         return mapService;
     }
-
 }

@@ -17,11 +17,10 @@
 
 package com.hazelcast.monitor.client.event;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Date;
 
-public abstract class InstanceStatistics implements Serializable {
+public abstract class InstanceStatistics implements ChangeEvent {
     protected int size;
     protected int totalOPS;
     protected String name;
@@ -44,9 +43,10 @@ public abstract class InstanceStatistics implements Serializable {
         this.size = size;
     }
 
-    public int getTotalOPS(){
+    public int getTotalOPS() {
         return totalOPS;
     }
+
     public int getClusterId() {
         return clusterId;
     }
@@ -64,4 +64,15 @@ public abstract class InstanceStatistics implements Serializable {
     }
 
     public abstract Collection<? extends LocalInstanceStatistics> getListOfLocalStats();
+
+    @Override
+    public String toString() {
+        return "{" +
+                "size=" + size +
+                ", totalOPS=" + totalOPS +
+                ", name='" + name + '\'' +
+                ", clusterId=" + clusterId +
+                ", date=" + date +
+                '}';
+    }
 }

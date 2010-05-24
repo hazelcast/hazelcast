@@ -27,7 +27,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- convenience to define GWT version in one place -->
-        <gwt.version>2.0.0</gwt.version>
+        <gwt.version>2.0.3</gwt.version>
         <!--  tell the compiler we can use 1.5 -->
         <maven.compiler.source>1.5</maven.compiler.source>
         <maven.compiler.target>1.5</maven.compiler.target>
@@ -37,12 +37,12 @@
         <dependency>
             <groupId>com.google.gwt</groupId>
             <artifactId>gwt-servlet</artifactId>
-            <version>2.0.0</version>
+            <version>2.0.3</version>
         </dependency>
         <dependency>
             <groupId>com.google.gwt</groupId>
             <artifactId>gwt-user</artifactId>
-            <version>2.0.0</version>
+            <version>2.0.3</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

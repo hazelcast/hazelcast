@@ -17,10 +17,8 @@
 package com.hazelcast.monitor.client.handler;
 
 import com.google.gwt.user.client.ui.Anchor;
-import com.google.gwt.user.client.ui.Hyperlink;
 import com.google.gwt.user.client.ui.TreeItem;
 import com.hazelcast.monitor.client.ClusterWidgets;
-import com.hazelcast.monitor.client.InstanceType;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.MemberEvent;
 
@@ -55,7 +53,6 @@ public class MemberEventHandler implements ChangeEventHandler {
         addNewMembers(currentMembers, memberTreeItem);
         String headerText = "Members (" + memberSize + ")";
         clusterWidgets.getMemberTreeItem().setText(headerText);
-
     }
 
     private void addNewMembers(List<String> currentMembers, TreeItem memberTreeItem) {

@@ -16,7 +16,6 @@
  */
 package com.hazelcast.monitor.client;
 
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import com.hazelcast.monitor.client.event.ChangeEvent;

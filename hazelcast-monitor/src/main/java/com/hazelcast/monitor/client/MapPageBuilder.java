@@ -25,9 +25,9 @@ public class MapPageBuilder implements PageBuilder {
 
     public void buildPage(ClusterWidgets clusterWidgets, String name, AsyncCallback<ChangeEvent> callBack, ServicesFactory servicesFactory) {
         MapChartPanel mapChartPanel = new MapChartPanel(name, callBack, servicesFactory);
-        ((DisclosurePanel)mapChartPanel.getPanelWidget()).setOpen(true);
+        ((DisclosurePanel) mapChartPanel.getPanelWidget()).setOpen(true);
         MapThroughputPanel mapThroughputPanel = new MapThroughputPanel(name, callBack, servicesFactory);
-        ((DisclosurePanel)mapThroughputPanel.getPanelWidget()).setOpen(true);
+        ((DisclosurePanel) mapThroughputPanel.getPanelWidget()).setOpen(true);
         MapEntryOwnerShipPanel mapStatisticsPanel = new MapEntryOwnerShipPanel(name, callBack, servicesFactory);
         MapBrowserPanel mapBrowserPanel = new MapBrowserPanel(name, callBack, servicesFactory);
         MapTimesPanel mapTimesPanel = new MapTimesPanel(name, callBack, servicesFactory);

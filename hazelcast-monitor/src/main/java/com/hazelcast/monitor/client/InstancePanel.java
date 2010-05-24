@@ -31,7 +31,7 @@ public abstract class InstancePanel extends AbstractMonitoringPanel implements M
     private ChangeEventType changeEventType;
 
     public InstancePanel(String name, AsyncCallback<? extends ChangeEvent> callBack, String panelLabel,
-                    HazelcastServiceAsync hazelcastService, ChangeEventType changeEventType) {
+                         HazelcastServiceAsync hazelcastService, ChangeEventType changeEventType) {
         super(hazelcastService);
         this.name = name;
         this.callBack = callBack;

@@ -35,6 +35,4 @@ public interface HazelcastService extends RemoteService {
     public void deRegisterEvent(ChangeEventType eventType, int clusterId, String instanceName);
 
     public ArrayList<ClusterView> loadActiveClusterViews();
-
-
 }

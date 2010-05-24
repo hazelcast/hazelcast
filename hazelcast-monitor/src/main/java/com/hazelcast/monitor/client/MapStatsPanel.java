@@ -31,8 +31,8 @@ public abstract class MapStatsPanel extends InstanceStatsPanel implements Monito
     }
 
     protected void handleRow(FlexTable table, int row, LocalInstanceStatistics localInstanceStatistics) {
-        handleRow(table, row, (MapStatistics.LocalMapStatistics)localInstanceStatistics);
+        handleRow(table, row, (MapStatistics.LocalMapStatistics) localInstanceStatistics);
     }
 
-    protected abstract void handleRow(FlexTable table, int row, MapStatistics.LocalMapStatistics localMapStatistics) ;
+    protected abstract void handleRow(FlexTable table, int row, MapStatistics.LocalMapStatistics localMapStatistics);
 }

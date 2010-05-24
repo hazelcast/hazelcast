@@ -19,18 +19,10 @@ package com.hazelcast.monitor.client.event;
 import com.hazelcast.monitor.client.InstanceType;
 
 import java.io.Serializable;
-import java.util.Date;
 
 public class InstanceCreated extends InstanceEvent implements Serializable {
-    private Date date;
 
-    public InstanceCreated(){
-        
-    }
-
-    public InstanceCreated(Date date) {
-        this.date = date;
-
+    public InstanceCreated() {
     }
 
     public InstanceCreated(int clusterId, InstanceType instanceType, String name) {
@@ -39,5 +31,10 @@ public class InstanceCreated extends InstanceEvent implements Serializable {
 
     public ChangeEventType getChangeEventType() {
         return ChangeEventType.INSTANCE_CREATED;
+    }
+
+    @Override
+    public String toString() {
+        return "InstanceCreated" + super.toString();
     }
 }

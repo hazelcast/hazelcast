@@ -19,8 +19,8 @@ package com.hazelcast.monitor.client.event;
 import com.hazelcast.monitor.client.InstanceType;
 
 public class InstanceDestroyed extends InstanceEvent {
-    public InstanceDestroyed() {
 
+    public InstanceDestroyed() {
     }
 
     public InstanceDestroyed(int clusterId, InstanceType instanceType, String name) {
@@ -29,5 +29,10 @@ public class InstanceDestroyed extends InstanceEvent {
 
     public ChangeEventType getChangeEventType() {
         return ChangeEventType.INSTANCE_DESTROYED;
+    }
+
+    @Override
+    public String toString() {
+        return "InstanceDestroyed" + super.toString();
     }
 }

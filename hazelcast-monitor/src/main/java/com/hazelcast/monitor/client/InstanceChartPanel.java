@@ -46,9 +46,9 @@ public abstract class InstanceChartPanel extends InstancePanel {
         }
         HorizontalPanel horizontalPanel = (HorizontalPanel) vPanel.getWidget(1);
         Image sizeChart = (Image) ((AbsolutePanel) horizontalPanel.getWidget(0)).getWidget(0);
-        sizeChart.setUrl(getServletName()+"?name=" + name + "&type=size&random=" + Math.random() * 10);
+        sizeChart.setUrl(getServletName() + "?name=" + name + "&type=size&random=" + Math.random() * 10);
         Image opsChart = (Image) ((AbsolutePanel) horizontalPanel.getWidget(1)).getWidget(0);
-        opsChart.setUrl(getServletName()+"?name=" + name + "&type=ops&random=" + Math.random() * 10);
+        opsChart.setUrl(getServletName() + "?name=" + name + "&type=ops&random=" + Math.random() * 10);
     }
 
     private AbsolutePanel createAbsPanelWithImage() {

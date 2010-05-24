@@ -17,6 +17,6 @@
 
 package com.hazelcast.monitor.client.exception;
 
-public class ClientDisconnectedException extends RuntimeException{
+public class ClientDisconnectedException extends RuntimeException {
 
 }

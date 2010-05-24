@@ -19,6 +19,7 @@ package com.hazelcast.monitor.server.event;
 
 import com.hazelcast.monitor.client.event.ChangeEvent;
 import com.hazelcast.monitor.client.event.ChangeEventType;
+
 public interface ChangeEventGenerator {
     public ChangeEvent generateEvent();
 

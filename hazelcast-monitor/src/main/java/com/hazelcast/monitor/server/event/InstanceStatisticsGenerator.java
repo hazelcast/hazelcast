@@ -23,7 +23,7 @@ import com.hazelcast.monitor.client.event.InstanceStatistics;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class InstanceStatisticsGenerator implements ChangeEventGenerator{
+public abstract class InstanceStatisticsGenerator implements ChangeEventGenerator {
 
     private List<? super InstanceStatistics> list = new ArrayList();
     protected String name;

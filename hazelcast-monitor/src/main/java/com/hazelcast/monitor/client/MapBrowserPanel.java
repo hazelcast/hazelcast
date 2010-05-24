@@ -27,8 +27,6 @@ import com.hazelcast.monitor.client.exception.ClientDisconnectedException;
 
 import java.util.Date;
 
-import static com.hazelcast.monitor.client.MapEntryOwnerShipPanel.formatMemorySize;
-
 public class MapBrowserPanel extends InstancePanel implements MonitoringPanel {
     private String name;
 

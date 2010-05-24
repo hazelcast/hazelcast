@@ -55,5 +55,14 @@ public class Partitions implements ChangeEvent, Serializable {
     public Map<String, Integer> getCount() {
         return count;
     }
+
+    @Override
+    public String toString() {
+        return "Partitions{" +
+                "clusterId=" + clusterId +
+                ", date=" + date +
+                ", count=" + count +
+                '}';
+    }
 }
 

@@ -20,9 +20,11 @@ package com.hazelcast.monitor.client;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.ui.ListBox;
 import com.hazelcast.monitor.client.event.ChangeEvent;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 
 public class
@@ -36,7 +38,6 @@ public class
     private final HazelcastServiceAsync hazelcastService = GWT
             .create(HazelcastService.class);
 
-
     public RefreshTimer(HazelcastMonitor hazelcastMonitor) {
         this.hazelcastMonitor = hazelcastMonitor;
     }
@@ -45,7 +46,6 @@ public class
     public void run() {
         hazelcastService.getChange(new AsyncCallback<ArrayList<ChangeEvent>>() {
             public void onFailure(Throwable caught) {
-
             }
 
             public void onSuccess(ArrayList<ChangeEvent> result) {
@@ -62,11 +62,21 @@ public class
                         }
                         str = str.substring(0, str.length() - 1);
                         str += "]";
-                        System.out.println("Event for Cluster id:" + clusterId + ". Only following clusters are active on browser:" + str);
+                        logEvent("Event for Cluster id:" + clusterId + ". Only following clusters are active on browser:" + str);
                         return;
                     }
+                    logEvent(changeEvent.toString());
                     clusterWidgets.handle(changeEvent);
                 }
+            }
+
+            private void logEvent(String message) {
+                ListBox logBox = hazelcastMonitor.logBox;
+                logBox.addItem(new Date() + ": " + message);
+                while (logBox.getItemCount() > 30) {
+                    logBox.removeItem(0);
+                }
+                logBox.setSelectedIndex(logBox.getItemCount() - 1);
             }
         });
     }

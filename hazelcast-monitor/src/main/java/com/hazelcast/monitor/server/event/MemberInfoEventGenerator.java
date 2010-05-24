@@ -70,7 +70,7 @@ public class MemberInfoEventGenerator implements ChangeEventGenerator {
         if (memberInfo == null) {
             return null;
         }
-        MemberInfo info = new MemberInfo();
+        MemberInfo info = new MemberInfo(clusterId);
         info.setAvailableProcessors(memberInfo.getAvailableProcessors());
         info.setFreeMemory(memberInfo.getFreeMemory());
         info.setMaxMemory(memberInfo.getMaxMemory());

@@ -65,7 +65,6 @@ public class ClusterWidgets {
     }
 
     public void handle(ChangeEvent changeEvent) {
-//        System.out.println("Handling event for cluster: " + changeEvent.getClusterId() + " event: " + changeEvent);
         if (changeEvent instanceof ClientDisconnectedEvent) {
             disconnected();
         } else if (changeEvent instanceof InstanceCreated) {

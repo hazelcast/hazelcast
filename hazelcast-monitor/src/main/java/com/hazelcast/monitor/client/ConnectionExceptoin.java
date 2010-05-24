@@ -21,7 +21,6 @@ import java.io.Serializable;
 
 public class ConnectionExceptoin extends Exception implements Serializable {
     public ConnectionExceptoin() {
-
     }
 
     public ConnectionExceptoin(String message) {

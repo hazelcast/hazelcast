@@ -41,6 +41,7 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
     HorizontalSplitPanel mainPanel;
     DecoratedStackPanel dsPanel;
     DisclosurePanel clusterAddPanel;
+    ListBox logBox = new ListBox(true);
     private Timer refreshTimer;
 
     /**
@@ -67,7 +68,16 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
         mainPanel.setLeftWidget(leftPanel);
         VerticalPanel rightPanel = new VerticalPanel();
         mainPanel.setRightWidget(rightPanel);
-        RootPanel.get().add(mainPanel);
+        VerticalSplitPanel
+                topPanel = new VerticalSplitPanel();
+        topPanel.setSize("100%", "100%");
+        topPanel.setSplitPosition("100%");
+        topPanel.setTopWidget(mainPanel);
+        topPanel.setBottomWidget(logBox);
+        logBox.setWidth("100%");
+        logBox.setHeight("100%");
+        RootPanel.get().add(topPanel);
+//        RootPanel.get().add(mainPanel);
         History.addValueChangeHandler(this);
         loadActiveClusterViews();
         ServicesFactory servicesFactory = new ServicesFactory();
@@ -139,22 +149,21 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
         final Button btAddCluster = new Button("Add Cluster");
         btAddCluster.addClickHandler(new AddClusterClickHandler(this, tbGroupName, tbGroupPass, tbAddresses, lbError));
         FlexTable table = new FlexTable();
-        table.setWidget(0,0,new Label("Group Name:"));
-        table.setWidget(1,0,new Label("Password:"));
-        table.setWidget(2,0,new Label("Address:"));
-        table.setWidget(0,1,tbGroupName);
-        table.setWidget(1,1,tbGroupPass);
-        table.setWidget(2,1,tbAddresses);
-        table.setWidget(3,1, btAddCluster);
-        table.setWidget(4,0, lbError);
-        table.getFlexCellFormatter().setColSpan(4,0,2);
-        table.getCellFormatter().setHorizontalAlignment(0,0, HasHorizontalAlignment.ALIGN_RIGHT);
-        table.getCellFormatter().setHorizontalAlignment(1,0, HasHorizontalAlignment.ALIGN_RIGHT);
-        table.getCellFormatter().setHorizontalAlignment(2,0, HasHorizontalAlignment.ALIGN_RIGHT);
+        table.setWidget(0, 0, new Label("Group Name:"));
+        table.setWidget(1, 0, new Label("Password:"));
+        table.setWidget(2, 0, new Label("Address:"));
+        table.setWidget(0, 1, tbGroupName);
+        table.setWidget(1, 1, tbGroupPass);
+        table.setWidget(2, 1, tbAddresses);
+        table.setWidget(3, 1, btAddCluster);
+        table.setWidget(4, 0, lbError);
+        table.getFlexCellFormatter().setColSpan(4, 0, 2);
+        table.getCellFormatter().setHorizontalAlignment(0, 0, HasHorizontalAlignment.ALIGN_RIGHT);
+        table.getCellFormatter().setHorizontalAlignment(1, 0, HasHorizontalAlignment.ALIGN_RIGHT);
+        table.getCellFormatter().setHorizontalAlignment(2, 0, HasHorizontalAlignment.ALIGN_RIGHT);
 //        disclosurePanel.add(vPanel);
         disclosurePanel.add(table);
         disclosurePanel.setOpen(true);
         return disclosurePanel;
-
     }
 }

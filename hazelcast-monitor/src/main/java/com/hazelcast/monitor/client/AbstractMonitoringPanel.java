@@ -56,7 +56,6 @@ public abstract class AbstractMonitoringPanel implements MonitoringPanel {
         result = list.isEmpty();
         list.add(this);
         return result;
-
     }
 
     public boolean register(ClusterWidgets clusterWidgets, ChangeEventType eventType, String name, AsyncCallback<? extends ChangeEvent> callBack) {
@@ -99,6 +98,7 @@ public abstract class AbstractMonitoringPanel implements MonitoringPanel {
         }
         return true;
     }
+
     public static class LabelWithToolTip extends Label {
         public LabelWithToolTip(final String label, final String toolTip) {
             super(label);

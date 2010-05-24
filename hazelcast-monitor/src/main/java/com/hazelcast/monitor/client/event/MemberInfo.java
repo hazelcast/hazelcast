@@ -109,4 +109,18 @@ public class MemberInfo implements ChangeEvent, Serializable {
     public void setPartitions(Set<Integer> partitions) {
         this.partitions = partitions;
     }
+
+    @Override
+    public String toString() {
+        return "MemberInfo{" +
+                "clusterID=" + clusterID +
+                ", date=" + date +
+                ", partitions=" + partitions +
+                ", time=" + time +
+                ", totalMemory=" + totalMemory +
+                ", freeMemory=" + freeMemory +
+                ", maxMemory=" + maxMemory +
+                ", availableProcessors=" + availableProcessors +
+                '}';
+    }
 }

@@ -17,10 +17,9 @@
 
 package com.hazelcast.monitor.client.event;
 
-import java.io.Serializable;
 import java.util.Date;
 
-public class ClientDisconnectedEvent implements ChangeEvent, Serializable {
+public class ClientDisconnectedEvent implements ChangeEvent {
     private int clusterId;
     private Date date;
 
@@ -42,5 +41,14 @@ public class ClientDisconnectedEvent implements ChangeEvent, Serializable {
 
     public Date getCreatedDate() {
         return date;
+    }
+
+    @Override
+    public String toString() {
+        return "ClientDisconnectedEvent{" +
+                "clusterId=" + clusterId +
+                "changeEventType=" + getChangeEventType() +
+                ", date=" + date +
+                '}';
     }
 }

@@ -19,7 +19,7 @@ package com.hazelcast.monitor.client.event;
 import java.io.Serializable;
 import java.util.Collection;
 
-public class MapStatistics extends InstanceStatistics implements ChangeEvent, Serializable {
+public class MapStatistics extends InstanceStatistics {
 
     Collection<LocalMapStatistics> listOfLocalStats;
 
@@ -75,5 +75,10 @@ public class MapStatistics extends InstanceStatistics implements ChangeEvent, Se
         public long totalOperationsInSec() {
             return numberOfGetsInSec + numberOfPutsInSec + numberOfRemovesInSec + numberOfOthersInSec;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "MapStatistics " + super.toString();
     }
 }

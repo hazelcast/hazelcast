@@ -72,7 +72,7 @@ public class TestClientApp {
 
     private void message() {
         System.out.println("Make sure you started Hazelcast server first.");
-        System.out.println("You should connect first by typing 'connect <hazelcast-server-ip> <group-name> <group-dev>'");
+        System.out.println("You should connect first by typing 'connect <hazelcast-server-ip> <group-name> <group-password>'");
         System.out.println("If group-name is 'dev' and password is 'dev-pass', 'connect <hazelcast-server-ip>' will be enough ");
     }
 

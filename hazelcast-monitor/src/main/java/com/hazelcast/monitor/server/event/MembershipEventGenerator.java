@@ -39,7 +39,6 @@ public class MembershipEventGenerator implements ChangeEventGenerator {
     }
 
     public ChangeEvent generateEvent() {
-//        System.out.println("Generating event for cluster id: "+clusterId  + ": "+this.hashCode());
         Set<Member> members = hazelcastInstance.getCluster().getMembers();
         List<String> memberList = new ArrayList<String>();
         for (Iterator<Member> iterator = members.iterator(); iterator.hasNext();) {

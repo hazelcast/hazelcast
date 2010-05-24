@@ -30,10 +30,9 @@ public class ChangeEventGeneratorFactory {
             eventGenerator = new PartitionsEventGenerator(client, clusterId);
         } else if (eventType.equals(ChangeEventType.MEMBER_INFO)) {
             eventGenerator = new MemberInfoEventGenerator(client, clusterId, name);
-        } else if (eventType.equals(ChangeEventType.QUEUE_STATISTICS)){
+        } else if (eventType.equals(ChangeEventType.QUEUE_STATISTICS)) {
             eventGenerator = new QueueStatisticsGenerator(client, name, clusterId);
         }
-
         return eventGenerator;
     }
 }

@@ -20,7 +20,7 @@ package com.hazelcast.monitor.client.event;
 import java.io.Serializable;
 import java.util.Collection;
 
-public class QueueStatistics extends InstanceStatistics implements ChangeEvent, Serializable {
+public class QueueStatistics extends InstanceStatistics {
 
     Collection<LocalQueueStatistics> list;
 
@@ -65,5 +65,10 @@ public class QueueStatistics extends InstanceStatistics implements ChangeEvent, 
         public long numberOfPollsInSec;
         public long numberOfEmptyPollsInSec;
         public String memberName;
+    }
+
+    @Override
+    public String toString() {
+        return "QueueStatistics" + super.toString();
     }
 }

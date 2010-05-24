@@ -99,4 +99,20 @@ public class ClusterClientProxy implements Cluster {
         check(instanceListener);
         client.getListenerManager().getInstanceListenerManager().removeInstanceListener(instanceListener);
     }
+
+@Override
+    public String toString() {
+        Set<Member> members = getMembers();
+        StringBuffer sb = new StringBuffer("Cluster [");
+        if (members != null) {
+            sb.append(members.size());
+            sb.append("] {");
+            for (Member member : members) {
+                sb.append("\n\t").append(member);
+            }
+        }
+        sb.append("\n}\n");
+        return sb.toString();
+    }
+
 }

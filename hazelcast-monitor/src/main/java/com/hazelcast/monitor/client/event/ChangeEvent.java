@@ -23,5 +23,6 @@ public interface ChangeEvent extends Serializable {
     ChangeEventType getChangeEventType();
 
     int getClusterId();
+
     Date getCreatedDate();
 }
