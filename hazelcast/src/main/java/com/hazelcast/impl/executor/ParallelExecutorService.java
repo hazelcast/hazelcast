@@ -19,6 +19,7 @@ package com.hazelcast.impl.executor;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ParallelExecutorService {
@@ -26,6 +27,14 @@ public class ParallelExecutorService {
 
     public ParallelExecutorService(ExecutorService executorService) {
         this.executorService = executorService;
+    }
+
+    public void shutdown() {
+        try {
+            executorService.shutdown();
+            executorService.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+        }
     }
 
     public ParallelExecutor newParallelExecutor(int concurrencyLevel) {

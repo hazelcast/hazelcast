@@ -196,6 +196,7 @@ public class ExecutorManager extends BaseManager {
 
     public void stop() {
         if (!started) return;
+        parallelExecutorService.shutdown();
         Collection<NamedExecutorService> executors = mapExecutors.values();
         for (NamedExecutorService namedExecutorService : executors) {
             namedExecutorService.stop();

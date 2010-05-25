@@ -125,14 +125,16 @@ public class
         });
     }
 
-    class BlockBackupSyncRunner implements Runnable {
+    // todo: this part can be implemented better.
+    // Thread.sleep is bad!
+    class BlockBackupSyncRunner extends FallThroughRunnable {
         final BlockBackupSync blockSync;
 
         public BlockBackupSyncRunner(BlockBackupSync blockSync) {
             this.blockSync = blockSync;
         }
 
-        public void run() {
+        public void doRun() {
             while (!blockSync.done) {
                 try {
                     synchronized (blockSync) {
@@ -140,8 +142,7 @@ public class
                         blockSync.wait();
                     }
                     Thread.sleep(1);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                } catch (InterruptedException ignored) {
                 }
             }
         }
@@ -209,8 +210,7 @@ public class
                             // I am the new owner so backup to next member
                             int indexUpto = block.size() - 1;
                             if (indexUpto > -1) {
-                                executeLocally(new BlockBackupSyncRunner(new BlockBackupSync(q, block,
-                                        indexUpto)));
+                                executeLocally(new BlockBackupSyncRunner(new BlockBackupSync(q, block, indexUpto)));
                             }
                         }
                     }
@@ -224,8 +224,7 @@ public class
                                 || memberBackupWas.getAddress().equals(deadAddress)) {
                             int indexUpto = block.size() - 1;
                             if (indexUpto > -1) {
-                                executeLocally(new BlockBackupSyncRunner(new BlockBackupSync(q, block,
-                                        indexUpto)));
+                                executeLocally(new BlockBackupSyncRunner(new BlockBackupSync(q, block, indexUpto)));
                             }
                         }
                     }
@@ -278,8 +277,7 @@ public class
                         if (memberBackupWas == null || !memberBackupWas.equals(memberBackupIs)) {
                             int indexUpto = block.size() - 1;
                             if (indexUpto > -1) {
-                                executeLocally(new BlockBackupSyncRunner(new BlockBackupSync(q, block,
-                                        indexUpto)));
+                                executeLocally(new BlockBackupSyncRunner(new BlockBackupSync(q, block, indexUpto)));
                             }
                         }
                     }
@@ -1512,7 +1510,6 @@ public class
                     return false;
                 }
             }
-
             return true;
         }
 
@@ -1799,14 +1796,14 @@ public class
                 }
             }
             return false;
-        } 
+        }
 
         public int size() {
             int s = 0;
             boolean owner = (thisAddress.equals(address));
             int start = (owner) ? removeIndex : 0;
             int end = (owner) ? addIndex : BLOCK_SIZE;
-            for (int i = start ; i < end; i++) {
+            for (int i = start; i < end; i++) {
                 if (values[i] != null) {
                     QData value = values[i];
                     long age = System.currentTimeMillis() - value.createDate;
