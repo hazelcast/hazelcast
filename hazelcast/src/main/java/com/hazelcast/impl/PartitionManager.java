@@ -167,6 +167,7 @@ public class PartitionManager implements Runnable {
             }
         }
         sendBlocks(null);
+        partitionServiceImpl.reset();
     }
 
     private void createAllBlocks() {
@@ -449,12 +450,7 @@ public class PartitionManager implements Runnable {
     }
 
     void backupIfNextOrPreviousChanged(boolean add) {
-        boolean shouldBackup = false;
-        if (add && node.clusterManager.isNextChanged()) {
-            shouldBackup = true;
-        } else if (!add && node.clusterManager.isPreviousChanged()) {
-            shouldBackup = true;
-        }
+        boolean shouldBackup = node.clusterManager.isNextChanged(); 
         //todo  should we check member size. if <=1 we should skip this
         if (shouldBackup) {
             List<Record> lsOwnedRecords = new ArrayList<Record>(1000);
@@ -469,6 +465,7 @@ public class PartitionManager implements Runnable {
                     }
                 }
             }
+            if (!add) logger.log(Level.INFO, thisAddress + " will backup " + lsOwnedRecords.size());
             for (final Record rec : lsOwnedRecords) {
                 parallelExecutorBackups.execute(new FallThroughRunnable() {
                     public void doRun() {

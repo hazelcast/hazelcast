@@ -75,6 +75,14 @@ public class ClusterTest {
     }
 
     @Test
+    public void testPartitions() throws Exception {
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        assertEquals(271, getLocalPartitions(h1).size());
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        assertEquals(271, getLocalPartitions(h1).size() + getLocalPartitions(h2).size());
+    }
+
+    @Test
     public void testFirstNodeNoWait() throws Exception {
         final Config config = new XmlConfigBuilder().build();
         final BlockingQueue<Integer> counts = new ArrayBlockingQueue<Integer>(2);
@@ -1091,6 +1099,45 @@ public class ClusterTest {
         long total = Runtime.getRuntime().totalMemory();
         long free = Runtime.getRuntime().freeMemory();
         return (total - free) / 1024 / 1024;
+    }
+
+    /**
+     * Fix for the issue 275.
+     *
+     * @throws Exception
+     */
+    @Test(timeout = 60000)
+    public void testDataRecovery2() throws Exception {
+        final int size = 1000;
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        IMap map1 = h1.getMap("default");
+        for (int i = 0; i < size; i++) {
+            map1.put(i, "value" + i);
+        }
+        assertEquals(size, map1.size());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        IMap map2 = h2.getMap("default");
+        assertEquals(size, map1.size());
+        assertEquals(size, map2.size());
+        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
+        IMap map3 = h3.getMap("default");
+        assertEquals(size, map1.size());
+        assertEquals(size, map2.size());
+        assertEquals(size, map3.size());
+        Thread.sleep(3000);
+        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map3.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
+        h2.shutdown();
+        assertEquals(size, map1.size());
+        assertEquals(size, map3.size());
+        Thread.sleep(3000);
+        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map3.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
+        h1.shutdown();
+        assertEquals(size, map3.size());
     }
 
     /**

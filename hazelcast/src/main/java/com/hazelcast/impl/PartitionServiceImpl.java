@@ -129,6 +129,11 @@ public class PartitionServiceImpl implements PartitionService {
         lsMigrationListeners.remove(migrationListener);
     }
 
+    public void reset() {
+        mapPartitions.clear();
+        
+    }
+
     class PartitionProxy implements Partition, Comparable {
         final int partitionId;
 
