@@ -20,12 +20,10 @@ package com.hazelcast.impl;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.impl.base.ScheduledAction;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
 import java.util.*;
-
 
 public class Record implements MapEntry {
 
@@ -179,9 +177,11 @@ public class Record implements MapEntry {
             if (copyCount > 0) {
                 cost *= copyCount;
             }
-        } else if (getMultiValues() != null) {
+        } else if (getMultiValues() != null && getMultiValues().size() > 0) {
             for (Data data : getMultiValues()) {
-                cost += data.size();
+                if (data != null) {
+                    cost += data.size();
+                }
             }
         }
         return cost + getKey().size() + 250;
@@ -437,7 +437,7 @@ public class Record implements MapEntry {
     public void setMultiValues(Set<Data> lsValues) {
         if (lsValues != null || optionalInfo != null) {
             this.getOptionalInfo().lsMultiValues = lsValues;
-        }         
+        }
     }
 
     public int getBackupOpCount() {
@@ -516,7 +516,6 @@ public class Record implements MapEntry {
     }
 
     public int getLockCount() {
-
         return (lock == null) ? 0 : lock.getLockCount();
     }
 
