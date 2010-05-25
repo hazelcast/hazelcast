@@ -450,7 +450,12 @@ public class PartitionManager implements Runnable {
     }
 
     void backupIfNextOrPreviousChanged(boolean add) {
-        boolean shouldBackup = node.clusterManager.isNextChanged(); 
+        boolean shouldBackup = false;
+        if (add) {
+            shouldBackup = node.clusterManager.isNextChanged();
+        } else {
+            shouldBackup = node.clusterManager.isNextChanged() || node.clusterManager.isPreviousChanged();
+        }
         //todo  should we check member size. if <=1 we should skip this
         if (shouldBackup) {
             List<Record> lsOwnedRecords = new ArrayList<Record>(1000);

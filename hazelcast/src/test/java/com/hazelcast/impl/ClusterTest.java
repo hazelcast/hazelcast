@@ -1171,16 +1171,25 @@ public class ClusterTest {
         assertEquals(size, map2.size());
         assertEquals(size, map3.size());
         assertEquals(size, map4.size());
-        Thread.sleep(2000);
+        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map3.getLocalMapStats().getOwnedEntryCount(), map4.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map4.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
+        Thread.sleep(4000);
         h4.shutdown();
         assertEquals(size, map1.size());
         assertEquals(size, map2.size());
         assertEquals(size, map3.size());
-        Thread.sleep(2000);
+        Thread.sleep(4000);
+        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map3.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
         h1.shutdown();
         assertEquals(size, map2.size());
         assertEquals(size, map3.size());
-        Thread.sleep(2000);
+        Thread.sleep(4000);
+        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map3.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
         h2.shutdown();
         assertEquals(size, map3.size());
     }
