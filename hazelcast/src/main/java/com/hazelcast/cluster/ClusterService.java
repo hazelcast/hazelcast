@@ -165,7 +165,7 @@ public final class ClusterService implements Runnable, Constants {
                 }
                 processPacket(packet);
             }
-        } catch (final Throwable e) {
+        } catch (Throwable e) {
             logger.log(Level.SEVERE, "error processing messages  packet=" + packet, e);
         }
         return PACKET_BULK_SIZE;
@@ -182,7 +182,7 @@ public final class ClusterService implements Runnable, Constants {
                 }
                 processProcessable(processable);
             }
-        } catch (final Throwable e) {
+        } catch (Throwable e) {
             logger.log(Level.SEVERE, "error processing messages  processable=" + processable, e);
         }
         return PACKET_BULK_SIZE;

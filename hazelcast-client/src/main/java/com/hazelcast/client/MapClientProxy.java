@@ -43,6 +43,14 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         this.proxyHelper = new ProxyHelper(name, client);
     }
 
+    public Future<V> getAsync(K key) {
+        throw new UnsupportedOperationException();
+    }
+
+    public Future<V> putAsync(K key, V value) {
+        throw new UnsupportedOperationException();
+    }
+
     public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
         addEntryListener(listener, null, includeValue);
     }

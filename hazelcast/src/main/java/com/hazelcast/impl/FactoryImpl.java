@@ -31,7 +31,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.SerializationHelper;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
@@ -1905,6 +1907,33 @@ public class FactoryImpl implements HazelcastInstance {
             return put(key, value, 0, TimeUnit.SECONDS);
         }
 
+        public Future getAsync(Object key) {
+            final MProxyImpl mProxy = MProxyImpl.this;
+            final Data dataKey = IOUtil.toData(key);
+            AsyncCall call = new AsyncCall() {
+                @Override
+                protected void call() {
+                    setResult(mProxy.get(dataKey));
+                }
+            };
+            factory.node.executorManager.executeLocally(call);
+            return call;
+        }
+
+        public Future putAsync(Object key, Object value) {
+            final MProxyImpl mProxy = MProxyImpl.this;
+            final Data dataKey = IOUtil.toData(key);
+            final Data dataValue = IOUtil.toData(value);
+            AsyncCall call = new AsyncCall() {
+                @Override
+                protected void call() {
+                    setResult(mProxy.put(dataKey, dataValue));
+                }
+            };
+            factory.node.executorManager.executeLocally(call);
+            return call;
+        }
+
         public Object put(Object key, Object value, long ttl, TimeUnit timeunit) {
             beforeCall();
             try {
@@ -2218,6 +2247,14 @@ public class FactoryImpl implements HazelcastInstance {
                 mapOperationStats.incrementPuts();
                 MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
                 return mput.put(name, key, value, -1, -1);
+            }
+
+            public Future getAsync(Object key) {
+                throw new UnsupportedOperationException();
+            }
+
+            public Future putAsync(Object key, Object value) {
+                throw new UnsupportedOperationException();
             }
 
             public Object put(Object key, Object value, long ttl, TimeUnit timeunit) {

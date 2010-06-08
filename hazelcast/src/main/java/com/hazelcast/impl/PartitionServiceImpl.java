@@ -46,7 +46,7 @@ public class PartitionServiceImpl implements PartitionService {
     public PartitionServiceImpl(ConcurrentMapManager concurrentMapManager) {
         this.concurrentMapManager = concurrentMapManager;
     }
-    
+
     public Set<Partition> getPartitions() {
         Set<Partition> partitions = new TreeSet<Partition>(mapPartitions.values());
         for (int i = 0; i < concurrentMapManager.PARTITION_COUNT; i++) {
@@ -92,13 +92,17 @@ public class PartitionServiceImpl implements PartitionService {
                 responseQ.offer(new PartitionReal(block.getBlockId(), memberOwner, null));
             }
         });
+        partition = new PartitionProxy(partitionId);
         try {
             PartitionReal partitionReal = responseQ.take();
             mapRealPartitions.put(partitionId, partitionReal);
-            mapPartitions.putIfAbsent(partitionId, new PartitionProxy(partitionId));
+            PartitionProxy oldPartitionProxy = mapPartitions.putIfAbsent(partitionId, partition);
+            if (oldPartitionProxy != null) {
+                return oldPartitionProxy;
+            }
         } catch (InterruptedException ignored) {
         }
-        return mapPartitions.get(partitionId);
+        return partition;
     }
 
     void doFireMigrationEvent(final boolean started, final MigrationEvent migrationEvent) {
@@ -131,7 +135,6 @@ public class PartitionServiceImpl implements PartitionService {
 
     public void reset() {
         mapPartitions.clear();
-        
     }
 
     class PartitionProxy implements Partition, Comparable {

@@ -171,7 +171,7 @@ public class Node {
                 return new Packet();
             }
         };
-        clusterImpl = new ClusterImpl(this);
+        clusterImpl = new ClusterImpl(this, localMember);
         baseVariables = new NodeBaseVariables(address, localMember);
         this.loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), localMember);
         this.logger = loggingService.getLogger(Node.class.getName());
@@ -315,6 +315,7 @@ public class Node {
             clientService.reset();
             logger.log(Level.FINEST, "Shutting down the executorManager");
             executorManager.stop();
+            textCommandService.stop();
             masterAddress = null;
             logger.log(Level.FINEST, "Shutting down the cluster manager");
             clusterManager.stop();

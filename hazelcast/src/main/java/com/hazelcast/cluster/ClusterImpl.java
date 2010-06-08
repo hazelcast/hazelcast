@@ -39,8 +39,11 @@ public class ClusterImpl implements Cluster {
     volatile long clusterTimeDiff = Long.MAX_VALUE;
     final Node node;
 
-    public ClusterImpl(Node node) {
+    public ClusterImpl(Node node, MemberImpl thisMember) {
         this.node = node;
+        List ls = new ArrayList();
+        ls.add(thisMember);
+        this.setMembers(ls);
     }
 
     public int getDistanceFrom(Member member) {

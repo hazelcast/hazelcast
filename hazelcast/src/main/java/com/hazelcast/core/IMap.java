@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -44,6 +45,59 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * @return name of this map
      */
     String getName();
+
+    /**
+     * Asynchronously gets the given key.
+     * <code>
+     * Future future = map.getAsync(key);
+     * // do some other stuff, when ready get the result
+     * Object value = future.get();
+     * </code>
+     * Future.get() will block until the actual map.get() completes.
+     * If the application requires timely response,
+     * then Future.get(timeout, timeunit) can be used.
+     * <code>
+     * try{
+     * Future future = map.getAsync(key);
+     * Object value = future.get(40, TimeUnit.MILLISECOND);
+     * }catch (TimeoutException t) {
+     * // time wasn't enough
+     * }
+     * </code>
+     * ExecutionException is never thrown.
+     *
+     * @param key the key of the map entry
+     * @return Future from which the value of the key can be retrieved.
+     * @see java.util.concurrent.Future
+     */
+    Future<V> getAsync(K key);
+
+    /**
+     * Asynchronously puts the given key and value.
+     * <code>
+     * Future future = map.putAsync(key, value);
+     * // do some other stuff, when ready get the result
+     * Object oldValue = future.get();
+     * </code>
+     * Future.get() will block until the actual map.get() completes.
+     * If the application requires timely response,
+     * then Future.get(timeout, timeunit) can be used.
+     * <code>
+     * try{
+     * Future future = map.putAsync(key, newValue);
+     * Object oldValue = future.get(40, TimeUnit.MILLISECOND);
+     * }catch (TimeoutException t) {
+     * // time wasn't enough
+     * }
+     * </code>
+     * ExecutionException is never thrown.
+     *
+     * @param key   the key of the map entry
+     * @param value the new value of the map entry
+     * @return Future from which the old value of the key can be retrieved.
+     * @see java.util.concurrent.Future
+     */
+    Future<V> putAsync(K key, V value);
 
     /**
      * Tries to put the given key, value into this map within specified
@@ -157,7 +211,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
     /**
      * Unlocks the map. It never blocks and
      * returns immediately.
-     * 
      */
     void unlockMap();
 

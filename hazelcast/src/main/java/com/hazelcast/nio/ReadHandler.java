@@ -67,7 +67,10 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
                 connection.close();
                 return;
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            if (e instanceof OutOfMemoryError){
+                logger.log(Level.SEVERE, e.getMessage(), e);
+            }
             handleSocketException(e);
             return;
         }

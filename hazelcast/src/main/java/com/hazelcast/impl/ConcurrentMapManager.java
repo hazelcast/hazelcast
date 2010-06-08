@@ -84,11 +84,16 @@ public class ConcurrentMapManager extends BaseManager {
                     nextCleanup = Long.MAX_VALUE;
                     executeLocally(new FallThroughRunnable() {
                         public void doRun() {
-                            Collection<CMap> cmaps = maps.values();
-                            for (CMap cmap : cmaps) {
-                                cmap.startCleanup();
+                            try {
+                                Collection<CMap> cmaps = maps.values();
+                                for (CMap cmap : cmaps) {
+                                    cmap.startCleanup();
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            } finally {
+                                nextCleanup = System.currentTimeMillis() + CLEANUP_DELAY_MILLIS;
                             }
-                            nextCleanup = System.currentTimeMillis() + CLEANUP_DELAY_MILLIS;
                         }
                     });
                 }
@@ -564,7 +569,7 @@ public class ConcurrentMapManager extends BaseManager {
                     int removedValueCount = 0;
                     if (oldObject != null) {
                         if (oldObject instanceof CMap.Values) {
-                            CMap.Values values =  (CMap.Values) oldObject;
+                            CMap.Values values = (CMap.Values) oldObject;
                             removedValueCount = values.size();
                         } else {
                             removedValueCount = 1;

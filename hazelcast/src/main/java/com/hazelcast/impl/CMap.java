@@ -1041,7 +1041,10 @@ public class CMap {
         final Set<Record> recordsToEvict = new HashSet<Record>();
         final Set<Record> sortedRecords = new TreeSet<Record>(evictionComparator);
         final Collection<Record> records = mapRecords.values();
-        final boolean evictionAware = evictionComparator != null && maxSize > 0;
+        final int clusterMemberSize = node.getClusterImpl().getMembers().size();
+        final int memberCount = (clusterMemberSize== 0) ? 1 : clusterMemberSize;
+        final int maxSizePerJVM = maxSize / memberCount;
+        final boolean evictionAware = evictionComparator != null && maxSizePerJVM > 0;
         final PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
         int recordsStillOwned = 0;
         for (Record record : records) {
@@ -1086,7 +1089,7 @@ public class CMap {
                 }
             }
         }
-        if (evictionAware && maxSize < recordsStillOwned) {
+        if (evictionAware && maxSizePerJVM < recordsStillOwned) {
             int numberOfRecordsToEvict = (int) (recordsStillOwned * evictionRate);
             int evictedCount = 0;
             for (Record record : sortedRecords) {

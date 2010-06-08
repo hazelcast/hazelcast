@@ -18,6 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.impl.ClientService.ClientOperationHandler;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 
 import java.util.logging.Logger;
@@ -26,7 +27,7 @@ public class ClientRequestHandler implements Runnable {
     private final Packet packet;
     private final CallContext callContext;
     private final Node node;
-    Logger logger = Logger.getLogger(this.getClass().getName());
+    private final ILogger logger;
 
     private final ClientOperationHandler[] clientOperationHandlers;
 
@@ -35,6 +36,7 @@ public class ClientRequestHandler implements Runnable {
         this.callContext = callContext;
         this.node = node;
         this.clientOperationHandlers = clientOperationHandlers;
+        this.logger = node.getLogger(this.getClass().getName());
     }
 
     public void run() {

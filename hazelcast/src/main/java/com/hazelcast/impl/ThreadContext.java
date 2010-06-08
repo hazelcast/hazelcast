@@ -25,7 +25,6 @@ import com.hazelcast.nio.Serializer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
 public final class ThreadContext {
 
@@ -78,20 +77,11 @@ public final class ThreadContext {
         finalizeTxn();
     }
 
-    public Data toData(final Object obj) {
-        if (obj == null) return null;
-        if (obj instanceof Data) {
-            return (Data) obj;
-        }
-        try {
-            return serializer.writeObject(obj);
-        } catch (final Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
+    public Data toData(Object obj) {
+        return serializer.writeObject(obj);
     }
 
-    public Object toObject(final Data data) {
+    public Object toObject(Data data) {
         return serializer.readObject(data);
     }
 

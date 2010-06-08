@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public final class ReplicatedMapFactory {
@@ -66,6 +67,14 @@ public final class ReplicatedMapFactory {
             for (Entry<K, V> entry : entries) {
                 this.putIfAbsent(entry.getKey(), entry.getValue());
             }
+        }
+
+        public Future<V> getAsync(K key) {
+            return distributedMap.getAsync(key);
+        }
+
+        public Future<V> putAsync(K key, V value) {
+            return distributedMap.putAsync(key, value);
         }
 
         public V put(K key, V value, long ttl, TimeUnit timeunit) {

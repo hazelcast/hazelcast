@@ -55,7 +55,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
         this.connection = connection;
         this.socketChannel = connection.getSocketChannel();
         this.node = connection.connectionManager.node;
-        this.logger = node.getLogger(AbstractSelectionHandler.class.getName());
+        this.logger = node.getLogger(this.getClass().getName());
         this.inSelector = node.inSelector;
         this.outSelector = node.outSelector;
         this.clusterService = node.clusterService;
@@ -64,7 +64,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
     protected void shutdown() {
     }
 
-    final void handleSocketException(final Exception e) {
+    final void handleSocketException(Throwable e) {
         logger.log(Level.FINEST, Thread.currentThread().getName() + " Closing Socket. cause:  ", e);
         if (sk != null)
             sk.cancel();

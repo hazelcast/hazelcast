@@ -20,14 +20,19 @@ package com.hazelcast.nio;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.io.*;
 import java.math.BigInteger;
 import java.util.Date;
+import java.util.logging.Level;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public final class Serializer {
+
+    private static final ILogger logger = Logger.getLogger(Serializer.class.getName());
 
     private static final byte SERIALIZER_TYPE_DATA = 0;
 
@@ -96,42 +101,48 @@ public final class Serializer {
         }
     }
 
-    public Data writeObject(Object obj) throws Exception {
+    public Data writeObject(Object obj) {
+        if (obj == null) return null;
         if (obj instanceof Data) {
             return (Data) obj;
         }
-        bbos.reset();
-        byte typeId = SERIALIZER_TYPE_OBJECT;
-        if (obj instanceof DataSerializable) {
-            typeId = SERIALIZER_TYPE_DATA;
-        } else if (obj instanceof byte[]) {
-            typeId = SERIALIZER_TYPE_BYTE_ARRAY;
-        } else if (obj instanceof Long) {
-            typeId = SERIALIZER_TYPE_LONG;
-        } else if (obj instanceof Integer) {
-            typeId = SERIALIZER_TYPE_INTEGER;
-        } else if (obj instanceof String) {
-            typeId = SERIALIZER_TYPE_STRING;
-        } else if (obj instanceof Date) {
-            typeId = SERIALIZER_TYPE_DATE;
-        } else if (obj instanceof Class) {
-            typeId = SERIALIZER_TYPE_CLASS;
-        } else if (obj instanceof BigInteger) {
-            typeId = SERIALIZER_TYPE_BIG_INTEGER;
+        try {
+            bbos.reset();
+            byte typeId = SERIALIZER_TYPE_OBJECT;
+            if (obj instanceof DataSerializable) {
+                typeId = SERIALIZER_TYPE_DATA;
+            } else if (obj instanceof byte[]) {
+                typeId = SERIALIZER_TYPE_BYTE_ARRAY;
+            } else if (obj instanceof Long) {
+                typeId = SERIALIZER_TYPE_LONG;
+            } else if (obj instanceof Integer) {
+                typeId = SERIALIZER_TYPE_INTEGER;
+            } else if (obj instanceof String) {
+                typeId = SERIALIZER_TYPE_STRING;
+            } else if (obj instanceof Date) {
+                typeId = SERIALIZER_TYPE_DATE;
+            } else if (obj instanceof Class) {
+                typeId = SERIALIZER_TYPE_CLASS;
+            } else if (obj instanceof BigInteger) {
+                typeId = SERIALIZER_TYPE_BIG_INTEGER;
+            }
+            bbos.writeByte(typeId);
+            typeSerializer[typeId].write(bbos, obj);
+            Data data = new Data(bbos.toByteArray());
+            if (bbos.size() > OUTPUT_STREAM_BUFFER_SIZE) {
+                bbos.set(new byte[OUTPUT_STREAM_BUFFER_SIZE]);
+            }
+            return data;
+        } catch (Throwable e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            throw new RuntimeException(e);
         }
-        bbos.writeByte(typeId);
-        typeSerializer[typeId].write(bbos, obj);
-        Data data = new Data(bbos.toByteArray());
-        if (bbos.size() > OUTPUT_STREAM_BUFFER_SIZE) {
-            bbos.set(new byte[OUTPUT_STREAM_BUFFER_SIZE]);
-        }
-        return data;
     }
 
     public Object readObject(Data data) {
-        if (data == null || data.size() == 0)
-            return null;
         try {
+            if (data == null || data.size() == 0)
+                return null;
             bbis.set(data.buffer, data.size());
             byte typeId = bbis.readByte();
             Object obj = typeSerializer[typeId].read(bbis);
@@ -139,8 +150,8 @@ public final class Serializer {
                 ((HazelcastInstanceAware) obj).setHazelcastInstance(ThreadContext.get().getCurrentFactory());
             }
             return obj;
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Throwable e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }

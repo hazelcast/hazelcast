@@ -344,7 +344,6 @@ public class
                 Data data = packet.getValueData();
                 q.doBackup(true, data, blockId, (int) packet.longValue);
             } else if (packet.operation == ClusterOperation.BLOCKING_QUEUE_BACKUP_REMOVE) {
-                System.out.println("handle backup remove!!! ");
                 q.doBackup(false, null, blockId, 0);
             }
         } catch (Exception e) {
@@ -1219,7 +1218,6 @@ public class
             ScheduledPollAction action = new ScheduledPollAction(request);
             lsScheduledPollActions.add(action);
             node.clusterManager.registerScheduledAction(action);
-            System.out.println("scheduled polls " + lsScheduledPollActions.size());
         }
 
         public int getMaxSizePerJVM() {
@@ -1550,7 +1548,6 @@ public class
                 if (!sent) {
                     releasePacket(packet);
                 }
-                if (!add) System.out.println("Q..SENDING BACKUP REMOVE " + sent);
                 return sent;
             } else {
                 return true;
