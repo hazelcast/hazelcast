@@ -225,7 +225,7 @@ public class ClientService {
 
         private void sendPacket(Packet packet) {
             if (conn != null && conn.live()) {
-                conn.getWriteHandler().enqueuePacket(packet);
+                conn.getWriteHandler().enqueueSocketWritable(packet);
             }
         }
 
@@ -900,7 +900,7 @@ public class ClientService {
             request.operation = ClusterOperation.RESPONSE;
             request.responseType = RESPONSE_SUCCESS;
             if (request.conn != null && request.conn.live()) {
-                request.conn.getWriteHandler().enqueuePacket(request);
+                request.conn.getWriteHandler().enqueueSocketWritable(request);
             }
         }
     }

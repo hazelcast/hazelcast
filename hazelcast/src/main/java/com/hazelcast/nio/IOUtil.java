@@ -24,15 +24,20 @@ import java.nio.ByteBuffer;
 public final class IOUtil {
 
     public static int copyToHeapBuffer(ByteBuffer src, ByteBuffer dest) {
+        if (src == null) return 0; 
         int n = Math.min(src.remaining(), dest.remaining());
         if (n > 0) {
-            int srcPosition = src.position();
-            int destPosition = dest.position();
-            int ixSrc = srcPosition + src.arrayOffset();
-            int ixDest = destPosition + dest.arrayOffset();
-            System.arraycopy(src.array(), ixSrc, dest.array(), ixDest, n);
-            src.position(srcPosition + n);
-            dest.position(destPosition + n);
+            if (n < 16) {
+                for (int i = 0; i < n; i++) {
+                    dest.put(src.get());
+                }
+            } else {
+                int srcPosition = src.position();
+                int destPosition = dest.position();
+                System.arraycopy(src.array(), srcPosition, dest.array(), destPosition, n);
+                src.position(srcPosition + n);
+                dest.position(destPosition + n);
+            }
         }
         return n;
     }
@@ -58,7 +63,6 @@ public final class IOUtil {
         return ThreadContext.get().toData(obj);
     }
 
-
     public static Data addDelta(Data longData, long delta) {
         byte[] b = longData.buffer;
         ByteBuffer current = ByteBuffer.wrap(b);
@@ -68,7 +72,7 @@ public final class IOUtil {
         ByteBuffer newLong = ByteBuffer.allocate(b.length);
         newLong.put(type);
         newLong.putLong(value);
-        return new Data (newLong.array());        
+        return new Data(newLong.array());
     }
 
     public static Object toObject(Data data) {
@@ -78,6 +82,4 @@ public final class IOUtil {
     public static Object toObject(DataHolder dataHolder) {
         return toObject(dataHolder.toData());
     }
-
-    
 }

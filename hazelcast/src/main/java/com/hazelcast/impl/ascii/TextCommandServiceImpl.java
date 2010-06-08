@@ -1,0 +1,222 @@
+/* 
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at 
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+package com.hazelcast.impl.ascii;
+
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.impl.Node;
+import com.hazelcast.impl.ascii.memcache.*;
+import com.hazelcast.impl.ascii.rest.HttpGetCommandProcessor;
+import com.hazelcast.impl.ascii.rest.HttpPostCommandProcessor;
+import com.hazelcast.impl.ascii.rest.RestValue;
+import com.hazelcast.impl.executor.ParallelExecutor;
+import com.hazelcast.nio.ascii.SocketTextWriter;
+import com.hazelcast.impl.ascii.TextCommand;
+import com.hazelcast.impl.ascii.TextCommandConstants;
+import com.hazelcast.impl.ascii.TextCommandService;
+import com.hazelcast.util.SimpleBlockingQueue;
+
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static com.hazelcast.impl.ascii.TextCommandConstants.TextCommandType.*;
+
+public class TextCommandServiceImpl implements TextCommandService, TextCommandConstants {
+    private final Node node;
+    private final ParallelExecutor parallelExecutor;
+    private volatile boolean running = true;
+    private final TextCommandProcessor[] textCommandProcessors = new TextCommandProcessor[100];
+    private final HazelcastInstance hazelcast;
+    final AtomicLong gets = new AtomicLong();
+    final AtomicLong sets = new AtomicLong();
+    final AtomicLong deletes = new AtomicLong();
+    final AtomicLong getHits = new AtomicLong();
+    final long startTime = System.currentTimeMillis();
+
+    private ResponseThreadRunnable responseThreadRunnable;
+
+    public TextCommandServiceImpl(Node node) {
+        this.node = node;
+        this.hazelcast = node.factory;
+        this.parallelExecutor = this.node.executorManager.newParallelExecutor(40);
+        textCommandProcessors[GET.getValue()] = new GetCommandProcessor(this, true);
+        textCommandProcessors[PARTIAL_GET.getValue()] = new GetCommandProcessor(this, false);
+        textCommandProcessors[SET.getValue()] = new SetCommandProcessor(this);
+        textCommandProcessors[ADD.getValue()] = new SetCommandProcessor(this);
+        textCommandProcessors[REPLACE.getValue()] = new SetCommandProcessor(this);
+        textCommandProcessors[GET_END.getValue()] = new NoOpCommandProcessor(this);
+        textCommandProcessors[DELETE.getValue()] = new DeleteCommandProcessor(this);
+        textCommandProcessors[QUIT.getValue()] = new SimpleCommandProcessor(this);
+        textCommandProcessors[STATS.getValue()] = new StatsCommandProcessor(this);
+        textCommandProcessors[UNKNOWN.getValue()] = new ErrorCommandProcessor(this);
+        textCommandProcessors[ERROR_CLIENT.getValue()] = new ErrorCommandProcessor(this);
+        textCommandProcessors[ERROR_SERVER.getValue()] = new ErrorCommandProcessor(this);
+        textCommandProcessors[HTTP_GET.getValue()] = new HttpGetCommandProcessor(this);
+        textCommandProcessors[HTTP_POST.getValue()] = new HttpPostCommandProcessor(this);
+        textCommandProcessors[HTTP_PUT.getValue()] = new HttpPostCommandProcessor(this);
+        textCommandProcessors[NO_OP.getValue()] = new NoOpCommandProcessor(this);
+    }
+
+    public Stats getStats() {
+        Stats stats = new Stats();
+        stats.uptime = (int) ((System.currentTimeMillis() - startTime) / 1000);
+        stats.threads = parallelExecutor.getActiveCount();
+        stats.waiting_requests = parallelExecutor.getPoolSize();
+        stats.cmd_get = gets.get();
+        stats.cmd_set = sets.get();
+        stats.cmd_delete = deletes.get();
+        stats.get_hits = getHits.get();
+        stats.get_misses = gets.get() - getHits.get();
+        stats.curr_connections = node.connectionManager.getCurrentTextConnections();
+        stats.total_connections = node.connectionManager.getAllTextConnections();
+        return stats;
+    }
+
+    public long incrementDeleteCount() {
+        return deletes.incrementAndGet();
+    }
+
+    public long incrementGetCount() {
+        return gets.incrementAndGet();
+    }
+
+    public long incrementSetCount() {
+        return sets.incrementAndGet();
+    }
+
+    public long incrementHitCount() {
+        return getHits.incrementAndGet();
+    }
+
+    public void processRequest(TextCommand command) {
+        if (responseThreadRunnable == null) {
+            responseThreadRunnable = new ResponseThreadRunnable();
+            Thread thread = new Thread(responseThreadRunnable, "hz.ascii.service.response.thread");
+            thread.start();
+        }
+        parallelExecutor.execute(new CommandExecutor(command));
+    }
+
+    public Object get(String mapName, String key) {
+        return hazelcast.getMap(mapName).get(key);
+    }
+
+    public int getAdjustedTTLSeconds(int ttl) {
+        if (ttl <= MONTH_SECONDS) {
+            return ttl;
+        } else {
+            return ttl - (int) (System.currentTimeMillis() / 1000);
+        }
+    }
+
+    public byte[] getByteArray(String mapName, String key) {
+        Object value = hazelcast.getMap(mapName).get(key);
+        if (value != null && value instanceof RestValue) {
+            RestValue restValue = (RestValue) value;
+            return restValue.getValue();
+        } else {
+            return (byte[]) value;
+        }
+    }
+
+    public Object put(String mapName, String key, Object value, int ttlSeconds) {
+        return hazelcast.getMap(mapName).put(key, value, ttlSeconds, TimeUnit.SECONDS);
+    }
+
+    public Object putIfAbsent(String mapName, String key, Object value, int ttlSeconds) {
+        return hazelcast.getMap(mapName).putIfAbsent(key, value, ttlSeconds, TimeUnit.SECONDS);
+    }
+
+    public Object replace(String mapName, String key, Object value) {
+        return hazelcast.getMap(mapName).replace(key, value);
+    }
+
+    public Object delete(String mapName, String key) {
+        return hazelcast.getMap(mapName).remove(key);
+    }
+
+    public byte[] get(String key) {
+        String mapName = "default";
+        int index = key.indexOf(':');
+        if (index != -1) {
+            mapName = key.substring(0, index);
+            key = key.substring(index + 1);
+        }
+        Object value = hazelcast.getMap(mapName).get(key);
+        if (value != null && value instanceof RestValue) {
+            RestValue restValue = (RestValue) value;
+            return restValue.getValue();
+        } else {
+            return (byte[]) value;
+        }
+    }
+
+    public void set(String key, byte[] value, int ttl) {
+        String mapName = "default";
+        int index = key.indexOf(':');
+        if (index != -1) {
+            mapName = key.substring(0, index);
+            key = key.substring(index + 1);
+        }
+        hazelcast.getMap(mapName).put(key, value);
+    }
+
+    class CommandExecutor implements Runnable {
+        final TextCommand command;
+
+        CommandExecutor(TextCommand command) {
+            this.command = command;
+        }
+
+        public void run() {
+            TextCommandConstants.TextCommandType type = command.getType();
+            textCommandProcessors[type.getValue()].handle(command);
+        }
+    }
+
+    public void sendResponse(TextCommand textCommand) {
+        if (!textCommand.shouldReply() || textCommand.getRequestId() == -1) {
+            throw new RuntimeException("Shouldn't reply " + textCommand);
+        }
+        responseThreadRunnable.sendResponse(textCommand);
+    }
+
+    class ResponseThreadRunnable implements Runnable {
+        private BlockingQueue<TextCommand> blockingQueue = new SimpleBlockingQueue<TextCommand>();
+
+        public void sendResponse(TextCommand textCommand) {
+            blockingQueue.offer(textCommand);
+        }
+
+        public void run() {
+            while (running) {
+                try {
+                    TextCommand textCommand = blockingQueue.take();
+                    SocketTextWriter socketTextWriter = textCommand.getSocketTextWriter();
+                    socketTextWriter.enqueue(textCommand);
+                } catch (InterruptedException e) {
+                    running = false;
+                }
+            }
+        }
+    }
+
+    public void stop() {
+        running = false;
+    }
+}

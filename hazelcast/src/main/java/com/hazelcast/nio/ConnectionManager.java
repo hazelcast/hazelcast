@@ -27,17 +27,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public class ConnectionManager {
 
     protected final ILogger logger;
-
+     
     private final Map<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(100);
 
     private final Set<Address> setConnectionInProgress = new CopyOnWriteArraySet<Address>();
 
     private final Set<ConnectionListener> setConnectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
+
+    private final AtomicInteger allTextConnections = new AtomicInteger();
 
     private boolean acceptTypeConnection = false;
 
@@ -71,7 +74,7 @@ public class ConnectionManager {
                 //make sure bind packet is the first packet sent to the end point.
                 ClusterManager clusterManager = node.clusterManager;
                 Packet bindPacket = clusterManager.createRemotelyProcessablePacket(new Bind(clusterManager.getThisAddress()));
-                connection.writeHandler.enqueuePacket(bindPacket);
+                connection.writeHandler.enqueueSocketWritable(bindPacket);
                 //now you can send anything...
             }
             mapConnections.put(endPoint, connection);
@@ -81,7 +84,6 @@ public class ConnectionManager {
             }
         } else {
             return false;
-//            throw new RuntimeException("ConnMan setting self!!");
         }
         return true;
     }
@@ -163,7 +165,7 @@ public class ConnectionManager {
     @Override
     public String toString() {
         final StringBuffer sb = new StringBuffer("Connections {");
-        for (final Connection conn : mapConnections.values()) {
+        for (Connection conn : mapConnections.values()) {
             sb.append("\n");
             sb.append(conn);
         }
@@ -171,5 +173,25 @@ public class ConnectionManager {
         sb.append(live);
         sb.append("\n}");
         return sb.toString();
+    }
+
+    public int getCurrentTextConnections() {
+        int count = 0;
+        for (Connection conn : mapConnections.values()) {
+            if (conn.live()) {
+                if (conn.isTextConnection()) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    public int getAllTextConnections() {
+        return allTextConnections.get();
+    }
+
+    public void incrementTextConnections() {
+        allTextConnections.incrementAndGet();
     }
 }

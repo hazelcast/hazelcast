@@ -611,6 +611,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     public void registerScheduledAction(ScheduledAction scheduledAction) {
         setScheduledActions.add(scheduledAction);
+        System.out.println("scheduled actions " + setScheduledActions.size());
     }
 
     public void deregisterScheduledAction(ScheduledAction scheduledAction) {
@@ -622,9 +623,11 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             Iterator<ScheduledAction> it = setScheduledActions.iterator();
             while (it.hasNext()) {
                 ScheduledAction sa = it.next();
+                System.out.println(setScheduledActions.size()  + "  scheduled expired " + sa);
                 if (sa.expired()) {
                     sa.onExpire();
                     it.remove();
+                    System.out.printf("removing " + setScheduledActions.size());
                 }
             }
         }

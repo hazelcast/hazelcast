@@ -17,45 +17,22 @@
 
 package com.hazelcast.nio;
 
-import javax.crypto.Cipher;
-import javax.crypto.ShortBufferException;
+import com.hazelcast.nio.ascii.SocketTextReader;
+
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.logging.Level;
-
-import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
 
 class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     final ByteBuffer inBuffer = ByteBuffer.allocate(RECEIVE_SOCKET_BUFFER_SIZE);
 
-    Packet packet = null;
+    final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
 
-    final PacketReader packetReader;
+    SocketReader socketReader = null;
 
-    public ReadHandler(final Connection connection) {
+    public ReadHandler(Connection connection) {
         super(connection);
-        boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(node);
-        boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled(node);
-        if (asymmetricEncryptionEnabled || symmetricEncryptionEnabled) {
-            if (asymmetricEncryptionEnabled && symmetricEncryptionEnabled) {
-                if (true) {
-                    logger.log(Level.INFO, "Incorrect encryption configuration.");
-                    logger.log(Level.INFO, "You can enable either SymmetricEncryption or AsymmetricEncryption.");
-                    throw new RuntimeException();
-                }
-                packetReader = new ComplexCipherPacketReader();
-                logger.log(Level.INFO, "Reader started with ComplexEncryption");
-            } else if (symmetricEncryptionEnabled) {
-                packetReader = new SymmetricCipherPacketReader();
-                logger.log(Level.INFO, "Reader started with SymmetricEncryption");
-            } else {
-                packetReader = new AsymmetricCipherPacketReader();
-                logger.log(Level.INFO, "Reader started with AsymmetricEncryption");
-            }
-        } else {
-            packetReader = new DefaultPacketReader();
-        }
     }
 
     public final void handle() {
@@ -64,186 +41,53 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
             return;
         }
         try {
-            final int readBytes = socketChannel.read(inBuffer);
+            if (socketReader == null) {
+                int readBytes = socketChannel.read(protocolBuffer);
+                if (readBytes == -1) {
+                    connection.close();
+                    return;
+                }
+                if (!protocolBuffer.hasRemaining()) {
+                    String protocol = new String(protocolBuffer.array());
+                    WriteHandler writeHandler = connection.getWriteHandler();
+                    if ("HZC".equals(protocol)) {
+                        writeHandler.setProtocol("HZC");
+                        socketReader = new SocketPacketReader(node, socketChannel, connection);
+                    } else {
+                        writeHandler.setProtocol("TEXT");
+                        inBuffer.put(protocolBuffer.array());
+                        socketReader = new SocketTextReader(node, connection);
+                        connection.connectionManager.incrementTextConnections();
+                    }
+                }
+            }
+            if (socketReader == null) return;
+            int readBytes = socketChannel.read(inBuffer);
             if (readBytes == -1) {
-                // End of stream. Closing channel...
                 connection.close();
                 return;
             }
-        } catch (final Exception e) {
-            if (packet != null) {
-                node.getPacketPool().release(packet);
-                packet = null;
-            }
+        } catch (Exception e) {
             handleSocketException(e);
             return;
         }
         try {
             if (inBuffer.position() == 0) return;
             inBuffer.flip();
-            packetReader.readPacket();
+            socketReader.read(inBuffer);
             if (inBuffer.hasRemaining()) {
                 inBuffer.compact();
             } else {
                 inBuffer.clear();
             }
-        } catch (final Exception t) {
-            t.printStackTrace();
+        } catch (Exception t) {
             handleSocketException(t);
         } finally {
             registerOp(inSelector.selector, SelectionKey.OP_READ);
         }
     }
 
-    public void enqueueFullPacket(final Packet p) {
-        p.flipBuffers();
-        p.read();
-        p.setFromConnection(connection);
-        if (p.client) {
-            node.clientService.handle(p);
-        } else {
-            clusterService.enqueuePacket(p);
-        }
-    }
-
-    interface PacketReader {
-        void readPacket() throws Exception;
-    }
-
-    class DefaultPacketReader implements PacketReader {
-        public void readPacket() {
-            while (inBuffer.hasRemaining()) {
-                if (packet == null) {
-                    packet = obtainReadable();
-                }
-                boolean complete = packet.read(inBuffer);
-                if (complete) {
-                    enqueueFullPacket(packet);
-                    packet = null;
-                }
-            }
-        }
-    }
-
-    class ComplexCipherPacketReader implements PacketReader {
-
-        ComplexCipherPacketReader() {
-        }
-
-        public void readPacket() throws Exception {
-        }
-    }
-
-    class AsymmetricCipherPacketReader implements PacketReader {
-        Cipher cipher = null;
-        ByteBuffer cipherBuffer = ByteBuffer.allocate(128);
-        ByteBuffer bbAlias = null;
-        boolean aliasSizeSet = false;
-
-        public void readPacket() throws Exception {
-            if (cipher == null) {
-                if (!aliasSizeSet) {
-                    if (inBuffer.remaining() < 4) {
-                        return;
-                    } else {
-                        int aliasSize = inBuffer.getInt();
-                        bbAlias = ByteBuffer.allocate(aliasSize);
-                    }
-                }
-                copyToHeapBuffer(inBuffer, bbAlias);
-                if (!bbAlias.hasRemaining()) {
-                    bbAlias.flip();
-                    String remoteAlias = new String(bbAlias.array(), 0, bbAlias.limit());
-                    cipher = CipherHelper.createAsymmetricReaderCipher(node, remoteAlias);
-                }
-            }
-            while (inBuffer.remaining() >= 128) {
-                if (cipherBuffer.position() > 0) throw new RuntimeException();
-                int oldLimit = inBuffer.limit();
-                inBuffer.limit(inBuffer.position() + 128);
-                int cipherReadSize = cipher.doFinal(inBuffer, cipherBuffer);
-                inBuffer.limit(oldLimit);
-                cipherBuffer.flip();
-                while (cipherBuffer.hasRemaining()) {
-                    if (packet == null) {
-                        packet = obtainReadable();
-                    }
-                    boolean complete = packet.read(cipherBuffer);
-                    if (complete) {
-                        enqueueFullPacket(packet);
-                        packet = null;
-                    }
-                }
-                cipherBuffer.clear();
-            }
-        }
-    }
-
-    class SymmetricCipherPacketReader implements PacketReader {
-        int size = -1;
-        final Cipher cipher;
-        ByteBuffer cipherBuffer = ByteBuffer.allocate(2 * RECEIVE_SOCKET_BUFFER_SIZE);
-
-        SymmetricCipherPacketReader() {
-            cipher = init();
-        }
-
-        Cipher init() {
-            Cipher c = null;
-            try {
-                c = CipherHelper.createSymmetricReaderCipher(node);
-            } catch (Exception e) {
-                logger.log(Level.SEVERE, "Symmetric Cipher for ReadHandler cannot be initialized.", e);
-            }
-            return c;
-        }
-
-        public void readPacket() throws Exception {
-            while (inBuffer.hasRemaining()) {
-                try {
-                    if (size == -1) {
-                        if (inBuffer.remaining() < 4) return;
-                        size = inBuffer.getInt();
-                    }
-                    int remaining = inBuffer.remaining();
-                    if (remaining < size) {
-                        cipher.update(inBuffer, cipherBuffer);
-                        size -= remaining;
-                    } else if (remaining == size) {
-                        cipher.doFinal(inBuffer, cipherBuffer);
-                        size = -1;
-                    } else {
-                        int oldLimit = inBuffer.limit();
-                        int newLimit = inBuffer.position() + size;
-                        inBuffer.limit(newLimit);
-                        cipher.doFinal(inBuffer, cipherBuffer);
-                        inBuffer.limit(oldLimit);
-                        size = -1;
-                    }
-                } catch (ShortBufferException e) {
-                    e.printStackTrace();
-                }
-                cipherBuffer.flip();
-                while (cipherBuffer.hasRemaining()) {
-                    if (packet == null) {
-                        packet = obtainReadable();
-                    }
-                    boolean complete = packet.read(cipherBuffer);
-                    if (complete) {
-                        enqueueFullPacket(packet);
-                        packet = null;
-                    }
-                }
-                cipherBuffer.clear();
-            }
-        }
-    }
-
     public final void run() {
         registerOp(inSelector.selector, SelectionKey.OP_READ);
-    }
-
-    public Packet obtainReadable() {
-        return node.getPacketPool().obtain();
     }
 }

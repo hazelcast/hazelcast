@@ -68,8 +68,8 @@ public abstract class
         }
     }
 
-    private boolean restoredConnection(Connection connection, boolean isOldConnectonNull, long oldConnectionId) {
-        return !isOldConnectonNull && connection != null && connection.getVersion() != oldConnectionId;
+    private boolean restoredConnection(Connection connection, boolean isOldConnectionNull, long oldConnectionId) {
+        return !isOldConnectionNull && connection != null && connection.getVersion() != oldConnectionId;
     }
 
     protected boolean restoredConnection(Connection oldConnection, Connection newConnection) {

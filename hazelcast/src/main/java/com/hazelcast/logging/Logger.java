@@ -44,6 +44,12 @@ public class Logger {
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
+                            } else if ("slf4j".equals(loggerType)) {
+                                try {
+                                    loggerFactory = (LoggerFactory) Serializer.classForName("com.hazelcast.logging.Slf4jFactory").newInstance();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
                             } else if ("none".equals(loggerType)) {
                                 loggerFactory = new NoLogFactory();
                             }

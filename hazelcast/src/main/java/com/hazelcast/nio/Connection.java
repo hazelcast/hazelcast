@@ -34,6 +34,8 @@ public class Connection {
 
     private volatile boolean live = true;
 
+    private volatile Type type = Type.MEMBER;
+
     Address endPoint = null;
 
     private final ILogger logger;
@@ -44,6 +46,37 @@ public class Connection {
         this.socketChannel = socketChannel;
         this.writeHandler = new WriteHandler(this);
         this.readHandler = new ReadHandler(this);
+    }
+
+    public enum Type {
+        MEMBER(true, true),
+        JAVA_CLIENT(false, true),
+        REST_CLIENT(false, false),
+        MEMCACHE_CLIENT(false, false);
+
+        final boolean member;
+        final boolean binary;
+
+        Type(boolean member, boolean binary) {
+            this.member = member;
+            this.binary = binary;
+        }
+
+        public boolean isBinary() {
+            return binary;
+        }
+
+        public boolean isClient() {
+            return !member;
+        }
+    }
+
+    public boolean isTextConnection() {
+        return (type != null) && !type.isBinary();
+    }
+
+    public void setType (Type type) {
+        this.type = type;
     }
 
     public SocketChannel getSocketChannel() {
@@ -122,4 +155,6 @@ public class Connection {
     public String toString() {
         return "Connection [" + this.endPoint + "] live=" + live;
     }
+
+
 }

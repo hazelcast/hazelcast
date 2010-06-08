@@ -28,7 +28,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 /**
- * Holds the socket to one of the members of Hazelcast Clustor.
+ * Holds the socket to one of the members of Hazelcast Cluster.
  *
  * @author fuad-malikov
  */
@@ -39,6 +39,8 @@ public class Connection {
     private int id = -1;
     private DataOutputStream dos;
     private DataInputStream dis;
+    boolean headersWritten = false;
+    boolean headerRead = false;
 
     /**
      * Creates the Socket to the given host and port

@@ -76,14 +76,14 @@ public class ConcurrentMapManager extends BaseManager {
         for (int i = 0; i < PARTITION_COUNT; i++) {
             orderedExecutionTasks[i] = new OrderedExecutionTask();
         }
-        node.clusterService.registerPeriodicRunnable(new Runnable() {
-            public void run() {
+        node.clusterService.registerPeriodicRunnable(new FallThroughRunnable() {
+            public void doRun() {
                 logState();
                 long now = System.currentTimeMillis();
                 if (now > nextCleanup) {
                     nextCleanup = Long.MAX_VALUE;
-                    executeLocally(new Runnable() {
-                        public void run() {
+                    executeLocally(new FallThroughRunnable() {
+                        public void doRun() {
                             Collection<CMap> cmaps = maps.values();
                             for (CMap cmap : cmaps) {
                                 cmap.startCleanup();

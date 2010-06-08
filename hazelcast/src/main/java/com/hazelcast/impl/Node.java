@@ -22,9 +22,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.Interfaces;
 import com.hazelcast.config.Join;
 import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.impl.ascii.TextCommandServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.*;
+import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.util.NoneStrictObjectPool;
 
 import java.io.InputStream;
@@ -80,6 +82,8 @@ public class Node {
     public final ConnectionManager connectionManager;
 
     public final ClientService clientService;
+
+    public final TextCommandServiceImpl textCommandService;
 
     public final Config config;
 
@@ -185,6 +189,7 @@ public class Node {
         listenerManager = new ListenerManager(this);
         topicManager = new TopicManager(this);
         clusterManager.addMember(localMember);
+        textCommandService = new TextCommandServiceImpl(this);
         ILogger systemLogger = getLogger("com.hazelcast.system");
         systemLogger.log(Level.INFO, "Hazelcast " + version + " ("
                 + build + ") starting at " + address);
@@ -371,6 +376,10 @@ public class Node {
         return groupProperties;
     }
 
+    public TextCommandService getTextCommandService() {
+        return textCommandService;
+    }
+
     public class NodeShutdownHookThread extends Thread {
 
         NodeShutdownHookThread(String name) {
@@ -442,7 +451,6 @@ public class Node {
             if (ip) {
                 return new Address(host, port, true);
             } else {
-
                 final InetAddress[] allAddresses = InetAddress.getAllByName(host);
                 for (final InetAddress inetAddress : allAddresses) {
                     boolean shouldCheck = true;
@@ -546,7 +554,7 @@ public class Node {
                         TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
                         if (tcpIpConfig != null && tcpIpConfig.isEnabled()) {
                             masterAddress = null;
-                            logger.log (Level.FINEST, "Multicast couldn't find cluster. Trying TCP/IP");
+                            logger.log(Level.FINEST, "Multicast couldn't find cluster. Trying TCP/IP");
                             joinWithTCP();
                         } else {
                             setAsMaster();
@@ -616,7 +624,7 @@ public class Node {
                 numberOfSeconds++;
                 int numberOfJoinReq = 0;
                 logger.log(Level.FINE, "we are going to try to connect to each lockAddress, but no more than five times");
-                for (final Address possibleAddress : lsPossibleAddresses) {
+                for (Address possibleAddress : lsPossibleAddresses) {
                     logger.log(Level.FINEST, "connection attempt " + numberOfJoinReq + " to " + possibleAddress);
                     final Connection conn = connectionManager.getOrConnect(possibleAddress);
                     if (conn != null && numberOfJoinReq < 5) {
@@ -637,7 +645,7 @@ public class Node {
                 while (!joined) {
                     int numberOfJoinReq = 0;
                     lsPossibleAddresses.removeAll(failedConnections);
-                    for (final Address possibleAddress : lsPossibleAddresses) {
+                    for (Address possibleAddress : lsPossibleAddresses) {
                         final Connection conn = connectionManager.getOrConnect(possibleAddress);
                         if (conn != null && numberOfJoinReq < 5) {
                             logger.log(Level.FINEST, "sending join request for " + possibleAddress);
@@ -650,9 +658,10 @@ public class Node {
                     Thread.sleep(2000);
                     if (masterAddress == null) { // no-one knows the master
                         boolean masterCandidate = true;
-                        for (final Address address : lsPossibleAddresses) {
-                            if (this.address.hashCode() > address.hashCode())
+                        for (Address address : lsPossibleAddresses) {
+                            if (this.address.hashCode() > address.hashCode()) {
                                 masterCandidate = false;
+                            }
                         }
                         if (masterCandidate) {
                             logger.log(Level.FINEST, "I am the master candidate, setting as master");
@@ -663,7 +672,7 @@ public class Node {
             }
             lsPossibleAddresses.clear();
             failedConnections.clear();
-        } catch (final Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             logger.log(Level.SEVERE, e.getMessage(), e);
         }

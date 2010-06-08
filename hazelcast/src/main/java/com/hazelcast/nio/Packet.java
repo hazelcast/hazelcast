@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
-public final class Packet {
+public final class Packet implements SocketWritable{
 
     public String name;
 
@@ -126,7 +126,7 @@ public final class Packet {
         return (bb.get() == (byte) 1);
     }
 
-    public void write() {
+    public void onEnqueue() {
         bbSizes.clear();
         bbHeader.clear();
         bbHeader.put(operation.getValue());
@@ -304,13 +304,13 @@ public final class Packet {
     }
 
     public final boolean writeToSocketBuffer(ByteBuffer dest) {
-        totalWritten += IOUtil.copyToDirectBuffer(bbSizes, dest);
-        totalWritten += IOUtil.copyToDirectBuffer(bbHeader, dest);
+        totalWritten += IOUtil.copyToHeapBuffer(bbSizes, dest);
+        totalWritten += IOUtil.copyToHeapBuffer(bbHeader, dest);
         if (key != null && key.size() > 0) {
-            totalWritten += IOUtil.copyToDirectBuffer(key.buffer, dest);
+            totalWritten += IOUtil.copyToHeapBuffer(key.buffer, dest);
         }
         if (getValueData() != null && getValueData().size() > 0) {
-            totalWritten += IOUtil.copyToDirectBuffer(value.buffer, dest);
+            totalWritten += IOUtil.copyToHeapBuffer(value.buffer, dest);
         }
         return totalWritten >= totalSize;
     }

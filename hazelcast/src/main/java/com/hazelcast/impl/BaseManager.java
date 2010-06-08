@@ -268,7 +268,7 @@ public abstract class BaseManager {
                 }
             }
             if (conn != null) {
-                conn.getWriteHandler().enqueuePacket(packet);
+                conn.getWriteHandler().enqueueSocketWritable(packet);
             } else {
                 return sendResponse(packet, request.caller);
             }
@@ -1270,7 +1270,7 @@ public abstract class BaseManager {
                 packet.lockAddress = null;
             }
         }
-        conn.getWriteHandler().enqueuePacket(packet);
+        conn.getWriteHandler().enqueueSocketWritable(packet);
         return true;
     }
 }

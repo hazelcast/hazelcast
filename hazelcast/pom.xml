@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>1.8.4</version>
+        <version>1.8.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -117,6 +117,12 @@
             <artifactId>log4j</artifactId>
             <version>1.2.12</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.6.0</version>
+            <scope>provided</scope>            
         </dependency>
     </dependencies>
 </project>

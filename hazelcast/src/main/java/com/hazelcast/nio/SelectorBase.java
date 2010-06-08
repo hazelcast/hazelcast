@@ -144,7 +144,6 @@ public abstract class SelectorBase implements Runnable {
         socketChannel.socket().setKeepAlive(true);
 //        socketChannel.socket().setTcpNoDelay(true);
         socketChannel.configureBlocking(false);
-        return node.connectionManager.createConnection(socketChannel,
-                acceptor);
+        return node.connectionManager.createConnection(socketChannel, acceptor);
     }
 }

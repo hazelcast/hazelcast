@@ -344,6 +344,7 @@ public class
                 Data data = packet.getValueData();
                 q.doBackup(true, data, blockId, (int) packet.longValue);
             } else if (packet.operation == ClusterOperation.BLOCKING_QUEUE_BACKUP_REMOVE) {
+                System.out.println("handle backup remove!!! ");
                 q.doBackup(false, null, blockId, 0);
             }
         } catch (Exception e) {
@@ -983,7 +984,7 @@ public class
                             packet.conn.getEndPoint())) {
                         if (packet.getValueData() != null) {
                             Q q = getQ(packet.name);
-                            q.doBackup(false, null, request.blockId, 0);
+                            q.doBackup(false, null, request.blockId, (int) request.longValue);
                         }
                     }
                 }
@@ -1218,6 +1219,7 @@ public class
             ScheduledPollAction action = new ScheduledPollAction(request);
             lsScheduledPollActions.add(action);
             node.clusterManager.registerScheduledAction(action);
+            System.out.println("scheduled polls " + lsScheduledPollActions.size());
         }
 
         public int getMaxSizePerJVM() {
@@ -1248,6 +1250,7 @@ public class
             public void onExpire() {
                 request.response = null;
                 returnScheduledAsSuccess(request);
+                lsScheduledPollActions.remove(ScheduledPollAction.this);
             }
         }
 
@@ -1277,6 +1280,7 @@ public class
             public void onExpire() {
                 request.response = Boolean.FALSE;
                 returnScheduledAsBoolean(request);
+                lsScheduledOfferActions.remove(ScheduledOfferAction.this);
             }
         }
 
@@ -1443,6 +1447,8 @@ public class
             try {
                 setCurrentTake();
                 QData qdata = blCurrentTake.remove();
+                int removeIndex = blCurrentTake.removeIndex - 1;
+                request.longValue = removeIndex;
                 Data value = (qdata == null) ? null : qdata.data;
                 if (request.txnId != -1) {
                     MemberImpl backup = null;
@@ -1460,7 +1466,7 @@ public class
                     }
                 }
                 doFireEntryEvent(false, value);
-                sendBackup(false, request.caller, null, blCurrentTake.blockId, 0);
+                sendBackup(false, request.caller, null, blCurrentTake.blockId, removeIndex);
                 if (!blCurrentTake.containsValidItem() && blCurrentTake.isFull()) {
                     fireBlockRemoveEvent(blCurrentTake);
                     blCurrentTake = null;
@@ -1492,7 +1498,7 @@ public class
             return value.data;
         }
 
-        boolean doBackup(boolean add, Data data, int blockId, int addIndex) {
+        boolean doBackup(boolean add, Data data, int blockId, int itemIndex) {
             if (zeroBackup) return true;
             Block block = getBlock(blockId);
             if (block == null)
@@ -1501,11 +1507,11 @@ public class
                 return false;
             }
             if (add) {
-                boolean added = block.add(addIndex, data);
+                boolean added = block.add(itemIndex, data);
                 return true;
             } else {
                 if (block.size() > 0) {
-                    block.remove();
+                    block.remove(itemIndex);
                 } else {
                     return false;
                 }
@@ -1544,6 +1550,7 @@ public class
                 if (!sent) {
                     releasePacket(packet);
                 }
+                if (!add) System.out.println("Q..SENDING BACKUP REMOVE " + sent);
                 return sent;
             } else {
                 return true;

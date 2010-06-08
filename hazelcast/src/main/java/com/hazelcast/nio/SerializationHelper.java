@@ -104,4 +104,23 @@ public class SerializationHelper {
         }
         return null;
     }
+
+    public static void writeByteArray(DataOutput out, byte[] value) throws IOException {
+        int size = (value == null) ? 0 : value.length;
+        out.writeInt(size);
+        if (size > 0) {
+            out.write(value);
+        }
+    }
+
+    public static byte[] readByteArray(DataInput in) throws IOException {
+        int size = in.readInt();
+        if (size == 0) {
+            return null;
+        } else {
+            byte[] b = new byte[size];
+            in.readFully(b);
+            return b;
+        }
+    }
 }

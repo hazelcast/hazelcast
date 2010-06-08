@@ -26,4 +26,6 @@ public interface ParallelExecutor {
 
     int getPoolSize();
 
+    int getActiveCount();
+
 }

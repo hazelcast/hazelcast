@@ -82,6 +82,51 @@ public class ClusterTest {
         assertEquals(271, getLocalPartitions(h1).size() + getLocalPartitions(h2).size());
     }
 
+    /**
+     * Test case for issue 289.
+     * <p/>
+     * 1. Create instanceA then instanceB, and then a queue on each (same queue name)
+     * 2. put a message on queue from instanceB
+     * 3. take message off on instanceA
+     * 4. shutdown instanceA, then check if queue is still empty on instanceB
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testQueueAfterShutdown() throws Exception {
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        IQueue q1 = h1.getQueue("default");
+        IQueue q2 = h2.getQueue("default");
+        q2.offer("item");
+        assertEquals(1, q1.size());
+        assertEquals(1, q2.size());
+        assertEquals("item", q1.take());
+        assertEquals(0, q1.size());
+        assertEquals(0, q2.size());
+        h1.shutdown();
+        assertEquals(0, q2.size());
+    }
+
+    /**
+     * @throws Exception
+     */
+    @Test
+    public void testQueueAfterShutdown2() throws Exception {
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        IQueue q1 = h1.getQueue("default");
+        IQueue q2 = h2.getQueue("default");
+        q1.offer("item");
+        assertEquals(1, q1.size());
+        assertEquals(1, q2.size());
+        assertEquals("item", q2.take());
+        assertEquals(0, q1.size());
+        assertEquals(0, q2.size());
+        h2.shutdown();
+        assertEquals(0, q1.size());
+    }
+
     @Test
     public void testFirstNodeNoWait() throws Exception {
         final Config config = new XmlConfigBuilder().build();

@@ -60,11 +60,16 @@ public class ParallelExecutorService {
         public int getPoolSize() {
             return 0;
         }
+
+        public int getActiveCount() {
+            return 0;
+        }
     }
 
     class ParallelExecutorImpl implements ParallelExecutor {
         final ExecutionSegment[] executionSegments;
         final AtomicInteger offerIndex = new AtomicInteger();
+        final AtomicInteger activeCount = new AtomicInteger();
 
         ParallelExecutorImpl(int concurrencyLevel) {
             this.executionSegments = new ExecutionSegment[concurrencyLevel];
@@ -103,6 +108,10 @@ public class ParallelExecutorService {
             return size;
         }
 
+        public int getActiveCount() {
+            return activeCount.get();
+        }
+
         class ExecutionSegment implements Runnable {
             final ConcurrentLinkedQueue<Runnable> q = new ConcurrentLinkedQueue<Runnable>();
             final AtomicInteger size = new AtomicInteger();
@@ -120,12 +129,14 @@ public class ParallelExecutorService {
             }
 
             public void run() {
+                activeCount.incrementAndGet();
                 Runnable r = q.poll();
                 while (r != null) {
                     r.run();
                     size.decrementAndGet();
                     r = q.poll();
                 }
+                activeCount.decrementAndGet();
             }
 
             public void shutdown() {

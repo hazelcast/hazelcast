@@ -23,6 +23,10 @@ import java.io.IOException;
 public class PacketReader extends PacketHandler {
 
     public Packet readPacket(Connection connection) throws IOException {
+        if (!connection.headerRead) {
+            connection.getInputStream().readFully(new byte[3]);
+            connection.headerRead = true;
+        }
         DataInputStream dis = connection.getInputStream();
         Packet response = new Packet();
         response.readFrom(dis);

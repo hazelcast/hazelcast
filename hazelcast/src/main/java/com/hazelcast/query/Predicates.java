@@ -34,7 +34,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Predicates {
+public class
+        Predicates {
 
     public static class GreaterLessPredicate extends EqualPredicate {
         boolean equal = false;
@@ -58,8 +59,7 @@ public class Predicates {
         protected boolean doApply(Object first, Object second) {
             int expectedResult = (less) ? -1 : 1;
             int result = ((Comparable) first).compareTo(second);
-            if (equal && result == 0) return true;
-            return (expectedResult == result);
+            return equal && result == 0 || (expectedResult == result);
         }
 
         public Set<MapEntry> filter(QueryContext queryContext) {

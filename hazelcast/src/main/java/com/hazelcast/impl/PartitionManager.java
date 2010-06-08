@@ -388,6 +388,7 @@ public class PartitionManager implements Runnable {
                     Record record = (Record) recordObject;
                     cmap.onDisconnect(record, deadAddress);
                     if (record.isActive() && blocksOwnedAfterDead.contains(record.getBlockId())) {
+                        cmap.markAsDirty(record);
                         // you have to update the indexes
                         cmap.updateIndexes(record);
                     }
@@ -470,7 +471,7 @@ public class PartitionManager implements Runnable {
                     }
                 }
             }
-            if (!add) logger.log(Level.INFO, thisAddress + " will backup " + lsOwnedRecords.size());
+            if (!add) logger.log(Level.FINEST, thisAddress + " will backup " + lsOwnedRecords.size());
             for (final Record rec : lsOwnedRecords) {
                 parallelExecutorBackups.execute(new FallThroughRunnable() {
                     public void doRun() {
