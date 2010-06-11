@@ -17,8 +17,6 @@
 
 package com.hazelcast.config;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -44,7 +42,7 @@ public final class MapStoreConfig {
     }
 
     /**
-     * Sets the name fo the MapStore implementation class
+     * Sets the name for the MapStore implementation class
      *
      * @param className the name of the MapStore implementation class to set
      */
