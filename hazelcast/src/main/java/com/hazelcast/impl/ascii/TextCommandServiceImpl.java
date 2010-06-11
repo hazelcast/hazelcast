@@ -20,6 +20,7 @@ package com.hazelcast.impl.ascii;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.ascii.memcache.*;
+import com.hazelcast.impl.ascii.rest.HttpDeleteCommandProcessor;
 import com.hazelcast.impl.ascii.rest.HttpGetCommandProcessor;
 import com.hazelcast.impl.ascii.rest.HttpPostCommandProcessor;
 import com.hazelcast.impl.ascii.rest.RestValue;
@@ -66,6 +67,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         textCommandProcessors[HTTP_GET.getValue()] = new HttpGetCommandProcessor(this);
         textCommandProcessors[HTTP_POST.getValue()] = new HttpPostCommandProcessor(this);
         textCommandProcessors[HTTP_PUT.getValue()] = new HttpPostCommandProcessor(this);
+        textCommandProcessors[HTTP_DELETE.getValue()] = new HttpDeleteCommandProcessor(this);
         textCommandProcessors[NO_OP.getValue()] = new NoOpCommandProcessor(this);
     }
 

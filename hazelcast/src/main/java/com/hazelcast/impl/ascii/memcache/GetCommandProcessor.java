@@ -19,7 +19,6 @@ package com.hazelcast.impl.ascii.memcache;
 
 import com.hazelcast.impl.ascii.AbstractTextCommandProcessor;
 import com.hazelcast.impl.ascii.TextCommandService;
-import com.hazelcast.impl.ascii.memcache.GetCommand;
 
 public class GetCommandProcessor extends AbstractTextCommandProcessor<GetCommand> {
     final boolean single;
@@ -45,7 +44,6 @@ public class GetCommandProcessor extends AbstractTextCommandProcessor<GetCommand
         getCommand.setValue(valueBytes, single);
         textCommandService.sendResponse(getCommand);
     }
-
 
     public void handleRejection(GetCommand getCommand) {
         getCommand.setValue(null, single);

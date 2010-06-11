@@ -17,10 +17,10 @@
 
 package com.hazelcast.impl.ascii.memcache;
 
-import com.hazelcast.impl.ascii.TextCommandConstants;
 import com.hazelcast.impl.ascii.TextCommand;
-import com.hazelcast.nio.ascii.SocketTextReader;
+import com.hazelcast.impl.ascii.TextCommandConstants;
 import com.hazelcast.impl.ascii.TypeAwareCommandParser;
+import com.hazelcast.nio.ascii.SocketTextReader;
 
 import static com.hazelcast.impl.ascii.TextCommandConstants.TextCommandType.*;
 

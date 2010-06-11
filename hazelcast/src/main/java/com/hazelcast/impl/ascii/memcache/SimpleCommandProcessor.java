@@ -19,7 +19,6 @@ package com.hazelcast.impl.ascii.memcache;
 
 import com.hazelcast.impl.ascii.AbstractTextCommandProcessor;
 import com.hazelcast.impl.ascii.TextCommandService;
-import com.hazelcast.impl.ascii.memcache.SimpleCommand;
 
 import static com.hazelcast.impl.ascii.TextCommandConstants.TextCommandType.QUIT;
 import static com.hazelcast.impl.ascii.TextCommandConstants.TextCommandType.UNKNOWN;

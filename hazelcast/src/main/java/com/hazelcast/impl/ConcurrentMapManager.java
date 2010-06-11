@@ -1279,7 +1279,7 @@ public class ConcurrentMapManager extends BaseManager {
             cmap.removeListener(key, address);
         }
     }
-    // master should call this method
+    // isMaster should call this method
 
     boolean sendBlockInfo(Block block, Address address) {
         return send("mapblock", CONCURRENT_MAP_BLOCK_INFO, block, address);

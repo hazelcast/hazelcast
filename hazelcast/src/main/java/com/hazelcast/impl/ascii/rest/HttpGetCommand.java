@@ -22,7 +22,6 @@ import com.hazelcast.nio.IOUtil;
 import java.nio.ByteBuffer;
 
 public class HttpGetCommand extends HttpCommand {
-    private ByteBuffer response;
     boolean nextLine = false;
 
     public HttpGetCommand(String uri) {
@@ -55,10 +54,9 @@ public class HttpGetCommand extends HttpCommand {
      * @param value
      */
     public void setResponse(byte[] contentType, byte[] value) {
-        if (value == null) throw new IllegalArgumentException("value cannot be null!");
-        byte[] len = String.valueOf(value.length).getBytes();
-        int size = 0;
-        size += RES_200.length;
+        int valueSize = (value == null) ? 0 : value.length;
+        byte[] len = String.valueOf(valueSize).getBytes();
+        int size = RES_200.length;
         if (contentType != null) {
             size += CONTENT_TYPE.length;
             size += contentType.length;
@@ -68,9 +66,9 @@ public class HttpGetCommand extends HttpCommand {
         size += len.length;
         size += RETURN.length;
         size += RETURN.length;
-        size += value.length;
+        size += valueSize;
         size += RETURN.length;
-        this.response = ByteBuffer.allocate(10000);
+        this.response = ByteBuffer.allocate(size);
         response.put(RES_200);
         if (contentType != null) {
             response.put(CONTENT_TYPE);
@@ -81,13 +79,11 @@ public class HttpGetCommand extends HttpCommand {
         response.put(len);
         response.put(RETURN);
         response.put(RETURN);
-        response.put(value);
+        if (value != null) {
+            response.put(value);
+        }
         response.put(RETURN);
         response.flip();
-    }
-
-    public void setResponse(byte[] response) {
-        this.response = ByteBuffer.wrap(response);
     }
 
     public boolean writeTo(ByteBuffer bb) {

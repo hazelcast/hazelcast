@@ -15,31 +15,30 @@
  *
  */
 
-package com.hazelcast.impl.ascii;
+package com.hazelcast.impl.ascii.rest;
 
 import java.nio.ByteBuffer;
 
-public class NoOpCommand extends AbstractTextCommand {
-    final ByteBuffer response;
+public class HttpDeleteCommand extends HttpCommand {
+    boolean nextLine = false;
 
-    public NoOpCommand(byte[] response) {
-        super(TextCommandType.NO_OP);
-        this.response = ByteBuffer.wrap(response);
+    public HttpDeleteCommand(String uri) {
+        super(TextCommandType.HTTP_DELETE, uri);
     }
 
     public boolean doRead(ByteBuffer cb) {
-        return true;
-    }
-
-    public boolean writeTo(ByteBuffer bb) {
-        while (bb.hasRemaining() && response.hasRemaining()) {
-            bb.put(response.get());
+        while (cb.hasRemaining()) {
+            char c = (char) cb.get();
+//            System.out.println("READing " + c);
+            if (c == '\n') {
+                if (nextLine) {
+                    return true;
+                }
+                nextLine = true;
+            } else if (c != '\r') {
+                nextLine = false;
+            }
         }
-        return !response.hasRemaining();
-    }
-
-    @Override
-    public String toString() {
-        return "NoOpCommand {" + new String(response.array()) + "}";
+        return false;
     }
 }

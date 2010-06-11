@@ -1043,7 +1043,7 @@ public abstract class BaseManager {
     }
 
     protected boolean isMaster() {
-        return node.master();
+        return node.isMaster();
     }
 
     protected boolean isSuperClient() {

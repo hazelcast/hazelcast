@@ -17,10 +17,7 @@
 
 package com.hazelcast.impl.ascii.rest;
 
-import com.hazelcast.impl.ascii.rest.RestValue;
 import com.hazelcast.impl.ascii.TextCommandService;
-import com.hazelcast.impl.ascii.rest.HttpCommand;
-import com.hazelcast.impl.ascii.rest.HttpPostCommand;
 
 public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostCommand> {
 
@@ -35,6 +32,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             String mapName = uri.substring(URI_MAPS.length(), indexEnd);
             String key = uri.substring(indexEnd + 1);
             byte[] data = command.getData();
+            System.out.println("data is " + data + " data length " + data.length);
             textCommandService.put(mapName, key, new RestValue(data, command.getContentType()), 0);
             command.setResponse(HttpCommand.RES_204);
         } else {

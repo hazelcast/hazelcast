@@ -24,6 +24,7 @@ import com.hazelcast.impl.ascii.TextCommandConstants;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.ascii.memcache.*;
 import com.hazelcast.impl.ascii.rest.HttpCommand;
+import com.hazelcast.impl.ascii.rest.HttpDeleteCommandParser;
 import com.hazelcast.impl.ascii.rest.HttpGetCommandParser;
 import com.hazelcast.impl.ascii.rest.HttpPostCommandParser;
 import com.hazelcast.nio.Connection;
@@ -41,6 +42,7 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
 
     static {
         mapCommandParsers.put("get", new GetCommandParser());
+        mapCommandParsers.put("gets", new GetCommandParser());
         mapCommandParsers.put("set", new SetCommandParser(SET));
         mapCommandParsers.put("add", new SetCommandParser(ADD));
         mapCommandParsers.put("replace", new SetCommandParser(REPLACE));
@@ -51,8 +53,8 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
         mapCommandParsers.put("stats", new SimpleCommandParser(STATS));
         mapCommandParsers.put("GET", new HttpGetCommandParser());
         mapCommandParsers.put("POST", new HttpPostCommandParser());
-        mapCommandParsers.put("PUT", new HttpGetCommandParser());
-        mapCommandParsers.put("DELETE", new HttpGetCommandParser());
+        mapCommandParsers.put("PUT", new HttpPostCommandParser());
+        mapCommandParsers.put("DELETE", new HttpDeleteCommandParser());
     }
 
     ByteBuffer commandLine = ByteBuffer.allocate(500);
@@ -125,6 +127,7 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
     }
 
     public void publishRequest(TextCommand command) {
+//        System.out.println("publishing " + command);
         if (!connectionTypeSet) {
             if (command instanceof HttpCommand) {
                 connection.setType(Connection.Type.REST_CLIENT);
@@ -135,7 +138,6 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
         }
         long requestId = (command.shouldReply()) ? requestIdGen++ : -1;
         command.init(this, requestId);
-//        System.out.println("publising " + command);
         textCommandService.processRequest(command);
     }
 

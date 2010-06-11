@@ -27,11 +27,11 @@ public class ErrorCommand extends AbstractTextCommand {
     ByteBuffer response;
 
     public ErrorCommand(TextCommandType type) {
-        this (type, null);
+        this(type, null);
     }
 
     public ErrorCommand(TextCommandType type, String message) {
-        super (type);
+        super(type);
         byte[] error = ERROR;
         if (type == TextCommandType.ERROR_CLIENT) {
             error = CLIENT_ERROR;

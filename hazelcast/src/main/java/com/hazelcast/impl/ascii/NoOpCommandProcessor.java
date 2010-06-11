@@ -17,9 +17,6 @@
 
 package com.hazelcast.impl.ascii;
 
-import com.hazelcast.impl.ascii.NoOpCommand;
-import com.hazelcast.impl.ascii.TextCommandService;
-
 public class NoOpCommandProcessor extends AbstractTextCommandProcessor<NoOpCommand> {
 
     public NoOpCommandProcessor(TextCommandService textCommandService) {

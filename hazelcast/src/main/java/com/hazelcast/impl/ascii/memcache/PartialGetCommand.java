@@ -17,12 +17,11 @@
 
 package com.hazelcast.impl.ascii.memcache;
 
-import com.hazelcast.impl.ascii.memcache.GetCommand;
-
 public class PartialGetCommand extends GetCommand {
 
     public PartialGetCommand(String key) {
-        super(TextCommandType.PARTIAL_GET, key);    }
+        super(TextCommandType.PARTIAL_GET, key);
+    }
 
     @Override
     public String toString() {

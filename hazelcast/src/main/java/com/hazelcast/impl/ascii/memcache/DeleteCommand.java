@@ -60,7 +60,6 @@ public class DeleteCommand extends AbstractTextCommand {
         return expiration;
     }
 
-
     public String getKey() {
         return key;
     }

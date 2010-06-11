@@ -187,7 +187,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 }
             }
         } else {
-            // send heartbeat to master
+            // send heartbeat to isMaster
             if (getMasterAddress() != null) {
                 MemberImpl masterMember = getMember(getMasterAddress());
                 boolean removed = false;

@@ -29,9 +29,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 /**
@@ -55,17 +54,36 @@ public class HazelcastClient implements HazelcastInstance {
     final ClusterClientProxy clusterClientProxy;
     final PartitionClientProxy partitionClientProxy;
     final String groupName;
-    final static ILogger logger = Logger.getLogger(HazelcastClient.class.toString());
+    final ThreadPoolExecutor executor;
+    final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
     private volatile boolean shutdownInProgress = false;
 
     private HazelcastClient(String groupName, String groupPassword, boolean shuffle, InetSocketAddress[] clusterMembers, boolean automatic) {
+        this.groupName = groupName;
+        final ThreadFactory threadFactory = new ThreadFactory() {
+            final AtomicInteger atomicInteger = new AtomicInteger();
+
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(HazelcastClient.this.groupName + "thread_" + atomicInteger.incrementAndGet());
+                if (t.isDaemon()) {
+                    t.setDaemon(false);
+                }
+                if (t.getPriority() != Thread.NORM_PRIORITY) {
+                    t.setPriority(Thread.NORM_PRIORITY);
+                }
+                return t;
+            }
+        };
+        executor = new ThreadPoolExecutor(0, 20,
+                60L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>(),
+                threadFactory);
         if (automatic) {
             this.connectionManager = new ConnectionManager(this, clusterMembers[0]);
         } else {
             this.connectionManager = new ConnectionManager(this, clusterMembers, shuffle);
         }
         this.connectionManager.setBinder(new DefaultClientBinder(this));
-        this.groupName = groupName;
         out = new OutRunnable(this, calls, new PacketWriter());
         new Thread(out, "hz.client.OutThread").start();
         in = new InRunnable(this, calls, new PacketReader());

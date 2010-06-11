@@ -17,8 +17,8 @@
 
 package com.hazelcast.impl.ascii.memcache;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.impl.ascii.AbstractTextCommand;
+import com.hazelcast.nio.IOUtil;
 
 import java.nio.ByteBuffer;
 

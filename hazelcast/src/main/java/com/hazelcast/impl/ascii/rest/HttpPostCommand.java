@@ -26,7 +26,6 @@ import java.nio.ByteBuffer;
 public class HttpPostCommand extends HttpCommand {
 
     private ByteBuffer data = null;
-    private ByteBuffer response = null;
     boolean nextLine = false;
     boolean readyToReadData = false;
     private ByteBuffer line = ByteBuffer.allocate(500);
@@ -138,7 +137,6 @@ public class HttpPostCommand extends HttpCommand {
     }
 
     private void processLine(String currentLine) {
-//        System.out.println("LINE " + line);
         if (contentType == null && currentLine.startsWith(HEADER_CONTENT_TYPE)) {
             contentType = currentLine.substring(currentLine.indexOf(' ') + 1);
         } else if (data == null && currentLine.startsWith(HEADER_CONTENT_LENGTH)) {
@@ -148,17 +146,5 @@ public class HttpPostCommand extends HttpCommand {
         } else if (currentLine.startsWith("Expect: 100")) {
             socketTextRequestReader.sendResponse(new NoOpCommand(RES_100));
         }
-//        System.out.println(contentType + "  ........ " + data);
-    }
-
-    public void setResponse(byte[] value) {
-        this.response = ByteBuffer.wrap(value);
-    }
-
-    public boolean writeTo(ByteBuffer bb) {
-        while (bb.hasRemaining() && response.hasRemaining()) {
-            bb.put(response.get());
-        }
-        return !response.hasRemaining();
     }
 }

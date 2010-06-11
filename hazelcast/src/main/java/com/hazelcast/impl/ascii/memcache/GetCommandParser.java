@@ -18,9 +18,8 @@
 package com.hazelcast.impl.ascii.memcache;
 
 import com.hazelcast.impl.ascii.CommandParser;
-import com.hazelcast.impl.ascii.NoOpCommand;
-import com.hazelcast.nio.ascii.SocketTextReader;
 import com.hazelcast.impl.ascii.TextCommand;
+import com.hazelcast.nio.ascii.SocketTextReader;
 
 import java.util.StringTokenizer;
 
@@ -37,7 +36,7 @@ public class GetCommandParser implements CommandParser {
                 PartialGetCommand r = new PartialGetCommand(st.nextToken());
                 socketTextReader.publishRequest(r);
             }
-            socketTextReader.publishRequest(new NoOpCommand(END));
+            socketTextReader.publishRequest(new EndCommand());
         }
         return null;
     }

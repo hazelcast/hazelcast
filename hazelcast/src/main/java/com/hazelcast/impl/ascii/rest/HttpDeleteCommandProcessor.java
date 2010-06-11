@@ -15,24 +15,31 @@
  *
  */
 
-package com.hazelcast.impl.ascii.memcache;
+package com.hazelcast.impl.ascii.rest;
 
-import com.hazelcast.impl.ascii.AbstractTextCommandProcessor;
 import com.hazelcast.impl.ascii.TextCommandService;
 
-public class StatsCommandProcessor extends AbstractTextCommandProcessor<StatsCommand> {
+public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteCommand> {
 
-    public StatsCommandProcessor(TextCommandService textCommandService) {
+    public HttpDeleteCommandProcessor(TextCommandService textCommandService) {
         super(textCommandService);
     }
 
-    public void handle(StatsCommand command) {
-        Stats stats = textCommandService.getStats();
-        command.setResponse(stats);
+    public void handle(HttpDeleteCommand command) {
+        String uri = command.getURI();
+        if (uri.startsWith(URI_MAPS)) {
+            int indexEnd = uri.indexOf('/', URI_MAPS.length());
+            String mapName = uri.substring(URI_MAPS.length(), indexEnd);
+            String key = uri.substring(indexEnd + 1);
+            Object value = textCommandService.delete(mapName, key);
+            command.send204();
+        } else {
+            command.send400();
+        }
         textCommandService.sendResponse(command);
     }
 
-    public void handleRejection(StatsCommand command) {
+    public void handleRejection(HttpDeleteCommand command) {
         handle(command);
     }
 }

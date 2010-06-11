@@ -26,7 +26,7 @@ import java.util.StringTokenizer;
 
 import static com.hazelcast.impl.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
 
-public class HttpPostCommandParser implements CommandParser {
+public class HttpDeleteCommandParser implements CommandParser {
 
     public TextCommand parser(SocketTextReader socketTextReader, String cmd, int space) {
         StringTokenizer st = new StringTokenizer(cmd);
@@ -37,6 +37,6 @@ public class HttpPostCommandParser implements CommandParser {
         } else {
             return new ErrorCommand(ERROR_CLIENT);
         }
-        return new HttpPostCommand(socketTextReader, uri);
+        return new HttpDeleteCommand(uri);
     }
 }

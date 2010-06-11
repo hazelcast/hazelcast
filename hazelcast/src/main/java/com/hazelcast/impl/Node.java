@@ -22,11 +22,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.Interfaces;
 import com.hazelcast.config.Join;
 import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.ascii.TextCommandServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.*;
-import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.util.NoneStrictObjectPool;
 
 import java.io.InputStream;
@@ -277,13 +277,13 @@ public class Node {
         return joined;
     }
 
-    public boolean master() {
+    public boolean isMaster() {
         return address != null && address.equals(masterAddress);
     }
 
     public void setMasterAddress(final Address master) {
         if (master != null) {
-            logger.log(Level.FINE, "** setting master lockAddress to " + master.toString());
+            logger.log(Level.FINE, "** setting isMaster lockAddress to " + master.toString());
         }
         masterAddress = master;
     }
@@ -535,7 +535,7 @@ public class Node {
     }
 
     void setAsMaster() {
-        logger.log(Level.FINE, "This node is being set as the master");
+        logger.log(Level.FINE, "This node is being set as the isMaster");
         masterAddress = address;
         logger.log(Level.FINEST, "adding member myself");
         clusterManager.addMember(address, getLocalNodeType()); // add
@@ -568,7 +568,7 @@ public class Node {
                     sb.append("\n");
                     sb.append("===========================");
                     sb.append("\n");
-                    sb.append("Couldn't connect to discovered master! tryCount: " + tryCount);
+                    sb.append("Couldn't connect to discovered isMaster! tryCount: " + tryCount);
                     sb.append("\n");
                     sb.append("thisAddress: " + address);
                     sb.append("\n");
@@ -640,7 +640,7 @@ public class Node {
             }
             logger.log(Level.FINEST, "FOUND " + found);
             if (!found) {
-                logger.log(Level.FINEST, "This node will assume master role since no possible member where connected to");
+                logger.log(Level.FINEST, "This node will assume isMaster role since no possible member where connected to");
                 setAsMaster();
             } else {
                 while (!joined) {
@@ -657,7 +657,7 @@ public class Node {
                         }
                     }
                     Thread.sleep(2000);
-                    if (masterAddress == null) { // no-one knows the master
+                    if (masterAddress == null) { // no-one knows the isMaster
                         boolean masterCandidate = true;
                         for (Address address : lsPossibleAddresses) {
                             if (this.address.hashCode() > address.hashCode()) {
@@ -665,7 +665,7 @@ public class Node {
                             }
                         }
                         if (masterCandidate) {
-                            logger.log(Level.FINEST, "I am the master candidate, setting as master");
+                            logger.log(Level.FINEST, "I am the isMaster candidate, setting as isMaster");
                             setAsMaster();
                         }
                     }
@@ -731,10 +731,6 @@ public class Node {
         return executorManager;
     }
 
-    public String toString() {
-        return "Node[" + getName() + "]";
-    }
-
     /**
      * @param active the active to set
      */
@@ -747,5 +743,9 @@ public class Node {
      */
     public boolean isActive() {
         return active;
+    }
+
+    public String toString() {
+        return "Node[" + getName() + "]";
     }
 }

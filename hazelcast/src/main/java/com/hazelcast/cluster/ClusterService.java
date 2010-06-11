@@ -213,8 +213,8 @@ public final class ClusterService implements Runnable, Constants {
     @Override
     public String toString() {
         return "ClusterService packetQueueSize=" + packetQueue.size()
-                + "unknownQueueSize=" + processableQueue.size() + " master= " + node.master()
-                + " master= " + node.getMasterAddress();
+                + "unknownQueueSize=" + processableQueue.size() + " isMaster= " + node.isMaster()
+                + " isMaster= " + node.getMasterAddress();
     }
 
     private void checkPeriodics() {

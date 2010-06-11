@@ -19,8 +19,8 @@ package com.hazelcast.impl.ascii.rest;
 
 import com.hazelcast.impl.ascii.CommandParser;
 import com.hazelcast.impl.ascii.TextCommand;
-import com.hazelcast.nio.ascii.SocketTextReader;
 import com.hazelcast.impl.ascii.memcache.ErrorCommand;
+import com.hazelcast.nio.ascii.SocketTextReader;
 
 import java.util.StringTokenizer;
 

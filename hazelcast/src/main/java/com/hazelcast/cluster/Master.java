@@ -34,13 +34,13 @@ public class Master extends AbstractRemotelyProcessable {
     protected Address address = null;
 
     /**
-     * Instantiates a new master.
+     * Instantiates a new isMaster.
      */
     public Master() {
     }
 
     /**
-     * Instantiates a new master.
+     * Instantiates a new isMaster.
      *
      * @param originAddress the origin address
      */
