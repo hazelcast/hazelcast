@@ -41,9 +41,7 @@ public class ClusterImpl implements Cluster {
 
     public ClusterImpl(Node node, MemberImpl thisMember) {
         this.node = node;
-        List ls = new ArrayList();
-        ls.add(thisMember);
-        this.setMembers(ls);
+        this.setMembers(Arrays.asList(thisMember));
     }
 
     public int getDistanceFrom(Member member) {
