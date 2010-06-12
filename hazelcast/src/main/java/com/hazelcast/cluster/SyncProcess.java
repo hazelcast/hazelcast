@@ -17,6 +17,7 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.impl.Node;
 import com.hazelcast.nio.Connection;
 
 import java.io.DataInput;
@@ -24,14 +25,15 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public class SyncProcess extends AbstractRemotelyCallable<Boolean> {
-    Connection conn;
+    
+	private Connection connection;
 
     public Connection getConnection() {
-        return conn;
+        return connection;
     }
 
     public void setConnection(Connection conn) {
-        this.conn = conn;
+        this.connection = conn;
     }
 
     public void readData(DataInput in) throws IOException {
@@ -46,10 +48,11 @@ public class SyncProcess extends AbstractRemotelyCallable<Boolean> {
     }
 
     public void process() {
-        getNode().concurrentMapManager.syncForAdd();
-        getNode().blockingQueueManager.syncForAdd();
-        getNode().listenerManager.syncForAdd();
-        getNode().topicManager.syncForAdd();
-        getNode().clusterManager.joinReset();
+    	Node node = getNode();
+    	node.concurrentMapManager.syncForAdd();
+    	node.blockingQueueManager.syncForAdd();
+    	node.listenerManager.syncForAdd();
+    	node.topicManager.syncForAdd();
+    	node.clusterManager.joinReset();
     }
 }
