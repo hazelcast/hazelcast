@@ -27,29 +27,28 @@ public class InitialProcess extends AbstractRemotelyProcessable {
 
     private static final long serialVersionUID = 4803635299019880729L;
 
-    private List<AbstractRemotelyProcessable> lsProcessables = new ArrayList<AbstractRemotelyProcessable>(10);
+    private List<AbstractRemotelyProcessable> processables = new ArrayList<AbstractRemotelyProcessable>(10);
 
     public List<AbstractRemotelyProcessable> getProcessables() {
-        return lsProcessables;
+        return processables;
     }
 
     public void writeData(DataOutput out) throws IOException {
-        int size = lsProcessables.size();
-        out.writeInt(size);
-        for (int i = 0; i < size; i++) {
-            writeObject(out, lsProcessables.get(i));
+        out.writeInt(processables.size());
+        for (AbstractRemotelyProcessable processable : processables) {
+            writeObject(out, processable);
         }
     }
 
     public void readData(DataInput in) throws IOException {
         int size = in.readInt();
-        for (int i = 0; i < size; i++) {
-            lsProcessables.add((AbstractRemotelyProcessable) readObject(in));
+        while (size-- > 0) {
+            processables.add((AbstractRemotelyProcessable) readObject(in));
         }
     }
 
     public void process() {
-        for (AbstractRemotelyProcessable processable : lsProcessables) {
+        for (AbstractRemotelyProcessable processable : processables) {
             processable.setConnection(getConnection());
             processable.setNode(getNode());
             processable.process();
