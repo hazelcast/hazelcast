@@ -33,12 +33,12 @@ import java.net.UnknownHostException;
  * @author fuad-malikov
  */
 public class Connection {
-    private static final int BUFFER_SIZE = 1 * 1024;
-    private Socket socket;
+    private static final int BUFFER_SIZE = 32 * 1024;
+    private final Socket socket;
     private InetSocketAddress address;
     private int id = -1;
-    private DataOutputStream dos;
-    private DataInputStream dis;
+    private final DataOutputStream dos;
+    private final DataInputStream dis;
     boolean headersWritten = false;
     boolean headerRead = false;
 
@@ -52,14 +52,12 @@ public class Connection {
      */
     public Connection(String host, int port, int id) {
         try {
-            setSocket(SocketFactory.getDefault().createSocket(host, port));
+            this.socket = SocketFactory.getDefault().createSocket(host, port);
             socket.setKeepAlive(true);
             dos = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), BUFFER_SIZE));
             dis = new DataInputStream(new BufferedInputStream(socket.getInputStream(), BUFFER_SIZE));
             this.id = id;
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -67,10 +65,6 @@ public class Connection {
     public Connection(InetSocketAddress address, int version) {
         this(address.getAddress().getHostAddress(), address.getPort(), version);
         this.address = address;
-    }
-
-    public void setSocket(Socket socket) {
-        this.socket = socket;
     }
 
     public Socket getSocket() {

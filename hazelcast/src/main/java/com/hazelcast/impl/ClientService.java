@@ -103,9 +103,9 @@ public class ClientService {
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
         ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext, clientOperationHandlers);
         if (!packet.operation.equals(ClusterOperation.CONCURRENT_MAP_UNLOCK)) {
-            node.executorManager.getClientExecutorService().executeOrderedRunnable(clientEndpoint.hashCode(), clientRequestHandler);
+            node.executorManager.getClientExecutorService().executeOrderedRunnable(callContext.getThreadId(), clientRequestHandler);
         } else {
-            node.executorManager.executeMigrationTask(clientRequestHandler);
+            node.executorManager.executeNow(clientRequestHandler);
         }
     }
 

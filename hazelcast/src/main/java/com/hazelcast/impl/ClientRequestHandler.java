@@ -18,16 +18,12 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.impl.ClientService.ClientOperationHandler;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
-
-import java.util.logging.Logger;
 
 public class ClientRequestHandler implements Runnable {
     private final Packet packet;
     private final CallContext callContext;
     private final Node node;
-    private final ILogger logger;
 
     private final ClientOperationHandler[] clientOperationHandlers;
 
@@ -36,7 +32,6 @@ public class ClientRequestHandler implements Runnable {
         this.callContext = callContext;
         this.node = node;
         this.clientOperationHandlers = clientOperationHandlers;
-        this.logger = node.getLogger(this.getClass().getName());
     }
 
     public void run() {
@@ -44,7 +39,6 @@ public class ClientRequestHandler implements Runnable {
         ClientOperationHandler clientOperationHandler = clientOperationHandlers[packet.operation.getValue()];
         if (clientOperationHandler != null) {
             clientOperationHandler.handle(node, packet);
-            return;
         } else {
             throw new RuntimeException("Unknown Client Operation, can not handle " + packet.operation);
         }

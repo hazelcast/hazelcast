@@ -20,15 +20,12 @@ package com.hazelcast.client;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.util.ByteUtil;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class Packet {
-
-    private int headerSize;
-
-    private int keySize;
-
-    private int valueSize;
 
     private byte[] headerInBytes;
 
@@ -68,17 +65,21 @@ public class Packet {
 
     private static final byte PACKET_VERSION = 5;
 
+    private final static ByteBuffer readHeaderBuffer = ByteBuffer.allocate(1000);
+
+    private final static ByteBuffer writeHeaderBuffer = ByteBuffer.allocate(1000);
+
     public Packet() {
     }
 
     public void writeTo(DataOutputStream outputStream) throws IOException {
-        headerInBytes = getHeader();
-        headerSize = headerInBytes.length;
+        ByteBuffer header = getHeader();
+        int headerSize = header.position();
         outputStream.writeInt(headerSize);
-        outputStream.writeInt(keySize);
-        outputStream.writeInt(valueSize);
+        outputStream.writeInt((key == null) ? 0 : key.length);
+        outputStream.writeInt((value == null) ? 0 : value.length);
         outputStream.writeByte(PACKET_VERSION);
-        outputStream.write(headerInBytes);
+        outputStream.write(header.array(), 0, headerSize);
         if (key != null)
             outputStream.write(key);
         if (value != null)
@@ -86,55 +87,54 @@ public class Packet {
     }
 
     public void readFrom(DataInputStream dis) throws IOException {
-        headerSize = dis.readInt();
-        keySize = dis.readInt();
-        valueSize = dis.readInt();
+        int headerSize = dis.readInt();
+        int keySize = dis.readInt();
+        int valueSize = dis.readInt();
         byte packetVersion = dis.readByte();
         if (packetVersion != PACKET_VERSION) {
             throw new RuntimeException("Invalid packet version. Expected:"
                     + PACKET_VERSION + ", Found:" + packetVersion);
         }
-        headerInBytes = new byte[headerSize];
-        dis.readFully(headerInBytes);
-        ByteArrayInputStream bis = new ByteArrayInputStream(headerInBytes);
-        DataInputStream dis2 = new DataInputStream(bis);
-        this.operation = ClusterOperation.create(dis2.readByte());
-        this.blockId = dis2.readInt();
-        this.threadId = dis2.readInt();
-        byte booleans = dis2.readByte();
+        readHeaderBuffer.clear();
+        readHeaderBuffer.limit(headerSize);
+        dis.readFully(readHeaderBuffer.array(), 0, headerSize);
+        this.operation = ClusterOperation.create(readHeaderBuffer.get());
+        this.blockId = readHeaderBuffer.getInt();
+        this.threadId = readHeaderBuffer.getInt();
+        byte booleans = readHeaderBuffer.get();
         if (ByteUtil.isTrue(booleans, 0)) {
-            lockCount = dis2.readInt();
+            lockCount = readHeaderBuffer.getInt();
         }
         if (ByteUtil.isTrue(booleans, 1)) {
-            timeout = dis2.readLong();
+            timeout = readHeaderBuffer.getLong();
         }
         if (ByteUtil.isTrue(booleans, 2)) {
-            ttl = dis2.readLong();
+            ttl = readHeaderBuffer.getLong();
         }
         if (ByteUtil.isTrue(booleans, 3)) {
-            txnId = dis2.readLong();
+            txnId = readHeaderBuffer.getLong();
         }
         if (ByteUtil.isTrue(booleans, 4)) {
-            longValue = dis2.readLong();
+            longValue = readHeaderBuffer.getLong();
         }
         if (ByteUtil.isTrue(booleans, 5)) {
-            version = dis2.readLong();
+            version = readHeaderBuffer.getLong();
         }
         if (!ByteUtil.isTrue(booleans, 7)) {
             throw new RuntimeException("LockAddress cannot be sent to the client!" + operation);
         }
-        this.callId = dis2.readLong();
-        this.responseType = dis2.readByte();
-        int nameLength = dis2.readInt();
+        this.callId = readHeaderBuffer.getLong();
+        this.responseType = readHeaderBuffer.get();
+        int nameLength = readHeaderBuffer.getInt();
         if (nameLength > 0) {
             byte[] b = new byte[nameLength];
-            dis2.readFully(b);
+            readHeaderBuffer.get(b);
             this.name = new String(b);
         }
-        indexCount = dis2.readByte();
+        indexCount = readHeaderBuffer.get();
         for (int i = 0; i < indexCount; i++) {
-            indexes[i] = dis2.readLong();
-            indexTypes[i] = dis2.readByte();
+            indexes[i] = readHeaderBuffer.getLong();
+            indexTypes[i] = readHeaderBuffer.get();
         }
         key = new byte[keySize];
         dis.readFully(key);
@@ -142,12 +142,11 @@ public class Packet {
         dis.readFully(value);
     }
 
-    private byte[] getHeader() throws IOException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(bos);
-        dos.writeByte(operation.getValue());
-        dos.writeInt(blockId);
-        dos.writeInt(threadId);
+    private ByteBuffer getHeader() throws IOException {
+        writeHeaderBuffer.clear();
+        writeHeaderBuffer.put(operation.getValue());
+        writeHeaderBuffer.putInt(blockId);
+        writeHeaderBuffer.putInt(threadId);
         byte booleans = 0;
         if (lockCount != 0) {
             booleans = ByteUtil.setTrue(booleans, 0);
@@ -169,43 +168,43 @@ public class Packet {
         }
         booleans = ByteUtil.setTrue(booleans, 6); // client = true
         booleans = ByteUtil.setTrue(booleans, 7); // lockAddressNull = true
-        dos.writeByte(booleans);
+        writeHeaderBuffer.put(booleans);
         if (lockCount != 0) {
-            dos.writeInt(lockCount);
+            writeHeaderBuffer.putInt(lockCount);
         }
         if (timeout != -1) {
-            dos.writeLong(timeout);
+            writeHeaderBuffer.putLong(timeout);
         }
         if (ttl != -1) {
-            dos.writeLong(ttl);
+            writeHeaderBuffer.putLong(ttl);
         }
         if (txnId != -1) {
-            dos.writeLong(txnId);
+            writeHeaderBuffer.putLong(txnId);
         }
         if (longValue != Long.MIN_VALUE) {
-            dos.writeLong(longValue);
+            writeHeaderBuffer.putLong(longValue);
         }
         if (version != -1) {
-            dos.writeLong(version);
+            writeHeaderBuffer.putLong(version);
         }
-        dos.writeLong(callId);
-        dos.writeByte(responseType);
+        writeHeaderBuffer.putLong(callId);
+        writeHeaderBuffer.put(responseType);
         int nameLen = 0;
         byte[] nameInBytes = null;
         if (name != null) {
             nameInBytes = name.getBytes();
             nameLen = nameInBytes.length;
         }
-        dos.writeInt(nameLen);
+        writeHeaderBuffer.putInt(nameLen);
         if (nameLen > 0) {
-            dos.write(nameInBytes);
+            writeHeaderBuffer.put(nameInBytes);
         }
-        dos.writeByte(indexCount);
+        writeHeaderBuffer.put(indexCount);
         for (int i = 0; i < indexCount; i++) {
-            dos.writeLong(indexes[i]);
-            dos.writeByte(indexTypes[i]);
+            writeHeaderBuffer.putLong(indexes[i]);
+            writeHeaderBuffer.put(indexTypes[i]);
         }
-        return bos.toByteArray();
+        return writeHeaderBuffer;
     }
 
     public void set(String name, ClusterOperation operation,
@@ -216,38 +215,12 @@ public class Packet {
         this.setValue(value);
     }
 
-    public int getHeaderSize() {
-        return headerSize;
-    }
-
-    public void setHeaderSize(int headerSize) {
-        this.headerSize = headerSize;
-    }
-
-    public int getKeySize() {
-        return keySize;
-    }
-
-    public void setKeySize(int keySize) {
-        this.keySize = keySize;
-    }
-
-    public int getValueSize() {
-        return valueSize;
-    }
-
-    public void setValueSize(int valueSize) {
-        this.valueSize = valueSize;
-    }
-
     public byte[] getKey() {
         return key;
     }
 
     public void setKey(byte[] key) {
         this.key = key;
-        if (key != null)
-            keySize = this.key.length;
     }
 
     public byte[] getValue() {
@@ -256,8 +229,6 @@ public class Packet {
 
     public void setValue(byte[] value) {
         this.value = value;
-        if (value != null)
-            valueSize = this.value.length;
     }
 
     public void setCallId(long callid) {
@@ -266,15 +237,6 @@ public class Packet {
 
     public long getCallId() {
         return callId;
-    }
-
-    public byte[] getHeaderInBytes() {
-        return headerInBytes;
-    }
-
-    public void setHeaderInBytes(byte[] headerInBytes) {
-        this.headerInBytes = headerInBytes;
-        headerSize = headerInBytes.length;
     }
 
     public String getName() {

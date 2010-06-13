@@ -34,6 +34,10 @@ public class PacketWriter extends PacketHandler {
         }
         DataOutputStream dos = connection.getOutputStream();
         request.writeTo(dos);
+    }
+
+    public void flush(Connection connection) throws IOException {
+        DataOutputStream dos = connection.getOutputStream();
         dos.flush();
     }
 }

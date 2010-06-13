@@ -142,7 +142,7 @@ public final class ClusterService implements Runnable, Constants {
             if (!readPackets && !readProcessables) {
                 try {
                     synchronized (notEmptyLock) {
-                        notEmptyLock.wait(100);
+                        notEmptyLock.wait(10);
                     }
                     checkPeriodics();
                 } catch (InterruptedException e) {
@@ -205,7 +205,7 @@ public final class ClusterService implements Runnable, Constants {
                     stopLatch.countDown();
                 }
             });
-            stopLatch.await();
+            stopLatch.await(3, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
         }
     }

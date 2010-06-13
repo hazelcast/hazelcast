@@ -25,8 +25,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.logging.Level;
 
-public abstract class
-        IORunnable extends ClientRunnable {
+public abstract class IORunnable extends ClientRunnable {
 
     protected Map<Long, Call> callMap;
     protected final HazelcastClient client;

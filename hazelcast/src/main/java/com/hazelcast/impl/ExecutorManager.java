@@ -62,13 +62,14 @@ public class ExecutorManager extends BaseManager {
     private static final String EVENT_EXECUTOR_SERVICE = "x:hz.events";
     private final Object CREATE_LOCK = new Object();
     private final ParallelExecutorService parallelExecutorService;
+    private final ThreadPoolExecutor threadPoolExecutor;
 
     ExecutorManager(final Node node) {
         super(node);
         logger.log(Level.FINEST, "Starting ExecutorManager");
         GroupProperties gp = node.groupProperties;
         ClassLoader classLoader = node.getConfig().getClassLoader();
-        ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
+        threadPoolExecutor = new ThreadPoolExecutor(
                 0, Integer.MAX_VALUE,
                 60L,
                 TimeUnit.SECONDS,
@@ -218,6 +219,10 @@ public class ExecutorManager extends BaseManager {
 
     public void executeLocally(Runnable runnable) {
         defaultExecutorService.execute(runnable);
+    }
+
+    public void executeNow(Runnable runnable) {
+       threadPoolExecutor.execute(runnable);
     }
 
     public void executeMigrationTask(Runnable runnable) {

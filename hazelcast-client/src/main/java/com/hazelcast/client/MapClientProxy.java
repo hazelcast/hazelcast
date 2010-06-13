@@ -244,10 +244,9 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public void putAll(final Map<? extends K, ? extends V> map) {
-        ExecutorService es = Executors.newFixedThreadPool(50);
+        ExecutorService es = Executors.newFixedThreadPool(20);
         List<Future> lsFutures = new ArrayList(map.size());
-        for (Iterator<? extends K> it = map.keySet().iterator(); it.hasNext();) {
-            final K key = (K) it.next();
+        for (final K key : map.keySet()) {
             final V value = map.get(key);
             lsFutures.add(es.submit(new Runnable() {
                 public void run() {

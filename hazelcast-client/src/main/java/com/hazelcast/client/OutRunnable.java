@@ -42,28 +42,31 @@ public class OutRunnable extends IORunnable {
     }
 
     protected void customRun() throws InterruptedException {
-        Call call = null;
+        Call call = queue.poll(100, TimeUnit.MILLISECONDS);
         try {
-            call = queue.poll(100, TimeUnit.MILLISECONDS);
-            if (call == null) {
-                return;
+            if (call == null) return;
+            int count = 0;
+            while (call != null) {
+                counter.incrementAndGet();
+                callMap.put(call.getId(), call);
+                Connection oldConnection = connection;
+                connection = client.getConnectionManager().getConnection();
+                if (restoredConnection(oldConnection, connection)) {
+                    redoUnfinishedCalls(call, oldConnection);
+                } else if (connection != null) {
+                    logger.log(Level.FINEST, "Sending: " + call);
+                    writer.write(connection, call.getRequest());
+                } else {
+                    interruptWaitingCalls();
+                }
+                call = null;
+                if (count++ < 24) {
+                    call = queue.poll();
+                }
             }
-            counter.incrementAndGet();
-            callMap.put(call.getId(), call);
-            Connection oldConnection = connection;
-            connection = client.getConnectionManager().getConnection();
-            if (restoredConnection(oldConnection, connection)) {
-                redoUnfinishedCalls(call, oldConnection);
-            } else if (connection != null) {
-                logger.log(Level.FINEST, "Sending: " + call);
-                writer.write(connection, call.getRequest());
-            } else {
-                interruptWaitingCalls();
-            }
-        } catch (InterruptedException e) {
-            throw e;
+            writer.flush(connection);
         } catch (Throwable io) {
-            logger.log(Level.FINE, "OutRunnable got an exception:" + io.getMessage());
+            logger.log(Level.FINE, "OutRunnable got exception:" + io.getMessage());
             io.printStackTrace();
             enQueue(call);
             client.getConnectionManager().destroyConnection(connection);
@@ -80,7 +83,7 @@ public class OutRunnable extends IORunnable {
 
     public void enQueue(Call call) {
         try {
-            logger.log(Level.FINEST, "Enquing: " + call);
+            logger.log(Level.FINEST, "Enqueue: " + call);
             queue.put(call);
         } catch (InterruptedException e) {
             e.printStackTrace();
