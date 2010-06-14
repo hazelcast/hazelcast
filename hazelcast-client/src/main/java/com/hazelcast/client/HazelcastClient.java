@@ -80,7 +80,7 @@ public class HazelcastClient implements HazelcastInstance {
         };
         executor = Executors.newCachedThreadPool(threadFactory);
         parallelExecutorService = new ParallelExecutorService(executor);
-        parallelExecutorDefault = parallelExecutorService.newParallelExecutor(40);        
+        parallelExecutorDefault = parallelExecutorService.newParallelExecutor(10);
         if (automatic) {
             this.connectionManager = new ConnectionManager(this, clusterMembers[0]);
         } else {
@@ -274,6 +274,11 @@ public class HazelcastClient implements HazelcastInstance {
             long time = System.currentTimeMillis() - begin;
             logger.log(Level.FINE, "HazelcastClient shutdown completed in " + time + " ms.");
             shutdownInProgress = false;
+            executor.shutdownNow();
+            try {
+                executor.awaitTermination(5, TimeUnit.SECONDS);
+            } catch (InterruptedException ignore) {
+            }
         }
     }
 
@@ -350,10 +355,5 @@ public class HazelcastClient implements HazelcastInstance {
 
     protected void destroy(String proxyName) {
         mapProxies.remove(proxyName);
-        executor.shutdownNow();
-        try {
-            executor.awaitTermination(5, TimeUnit.SECONDS);
-        } catch (InterruptedException ignore) {
-        }
     }
 }
