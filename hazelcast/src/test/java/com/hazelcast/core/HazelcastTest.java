@@ -320,7 +320,7 @@ public class HazelcastTest {
         m1.put(1, 1);
         assertEquals(1, m1.get(1));
         assertEquals(1, m1.get(1));
-        Thread.sleep(3000);
+        Thread.sleep(4000);
         assertEquals(null, m1.get(1));
         m1.put(1, 1);
         assertEquals(1, m1.get(1));
