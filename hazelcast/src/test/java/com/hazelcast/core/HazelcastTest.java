@@ -17,6 +17,9 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.XmlConfigBuilder;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -302,6 +305,25 @@ public class HazelcastTest {
         assertEquals(true, map.containsKey("key"));
         Thread.sleep(500);
         assertEquals(false, map.containsKey("key"));
+    }
+
+    @Test
+    public void testIssue290() throws Exception {
+        String mapName = "testIssue290";
+        Config config = new XmlConfigBuilder().build();
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setName(mapName);
+        mapConfig.setTimeToLiveSeconds(3);
+        config.getMapConfigs().put(mapName, mapConfig);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap<Object, Object> m1 = h1.getMap(mapName);
+        m1.put(1, 1);
+        assertEquals(1, m1.get(1));
+        assertEquals(1, m1.get(1));
+        Thread.sleep(3000);
+        assertEquals(null, m1.get(1));
+        m1.put(1, 1);
+        assertEquals(1, m1.get(1));
     }
 
     @Test

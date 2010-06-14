@@ -1323,9 +1323,11 @@ public class CMap {
     }
 
     void markAsActive(Record record) {
-        if (!record.isActive()) {
+        long now = System.currentTimeMillis();
+        if (!record.isActive() || !record.isValid(now)) {
             record.setActive();
-            record.setCreationTime(System.currentTimeMillis());
+            record.setCreationTime(now);
+            record.setExpirationTime(ttl);
         }
     }
 

@@ -202,6 +202,11 @@ public class ExecutorManager extends BaseManager {
         for (NamedExecutorService namedExecutorService : executors) {
             namedExecutorService.stop();
         }
+        threadPoolExecutor.shutdownNow();
+        try {
+            threadPoolExecutor.awaitTermination(3, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+        }
         started = false;
     }
 

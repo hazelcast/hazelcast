@@ -89,7 +89,7 @@ public class PartitionServiceImpl implements PartitionService {
                         memberOwner = concurrentMapManager.getMember(block.getOwner());
                     }
                 }
-                responseQ.offer(new PartitionReal(block.getBlockId(), memberOwner, null));
+                responseQ.offer(new PartitionReal(partitionId, memberOwner, null));
             }
         });
         partition = new PartitionProxy(partitionId);
@@ -149,19 +149,35 @@ public class PartitionServiceImpl implements PartitionService {
         }
 
         public Member getOwner() {
-            return mapRealPartitions.get(partitionId).getOwner();
+            PartitionReal partitionReal = mapRealPartitions.get(partitionId);
+            if (partitionReal == null) {
+                return null;
+            } else {
+                return partitionReal.getOwner();
+            }
         }
 
         public boolean isMigrating() {
-            return mapRealPartitions.get(partitionId).isMigrating();
+            PartitionReal partitionReal = mapRealPartitions.get(partitionId);
+            return partitionReal != null && partitionReal.isMigrating();
         }
 
         public Member getEventualOwner() {
-            return mapRealPartitions.get(partitionId).getEventualOwner();
+            PartitionReal partitionReal = mapRealPartitions.get(partitionId);
+            if (partitionReal == null) {
+                return null;
+            } else {
+                return partitionReal.getEventualOwner();
+            }
         }
 
         public Member getMigrationMember() {
-            return mapRealPartitions.get(partitionId).getMigrationMember();
+            PartitionReal partitionReal = mapRealPartitions.get(partitionId);
+            if (partitionReal == null) {
+                return null;
+            } else {
+                return partitionReal.getMigrationMember();
+            }
         }
 
         public int compareTo(Object o) {
