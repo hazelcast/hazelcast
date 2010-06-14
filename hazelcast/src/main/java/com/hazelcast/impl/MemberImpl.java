@@ -35,7 +35,6 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     protected NodeType nodeType;
     protected transient long lastRead = 0;
     protected transient long lastWrite = 0;
-    protected transient long connectionTimeoutMillis = 0;
 
     public MemberImpl() {
     }

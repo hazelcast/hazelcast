@@ -164,6 +164,7 @@ public class ExecutorServiceProxy implements ExecutorService {
 
     public <T> Future<T> submit(Runnable task, T result) {
         if (!active) throw new RejectedExecutionException("ExecutorService[" + name + "] is not active");
+        ThreadContext.get().setCurrentFactory(node.factory);
         DistributedTask dtask;
         if (task instanceof DistributedTask) {
             dtask = (DistributedTask) task;
