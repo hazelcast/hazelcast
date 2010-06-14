@@ -1124,9 +1124,13 @@ public abstract class BaseManager {
         if (eventKey != null) {
             hash = eventKey.hashCode();
         } else {
-            hash = from.hashCode();
+            hash = hashTwo(from.hashCode(), name.hashCode());
         }
         node.executorManager.getEventExecutorService().executeOrderedRunnable(hash, eventTask);
+    }
+
+    static int hashTwo(int hash1, int hash2) {
+        return hash1 * 29 + hash2;
     }
 
     class EventTask extends EntryEvent implements Runnable {

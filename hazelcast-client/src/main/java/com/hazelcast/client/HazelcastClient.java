@@ -20,6 +20,8 @@ package com.hazelcast.client;
 import com.hazelcast.client.impl.ListenerManager;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.impl.executor.ParallelExecutor;
+import com.hazelcast.impl.executor.ParallelExecutorService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
@@ -54,7 +56,9 @@ public class HazelcastClient implements HazelcastInstance {
     final ClusterClientProxy clusterClientProxy;
     final PartitionClientProxy partitionClientProxy;
     final String groupName;
-    final ThreadPoolExecutor executor;
+    final ExecutorService executor;
+    final ParallelExecutorService parallelExecutorService;
+    final ParallelExecutor parallelExecutorDefault;
     final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
     private volatile boolean shutdownInProgress = false;
 
@@ -64,7 +68,7 @@ public class HazelcastClient implements HazelcastInstance {
             final AtomicInteger atomicInteger = new AtomicInteger();
 
             public Thread newThread(Runnable r) {
-                Thread t = new Thread(HazelcastClient.this.groupName + "thread_" + atomicInteger.incrementAndGet());
+                Thread t = new Thread(r, "hz.client." + HazelcastClient.this.groupName + "_cached_thread_" + atomicInteger.incrementAndGet());
                 if (t.isDaemon()) {
                     t.setDaemon(false);
                 }
@@ -74,10 +78,9 @@ public class HazelcastClient implements HazelcastInstance {
                 return t;
             }
         };
-        executor = new ThreadPoolExecutor(0, 20,
-                60L, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>(),
-                threadFactory);
+        executor = Executors.newCachedThreadPool(threadFactory);
+        parallelExecutorService = new ParallelExecutorService(executor);
+        parallelExecutorDefault = parallelExecutorService.newParallelExecutor(40);        
         if (automatic) {
             this.connectionManager = new ConnectionManager(this, clusterMembers[0]);
         } else {
@@ -106,6 +109,10 @@ public class HazelcastClient implements HazelcastInstance {
             this.getCluster().addMembershipListener(connectionManager);
             connectionManager.updateMembers();
         }
+    }
+
+    public ParallelExecutor getDefaultParallelExecutor() {
+        return parallelExecutorDefault;
     }
 
     public OutRunnable getOutRunnable() {
@@ -343,5 +350,10 @@ public class HazelcastClient implements HazelcastInstance {
 
     protected void destroy(String proxyName) {
         mapProxies.remove(proxyName);
+        executor.shutdownNow();
+        try {
+            executor.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException ignore) {
+        }
     }
 }

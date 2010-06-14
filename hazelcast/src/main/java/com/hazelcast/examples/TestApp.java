@@ -285,6 +285,10 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleMapReplace(args);
         } else if (first.equalsIgnoreCase("m.putIfAbsent")) {
             handleMapPutIfAbsent(args);
+        } else if (first.equals("m.putAsync")) {
+            handleMapPutAsync(args);
+        } else if (first.equals("m.getAsync")) {
+            handleMapGetAsync(args);
         } else if (first.equals("m.put")) {
             handleMapPut(args);
         } else if (first.equals("m.get")) {
@@ -401,6 +405,15 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     private void handleMapPut(String[] args) {
         print(map.put(args[1], args[2]));
     }
+    private void handleMapPutAsync(String[] args) {
+        try {
+            print(map.putAsync(args[1], args[2]).get());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
 
     private void handleMapPutIfAbsent(String[] args) {
         print(map.putIfAbsent(args[1], args[2]));
@@ -412,6 +425,17 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private void handleMapGet(String[] args) {
         print(map.get(args[1]));
+    }
+
+
+    private void handleMapGetAsync(String[] args) {
+        try {
+            print(map.getAsync(args[1]).get());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
     }
 
     private void handleMapGetMapEntry(String[] args) {

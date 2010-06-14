@@ -26,6 +26,7 @@ import com.hazelcast.query.Predicate;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.EventListener;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -86,8 +87,12 @@ public class ProxyHelper {
     private Packet createRequestPacket() {
         Packet request = new Packet();
         request.setName(name);
-        request.setThreadId((int) Thread.currentThread().getId());
+        request.setThreadId(getCurrentThreadId());
         return request;
+    }
+
+    public int getCurrentThreadId() {
+        return (int) Thread.currentThread().getId();
     }
 
     public Packet createRequestPacket(ClusterOperation operation, byte[] key, byte[] value) {
@@ -96,6 +101,21 @@ public class ProxyHelper {
         request.setKey(key);
         request.setValue(value);
         return request;
+    }
+
+    <V> Future<V> doAsync(final ClusterOperation operation, final Object key, final Object value) {
+        final int threadId = getCurrentThreadId();
+        AsyncClientCall<V> call = new AsyncClientCall<V>() {
+            @Override
+            protected void call() {
+                Packet request = prepareRequest(operation, key, value);
+                request.setThreadId(threadId);
+                Packet response = callAndGetResult(request);
+                setResult(getValue(response));
+            }
+        };
+        client.getDefaultParallelExecutor().execute(call);
+        return call;
     }
 
     protected Object doOp(ClusterOperation operation, Object key, Object value) {
@@ -114,8 +134,7 @@ public class ProxyHelper {
         if (value != null) {
             v = toByte(value);
         }
-        Packet request = createRequestPacket(operation, k, v);
-        return request;
+        return createRequestPacket(operation, k, v);
     }
 
     protected Object getValue(Packet response) {

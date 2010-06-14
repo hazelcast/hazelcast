@@ -920,6 +920,9 @@ public class CMap {
             req.value = new Data();
         }
         Record record = getRecord(req.key);
+        if (record != null && !record.isValid(now)) {
+            markAsRemoved(record);
+        }
         if (req.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
             if (record != null && record.isActive() && record.isValid(now) && record.getValue() != null) {
                 req.clearForResponse();
@@ -975,6 +978,7 @@ public class CMap {
         if (req.txnId != -1) {
             unlock(record);
         }
+
         record.setIndexes(req.indexes, req.indexTypes);
         updateStats(op, record, true, oldValue);
         updateIndexes(record);

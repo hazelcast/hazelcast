@@ -26,8 +26,6 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
 
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -41,14 +39,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     public MapClientProxy(HazelcastClient client, String name) {
         this.name = name;
         this.proxyHelper = new ProxyHelper(name, client);
-    }
-
-    public Future<V> getAsync(K key) {
-        throw new UnsupportedOperationException();
-    }
-
-    public Future<V> putAsync(K key, V value) {
-        throw new UnsupportedOperationException();
     }
 
     public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
@@ -101,14 +91,12 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         if (cMapEntry == null) {
             return null;
         }
-        MapEntry<K, V> mapEntry = new ClientMapEntry(cMapEntry, key, this);
-        return mapEntry;
+        return new ClientMapEntry(cMapEntry, key, this);
     }
 
     public Set<K> keySet(Predicate predicate) {
         final Collection<K> collection = proxyHelper.keys(predicate);
-        LightKeySet<K> set = new LightKeySet<K>(this, new HashSet<K>(collection));
-        return set;
+        return new LightKeySet<K>(this, new HashSet<K>(collection));
     }
 
     public boolean lockMap(long time, TimeUnit timeunit) {
@@ -229,6 +217,17 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         return keySet(null);
     }
 
+    public Future<V> getAsync(K key) {
+        check(key); 
+        return proxyHelper.doAsync(ClusterOperation.CONCURRENT_MAP_GET, key, null);
+    }
+
+    public Future<V> putAsync(K key, V value) {
+        check(key);
+        check(value);
+        return proxyHelper.doAsync(ClusterOperation.CONCURRENT_MAP_PUT, key, value);
+    }
+
     public V put(K key, V value) {
         check(key);
         check(value);
@@ -244,15 +243,10 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public void putAll(final Map<? extends K, ? extends V> map) {
-        ExecutorService es = Executors.newFixedThreadPool(20);
-        List<Future> lsFutures = new ArrayList(map.size());
+        List<Future> lsFutures = new ArrayList<Future>(map.size());
         for (final K key : map.keySet()) {
             final V value = map.get(key);
-            lsFutures.add(es.submit(new Runnable() {
-                public void run() {
-                    put(key, value);
-                }
-            }));
+            lsFutures.add(putAsync(key, value));
         }
         for (Future future : lsFutures) {
             try {
@@ -261,7 +255,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
                 e.printStackTrace();
             }
         }
-        es.shutdown();
     }
 
     public V remove(Object arg0) {
