@@ -62,6 +62,34 @@ public class ExecutorServiceTest {
         }
     }
 
+    public static class MemberCheck implements Callable<Member>, Serializable {
+        public Member call() throws Exception {
+            return Hazelcast.getCluster().getLocalMember();
+        }
+    }
+
+    @Test
+    public void testIssue292() throws Exception {
+        final BlockingQueue qResponse = new ArrayBlockingQueue(1);
+        Hazelcast.getDefaultInstance();//instance creation
+        Thread thread = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    DistributedTask<Member> dtask = new DistributedTask<Member>(new MemberCheck());
+                    Hazelcast.getExecutorService().submit(dtask);//instance usage
+                    Member member = dtask.get();
+                    qResponse.offer(member);
+                } catch (Exception e) {
+                    qResponse.offer(e);
+                }
+            }
+        });
+        thread.start();
+        Object response = qResponse.poll(10, TimeUnit.SECONDS);
+        assertNotNull(response);
+        assertTrue(response instanceof Member);
+    }
+
     /**
      * Submit a null task must raise a NullPointerException
      */
@@ -136,7 +164,7 @@ public class ExecutorServiceTest {
      * something else inside. Nested Execution.
      */
     @Test(timeout = 10000)
-    public void testNestedExecution() throws Exception{
+    public void testNestedExecution() throws Exception {
         Callable<String> task = new NestedExecutorTask();
         ExecutorService executor = Hazelcast.getExecutorService();
         Future future = executor.submit(task);
