@@ -38,11 +38,11 @@ public class ValueCollectionTest {
     @Test
     public void testContainsAll() {
         EntryHolder entryHolder = mock(EntryHolder.class);
-        when(entryHolder.containsValue("1")).thenReturn(true);
-        when(entryHolder.containsValue("2")).thenReturn(true);
-        when(entryHolder.containsValue("3")).thenReturn(true);
-        Set set = new HashSet();
-        ValueCollection valueCollection = new ValueCollection(entryHolder, set);
+        Map map = new HashMap();
+        map.put("1", "1");
+        map.put("2", "2");
+        map.put("3", "3");
+        ValueCollection valueCollection = new ValueCollection(entryHolder, map.entrySet());
         Collection c = new ArrayList();
         c.add("1");
         c.add("2");
@@ -54,9 +54,9 @@ public class ValueCollectionTest {
     @Test
     public void testContains() {
         EntryHolder entryHolder = mock(EntryHolder.class);
-        when(entryHolder.containsValue("1")).thenReturn(true);
-        Set set = new HashSet();
-        ValueCollection valueCollection = new ValueCollection(entryHolder, set);
+        Map map = new HashMap();
+        map.put("1", "1");
+        ValueCollection valueCollection = new ValueCollection(entryHolder, map.entrySet());
         boolean result = valueCollection.contains("1");
         assertTrue(result);
     }
@@ -78,8 +78,8 @@ public class ValueCollectionTest {
     @Test
     public void testNotEmpty() {
         EntryHolder entryHolder = mock(EntryHolder.class);
-        when(entryHolder.size()).thenReturn(1);
         Map map = new HashMap();
+        map.put("1", "value");
         ValueCollection valueCollection = new ValueCollection(entryHolder, map.entrySet());
         assertFalse(valueCollection.isEmpty());
     }
