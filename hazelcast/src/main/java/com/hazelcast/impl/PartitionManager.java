@@ -302,7 +302,9 @@ public class PartitionManager implements Runnable {
             for (Block blockReal : blocks) {
                 if (blockReal != null && !blockReal.isMigrating()) {
                     List<Block> ownedBlocks = addressBlocks.get(blockReal.getOwner());
-                    ownedBlocks.add(new Block(blockReal));
+                    if (ownedBlocks != null) {
+                        ownedBlocks.add(new Block(blockReal));
+                    }
                 }
             }
         }
