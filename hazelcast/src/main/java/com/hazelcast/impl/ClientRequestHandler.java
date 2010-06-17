@@ -38,9 +38,17 @@ public class ClientRequestHandler implements Runnable {
         ThreadContext.get().setCallContext(callContext);
         ClientOperationHandler clientOperationHandler = clientOperationHandlers[packet.operation.getValue()];
         if (clientOperationHandler != null) {
-            clientOperationHandler.handle(node, packet);
+            try {
+                clientOperationHandler.handle(node, packet);
+            } catch (Throwable e) {
+                if (node.isActive()) {
+                    throw (RuntimeException) e;
+                }
+            }
         } else {
-            throw new RuntimeException("Unknown Client Operation, can not handle " + packet.operation);
+            if (node.isActive()) {
+                throw new RuntimeException("Unknown Client Operation, can not handle " + packet.operation);
+            }
         }
     }
 }

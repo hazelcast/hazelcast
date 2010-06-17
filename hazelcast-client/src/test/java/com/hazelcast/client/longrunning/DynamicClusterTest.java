@@ -647,7 +647,7 @@ public class DynamicClusterTest {
     }
 
     @Test(expected = ExecutionException.class)
-    public void shouldThrowExExcptnWhenCallableThrowsException() throws ExecutionException, InterruptedException {
+    public void shouldThrowExceptionWhenCallableThrowsException() throws ExecutionException, InterruptedException {
         HazelcastInstance h1 = null;
         try {
             h1 = Hazelcast.newHazelcastInstance(config);
@@ -659,11 +659,34 @@ public class DynamicClusterTest {
             Collection<String> result = null;
             result = task.get();
             assertEquals(members.size(), result.size());
-        } catch (ExecutionException e) {
-            throw e;
         } finally {
             h1.shutdown();
         }
+    }
+
+    @Test
+    public void testClientHangOnShutdown() throws Exception {
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+        final HazelcastClient client = getHazelcastClient(h);
+        final IMap map = client.getMap("default");
+        map.lock("1");
+        final CountDownLatch l1 = new CountDownLatch(1);
+        final CountDownLatch l2 = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            public void run() {
+                l1.countDown();
+                try {
+                    map.lock ("1");
+                    fail("Should not lock!!");
+                } catch (Exception e) {
+                    l2.countDown();
+                }
+            }
+        }).start();
+        l1.await(10, TimeUnit.SECONDS);
+        Thread.sleep(5000);
+        h.shutdown();
+        assertTrue(l2.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -729,7 +752,6 @@ public class DynamicClusterTest {
     @AfterClass
     @BeforeClass
     public static void shutdownAll() {
-        System.out.println("Before and After Class");
         shutdownHazelcastClient();
         Hazelcast.shutdownAll();
         TestUtility.client = null;
