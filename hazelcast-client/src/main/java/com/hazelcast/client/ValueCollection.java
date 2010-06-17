@@ -42,12 +42,17 @@ public class ValueCollection<K, V> implements Collection<V> {
     }
 
     public boolean contains(Object arg0) {
-        return proxy.containsValue(arg0);
+        for (Entry<K, V> anEntrySet : entrySet) {
+            Object object = anEntrySet.getValue();
+            if (object.equals(arg0)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean containsAll(Collection<?> arg0) {
-        for (Iterator<?> iterator = arg0.iterator(); iterator.hasNext();) {
-            Object object = iterator.next();
+        for (Object object : arg0) {
             if (!contains(object)) {
                 return false;
             }
@@ -56,7 +61,7 @@ public class ValueCollection<K, V> implements Collection<V> {
     }
 
     public boolean isEmpty() {
-        return proxy.size() == 0;
+        return entrySet.size() == 0;
     }
 
     public Iterator<V> iterator() {
@@ -76,13 +81,12 @@ public class ValueCollection<K, V> implements Collection<V> {
     }
 
     public int size() {
-        return proxy.size();
+        return entrySet.size();
     }
 
     public Object[] toArray() {
         List<V> list = new ArrayList<V>();
-        for (Iterator<Entry<K, V>> iterator = entrySet.iterator(); iterator.hasNext();) {
-            Entry<K, V> entry = iterator.next();
+        for (Entry<K, V> entry : entrySet) {
             list.add(entry.getValue());
         }
         return list.toArray();
