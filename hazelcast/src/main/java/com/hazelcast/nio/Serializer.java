@@ -24,6 +24,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import java.io.*;
+import java.lang.reflect.Constructor;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.logging.Level;
@@ -81,6 +82,12 @@ public final class Serializer {
 
     public static Class<?> classForName(String className) throws ClassNotFoundException {
         return classForName(null, className);
+    }
+
+    public static Object newInstance(Class klass) throws Exception {
+        Constructor<?> constructor = klass.getDeclaredConstructor();
+        if (!constructor.isAccessible()) constructor.setAccessible(true);
+        return constructor.newInstance();
     }
 
     public static Class<?> classForName(ClassLoader classLoader, String className) throws ClassNotFoundException {
@@ -275,7 +282,7 @@ public final class Serializer {
         public DataSerializable read(FastByteArrayInputStream bbis) throws Exception {
             String className = bbis.readUTF();
             try {
-                DataSerializable ds = (DataSerializable) classForName(className).newInstance();
+                DataSerializable ds = (DataSerializable) newInstance(classForName(className));
                 ds.readData(bbis);
                 return ds;
             } catch (Exception e) {

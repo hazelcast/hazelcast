@@ -18,6 +18,7 @@
 package com.hazelcast.nio;
 
 import java.io.*;
+import java.lang.reflect.Constructor;
 import java.util.Date;
 
 public class SerializationHelper {
@@ -80,7 +81,8 @@ public class SerializationHelper {
         } else if (type == 7) {
             DataSerializable ds;
             try {
-                ds = (DataSerializable) Serializer.classForName(in.readUTF()).newInstance();
+                String className = in.readUTF();
+                ds = (DataSerializable) Serializer.newInstance(Serializer.classForName(className));
             } catch (Throwable e) {
                 throw new IOException(e.getMessage());
             }
