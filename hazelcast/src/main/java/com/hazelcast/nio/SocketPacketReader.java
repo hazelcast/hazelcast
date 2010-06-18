@@ -70,8 +70,10 @@ class SocketPacketReader implements SocketReader {
         p.read();
         p.setFromConnection(connection);
         if (p.client) {
+            connection.setType(Connection.Type.JAVA_CLIENT);
             node.clientService.handle(p);
         } else {
+            connection.setType(Connection.Type.MEMBER);
             node.clusterService.enqueuePacket(p);
         }
     }

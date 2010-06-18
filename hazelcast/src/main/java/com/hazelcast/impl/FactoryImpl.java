@@ -306,13 +306,13 @@ public class FactoryImpl implements HazelcastInstance {
     public FactoryImpl(String name, Config config) {
         this.name = name;
         node = new Node(this, config);
+        globalProxies = new MProxyImpl("c:__hz_Proxies", this);
         final ILogger logger = node.getLogger(FactoryImpl.class.getName());
         transactionFactory = new TransactionFactory(this);
         hazelcastInstanceProxy = new HazelcastInstanceProxy(this);
-        node.start();
         locksMapProxy = new MProxyImpl("c:__hz_Locks", this);
         idGeneratorMapProxy = new MProxyImpl("c:__hz_IdGenerator", this);
-        globalProxies = new MProxyImpl("c:__hz_Proxies", this);
+        node.start();
         globalProxies.addEntryListener(new EntryListener() {
             public void entryAdded(EntryEvent event) {
                 final ProxyKey proxyKey = (ProxyKey) event.getKey();

@@ -1795,62 +1795,27 @@ public class ClusterTest {
     }
 
     @Test
-    public void testStatsWithTTL() throws InterruptedException {
-        Config conf = new Config();
-        MapConfig config = conf.getMapConfig("default");
-        config.setTimeToLiveSeconds(5);
-//        config.setMaxSize(1000);
-//        config.setEvictionPolicy("LRU");
-        final HazelcastInstance h = Hazelcast.newHazelcastInstance(conf);
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(conf);
-        final IMap<Integer, Double> map1 = h.getMap("default");
-        final AtomicBoolean end = new AtomicBoolean(false);
-        new Thread(new Runnable() {
-            public void run() {
-                while (!end.get()) {
-                    map1.put((int) (Math.random() * 10000), Math.random());
-                }
-            }
-        }).start();
-        while (true) {
-            final IMap<Integer, Double> map2 = h2.getMap("default");
-            System.out.println("Size" + map1.size());
-            System.out.println("Owned Entry Count" + map1.getLocalMapStats().getOwnedEntryCount());
-            System.out.println("Backup Entry Count" + map2.getLocalMapStats().getBackupEntryCount());
-            sleep(100);
-        }
-    }
-
-    @Test
     public void testMemberFiredTheEventIsLocal() throws InterruptedException {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         IMap map = h1.getMap("default");
-//        for (int i = 0; i < 1000; i++) {
-//            map.put(i, i);
-//        }
-//        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         final CountDownLatch latch = new CountDownLatch(1);
         map.addEntryListener(new EntryListener() {
             public void entryAdded(EntryEvent entryEvent) {
-                System.out.println("I got " + entryEvent.getMember());
                 if (entryEvent.getMember().localMember()) {
                     latch.countDown();
                 }
             }
 
             public void entryRemoved(EntryEvent entryEvent) {
-                //To change body of implemented methods use File | Settings | File Templates.
             }
 
             public void entryUpdated(EntryEvent entryEvent) {
             }
 
             public void entryEvicted(EntryEvent entryEvent) {
-                //To change body of implemented methods use File | Settings | File Templates.
             }
         }, false);
-        map.put(100000, 1);
-        System.out.println(h1.getPartitionService().getPartitions().toString());
+        map.put(1, 1);
         boolean isLocal = latch.await(3, TimeUnit.SECONDS);
         assertTrue("localMember() on member that fired event should return true, but was false", isLocal);
     }

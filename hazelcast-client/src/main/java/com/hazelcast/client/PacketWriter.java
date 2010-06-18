@@ -27,17 +27,21 @@ public class PacketWriter extends PacketHandler {
     }
 
     public void write(Connection connection, Packet request) throws IOException {
-        if (!connection.headersWritten) {
-            connection.getOutputStream().write("HZC".getBytes());
-            connection.headersWritten = true;
-            connection.getOutputStream().flush();
+        if (connection != null) {
+            if (!connection.headersWritten) {
+                connection.getOutputStream().write("HZC".getBytes());
+                connection.headersWritten = true;
+                connection.getOutputStream().flush();
+            }
+            DataOutputStream dos = connection.getOutputStream();
+            request.writeTo(dos);
         }
-        DataOutputStream dos = connection.getOutputStream();
-        request.writeTo(dos);
     }
 
     public void flush(Connection connection) throws IOException {
-        DataOutputStream dos = connection.getOutputStream();
-        dos.flush();
+        if (connection != null) {
+            DataOutputStream dos = connection.getOutputStream();
+            dos.flush();
+        }
     }
 }

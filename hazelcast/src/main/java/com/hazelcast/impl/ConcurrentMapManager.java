@@ -1099,25 +1099,7 @@ public class ConcurrentMapManager extends BaseManager {
         if (cmap == null) {
             return new LocalMapStatsImpl();
         }
-        int tryCount = 0;
-        while (tryCount++ < 10 && partitionManager.partitionServiceImpl.isMigrating()) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        final BlockingQueue responseQ = ResponseQueueFactory.newResponseQueue();
-        enqueueAndReturn(new Processable() {
-            public void process() {
-                responseQ.offer(cmap.getLocalMapStats());
-            }
-        });
-        try {
-            return (LocalMapStatsImpl) responseQ.take();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        return cmap.getLocalMapStats();
     }
 
     public class MIterateLocal extends MGetEntries {

@@ -34,13 +34,16 @@ public class Connection {
 
     private volatile boolean live = true;
 
-    private volatile Type type = Type.MEMBER;
+    private volatile Type type = Type.NONE;
 
     Address endPoint = null;
 
     private final ILogger logger;
 
-    public Connection(ConnectionManager connectionManager, SocketChannel socketChannel) {
+    private final int connectionId;
+
+    public Connection(ConnectionManager connectionManager, int connectionId, SocketChannel socketChannel) {
+        this.connectionId = connectionId;
         this.logger = connectionManager.node.getLogger(Connection.class.getName());
         this.connectionManager = connectionManager;
         this.socketChannel = socketChannel;
@@ -48,7 +51,12 @@ public class Connection {
         this.readHandler = new ReadHandler(this);
     }
 
+    public Type getType() {
+        return type;
+    }
+
     public enum Type {
+        NONE(false, false),
         MEMBER(true, true),
         JAVA_CLIENT(false, true),
         REST_CLIENT(false, false),
@@ -71,12 +79,14 @@ public class Connection {
         }
     }
 
-    public boolean isTextConnection() {
-        return (type != null) && !type.isBinary();
+    public boolean isClient() {
+        return (type != null) && type != Type.NONE && type.isClient();
     }
 
-    public void setType (Type type) {
-        this.type = type;
+    public void setType(Type type) {
+        if (this.type == Type.NONE) {
+            this.type = type;
+        }
     }
 
     public SocketChannel getSocketChannel() {
@@ -108,28 +118,16 @@ public class Connection {
     }
 
     @Override
-    public int hashCode() {
-        final int PRIME = 31;
-        int result = 1;
-        result = PRIME * result + ((endPoint == null) ? 0 : endPoint.hashCode());
-        return result;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Connection that = (Connection) o;
+        return connectionId == that.connectionId;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        final Connection other = (Connection) obj;
-        if (endPoint == null) {
-            if (other.endPoint != null)
-                return false;
-        } else if (!endPoint.equals(other.endPoint))
-            return false;
-        return true;
+    public int hashCode() {
+        return connectionId;
     }
 
     public void close() {
@@ -155,6 +153,4 @@ public class Connection {
     public String toString() {
         return "Connection [" + this.endPoint + "] live=" + live;
     }
-
-
 }

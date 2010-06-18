@@ -443,20 +443,27 @@ public class CMap {
     }
 
     public LocalMapStatsImpl getLocalMapStats() {
-        ClusterImpl clusterImpl = node.getClusterImpl();
         LocalMapStatsImpl stats = new LocalMapStatsImpl();
-        stats.setLockWaitCount(localMapStats.getLockWaitCount());
-        stats.setLockedEntryCount(localMapStats.getLockedEntryCount());
-        stats.setHits(localMapStats.getHits());
-        stats.setOwnedEntryCount(localMapStats.getOwnedEntryCount());
-        stats.setBackupEntryCount(localMapStats.getBackupEntryCount());
-        stats.setOwnedEntryMemoryCost(localMapStats.getOwnedEntryMemoryCost());
-        stats.setBackupEntryMemoryCost(localMapStats.getBackupEntryMemoryCost());
-        stats.setLastEvictionTime(clusterImpl.getClusterTimeFor(lastEvictionTime));
-        stats.setCreationTime(clusterImpl.getClusterTimeFor(creationTime));
-        stats.setLastAccessTime(clusterImpl.getClusterTimeFor(localMapStats.getLastAccessTime()));
-        stats.setLastUpdateTime(clusterImpl.getClusterTimeFor(localMapStats.getLastUpdateTime()));
+        createStats(stats);
         return stats;
+//        if (maxIdle > 0 || ttl > 0 || ttlPerRecord || isList() || isMultiMap()) {
+//            createStats(stats);
+//        } else {
+//            ClusterImpl clusterImpl = node.getClusterImpl();
+//
+//            stats.setLockWaitCount(localMapStats.getLockWaitCount());
+//            stats.setLockedEntryCount(localMapStats.getLockedEntryCount());
+//            stats.setHits(localMapStats.getHits());
+//            stats.setOwnedEntryCount(localMapStats.getOwnedEntryCount());
+//            stats.setBackupEntryCount(localMapStats.getBackupEntryCount());
+//            stats.setOwnedEntryMemoryCost(localMapStats.getOwnedEntryMemoryCost());
+//            stats.setBackupEntryMemoryCost(localMapStats.getBackupEntryMemoryCost());
+//            stats.setLastEvictionTime(clusterImpl.getClusterTimeFor(lastEvictionTime));
+//            stats.setCreationTime(clusterImpl.getClusterTimeFor(creationTime));
+//            stats.setLastAccessTime(clusterImpl.getClusterTimeFor(localMapStats.getLastAccessTime()));
+//            stats.setLastUpdateTime(clusterImpl.getClusterTimeFor(localMapStats.getLastUpdateTime()));
+//        }
+//        return stats;
     }
 
     void resetLocalMapStats(Map<Address, Integer> distances) {
@@ -472,13 +479,13 @@ public class CMap {
         int lockWaitCount = 0;
         ClusterImpl clusterImpl = node.getClusterImpl();
         for (Record record : mapRecords.values()) {
-            if (!record.isActive() || !record.isValid(now)) {
-                markedAsRemovedEntryCount++;
-                markedAsRemovedMemoryCost += record.getCost();
-            } else {
-                Block block = concurrentMapManager.getOrCreateBlock(record.getBlockId());
-                boolean owned = thisAddress.equals(block.getOwner());
-                if (owned) {
+            Block block = concurrentMapManager.getOrCreateBlock(record.getBlockId());
+            boolean owned = thisAddress.equals(block.getOwner());
+            if (owned) {
+                if (!record.isActive() || !record.isValid(now)) {
+                    markedAsRemovedEntryCount++;
+                    markedAsRemovedMemoryCost += record.getCost();
+                } else {
                     ownedEntryCount += record.valueCount();
                     ownedEntryMemoryCost += record.getCost();
                     localMapStats.setLastAccessTime(record.getLastAccessTime());
@@ -488,74 +495,26 @@ public class CMap {
                         lockedEntryCount++;
                         lockWaitCount += record.getScheduledActionCount();
                     }
-                } else {
-                    boolean unknown = false;
-                    Address eventualOwner = (block.isMigrating()) ? block.getMigrationAddress() : block.getOwner();
-                    if (!thisAddress.equals(eventualOwner)) {
-                        Integer distance = distances.get(eventualOwner);
-                        if (distance != null && distance > getBackupCount()) {
-                            unknown = true;
-                        }
-                    }
-                    if (unknown) {
-                        markedAsRemovedEntryCount++;
-                        markedAsRemovedMemoryCost += record.getCost();
-                        markAsRemoved(record);
-                    } else {
-                        backupEntryCount += record.valueCount();
-                        backupEntryMemoryCost += record.getCost();
-                    }
                 }
-            }
-        }
-        localMapStats.setMarkedAsRemovedEntryCount(markedAsRemovedEntryCount);
-        localMapStats.setMarkedAsRemovedMemoryCost(markedAsRemovedMemoryCost);
-        localMapStats.setLockWaitCount(lockWaitCount);
-        localMapStats.setLockedEntryCount(lockedEntryCount);
-        localMapStats.setHits(hits);
-        localMapStats.setOwnedEntryCount(ownedEntryCount);
-        localMapStats.setBackupEntryCount(backupEntryCount);
-        localMapStats.setOwnedEntryMemoryCost(ownedEntryMemoryCost);
-        localMapStats.setBackupEntryMemoryCost(backupEntryMemoryCost);
-        localMapStats.setLastEvictionTime(clusterImpl.getClusterTimeFor(lastEvictionTime));
-        localMapStats.setCreationTime(clusterImpl.getClusterTimeFor(creationTime));
-    }
-
-    public LocalMapStatsImpl createLocalMapStats() {
-        long now = System.currentTimeMillis();
-        int ownedEntryCount = 0;
-        int backupEntryCount = 0;
-        int markedAsRemovedEntryCount = 0;
-        int ownedEntryMemoryCost = 0;
-        int backupEntryMemoryCost = 0;
-        int markedAsRemovedMemoryCost = 0;
-        int hits = 0;
-        int lockedEntryCount = 0;
-        int lockWaitCount = 0;
-        ClusterImpl clusterImpl = node.getClusterImpl();
-        LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
-        for (Record record : mapRecords.values()) {
-            if (!record.isActive() || !record.isValid(now)) {
-                markedAsRemovedEntryCount++;
-                markedAsRemovedMemoryCost += record.getCost();
             } else {
-                if (isOwned(record)) {
-                    ownedEntryCount += record.valueCount();
-                    ownedEntryMemoryCost += record.getCost();
-                    localMapStats.setLastAccessTime(clusterImpl.getClusterTimeFor(record.getLastAccessTime()));
-                    localMapStats.setLastUpdateTime(clusterImpl.getClusterTimeFor(record.getLastUpdateTime()));
-                    hits += record.getHits();
-                    if (record.isLocked()) {
-                        lockedEntryCount++;
-                        lockWaitCount += record.getScheduledActionCount();
+                boolean unknown = false;
+                Address eventualOwner = (block.isMigrating()) ? block.getMigrationAddress() : block.getOwner();
+                if (!thisAddress.equals(eventualOwner)) {
+                    Integer distance = distances.get(eventualOwner);
+                    if (distance != null && distance > getBackupCount()) {
+                        unknown = true;
                     }
-                } else if (isBackup(record)) {
-                    backupEntryCount += record.valueCount();
-                    backupEntryMemoryCost += record.getCost();
-                } else {
-                    markedAsRemovedEntryCount++;
-                    markedAsRemovedMemoryCost += record.getCost();
                 }
+                backupEntryCount += record.valueCount();
+                    backupEntryMemoryCost += record.getCost();
+//                if (unknown) {
+//                    markedAsRemovedEntryCount++;
+//                    markedAsRemovedMemoryCost += record.getCost();
+//                    markAsRemoved(record);
+//                } else {
+//                    backupEntryCount += record.valueCount();
+//                    backupEntryMemoryCost += record.getCost();
+//                }
             }
         }
         localMapStats.setMarkedAsRemovedEntryCount(markedAsRemovedEntryCount);
@@ -569,7 +528,6 @@ public class CMap {
         localMapStats.setBackupEntryMemoryCost(backupEntryMemoryCost);
         localMapStats.setLastEvictionTime(clusterImpl.getClusterTimeFor(lastEvictionTime));
         localMapStats.setCreationTime(clusterImpl.getClusterTimeFor(creationTime));
-        return localMapStats;
     }
 
     private void purgeIfNotOwnedOrBackup(Collection<Record> records) {
@@ -921,7 +879,7 @@ public class CMap {
         }
         Record record = getRecord(req.key);
         if (record != null && !record.isValid(now)) {
-            markAsRemoved(record);
+//            markAsRemoved(record);
         }
         if (req.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
             if (record != null && record.isActive() && record.isValid(now) && record.getValue() != null) {
@@ -978,7 +936,6 @@ public class CMap {
         if (req.txnId != -1) {
             unlock(record);
         }
-
         record.setIndexes(req.indexes, req.indexTypes);
         updateStats(op, record, true, oldValue);
         updateIndexes(record);
@@ -1036,6 +993,70 @@ public class CMap {
         }
     }
 
+    void createStats(LocalMapStatsImpl localMapStats) {
+        long now = System.currentTimeMillis();
+        int ownedEntryCount = 0;
+        int backupEntryCount = 0;
+        int markedAsRemovedEntryCount = 0;
+        int ownedEntryMemoryCost = 0;
+        int backupEntryMemoryCost = 0;
+        int markedAsRemovedMemoryCost = 0;
+        int hits = 0;
+        int lockedEntryCount = 0;
+        int lockWaitCount = 0;
+        ClusterImpl clusterImpl = node.getClusterImpl();
+        final Collection<Record> records = mapRecords.values();
+        final PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
+        for (Record record : records) {
+            if (!record.isActive() || !record.isValid(now)) {
+                markedAsRemovedEntryCount++;
+                markedAsRemovedMemoryCost += record.getCost();
+            } else {
+                PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
+                Member owner = partition.getOwner();
+                if (owner != null && !partition.isMigrating()) {
+                    boolean owned = owner.localMember();
+                    if (owned) {
+                        ownedEntryCount += record.valueCount();
+                        ownedEntryMemoryCost += record.getCost();
+                        localMapStats.setLastAccessTime(record.getLastAccessTime());
+                        localMapStats.setLastUpdateTime(record.getLastUpdateTime());
+                        hits += record.getHits();
+                        if (record.isLocked()) {
+                            lockedEntryCount++;
+                            lockWaitCount += record.getScheduledActionCount();
+                        }
+                    } else {
+                        Member ownerEventual = partition.getEventualOwner();
+                        boolean backup = false;
+                        if (ownerEventual != null && !owner.localMember()) {
+                            int distance = node.getClusterImpl().getDistanceFrom(ownerEventual);
+                            backup = (distance != -1 && distance <= getBackupCount());
+                        }
+                        if (backup && !shouldPurgeRecord(record, now)) {
+                            backupEntryCount += record.valueCount();
+                            backupEntryMemoryCost += record.getCost();
+                        } else {
+                            markedAsRemovedEntryCount++;
+                            markedAsRemovedMemoryCost += record.getCost();
+                        }
+                    }
+                }
+            }
+        }
+        localMapStats.setMarkedAsRemovedEntryCount(markedAsRemovedEntryCount);
+        localMapStats.setMarkedAsRemovedMemoryCost(markedAsRemovedMemoryCost);
+        localMapStats.setLockWaitCount(lockWaitCount);
+        localMapStats.setLockedEntryCount(lockedEntryCount);
+        localMapStats.setHits(hits);
+        localMapStats.setOwnedEntryCount(ownedEntryCount);
+        localMapStats.setBackupEntryCount(backupEntryCount);
+        localMapStats.setOwnedEntryMemoryCost(ownedEntryMemoryCost);
+        localMapStats.setBackupEntryMemoryCost(backupEntryMemoryCost);
+        localMapStats.setLastEvictionTime(clusterImpl.getClusterTimeFor(lastEvictionTime));
+        localMapStats.setCreationTime(clusterImpl.getClusterTimeFor(creationTime));
+    }
+
     void startCleanup() {
         final long now = System.currentTimeMillis();
         final Map<Data, Data> entriesToStore = new HashMap<Data, Data>();
@@ -1046,7 +1067,7 @@ public class CMap {
         final Set<Record> sortedRecords = new TreeSet<Record>(evictionComparator);
         final Collection<Record> records = mapRecords.values();
         final int clusterMemberSize = node.getClusterImpl().getMembers().size();
-        final int memberCount = (clusterMemberSize== 0) ? 1 : clusterMemberSize;
+        final int memberCount = (clusterMemberSize == 0) ? 1 : clusterMemberSize;
         final int maxSizePerJVM = maxSize / memberCount;
         final boolean evictionAware = evictionComparator != null && maxSizePerJVM > 0;
         final PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;

@@ -33,14 +33,18 @@ import java.util.logging.Level;
 public class ConnectionManager {
 
     protected final ILogger logger;
-     
+
     private final Map<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(100);
 
     private final Set<Address> setConnectionInProgress = new CopyOnWriteArraySet<Address>();
 
     private final Set<ConnectionListener> setConnectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
 
+    private final Set<Connection> setActiveConnections = new CopyOnWriteArraySet<Connection>();
+
     private final AtomicInteger allTextConnections = new AtomicInteger();
+
+    private final AtomicInteger connectionIdGen = new AtomicInteger();
 
     private boolean acceptTypeConnection = false;
 
@@ -90,7 +94,8 @@ public class ConnectionManager {
 
     public Connection createConnection(SocketChannel socketChannel,
                                        boolean acceptor) {
-        final Connection connection = new Connection(this, socketChannel);
+        final Connection connection = new Connection(this, connectionIdGen.incrementAndGet(), socketChannel);
+        setActiveConnections.add(connection);
         try {
             if (acceptor) {
                 // do nothing. you will be registering for the
@@ -135,6 +140,7 @@ public class ConnectionManager {
     public void remove(Connection connection) {
         if (connection == null)
             return;
+        setActiveConnections.remove(connection);
         if (connection.getEndPoint() != null) {
             mapConnections.remove(connection.getEndPoint());
             setConnectionInProgress.remove(connection.getEndPoint());
@@ -175,11 +181,11 @@ public class ConnectionManager {
         return sb.toString();
     }
 
-    public int getCurrentTextConnections() {
+    public int getCurrentClientConnections() {
         int count = 0;
-        for (Connection conn : mapConnections.values()) {
+        for (Connection conn : setActiveConnections) {
             if (conn.live()) {
-                if (conn.isTextConnection()) {
+                if (conn.isClient()) {
                     count++;
                 }
             }

@@ -189,7 +189,11 @@ public class Node {
         blockingQueueManager = new BlockingQueueManager(this);
         listenerManager = new ListenerManager(this);
         topicManager = new TopicManager(this);
-        clusterManager.addMember(localMember);
+        clusterService.enqueueAndReturn(new Processable() {
+            public void process() {
+                clusterManager.addMember(getThisAddress(), NodeType.MEMBER);
+            }
+        });
         textCommandService = new TextCommandServiceImpl(this);
         ILogger systemLogger = getLogger("com.hazelcast.system");
         systemLogger.log(Level.INFO, "Hazelcast " + version + " ("
@@ -382,6 +386,10 @@ public class Node {
         return textCommandService;
     }
 
+    public ConnectionManager getConnectionManager() {
+        return connectionManager;
+    }
+
     public class NodeShutdownHookThread extends Thread {
 
         NodeShutdownHookThread(String name) {
@@ -472,19 +480,19 @@ public class Node {
         }
         return null;
     }
-    
-    private List<Address> getPossibleIpAddresses(final String host, final int port, boolean portSet) 
-    throws UnknownHostException{
-    	final List<Address> list;
-    	if (portSet){
-    		list = Collections.singletonList(new Address(host, port, true));
-    	} else {
-	        list = new ArrayList(6);
-	        for (int i = -2; i < 3; i++) {
-	            list.add(new Address(host, port + i, true));
-	        }
-    	} 
-    	return list;
+
+    private List<Address> getPossibleIpAddresses(final String host, final int port, boolean portSet)
+            throws UnknownHostException {
+        final List<Address> list;
+        if (portSet) {
+            list = Collections.singletonList(new Address(host, port, true));
+        } else {
+            list = new ArrayList(6);
+            for (int i = -2; i < 3; i++) {
+                list.add(new Address(host, port + i, true));
+            }
+        }
+        return list;
     }
 
     private List<Address> getPossibleMembers() {
@@ -492,7 +500,7 @@ public class Node {
         final List<String> lsJoinMembers = join.getTcpIpConfig().getMembers();
         final List<Address> lsPossibleAddresses = new ArrayList<Address>();
         for (final String lsJoinMember : lsJoinMembers) {
-        	String host = lsJoinMember;
+            String host = lsJoinMember;
             int port = config.getPort();
             final int indexColon = host.indexOf(':');
             if (indexColon >= 0) {
