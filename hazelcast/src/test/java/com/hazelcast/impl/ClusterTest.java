@@ -1833,7 +1833,7 @@ public class ClusterTest {
     }
 
     @Test
-    public void queudEntriesShouldBeConsistentAfterShutdown() {
+    public void queueEntriesShouldBeConsistentAfterShutdown() {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         Queue<String> q1 = h1.getQueue("q");
