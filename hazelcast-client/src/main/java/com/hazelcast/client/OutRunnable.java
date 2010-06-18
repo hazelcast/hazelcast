@@ -64,7 +64,9 @@ public class OutRunnable extends IORunnable {
                     call = queue.poll();
                 }
             }
-            writer.flush(connection);
+            if (connection != null) {
+                writer.flush(connection);
+            }
         } catch (Throwable io) {
             logger.log(Level.FINE, "OutRunnable got exception:" + io.getMessage());
             io.printStackTrace();

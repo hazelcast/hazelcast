@@ -39,6 +39,7 @@ import java.util.concurrent.locks.Lock;
 import static com.hazelcast.client.HazelcastClientMapTest.getAllThreads;
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static com.hazelcast.client.TestUtility.shutdownHazelcastClient;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.*;
 
 public class DynamicClusterTest {
@@ -177,9 +178,9 @@ public class DynamicClusterTest {
         map.put("hello", "world");
         map.put("hello", "new world");
         map.remove("hello");
-        assertTrue(entryAddLatch.await(10, TimeUnit.SECONDS));
-        assertTrue(entryUpdatedLatch.await(10, TimeUnit.SECONDS));
-        assertTrue(entryRemovedLatch.await(10, TimeUnit.SECONDS));
+        assertTrue(entryAddLatch.await(10, SECONDS));
+        assertTrue(entryUpdatedLatch.await(10, SECONDS));
+        assertTrue(entryRemovedLatch.await(10, SECONDS));
     }
 
     @Test
@@ -248,7 +249,7 @@ public class DynamicClusterTest {
         }
         Thread.sleep(1000);
         System.out.println("FINISHED");
-        assertTrue(latch.await(2, TimeUnit.SECONDS));
+        assertTrue(latch.await(2, SECONDS));
     }
 
     @Test
@@ -409,9 +410,9 @@ public class DynamicClusterTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         Member member = h2.getCluster().getLocalMember();
         h2.shutdown();
-        assertTrue(added.await(10, TimeUnit.SECONDS));
+        assertTrue(added.await(10, SECONDS));
         assertEquals(member.getInetSocketAddress(), map.get("Added").getInetSocketAddress());
-        assertTrue(removed.await(10, TimeUnit.SECONDS));
+        assertTrue(removed.await(10, SECONDS));
         assertEquals(member.getInetSocketAddress(), map.get("Removed").getInetSocketAddress());
     }
 
@@ -456,7 +457,7 @@ public class DynamicClusterTest {
         assertEquals(user.getFamilyName(), dsu.getFamilyName());
         assertEquals(user.getAge(), dsu.getAge());
         assertEquals(user.getAddress().getAddress(), dsu.getAddress().getAddress());
-        assertTrue(cdl.await(2, TimeUnit.SECONDS));
+        assertTrue(cdl.await(2, SECONDS));
     }
 
     @Test
@@ -518,7 +519,6 @@ public class DynamicClusterTest {
 
     @Test(timeout = 25000, expected = ExecutionException.class)
     public void shouldThrowExExcptnWhenTheOnlyConnectedMemberDiesWhileExecuting() throws ExecutionException, InterruptedException {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         client = getHazelcastClient(h2);
         Set<Member> members = client.getCluster().getMembers();
@@ -529,6 +529,29 @@ public class DynamicClusterTest {
         h2.shutdown();
         task.get();
     }
+
+    @Test
+    public void shouldThrowNoMemeberAvailableExceptionWhenThereIsNoMemberToConnect() throws InterruptedException {
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+        client = getHazelcastClient(h);
+        final Map<Integer, Integer> map = client.getMap("default");
+        map.put(1, 1);
+        h.shutdown();
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread(new Runnable() {
+
+            public void run() {
+                try {
+                    client.getCluster().getMembers();
+                } catch (NoMemberAvailableException e) {
+                    latch.countDown();
+                }
+            }
+        }).start();
+
+        latch.await(10, SECONDS);
+    }
+
 
     @Test(timeout = 25000, expected = MemberLeftException.class)
     public void shouldThrowMemberLeftExceptionWhenConnectedMemberDiesWhileExecuting() throws ExecutionException, InterruptedException, IOException {
@@ -568,7 +591,7 @@ public class DynamicClusterTest {
         } catch (ExecutionException e) {
             latch.countDown();
         }
-        latch.await(10, TimeUnit.SECONDS);
+        latch.await(10, SECONDS);
         client.shutdown();
         config.setGroupConfig(new GroupConfig());
     }
@@ -676,17 +699,17 @@ public class DynamicClusterTest {
             public void run() {
                 l1.countDown();
                 try {
-                    map.lock ("1");
+                    map.lock("1");
                     fail("Should not lock!!");
                 } catch (Exception e) {
                     l2.countDown();
                 }
             }
         }).start();
-        l1.await(10, TimeUnit.SECONDS);
+        l1.await(10, SECONDS);
         Thread.sleep(5000);
         h.shutdown();
-        assertTrue(l2.await(10, TimeUnit.SECONDS));
+        assertTrue(l2.await(10, SECONDS));
     }
 
     @Test
@@ -746,7 +769,7 @@ public class DynamicClusterTest {
                 latch.countDown();
             }
         }).start();
-        assertTrue("Could not get instances from client", latch.await(1, TimeUnit.SECONDS));
+        assertTrue("Could not get instances from client", latch.await(1, SECONDS));
     }
 
     @AfterClass
