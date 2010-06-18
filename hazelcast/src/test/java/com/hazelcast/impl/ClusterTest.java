@@ -34,6 +34,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static java.lang.Thread.sleep;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.*;
@@ -65,11 +66,11 @@ public class ClusterTest {
         Map map = h1.getMap("default");
         map.put(1, 1);
         assertEquals(1, map.get(1));
-        Thread.sleep(2000);
+        sleep(2000);
         assertEquals(1, map.get(1));
-        Thread.sleep(2000);
+        sleep(2000);
         assertEquals(1, map.get(1));
-        Thread.sleep(4000);
+        sleep(4000);
         assertNull(map.get(1));
         assertEquals(0, map.size());
     }
@@ -229,12 +230,12 @@ public class ClusterTest {
         config.setSuperClient(true);
         final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance hSuper2 = Hazelcast.newHazelcastInstance(config);
-        Thread.sleep(11000);
+        sleep(11000);
         HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(null);
         Map map = hSuper.getMap("default");
         map.put("1", "value");
         assertEquals("value", hNormal.getMap("default").get("1"));
-        Thread.sleep(10000);
+        sleep(10000);
         assertEquals("value", hNormal.getMap("default").get("1"));
         assertEquals("value", map.get("1"));
     }
@@ -269,7 +270,7 @@ public class ClusterTest {
         Thread interrupter = new Thread(new Runnable() {
             public void run() {
                 try {
-                    Thread.sleep(1000);
+                    sleep(1000);
                     h.restart();
                     latch.countDown();
                 } catch (Throwable e) {
@@ -290,7 +291,7 @@ public class ClusterTest {
         map.put("1", "value1");
         assertEquals(2, h.getCluster().getMembers().size());
         h2.restart();
-        Thread.sleep(400);
+        sleep(400);
         assertEquals("value1", map.get("1"));
         map.put("1", "value2");
         assertEquals("value2", map.get("1"));
@@ -310,7 +311,7 @@ public class ClusterTest {
         assertEquals(map2.getLocalMapStats().getBackupEntryCount(), map1.getLocalMapStats().getOwnedEntryCount());
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
         IMap map3 = h3.getMap("default");
-        Thread.sleep(12000);
+        sleep(12000);
         assertEquals(map2.getLocalMapStats().getBackupEntryCount(), map1.getLocalMapStats().getOwnedEntryCount());
         assertEquals(map1.getLocalMapStats().getBackupEntryCount(), map3.getLocalMapStats().getOwnedEntryCount());
         assertEquals(map3.getLocalMapStats().getBackupEntryCount(), map2.getLocalMapStats().getOwnedEntryCount());
@@ -382,7 +383,7 @@ public class ClusterTest {
         myMap.put(key, value);
         assertEquals(value, myMap.get(key));
         assertTrue(myMap.containsKey(key));
-        Thread.sleep((ttl + 1) * 1000);
+        sleep((ttl + 1) * 1000);
         assertFalse(myMap.containsKey(key));
         assertNull(myMap.get(key));
         assertNull(myMap.putIfAbsent(key, "value2"));
@@ -401,7 +402,7 @@ public class ClusterTest {
         assertEquals(value, myMap.get(key));
         assertTrue(myMap.containsKey(key));
         assertEquals(value, myMap.remove(key));
-        Thread.sleep((ttl + 1) * 1000);
+        sleep((ttl + 1) * 1000);
         assertFalse(myMap.containsKey(key));
         assertNull(myMap.get(key));
         assertNull(myMap.putIfAbsent(key, "value2"));
@@ -486,7 +487,7 @@ public class ClusterTest {
         assertEquals(1, map.size());
         assertEquals(1, maps.size());
         h.shutdown();
-        Thread.sleep(500);
+        sleep(500);
         assertEquals(1, s.getCluster().getMembers().size());
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread(new Runnable() {
@@ -774,7 +775,7 @@ public class ClusterTest {
                 }
             }
         }).start();
-        Thread.sleep(4000);
+        sleep(4000);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         new Thread(new Runnable() {
             public void run() {
@@ -796,7 +797,7 @@ public class ClusterTest {
         Random r = new Random();
         Map<Integer, Integer> map = h.getMap("testMap");
         try {
-            Thread.sleep(5000);
+            sleep(5000);
         } catch (InterruptedException ignored) {
         }
         int size = 0;
@@ -900,7 +901,7 @@ public class ClusterTest {
                 }
         );
         lock2.unlock();
-        Thread.sleep(1000);
+        sleep(1000);
         h.shutdown();
         assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
@@ -938,7 +939,7 @@ public class ClusterTest {
             });
         }
         assertTrue(latchStart.await(1, TimeUnit.SECONDS));
-        Thread.sleep(1000); // extra second so that map2.put can actually start
+        sleep(1000); // extra second so that map2.put can actually start
         mapLocker.unlock(key);
         assertTrue(latchEnd.await(10, TimeUnit.SECONDS));
         es.shutdown();
@@ -979,7 +980,7 @@ public class ClusterTest {
             });
         }
         assertTrue(latchStart.await(1, TimeUnit.SECONDS));
-        Thread.sleep(1000); // extra second so that map2.put can actually start
+        sleep(1000); // extra second so that map2.put can actually start
         mapLocker.unlockMap();
         assertTrue(latchEnd.await(10, TimeUnit.SECONDS));
         es.shutdown();
@@ -1085,9 +1086,9 @@ public class ClusterTest {
         }
         long usedMemoryStart = getUsedMemoryAsMB();
         assertTrue(usedMemoryStart > 400);
-        Thread.sleep(50000);
+        sleep(50000);
         Runtime.getRuntime().gc();
-        Thread.sleep(5000);
+        sleep(5000);
         long usedMemoryEnd = getUsedMemoryAsMB();
         assertTrue(initialUsedMemory + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - initialUsedMemory) < 50);
     }
@@ -1108,9 +1109,9 @@ public class ClusterTest {
         }
         long usedMemoryStart = getUsedMemoryAsMB();
         assertTrue(usedMemoryStart > 400);
-        Thread.sleep(50000);
+        sleep(50000);
         Runtime.getRuntime().gc();
-        Thread.sleep(5000);
+        sleep(5000);
         long usedMemoryEnd = getUsedMemoryAsMB();
         assertTrue(initialUsedMemory + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - initialUsedMemory) < 50);
     }
@@ -1133,9 +1134,9 @@ public class ClusterTest {
         }
         long usedMemoryStart = getUsedMemoryAsMB();
         assertTrue(usedMemoryStart > 400);
-        Thread.sleep(50000);
+        sleep(50000);
         Runtime.getRuntime().gc();
-        Thread.sleep(5000);
+        sleep(5000);
         long usedMemoryEnd = getUsedMemoryAsMB();
         assertTrue(initialUsedMemory + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - initialUsedMemory) < 50);
     }
@@ -1171,14 +1172,14 @@ public class ClusterTest {
         assertEquals(size, map1.size());
         assertEquals(size, map2.size());
         assertEquals(size, map3.size());
-        Thread.sleep(3000);
+        sleep(3000);
         assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
         assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
         assertEquals(map3.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
         h2.shutdown();
         assertEquals(size, map1.size());
         assertEquals(size, map3.size());
-        Thread.sleep(3000);
+        sleep(3000);
         assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
         assertEquals(map3.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
         h1.shutdown();
@@ -1220,19 +1221,19 @@ public class ClusterTest {
         assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
         assertEquals(map3.getLocalMapStats().getOwnedEntryCount(), map4.getLocalMapStats().getBackupEntryCount());
         assertEquals(map4.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
-        Thread.sleep(4000);
+        sleep(4000);
         h4.shutdown();
         assertEquals(size, map1.size());
         assertEquals(size, map2.size());
         assertEquals(size, map3.size());
-        Thread.sleep(4000);
+        sleep(4000);
         assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
         assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
         assertEquals(map3.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
         h1.shutdown();
         assertEquals(size, map2.size());
         assertEquals(size, map3.size());
-        Thread.sleep(4000);
+        sleep(4000);
         assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
         assertEquals(map3.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
         h2.shutdown();
@@ -1506,7 +1507,7 @@ public class ClusterTest {
             lsTasks.add(t2);
             h1.getExecutorService().execute(t2);
         }
-        Thread.sleep(7000);
+        sleep(7000);
         for (DistributedTask<Long> task : lsTasks) {
             Long result = task.get(1, TimeUnit.SECONDS);
             assertTrue(result == 1000 || result == 2000);
@@ -1722,15 +1723,15 @@ public class ClusterTest {
         TestMigrationListener listener2 = new TestMigrationListener(5, 5);
         h2.getPartitionService().addMigrationListener(listener2);
         IMap map2 = h2.getMap("testIfProperlyBackedUp");
-        Thread.sleep(1000);
+        sleep(1000);
         for (int i = 0; i < 5; i++) {
-            Thread.sleep(10000);
+            sleep(10000);
             LocalMapStats mapStats1 = map1.getLocalMapStats();
             LocalMapStats mapStats2 = map2.getLocalMapStats();
             if (mapStats1.getOwnedEntryCount() == counter) {
-                Thread.sleep(1000);
+                sleep(1000);
             }
-            Thread.sleep(1000);
+            sleep(1000);
             System.out.println(mapStats1);
             System.out.println(mapStats2);
             assertEquals(mapStats1.getOwnedEntryCount(), mapStats2.getBackupEntryCount());
@@ -1747,7 +1748,7 @@ public class ClusterTest {
         Set<Member> members = h2.getCluster().getMembers();
         MultiTask<Long> task = new MultiTask<Long>(new SleepCallable(10000), members);
         h2.getExecutorService().execute(task);
-        Thread.sleep(2000);
+        sleep(2000);
         h1.shutdown();
         task.get();
     }
@@ -1791,5 +1792,66 @@ public class ClusterTest {
         pool.awaitTermination(1, TimeUnit.SECONDS);
         Long value = (Long) testMap.get(1L);
         assertEquals(Long.valueOf(total), value);
+    }
+
+    @Test
+    public void testStatsWithTTL() throws InterruptedException {
+        Config conf = new Config();
+        MapConfig config = conf.getMapConfig("default");
+        config.setTimeToLiveSeconds(5);
+//        config.setMaxSize(1000);
+//        config.setEvictionPolicy("LRU");
+        final HazelcastInstance h = Hazelcast.newHazelcastInstance(conf);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(conf);
+        final IMap<Integer, Double> map1 = h.getMap("default");
+        final AtomicBoolean end = new AtomicBoolean(false);
+        new Thread(new Runnable() {
+            public void run() {
+                while (!end.get()) {
+                    map1.put((int) (Math.random() * 10000), Math.random());
+                }
+            }
+        }).start();
+        while (true) {
+            final IMap<Integer, Double> map2 = h2.getMap("default");
+            System.out.println("Size" + map1.size());
+            System.out.println("Owned Entry Count" + map1.getLocalMapStats().getOwnedEntryCount());
+            System.out.println("Backup Entry Count" + map2.getLocalMapStats().getBackupEntryCount());
+            sleep(100);
+        }
+    }
+
+    @Test
+    public void testMemberFiredTheEventIsLocal() throws InterruptedException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        IMap map = h1.getMap("default");
+//        for (int i = 0; i < 1000; i++) {
+//            map.put(i, i);
+//        }
+//        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener(new EntryListener() {
+            public void entryAdded(EntryEvent entryEvent) {
+                System.out.println("I got " + entryEvent.getMember());
+                if (entryEvent.getMember().localMember()) {
+                    latch.countDown();
+                }
+            }
+
+            public void entryRemoved(EntryEvent entryEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            public void entryUpdated(EntryEvent entryEvent) {
+            }
+
+            public void entryEvicted(EntryEvent entryEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+        }, false);
+        map.put(100000, 1);
+        System.out.println(h1.getPartitionService().getPartitions().toString());
+        boolean isLocal = latch.await(3, TimeUnit.SECONDS);
+        assertTrue("localMember() on member that fired event should return true, but was false", isLocal);
     }
 }

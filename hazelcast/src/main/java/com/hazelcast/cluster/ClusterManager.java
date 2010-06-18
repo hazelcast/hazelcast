@@ -577,6 +577,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             mapOldMembers.put(member.getAddress(), member);
         }
         lsMembers.clear();
+        mapMembers.clear();
         for (MemberInfo memberInfo : lsMemberInfos) {
             MemberImpl member = mapOldMembers.get(memberInfo.address);
             if (member == null) {
@@ -588,10 +589,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
         if (!lsMembers.contains(thisMember)) {
             throw new RuntimeException("Member list doesn't contain local member!");
-        }
-        mapMembers.clear();
-        for (MemberImpl member : lsMembers) {
-            mapMembers.put(member.getAddress(), member);
         }
         heartBeater();
         node.getClusterImpl().setMembers(lsMembers);
@@ -675,6 +672,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 node.connectionManager.getConnection(member.getAddress());
             }
             lsMembers.add(member);
+            mapMembers.put(member.getAddress(), member);
         }
         return member;
     }

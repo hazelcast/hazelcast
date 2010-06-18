@@ -1117,7 +1117,7 @@ public abstract class BaseManager {
                       final Data eventValue, final Address from) {
         Member member = getMember(from);
         if (member == null) {
-            member = new MemberImpl(from, false);
+            member = new MemberImpl(from, thisAddress.equals(from));
         }
         final EventTask eventTask = new EventTask(member, eventType, name, eventKey, eventValue);
         int hash;
