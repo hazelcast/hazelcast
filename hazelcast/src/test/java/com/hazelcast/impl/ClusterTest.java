@@ -22,6 +22,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
+import com.hazelcast.examples.TestApp;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
@@ -1818,5 +1819,33 @@ public class ClusterTest {
         map.put(1, 1);
         boolean isLocal = latch.await(3, TimeUnit.SECONDS);
         assertTrue("localMember() on member that fired event should return true, but was false", isLocal);
+    }
+
+    @Test(expected = MemberLeftException.class)
+    public void distributedTaskShouldThrowMemberLeftExceptionWhenTargetMemberRemoved() throws ExecutionException, TimeoutException, InterruptedException {
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        ExecutorService ex = h2.getExecutorService();
+        FutureTask<String> ft = new DistributedTask<String>(new TestApp.Echo("hello"), h1.getCluster().getLocalMember());
+        h1.shutdown();
+        ex.submit(ft);
+        ft.get();
+    }
+
+    @Test
+    public void queuEntriesShoulBeConsistentAfterShutdown() {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        Queue<String> q1 = h1.getQueue("q");
+        for (int i = 0; i < 10; i++) {
+            q1.offer("" + i);
+        }
+        Queue<String> q2 = h2.getQueue("q");
+        for (int i = 0; i < 5; i++) {
+            q2.poll();
+        }
+        assertEquals(5, q2.size());
+        h1.shutdown();
+        assertEquals(5, q2.size());
     }
 }
