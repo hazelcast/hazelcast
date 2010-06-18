@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
+import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -458,7 +459,7 @@ public class Node {
                     Address address;
                     Interfaces interfaces = config.getNetworkConfig().getInterfaces();
                     if (interfaces.isEnabled()) {
-                        address = new Address(inetAddress.getAddress(), config.getPort());
+                        address = new Address(inetAddress.getAddress(), port);
                         shouldCheck = AddressPicker.matchAddress(address.getHost(), interfaces.getInterfaces());
                     }
                     if (shouldCheck) {
@@ -471,18 +472,38 @@ public class Node {
         }
         return null;
     }
+    
+    private List<Address> getPossibleIpAddresses(final String host, final int port, boolean portSet) 
+    throws UnknownHostException{
+    	final List<Address> list;
+    	if (portSet){
+    		list = Collections.singletonList(new Address(host, port, true));
+    	} else {
+	        list = new ArrayList(6);
+	        for (int i = -2; i < 3; i++) {
+	            list.add(new Address(host, port + i, true));
+	        }
+    	} 
+    	return list;
+    }
 
     private List<Address> getPossibleMembers() {
         Join join = config.getNetworkConfig().getJoin();
         final List<String> lsJoinMembers = join.getTcpIpConfig().getMembers();
         final List<Address> lsPossibleAddresses = new ArrayList<Address>();
-        for (final String host : lsJoinMembers) {
+        for (final String lsJoinMember : lsJoinMembers) {
+        	String host = lsJoinMember;
+            int port = config.getPort();
+            final int indexColon = host.indexOf(':');
+            if (indexColon >= 0) {
+                port = Integer.parseInt(host.substring(indexColon + 1));
+                host = host.substring(0, indexColon);
+            }
             // check if host is hostname of ip lockAddress
             final boolean ip = isIP(host);
             try {
                 if (ip) {
-                    for (int i = 0; i < 3; i++) {
-                        final Address addrs = new Address(host, config.getPort() + i, true);
+                    for (final Address addrs : getPossibleIpAddresses(host, port, indexColon >= 0)) {
                         if (!addrs.equals(getThisAddress())) {
                             logger.log(Level.FINEST, "adding possible member " + addrs);
                             lsPossibleAddresses.add(addrs);
@@ -495,13 +516,13 @@ public class Node {
                         Address addrs;
                         Interfaces interfaces = config.getNetworkConfig().getInterfaces();
                         if (interfaces.isEnabled()) {
-                            addrs = new Address(inetAddress.getAddress(), config.getPort());
+                            addrs = new Address(inetAddress.getAddress(), port);
                             shouldCheck = AddressPicker.matchAddress(addrs.getHost(), interfaces.getInterfaces());
                         }
                         if (shouldCheck) {
-                            for (int i = 0; i < 3; i++) {
+                            for (int i = -2; i < 3; i++) {
                                 final Address addressProper = new Address(inetAddress.getAddress(),
-                                        config.getPort() + i);
+                                        port + i);
                                 if (!addressProper.equals(getThisAddress())) {
                                     logger.log(Level.FINEST, "adding possible member " + addressProper);
                                     lsPossibleAddresses.add(addressProper);
