@@ -118,6 +118,7 @@ public class EntryEvent<K, V> extends EventObject {
     public String toString() {
         return "EntryEvent {" + getSource() + "} key="
                 + getKey() + ", value=" + getValue() + ", event="
-                + entryEventType;
+                + entryEventType
+                + ", by " + member;
     }
 }

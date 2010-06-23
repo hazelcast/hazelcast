@@ -90,4 +90,8 @@ public class HttpGetCommand extends HttpCommand {
         IOUtil.copyToHeapBuffer(response, bb);
         return !response.hasRemaining();
     }
+
+    public void sendClusterInfo() {
+        
+    }
 }

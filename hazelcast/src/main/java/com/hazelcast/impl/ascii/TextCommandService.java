@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl.ascii;
 
+import com.hazelcast.impl.Node;
 import com.hazelcast.impl.ascii.memcache.Stats;
 
 public interface TextCommandService {
@@ -48,4 +49,6 @@ public interface TextCommandService {
     Object delete(String mapName, String key);
 
     Stats getStats();
+
+    Node getNode();
 }

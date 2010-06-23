@@ -888,20 +888,20 @@ public abstract class BaseManager {
         }
     }
 
-    public void sendEvents(final int eventType, final String name, final Data key,
-                           final Data value, final Map<Address, Boolean> mapListeners) {
+    public void sendEvents(int eventType, String name, Data key, Data value, Map<Address, Boolean> mapListeners, Address callerAddress) {
         if (mapListeners != null) {
             final Set<Map.Entry<Address, Boolean>> listeners = mapListeners.entrySet();
             for (final Map.Entry<Address, Boolean> listener : listeners) {
-                final Address address = listener.getKey();
+                final Address toAddress = listener.getKey();
                 final boolean includeValue = listener.getValue();
-                if (address.isThisAddress()) {
-                    enqueueEvent(eventType, name, key, (includeValue) ? value : null, address);
+                if (toAddress.isThisAddress()) {
+                    enqueueEvent(eventType, name, key, (includeValue) ? value : null, callerAddress);
                 } else {
                     final Packet packet = obtainPacket();
                     packet.set(name, ClusterOperation.EVENT, key, (includeValue) ? value : null);
+                    packet.lockAddress = callerAddress;
                     packet.longValue = eventType;
-                    final boolean sent = send(packet, address);
+                    final boolean sent = send(packet, toAddress);
                     if (!sent)
                         releasePacket(packet);
                 }
@@ -1113,20 +1113,23 @@ public abstract class BaseManager {
                 + key);
     }
 
-    void enqueueEvent(final int eventType, final String name, final Data eventKey,
-                      final Data eventValue, final Address from) {
-        Member member = getMember(from);
-        if (member == null) {
-            member = new MemberImpl(from, thisAddress.equals(from));
+    void enqueueEvent(int eventType, String name, Data eventKey, Data eventValue, Address from) {
+        try {
+            Member member = getMember(from);
+            if (member == null) {
+                member = new MemberImpl(from, thisAddress.equals(from));
+            }
+            final EventTask eventTask = new EventTask(member, eventType, name, eventKey, eventValue);
+            int hash;
+            if (eventKey != null) {
+                hash = eventKey.hashCode();
+            } else {
+                hash = hashTwo(from.hashCode(), name.hashCode());
+            }
+            node.executorManager.getEventExecutorService().executeOrderedRunnable(hash, eventTask);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        final EventTask eventTask = new EventTask(member, eventType, name, eventKey, eventValue);
-        int hash;
-        if (eventKey != null) {
-            hash = eventKey.hashCode();
-        } else {
-            hash = hashTwo(from.hashCode(), name.hashCode());
-        }
-        node.executorManager.getEventExecutorService().executeOrderedRunnable(hash, eventTask);
     }
 
     static int hashTwo(int hash1, int hash2) {
@@ -1138,8 +1141,7 @@ public abstract class BaseManager {
 
         protected final Data dataValue;
 
-        public EventTask(final Member from, final int eventType, final String name,
-                         final Data dataKey, final Data dataValue) {
+        public EventTask(Member from, int eventType, String name, Data dataKey, Data dataValue) {
             super(name, from, eventType, null, null);
             this.dataKey = dataKey;
             this.dataValue = dataValue;
@@ -1155,8 +1157,8 @@ public abstract class BaseManager {
 
         public void run() {
             try {
-                node.listenerManager.callListeners(this);
-            } catch (final Exception e) {
+                node.listenerManager.callListeners(EventTask.this);
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -1181,12 +1183,13 @@ public abstract class BaseManager {
     }
 
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
-                      final int eventType, final Data value) {
-        fireMapEvent(mapListeners, name, eventType, null, value, null);
+                      final int eventType, final Data value, Address callerAddress) {
+        fireMapEvent(mapListeners, name, eventType, null, value, null, callerAddress);
     }
 
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
-                      final int eventType, final Data key, final Data value, Map<Address, Boolean> keyListeners) {
+                      final int eventType, final Data key, final Data value,
+                      Map<Address, Boolean> keyListeners, Address callerAddress) {
         try {
             Map<Address, Boolean> mapTargetListeners = null;
             if (keyListeners != null) {
@@ -1210,7 +1213,7 @@ public abstract class BaseManager {
             if (mapTargetListeners == null || mapTargetListeners.size() == 0) {
                 return;
             }
-            sendEvents(eventType, name, key, value, mapTargetListeners);
+            sendEvents(eventType, name, key, value, mapTargetListeners, callerAddress);
         } catch (final Exception e) {
             e.printStackTrace();
         }

@@ -344,7 +344,7 @@ public class
                 Data data = packet.getValueData();
                 q.doBackup(true, data, blockId, (int) packet.longValue);
             } else if (packet.operation == ClusterOperation.BLOCKING_QUEUE_BACKUP_REMOVE) {
-                q.doBackup(false, null, blockId, 0);
+                q.doBackup(false, null, blockId, (int) packet.longValue);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -464,6 +464,7 @@ public class
         if (rightRemotePollTarget(packet)) {
             Request request = Request.copy(packet);
             doPoll(request);
+            packet.longValue = request.longValue;
             if (!request.scheduled) {
                 Data oldValue = (Data) request.response;
                 if (oldValue != null && oldValue.size() > 0) {
@@ -983,7 +984,7 @@ public class
                             packet.conn.getEndPoint())) {
                         if (packet.getValueData() != null) {
                             Q q = getQ(packet.name);
-                            q.doBackup(false, null, request.blockId, (int) request.longValue);
+                            q.doBackup(false, null, request.blockId, (int) packet.longValue);
                         }
                     }
                 }
@@ -1401,13 +1402,13 @@ public class
             sendResponse(packet);
         }
 
-        void doFireEntryEvent(boolean add, Data value) {
+        void doFireEntryEvent(boolean add, Data value, Address callerAddress) {
             if (mapListeners.size() == 0)
                 return;
             if (add) {
-                fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, value);
+                fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, value, callerAddress);
             } else {
-                fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, value);
+                fireMapEvent(mapListeners, name, EntryEvent.TYPE_REMOVED, value, callerAddress);
             }
         }
 
@@ -1420,7 +1421,7 @@ public class
             }
             try {
                 int addIndex = blCurrentPut.add(req.value);
-                doFireEntryEvent(true, req.value);
+                doFireEntryEvent(true, req.value, req.caller);
                 sendBackup(true, req.caller, req.value, blCurrentPut.blockId, addIndex);
                 req.longValue = addIndex;
                 if (blCurrentPut.isFull()) {
@@ -1463,7 +1464,7 @@ public class
                         }
                     }
                 }
-                doFireEntryEvent(false, value);
+                doFireEntryEvent(false, value, request.caller);
                 sendBackup(false, request.caller, null, blCurrentTake.blockId, removeIndex);
                 if (!blCurrentTake.containsValidItem() && blCurrentTake.isFull()) {
                     fireBlockRemoveEvent(blCurrentTake);

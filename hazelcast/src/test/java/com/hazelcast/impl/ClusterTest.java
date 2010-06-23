@@ -1,12 +1,12 @@
-/* 
+/*
  * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at 
- * 
+ * You may obtain a copy of the License at
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -36,8 +36,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.Thread.sleep;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.*;
 
 /**
@@ -192,18 +190,23 @@ public class ClusterTest {
 
     @Test(timeout = 40000)
     public void testSuperClientPartitionOwnership() {
-        Config configSuperClient = new XmlConfigBuilder().build();
+        Config configSuperClient = new Config();
         configSuperClient.setSuperClient(true);
-        HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(new Config());
         final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(configSuperClient);
         Map map = hSuper.getMap("default");
         assertNull(map.put("1", "value"));
+        Set<Partition> partitions2 = hSuper.getPartitionService().getPartitions();
+        for (Partition partition : partitions2) {
+            System.out.println(partition);
+        }
         hNormal.shutdown();
         Set<Partition> partitions = hSuper.getPartitionService().getPartitions();
         for (Partition partition : partitions) {
+            System.out.println(partition);
             assertNull(partition.getOwner());
         }
-        hNormal = Hazelcast.newHazelcastInstance(null);
+        hNormal = Hazelcast.newHazelcastInstance(new Config());
         partitions = hSuper.getPartitionService().getPartitions();
         for (Partition partition : partitions) {
             assertEquals(hNormal.getCluster().getLocalMember(), partition.getOwner());
@@ -597,41 +600,50 @@ public class ClusterTest {
 
     @Test(timeout = 1200000)
     public void testListeners2() throws Exception {
-        final CountDownLatch latchAdded = new CountDownLatch(1);
-        final CountDownLatch latchUpdated = new CountDownLatch(1);
-        final CountDownLatch latchRemoved = new CountDownLatch(1);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        final Member member1 = h1.getCluster().getLocalMember();
+        final Member member2 = h2.getCluster().getLocalMember();
+        final CountDownLatch latchAdded = new CountDownLatch(2);
+        final CountDownLatch latchUpdated = new CountDownLatch(2);
+        final CountDownLatch latchRemoved = new CountDownLatch(2);
         final CountDownLatch latchEvicted = new CountDownLatch(0);
         EntryListener listener = new EntryListener() {
             public void entryAdded(EntryEvent entryEvent) {
+                assertEquals(member1, entryEvent.getMember());
                 latchAdded.countDown();
             }
 
             public void entryRemoved(EntryEvent entryEvent) {
+                assertEquals(member1, entryEvent.getMember());
                 latchRemoved.countDown();
             }
 
             public void entryUpdated(EntryEvent entryEvent) {
+                assertEquals(member2, entryEvent.getMember());
                 latchUpdated.countDown();
             }
 
             public void entryEvicted(EntryEvent entryEvent) {
-                latchEvicted.countDown();
+                fail("Should never receive eviction event");
             }
         };
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        IMap mapSource = h2.getMap("default");
-        IMap map = h1.getMap("default");
+        IMap map2 = h2.getMap("default");
+        IMap map1 = h1.getMap("default");
         Object key = "2133aa";
-        map.addEntryListener(listener, key, true);
-        assertNull(mapSource.put(key, "value5"));
-        assertEquals("value5", mapSource.put(key, "value55"));
-        assertFalse(mapSource.evict(key));
-        assertEquals("value55", mapSource.put(key, "value5"));
-        assertEquals("value5", mapSource.remove(key));
-        map.removeEntryListener(listener, key);
-        assertTrue(mapSource.evict(key));
+        map1.addEntryListener(listener, key, true);
+        map2.addEntryListener(listener, key, true);
+        assertNull(map1.put(key, "value5"));
+        assertEquals("value5", map2.put(key, "value55"));
+        assertFalse(map2.evict(key));
+        assertEquals("value55", map2.put(key, "value5"));
+        assertEquals("value5", map1.remove(key));
         int waitSeconds = 20;
+        assertTrue(latchRemoved.await(waitSeconds, TimeUnit.SECONDS));
+        map1.removeEntryListener(listener, key);
+        assertFalse(map2.evict(key));
+        map2.removeEntryListener(listener, key);
+        assertTrue(map2.evict(key));
         assertTrue(latchAdded.await(waitSeconds, TimeUnit.SECONDS));
         assertTrue(latchUpdated.await(waitSeconds, TimeUnit.SECONDS));
         assertTrue(latchRemoved.await(waitSeconds, TimeUnit.SECONDS));
@@ -676,10 +688,11 @@ public class ClusterTest {
         assertTrue(mapSource.evict(keyToUpdate));
         assertNull(mapSource.put(keyToUpdate, "value5"));
         assertEquals("value5", mapSource.remove(keyToUpdate));
-        assertTrue(latchAdded.await(5, TimeUnit.SECONDS));
-        assertTrue(latchUpdated.await(5, TimeUnit.SECONDS));
-        assertTrue(latchRemoved.await(5, TimeUnit.SECONDS));
-        assertTrue(latchEvicted.await(5, TimeUnit.SECONDS));
+        int waitSeconds = 20;
+        assertTrue(latchAdded.await(waitSeconds, TimeUnit.SECONDS));
+        assertTrue(latchUpdated.await(waitSeconds, TimeUnit.SECONDS));
+        assertTrue(latchRemoved.await(waitSeconds, TimeUnit.SECONDS));
+        assertTrue(latchEvicted.await(waitSeconds, TimeUnit.SECONDS));
         map.removeEntryListener(listener);
     }
 
@@ -1833,19 +1846,44 @@ public class ClusterTest {
     }
 
     @Test
-    public void queueEntriesShouldBeConsistentAfterShutdown() {
+    public void queueEntriesShouldBeConsistentAfterShutdown() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         Queue<String> q1 = h1.getQueue("q");
-        for (int i = 0; i < 10; i++) {
-            q1.offer("" + i);
-        }
         Queue<String> q2 = h2.getQueue("q");
         for (int i = 0; i < 5; i++) {
-            q2.poll();
+            q1.offer("item" + i);
         }
+        assertEquals(5, q1.size());
         assertEquals(5, q2.size());
+        assertEquals("item0", q2.poll());
+        assertEquals("item1", q2.poll());
+        assertEquals("item2", q2.poll());
+        Thread.sleep(3000);
+        assertEquals(2, q1.size());
+        assertEquals(2, q2.size());
         h1.shutdown();
+        assertEquals(2, q2.size());
+    }
+
+    @Test
+    public void queueEntriesShouldBeConsistentAfterShutdown2() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        Queue<String> q1 = h1.getQueue("q");
+        Queue<String> q2 = h2.getQueue("q");
+        for (int i = 0; i < 5; i++) {
+            q1.offer("item" + i);
+        }
+        assertEquals(5, q1.size());
         assertEquals(5, q2.size());
+        assertEquals("item0", q1.poll());
+        assertEquals("item1", q1.poll());
+        assertEquals("item2", q1.poll());
+        Thread.sleep(3000);
+        assertEquals(2, q1.size());
+        assertEquals(2, q2.size());
+        h1.shutdown();
+        assertEquals(2, q2.size());
     }
 }

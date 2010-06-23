@@ -28,10 +28,8 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryContext;
-import com.hazelcast.util.ResponseQueueFactory;
 
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -802,6 +800,7 @@ public class ConcurrentMapManager extends BaseManager {
                     if (returnObject instanceof AddressAwareException) {
                         rethrowException(operation, (AddressAwareException) returnObject);
                     }
+                    request.longValue = request.ttl;
                     backup(CONCURRENT_MAP_BACKUP_PUT);
                     return returnObject;
                 }
@@ -969,9 +968,9 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
-                      final int eventType, final Record record) {
+                      final int eventType, final Record record, Address callerAddress) {
         checkServiceThread();
-        fireMapEvent(mapListeners, name, eventType, record.getKey(), record.getValue(), record.getMapListeners());
+        fireMapEvent(mapListeners, name, eventType, record.getKey(), record.getValue(), record.getMapListeners(), callerAddress);
     }
 
     public class MContainsValue extends MultiCall<Boolean> {

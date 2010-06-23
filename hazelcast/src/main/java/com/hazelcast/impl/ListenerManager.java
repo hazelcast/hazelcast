@@ -37,7 +37,7 @@ import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.nio.IOUtil.toData;
 
 public class ListenerManager extends BaseManager {
-    private List<ListenerItem> listeners = new CopyOnWriteArrayList<ListenerItem>();
+    private final List<ListenerItem> listeners = new CopyOnWriteArrayList<ListenerItem>();
 
     ListenerManager(Node node) {
         super(node);
@@ -60,7 +60,7 @@ public class ListenerManager extends BaseManager {
         Data key = packet.getKeyData();
         Data value = packet.getValueData();
         String name = packet.name;
-        Address from = packet.conn.getEndPoint();
+        Address from = packet.lockAddress;
         releasePacket(packet);
         enqueueEvent(eventType, name, key, value, from);
     }

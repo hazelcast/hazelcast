@@ -121,7 +121,7 @@ public class TopicManager extends BaseManager {
         }
 
         public void publish(final Data msg) {
-            topicManager.fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, msg);
+            topicManager.fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, msg, thisAddress);
         }
     }
 }

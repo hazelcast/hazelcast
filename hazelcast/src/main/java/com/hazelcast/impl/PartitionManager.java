@@ -411,7 +411,7 @@ public class PartitionManager implements Runnable {
                     block.setOwner(null);
                 }
             } else {
-                if (!deadAddress.equals(member.getAddress())) {
+                if (!deadAddress.equals(member.getAddress()) && !concurrentMapManager.isSuperClient()) {
                     block.setOwner(member.getAddress());
                 } else {
                     block.setOwner(null);
@@ -445,11 +445,15 @@ public class PartitionManager implements Runnable {
                 }
             }
         }
-        for (Block b : blocks) {
-            if (b != null && b.isMigrating() && b.getMigrationAddress().equals(b.getOwner())) {
-                b.setMigrationAddress(null);
-            }
+//        for (Block b : blocks) {
+//            if (b != null && b.isMigrating() && b.getMigrationAddress().equals(b.getOwner())) {
+//                b.setMigrationAddress(null);
+//            }
+//        }
+        if (block.isMigrating() && block.getMigrationAddress().equals(block.getOwner())) {
+            block.setMigrationAddress(null);
         }
+        partitionServiceImpl.reset();
     }
 
     void backupIfNextOrPreviousChanged(boolean add) {

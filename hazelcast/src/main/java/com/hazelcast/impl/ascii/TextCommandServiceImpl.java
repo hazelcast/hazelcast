@@ -71,6 +71,10 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         textCommandProcessors[NO_OP.getValue()] = new NoOpCommandProcessor(this);
     }
 
+    public Node getNode() {
+        return node;
+    }
+
     public Stats getStats() {
         Stats stats = new Stats();
         stats.uptime = (int) ((System.currentTimeMillis() - startTime) / 1000);
@@ -81,7 +85,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         stats.cmd_delete = deletes.get();
         stats.get_hits = getHits.get();
         stats.get_misses = gets.get() - getHits.get();
-        stats.curr_connections = node.connectionManager.getCurrentTextConnections();
+        stats.curr_connections = node.connectionManager.getCurrentClientConnections();
         stats.total_connections = node.connectionManager.getAllTextConnections();
         return stats;
     }

@@ -383,10 +383,7 @@ public class CMap {
         }
         if (req.operation == CONCURRENT_MAP_BACKUP_PUT) {
             Record record = toRecordAndStats(req, false);
-            if (!record.isActive()) {
-                record.setActive();
-                record.setCreationTime(System.currentTimeMillis());
-            }
+            markAsActive(record);
             record.setVersion(req.version);
             if (req.indexes != null) {
                 if (req.indexTypes == null) {
@@ -396,6 +393,10 @@ public class CMap {
                     throw new RuntimeException("index and type lengths do not match");
                 }
                 record.setIndexes(req.indexes, req.indexTypes);
+            }
+            if (req.ttl > 0) {
+                record.setExpirationTime(req.ttl);
+                ttlPerRecord = true;
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE) {
             Record record = getRecord(req.key);
@@ -506,7 +507,7 @@ public class CMap {
                     }
                 }
                 backupEntryCount += record.valueCount();
-                    backupEntryMemoryCost += record.getCost();
+                backupEntryMemoryCost += record.getCost();
 //                if (unknown) {
 //                    markedAsRemovedEntryCount++;
 //                    markedAsRemovedMemoryCost += record.getCost();
@@ -715,7 +716,7 @@ public class CMap {
         record.incrementCopyCount();
         if (!backup) {
             updateIndexes(record);
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record);
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record, req.caller);
         }
         return true;
     }
@@ -823,7 +824,7 @@ public class CMap {
         }
         if (removed) {
             record.incrementVersion();
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKey(), req.value, record.getMapListeners());
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKey(), req.value, record.getMapListeners(), req.caller);
             logger.log(Level.FINEST, record.getValue() + " RemoveMulti " + record.getMultiValues());
         }
         req.version = record.getVersion();
@@ -851,7 +852,7 @@ public class CMap {
             updateIndexes(record);
             record.addValue(value);
             record.incrementVersion();
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKey(), value, record.getMapListeners());
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKey(), value, record.getMapListeners(), req.caller);
         }
         if (req.txnId != -1) {
             unlock(record);
@@ -879,7 +880,8 @@ public class CMap {
         }
         Record record = getRecord(req.key);
         if (record != null && !record.isValid(now)) {
-//            markAsRemoved(record);
+            record.setValue(null);
+            record.setMultiValues(null);
         }
         if (req.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
             if (record != null && record.isActive() && record.isValid(now) && record.getValue() != null) {
@@ -928,10 +930,10 @@ public class CMap {
             ttlPerRecord = true;
         }
         if (oldValue == null) {
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record);
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record, req.caller);
         } else {
             fireInvalidation(record);
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_UPDATED, record);
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_UPDATED, record, req.caller);
         }
         if (req.txnId != -1) {
             unlock(record);
@@ -1244,7 +1246,7 @@ public class CMap {
             removed = true;
         }
         if (removed) {
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record);
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record, req.caller);
             record.incrementVersion();
         }
         req.version = record.getVersion();
@@ -1257,7 +1259,7 @@ public class CMap {
         Record record = getRecord(req.key);
         if (record != null && record.isEvictable()) {
             fireInvalidation(record);
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_EVICTED, record.getKey(), record.getValue(), record.getMapListeners());
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_EVICTED, record.getKey(), record.getValue(), record.getMapListeners(), req.caller);
             record.incrementVersion();
             updateStats(REMOVE, record, true, null);
             markAsRemoved(record);
@@ -1301,7 +1303,7 @@ public class CMap {
         }
         if (oldValue != null) {
             fireInvalidation(record);
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKey(), oldValue, record.getMapListeners());
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKey(), oldValue, record.getMapListeners(), req.caller);
             record.incrementVersion();
         }
         updateStats(REMOVE, record, true, null);

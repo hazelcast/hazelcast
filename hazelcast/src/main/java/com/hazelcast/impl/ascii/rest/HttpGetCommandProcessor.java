@@ -17,7 +17,9 @@
 
 package com.hazelcast.impl.ascii.rest;
 
+import com.hazelcast.impl.Node;
 import com.hazelcast.impl.ascii.TextCommandService;
+import com.hazelcast.nio.ConnectionManager;
 
 public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand> {
 
@@ -44,6 +46,16 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                     command.setResponse(restValue.getContentType(), restValue.getValue());
                 }
             }
+        } else if (uri.startsWith(URI_CLUSTER)) {
+            Node node = textCommandService.getNode();
+            StringBuilder res = new StringBuilder(node.getClusterImpl().toString());
+            res.append("\n");
+            ConnectionManager connectionManager = node.getConnectionManager();
+            res.append("ConnectionCount: " + connectionManager.getCurrentClientConnections());
+            res.append("\n");
+            res.append("AllConnectionCount: " + connectionManager.getAllTextConnections());
+            res.append("\n");
+            command.setResponse(null, res.toString().getBytes());
         } else {
             command.send400();
         }

@@ -22,6 +22,7 @@ import com.hazelcast.impl.ascii.TextCommandService;
 
 public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcessor<T> {
     public static final String URI_MAPS = "/hazelcast/rest/maps/";
+    public static final String URI_CLUSTER = "/hazelcast/rest/cluster";
 
     protected HttpCommandProcessor(TextCommandService textCommandService) {
         super(textCommandService);
