@@ -414,9 +414,7 @@ public abstract class BaseManager {
         }
 
         public void beforeRedo() {
-            if (node.factory.restarted || !node.isActive()) {
-                throw new RuntimeException();
-            }
+            node.checkNodeState();
         }
 
         public Object getResult(long time, TimeUnit unit) throws InterruptedException {
@@ -429,11 +427,8 @@ public abstract class BaseManager {
                     Object obj = responses.poll(5, TimeUnit.SECONDS);
                     if (obj != null) {
                         return obj;
-                    } else if (node.factory.restarted) {
-                        throw new RuntimeException();
-                    } else if (!node.isActive()) {
-                        throw new IllegalStateException("Hazelcast Instance is not active!");
                     }
+                    node.checkNodeState();
                 } catch (InterruptedException e) {
                     if (node.factory.restarted) {
                         throw new RuntimeException();
@@ -714,9 +709,7 @@ public abstract class BaseManager {
 
         T call() {
             try {
-                if (!node.isActive()) {
-                    throw new RuntimeException();
-                }
+                node.checkNodeState();
                 onCall();
                 //local call first
                 TargetAwareOp localCall = createNewTargetAwareOp(thisAddress);

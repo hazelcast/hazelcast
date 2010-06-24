@@ -253,6 +253,14 @@ public class Node {
         logger.log(Level.FINEST, thread.getName() + " is interrupted ", e);
     }
 
+    void checkNodeState() {
+        if (factory.restarted) {
+            throw new IllegalStateException("Hazelcast Instance is restarted!");
+        } else if (!isActive()) {
+            throw new IllegalStateException("Hazelcast Instance is not active!");
+        }
+    }
+
     public static boolean isIP(final String address) {
         if (address.indexOf('.') == -1) {
             return false;

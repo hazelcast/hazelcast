@@ -17,8 +17,6 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.core.MapEntry;
-
 public class EntryObject {
     PredicateBuilder qb;
 
@@ -36,12 +34,7 @@ public class EntryObject {
     }
 
     public EntryObject key() {
-        Expression expression = new Expression() {
-            public Object getValue(Object obj) {
-                MapEntry entry = (MapEntry) obj;
-                return entry.getKey();
-            }
-        };
+        Expression expression = new EntryKeyObject();
         qb.exp = expression;
         return this;
     }
