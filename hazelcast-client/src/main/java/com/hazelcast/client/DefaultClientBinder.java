@@ -29,7 +29,7 @@ import java.util.logging.Level;
 
 public class DefaultClientBinder implements ClientBinder {
     private HazelcastClient client;
-    private final ILogger logger = Logger.getLogger(getClass().toString());
+    private final ILogger logger = Logger.getLogger(getClass().getName());
 
     public DefaultClientBinder(HazelcastClient client) {
         this.client = client;

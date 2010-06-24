@@ -37,7 +37,7 @@ public class ConnectionManager implements MembershipListener {
     private volatile Connection currentConnection;
     private final AtomicInteger connectionIdGenerator = new AtomicInteger(-1);
     private final List<InetSocketAddress> clusterMembers = new CopyOnWriteArrayList<InetSocketAddress>();
-    private final ILogger logger = Logger.getLogger(getClass().toString());
+    private final ILogger logger = Logger.getLogger(getClass().getName());
     private final HazelcastClient client;
     private volatile int lastDisconnectedConnectionId = -1;
     private ClientBinder binder;

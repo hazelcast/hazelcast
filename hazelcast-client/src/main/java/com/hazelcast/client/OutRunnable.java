@@ -34,7 +34,7 @@ public class OutRunnable extends IORunnable {
     private Connection connection = null;
     AtomicInteger counter = new AtomicInteger(0);
 
-    ILogger logger = Logger.getLogger(this.getClass().toString());
+    ILogger logger = Logger.getLogger(this.getClass().getName());
 
     public OutRunnable(final HazelcastClient client, final Map<Long, Call> calls, final PacketWriter writer) {
         super(client, calls);
