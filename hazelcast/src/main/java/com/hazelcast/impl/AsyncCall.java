@@ -53,15 +53,22 @@ public abstract class AsyncCall implements Future, Runnable {
     }
 
     public Object get() throws InterruptedException, ExecutionException {
-        return getResult(responseQ.take());
+        return processResult(responseQ.take());
     }
 
     public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        return getResult(responseQ.poll(timeout, unit));
+        Object result = responseQ.poll(timeout, unit);
+        if (result == null) throw new TimeoutException();
+        return processResult(result);
     }
 
-    private Object getResult(Object obj) {
-        if (obj == NULL) return null;
-        else return obj;
+    private Object processResult(Object result) throws ExecutionException {
+        if (result == NULL) {
+            return null;
+        } else if (result instanceof Throwable) {
+            throw new ExecutionException((Throwable) result);
+        } else {
+            return result;
+        }
     }
 }

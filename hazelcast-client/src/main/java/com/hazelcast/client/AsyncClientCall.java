@@ -51,15 +51,22 @@ public abstract class AsyncClientCall<V> implements Future<V>, Runnable {
     }
 
     public V get() throws InterruptedException, ExecutionException {
-        return (V) getResult(responseQ.take());
+        return (V) processResult(responseQ.take());
     }
 
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        return (V) getResult(responseQ.poll(timeout, unit));
+        Object result = responseQ.poll(timeout, unit);
+        if (result == null) throw new TimeoutException();
+        return (V) processResult(result);
     }
 
-    private Object getResult(Object obj) {
-        if (obj == NULL) return null;
-        else return obj;
+    private Object processResult(Object result) throws ExecutionException {
+        if (result == NULL) {
+            return null;
+        } else if (result instanceof Throwable) {
+            throw new ExecutionException((Throwable) result);
+        } else {
+            return result;
+        }
     }
 }
