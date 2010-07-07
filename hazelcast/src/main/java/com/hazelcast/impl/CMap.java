@@ -775,6 +775,26 @@ public class CMap {
         }
     }
 
+
+    public void onMigrate(Record record){
+        if (record == null) return;
+        List<ScheduledAction> lsScheduledActions = record.getScheduledActions();
+        if (lsScheduledActions != null) {
+            if (lsScheduledActions.size() > 0) {
+                Iterator<ScheduledAction> it = lsScheduledActions.iterator();
+                while (it.hasNext()) {
+                    ScheduledAction sa = it.next();
+                    if (sa.isValid() && !sa.expired()) {
+                        sa.onMigrate();
+                    }
+                    sa.setValid(false);
+                    node.clusterManager.deregisterScheduledAction(sa);
+                    it.remove();
+                }
+            }
+        }
+    }
+
     public void onDisconnect(Record record, Address deadAddress) {
         if (record == null || deadAddress == null) return;
         List<ScheduledAction> lsScheduledActions = record.getScheduledActions();

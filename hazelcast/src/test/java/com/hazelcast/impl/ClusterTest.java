@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.Thread.sleep;
+import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.*;
 
 /**

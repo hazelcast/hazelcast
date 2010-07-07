@@ -25,6 +25,7 @@ import com.hazelcast.impl.BlockingQueueManager.Offer;
 import com.hazelcast.impl.BlockingQueueManager.Poll;
 import com.hazelcast.impl.BlockingQueueManager.QIterator;
 import com.hazelcast.impl.ConcurrentMapManager.*;
+import com.hazelcast.impl.base.FactoryAwareNamedProxy;
 import com.hazelcast.impl.concurrentmap.AddMapIndex;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
@@ -494,7 +495,7 @@ public class FactoryImpl implements HazelcastInstance {
         initialChecks();
         Object proxy = proxies.get(proxyKey);
         if (proxy == null) {
-            proxy = createInstanceClusterwide(proxyKey);
+            proxy = createInstanceClusterWide(proxyKey);
         }
         return proxy;
     }
@@ -717,7 +718,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public void destroy() {
-                factory.destroyInstanceClusterwide("lock", key);
+                factory.destroyInstanceClusterWide("lock", key);
             }
 
             public InstanceType getInstanceType() {
@@ -734,7 +735,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    Object createInstanceClusterwide(final ProxyKey proxyKey) {
+    Object createInstanceClusterWide(final ProxyKey proxyKey) {
         final BlockingQueue<Object> result = ResponseQueueFactory.newResponseQueue();
         node.clusterService.enqueueAndReturn(new Processable() {
             public void process() {
@@ -753,7 +754,7 @@ public class FactoryImpl implements HazelcastInstance {
         return proxy;
     }
 
-    void destroyInstanceClusterwide(String name, Object key) {
+    void destroyInstanceClusterWide(String name, Object key) {
         final ProxyKey proxyKey = new ProxyKey(name, key);
         if (proxies.containsKey(proxyKey)) {
             if (name.equals("lock")) {
@@ -948,7 +949,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public void destroy() {
-                factory.destroyInstanceClusterwide(name, null);
+                factory.destroyInstanceClusterWide(name, null);
             }
 
             public Instance.InstanceType getInstanceType() {
@@ -1062,7 +1063,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public void destroy() {
-            factory.destroyInstanceClusterwide(name, null);
+            factory.destroyInstanceClusterWide(name, null);
         }
 
         public void writeData(DataOutput out) throws IOException {
@@ -1170,7 +1171,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public void destroy() {
-                factory.destroyInstanceClusterwide(name, null);
+                factory.destroyInstanceClusterWide(name, null);
             }
         }
     }
@@ -1507,7 +1508,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public void destroy() {
                 operationsCounter.incrementOtherOperations();
-                factory.destroyInstanceClusterwide(name, null);
+                factory.destroyInstanceClusterWide(name, null);
             }
 
             public Instance.InstanceType getInstanceType() {
@@ -1858,7 +1859,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
         }
 
-        private MProxyImpl(String name, FactoryImpl factory) {
+        MProxyImpl(String name, FactoryImpl factory) {
             setName(name);
             setHazelcastInstance(factory);
             mproxyReal = new MProxyReal();
@@ -2601,7 +2602,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public void destroy() {
-                factory.destroyInstanceClusterwide(name, null);
+                factory.destroyInstanceClusterWide(name, null);
             }
 
             public boolean evict(Object key) {
@@ -2609,47 +2610,6 @@ public class FactoryImpl implements HazelcastInstance {
                 MEvict mevict = ThreadContext.get().getCallCache(factory).getMEvict();
                 return mevict.evict(name, key);
             }
-        }
-    }
-
-    static abstract class FactoryAwareNamedProxy implements HazelcastInstanceAwareInstance, DataSerializable {
-        transient protected FactoryImpl factory = null;
-        protected String name = null;
-
-        protected FactoryAwareNamedProxy() {
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public FactoryImpl getFactory() {
-            return factory;
-        }
-
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.factory = (FactoryImpl) hazelcastInstance;
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            out.writeUTF(name);
-        }
-
-        public void readData(DataInput in) throws IOException {
-            setName(in.readUTF());
-            setHazelcastInstance(ThreadContext.get().getCurrentFactory());
-        }
-
-        private void writeObject(ObjectOutputStream out) throws IOException {
-            writeData(out);
-        }
-
-        private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-            readData(in);
         }
     }
 
@@ -2766,7 +2726,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public void destroy() {
-                factory.destroyInstanceClusterwide(name, null);
+                factory.destroyInstanceClusterWide(name, null);
             }
 
             public Object getId() {

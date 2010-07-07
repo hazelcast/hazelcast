@@ -685,6 +685,61 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    class MAtomic extends MBackupAndMigrationAwareOp {
+        final Data nameAsKey;
+        final ClusterOperation op;
+        final long expected;
+        final long value;
+        final boolean ignoreExpected;
+
+        MAtomic(Data nameAsKey, ClusterOperation op, long value, long expected, boolean ignoreExpected) {
+            this.nameAsKey = nameAsKey;
+            this.op = op;
+            this.value = value;
+            this.expected = expected;
+            this.ignoreExpected = ignoreExpected;
+        }
+
+        MAtomic(Data nameAsKey, ClusterOperation op, long value, long expected) {
+            this(nameAsKey, op, value, expected, false);
+        }
+
+        MAtomic(Data nameAsKey, ClusterOperation op, long value) {
+            this(nameAsKey, op, value, 0, true);
+        }
+
+        boolean doBooleanAtomic() {
+            Data expectedData = (ignoreExpected) ? null : toData(expected);
+            setLocal(op, "c:hz_AtomicNumber", nameAsKey, expectedData, 0, 0);
+            request.longValue = value;
+            request.setBooleanRequest();
+            doOp();
+            Object returnObject = getResultAsBoolean();
+            if (returnObject instanceof AddressAwareException) {
+                rethrowException(op, (AddressAwareException) returnObject);
+            }
+            return returnObject != Boolean.FALSE;
+        }
+
+        long doLongAtomic() {
+            Data expectedData = null;
+            setLocal(op, "c:hz_AtomicNumber", nameAsKey, expectedData, 0, 0);
+            request.longValue = value;
+            request.setLongRequest();
+            doOp();
+            Object returnObject = getResultAsObject();
+            if (returnObject instanceof AddressAwareException) {
+                rethrowException(op, (AddressAwareException) returnObject);
+            }
+            return (Long) returnObject;
+        }
+
+        void backup(Long value) {
+            request.value = toData(value);
+            backup(CONCURRENT_MAP_BACKUP_PUT);
+        }
+    }
+
     class MPut extends MBackupAndMigrationAwareOp {
 
         public boolean replace(String name, Object key, Object oldValue, Object newValue, long timeout) {
@@ -1572,6 +1627,12 @@ public class ConcurrentMapManager extends BaseManager {
                 public void onExpire() {
                     cmap.decrementLockWaits(record);
                     onNoTimeToSchedule(request);
+                }
+
+                @Override
+                public void onMigrate() {
+                    request.response = OBJECT_REDO;
+                    returnResponse(request);
                 }
             };
             cmap.incrementLockWaits(record);

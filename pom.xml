@@ -7,7 +7,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>1.8.5-SNAPSHOT</version>
+    <version>1.8.5</version>
     <name>Hazelcast Root</name>
 
     <modules>
@@ -50,7 +50,7 @@
                     <include>**/*.properties</include>
                     <include>**/*.xml</include>
                 </includes>
-            </resource>
+            </resource> 
         </resources>
 
         <plugins>

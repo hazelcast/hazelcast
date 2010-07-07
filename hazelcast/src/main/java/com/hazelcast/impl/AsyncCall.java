@@ -22,9 +22,9 @@ import com.hazelcast.util.SimpleBlockingQueue;
 import java.util.concurrent.*;
 
 public abstract class AsyncCall implements Future, Runnable {
-    BlockingQueue responseQ = new SimpleBlockingQueue();
     private static final Object NULL = new Object();
-    private CallContext callContext = ThreadContext.get().getCallContext();
+    private final BlockingQueue responseQ = new SimpleBlockingQueue();
+    private final CallContext callContext = ThreadContext.get().getCallContext();
 
     protected abstract void call();
 

@@ -17,7 +17,7 @@
 
 package com.hazelcast.core;
 
-public interface AtomicNumber {
+public interface AtomicNumber extends Instance {
 
     boolean compareAndSet(long expect, long update);
 

@@ -168,8 +168,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                         }
                         if (conn != null && conn.live()) {
                             if ((now - memberImpl.getLastWrite()) > 500) {
-                                Packet packet = obtainPacket("heartbeat", null, null,
-                                        ClusterOperation.HEARTBEAT, 0);
+                                Packet packet = obtainPacket("heartbeat", null, null, ClusterOperation.HEARTBEAT, 0);
                                 sendOrReleasePacket(packet, conn);
                             }
                         }
@@ -199,8 +198,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                     }
                 }
                 if (!removed) {
-                    Packet packet = obtainPacket("heartbeat", null, null, ClusterOperation.HEARTBEAT,
-                            0);
+                    Packet packet = obtainPacket("heartbeat", null, null, ClusterOperation.HEARTBEAT, 0);
                     Connection connMaster = node.connectionManager.getOrConnect(getMasterAddress());
                     sendOrReleasePacket(packet, connMaster);
                 }
@@ -221,8 +219,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                         Connection conn = node.connectionManager.getConnection(address);
                         if (conn != null && conn.live()) {
                             if ((now - member.getLastWrite()) > 500) {
-                                Packet packet = obtainPacket("heartbeat", null, null,
-                                        ClusterOperation.HEARTBEAT, 0);
+                                Packet packet = obtainPacket("heartbeat", null, null, ClusterOperation.HEARTBEAT, 0);
                                 sendOrReleasePacket(packet, conn);
                             }
                         } else {
@@ -621,6 +618,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 ScheduledAction sa = it.next();
                 if (sa.expired()) {
                     sa.onExpire();
+                    it.remove();
+                } else if (!sa.isValid()) {
                     it.remove();
                 }
             }

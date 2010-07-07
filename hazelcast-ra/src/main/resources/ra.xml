@@ -9,7 +9,7 @@
     <icon></icon>
     <vendor-name>Hazelcast.com</vendor-name>
     <eis-type>Hazelcast</eis-type>
-    <resourceadapter-version>1.8.5-SNAPSHOT</resourceadapter-version>
+    <resourceadapter-version>1.8.5</resourceadapter-version>
 
     <license>
         <description>Copyright (c) Hazelcast.com</description>

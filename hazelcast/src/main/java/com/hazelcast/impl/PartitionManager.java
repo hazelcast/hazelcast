@@ -522,6 +522,7 @@ public class PartitionManager implements Runnable {
                         throw new RuntimeException("Record.key is null or empty " + rec.getKey());
                     }
                     if (rec.getBlockId() == blockInfo.getBlockId()) {
+                        cmap.onMigrate(rec);
                         Record recordCopy = rec.copy();
                         lsRecordsToMigrate.add(recordCopy);
                         cmap.markAsRemoved(rec);

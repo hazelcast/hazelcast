@@ -76,6 +76,10 @@ public abstract class ScheduledAction {
     public void onExpire() {
     }
 
+    public void onMigrate() {
+
+    }
+
     public void setTimeout(long timeout) {
         if (timeout > -1) {
             this.timeout = timeout;
