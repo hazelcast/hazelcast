@@ -496,6 +496,11 @@ public class QueryTest extends TestUtil {
             assertEquals(c.getAge(), 23);
             assertTrue(c.isActive());
         }
+		entries = imap.entrySet(new SqlPredicate("active != false"));
+		for (Map.Entry entry : entries) {
+			Employee c = (Employee) entry.getValue();
+			assertTrue(c.isActive());
+		}
     }
 
     public void doFunctionalQueryTest(IMap imap) {
