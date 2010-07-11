@@ -166,9 +166,9 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     private static InetSocketAddress parse(String address) {
-        String[] seperated = address.split(":");
-        int port = (seperated.length > 1) ? Integer.valueOf(seperated[1]) : 5701;
-        InetSocketAddress inetSocketAddress = new InetSocketAddress(seperated[0], port);
+        String[] separated = address.split(":");
+        int port = (separated.length > 1) ? Integer.valueOf(separated[1]) : 5701;
+        InetSocketAddress inetSocketAddress = new InetSocketAddress(separated[0], port);
         return inetSocketAddress;
     }
 
@@ -237,6 +237,8 @@ public class HazelcastClient implements HazelcastInstance {
                             proxy = new QueueClientProxy<E>(this, name);
                         } else if (name.startsWith(Prefix.TOPIC)) {
                             proxy = new TopicClientProxy<E>(this, name);
+                        } else if (name.startsWith(Prefix.ATOMIC_NUMBER)) {
+                            proxy = new AtomicNumberClientProxy(this, name);
                         } else if (name.startsWith(Prefix.IDGEN)) {
                             proxy = new IdGeneratorClientProxy(this, name);
                         } else if (name.startsWith(Prefix.MULTIMAP)) {
@@ -312,6 +314,10 @@ public class HazelcastClient implements HazelcastInstance {
         return (IdGenerator) getClientProxy(Prefix.IDGEN + name);
     }
 
+    public AtomicNumber getAtomicNumber(String name) {
+        return (AtomicNumber) getClientProxy(Prefix.ATOMIC_NUMBER + name);
+    }
+
     public Collection<Instance> getInstances() {
         return clusterClientProxy.getInstances();
     }
@@ -341,7 +347,6 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public <E> ITopic<E> getTopic(String name) {
-        // TODO Auto-generated method stub
         return (ITopic) getClientProxy(Prefix.TOPIC + name);
     }
 

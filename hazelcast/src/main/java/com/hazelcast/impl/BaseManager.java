@@ -348,17 +348,6 @@ public abstract class BaseManager {
             return result;
         }
 
-        public Data getResultAsData() {
-            Object result = getResult();
-            if (result == OBJECT_NULL || result == null) {
-                result = null;
-            } else if (! (result instanceof Data)) {
-                logger.log(Level.SEVERE, "Data is expected. Found : " + result + ". Request: " + request);
-            }
-            afterGettingResult(request);
-            return (Data) result;
-        }
-
         protected void afterGettingResult(Request request) {
         }
 

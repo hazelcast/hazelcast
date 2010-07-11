@@ -177,6 +177,10 @@ public class FactoryImpl implements HazelcastInstance {
             return hazelcastInstance.getIdGenerator(name);
         }
 
+        public AtomicNumber getAtomicNumber(String name) {
+            return hazelcastInstance.getAtomicNumber(name);
+        }
+
         public Transaction getTransaction() {
             return hazelcastInstance.getTransaction();
         }
@@ -436,6 +440,10 @@ public class FactoryImpl implements HazelcastInstance {
         return (IdGenerator) getOrCreateProxyByName(Prefix.IDGEN + name);
     }
 
+    public AtomicNumber getAtomicNumber(String name) {
+        return (AtomicNumber) getOrCreateProxyByName(Prefix.ATOMIC_NUMBER + name);
+    }
+
     public Transaction getTransaction() {
         initialChecks();
         ThreadContext threadContext = ThreadContext.get();
@@ -540,6 +548,8 @@ public class FactoryImpl implements HazelcastInstance {
                 } else {
                     proxy = new CollectionProxyImpl(name, this);
                 }
+            } else if (name.startsWith(Prefix.ATOMIC_NUMBER)) {
+                proxy = new AtomicNumberImpl(name, this);
             } else if (name.startsWith(Prefix.IDGEN)) {
                 proxy = new IdGeneratorProxy(name, this);
             } else if (name.equals("lock")) {

@@ -24,7 +24,7 @@ import java.nio.ByteBuffer;
 public final class IOUtil {
 
     public static int copyToHeapBuffer(ByteBuffer src, ByteBuffer dest) {
-        if (src == null) return 0; 
+        if (src == null) return 0;
         int n = Math.min(src.remaining(), dest.remaining());
         if (n > 0) {
             if (n < 16) {
@@ -61,6 +61,13 @@ public final class IOUtil {
 
     public static Data toData(Object obj) {
         return ThreadContext.get().toData(obj);
+    }
+
+    public static long getLong(Data longData) {
+        byte[] b = longData.buffer;
+        ByteBuffer current = ByteBuffer.wrap(b);
+        current.get(); // type
+        return current.getLong();
     }
 
     public static Data addDelta(Data longData, long delta) {

@@ -20,22 +20,21 @@ package com.hazelcast.core;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.XmlConfigBuilder;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.fail;
-import static org.junit.Assert.*;
+import static junit.framework.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class HazelcastTest {
 
     @BeforeClass
+    @AfterClass
     public static void init() throws Exception {
         Hazelcast.shutdownAll();
     }
@@ -96,6 +95,24 @@ public class HazelcastTest {
         assertEquals("New World", map.get("Hello"));
         assertEquals(1, map.size());
         assertEquals("World", value);
+    }
+
+    @Test
+    public void testAtomicNumber() {
+        AtomicNumber an = Hazelcast.getAtomicNumber("testAtomicNumber");
+        assertEquals(0, an.get());
+        assertEquals(-1, an.decrementAndGet());
+        assertEquals(0, an.incrementAndGet());
+        assertEquals(1, an.incrementAndGet());
+        assertEquals(2, an.incrementAndGet());
+        assertEquals(1, an.decrementAndGet());
+        assertEquals(1, an.getAndSet(23));
+        assertEquals(28, an.addAndGet(5));
+        assertEquals(28, an.get());
+        assertEquals(28, an.getAndAdd(-3));
+        assertEquals(24, an.decrementAndGet());
+        Assert.assertFalse(an.compareAndSet(23, 50));
+        assertTrue(an.compareAndSet(24, 50));
     }
 
     @Test

@@ -775,8 +775,7 @@ public class CMap {
         }
     }
 
-
-    public void onMigrate(Record record){
+    public void onMigrate(Record record) {
         if (record == null) return;
         List<ScheduledAction> lsScheduledActions = record.getScheduledActions();
         if (lsScheduledActions != null) {
@@ -883,11 +882,30 @@ public class CMap {
         return added;
     }
 
-    public void addAndGet(Request req) {
+    public void doAtomic(Request req) {
         Record record = getRecord(req.key);
-    }
-
-    public void getAndAdd(Request req) {
+        if (record == null) {
+            record = createNewRecord(req.key, toData(0L));
+            mapRecords.put(req.key, record);
+        }
+        if (req.operation == ATOMIC_NUMBER_GET_AND_SET) {
+            req.response = record.getValue();
+            record.setValue(toData(req.longValue));
+        } else if (req.operation == ATOMIC_NUMBER_ADD_AND_GET) {
+            record.setValue(IOUtil.addDelta(record.getValue(), req.longValue));
+            req.response = record.getValue();
+        } else if (req.operation == ATOMIC_NUMBER_GET_AND_ADD) {
+            req.response = record.getValue();
+            record.setValue(IOUtil.addDelta(record.getValue(), req.longValue));
+        } else if (req.operation == ATOMIC_NUMBER_COMPARE_AND_SET) {
+            if (record.getValue().equals(req.value)) {
+                record.setValue(toData(req.longValue));
+                req.response = Boolean.TRUE;
+            } else {
+                req.response = Boolean.FALSE;
+            }
+            req.value = null;
+        }
     }
 
     public void put(Request req) {

@@ -136,6 +136,10 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_BLOCK_MIGRATION_CHECK, new BlockMigrationCheckHandler());
         registerPacketProcessor(CONCURRENT_MAP_VALUE_COUNT, new ValueCountOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_INVALIDATE, new InvalidateOperationHandler());
+        registerPacketProcessor(ATOMIC_NUMBER_GET_AND_SET, new AtomicOperationHandler());
+        registerPacketProcessor(ATOMIC_NUMBER_GET_AND_ADD, new AtomicOperationHandler());
+        registerPacketProcessor(ATOMIC_NUMBER_COMPARE_AND_SET, new AtomicOperationHandler());
+        registerPacketProcessor(ATOMIC_NUMBER_ADD_AND_GET, new AtomicOperationHandler());
     }
 
     public void reset() {
@@ -722,10 +726,8 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         long doLongAtomic() {
-            Data expectedData = null;
-            setLocal(op, "c:hz_AtomicNumber", nameAsKey, expectedData, 0, 0);
+            setLocal(op, "c:hz_AtomicNumber", nameAsKey, null, 0, 0);
             request.longValue = value;
-            request.setLongRequest();
             doOp();
             Object returnObject = getResultAsObject();
             if (returnObject instanceof AddressAwareException) {
@@ -1436,6 +1438,13 @@ public class ConcurrentMapManager extends BaseManager {
             if (request.operation == CONCURRENT_MAP_TRY_PUT) {
                 request.response = Boolean.TRUE;
             }
+        }
+    }
+
+    class AtomicOperationHandler extends MTargetAwareOperationHandler {
+        void doOperation(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            cmap.doAtomic(request);
         }
     }
 

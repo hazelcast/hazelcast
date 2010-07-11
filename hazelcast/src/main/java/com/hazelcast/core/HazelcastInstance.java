@@ -194,6 +194,18 @@ public interface HazelcastInstance {
     IdGenerator getIdGenerator(String name);
 
     /**
+     * Creates cluster-wide unique IDs. Generated IDs are long type primitive values
+     * between <tt>0</tt> and <tt>Long.MAX_VALUE</tt> . Id generation occurs almost at the speed of
+     * <tt>AtomicLong.incrementAndGet()</tt> . Generated IDs are unique during the life
+     * cycle of the cluster. If the entire cluster is restarted, IDs start from <tt>0</tt> again.
+     *
+     * @param name name of the AtomicNumber
+     * @return AtomicNumber for the given name
+     */
+    AtomicNumber getAtomicNumber(String name);
+
+
+    /**
      * Detaches this member from the cluster.
      * It doesn't shutdown the entire cluster, it shuts down
      * this local member only.

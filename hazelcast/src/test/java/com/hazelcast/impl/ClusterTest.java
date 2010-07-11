@@ -83,6 +83,36 @@ public class ClusterTest {
         assertEquals(271, getLocalPartitions(h1).size() + getLocalPartitions(h2).size());
     }
 
+    @Test
+    public void testAtomicNumber() throws Exception {
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        AtomicNumber a1 = h1.getAtomicNumber("default");
+        AtomicNumber a2 = h2.getAtomicNumber("default");
+        assertEquals(1, a1.incrementAndGet());
+        assertEquals(1, a1.get());
+        assertEquals(1, a2.get());
+        assertEquals(5, a2.addAndGet(4));
+        assertEquals(5, a1.getAndSet(13));
+        assertEquals(13, a1.get());
+        assertEquals(13, a2.get());
+        h1.shutdown();
+        assertEquals(13, a2.getAndSet(21));
+        assertEquals(21, a2.get());
+        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
+        AtomicNumber a3 = h3.getAtomicNumber("default");
+        assertEquals(20, a3.decrementAndGet());
+        assertEquals(20, a2.getAndAdd(-20));
+        assertFalse(a2.compareAndSet(1, 6));
+        assertFalse(a3.compareAndSet(1, 6));
+        assertTrue(a2.compareAndSet(0, 6));
+        assertTrue(a3.compareAndSet(6, 0));
+        assertEquals(0, a3.get());
+        assertEquals(0, a2.get());
+        h2.shutdown();
+        assertEquals(0, a3.get());
+    }
+
     /**
      * Test case for issue 289.
      * <p/>

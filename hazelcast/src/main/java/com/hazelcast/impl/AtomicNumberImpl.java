@@ -147,11 +147,11 @@ public class AtomicNumberImpl extends FactoryAwareNamedProxy implements AtomicNu
         }
 
         ConcurrentMapManager.MAtomic newMAtomic(ClusterOperation op, long value, long expected) {
-            return factory.node.concurrentMapManager.new MAtomic(getNameAsData(), null, value, expected);
+            return factory.node.concurrentMapManager.new MAtomic(getNameAsData(), op, value, expected);
         }
 
         ConcurrentMapManager.MAtomic newMAtomic(ClusterOperation op, long value) {
-            return factory.node.concurrentMapManager.new MAtomic(getNameAsData(), null, value);
+            return factory.node.concurrentMapManager.new MAtomic(getNameAsData(), op, value);
         }
 
         public long addAndGet(long delta) {
@@ -162,7 +162,7 @@ public class AtomicNumberImpl extends FactoryAwareNamedProxy implements AtomicNu
         }
 
         public boolean compareAndSet(long expect, long update) {
-            ConcurrentMapManager.MAtomic a = newMAtomic(ClusterOperation.ATOMIC_NUMBER_COMPARE_AND_SET, expect, update);
+            ConcurrentMapManager.MAtomic a = newMAtomic(ClusterOperation.ATOMIC_NUMBER_COMPARE_AND_SET, update, expect);
             boolean result = a.doBooleanAtomic();
             if (result) {
                 a.backup(update);
@@ -175,14 +175,11 @@ public class AtomicNumberImpl extends FactoryAwareNamedProxy implements AtomicNu
         }
 
         public long decrementAndGet() {
-            ConcurrentMapManager.MAtomic a = newMAtomic(ClusterOperation.ATOMIC_NUMBER_DECREMENT_AND_GET, 0);
-            long result = a.doLongAtomic();
-            a.backup(result);
-            return result;
+            return addAndGet(-1L);
         }
 
         public long get() {
-            return 0;
+            return addAndGet(0L);
         }
 
         public long getAndAdd(long delta) {
@@ -200,10 +197,7 @@ public class AtomicNumberImpl extends FactoryAwareNamedProxy implements AtomicNu
         }
 
         public long incrementAndGet() {
-            ConcurrentMapManager.MAtomic a = newMAtomic(ClusterOperation.ATOMIC_NUMBER_INCREMENT_AND_GET, 0);
-            long result = a.doLongAtomic();
-            a.backup(result);
-            return result;
+            return addAndGet(1L);
         }
 
         public void lazySet(long newValue) {
