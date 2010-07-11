@@ -137,7 +137,7 @@ public class
         }
     }
 
-    public static class NotEqualPredicate extends EqualPredicate {
+    public static class NotEqualPredicate extends EqualPredicate implements IndexAwarePredicate{
         public NotEqualPredicate() {
         }
 
@@ -152,7 +152,16 @@ public class
         public boolean apply(MapEntry entry) {
             return !super.apply(entry);
         }
-
+        
+        public Set<MapEntry> filter(QueryContext queryContext) {
+            Index index = queryContext.getMapIndexes().get(first);
+            if (index != null) {
+                return index.getSubRecords(false, false, index.getLongValue(second));
+            } else {
+                return null;
+            }
+        }
+        
         @Override
         public String toString() {
             final StringBuffer sb = new StringBuffer();
