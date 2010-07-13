@@ -102,10 +102,10 @@ public class ClientService {
         ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
         ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext, clientOperationHandlers);
-        if (!packet.operation.equals(ClusterOperation.CONCURRENT_MAP_UNLOCK)) {
-            node.executorManager.getClientExecutorService().executeOrderedRunnable(callContext.getThreadId(), clientRequestHandler);
-        } else {
+        if (packet.operation.equals(ClusterOperation.CONCURRENT_MAP_UNLOCK)) {
             node.executorManager.executeNow(clientRequestHandler);
+        } else {
+            node.executorManager.getClientExecutorService().executeOrderedRunnable(callContext.getThreadId(), clientRequestHandler);
         }
     }
 
@@ -114,141 +114,12 @@ public class ClientService {
         if (clientEndpoint == null) {
             clientEndpoint = new ClientEndpoint(conn);
             mapClientEndpoints.put(conn, clientEndpoint);
+            node.connectionManager.addConnectionListener(clientEndpoint);
         }
         return clientEndpoint;
     }
 
-    class ClientEndpoint implements EntryListener, InstanceListener, MembershipListener {
-        final Connection conn;
-        final private Map<Integer, CallContext> callContexts = new HashMap<Integer, CallContext>();
-        final ConcurrentMap<String, ConcurrentMap<Object, EntryEvent>> listeneds = new ConcurrentHashMap<String, ConcurrentMap<Object, EntryEvent>>();
-        final Map<String, MessageListener<Object>> messageListeners = new HashMap<String, MessageListener<Object>>();
-
-        ClientEndpoint(Connection conn) {
-            this.conn = conn;
-        }
-
-        public CallContext getCallContext(int threadId) {
-            CallContext context = callContexts.get(threadId);
-            if (context == null) {
-                int locallyMappedThreadId = ThreadContext.get().createNewThreadId();
-                context = new CallContext(locallyMappedThreadId, true);
-                callContexts.put(threadId, context);
-            }
-            return context;
-        }
-
-        public void addThisAsListener(IMap map, Data key, boolean includeValue) {
-            if (key == null) {
-                map.addEntryListener(this, includeValue);
-            } else {
-                map.addEntryListener(this, key, includeValue);
-            }
-        }
-
-        private ConcurrentMap<Object, EntryEvent> getEventProcessedLog(String name) {
-            ConcurrentMap<Object, EntryEvent> eventProcessedLog = listeneds.get(name);
-            if (eventProcessedLog == null) {
-                eventProcessedLog = new ConcurrentHashMap<Object, EntryEvent>();
-                listeneds.putIfAbsent(name, eventProcessedLog);
-            }
-            return eventProcessedLog;
-        }
-
-        @Override
-        public int hashCode() {
-            return this.conn.hashCode();
-        }
-
-        public void entryAdded(EntryEvent event) {
-            processEvent(event);
-        }
-
-        public void entryEvicted(EntryEvent event) {
-            processEvent(event);
-        }
-
-        public void entryRemoved(EntryEvent event) {
-            processEvent(event);
-        }
-
-        public void entryUpdated(EntryEvent event) {
-            processEvent(event);
-        }
-
-        public void instanceCreated(InstanceEvent event) {
-            processEvent(event);
-        }
-
-        public void instanceDestroyed(InstanceEvent event) {
-            processEvent(event);
-        }
-
-        public void memberAdded(MembershipEvent membershipEvent) {
-            processEvent(membershipEvent);
-        }
-
-        public void memberRemoved(MembershipEvent membershipEvent) {
-            processEvent(membershipEvent);
-        }
-
-        private void processEvent(MembershipEvent membershipEvent) {
-            Packet packet = createMembershipEventPacket(membershipEvent);
-            sendPacket(packet);
-        }
-
-        private void processEvent(InstanceEvent event) {
-            Packet packet = createInstanceEventPacket(event);
-            sendPacket(packet);
-        }
-
-        /**
-         * if a client is listening for both key and the entire
-         * map, then we should make sure that we don't send
-         * two separate events. One is enough. so check
-         * if we already sent one.
-         * <p/>
-         * called by executor service threads
-         *
-         * @param event
-         */
-        private void processEvent(EntryEvent event) {
-            final Object key = event.getKey();
-            Map<Object, EntryEvent> eventProcessedLog = getEventProcessedLog(event.getName());
-            if (eventProcessedLog.get(key) != null && eventProcessedLog.get(key) == event) {
-                return;
-            }
-            eventProcessedLog.put(key, event);
-            Packet packet = createEntryEventPacket(event);
-            sendPacket(packet);
-        }
-
-        private void sendPacket(Packet packet) {
-            if (conn != null && conn.live()) {
-                conn.getWriteHandler().enqueueSocketWritable(packet);
-            }
-        }
-
-        private Packet createEntryEventPacket(EntryEvent event) {
-            Packet packet = new Packet();
-            EventTask eventTask = (EventTask) event;
-            packet.set(event.getName(), ClusterOperation.EVENT, eventTask.getDataKey(), eventTask.getDataValue());
-            packet.longValue = event.getEventType().getType();
-            return packet;
-        }
-
-        private Packet createInstanceEventPacket(InstanceEvent event) {
-            Packet packet = new Packet();
-            packet.set(null, ClusterOperation.EVENT, toData(event.getInstance().getId()), toData(event.getEventType()));
-            return packet;
-        }
-
-        private Packet createMembershipEventPacket(MembershipEvent membershipEvent) {
-            Packet packet = new Packet();
-            packet.set(null, ClusterOperation.EVENT, toData(membershipEvent.getMember()), toData(membershipEvent.getEventType()));
-            return packet;
-        }
-    }
+    
 
     public void reset() {
         mapClientEndpoints.clear();
@@ -734,6 +605,8 @@ public class ClientService {
                 value = toData(map.tryLock(packet.getKeyData(), timeout, (TimeUnit) toObject(packet.getValueData())));
             }
             packet.setValue(value);
+            ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
+            clientEndpoint.locked(map, packet.getKeyData(), packet.threadId);
         }
     }
 
@@ -741,6 +614,15 @@ public class ClientService {
         public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
             map.unlock(key);
             return null;
+        }
+        @Override
+        public void processCall(Node node, Packet packet) {
+            IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+            Data value = processMapOp(map, packet.getKeyData(), packet.getValueData());
+            ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
+            clientEndpoint.unlocked(map, packet.getKeyData(), packet.threadId);
+            packet.clearForResponse();
+            packet.setValue(value);
         }
     }
 

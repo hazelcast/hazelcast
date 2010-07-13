@@ -771,6 +771,15 @@ public class DynamicClusterTest {
         }).start();
         assertTrue("Could not get instances from client", latch.await(1, SECONDS));
     }
+    @Test(timeout = 15000)
+    public void lockFromClientAndThenCrashClientShouldReleaseLock(){
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        HazelcastClient client = getHazelcastClient(h);
+        client.getMap("def").lock("1");
+        client.shutdown();
+        h.getMap("def").lock("1");
+        h.shutdown();
+    }
 
     @AfterClass
     @BeforeClass
