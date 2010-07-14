@@ -17,6 +17,8 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.nio.DataSerializable;
@@ -339,6 +341,27 @@ public class HazelcastClientMapTest {
         final CountDownLatch entryRemovedLatch = new CountDownLatch(1);
         CountDownLatchEntryListener<String, String> listener = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
         map.addEntryListener(listener, true);
+        assertNull(map.get("hello"));
+        map.put("hello", "world");
+        map.put("hello", "new world");
+        assertEquals("new world", map.get("hello"));
+        map.remove("hello");
+        assertTrue(entryAddLatch.await(10, TimeUnit.SECONDS));
+        assertTrue(entryUpdatedLatch.await(10, TimeUnit.SECONDS));
+        assertTrue(entryRemovedLatch.await(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void addListenerForKey() throws InterruptedException, IOException {
+        HazelcastClient hClient = getHazelcastClient();
+        final IMap<String, String> map = hClient.getMap("addListenerForKey");
+        map.clear();
+        assertEquals(0, map.size());
+        final CountDownLatch entryAddLatch = new CountDownLatch(1);
+        final CountDownLatch entryUpdatedLatch = new CountDownLatch(1);
+        final CountDownLatch entryRemovedLatch = new CountDownLatch(1);
+        CountDownLatchEntryListener<String, String> listener = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
+        map.addEntryListener(listener,"hello", true);
         assertNull(map.get("hello"));
         map.put("hello", "world");
         map.put("hello", "new world");

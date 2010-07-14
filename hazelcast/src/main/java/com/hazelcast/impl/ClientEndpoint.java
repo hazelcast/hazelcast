@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class ClientEndpoint implements EntryListener, InstanceListener, MembershipListener, ConnectionListener {
     final Connection conn;
@@ -57,7 +58,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
         if (key == null) {
             map.addEntryListener(this, includeValue);
         } else {
-            map.addEntryListener(this, key, includeValue);
+            map.addEntryListener(this, toObject(key), includeValue);
         }
     }
 
