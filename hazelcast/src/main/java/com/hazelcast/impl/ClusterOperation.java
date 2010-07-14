@@ -127,6 +127,9 @@ public enum ClusterOperation {
     }
 
     public static ClusterOperation create(int operation) {
-        return clusterOperations[operation];
+        if (operation > 0 && operation <= OPERATION_COUNT){
+            return clusterOperations[operation];
+        }
+        else return NONE;
     }
 }
