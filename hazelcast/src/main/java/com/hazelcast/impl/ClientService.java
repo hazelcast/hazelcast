@@ -405,7 +405,6 @@ public class ClientService {
 
     private class ClientAddInstanceListenerHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-//            System.out.println("Add listener");
             ClientEndpoint endPoint = getClientEndpoint(packet.conn);
             node.factory.addInstanceListener(endPoint);
         }

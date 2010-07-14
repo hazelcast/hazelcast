@@ -178,7 +178,6 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
                     for (Data key : list) {
 
                         map.unlock(key);
-                        System.out.printf("Removed lock key" + key);
                     }
                 }
             }
@@ -198,7 +197,6 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
             mapOfLocks.put(map, list);
         }
         mapOfLocks.get(map).add(keyData);
-        System.out.printf("Added lock" + keyData);
     }
 
     public void unlocked(IMap<Object, Object> map, Data keyData, int threadId) {
