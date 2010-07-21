@@ -7,7 +7,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>1.8.5</version>
+    <version>1.9-SNAPSHOT</version>
     <name>Hazelcast Root</name>
 
     <modules>

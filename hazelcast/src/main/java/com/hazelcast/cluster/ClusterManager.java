@@ -357,11 +357,11 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         Connection conn = joinRequest.getConnection();
         if (node.validateJoinRequest(joinRequest)) {
             if (!node.getConfig().getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
-                if (node.getMasterAddress() != null && !isMaster()) {
+                if (node.isActive() && node.joined() && node.getMasterAddress() != null && !isMaster()) {
                     sendProcessableTo(new Master(node.getMasterAddress()), conn);
                 }
             }
-            if (isMaster()) {
+            if (isMaster() && node.joined() && node.isActive()) {
                 if (joinRequest.to != null && !joinRequest.to.equals(thisAddress)) {
                     sendProcessableTo(new Master(node.getMasterAddress()), conn);
                     return;

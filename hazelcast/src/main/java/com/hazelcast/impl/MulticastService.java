@@ -79,7 +79,7 @@ public class MulticastService implements Runnable {
                 if (joinInfo != null) {
                     if (node.address != null && !node.address.equals(joinInfo.address)) {
                         if (node.validateJoinRequest(joinInfo)) {
-                            if (node.isMaster()) {
+                            if (node.isMaster() && node.isActive() && node.joined()) {
                                 if (joinInfo.isRequest()) {
                                     send(joinInfo.copy(false, node.address));
                                 }

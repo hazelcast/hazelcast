@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>1.8.5</version>
+        <version>1.9-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -61,7 +61,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>-Xmx512m -XX:MaxPermSize=128M</argLine>
+                    <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M</argLine>
                     <excludes>
                         <exclude>**/ClusterTest.java</exclude>
                         <exclude>**/QueryTest.java</exclude>
@@ -83,7 +83,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <argLine>-Xmx512m -XX:MaxPermSize=128M</argLine>
+                            <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M</argLine>
                             <excludes>
                                 <exclude>**/PerformanceTest.java</exclude>
                             </excludes>
@@ -100,7 +100,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <argLine>-Xmx512m -XX:MaxPermSize=128M</argLine>
+                            <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M</argLine>
                             <includes>
                                 <include>**/client/**.java</include>
                             </includes>
