@@ -35,12 +35,9 @@ import static com.hazelcast.client.Serializer.toObject;
 public class ExecutorServiceClientProxy implements ExecutorService {
 
     final ProxyHelper proxyHelper;
-    private final HazelcastClient client;
-    private final String name;
+    final ExecutorService callBackExecutors = Executors.newFixedThreadPool(5);
 
     public ExecutorServiceClientProxy(HazelcastClient client, String name) {
-        this.client = client;
-        this.name = name;
         proxyHelper = new ProxyHelper(name, client);
     }
 
@@ -99,6 +96,17 @@ public class ExecutorServiceClientProxy implements ExecutorService {
         final Call call = new Call(ProxyHelper.newCallId(), request) {
             public void onDisconnect(final Member member) {
                 setResponse(new MemberLeftException(member));
+            }
+
+            public void setResponse(Object response) {
+                super.setResponse(response);
+                if (dt.getExecutionCallback() != null) {
+                    callBackExecutors.execute(new Runnable() {
+                        public void run() {
+                            dt.getExecutionCallback().done(dt);
+                        }
+                    });
+                }
             }
         };
         inner.setExecutionManagerCallback(new ExecutionManagerCallback() {

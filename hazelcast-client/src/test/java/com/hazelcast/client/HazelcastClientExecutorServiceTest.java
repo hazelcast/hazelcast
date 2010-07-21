@@ -17,11 +17,8 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.DistributedTask;
-import com.hazelcast.core.ExecutorServiceTest;
+import com.hazelcast.core.*;
 import com.hazelcast.core.ExecutorServiceTest.BasicTestTask;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MultiTask;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
 import com.hazelcast.monitor.DistributedMemberInfoCallable;
 import org.junit.Test;
@@ -31,10 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static junit.framework.Assert.*;
@@ -182,7 +176,7 @@ public class HazelcastClientExecutorServiceTest {
     }
 
     @Test
-    public void DistributedTaskOnMember() throws ExecutionException, InterruptedException {
+    public void distributedTaskOnMember() throws ExecutionException, InterruptedException {
         ExecutorService ex = getExecutorService();
         Member member = getHazelcastClient().getCluster().getMembers().iterator().next();
         DistributedTask task = new DistributedTask(new BasicTestTask(), member);
@@ -192,7 +186,22 @@ public class HazelcastClientExecutorServiceTest {
     }
 
     @Test
-    public void DistributedTaskGetMemberInfo() throws ExecutionException, InterruptedException {
+    public void distributedTaskCallBack() throws ExecutionException, InterruptedException {
+        ExecutorService ex = getExecutorService();
+        Member member = getHazelcastClient().getCluster().getMembers().iterator().next();
+        DistributedTask task = new DistributedTask(new BasicTestTask(), member);
+        final CountDownLatch latch= new CountDownLatch(1);
+        task.setExecutionCallback(new ExecutionCallback(){
+            public void done(Future future) {
+                latch.countDown();
+            }
+        });
+        ex.execute(task);
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void distributedTaskGetMemberInfo() throws ExecutionException, InterruptedException {
         ExecutorService esService = getExecutorService();
         Member member = getHazelcastClient().getCluster().getMembers().iterator().next();
         DistributedTask<DistributedMemberInfoCallable.MemberInfo> task =
