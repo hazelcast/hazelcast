@@ -25,6 +25,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
+import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.SleepCallable;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
@@ -548,10 +549,8 @@ public class DynamicClusterTest {
                 }
             }
         }).start();
-
         latch.await(10, SECONDS);
     }
-
 
     @Test(timeout = 25000, expected = MemberLeftException.class)
     public void shouldThrowMemberLeftExceptionWhenConnectedMemberDiesWhileExecuting() throws ExecutionException, InterruptedException, IOException {
@@ -771,8 +770,9 @@ public class DynamicClusterTest {
         }).start();
         assertTrue("Could not get instances from client", latch.await(1, SECONDS));
     }
+
     @Test(timeout = 15000)
-    public void mapLockFromClientAndThenCrashClientShouldReleaseLock(){
+    public void mapLockFromClientAndThenCrashClientShouldReleaseLock() {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
         HazelcastClient client = getHazelcastClient(h);
         client.getMap("def").lock("1");
@@ -782,7 +782,7 @@ public class DynamicClusterTest {
     }
 
     @Test(timeout = 15000)
-    public void lockFromClientAndThenCrashClientShouldReleaseLock(){
+    public void lockFromClientAndThenCrashClientShouldReleaseLock() {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
         HazelcastClient client = getHazelcastClient(h);
         Lock lock = client.getLock("1");
@@ -790,6 +790,49 @@ public class DynamicClusterTest {
         client.shutdown();
         h.getLock("1").lock();
         h.shutdown();
+    }
+
+    @Test
+    public void clientEndpointShouldbeRemovedAfterClientShutDown() throws InterruptedException {
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        assertEquals(0, getNumberOfClientsConnected(h));
+        for (int i = 0; i < 10; i++) {
+            if (i % 10 == 0) {
+                System.out.println(i);
+            }
+            HazelcastClient client = getHazelcastClient(h);
+            System.out.println("Client " + client);
+            assertEquals(1, getNumberOfClientsConnected(h));
+            client.shutdown();
+        }
+        Thread.sleep(1000);
+        assertEquals(0, getNumberOfClientsConnected(h));
+        h.shutdown();
+    }
+
+    @Test
+    public void create10clientsThenShutdownNumberOfConnectedClientsShouldBeZero() throws InterruptedException {
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        assertEquals(0, getNumberOfClientsConnected(h));
+        List<HazelcastClient> listOfHazelcastClient = new ArrayList<HazelcastClient>();
+        for(int i=0;i<10;i++){
+           HazelcastClient client = getHazelcastClient(h);
+            listOfHazelcastClient.add(client);
+        }
+        assertEquals(10, getNumberOfClientsConnected(h));
+        for(HazelcastClient client: listOfHazelcastClient){
+            client.shutdown();
+        }
+        Thread.sleep(1000);
+        assertEquals(0, getNumberOfClientsConnected(h));
+        h.shutdown();
+    }
+
+    private int getNumberOfClientsConnected(HazelcastInstance h) {
+        FactoryImpl.HazelcastInstanceProxy proxy = (FactoryImpl.HazelcastInstanceProxy) h;
+        FactoryImpl factory = (FactoryImpl)proxy.getHazelcastInstance();
+        int size = factory.node.clientService.numberOfConnectedClients();
+        return size;
     }
 
     @AfterClass

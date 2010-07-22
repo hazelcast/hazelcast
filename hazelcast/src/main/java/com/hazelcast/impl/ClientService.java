@@ -19,15 +19,11 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.*;
 import com.hazelcast.core.Instance.InstanceType;
-import com.hazelcast.impl.BaseManager.EventTask;
 import com.hazelcast.impl.ConcurrentMapManager.Entries;
 import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl;
 import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl.CollectionProxyReal;
 import com.hazelcast.impl.base.KeyValue;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.*;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
@@ -36,14 +32,16 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.impl.BaseManager.getInstanceType;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_SUCCESS;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class ClientService {
+public class ClientService implements ConnectionListener {
     private final Node node;
     private final Map<Connection, ClientEndpoint> mapClientEndpoints = new HashMap<Connection, ClientEndpoint>();
     private final ClientOperationHandler[] clientOperationHandlers = new ClientOperationHandler[300];
@@ -95,6 +93,7 @@ public class ClientService {
         clientOperationHandlers[ClusterOperation.CLIENT_ADD_INSTANCE_LISTENER.getValue()] = new ClientAddInstanceListenerHandler();
         clientOperationHandlers[ClusterOperation.CLIENT_ADD_MEMBERSHIP_LISTENER.getValue()] = new ClientAddMembershipListenerHandler();
         clientOperationHandlers[ClusterOperation.CLIENT_GET_PARTITIONS.getValue()] = new GetPartitionsHandler();
+        node.connectionManager.addConnectionListener(this);
     }
     // always called by InThread
 
@@ -109,20 +108,30 @@ public class ClientService {
         }
     }
 
+    public int numberOfConnectedClients() {
+        return mapClientEndpoints.size();
+    }
+
     public ClientEndpoint getClientEndpoint(Connection conn) {
         ClientEndpoint clientEndpoint = mapClientEndpoints.get(conn);
         if (clientEndpoint == null) {
             clientEndpoint = new ClientEndpoint(conn);
             mapClientEndpoints.put(conn, clientEndpoint);
-            node.connectionManager.addConnectionListener(clientEndpoint);
         }
         return clientEndpoint;
     }
 
-    
-
     public void reset() {
         mapClientEndpoints.clear();
+    }
+
+    public void connectionAdded(Connection connection) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void connectionRemoved(Connection connection) {
+        ClientEndpoint clientEndpoint = mapClientEndpoints.remove(connection);
+        clientEndpoint.connectionRemoved(connection);
     }
 
     private class QueueOfferHandler extends ClientQueueOperationHandler {
@@ -614,6 +623,7 @@ public class ClientService {
             map.unlock(key);
             return null;
         }
+
         @Override
         public void processCall(Node node, Packet packet) {
             IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);

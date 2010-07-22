@@ -25,8 +25,8 @@ import com.hazelcast.impl.GroupProperties;
 import java.net.InetSocketAddress;
 
 public class TestUtility {
-    public static HazelcastClient client;
-    static HazelcastInstance hz;
+    public static volatile HazelcastClient client;
+    static volatile HazelcastInstance hz;
 
     public synchronized static HazelcastClient getHazelcastClient() {
         if (client == null) {
