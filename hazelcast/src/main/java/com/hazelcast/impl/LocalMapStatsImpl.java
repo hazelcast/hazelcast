@@ -21,7 +21,6 @@ import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.monitor.LocalMapStats;
 
 import java.io.Serializable;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class LocalMapStatsImpl implements LocalMapStats, Serializable {
@@ -40,11 +39,6 @@ public class LocalMapStatsImpl implements LocalMapStats, Serializable {
     private long lockWaitCount;
     private LocalMapOperationStats operationStats;
 
-    public void incrementHit() {
-        hits.incrementAndGet();
-        lastAccessTime.set(System.currentTimeMillis());
-    }
-
     enum Op {
         CREATE,
         READ,
@@ -57,41 +51,6 @@ public class LocalMapStatsImpl implements LocalMapStats, Serializable {
     }
 
     public LocalMapStatsImpl() {
-    }
-
-    public void update(Op op, Record record, boolean owned, long updateCost) {
-        if (owned) {
-            if (op == Op.READ) {
-                hits.incrementAndGet();
-            } else if (op == Op.UPDATE) {
-                lastUpdateTime = System.currentTimeMillis();
-                ownedEntryMemoryCost += updateCost;
-            } else if (op == Op.CREATE) {
-                ownedEntryCount++;
-                ownedEntryMemoryCost += record.getCost();
-            } else if (op == Op.REMOVE) {
-                ownedEntryCount--;
-                ownedEntryMemoryCost -= record.getCost();
-            } else if (op == Op.LOCK) {
-                lockedEntryCount++;
-            } else if (op == Op.UNLOCK) {
-                lockedEntryCount--;
-            } else if (op == Op.ADD_LOCK_WAIT) {
-                lockWaitCount++;
-            } else if (op == Op.REMOVE_LOCK_WAIT) {
-                lockWaitCount--;
-            }
-        } else {
-            if (op == Op.CREATE) {
-                backupEntryCount++;
-                backupEntryMemoryCost += record.getCost();
-            } else if (op == Op.UPDATE) {
-                backupEntryMemoryCost += updateCost;
-            } else if (op == Op.REMOVE) {
-                backupEntryCount--;
-                backupEntryMemoryCost -= record.getCost();
-            }
-        }
     }
 
     public long getOwnedEntryCount() {

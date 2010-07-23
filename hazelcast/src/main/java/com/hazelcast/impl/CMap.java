@@ -122,8 +122,6 @@ public class CMap {
 
     DistributedLock lockEntireMap = null;
 
-    final LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
-
     public CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
         this.logger = concurrentMapManager.node.getLogger(CMap.class.getName());
@@ -178,7 +176,7 @@ public class CMap {
             writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
         }
         if (!node.isSuperClient() && evictionPolicy == EvictionPolicy.NONE && instanceType == Instance.InstanceType.MAP) {
-            locallyOwnedMap = new LocallyOwnedMap(localMapStats);
+            locallyOwnedMap = new LocallyOwnedMap();
             concurrentMapManager.mapLocallyOwnedMaps.put(name, locallyOwnedMap);
         } else {
             locallyOwnedMap = null;
@@ -272,7 +270,7 @@ public class CMap {
         if (req.value == null) {
             req.value = new Data();
         }
-        Record record = toRecordAndStats(req, true);
+        Record record = toRecord(req);
         if (req.ttl <= 0 || req.timeout <= 0) {
             record.setInvalid();
         } else {
@@ -282,9 +280,6 @@ public class CMap {
         markAsActive(record);
         markAsDirty(record);
         updateIndexes(record);
-        if (record.isLocked()) {
-            updateStats(LOCK, record, true, null);
-        }
         record.setVersion(req.version);
     }
 
@@ -360,29 +355,14 @@ public class CMap {
             record.runBackupOps();
         }
         return true;
-    }
-
-    Record toRecordAndStats(Request req, boolean owned) {
-        Record record = getRecord(req.key);
-        Op op;
-        Data oldValue = null;
-        if (record == null || !record.isActive()) {
-            op = CREATE;
-        } else {
-            op = UPDATE;
-            oldValue = record.getValue();
-        }
-        record = toRecord(req);
-        updateStats(op, record, owned, oldValue);
-        return record;
-    }
+    } 
 
     public void doBackup(Request req) {
         if (req.key == null || req.key.size() == 0) {
             throw new RuntimeException("Backup key size cannot be zero! " + req.key);
         }
         if (req.operation == CONCURRENT_MAP_BACKUP_PUT) {
-            Record record = toRecordAndStats(req, false);
+            Record record = toRecord(req);
             markAsActive(record);
             record.setVersion(req.version);
             if (req.indexes != null) {
@@ -402,7 +382,6 @@ public class CMap {
             Record record = getRecord(req.key);
             if (record != null) {
                 if (record.isActive()) {
-                    updateStats(REMOVE, record, false, null);
                     if (record.getCopyCount() > 0) {
                         record.decrementCopyCount();
                     }
@@ -441,94 +420,6 @@ public class CMap {
         } else {
             logger.log(Level.SEVERE, "Unknown backup operation " + req.operation);
         }
-    }
-
-    public LocalMapStatsImpl getLocalMapStats() {
-        LocalMapStatsImpl stats = new LocalMapStatsImpl();
-        createStats(stats);
-        return stats;
-//        if (maxIdle > 0 || ttl > 0 || ttlPerRecord || isList() || isMultiMap()) {
-//            createStats(stats);
-//        } else {
-//            ClusterImpl clusterImpl = node.getClusterImpl();
-//
-//            stats.setLockWaitCount(localMapStats.getLockWaitCount());
-//            stats.setLockedEntryCount(localMapStats.getLockedEntryCount());
-//            stats.setHits(localMapStats.getHits());
-//            stats.setOwnedEntryCount(localMapStats.getOwnedEntryCount());
-//            stats.setBackupEntryCount(localMapStats.getBackupEntryCount());
-//            stats.setOwnedEntryMemoryCost(localMapStats.getOwnedEntryMemoryCost());
-//            stats.setBackupEntryMemoryCost(localMapStats.getBackupEntryMemoryCost());
-//            stats.setLastEvictionTime(clusterImpl.getClusterTimeFor(lastEvictionTime));
-//            stats.setCreationTime(clusterImpl.getClusterTimeFor(creationTime));
-//            stats.setLastAccessTime(clusterImpl.getClusterTimeFor(localMapStats.getLastAccessTime()));
-//            stats.setLastUpdateTime(clusterImpl.getClusterTimeFor(localMapStats.getLastUpdateTime()));
-//        }
-//        return stats;
-    }
-
-    void resetLocalMapStats(Map<Address, Integer> distances) {
-        long now = System.currentTimeMillis();
-        int ownedEntryCount = 0;
-        int backupEntryCount = 0;
-        int markedAsRemovedEntryCount = 0;
-        int ownedEntryMemoryCost = 0;
-        int backupEntryMemoryCost = 0;
-        int markedAsRemovedMemoryCost = 0;
-        int hits = 0;
-        int lockedEntryCount = 0;
-        int lockWaitCount = 0;
-        ClusterImpl clusterImpl = node.getClusterImpl();
-        for (Record record : mapRecords.values()) {
-            Block block = concurrentMapManager.getOrCreateBlock(record.getBlockId());
-            boolean owned = thisAddress.equals(block.getOwner());
-            if (owned) {
-                if (!record.isActive() || !record.isValid(now)) {
-                    markedAsRemovedEntryCount++;
-                    markedAsRemovedMemoryCost += record.getCost();
-                } else {
-                    ownedEntryCount += record.valueCount();
-                    ownedEntryMemoryCost += record.getCost();
-                    localMapStats.setLastAccessTime(record.getLastAccessTime());
-                    localMapStats.setLastUpdateTime(record.getLastUpdateTime());
-                    hits += record.getHits();
-                    if (record.isLocked()) {
-                        lockedEntryCount++;
-                        lockWaitCount += record.getScheduledActionCount();
-                    }
-                }
-            } else {
-                boolean unknown = false;
-                Address eventualOwner = (block.isMigrating()) ? block.getMigrationAddress() : block.getOwner();
-                if (!thisAddress.equals(eventualOwner)) {
-                    Integer distance = distances.get(eventualOwner);
-                    if (distance != null && distance > getBackupCount()) {
-                        unknown = true;
-                    }
-                }
-                backupEntryCount += record.valueCount();
-                backupEntryMemoryCost += record.getCost();
-//                if (unknown) {
-//                    markedAsRemovedEntryCount++;
-//                    markedAsRemovedMemoryCost += record.getCost();
-//                    markAsRemoved(record);
-//                } else {
-//                    backupEntryCount += record.valueCount();
-//                    backupEntryMemoryCost += record.getCost();
-//                }
-            }
-        }
-        localMapStats.setMarkedAsRemovedEntryCount(markedAsRemovedEntryCount);
-        localMapStats.setMarkedAsRemovedMemoryCost(markedAsRemovedMemoryCost);
-        localMapStats.setLockWaitCount(lockWaitCount);
-        localMapStats.setLockedEntryCount(lockedEntryCount);
-        localMapStats.setHits(hits);
-        localMapStats.setOwnedEntryCount(ownedEntryCount);
-        localMapStats.setBackupEntryCount(backupEntryCount);
-        localMapStats.setOwnedEntryMemoryCost(ownedEntryMemoryCost);
-        localMapStats.setBackupEntryMemoryCost(backupEntryMemoryCost);
-        localMapStats.setLastEvictionTime(clusterImpl.getClusterTimeFor(lastEvictionTime));
-        localMapStats.setCreationTime(clusterImpl.getClusterTimeFor(creationTime));
     }
 
     private void purgeIfNotOwnedOrBackup(Collection<Record> records) {
@@ -619,7 +510,6 @@ public class CMap {
                 return false;
             } else {
                 if (record.isActive() && record.isValid()) {
-                    updateStats(READ, record, true, null);
                     if (value == null) {
                         return record.valueCount() > 0;
                     } else {
@@ -685,7 +575,6 @@ public class CMap {
             }
         }
         record.setLastAccessed();
-        updateStats(READ, record, true, null);
         Data data = record.getValue();
         Data returnValue = null;
         if (data != null) {
@@ -746,7 +635,6 @@ public class CMap {
         mapRecordEntries.remove(rec.getId());
         request.version = rec.getVersion();
         request.lockCount = rec.getLockCount();
-        updateStats(LOCK, rec, true, null);
         markAsActive(rec);
         request.response = Boolean.TRUE;
     }
@@ -977,7 +865,6 @@ public class CMap {
             unlock(record);
         }
         record.setIndexes(req.indexes, req.indexTypes);
-        updateStats(op, record, true, oldValue);
         updateIndexes(record);
         markAsDirty(record);
         req.clearForResponse();
@@ -1033,7 +920,8 @@ public class CMap {
         }
     }
 
-    void createStats(LocalMapStatsImpl localMapStats) {
+    LocalMapStatsImpl getLocalMapStats() {
+        LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
         long now = System.currentTimeMillis();
         int ownedEntryCount = 0;
         int backupEntryCount = 0;
@@ -1095,6 +983,7 @@ public class CMap {
         localMapStats.setBackupEntryMemoryCost(backupEntryMemoryCost);
         localMapStats.setLastEvictionTime(clusterImpl.getClusterTimeFor(lastEvictionTime));
         localMapStats.setCreationTime(clusterImpl.getClusterTimeFor(creationTime));
+        return localMapStats;
     }
 
     void startCleanup() {
@@ -1299,7 +1188,6 @@ public class CMap {
             fireInvalidation(record);
             concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_EVICTED, record.getKey(), record.getValue(), record.getMapListeners(), req.caller);
             record.incrementVersion();
-            updateStats(REMOVE, record, true, null);
             markAsRemoved(record);
             req.clearForResponse();
             req.version = record.getVersion();
@@ -1344,30 +1232,11 @@ public class CMap {
             concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKey(), oldValue, record.getMapListeners(), req.caller);
             record.incrementVersion();
         }
-        updateStats(REMOVE, record, true, null);
         markAsRemoved(record);
         req.clearForResponse();
         req.version = record.getVersion();
         req.longValue = record.getCopyCount();
         req.response = oldValue;
-    }
-
-    void updateStats(Op op, Record record, boolean owned, Data oldValue) {
-        long updateCost = 0;
-        if (op == UPDATE) {
-            long newValueCost = (record.getValue() != null) ? record.getValue().size() : 0;
-            long oldValueCost = (oldValue != null) ? oldValue.size() : 0;
-            updateCost = (newValueCost - oldValueCost);
-        }
-        localMapStats.update(op, record, owned, updateCost);
-    }
-
-    public void incrementLockWaits(Record record) {
-        localMapStats.update(ADD_LOCK_WAIT, record, true, 0);
-    }
-
-    public void decrementLockWaits(Record record) {
-        localMapStats.update(REMOVE_LOCK_WAIT, record, true, 0);
     }
 
     void reset() {

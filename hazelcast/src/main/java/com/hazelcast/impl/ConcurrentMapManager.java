@@ -1585,7 +1585,6 @@ public class ConcurrentMapManager extends BaseManager {
                     request.version = record.getVersion();
                     request.lockCount = record.getLockCount();
                     cmap.fireScheduledActions(record);
-                    cmap.updateStats(UNLOCK, record, true, null);
                 }
                 logger.log(Level.FINEST, unlocked + " now lock " + record.getLock());
             }
@@ -1627,14 +1626,12 @@ public class ConcurrentMapManager extends BaseManager {
             ScheduledAction scheduledAction = new ScheduledAction(request) {
                 @Override
                 public boolean consume() {
-                    cmap.decrementLockWaits(record);
                     handle(request);
                     return true;
                 }
 
                 @Override
                 public void onExpire() {
-                    cmap.decrementLockWaits(record);
                     onNoTimeToSchedule(request);
                 }
 
@@ -1644,7 +1641,6 @@ public class ConcurrentMapManager extends BaseManager {
                     returnResponse(request);
                 }
             };
-            cmap.incrementLockWaits(record);
             record.addScheduledAction(scheduledAction);
             node.clusterManager.registerScheduledAction(scheduledAction);
         }
