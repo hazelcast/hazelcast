@@ -19,11 +19,14 @@ package com.hazelcast.impl;
 
 import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.nio.DataSerializable;
 
-import java.io.Serializable;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class LocalMapStatsImpl implements LocalMapStats, Serializable {
+public class LocalMapStatsImpl implements LocalMapStats, DataSerializable {
     private final AtomicLong lastAccessTime = new AtomicLong();
     private final AtomicLong hits = new AtomicLong();
     private long ownedEntryCount;
@@ -51,6 +54,41 @@ public class LocalMapStatsImpl implements LocalMapStats, Serializable {
     }
 
     public LocalMapStatsImpl() {
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        out.writeLong(lastAccessTime.get());
+        out.writeLong(hits.get());
+        out.writeLong(ownedEntryCount);
+        out.writeLong(backupEntryCount);
+        out.writeLong(markedAsRemovedEntryCount);
+        out.writeLong(ownedEntryMemoryCost);
+        out.writeLong(backupEntryMemoryCost);
+        out.writeLong(markedAsRemovedMemoryCost);
+        out.writeLong(creationTime);
+        out.writeLong(lastUpdateTime);
+        out.writeLong(lastEvictionTime);
+        out.writeLong(lockedEntryCount);
+        out.writeLong(lockWaitCount);
+        operationStats.writeData(out);
+    }
+
+    public void readData(DataInput in) throws IOException {
+        lastAccessTime.set(in.readLong());
+        hits.set(in.readLong());
+        ownedEntryCount = in.readLong();
+        backupEntryCount = in.readLong();
+        markedAsRemovedEntryCount = in.readLong();
+        ownedEntryMemoryCost = in.readLong();
+        backupEntryMemoryCost = in.readLong();
+        markedAsRemovedMemoryCost = in.readLong();
+        creationTime = in.readLong();
+        lastUpdateTime = in.readLong();
+        lastEvictionTime = in.readLong();
+        lockedEntryCount = in.readLong();
+        lockWaitCount = in.readLong();
+        operationStats = new MapOperationStatsImpl();
+        operationStats.readData(in);
     }
 
     public long getOwnedEntryCount() {

@@ -17,12 +17,14 @@
 
 package com.hazelcast.monitor;
 
+import com.hazelcast.nio.DataSerializable;
+
 /**
  * Local Map Operation Statistics returns number of map operations in bounded period. The period
  * has start and end times. Given the number of operations in that period, one can calculate the number of
  * operations per second. 
  */
-public interface LocalMapOperationStats {
+public interface LocalMapOperationStats extends DataSerializable{
 
     /**
      * Gets the start time of the period in milliseconds.

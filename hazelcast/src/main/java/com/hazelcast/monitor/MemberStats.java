@@ -18,8 +18,9 @@
 package com.hazelcast.monitor;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.nio.DataSerializable;
 
-public interface MemberStats {
+public interface MemberStats extends DataSerializable {
 
     Member getMember();
 

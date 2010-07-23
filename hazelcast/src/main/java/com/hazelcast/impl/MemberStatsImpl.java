@@ -22,13 +22,55 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.MemberStats;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class MemberStatsImpl implements MemberStats {
     MemberImpl member;
     Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
     Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
+
+    public void writeData(DataOutput out) throws IOException {
+        member.writeData(out);
+        int mapCount = mapStats.size();
+        int queueCount = queueStats.size();
+        out.writeInt(mapCount);
+        Set<Map.Entry<String, LocalMapStatsImpl>> maps = mapStats.entrySet();
+        for (Map.Entry<String, LocalMapStatsImpl> mapStatsEntry : maps) {
+            out.writeUTF(mapStatsEntry.getKey());
+            mapStatsEntry.getValue().writeData(out);
+        }
+        out.writeInt(queueCount);
+        Set<Map.Entry<String, LocalQueueStatsImpl>> queueStatEntries = queueStats.entrySet();
+        for (Map.Entry<String, LocalQueueStatsImpl> queueStatEntry : queueStatEntries) {
+            out.writeUTF(queueStatEntry.getKey());
+            queueStatEntry.getValue().writeData (out);
+        }
+
+    }
+
+    public void readData(DataInput in) throws IOException {
+        member = new MemberImpl();
+        member.readData(in);
+        int mapCount = in.readInt();
+        for (int i = 0; i < mapCount; i++) {
+            String mapName = in.readUTF();
+            LocalMapStatsImpl localMapStatsImpl = new LocalMapStatsImpl();
+            localMapStatsImpl.readData(in);
+            mapStats.put(mapName, localMapStatsImpl);
+        }
+        int queueCount = in.readInt();
+        for (int i = 0; i < queueCount; i++) {
+            String queueName = in.readUTF();
+            LocalQueueStatsImpl localQueueStats = new LocalQueueStatsImpl();
+            localQueueStats.readData(in);
+            queueStats.put(queueName, localQueueStats);
+        }
+    }
 
     public Member getMember() {
         return member;

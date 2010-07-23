@@ -18,13 +18,12 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.monitor.LocalMapOperationStats;
-import com.hazelcast.nio.DataSerializable;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class MapOperationStatsImpl implements DataSerializable, LocalMapOperationStats {
+public class MapOperationStatsImpl implements LocalMapOperationStats {
 
     long periodStart;
     long periodEnd;

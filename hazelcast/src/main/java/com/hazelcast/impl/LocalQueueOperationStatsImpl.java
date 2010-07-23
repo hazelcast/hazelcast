@@ -24,7 +24,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class LocalQueueOperationStatsImpl implements DataSerializable, LocalQueueOperationStats {
+public class LocalQueueOperationStatsImpl implements LocalQueueOperationStats {
 
     long periodStart;
     long periodEnd;

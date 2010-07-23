@@ -19,10 +19,14 @@ package com.hazelcast.impl;
 
 import com.hazelcast.monitor.LocalQueueOperationStats;
 import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.nio.DataSerializable;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.Serializable;
 
-public class LocalQueueStatsImpl implements LocalQueueStats, Serializable {
+public class LocalQueueStatsImpl implements LocalQueueStats, DataSerializable {
     private int ownedItemCount;
     private int backupItemCount;
     private long minAge;
@@ -31,12 +35,35 @@ public class LocalQueueStatsImpl implements LocalQueueStats, Serializable {
 
     private LocalQueueOperationStats queueOperationStats;
 
+    public LocalQueueStatsImpl() {
+    }
+
     public LocalQueueStatsImpl(int ownedItemCount, int backupItemCount, long minAge, long maxAge, long aveAge) {
         this.ownedItemCount = ownedItemCount;
         this.backupItemCount = backupItemCount;
         this.minAge = minAge;
         this.maxAge = maxAge;
         this.aveAge = aveAge;
+
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        out.writeInt(ownedItemCount);
+        out.writeInt(backupItemCount);
+        out.writeLong(minAge);
+        out.writeLong(maxAge);
+        out.writeLong(aveAge);
+        queueOperationStats.writeData(out);
+    }
+
+    public void readData(DataInput in) throws IOException {
+        ownedItemCount = in.readInt();
+        backupItemCount = in.readInt();
+        minAge = in.readLong();
+        maxAge = in.readLong();
+        aveAge = in.readLong();
+        queueOperationStats = new LocalQueueOperationStatsImpl();
+        queueOperationStats.readData(in);
     }
 
     public int getOwnedItemCount() {
