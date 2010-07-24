@@ -25,5 +25,5 @@ public abstract class FallThroughRunnable implements Runnable {
         }
     }
 
-    abstract void doRun();
+    public abstract void doRun();
 }

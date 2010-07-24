@@ -50,7 +50,7 @@ public final class ClusterService implements Runnable, Constants {
 
     private final PacketProcessor[] packetProcessors = new PacketProcessor[ClusterOperation.OPERATION_COUNT];
 
-    private final Runnable[] periodicRunnables = new Runnable[4];
+    private final Runnable[] periodicRunnables = new Runnable[5];
 
     private final Node node;
 

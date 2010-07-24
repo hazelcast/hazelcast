@@ -125,6 +125,13 @@ public class
         });
     }
 
+    public void collectMemberStats(MemberStatsImpl memberStats) {
+        Collection<Q> queues = mapQueues.values();
+        for (Q queue : queues) {
+            memberStats.putLocalQueueStats(queue.getName(), queue.getQueueStats());
+        }
+    }
+
     // todo: this part can be implemented better.
     // Thread.sleep is bad!
     class BlockBackupSyncRunner extends FallThroughRunnable {
@@ -1225,6 +1232,10 @@ public class
             return maxSizePerJVM;
         }
 
+        public String getName() {
+            return name;
+        }
+
         public class ScheduledPollAction extends ScheduledAction {
 
             public ScheduledPollAction(Request request) {
@@ -1535,7 +1546,8 @@ public class
             if (addIndex == -1)
                 throw new RuntimeException("addIndex cannot be -1");
             if (lsMembers.size() > 1) {
-                if (getNextMemberAfter(thisAddress, true, 1).getAddress().equals(caller)) {
+                MemberImpl memberBackup = getNextMemberAfter(thisAddress, true, 1);
+                if (memberBackup == null || memberBackup.getAddress().equals(caller)) {
                     return true;
                 }
                 ClusterOperation operation = ClusterOperation.BLOCKING_QUEUE_BACKUP_REMOVE;
@@ -1545,7 +1557,7 @@ public class
                 Packet packet = obtainPacket(name, null, data, operation, 0);
                 packet.blockId = blockId;
                 packet.longValue = addIndex;
-                boolean sent = send(packet, getNextMemberAfter(thisAddress, true, 1).getAddress());
+                boolean sent = send(packet, memberBackup.getAddress());
                 if (!sent) {
                     releasePacket(packet);
                 }

@@ -250,6 +250,13 @@ public class ConcurrentMapManager extends BaseManager {
         return blocks;
     }
 
+    public void collectMemberStats(MemberStatsImpl memberStats) {
+        Collection<CMap> cmaps = maps.values();
+        for (CMap cmap : cmaps) {
+            memberStats.putLocalMapStats(cmap.getName(), cmap.getLocalMapStats());
+        }
+    }
+
     class MLock extends MBackupAndMigrationAwareOp {
         volatile Data oldValue = null;
 

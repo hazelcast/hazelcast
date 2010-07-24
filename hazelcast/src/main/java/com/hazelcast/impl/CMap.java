@@ -972,18 +972,22 @@ public class CMap {
                 }
             }
         }
-        localMapStats.setMarkedAsRemovedEntryCount(markedAsRemovedEntryCount);
-        localMapStats.setMarkedAsRemovedMemoryCost(markedAsRemovedMemoryCost);
-        localMapStats.setLockWaitCount(lockWaitCount);
-        localMapStats.setLockedEntryCount(lockedEntryCount);
-        localMapStats.setHits(hits);
-        localMapStats.setOwnedEntryCount(ownedEntryCount);
-        localMapStats.setBackupEntryCount(backupEntryCount);
-        localMapStats.setOwnedEntryMemoryCost(ownedEntryMemoryCost);
-        localMapStats.setBackupEntryMemoryCost(backupEntryMemoryCost);
-        localMapStats.setLastEvictionTime(clusterImpl.getClusterTimeFor(lastEvictionTime));
-        localMapStats.setCreationTime(clusterImpl.getClusterTimeFor(creationTime));
+        localMapStats.setMarkedAsRemovedEntryCount(zeroOrPositive(markedAsRemovedEntryCount));
+        localMapStats.setMarkedAsRemovedMemoryCost(zeroOrPositive(markedAsRemovedMemoryCost));
+        localMapStats.setLockWaitCount(zeroOrPositive(lockWaitCount));
+        localMapStats.setLockedEntryCount(zeroOrPositive(lockedEntryCount));
+        localMapStats.setHits(zeroOrPositive(hits));
+        localMapStats.setOwnedEntryCount(zeroOrPositive(ownedEntryCount));
+        localMapStats.setBackupEntryCount(zeroOrPositive(backupEntryCount));
+        localMapStats.setOwnedEntryMemoryCost(zeroOrPositive(ownedEntryMemoryCost));
+        localMapStats.setBackupEntryMemoryCost(zeroOrPositive(backupEntryMemoryCost));
+        localMapStats.setLastEvictionTime(zeroOrPositive(clusterImpl.getClusterTimeFor(lastEvictionTime)));
+        localMapStats.setCreationTime(zeroOrPositive(clusterImpl.getClusterTimeFor(creationTime)));
         return localMapStats;
+    }
+
+    private static long zeroOrPositive(long value) {
+        return (value > 0) ? value : 0;
     }
 
     void startCleanup() {

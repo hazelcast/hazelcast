@@ -1153,7 +1153,7 @@ public class ClusterTest {
             map1.put(i, new byte[10000], 10, TimeUnit.SECONDS);
         }
         long usedMemoryStart = getUsedMemoryAsMB();
-        assertTrue(usedMemoryStart > 300);
+        assertTrue("UsedMemoryStart: " + usedMemoryStart, usedMemoryStart > 300);
         sleep(50000);
         Runtime.getRuntime().gc();
         sleep(5000);
@@ -1178,7 +1178,7 @@ public class ClusterTest {
             map1.put(i, new byte[10000]);
         }
         long usedMemoryStart = getUsedMemoryAsMB();
-        assertTrue(usedMemoryStart > 300);
+        assertTrue("UsedMemoryStart: " + usedMemoryStart, usedMemoryStart > 300);
         sleep(50000);
         Runtime.getRuntime().gc();
         sleep(5000);
@@ -1916,5 +1916,28 @@ public class ClusterTest {
         assertEquals(2, q2.size());
         h1.shutdown();
         assertEquals(2, q2.size());
+    }
+
+    /**
+     * Test case for issue 323
+     */
+    @Test
+    public void testSuperClientWithQueues() {
+        Config configSuperClient = new Config();
+        configSuperClient.setSuperClient(true);
+        HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(new Config());
+        final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(configSuperClient);
+        final Queue qSuper = hSuper.getQueue("default");
+        final Queue qNormal = hNormal.getQueue("default");
+        for (int i = 0; i < 12000; i++) {
+            String item = "item" + i;
+            qSuper.offer(item);
+            assertEquals(item, qNormal.poll());
+        }
+        for (int i = 0; i < 5000; i++) {
+            String item = "item" + i;
+            qNormal.offer(item);
+            assertEquals(item, qSuper.poll());
+        }
     }
 }

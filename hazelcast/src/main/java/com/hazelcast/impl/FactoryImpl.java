@@ -366,6 +366,22 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
+    public MemberStatsImpl createMemberStats() {
+        MemberStatsImpl memberStats = new MemberStatsImpl();
+        Collection<HazelcastInstanceAwareInstance> proxyObjects = proxies.values();
+        for (HazelcastInstanceAwareInstance proxyObject : proxyObjects) {
+            if (proxyObject.getInstanceType() == Instance.InstanceType.MAP) {
+                MProxy mapProxy = (MProxy) proxyObject;
+                memberStats.putLocalMapStats(mapProxy.getName(), (LocalMapStatsImpl) mapProxy.getLocalMapStats());
+            } else if (proxyObject.getInstanceType() == Instance.InstanceType.QUEUE) {
+                QProxy qProxy = (QProxy) proxyObject;
+                memberStats.putLocalQueueStats(qProxy.getName(), (LocalQueueStatsImpl) qProxy.getLocalQueueStats());
+            }
+        }
+        memberStats.setMember((MemberImpl) node.getClusterImpl().getLocalMember());
+        return memberStats;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -72,16 +72,15 @@ public class HazelcastClientTest {
                 assertEquals(InstanceEventType.CREATED, event.getEventType());
                 IMap<Integer, Integer> map = (IMap<Integer, Integer>) event.getInstance();
                 assertEquals(instance.getName(), map.getName());
-                assertEquals(1, map.size());
                 createdLatch.countDown();
             }
         };
         getHazelcastClient().addInstanceListener(listener);
         instance.put(1, 1);
         assertEquals(1, instance.size());
-        assertTrue(createdLatch.await(2, TimeUnit.SECONDS));
+        assertTrue(createdLatch.await(10, TimeUnit.SECONDS));
         instance.destroy();
-        assertTrue(destroyedLatch.await(2, TimeUnit.SECONDS));
+        assertTrue(destroyedLatch.await(10, TimeUnit.SECONDS));
         getHazelcastClient().removeInstanceListener(listener);
     }
 

@@ -48,9 +48,8 @@ public class MemberStatsImpl implements MemberStats {
         Set<Map.Entry<String, LocalQueueStatsImpl>> queueStatEntries = queueStats.entrySet();
         for (Map.Entry<String, LocalQueueStatsImpl> queueStatEntry : queueStatEntries) {
             out.writeUTF(queueStatEntry.getKey());
-            queueStatEntry.getValue().writeData (out);
+            queueStatEntry.getValue().writeData(out);
         }
-
     }
 
     public void readData(DataInput in) throws IOException {
@@ -82,5 +81,25 @@ public class MemberStatsImpl implements MemberStats {
 
     public LocalQueueStats getLocalQueueStats(String queueName) {
         return queueStats.get(queueName);
+    }
+
+    public void setMember(MemberImpl member) {
+        this.member = member;
+    }
+
+    public void putLocalMapStats(String mapName, LocalMapStatsImpl localMapStats) {
+        mapStats.put(mapName, localMapStats);
+    }
+
+    public void putLocalQueueStats(String queueName, LocalQueueStatsImpl localQueueStats) {
+        queueStats.put(queueName, localQueueStats);
+    }
+
+    @Override
+    public String toString() {
+        return "MemberStatsImpl [" + member +
+                "] { mapStats=" + mapStats +
+                "\n queueStats=" + queueStats +
+                '}';
     }
 }
