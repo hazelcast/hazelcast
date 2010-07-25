@@ -126,12 +126,13 @@ public class ClientService implements ConnectionListener {
     }
 
     public void connectionAdded(Connection connection) {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void connectionRemoved(Connection connection) {
         ClientEndpoint clientEndpoint = mapClientEndpoints.remove(connection);
-        clientEndpoint.connectionRemoved(connection);
+        if (clientEndpoint != null) {
+            clientEndpoint.connectionRemoved(connection);
+        }
     }
 
     private class QueueOfferHandler extends ClientQueueOperationHandler {
