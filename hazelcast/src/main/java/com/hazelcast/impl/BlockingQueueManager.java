@@ -41,6 +41,7 @@ import java.util.logging.Level;
 import static com.hazelcast.impl.ClusterOperation.BLOCKING_QUEUE_SIZE;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class
         BlockingQueueManager extends BaseManager {
@@ -611,6 +612,8 @@ public class
         int currentBlockId = -1;
         int currentIndex = -1;
         Object next = null;
+        int nextBlockId = -1;
+        int nextIndex = -1;
         boolean hasNextCalled = false;
         Iterator txnOffers = null;
 
@@ -669,6 +672,8 @@ public class
                     currentIndex = -1;
                 } else {
                     currentIndex = read.readIndex;
+                    nextBlockId = currentBlockId;
+                    nextIndex = currentIndex;
                     currentIndex++;
                 }
             }
@@ -703,6 +708,10 @@ public class
         }
 
         public void remove() {
+            if (nextBlockId != -1 && nextIndex != -1) {
+                Remove remove = new Remove();
+                remove.remove(name, nextBlockId, nextIndex);
+            }
         }
     }
 
@@ -722,7 +731,7 @@ public class
                 if (result == OBJECT_NULL)
                     return null;
                 else {
-                    return ThreadContext.get().toObject((Data) result);
+                    return toObject((Data) result);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -745,7 +754,6 @@ public class
         }
 
         public void process() {
-            addCall(this);
             Q q = getQ(name);
             Address target = q.getBlockOwner(blockId);
             if (target == null) {
@@ -753,6 +761,7 @@ public class
             } else if (target.equals(thisAddress)) {
                 q.remove(this);
             } else {
+                addCall(this);
                 Packet packet = obtainPacket();
                 packet.name = name;
                 packet.operation = getOperation();

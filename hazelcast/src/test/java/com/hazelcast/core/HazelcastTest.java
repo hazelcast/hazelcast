@@ -27,8 +27,11 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static junit.framework.Assert.*;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.fail;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 public class HazelcastTest {
@@ -564,6 +567,31 @@ public class HazelcastTest {
         List<String> list = Arrays.asList(items);
         queue.addAll(list);
         assertTrue(queue.containsAll(list));
+    }
+
+    @Test
+    public void testQueueRemove() throws Exception {
+        IQueue<String> q = Hazelcast.getQueue("testQueueRemove");
+        for (int i = 0; i < 10; i++) {
+            q.offer("item" + i);
+        }
+        for (int i = 0; i < 5; i++) {
+            assertNotNull(q.poll());
+        }
+        assertEquals("item5", q.peek());
+        boolean removed = q.remove("item5");
+        assertTrue(removed);
+        Iterator<String> it = q.iterator();
+        it.next();
+        it.remove();
+        it = q.iterator();
+        int i = 7;
+        while (it.hasNext()) {
+            String o = it.next();
+            String expectedValue = "item" + (i++);
+            assertEquals(o, expectedValue);
+        }
+        assertEquals(3, q.size());
     }
 
     @Test
