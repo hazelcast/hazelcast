@@ -24,8 +24,10 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.query.Predicate;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EventListener;
+import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -151,6 +153,10 @@ public class ProxyHelper {
 
     public <K> Collection<K> keys(Predicate predicate) {
         return ((CollectionWrapper<K>) doOp(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS, null, predicate)).getKeys();
+    }
+    
+    public <K> Collection<K> entries(final Predicate predicate) {
+        return ((CollectionWrapper<K>) doOp(ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES, null, predicate)).getKeys();
     }
 
     static void check(Object obj) {

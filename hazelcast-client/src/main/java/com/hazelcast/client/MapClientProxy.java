@@ -71,13 +71,8 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public Set<java.util.Map.Entry<K, V>> entrySet(Predicate predicate) {
-        Set<K> keySet = null;
-        if (predicate == null) {
-            keySet = keySet();
-        } else {
-            keySet = keySet(predicate);
-        }
-        return new LightEntrySet<K, V>(keySet, this, getInstanceType());
+    	final Collection collection = proxyHelper.entries(predicate);
+    	return new LightEntrySetSet<K, V>(collection, this, getInstanceType());
     }
 
     public boolean evict(Object key) {

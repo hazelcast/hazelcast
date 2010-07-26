@@ -68,6 +68,7 @@ public class ClientService implements ConnectionListener {
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ADD_TO_SET.getValue()] = new SetAddHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REMOVE_ITEM.getValue()] = new MapItemRemoveHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS.getValue()] = new MapIterateKeysHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES.getValue()] = new MapIterateEntriesHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_VALUE_COUNT.getValue()] = new MapValueCountHandler();
         clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_OFFER.getValue()] = new QueueOfferHandler();
         clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_POLL.getValue()] = new QueuePollHandler();
@@ -654,6 +655,59 @@ public class ClientService implements ConnectionListener {
         }
     }
 
+    private class MapIterateEntriesHandler extends ClientCollectionOperationHandler {
+        public Data getMapKeys(final IMap<Object, Object> map, final Data key, final Data value) {
+            ConcurrentMapManager.Entries entries = null;
+            if (value == null) {
+                entries = (Entries) map.entrySet();
+            } else {
+                final Predicate p = (Predicate) toObject(value);
+                entries = (Entries) map.entrySet(p);
+            }
+            final List<Map.Entry> list = entries.getKeyValues();
+            final Keys keys = new Keys(new ArrayList<Data>(list.size() << 1));
+            for (final Object obj : list) {
+                final KeyValue entry = (KeyValue) obj;
+                keys.addKey(toData(entry));
+            }
+            return toData(keys);
+        }
+
+        @Override
+        public void doListOp(final Node node, final Packet packet) {
+            final CollectionProxyImpl collectionProxy = (CollectionProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
+            final MProxy mapProxy = ((CollectionProxyReal) collectionProxy.getBase()).mapProxy;
+            packet.setValue(getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData()));
+        }
+
+        @Override
+        public void doMapOp(final Node node, final Packet packet) {
+            packet.setValue(getMapKeys((IMap) node.factory.getOrCreateProxyByName(packet.name), packet.getKeyData(), packet.getValueData()));
+        }
+
+        @Override
+        public void doSetOp(final Node node, final Packet packet) {
+            final CollectionProxyImpl collectionProxy = (CollectionProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
+            final MProxy mapProxy = ((CollectionProxyReal) collectionProxy.getBase()).mapProxy;
+            packet.setValue(getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData()));
+        }
+
+        @Override
+		public void doMultiMapOp(final Node node, final Packet packet) {
+            final FactoryImpl.MultiMapProxy multiMap = (FactoryImpl.MultiMapProxy) node.factory.getOrCreateProxyByName(packet.name);
+            final FactoryImpl.MultiMapProxy.MultiMapBase base = multiMap.getBase();
+            final MProxy mapProxy = base.mapProxy;
+            final Data value = getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData());
+            packet.clearForResponse();
+            packet.setValue(value);
+        }
+
+        @Override
+		public void doQueueOp(final Node node, final Packet packet) {
+            final IQueue queue = (IQueue) node.factory.getOrCreateProxyByName(packet.name);
+        }
+    }
+    
     private class MapIterateKeysHandler extends ClientCollectionOperationHandler {
         public Data getMapKeys(IMap<Object, Object> map, Data key, Data value, Collection<Data> collection) {
             ConcurrentMapManager.Entries entries = null;
