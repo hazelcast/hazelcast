@@ -30,17 +30,13 @@ import java.util.Map;
 import java.util.Set;
 
 public class TimedClusterStats implements DataSerializable {
-    /**
-	 *
-	 */
-	private static final long serialVersionUID = -2924333395156041186L;
-	long time;
-    Map<Member, MemberStats> mapMemberStats = new HashMap<Member, MemberStats>();
+    long time;
+    Map<Member, MemberStats> memberStats = new HashMap<Member, MemberStats>();
 
     public void writeData(DataOutput out) throws IOException {
         out.writeLong(time);
-        out.writeInt(mapMemberStats.size());
-        Set<Map.Entry<Member, MemberStats>> memberStatEntries = mapMemberStats.entrySet();
+        out.writeInt(memberStats.size());
+        Set<Map.Entry<Member, MemberStats>> memberStatEntries = memberStats.entrySet();
         for (Map.Entry<Member, MemberStats> memberStatEntry : memberStatEntries) {
             memberStatEntry.getKey().writeData(out);
             memberStatEntry.getValue().writeData(out);
@@ -53,26 +49,28 @@ public class TimedClusterStats implements DataSerializable {
         for (int i = 0; i < memberStatsCount; i++) {
             Member member = new MemberImpl();
             member.readData(in);
-            MemberStats memberStats = new MemberStatsImpl();
-            memberStats.readData(in);
-            mapMemberStats.put(member, memberStats);
+            MemberStatsImpl memberStatsImpl = new MemberStatsImpl();
+            memberStatsImpl.readData(in);
+            memberStats.put(member, memberStatsImpl);
         }
     }
 
-	public long getTime() {
-		return time;
+	public boolean containsKey(Member member) {
+
+		return memberStats.containsKey(member);
+	}
+
+	public void putMemberStats(Member member, MemberStats mapStat) {
+		memberStats.put(member, mapStat);
+
 	}
 
 	public void setTime(long time) {
 		this.time = time;
 	}
 
-	public MemberStats putMemberStats(Member member, MemberStats mStats){
-		return mapMemberStats.put(member, mStats);
-	}
-
-	public boolean containsKey(Member member) {
-		return mapMemberStats.containsKey(member);
+	public Object getTime() {
+		return time;
 	}
 }
 
