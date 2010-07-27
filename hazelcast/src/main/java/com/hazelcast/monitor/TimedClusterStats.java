@@ -25,13 +25,13 @@ import com.hazelcast.nio.DataSerializable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TimedClusterStats implements DataSerializable {
     long time;
-    Map<Member, MemberStats> memberStats = new HashMap<Member, MemberStats>();
+    Map<Member, MemberStats> memberStats = new ConcurrentHashMap<Member, MemberStats>();
 
     public void writeData(DataOutput out) throws IOException {
         out.writeLong(time);
@@ -55,22 +55,24 @@ public class TimedClusterStats implements DataSerializable {
         }
     }
 
-	public boolean containsKey(Member member) {
+    public boolean containsKey(Member member) {
+        return memberStats.containsKey(member);
+    }
 
-		return memberStats.containsKey(member);
-	}
+    public void putMemberStats(Member member, MemberStats mapStat) {
+        memberStats.put(member, mapStat);
+    }
 
-	public void putMemberStats(Member member, MemberStats mapStat) {
-		memberStats.put(member, mapStat);
+    public Map<Member, MemberStats> getMemberStats() {
+        return memberStats;
+    }
 
-	}
+    public void setTime(long time) {
+        this.time = time;
+    }
 
-	public void setTime(long time) {
-		this.time = time;
-	}
-
-	public Object getTime() {
-		return time;
-	}
+    public Object getTime() {
+        return time;
+    }
 }
 
