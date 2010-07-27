@@ -85,6 +85,8 @@ public class FactoryImpl implements HazelcastInstance {
 
     private static boolean jmxRegistered = false;
 
+    private final MemberStatsPublisher memberStatsPublisher;
+
     public static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config) {
         try {
             FactoryImpl factory = null;
@@ -318,6 +320,7 @@ public class FactoryImpl implements HazelcastInstance {
         locksMapProxy = new MProxyImpl("c:__hz_Locks", this);
         idGeneratorMapProxy = new MProxyImpl("c:__hz_IdGenerator", this);
         node.start();
+        memberStatsPublisher = new MemberStatsPublisher(node);
         globalProxies.addEntryListener(new EntryListener() {
             public void entryAdded(EntryEvent event) {
                 final ProxyKey proxyKey = (ProxyKey) event.getKey();
@@ -378,7 +381,7 @@ public class FactoryImpl implements HazelcastInstance {
                 memberStats.putLocalQueueStats(qProxy.getName(), (LocalQueueStatsImpl) qProxy.getLocalQueueStats());
             }
         }
-        memberStats.setMember((MemberImpl) node.getClusterImpl().getLocalMember());
+        memberStats.setMember(node.getClusterImpl().getLocalMember());
         return memberStats;
     }
 

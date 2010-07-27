@@ -605,9 +605,7 @@ public class PartitionManager implements Runnable {
             throw new IllegalArgumentException("Not the same blocks!");
         }
         if (b1.getOwner() == null) {
-            if (b2.getOwner() == null) {
-                return true;
-            }
+            return b2.getOwner() == null;
         }
         if (!b1.getOwner().equals(b2.getOwner())) {
             return false;

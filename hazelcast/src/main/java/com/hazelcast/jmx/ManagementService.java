@@ -152,7 +152,6 @@ public class ManagementService {
             logger.log(Level.FINE, "Error unregistering MBeans", e);
         }
         if (statCollectors != null) {
-            System.out.println("shutting down!!!!!!!!");
             statCollectors.shutdownNow();
             statCollectors = null;
         }

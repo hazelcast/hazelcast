@@ -56,7 +56,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 heartBeater();
             }
         });
-        node.clusterService.registerPeriodicRunnable(new MemberStatsPublisher());
         node.clusterService.registerPeriodicRunnable(new Runnable() {
             public void run() {
                 checkScheduledActions();
@@ -146,26 +145,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 });
     }
 
-    class MemberStatsPublisher implements Runnable {
-        long lastPublication = 0;
-
-        public void run() {
-            long now = System.currentTimeMillis();
-            if (now - lastPublication >= 5000) {
-                executeLocally(new FallThroughRunnable() {
-                    public void doRun() {
-                        MemberStatsImpl memberStats = node.factory.createMemberStats();
-                        node.factory.getTopic("default").publish(memberStats);
-                    }
-                });
-                lastPublication = now;
-            }
-        }
-    }
-
     public final void heartBeater() {
-        if (!node.joined())
-            return;
+        if (!node.joined() || !node.isActive()) return;
         long now = System.currentTimeMillis();
         if (isMaster()) {
             List<Address> lsDeadAddresses = null;
@@ -630,6 +611,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     public void checkScheduledActions() {
+        if (!node.joined() || !node.isActive()) return;
         if (setScheduledActions.size() > 0) {
             Iterator<ScheduledAction> it = setScheduledActions.iterator();
             while (it.hasNext()) {
