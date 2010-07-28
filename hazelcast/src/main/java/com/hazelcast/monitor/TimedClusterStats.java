@@ -71,7 +71,7 @@ public class TimedClusterStats implements DataSerializable {
         this.time = time;
     }
 
-    public Object getTime() {
+    public long getTime() {
         return time;
     }
 }
