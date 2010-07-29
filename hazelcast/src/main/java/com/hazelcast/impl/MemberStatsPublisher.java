@@ -17,16 +17,17 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MessageListener;
 
 public class MemberStatsPublisher implements MessageListener {
-    final Node node;
+    private final Node node;
     public final static String STATS_TOPIC_NAME = "_hz__MemberStatsTopic";
     public final static String STATS_MULTIMAP_NAME = "_hz__MemberStatsMultiMap";
 
-    public MemberStatsPublisher(Node node) {
+    public MemberStatsPublisher(ITopic topic, Node node) {
         this.node = node;
-        node.factory.getTopic(STATS_TOPIC_NAME).addMessageListener(this);
+        topic.addMessageListener(this);
     }
 
     public void onMessage(final Object key) {

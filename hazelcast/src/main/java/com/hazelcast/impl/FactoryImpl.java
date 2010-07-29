@@ -63,6 +63,8 @@ public class FactoryImpl implements HazelcastInstance {
 
     private final MProxyImpl globalProxies;
 
+    private final TopicProxyImpl memberStatsTopicProxy;
+
     private final ConcurrentMap<String, ExecutorServiceProxy> executorServiceProxies = new ConcurrentHashMap<String, ExecutorServiceProxy>(2);
 
     private final CopyOnWriteArrayList<InstanceListener> lsInstanceListeners = new CopyOnWriteArrayList<InstanceListener>();
@@ -85,7 +87,9 @@ public class FactoryImpl implements HazelcastInstance {
 
     private static boolean jmxRegistered = false;
 
-    private final MemberStatsPublisher memberStatsPublisher;
+    private MemberStatsPublisher memberStatsPublisher;
+
+    private final ILogger logger;
 
     public static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config) {
         try {
@@ -247,10 +251,6 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    public static Collection<FactoryImpl> getFactories() {
-        return factories.values();
-    }
-
     public static void shutdown(HazelcastInstanceProxy hazelcastInstanceProxy) {
         synchronized (factoryLock) {
             FactoryImpl factory = hazelcastInstanceProxy.getFactory();
@@ -314,13 +314,14 @@ public class FactoryImpl implements HazelcastInstance {
         this.name = name;
         node = new Node(this, config);
         globalProxies = new MProxyImpl("c:__hz_Proxies", this);
-        final ILogger logger = node.getLogger(FactoryImpl.class.getName());
+        logger = node.getLogger(FactoryImpl.class.getName());
         transactionFactory = new TransactionFactory(this);
         hazelcastInstanceProxy = new HazelcastInstanceProxy(this);
         locksMapProxy = new MProxyImpl("c:__hz_Locks", this);
         idGeneratorMapProxy = new MProxyImpl("c:__hz_IdGenerator", this);
+        memberStatsTopicProxy = new TopicProxyImpl("t:" + MemberStatsPublisher.STATS_TOPIC_NAME, this);
         node.start();
-        memberStatsPublisher = new MemberStatsPublisher(node);
+        memberStatsPublisher = new MemberStatsPublisher(memberStatsTopicProxy, node);
         globalProxies.addEntryListener(new EntryListener() {
             public void entryAdded(EntryEvent event) {
                 final ProxyKey proxyKey = (ProxyKey) event.getKey();
