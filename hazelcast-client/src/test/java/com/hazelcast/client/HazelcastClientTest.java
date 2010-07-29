@@ -233,20 +233,7 @@ public class HazelcastClientTest {
         Set<IMap.Entry<String, String>> set = map.entrySet();
         map.remove("Hello");
         for (IMap.Entry<String, String> e : set) {
-            fail("Iterator should not contain removed entry");
-        }
-    }
-
-    @Test
-    public void mapEntrySetWhenRemoved() {
-        IMap<String, String> map = getHazelcastClient().getMap("testMapEntrySetWhenRemoved");
-        map.put("Hello", "World");
-        map.put("HC", "Rocks");
-        Set<IMap.Entry<String, String>> set = map.entrySet();
-        map.remove("Hello");
-        map.remove("HC");
-        for (IMap.Entry<String, String> e : set) {
-            fail("Iterator should not contain removed entry");
+            assertTrue(e.getValue().equals("World"));
         }
     }
 

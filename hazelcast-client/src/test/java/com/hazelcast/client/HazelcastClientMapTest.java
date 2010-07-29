@@ -298,7 +298,7 @@ public class HazelcastClientMapTest {
         Iterator<Entry<String, String>> it = entrySet.iterator();
         for (String key : keySet) {
             MapEntry mapEntry = map.getMapEntry(key);
-            assertEquals(2, mapEntry.getHits());
+            assertEquals(1, mapEntry.getHits());
         }
         while (it.hasNext()) {
             it.next();
