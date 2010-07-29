@@ -17,20 +17,22 @@
 
 package com.hazelcast.hibernate.entity;
 
-import com.hazelcast.hibernate.region.AbstractTransactionalDataRegion;
 import org.hibernate.cache.CacheDataDescription;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.EntityRegion;
 import org.hibernate.cache.access.AccessType;
 import org.hibernate.cache.access.EntityRegionAccessStrategy;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.hibernate.region.AbstractTransactionalDataRegion;
+
 /**
  * @author Leo Kim (lkim@limewire.com)
  */
 public class HazelcastEntityRegion extends AbstractTransactionalDataRegion implements EntityRegion {
 
-    public HazelcastEntityRegion(final String name, final CacheDataDescription metadata) {
-        super(name, metadata);
+    public HazelcastEntityRegion(final HazelcastInstance instance, final String name, final CacheDataDescription metadata) {
+        super(instance, name, metadata);
     }
 
     public EntityRegionAccessStrategy buildAccessStrategy(final AccessType accessType) throws CacheException {

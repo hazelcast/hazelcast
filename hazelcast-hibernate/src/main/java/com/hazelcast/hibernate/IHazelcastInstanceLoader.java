@@ -15,19 +15,14 @@
  *
  */
 
-package com.hazelcast.hibernate.query;
+package com.hazelcast.hibernate;
 
-import org.hibernate.cache.QueryResultsRegion;
+import java.util.Properties;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.hibernate.region.AbstractGeneralRegion;
 
-/**
- * @author Leo Kim (lkim@limewire.com)
- */
-public class HazelcastQueryResultsRegion extends AbstractGeneralRegion implements QueryResultsRegion {
+public interface IHazelcastInstanceLoader {
+	
+	HazelcastInstance loadInstance(Properties props);
 
-    public HazelcastQueryResultsRegion(final HazelcastInstance instance, final String name) {
-        super(instance, name);
-    }
 }

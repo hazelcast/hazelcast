@@ -20,6 +20,8 @@ package com.hazelcast.hibernate.region;
 import org.hibernate.cache.CacheDataDescription;
 import org.hibernate.cache.TransactionalDataRegion;
 
+import com.hazelcast.core.HazelcastInstance;
+
 /**
  * @author Leo Kim (lkim@limewire.com)
  */
@@ -28,8 +30,8 @@ public abstract class AbstractTransactionalDataRegion extends AbstractHazelcastR
 
     private final CacheDataDescription metadata;
 
-    protected AbstractTransactionalDataRegion(final String regionName, final CacheDataDescription metadata) {
-        super(regionName);
+    protected AbstractTransactionalDataRegion(final HazelcastInstance instance, final String regionName, final CacheDataDescription metadata) {
+        super(instance, regionName);
         this.metadata = metadata;
     }
 

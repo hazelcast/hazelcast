@@ -29,8 +29,7 @@ import org.hibernate.cache.RegionFactory;
 import org.hibernate.cache.TimestampsRegion;
 import org.hibernate.cfg.Settings;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.IdGenerator;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.collection.HazelcastCollectionRegion;
 import com.hazelcast.hibernate.entity.HazelcastEntityRegion;
 import com.hazelcast.hibernate.query.HazelcastQueryResultsRegion;
@@ -44,12 +43,10 @@ import com.hazelcast.logging.Logger;
 public class HazelcastCacheRegionFactory implements RegionFactory {
 
     private static final ILogger LOG = Logger.getLogger(HazelcastCacheRegionFactory.class.getName());
-
-    private final IdGenerator idGenerator;
+    
+    private HazelcastInstance instance;
 
     public HazelcastCacheRegionFactory() {
-        LOG.log(Level.INFO, "Initializing HazelcastCacheRegionFactory...");
-        idGenerator = Hazelcast.getIdGenerator("HazelcastCacheRegionFactoryTimestampIdGenerator");
     }
 
     public HazelcastCacheRegionFactory(final Properties properties) {
@@ -58,52 +55,42 @@ public class HazelcastCacheRegionFactory implements RegionFactory {
 
     public CollectionRegion buildCollectionRegion(final String regionName, final Properties properties,
                                                   final CacheDataDescription metadata) throws CacheException {
-        return new HazelcastCollectionRegion(regionName, metadata);
+        return new HazelcastCollectionRegion(instance, regionName, metadata);
     }
 
     public EntityRegion buildEntityRegion(final String regionName, final Properties properties,
                                           final CacheDataDescription metadata) throws CacheException {
-        return new HazelcastEntityRegion(regionName, metadata);
+        return new HazelcastEntityRegion(instance, regionName, metadata);
     }
 
     public QueryResultsRegion buildQueryResultsRegion(final String regionName, final Properties properties)
             throws CacheException {
-        return new HazelcastQueryResultsRegion(regionName);
+        return new HazelcastQueryResultsRegion(instance, regionName);
     }
 
     public TimestampsRegion buildTimestampsRegion(final String regionName, final Properties properties)
             throws CacheException {
-        return new HazelcastTimestampsRegion(regionName);
+        return new HazelcastTimestampsRegion(instance, regionName);
     }
 
     /**
-     * From what I can tell from the <code>{@link org.hibernate.cache.CacheCurrencyStrategy}</code>s implemented in
-     * Hibernate, the return value "false" will mean an object will be replaced in a cache if it already exists there,
-     * and "true" will not replace it.
-     *
      * @return true - for a large cluster, unnecessary puts will most likely slow things down.
      */
     public boolean isMinimalPutsEnabledByDefault() {
         return true;
     }
 
-    /**
-     * @return Output of <code>{@link Hazelcast#getIdGenerator}</code> and <code>{@link IdGenerator#newId()}</code>
-     */
     public long nextTimestamp() {
-        final long id = idGenerator.newId();
-        return id;
+    	return HazelcastTimestamper.nextTimestamp(instance);
     }
 
     public void start(final Settings settings, final Properties properties) throws CacheException {
         LOG.log(Level.INFO, "Starting up HazelcastCacheRegionFactory...");
+        instance = HazelcastInstanceFactory.createInstance(properties);
     }
 
-    /**
-     * Calls <code>{@link Hazelcast#shutdown()}</code>.
-     */
     public void stop() {
         LOG.log(Level.INFO, "Shutting down HazelcastCacheRegionFactory...");
-        Hazelcast.shutdown();
+        instance.shutdown();
     }
 }

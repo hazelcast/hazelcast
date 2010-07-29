@@ -17,25 +17,29 @@
 
 package com.hazelcast.hibernate.region;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEntry;
+import java.util.Map;
+
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.Region;
-import org.hibernate.cache.Timestamper;
 
-import java.util.Map;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEntry;
+import com.hazelcast.hibernate.HazelcastTimestamper;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
  */
 abstract class AbstractHazelcastRegion implements HazelcastRegion {
 
+	private final HazelcastInstance instance;
     private final IMap cache;
     private final String regionName;
 
-    protected AbstractHazelcastRegion(final String regionName) {
-        cache = Hazelcast.getMap(regionName);
+    protected AbstractHazelcastRegion(final HazelcastInstance instance, final String regionName) {
+    	super();
+    	this.instance = instance;
+        this.cache = instance.getMap(regionName);
         this.regionName = regionName;
     }
 
@@ -87,20 +91,12 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
         return size;
     }
 
-    /**
-     * TODO: I am not clear as to what this is a timeout for.
-     *
-     * @return 60000 (milliseconds)
-     */
     public int getTimeout() {
-        return Timestamper.ONE_MS * 60000;
+        return HazelcastTimestamper.getTimeout();
     }
 
-    /**
-     * @return <code>{@link System#currentTimeMillis}</code>/100.
-     */
     public long nextTimestamp() {
-        return System.currentTimeMillis() / 100;
+    	return HazelcastTimestamper.nextTimestamp(instance);
     }
 
     /**

@@ -25,8 +25,10 @@ import org.hibernate.cache.CacheException;
 import org.hibernate.cache.CacheProvider;
 
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.IdGenerator;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
+import com.hazelcast.hibernate.HazelcastInstanceFactory;
+import com.hazelcast.hibernate.HazelcastTimestamper;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -44,40 +46,33 @@ import com.hazelcast.logging.Logger;
 public final class HazelcastCacheProvider implements CacheProvider {
 
     private static final ILogger LOG = Logger.getLogger(HazelcastCacheProvider.class.getName());
-    private final IdGenerator idGenerator;
+    
+    private HazelcastInstance instance;
 
     public HazelcastCacheProvider() {
-        idGenerator = Hazelcast.getIdGenerator("HazelcastCacheProviderTimestampIdGenerator");
     }
 
     /**
      * We ignore the <code>Properties</code> passed in here in favor of the <code>hazelcast.xml</code> file.
      */
     public Cache buildCache(final String name, final Properties properties) throws CacheException {
-        return new HazelcastCache(name);
+        return new HazelcastCache(instance, name);
     }
 
     /**
-     * From what I can tell from the <code>{@link org.hibernate.cache.CacheCurrencyStrategy}</code>s implemented in
-     * Hibernate, the return value "false" will mean an object will be replaced in a cache if it already exists there,
-     * and "true" will not replace it.
-     *
      * @return true - for a large cluster, unnecessary puts will most likely slow things down.
      */
     public boolean isMinimalPutsEnabledByDefault() {
         return true;
     }
 
-    /**
-     * @return Output of <code>{@link Hazelcast#getIdGenerator}</code> and <code>{@link IdGenerator#newId()}</code>
-     */
     public long nextTimestamp() {
-        final long id = idGenerator.newId();
-        return id;
+    	return HazelcastTimestamper.nextTimestamp(instance);
     }
 
-    public void start(final Properties arg0) throws CacheException {
+    public void start(final Properties props) throws CacheException {
         LOG.log(Level.INFO, "Starting up HazelcastCacheProvider...");
+        instance = HazelcastInstanceFactory.createInstance(props);
     }
 
     /**
@@ -85,6 +80,6 @@ public final class HazelcastCacheProvider implements CacheProvider {
      */
     public void stop() {
         LOG.log(Level.INFO, "Shutting down HazelcastCacheProvider...");
-        Hazelcast.shutdown();
+        instance.shutdown();
     }
 }

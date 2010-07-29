@@ -20,13 +20,15 @@ package com.hazelcast.hibernate.region;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.GeneralDataRegion;
 
+import com.hazelcast.core.HazelcastInstance;
+
 /**
  * @author Leo Kim (lkim@limewire.com)
  */
 public abstract class AbstractGeneralRegion extends AbstractHazelcastRegion implements GeneralDataRegion {
 
-    protected AbstractGeneralRegion(final String name) {
-        super(name);
+    protected AbstractGeneralRegion(final HazelcastInstance instance, final String name) {
+        super(instance, name);
     }
 
     public void evict(final Object key) throws CacheException {

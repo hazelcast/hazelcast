@@ -15,19 +15,22 @@
  *
  */
 
-package com.hazelcast.hibernate.query;
-
-import org.hibernate.cache.QueryResultsRegion;
+package com.hazelcast.hibernate;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.hibernate.region.AbstractGeneralRegion;
 
-/**
- * @author Leo Kim (lkim@limewire.com)
- */
-public class HazelcastQueryResultsRegion extends AbstractGeneralRegion implements QueryResultsRegion {
+public final class HazelcastTimestamper {
+	
+	private final static int TRUNC_RATIO = 10;
+	
+	// 60 seconds
+	private final static int TIMEOUT = (60 * 1000) / TRUNC_RATIO;
+	
+	public static long nextTimestamp(HazelcastInstance instance) {
+		return instance.getCluster().getClusterTime() / TRUNC_RATIO;
+	}
 
-    public HazelcastQueryResultsRegion(final HazelcastInstance instance, final String name) {
-        super(instance, name);
+	public static int getTimeout() {
+        return TIMEOUT;
     }
 }

@@ -17,15 +17,17 @@
 
 package com.hazelcast.hibernate.timestamp;
 
-import com.hazelcast.hibernate.region.AbstractGeneralRegion;
 import org.hibernate.cache.TimestampsRegion;
+
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.hibernate.region.AbstractGeneralRegion;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
  */
 public class HazelcastTimestampsRegion extends AbstractGeneralRegion implements TimestampsRegion {
 
-    public HazelcastTimestampsRegion(final String name) {
-        super(name);
+    public HazelcastTimestampsRegion(final HazelcastInstance instance, final String name) {
+        super(instance, name);
     }
 }

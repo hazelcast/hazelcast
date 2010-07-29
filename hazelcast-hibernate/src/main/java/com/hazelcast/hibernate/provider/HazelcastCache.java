@@ -22,12 +22,12 @@ import java.util.logging.Level;
 
 import org.hibernate.cache.Cache;
 import org.hibernate.cache.CacheException;
-import org.hibernate.cache.Timestamper;
 
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
+import com.hazelcast.hibernate.HazelcastTimestamper;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -42,12 +42,14 @@ import com.hazelcast.logging.Logger;
 public final class HazelcastCache implements Cache {
 
     private static final ILogger LOG = Logger.getLogger(HazelcastCache.class.getName());
+    private final HazelcastInstance instance;
     private final IMap cache;
     private final String regionName;
 
-    public HazelcastCache(final String regionName) {
+    public HazelcastCache(final HazelcastInstance instance, final String regionName) {
         LOG.log(Level.INFO, "Creating new HazelcastCache with region name: " + regionName);
-        cache = Hazelcast.getMap(regionName);
+        this.instance = instance;
+        this.cache = instance.getMap(regionName);
         this.regionName = regionName;
     }
 
@@ -86,11 +88,11 @@ public final class HazelcastCache implements Cache {
     }
 
     public int getTimeout() {
-        return Timestamper.ONE_MS * 60000;
+    	return HazelcastTimestamper.getTimeout();
     }
 
     public long nextTimestamp() {
-        return System.currentTimeMillis() / 100;
+    	return HazelcastTimestamper.nextTimestamp(instance);
     }
 
     public void lock(final Object key) throws CacheException {
