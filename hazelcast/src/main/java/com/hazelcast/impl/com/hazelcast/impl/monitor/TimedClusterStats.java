@@ -15,11 +15,12 @@
  *
  */
 
-package com.hazelcast.monitor;
+package com.hazelcast.impl.com.hazelcast.impl.monitor;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.MemberStatsImpl;
+import com.hazelcast.monitor.MemberStats;
 import com.hazelcast.nio.DataSerializable;
 
 import java.io.DataInput;
