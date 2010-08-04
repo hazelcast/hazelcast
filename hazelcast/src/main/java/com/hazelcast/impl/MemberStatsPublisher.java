@@ -17,15 +17,26 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.core.ITopic;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.MessageListener;
+import com.hazelcast.core.MultiMap;
+import com.hazelcast.impl.com.hazelcast.impl.monitor.ClusterViewImpl;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionService;
+
+import java.util.ArrayList;
+import java.util.Set;
 
 public class MemberStatsPublisher implements MessageListener {
+    private final MultiMap multimap;
     private final Node node;
     public final static String STATS_TOPIC_NAME = "_hz__MemberStatsTopic";
     public final static String STATS_MULTIMAP_NAME = "_hz__MemberStatsMultiMap";
 
-    public MemberStatsPublisher(ITopic topic, Node node) {
+    public MemberStatsPublisher(ITopic topic, MultiMap multimap, Node node) {
+        this.multimap = multimap;
         this.node = node;
         topic.addMessageListener(this);
     }
@@ -33,9 +44,37 @@ public class MemberStatsPublisher implements MessageListener {
     public void onMessage(final Object key) {
         node.executorManager.executeLocally(new FallThroughRunnable() {
             public void doRun() {
-                MemberStatsImpl memberStats = node.factory.createMemberStats();
-                node.factory.getMultiMap(STATS_MULTIMAP_NAME).put(key, memberStats);
+                if (node.joined() && node.isActive()) {
+                    ClusterImpl clusterImpl = node.getClusterImpl();
+                    if (node.isMaster()) {
+                        ClusterViewImpl clusterView = new ClusterViewImpl(node.factory.getLongInstanceNames());
+                        PartitionService partitionService = node.factory.getPartitionService();
+                        Set<Member> members = clusterImpl.getMembers();
+                        for (Member member : members) {
+                            clusterView.setPartition(member, getPartitions(partitionService, member));
+                        }
+                        multimap.put(key, clusterView);
+                    }
+                    MemberStatsImpl memberStats = node.factory.createMemberStats();
+                    multimap.put(key, memberStats);
+                }
             }
         });
+    }
+
+    private int[] getPartitions(PartitionService partitionService, Member member) {
+        Set<Partition> partitions = partitionService.getPartitions();
+        ArrayList<Integer> ownedPartitions = new ArrayList<Integer>();
+        for (Partition partition : partitions) {
+            if (member.equals(partition.getOwner())) {
+                ownedPartitions.add(partition.getPartitionId());
+            }
+        }
+        int[] ownedPartitionIds = new int[ownedPartitions.size()];
+        int c = 0;
+        for (Integer ownedPartition : ownedPartitions) {
+            ownedPartitionIds[c++] = ownedPartition;
+        }
+        return ownedPartitionIds;
     }
 }

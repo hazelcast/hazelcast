@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 
 public class GroupProperties {
 
+    public static final String PROP_REDO_WAIT_MILLIS = "hazelcast.redo.wait.millis";
     public static final String PROP_SOCKET_BIND_ANY = "hazelcast.socket.bind.any";
     public static final String PROP_SERIALIZER_GZIP_ENABLED = "hazelcast.serializer.gzip.enabled";
     public static final String PROP_SERIALIZER_SHARED = "hazelcast.serializer.shared";
@@ -46,6 +47,8 @@ public class GroupProperties {
     public static final GroupProperty SERIALIZER_SHARED = new GroupProperty(null, PROP_SERIALIZER_SHARED, "false");
 
     public static final GroupProperty PACKET_VERSION = new GroupProperty(null, PROP_PACKET_VERSION, "5");
+
+    public final GroupProperty REDO_WAIT_MILLIS;
 
     public final GroupProperty SOCKET_BIND_ANY;
 
@@ -80,6 +83,7 @@ public class GroupProperties {
     public final GroupProperty LOG_STATE;
 
     public GroupProperties(Config config) {
+        REDO_WAIT_MILLIS = new GroupProperty(config, PROP_REDO_WAIT_MILLIS, "500");
         SOCKET_BIND_ANY = new GroupProperty(config, PROP_SOCKET_BIND_ANY, "true");
         SHUTDOWNHOOK_ENABLED = new GroupProperty(config, PROP_SHUTDOWNHOOK_ENABLED, "true");
         WAIT_SECONDS_BEFORE_JOIN = new GroupProperty(config, PROP_WAIT_SECONDS_BEFORE_JOIN, "5");

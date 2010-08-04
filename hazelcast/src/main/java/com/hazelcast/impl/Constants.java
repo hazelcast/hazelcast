@@ -35,7 +35,7 @@ public interface Constants {
 
     interface IO {
 
-        public static final int BYTE_BUFFER_SIZE = 1024;
+        public static final int KILO_BYTE = 1024;
 
         public static final Data EMPTY_DATA = new Data();
     }

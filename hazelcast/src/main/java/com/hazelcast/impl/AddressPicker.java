@@ -89,7 +89,7 @@ public class AddressPicker {
         String currentAddress = null;
         try {
             final Config config = node.getConfig();
-            final String localAddress = System.getProperty("hazelcast.local.lockAddress");
+            final String localAddress = System.getProperty("hazelcast.local.localAddress");
             if (localAddress != null) {
                 currentAddress = InetAddress.getByName(localAddress.trim()).getHostAddress();
             }

@@ -35,6 +35,17 @@ public class ClusterViewImpl implements ClusterView, DataSerializable {
     Map<Member, int[]> memberPartitions = new ConcurrentHashMap<Member, int[]>();
     Set<String> instanceNames = new HashSet<String>();
 
+    public ClusterViewImpl(Set<String> instanceNames) {
+        this.instanceNames = instanceNames;
+    }
+
+    public ClusterViewImpl() {
+    }
+
+    public void setPartition(Member member, int[] partitions) {
+        memberPartitions.put(member, partitions);
+    }
+
     public void writeData(DataOutput out) throws IOException {
         out.writeInt(memberPartitions.size());
         Set<Map.Entry<Member, int[]>> memberStatEntries = memberPartitions.entrySet();
@@ -119,5 +130,13 @@ public class ClusterViewImpl implements ClusterView, DataSerializable {
 
     public int[] getPartitions(Member member) {
         return memberPartitions.get(member);
+    }
+
+    @Override
+    public String toString() {
+        return "ClusterViewImpl{" +
+                "instanceNames=" + instanceNames +
+                ", memberPartitions=" + memberPartitions +
+                '}';
     }
 }

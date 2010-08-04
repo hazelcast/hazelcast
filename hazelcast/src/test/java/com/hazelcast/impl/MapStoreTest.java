@@ -105,6 +105,12 @@ public class MapStoreTest {
         } catch (Exception e) {
         }
         assertEquals(2, testMapStore.loads.get());
+        try {
+            map.put("1", "value");
+            fail("should have thrown exception");
+        } catch (Exception e) {
+        }
+        assertEquals(1, testMapStore.stores.get());
     }
 
     @Test

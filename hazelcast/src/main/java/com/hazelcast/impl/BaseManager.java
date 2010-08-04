@@ -60,6 +60,8 @@ public abstract class BaseManager {
 
     protected final ILogger logger;
 
+    protected final long redoWaitMillis;
+
     protected BaseManager(Node node) {
         this.node = node;
         lsMembers = node.baseVariables.lsMembers;
@@ -69,6 +71,7 @@ public abstract class BaseManager {
         thisMember = node.baseVariables.thisMember;
         this.localIdGen = node.baseVariables.localIdGen;
         this.logger = node.getLogger(this.getClass().getName());
+        this.redoWaitMillis = node.getGroupProperties().REDO_WAIT_MILLIS.getLong();
     }
 
     public LinkedList<MemberImpl> getMembers() {
@@ -486,7 +489,7 @@ public abstract class BaseManager {
                     }
                 }
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(redoWaitMillis);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -717,7 +720,7 @@ public abstract class BaseManager {
                 Object result = localCall.getResultAsObject();
                 if (result == OBJECT_REDO) {
                     onRedo();
-                    Thread.sleep(1000);
+                    Thread.sleep(redoWaitMillis);
                     return call();
                 }
                 if (onResponse(result)) {
@@ -735,7 +738,7 @@ public abstract class BaseManager {
                         result = call.getResultAsObject();
                         if (result == OBJECT_REDO) {
                             onRedo();
-                            Thread.sleep(1000);
+                            Thread.sleep(redoWaitMillis);
                             return call();
                         } else {
                             if (!onResponse(result)) {

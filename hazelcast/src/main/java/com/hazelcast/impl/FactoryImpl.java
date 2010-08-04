@@ -65,6 +65,8 @@ public class FactoryImpl implements HazelcastInstance {
 
     private final TopicProxyImpl memberStatsTopicProxy;
 
+    private final MultiMapProxy memberStatsMultimapProxy;
+
     private final ConcurrentMap<String, ExecutorServiceProxy> executorServiceProxies = new ConcurrentHashMap<String, ExecutorServiceProxy>(2);
 
     private final CopyOnWriteArrayList<InstanceListener> lsInstanceListeners = new CopyOnWriteArrayList<InstanceListener>();
@@ -313,15 +315,16 @@ public class FactoryImpl implements HazelcastInstance {
     public FactoryImpl(String name, Config config) {
         this.name = name;
         node = new Node(this, config);
-        globalProxies = new MProxyImpl("c:__hz_Proxies", this);
+        globalProxies = new MProxyImpl(Prefix.MAP + "__hz_Proxies", this);
         logger = node.getLogger(FactoryImpl.class.getName());
         transactionFactory = new TransactionFactory(this);
         hazelcastInstanceProxy = new HazelcastInstanceProxy(this);
-        locksMapProxy = new MProxyImpl("c:__hz_Locks", this);
-        idGeneratorMapProxy = new MProxyImpl("c:__hz_IdGenerator", this);
-        memberStatsTopicProxy = new TopicProxyImpl("t:" + MemberStatsPublisher.STATS_TOPIC_NAME, this);
+        locksMapProxy = new MProxyImpl(Prefix.MAP + "__hz_Locks", this);
+        idGeneratorMapProxy = new MProxyImpl(Prefix.MAP + "__hz_IdGenerator", this);
+        memberStatsMultimapProxy = new MultiMapProxy(Prefix.MULTIMAP + MemberStatsPublisher.STATS_MULTIMAP_NAME, this);
+        memberStatsTopicProxy = new TopicProxyImpl(Prefix.TOPIC + MemberStatsPublisher.STATS_TOPIC_NAME, this);
         node.start();
-        memberStatsPublisher = new MemberStatsPublisher(memberStatsTopicProxy, node);
+        memberStatsPublisher = new MemberStatsPublisher(memberStatsTopicProxy, memberStatsMultimapProxy, node);
         globalProxies.addEntryListener(new EntryListener() {
             public void entryAdded(EntryEvent event) {
                 final ProxyKey proxyKey = (ProxyKey) event.getKey();
@@ -368,6 +371,10 @@ public class FactoryImpl implements HazelcastInstance {
                 }
             }
         }
+    }
+
+    public Set<String> getLongInstanceNames() {
+        return proxiesByName.keySet();
     }
 
     public MemberStatsImpl createMemberStats() {

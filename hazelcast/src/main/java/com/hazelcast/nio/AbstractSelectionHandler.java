@@ -26,13 +26,13 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 
-import static com.hazelcast.impl.Constants.IO.BYTE_BUFFER_SIZE;
+import static com.hazelcast.impl.Constants.IO.KILO_BYTE;
 
 abstract class AbstractSelectionHandler implements SelectionHandler {
 
-    public static final int RECEIVE_SOCKET_BUFFER_SIZE = 32 * BYTE_BUFFER_SIZE;
+    public static final int RECEIVE_SOCKET_BUFFER_SIZE = 32 * KILO_BYTE;
 
-    public static final int SEND_SOCKET_BUFFER_SIZE = 32 * BYTE_BUFFER_SIZE;
+    public static final int SEND_SOCKET_BUFFER_SIZE = 32 * KILO_BYTE;
 
     protected final ILogger logger;
 
