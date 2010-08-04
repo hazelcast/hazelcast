@@ -53,6 +53,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private HazelcastInstance hazelcast;
 
+    private volatile LineReader lineReader;
+
     public TestApp(HazelcastInstance hazelcast) {
         this.hazelcast = hazelcast;
     }
@@ -68,7 +70,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         map = hazelcast.getMap(namespace);
         set = hazelcast.getSet(namespace);
         list = hazelcast.getList(namespace);
-        LineReader lineReader = new DefaultLineReader();
+        lineReader = new DefaultLineReader();
         while (true) {
             System.out.print("hazelcast[" + namespace + "] > ");
             try {
@@ -80,6 +82,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
+    public void setLineReader(LineReader lineReader){
+        this.lineReader = lineReader;
+    }
     
 
     class DefaultLineReader implements LineReader {
