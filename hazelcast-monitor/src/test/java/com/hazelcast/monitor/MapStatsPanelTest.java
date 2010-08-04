@@ -42,7 +42,7 @@ public class MapStatsPanelTest {
         when(servicesFactory.getHazelcastService()).thenReturn(mockHazelcastServiceAsync);
         MonitoringPanel monitoringPanel = new MapTimesPanel(name, mockCallBack, servicesFactory);
         HazelcastMonitor hazelcastMonitor = mock(HazelcastMonitor.class);
-        com.hazelcast.impl.com.hazelcast.impl.monitor.ClusterView clusterView = new com.hazelcast.impl.com.hazelcast.impl.monitor.ClusterView();
+        ClusterView clusterView = new ClusterView();
         clusterView.setId(1);
         ClusterWidgets clusterWidgets = new ClusterWidgets(hazelcastMonitor, clusterView);
         monitoringPanel.register(clusterWidgets);
@@ -62,7 +62,7 @@ public class MapStatsPanelTest {
         when(servicesFactory.getHazelcastService()).thenReturn(mockHazelcastServiceAsync);
         MonitoringPanel monitoringPanel1 = new MapTimesPanel(name, mockCallBack, servicesFactory);
         HazelcastMonitor hazelcastMonitor = mock(HazelcastMonitor.class);
-        com.hazelcast.impl.com.hazelcast.impl.monitor.ClusterView clusterView = new com.hazelcast.impl.com.hazelcast.impl.monitor.ClusterView();
+        ClusterView clusterView = new ClusterView();
         clusterView.setId(1);
         ClusterWidgets clusterWidgets = new ClusterWidgets(hazelcastMonitor, clusterView);
         monitoringPanel1.register(clusterWidgets);
@@ -88,7 +88,7 @@ public class MapStatsPanelTest {
         when(servicesFactory.getHazelcastService()).thenReturn(mockHazelcastServiceAsync);
         MonitoringPanel monitoringPanel = new MapTimesPanel(name, mockCallBack, servicesFactory);
         HazelcastMonitor hazelcastMonitor = mock(HazelcastMonitor.class);
-        com.hazelcast.impl.com.hazelcast.impl.monitor.ClusterView clusterView = new com.hazelcast.impl.com.hazelcast.impl.monitor.ClusterView();
+        ClusterView clusterView = new ClusterView();
         clusterView.setId(1);
         ClusterWidgets clusterWidgets = new ClusterWidgets(hazelcastMonitor, clusterView);
         List<MonitoringPanel> list = new ArrayList<MonitoringPanel>();
@@ -109,7 +109,7 @@ public class MapStatsPanelTest {
         when(servicesFactory.getHazelcastService()).thenReturn(mockHazelcastServiceAsync);
         MonitoringPanel monitoringPanel = new MapTimesPanel(name, mockCallBack, servicesFactory);
         HazelcastMonitor hazelcastMonitor = mock(HazelcastMonitor.class);
-        com.hazelcast.impl.com.hazelcast.impl.monitor.ClusterView clusterView = new com.hazelcast.impl.com.hazelcast.impl.monitor.ClusterView();
+        ClusterView clusterView = new ClusterView();
         clusterView.setId(1);
         ClusterWidgets clusterWidgets = new ClusterWidgets(hazelcastMonitor, clusterView);
         MonitoringPanel monitoringPanel2 = new MapTimesPanel(name, mockCallBack, servicesFactory);
@@ -134,7 +134,7 @@ public class MapStatsPanelTest {
         when(servicesFactory.getHazelcastService()).thenReturn(mockHazelcastServiceAsync);
         MonitoringPanel monitoringPanel1 = new MapTimesPanel(name, mockCallBack, servicesFactory);
         HazelcastMonitor hazelcastMonitor = mock(HazelcastMonitor.class);
-        com.hazelcast.impl.com.hazelcast.impl.monitor.ClusterView clusterView = new com.hazelcast.impl.com.hazelcast.impl.monitor.ClusterView();
+        ClusterView clusterView = new ClusterView();
         clusterView.setId(1);
         ClusterWidgets clusterWidgets = new ClusterWidgets(hazelcastMonitor, clusterView);
         MonitoringPanel monitoringPanel2 = new MapTimesPanel(name, mockCallBack, servicesFactory);
@@ -163,7 +163,7 @@ public class MapStatsPanelTest {
         when(servicesFactory.getHazelcastService()).thenReturn(mockHazelcastServiceAsync);
         MonitoringPanel monitoringPanel1 = new MapTimesPanel(name, mockCallBack, servicesFactory);
         HazelcastMonitor hazelcastMonitor = mock(HazelcastMonitor.class);
-        com.hazelcast.impl.com.hazelcast.impl.monitor.ClusterView clusterView = new com.hazelcast.impl.com.hazelcast.impl.monitor.ClusterView();
+        ClusterView clusterView = new ClusterView();
         clusterView.setId(1);
         ClusterWidgets clusterWidgets = new ClusterWidgets(hazelcastMonitor, clusterView);
         List<MonitoringPanel> list = new ArrayList<MonitoringPanel>();
