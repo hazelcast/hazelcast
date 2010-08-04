@@ -33,6 +33,7 @@ public abstract class NoneStrictObjectPool<T> {
         onRelease(t);
         if (size.get() < maxSize) {
             queue.offer(t);
+            size.incrementAndGet();
             return true;
         }
         return false;
