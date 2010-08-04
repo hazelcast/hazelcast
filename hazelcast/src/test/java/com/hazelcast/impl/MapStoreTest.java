@@ -22,6 +22,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
+import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.TestUtil;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -39,7 +41,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.*;
 
-public class MapStoreTest {
+public class MapStoreTest extends TestUtil {
 
     @BeforeClass
     public static void init() throws Exception {
@@ -115,6 +117,24 @@ public class MapStoreTest {
 
     @Test
     public void testOneMemberWriteThrough() throws Exception {
+        TestMapStore testMapStore = new TestMapStore(1, 1, 1);
+        Config config = newConfig(testMapStore, 0);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        Employee employee = new Employee("joe", 25, true,  100.00);
+        testMapStore.insert("1", employee);
+        IMap map = h1.getMap("default");
+        map.addIndex("name", false);
+        assertEquals(0, map.size());
+        assertEquals(employee, map.get("1"));
+        assertEquals(employee, testMapStore.getStore().get("1"));
+        assertEquals(1, map.size());
+        Collection values = map.values(new SqlPredicate("name = 'joe'"));
+        assertEquals(1, values.size());
+        assertEquals(employee, values.iterator().next());
+    }
+
+    @Test
+    public void testOneMemberWriteThroughWithIndex() throws Exception {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         Config config = newConfig(testMapStore, 0);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);

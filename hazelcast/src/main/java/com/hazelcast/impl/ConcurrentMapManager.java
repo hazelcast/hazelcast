@@ -1544,6 +1544,7 @@ public class ConcurrentMapManager extends BaseManager {
                         record.setValue(request.value);
                     }
                     CMap cmap = getOrCreateMap(request.name);
+                    record.setIndexes(request.indexes, request.indexTypes);
                     cmap.markAsActive(record);
                     cmap.updateIndexes(record);
                     request.response = record.getValue();
@@ -1697,11 +1698,13 @@ public class ConcurrentMapManager extends BaseManager {
                 // load the entry
                 Object value = cmap.loader.load(toObject(request.key));
                 if (value != null) {
+                    setIndexValues(request, value);
                     request.value = toData(value);
                 }
             } else if (request.operation == CONCURRENT_MAP_PUT || request.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
                 //store the entry
-                cmap.store.store(toObject(request.key), toObject(request.value));
+                Object value = toObject(request.value);
+                cmap.store.store(toObject(request.key), value);
             } else if (request.operation == CONCURRENT_MAP_REMOVE) {
                 // remove the entry
                 cmap.store.delete(toObject(request.key));
