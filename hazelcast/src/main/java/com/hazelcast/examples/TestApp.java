@@ -80,9 +80,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    interface LineReader {
-        String readLine() throws Exception;
-    }
+    
 
     class DefaultLineReader implements LineReader {
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
