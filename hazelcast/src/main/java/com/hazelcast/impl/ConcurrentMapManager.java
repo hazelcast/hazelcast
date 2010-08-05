@@ -40,7 +40,6 @@ import static com.hazelcast.core.Instance.InstanceType;
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
-import static com.hazelcast.impl.LocalMapStatsImpl.Op.UNLOCK;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -250,7 +249,7 @@ public class ConcurrentMapManager extends BaseManager {
         return blocks;
     }
 
-    public void collectMemberStats(MemberStatsImpl memberStats) {
+    public void collectMemberStats(MemberStateImpl memberStats) {
         Collection<CMap> cmaps = maps.values();
         for (CMap cmap : cmaps) {
             memberStats.putLocalMapStats(cmap.getName(), cmap.getLocalMapStats());

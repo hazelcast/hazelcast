@@ -20,7 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.core.Member;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.monitor.MemberStats;
+import com.hazelcast.monitor.MemberState;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -29,7 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class MemberStatsImpl implements MemberStats {
+public class MemberStateImpl implements MemberState {
     /**
 	 *
 	 */
@@ -101,7 +101,7 @@ public class MemberStatsImpl implements MemberStats {
 
     @Override
     public String toString() {
-        return "MemberStatsImpl [" + member +
+        return "MemberStateImpl [" + member +
                 "] { mapStats=" + mapStats +
                 "\n queueStats=" + queueStats +
                 '}';

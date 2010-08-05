@@ -19,8 +19,8 @@ package com.hazelcast.monitor;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.MemberImpl;
-import com.hazelcast.impl.MemberStatsImpl;
-import com.hazelcast.monitor.MemberStats;
+import com.hazelcast.impl.MemberStateImpl;
+import com.hazelcast.monitor.MemberState;
 import com.hazelcast.nio.DataSerializable;
 
 import java.io.DataInput;
@@ -30,15 +30,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class TimedClusterStats implements DataSerializable {
+public class TimedClusterState implements DataSerializable {
     long time;
-    Map<Member, MemberStats> memberStats = new ConcurrentHashMap<Member, MemberStats>();
+    Map<Member, MemberState> memberStates = new ConcurrentHashMap<Member, MemberState>();
 
     public void writeData(DataOutput out) throws IOException {
         out.writeLong(time);
-        out.writeInt(memberStats.size());
-        Set<Map.Entry<Member, MemberStats>> memberStatEntries = memberStats.entrySet();
-        for (Map.Entry<Member, MemberStats> memberStatEntry : memberStatEntries) {
+        out.writeInt(memberStates.size());
+        Set<Map.Entry<Member, MemberState>> memberStateEntries = memberStates.entrySet();
+        for (Map.Entry<Member, MemberState> memberStatEntry : memberStateEntries) {
             memberStatEntry.getKey().writeData(out);
             memberStatEntry.getValue().writeData(out);
         }
@@ -50,22 +50,22 @@ public class TimedClusterStats implements DataSerializable {
         for (int i = 0; i < memberStatsCount; i++) {
             Member member = new MemberImpl();
             member.readData(in);
-            MemberStatsImpl memberStatsImpl = new MemberStatsImpl();
-            memberStatsImpl.readData(in);
-            memberStats.put(member, memberStatsImpl);
+            MemberStateImpl memberStateImpl = new MemberStateImpl();
+            memberStateImpl.readData(in);
+            memberStates.put(member, memberStateImpl);
         }
     }
 
     public boolean containsKey(Member member) {
-        return memberStats.containsKey(member);
+        return memberStates.containsKey(member);
     }
 
-    public void putMemberStats(Member member, MemberStats mapStat) {
-        memberStats.put(member, mapStat);
+    public void putMemberState(Member member, MemberState mapStat) {
+        memberStates.put(member, mapStat);
     }
 
-    public Map<Member, MemberStats> getMemberStats() {
-        return memberStats;
+    public Map<Member, MemberState> getMemberState() {
+        return memberStates;
     }
 
     public void setTime(long time) {

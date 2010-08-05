@@ -126,7 +126,7 @@ public class
         });
     }
 
-    public void collectMemberStats(MemberStatsImpl memberStats) {
+    public void collectMemberStats(MemberStateImpl memberStats) {
         Collection<Q> queues = mapQueues.values();
         for (Q queue : queues) {
             memberStats.putLocalQueueStats(queue.getName(), queue.getQueueStats());

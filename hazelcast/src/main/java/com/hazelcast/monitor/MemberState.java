@@ -18,28 +18,13 @@
 package com.hazelcast.monitor;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.nio.DataSerializable;
 
-import java.util.Set;
+public interface MemberState extends DataSerializable {
 
-public interface ClusterView {
+    Member getMember();
 
-    Set<Member> getMembers();
+    LocalMapStats getLocalMapStats(String mapName);
 
-    Set<String> getMaps();
-
-    Set<String> getMultiMaps();
-
-    Set<String> getQueues();
-
-    Set<String> getSets();
-
-    Set<String> getLists();
-
-    Set<String> getTopics();
-
-    Set<String> getAtomicNumbers();
-
-    Set<String> getIdGenerators();
-
-    int[] getPartitions(Member member);
+    LocalQueueStats getLocalQueueStats(String queueName);
 }

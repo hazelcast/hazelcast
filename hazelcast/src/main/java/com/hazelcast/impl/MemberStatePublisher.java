@@ -22,20 +22,20 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.monitor.ClusterViewImpl;
+import com.hazelcast.monitor.ClusterStateViewImpl;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 
 import java.util.ArrayList;
 import java.util.Set;
 
-public class MemberStatsPublisher implements MessageListener {
+public class MemberStatePublisher implements MessageListener {
     private final MultiMap multimap;
     private final Node node;
-    public final static String STATS_TOPIC_NAME = "_hz__MemberStatsTopic";
-    public final static String STATS_MULTIMAP_NAME = "_hz__MemberStatsMultiMap";
+    public final static String STATS_TOPIC_NAME = "_hz__MemberStateTopic";
+    public final static String STATS_MULTIMAP_NAME = "_hz__MemberStateMultiMap";
 
-    public MemberStatsPublisher(ITopic topic, MultiMap multimap, Node node) {
+    public MemberStatePublisher(ITopic topic, MultiMap multimap, Node node) {
         this.multimap = multimap;
         this.node = node;
         topic.addMessageListener(this);
@@ -47,16 +47,16 @@ public class MemberStatsPublisher implements MessageListener {
                 if (node.joined() && node.isActive()) {
                     ClusterImpl clusterImpl = node.getClusterImpl();
                     if (node.isMaster()) {
-                        ClusterViewImpl clusterView = new ClusterViewImpl(node.factory.getLongInstanceNames());
+                        ClusterStateViewImpl clusterStateView = new ClusterStateViewImpl(node.factory.getLongInstanceNames());
                         PartitionService partitionService = node.factory.getPartitionService();
                         Set<Member> members = clusterImpl.getMembers();
                         for (Member member : members) {
-                            clusterView.setPartition(member, getPartitions(partitionService, member));
+                            clusterStateView.setPartition(member, getPartitions(partitionService, member));
                         }
-                        multimap.put(key, clusterView);
+                        multimap.put(key, clusterStateView);
                     }
-                    MemberStatsImpl memberStats = node.factory.createMemberStats();
-                    multimap.put(key, memberStats);
+                    MemberStateImpl memberState = node.factory.createMemberState();
+                    multimap.put(key, memberState);
                 }
             }
         });

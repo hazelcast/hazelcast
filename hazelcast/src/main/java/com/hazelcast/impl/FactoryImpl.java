@@ -89,7 +89,7 @@ public class FactoryImpl implements HazelcastInstance {
 
     private static boolean jmxRegistered = false;
 
-    private MemberStatsPublisher memberStatsPublisher;
+    private MemberStatePublisher memberStatePublisher;
 
     private final ILogger logger;
 
@@ -320,10 +320,10 @@ public class FactoryImpl implements HazelcastInstance {
         hazelcastInstanceProxy = new HazelcastInstanceProxy(this);
         locksMapProxy = new MProxyImpl(Prefix.MAP + "__hz_Locks", this);
         idGeneratorMapProxy = new MProxyImpl(Prefix.MAP + "__hz_IdGenerator", this);
-        memberStatsMultimapProxy = new MultiMapProxy(Prefix.MULTIMAP + MemberStatsPublisher.STATS_MULTIMAP_NAME, this);
-        memberStatsTopicProxy = new TopicProxyImpl(Prefix.TOPIC + MemberStatsPublisher.STATS_TOPIC_NAME, this);
+        memberStatsMultimapProxy = new MultiMapProxy(Prefix.MULTIMAP + MemberStatePublisher.STATS_MULTIMAP_NAME, this);
+        memberStatsTopicProxy = new TopicProxyImpl(Prefix.TOPIC + MemberStatePublisher.STATS_TOPIC_NAME, this);
         node.start();
-        memberStatsPublisher = new MemberStatsPublisher(memberStatsTopicProxy, memberStatsMultimapProxy, node);
+        memberStatePublisher = new MemberStatePublisher(memberStatsTopicProxy, memberStatsMultimapProxy, node);
         globalProxies.addEntryListener(new EntryListener() {
             public void entryAdded(EntryEvent event) {
                 final ProxyKey proxyKey = (ProxyKey) event.getKey();
@@ -376,8 +376,8 @@ public class FactoryImpl implements HazelcastInstance {
         return proxiesByName.keySet();
     }
 
-    public MemberStatsImpl createMemberStats() {
-        MemberStatsImpl memberStats = new MemberStatsImpl();
+    public MemberStateImpl createMemberState() {
+        MemberStateImpl memberStats = new MemberStateImpl();
         Collection<HazelcastInstanceAwareInstance> proxyObjects = proxies.values();
         for (HazelcastInstanceAwareInstance proxyObject : proxyObjects) {
             if (proxyObject.getInstanceType() == Instance.InstanceType.MAP) {

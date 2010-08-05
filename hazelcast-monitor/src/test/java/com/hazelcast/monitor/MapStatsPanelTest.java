@@ -62,7 +62,7 @@ public class MapStatsPanelTest {
         when(servicesFactory.getHazelcastService()).thenReturn(mockHazelcastServiceAsync);
         MonitoringPanel monitoringPanel1 = new MapTimesPanel(name, mockCallBack, servicesFactory);
         HazelcastMonitor hazelcastMonitor = mock(HazelcastMonitor.class);
-        ClusterView clusterView = new ClusterView();
+        ClusterView clusterView = new ClusterView ();
         clusterView.setId(1);
         ClusterWidgets clusterWidgets = new ClusterWidgets(hazelcastMonitor, clusterView);
         monitoringPanel1.register(clusterWidgets);

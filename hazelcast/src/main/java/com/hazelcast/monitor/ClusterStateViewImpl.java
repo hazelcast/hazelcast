@@ -30,16 +30,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ClusterViewImpl implements ClusterView, DataSerializable {
+public class ClusterStateViewImpl implements ClusterStateView, DataSerializable {
 
     Map<Member, int[]> memberPartitions = new ConcurrentHashMap<Member, int[]>();
     Set<String> instanceNames = new HashSet<String>();
 
-    public ClusterViewImpl(Set<String> instanceNames) {
+    public ClusterStateViewImpl(Set<String> instanceNames) {
         this.instanceNames = instanceNames;
     }
 
-    public ClusterViewImpl() {
+    public ClusterStateViewImpl() {
     }
 
     public void setPartition(Member member, int[] partitions) {
@@ -134,7 +134,7 @@ public class ClusterViewImpl implements ClusterView, DataSerializable {
 
     @Override
     public String toString() {
-        return "ClusterViewImpl{" +
+        return "ClusterStateViewImpl{" +
                 "instanceNames=" + instanceNames +
                 ", memberPartitions=" + memberPartitions +
                 '}';
