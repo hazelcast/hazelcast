@@ -72,7 +72,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         list = hazelcast.getList(namespace);
         lineReader = new DefaultLineReader();
         while (true) {
-            System.out.print("hazelcast[" + namespace + "] > ");
+            print("hazelcast[" + namespace + "] > ");
             try {
                 final String command = lineReader.readLine();
                 handleCommand(command);
@@ -85,9 +85,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     public void setLineReader(LineReader lineReader){
         this.lineReader = lineReader;
     }
-    
 
     class DefaultLineReader implements LineReader {
+
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 
         public String readLine() throws Exception {
