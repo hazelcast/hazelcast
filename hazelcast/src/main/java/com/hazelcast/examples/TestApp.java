@@ -106,7 +106,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 //                    return null;
 //                }
                 System.in.read();
-                System.out.println("char " + System.in.read());
+                println("char " + System.in.read());
             }
         }
 
@@ -118,9 +118,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     private void handleCommand(String command) {
         if (echo) {
             if (Thread.currentThread().getName().toLowerCase().indexOf("main") < 0)
-                System.out.println(" [" + Thread.currentThread().getName() + "] " + command);
+                println(" [" + Thread.currentThread().getName() + "] " + command);
             else
-                System.out.println(command);
+                println(command);
         }
         if (command == null || command.startsWith("//"))
             return;
@@ -178,11 +178,11 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             }
         } else if (first.startsWith("@")) {
             if (first.length() == 1) {
-                System.out.println("usage: @<file-name>");
+                println("usage: @<file-name>");
                 return;
             }
             File f = new File(first.substring(1));
-            System.out.println("Executing script file " + f.getAbsolutePath());
+            println("Executing script file " + f.getAbsolutePath());
             if (f.exists()) {
                 try {
                     BufferedReader br = new BufferedReader(new FileReader(f));
@@ -196,7 +196,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                     e.printStackTrace();
                 }
             } else {
-                System.out.println("File not found! " + f.getAbsolutePath());
+                println("File not found! " + f.getAbsolutePath());
             }
         } else if (command.indexOf(';') != -1) {
             StringTokenizer st = new StringTokenizer(command, ";");
@@ -222,14 +222,14 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                 list = hazelcast.getList(namespace);
             }
         } else if ("whoami".equals(first)) {
-            System.out.println(hazelcast.getCluster().getLocalMember());
+            println(hazelcast.getCluster().getLocalMember());
         } else if ("who".equals(first)) {
-            System.out.println(hazelcast.getCluster());
+            println(hazelcast.getCluster());
         } else if ("jvm".equals(first)) {
             System.gc();
-            System.out.println("Memory max: " + Runtime.getRuntime().maxMemory() / 1024 / 1024
+            println("Memory max: " + Runtime.getRuntime().maxMemory() / 1024 / 1024
                     + "M");
-            System.out.println("Memory free: "
+            println("Memory free: "
                     + Runtime.getRuntime().freeMemory()
                     / 1024
                     / 1024
@@ -238,12 +238,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                     .maxMemory()) + "%");
             long total = Runtime.getRuntime().totalMemory();
             long free = Runtime.getRuntime().freeMemory();
-            System.out.println("Used Memory:" + ((total - free) / 1024 / 1024) + "MB");
-            System.out.println("# procs: " + Runtime.getRuntime().availableProcessors());
-            System.out.println("OS info: " + ManagementFactory.getOperatingSystemMXBean().getArch()
+            println("Used Memory:" + ((total - free) / 1024 / 1024) + "MB");
+            println("# procs: " + Runtime.getRuntime().availableProcessors());
+            println("OS info: " + ManagementFactory.getOperatingSystemMXBean().getArch()
                     + " " + ManagementFactory.getOperatingSystemMXBean().getName() + " "
                     + ManagementFactory.getOperatingSystemMXBean().getVersion());
-            System.out.println("JVM: " + ManagementFactory.getRuntimeMXBean().getVmVendor() + " "
+            println("JVM: " + ManagementFactory.getRuntimeMXBean().getVmVendor() + " "
                     + ManagementFactory.getRuntimeMXBean().getVmName() + " "
                     + ManagementFactory.getRuntimeMXBean().getVmVersion());
         } else if (first.indexOf("ock") != -1 && first.indexOf(".") == -1) {
@@ -361,7 +361,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         } else if (first.equalsIgnoreCase("quit") || first.equalsIgnoreCase("exit")) {
             System.exit(0);
         } else {
-            print("type 'help' for help");
+            println("type 'help' for help");
         }
     }
 
@@ -378,39 +378,39 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                 }
                 partitionCounts.put(owner, newCount);
             }
-            System.out.println(partition);
+            println(partition);
         }
         Set<Map.Entry<Member, Integer>> entries = partitionCounts.entrySet();
         for (Map.Entry<Member, Integer> entry : entries) {
-            System.out.println(entry.getKey() + ":" + entry.getValue());
+            println(entry.getKey() + ":" + entry.getValue());
         }
     }
 
     private void handleInstances(String[] args) {
         Collection<Instance> instances = hazelcast.getInstances();
         for (Instance instance : instances) {
-            print(instance);
+            println(instance);
         }
     }
 
     private void handleListContains(String[] args) {
-        print(list.contains(args[1]));
+        println(list.contains(args[1]));
     }
 
     private void handleListRemove(String[] args) {
-        print(list.remove(args[1]));
+        println(list.remove(args[1]));
     }
 
     private void handleListAdd(String[] args) {
-        print(list.add(args[1]));
+        println(list.add(args[1]));
     }
 
     private void handleMapPut(String[] args) {
-        print(map.put(args[1], args[2]));
+        println(map.put(args[1], args[2]));
     }
     private void handleMapPutAsync(String[] args) {
         try {
-            print(map.putAsync(args[1], args[2]).get());
+            println(map.putAsync(args[1], args[2]).get());
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
@@ -419,21 +419,21 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     private void handleMapPutIfAbsent(String[] args) {
-        print(map.putIfAbsent(args[1], args[2]));
+        println(map.putIfAbsent(args[1], args[2]));
     }
 
     private void handleMapReplace(String[] args) {
-        print(map.replace(args[1], args[2]));
+        println(map.replace(args[1], args[2]));
     }
 
     private void handleMapGet(String[] args) {
-        print(map.get(args[1]));
+        println(map.get(args[1]));
     }
 
 
     private void handleMapGetAsync(String[] args) {
         try {
-            print(map.getAsync(args[1]).get());
+            println(map.getAsync(args[1]).get());
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
@@ -442,15 +442,15 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     private void handleMapGetMapEntry(String[] args) {
-        print(map.getMapEntry(args[1]));
+        println(map.getMapEntry(args[1]));
     }
 
     private void handleMapRemove(String[] args) {
-        print(map.remove(args[1]));
+        println(map.remove(args[1]));
     }
 
     private void handleMapEvict(String[] args) {
-        print(map.evict(args[1]));
+        println(map.evict(args[1]));
     }
 
     private void handleMapPutMany(String[] args) {
@@ -475,7 +475,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         map.putAll(theMap);
         long t1 = System.currentTimeMillis();
         if (t1 - t0 > 1) {
-            System.out.println("size = " + map.size() + ", " + count * 1000 / (t1 - t0)
+            println("size = " + map.size() + ", " + count * 1000 / (t1 - t0)
                     + " evt/s, " + (count * 1000 / (t1 - t0)) * (b * 8) / 1024 + " Kbit/s, "
                     + count * b / 1024 + " KB added");
         }
@@ -485,9 +485,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         String iteratorStr = args[0];
         if (iteratorStr.startsWith("s.")) {
         } else if (iteratorStr.startsWith("m.")) {
-            print(map.getLocalMapStats());
+            println(map.getLocalMapStats());
         } else if (iteratorStr.startsWith("q.")) {
-            print(queue.getLocalQueueStats());
+            println(queue.getLocalQueueStats());
         } else if (iteratorStr.startsWith("l.")) {
         }
     }
@@ -497,7 +497,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         if (args.length > 1)
             count = Integer.parseInt(args[1]);
         for (int i = 0; i < count; i++) {
-            print(map.get("key" + i));
+            println(map.get("key" + i));
         }
     }
 
@@ -513,12 +513,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             map.remove("key" + (start + i));
         }
         long t1 = System.currentTimeMillis();
-        System.out.println("size = " + map.size() + ", " + count * 1000 / (t1 - t0) + " evt/s");
+        println("size = " + map.size() + ", " + count * 1000 / (t1 - t0) + " evt/s");
     }
 
     private void handleMapLock(String[] args) {
         map.lock(args[1]);
-        print("true");
+        println("true");
     }
 
     private void handleLock(String[] args) {
@@ -527,18 +527,18 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         Lock lock = hazelcast.getLock(key);
         if (lockStr.equalsIgnoreCase("lock")) {
             lock.lock();
-            print("true");
+            println("true");
         } else if (lockStr.equalsIgnoreCase("unlock")) {
             lock.unlock();
-            print("true");
+            println("true");
         } else if (lockStr.equalsIgnoreCase("trylock")) {
             String timeout = args.length > 2 ? args[2] : null;
             if (timeout == null) {
-                print(lock.tryLock());
+                println(lock.tryLock());
             } else {
                 long time = Long.valueOf(timeout);
                 try {
-                    print(lock.tryLock(time, TimeUnit.SECONDS));
+                    println(lock.tryLock(time, TimeUnit.SECONDS));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -554,12 +554,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             locked = map.tryLock(key);
         else
             locked = map.tryLock(key, time, TimeUnit.SECONDS);
-        print(locked);
+        println(locked);
     }
 
     private void handleMapUnlock(String[] args) {
         map.unlock(args[1]);
-        print("true");
+        println("true");
     }
 
     private void handleAddListener(String[] args) {
@@ -606,9 +606,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         int count = 0;
         while (it.hasNext()) {
             count++;
-            print(it.next());
+            println(it.next());
         }
-        print("Total " + count);
+        println("Total " + count);
     }
 
     private void handleMapKeys() {
@@ -617,9 +617,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         int count = 0;
         while (it.hasNext()) {
             count++;
-            print(it.next());
+            println(it.next());
         }
-        print("Total " + count);
+        println("Total " + count);
     }
 
     private void handleMapEntries() {
@@ -630,9 +630,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         while (it.hasNext()) {
             count++;
             Map.Entry entry = (Entry) it.next();
-            print(entry.getKey() + " : " + entry.getValue());
+            println(entry.getKey() + " : " + entry.getValue());
         }
-        print("Total " + count);
+        println("Total " + count);
     }
 
     private void handleMapValues() {
@@ -641,17 +641,17 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         int count = 0;
         while (it.hasNext()) {
             count++;
-            print(it.next());
+            println(it.next());
         }
-        print("Total " + count);
+        println("Total " + count);
     }
 
     private void handleSetAdd(String[] args) {
-        print(set.add(args[1]));
+        println(set.add(args[1]));
     }
 
     private void handleSetRemove(String[] args) {
-        print(set.remove(args[1]));
+        println(set.remove(args[1]));
     }
 
     private void handleSetAddMany(String[] args) {
@@ -666,8 +666,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                 successCount++;
         }
         long t1 = System.currentTimeMillis();
-        print("Added " + successCount + " objects.");
-        System.out.println("size = " + set.size() + ", " + successCount * 1000 / (t1 - t0)
+        println("Added " + successCount + " objects.");
+        println("size = " + set.size() + ", " + successCount * 1000 / (t1 - t0)
                 + " evt/s");
     }
 
@@ -683,8 +683,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                 successCount++;
         }
         long t1 = System.currentTimeMillis();
-        print("Added " + successCount + " objects.");
-        System.out.println("size = " + list.size() + ", " + successCount * 1000 / (t1 - t0)
+        println("Added " + successCount + " objects.");
+        println("size = " + list.size() + ", " + successCount * 1000 / (t1 - t0)
                 + " evt/s");
     }
 
@@ -700,8 +700,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                 successCount++;
         }
         long t1 = System.currentTimeMillis();
-        print("Removed " + successCount + " objects.");
-        System.out.println("size = " + set.size() + ", " + successCount * 1000 / (t1 - t0)
+        println("Removed " + successCount + " objects.");
+        println("size = " + set.size() + ", " + successCount * 1000 / (t1 - t0)
                 + " evt/s");
     }
 
@@ -724,12 +724,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
         int count = 1;
         while (it.hasNext()) {
-            System.out.print(count++ + " " + it.next());
+            print(count++ + " " + it.next());
             if (remove) {
                 it.remove();
-                System.out.print(" removed");
+                print(" removed");
             }
-            print("");
+            println("");
         }
     }
 
@@ -753,7 +753,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         } else if (iteratorStr.startsWith("l.")) {
             result = list.contains(data);
         }
-        print("Contains : " + result);
+        println("Contains : " + result);
     }
 
     private void handleSize(String[] args) {
@@ -768,7 +768,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         } else if (iteratorStr.startsWith("l.")) {
             size = list.size();
         }
-        print("Size = " + size);
+        println("Size = " + size);
     }
 
     private void handleClear(String[] args) {
@@ -782,7 +782,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         } else if (iteratorStr.startsWith("l.")) {
             list.clear();
         }
-        print("Cleared all.");
+        println("Cleared all.");
     }
 
     private void handleDestroy(String[] args) {
@@ -798,7 +798,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         } else if (iteratorStr.startsWith("t.")) {
             topic.destroy();
         }
-        print("Destroyed!");
+        println("Destroyed!");
     }
 
     private void handleQOffer(String[] args) {
@@ -808,7 +808,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
         try {
             boolean offered = queue.offer(args[1], timeout, TimeUnit.SECONDS);
-            print(offered);
+            println(offered);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -816,7 +816,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private void handleQTake(String[] args) {
         try {
-            print(queue.take());
+            println(queue.take());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -828,7 +828,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             timeout = Long.valueOf(args[1]);
         }
         try {
-            print(queue.poll(timeout, TimeUnit.SECONDS));
+            println(queue.poll(timeout, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -853,12 +853,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                 queue.offer(value);
         }
         long t1 = System.currentTimeMillis();
-        System.out.print("size = " + queue.size() + ", " + count * 1000 / (t1 - t0) + " evt/s");
+        print("size = " + queue.size() + ", " + count * 1000 / (t1 - t0) + " evt/s");
         if (value == null) {
-            System.out.println("");
+            println("");
         } else {
             int b = Integer.parseInt(args[2]);
-            System.out.println(", " + (count * 1000 / (t1 - t0)) * (b * 8) / 1024 + " Kbit/s, "
+            println(", " + (count * 1000 / (t1 - t0)) * (b * 8) / 1024 + " Kbit/s, "
                     + count * b / 1024 + " KB added");
         }
     }
@@ -871,19 +871,19 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         for (int i = 0; i < count; i++) {
             Object obj = queue.poll();
             if (obj instanceof byte[]) {
-                print(c++ + " " + ((byte[]) obj).length);
+                println(c++ + " " + ((byte[]) obj).length);
             } else {
-                print(c++ + " " + obj);
+                println(c++ + " " + obj);
             }
         }
     }
 
     private void handleQPeek(String[] args) {
-        print(queue.peek());
+        println(queue.peek());
     }
 
     private void handleQCapacity(String[] args) {
-        print(queue.remainingCapacity());
+        println(queue.remainingCapacity());
     }
 
     private void execute(String[] args) {
@@ -925,7 +925,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                 task = new DistributedTask<String>(callable);
             }
             executorService.execute(task);
-            System.out.println("Result: " + task.get());
+            println("Result: " + task.get());
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
@@ -942,7 +942,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             executorService.execute(echoTask);
             Collection<String> results = echoTask.get();
             for (String result : results) {
-                System.out.println(result);
+                println(result);
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -959,18 +959,18 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                     .getMembers()) {
                 @Override
                 public void setMemberLeft(Member member) {
-                    System.out.println("Member Left " + member);
+                    println("Member Left " + member);
                 }
 
                 @Override
                 public void done() {
-                    System.out.println("Done!");
+                    println("Done!");
                 }
             };
             executorService.execute(echoTask);
             Collection<String> results = echoTask.get();
             for (String result : results) {
-                System.out.println(result);
+                println(result);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -994,48 +994,48 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             DistributedTask<String> echoTask = new DistributedTask(new LongTask(args[1]), otherMember) {
                 @Override
                 public void setMemberLeft(Member member) {
-                    System.out.println("Member Left " + member);
+                    println("Member Left " + member);
                 }
 
                 @Override
                 public void done() {
-                    System.out.println("Done!");
+                    println("Done!");
                 }
             };
             executorService.execute(echoTask);
             Object result = echoTask.get();
-            System.out.println(result);
+            println(result);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     public void entryAdded(EntryEvent event) {
-        System.out.println(event);
+        println(event);
     }
 
     public void entryRemoved(EntryEvent event) {
-        System.out.println(event);
+        println(event);
     }
 
     public void entryUpdated(EntryEvent event) {
-        System.out.println(event);
+        println(event);
     }
 
     public void entryEvicted(EntryEvent event) {
-        System.out.println(event);
+        println(event);
     }
 
     public void itemAdded(Object item) {
-        System.out.println("Item added = " + item);
+        println("Item added = " + item);
     }
 
     public void itemRemoved(Object item) {
-        System.out.println("Item removed = " + item);
+        println("Item removed = " + item);
     }
 
     public void onMessage(Object msg) {
-        System.out.println("Topic received = " + msg);
+        println("Topic received = " + msg);
     }
 
     public static class LongTask extends HazelcastInstanceAwareObject implements Callable<String>, Serializable {
@@ -1081,79 +1081,86 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     private void handleHelp(String command) {
         boolean silentBefore = silent;
         silent = false;
-        print("Commands:");
-        print("-- General commands");
-        print("echo true|false                      //turns on/off echo of commands (default false)");
-        print("silent true|false                    //turns on/off silent of command output (default false)");
-        print("#<number> <command>                  //repeats <number> time <command>, replace $i in <command> with current iteration (0..<number-1>)");
-        print("&<number> <command>                  //forks <number> threads to execute <command>, replace $t in <command> with current thread number (0..<number-1>");
-        print("     When using #x or &x, is is advised to use silent true as well.");
-        print("     When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a start key index is specified");
-        print("jvm                                  //displays info about the runtime");
-        print("who                                  //displays info about the cluster");
-        print("whoami                               //displays info about this cluster member");
-        print("ns <string>                          //switch the namespace for using the distributed queue/map/set/list <string> (defaults to \"default\"");
-        print("@<file>                              //executes the given <file> script. Use '//' for comments in the script");
-        print("");
-        print("-- Queue commands");
-        print("q.offer <string>                     //adds a string object to the queue");
-        print("q.poll                               //takes an object from the queue");
-        print("q.offermany <number> [<size>]        //adds indicated number of string objects to the queue ('obj<i>' or byte[<size>]) ");
-        print("q.pollmany <number>                  //takes indicated number of objects from the queue");
-        print("q.iterator [remove]                  //iterates the queue, remove if specified");
-        print("q.size                               //size of the queue");
-        print("q.clear                              //clears the queue");
-        print("");
-        print("-- Set commands");
-        print("s.add <string>                       //adds a string object to the set");
-        print("s.remove <string>                    //removes the string object from the set");
-        print("s.addmany <number>                   //adds indicated number of string objects to the set ('obj<i>')");
-        print("s.removemany <number>                //takes indicated number of objects from the set");
-        print("s.iterator [remove]                  //iterates the set, removes if specified");
-        print("s.size                               //size of the set");
-        print("s.clear                              //clears the set");
-        print("");
-        print("-- Lock commands");
-        print("lock <key>                           //same as Hazelcast.getLock(key).lock()");
-        print("tryLock <key>                        //same as Hazelcast.getLock(key).tryLock()");
-        print("tryLock <key> <time>                 //same as tryLock <key> with timeout in seconds");
-        print("unlock <key>                         //same as Hazelcast.getLock(key).unlock()");
-        print("");
-        print("-- Map commands");
-        print("m.put <key> <value>                  //puts an entry to the map");
-        print("m.remove <key>                       //removes the entry of given key from the map");
-        print("m.get <key>                          //returns the value of given key from the map");
-        print("m.putmany <number> [<size>] [<index>]//puts indicated number of entries to the map ('key<i>':byte[<size>], <index>+(0..<number>)");
-        print("m.removemany <number> [<index>]      //removes indicated number of entries from the map ('key<i>', <index>+(0..<number>)");
-        print("     When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a start key <index> is specified");
-        print("m.keys                               //iterates the keys of the map");
-        print("m.values                             //iterates the values of the map");
-        print("m.entries                            //iterates the entries of the map");
-        print("m.iterator [remove]                  //iterates the keys of the map, remove if specified");
-        print("m.size                               //size of the map");
-        print("m.clear                              //clears the map");
-        print("m.lock <key>                         //locks the key");
-        print("m.tryLock <key>                      //tries to lock the key and returns immediately");
-        print("m.tryLock <key> <time>               //tries to lock the key within given seconds");
-        print("m.unlock <key>                       //unlocks the key");
-        print("");
-        print("-- List commands:");
-        print("l.add <string>");
-        print("l.contains <string>");
-        print("l.remove <string>");
-        print("l.iterator [remove]");
-        print("l.size");
-        print("l.clear");
-        print("execute	<echo-input>				//executes an echo task on random member");
-        print("execute0nKey	<echo-input> <key>		//executes an echo task on the member that owns the given key");
-        print("execute0nMember <echo-input> <key>	//executes an echo task on the member with given index");
-        print("execute0nMembers <echo-input> 		//executes an echo task on all of the members");
-        print("");
+        println("Commands:");
+        println("-- General commands");
+        println("echo true|false                      //turns on/off echo of commands (default false)");
+        println("silent true|false                    //turns on/off silent of command output (default false)");
+        println("#<number> <command>                  //repeats <number> time <command>, replace $i in <command> with current iteration (0..<number-1>)");
+        println("&<number> <command>                  //forks <number> threads to execute <command>, replace $t in <command> with current thread number (0..<number-1>");
+        println("     When using #x or &x, is is advised to use silent true as well.");
+        println("     When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a start key index is specified");
+        println("jvm                                  //displays info about the runtime");
+        println("who                                  //displays info about the cluster");
+        println("whoami                               //displays info about this cluster member");
+        println("ns <string>                          //switch the namespace for using the distributed queue/map/set/list <string> (defaults to \"default\"");
+        println("@<file>                              //executes the given <file> script. Use '//' for comments in the script");
+        println("");
+        println("-- Queue commands");
+        println("q.offer <string>                     //adds a string object to the queue");
+        println("q.poll                               //takes an object from the queue");
+        println("q.offermany <number> [<size>]        //adds indicated number of string objects to the queue ('obj<i>' or byte[<size>]) ");
+        println("q.pollmany <number>                  //takes indicated number of objects from the queue");
+        println("q.iterator [remove]                  //iterates the queue, remove if specified");
+        println("q.size                               //size of the queue");
+        println("q.clear                              //clears the queue");
+        println("");
+        println("-- Set commands");
+        println("s.add <string>                       //adds a string object to the set");
+        println("s.remove <string>                    //removes the string object from the set");
+        println("s.addmany <number>                   //adds indicated number of string objects to the set ('obj<i>')");
+        println("s.removemany <number>                //takes indicated number of objects from the set");
+        println("s.iterator [remove]                  //iterates the set, removes if specified");
+        println("s.size                               //size of the set");
+        println("s.clear                              //clears the set");
+        println("");
+        println("-- Lock commands");
+        println("lock <key>                           //same as Hazelcast.getLock(key).lock()");
+        println("tryLock <key>                        //same as Hazelcast.getLock(key).tryLock()");
+        println("tryLock <key> <time>                 //same as tryLock <key> with timeout in seconds");
+        println("unlock <key>                         //same as Hazelcast.getLock(key).unlock()");
+        println("");
+        println("-- Map commands");
+        println("m.put <key> <value>                  //puts an entry to the map");
+        println("m.remove <key>                       //removes the entry of given key from the map");
+        println("m.get <key>                          //returns the value of given key from the map");
+        println("m.putmany <number> [<size>] [<index>]//puts indicated number of entries to the map ('key<i>':byte[<size>], <index>+(0..<number>)");
+        println("m.removemany <number> [<index>]      //removes indicated number of entries from the map ('key<i>', <index>+(0..<number>)");
+        println("     When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a start key <index> is specified");
+        println("m.keys                               //iterates the keys of the map");
+        println("m.values                             //iterates the values of the map");
+        println("m.entries                            //iterates the entries of the map");
+        println("m.iterator [remove]                  //iterates the keys of the map, remove if specified");
+        println("m.size                               //size of the map");
+        println("m.clear                              //clears the map");
+        println("m.lock <key>                         //locks the key");
+        println("m.tryLock <key>                      //tries to lock the key and returns immediately");
+        println("m.tryLock <key> <time>               //tries to lock the key within given seconds");
+        println("m.unlock <key>                       //unlocks the key");
+        println("");
+        println("-- List commands:");
+        println("l.add <string>");
+        println("l.contains <string>");
+        println("l.remove <string>");
+        println("l.iterator [remove]");
+        println("l.size");
+        println("l.clear");
+        println("execute	<echo-input>				//executes an echo task on random member");
+        println("execute0nKey	<echo-input> <key>		//executes an echo task on the member that owns the given key");
+        println("execute0nMember <echo-input> <key>	//executes an echo task on the member with given index");
+        println("execute0nMembers <echo-input> 		//executes an echo task on all of the members");
+        println("");
         silent = silentBefore;
+    }
+
+    void println(Object obj) {
+        if (!silent)
+            System.out.println(obj);
     }
 
     void print(Object obj) {
         if (!silent)
-            System.out.println(obj);
+            System.out.print(obj);
     }
+
+
 }
