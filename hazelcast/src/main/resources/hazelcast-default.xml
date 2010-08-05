@@ -1,3 +1,7 @@
+<note
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="/hazelcast-default.xsd">
+
 <hazelcast>
     <group>
         <name>dev</name>
