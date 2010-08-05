@@ -131,8 +131,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
             return factory.hazelcastInstanceProxy;
         } catch (Throwable t) {
-            t.printStackTrace();
-            return null;
+            throw new RuntimeException(t);
         }
     }
 
