@@ -22,7 +22,7 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.impl.com.hazelcast.impl.monitor.ClusterViewImpl;
+import com.hazelcast.monitor.ClusterViewImpl;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 
