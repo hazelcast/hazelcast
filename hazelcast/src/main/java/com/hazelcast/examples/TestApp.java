@@ -1152,12 +1152,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         silent = silentBefore;
     }
 
-    void println(Object obj) {
+    public void println(Object obj) {
         if (!silent)
             System.out.println(obj);
     }
 
-    void print(Object obj) {
+    public void print(Object obj) {
         if (!silent)
             System.out.print(obj);
     }
