@@ -70,7 +70,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         map = hazelcast.getMap(namespace);
         set = hazelcast.getSet(namespace);
         list = hazelcast.getList(namespace);
-        lineReader = new DefaultLineReader();
+        if(lineReader == null){
+            lineReader = new DefaultLineReader();
+        }
         while (true) {
             print("hazelcast[" + namespace + "] > ");
             try {
