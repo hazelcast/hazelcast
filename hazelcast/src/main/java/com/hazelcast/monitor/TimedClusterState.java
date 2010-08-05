@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TimedClusterState implements DataSerializable {
     long time;
     Map<Member, MemberState> memberStates = new ConcurrentHashMap<Member, MemberState>();
+    ClusterStateView clusterStateView;
 
     public void writeData(DataOutput out) throws IOException {
         out.writeLong(time);
@@ -74,6 +75,14 @@ public class TimedClusterState implements DataSerializable {
 
     public long getTime() {
         return time;
+    }
+
+    public ClusterStateView getClusterStateView() {
+        return clusterStateView;
+    }
+
+    public void setClusterStateView(ClusterStateView clusterStateView) {
+        this.clusterStateView = clusterStateView;
     }
 }
 
