@@ -27,9 +27,9 @@ import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 class LocallyOwnedMap {
-    private final ConcurrentMap<Object, Record> mapCache = new ConcurrentHashMap<Object, Record>(CMap.DEFAULT_MAP_SIZE);
-    private final Queue<Record> localRecords = new ConcurrentLinkedQueue<Record>();
-    private final AtomicInteger counter = new AtomicInteger();
+    final ConcurrentMap<Object, Record> mapCache = new ConcurrentHashMap<Object, Record>(CMap.DEFAULT_MAP_SIZE);
+    final Queue<Record> localRecords = new ConcurrentLinkedQueue<Record>();
+    final AtomicInteger counter = new AtomicInteger();
     private final int LOCAL_INVALIDATION_COUNTER = 100000;
     private long lastEvictionTime = 0;
 

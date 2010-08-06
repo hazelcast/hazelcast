@@ -992,6 +992,12 @@ public class CMap {
 
     void startCleanup() {
         final long now = System.currentTimeMillis();
+        if (locallyOwnedMap != null) {
+            locallyOwnedMap.evict(now);
+        }
+        if (mapNearCache != null) {
+            mapNearCache.evict(now, false);
+        }
         final Map<Data, Data> entriesToStore = new HashMap<Data, Data>();
         final Collection<Data> keysToDelete = new HashSet<Data>();
         final Set<Record> recordsUnknown = new HashSet<Record>();
@@ -1005,6 +1011,7 @@ public class CMap {
         final boolean evictionAware = evictionComparator != null && maxSizePerJVM > 0;
         final PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
         int recordsStillOwned = 0;
+        int backupPurgeCount  =0 ;
         for (Record record : records) {
             PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
             Member owner = partition.getOwner();
@@ -1040,6 +1047,7 @@ public class CMap {
                     if (backup) {
                         if (shouldPurgeRecord(record, now)) {
                             recordsToPurge.add(record);
+                            backupPurgeCount++;
                         }
                     } else {
                         recordsUnknown.add(record);
@@ -1060,12 +1068,14 @@ public class CMap {
             }
         }
         Level levelLog = (concurrentMapManager.LOG_STATE) ? Level.INFO : Level.FINEST;
-        logger.log(levelLog, "Cleanup "
+        logger.log(levelLog, name + " Cleanup "
                 + ", store:" + entriesToStore.size()
                 + ", delete:" + keysToDelete.size()
                 + ", purge:" + recordsToPurge.size()
                 + ", evict:" + recordsToEvict.size()
                 + ", unknown:" + recordsUnknown.size()
+                + ", stillOwned:" + recordsStillOwned
+                + ", backupPurge:" + backupPurgeCount
         );
         executeStoreUpdate(entriesToStore, keysToDelete);
         executeEviction(recordsToEvict);

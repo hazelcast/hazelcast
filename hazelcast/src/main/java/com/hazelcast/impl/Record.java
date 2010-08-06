@@ -254,11 +254,11 @@ public class Record implements MapEntry {
     }
 
     public void incrementCopyCount() {
-        copyCount += 1;
+        copyCount++;
     }
 
     public void decrementCopyCount() {
-        copyCount -= 1;
+        copyCount--;
     }
 
     public int getCopyCount() {

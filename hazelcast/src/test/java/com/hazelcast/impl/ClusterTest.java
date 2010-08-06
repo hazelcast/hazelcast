@@ -1128,6 +1128,10 @@ public class ClusterTest {
         final int size = 20000;
         for (int i = 0; i < size; i++) {
             map1.put(i, new byte[10000]);
+            h1.getMap("default").get(i);
+            h2.getMap("default").get(i);
+            h3.getMap("default").get(i);
+            h4.getMap("default").get(i);
         }
         long usedMemoryStart = getUsedMemoryAsMB();
         assertTrue(usedMemoryStart > 300);
@@ -1151,6 +1155,10 @@ public class ClusterTest {
         final int size = 20000;
         for (int i = 0; i < size; i++) {
             map1.put(i, new byte[10000], 10, TimeUnit.SECONDS);
+            h1.getMap("default").get(i);
+            h2.getMap("default").get(i);
+            h3.getMap("default").get(i);
+            h4.getMap("default").get(i);
         }
         long usedMemoryStart = getUsedMemoryAsMB();
         assertTrue("UsedMemoryStart: " + usedMemoryStart, usedMemoryStart > 300);
@@ -1176,6 +1184,10 @@ public class ClusterTest {
         final int size = 20000;
         for (int i = 0; i < size; i++) {
             map1.put(i, new byte[10000]);
+            h1.getMap("default").get(i);
+            h2.getMap("default").get(i);
+            h3.getMap("default").get(i);
+            h4.getMap("default").get(i);
         }
         long usedMemoryStart = getUsedMemoryAsMB();
         assertTrue("UsedMemoryStart: " + usedMemoryStart, usedMemoryStart > 300);

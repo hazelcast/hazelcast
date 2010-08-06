@@ -143,6 +143,8 @@ public class ConcurrentMapManager extends BaseManager {
 
     public void reset() {
         maps.clear();
+        mapLocallyOwnedMaps.clear();
+        mapCaches.clear();
     }
 
     public void syncForDead(MemberImpl deadMember) {
@@ -863,7 +865,7 @@ public class ConcurrentMapManager extends BaseManager {
                     if (returnObject instanceof AddressAwareException) {
                         rethrowException(operation, (AddressAwareException) returnObject);
                     }
-                    request.longValue = request.ttl;
+                    request.longValue = Long.MIN_VALUE; 
                     backup(CONCURRENT_MAP_BACKUP_PUT);
                     return returnObject;
                 }

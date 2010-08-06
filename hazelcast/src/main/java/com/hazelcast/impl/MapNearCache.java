@@ -155,7 +155,7 @@ public class MapNearCache {
         }
     }
 
-    private void startEviction() {
+    void startEviction() {
         checkThread();
         int evictionCount = (int) (cache.size() * 0.25);
         List<Data> lsRemoves = new ArrayList<Data>(evictionCount);
