@@ -65,7 +65,7 @@ public class HazelcastClientQueueTest {
 
             public void run() {
                 try {
-                    Thread.sleep(60);
+                    Thread.sleep(100);
                     assertEquals("b", queue.poll(100, TimeUnit.MILLISECONDS));
                     cl.countDown();
                 } catch (InterruptedException e) {
@@ -75,7 +75,7 @@ public class HazelcastClientQueueTest {
         }).start();
         Thread.sleep(50);
         assertTrue(queue.offer("b"));
-        assertTrue(cl.await(50, TimeUnit.MILLISECONDS));
+        assertTrue(cl.await(200, TimeUnit.MILLISECONDS));
     }
 
     @Test
