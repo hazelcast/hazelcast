@@ -503,10 +503,10 @@ public class Node {
         return list;
     }
 
-    private List<Address> getPossibleMembers() {
+    private Collection<Address> getPossibleMembers() {
         Join join = config.getNetworkConfig().getJoin();
         final List<String> lsJoinMembers = join.getTcpIpConfig().getMembers();
-        final List<Address> lsPossibleAddresses = new ArrayList<Address>();
+        final Set<Address> setPossibleAddresses = new HashSet<Address>();
         for (final String lsJoinMember : lsJoinMembers) {
             String host = lsJoinMember;
             int port = config.getPort();
@@ -521,8 +521,9 @@ public class Node {
                 if (ip) {
                     for (final Address addrs : getPossibleIpAddresses(host, port, indexColon >= 0)) {
                         if (!addrs.equals(getThisAddress())) {
-                            logger.log(Level.FINEST, "adding possible member " + addrs);
-                            lsPossibleAddresses.add(addrs);
+                            if ( setPossibleAddresses.add(addrs)){
+                                logger.log(Level.FINEST, "adding possible member " + addrs);
+                            }
                         }
                     }
                 } else {
@@ -535,13 +536,23 @@ public class Node {
                             addrs = new Address(inetAddress.getAddress(), port);
                             shouldCheck = AddressPicker.matchAddress(addrs.getHost(), interfaces.getInterfaces());
                         }
-                        if (shouldCheck) {
-                            for (int i = -2; i < 3; i++) {
-                                final Address addressProper = new Address(inetAddress.getAddress(),
-                                        port + i);
-                                if (!addressProper.equals(getThisAddress())) {
+                        if (indexColon < 0){ 
+                        	// port is not set
+	                        if (shouldCheck) {
+	                            for (int i = -2; i < 3; i++) {
+	                                final Address addressProper = new Address(inetAddress.getAddress(), port + i);
+	                                if (!addressProper.equals(getThisAddress())) {
+	                                    if ( setPossibleAddresses.add(addressProper)) {
+	                                        logger.log(Level.FINEST, "adding possible member " + addressProper);
+	                                    }
+	                                }
+	                            }
+	                        }
+                        } else {
+                        	final Address addressProper = new Address(inetAddress.getAddress(), port);
+                            if (!addressProper.equals(getThisAddress())) {
+                                if ( setPossibleAddresses.add(addressProper)) {
                                     logger.log(Level.FINEST, "adding possible member " + addressProper);
-                                    lsPossibleAddresses.add(addressProper);
                                 }
                             }
                         }
@@ -552,8 +563,8 @@ public class Node {
                 logger.log(Level.SEVERE, e.getMessage(), e);
             }
         }
-        lsPossibleAddresses.addAll(config.getNetworkConfig().getJoin().getTcpIpConfig().getAddresses());
-        return lsPossibleAddresses;
+         setPossibleAddresses.addAll(config.getNetworkConfig().getJoin().getTcpIpConfig().getAddresses());
+        return  setPossibleAddresses;
     }
 
     private void join() {
@@ -644,9 +655,9 @@ public class Node {
     private void joinViaPossibleMembers() {
         try {
             failedConnections.clear();
-            final List<Address> lsPossibleAddresses = getPossibleMembers();
-            lsPossibleAddresses.remove(address);
-            for (final Address possibleAddress : lsPossibleAddresses) {
+            final Collection<Address> colPossibleAddresses = getPossibleMembers();
+            colPossibleAddresses.remove(address);
+            for (final Address possibleAddress : colPossibleAddresses) {
                 logger.log(Level.FINEST, "connecting to " + possibleAddress);
                 connectionManager.getOrConnect(possibleAddress);
             }
@@ -654,15 +665,15 @@ public class Node {
             int numberOfSeconds = 0;
             final int connectionTimeoutSeconds = config.getNetworkConfig().getJoin().getTcpIpConfig().getConnectionTimeoutSeconds();
             while (!found && numberOfSeconds < connectionTimeoutSeconds) {
-                lsPossibleAddresses.removeAll(failedConnections);
-                if (lsPossibleAddresses.size() == 0) {
+                colPossibleAddresses.removeAll(failedConnections);
+                if (colPossibleAddresses.size() == 0) {
                     break;
                 }
                 Thread.sleep(1000);
                 numberOfSeconds++;
                 int numberOfJoinReq = 0;
                 logger.log(Level.FINE, "we are going to try to connect to each lockAddress, but no more than five times");
-                for (Address possibleAddress : lsPossibleAddresses) {
+                for (Address possibleAddress : colPossibleAddresses) {
                     logger.log(Level.FINEST, "connection attempt " + numberOfJoinReq + " to " + possibleAddress);
                     final Connection conn = connectionManager.getOrConnect(possibleAddress);
                     if (conn != null && numberOfJoinReq < 5) {
@@ -682,8 +693,8 @@ public class Node {
             } else {
                 while (!joined) {
                     int numberOfJoinReq = 0;
-                    lsPossibleAddresses.removeAll(failedConnections);
-                    for (Address possibleAddress : lsPossibleAddresses) {
+                    colPossibleAddresses.removeAll(failedConnections);
+                    for (Address possibleAddress : colPossibleAddresses) {
                         final Connection conn = connectionManager.getOrConnect(possibleAddress);
                         if (conn != null && numberOfJoinReq < 5) {
                             logger.log(Level.FINEST, "sending join request for " + possibleAddress);
@@ -696,7 +707,7 @@ public class Node {
                     Thread.sleep(2000);
                     if (masterAddress == null) { // no-one knows the isMaster
                         boolean masterCandidate = true;
-                        for (Address address : lsPossibleAddresses) {
+                        for (Address address : colPossibleAddresses) {
                             if (this.address.hashCode() > address.hashCode()) {
                                 masterCandidate = false;
                             }
@@ -708,7 +719,7 @@ public class Node {
                     }
                 }
             }
-            lsPossibleAddresses.clear();
+            colPossibleAddresses.clear();
             failedConnections.clear();
         } catch (Exception e) {
             e.printStackTrace();

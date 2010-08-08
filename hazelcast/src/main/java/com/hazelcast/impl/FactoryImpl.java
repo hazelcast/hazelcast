@@ -79,7 +79,7 @@ public class FactoryImpl implements HazelcastInstance {
 
     public final Node node;
 
-    private final static ConcurrentMap<String, FactoryImpl> factories = new ConcurrentHashMap<String, FactoryImpl>(5);
+    final static ConcurrentMap<String, FactoryImpl> factories = new ConcurrentHashMap<String, FactoryImpl>(5);
 
     private final static Object factoryLock = new Object();
 

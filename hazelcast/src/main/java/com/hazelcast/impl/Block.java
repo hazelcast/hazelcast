@@ -44,6 +44,11 @@ public class Block implements DataSerializable {
         this.setOwner(owner);
     }
 
+    public Block(int blockId, Address owner, Address migrationAddress) {
+        this (blockId, owner);
+        setMigrationAddress(migrationAddress);
+    }
+
     public int getBlockId() {
         return blockId;
     }

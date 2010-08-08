@@ -19,8 +19,20 @@ package com.hazelcast.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.Prefix;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
+import com.hazelcast.partition.MigrationEvent;
+import com.hazelcast.partition.MigrationListener;
 import org.junit.Test;
+
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.nio.IOUtil.toData;
@@ -31,6 +43,166 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
 public class CMapTest {
+
+    @Test
+    public void testTwoMemberPut() throws Exception {
+        Config config = new XmlConfigBuilder().build();
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        IMap imap1 = h1.getMap("default");
+        IMap imap2 = h2.getMap("default");
+        assertEquals(0, imap1.size());
+        assertEquals(0, imap2.size());
+        CMap cmap1 = getCMap(h1, "default");
+        CMap cmap2 = getCMap(h2, "default");
+        assertNotNull(cmap1);
+        assertNotNull(cmap2);
+        Object key = "1";
+        Object value = "value";
+        Data dKey = toData(key);
+        Data dValue = toData(value);
+        imap1.put(key, value, 5, TimeUnit.SECONDS);
+        assertEquals(1, cmap1.mapRecords.size());
+        assertEquals(1, cmap2.mapRecords.size());
+        assertEquals(1, cmap1.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap2.getMapIndexService().getOwnedRecords().size());
+        Record record1 = cmap1.getRecord(dKey);
+        Record record2 = cmap2.getRecord(dKey);
+        long now = System.currentTimeMillis();
+        long millisLeft1 = record1.getExpirationTime() - now;
+        long millisLeft2 = record2.getExpirationTime() - now;
+        assertTrue(millisLeft1 <= 5000 && millisLeft1 > 0);
+        assertTrue(millisLeft2 <= 5000 && millisLeft2 > 0);
+        assertTrue(record1.isActive());
+        assertTrue(record2.isActive());
+        assertEquals(1, record1.valueCount());
+        assertEquals(1, record2.valueCount());
+        assertEquals(dValue, record1.getValue());
+        assertEquals(dValue, record2.getValue());
+        Thread.sleep(6000);
+        now = System.currentTimeMillis();
+        assertFalse(record1.isValid(now));
+        assertFalse(record2.isValid(now));
+        Thread.sleep(20000);
+        assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap2.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap1.mapRecords.size());
+        assertEquals(0, cmap2.mapRecords.size());
+        imap1.put(key, value, 10, TimeUnit.SECONDS);
+        assertEquals(1, cmap1.mapRecords.size());
+        assertEquals(1, cmap2.mapRecords.size());
+        assertEquals(1, cmap1.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap2.getMapIndexService().getOwnedRecords().size());
+        record1 = cmap1.getRecord(dKey);
+        record2 = cmap2.getRecord(dKey);
+        now = System.currentTimeMillis();
+        millisLeft1 = record1.getExpirationTime() - now;
+        millisLeft2 = record2.getExpirationTime() - now;
+        assertTrue(millisLeft1 <= 10000 && millisLeft1 > 0);
+        assertTrue(millisLeft2 <= 10000 && millisLeft2 > 0);
+        assertTrue(record1.isActive());
+        assertTrue(record2.isActive());
+        assertTrue(record1.isValid(now));
+        assertTrue(record2.isValid(now));
+        assertEquals(1, record1.valueCount());
+        assertEquals(1, record2.valueCount());
+        assertTrue(migrateKey(key, h1, h2));
+        assertEquals(1, cmap1.mapRecords.size());
+        assertEquals(1, cmap2.mapRecords.size());
+        assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
+        assertEquals(1, cmap2.getMapIndexService().getOwnedRecords().size());
+        now = System.currentTimeMillis();
+        millisLeft1 = record1.getExpirationTime() - now;
+        millisLeft2 = record2.getExpirationTime() - now;
+        assertTrue(millisLeft1 <= 10000 && millisLeft1 > 0);
+        assertTrue(millisLeft2 <= 10000 && millisLeft2 > 0);
+        assertTrue(record1.isActive());
+        assertTrue(record2.isActive());
+        assertTrue(record1.isValid(now));
+        assertTrue(record2.isValid(now));
+        assertEquals(1, record1.valueCount());
+        assertEquals(1, record2.valueCount());
+        Thread.sleep(10000);
+        now = System.currentTimeMillis();
+        assertFalse(record1.isValid(now));
+        assertFalse(record2.isValid(now));
+        Thread.sleep(20000);
+        assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap2.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap1.mapRecords.size());
+        assertEquals(0, cmap2.mapRecords.size());
+        imap1.put("1", "value1");
+        record1 = cmap1.getRecord(dKey);
+        record2 = cmap2.getRecord(dKey);
+        assertEquals(1, cmap1.mapRecords.size());
+        assertEquals(1, cmap2.mapRecords.size());
+        assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
+        assertEquals(1, cmap2.getMapIndexService().getOwnedRecords().size());
+        now = System.currentTimeMillis();
+        assertEquals(Long.MAX_VALUE, record1.getExpirationTime());
+        assertEquals(Long.MAX_VALUE, record2.getExpirationTime());
+        assertTrue(record1.isActive());
+        assertTrue(record2.isActive());
+        assertTrue(record1.isValid(now));
+        assertTrue(record2.isValid(now));
+        assertEquals(1, record1.valueCount());
+        assertEquals(1, record2.valueCount());
+        imap1.remove("1");
+        assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap2.getMapIndexService().getOwnedRecords().size());
+        Thread.sleep(20000);
+        assertEquals(0, cmap1.mapRecords.size());
+        assertEquals(0, cmap2.mapRecords.size());
+    }
+
+    public static boolean migrateKey(Object key, HazelcastInstance oldest, HazelcastInstance to) throws Exception {
+        final MemberImpl currentOwnerMember = (MemberImpl) oldest.getPartitionService().getPartition(key).getOwner();
+        final MemberImpl toMember = (MemberImpl) to.getCluster().getLocalMember();
+        if (currentOwnerMember.equals(toMember)) {
+            return false;
+        }
+        final ConcurrentMapManager concurrentMapManagerOldest = getConcurrentMapManager(oldest);
+        final Address addressCurrentOwner = currentOwnerMember.getAddress();
+        final Address addressNewOwner = toMember.getAddress();
+        final int blockId = oldest.getPartitionService().getPartition(key).getPartitionId();
+        final CountDownLatch migrationLatch = new CountDownLatch(2);
+        MigrationListener migrationListener  = new MigrationListener() {
+            public void migrationCompleted(MigrationEvent migrationEvent) {
+                if (migrationEvent.getPartitionId() == blockId && migrationEvent.getNewOwner().equals(toMember)) {
+                    migrationLatch.countDown();
+                }
+            }
+
+            public void migrationStarted(MigrationEvent migrationEvent) {
+            }
+        };
+        oldest.getPartitionService().addMigrationListener(migrationListener);
+        to.getPartitionService().addMigrationListener(migrationListener);
+        concurrentMapManagerOldest.enqueueAndReturn(new Processable() {
+            public void process() {
+                Block blockToMigrate = new Block(blockId, addressCurrentOwner, addressNewOwner);
+                concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.add(blockToMigrate);
+                concurrentMapManagerOldest.partitionManager.initiateMigration();
+            }
+        });
+        if (!migrationLatch.await(20, TimeUnit.SECONDS)) {
+            fail("Migration should get completed in 20 seconds!!");
+        }
+        assertEquals(toMember, oldest.getPartitionService().getPartition(key).getOwner());
+        assertEquals(toMember, to.getPartitionService().getPartition(key).getOwner());
+        return true;
+    }
+
+    public static ConcurrentMapManager getConcurrentMapManager(HazelcastInstance h) {
+        FactoryImpl.HazelcastInstanceProxy hiProxy = (FactoryImpl.HazelcastInstanceProxy) h;
+        return hiProxy.getFactory().node.concurrentMapManager;
+    }
+
+    public static CMap getCMap(HazelcastInstance h, String name) {
+        ConcurrentMapManager concurrentMapManager = getConcurrentMapManager(h);
+        String fullName = Prefix.MAP + name;
+        return concurrentMapManager.getMap(fullName);
+    }
 
     @Test
     public void testTTL() throws Exception {

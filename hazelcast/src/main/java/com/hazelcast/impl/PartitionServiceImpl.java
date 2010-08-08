@@ -77,10 +77,7 @@ public class PartitionServiceImpl implements PartitionService {
         final BlockingQueue<PartitionReal> responseQ = ResponseQueueFactory.newResponseQueue();
         concurrentMapManager.enqueueAndReturn(new Processable() {
             public void process() {
-                Block block = concurrentMapManager.blocks[partitionId];
-                if (block == null) {
-                    block = concurrentMapManager.getOrCreateBlock(partitionId);
-                }
+                Block block = concurrentMapManager.getOrCreateBlock(partitionId);
                 MemberImpl memberOwner = null;
                 if (block.getOwner() != null) {
                     if (concurrentMapManager.thisAddress.equals(block.getOwner())) {
