@@ -19,7 +19,7 @@ package com.hazelcast.core;
 
 import java.util.Properties;
 
-public abstract class AbstractMapStore implements MapStore {
+public abstract class AbstractMapStore<K, V> implements MapStore<K, V> {
 
     /**
      * Initializes this MapStore implementation. Hazelcast will call
