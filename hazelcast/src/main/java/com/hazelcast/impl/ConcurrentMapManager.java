@@ -865,7 +865,7 @@ public class ConcurrentMapManager extends BaseManager {
                     if (returnObject instanceof AddressAwareException) {
                         rethrowException(operation, (AddressAwareException) returnObject);
                     }
-                    request.longValue = Long.MIN_VALUE; 
+                    request.longValue = Long.MIN_VALUE;
                     backup(CONCURRENT_MAP_BACKUP_PUT);
                     return returnObject;
                 }
@@ -1629,7 +1629,6 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         protected void schedule(Request request) {
-            final CMap cmap = getOrCreateMap(request.name);
             final Record record = ensureRecord(request);
             request.scheduled = true;
             ScheduledAction scheduledAction = new ScheduledAction(request) {
@@ -1718,7 +1717,9 @@ public class ConcurrentMapManager extends BaseManager {
 
         protected boolean shouldExecuteAsync(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            return (cmap.writeDelayMillis == 0);
+            if (request.operation == CONCURRENT_MAP_GET) {
+                return cmap.loader != null;
+            } else return cmap.writeDelayMillis == 0 && cmap.store != null;
         }
 
         public void handle(Request request) {
