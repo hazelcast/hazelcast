@@ -134,8 +134,13 @@ public class DistributedTask<V> extends FutureTask<V> {
             throw new CancellationException();
         if (memberLeftException != null)
             throw memberLeftException;
-        if (exception != null)
-            throw new ExecutionException(exception);
+        if (exception != null) {
+            if (exception instanceof TimeoutException) {
+                throw (TimeoutException) exception;
+            } else {
+                throw new ExecutionException(exception);
+            }
+        }
         if (!done) {
             throw new TimeoutException();
         }
@@ -144,7 +149,6 @@ public class DistributedTask<V> extends FutureTask<V> {
 
     @Override
     protected void set(V value) {
-
     }
 
     public void setExecutionCallback(ExecutionCallback<V> executionCallback) {
