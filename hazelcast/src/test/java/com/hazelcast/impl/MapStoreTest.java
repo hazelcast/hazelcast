@@ -56,7 +56,7 @@ public class MapStoreTest extends TestUtil {
     @Test
     public void testOneMemberWriteThroughTxnalFailingStore() {
         FailAwareMapStore testMapStore = new FailAwareMapStore();
-        testMapStore.setFail(false);        
+        testMapStore.setFail(false);
         Config config = newConfig(testMapStore, 0);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
@@ -120,7 +120,7 @@ public class MapStoreTest extends TestUtil {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         Config config = newConfig(testMapStore, 0);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        Employee employee = new Employee("joe", 25, true,  100.00);
+        Employee employee = new Employee("joe", 25, true, 100.00);
         testMapStore.insert("1", employee);
         IMap map = h1.getMap("default");
         map.addIndex("name", false);
@@ -202,7 +202,7 @@ public class MapStoreTest extends TestUtil {
 
     public static class TestMapStore extends AbstractMapStore implements MapLoader {
 
-        Map store = new ConcurrentHashMap();
+        final Map store = new ConcurrentHashMap();
 
         final CountDownLatch latchStore;
         final CountDownLatch latchStoreAll;
@@ -271,8 +271,8 @@ public class MapStoreTest extends TestUtil {
         }
 
         public void store(Object key, Object value) {
-            latchStore.countDown();
             store.put(key, value);
+            latchStore.countDown();
         }
 
         public Object load(Object key) {
@@ -281,17 +281,16 @@ public class MapStoreTest extends TestUtil {
         }
 
         public void storeAll(Map map) {
-            latchStoreAll.countDown();
             store.putAll(map);
+            latchStoreAll.countDown();
         }
 
         public void delete(Object key) {
-            latchDelete.countDown();
             store.remove(key);
+            latchDelete.countDown();
         }
 
         public Map loadAll(Collection keys) {
-            latchLoadAll.countDown();
             Map map = new HashMap(keys.size());
             for (Object key : keys) {
                 Object value = store.get(key);
@@ -299,6 +298,7 @@ public class MapStoreTest extends TestUtil {
                     map.put(key, value);
                 }
             }
+            latchLoadAll.countDown();
             return map;
         }
 
@@ -311,7 +311,7 @@ public class MapStoreTest extends TestUtil {
     }
 
     public static class FailAwareMapStore implements MapStore, MapLoader {
-        Map db = new ConcurrentHashMap();
+        final Map db = new ConcurrentHashMap();
 
         AtomicLong deletes = new AtomicLong();
         AtomicLong deleteAlls = new AtomicLong();
@@ -322,11 +322,14 @@ public class MapStoreTest extends TestUtil {
         AtomicBoolean shouldFail = new AtomicBoolean(false);
 
         public void delete(Object key) {
-            deletes.incrementAndGet();
-            if (shouldFail.get()) {
-                throw new RuntimeException();
-            } else {
-                db.remove(key);
+            try {
+                if (shouldFail.get()) {
+                    throw new RuntimeException();
+                } else {
+                    db.remove(key);
+                }
+            } finally {
+                deletes.incrementAndGet();
             }
         }
 
@@ -347,56 +350,71 @@ public class MapStoreTest extends TestUtil {
         }
 
         public void store(Object key, Object value) {
-            stores.incrementAndGet();
-            if (shouldFail.get()) {
-                throw new RuntimeException();
-            } else {
-                db.put(key, value);
+            try {
+                if (shouldFail.get()) {
+                    throw new RuntimeException();
+                } else {
+                    db.put(key, value);
+                }
+            } finally {
+                stores.incrementAndGet();
             }
         }
 
         public Object load(Object key) {
-            loads.incrementAndGet();
-            if (shouldFail.get()) {
-                throw new RuntimeException();
-            } else {
-                return db.get(key);
+            try {
+                if (shouldFail.get()) {
+                    throw new RuntimeException();
+                } else {
+                    return db.get(key);
+                }
+            } finally {
+                loads.incrementAndGet();
             }
         }
 
         public void storeAll(Map map) {
-            storeAlls.incrementAndGet();
-            if (shouldFail.get()) {
-                throw new RuntimeException();
-            } else {
-                db.putAll(map);
+            try {
+                if (shouldFail.get()) {
+                    throw new RuntimeException();
+                } else {
+                    db.putAll(map);
+                }
+            } finally {
+                storeAlls.incrementAndGet();
             }
         }
 
         public Map loadAll(Collection keys) {
-            loadAlls.incrementAndGet();
-            if (shouldFail.get()) {
-                throw new RuntimeException();
-            } else {
-                Map results = new HashMap();
-                for (Object key : keys) {
-                    Object value = db.get(key);
-                    if (value != null) {
-                        results.put(key, value);
+            try {
+                if (shouldFail.get()) {
+                    throw new RuntimeException();
+                } else {
+                    Map results = new HashMap();
+                    for (Object key : keys) {
+                        Object value = db.get(key);
+                        if (value != null) {
+                            results.put(key, value);
+                        }
                     }
+                    return results;
                 }
-                return results;
+            } finally {
+                loadAlls.incrementAndGet();
             }
         }
 
         public void deleteAll(Collection keys) {
-            deleteAlls.incrementAndGet();
-            if (shouldFail.get()) {
-                throw new RuntimeException();
-            } else {
-                for (Object key : keys) {
-                    db.remove(key);
+            try {
+                if (shouldFail.get()) {
+                    throw new RuntimeException();
+                } else {
+                    for (Object key : keys) {
+                        db.remove(key);
+                    }
                 }
+            } finally {
+                deleteAlls.incrementAndGet();
             }
         }
     }

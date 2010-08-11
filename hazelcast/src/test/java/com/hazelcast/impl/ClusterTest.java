@@ -1119,7 +1119,7 @@ public class ClusterTest {
         long initialUsedMemory = getUsedMemoryAsMB();
         Config config = new XmlConfigBuilder().build();
         MapConfig mapConfig = config.getMapConfig("default");
-        mapConfig.setTimeToLiveSeconds(5);
+        mapConfig.setTimeToLiveSeconds(10);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
@@ -1128,13 +1128,15 @@ public class ClusterTest {
         final int size = 20000;
         for (int i = 0; i < size; i++) {
             map1.put(i, new byte[10000]);
+        }
+        long usedMemoryStart = getUsedMemoryAsMB();
+        assertTrue("UsedMemoryStart: " + usedMemoryStart, usedMemoryStart > 300);
+        for (int i = 0; i < size; i++) {
             h1.getMap("default").get(i);
             h2.getMap("default").get(i);
             h3.getMap("default").get(i);
             h4.getMap("default").get(i);
         }
-        long usedMemoryStart = getUsedMemoryAsMB();
-        assertTrue(usedMemoryStart > 300);
         sleep(50000);
         Runtime.getRuntime().gc();
         sleep(5000);
@@ -1155,13 +1157,15 @@ public class ClusterTest {
         final int size = 20000;
         for (int i = 0; i < size; i++) {
             map1.put(i, new byte[10000], 10, TimeUnit.SECONDS);
+        }
+        long usedMemoryStart = getUsedMemoryAsMB();
+        assertTrue("UsedMemoryStart: " + usedMemoryStart, usedMemoryStart > 300);
+        for (int i = 0; i < size; i++) {
             h1.getMap("default").get(i);
             h2.getMap("default").get(i);
             h3.getMap("default").get(i);
             h4.getMap("default").get(i);
         }
-        long usedMemoryStart = getUsedMemoryAsMB();
-        assertTrue("UsedMemoryStart: " + usedMemoryStart, usedMemoryStart > 300);
         sleep(50000);
         Runtime.getRuntime().gc();
         sleep(5000);
@@ -1175,7 +1179,7 @@ public class ClusterTest {
         long initialUsedMemory = getUsedMemoryAsMB();
         Config config = new XmlConfigBuilder().build();
         MapConfig mapConfig = config.getMapConfig("default");
-        mapConfig.setMaxIdleSeconds(5);
+        mapConfig.setMaxIdleSeconds(10);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
@@ -1184,13 +1188,15 @@ public class ClusterTest {
         final int size = 20000;
         for (int i = 0; i < size; i++) {
             map1.put(i, new byte[10000]);
+        }
+        long usedMemoryStart = getUsedMemoryAsMB();
+        assertTrue("UsedMemoryStart: " + usedMemoryStart, usedMemoryStart > 300);
+        for (int i = 0; i < size; i++) {
             h1.getMap("default").get(i);
             h2.getMap("default").get(i);
             h3.getMap("default").get(i);
             h4.getMap("default").get(i);
         }
-        long usedMemoryStart = getUsedMemoryAsMB();
-        assertTrue("UsedMemoryStart: " + usedMemoryStart, usedMemoryStart > 300);
         sleep(50000);
         Runtime.getRuntime().gc();
         sleep(5000);
