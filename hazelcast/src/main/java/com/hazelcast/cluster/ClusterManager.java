@@ -510,6 +510,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
 
         public void run() {
+            membersUpdate.call();
             Collection<MemberInfo> lsMemberInfos = membersUpdate.getMemberInfos();
             List<Address> newMemberList = new ArrayList<Address>(lsMemberInfos.size());
             for (final MemberInfo memberInfo : lsMemberInfos) {
@@ -517,9 +518,11 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             }
             List<AsyncRemotelyBooleanCallable> calls = new ArrayList<AsyncRemotelyBooleanCallable>(lsMemberInfos.size());
             for (final Address target : newMemberList) {
-                AsyncRemotelyBooleanCallable rrp = new AsyncRemotelyBooleanCallable();
-                rrp.executeProcess(target, membersUpdate);
-                calls.add(rrp);
+                if (!thisAddress.equals(target)) {
+                    AsyncRemotelyBooleanCallable rrp = new AsyncRemotelyBooleanCallable();
+                    rrp.executeProcess(target, membersUpdate);
+                    calls.add(rrp);
+                }
             }
             for (AsyncRemotelyBooleanCallable call : calls) {
                 if (call.getResultAsBoolean() == Boolean.FALSE) {
