@@ -503,7 +503,7 @@ public class Node {
         return list;
     }
 
-    private Collection<Address> getPossibleMembers() {
+    Collection<Address> getPossibleMembers() {
         Join join = config.getNetworkConfig().getJoin();
         final List<String> lsJoinMembers = join.getTcpIpConfig().getMembers();
         final Set<Address> setPossibleAddresses = new HashSet<Address>();
@@ -536,7 +536,7 @@ public class Node {
                             addrs = new Address(inetAddress.getAddress(), port);
                             shouldCheck = AddressPicker.matchAddress(addrs.getHost(), interfaces.getInterfaces());
                         }
-                        if (indexColon < 0){ 
+                        if (indexColon < 0){
                         	// port is not set
 	                        if (shouldCheck) {
 	                            for (int i = -2; i < 3; i++) {

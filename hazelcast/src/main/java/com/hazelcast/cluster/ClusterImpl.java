@@ -83,26 +83,28 @@ public class ClusterImpl implements Cluster {
         Set<Member> setNew = new LinkedHashSet<Member>(lsMembers.size());
         ArrayList<Runnable> notifications = new ArrayList<Runnable>();
         for (MemberImpl member : lsMembers) {
-            final MemberImpl dummy = new MemberImpl(member.getAddress(), member.localMember(), member.getNodeType());
-            Member clusterMember = clusterMembers.get(dummy);
-            if (clusterMember == null) {
-                clusterMember = dummy;
-                if (listeners.size() > 0) {
-                    notifications.add(new Runnable() {
-                        public void run() {
-                            MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
-                                    dummy, MembershipEvent.MEMBER_ADDED);
-                            for (MembershipListener listener : listeners) {
-                                listener.memberAdded(membershipEvent);
+            if (member != null) {
+                final MemberImpl dummy = new MemberImpl(member.getAddress(), member.localMember(), member.getNodeType());
+                Member clusterMember = clusterMembers.get(dummy);
+                if (clusterMember == null) {
+                    clusterMember = dummy;
+                    if (listeners.size() > 0) {
+                        notifications.add(new Runnable() {
+                            public void run() {
+                                MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
+                                        dummy, MembershipEvent.MEMBER_ADDED);
+                                for (MembershipListener listener : listeners) {
+                                    listener.memberAdded(membershipEvent);
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
                 }
+                if (clusterMember.localMember()) {
+                    localMember.set(clusterMember);
+                }
+                setNew.add(clusterMember);
             }
-            if (clusterMember.localMember()) {
-                localMember.set(clusterMember);
-            }
-            setNew.add(clusterMember);
         }
         if (listeners.size() > 0) {
             Set<Member> it = clusterMembers.keySet();
