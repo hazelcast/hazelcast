@@ -1,12 +1,12 @@
-/* 
+/*
  * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at 
- * 
+ * You may obtain a copy of the License at
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -35,15 +35,15 @@ import java.util.concurrent.locks.Lock;
  */
 public class TestApp implements EntryListener, ItemListener, MessageListener {
 
-    private IQueue queue = null;
+    private IQueue<Object> queue = null;
 
-    private ITopic topic = null;
+    private ITopic<Object> topic = null;
 
-    private IMap map = null;
+    private IMap<Object,Object> map = null;
 
-    private ISet set = null;
+    private ISet<Object> set = null;
 
-    private IList list = null;
+    private IList<Object> list = null;
 
     private String namespace = "default";
 
@@ -51,7 +51,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private boolean echo = false;
 
-    private HazelcastInstance hazelcast;
+    private volatile HazelcastInstance hazelcast;
 
     private volatile LineReader lineReader;
 
@@ -59,17 +59,58 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         this.hazelcast = hazelcast;
     }
 
-    public static void main(String[] args) throws Exception {
+    public IQueue<Object> getQueue() {
+    	if(queue==null){
+    		queue = hazelcast.getQueue(namespace);
+    	}
+		return queue;
+	}
+
+	public ITopic<Object> getTopic() {
+		if(topic == null){
+			topic = hazelcast.getTopic(namespace);
+		}
+		return topic;
+	}
+
+	public IMap<Object,Object> getMap() {
+		if(map == null){
+			map = hazelcast.getMap(namespace);
+		}
+		return map;
+	}
+
+	public ISet<Object> getSet() {
+		if(set==null){
+			set = hazelcast.getSet(namespace);
+		}
+		return set;
+	}
+
+	public IList<Object> getList() {
+		if(list==null){
+			list = hazelcast.getList(namespace);
+		}
+		return list;
+	}
+
+	public void setHazelcast(HazelcastInstance hazelcast) {
+		this.hazelcast = hazelcast;
+		map = null;
+		list = null;
+		set = null;
+		queue = null;
+		topic = null;
+	}
+
+
+
+	public static void main(String[] args) throws Exception {
         TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(null));
         testApp.start(args);
     }
 
     public void start(String[] args) throws Exception {
-        queue = hazelcast.getQueue(namespace);
-        topic = hazelcast.getTopic(namespace);
-        map = hazelcast.getMap(namespace);
-        set = hazelcast.getSet(namespace);
-        list = hazelcast.getList(namespace);
         if(lineReader == null){
             lineReader = new DefaultLineReader();
         }
@@ -102,11 +143,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
         public String readLine() throws Exception {
             while (true) {
-//                System.out.println("reading..");
-//                int c = 0;
-//                if ((c = readCharacter()) == -1) {
-//                    return null;
-//                }
                 System.in.read();
                 println("char " + System.in.read());
             }
@@ -217,11 +253,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         } else if ("ns".equals(first)) {
             if (args.length > 1) {
                 namespace = args[1];
-                queue = hazelcast.getQueue(namespace);
-                topic = hazelcast.getTopic(namespace);
-                map = hazelcast.getMap(namespace);
-                set = hazelcast.getSet(namespace);
-                list = hazelcast.getList(namespace);
+//                init();
             }
         } else if ("whoami".equals(first)) {
             println(hazelcast.getCluster().getLocalMember());
@@ -396,23 +428,23 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     private void handleListContains(String[] args) {
-        println(list.contains(args[1]));
+        println(getList().contains(args[1]));
     }
 
     private void handleListRemove(String[] args) {
-        println(list.remove(args[1]));
+        println(getList().remove(args[1]));
     }
 
     private void handleListAdd(String[] args) {
-        println(list.add(args[1]));
+        println(getList().add(args[1]));
     }
 
     private void handleMapPut(String[] args) {
-        println(map.put(args[1], args[2]));
+        println(getMap().put(args[1], args[2]));
     }
     private void handleMapPutAsync(String[] args) {
         try {
-            println(map.putAsync(args[1], args[2]).get());
+            println(getMap().putAsync(args[1], args[2]).get());
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
@@ -421,21 +453,21 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     private void handleMapPutIfAbsent(String[] args) {
-        println(map.putIfAbsent(args[1], args[2]));
+        println(getMap().putIfAbsent(args[1], args[2]));
     }
 
     private void handleMapReplace(String[] args) {
-        println(map.replace(args[1], args[2]));
+        println(getMap().replace(args[1], args[2]));
     }
 
     private void handleMapGet(String[] args) {
-        println(map.get(args[1]));
+        println(getMap().get(args[1]));
     }
 
 
     private void handleMapGetAsync(String[] args) {
         try {
-            println(map.getAsync(args[1]).get());
+            println(getMap().getAsync(args[1]).get());
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
@@ -444,15 +476,15 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     private void handleMapGetMapEntry(String[] args) {
-        println(map.getMapEntry(args[1]));
+        println(getMap().getMapEntry(args[1]));
     }
 
     private void handleMapRemove(String[] args) {
-        println(map.remove(args[1]));
+        println(getMap().remove(args[1]));
     }
 
     private void handleMapEvict(String[] args) {
-        println(map.evict(args[1]));
+        println(getMap().evict(args[1]));
     }
 
     private void handleMapPutMany(String[] args) {
@@ -465,7 +497,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             b = Integer.parseInt(args[2]);
             value = new byte[b];
         }
-        int start = map.size();
+        int start = getMap().size();
         if (args.length > 3) {
             start = Integer.parseInt(args[3]);
         }
@@ -474,10 +506,10 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             theMap.put("key" + (start + i), value);
         }
         long t0 = System.currentTimeMillis();
-        map.putAll(theMap);
+        getMap().putAll(theMap);
         long t1 = System.currentTimeMillis();
         if (t1 - t0 > 1) {
-            println("size = " + map.size() + ", " + count * 1000 / (t1 - t0)
+            println("size = " + getMap().size() + ", " + count * 1000 / (t1 - t0)
                     + " evt/s, " + (count * 1000 / (t1 - t0)) * (b * 8) / 1024 + " Kbit/s, "
                     + count * b / 1024 + " KB added");
         }
@@ -487,9 +519,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         String iteratorStr = args[0];
         if (iteratorStr.startsWith("s.")) {
         } else if (iteratorStr.startsWith("m.")) {
-            println(map.getLocalMapStats());
+            println(getMap().getLocalMapStats());
         } else if (iteratorStr.startsWith("q.")) {
-            println(queue.getLocalQueueStats());
+            println(getQueue().getLocalQueueStats());
         } else if (iteratorStr.startsWith("l.")) {
         }
     }
@@ -499,7 +531,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         if (args.length > 1)
             count = Integer.parseInt(args[1]);
         for (int i = 0; i < count; i++) {
-            println(map.get("key" + i));
+            println(getMap().get("key" + i));
         }
     }
 
@@ -512,14 +544,14 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             start = Integer.parseInt(args[2]);
         long t0 = System.currentTimeMillis();
         for (int i = 0; i < count; i++) {
-            map.remove("key" + (start + i));
+            getMap().remove("key" + (start + i));
         }
         long t1 = System.currentTimeMillis();
-        println("size = " + map.size() + ", " + count * 1000 / (t1 - t0) + " evt/s");
+        println("size = " + getMap().size() + ", " + count * 1000 / (t1 - t0) + " evt/s");
     }
 
     private void handleMapLock(String[] args) {
-        map.lock(args[1]);
+        getMap().lock(args[1]);
         println("true");
     }
 
@@ -553,57 +585,57 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         long time = (args.length > 2) ? Long.valueOf(args[2]) : 0;
         boolean locked = false;
         if (time == 0)
-            locked = map.tryLock(key);
+            locked = getMap().tryLock(key);
         else
-            locked = map.tryLock(key, time, TimeUnit.SECONDS);
+            locked = getMap().tryLock(key, time, TimeUnit.SECONDS);
         println(locked);
     }
 
     private void handleMapUnlock(String[] args) {
-        map.unlock(args[1]);
+        getMap().unlock(args[1]);
         println("true");
     }
 
     private void handleAddListener(String[] args) {
         String first = args[0];
         if (first.startsWith("s.")) {
-            set.addItemListener(this, true);
+            getSet().addItemListener(this, true);
         } else if (first.startsWith("m.")) {
             if (args.length > 1) {
-                map.addEntryListener(this, args[1], true);
+                getMap().addEntryListener(this, args[1], true);
             } else {
-                map.addEntryListener(this, true);
+                getMap().addEntryListener(this, true);
             }
         } else if (first.startsWith("q.")) {
-            queue.addItemListener(this, true);
+            getQueue().addItemListener(this, true);
         } else if (first.startsWith("t.")) {
-            topic.addMessageListener(this);
+            getTopic().addMessageListener(this);
         } else if (first.startsWith("l.")) {
-            list.addItemListener(this, true);
+            getList().addItemListener(this, true);
         }
     }
 
     private void handleRemoveListener(String[] args) {
         String first = args[0];
         if (first.startsWith("s.")) {
-            set.removeItemListener(this);
+            getSet().removeItemListener(this);
         } else if (first.startsWith("m.")) {
             if (args.length > 1) {
-                map.removeEntryListener(this, args[1]);
+                getMap().removeEntryListener(this, args[1]);
             } else {
-                map.removeEntryListener(this);
+                getMap().removeEntryListener(this);
             }
         } else if (first.startsWith("q.")) {
-            queue.removeItemListener(this);
+            getQueue().removeItemListener(this);
         } else if (first.startsWith("t.")) {
-            topic.removeMessageListener(this);
+            getTopic().removeMessageListener(this);
         } else if (first.startsWith("l.")) {
-            list.removeItemListener(this);
+            getList().removeItemListener(this);
         }
     }
 
     private void handleMapLocalKeys() {
-        Set set = map.localKeySet();
+        Set set = getMap().localKeySet();
         Iterator it = set.iterator();
         int count = 0;
         while (it.hasNext()) {
@@ -614,7 +646,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     private void handleMapKeys() {
-        Set set = map.keySet();
+        Set set = getMap().keySet();
         Iterator it = set.iterator();
         int count = 0;
         while (it.hasNext()) {
@@ -625,7 +657,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     private void handleMapEntries() {
-        Set set = map.entrySet();
+        Set set = getMap().entrySet();
         Iterator it = set.iterator();
         int count = 0;
         long time = System.currentTimeMillis();
@@ -638,7 +670,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     private void handleMapValues() {
-        Collection set = map.values();
+        Collection set = getMap().values();
         Iterator it = set.iterator();
         int count = 0;
         while (it.hasNext()) {
@@ -649,11 +681,11 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     private void handleSetAdd(String[] args) {
-        println(set.add(args[1]));
+        println(getSet().add(args[1]));
     }
 
     private void handleSetRemove(String[] args) {
-        println(set.remove(args[1]));
+        println(getSet().remove(args[1]));
     }
 
     private void handleSetAddMany(String[] args) {
@@ -663,13 +695,13 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         int successCount = 0;
         long t0 = System.currentTimeMillis();
         for (int i = 0; i < count; i++) {
-            boolean success = set.add("obj" + i);
+            boolean success = getSet().add("obj" + i);
             if (success)
                 successCount++;
         }
         long t1 = System.currentTimeMillis();
         println("Added " + successCount + " objects.");
-        println("size = " + set.size() + ", " + successCount * 1000 / (t1 - t0)
+        println("size = " + getSet().size() + ", " + successCount * 1000 / (t1 - t0)
                 + " evt/s");
     }
 
@@ -680,7 +712,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         int successCount = 0;
         long t0 = System.currentTimeMillis();
         for (int i = 0; i < count; i++) {
-            boolean success = list.add("obj" + i);
+            boolean success = getList().add("obj" + i);
             if (success)
                 successCount++;
         }
@@ -697,13 +729,13 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         int successCount = 0;
         long t0 = System.currentTimeMillis();
         for (int i = 0; i < count; i++) {
-            boolean success = set.remove("obj" + i);
+            boolean success = getSet().remove("obj" + i);
             if (success)
                 successCount++;
         }
         long t1 = System.currentTimeMillis();
         println("Removed " + successCount + " objects.");
-        println("size = " + set.size() + ", " + successCount * 1000 / (t1 - t0)
+        println("size = " + getSet().size() + ", " + successCount * 1000 / (t1 - t0)
                 + " evt/s");
     }
 
@@ -711,13 +743,13 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         Iterator it = null;
         String iteratorStr = args[0];
         if (iteratorStr.startsWith("s.")) {
-            it = set.iterator();
+            it = getSet().iterator();
         } else if (iteratorStr.startsWith("m.")) {
-            it = map.keySet().iterator();
+            it = getMap().keySet().iterator();
         } else if (iteratorStr.startsWith("q.")) {
-            it = queue.iterator();
+            it = getQueue().iterator();
         } else if (iteratorStr.startsWith("l.")) {
-            it = list.iterator();
+            it = getList().iterator();
         }
         boolean remove = false;
         if (args.length > 1) {
@@ -747,13 +779,13 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         String data = args[1];
         boolean result = false;
         if (iteratorStr.startsWith("s.")) {
-            result = set.contains(data);
+            result = getSet().contains(data);
         } else if (iteratorStr.startsWith("m.")) {
-            result = (key) ? map.containsKey(data) : map.containsValue(data);
+            result = (key) ? getMap().containsKey(data) : getMap().containsValue(data);
         } else if (iteratorStr.startsWith("q.")) {
-            result = queue.contains(data);
+            result = getQueue().contains(data);
         } else if (iteratorStr.startsWith("l.")) {
-            result = list.contains(data);
+            result = getList().contains(data);
         }
         println("Contains : " + result);
     }
@@ -762,13 +794,13 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         int size = 0;
         String iteratorStr = args[0];
         if (iteratorStr.startsWith("s.")) {
-            size = set.size();
+            size = getSet().size();
         } else if (iteratorStr.startsWith("m.")) {
-            size = map.size();
+            size = getMap().size();
         } else if (iteratorStr.startsWith("q.")) {
-            size = queue.size();
+            size = getQueue().size();
         } else if (iteratorStr.startsWith("l.")) {
-            size = list.size();
+            size = getList().size();
         }
         println("Size = " + size);
     }
@@ -776,13 +808,13 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     private void handleClear(String[] args) {
         String iteratorStr = args[0];
         if (iteratorStr.startsWith("s.")) {
-            set.clear();
+            getSet().clear();
         } else if (iteratorStr.startsWith("m.")) {
-            map.clear();
+            getMap().clear();
         } else if (iteratorStr.startsWith("q.")) {
-            queue.clear();
+            getQueue().clear();
         } else if (iteratorStr.startsWith("l.")) {
-            list.clear();
+            getList().clear();
         }
         println("Cleared all.");
     }
@@ -790,15 +822,15 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     private void handleDestroy(String[] args) {
         String iteratorStr = args[0];
         if (iteratorStr.startsWith("s.")) {
-            set.destroy();
+            getSet().destroy();
         } else if (iteratorStr.startsWith("m.")) {
-            map.destroy();
+            getMap().destroy();
         } else if (iteratorStr.startsWith("q.")) {
-            queue.destroy();
+            getQueue().destroy();
         } else if (iteratorStr.startsWith("l.")) {
-            list.destroy();
+            getList().destroy();
         } else if (iteratorStr.startsWith("t.")) {
-            topic.destroy();
+            getTopic().destroy();
         }
         println("Destroyed!");
     }
@@ -809,7 +841,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             timeout = Long.valueOf(args[2]);
         }
         try {
-            boolean offered = queue.offer(args[1], timeout, TimeUnit.SECONDS);
+            boolean offered = getQueue().offer(args[1], timeout, TimeUnit.SECONDS);
             println(offered);
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -818,7 +850,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private void handleQTake(String[] args) {
         try {
-            println(queue.take());
+            println(getQueue().take());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -830,14 +862,14 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             timeout = Long.valueOf(args[1]);
         }
         try {
-            println(queue.poll(timeout, TimeUnit.SECONDS));
+            println(getQueue().poll(timeout, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
     private void handleTopicPublish(String[] args) {
-        topic.publish(args[1]);
+        getTopic().publish(args[1]);
     }
 
     private void handleQOfferMany(String[] args) {
@@ -850,12 +882,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         long t0 = System.currentTimeMillis();
         for (int i = 0; i < count; i++) {
             if (value == null)
-                queue.offer("obj");
+                getQueue().offer("obj");
             else
-                queue.offer(value);
+                getQueue().offer(value);
         }
         long t1 = System.currentTimeMillis();
-        print("size = " + queue.size() + ", " + count * 1000 / (t1 - t0) + " evt/s");
+        print("size = " + getQueue().size() + ", " + count * 1000 / (t1 - t0) + " evt/s");
         if (value == null) {
             println("");
         } else {
@@ -871,7 +903,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             count = Integer.parseInt(args[1]);
         int c = 1;
         for (int i = 0; i < count; i++) {
-            Object obj = queue.poll();
+            Object obj = getQueue().poll();
             if (obj instanceof byte[]) {
                 println(c++ + " " + ((byte[]) obj).length);
             } else {
@@ -881,11 +913,11 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     private void handleQPeek(String[] args) {
-        println(queue.peek());
+        println(getQueue().peek());
     }
 
     private void handleQCapacity(String[] args) {
-        println(queue.remainingCapacity());
+        println(getQueue().remainingCapacity());
     }
 
     private void execute(String[] args) {
