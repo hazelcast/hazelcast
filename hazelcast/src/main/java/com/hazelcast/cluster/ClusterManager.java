@@ -510,6 +510,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
 
         public void run() {
+            membersUpdate.setNode(node);
             membersUpdate.call();
             Collection<MemberInfo> lsMemberInfos = membersUpdate.getMemberInfos();
             List<Address> newMemberList = new ArrayList<Address>(lsMemberInfos.size());

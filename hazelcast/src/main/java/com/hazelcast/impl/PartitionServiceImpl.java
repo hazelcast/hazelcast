@@ -130,8 +130,13 @@ public class PartitionServiceImpl implements PartitionService {
         lsMigrationListeners.remove(migrationListener);
     }
 
+    void clearRealPartitions() {
+        mapRealPartitions.clear();
+    }
+
     public void reset() {
         mapPartitions.clear();
+        mapRealPartitions.clear();
     }
 
     class PartitionProxy implements Partition, Comparable {

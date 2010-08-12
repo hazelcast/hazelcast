@@ -220,7 +220,7 @@ public class ClusterTest {
     }
 
     @Test(timeout = 40000)
-    public void testSuperClientPartitionOwnership() {
+    public void testSuperClientPartitionOwnership() throws Exception{
         Config configSuperClient = new Config();
         configSuperClient.setSuperClient(true);
         HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(new Config());
@@ -229,12 +229,12 @@ public class ClusterTest {
         assertNull(map.put("1", "value"));
         Set<Partition> partitions2 = hSuper.getPartitionService().getPartitions();
         for (Partition partition : partitions2) {
-            System.out.println(partition);
+            assertEquals(partition.getOwner(), hNormal.getCluster().getLocalMember());
         }
         hNormal.shutdown();
+        Thread.sleep(3000);
         Set<Partition> partitions = hSuper.getPartitionService().getPartitions();
         for (Partition partition : partitions) {
-            System.out.println(partition);
             assertNull(partition.getOwner());
         }
         hNormal = Hazelcast.newHazelcastInstance(new Config());

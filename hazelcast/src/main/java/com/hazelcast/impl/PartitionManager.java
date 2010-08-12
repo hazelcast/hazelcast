@@ -355,6 +355,7 @@ public class PartitionManager implements Runnable {
     }
 
     public void syncForDead(MemberImpl deadMember) {
+        partitionServiceImpl.clearRealPartitions();
         Address deadAddress = deadMember.getAddress();
         if (deadAddress == null || deadAddress.equals(thisAddress)) {
             return;
