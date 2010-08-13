@@ -1932,8 +1932,10 @@ public class FactoryImpl implements HazelcastInstance {
             } catch (Throwable e) {
                 if (factory.restarted) {
                     return get(key);
-                } else {
+                } else if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;
+                } else {
+                    throw new RuntimeException(e);
                 }
             } finally {
                 afterCall();
@@ -1978,8 +1980,10 @@ public class FactoryImpl implements HazelcastInstance {
             } catch (Throwable e) {
                 if (factory.restarted) {
                     return put(key, value);
-                } else {
+                } else if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;
+                } else {
+                    throw new RuntimeException(e);
                 }
             } finally {
                 afterCall();
@@ -1992,8 +1996,10 @@ public class FactoryImpl implements HazelcastInstance {
             } catch (Throwable e) {
                 if (factory.restarted) {
                     return remove(key);
-                } else {
+                }  else if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;
+                } else {
+                    throw new RuntimeException(e);
                 }
             } finally {
                 afterCall();

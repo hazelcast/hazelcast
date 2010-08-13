@@ -84,6 +84,23 @@ public class HazelcastTest {
     }
 
     @Test
+    public void testIssue304() {
+        IMap map = Hazelcast.getMap("testIssue304");
+        map.lock("1");
+        assertEquals(0, map.size());
+        assertEquals(0, map.entrySet().size());
+        map.put("1", "value");
+        assertEquals(1, map.size());
+        assertEquals(1, map.entrySet().size());
+        map.unlock("1");
+        assertEquals(1, map.size());
+        assertEquals(1, map.entrySet().size());
+        map.remove("1");
+        assertEquals(0, map.size());
+        assertEquals(0, map.entrySet().size());
+    }
+
+    @Test
     public void testMapPutAndGet() {
         IMap<String, String> map = Hazelcast.getMap("testMapPutAndGet");
         String value = map.put("Hello", "World");

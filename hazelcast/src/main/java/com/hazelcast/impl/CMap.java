@@ -1198,7 +1198,7 @@ public class CMap {
 
     boolean evict(Request req) {
         Record record = getRecord(req.key);
-        if (record != null && record.isEvictable()) {
+        if (record != null) {
             fireInvalidation(record);
             concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_EVICTED, record.getKey(), record.getValue(), record.getMapListeners(), req.caller);
             record.incrementVersion();
