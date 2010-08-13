@@ -103,7 +103,7 @@ public class AddressPicker {
                 if (config.getNetworkConfig().getInterfaces().isEnabled()) {
                     interfaces.addAll(config.getNetworkConfig().getInterfaces().getInterfaces());
                 }
-                if (interfaces.contains("127.0.0.1")) {
+                if (interfaces.contains("127.0.0.1") || interfaces.contains("localhost")) {
                     currentAddress = "127.0.0.1";
                 } else {
                     final Enumeration<NetworkInterface> enums = NetworkInterface.getNetworkInterfaces();

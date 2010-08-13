@@ -510,8 +510,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
 
         public void run() {
-            membersUpdate.setNode(node);
-            membersUpdate.call();
             Collection<MemberInfo> lsMemberInfos = membersUpdate.getMemberInfos();
             List<Address> newMemberList = new ArrayList<Address>(lsMemberInfos.size());
             for (final MemberInfo memberInfo : lsMemberInfos) {
@@ -564,6 +562,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 membersUpdate.addMemberInfo(memberJoined);
             }
         }
+        membersUpdate.setNode(node);
+        membersUpdate.call();
         node.executorManager.executeMigrationTask(new JoinRunnable(membersUpdate));
     }
 
