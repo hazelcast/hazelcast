@@ -460,14 +460,14 @@ public class ClusterTest {
 
     @Test(timeout = 20000)
     public void testDifferentGroups() {
-        Config c1 = new XmlConfigBuilder().build();
+        Config c1 = new Config();
         c1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         c1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
         c1.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
         c1.getNetworkConfig().getInterfaces().clear();
         c1.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
         c1.getNetworkConfig().getInterfaces().setEnabled(true);
-        Config c2 = new XmlConfigBuilder().build();
+        Config c2 = new Config();
         c2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         c2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
         c2.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
@@ -488,10 +488,10 @@ public class ClusterTest {
 
     @Test(timeout = 60000)
     public void shutdownSuperClient() {
-        Config c1 = new XmlConfigBuilder().build();
+        Config c1 = new Config();
         c1.setPortAutoIncrement(false);
         c1.setPort(5709);
-        Config c2 = new XmlConfigBuilder().build();
+        Config c2 = new Config();
         c2.setPortAutoIncrement(false);
         c2.setPort(5710);
         c2.setSuperClient(true);
@@ -505,8 +505,8 @@ public class ClusterTest {
 
     @Test(timeout = 60000)
     public void testSuperClientRestart() throws Exception {
-        Config configNormal = new XmlConfigBuilder().build();
-        Config configSuper = new XmlConfigBuilder().build();
+        Config configNormal = new Config();
+        Config configSuper = new Config();
         configSuper.setSuperClient(true);
         HazelcastInstance h = Hazelcast.newHazelcastInstance(configNormal);
         HazelcastInstance s = Hazelcast.newHazelcastInstance(configSuper);
@@ -548,7 +548,7 @@ public class ClusterTest {
 
     @Test(timeout = 60000)
     public void testTcpIp() throws Exception {
-        Config c = new XmlConfigBuilder().build();
+        Config c = new Config();
         c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         c.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
         c.getNetworkConfig().getInterfaces().setEnabled(true);
@@ -1140,6 +1140,7 @@ public class ClusterTest {
         sleep(50000);
         Runtime.getRuntime().gc();
         sleep(5000);
+        Runtime.getRuntime().gc();
         long usedMemoryEnd = getUsedMemoryAsMB();
         assertTrue(initialUsedMemory + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - initialUsedMemory) < 50);
     }
@@ -1169,6 +1170,7 @@ public class ClusterTest {
         sleep(50000);
         Runtime.getRuntime().gc();
         sleep(5000);
+        Runtime.getRuntime().gc();
         long usedMemoryEnd = getUsedMemoryAsMB();
         assertTrue(initialUsedMemory + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - initialUsedMemory) < 50);
     }
@@ -1200,6 +1202,7 @@ public class ClusterTest {
         sleep(50000);
         Runtime.getRuntime().gc();
         sleep(5000);
+        Runtime.getRuntime().gc();
         long usedMemoryEnd = getUsedMemoryAsMB();
         assertTrue(initialUsedMemory + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - initialUsedMemory) < 50);
     }
