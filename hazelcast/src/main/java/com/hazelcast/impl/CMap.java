@@ -1198,7 +1198,8 @@ public class CMap {
 
     boolean evict(Request req) {
         Record record = getRecord(req.key);
-        if (record != null) {
+        long now = System.currentTimeMillis();
+        if (record != null && record.isActive() && record.isValid(now) && record.valueCount() > 0) {
             fireInvalidation(record);
             concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_EVICTED, record.getKey(), record.getValue(), record.getMapListeners(), req.caller);
             record.incrementVersion();
@@ -1206,7 +1207,7 @@ public class CMap {
             req.clearForResponse();
             req.version = record.getVersion();
             req.longValue = record.getCopyCount();
-            lastEvictionTime = System.currentTimeMillis();
+            lastEvictionTime = now;
             return true;
         }
         return false;

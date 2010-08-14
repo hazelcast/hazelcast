@@ -560,6 +560,7 @@ public class ClusterTest {
         assertEquals("value1", h1.getMap("default").put("1", "value2"));
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
         testTwoNodes(h1, h2);
+        Thread.sleep(5000);
     }
 
     @Test(timeout = 60000)
@@ -635,13 +636,17 @@ public class ClusterTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         final Member member1 = h1.getCluster().getLocalMember();
         final Member member2 = h2.getCluster().getLocalMember();
-        final CountDownLatch latchAdded = new CountDownLatch(2);
+        final CountDownLatch latchAdded = new CountDownLatch(4);
         final CountDownLatch latchUpdated = new CountDownLatch(2);
         final CountDownLatch latchRemoved = new CountDownLatch(2);
-        final CountDownLatch latchEvicted = new CountDownLatch(0);
+        final CountDownLatch latchEvicted = new CountDownLatch(2);
         EntryListener listener = new EntryListener() {
-            public void entryAdded(EntryEvent entryEvent) {
-                assertEquals(member1, entryEvent.getMember());
+            public synchronized void entryAdded(EntryEvent entryEvent) {
+                if (latchAdded.getCount() > 2) {
+                    assertEquals(member1, entryEvent.getMember());
+                } else {
+                   assertEquals(member2, entryEvent.getMember());
+                }
                 latchAdded.countDown();
             }
 
@@ -656,7 +661,8 @@ public class ClusterTest {
             }
 
             public void entryEvicted(EntryEvent entryEvent) {
-                fail("Should never receive eviction event");
+                assertEquals(member2, entryEvent.getMember());
+                latchEvicted.countDown();
             }
         };
         IMap map2 = h2.getMap("default");
@@ -666,15 +672,14 @@ public class ClusterTest {
         map2.addEntryListener(listener, key, true);
         assertNull(map1.put(key, "value5"));
         assertEquals("value5", map2.put(key, "value55"));
-        assertFalse(map2.evict(key));
-        assertEquals("value55", map2.put(key, "value5"));
+        assertTrue(map2.evict(key));
+        assertNull(map2.put(key, "value5"));
         assertEquals("value5", map1.remove(key));
         int waitSeconds = 20;
         assertTrue(latchRemoved.await(waitSeconds, TimeUnit.SECONDS));
         map1.removeEntryListener(listener, key);
         assertFalse(map2.evict(key));
         map2.removeEntryListener(listener, key);
-        assertTrue(map2.evict(key));
         assertTrue(latchAdded.await(waitSeconds, TimeUnit.SECONDS));
         assertTrue(latchUpdated.await(waitSeconds, TimeUnit.SECONDS));
         assertTrue(latchRemoved.await(waitSeconds, TimeUnit.SECONDS));
