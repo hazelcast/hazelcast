@@ -1199,7 +1199,7 @@ public class CMap {
     boolean evict(Request req) {
         Record record = getRecord(req.key);
         long now = System.currentTimeMillis();
-        if (record != null && record.isActive() && record.isValid(now) && record.valueCount() > 0) {
+        if (record != null && record.isActive() && record.valueCount() > 0) {
             fireInvalidation(record);
             concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_EVICTED, record.getKey(), record.getValue(), record.getMapListeners(), req.caller);
             record.incrementVersion();

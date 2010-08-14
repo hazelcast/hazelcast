@@ -458,7 +458,7 @@ public class ClusterTest {
         return myConfig;
     }
 
-    @Test(timeout = 20000)
+    @Test(timeout = 200000)
     public void testDifferentGroups() {
         Config c1 = new Config();
         c1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
@@ -1154,7 +1154,7 @@ public class ClusterTest {
     public void testTTLAndMemoryLeak2() throws Exception {
         Runtime.getRuntime().gc();
         long initialUsedMemory = getUsedMemoryAsMB();
-        Config config = new XmlConfigBuilder().build();
+        Config config = new Config();
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
