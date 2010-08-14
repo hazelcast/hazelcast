@@ -276,7 +276,9 @@ public class CMap {
             record.setMaxIdle(req.timeout);
         }
         markAsActive(record);
-        markAsDirty(record);
+        if (store != null && writeDelayMillis > 0) {
+            markAsDirty(record);
+        }
         updateIndexes(record);
         record.setVersion(req.version);
     }
