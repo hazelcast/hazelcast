@@ -211,7 +211,7 @@ public class ClusterTest {
         return localPartitions;
     }
 
-    @Test(timeout = 10000, expected = RuntimeException.class)
+    @Test(timeout = 50000, expected = RuntimeException.class)
     public void testPutAfterShutdown() throws InterruptedException {
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         Map map = h1.getMap("default");
@@ -220,7 +220,7 @@ public class ClusterTest {
     }
 
     @Test(timeout = 40000)
-    public void testSuperClientPartitionOwnership() throws Exception{
+    public void testSuperClientPartitionOwnership() throws Exception {
         Config configSuperClient = new Config();
         configSuperClient.setSuperClient(true);
         HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(new Config());
@@ -458,7 +458,7 @@ public class ClusterTest {
         return myConfig;
     }
 
-    @Test(timeout = 200000)
+    @Test(timeout = 40000)
     public void testDifferentGroups() {
         Config c1 = new Config();
         c1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
@@ -474,6 +474,8 @@ public class ClusterTest {
         c2.getNetworkConfig().getInterfaces().clear();
         c2.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
         c2.getNetworkConfig().getInterfaces().setEnabled(true);
+        c1.getGroupConfig().setName("sameGroup");
+        c2.getGroupConfig().setName("sameGroup");
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c1);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
         assertEquals(2, h1.getCluster().getMembers().size());
@@ -645,7 +647,7 @@ public class ClusterTest {
                 if (latchAdded.getCount() > 2) {
                     assertEquals(member1, entryEvent.getMember());
                 } else {
-                   assertEquals(member2, entryEvent.getMember());
+                    assertEquals(member2, entryEvent.getMember());
                 }
                 latchAdded.countDown();
             }
@@ -1916,7 +1918,7 @@ public class ClusterTest {
         assertEquals("item0", q2.poll());
         assertEquals("item1", q2.poll());
         assertEquals("item2", q2.poll());
-        Thread.sleep(3000);
+        Thread.sleep(10000);
         assertEquals(2, q1.size());
         assertEquals(2, q2.size());
         h1.shutdown();
@@ -1930,17 +1932,17 @@ public class ClusterTest {
         Queue<String> q1 = h1.getQueue("q");
         Queue<String> q2 = h2.getQueue("q");
         for (int i = 0; i < 5; i++) {
-            q1.offer("item" + i);
+            q1.offer("item" + i); 
         }
         assertEquals(5, q1.size());
         assertEquals(5, q2.size());
         assertEquals("item0", q1.poll());
         assertEquals("item1", q1.poll());
         assertEquals("item2", q1.poll());
-        Thread.sleep(3000);
+        Thread.sleep(10000);
         assertEquals(2, q1.size());
         assertEquals(2, q2.size());
-        h1.shutdown();
+        h1.shutdown();                           
         assertEquals(2, q2.size());
     }
 
