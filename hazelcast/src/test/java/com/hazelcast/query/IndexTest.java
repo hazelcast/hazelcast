@@ -18,6 +18,7 @@
 package com.hazelcast.query;
 
 import com.hazelcast.impl.Record;
+import com.hazelcast.impl.TestUtil;
 import org.junit.Test;
 
 import java.util.concurrent.ConcurrentMap;

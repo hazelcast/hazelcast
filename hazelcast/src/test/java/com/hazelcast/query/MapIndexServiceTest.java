@@ -17,10 +17,9 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.Record;
-import org.junit.Ignore;
+import com.hazelcast.impl.TestUtil;
 import org.junit.Test;
 
 import java.util.Map;

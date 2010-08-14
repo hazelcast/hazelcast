@@ -22,15 +22,13 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.Prefix;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.impl.TestUtil;
 import org.junit.Test;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -42,7 +40,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
-public class CMapTest {
+public class CMapTest extends TestUtil {
 
     @Test
     public void testTwoMemberPut() throws Exception {
@@ -191,17 +189,6 @@ public class CMapTest {
         assertEquals(toMember, oldest.getPartitionService().getPartition(key).getOwner());
         assertEquals(toMember, to.getPartitionService().getPartition(key).getOwner());
         return true;
-    }
-
-    public static ConcurrentMapManager getConcurrentMapManager(HazelcastInstance h) {
-        FactoryImpl.HazelcastInstanceProxy hiProxy = (FactoryImpl.HazelcastInstanceProxy) h;
-        return hiProxy.getFactory().node.concurrentMapManager;
-    }
-
-    public static CMap getCMap(HazelcastInstance h, String name) {
-        ConcurrentMapManager concurrentMapManager = getConcurrentMapManager(h);
-        String fullName = Prefix.MAP + name;
-        return concurrentMapManager.getMap(fullName);
     }
 
     @Test

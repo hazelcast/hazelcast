@@ -23,18 +23,12 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.query.TestUtil;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -160,6 +154,31 @@ public class MapStoreTest extends TestUtil {
         assertEquals(1, testMapStore.getInitCount());
         assertEquals("default", testMapStore.getMapName());
         assertEquals(h1, testMapStore.getHazelcastInstance());
+    }
+
+    @Test
+    public void testOneMemberFailingWriteBehind() throws Exception {
+        FailAwareMapStore testMapStore = new FailAwareMapStore();
+        Config config = newConfig(testMapStore, 2);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap map = h1.getMap("default");
+        assertEquals(0, map.size());
+        CMap cmap = getCMap(h1, "default");
+        assertEquals(0, testMapStore.db.size());
+        testMapStore.setFail(true);
+        map.put("1", "value1");
+        Thread.sleep(3000);
+        BlockingQueue listener = new LinkedBlockingQueue();
+        testMapStore.addListener(listener);
+        cmap.startCleanup();
+        assertNotNull(listener.poll(20, TimeUnit.SECONDS));
+        assertEquals(1, map.size());
+        assertEquals(0, testMapStore.db.size());
+        testMapStore.setFail(false);  
+        cmap.startCleanup();
+        assertNotNull(listener.poll(20, TimeUnit.SECONDS));
+        assertEquals(1, testMapStore.db.size());
+        assertEquals("value1", testMapStore.db.get("1"));
     }
 
     @Test
@@ -313,13 +332,24 @@ public class MapStoreTest extends TestUtil {
     public static class FailAwareMapStore implements MapStore, MapLoader {
         final Map db = new ConcurrentHashMap();
 
-        AtomicLong deletes = new AtomicLong();
-        AtomicLong deleteAlls = new AtomicLong();
-        AtomicLong stores = new AtomicLong();
-        AtomicLong storeAlls = new AtomicLong();
-        AtomicLong loads = new AtomicLong();
-        AtomicLong loadAlls = new AtomicLong();
-        AtomicBoolean shouldFail = new AtomicBoolean(false);
+        final AtomicLong deletes = new AtomicLong();
+        final AtomicLong deleteAlls = new AtomicLong();
+        final AtomicLong stores = new AtomicLong();
+        final AtomicLong storeAlls = new AtomicLong();
+        final AtomicLong loads = new AtomicLong();
+        final AtomicLong loadAlls = new AtomicLong();
+        final AtomicBoolean shouldFail = new AtomicBoolean(false);
+        final List<BlockingQueue> listeners = new CopyOnWriteArrayList<BlockingQueue>();
+
+        public void addListener(BlockingQueue obj) {
+            listeners.add(obj);
+        }
+
+        public void notifyListeners() {
+            for (BlockingQueue listener : listeners) {
+                listener.offer(new Object());
+            }
+        }
 
         public void delete(Object key) {
             try {
@@ -330,6 +360,7 @@ public class MapStoreTest extends TestUtil {
                 }
             } finally {
                 deletes.incrementAndGet();
+                notifyListeners();
             }
         }
 
@@ -358,6 +389,7 @@ public class MapStoreTest extends TestUtil {
                 }
             } finally {
                 stores.incrementAndGet();
+                notifyListeners();
             }
         }
 
@@ -382,6 +414,7 @@ public class MapStoreTest extends TestUtil {
                 }
             } finally {
                 storeAlls.incrementAndGet();
+                notifyListeners();
             }
         }
 
@@ -401,6 +434,7 @@ public class MapStoreTest extends TestUtil {
                 }
             } finally {
                 loadAlls.incrementAndGet();
+                notifyListeners();
             }
         }
 
@@ -415,6 +449,7 @@ public class MapStoreTest extends TestUtil {
                 }
             } finally {
                 deleteAlls.incrementAndGet();
+                notifyListeners();
             }
         }
     }

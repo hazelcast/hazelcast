@@ -44,8 +44,6 @@ import java.util.logging.Level;
 
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
-import static com.hazelcast.impl.LocalMapStatsImpl.Op;
-import static com.hazelcast.impl.LocalMapStatsImpl.Op.*;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -355,7 +353,7 @@ public class CMap {
             record.runBackupOps();
         }
         return true;
-    } 
+    }
 
     public void doBackup(Request req) {
         if (req.key == null || req.key.size() == 0) {
@@ -836,15 +834,10 @@ public class CMap {
             }
         }
         Data oldValue = null;
-        Op op = UPDATE;
         if (record == null) {
             record = createNewRecord(req.key, req.value);
             mapRecords.put(req.key, record);
-            op = CREATE;
         } else {
-            if (!record.isActive()) {
-                op = CREATE;
-            }
             markAsActive(record);
             oldValue = (record.isValid(now)) ? record.getValue() : null;
             record.setValue(req.value);
@@ -877,42 +870,36 @@ public class CMap {
         }
     }
 
-    private void executeStoreUpdate(final Map<Data, Data> entriesToStore, final Collection<Data> keysToDelete) {
-        final int entriesToStoreSize = entriesToStore.size();
-        final int keysToDeleteSize = keysToDelete.size();
-        if (entriesToStoreSize > 0 || keysToDeleteSize > 0) {
+    private void executeStoreUpdate(final Set<Record> dirtyRecords) {
+        if (dirtyRecords.size() > 0) {
             concurrentMapManager.node.executorManager.executeStoreTask(new Runnable() {
                 public void run() {
-                    if (keysToDeleteSize > 0) {
-                        if (keysToDeleteSize == 1) {
-                            Data key = keysToDelete.iterator().next();
-                            store.delete(toObject(key));
-                        } else {
-                            Collection realKeys = new HashSet();
-                            for (Data key : keysToDelete) {
-                                realKeys.add(toObject(key));
-                            }
-                            store.deleteAll(realKeys);
-                        }
-                    }
-                    if (entriesToStoreSize > 0) {
-                        Object keyFirst = null;
-                        Object valueFirst = null;
-                        Set<Map.Entry<Data, Data>> entries = entriesToStore.entrySet();
-                        Map realEntries = new HashMap();
-                        for (Map.Entry<Data, Data> entry : entries) {
-                            Object key = toObject(entry.getKey());
-                            Object value = toObject(entry.getValue());
-                            realEntries.put(key, value);
-                            if (keyFirst == null) {
-                                keyFirst = key;
-                                valueFirst = value;
+                    try {
+                        Set<Object> keysToDelete = new HashSet<Object>();
+                        Map<Object, Object> updates = new HashMap<Object, Object>();
+                        for (Record dirtyRecord : dirtyRecords) {
+                            dirtyRecord.setDirty(false);
+                            if (!dirtyRecord.isActive()) {
+                                keysToDelete.add(dirtyRecord.getRecordEntry().getKey());
+                            } else {
+                                Map.Entry entry = dirtyRecord.getRecordEntry();
+                                updates.put(entry.getKey(), entry.getValue());
                             }
                         }
-                        if (entriesToStoreSize == 1) {
-                            store.store(keyFirst, valueFirst);
-                        } else {
-                            store.storeAll(realEntries);
+                        if (keysToDelete.size() == 1) {
+                            store.delete(keysToDelete.iterator().next());
+                        } else if (keysToDelete.size() > 1) {
+                            store.deleteAll(keysToDelete);
+                        }
+                        if (updates.size() == 1) {
+                            Map.Entry entry = updates.entrySet().iterator().next();
+                            store.store(entry.getKey(), entry.getValue());
+                        } else if (updates.size() > 1) {
+                            store.storeAll(updates);
+                        }
+                    } catch (Exception e) {
+                        for (Record dirtyRecord : dirtyRecords) {
+                            dirtyRecord.setDirty(true);
                         }
                     }
                 }
@@ -998,8 +985,7 @@ public class CMap {
         if (mapNearCache != null) {
             mapNearCache.evict(now, false);
         }
-        final Map<Data, Data> entriesToStore = new HashMap<Data, Data>();
-        final Collection<Data> keysToDelete = new HashSet<Data>();
+        final Set<Record> recordsDirty = new HashSet<Record>();
         final Set<Record> recordsUnknown = new HashSet<Record>();
         final Set<Record> recordsToPurge = new HashSet<Record>();
         final Set<Record> recordsToEvict = new HashSet<Record>();
@@ -1011,7 +997,7 @@ public class CMap {
         final boolean evictionAware = evictionComparator != null && maxSizePerJVM > 0;
         final PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
         int recordsStillOwned = 0;
-        int backupPurgeCount  =0 ;
+        int backupPurgeCount = 0;
         for (Record record : records) {
             PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
             Member owner = partition.getOwner();
@@ -1020,12 +1006,7 @@ public class CMap {
                 if (owned) {
                     if (store != null && record.isDirty()) {
                         if (now > record.getWriteTime()) {
-                            if (record.getValue() != null) {
-                                entriesToStore.put(record.getKey(), record.getValue());
-                            } else {
-                                keysToDelete.add(record.getKey());
-                            }
-                            record.setDirty(false);
+                            recordsDirty.add(record);
                         }
                     } else if (shouldPurgeRecord(record, now)) {
                         recordsToPurge.add(record);  // removed records
@@ -1069,15 +1050,14 @@ public class CMap {
         }
         Level levelLog = (concurrentMapManager.LOG_STATE) ? Level.INFO : Level.FINEST;
         logger.log(levelLog, name + " Cleanup "
-                + ", store:" + entriesToStore.size()
-                + ", delete:" + keysToDelete.size()
+                + ", dirty:" + recordsDirty.size()
                 + ", purge:" + recordsToPurge.size()
                 + ", evict:" + recordsToEvict.size()
                 + ", unknown:" + recordsUnknown.size()
                 + ", stillOwned:" + recordsStillOwned
                 + ", backupPurge:" + backupPurgeCount
         );
-        executeStoreUpdate(entriesToStore, keysToDelete);
+        executeStoreUpdate(recordsDirty);
         executeEviction(recordsToEvict);
         executePurge(recordsToPurge);
         executePurgeUnknowns(recordsUnknown);

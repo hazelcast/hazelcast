@@ -15,10 +15,14 @@
  *
  */
 
-package com.hazelcast.query;
+package com.hazelcast.impl;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.CMap;
+import com.hazelcast.impl.ConcurrentMapManager;
+import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Data;
 import org.junit.Ignore;
@@ -30,6 +34,18 @@ import static org.mockito.Mockito.mock;
 
 @Ignore
 public class TestUtil {
+
+    public static ConcurrentMapManager getConcurrentMapManager(HazelcastInstance h) {
+        FactoryImpl.HazelcastInstanceProxy hiProxy = (FactoryImpl.HazelcastInstanceProxy) h;
+        return hiProxy.getFactory().node.concurrentMapManager;
+    }
+
+    public static CMap getCMap(HazelcastInstance h, String name) {
+        ConcurrentMapManager concurrentMapManager = getConcurrentMapManager(h);
+        String fullName = Prefix.MAP + name;
+        return concurrentMapManager.getMap(fullName);
+    }
+
     public static Record newRecord(long recordId, Data key, Data value) {
         CMap cmap = mock(CMap.class);
         return new Record(cmap, 1, null, null, 0, 0, recordId);

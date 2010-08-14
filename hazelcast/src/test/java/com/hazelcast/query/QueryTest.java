@@ -22,11 +22,11 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.impl.TestUtil;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -69,7 +69,7 @@ public class QueryTest extends TestUtil {
         int expectedCount = 0;
         for (int i = 0; i < 1000; i++) {
             Employee employee = new Employee("joe" + i, i % 60, ((i % 2) == 1), Double.valueOf(i));
-            if (employee.name.startsWith("joe15") && employee.active) {
+            if (employee.getName().startsWith("joe15") && employee.isActive()) {
                 expectedCount++;
                 System.out.println(employee);
             }
