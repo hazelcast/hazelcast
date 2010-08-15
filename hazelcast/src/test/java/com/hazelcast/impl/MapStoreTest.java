@@ -110,6 +110,53 @@ public class MapStoreTest extends TestUtil {
     }
 
     @Test
+    public void testTwoMemberWriteThrough2() throws Exception {
+        TestMapStore testMapStore = new TestMapStore(1000, 0, 0);
+        Config config = newConfig(testMapStore, 0);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        IMap map1 = h1.getMap("default");
+        IMap map2 = h2.getMap("default");
+        for (int i = 0; i < 1000; i++) {
+            map1.put(i, "value"+i);
+        }
+        assertEquals(1000, testMapStore.getStore().size());
+        assertEquals(1000, map1.size());
+        assertEquals(1000, map2.size());
+        testMapStore.assertAwait(10);
+        assertEquals(1000, testMapStore.callCount.get());
+    }
+
+    @Test
+    public void testTwoMemberWriteThrough() throws Exception {
+        TestMapStore testMapStore = new TestMapStore(1, 1, 1);
+        Config config = newConfig(testMapStore, 0);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        Employee employee = new Employee("joe", 25, true, 100.00);
+        Employee employee2 = new Employee("jay", 35, false, 100.00);
+        testMapStore.insert("1", employee);
+        IMap map = h1.getMap("default");
+        map.addIndex("name", false);
+        assertEquals(0, map.size());
+        assertEquals(employee, map.get("1"));
+        assertEquals(employee, testMapStore.getStore().get("1"));
+        assertEquals(1, map.size());
+        Collection values = map.values(new SqlPredicate("name = 'joe'"));
+        assertEquals(1, values.size());
+        assertEquals(employee, values.iterator().next());
+        map.put("2", employee2);
+        assertEquals(employee2, testMapStore.getStore().get("2"));
+        assertEquals(2, testMapStore.getStore().size());
+        assertEquals(2, map.size());
+        map.remove("2");
+        assertEquals(1, testMapStore.getStore().size());
+        assertEquals(1, map.size());
+        testMapStore.assertAwait(10);
+        assertEquals(3, testMapStore.callCount.get());
+    }
+
+    @Test
     public void testOneMemberWriteThrough() throws Exception {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         Config config = newConfig(testMapStore, 0);
@@ -174,7 +221,7 @@ public class MapStoreTest extends TestUtil {
         assertNotNull(listener.poll(20, TimeUnit.SECONDS));
         assertEquals(1, map.size());
         assertEquals(0, testMapStore.db.size());
-        testMapStore.setFail(false);  
+        testMapStore.setFail(false);
         cmap.startCleanup();
         assertNotNull(listener.poll(20, TimeUnit.SECONDS));
         assertEquals(1, testMapStore.db.size());
@@ -229,6 +276,7 @@ public class MapStoreTest extends TestUtil {
         final CountDownLatch latchDeleteAll;
         final CountDownLatch latchLoad;
         final CountDownLatch latchLoadAll;
+        final AtomicInteger callCount = new AtomicInteger();
         final AtomicInteger initCount = new AtomicInteger();
         private HazelcastInstance hazelcastInstance;
         private Properties properties;
@@ -291,21 +339,25 @@ public class MapStoreTest extends TestUtil {
 
         public void store(Object key, Object value) {
             store.put(key, value);
+            callCount.incrementAndGet();
             latchStore.countDown();
         }
 
         public Object load(Object key) {
+            callCount.incrementAndGet();
             latchLoad.countDown();
             return store.get(key);
         }
 
         public void storeAll(Map map) {
             store.putAll(map);
+            callCount.incrementAndGet();
             latchStoreAll.countDown();
         }
 
         public void delete(Object key) {
             store.remove(key);
+            callCount.incrementAndGet();
             latchDelete.countDown();
         }
 
@@ -317,6 +369,7 @@ public class MapStoreTest extends TestUtil {
                     map.put(key, value);
                 }
             }
+            callCount.incrementAndGet();
             latchLoadAll.countDown();
             return map;
         }
@@ -325,6 +378,7 @@ public class MapStoreTest extends TestUtil {
             for (Object key : keys) {
                 store.remove(key);
             }
+            callCount.incrementAndGet();
             latchDeleteAll.countDown();
         }
     }
