@@ -1932,7 +1932,7 @@ public class ClusterTest {
         Queue<String> q1 = h1.getQueue("q");
         Queue<String> q2 = h2.getQueue("q");
         for (int i = 0; i < 5; i++) {
-            q1.offer("item" + i); 
+            q1.offer("item" + i);
         }
         assertEquals(5, q1.size());
         assertEquals(5, q2.size());
@@ -1942,7 +1942,7 @@ public class ClusterTest {
         Thread.sleep(10000);
         assertEquals(2, q1.size());
         assertEquals(2, q2.size());
-        h1.shutdown();                           
+        h1.shutdown();
         assertEquals(2, q2.size());
     }
 

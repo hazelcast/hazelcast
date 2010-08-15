@@ -880,7 +880,6 @@ public class CMap {
                         Set<Object> keysToDelete = new HashSet<Object>();
                         Map<Object, Object> updates = new HashMap<Object, Object>();
                         for (Record dirtyRecord : dirtyRecords) {
-                            dirtyRecord.setDirty(false);
                             if (!dirtyRecord.isActive()) {
                                 keysToDelete.add(dirtyRecord.getRecordEntry().getKey());
                             } else {
@@ -1009,6 +1008,7 @@ public class CMap {
                     if (store != null && record.isDirty()) {
                         if (now > record.getWriteTime()) {
                             recordsDirty.add(record);
+                            record.setDirty(false);
                         }
                     } else if (shouldPurgeRecord(record, now)) {
                         recordsToPurge.add(record);  // removed records

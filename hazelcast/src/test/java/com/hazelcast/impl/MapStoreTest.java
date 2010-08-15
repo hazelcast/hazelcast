@@ -118,7 +118,7 @@ public class MapStoreTest extends TestUtil {
         IMap map1 = h1.getMap("default");
         IMap map2 = h2.getMap("default");
         for (int i = 0; i < 1000; i++) {
-            map1.put(i, "value"+i);
+            map1.put(i, "value" + i);
         }
         assertEquals(1000, testMapStore.getStore().size());
         assertEquals(1000, map1.size());
