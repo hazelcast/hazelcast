@@ -197,7 +197,7 @@ public class ClusterTest {
                 }
             }).start();
         }
-        latch.await(20, TimeUnit.SECONDS);
+        latch.await(100, TimeUnit.SECONDS);
     }
 
     private Set<Partition> getLocalPartitions(HazelcastInstance h) {
@@ -251,7 +251,7 @@ public class ClusterTest {
         assertEquals("value", hNormal.getMap("default").get("1"));
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 50000)
     public void testPutAfterRestart() {
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         Map map = h1.getMap("default");
@@ -491,11 +491,7 @@ public class ClusterTest {
     @Test(timeout = 60000)
     public void shutdownSuperClient() {
         Config c1 = new Config();
-        c1.setPortAutoIncrement(false);
-        c1.setPort(5709);
         Config c2 = new Config();
-        c2.setPortAutoIncrement(false);
-        c2.setPort(5710);
         c2.setSuperClient(true);
         HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(c1);
         HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(c2);
@@ -1922,6 +1918,7 @@ public class ClusterTest {
         assertEquals(2, q1.size());
         assertEquals(2, q2.size());
         h1.shutdown();
+        Thread.sleep(5000);
         assertEquals(2, q2.size());
     }
 
@@ -1943,6 +1940,7 @@ public class ClusterTest {
         assertEquals(2, q1.size());
         assertEquals(2, q2.size());
         h1.shutdown();
+        Thread.sleep(5000);
         assertEquals(2, q2.size());
     }
 
