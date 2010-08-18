@@ -36,6 +36,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.impl.ClusterOperation.CANCEL_EXECUTION;
 import static com.hazelcast.impl.ClusterOperation.EXECUTE;
+import static com.hazelcast.impl.Constants.Objects.OBJECT_NO_RESPONSE;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_MEMBER_LEFT;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.nio.IOUtil.toData;
@@ -397,8 +398,28 @@ public class ExecutorManager extends BaseManager {
             }
         }
 
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            throw new UnsupportedOperationException();
+        public boolean cancel(final boolean mayInterruptIfRunning) {
+            List<AsyncCall> lsCancellationCalls = new ArrayList<AsyncCall>(lsMemberCalls.size());
+            for (final MemberCall memberCall : lsMemberCalls) {
+                AsyncCall asyncCall = new AsyncCall() {
+                    @Override
+                    protected void call() {
+                        this.setResult(memberCall.cancel(mayInterruptIfRunning));
+                    }
+                };
+                lsCancellationCalls.add(asyncCall);
+                executeLocally(asyncCall);
+            }
+            for (AsyncCall cancellationCall : lsCancellationCalls) {
+                try {
+                    if (cancellationCall.get(5, TimeUnit.SECONDS) == Boolean.TRUE) {
+                        return true;
+                    }
+                } catch (Exception ignored) {
+                    return false;
+                }
+            }
+            return false;
         }
 
         public void get() throws InterruptedException, ExecutionException {
@@ -410,6 +431,7 @@ public class ExecutorManager extends BaseManager {
         }
 
         void doGet(long timeoutMillis) {
+            boolean done = true;
             long remainingMillis = timeoutMillis;
             try {
                 for (MemberCall memberCall : lsMemberCalls) {
@@ -418,7 +440,8 @@ public class ExecutorManager extends BaseManager {
                         memberCall.get();
                     } else {
                         if (remainingMillis < 0) {
-                            innerFutureTask.innerSetException(new TimeoutException());
+                            done = false;
+                            innerFutureTask.innerSetException(new TimeoutException(), done);
                             return;
                         }
                         memberCall.get(remainingMillis, TimeUnit.MILLISECONDS);
@@ -426,10 +449,11 @@ public class ExecutorManager extends BaseManager {
                     remainingMillis -= (System.currentTimeMillis() - now);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
-                innerFutureTask.innerSetException(e);
+                innerFutureTask.innerSetException(e, done);
             } finally {
-                innerFutureTask.innerDone();
+                if (done) {
+                    innerFutureTask.innerDone();
+                }
             }
         }
     }
@@ -507,21 +531,26 @@ public class ExecutorManager extends BaseManager {
         }
 
         public void get(long time, TimeUnit unit) throws InterruptedException {
+            Object result = null;
+            boolean done = true;
             try {
-                Object result = doGetResult((time == -1) ? -1 : unit.toMillis(time));
-                if (result instanceof CancellationException) {
+                result = doGetResult((time == -1) ? -1 : unit.toMillis(time));
+                if (result == OBJECT_NO_RESPONSE) {
+                    done = false;
+                    innerFutureTask.innerSetException(new TimeoutException(), false);
+                } else if (result instanceof CancellationException) {
                     innerFutureTask.innerSetCancelled();
                 } else if (result == OBJECT_MEMBER_LEFT) {
                     innerFutureTask.innerSetMemberLeft(member);
                 } else if (result instanceof Throwable) {
-                    innerFutureTask.innerSetException((Throwable) result);
+                    innerFutureTask.innerSetException((Throwable) result, true);
                 } else {
                     innerFutureTask.innerSet(result);
                 }
             } catch (Exception e) {
-                innerFutureTask.innerSetException(e);
+                innerFutureTask.innerSetException(e, done);
             } finally {
-                if (singleTask) {
+                if (singleTask && done) {
                     innerFutureTask.innerDone();
                 }
             }
@@ -530,7 +559,7 @@ public class ExecutorManager extends BaseManager {
         public Object doGetResult(long timeoutMillis) throws InterruptedException {
             Object result = (timeoutMillis == -1) ? getResult() : getResult(timeoutMillis, TimeUnit.MILLISECONDS);
             if (result == null) {
-                result = new TimeoutException();
+                result = OBJECT_NO_RESPONSE;
             }
             if (result == OBJECT_NULL) {
                 result = null;

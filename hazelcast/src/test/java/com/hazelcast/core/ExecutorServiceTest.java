@@ -31,6 +31,7 @@ import static org.junit.Assert.assertEquals;
  * Testing suite for ExecutorService
  *
  * @author Marco Ferrante, DISI - University of Genoa
+ * @oztalip
  */
 public class ExecutorServiceTest {
 
@@ -56,8 +57,14 @@ public class ExecutorServiceTest {
 
     public static class CancellationAwareTask implements Callable<Boolean>, Serializable {
 
+        long sleepTime = 10000;
+
+        public CancellationAwareTask(long sleepTime) {
+            this.sleepTime = sleepTime;
+        }
+
         public Boolean call() throws InterruptedException {
-            Thread.sleep(10000);
+            Thread.sleep(sleepTime);
             return Boolean.TRUE;
         }
     }
@@ -127,14 +134,16 @@ public class ExecutorServiceTest {
 
     @Test
     public void testCancellationAwareTask() {
-        CancellationAwareTask task = new CancellationAwareTask();
+        CancellationAwareTask task = new CancellationAwareTask(10000);
         ExecutorService executor = Hazelcast.getExecutorService();
         Future future = executor.submit(task);
-//        try {
-//            Thread.sleep(2000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            future.get(2, TimeUnit.SECONDS);
+        } catch (TimeoutException expected) {
+        } catch (Exception e) {
+            fail("No other Exception!!");
+        }
+        assertFalse(future.isDone());
         assertTrue(future.cancel(true));
         assertTrue(future.isCancelled());
         try {

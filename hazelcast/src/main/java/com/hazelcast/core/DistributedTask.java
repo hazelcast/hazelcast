@@ -242,8 +242,10 @@ public class DistributedTask<V> extends FutureTask<V> {
             onResult(value);
         }
 
-        public void innerSetException(Throwable throwable) {
-            innerDone();
+        public void innerSetException(Throwable throwable, boolean done) {
+            if (done) {
+                innerDone();
+            }
             exception = throwable;
             setException(throwable);
         }

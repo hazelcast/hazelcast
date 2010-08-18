@@ -26,6 +26,8 @@ public interface Constants {
 
         public static final Object OBJECT_NULL = new Object();
 
+        public static final Object OBJECT_NO_RESPONSE = new Object();
+
         public static final Object OBJECT_CANCELLED = new Object();
 
         public static final Object OBJECT_MEMBER_LEFT = new Object();

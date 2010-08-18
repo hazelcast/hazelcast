@@ -26,7 +26,7 @@ import java.util.concurrent.Callable;
 public interface InnerFutureTask<V> {
     void innerSet(V value);
 
-    void innerSetException(Throwable throwable);
+    void innerSetException(Throwable throwable, boolean done);
 
     void innerSetMemberLeft(Member member);
 
