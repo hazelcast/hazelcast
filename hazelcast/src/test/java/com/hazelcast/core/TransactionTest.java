@@ -284,7 +284,7 @@ public class TransactionTest {
         final TransactionalMap txnMap2 = newTransactionalMapProxy("testTryLock");
         txnMap.lock("1");
         Future f = txnMap2.async("tryLock", "1", 101, TimeUnit.MILLISECONDS);
-        Thread.sleep(110);
+        Thread.sleep(2100);
         txnMap.unlock("1");
         assertFalse((Boolean) f.get(3, TimeUnit.SECONDS));
     }
