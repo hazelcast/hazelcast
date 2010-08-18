@@ -1005,7 +1005,7 @@ public class CMap {
             if (owner != null && !partition.isMigrating()) {
                 boolean owned = owner.localMember();
                 if (owned) {
-                    if (store != null && record.isDirty()) {
+                    if (store != null && writeDelayMillis > 0 && record.isDirty()) {
                         if (now > record.getWriteTime()) {
                             recordsDirty.add(record);
                             record.setDirty(false);
