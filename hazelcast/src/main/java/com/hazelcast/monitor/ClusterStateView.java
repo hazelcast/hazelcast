@@ -18,10 +18,11 @@
 package com.hazelcast.monitor;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.nio.DataSerializable;
 
 import java.util.Set;
 
-public interface ClusterStateView {
+public interface ClusterStateView extends DataSerializable {
 
     Set<Member> getMembers();
 

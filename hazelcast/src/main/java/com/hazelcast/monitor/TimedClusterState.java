@@ -43,6 +43,13 @@ public class TimedClusterState implements DataSerializable {
             memberStatEntry.getKey().writeData(out);
             memberStatEntry.getValue().writeData(out);
         }
+        if(clusterStateView != null) {
+        	out.writeBoolean(true);
+        	clusterStateView.writeData(out);
+        }
+        else {
+        	out.writeBoolean(false);
+        }
     }
 
     public void readData(DataInput in) throws IOException {
@@ -54,6 +61,10 @@ public class TimedClusterState implements DataSerializable {
             MemberStateImpl memberStateImpl = new MemberStateImpl();
             memberStateImpl.readData(in);
             memberStates.put(member, memberStateImpl);
+        }
+        if(in.readBoolean()) {
+        	clusterStateView = new ClusterStateViewImpl();
+        	clusterStateView.readData(in);
         }
     }
 
