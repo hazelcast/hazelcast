@@ -248,6 +248,11 @@ public class DistributedTask<V> extends FutureTask<V> {
             setException(throwable);
         }
 
+        public void innerSetCancelled() {
+            cancelled = true;
+            innerDone();
+        }
+
         public void innerSetMemberLeft(Member member) {
             innerDone();
             memberLeftException = new MemberLeftException(member);

@@ -25,15 +25,16 @@ import com.hazelcast.impl.executor.ParallelExecutorService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.util.SimpleBlockingQueue;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
+import static com.hazelcast.impl.ClusterOperation.CANCEL_EXECUTION;
 import static com.hazelcast.impl.ClusterOperation.EXECUTE;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_MEMBER_LEFT;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
@@ -63,6 +64,8 @@ public class ExecutorManager extends BaseManager {
     private final Object CREATE_LOCK = new Object();
     private final ParallelExecutorService parallelExecutorService;
     private final ThreadPoolExecutor threadPoolExecutor;
+    private final ConcurrentMap<ExecutionKey, RequestExecutor> executions = new ConcurrentHashMap<ExecutionKey, RequestExecutor>(100);
+    final AtomicLong executionIdGen = new AtomicLong();
 
     ExecutorManager(final Node node) {
         super(node);
@@ -95,6 +98,7 @@ public class ExecutorManager extends BaseManager {
         storeExecutorService = getOrCreateNamedExecutorService(STORE_EXECUTOR_SERVICE, gp.EXECUTOR_STORE_THREAD_COUNT);
         eventExecutorService = getOrCreateNamedExecutorService(EVENT_EXECUTOR_SERVICE, gp.EXECUTOR_EVENT_THREAD_COUNT);
         registerPacketProcessor(EXECUTE, new ExecutionOperationHandler());
+        registerPacketProcessor(CANCEL_EXECUTION, new ExecutionCancelOperationHandler());
         started = true;
     }
 
@@ -137,10 +141,14 @@ public class ExecutorManager extends BaseManager {
         return parallelExecutorService.newParallelExecutor(concurrencyLevel);
     }
 
-    class ExecutionOperationHandler extends AbstractOperationHandler {
+    class ExecutionCancelOperationHandler extends AbstractOperationHandler {
         void doOperation(Request request) {
-            NamedExecutorService namedExecutorService = getOrCreateNamedExecutorService(request.name);
-            namedExecutorService.execute(new RequestExecutor(request));
+            ExecutionKey executionKey = new ExecutionKey(request.caller, request.longValue);
+            RequestExecutor requestExecutor = executions.get(executionKey);
+            if (requestExecutor != null) {
+                request.response = requestExecutor.cancel(request.blockId == 1);
+            }
+            returnResponse(request);
         }
 
         public void handle(Request request) {
@@ -148,26 +156,93 @@ public class ExecutorManager extends BaseManager {
         }
     }
 
+    class ExecutionOperationHandler extends AbstractOperationHandler {
+        void doOperation(Request request) {
+            NamedExecutorService namedExecutorService = getOrCreateNamedExecutorService(request.name);
+            ExecutionKey executionKey = new ExecutionKey(request.caller, request.longValue);
+            RequestExecutor requestExecutor = new RequestExecutor(request, executionKey);
+            executions.put(executionKey, requestExecutor);
+            namedExecutorService.execute(requestExecutor);
+        }
+
+        public void handle(Request request) {
+            doOperation(request);
+        }
+    }
+
+    class ExecutionKey {
+        final Address from;
+        final long executionId;
+
+        ExecutionKey(Address from, long executionId) {
+            this.executionId = executionId;
+            this.from = from;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ExecutionKey that = (ExecutionKey) o;
+            if (executionId != that.executionId) return false;
+            return from.equals(that.from);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = from.hashCode();
+            result = 31 * result + (int) (executionId ^ (executionId >>> 32));
+            return result;
+        }
+    }
+
     class RequestExecutor implements Runnable {
         final Request request;
+        private final ExecutionKey executionKey;
+        volatile boolean done = false;
+        volatile boolean cancelled = false;
+        volatile boolean running = false;
+        volatile Thread runningThread = null;
 
-        RequestExecutor(Request request) {
+        RequestExecutor(Request request, ExecutionKey executionKey) {
             this.request = request;
+            this.executionKey = executionKey;
         }
 
         public void run() {
             Object result = null;
             try {
-                Callable callable = (Callable) toObject(request.value);
-                result = callable.call();
-                result = toData(result);
+                runningThread = Thread.currentThread();
+                running = true;
+                if (!cancelled) {
+                    Callable callable = (Callable) toObject(request.value);
+                    result = callable.call();
+                    result = toData(result);
+                }
             } catch (Throwable e) {
                 result = toData(e);
             } finally {
+                if (cancelled) {
+                    result = toData(new CancellationException());
+                }
+                running = false;
+                done = true;
+                executions.remove(executionKey);
                 request.clearForResponse();
                 request.response = result;
                 enqueueAndReturn(new ReturnResponseProcess(request));
             }
+        }
+
+        public boolean cancel(final boolean mayInterruptIfRunning) {
+            if (done || cancelled) {
+                return false;
+            }
+            cancelled = true;
+            if (running && mayInterruptIfRunning && runningThread != null) {
+                runningThread.interrupt();
+            }
+            return true;
         }
     }
 
@@ -227,7 +302,7 @@ public class ExecutorManager extends BaseManager {
     }
 
     public void executeNow(Runnable runnable) {
-       threadPoolExecutor.execute(runnable);
+        threadPoolExecutor.execute(runnable);
     }
 
     public void executeMigrationTask(Runnable runnable) {
@@ -363,6 +438,33 @@ public class ExecutorManager extends BaseManager {
         void onResponse(Object result);
     }
 
+    class TaskCancellationCall extends TargetAwareOp {
+        final String name;
+        final MemberImpl member;
+        final long executionId;
+        final boolean mayInterruptIfRunning;
+
+        TaskCancellationCall(String name, MemberImpl member, long executionId, boolean mayInterruptIfRunning) {
+            this.name = name;
+            this.member = member;
+            this.executionId = executionId;
+            this.mayInterruptIfRunning = mayInterruptIfRunning;
+        }
+
+        public boolean cancel() {
+            request.setLocal(CANCEL_EXECUTION, name, null, null, -1, 0L, -1L, thisAddress);
+            request.longValue = executionId;
+            request.blockId = (mayInterruptIfRunning) ? 1 : 0;
+            doOp();
+            return getResultAsBoolean();
+        }
+
+        @Override
+        public void setTarget() {
+            target = member.getAddress();
+        }
+    }
+
     class MemberCall extends TargetAwareOp implements ExecutionManagerCallback {
         final String name;
         final MemberImpl member;
@@ -371,6 +473,7 @@ public class ExecutorManager extends BaseManager {
         final InnerFutureTask innerFutureTask;
         final boolean singleTask;
         final ExecutionListener executionListener;
+        volatile long executionId;
 
         MemberCall(String name, MemberImpl member, Data callable, DistributedTask dtask) {
             this(name, member, callable, dtask, true, null);
@@ -388,12 +491,15 @@ public class ExecutorManager extends BaseManager {
         }
 
         public void call() {
+            executionId = executionIdGen.incrementAndGet();
             request.setLocal(EXECUTE, name, null, callable, -1, -1, -1, thisAddress);
+            request.longValue = executionId;
             doOp();
         }
 
         public boolean cancel(boolean mayInterruptIfRunning) {
-            throw new UnsupportedOperationException();
+            TaskCancellationCall call = new TaskCancellationCall(name, member, executionId, mayInterruptIfRunning);
+            return call.cancel();
         }
 
         public void get() throws InterruptedException {
@@ -403,7 +509,9 @@ public class ExecutorManager extends BaseManager {
         public void get(long time, TimeUnit unit) throws InterruptedException {
             try {
                 Object result = doGetResult((time == -1) ? -1 : unit.toMillis(time));
-                if (result == OBJECT_MEMBER_LEFT) {
+                if (result instanceof CancellationException) {
+                    innerFutureTask.innerSetCancelled();
+                } else if (result == OBJECT_MEMBER_LEFT) {
                     innerFutureTask.innerSetMemberLeft(member);
                 } else if (result instanceof Throwable) {
                     innerFutureTask.innerSetException((Throwable) result);
@@ -469,7 +577,7 @@ public class ExecutorManager extends BaseManager {
 
         @Override
         public void setTarget() {
-            this.target = member.getAddress();
+            target = member.getAddress();
         }
     }
 

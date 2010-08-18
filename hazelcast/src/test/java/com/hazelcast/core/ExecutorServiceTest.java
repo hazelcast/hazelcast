@@ -54,6 +54,14 @@ public class ExecutorServiceTest {
         }
     }
 
+    public static class CancellationAwareTask implements Callable<Boolean>, Serializable {
+
+        public Boolean call() throws InterruptedException {
+            Thread.sleep(10000);
+            return Boolean.TRUE;
+        }
+    }
+
     public static class NestedExecutorTask implements Callable<String>, Serializable {
 
         public String call() throws Exception {
@@ -115,6 +123,28 @@ public class ExecutorServiceTest {
         ExecutorService executor = Hazelcast.getExecutorService();
         Future future = executor.submit(task);
         assertEquals(future.get(), BasicTestTask.RESULT);
+    }
+
+    @Test
+    public void testCancellationAwareTask() {
+        CancellationAwareTask task = new CancellationAwareTask();
+        ExecutorService executor = Hazelcast.getExecutorService();
+        Future future = executor.submit(task);
+//        try {
+//            Thread.sleep(2000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+        assertTrue(future.cancel(true));
+        assertTrue(future.isCancelled());
+        try {
+            future.get();
+            fail("Should not complete the task successfully");
+        } catch (CancellationException e) {
+            // expected
+        } catch (Exception e) {
+            fail("Unexpected exception " + e.getMessage());
+        }
     }
 
     /**

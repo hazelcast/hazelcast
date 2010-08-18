@@ -30,6 +30,8 @@ public interface InnerFutureTask<V> {
 
     void innerSetMemberLeft(Member member);
 
+    void innerSetCancelled();
+
     void innerDone();
 
     boolean cancel(boolean mayInterruptIfRunning);

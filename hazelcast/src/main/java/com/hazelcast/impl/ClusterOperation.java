@@ -27,6 +27,7 @@ public enum ClusterOperation {
     REMOTELY_CALLABLE_OBJECT(),
     EVENT(),
     EXECUTE(),
+    CANCEL_EXECUTION(),
     ADD_LISTENER(),
     ADD_LISTENER_NO_RESPONSE(),
     REMOVE_LISTENER(),
