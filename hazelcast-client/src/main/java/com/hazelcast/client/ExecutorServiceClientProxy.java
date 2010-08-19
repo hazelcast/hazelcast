@@ -135,7 +135,7 @@ public class ExecutorServiceClientProxy implements ExecutorService {
             private void handle(Object response) {
                 Object result = response;
                 if (response == null) {
-                    inner.innerSetException(new TimeoutException());
+                    inner.innerSetException(new TimeoutException(), false);
                 } else {
                     if (response instanceof Packet) {
                         Packet responsePacket = (Packet) response;
@@ -145,7 +145,7 @@ public class ExecutorServiceClientProxy implements ExecutorService {
                         MemberLeftException memberLeftException = (MemberLeftException) result;
                         inner.innerSetMemberLeft(memberLeftException.getMember());
                     } else if (result instanceof Throwable) {
-                        inner.innerSetException((Throwable) result);
+                        inner.innerSetException((Throwable) result, true);
                     } else {
                         if (dt instanceof MultiTask) {
                             if (result != null) {
