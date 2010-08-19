@@ -3,7 +3,7 @@
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at 
+ * You may 12obtain a copy of the License at
  * 
  * http://www.apache.org/licenses/LICENSE-2.0
  * 
@@ -128,9 +128,8 @@ public enum ClusterOperation {
     }
 
     public static ClusterOperation create(int operation) {
-        if (operation > 0 && operation <= OPERATION_COUNT){
+        if (operation > 0 && operation <= OPERATION_COUNT) {
             return clusterOperations[operation];
-        }
-        else return NONE;
+        } else return NONE;
     }
 }

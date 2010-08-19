@@ -693,7 +693,7 @@ public class ClientService implements ConnectionListener {
         }
 
         @Override
-		public void doMultiMapOp(final Node node, final Packet packet) {
+        public void doMultiMapOp(final Node node, final Packet packet) {
             final FactoryImpl.MultiMapProxy multiMap = (FactoryImpl.MultiMapProxy) node.factory.getOrCreateProxyByName(packet.name);
             final FactoryImpl.MultiMapProxy.MultiMapBase base = multiMap.getBase();
             final MProxy mapProxy = base.mapProxy;
@@ -703,11 +703,11 @@ public class ClientService implements ConnectionListener {
         }
 
         @Override
-		public void doQueueOp(final Node node, final Packet packet) {
+        public void doQueueOp(final Node node, final Packet packet) {
             final IQueue queue = (IQueue) node.factory.getOrCreateProxyByName(packet.name);
         }
     }
-    
+
     private class MapIterateKeysHandler extends ClientCollectionOperationHandler {
         public Data getMapKeys(IMap<Object, Object> map, Data key, Data value, Collection<Data> collection) {
             ConcurrentMapManager.Entries entries = null;
@@ -781,7 +781,7 @@ public class ClientService implements ConnectionListener {
                     }
                 };
                 topic.addMessageListener(messageListener);
-                clientEndpoint.messageListeners.put(packet.name, messageListener);
+                clientEndpoint.messageListeners.put(topic, messageListener);
             }
             packet.clearForResponse();
         }
@@ -799,7 +799,7 @@ public class ClientService implements ConnectionListener {
                 }
             } else if (getInstanceType(packet.name).equals(InstanceType.TOPIC)) {
                 ITopic topic = (ITopic) node.factory.getOrCreateProxyByName(packet.name);
-                topic.removeMessageListener(clientEndpoint.messageListeners.remove(packet.name));
+                topic.removeMessageListener(clientEndpoint.messageListeners.remove(topic));
             }
         }
     }

@@ -23,6 +23,7 @@ import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,8 +38,10 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     final Connection conn;
     final private Map<Integer, CallContext> callContexts = new HashMap<Integer, CallContext>();
     final ConcurrentMap<String, ConcurrentMap<Object, EntryEvent>> listeneds = new ConcurrentHashMap<String, ConcurrentMap<Object, EntryEvent>>();
-    final Map<String, MessageListener<Object>> messageListeners = new HashMap<String, MessageListener<Object>>();
+    final Map<ITopic, MessageListener<Object>> messageListeners = new HashMap<ITopic, MessageListener<Object>>();
     final Map<Integer, Map<IMap, List<Data>>> locks = new ConcurrentHashMap<Integer, Map<IMap, List<Data>>>();
+    final List<IMap> listeningMaps = new ArrayList<IMap>();
+    final List<Map.Entry<Object, IMap>> listeningKeysOfMaps = new ArrayList<Map.Entry<Object, IMap>>();
 
     ClientEndpoint(Connection conn) {
         this.conn = conn;
@@ -57,8 +60,11 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     public void addThisAsListener(IMap map, Data key, boolean includeValue) {
         if (key == null) {
             map.addEntryListener(this, includeValue);
+            listeningMaps.add(map);
         } else {
-            map.addEntryListener(this, toObject(key), includeValue);
+            Object keyAsObject = toObject(key);
+            map.addEntryListener(this, keyAsObject, includeValue);
+            listeningKeysOfMaps.add(new Entry(keyAsObject, map));
         }
     }
 
@@ -177,10 +183,19 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
                 for (IMap map : mapOfLocks.keySet()) {
                     List<Data> list = mapOfLocks.get(map);
                     for (Data key : list) {
-
                         map.unlock(key);
                     }
                 }
+            }
+            for (IMap map : listeningMaps) {
+                map.removeEntryListener(this);
+            }
+            for (Map.Entry e : listeningKeysOfMaps) {
+                IMap m = (IMap) e.getValue();
+                m.removeEntryListener(this, e.getKey());
+            }
+            for (ITopic topic : messageListeners.keySet()) {
+                topic.removeMessageListener(messageListeners.get(topic));
             }
         }
     }
@@ -209,10 +224,34 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
                 if (list.size() == 0) {
                     mapOfLocks.remove(map);
                 }
-                if(locks.keySet().size() == 0){
+                if (locks.keySet().size() == 0) {
                     locks.remove(threadId);
                 }
             }
+        }
+    }
+
+    static class Entry implements Map.Entry {
+        Object key;
+        Object value;
+
+        Entry(Object k, Object v) {
+            key = k;
+            value = v;
+        }
+
+        public Object getKey() {
+            return key;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+
+        public Object setValue(Object value) {
+            Object r = key;
+            key = value;
+            return r;
         }
     }
 }

@@ -28,6 +28,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static junit.framework.Assert.assertTrue;
@@ -377,6 +378,50 @@ public class HazelcastClientMultiMapTest {
         map.put(2, "Australia");
         assertEquals(4, map.valueCount(1));
         assertEquals(3, map.valueCount(2));
+    }
+
+    @Test
+    public void testLotsOfRemove() throws InterruptedException {
+        HazelcastClient hClient = getHazelcastClient();
+        final MultiMap<Integer, String> map = hClient.getMultiMap("testLotsOfRemove");
+        map.put(1, "adam");
+        System.out.println("Here is map ");
+        final boolean running = true;
+        final AtomicInteger p = new AtomicInteger(0);
+        final AtomicInteger r = new AtomicInteger(0);
+        Thread.sleep(1000);
+        new Thread(new Runnable() {
+            public void run() {
+                while (running) {
+                    map.put(1, "" + Math.random());
+                    System.out.println("PUT");
+                    p.incrementAndGet();
+                }
+            }
+        }).start();
+        new Thread(new Runnable() {
+            public void run() {
+                while (running) {
+                    map.remove(1);
+                    System.out.println("REMOVE");
+                    r.incrementAndGet();
+                }
+            }
+        }).start();
+        new Thread(new Runnable() {
+            public void run() {
+                int ip = p.get();
+                int ir = r.get();
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                }
+                if (p.get() > ip || r.get() > ir) {
+                    System.out.println("STUCK p= " + p.get() + "::: r" + r.get());
+                }
+            }
+        }).start();
+        Thread.sleep(60 * 1000 * 60);
     }
 
     @AfterClass

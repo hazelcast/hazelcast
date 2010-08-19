@@ -815,12 +815,12 @@ public class DynamicClusterTest {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
         assertEquals(0, getNumberOfClientsConnected(h));
         List<HazelcastClient> listOfHazelcastClient = new ArrayList<HazelcastClient>();
-        for(int i=0;i<10;i++){
-           HazelcastClient client = getHazelcastClient(h);
+        for (int i = 0; i < 10; i++) {
+            HazelcastClient client = getHazelcastClient(h);
             listOfHazelcastClient.add(client);
         }
         assertEquals(10, getNumberOfClientsConnected(h));
-        for(HazelcastClient client: listOfHazelcastClient){
+        for (HazelcastClient client : listOfHazelcastClient) {
             client.shutdown();
         }
         Thread.sleep(1000);
@@ -828,9 +828,42 @@ public class DynamicClusterTest {
         h.shutdown();
     }
 
+    @Test
+    public void afterClientTerminationListenersAttachedByItShouldBeRemovedFromMember() throws InterruptedException {
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        HazelcastClient client = getHazelcastClient(h);
+        String mapName = "afterClientTerminationListenersAttachedByItShouldBeRemovedFromMember";
+        IMap clientMap = client.getMap(mapName);
+        clientMap.addEntryListener(new EntryListener() {
+            public void entryAdded(EntryEvent entryEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            public void entryRemoved(EntryEvent entryEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            public void entryUpdated(EntryEvent entryEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            public void entryEvicted(EntryEvent entryEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+        }, true);
+        IMap map = h.getMap(mapName);
+        map.put("1", "1");
+        Thread.sleep(100);
+        assertEquals(1, map.getLocalMapStats().getOperationStats().getNumberOfEvents());
+        client.shutdown();
+        map.put(2, 2);
+        Thread.sleep(1000);
+        assertEquals(1, map.getLocalMapStats().getOperationStats().getNumberOfEvents());
+    }
+
     private int getNumberOfClientsConnected(HazelcastInstance h) {
         FactoryImpl.HazelcastInstanceProxy proxy = (FactoryImpl.HazelcastInstanceProxy) h;
-        FactoryImpl factory = (FactoryImpl)proxy.getHazelcastInstance();
+        FactoryImpl factory = (FactoryImpl) proxy.getHazelcastInstance();
         int size = factory.node.clientService.numberOfConnectedClients();
         return size;
     }

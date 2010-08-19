@@ -190,13 +190,29 @@ public class HazelcastClientExecutorServiceTest {
         ExecutorService ex = getExecutorService();
         Member member = getHazelcastClient().getCluster().getMembers().iterator().next();
         DistributedTask task = new DistributedTask(new BasicTestTask(), member);
-        final CountDownLatch latch= new CountDownLatch(1);
-        task.setExecutionCallback(new ExecutionCallback(){
+        final CountDownLatch latch = new CountDownLatch(1);
+        task.setExecutionCallback(new ExecutionCallback() {
             public void done(Future future) {
                 latch.countDown();
             }
         });
         ex.execute(task);
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void multiTaskCallBack() throws ExecutionException, InterruptedException {
+        ExecutorService esService = getExecutorService();
+        Set<Member> members = getHazelcastClient().getCluster().getMembers();
+        MultiTask<DistributedMapStatsCallable.MemberMapStat> task =
+                new MultiTask<DistributedMapStatsCallable.MemberMapStat>(new DistributedMapStatsCallable("default"), members);
+        final CountDownLatch latch = new CountDownLatch(1);
+        task.setExecutionCallback(new ExecutionCallback() {
+            public void done(Future future) {
+                latch.countDown();
+            }
+        });
+        esService.execute(task);
         assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
 
