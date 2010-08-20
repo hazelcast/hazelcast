@@ -141,6 +141,17 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(ATOMIC_NUMBER_ADD_AND_GET, new AtomicOperationHandler());
     }
 
+    public void onRestart() {
+        enqueueAndWait(new Processable() {
+            public void process() {
+                partitionManager.reset();
+                for (CMap cmap : maps.values()) {
+                    cmap.mapIndexService.clear();
+                }
+            }
+        }, 5);
+    }
+
     public void reset() {
         maps.clear();
         mapLocallyOwnedMaps.clear();
@@ -249,13 +260,6 @@ public class ConcurrentMapManager extends BaseManager {
 
     public Block[] getBlocks() {
         return blocks;
-    }
-
-    public void collectMemberStats(MemberStateImpl memberStats) {
-        Collection<CMap> cmaps = maps.values();
-        for (CMap cmap : cmaps) {
-            memberStats.putLocalMapStats(cmap.getName(), cmap.getLocalMapStats());
-        }
     }
 
     class MLock extends MBackupAndMigrationAwareOp {

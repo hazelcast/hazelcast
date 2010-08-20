@@ -28,18 +28,20 @@ public class JoinInfo extends JoinRequest {
 
     private static final long serialVersionUID = 1088129500826234941L;
     private boolean request = true;
+    private int memberCount = 0;
 
     public JoinInfo() {
     }
 
     public JoinInfo(boolean request, Address address, String groupName, String groupPassword,
-                    NodeType type, byte packetVersion, int buildNumber) {
+                    NodeType type, byte packetVersion, int buildNumber, int memberCount) {
         super(address, groupName, groupPassword, type, packetVersion, buildNumber);
         this.setRequest(request);
+        this.memberCount = memberCount;
     }
 
     public JoinInfo copy(boolean newRequest, Address newAddress) {
-        return new JoinInfo(newRequest, newAddress, groupName, groupPassword, nodeType, packetVersion, buildNumber);
+        return new JoinInfo(newRequest, newAddress, groupName, groupPassword, nodeType, packetVersion, buildNumber, memberCount);
     }
 
     public void writeToPacket(DatagramPacket packet) {
@@ -52,6 +54,7 @@ public class JoinInfo extends JoinRequest {
             dos.writeUTF(groupPassword);
             dos.writeByte(Packet.PACKET_VERSION);
             dos.writeInt(buildNumber);
+            dos.writeInt(memberCount);
             packet.setData(bos.toByteArray());
             packet.setLength(bos.size());
         } catch (IOException e) {
@@ -70,6 +73,7 @@ public class JoinInfo extends JoinRequest {
             groupPassword = dis.readUTF();
             packetVersion = dis.readByte();
             buildNumber = dis.readInt();
+            memberCount = dis.readInt();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -89,10 +93,16 @@ public class JoinInfo extends JoinRequest {
         return request;
     }
 
+    public int getMemberCount() {
+        return memberCount;
+    }
+
     @Override
     public String toString() {
         return "JoinInfo{" +
-                "request=" + isRequest() + "  " + super.toString() +
+                "request=" + isRequest() +
+                ", memberCount=" + memberCount +
+                "  " + super.toString() +
                 '}';
     }
 }

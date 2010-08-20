@@ -67,6 +67,7 @@ public class ExecutorServiceProxy implements ExecutorService {
     }
 
     public List<Future> invokeAll(Collection tasks) throws InterruptedException {
+        node.factory.initialChecks();
         // Inspired to JDK7
         if (tasks == null)
             throw new NullPointerException();
@@ -163,6 +164,7 @@ public class ExecutorServiceProxy implements ExecutorService {
     }
 
     public <T> Future<T> submit(Runnable task, T result) {
+        node.factory.initialChecks();
         if (!active) throw new RejectedExecutionException("ExecutorService[" + name + "] is not active");
         ThreadContext.get().setCurrentFactory(node.factory);
         DistributedTask dtask;

@@ -141,7 +141,7 @@ public abstract class BaseManager {
             enqueueCall(this);
         }
 
-        public void setCallId(final long callId) {
+        public void setCallId(long callId) {
             this.callId = callId;
         }
 
@@ -813,26 +813,30 @@ public abstract class BaseManager {
         node.clusterService.enqueueAndReturn(obj);
     }
 
-    public Address getKeyOwner(final Data key) {
+    public boolean enqueueAndWait(final Processable processable, final int seconds) {
+         return node.clusterService.enqueueAndWait(processable, seconds);
+    }
+
+    public Address getKeyOwner(Data key) {
         return node.concurrentMapManager.getKeyOwner(key);
     }
 
-    public Packet obtainPacket(final String name, final Object key,
-                               final Object value, final ClusterOperation operation, final long timeout) {
+    public Packet obtainPacket(String name, Object key, Object value,
+                               ClusterOperation operation, long timeout) {
         final Packet packet = obtainPacket();
         packet.set(name, operation, key, value);
         packet.timeout = timeout;
         return packet;
     }
 
-    public long addCall(final Call call) {
+    public long addCall(Call call) {
         final long id = localIdGen.incrementAndGet();
         call.setCallId(id);
         mapCalls.put(id, call);
         return id;
     }
 
-    public Call removeCall(final Long id) {
+    public Call removeCall(long id) {
         Call callRemoved = mapCalls.remove(id);
         if (callRemoved != null) {
             callRemoved.setCallId(-1);
@@ -848,7 +852,7 @@ public abstract class BaseManager {
         return node.clusterService.getPacketProcessor(operation);
     }
 
-    public void returnScheduledAsBoolean(final Request request) {
+    public void returnScheduledAsBoolean(Request request) {
         if (request.local) {
             final TargetAwareOp mop = (TargetAwareOp) request.attachment;
             mop.setResult(request.response);
@@ -945,17 +949,7 @@ public abstract class BaseManager {
                                             final boolean skipSuperClient, final int distance) {
         return getNextMemberAfter(lsMembers, address, skipSuperClient, distance);
     }
-
-    protected int getNumberOfStorageMembers() {
-        int count = 0;
-        for (MemberImpl member : lsMembers) {
-            if (!member.isSuperClient()) {
-                count++;
-            }
-        }
-        return count;
-    }
-
+    
     protected MemberImpl getNextMemberAfter(final List<MemberImpl> lsMembers,
                                             final Address address, final boolean skipSuperClient, final int distance) {
         final int size = lsMembers.size();

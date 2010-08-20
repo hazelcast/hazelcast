@@ -19,7 +19,6 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.config.Config;
-import com.hazelcast.nio.Address;
 import com.hazelcast.util.UnboundedBlockingQueue;
 
 import java.io.IOException;
@@ -27,7 +26,9 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketTimeoutException;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 
 public class MulticastService implements Runnable {
@@ -39,18 +40,27 @@ public class MulticastService implements Runnable {
     private final Object sendLock = new Object();
     private final Object receiveLock = new Object();
     final Node node;
-    private int bufferSize = 1024;
     private boolean running = true;
+    private List<MulticastListener> lsListeners = new CopyOnWriteArrayList<MulticastListener>();
 
     public MulticastService(Node node, MulticastSocket multicastSocket) throws Exception {
         this.node = node;
         Config config = node.getConfig();
         this.multicastSocket = multicastSocket;
+        int bufferSize = 1024;
         this.datagramPacketReceive = new DatagramPacket(new byte[bufferSize], bufferSize);
         this.datagramPacketSend = new DatagramPacket(new byte[bufferSize], bufferSize, InetAddress
                 .getByName(config.getNetworkConfig().getJoin().getMulticastConfig().getMulticastGroup()),
                 config.getNetworkConfig().getJoin().getMulticastConfig().getMulticastPort());
         running = true;
+    }
+
+    public void addMulticastListener(MulticastListener multicastListener) {
+        lsListeners.add(multicastListener);
+    }
+
+    public void removeMulticastListener(MulticastListener multicastListener) {
+        lsListeners.remove(multicastListener);
     }
 
     public void stop() {
@@ -77,20 +87,8 @@ public class MulticastService implements Runnable {
                 }
                 final JoinInfo joinInfo = receive();
                 if (joinInfo != null) {
-                    if (node.address != null && !node.address.equals(joinInfo.address)) {
-                        if (node.validateJoinRequest(joinInfo)) {
-                            if (node.isMaster() && node.isActive() && node.joined()) {
-                                if (joinInfo.isRequest()) {
-                                    send(joinInfo.copy(false, node.address));
-                                }
-                            } else {
-                                if (!node.joined() && !joinInfo.isRequest()) {
-                                    if (node.masterAddress == null) {
-                                        node.masterAddress = new Address(joinInfo.address);
-                                    }
-                                }
-                            }
-                        }
+                    for (MulticastListener multicastListener : lsListeners) {
+                        multicastListener.onMessage(joinInfo);
                     }
                 }
             } catch (Exception e) {

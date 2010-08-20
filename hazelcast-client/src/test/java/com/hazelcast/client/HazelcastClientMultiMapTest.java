@@ -394,7 +394,6 @@ public class HazelcastClientMultiMapTest {
             public void run() {
                 while (running) {
                     map.put(1, "" + Math.random());
-                    System.out.println("PUT");
                     p.incrementAndGet();
                 }
             }
@@ -403,7 +402,6 @@ public class HazelcastClientMultiMapTest {
             public void run() {
                 while (running) {
                     map.remove(1);
-                    System.out.println("REMOVE");
                     r.incrementAndGet();
                 }
             }

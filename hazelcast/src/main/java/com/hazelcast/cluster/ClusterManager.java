@@ -51,6 +51,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         super(node);
         WAIT_MILLIS_BEFORE_JOIN = node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
         MAX_NO_HEARTBEAT_MILLIS = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
+        node.clusterService.registerPeriodicRunnable(new SplitBrainHandler(node));
         node.clusterService.registerPeriodicRunnable(new Runnable() {
             public void run() {
                 heartBeater();
@@ -435,6 +436,16 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         joinInProgress = false;
         setJoins.clear();
         timeToStartJoin = System.currentTimeMillis() + WAIT_MILLIS_BEFORE_JOIN;
+    }
+
+    public void onRestart() {
+        enqueueAndWait(new Processable() {
+            public void process() {
+                joinReset();
+                lsMembers.clear();
+                mapMembers.clear();
+            }
+        }, 5);
     }
 
     public class AsyncRemotelyBooleanCallable extends TargetAwareOp {

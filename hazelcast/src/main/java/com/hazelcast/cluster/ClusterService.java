@@ -50,7 +50,7 @@ public final class ClusterService implements Runnable, Constants {
 
     private final PacketProcessor[] packetProcessors = new PacketProcessor[ClusterOperation.OPERATION_COUNT];
 
-    private final Runnable[] periodicRunnables = new Runnable[4];
+    private final Runnable[] periodicRunnables = new Runnable[5];
 
     private final Node node;
 
@@ -99,6 +99,21 @@ public final class ClusterService implements Runnable, Constants {
         synchronized (notEmptyLock) {
             notEmptyLock.notify();
         }
+    }
+
+    public boolean enqueueAndWait(final Processable processable, final int seconds) {
+        try {
+            final CountDownLatch l = new CountDownLatch(1);
+            enqueueAndReturn(new Processable() {
+                public void process() {
+                    processable.process();
+                    l.countDown();
+                }
+            });
+            return l.await(seconds, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+        }
+        return false;
     }
 
     public void enqueueAndReturn(Processable processable) {

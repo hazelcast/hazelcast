@@ -47,6 +47,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.logging.Level;
@@ -92,6 +93,8 @@ public class FactoryImpl implements HazelcastInstance {
     private MemberStatePublisher memberStatePublisher;
 
     private final ILogger logger;
+
+    AtomicBoolean paused = new AtomicBoolean(false);
 
     public static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config) {
         try {
@@ -157,11 +160,11 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public void shutdown() {
-            FactoryImpl.shutdown(HazelcastInstanceProxy.this);
+            hazelcastInstance.shutdown();
         }
 
         public void restart() {
-            FactoryImpl.restart(HazelcastInstanceProxy.this);
+            hazelcastInstance.restart();
         }
 
         public Collection<Instance> getInstances() {
@@ -308,7 +311,8 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public void restart() {
-        restart(hazelcastInstanceProxy);
+//        restart(hazelcastInstanceProxy);
+        doRestart();
     }
 
     public FactoryImpl(String name, Config config) {
@@ -534,7 +538,26 @@ public class FactoryImpl implements HazelcastInstance {
         return proxy;
     }
 
-    public static void initialChecks() {
+
+
+    public void initialChecks() {
+       while (paused.get()) {
+           try {
+               Thread.sleep(100);
+           } catch (InterruptedException e) {
+               return;
+           }
+       }
+    }
+
+
+    public void doRestart() {
+        paused.set(true);
+        node.connectionManager.onRestart();
+        node.clusterManager.onRestart();
+        node.concurrentMapManager.onRestart();
+        node.rejoin();
+        paused.set(false);
     }
 
     public void destroyProxy(final ProxyKey proxyKey) {
@@ -647,7 +670,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         private void ensure() {
-            initialChecks();
+            factory.initialChecks();
             if (base == null) {
                 base = factory.getLock(key);
             }
@@ -894,7 +917,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         private void ensure() {
-            initialChecks();
+            factory.initialChecks();
             if (base == null) {
                 base = (TopicProxy) factory.getOrCreateProxyByName(name);
             }
@@ -1029,7 +1052,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         private void ensure() {
-            initialChecks();
+            factory.initialChecks();
             if (base == null) {
                 base = (CollectionProxy) factory.getOrCreateProxyByName(name);
             }
@@ -1239,7 +1262,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         private void ensure() {
-            initialChecks();
+            factory.initialChecks();
             if (qproxyReal == null) {
                 qproxyReal = (QProxy) factory.getOrCreateProxyByName(name);
             }
@@ -1571,7 +1594,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         private void ensure() {
-            initialChecks();
+            factory.initialChecks();
             if (base == null) {
                 base = (MultiMap) factory.getOrCreateProxyByName(name);
             }
@@ -1916,7 +1939,7 @@ public class FactoryImpl implements HazelcastInstance {
 
         private void beforeCall() {
             ThreadContext.get().setCurrentFactory(factory);
-            initialChecks();
+            factory.initialChecks();
             if (mproxyReal == null) {
                 mproxyReal = (MProxy) factory.getOrCreateProxyByName(name);
             }
@@ -2669,7 +2692,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         private void ensure() {
-            initialChecks();
+            factory.initialChecks();
             if (base == null) {
                 base = (IdGenerator) factory.getOrCreateProxyByName(name);
             }

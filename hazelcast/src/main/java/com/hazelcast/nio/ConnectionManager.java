@@ -156,6 +156,11 @@ public class ConnectionManager {
         live = true;
     }
 
+    public void onRestart() {
+        shutdown();
+        start();
+    }
+
     public void shutdown() {
         live = false;
         for (Connection conn : mapConnections.values()) {
@@ -166,6 +171,7 @@ public class ConnectionManager {
         }
         setConnectionInProgress.clear();
         mapConnections.clear();
+        setActiveConnections.clear();
     }
 
     @Override

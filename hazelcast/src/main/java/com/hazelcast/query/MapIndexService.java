@@ -256,7 +256,8 @@ public class MapIndexService {
     }
 
     public void clear() {
-        //todo
+        mapIndexes.clear();
+        records.clear(); 
     }
 
     public int size() {

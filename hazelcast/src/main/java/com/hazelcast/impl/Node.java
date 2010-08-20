@@ -217,6 +217,7 @@ public class Node {
                         .getByName(join.getMulticastConfig().getMulticastGroup()));
                 multicastSocket.setSoTimeout(1000);
                 mcService = new MulticastService(this, multicastSocket);
+                mcService.addMulticastListener(new NodeMulticastListener(this));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -425,12 +426,17 @@ public class Node {
         joined = true;
     }
 
+    JoinInfo createJoinInfo() {
+        return new JoinInfo(true, address, config.getGroupConfig().getName(),
+                config.getGroupConfig().getPassword(), getLocalNodeType(),
+                Packet.PACKET_VERSION, buildNumber, clusterImpl.getMembers().size());
+    }
+
     private Address findMaster() {
         try {
             final String ip = System.getProperty("join.ip");
             if (ip == null) {
-                JoinInfo joinInfo = new JoinInfo(true, address, config.getGroupConfig().getName(),
-                        config.getGroupConfig().getPassword(), getLocalNodeType(), Packet.PACKET_VERSION, buildNumber);
+                JoinInfo joinInfo = createJoinInfo();
                 int tryCount = config.getNetworkConfig().getJoin().getMulticastConfig().getMulticastTimeoutSeconds() * 100;
                 for (int i = 0; i < tryCount; i++) {
                     multicastService.send(joinInfo);
@@ -560,7 +566,15 @@ public class Node {
         return setPossibleAddresses;
     }
 
-    private void join() {
+    void rejoin() {
+        masterAddress = null;
+        joined = false;
+        clusterImpl.reset();
+        failedConnections.clear();
+        join();
+    }
+
+    void join() {
         if (!config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             joinWithTCP();
         } else {

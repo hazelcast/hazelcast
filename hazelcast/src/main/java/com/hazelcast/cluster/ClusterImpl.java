@@ -44,6 +44,13 @@ public class ClusterImpl implements Cluster {
         this.setMembers(Arrays.asList(thisMember));
     }
 
+    public void reset() {
+        clusterMembers.clear();
+        distances.clear();
+        members.set(null);
+        this.setMembers(Arrays.asList((MemberImpl)localMember.get()));
+    }
+
     public int getDistanceFrom(Member member) {
         if (member.localMember()) {
             return 0;

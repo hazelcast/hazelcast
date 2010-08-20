@@ -67,6 +67,14 @@ public class PartitionManager implements Runnable {
         this.parallelExecutorBackups = node.getExecutorManager().newParallelExecutor(12);
     }
 
+    public void reset() {
+        lsBlocksToMigrate.clear();
+        for (int i = 0; i < PARTITION_COUNT; i++) {
+            blocks[i] = null;
+        }
+        partitionServiceImpl.reset();
+    }
+
     public void run() {
         long now = System.currentTimeMillis();
         if (now > nextMigrationMillis) {
