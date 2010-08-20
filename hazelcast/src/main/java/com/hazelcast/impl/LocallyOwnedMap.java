@@ -68,7 +68,7 @@ class LocallyOwnedMap {
             for (Map.Entry<Object, Record> entry : entries) {
                 Object key = entry.getKey();
                 Record record = entry.getValue();
-                if (!record.isActive() || !record.isValid(now)) {
+                if (record == null || !record.isActive() || !record.isValid(now)) {
                     lsKeysToRemove.add(key);
                 }
             }
