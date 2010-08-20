@@ -28,6 +28,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
@@ -385,14 +386,13 @@ public class HazelcastClientMultiMapTest {
         HazelcastClient hClient = getHazelcastClient();
         final MultiMap<Integer, String> map = hClient.getMultiMap("testLotsOfRemove");
         map.put(1, "adam");
-        System.out.println("Here is map ");
-        final boolean running = true;
+        final AtomicBoolean running = new AtomicBoolean(true);
         final AtomicInteger p = new AtomicInteger(0);
         final AtomicInteger r = new AtomicInteger(0);
         Thread.sleep(1000);
         new Thread(new Runnable() {
             public void run() {
-                while (running) {
+                while (running.get()) {
                     map.put(1, "" + Math.random());
                     p.incrementAndGet();
                 }
@@ -400,26 +400,30 @@ public class HazelcastClientMultiMapTest {
         }).start();
         new Thread(new Runnable() {
             public void run() {
-                while (running) {
+                while (running.get()) {
                     map.remove(1);
                     r.incrementAndGet();
                 }
             }
         }).start();
+        final CountDownLatch latch = new CountDownLatch(1);
         new Thread(new Runnable() {
             public void run() {
                 int ip = p.get();
                 int ir = r.get();
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
                 }
-                if (p.get() > ip || r.get() > ir) {
+                if (p.get() == ip || r.get() == ir) {
                     System.out.println("STUCK p= " + p.get() + "::: r" + r.get());
+                } else {
+                    latch.countDown();
                 }
             }
         }).start();
-        Thread.sleep(60 * 1000 * 60);
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        running.set(false);
     }
 
     @AfterClass
