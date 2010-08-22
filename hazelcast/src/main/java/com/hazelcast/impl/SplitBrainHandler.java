@@ -20,6 +20,8 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.config.Config;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -41,7 +43,7 @@ public class SplitBrainHandler implements Runnable {
             }
             if (!inProgress && (now - lastRun > 3000)) {
                 inProgress = true;
-                node.executorManager.executeLocally(new Runnable() {
+                node.executorManager.executeNow(new Runnable() {
                     public void run() {
                         searchForOtherClusters();
                         lastRun = System.currentTimeMillis();
@@ -96,5 +98,5 @@ public class SplitBrainHandler implements Runnable {
                 e.printStackTrace();
             }
         }
-    }
+    } 
 }

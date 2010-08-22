@@ -361,4 +361,8 @@ public class HazelcastClient implements HazelcastInstance {
     protected void destroy(String proxyName) {
         mapProxies.remove(proxyName);
     }
+
+    public LifecycleService getLifecycleService() {
+        throw new UnsupportedOperationException();
+    }
 }

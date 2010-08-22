@@ -97,8 +97,9 @@ public class ConcurrentMapManager extends BaseManager {
             }
         });
         node.clusterService.registerPeriodicRunnable(partitionManager);
-        registerPacketProcessor(CONCURRENT_MAP_GET_MAP_ENTRY, new GetMapEnryOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_GET_MAP_ENTRY, new GetMapEntryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_GET, new GetOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_MERGE, new MergeOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_TRY_PUT, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT_IF_ABSENT, new PutOperationHandler());
@@ -260,6 +261,14 @@ public class ConcurrentMapManager extends BaseManager {
 
     public Block[] getBlocks() {
         return blocks;
+    }
+
+    public PartitionManager getPartitionManager() {
+        return partitionManager;
+    }
+
+    public Map<String, CMap> getCMaps() {
+        return maps;
     }
 
     class MLock extends MBackupAndMigrationAwareOp {
@@ -771,6 +780,23 @@ public class ConcurrentMapManager extends BaseManager {
 
         public Object put(String name, Object key, Object value, long timeout, long ttl) {
             return txnalPut(CONCURRENT_MAP_PUT, name, key, value, timeout, ttl);
+        }
+
+        public Object merge(Record record) {
+            DataRecordEntry dataRecordEntry = new DataRecordEntry(record);
+            ClusterOperation operation = CONCURRENT_MAP_MERGE;
+            setLocal(operation, record.getName(), record.getKey(), dataRecordEntry, 0, -1);
+            request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
+            Object value = record.getRecordEntry().getValue();
+            setIndexValues(request, value);
+            request.setBooleanRequest();
+            doOp();
+            Boolean returnObject = getResultAsBoolean();
+            if (returnObject) {
+                request.value = record.getValue();
+                backup(CONCURRENT_MAP_BACKUP_PUT);
+            }
+            return returnObject;
         }
 
         public boolean tryPut(String name, Object key, Object value, long timeout, long ttl) {
@@ -1467,7 +1493,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class GetMapEnryOperationHandler extends MTargetAwareOperationHandler {
+    class GetMapEntryOperationHandler extends MTargetAwareOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.getMapEntry(request);
@@ -1510,6 +1536,27 @@ public class ConcurrentMapManager extends BaseManager {
                 Record record = cmap.getRecord(request.key);
                 cmap.markAsDirty(record);
                 request.response = Boolean.FALSE;
+            }
+            returnResponse(request);
+        }
+    }
+
+    class MergeOperationHandler extends StoreAwareOperationHandler {
+
+        void doOperation(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            cmap.put(request);
+            request.response = Boolean.TRUE;
+        }
+
+        protected boolean shouldExecuteAsync(Request request) {
+            return true;
+        }
+
+        public void afterExecute(Request request) {
+            System.out.println(thisAddress + " merge after execute " + request.response);
+            if (request.response != Boolean.FALSE) {
+                doOperation(request);
             }
             returnResponse(request);
         }
@@ -1716,6 +1763,29 @@ public class ConcurrentMapManager extends BaseManager {
                 //store the entry
                 cmap.store.store(toObject(request.key), toObject(request.value));
                 request.response = Boolean.TRUE;
+            } else if (request.operation == CONCURRENT_MAP_MERGE) {
+                System.out.println(request.name + " merge execution");
+                Record existing = cmap.getRecord(request.key);
+                RecordEntry existingEntry = (existing == null) ? null : cmap.getRecordEntry(existing);
+                DataRecordEntry newEntry = (DataRecordEntry) toObject(request.value);
+                Object key = newEntry.getKey();
+                Object winner = newEntry.getValue(); // cmap.merger.merge(existingEntry, newEntry);
+                boolean success = false;
+                if (winner != null) {
+                    success = true;
+                    if (cmap.writeDelayMillis == 0 && cmap.store != null) {
+                        cmap.store.store(key, winner);
+                        success = (request.response == null);
+                    }
+                }
+                System.out.println(request.name + " success  " + success);
+                if (success) {
+                    request.value = toData(winner);
+                    request.response = Boolean.TRUE;
+                } else {
+                    request.value = null;
+                    request.response = Boolean.FALSE;
+                }
             }
         }
 

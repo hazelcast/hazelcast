@@ -33,6 +33,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.Thread.sleep;
@@ -1964,6 +1965,82 @@ public class ClusterTest {
             String item = "item" + i;
             qNormal.offer(item);
             assertEquals(item, qSuper.poll());
+        }
+    }
+
+    @Test(timeout = 100000)
+    public void testSplitBrainMulticast() throws Exception {
+        Config c1 = new Config();
+        c1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
+        c1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
+        c1.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
+        c1.getNetworkConfig().getInterfaces().clear();
+        c1.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
+        c1.getNetworkConfig().getInterfaces().setEnabled(true);
+        Config c2 = new Config();
+        c2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
+        c2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
+        c2.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
+        c2.getNetworkConfig().getInterfaces().clear();
+        c2.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
+        c2.getNetworkConfig().getInterfaces().setEnabled(true);
+        c1.getGroupConfig().setName("differentGroup");
+        c2.getGroupConfig().setName("sameGroup");
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c1);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
+        LifecycleCountingListener l = new LifecycleCountingListener();
+        h2.getLifecycleService().addLifecycleListener(l);
+        for (int i = 0; i < 500; i++) {
+            h2.getMap("default").put(i, "value" + i);
+        }
+        assertEquals(1, h1.getCluster().getMembers().size());
+        assertEquals(1, h2.getCluster().getMembers().size());
+        Thread.sleep(2000);
+        c1.getGroupConfig().setName("sameGroup");
+        assertTrue(l.waitFor(LifecycleEvent.LifecycleState.RESTARTED, 40));
+        assertEquals(1, l.getCount(LifecycleEvent.LifecycleState.RESTARTING));
+        assertEquals(1, l.getCount(LifecycleEvent.LifecycleState.RESTARTED));
+        assertEquals(2, h1.getCluster().getMembers().size());
+        assertEquals(2, h2.getCluster().getMembers().size());
+        assertEquals(500, h1.getMap("default").size());
+        assertEquals(500, h2.getMap("default").size());
+    }
+
+    class LifecycleCountingListener implements LifecycleListener {
+        Map<LifecycleEvent.LifecycleState, AtomicInteger> counter = new ConcurrentHashMap<LifecycleEvent.LifecycleState, AtomicInteger>();
+        BlockingQueue<LifecycleEvent.LifecycleState> eventQueue = new LinkedBlockingQueue<LifecycleEvent.LifecycleState>();
+
+        LifecycleCountingListener() {
+            for (LifecycleEvent.LifecycleState state : LifecycleEvent.LifecycleState.values()) {
+                counter.put(state, new AtomicInteger(0));
+            }
+        }
+
+        public void stateChanged(LifecycleEvent event) {
+            counter.get(event.getState()).incrementAndGet();
+            eventQueue.offer(event.getState());
+        }
+
+        int getCount(LifecycleEvent.LifecycleState state) {
+            return counter.get(state).get();
+        }
+
+        boolean waitFor(LifecycleEvent.LifecycleState state, int seconds) {
+            long remainingMillis = TimeUnit.SECONDS.toMillis(seconds);
+            while (remainingMillis >= 0) {
+                LifecycleEvent.LifecycleState received = null;
+                try {
+                    long now = System.currentTimeMillis();
+                    received = eventQueue.poll(remainingMillis, TimeUnit.MILLISECONDS);
+                    remainingMillis -= (System.currentTimeMillis() - now);
+                } catch (InterruptedException e) {
+                    return false;
+                }
+                if (received != null && received == state) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

@@ -27,6 +27,7 @@ import com.hazelcast.impl.BlockingQueueManager.QIterator;
 import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
 import com.hazelcast.impl.concurrentmap.AddMapIndex;
+import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -94,7 +95,7 @@ public class FactoryImpl implements HazelcastInstance {
 
     private final ILogger logger;
 
-    AtomicBoolean paused = new AtomicBoolean(false);
+    final LifecycleServiceImpl lifecycleService;
 
     public static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config) {
         try {
@@ -242,6 +243,14 @@ public class FactoryImpl implements HazelcastInstance {
         public LoggingService getLoggingService() {
             return hazelcastInstance.getLoggingService();
         }
+
+        public LifecycleService getLifecycleService() {
+            return hazelcastInstance.getLifecycleService();
+        }
+    }
+
+    public String getName() {
+        return name;
     }
 
     public static void shutdownAll() {
@@ -288,38 +297,12 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    public static HazelcastInstance restart(HazelcastInstanceProxy hazelcastInstanceProxy) {
-        synchronized (factoryLock) {
-            FactoryImpl factory = hazelcastInstanceProxy.getFactory();
-            factory.restarted = true;
-            shutdown(hazelcastInstanceProxy);
-            HazelcastInstanceProxy newFactory = newHazelcastInstanceProxy(factory.node.config);
-            Collection<HazelcastInstanceAwareInstance> proxies = factory.proxies.values();
-            for (HazelcastInstanceAwareInstance factoryAwareProxy : proxies) {
-                factoryAwareProxy.setHazelcastInstance(newFactory.getHazelcastInstance());
-            }
-            return newFactory;
-        }
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void shutdown() {
-        shutdown(hazelcastInstanceProxy);
-    }
-
-    public void restart() {
-//        restart(hazelcastInstanceProxy);
-        doRestart();
-    }
-
     public FactoryImpl(String name, Config config) {
         this.name = name;
         node = new Node(this, config);
         globalProxies = new MProxyImpl(Prefix.MAP + "__hz_Proxies", this);
         logger = node.getLogger(FactoryImpl.class.getName());
+        lifecycleService = new LifecycleServiceImpl(FactoryImpl.this);
         transactionFactory = new TransactionFactory(this);
         hazelcastInstanceProxy = new HazelcastInstanceProxy(this);
         locksMapProxy = new MProxyImpl(Prefix.MAP + "__hz_Locks", this);
@@ -493,6 +476,18 @@ public class FactoryImpl implements HazelcastInstance {
         return node.loggingService;
     }
 
+    public LifecycleService getLifecycleService() {
+        return lifecycleService;
+    }
+
+    public void restart() {
+        lifecycleService.restart();
+    }
+
+    public void shutdown() {
+        lifecycleService.shutdown();
+    }
+
     public <K, V> IMap<K, V> getMap(String name) {
         return (IMap<K, V>) getOrCreateProxyByName(Prefix.MAP + name);
     }
@@ -538,26 +533,14 @@ public class FactoryImpl implements HazelcastInstance {
         return proxy;
     }
 
-
-
     public void initialChecks() {
-       while (paused.get()) {
-           try {
-               Thread.sleep(100);
-           } catch (InterruptedException e) {
-               return;
-           }
-       }
-    }
-
-
-    public void doRestart() {
-        paused.set(true);
-        node.connectionManager.onRestart();
-        node.clusterManager.onRestart();
-        node.concurrentMapManager.onRestart();
-        node.rejoin();
-        paused.set(false);
+        while (lifecycleService.paused.get()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                return;
+            }
+        }
     }
 
     public void destroyProxy(final ProxyKey proxyKey) {
@@ -2019,7 +2002,7 @@ public class FactoryImpl implements HazelcastInstance {
             } catch (Throwable e) {
                 if (factory.restarted) {
                     return remove(key);
-                }  else if (e instanceof RuntimeException) {
+                } else if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;
                 } else {
                     throw new RuntimeException(e);

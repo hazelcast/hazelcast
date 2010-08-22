@@ -204,7 +204,6 @@ public interface HazelcastInstance {
      */
     AtomicNumber getAtomicNumber(String name);
 
-
     /**
      * Detaches this member from the cluster.
      * It doesn't shutdown the entire cluster, it shuts down
@@ -268,4 +267,11 @@ public interface HazelcastInstance {
      * @return logging service
      */
     LoggingService getLoggingService();
+
+    /**
+     * Returns the lifecycle service for this instance. LifecycleService allows you
+     * to shutdown, restart, pause and resume this HazelcastInstance.
+     *
+     */
+    LifecycleService getLifecycleService();
 }

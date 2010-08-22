@@ -202,6 +202,10 @@ public class CMap {
         this.creationTime = System.currentTimeMillis();
     }
 
+    boolean isUserMap() {
+        return !name.startsWith("c:__hz_");
+    }
+
     public boolean checkLock(Request request) {
         return (lockEntireMap == null
                 || !lockEntireMap.isLocked()

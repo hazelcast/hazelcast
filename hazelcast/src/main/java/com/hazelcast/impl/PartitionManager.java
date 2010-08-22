@@ -440,11 +440,6 @@ public class PartitionManager implements Runnable {
                 }
             }
         }
-//        for (Block b : blocks) {
-//            if (b != null && b.isMigrating() && b.getMigrationAddress().equals(b.getOwner())) {
-//                b.setMigrationAddress(null);
-//            }
-//        }
         if (block.isMigrating() && block.getMigrationAddress().equals(block.getOwner())) {
             block.setMigrationAddress(null);
         }
