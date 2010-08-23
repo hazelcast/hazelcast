@@ -238,19 +238,19 @@ public class Record implements MapEntry {
     }
 
     public boolean hasListener() {
-        return (getMapListeners() != null && getMapListeners().size() > 0);
+        return (getListeners() != null && getListeners().size() > 0);
     }
 
     public void addListener(Address address, boolean returnValue) {
-        if (getMapListeners() == null)
+        if (getListeners() == null)
             setMapListeners(new HashMap<Address, Boolean>(1));
-        getMapListeners().put(address, returnValue);
+        getListeners().put(address, returnValue);
     }
 
     public void removeListener(Address address) {
-        if (getMapListeners() == null)
+        if (getListeners() == null)
             return;
-        getMapListeners().remove(address);
+        getListeners().remove(address);
     }
 
     public void incrementCopyCount() {
@@ -493,7 +493,7 @@ public class Record implements MapEntry {
         this.getOptionalInfo().lsScheduledActions = lsScheduledActions;
     }
 
-    public Map<Address, Boolean> getMapListeners() {
+    public Map<Address, Boolean> getListeners() {
         if (optionalInfo == null) return null;
         return getOptionalInfo().mapListeners;
     }

@@ -1246,6 +1246,41 @@ public abstract class BaseManager {
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
                       final int eventType, final Data key, final Data value,
                       Map<Address, Boolean> keyListeners, Address callerAddress) {
+        if (keyListeners == null && (mapListeners == null || mapListeners.size() == 0)) {
+            return;
+        }
+        try {
+            Map<Address, Boolean> mapTargetListeners = null;
+            if (keyListeners != null) {
+                mapTargetListeners = new HashMap<Address, Boolean>(keyListeners);
+            }
+            if (mapListeners != null && mapListeners.size() > 0) {
+                if (mapTargetListeners == null) {
+                    mapTargetListeners = new HashMap<Address, Boolean>(mapListeners);
+                } else {
+                    final Set<Map.Entry<Address, Boolean>> entries = mapListeners.entrySet();
+                    for (final Map.Entry<Address, Boolean> entry : entries) {
+                        if (mapTargetListeners.containsKey(entry.getKey())) {
+                            if (entry.getValue()) {
+                                mapTargetListeners.put(entry.getKey(), entry.getValue());
+                            }
+                        } else
+                            mapTargetListeners.put(entry.getKey(), entry.getValue());
+                    }
+                }
+            }
+            if (mapTargetListeners == null || mapTargetListeners.size() == 0) {
+                return;
+            }
+            sendEvents(eventType, name, key, value, mapTargetListeners, callerAddress);
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    void fireMapEvent2(final Map<Address, Boolean> mapListeners, final String name,
+                       final int eventType, final Data key, final Data value,
+                       Map<Address, Boolean> keyListeners, Address callerAddress) {
         try {
             Map<Address, Boolean> mapTargetListeners = null;
             if (keyListeners != null) {

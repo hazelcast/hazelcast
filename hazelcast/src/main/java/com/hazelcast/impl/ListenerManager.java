@@ -28,7 +28,6 @@ import com.hazelcast.nio.Packet;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
@@ -231,10 +230,6 @@ public class ListenerManager extends BaseManager {
 
     public void addListener(String name, Object listener, Object key, boolean includeValue,
                             Instance.InstanceType instanceType) {
-        /**
-         * check if already registered send this lockAddress to the key owner as a
-         * listener add this listener to the local listeners map
-         */
         boolean remotelyRegister = true;
         for (ListenerItem listenerItem : listeners) {
             if (remotelyRegister) {
@@ -249,8 +244,7 @@ public class ListenerManager extends BaseManager {
                         } else {
                             if (listenerItem.key != null) {
                                 if (listenerItem.key.equals(key)) {
-                                    if (!includeValue
-                                            || listenerItem.includeValue == includeValue) {
+                                    if (!includeValue || listenerItem.includeValue == includeValue) {
                                         remotelyRegister = false;
                                     }
                                 }
@@ -263,19 +257,12 @@ public class ListenerManager extends BaseManager {
         if (remotelyRegister) {
             registerListener(name, key, true, includeValue);
         }
-        ListenerItem listenerItem = new ListenerItem(name, key, listener, includeValue,
-                instanceType);
+        ListenerItem listenerItem = new ListenerItem(name, key, listener, includeValue, instanceType);
         listeners.add(listenerItem);
     }
 
     public synchronized void removeListener(String name, Object listener, Object key) {
-        /**
-         * send this lockAddress to the key owner as a listener add this listener to
-         * the local listeners map
-         */
-        Iterator<ListenerItem> it = listeners.iterator();
-        for (; it.hasNext();) {
-            ListenerItem listenerItem = it.next();
+        for (ListenerItem listenerItem : listeners) {
             if (listener == listenerItem.listener) {
                 if (key == null && listenerItem.key == null) {
                     listeners.remove(listenerItem);
@@ -284,10 +271,8 @@ public class ListenerManager extends BaseManager {
                 }
             }
         }
-        it = listeners.iterator();
         boolean left = false;
-        for (; it.hasNext();) {
-            ListenerItem listenerItem = it.next();
+        for (ListenerItem listenerItem : listeners) {
             if (key == null && listenerItem.key == null) {
                 left = true;
             } else if (key != null && key.equals(listenerItem.key)) {

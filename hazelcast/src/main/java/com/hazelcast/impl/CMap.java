@@ -735,7 +735,7 @@ public class CMap {
         }
         if (removed) {
             record.incrementVersion();
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKey(), req.value, record.getMapListeners(), req.caller);
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKey(), req.value, record.getListeners(), req.caller);
             logger.log(Level.FINEST, record.getValue() + " RemoveMulti " + record.getMultiValues());
         }
         req.version = record.getVersion();
@@ -763,7 +763,7 @@ public class CMap {
             updateIndexes(record);
             record.addValue(value);
             record.incrementVersion();
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKey(), value, record.getMapListeners(), req.caller);
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKey(), value, record.getListeners(), req.caller);
         }
         if (req.txnId != -1) {
             unlock(record);
@@ -1187,7 +1187,7 @@ public class CMap {
         long now = System.currentTimeMillis();
         if (record != null && record.isActive() && record.valueCount() > 0) {
             fireInvalidation(record);
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_EVICTED, record.getKey(), record.getValue(), record.getMapListeners(), req.caller);
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_EVICTED, record.getKey(), record.getValue(), record.getListeners(), req.caller);
             record.incrementVersion();
             markAsRemoved(record);
             req.clearForResponse();
@@ -1230,7 +1230,7 @@ public class CMap {
         }
         if (oldValue != null) {
             fireInvalidation(record);
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKey(), oldValue, record.getMapListeners(), req.caller);
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKey(), oldValue, record.getListeners(), req.caller);
             record.incrementVersion();
         }
         markAsRemoved(record);
