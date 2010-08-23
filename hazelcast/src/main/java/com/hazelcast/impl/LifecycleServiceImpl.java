@@ -35,11 +35,8 @@ public class LifecycleServiceImpl implements LifecycleService {
     final FactoryImpl factory;
     final Node node;
     final ILogger logger;
-
     final AtomicBoolean paused = new AtomicBoolean(false);
-
     final CopyOnWriteArrayList<LifecycleListener> lsLifecycleListeners = new CopyOnWriteArrayList<LifecycleListener>();
-
     final Object lifecycleLock = new Object();
 
     public LifecycleServiceImpl(FactoryImpl factory) {
@@ -57,7 +54,7 @@ public class LifecycleServiceImpl implements LifecycleService {
     }
 
     public void fireLifecycleEvent(LifecycleEvent lifecycleEvent) {
-        logger.log(Level.INFO, node.getThisAddress() + " lifecycle event " + lifecycleEvent.getState());
+        logger.log(Level.INFO, node.getThisAddress() + " is " + lifecycleEvent.getState());
         for (LifecycleListener lifecycleListener : lsLifecycleListeners) {
             lifecycleListener.stateChanged(lifecycleEvent);
         }
@@ -79,12 +76,12 @@ public class LifecycleServiceImpl implements LifecycleService {
     public boolean resume() {
         synchronized (lifecycleLock) {
             if (paused.get()) {
-                fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.RESTARTING));
+                fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.RESUMING));
             } else {
                 return false;
             }
             paused.set(false);
-            fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.RESTARTED));
+            fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.RESUMED));
             return true;
         }
     }

@@ -1970,22 +1970,35 @@ public class ClusterTest {
 
     @Test(timeout = 100000)
     public void testSplitBrainMulticast() throws Exception {
+        splitBrain(true);
+    }
+
+    @Test(timeout = 100000)
+    public void testSplitBrainTCP() throws Exception {
+        splitBrain(false);
+    }
+
+    public void splitBrain(boolean multicast) throws Exception {
         Config c1 = new Config();
-        c1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
-        c1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
+        c1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(multicast);
+        c1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(!multicast);
         c1.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
         c1.getNetworkConfig().getInterfaces().clear();
         c1.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
         c1.getNetworkConfig().getInterfaces().setEnabled(true);
         Config c2 = new Config();
-        c2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
-        c2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
+        c2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(multicast);
+        c2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(!multicast);
         c2.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
         c2.getNetworkConfig().getInterfaces().clear();
         c2.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
         c2.getNetworkConfig().getInterfaces().setEnabled(true);
         c1.getGroupConfig().setName("differentGroup");
         c2.getGroupConfig().setName("sameGroup");
+        c1.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
+        c1.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        c2.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
+        c2.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c1);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
         LifecycleCountingListener l = new LifecycleCountingListener();

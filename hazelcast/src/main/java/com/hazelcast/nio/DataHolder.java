@@ -20,13 +20,12 @@ package com.hazelcast.nio;
 import java.nio.ByteBuffer;
 
 public final class DataHolder {
-    final ByteBuffer buffer ;
+    final ByteBuffer buffer;
     final int size;
 
     public DataHolder(int size) {
         this.size = size;
         this.buffer = ByteBuffer.allocate(size);
-
     }
 
     public DataHolder(Data data) {
@@ -54,6 +53,13 @@ public final class DataHolder {
 
     public Data toData() {
         return new Data(buffer.array());
+    }
+
+    @Override
+    public String toString() {
+        return "DataHolder{" +
+                "size=" + size +
+                '}';
     }
 }
 

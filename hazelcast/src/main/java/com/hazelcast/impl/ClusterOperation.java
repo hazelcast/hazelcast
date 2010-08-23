@@ -21,6 +21,7 @@ public enum ClusterOperation {
     NONE(),
     RESPONSE(),
     HEARTBEAT(),
+    JOIN_CHECK(),
     REMOTELY_PROCESS(),
     REMOTELY_PROCESS_AND_RESPOND(),
     REMOTELY_CALLABLE_BOOLEAN(),

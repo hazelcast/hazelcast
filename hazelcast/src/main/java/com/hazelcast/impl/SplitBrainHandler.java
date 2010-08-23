@@ -19,29 +19,39 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Member;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 public class SplitBrainHandler implements Runnable {
     final Node node;
+    final ILogger logger;
     volatile long lastRun = 0;
     volatile boolean inProgress = false;
+    final long FIRST_RUN_DELAY_MILLIS;
+    final long NEXT_RUN_DELAY_MILLIS;
 
     public SplitBrainHandler(Node node) {
         this.node = node;
+        this.logger = node.getLogger(SplitBrainHandler.class.getName());
+        FIRST_RUN_DELAY_MILLIS = node.getGroupProperties().MERGE_FIRST_RUN_DELAY_SECONDS.getLong() * 1000L;
+        NEXT_RUN_DELAY_MILLIS = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong() * 1000L;
     }
 
     public void run() {
-        if (node.isMaster()) {
+        if (node.isMaster() && node.joined() && node.isActive()) {
             long now = System.currentTimeMillis();
             if (lastRun == 0) {
-                lastRun = now + 5000;
+                lastRun = now + FIRST_RUN_DELAY_MILLIS;
             }
-            if (!inProgress && (now - lastRun > 3000)) {
+            if (!inProgress && (now - lastRun > NEXT_RUN_DELAY_MILLIS) && node.clusterManager.shouldTryMerge()) {
                 inProgress = true;
                 node.executorManager.executeNow(new Runnable() {
                     public void run() {
@@ -75,28 +85,64 @@ public class SplitBrainHandler implements Runnable {
             try {
                 JoinInfo joinInfo = (JoinInfo) q.poll(3, TimeUnit.SECONDS);
                 node.multicastService.removeMulticastListener(listener);
-                if (joinInfo != null) {
-                    if (node.validateJoinRequest(joinInfo)) {
-                        boolean shouldJoin = false;
-                        int currentMemberCount = node.getClusterImpl().getMembers().size();
-                        if (joinInfo.getMemberCount() > currentMemberCount) {
-                            // I should join the other cluster
-                            shouldJoin = true;
-                        } else if (joinInfo.getMemberCount() == currentMemberCount) {
-                            // compare the hashes
-                            if (node.getThisAddress().hashCode() > joinInfo.address.hashCode()) {
-                                shouldJoin = true;
-                            }
-                        }
-                        if (shouldJoin) {
-                            node.factory.restart();
-                        }
-                    }
+                if (shouldJoin(joinInfo)) {
+                    node.factory.restart();
+                    return;
                 }
             } catch (InterruptedException ignored) {
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-    } 
+        if (tcpEnabled) {
+            final Collection<Address> colPossibleAddresses = node.getPossibleMembers();
+            colPossibleAddresses.remove(node.getThisAddress());
+            for (Member member : node.getClusterImpl().getMembers()) {
+                colPossibleAddresses.remove(((MemberImpl) member).getAddress());
+            }
+            if (colPossibleAddresses.size() == 0) {
+                return;
+            }
+            for (final Address possibleAddress : colPossibleAddresses) {
+                logger.log(Level.FINEST, node.getThisAddress() + " is connecting to " + possibleAddress);
+                node.connectionManager.getOrConnect(possibleAddress);
+            }
+            for (Address possibleAddress : colPossibleAddresses) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    return;
+                }
+                final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
+                if (conn != null) {
+                    JoinInfo response = node.clusterManager.checkJoin(conn);
+                    if (shouldJoin(response)) {
+                        // we will join so delay the merge checks.
+                        lastRun = System.currentTimeMillis() + FIRST_RUN_DELAY_MILLIS;
+                        node.factory.restart();
+                    }
+                    // trying one live connection is good enough
+                    // no need to try other connections
+                    return;
+                }
+            }
+        }
+    }
+
+    boolean shouldJoin(JoinInfo joinInfo) {
+        boolean shouldJoin = false;
+        if (joinInfo != null && node.validateJoinRequest(joinInfo)) {
+            int currentMemberCount = node.getClusterImpl().getMembers().size();
+            if (joinInfo.getMemberCount() > currentMemberCount) {
+                // I should join the other cluster
+                shouldJoin = true;
+            } else if (joinInfo.getMemberCount() == currentMemberCount) {
+                // compare the hashes
+                if (node.getThisAddress().hashCode() > joinInfo.address.hashCode()) {
+                    shouldJoin = true;
+                }
+            }
+        }
+        return shouldJoin;
+    }
 }

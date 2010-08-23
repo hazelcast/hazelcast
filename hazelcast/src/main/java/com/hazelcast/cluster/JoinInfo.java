@@ -19,12 +19,13 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.impl.NodeType;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.Packet;
 
 import java.io.*;
 import java.net.DatagramPacket;
 
-public class JoinInfo extends JoinRequest {
+public class JoinInfo extends JoinRequest implements DataSerializable {
 
     private static final long serialVersionUID = 1088129500826234941L;
     private boolean request = true;
@@ -41,20 +42,42 @@ public class JoinInfo extends JoinRequest {
     }
 
     public JoinInfo copy(boolean newRequest, Address newAddress) {
-        return new JoinInfo(newRequest, newAddress, groupName, groupPassword, nodeType, packetVersion, buildNumber, memberCount);
+        return new JoinInfo(newRequest, newAddress, groupName, groupPassword,
+                nodeType, packetVersion, buildNumber, memberCount);
+    }
+
+    @Override
+    public void readData(DataInput dis) throws IOException {
+        setRequest(dis.readBoolean());
+        address = new Address();
+        address.readData(dis);
+        groupName = dis.readUTF();
+        groupPassword = dis.readUTF();
+        packetVersion = dis.readByte();
+        buildNumber = dis.readInt();
+        memberCount = dis.readInt();
+    }
+
+    @Override
+    public void writeData(DataOutput out) throws IOException {
+        try {
+            out.writeBoolean(isRequest());
+            address.writeData(out);
+            out.writeUTF(groupName);
+            out.writeUTF(groupPassword);
+            out.writeByte(Packet.PACKET_VERSION);
+            out.writeInt(buildNumber);
+            out.writeInt(memberCount);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void writeToPacket(DatagramPacket packet) {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(bos);
         try {
-            dos.writeBoolean(isRequest());
-            address.writeData(dos);
-            dos.writeUTF(groupName);
-            dos.writeUTF(groupPassword);
-            dos.writeByte(Packet.PACKET_VERSION);
-            dos.writeInt(buildNumber);
-            dos.writeInt(memberCount);
+            writeData(dos);
             packet.setData(bos.toByteArray());
             packet.setLength(bos.size());
         } catch (IOException e) {
@@ -66,14 +89,7 @@ public class JoinInfo extends JoinRequest {
         ByteArrayInputStream bis = new ByteArrayInputStream(packet.getData(), 0, packet.getLength());
         DataInputStream dis = new DataInputStream(bis);
         try {
-            setRequest(dis.readBoolean());
-            address = new Address();
-            address.readData(dis);
-            groupName = dis.readUTF();
-            groupPassword = dis.readUTF();
-            packetVersion = dis.readByte();
-            buildNumber = dis.readInt();
-            memberCount = dis.readInt();
+            readData(dis);
         } catch (IOException e) {
             e.printStackTrace();
         }

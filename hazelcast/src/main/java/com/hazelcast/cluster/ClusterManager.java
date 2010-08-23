@@ -73,6 +73,19 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 releasePacket(packet);
             }
         });
+        registerPacketProcessor(ClusterOperation.JOIN_CHECK, new PacketProcessor() {
+            public void process(Packet packet) {
+                Connection conn = packet.conn;
+                Request request = Request.copy(packet);
+                JoinInfo joinInfo = (JoinInfo) toObject(request.value);
+                request.clearForResponse();
+                if (joinInfo != null && node.joined() && node.isActive() && node.validateJoinRequest(joinInfo)) {
+                    request.response = toData(node.createJoinInfo());
+                }
+                returnResponse(request, conn);
+                releasePacket(packet);
+            }
+        });
         registerPacketProcessor(ClusterOperation.REMOTELY_PROCESS_AND_RESPOND,
                 new PacketProcessor() {
                     public void process(Packet packet) {
@@ -144,6 +157,26 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                         sendResponse(packet);
                     }
                 });
+    }
+
+    public boolean shouldTryMerge() {
+        return !joinInProgress && setJoins.size() == 0;
+    }
+
+    public JoinInfo checkJoin(Connection conn) {
+        return new JoinCall(conn).checkJoin();
+    }
+
+    class JoinCall extends ConnectionAwareOp {
+        JoinCall(Connection target) {
+            super(target);
+        }
+
+        JoinInfo checkJoin() {
+            setLocal(ClusterOperation.JOIN_CHECK, "join", null, node.createJoinInfo(), 0, 0);
+            doOp();
+            return (JoinInfo) getResultAsObject();
+        }
     }
 
     public final void heartBeater() {

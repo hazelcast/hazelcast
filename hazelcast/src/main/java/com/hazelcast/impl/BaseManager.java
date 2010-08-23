@@ -26,6 +26,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
 import com.hazelcast.util.ResponseQueueFactory;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -587,6 +588,71 @@ public abstract class BaseManager {
         }
     }
 
+    public abstract class ConnectionAwareOp extends ResponseQueueCall {
+
+        final protected Connection targetConnection;
+
+        public ConnectionAwareOp(Connection targetConnection) {
+            this.targetConnection = targetConnection;
+        }
+
+        public void handleResponse(final Packet packet) {
+            if (packet.responseType == RESPONSE_REDO) {
+                redo();
+            } else {
+                handleNoneRedoResponse(packet);
+            }
+            releasePacket(packet);
+        }
+
+        @Override
+        public void onDisconnect(final Address dead) {
+        }
+
+        public void reset() {
+            super.reset();
+        }
+
+        @Override
+        public void beforeRedo() {
+            logger.log(Level.FINEST, request.operation + " BeforeRedo target " + targetConnection);
+            super.beforeRedo();
+        }
+
+        public void process() {
+            invoke();
+        }
+
+        protected void invoke() {
+            addCall(ConnectionAwareOp.this);
+            final Packet packet = obtainPacket();
+            request.setPacket(packet);
+            packet.callId = getCallId();
+            request.callId = getCallId();
+            final boolean sent = send(packet, targetConnection);
+            if (!sent) {
+                logger.log(Level.FINEST, ConnectionAwareOp.this + " Packet cannot be sent to " + targetConnection);
+                releasePacket(packet);
+                packetNotSent();
+            }
+        }
+
+        protected void packetNotSent() {
+            setResult(new IOException("Connection is lost!"));
+        }
+
+        @Override
+        public String toString() {
+            return this.getClass().getSimpleName() + "{[" +
+                    "" + getCallId() +
+                    "], firstEnqueue=" + (System.currentTimeMillis() - firstEnqueueTime) / 1000 +
+                    "sn., enqueueCount=" + enqueueCount +
+                    ", " + request +
+                    ", target=" + getTarget() +
+                    '}';
+        }
+    }
+
     public abstract class TargetAwareOp extends ResponseQueueCall {
 
         protected Address target = null;
@@ -814,7 +880,7 @@ public abstract class BaseManager {
     }
 
     public boolean enqueueAndWait(final Processable processable, final int seconds) {
-         return node.clusterService.enqueueAndWait(processable, seconds);
+        return node.clusterService.enqueueAndWait(processable, seconds);
     }
 
     public Address getKeyOwner(Data key) {
@@ -949,7 +1015,7 @@ public abstract class BaseManager {
                                             final boolean skipSuperClient, final int distance) {
         return getNextMemberAfter(lsMembers, address, skipSuperClient, distance);
     }
-    
+
     protected MemberImpl getNextMemberAfter(final List<MemberImpl> lsMembers,
                                             final Address address, final boolean skipSuperClient, final int distance) {
         final int size = lsMembers.size();

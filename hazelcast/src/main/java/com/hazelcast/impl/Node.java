@@ -426,7 +426,7 @@ public class Node {
         joined = true;
     }
 
-    JoinInfo createJoinInfo() {
+    public JoinInfo createJoinInfo() {
         return new JoinInfo(true, address, config.getGroupConfig().getName(),
                 config.getGroupConfig().getPassword(), getLocalNodeType(),
                 Packet.PACKET_VERSION, buildNumber, clusterImpl.getMembers().size());
@@ -641,7 +641,7 @@ public class Node {
                     masterAddress = null;
                     tryCount = 0;
                 }
-                Thread.sleep(500);
+                Thread.sleep(500L);
             } catch (final Exception e) {
                 logger.log(Level.FINEST, "multicast join", e);
             }
@@ -676,7 +676,7 @@ public class Node {
                 if (colPossibleAddresses.size() == 0) {
                     break;
                 }
-                Thread.sleep(1000);
+                Thread.sleep(1000L);
                 numberOfSeconds++;
                 int numberOfJoinReq = 0;
                 logger.log(Level.FINE, "we are going to try to connect to each lockAddress, but no more than five times");
@@ -711,7 +711,17 @@ public class Node {
                             logger.log(Level.FINEST, "number of join request is greater than 5, no join request will be sent for " + possibleAddress + " the second time");
                         }
                     }
-                    Thread.sleep(2000);
+                    long sleepTime = 3000L;
+                    for (Address possibleAddress : colPossibleAddresses) {
+                        if (address.hashCode() > possibleAddress.hashCode()) {
+                            sleepTime = 6000L;
+                            break;
+                        } else if(address.hashCode() == possibleAddress.hashCode()) {
+                            sleepTime = 3000L + ((int) (Math.random() * 10) * 1000L);
+                            break;
+                        }
+                    }
+                    Thread.sleep(sleepTime);
                     if (masterAddress == null) { // no-one knows the isMaster
                         boolean masterCandidate = true;
                         for (Address address : colPossibleAddresses) {
@@ -750,7 +760,7 @@ public class Node {
             Connection conn = null;
             while (conn == null) {
                 conn = connectionManager.getOrConnect(requiredAddress);
-                Thread.sleep(1000);
+                Thread.sleep(2000L);
             }
             while (!joined) {
                 final Connection connection = connectionManager.getOrConnect(requiredAddress);
@@ -759,7 +769,7 @@ public class Node {
                 }
                 logger.log(Level.FINEST, "Sending joinRequest " + requiredAddress);
                 clusterManager.sendJoinRequest(requiredAddress);
-                Thread.sleep(2000);
+                Thread.sleep(3000L);
             }
         } catch (final Exception e) {
             e.printStackTrace();
