@@ -1554,7 +1554,6 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         public void afterExecute(Request request) {
-            System.out.println(thisAddress + " merge after execute " + request.response);
             if (request.response != Boolean.FALSE) {
                 doOperation(request);
             }
@@ -1764,7 +1763,6 @@ public class ConcurrentMapManager extends BaseManager {
                 cmap.store.store(toObject(request.key), toObject(request.value));
                 request.response = Boolean.TRUE;
             } else if (request.operation == CONCURRENT_MAP_MERGE) {
-                System.out.println(request.name + " merge execution");
                 Record existing = cmap.getRecord(request.key);
                 RecordEntry existingEntry = (existing == null) ? null : cmap.getRecordEntry(existing);
                 DataRecordEntry newEntry = (DataRecordEntry) toObject(request.value);
@@ -1778,7 +1776,6 @@ public class ConcurrentMapManager extends BaseManager {
                         success = (request.response == null);
                     }
                 }
-                System.out.println(request.name + " success  " + success);
                 if (success) {
                     request.value = toData(winner);
                     request.response = Boolean.TRUE;

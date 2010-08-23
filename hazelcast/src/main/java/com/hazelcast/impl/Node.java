@@ -711,18 +711,21 @@ public class Node {
                             logger.log(Level.FINEST, "number of join request is greater than 5, no join request will be sent for " + possibleAddress + " the second time");
                         }
                     }
-                    long sleepTime = 3000L;
+                    int maxTryCount = 3;
                     for (Address possibleAddress : colPossibleAddresses) {
                         if (address.hashCode() > possibleAddress.hashCode()) {
-                            sleepTime = 6000L;
+                            maxTryCount = 6;
                             break;
-                        } else if(address.hashCode() == possibleAddress.hashCode()) {
-                            sleepTime = 3000L + ((int) (Math.random() * 10) * 1000L);
+                        } else if (address.hashCode() == possibleAddress.hashCode()) {
+                            maxTryCount = 3 + ((int) (Math.random() * 10));
                             break;
                         }
                     }
-                    Thread.sleep(sleepTime);
-                    if (masterAddress == null) { // no-one knows the isMaster
+                    int tryCount = 0;
+                    while (tryCount++ < maxTryCount && (masterAddress == null)) {
+                        Thread.sleep(1000L);
+                    }
+                    if (masterAddress == null) { // no-one knows the master
                         boolean masterCandidate = true;
                         for (Address address : colPossibleAddresses) {
                             if (this.address.hashCode() > address.hashCode()) {

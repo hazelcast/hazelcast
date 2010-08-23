@@ -121,10 +121,8 @@ public class LifecycleServiceImpl implements LifecycleService {
                     public void run() {
                         try {
                             ConcurrentMapManager.MPut mput = node.concurrentMapManager.new MPut();
-                            System.out.println("sending merge");
                             mput.merge(ownedRecord);
                             latch.countDown();
-                            System.out.println("merge complete " + latch.getCount());
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
