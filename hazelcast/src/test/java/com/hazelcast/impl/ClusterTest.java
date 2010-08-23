@@ -1123,7 +1123,7 @@ public class ClusterTest {
         long initialUsedMemory = getUsedMemoryAsMB();
         Config config = new XmlConfigBuilder().build();
         MapConfig mapConfig = config.getMapConfig("default");
-        mapConfig.setTimeToLiveSeconds(10);
+        mapConfig.setTimeToLiveSeconds(20);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
@@ -1161,7 +1161,7 @@ public class ClusterTest {
         IMap map1 = h1.getMap("default");
         final int size = 20000;
         for (int i = 0; i < size; i++) {
-            map1.put(i, new byte[10000], 10, TimeUnit.SECONDS);
+            map1.put(i, new byte[10000], 20, TimeUnit.SECONDS);
         }
         long usedMemoryStart = getUsedMemoryAsMB();
         assertTrue("UsedMemoryStart: " + usedMemoryStart, usedMemoryStart > 300);
@@ -1185,7 +1185,7 @@ public class ClusterTest {
         long initialUsedMemory = getUsedMemoryAsMB();
         Config config = new XmlConfigBuilder().build();
         MapConfig mapConfig = config.getMapConfig("default");
-        mapConfig.setMaxIdleSeconds(10);
+        mapConfig.setMaxIdleSeconds(20);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);

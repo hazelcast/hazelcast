@@ -25,7 +25,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.TestUtility.getHazelcastClient;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class HazelcastClientLockTest {
 
@@ -42,18 +43,17 @@ public class HazelcastClientLockTest {
         final ILock lock = hClient.getLock("testLockUnlock");
         lock.lock();
         final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch unlockLatch = new CountDownLatch(1);
         new Thread(new Runnable() {
-
             public void run() {
                 assertFalse(lock.tryLock());
+                unlockLatch.countDown();
                 lock.lock();
                 latch.countDown();
             }
         }).start();
-        Thread.sleep(100);
-        assertEquals(1, latch.getCount());
+        assertTrue(unlockLatch.await(10, TimeUnit.SECONDS));
         lock.unlock();
-        Thread.sleep(100);
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
@@ -64,10 +64,12 @@ public class HazelcastClientLockTest {
         assertTrue(lock.tryLock());
         lock.lock();
         final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch unlockLatch = new CountDownLatch(1);
         new Thread(new Runnable() {
 
             public void run() {
                 assertFalse(lock.tryLock());
+                unlockLatch.countDown();
                 try {
                     assertTrue(lock.tryLock(10, TimeUnit.SECONDS));
                 } catch (InterruptedException e) {
@@ -76,11 +78,9 @@ public class HazelcastClientLockTest {
                 latch.countDown();
             }
         }).start();
-        Thread.sleep(100);
-        assertEquals(1, latch.getCount());
+        assertTrue(unlockLatch.await(10, TimeUnit.SECONDS));
         lock.unlock();
         lock.unlock();
-        Thread.sleep(100);
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
