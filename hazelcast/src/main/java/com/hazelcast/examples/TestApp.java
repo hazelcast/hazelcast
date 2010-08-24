@@ -39,7 +39,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private ITopic<Object> topic = null;
 
-    private IMap<Object,Object> map = null;
+    private IMap<Object, Object> map = null;
 
     private ISet<Object> set = null;
 
@@ -55,66 +55,71 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private volatile LineReader lineReader;
 
+    private volatile boolean running = false;
+
     public TestApp(HazelcastInstance hazelcast) {
         this.hazelcast = hazelcast;
     }
 
     public IQueue<Object> getQueue() {
-    	if(queue==null){
-    		queue = hazelcast.getQueue(namespace);
-    	}
-		return queue;
-	}
+        if (queue == null) {
+            queue = hazelcast.getQueue(namespace);
+        }
+        return queue;
+    }
 
-	public ITopic<Object> getTopic() {
-		if(topic == null){
-			topic = hazelcast.getTopic(namespace);
-		}
-		return topic;
-	}
+    public ITopic<Object> getTopic() {
+        if (topic == null) {
+            topic = hazelcast.getTopic(namespace);
+        }
+        return topic;
+    }
 
-	public IMap<Object,Object> getMap() {
-		if(map == null){
-			map = hazelcast.getMap(namespace);
-		}
-		return map;
-	}
+    public IMap<Object, Object> getMap() {
+        if (map == null) {
+            map = hazelcast.getMap(namespace);
+        }
+        return map;
+    }
 
-	public ISet<Object> getSet() {
-		if(set==null){
-			set = hazelcast.getSet(namespace);
-		}
-		return set;
-	}
+    public ISet<Object> getSet() {
+        if (set == null) {
+            set = hazelcast.getSet(namespace);
+        }
+        return set;
+    }
 
-	public IList<Object> getList() {
-		if(list==null){
-			list = hazelcast.getList(namespace);
-		}
-		return list;
-	}
+    public IList<Object> getList() {
+        if (list == null) {
+            list = hazelcast.getList(namespace);
+        }
+        return list;
+    }
 
-	public void setHazelcast(HazelcastInstance hazelcast) {
-		this.hazelcast = hazelcast;
-		map = null;
-		list = null;
-		set = null;
-		queue = null;
-		topic = null;
-	}
+    public void setHazelcast(HazelcastInstance hazelcast) {
+        this.hazelcast = hazelcast;
+        map = null;
+        list = null;
+        set = null;
+        queue = null;
+        topic = null;
+    }
 
-
-
-	public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
         TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(null));
         testApp.start(args);
     }
 
+    public void stop() {
+        running = false;
+    }
+
     public void start(String[] args) throws Exception {
-        if(lineReader == null){
+        if (lineReader == null) {
             lineReader = new DefaultLineReader();
         }
-        while (true) {
+        running = true;
+        while (running) {
             print("hazelcast[" + namespace + "] > ");
             try {
                 final String command = lineReader.readLine();
@@ -125,7 +130,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    public void setLineReader(LineReader lineReader){
+    public void setLineReader(LineReader lineReader) {
         this.lineReader = lineReader;
     }
 
@@ -442,6 +447,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     private void handleMapPut(String[] args) {
         println(getMap().put(args[1], args[2]));
     }
+
     private void handleMapPutAsync(String[] args) {
         try {
             println(getMap().putAsync(args[1], args[2]).get());
@@ -463,7 +469,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     private void handleMapGet(String[] args) {
         println(getMap().get(args[1]));
     }
-
 
     private void handleMapGetAsync(String[] args) {
         try {
@@ -1195,6 +1200,4 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         if (!silent)
             System.out.print(obj);
     }
-
-
 }

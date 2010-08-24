@@ -28,20 +28,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.hazelcast.nio.IOUtil.toData;
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class ClientEndpoint implements EntryListener, InstanceListener, MembershipListener, ConnectionListener {
     final Connection conn;
     final private Map<Integer, CallContext> callContexts = new HashMap<Integer, CallContext>();
-    final ConcurrentMap<String, ConcurrentMap<Object, EntryEvent>> listeneds = new ConcurrentHashMap<String, ConcurrentMap<Object, EntryEvent>>();
     final Map<ITopic, MessageListener<Object>> messageListeners = new HashMap<ITopic, MessageListener<Object>>();
     final Map<Integer, Map<IMap, List<Data>>> locks = new ConcurrentHashMap<Integer, Map<IMap, List<Data>>>();
     final List<IMap> listeningMaps = new ArrayList<IMap>();
-    final List<Map.Entry<Object, IMap>> listeningKeysOfMaps = new ArrayList<Map.Entry<Object, IMap>>();
+    final List<Map.Entry<IMap, Object>> listeningKeysOfMaps = new ArrayList<Map.Entry<IMap, Object>>();
 
     ClientEndpoint(Connection conn) {
         this.conn = conn;
@@ -57,24 +54,42 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
         return context;
     }
 
-    public void addThisAsListener(IMap map, Data key, boolean includeValue) {
-        if (key == null) {
+    public synchronized void addThisAsListener(IMap map, Data key, boolean includeValue) {
+        if (!listeningMaps.contains(map) && !(listeningKeyExist(map, key))) {
             map.addEntryListener(this, includeValue);
+        }
+        if (key == null) {
             listeningMaps.add(map);
         } else {
-            Object keyAsObject = toObject(key);
-            map.addEntryListener(this, keyAsObject, includeValue);
-            listeningKeysOfMaps.add(new Entry(keyAsObject, map));
+            listeningKeysOfMaps.add(new Entry(map, key));
         }
     }
 
-    private ConcurrentMap<Object, EntryEvent> getEventProcessedLog(String name) {
-        ConcurrentMap<Object, EntryEvent> eventProcessedLog = listeneds.get(name);
-        if (eventProcessedLog == null) {
-            eventProcessedLog = new ConcurrentHashMap<Object, EntryEvent>();
-            listeneds.putIfAbsent(name, eventProcessedLog);
+    public synchronized void removeThisListener(IMap map, Data key) {
+        List<Map.Entry<IMap, Object>> entriesToRemove = new ArrayList<Map.Entry<IMap, Object>>();
+        if (key == null) {
+            listeningMaps.remove(map);
+        } else {
+            for (Map.Entry<IMap, Object> entry : listeningKeysOfMaps) {
+                if (entry.getKey().equals(map) && entry.getValue().equals(key)) {
+                    entriesToRemove.add(entry);
+                    break;
+                }
+            }
         }
-        return eventProcessedLog;
+        listeningKeysOfMaps.removeAll(entriesToRemove);
+        if (!listeningMaps.contains(map) && !(listeningKeyExist(map, key))) {
+            map.removeEntryListener(this);
+        }
+    }
+
+    private boolean listeningKeyExist(IMap map, Object key) {
+        for (Map.Entry<IMap, Object> entry : listeningKeysOfMaps) {
+            if (entry.getKey().equals(map) && (key == null || entry.getValue().equals(key))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -135,12 +150,6 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
      * @param event
      */
     private void processEvent(EntryEvent event) {
-        final Object key = event.getKey();
-        Map<Object, EntryEvent> eventProcessedLog = getEventProcessedLog(event.getName());
-        if (eventProcessedLog.get(key) != null && eventProcessedLog.get(key) == event) {
-            return;
-        }
-        eventProcessedLog.put(key, event);
         Packet packet = createEntryEventPacket(event);
         sendPacket(packet);
     }
@@ -191,8 +200,8 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
                 map.removeEntryListener(this);
             }
             for (Map.Entry e : listeningKeysOfMaps) {
-                IMap m = (IMap) e.getValue();
-                m.removeEntryListener(this, e.getKey());
+                IMap m = (IMap) e.getKey();
+                m.removeEntryListener(this, e.getValue());
             }
             for (ITopic topic : messageListeners.keySet()) {
                 topic.removeMessageListener(messageListeners.get(topic));

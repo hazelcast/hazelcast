@@ -792,11 +792,7 @@ public class ClientService implements ConnectionListener {
             ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
             if (getInstanceType(packet.name).equals(InstanceType.MAP)) {
                 IMap map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
-                if (packet.getKeyData() == null) {
-                    map.removeEntryListener(clientEndpoint);
-                } else {
-                    map.removeEntryListener(clientEndpoint, packet.getKeyData());
-                }
+                clientEndpoint.removeThisListener(map, packet.getKeyData());
             } else if (getInstanceType(packet.name).equals(InstanceType.TOPIC)) {
                 ITopic topic = (ITopic) node.factory.getOrCreateProxyByName(packet.name);
                 topic.removeMessageListener(clientEndpoint.messageListeners.remove(topic));
