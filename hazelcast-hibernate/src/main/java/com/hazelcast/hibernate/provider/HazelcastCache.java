@@ -58,13 +58,20 @@ public final class HazelcastCache implements Cache {
     }
 
     public void destroy() throws CacheException {
-        cache.destroy();
+//    	Destroy of the cache should not propagate 
+//    	to other nodes of cluster.
+//    	Do nothing on destroy.
     }
 
     public long getElementCountInMemory() {
         return cache.size();
     }
 
+    /**
+     * Hazelcast does not support pushing elements to disk.
+     *
+     * @return -1 this value means "unsupported"
+     */
     public long getElementCountOnDisk() {
         return -1L;
     }

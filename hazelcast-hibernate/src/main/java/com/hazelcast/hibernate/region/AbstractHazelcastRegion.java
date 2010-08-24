@@ -20,7 +20,6 @@ package com.hazelcast.hibernate.region;
 import java.util.Map;
 
 import org.hibernate.cache.CacheException;
-import org.hibernate.cache.Region;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -47,11 +46,10 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
         return cache;
     }
 
-    /**
-     * Calls <code>{@link IMap#destroy()}</code> on the given <code>{@link Region}</code>.
-     */
     public void destroy() throws CacheException {
-        getCache().destroy();
+//    	Destroy of the region should not propagate 
+//    	to other nodes of cluster.
+//    	Do nothing on destroy.
     }
 
     /**
@@ -64,7 +62,7 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
     /**
      * Hazelcast does not support pushing elements to disk.
      *
-     * @return -1 (according to <code>{@link Region}</code>, this value means "unsupported"
+     * @return -1 this value means "unsupported"
      */
     public long getElementCountOnDisk() {
         return -1;
