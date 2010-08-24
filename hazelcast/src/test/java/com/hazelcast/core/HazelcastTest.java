@@ -557,6 +557,36 @@ public class HazelcastTest {
     }
 
     @Test
+    public void testQueueTake() {
+        IQueue<String> queue = Hazelcast.getQueue("testQueueTake");
+        final Thread takeThread = Thread.currentThread();
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Thread.sleep(3000);
+                    takeThread.interrupt();
+                } catch (InterruptedException e) {
+                    fail();
+                }
+            }
+        }).start();
+        CountDownLatch latchException = new CountDownLatch(1);
+        try {
+            queue.take();
+            fail();
+        } catch (InterruptedException e) {
+            latchException.countDown();
+        } catch (RuntimeException e) {
+            fail();
+        }
+        try {
+            assertTrue(latchException.await(20, TimeUnit.SECONDS));
+        } catch (InterruptedException e) {
+            fail();
+        }
+    }
+
+    @Test
     public void testQueueAddAll() {
         IQueue<String> queue = Hazelcast.getQueue("testQueueAddAll");
         String[] items = new String[]{"one", "two", "three", "four"};

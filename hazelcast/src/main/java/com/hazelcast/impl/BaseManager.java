@@ -434,12 +434,16 @@ public abstract class BaseManager {
                     }
                     node.checkNodeState();
                 } catch (InterruptedException e) {
-                    if (node.factory.restarted) {
-                        throw new RuntimeException();
-                    } else {
-                        throw new RuntimeInterruptedException();
-                    }
+                    handleInterruptedException();
                 }
+            }
+        }
+
+        private void handleInterruptedException() {
+            if (node.factory.restarted) {
+                throw new RuntimeException();
+            } else {
+                throw new RuntimeInterruptedException();
             }
         }
 
@@ -450,6 +454,9 @@ public abstract class BaseManager {
 
         protected Object getRedoAwareResult() {
             Object result = waitAndGetResult();
+            if (Thread.interrupted()) {
+                handleInterruptedException();
+            }
             if (result == OBJECT_REDO) {
                 request.redoCount++;
                 if (request.redoCount > 19 && (request.redoCount % 10 == 0)) {
@@ -487,12 +494,13 @@ public abstract class BaseManager {
                     try {
                         l.await();
                     } catch (InterruptedException e) {
+                        handleInterruptedException();
                     }
                 }
                 try {
                     Thread.sleep(redoWaitMillis);
                 } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                    handleInterruptedException();
                 }
                 beforeRedo();
                 doOp();
