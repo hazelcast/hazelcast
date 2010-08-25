@@ -311,6 +311,8 @@ public class Node {
             long start = System.currentTimeMillis();
             joined = false;
             setActive(false);
+            logger.log(Level.FINEST, "Shutting down the clientService");
+            clientService.reset();
             logger.log(Level.FINEST, "Shutting down the NIO socket selector for input");
             inSelector.shutdown();
             logger.log(Level.FINEST, "Shutting down the NIO socket selector for output");
@@ -325,8 +327,6 @@ public class Node {
             connectionManager.shutdown();
             logger.log(Level.FINEST, "Shutting down the concurrentMapManager");
             concurrentMapManager.reset();
-            logger.log(Level.FINEST, "Shutting down the clientService");
-            clientService.reset();
             logger.log(Level.FINEST, "Shutting down the executorManager");
             executorManager.stop();
             textCommandService.stop();

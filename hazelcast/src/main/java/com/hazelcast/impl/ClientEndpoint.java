@@ -210,16 +210,22 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     }
 
     public void locked(IMap<Object, Object> map, Data keyData, int threadId) {
-        Map<IMap, List<Data>> mapOfLocks;
         if (!locks.containsKey(threadId)) {
-            mapOfLocks = new ConcurrentHashMap<IMap, List<Data>>();
-            locks.put(threadId, mapOfLocks);
-        } else {
-            mapOfLocks = locks.get(threadId);
+            synchronized (locks) {
+                if (!locks.containsKey(threadId)) {
+                    Map<IMap, List<Data>> mapOfLocks = new ConcurrentHashMap<IMap, List<Data>>();
+                    locks.put(threadId, mapOfLocks);
+                }
+            }
         }
+        Map<IMap, List<Data>> mapOfLocks = locks.get(threadId);
         if (!mapOfLocks.containsKey(map)) {
-            List<Data> list = new CopyOnWriteArrayList<Data>();
-            mapOfLocks.put(map, list);
+            synchronized (locks.get(threadId)) {
+                if (!mapOfLocks.containsKey(map)) {
+                    List<Data> list = new CopyOnWriteArrayList<Data>();
+                    mapOfLocks.put(map, list);
+                }
+            }
         }
         mapOfLocks.get(map).add(keyData);
     }

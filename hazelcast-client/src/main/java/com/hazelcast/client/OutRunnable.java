@@ -85,7 +85,7 @@ public class OutRunnable extends IORunnable {
 
     public void enQueue(Call call) {
         try {
-            if(running == false){
+            if (running == false) {
                 throw new NoMemberAvailableException("Client is shutdown either explicitely or implicitely " +
                         "when there is no member available to connect.");
             }

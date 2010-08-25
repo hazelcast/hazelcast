@@ -207,7 +207,7 @@ public class DynamicClusterTest {
         map.put("hello", "world");
         map.put("hello", "new world");
         map.remove("hello");
-        Thread.sleep(100);
+        Thread.sleep(1000);
         assertEquals(1, entryAddLatch.getCount());
         assertEquals(1, entryUpdatedLatch.getCount());
         assertEquals(1, entryRemovedLatch.getCount());
@@ -248,9 +248,8 @@ public class DynamicClusterTest {
                 }
             }).start();
         }
-        Thread.sleep(1000);
         System.out.println("FINISHED");
-        assertTrue(latch.await(2, SECONDS));
+        assertTrue(latch.await(5, SECONDS));
     }
 
     @Test
@@ -399,13 +398,13 @@ public class DynamicClusterTest {
         final Map<String, Member> map = new HashMap<String, Member>();
         client.getCluster().addMembershipListener(new MembershipListener() {
             public void memberAdded(MembershipEvent membershipEvent) {
-                added.countDown();
                 map.put("Added", membershipEvent.getMember());
+                added.countDown();
             }
 
             public void memberRemoved(MembershipEvent membershipEvent) {
-                removed.countDown();
                 map.put("Removed", membershipEvent.getMember());
+                removed.countDown();
             }
         });
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
@@ -709,6 +708,29 @@ public class DynamicClusterTest {
         Thread.sleep(5000);
         h.shutdown();
         assertTrue(l2.await(10, SECONDS));
+    }
+
+    @Test
+    public void throwsRuntimeExceptionWhenNoMemberToConnectTrwyWithLocks() {
+        try {
+            HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+            HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+            Map realMap = h1.getMap("default");
+            Map<Integer, HazelcastInstance> memberMap = getMapOfClusterMembers(h1);
+            client = getHazelcastClient(h1, h3);
+            Map map = client.getMap("default");
+            int counter = 0;
+            realMap.get("currentIteratedKey");
+            while (counter < 2) {
+                map.put("currentIteratedKey", counter);
+                assertEquals(counter, map.get("currentIteratedKey"));
+                assertEquals(counter, realMap.get("currentIteratedKey"));
+                memberMap.get(client.getConnectionManager().getConnection().getAddress().getPort()).shutdown();
+                counter++;
+            }
+        } catch (Exception e) {
+            System.out.println("Here is the exception: " + e);
+        }
     }
 
     @Test
