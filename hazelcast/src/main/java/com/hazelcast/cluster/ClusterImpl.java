@@ -144,6 +144,7 @@ public class ClusterImpl implements Cluster {
         }
     }
 
+
     public void addMembershipListener(MembershipListener listener) {
         listeners.add(listener);
     }

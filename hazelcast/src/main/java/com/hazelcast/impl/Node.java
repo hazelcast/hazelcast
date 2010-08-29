@@ -191,7 +191,7 @@ public class Node {
         topicManager = new TopicManager(this);
         clusterService.enqueueAndReturn(new Processable() {
             public void process() {
-                clusterManager.addMember(getThisAddress(), NodeType.MEMBER);
+                clusterManager.addMember(getThisAddress(), localNodeType);
             }
         });
         textCommandService = new TextCommandServiceImpl(this);

@@ -78,4 +78,12 @@ public class MemberInfo implements DataSerializable {
             return false;
         return true;
     }
+
+    @Override
+    public String toString() {
+        return "MemberInfo{" +
+                "address=" + address +
+                ", nodeType=" + nodeType +
+                '}';
+    }
 }

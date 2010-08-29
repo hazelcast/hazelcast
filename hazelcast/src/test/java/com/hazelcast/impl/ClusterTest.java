@@ -226,12 +226,24 @@ public class ClusterTest {
         configSuperClient.setSuperClient(true);
         HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(new Config());
         final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(configSuperClient);
-        Map map = hSuper.getMap("default");
-        assertNull(map.put("1", "value"));
+        IMap mapSuper = hSuper.getMap("default");
+        IMap mapNormal = hNormal.getMap("default");
+        for (int i = 0; i < 1000; i++) {
+            mapNormal.put("item" + i, "value" + i);
+        }
+        for (int i = 1000; i < 2000; i++) {
+            mapSuper.put("item" + i, "value" + i);
+        }
         Set<Partition> partitions2 = hSuper.getPartitionService().getPartitions();
         for (Partition partition : partitions2) {
             assertEquals(partition.getOwner(), hNormal.getCluster().getLocalMember());
         }
+        assertEquals(2000, mapNormal.size());
+        assertEquals(2000, mapSuper.size());
+        assertEquals(0, mapSuper.getLocalMapStats().getOwnedEntryCount());
+        assertEquals(0, mapSuper.getLocalMapStats().getBackupEntryCount());
+        assertEquals(2000, mapNormal.getLocalMapStats().getOwnedEntryCount());
+        assertEquals(0, mapNormal.getLocalMapStats().getBackupEntryCount());
         hNormal.shutdown();
         Thread.sleep(3000);
         Set<Partition> partitions = hSuper.getPartitionService().getPartitions();
@@ -243,7 +255,7 @@ public class ClusterTest {
         for (Partition partition : partitions) {
             assertEquals(hNormal.getCluster().getLocalMember(), partition.getOwner());
         }
-        assertNull(map.put("1", "value"));
+        assertNull(mapSuper.put("1", "value"));
         hSuper.shutdown();
         partitions = hNormal.getPartitionService().getPartitions();
         for (Partition partition : partitions) {

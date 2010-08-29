@@ -122,6 +122,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
         address = new Address();
         address.readData(in);
         nodeType = NodeType.create(in.readInt());
+        this.lastRead = System.currentTimeMillis();
     }
 
     public void writeData(DataOutput out) throws IOException {
@@ -135,9 +136,12 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
         sb.append(address.getHost());
         sb.append(":");
         sb.append(address.getPort());
-        sb.append("] ");
+        sb.append("]");
         if (localMember) {
-            sb.append("this ");
+            sb.append(" this");
+        }
+        if (nodeType == NodeType.SUPER_CLIENT) {
+            sb.append(" lite");
         }
         return sb.toString();
     }
