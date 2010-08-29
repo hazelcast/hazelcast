@@ -48,25 +48,16 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
 
     @Override
     public void readData(DataInput dis) throws IOException {
+        super.readData(dis);
         setRequest(dis.readBoolean());
-        address = new Address();
-        address.readData(dis);
-        groupName = dis.readUTF();
-        groupPassword = dis.readUTF();
-        packetVersion = dis.readByte();
-        buildNumber = dis.readInt();
         memberCount = dis.readInt();
     }
 
     @Override
     public void writeData(DataOutput out) throws IOException {
         try {
+            super.writeData(out);
             out.writeBoolean(isRequest());
-            address.writeData(out);
-            out.writeUTF(groupName);
-            out.writeUTF(groupPassword);
-            out.writeByte(Packet.PACKET_VERSION);
-            out.writeInt(buildNumber);
             out.writeInt(memberCount);
         } catch (IOException e) {
             e.printStackTrace();

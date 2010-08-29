@@ -297,7 +297,7 @@ public class Node {
 
     public void setMasterAddress(final Address master) {
         if (master != null) {
-            logger.log(Level.FINE, "** setting isMaster lockAddress to " + master.toString());
+            logger.log(Level.FINE, "** setting master address to " + master.toString());
         }
         masterAddress = master;
     }
@@ -521,7 +521,7 @@ public class Node {
                 port = Integer.parseInt(host.substring(indexColon + 1));
                 host = host.substring(0, indexColon);
             }
-            // check if host is hostname of ip lockAddress
+            // check if host is hostname of ip address
             final boolean ip = isIP(host);
             try {
                 if (ip) {
@@ -590,7 +590,7 @@ public class Node {
     }
 
     void setAsMaster() {
-        logger.log(Level.FINE, "This node is being set as the isMaster");
+        logger.log(Level.FINEST, "This node is being set as the master");
         masterAddress = address;
         logger.log(Level.FINEST, "adding member myself");
         clusterManager.addMember(address, getLocalNodeType()); // add
@@ -623,7 +623,7 @@ public class Node {
                     sb.append("\n");
                     sb.append("===========================");
                     sb.append("\n");
-                    sb.append("Couldn't connect to discovered isMaster! tryCount: " + tryCount);
+                    sb.append("Couldn't connect to discovered master! tryCount: " + tryCount);
                     sb.append("\n");
                     sb.append("thisAddress: " + address);
                     sb.append("\n");
@@ -679,7 +679,7 @@ public class Node {
                 Thread.sleep(1000L);
                 numberOfSeconds++;
                 int numberOfJoinReq = 0;
-                logger.log(Level.FINE, "we are going to try to connect to each lockAddress, but no more than five times");
+                logger.log(Level.FINEST, "we are going to try to connect to each address, but no more than five times");
                 for (Address possibleAddress : colPossibleAddresses) {
                     logger.log(Level.FINEST, "connection attempt " + numberOfJoinReq + " to " + possibleAddress);
                     final Connection conn = connectionManager.getOrConnect(possibleAddress);
@@ -695,22 +695,10 @@ public class Node {
             }
             logger.log(Level.FINEST, "FOUND " + found);
             if (!found) {
-                logger.log(Level.FINEST, "This node will assume isMaster role since no possible member where connected to");
+                logger.log(Level.FINEST, "This node will assume master role since no possible member where connected to");
                 setAsMaster();
             } else {
                 while (!joined) {
-                    int numberOfJoinReq = 0;
-                    colPossibleAddresses.removeAll(failedConnections);
-                    for (Address possibleAddress : colPossibleAddresses) {
-                        final Connection conn = connectionManager.getOrConnect(possibleAddress);
-                        if (conn != null && numberOfJoinReq < 5) {
-                            logger.log(Level.FINEST, "sending join request for " + possibleAddress);
-                            clusterManager.sendJoinRequest(possibleAddress);
-                            numberOfJoinReq++;
-                        } else {
-                            logger.log(Level.FINEST, "number of join request is greater than 5, no join request will be sent for " + possibleAddress + " the second time");
-                        }
-                    }
                     int maxTryCount = 3;
                     for (Address possibleAddress : colPossibleAddresses) {
                         if (address.hashCode() > possibleAddress.hashCode()) {
@@ -723,7 +711,12 @@ public class Node {
                     }
                     int tryCount = 0;
                     while (tryCount++ < maxTryCount && (masterAddress == null)) {
+                        connectAndSendJoinRequest(colPossibleAddresses);
                         Thread.sleep(1000L);
+                    }
+                    while (masterAddress != null && !joined) {
+                        Thread.sleep(1000L);
+                        clusterManager.sendJoinRequest(masterAddress);
                     }
                     if (masterAddress == null) { // no-one knows the master
                         boolean masterCandidate = true;
@@ -733,7 +726,7 @@ public class Node {
                             }
                         }
                         if (masterCandidate) {
-                            logger.log(Level.FINEST, "I am the isMaster candidate, setting as isMaster");
+                            logger.log(Level.FINEST, "I am the master candidate, setting as master");
                             setAsMaster();
                         }
                     }
@@ -744,6 +737,21 @@ public class Node {
         } catch (Exception e) {
             e.printStackTrace();
             logger.log(Level.SEVERE, e.getMessage(), e);
+        }
+    }
+
+    private void connectAndSendJoinRequest(Collection<Address> colPossibleAddresses) {
+        int numberOfJoinReq = 0;
+        colPossibleAddresses.removeAll(failedConnections);
+        for (Address possibleAddress : colPossibleAddresses) {
+            final Connection conn = connectionManager.getOrConnect(possibleAddress);
+            if (conn != null && numberOfJoinReq < 5) {
+                logger.log(Level.FINEST, "sending join request for " + possibleAddress);
+                clusterManager.sendJoinRequest(possibleAddress);
+                numberOfJoinReq++;
+            } else {
+                logger.log(Level.FINEST, "number of join request is greater than 5, no join request will be sent for " + possibleAddress + " the second time");
+            }
         }
     }
 

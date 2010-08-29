@@ -385,8 +385,9 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     void handleJoinRequest(JoinRequest joinRequest) {
         logger.log(Level.FINEST, joinInProgress + " Handling " + joinRequest);
-        if (getMember(joinRequest.address) != null)
+        if (getMember(joinRequest.address) != null) {
             return;
+        }
         Connection conn = joinRequest.getConnection();
         if (node.validateJoinRequest(joinRequest)) {
             if (!node.getConfig().getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
@@ -644,10 +645,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         if (toAddress == null) {
             toAddress = node.getMasterAddress();
         }
-        sendProcessableTo(new JoinRequest(thisAddress, node.getConfig().getGroupConfig().getName(),
-                node.getConfig().getGroupConfig().getPassword(),
-                node.getLocalNodeType(), Packet.PACKET_VERSION, node.getBuildNumber()),
-                toAddress);
+        sendProcessableTo(node.createJoinInfo(), toAddress);
     }
 
     public void registerScheduledAction(ScheduledAction scheduledAction) {
