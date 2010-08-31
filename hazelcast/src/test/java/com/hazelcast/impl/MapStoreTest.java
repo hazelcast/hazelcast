@@ -217,12 +217,12 @@ public class MapStoreTest extends TestUtil {
         Thread.sleep(3000);
         BlockingQueue listener = new LinkedBlockingQueue();
         testMapStore.addListener(listener);
-        cmap.startCleanup();
+        cmap.startCleanup(false);
         assertNotNull(listener.poll(20, TimeUnit.SECONDS));
         assertEquals(1, map.size());
         assertEquals(0, testMapStore.db.size());
         testMapStore.setFail(false);
-        cmap.startCleanup();
+        cmap.startCleanup(false);
         assertNotNull(listener.poll(20, TimeUnit.SECONDS));
         assertEquals(1, testMapStore.db.size());
         assertEquals("value1", testMapStore.db.get("1"));

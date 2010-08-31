@@ -58,6 +58,12 @@ public class CMap {
         NONE
     }
 
+    enum CleanupState {
+        NONE,
+        SHOULD_CLEAN,
+        CLEANING
+    }
+
     public final static int DEFAULT_MAP_SIZE = 10000;
 
     final ILogger logger;
@@ -119,6 +125,8 @@ public class CMap {
     volatile long lastEvictionTime = 0;
 
     DistributedLock lockEntireMap = null;
+
+    CleanupState cleanupState = CleanupState.NONE;
 
     public CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
@@ -206,10 +214,28 @@ public class CMap {
         return !name.startsWith("c:__hz_");
     }
 
-    public boolean checkLock(Request request) {
+    public boolean isNotLocked(Request request) {
         return (lockEntireMap == null
                 || !lockEntireMap.isLocked()
                 || lockEntireMap.isLockedBy(request.lockAddress, request.lockThreadId));
+    }
+
+    public boolean exceedingMapMaxSize(Request request) {
+        int perJVMMaxSize = maxSize / concurrentMapManager.getMembers().size();
+        if (perJVMMaxSize <= mapIndexService.size()) {
+            boolean addOp = (request.operation == ClusterOperation.CONCURRENT_MAP_PUT)
+                    || (request.operation == ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT);
+            if (addOp) {
+                Record record = getRecord(request.key);
+                if (record == null) {
+                    if (cleanupState == CleanupState.NONE) {
+                        cleanupState = CleanupState.SHOULD_CLEAN;
+                    }
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public RecordEntry getRecordEntry(Record record) {
@@ -802,9 +828,6 @@ public class CMap {
 
     public void put(Request req) {
         long now = System.currentTimeMillis();
-        if (mapRecords.size() >= maxSize) {
-            //todo
-        }
         if (req.value == null) {
             req.value = new Data();
         }
@@ -982,7 +1005,7 @@ public class CMap {
         return (value > 0) ? value : 0;
     }
 
-    void startCleanup() {
+    void startCleanup(boolean forced) {
         final long now = System.currentTimeMillis();
         if (locallyOwnedMap != null) {
             locallyOwnedMap.evict(now);
@@ -1042,7 +1065,7 @@ public class CMap {
                 }
             }
         }
-        if (evictionAware && maxSizePerJVM < recordsStillOwned) {
+        if (evictionAware && ((forced) ? maxSizePerJVM <= recordsStillOwned : maxSizePerJVM < recordsStillOwned)) {
             int numberOfRecordsToEvict = (int) (recordsStillOwned * evictionRate);
             int evictedCount = 0;
             for (Record record : sortedRecords) {

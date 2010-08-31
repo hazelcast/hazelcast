@@ -77,22 +77,19 @@ public class ConcurrentMapManager extends BaseManager {
             public void doRun() {
                 logState();
                 long now = System.currentTimeMillis();
+                Collection<CMap> cmaps = maps.values();
+                for (final CMap cmap : cmaps) {
+                    if (cmap.cleanupState == CMap.CleanupState.SHOULD_CLEAN) {
+                        executeCleanup(cmap, true);
+                    }
+                }
                 if (now > nextCleanup) {
-                    nextCleanup = Long.MAX_VALUE;
-                    executeLocally(new FallThroughRunnable() {
-                        public void doRun() {
-                            try {
-                                Collection<CMap> cmaps = maps.values();
-                                for (CMap cmap : cmaps) {
-                                    cmap.startCleanup();
-                                }
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            } finally {
-                                nextCleanup = System.currentTimeMillis() + CLEANUP_DELAY_MILLIS;
-                            }
+                    for (final CMap cmap : cmaps) {
+                        if (cmap.cleanupState == CMap.CleanupState.NONE) {
+                            executeCleanup(cmap, false);
                         }
-                    });
+                    }
+                    nextCleanup = now + CLEANUP_DELAY_MILLIS;
                 }
             }
         });
@@ -140,6 +137,28 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(ATOMIC_NUMBER_GET_AND_ADD, new AtomicOperationHandler());
         registerPacketProcessor(ATOMIC_NUMBER_COMPARE_AND_SET, new AtomicOperationHandler());
         registerPacketProcessor(ATOMIC_NUMBER_ADD_AND_GET, new AtomicOperationHandler());
+    }
+
+    private void executeCleanup(final CMap cmap, final boolean forced) {
+        if (cmap.cleanupState == CMap.CleanupState.CLEANING) {
+            return;
+        }
+        cmap.cleanupState = CMap.CleanupState.CLEANING;        
+        executeLocally(new FallThroughRunnable() {
+            public void doRun() {
+                try {
+                    cmap.startCleanup(forced);
+                } catch (Exception e) {
+                    logger.log(Level.SEVERE, e.getMessage(), e);
+                } finally {
+                    enqueueAndReturn(new Processable() {
+                        public void process() {
+                            cmap.cleanupState = CMap.CleanupState.NONE;
+                        }
+                    });
+                }
+            }
+        });
     }
 
     public void onRestart() {
@@ -1502,7 +1521,7 @@ public class ConcurrentMapManager extends BaseManager {
 
     class EvictOperationHandler extends StoreAwareOperationHandler {
         public void handle(Request request) {
-            if (checkMapLock(request)) {
+            if (mapIsNotLocked(request)) {
                 CMap cmap = getOrCreateMap(request.name);
                 Record record = cmap.getRecord(request.key);
                 if (record != null && record.isActive() && cmap.loader != null &&
@@ -1563,7 +1582,7 @@ public class ConcurrentMapManager extends BaseManager {
 
     class GetOperationHandler extends StoreAwareOperationHandler {
         public void handle(Request request) {
-            if (checkMapLock(request)) {
+            if (mapIsNotLocked(request)) {
                 CMap cmap = getOrCreateMap(request.name);
                 Record record = cmap.getRecord(request.key);
                 if (cmap.loader != null && (record == null || !record.isActive() || record.getValue() == null)) {
@@ -1794,7 +1813,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         public void handle(Request request) {
-            if (checkMapLock(request)) {
+            if (mapIsNotLocked(request) && !exceedingMapMaxSize(request)) {
                 if (shouldSchedule(request)) {
                     if (request.hasEnoughTimeToSchedule()) {
                         schedule(request);
@@ -1854,17 +1873,22 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         abstract Runnable createRunnable(Request request);
+    } 
+
+    public boolean mapIsNotLocked(Request request) {
+        CMap cmap = getOrCreateMap(request.name);
+        return cmap.isNotLocked(request);
     }
 
-    public boolean checkMapLock(Request request) {
+    public boolean exceedingMapMaxSize(Request request) {
         CMap cmap = getOrCreateMap(request.name);
-        return cmap.checkLock(request);
+        return cmap.exceedingMapMaxSize(request);
     }
 
     class SizeOperationHandler extends ExecutedOperationHandler {
         @Override
         public void handle(Request request) {
-            if (checkMapLock(request) && !isMigrating(request)) {
+            if (mapIsNotLocked(request) && !isMigrating(request)) {
                 super.handle(request);
             } else {
                 request.response = OBJECT_REDO;
@@ -1902,7 +1926,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void handle(Request request) {
-            if (checkMapLock(request) && !isMigrating(request)) {
+            if (mapIsNotLocked(request) && !isMigrating(request)) {
                 super.handle(request);
             } else {
                 request.response = OBJECT_REDO;

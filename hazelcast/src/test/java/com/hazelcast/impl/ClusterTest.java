@@ -777,20 +777,22 @@ public class ClusterTest {
         System.setProperty("hazelcast.build", "t");
     }
 
-    @Ignore
     @Test(timeout = 60000)
     public void testMapMaxSize() throws Exception {
+        int maxSize = 40;
         Config c = new XmlConfigBuilder().build();
         MapConfig mapConfig = new MapConfig();
         mapConfig.setEvictionPolicy("LRU");
-        mapConfig.setMaxSize(3);
+        mapConfig.setMaxSize(maxSize);
+        mapConfig.setEvictionPercentage(25);
         c.getMapConfigs().put("default", mapConfig);
         HazelcastInstance h = Hazelcast.newHazelcastInstance(c);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
         IMap map = h.getMap("default");
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 100; i++) {
             map.put(String.valueOf(i), String.valueOf(i));
-            int expectedSize = (i < 3) ? i + 1 : 3;
-            assertEquals(expectedSize, map.size());
+            int mapSize = map.size();
+            assertTrue("CurrentMapSize : " + mapSize, mapSize <= maxSize);
         }
     }
 
