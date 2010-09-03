@@ -130,7 +130,7 @@ public class LifecycleServiceImpl implements LifecycleService {
                 });
             }
             try {
-                latch.await(30, TimeUnit.SECONDS);
+                latch.await(60, TimeUnit.SECONDS);
             } catch (InterruptedException ignored) {
             }
             logger.log(Level.INFO, node.getThisAddress() + " is restarted!");

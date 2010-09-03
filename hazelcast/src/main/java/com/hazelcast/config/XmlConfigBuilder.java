@@ -17,32 +17,21 @@
 
 package com.hazelcast.config;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
+import com.hazelcast.impl.Util;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.Address;
+import org.w3c.dom.*;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.*;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.logging.Level;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import com.hazelcast.impl.Util;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Address;
 
 public class XmlConfigBuilder implements ConfigBuilder {
 
@@ -105,7 +94,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
                     configurationFile = null;
                 }
             }
-            
             if (configurationFile == null) {
                 configFile = "hazelcast.xml";
                 configurationFile = new File("hazelcast.xml");
@@ -113,7 +101,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
                     configurationFile = null;
                 }
             }
-            
             if (configurationFile != null) {
                 logger.log(Level.INFO, "Using configuration file at " + configurationFile.getAbsolutePath());
                 try {
@@ -128,22 +115,18 @@ public class XmlConfigBuilder implements ConfigBuilder {
                     in = null;
                 }
             }
-            
             if (in == null) {
-            	logger.log(Level.INFO, "Looking for hazelcast.xml config file in classpath.");
+                logger.log(Level.INFO, "Looking for hazelcast.xml config file in classpath.");
                 configurationUrl = Config.class.getClassLoader().getResource("hazelcast.xml");
-                
                 if (configurationUrl == null) {
-                	configurationUrl = Config.class.getClassLoader().getResource("hazelcast-default.xml");
-                	logger.log(Level.WARNING, "Could not find hazelcast.xml in classpath.\nHazelcast will use hazelcast-default.xml config file in jar.");
-                	
-                	if(configurationUrl == null) {
-                		logger.log(Level.WARNING, "Could not find hazelcast-default.xml in the classpath!" +
-                				"\nThis may be due to a wrong-packaged or corrupted jar file.");
-                		return;
-                	}
+                    configurationUrl = Config.class.getClassLoader().getResource("hazelcast-default.xml");
+                    logger.log(Level.WARNING, "Could not find hazelcast.xml in classpath.\nHazelcast will use hazelcast-default.xml config file in jar.");
+                    if (configurationUrl == null) {
+                        logger.log(Level.WARNING, "Could not find hazelcast-default.xml in the classpath!" +
+                                "\nThis may be due to a wrong-packaged or corrupted jar file.");
+                        return;
+                    }
                 }
-                
                 logger.log(Level.INFO, "Using configuration file " + configurationUrl.getFile() + " in the classpath.");
                 in = configurationUrl.openStream();
                 if (in == null) {
@@ -152,7 +135,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
                     logger.log(Level.WARNING, msg);
                 }
             }
-            
         } catch (final Exception e) {
             logger.log(Level.SEVERE, "Error while creating configuration", e);
             e.printStackTrace();
@@ -162,7 +144,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
     public Config build() {
         return build(new Config());
     }
-    
+
     Config build(Config config) {
         try {
             parse(config);
@@ -225,6 +207,8 @@ public class XmlConfigBuilder implements ConfigBuilder {
                 handleMap(node);
             } else if ("topic".equals(nodeName)) {
                 handleTopic(node);
+            } else if ("merge-policies".equals(nodeName)) {
+                handleMergePolicies(node);
             }
         }
     }
@@ -349,12 +333,14 @@ public class XmlConfigBuilder implements ConfigBuilder {
 
     private void handleViaReflection(final org.w3c.dom.Node node, Object parent, Object target) throws Exception {
         final NamedNodeMap atts = node.getAttributes();
-        for (int a = 0; a < atts.getLength(); a++) {
-            final org.w3c.dom.Node att = atts.item(a);
-            String methodName = "set" + getMethodName(att.getNodeName());
-            Method method = getMethod(target, methodName);
-            final String value = att.getNodeValue();
-            invoke(target, method, value);
+        if (atts != null) {
+            for (int a = 0; a < atts.getLength(); a++) {
+                final org.w3c.dom.Node att = atts.item(a);
+                String methodName = "set" + getMethodName(att.getNodeName());
+                Method method = getMethod(target, methodName);
+                final String value = att.getNodeValue();
+                invoke(target, method, value);
+            }
         }
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();
@@ -518,6 +504,8 @@ public class XmlConfigBuilder implements ConfigBuilder {
                 mapConfig.setMapStoreConfig(mapStoreConfig);
             } else if ("near-cache".equals(nodeName)) {
                 handleViaReflection(n, mapConfig, new NearCacheConfig());
+            } else if ("merge-policy".equals(nodeName)) {
+                mapConfig.setMergePolicy(value);
             }
         }
         this.config.getMapConfigs().put(name, mapConfig);
@@ -624,6 +612,15 @@ public class XmlConfigBuilder implements ConfigBuilder {
             }
         }
         config.getTopicConfigs().put(name, tConfig);
+    }
+
+    private void handleMergePolicies(final org.w3c.dom.Node node) throws Exception {
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = n.getNodeName().toLowerCase();
+            if (nodeName.equals("map-merge-policy")) {
+                handleViaReflection(n, config, new MergePolicyConfig());
+            }
+        }
     }
 
     private boolean hasTextContent(final Node child) {

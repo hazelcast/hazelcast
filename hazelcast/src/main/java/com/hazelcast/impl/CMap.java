@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.DistributedLock;
@@ -29,6 +30,7 @@ import com.hazelcast.impl.concurrentmap.LRUMapEntryComparator;
 import com.hazelcast.impl.concurrentmap.MapStoreWrapper;
 import com.hazelcast.impl.concurrentmap.MultiData;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.merge.MergePolicy;
 import com.hazelcast.nio.*;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.MapIndexService;
@@ -106,6 +108,8 @@ public class CMap {
 
     final MapStore store;
 
+    final MergePolicy mergePolicy;
+
     final long writeDelayMillis;
 
     final long removeDelayMillis;
@@ -177,7 +181,7 @@ public class CMap {
                         mapStoreConfig.getProperties(),
                         mapConfigName);
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.log(Level.SEVERE, e.getMessage(), e);
             }
             writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
         }
@@ -207,6 +211,23 @@ public class CMap {
                     nearCacheConfig.isInvalidateOnChange());
             concurrentMapManager.mapCaches.put(name, mapNearCache);
         }
+        MergePolicy mergePolicyTemp = null;
+        String mergePolicyName = mapConfig.getMergePolicy();
+        if (mergePolicyName != null && !"hz.NO_MERGE".equalsIgnoreCase(mergePolicyName)) {
+            MergePolicyConfig mergePolicyConfig = node.getConfig().getMergePolicyConfig(mapConfig.getMergePolicy());
+            if (mergePolicyConfig != null) {
+                mergePolicyTemp = mergePolicyConfig.getImplementation();
+                if (mergePolicyTemp == null) {
+                    String mergeClassName = mergePolicyConfig.getClassName();
+                    try {
+                        mergePolicyTemp = (MergePolicy) Serializer.classForName(node.getConfig().getClassLoader(), mergeClassName).newInstance();
+                    } catch (Exception e) {
+                        logger.log(Level.SEVERE, e.getMessage(), e);
+                    }
+                }
+            }
+        }
+        this.mergePolicy = mergePolicyTemp;
         this.creationTime = System.currentTimeMillis();
     }
 

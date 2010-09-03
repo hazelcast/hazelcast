@@ -85,7 +85,7 @@ public class SplitBrainHandler implements Runnable {
             try {
                 JoinInfo joinInfo = (JoinInfo) q.poll(3, TimeUnit.SECONDS);
                 node.multicastService.removeMulticastListener(listener);
-                if (shouldJoin(joinInfo)) {
+                if (shouldMerge(joinInfo)) {
                     node.factory.restart();
                     return;
                 }
@@ -116,7 +116,7 @@ public class SplitBrainHandler implements Runnable {
                 final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
                 if (conn != null) {
                     JoinInfo response = node.clusterManager.checkJoin(conn);
-                    if (shouldJoin(response)) {
+                    if (shouldMerge(response)) {
                         // we will join so delay the merge checks.
                         lastRun = System.currentTimeMillis() + FIRST_RUN_DELAY_MILLIS;
                         node.factory.restart();
@@ -129,20 +129,20 @@ public class SplitBrainHandler implements Runnable {
         }
     }
 
-    boolean shouldJoin(JoinInfo joinInfo) {
-        boolean shouldJoin = false;
+    boolean shouldMerge(JoinInfo joinInfo) {
+        boolean shouldMerge = false;
         if (joinInfo != null && node.validateJoinRequest(joinInfo)) {
             int currentMemberCount = node.getClusterImpl().getMembers().size();
             if (joinInfo.getMemberCount() > currentMemberCount) {
                 // I should join the other cluster
-                shouldJoin = true;
+                shouldMerge = true;
             } else if (joinInfo.getMemberCount() == currentMemberCount) {
                 // compare the hashes
                 if (node.getThisAddress().hashCode() > joinInfo.address.hashCode()) {
-                    shouldJoin = true;
+                    shouldMerge = true;
                 }
             }
         }
-        return shouldJoin;
+        return shouldMerge;
     }
 }

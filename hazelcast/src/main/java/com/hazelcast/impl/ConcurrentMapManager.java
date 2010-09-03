@@ -143,7 +143,7 @@ public class ConcurrentMapManager extends BaseManager {
         if (cmap.cleanupState == CMap.CleanupState.CLEANING) {
             return;
         }
-        cmap.cleanupState = CMap.CleanupState.CLEANING;        
+        cmap.cleanupState = CMap.CleanupState.CLEANING;
         executeLocally(new FallThroughRunnable() {
             public void doRun() {
                 try {
@@ -166,7 +166,7 @@ public class ConcurrentMapManager extends BaseManager {
             public void process() {
                 partitionManager.reset();
                 for (CMap cmap : maps.values()) {
-                    cmap.mapIndexService.clear();
+                    cmap.reset();
                 }
             }
         }, 5);
@@ -1782,17 +1782,22 @@ public class ConcurrentMapManager extends BaseManager {
                 cmap.store.store(toObject(request.key), toObject(request.value));
                 request.response = Boolean.TRUE;
             } else if (request.operation == CONCURRENT_MAP_MERGE) {
-                Record existing = cmap.getRecord(request.key);
-                RecordEntry existingEntry = (existing == null) ? null : cmap.getRecordEntry(existing);
-                DataRecordEntry newEntry = (DataRecordEntry) toObject(request.value);
-                Object key = newEntry.getKey();
-                Object winner = newEntry.getValue(); // cmap.merger.merge(existingEntry, newEntry);
                 boolean success = false;
-                if (winner != null) {
-                    success = true;
-                    if (cmap.writeDelayMillis == 0 && cmap.store != null) {
-                        cmap.store.store(key, winner);
-                        success = (request.response == null);
+                Object winner = null;
+                if (cmap.mergePolicy != null) {
+                    Record existing = cmap.getRecord(request.key);
+                    RecordEntry existingEntry = (existing == null) ? null : cmap.getRecordEntry(existing);
+                    DataRecordEntry newEntry = (DataRecordEntry) toObject(request.value);
+                    Object key = newEntry.getKey();
+                    if (key != null && newEntry.getValue() != null) {
+                        winner = cmap.mergePolicy.merge(cmap.getName(), newEntry, existingEntry);
+                        if (winner != null) {
+                            success = true;
+                            if (cmap.writeDelayMillis == 0 && cmap.store != null) {
+                                cmap.store.store(key, winner);
+                                success = (request.response == null);
+                            }
+                        }
                     }
                 }
                 if (success) {
@@ -1873,7 +1878,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         abstract Runnable createRunnable(Request request);
-    } 
+    }
 
     public boolean mapIsNotLocked(Request request) {
         CMap cmap = getOrCreateMap(request.name);

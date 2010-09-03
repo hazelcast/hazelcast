@@ -32,6 +32,7 @@ public class MapConfig {
     public final static int DEFAULT_MAX_IDLE_SECONDS = 0;
     public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
     public final static String DEFAULT_EVICTION_POLICY = "NONE";
+    public final static String DEFAULT_MERGE_POLICY = "hz.ADD_NEW_ENTRY";
 
     private String name = null;
 
@@ -54,6 +55,8 @@ public class MapConfig {
     private MapStoreConfig mapStoreConfig = null;
 
     private NearCacheConfig nearCacheConfig = null;
+
+    private String mergePolicy = DEFAULT_MERGE_POLICY;
 
     /**
      * @return the name
@@ -261,11 +264,21 @@ public class MapConfig {
         return this;
     }
 
+    public String getMergePolicy() {
+        return mergePolicy;
+    }
+
+    public MapConfig setMergePolicy(String mergePolicyName) {
+        this.mergePolicy = mergePolicyName;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "MapConfig{" +
                 "name='" + name + '\'' +
                 ", backupCount=" + backupCount +
+                ", mergePolicy=" + mergePolicy +
                 ", evictionPercentage=" + evictionPercentage +
                 ", timeToLiveSeconds=" + timeToLiveSeconds +
                 ", maxIdleSeconds=" + maxIdleSeconds +

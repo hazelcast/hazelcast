@@ -17,6 +17,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.merge.AddNewEntryMergePolicy;
+import com.hazelcast.merge.HigherHitsMergePolicy;
+import com.hazelcast.merge.LatestUpdateMergePolicy;
+
 import java.io.File;
 import java.net.URL;
 import java.util.*;
@@ -58,6 +62,8 @@ public class Config {
 
     private Properties properties = new Properties();
 
+    private Map<String, MergePolicyConfig> mapMergePolicyConfigs = new ConcurrentHashMap<String, MergePolicyConfig>();
+
     public Config() {
         final String superClientProp = System.getProperty("hazelcast.super.client");
         if ("true".equalsIgnoreCase(superClientProp)) {
@@ -65,6 +71,17 @@ public class Config {
         }
         String os = System.getProperty("os.name").toLowerCase();
         reuseAddress = (os.indexOf("win") == -1);
+        addMergePolicyConfig(new MergePolicyConfig(AddNewEntryMergePolicy.NAME, new AddNewEntryMergePolicy()));
+        addMergePolicyConfig(new MergePolicyConfig(HigherHitsMergePolicy.NAME, new HigherHitsMergePolicy()));
+        addMergePolicyConfig(new MergePolicyConfig(LatestUpdateMergePolicy.NAME, new LatestUpdateMergePolicy()));
+    }
+
+    public void addMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        mapMergePolicyConfigs.put(mergePolicyConfig.getName(), mergePolicyConfig);
+    }
+
+    public MergePolicyConfig getMergePolicyConfig(String name) {
+        return mapMergePolicyConfigs.get(name);
     }
 
     public ClassLoader getClassLoader() {
