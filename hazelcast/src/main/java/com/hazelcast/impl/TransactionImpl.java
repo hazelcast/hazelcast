@@ -55,11 +55,16 @@ class TransactionImpl implements Transaction {
     }
 
     public Object attachPutOp(String name, Object key, Object value, boolean newRecord) {
+        return attachPutOp(name, key, value, 0, newRecord);
+    }
+
+    public Object attachPutOp(String name, Object key, Object value, long timeout, boolean newRecord) {
         Instance.InstanceType instanceType = ConcurrentMapManager.getInstanceType(name);
         Object matchValue = (instanceType.isMultiMap()) ? value : null;
         TransactionRecord rec = findTransactionRecord(name, key, matchValue);
         if (rec == null) {
             rec = new TransactionRecord(name, key, value, newRecord);
+            rec.timeout = timeout;
             transactionRecords.add(rec);
             return null;
         } else {
@@ -290,6 +295,8 @@ class TransactionImpl implements Transaction {
 
         public int valueCount = 1;
 
+        public long timeout = 0; // for commit
+
         public TransactionRecord(String name, Object key, Object value, boolean newRecord) {
             this.name = name;
             this.key = key;
@@ -374,7 +381,10 @@ class TransactionImpl implements Transaction {
         private void offerAgain() {
             Offer offer = factory.node.blockingQueueManager.new Offer();
             try {
-                offer.offer(name, value, 0, false);
+                boolean offered = offer.offer(name, value, timeout, false);
+                if (!offered) {
+                    throw new RuntimeException("Failed to offer in " + timeout + " ms.");
+                }
             } catch (InterruptedException ignored) {
             }
         }

@@ -394,4 +394,15 @@ public final class Hazelcast {
     public static LoggingService getLoggingService() {
         return getDefaultInstance().getLoggingService();
     }
+
+    /**
+     * Returns the lifecycle service for this instance. LifecycleService allows you
+     * to shutdown, restart, pause and resume this HazelcastInstance and listen for
+     * the lifecycle events.
+     *
+     * @return lifecycle service
+     */
+    public static LifecycleService getLifecycleService() {
+        return getDefaultInstance().getLifecycleService();
+    }
 }

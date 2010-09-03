@@ -873,7 +873,7 @@ public class
                 ThreadContext threadContext = ThreadContext.get();
                 TransactionImpl txn = threadContext.getCallContext().getTransaction();
                 if (transactional && txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-                    txn.attachPutOp(name, null, value, true);
+                    txn.attachPutOp(name, null, value, timeout, true);  
                 } else {
                     return booleanCall(ClusterOperation.BLOCKING_QUEUE_OFFER, name, null, value, timeout, -1);
                 }

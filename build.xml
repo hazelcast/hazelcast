@@ -60,6 +60,7 @@
                 <include name="**/nio/DataSerializable*"/>
                 <include name="**/core/**"/>
                 <include name="**/monitor/**"/>
+                <include name="**/merge/**"/>
                 <include name="**/config/**"/>
                 <include name="**/jmx/**"/>
                 <include name="**/query/**"/>
