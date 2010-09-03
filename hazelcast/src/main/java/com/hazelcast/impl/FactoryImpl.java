@@ -1997,6 +1997,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public Object remove(Object key) {
+            beforeCall();
             try {
                 return mproxyReal.remove(key);
             } catch (Throwable e) {
