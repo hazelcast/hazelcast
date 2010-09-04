@@ -22,17 +22,17 @@ import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Constructor;
 
-public abstract class ThreadDump {
+public abstract class ThreadDumpGenerator {
 	
-	private static final String THREAD_DUMP_15_CNAME = "ThreadDumpImpl_15";
-	private static final String THREAD_DUMP_16_CNAME = "ThreadDumpImpl_16";
+	private static final String THREAD_DUMP_15_CNAME = "ThreadDumpGeneratorImpl_15";
+	private static final String THREAD_DUMP_16_CNAME = "ThreadDumpGeneratorImpl_16";
 	private static final Class[] TYPE = new Class[]{ThreadMXBean.class};
 	
-	public static ThreadDump newInstance() throws Exception {
+	public static ThreadDumpGenerator newInstance() throws Exception {
 		return newInstance(ManagementFactory.getThreadMXBean());
 	}
 	
-	public static ThreadDump newInstance(ThreadMXBean bean) throws Exception {
+	public static ThreadDumpGenerator newInstance(ThreadMXBean bean) throws Exception {
 		String v = System.getProperty("java.specification.version");
 		String cname = null;
 		if("1.6".equals(v)) {
@@ -42,21 +42,21 @@ public abstract class ThreadDump {
 			cname = THREAD_DUMP_15_CNAME;
 		}
 		
-		String pkg = ThreadDump.class.getPackage().getName();
+		String pkg = ThreadDumpGenerator.class.getPackage().getName();
 		String className = pkg + "." + cname;
-		Class clazz = ThreadDump.class.getClassLoader().loadClass(className);
-		Constructor<ThreadDump> cons = clazz.getConstructor(TYPE);
+		Class clazz = ThreadDumpGenerator.class.getClassLoader().loadClass(className);
+		Constructor<ThreadDumpGenerator> cons = clazz.getConstructor(TYPE);
 		return cons.newInstance(bean);
 	}
 	
 	protected final ThreadMXBean threadMxBean;
 	
-	ThreadDump(ThreadMXBean bean) {
+	ThreadDumpGenerator(ThreadMXBean bean) {
 		super();
 		this.threadMxBean = bean;
 	}
 	
-	public final String dumpAll() {
+	public final String dumpAllThreads() {
 		StringBuilder s = new StringBuilder();
 		s.append("Full thread dump ");
 		return dump(getAllThreads(), s);

@@ -24,14 +24,14 @@ import java.lang.management.ThreadMXBean;
  * ThreadDump Java 1.5 implementation
  */
 
-class ThreadDumpImpl_15 extends ThreadDump {
+class ThreadDumpGeneratorImpl_15 extends ThreadDumpGenerator {
 
-	public ThreadDumpImpl_15(ThreadMXBean bean) {
+	public ThreadDumpGeneratorImpl_15(ThreadMXBean bean) {
 		super(bean);
 	}
 
 	/**
-	 * copied from JDK 1.6 <{@link ThreadInfo} toString()
+	 * copied from JDK 1.6 {@link ThreadInfo} toString()
 	 */
 	protected void appendThreadInfo(ThreadInfo info, StringBuilder sb) {
         sb.append("\"" + info.getThreadName() + "\"" +
@@ -53,15 +53,10 @@ class ThreadDumpImpl_15 extends ThreadDump {
         sb.append('\n');
         
         StackTraceElement[] stackTrace = info.getStackTrace();
-        int i = 0;
-        for (; i < stackTrace.length; i++) {
+        for (int i = 0; i < stackTrace.length; i++) {
             StackTraceElement ste = stackTrace[i];
             sb.append("\tat " + ste.toString());
             sb.append('\n');
-       }
-       if (i < stackTrace.length) {
-           sb.append("\t...");
-           sb.append('\n');
        }
        sb.append('\n');
 	}

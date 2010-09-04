@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentMap;
  * ThreadDump Java 1.6 implementation
  */
 
-class ThreadDumpImpl_16 extends ThreadDump {
+class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
 	
 	private static final String ThreadMXBean_isObjectMonitorUsageSupported = "isObjectMonitorUsageSupported";
 	private static final String ThreadMXBean_isSynchronizerUsageSupported = "isSynchronizerUsageSupported";
@@ -41,7 +41,7 @@ class ThreadDumpImpl_16 extends ThreadDump {
 	
 	private final static ConcurrentMap<String, Method> methods = new ConcurrentHashMap<String, Method>();
 	
-	public ThreadDumpImpl_16(ThreadMXBean bean) {
+	public ThreadDumpGeneratorImpl_16(ThreadMXBean bean) {
 		super(bean);
 	}
 	
@@ -72,7 +72,7 @@ class ThreadDumpImpl_16 extends ThreadDump {
 	}
 	
 	/**
-	 * copied from JDK 1.6 <{@link ThreadInfo} toString()
+	 * copied from JDK 1.6 {@link ThreadInfo} toString()
 	 */
 	protected void appendThreadInfo(ThreadInfo info, StringBuilder sb) {
         sb.append("\"" + info.getThreadName() + "\"" +
@@ -94,8 +94,7 @@ class ThreadDumpImpl_16 extends ThreadDump {
         sb.append('\n');
         
         StackTraceElement[] stackTrace = info.getStackTrace();
-        int i = 0;
-        for (; i < stackTrace.length; i++) {
+        for (int i = 0; i < stackTrace.length; i++) {
             StackTraceElement ste = stackTrace[i];
             sb.append("\tat " + ste.toString());
             sb.append('\n');
@@ -128,10 +127,6 @@ class ThreadDumpImpl_16 extends ThreadDump {
                     sb.append('\n');
                 }
             }
-       }
-       if (i < stackTrace.length) {
-           sb.append("\t...");
-           sb.append('\n');
        }
  
        Object[] locks = objectCall(info, ThreadInfo_getLockedSynchronizers);
