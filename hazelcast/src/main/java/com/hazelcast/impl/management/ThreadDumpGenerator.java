@@ -21,8 +21,14 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Constructor;
+import java.util.logging.Level;
+
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 public abstract class ThreadDumpGenerator {
+	
+	protected static final ILogger logger = Logger.getLogger(ThreadDumpGenerator.class.getName());
 	
 	private static final String THREAD_DUMP_15_CNAME = "ThreadDumpGeneratorImpl_15";
 	private static final String THREAD_DUMP_16_CNAME = "ThreadDumpGeneratorImpl_16";
@@ -57,12 +63,14 @@ public abstract class ThreadDumpGenerator {
 	}
 	
 	public final String dumpAllThreads() {
+		logger.log(Level.INFO, "Generating full thread dump...");
 		StringBuilder s = new StringBuilder();
 		s.append("Full thread dump ");
 		return dump(getAllThreads(), s);
 	}
 	
 	public final String dumpDeadlocks() {
+		logger.log(Level.INFO, "Generating dead-locked threads dump...");
 		StringBuilder s = new StringBuilder();
 		s.append("Deadlocked thread dump ");
 		return dump(findDeadlockedThreads(), s);
@@ -71,6 +79,9 @@ public abstract class ThreadDumpGenerator {
 	private String dump(ThreadInfo[] infos, StringBuilder s) {
 		header(s);
 		appendThreadInfos(infos, s);
+		if(logger.isLoggable(Level.FINEST)) {
+			logger.log(Level.FINEST, "\n" + s.toString());
+		}
 		return s.toString();
 	}
 	

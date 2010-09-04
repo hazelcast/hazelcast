@@ -22,6 +22,7 @@ import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
 
 /**
  * ThreadDump Java 1.6 implementation
@@ -151,6 +152,9 @@ class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
 	}
 	
 	private static <T extends Object> T parameterizedObjectCall(Object object, String methodName, Class[] types, Object[] params) {
+		if(object == null) {
+			throw new NullPointerException("Object is mandatory!");
+		}
 		try {
 			Class clazz = object.getClass();
 			String mKey = clazz.getName() + "." + methodName;
@@ -163,7 +167,8 @@ class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
 			}
 			return (T) m.invoke(object, params);
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.log(Level.SEVERE, "While invoking method[" +
+					methodName + "] of class[" + object.getClass().getName() + "]", e);
 		}
 		return null;
 	}
