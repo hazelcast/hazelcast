@@ -35,8 +35,8 @@ import java.net.UnknownHostException;
 public class Connection {
     private static final int BUFFER_SIZE = 32 * 1024;
     private final Socket socket;
-    private InetSocketAddress address;
-    private int id = -1;
+    private final InetSocketAddress address;
+    private final int id;
     private final DataOutputStream dos;
     private final DataInputStream dis;
     boolean headersWritten = false;
@@ -51,20 +51,20 @@ public class Connection {
      * @throws IOException
      */
     public Connection(String host, int port, int id) {
+        this(new InetSocketAddress(host, port), id);
+    }
+
+    public Connection(InetSocketAddress address, int id) {
+        this.id = id;
+        this.address = address;
         try {
-            this.socket = SocketFactory.getDefault().createSocket(host, port);
+            this.socket = SocketFactory.getDefault().createSocket(address.getAddress(), address.getPort());
             socket.setKeepAlive(true);
             dos = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), BUFFER_SIZE));
             dis = new DataInputStream(new BufferedInputStream(socket.getInputStream(), BUFFER_SIZE));
-            this.id = id;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public Connection(InetSocketAddress address, int version) {
-        this(address.getAddress().getHostAddress(), address.getPort(), version);
-        this.address = address;
     }
 
     public Socket getSocket() {
@@ -73,10 +73,6 @@ public class Connection {
 
     public InetSocketAddress getAddress() {
         return address;
-    }
-
-    public void setVersion(int version) {
-        this.id = version;
     }
 
     public int getVersion() {

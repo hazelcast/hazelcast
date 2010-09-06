@@ -29,10 +29,9 @@ import java.util.logging.Level;
 
 public class OutRunnable extends IORunnable {
     final PacketWriter writer;
-    public final BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
+    final BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
     final BlockingQueue<Call> temp = new LinkedBlockingQueue<Call>();
     private Connection connection = null;
-    AtomicInteger counter = new AtomicInteger(0);
 
     ILogger logger = Logger.getLogger(this.getClass().getName());
 
@@ -47,7 +46,6 @@ public class OutRunnable extends IORunnable {
             if (call == null) return;
             int count = 0;
             while (call != null) {
-                counter.incrementAndGet();
                 callMap.put(call.getId(), call);
                 Connection oldConnection = connection;
                 connection = client.getConnectionManager().getConnection();
@@ -94,5 +92,9 @@ public class OutRunnable extends IORunnable {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    public int getQueueSize() {
+        return queue.size();
     }
 }

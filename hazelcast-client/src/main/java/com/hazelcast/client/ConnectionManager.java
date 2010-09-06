@@ -56,11 +56,10 @@ public class ConnectionManager implements MembershipListener {
     }
 
     public Connection getConnection() throws IOException {
-        Connection connection;
         if (currentConnection == null) {
             synchronized (this) {
                 if (currentConnection == null) {
-                    connection = searchForAvailableConnection();
+                    Connection connection = searchForAvailableConnection();
                     if (connection != null) {
                         logger.log(Level.FINE, "Client is connecting to " + connection);
                         binder.bind(connection);

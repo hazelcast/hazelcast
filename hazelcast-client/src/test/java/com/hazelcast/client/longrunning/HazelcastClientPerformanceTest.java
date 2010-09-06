@@ -211,7 +211,7 @@ public class HazelcastClientPerformanceTest {
 //                        numberOfTasks = numberOfTasks + numberOfTasks/10;
                         Thread.sleep(1 * 1000);
                         System.out.println("Operations per millisecond : " + callCounter.get() / (System.currentTimeMillis() - start));
-                        System.out.println("out runnable Queue size: " + outRunnable.queue.size());
+                        System.out.println("out runnable Queue size: " + outRunnable.getQueueSize());
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

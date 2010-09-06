@@ -247,15 +247,6 @@ public class ExecutorManager extends BaseManager {
         }
     }
 
-    /**
-     * Return true if the ExecutorManager is started and can accept task.
-     *
-     * @return the ExecutorManager running status
-     */
-    public boolean isStarted() {
-        return started;
-    }
-
     public void appendState(StringBuffer sbState) {
         Set<String> names = mapExecutors.keySet();
         for (String name : names) {
