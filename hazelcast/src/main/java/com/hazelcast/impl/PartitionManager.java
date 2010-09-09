@@ -610,8 +610,7 @@ public class PartitionManager implements Runnable {
         }
         if (b1.getOwner() == null) {
             return b2.getOwner() == null;
-        }
-        if (!b1.getOwner().equals(b2.getOwner())) {
+        } else if (!b1.getOwner().equals(b2.getOwner())) {
             return false;
         }
         if (b1.isMigrating() && !b1.getMigrationAddress().equals(b2.getMigrationAddress())) {

@@ -29,7 +29,11 @@ public class Blocks extends AbstractRemotelyProcessable {
     List<Block> lsBlocks = new ArrayList<Block>(271);
 
     public void addBlock(Block block) {
+        if (block == null) {
+            throw new IllegalArgumentException("Block cannot be null. " + block);
+        }
         lsBlocks.add(block);
+
     }
 
     public void readData(DataInput in) throws IOException {
