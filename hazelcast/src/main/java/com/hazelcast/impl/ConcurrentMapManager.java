@@ -447,6 +447,7 @@ public class ConcurrentMapManager extends BaseManager {
             }
             CMap.CMapEntry mapEntry = (CMap.CMapEntry) result;
             if (mapEntry != null) {
+                mapEntry.setHazelcastInstance(node.factory);
                 mapEntry.set(name, key);
             }
             return mapEntry;
@@ -454,7 +455,6 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     class MAddKeyListener extends MTargetAwareOp {
-
         public boolean addListener(String name, boolean add, Object key, boolean includeValue) {
             ClusterOperation operation = (add) ? ADD_LISTENER : REMOVE_LISTENER;
             setLocal(operation, name, key, null, -1, -1);
@@ -1585,7 +1585,11 @@ public class ConcurrentMapManager extends BaseManager {
             if (mapIsNotLocked(request)) {
                 CMap cmap = getOrCreateMap(request.name);
                 Record record = cmap.getRecord(request.key);
-                if (cmap.loader != null && (record == null || !record.isActive() || record.getValue() == null)) {
+                if (cmap.loader != null
+                        && (record == null
+                        || !record.isActive()
+                        || !record.isValid()
+                        || record.getValue() == null)) {
                     executeAsync(request);
                 } else {
                     doOperation(request);

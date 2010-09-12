@@ -172,6 +172,11 @@ public class MapStoreTest extends TestUtil {
         Collection values = map.values(new SqlPredicate("name = 'joe'"));
         assertEquals(1, values.size());
         assertEquals(employee, values.iterator().next());
+        map.remove("1");
+        map.put("1", employee, 1, TimeUnit.SECONDS);
+        Thread.sleep(2000);
+        assertEquals(employee, testMapStore.getStore().get("1"));
+        assertEquals(employee, map.get("1"));        
     }
 
     @Test
@@ -266,7 +271,7 @@ public class MapStoreTest extends TestUtil {
         return config;
     }
 
-    public static class TestMapStore extends AbstractMapStore implements MapLoader {
+    public static class TestMapStore implements MapLoaderLifecycleSupport, MapStore {
 
         final Map store = new ConcurrentHashMap();
 
@@ -296,12 +301,14 @@ public class MapStoreTest extends TestUtil {
             latchLoadAll = new CountDownLatch(expectedLoadAll);
         }
 
-        @Override
         public void init(HazelcastInstance hazelcastInstance, Properties properties, String mapName) {
             this.hazelcastInstance = hazelcastInstance;
             this.properties = properties;
             this.mapName = mapName;
             initCount.incrementAndGet();
+        }
+
+        public void destroy() {
         }
 
         public int getInitCount() {
@@ -383,7 +390,7 @@ public class MapStoreTest extends TestUtil {
         }
     }
 
-    public static class FailAwareMapStore implements MapStore, MapLoader {
+    public static class FailAwareMapStore implements MapStore {
         final Map db = new ConcurrentHashMap();
 
         final AtomicLong deletes = new AtomicLong();
