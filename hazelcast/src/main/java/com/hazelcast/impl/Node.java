@@ -311,6 +311,10 @@ public class Node {
             long start = System.currentTimeMillis();
             joined = false;
             setActive(false);
+            try {
+                Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
+            } catch (Throwable ignored) {
+            }
             logger.log(Level.FINEST, "Shutting down the clientService");
             clientService.reset();
             logger.log(Level.FINEST, "Shutting down the NIO socket selector for input");
