@@ -145,6 +145,11 @@ public class ListenerManager extends BaseManager {
             @Override
             public void setTarget() {
             }
+
+            @Override
+            public Object getResult() {
+                return waitAndGetResult();
+            }
         }
     }
 

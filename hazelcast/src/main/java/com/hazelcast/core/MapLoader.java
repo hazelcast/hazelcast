@@ -28,7 +28,7 @@ import java.util.Map;
  * IMap.get(key) normally returns the value that is available in-memory. If the entry
  * doesn't exist in-memory, Hazelcast returns null. If a Loader implementation
  * is provided then, instead of returning null, Hazelcast will load the unknown entry by
- * calling the implementation's load (key) or loaddAll(keys) methods. Loaded entries
+ * calling the implementation's load (key) or loadAll(keys) methods. Loaded entries
  * will be placed into the distributed map and they will stay in-memory until they are
  * explicitly removed or implicitly evicted (if eviction is configured).
  */

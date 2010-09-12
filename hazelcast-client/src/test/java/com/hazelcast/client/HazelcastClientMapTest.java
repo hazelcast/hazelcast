@@ -17,8 +17,6 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.nio.DataSerializable;
@@ -39,10 +37,9 @@ import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static org.junit.Assert.*;
 
-public class HazelcastClientMapTest {
+public class HazelcastClientMapTest extends HazelcastClientTestBase {
 
     @Test(expected = NullPointerException.class)
     public void testPutNull() {
@@ -361,7 +358,7 @@ public class HazelcastClientMapTest {
         final CountDownLatch entryUpdatedLatch = new CountDownLatch(1);
         final CountDownLatch entryRemovedLatch = new CountDownLatch(1);
         CountDownLatchEntryListener<String, String> listener = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
-        map.addEntryListener(listener,"hello", true);
+        map.addEntryListener(listener, "hello", true);
         assertNull(map.get("hello"));
         map.put("hello", "world");
         map.put("hello", "new world");

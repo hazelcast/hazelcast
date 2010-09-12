@@ -101,12 +101,10 @@ public enum ClusterOperation {
     GET_CLUSTER_TIME(),
     CLIENT_AUTHENTICATE(),
     CLIENT_ADD_INSTANCE_LISTENER(),
-    CLIENT_ADD_MEMBERSHIP_LISTENER(),
     CLIENT_GET_PARTITIONS();
 
-    static byte idGen = 0;
     public final static byte OPERATION_COUNT = 127;
-    static ClusterOperation[] clusterOperations = new ClusterOperation[OPERATION_COUNT];
+    private final static ClusterOperation[] clusterOperations = new ClusterOperation[OPERATION_COUNT];
 
     static {
         ClusterOperation[] cops = ClusterOperation.values();
@@ -115,23 +113,18 @@ public enum ClusterOperation {
         }
     }
 
-    private final byte value;
-
     ClusterOperation() {
-        value = nextId();
     }
 
     public byte getValue() {
-        return value;
-    }
-
-    private synchronized byte nextId() {
-        return idGen++;
+        return (byte) ordinal();
     }
 
     public static ClusterOperation create(int operation) {
         if (operation > 0 && operation <= OPERATION_COUNT) {
             return clusterOperations[operation];
-        } else return NONE;
+        } else {
+            return NONE;
+        }
     }
 }

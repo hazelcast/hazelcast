@@ -24,11 +24,10 @@ import org.junit.Test;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class HazelcastClientLockTest {
+public class HazelcastClientLockTest extends HazelcastClientTestBase {
 
     @Test(expected = NullPointerException.class)
     public void testLockNull() {
@@ -82,9 +81,5 @@ public class HazelcastClientLockTest {
         lock.unlock();
         lock.unlock();
         assertTrue(latch.await(10, TimeUnit.SECONDS));
-    }
-
-    @AfterClass
-    public static void shutdown() {
     }
 }

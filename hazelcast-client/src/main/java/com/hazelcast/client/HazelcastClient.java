@@ -33,7 +33,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
 /**
  * Hazelcast Client enables you to do all Hazelcast operations without
@@ -59,8 +58,8 @@ public class HazelcastClient implements HazelcastInstance {
     final ExecutorService executor;
     final ParallelExecutorService parallelExecutorService;
     final ParallelExecutor parallelExecutorDefault;
+    final LifecycleServiceClientImpl lifecycleService;
     final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
-    private volatile boolean shutdownInProgress = false;
 
     private HazelcastClient(String groupName, String groupPassword, boolean shuffle, InetSocketAddress[] clusterMembers, boolean automatic) {
         this.groupName = groupName;
@@ -79,6 +78,8 @@ public class HazelcastClient implements HazelcastInstance {
             }
         };
         executor = Executors.newCachedThreadPool(threadFactory);
+        lifecycleService = new LifecycleServiceClientImpl(this);
+        lifecycleService.fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.STARTING));
         parallelExecutorService = new ParallelExecutorService(executor);
         parallelExecutorDefault = parallelExecutorService.newParallelExecutor(10);
         if (automatic) {
@@ -109,6 +110,7 @@ public class HazelcastClient implements HazelcastInstance {
             this.getCluster().addMembershipListener(connectionManager);
             connectionManager.updateMembers();
         }
+        lifecycleService.fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.STARTED));
     }
 
     public ParallelExecutor getDefaultParallelExecutor() {
@@ -266,24 +268,6 @@ public class HazelcastClient implements HazelcastInstance {
         return connectionManager;
     }
 
-    public void shutdown() {
-        if (!shutdownInProgress) {
-            shutdownInProgress = true;
-            long begin = System.currentTimeMillis();
-            out.shutdown();
-            listenerManager.shutdown();
-            in.shutdown();
-            long time = System.currentTimeMillis() - begin;
-            logger.log(Level.FINE, "HazelcastClient shutdown completed in " + time + " ms.");
-            shutdownInProgress = false;
-            executor.shutdownNow();
-            try {
-                executor.awaitTermination(5, TimeUnit.SECONDS);
-            } catch (InterruptedException ignore) {
-            }
-        }
-    }
-
     public void addInstanceListener(InstanceListener instanceListener) {
         clusterClientProxy.addInstanceListener(instanceListener);
     }
@@ -354,15 +338,30 @@ public class HazelcastClient implements HazelcastInstance {
         clusterClientProxy.removeInstanceListener(instanceListener);
     }
 
-    public void restart() {
-        throw new UnsupportedOperationException();
+    public void shutdown() {
+        lifecycleService.shutdown();
+    }
+
+    void doShutdown() {
+        out.shutdown();
+        listenerManager.shutdown();
+        in.shutdown();
+        executor.shutdownNow();
+        try {
+            executor.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException ignore) {
+        }
     }
 
     protected void destroy(String proxyName) {
         mapProxies.remove(proxyName);
     }
 
+    public void restart() {
+        lifecycleService.restart();
+    }
+
     public LifecycleService getLifecycleService() {
-        throw new UnsupportedOperationException();
+        return lifecycleService;
     }
 }

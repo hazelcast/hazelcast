@@ -26,7 +26,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
-import com.hazelcast.impl.TestUtil;
+import org.junit.After;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -41,6 +41,22 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
 public class CMapTest extends TestUtil {
+
+    @After
+    public void cleanup() throws Exception {
+        Hazelcast.shutdownAll();
+    }
+
+    @Test(timeout = 10000)
+    public void testAddListenerInfiniteLoop() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        ConcurrentMapManager concurrentMapManager = getConcurrentMapManager(h1);
+        ListenerManager lm = concurrentMapManager.node.listenerManager;
+        ListenerManager.AddRemoveListener arl = lm.new AddRemoveListener("default", true, true);
+        BaseManager.TargetAwareOp op = arl.createNewTargetAwareOp(new Address("127.0.0.1", 6666));
+        op.doOp();
+        assertEquals(Constants.Objects.OBJECT_REDO, op.getResult());
+    }
 
     @Test
     public void testTwoMemberPut() throws Exception {
@@ -164,7 +180,7 @@ public class CMapTest extends TestUtil {
         final Address addressNewOwner = toMember.getAddress();
         final int blockId = oldest.getPartitionService().getPartition(key).getPartitionId();
         final CountDownLatch migrationLatch = new CountDownLatch(2);
-        MigrationListener migrationListener  = new MigrationListener() {
+        MigrationListener migrationListener = new MigrationListener() {
             public void migrationCompleted(MigrationEvent migrationEvent) {
                 if (migrationEvent.getPartitionId() == blockId && migrationEvent.getNewOwner().equals(toMember)) {
                     migrationLatch.countDown();

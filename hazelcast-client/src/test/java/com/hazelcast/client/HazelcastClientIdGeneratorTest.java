@@ -24,18 +24,17 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 
-public class HazelcastClientIdGeneratorTest {
+public class HazelcastClientIdGeneratorTest extends HazelcastClientTestBase {
 
     private HazelcastClient hClient;
 
     @Test
     public void idGenerator() {
         hClient = getHazelcastClient();
-        HazelcastInstance h = TestUtility.hz;
+        HazelcastInstance h = getHazelcastInstance();
         IdGenerator nativeId = h.getIdGenerator("id");
         IdGenerator clientId = hClient.getIdGenerator("id");
         long v = clientId.newId();

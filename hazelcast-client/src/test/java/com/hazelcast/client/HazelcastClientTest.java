@@ -30,12 +30,10 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.fail;
 import static org.junit.Assert.*;
 
-public class HazelcastClientTest {
+public class HazelcastClientTest extends HazelcastClientTestBase {
 
     @Test
     public void testGetClusterMemberSize() {
@@ -49,8 +47,7 @@ public class HazelcastClientTest {
     public void iterateOverMembers() {
         Cluster cluster = getHazelcastClient().getCluster();
         Set<com.hazelcast.core.Member> members = cluster.getMembers();
-        for (Iterator<com.hazelcast.core.Member> iterator = members.iterator(); iterator.hasNext();) {
-            com.hazelcast.core.Member member = iterator.next();
+        for (Member member : members) {
             assertNotNull(member);
         }
     }

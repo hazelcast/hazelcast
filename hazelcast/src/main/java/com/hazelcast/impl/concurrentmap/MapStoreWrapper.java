@@ -17,16 +17,13 @@
 
 package com.hazelcast.impl.concurrentmap;
 
-import com.hazelcast.core.AbstractMapStore;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.core.MapStore;
+import com.hazelcast.core.*;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
 
-public class MapStoreWrapper extends AbstractMapStore implements MapLoader {
+public class MapStoreWrapper implements MapStore {
 
     private final MapLoader mapLoader;
     private final MapStore mapStore;
@@ -54,14 +51,14 @@ public class MapStoreWrapper extends AbstractMapStore implements MapLoader {
         }
         this.mapLoader = loader;
         this.mapStore = store;
-        this.shouldInitialize = (impl instanceof AbstractMapStore);
+        this.shouldInitialize = (impl instanceof MapLoaderLifecycleSupport);
     }
 
     void checkInit() {
         if (!initialized && shouldInitialize) {
             synchronized (initLock) {
                 if (!initialized) {
-                    ((AbstractMapStore) impl).init(hazelcastInstance, properties, mapName);
+                    ((MapLoaderLifecycleSupport) impl).init(hazelcastInstance, properties, mapName);
                     initialized = true;
                 }
             }

@@ -19,33 +19,15 @@ package com.hazelcast.core;
 
 import java.util.Properties;
 
-public abstract class AbstractMapStore<K, V> implements MapStore<K, V> {
+/**
+ * @see MapLoaderLifecycleSupport
+ * @deprecated as of version 1.9
+ */
+public abstract class AbstractMapStore<K, V> implements MapLoaderLifecycleSupport, MapStore<K, V> {
 
-    /**
-     * Initializes this MapStore implementation. Hazelcast will call
-     * this method when the map is first used on the
-     * HazelcastInstance. This method can be overridden to
-     * initialize required resources for this
-     * mapStore such as reading a config file and/or creating
-     * database connection.
-     * <p/>
-     * Default implementation does nothing.
-     *
-     * @param hazelcastInstance HazelcastInstance of this mapStore.
-     * @param properties        Properties set for this mapStore. see MapStoreConfig
-     * @param mapName           name of the map.
-     */
     public void init(HazelcastInstance hazelcastInstance, Properties properties, String mapName) {
     }
 
-    /**
-     * Hazelcast will call this method before shutting down.
-     * This method can be overridden to cleanup the resources
-     * held by this map store implementation, such as closing the
-     * database connections etc.
-     * <p/>
-     * Default implementation does nothing.
-     */
     public void destroy() {
     }
 }

@@ -26,10 +26,9 @@ import org.junit.Test;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static org.junit.Assert.*;
 
-public class HazelcastClientListTest {
+public class HazelcastClientListTest extends HazelcastClientTestBase {
 
     @Test(expected = NullPointerException.class)
     public void addNull() {
@@ -222,9 +221,5 @@ public class HazelcastClientListTest {
         assertEquals(Integer.valueOf(0), counter.get(2));
         assertEquals(Integer.valueOf(0), counter.get(3));
         assertTrue(list.isEmpty());
-    }
-
-    @AfterClass
-    public static void shutdown() {
     }
 }

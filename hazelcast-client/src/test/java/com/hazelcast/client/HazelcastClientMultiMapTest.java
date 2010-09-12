@@ -20,10 +20,7 @@ package com.hazelcast.client;
 import com.hazelcast.client.impl.Values;
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.MultiMap;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -32,12 +29,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.*;
 
-public class HazelcastClientMultiMapTest {
+public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
 
+    
     @Test(expected = NullPointerException.class)
     public void testPutNull() {
         HazelcastClient hClient = getHazelcastClient();
@@ -383,7 +380,7 @@ public class HazelcastClientMultiMapTest {
     }
 
     @Test
-    @Ignore 
+    @Ignore
     public void testLotsOfRemove() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
         final MultiMap<Integer, String> map = hClient.getMultiMap("testLotsOfRemove");
@@ -426,9 +423,5 @@ public class HazelcastClientMultiMapTest {
         }).start();
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         running.set(false);
-    }
-
-    @AfterClass
-    public static void shutdown() {
     }
 }

@@ -112,9 +112,12 @@ public class HazelcastTest {
         assertEquals(1, map.size());
         assertEquals("World", value);
         value = map.put("Hello", "New World");
+        assertEquals("World", value);
         assertEquals("New World", map.get("Hello"));
         assertEquals(1, map.size());
-        assertEquals("World", value);
+        MapEntry entry = map.getMapEntry("Hello");
+        assertEquals("Hello", entry.getKey());
+        assertEquals("New World", entry.getValue());
     }
 
     @Test

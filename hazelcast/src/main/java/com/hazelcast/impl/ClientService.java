@@ -49,6 +49,7 @@ public class ClientService implements ConnectionListener {
 
     public ClientService(Node node) {
         this.node = node;
+        node.getClusterImpl().addMembershipListener(new ClientServiceMembershipListener());
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_PUT.getValue()] = new MapPutHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_PUT_MULTI.getValue()] = new MapPutMultiHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT.getValue()] = new MapPutIfAbsentHandler();
@@ -93,7 +94,6 @@ public class ClientService implements ConnectionListener {
         clientOperationHandlers[ClusterOperation.GET_CLUSTER_TIME.getValue()] = new GetClusterTimeHandler();
         clientOperationHandlers[ClusterOperation.CLIENT_AUTHENTICATE.getValue()] = new ClientAuthenticateHandler();
         clientOperationHandlers[ClusterOperation.CLIENT_ADD_INSTANCE_LISTENER.getValue()] = new ClientAddInstanceListenerHandler();
-        clientOperationHandlers[ClusterOperation.CLIENT_ADD_MEMBERSHIP_LISTENER.getValue()] = new ClientAddMembershipListenerHandler();
         clientOperationHandlers[ClusterOperation.CLIENT_GET_PARTITIONS.getValue()] = new GetPartitionsHandler();
         node.connectionManager.addConnectionListener(this);
     }
@@ -419,13 +419,6 @@ public class ClientService implements ConnectionListener {
         public void processCall(Node node, Packet packet) {
             ClientEndpoint endPoint = getClientEndpoint(packet.conn);
             node.factory.addInstanceListener(endPoint);
-        }
-    }
-
-    private class ClientAddMembershipListenerHandler extends ClientOperationHandler {
-        public void processCall(Node node, Packet packet) {
-            ClientEndpoint endPoint = getClientEndpoint(packet.conn);
-            node.factory.getCluster().addMembershipListener(endPoint);
         }
     }
 
@@ -904,6 +897,23 @@ public class ClientService implements ConnectionListener {
         public void processCall(Node node, Packet packet) {
             Transaction transaction = node.factory.getTransaction();
             processTransactionOp(transaction);
+        }
+    }
+
+    private class ClientServiceMembershipListener implements MembershipListener {
+        public void memberAdded(MembershipEvent membershipEvent) {
+            notifyEndPoints(membershipEvent);
+        }
+
+        public void memberRemoved(MembershipEvent membershipEvent) {
+            notifyEndPoints(membershipEvent);
+        }
+
+        void notifyEndPoints(MembershipEvent membershipEvent) {
+            for (ClientEndpoint endpoint : mapClientEndpoints.values()) {
+                Packet membershipEventPacket = endpoint.createMembershipEventPacket(membershipEvent);
+                endpoint.sendPacket(membershipEventPacket);
+            }
         }
     }
 }

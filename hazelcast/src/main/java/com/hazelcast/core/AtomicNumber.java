@@ -17,6 +17,12 @@
 
 package com.hazelcast.core;
 
+/**
+ * Cluster-wide atomic number. AtomicNumber is distributed
+ * implementation of <tt>java.util.concurrent.atomic.AtomicLong</tt>.
+ *
+ * @since 1.9
+ */
 public interface AtomicNumber extends Instance {
 
     boolean compareAndSet(long expect, long update);

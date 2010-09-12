@@ -30,12 +30,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
 
-import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static junit.framework.Assert.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-public class HazelcastClientExecutorServiceTest {
+public class HazelcastClientExecutorServiceTest extends HazelcastClientTestBase {
 
     private static final int COUNT = 10;
 

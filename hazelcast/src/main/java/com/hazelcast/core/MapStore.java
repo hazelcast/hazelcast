@@ -36,7 +36,7 @@ import java.util.Map;
  * Store implementation can be called synchronously (write-through)
  * or asynchronously (write-behind) depending on the configuration.
  */
-public interface MapStore<K, V> {
+public interface MapStore<K, V> extends MapLoader<K, V>{
     /**
      * Stores the key-value pair.
      *

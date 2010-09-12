@@ -44,21 +44,23 @@ public class MembershipListenerManager {
         this.memberShipListeners.remove(listener);
     }
 
-    public synchronized boolean noMembershipListenerRegistered() {
+    public boolean noMembershipListenerRegistered() {
         return memberShipListeners.isEmpty();
     }
 
     public void notifyMembershipListeners(Packet packet) {
-        Member member = (Member) toObject(packet.getKey());
-        Integer type = (Integer) toObject(packet.getValue());
-        MembershipEvent event = new MembershipEvent(client.getCluster(), member, type);
-        if (type.equals(MembershipEvent.MEMBER_ADDED)) {
-            for (MembershipListener membershipListener : memberShipListeners) {
-                membershipListener.memberAdded(event);
-            }
-        } else {
-            for (MembershipListener membershipListener : memberShipListeners) {
-                membershipListener.memberRemoved(event);
+        if (memberShipListeners.size() > 0) {
+            Member member = (Member) toObject(packet.getKey());
+            Integer type = (Integer) toObject(packet.getValue());
+            MembershipEvent event = new MembershipEvent(client.getCluster(), member, type);
+            if (type.equals(MembershipEvent.MEMBER_ADDED)) {
+                for (MembershipListener membershipListener : memberShipListeners) {
+                    membershipListener.memberAdded(event);
+                }
+            } else {
+                for (MembershipListener membershipListener : memberShipListeners) {
+                    membershipListener.memberRemoved(event);
+                }
             }
         }
     }

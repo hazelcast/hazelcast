@@ -34,13 +34,12 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class HazelcastClientPerformanceTest {
+public class HazelcastClientPerformanceTest extends HazelcastClientTestBase {
 
     @Test
     public void putAndget100000RecordsWith1ClusterMember() {
@@ -104,7 +103,7 @@ public class HazelcastClientPerformanceTest {
             volatile Boolean run = true;
 
             public void run() {
-                HazelcastClient hClient = getHazelcastClient(h);
+                HazelcastClient hClient = TestUtility.newHazelcastClient(h);
                 while (run) {
                     Map<String, String> clientMap = hClient.getMap("putFromMultipleThreads");
                     clientMap.put(String.valueOf(counter.incrementAndGet()), String.valueOf(counter.get()));

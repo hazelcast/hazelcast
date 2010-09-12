@@ -160,7 +160,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
         }
     }
 
-    private Packet createEntryEventPacket(EntryEvent event) {
+    Packet createEntryEventPacket(EntryEvent event) {
         Packet packet = new Packet();
         BaseManager.EventTask eventTask = (BaseManager.EventTask) event;
         packet.set(event.getName(), ClusterOperation.EVENT, eventTask.getDataKey(), eventTask.getDataValue());
@@ -168,13 +168,13 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
         return packet;
     }
 
-    private Packet createInstanceEventPacket(InstanceEvent event) {
+    Packet createInstanceEventPacket(InstanceEvent event) {
         Packet packet = new Packet();
         packet.set(null, ClusterOperation.EVENT, toData(event.getInstance().getId()), toData(event.getEventType()));
         return packet;
     }
 
-    private Packet createMembershipEventPacket(MembershipEvent membershipEvent) {
+    Packet createMembershipEventPacket(MembershipEvent membershipEvent) {
         Packet packet = new Packet();
         packet.set(null, ClusterOperation.EVENT, toData(membershipEvent.getMember()), toData(membershipEvent.getEventType()));
         return packet;

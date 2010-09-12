@@ -27,11 +27,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.TestUtility.getHazelcastClient;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class HazelcastClientTopicTest {
+public class HazelcastClientTopicTest extends HazelcastClientTestBase {
 
     @Test(expected = NullPointerException.class)
     public void testAddNull() throws InterruptedException {

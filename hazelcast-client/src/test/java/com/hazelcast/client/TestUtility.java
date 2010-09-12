@@ -17,34 +17,13 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.impl.GroupProperties;
 
 import java.net.InetSocketAddress;
 
 public class TestUtility {
-    public static volatile HazelcastClient client;
-    static volatile HazelcastInstance hz;
 
-    public synchronized static HazelcastClient getHazelcastClient() {
-        if (client == null) {
-            Config config = new Config();
-            config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
-            hz = Hazelcast.newHazelcastInstance(config);
-            client = getHazelcastClient(hz);
-        }
-        return client;
-    }
-
-    public synchronized static void shutdownHazelcastClient() {
-        if (client != null) {
-            client.shutdown();
-        }
-    }
-
-    public synchronized static HazelcastClient getHazelcastClient(HazelcastInstance... h) {
+    public synchronized static HazelcastClient newHazelcastClient(HazelcastInstance... h) {
         InetSocketAddress[] addresses = new InetSocketAddress[h.length];
         for (int i = 0; i < h.length; i++) {
             addresses[i] = h[i].getCluster().getLocalMember().getInetSocketAddress();

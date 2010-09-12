@@ -150,7 +150,7 @@ public interface HazelcastInstance {
      * <p/>
      * Transaction doesn't start until you call <tt>transaction.begin()</tt> and
      * if a transaction is started then all transactional Hazelcast operations
-     * are automatically transational.
+     * are automatically transactional.
      * <pre>
      *  Map map = Hazelcast.getMap("mymap");
      *  Transaction txn = Hazelcast.getTransaction();
@@ -194,10 +194,8 @@ public interface HazelcastInstance {
     IdGenerator getIdGenerator(String name);
 
     /**
-     * Creates cluster-wide unique IDs. Generated IDs are long type primitive values
-     * between <tt>0</tt> and <tt>Long.MAX_VALUE</tt> . Id generation occurs almost at the speed of
-     * <tt>AtomicLong.incrementAndGet()</tt> . Generated IDs are unique during the life
-     * cycle of the cluster. If the entire cluster is restarted, IDs start from <tt>0</tt> again.
+     * Creates cluster-wide atomic number. AtomicNumber is distributed
+     * implementation of <tt>java.util.concurrent.atomic.AtomicLong</tt>.
      *
      * @param name name of the AtomicNumber
      * @return AtomicNumber for the given name
@@ -208,12 +206,18 @@ public interface HazelcastInstance {
      * Detaches this member from the cluster.
      * It doesn't shutdown the entire cluster, it shuts down
      * this local member only.
+     *
+     * @see #getLifecycleService()
+     * @deprecated as of version 1.9
      */
     void shutdown();
 
     /**
      * Detaches this member from the cluster first and then restarts it
      * as a new member.
+     *
+     * @see #getLifecycleService()
+     * @deprecated as of version 1.9
      */
     void restart();
 
@@ -273,6 +277,7 @@ public interface HazelcastInstance {
      * to shutdown, restart, pause and resume this HazelcastInstance and listen for
      * the lifecycle events.
      *
+     * @return lifecycle service
      */
     LifecycleService getLifecycleService();
 }
