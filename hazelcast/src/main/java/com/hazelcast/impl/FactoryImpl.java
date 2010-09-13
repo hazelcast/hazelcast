@@ -37,6 +37,7 @@ import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.SerializationHelper;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.util.ResponseQueueFactory;
@@ -2033,6 +2034,10 @@ public class FactoryImpl implements HazelcastInstance {
             dynamicProxy.addIndex(attribute, ordered);
         }
 
+        public void addIndex(Expression expression, boolean ordered) {
+            dynamicProxy.addIndex(expression, ordered);
+        }
+
         public Object getId() {
             return dynamicProxy.getId();
         }
@@ -2263,10 +2268,14 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public void addIndex(final String attribute, final boolean ordered) {
+                addIndex(Predicates.get(attribute), ordered);
+            }
+
+            public void addIndex(final Expression expression, final boolean ordered) {
                 final CountDownLatch latch = new CountDownLatch(1);
                 concurrentMapManager.enqueueAndReturn(new Processable() {
                     public void process() {
-                        AddMapIndex addMapIndexProcess = new AddMapIndex(name, Predicates.get(attribute), ordered);
+                        AddMapIndex addMapIndexProcess = new AddMapIndex(name, expression, ordered);
                         concurrentMapManager.sendProcessableToAll(addMapIndexProcess, true);
                         latch.countDown();
                     }

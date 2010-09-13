@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.*;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 
 import java.util.Collection;
@@ -227,6 +228,10 @@ public final class ReplicatedMapFactory {
 
         public void addIndex(String attribute, boolean ordered) {
             distributedMap.addIndex(attribute, ordered);
+        }
+
+        public void addIndex(Expression<?> expression, boolean ordered) {
+            distributedMap.addIndex(expression, ordered);
         }
 
         public InstanceType getInstanceType() {

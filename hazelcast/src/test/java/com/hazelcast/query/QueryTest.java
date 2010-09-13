@@ -353,6 +353,46 @@ public class QueryTest extends TestUtil {
     }
 
     @Test
+    public void testIndexPerformanceUsingPredicate() {
+        HazelcastInstance h1 = newInstance();
+        IMap imap = h1.getMap("employees");
+        for (int i = 0; i < 5000; i++) {
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+        }
+        EntryObject e = new PredicateBuilder().getEntryObject();
+        Predicate predicate = e.is("active").and(e.get("age").equal(23));
+        long start = System.currentTimeMillis();
+        Set<Map.Entry> entries = imap.entrySet(predicate);
+        long tookWithout = (System.currentTimeMillis() - start);
+        assertEquals(83, entries.size());
+        for (Map.Entry entry : entries) {
+            Employee c = (Employee) entry.getValue();
+            assertEquals(c.getAge(), 23);
+            assertTrue(c.isActive());
+        }
+        imap.clear();
+        imap = h1.getMap("employees2");
+        imap.addIndex(Predicates.get("name"), false);
+        imap.addIndex(Predicates.get("active"), false);
+        imap.addIndex(Predicates.get("age"), true);
+        for (int i = 0; i < 5000; i++) {
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+        }
+        e = new PredicateBuilder().getEntryObject();
+        predicate = e.is("active").and(e.get("age").equal(23));
+        start = System.currentTimeMillis();
+        entries = imap.entrySet(predicate);
+        long tookWithIndex = (System.currentTimeMillis() - start);
+        assertEquals(83, entries.size());
+        for (Map.Entry entry : entries) {
+            Employee c = (Employee) entry.getValue();
+            assertEquals(c.getAge(), 23);
+            assertTrue(c.isActive());
+        }
+        assertTrue(tookWithIndex < (tookWithout / 2));
+    }
+
+    @Test
     public void testTwoMembers() {
         HazelcastInstance h1 = newInstance();
         HazelcastInstance h2 = newInstance();

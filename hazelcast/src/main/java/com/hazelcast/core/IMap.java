@@ -18,6 +18,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 
 import java.io.Serializable;
@@ -372,6 +373,15 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      *                  <tt>false</tt> otherwise.
      */
     void addIndex(String attribute, boolean ordered);
+
+    /**
+     * Adds an index to this map based on the provided expression.
+     *
+     * @param expression The expression for the index.
+     * @param ordered   <tt>true</tt> if index should be ordered,
+     *                  <tt>false</tt> otherwise.
+     */
+    void addIndex(Expression<?> expression, boolean ordered);
 
     /**
      * Returns LocalMapStats for this map.

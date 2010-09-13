@@ -23,6 +23,7 @@ import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.CMap.CMapEntry;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 
 import java.util.*;
@@ -282,6 +283,10 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public void addIndex(String attribute, boolean ordered) {
         proxyHelper.doOp(ClusterOperation.ADD_INDEX, attribute, ordered);
+    }
+
+    public void addIndex(Expression<?> expression, boolean ordered) {
+        proxyHelper.doOp(ClusterOperation.ADD_INDEX, expression, ordered);
     }
 
     public String getName() {
