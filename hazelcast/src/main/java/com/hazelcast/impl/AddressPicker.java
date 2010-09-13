@@ -83,8 +83,7 @@ public class AddressPicker {
         return true;
     }
 
-    public Address pickAddress()
-            throws Exception {
+    public Address pickAddress() throws Exception {
         String currentAddress = null;
         try {
             final Config config = node.getConfig();
@@ -106,22 +105,17 @@ public class AddressPicker {
                 if (interfaces.contains("127.0.0.1") || interfaces.contains("localhost")) {
                     currentAddress = "127.0.0.1";
                 } else {
-                    final Enumeration<NetworkInterface> enums = NetworkInterface.getNetworkInterfaces();
-                    interfaces:
-                    while (enums.hasMoreElements()) {
-                        final NetworkInterface ni = enums.nextElement();
-                        final Enumeration<InetAddress> e = ni.getInetAddresses();
-//					final boolean isUp = invoke(true, 1.6, ni, "isUp");     
-//					final boolean supportsMulticast = invoke(true, 1.6, ni, "supportsMulticast");
-                        while (e.hasMoreElements()) {
-                            final InetAddress inetAddress = e.nextElement();
-                            if (inetAddress instanceof Inet4Address) {
-                                final String address = inetAddress.getHostAddress();
-                                if (matchAddress(address, interfaces)) {
-                                    currentAddress = address;
-                                    break interfaces;
-                                } else {
-                                    if (!inetAddress.isLoopbackAddress()) {
+                    if (interfaces.size() > 0) {
+                        final Enumeration<NetworkInterface> enums = NetworkInterface.getNetworkInterfaces();
+                        interfaces:
+                        while (enums.hasMoreElements()) {
+                            final NetworkInterface ni = enums.nextElement();
+                            final Enumeration<InetAddress> e = ni.getInetAddresses();
+                            while (e.hasMoreElements()) {
+                                final InetAddress inetAddress = e.nextElement();
+                                if (inetAddress instanceof Inet4Address) {
+                                    final String address = inetAddress.getHostAddress();
+                                    if (matchAddress(address, interfaces)) {
                                         currentAddress = address;
                                         break interfaces;
                                     }
@@ -129,11 +123,29 @@ public class AddressPicker {
                             }
                         }
                     }
-                    if (config.getNetworkConfig().getInterfaces().isEnabled() && currentAddress == null) {
-                        String msg = "Hazelcast CANNOT start on this node. No matching network interface found. ";
-                        msg += "\nInterface matching must be either disabled or updated in the hazelcast.xml config file.";
-                        logger.log(Level.SEVERE, msg);
-                        throw new RuntimeException(msg);
+                    if (currentAddress == null) {
+                        if (config.getNetworkConfig().getInterfaces().isEnabled()) {
+                            String msg = "Hazelcast CANNOT start on this node. No matching network interface found. ";
+                            msg += "\nInterface matching must be either disabled or updated in the hazelcast.xml config file.";
+                            logger.log(Level.SEVERE, msg);
+                            throw new RuntimeException(msg);
+                        } else {
+                            final Enumeration<NetworkInterface> enums = NetworkInterface.getNetworkInterfaces();
+                            interfaces:
+                            while (enums.hasMoreElements()) {
+                                final NetworkInterface ni = enums.nextElement();
+                                final Enumeration<InetAddress> e = ni.getInetAddresses();
+                                while (e.hasMoreElements()) {
+                                    final InetAddress inetAddress = e.nextElement();
+                                    if (inetAddress instanceof Inet4Address) {
+                                        if (!inetAddress.isLoopbackAddress()) {
+                                            currentAddress = inetAddress.getHostAddress();
+                                            break interfaces;
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
