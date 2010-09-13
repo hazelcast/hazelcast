@@ -25,6 +25,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.nio.IOUtil.toData;
+
 public class TopicManager extends BaseManager {
 
     TopicManager(Node node) {
@@ -73,9 +75,9 @@ public class TopicManager extends BaseManager {
     void doPublish(String name, Object msg) {
         Data dataMsg = null;
         try {
-            dataMsg = ThreadContext.get().toData(msg);
+            dataMsg = toData(msg);
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalArgumentException(e);
         }
         enqueueAndReturn(new TopicPublishProcess(name, dataMsg));
     }
