@@ -1980,6 +1980,19 @@ public class FactoryImpl implements HazelcastInstance {
             return call;
         }
 
+        public Future removeAsync(Object key) {
+            final MProxyImpl mProxy = MProxyImpl.this;
+            final Data dataKey = IOUtil.toData(key);
+            AsyncCall call = new AsyncCall() {
+                @Override
+                protected void call() {
+                    setResult(mProxy.remove(dataKey));
+                }
+            };
+            factory.node.executorManager.executeLocally(call);
+            return call;
+        }
+
         public Object put(Object key, Object value, long ttl, TimeUnit timeunit) {
             beforeCall();
             try {
@@ -2313,6 +2326,10 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public Future putAsync(Object key, Object value) {
+                throw new UnsupportedOperationException();
+            }
+
+            public Future removeAsync(Object key) {
                 throw new UnsupportedOperationException();
             }
 

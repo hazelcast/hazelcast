@@ -101,6 +101,15 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
     Future<V> putAsync(K key, V value);
 
     /**
+     * Asynchronously removes the given key.
+     *
+     * @param key The key of the map entry to remove.
+     * @return A {@link java.util.concurrent.Future} from which the value
+     *         removed from the map can be retrieved.
+     */
+    Future<V> removeAsync(K key);
+
+    /**
      * Tries to put the given key, value into this map within specified
      * timeout value.
      *
@@ -378,8 +387,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * Adds an index to this map based on the provided expression.
      *
      * @param expression The expression for the index.
-     * @param ordered   <tt>true</tt> if index should be ordered,
-     *                  <tt>false</tt> otherwise.
+     * @param ordered    <tt>true</tt> if index should be ordered,
+     *                   <tt>false</tt> otherwise.
      */
     void addIndex(Expression<?> expression, boolean ordered);
 

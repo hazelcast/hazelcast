@@ -224,6 +224,11 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         return proxyHelper.doAsync(ClusterOperation.CONCURRENT_MAP_PUT, key, value);
     }
 
+    public Future<V> removeAsync(K key) {
+        check(key);
+        return proxyHelper.doAsync(ClusterOperation.CONCURRENT_MAP_REMOVE, key, null);
+    }
+
     public V put(K key, V value) {
         check(key);
         check(value);

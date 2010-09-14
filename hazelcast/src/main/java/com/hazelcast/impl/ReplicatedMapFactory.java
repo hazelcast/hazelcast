@@ -78,6 +78,10 @@ public final class ReplicatedMapFactory {
             return distributedMap.putAsync(key, value);
         }
 
+        public Future<V> removeAsync(K key) {
+            return distributedMap.removeAsync(key);
+        }
+
         public V put(K key, V value, long ttl, TimeUnit timeunit) {
             return distributedMap.put(key, value, ttl, timeunit);
         }
