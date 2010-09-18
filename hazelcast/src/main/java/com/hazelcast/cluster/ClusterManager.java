@@ -334,7 +334,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             for (MemberImpl memberBefore : lsMembers) {
                 lsMembersBefore.add(memberBefore);
             }
-            removeMember(deadAddress);
+            removeMember(deadMember);
             node.blockingQueueManager.syncForDead(deadAddress);
             node.concurrentMapManager.syncForDead(deadMember);
             node.listenerManager.syncForDead(deadAddress);
@@ -704,7 +704,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
     }
 
-    public Member addMember(MemberImpl member) {
+    private Member addMember(MemberImpl member) {
         logger.log(Level.FINEST, "ClusterManager adding " + member);
         if (lsMembers.contains(member)) {
             for (MemberImpl m : lsMembers) {
@@ -712,22 +712,18 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                     member = m;
                 }
             }
+            mapMembers.put(member.getAddress(),  member);
         } else {
-            if (!member.getAddress().equals(thisAddress)) {
-                node.connectionManager.getConnection(member.getAddress());
-            }
             lsMembers.add(member);
             mapMembers.put(member.getAddress(), member);
         }
         return member;
     }
 
-    protected void removeMember(Address address) {
-        logger.log(Level.FINEST, "removing  " + address);
-        MemberImpl member = mapMembers.remove(address);
-        if (member != null) {
-            lsMembers.remove(member);
-        }
+    protected void removeMember(MemberImpl member) {
+        logger.log(Level.FINEST, "removing  " + member);
+        mapMembers.remove(member.getAddress());
+        lsMembers.remove(member);
     }
 
     protected MemberImpl createMember(Address address, NodeType nodeType) {
