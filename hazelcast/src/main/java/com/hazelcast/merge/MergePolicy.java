@@ -25,8 +25,8 @@ public interface MergePolicy {
      * of entries with the same key. Returning value can be
      * You should consider the case where existingEntry is null.
      *
-     * @param mapName name of the map
-     * @param mergingEntry entry merging into the destination cluster
+     * @param mapName       name of the map
+     * @param mergingEntry  entry merging into the destination cluster
      * @param existingEntry existing entry in the destination cluster
      * @return final value of the entry. If returns null then no change on the entry.
      */
