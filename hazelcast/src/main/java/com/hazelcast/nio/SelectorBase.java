@@ -47,7 +47,7 @@ public abstract class SelectorBase implements Runnable {
 
     private final int waitTime;
 
-    protected boolean live = true;
+    protected volatile boolean live = true;
 
     public SelectorBase(Node node, int waitTime) {
         this.node = node;
@@ -86,8 +86,8 @@ public abstract class SelectorBase implements Runnable {
     }
 
     abstract void processSelectionQueue();
-
-    public void run() {
+    
+    public final void run() {
         try {
             while (live) {
                 if (size.get() > 0) {
@@ -118,11 +118,12 @@ public abstract class SelectorBase implements Runnable {
                         selectionHandler.handle();
                     } catch (Exception e) {
                         handleSelectorException(e);
-                        return;
+                        //break;
                     }
                 }
             }
         } catch (Exception ignored) {
+        	ignored.printStackTrace();
         } finally {
             try {
                 logger.log(Level.FINE, "closing selector " + Thread.currentThread().getName());
@@ -133,9 +134,8 @@ public abstract class SelectorBase implements Runnable {
     }
 
     protected void handleSelectorException(final Exception e) {
-        String msg = "Selector exception at  " + Thread.currentThread().getName();
-        msg += ", cause= " + e.toString();
-        logger.log(Level.FINEST, msg, e);
+        String msg = "Selector exception at  " + Thread.currentThread().getName() + ", cause= " + e.toString();
+        logger.log(Level.WARNING, msg, e);
     }
 
     protected Connection initChannel(final SocketChannel socketChannel, final boolean acceptor)
