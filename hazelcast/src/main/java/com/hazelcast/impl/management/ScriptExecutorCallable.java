@@ -20,8 +20,6 @@ package com.hazelcast.impl.management;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.NotSerializableException;
-import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,18 +28,19 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.SerializationHelper;
 
-public class ScriptExecutorCallable implements DataSerializable, Callable<Serializable> {
+public class ScriptExecutorCallable<V> implements DataSerializable, Callable<V>, HazelcastInstanceAware {
+	
 	private static final long serialVersionUID = -4729129143589252665L;
 	
 	private static final ILogger logger = Logger.getLogger(ScriptExecutorCallable.class.getName());
-	
 	private static final String SCRIPT_ENGINE_MANAGER_CLASS = "javax.script.ScriptEngineManager";
-	
 	private static final Class/*<ScriptEngineManager>*/ scriptEngineManagerClass;
 	private static final Object lock = new Object();
 	
@@ -60,7 +59,8 @@ public class ScriptExecutorCallable implements DataSerializable, Callable<Serial
 
 	private String engineName;
 	private String script;
-	private Map<String, Serializable> bindings;
+	private Map<String, Object> bindings;
+	private transient HazelcastInstance hazelcast; 
 	
 	public ScriptExecutorCallable() {
 	}
@@ -71,14 +71,14 @@ public class ScriptExecutorCallable implements DataSerializable, Callable<Serial
 		this.script = script;
 	}
 	
-	public ScriptExecutorCallable(String engineName, String script, Map<String, Serializable> bindings) {
+	public ScriptExecutorCallable(String engineName, String script, Map<String, Object> bindings) {
 		super();
 		this.engineName = engineName;
 		this.script = script;
 		this.bindings = bindings;
 	}
 
-	public Serializable call() throws Exception {
+	public V call() throws Exception {
 		if(scriptEngineManagerClass == null) {
 			throw new ClassNotFoundException("ScriptEngineManager class could not be loaded!");
 		}
@@ -98,10 +98,12 @@ public class ScriptExecutorCallable implements DataSerializable, Callable<Serial
 			throw new NullPointerException("Could not find ScriptEngine named '" + engineName + "'.");
 		}
 		
+		Method put = engine.getClass().getMethod("put", new Class[]{String.class, Object.class});
+		put.invoke(engine, "hazelcast", hazelcast);
+		
 		if(bindings != null) {
-			Method put = engine.getClass().getMethod("put", new Class[]{String.class, Object.class});
-			Set<Entry<String, Serializable>> entries = bindings.entrySet();
-			for (Entry<String, Serializable> entry : entries) {
+			Set<Entry<String, Object>> entries = bindings.entrySet();
+			for (Entry<String, Object> entry : entries) {
 				// ScriptEngine.put(key, value);
 				put.invoke(engine, entry.getKey(), entry.getValue());
 			}
@@ -115,11 +117,7 @@ public class ScriptExecutorCallable implements DataSerializable, Callable<Serial
 			return null;
 		}
 		
-		if(result instanceof Serializable) {
-			return (Serializable) result;
-		}
-		
-		throw new NotSerializableException(result.getClass().getName());
+		return (V) result;
 	}
 
 	public void writeData(DataOutput out) throws IOException {
@@ -127,8 +125,8 @@ public class ScriptExecutorCallable implements DataSerializable, Callable<Serial
 		out.writeUTF(script);
 		if(bindings != null) {
 			out.writeInt(bindings.size());
-			Set<Entry<String, Serializable>> entries = bindings.entrySet();
-			for (Entry<String, Serializable> entry : entries) {
+			Set<Entry<String, Object>> entries = bindings.entrySet();
+			for (Entry<String, Object> entry : entries) {
 				out.writeUTF(entry.getKey());
 				SerializationHelper.writeObject(out, entry.getValue());
 			}
@@ -143,13 +141,17 @@ public class ScriptExecutorCallable implements DataSerializable, Callable<Serial
 		script = in.readUTF();
 		int size = in.readInt();
 		if(size > 0) {
-			bindings = new HashMap<String, Serializable>(size);
+			bindings = new HashMap<String, Object>(size);
 			for (int i = 0; i < size; i++) {
 				String key = in.readUTF();
-				Serializable value = (Serializable) SerializationHelper.readObject(in);
+				Object value = SerializationHelper.readObject(in);
 				bindings.put(key, value);
 			}
 		}
+	}
+
+	public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+		this.hazelcast = hazelcastInstance;
 	}
 
 }

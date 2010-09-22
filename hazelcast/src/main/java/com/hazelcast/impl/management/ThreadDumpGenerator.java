@@ -39,13 +39,18 @@ public abstract class ThreadDumpGenerator {
 	}
 	
 	public static ThreadDumpGenerator newInstance(ThreadMXBean bean) throws Exception {
-		String v = System.getProperty("java.specification.version");
+		String p = System.getProperty("java.specification.version");
+		// 1.4, 1.5, 1.6 ...
+		int v = Integer.parseInt(p.split("\\.")[1]);
 		String cname = null;
-		if("1.6".equals(v)) {
+		if(v >= 6) {
 			cname = THREAD_DUMP_16_CNAME;
 		}
-		else {
+		else if(v == 5) {
 			cname = THREAD_DUMP_15_CNAME;
+		}
+		else {
+			throw new UnsupportedOperationException("ThreadDumpGenerator can not run on JVM version: " + p);
 		}
 		
 		String pkg = ThreadDumpGenerator.class.getPackage().getName();
