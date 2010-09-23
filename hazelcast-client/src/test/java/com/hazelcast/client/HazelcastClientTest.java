@@ -254,6 +254,7 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
             }
 
             public void entryUpdated(EntryEvent<String, String> event) {
+            	assertEquals("world", event.getOldValue());
                 assertEquals("new world", event.getValue());
                 assertEquals("hello", event.getKey());
                 latchUpdated.countDown();

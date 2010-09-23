@@ -782,7 +782,7 @@ public class CMap {
         }
         if (removed) {
             record.incrementVersion();
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKey(), req.value, record.getListeners(), req.caller);
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKey(), null, req.value, record.getListeners(), req.caller);
             logger.log(Level.FINEST, record.getValue() + " RemoveMulti " + record.getMultiValues());
         }
         req.version = record.getVersion();
@@ -810,7 +810,7 @@ public class CMap {
             updateIndexes(record);
             record.addValue(value);
             record.incrementVersion();
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKey(), value, record.getListeners(), req.caller);
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKey(), null, value, record.getListeners(), req.caller);
         }
         if (req.txnId != -1) {
             unlock(record);
@@ -902,7 +902,7 @@ public class CMap {
             concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record, req.caller);
         } else {
             fireInvalidation(record);
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_UPDATED, record, req.caller);
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_UPDATED, oldValue, record, req.caller);
         }
         if (req.txnId != -1) {
             unlock(record);
@@ -1231,7 +1231,7 @@ public class CMap {
         long now = System.currentTimeMillis();
         if (record != null && record.isActive() && record.valueCount() > 0) {
             fireInvalidation(record);
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_EVICTED, record.getKey(), record.getValue(), record.getListeners(), req.caller);
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_EVICTED, record.getKey(), null, record.getValue(), record.getListeners(), req.caller);
             record.incrementVersion();
             markAsRemoved(record);
             req.clearForResponse();
@@ -1274,7 +1274,7 @@ public class CMap {
         }
         if (oldValue != null) {
             fireInvalidation(record);
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKey(), oldValue, record.getListeners(), req.caller);
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKey(), null, oldValue, record.getListeners(), req.caller);
             record.incrementVersion();
         }
         markAsRemoved(record);
@@ -1511,7 +1511,7 @@ public class CMap {
             }
         }
     }
-
+    
     public static class CMapEntry implements HazelcastInstanceAware, MapEntry, DataSerializable {
         private long cost = 0;
         private long expirationTime = 0;

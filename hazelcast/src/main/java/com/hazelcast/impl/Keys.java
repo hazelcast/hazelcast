@@ -23,15 +23,24 @@ import com.hazelcast.nio.DataSerializable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 
 public class Keys implements DataSerializable {
 
     private Collection<Data> keys;
 
+    public Keys() {
+    	keys = new ArrayList<Data>();
+	}
+    
     public Keys(Collection<Data> keys) {
         this.keys = keys;
     }
+    
+    public Collection<Data> getKeys() {
+		return this.keys;
+	}
 
     public void readData(DataInput in) throws IOException {
         int size = in.readInt();

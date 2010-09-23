@@ -1233,11 +1233,35 @@ public abstract class BaseManager {
             }
             return key;
         }
+        
+        private void fillValues(){
+        	oldValue = null;
+            Object v = toObject(dataValue);
+    		if (v instanceof Keys){
+    			final Keys keys = (Keys) v;
+    			final Iterator<Data> it = keys.getKeys().iterator();
+				value = it.hasNext() ? toObject(it.next()) : null;
+				oldValue = it.hasNext() ? toObject(it.next()) : null;
+    		} else {
+    			value = v;
+    		}
+        }
+        
+        public Object getOldValue() {
+        	if (oldValue == null) {
+                if (dataValue != null) {
+                	fillValues();
+                } else if (collection) {
+                    value = null;
+                }
+            }
+            return oldValue;
+        }
 
         public Object getValue() {
             if (value == null) {
                 if (dataValue != null) {
-                    value = toObject(dataValue);
+                	fillValues();
                 } else if (collection) {
                     value = key;
                 }
@@ -1247,12 +1271,17 @@ public abstract class BaseManager {
     }
 
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
-                      final int eventType, final Data value, Address callerAddress) {
-        fireMapEvent(mapListeners, name, eventType, null, value, null, callerAddress);
+            final int eventType, final Data value, Address callerAddress) {
+        fireMapEvent(mapListeners, name, eventType, null, value, callerAddress);
     }
 
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
-                      final int eventType, final Data key, final Data value,
+                      final int eventType, final Data oldValue, final Data value, Address callerAddress) {
+        fireMapEvent(mapListeners, name, eventType, null, oldValue, value, null, callerAddress);
+    }
+
+    void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
+                      final int eventType, final Data key, final Data oldValue, final Data value,
                       Map<Address, Boolean> keyListeners, Address callerAddress) {
         if (keyListeners == null && (mapListeners == null || mapListeners.size() == 0)) {
             return;
@@ -1280,7 +1309,8 @@ public abstract class BaseManager {
             if (mapTargetListeners == null || mapTargetListeners.size() == 0) {
                 return;
             }
-            sendEvents(eventType, name, key, value, mapTargetListeners, callerAddress);
+            Data packetValue = oldValue != null ? toData(new Keys(Arrays.asList(value, oldValue))) : value;
+            sendEvents(eventType, name, key, packetValue, mapTargetListeners, callerAddress);
         } catch (final Exception e) {
             e.printStackTrace();
         }

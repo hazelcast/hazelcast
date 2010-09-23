@@ -249,6 +249,7 @@ public class HazelcastTest {
             }
 
             public void entryUpdated(EntryEvent event) {
+            	assertEquals("world", event.getOldValue());
                 assertEquals("new world", event.getValue());
                 assertEquals("hello", event.getKey());
                 latchUpdated.countDown();

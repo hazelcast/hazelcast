@@ -43,6 +43,8 @@ public class EntryEvent<K, V> extends EventObject {
 
     protected K key;
 
+    protected V oldValue;
+
     protected V value;
 
     protected Member member;
@@ -54,13 +56,18 @@ public class EntryEvent<K, V> extends EventObject {
     public EntryEvent(Object source) {
         super(source);
         this.name = (String) source;
-        collection = !(name.startsWith("c:") || name.startsWith("m:u:"));
+        collection = !(name.startsWith(Prefix.MAP) || name.startsWith(Prefix.MULTIMAP));
     }
 
     public EntryEvent(Object source, Member member, int eventType, K key, V value) {
+        this(source, member, eventType, key, null, value);
+    }
+    
+    public EntryEvent(Object source, Member member, int eventType, K key, V oldValue, V value) {
         this(source);
         this.member = member;
         this.key = key;
+        this.oldValue = oldValue;
         this.value = value;
         this.entryEventType = entryEventType.getByType(eventType);
     }
@@ -78,6 +85,15 @@ public class EntryEvent<K, V> extends EventObject {
     public K getKey() {
         return key;
     }
+    
+    /**
+     * Returns the old value of the entry event
+     * 
+     * @return
+     */
+    public V getOldValue() {
+		return this.oldValue;
+	}
 
     /**
      * Returns the value of the entry event
@@ -116,9 +132,11 @@ public class EntryEvent<K, V> extends EventObject {
 
     @Override
     public String toString() {
-        return "EntryEvent {" + getSource() + "} key="
-                + getKey() + ", value=" + getValue() + ", event="
-                + entryEventType
+        return "EntryEvent {" + getSource() 
+                + "} key=" + getKey() 
+                + ", oldValue=" + getOldValue()
+                + ", value=" + getValue() 
+                + ", event=" + entryEventType
                 + ", by " + member;
     }
 }

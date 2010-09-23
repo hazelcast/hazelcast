@@ -1082,9 +1082,14 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
-                      final int eventType, final Record record, Address callerAddress) {
+                     final int eventType, final Record record, Address callerAddress) {
+        fireMapEvent(mapListeners, name, eventType, null, record, callerAddress);
+    }
+
+    void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
+                      final int eventType, final Data oldValue, final Record record, Address callerAddress) {
         checkServiceThread();
-        fireMapEvent(mapListeners, name, eventType, record.getKey(), record.getValue(), record.getListeners(), callerAddress);
+        fireMapEvent(mapListeners, name, eventType, record.getKey(), oldValue, record.getValue(), record.getListeners(), callerAddress);
     }
 
     public class MContainsValue extends MultiCall<Boolean> {

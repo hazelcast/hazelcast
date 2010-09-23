@@ -88,24 +88,15 @@ public class EntryListenerManager {
     }
 
     public void notifyEntryListeners(Packet packet) {
-        Object object = toObject(packet.getValue());
-        
         Object oldValue = null;
-        Object value = null;
-        
-        if (object != null){
-	        if (object instanceof Values){
-	        	Values values = (Values) object;
-	        	final Object[] array = values.toArray();
-	        	oldValue = array.length == 2 ? array[0] : null;
-	        	value = array.length == 2 ? array[1] :
-	        		array.length == 1 ? array[0] : null;
-	        } else {
-	        	value = object;
-	        }
-        }
-        
-		EntryEvent event = new EntryEvent(packet.getName(), null, (int) packet.getLongValue(),
+        Object value = toObject(packet.getValue());
+        if (value instanceof CollectionWrapper){
+            final CollectionWrapper values = (CollectionWrapper) value;
+            final Iterator it = values.getKeys().iterator();
+            value = it.hasNext() ? it.next() : null;
+            oldValue = it.hasNext() ? it.next() : null;
+        } 
+        final EntryEvent event = new EntryEvent(packet.getName(), null, (int) packet.getLongValue(),
         		toObject(packet.getKey()),
         		oldValue, value);
         String name = event.getName();
