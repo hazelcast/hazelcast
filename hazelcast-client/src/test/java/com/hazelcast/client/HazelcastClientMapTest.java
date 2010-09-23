@@ -17,6 +17,8 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.nio.DataSerializable;
@@ -34,7 +36,9 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -48,6 +52,87 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         imap.put(1, null);
     }
 
+    private static class EntryAdapter<K, V> implements EntryListener<K, V> {
+
+		@Override
+		public void entryAdded(EntryEvent<K, V> event) {
+		}
+
+		@Override
+		public void entryRemoved(EntryEvent<K, V> event) {
+		}
+
+		@Override
+		public void entryUpdated(EntryEvent<K, V> event) {
+		}
+
+		@Override
+		public void entryEvicted(EntryEvent<K, V> event) {
+		}
+    	
+    }
+    
+    @Test
+    public void testIssue321() throws Exception {
+    	HazelcastClient hClient = getHazelcastClient();
+		final IMap<Integer, Integer> imap1 = hClient.getMap("testIssue321_1");
+
+		final BlockingQueue<EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<EntryEvent<Integer,Integer>>();
+        final BlockingQueue<EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<EntryEvent<Integer,Integer>>();
+
+		imap1.addEntryListener(new EntryAdapter(){
+			@Override
+			public void entryAdded(EntryEvent event) {
+				events2.add(event);
+			}
+		}, false);
+		imap1.addEntryListener(new EntryAdapter(){
+			@Override
+			public void entryAdded(EntryEvent event) {
+				events1.add(event);
+			}
+		}, true);
+
+		imap1.put(1, 1);
+		
+		{
+			final EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.MILLISECONDS);
+			final EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.MILLISECONDS);
+			
+			assertNotNull(event1);
+			assertNotNull(event2);
+			
+			assertNotNull(event1.getValue());
+			assertNull(event2.getValue());
+		}
+    	
+    	final IMap<Integer, Integer> imap2 = hClient.getMap("testIssue321_2");
+		imap2.addEntryListener(new EntryAdapter(){
+			@Override
+			public void entryAdded(EntryEvent event) {
+				events1.add(event);
+			}
+		}, true);
+		imap2.addEntryListener(new EntryAdapter(){
+			@Override
+			public void entryAdded(EntryEvent event) {
+				events2.add(event);
+			}
+		}, false);
+		imap2.put(1, 1);
+		
+		{
+			final EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.MILLISECONDS);
+			final EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.MILLISECONDS);
+			
+			assertNotNull(event1);
+			assertNotNull(event2);
+			
+			assertNotNull(event1.getValue());
+			assertNull(event2.getValue());
+		}
+    }
+    
     @Test
     public void getMapName() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
@@ -358,7 +443,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         final CountDownLatch entryUpdatedLatch = new CountDownLatch(1);
         final CountDownLatch entryRemovedLatch = new CountDownLatch(1);
         CountDownLatchEntryListener<String, String> listener = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
-        map.addEntryListener(listener, "hello", true);
+        map.addEntryListener(listener,"hello", true);
         assertNull(map.get("hello"));
         map.put("hello", "world");
         map.put("hello", "new world");

@@ -48,14 +48,19 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         check(listener);
-        if (proxyHelper.getHazelcastClient().getListenerManager().getEntryListenerManager().noEntryListenerRegistered(key, name)) {
+        Boolean noEntryListenerRegistered = proxyHelper.getHazelcastClient().getListenerManager().getEntryListenerManager().noEntryListenerRegistered(key, name, includeValue);
+        if (noEntryListenerRegistered == null){
+        	proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
+        	noEntryListenerRegistered = Boolean.TRUE;
+        }
+		if (noEntryListenerRegistered) {
             Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, toByte(key), null);
             request.setLongValue(includeValue ? 1 : 0);
             Call c = proxyHelper.createCall(request);
             proxyHelper.getHazelcastClient().getListenerManager().addListenerCall(c);
             proxyHelper.doCall(c);
         }
-        proxyHelper.getHazelcastClient().getListenerManager().getEntryListenerManager().registerEntryListener(name, key, listener);
+        proxyHelper.getHazelcastClient().getListenerManager().getEntryListenerManager().registerEntryListener(name, key, includeValue, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener) {

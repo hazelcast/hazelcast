@@ -51,14 +51,19 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
 
     public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         check(listener);
-        if (client.getListenerManager().getEntryListenerManager().noEntryListenerRegistered(key, name)) {
+        Boolean noEntryListenerRegistered = client.getListenerManager().getEntryListenerManager().noEntryListenerRegistered(key, name, includeValue);
+        if (noEntryListenerRegistered == null){
+        	proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
+        	noEntryListenerRegistered = Boolean.TRUE;
+        }
+		if (noEntryListenerRegistered.booleanValue()) {
             Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, toByte(key), null);
             request.setLongValue(includeValue ? 1 : 0);
             Call c = proxyHelper.createCall(request);
             client.getListenerManager().addListenerCall(c);
             proxyHelper.doCall(c);
-        }
-        client.getListenerManager().getEntryListenerManager().registerEntryListener(name, key, listener);
+        } 
+        client.getListenerManager().getEntryListenerManager().registerEntryListener(name, key, includeValue, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener) {

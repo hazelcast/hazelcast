@@ -51,7 +51,7 @@ public class ItemListenerManager {
                 // TODO Auto-generated method stub
             }
         };
-        entryListenerManager.registerEntryListener(name, null, e);
+        entryListenerManager.registerEntryListener(name, null, false, e);
         itemListener2EntryListener.put(itemListener, e);
     }
 
