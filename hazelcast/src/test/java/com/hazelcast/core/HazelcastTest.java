@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -137,6 +138,39 @@ public class HazelcastTest {
         Assert.assertFalse(an.compareAndSet(23, 50));
         assertTrue(an.compareAndSet(24, 50));
     }
+    
+    @Test
+    public void testMapIsEmpty() {
+        IMap<String, String> map = Hazelcast.getMap("testMapIsEmpty");
+        assertTrue(map.isEmpty());
+        map.put("Hello", "World");
+        assertFalse(map.isEmpty());
+    }
+    
+    @Test
+    public void testLockKey() {
+        IMap<String, String> map = Hazelcast.getMap("testLockKey");
+        map.lock("Hello");
+        try{
+            assertFalse(map.containsKey("Hello"));
+        } finally {
+            map.unlock("Hello");
+        }
+        map.put("Hello", "World");
+        map.lock("Hello");
+        try{
+            assertTrue(map.containsKey("Hello"));
+        } finally {
+            map.unlock("Hello");
+        }
+        map.remove("Hello");
+        map.lock("Hello");
+        try{
+            assertFalse(map.containsKey("Hello"));
+        } finally {
+            map.unlock("Hello");
+        }
+    }
 
     @Test
     public void testMapReplaceIfSame() {
@@ -207,6 +241,36 @@ public class HazelcastTest {
         assertTrue(map.containsKey("hazel"));
     }
 
+    @Test
+    public void valuesToArray() {
+    	IMap<String, String> map = Hazelcast.getMap("valuesToArray");
+        assertEquals(0, map.size());
+        map.put("a", "1");
+        map.put("b", "2");
+        map.put("c", "3");
+        assertEquals(3, map.size());
+        {
+            final Object[] values = map.values().toArray();
+            Arrays.sort(values);
+            assertArrayEquals(new Object[]{"1", "2", "3"}, values);
+        }
+        {
+            final String[] values = map.values().toArray(new String[3]);
+            Arrays.sort(values);
+            assertArrayEquals(new String[]{"1", "2", "3"}, values);
+        }
+        {
+            final String[] values = map.values().toArray(new String[2]);
+            Arrays.sort(values);
+            assertArrayEquals(new String[]{"1", "2", "3"}, values);
+        }
+        {
+            final String[] values = map.values().toArray(new String[5]);
+            Arrays.sort(values, 0, 3);
+            assertArrayEquals(new String[]{"1", "2", "3", null, null}, values);
+        }
+    }
+    
     @Test
     public void testMapEntrySet() {
         IMap<String, String> map = Hazelcast.getMap("testMapEntrySet");

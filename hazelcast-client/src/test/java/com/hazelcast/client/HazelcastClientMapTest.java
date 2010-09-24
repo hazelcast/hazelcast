@@ -322,6 +322,37 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         }
         assertEquals(0, map.size());
     }
+    
+    @Test
+    public void valuesToArray() {
+        HazelcastClient hClient = getHazelcastClient();
+        IMap map = hClient.getMap("valuesToArray");
+        assertEquals(0, map.size());
+        map.put("a", "1");
+        map.put("b", "2");
+        map.put("c", "3");
+        assertEquals(3, map.size());
+        {
+            final Object[] values = map.values().toArray();
+            Arrays.sort(values);
+            assertArrayEquals(new Object[]{"1", "2", "3"}, values);
+        }
+        {
+            final String[] values = (String[])map.values().toArray(new String[3]);
+            Arrays.sort(values);
+            assertArrayEquals(new String[]{"1", "2", "3"}, values);
+        }
+        {
+            final String[] values = (String[])map.values().toArray(new String[2]);
+            Arrays.sort(values);
+            assertArrayEquals(new String[]{"1", "2", "3"}, values);
+        }
+        {
+            final String[] values = (String[])map.values().toArray(new String[5]);
+            Arrays.sort(values, 0, 3);
+            assertArrayEquals(new String[]{"1", "2", "3", null, null}, values);
+        }
+    }
 
     @Test
     public void getMapEntry() {

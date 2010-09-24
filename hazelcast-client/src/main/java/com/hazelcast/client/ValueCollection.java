@@ -85,14 +85,30 @@ public class ValueCollection<K, V> implements Collection<V> {
     }
 
     public Object[] toArray() {
-        List<V> list = new ArrayList<V>();
+        List<V> list = new ArrayList<V>(entrySet.size());
         for (Entry<K, V> entry : entrySet) {
             list.add(entry.getValue());
         }
         return list.toArray();
     }
 
-    public <T> T[] toArray(T[] arg0) {
-        throw new UnsupportedOperationException();
+    public <T> T[] toArray(final T[] a) {
+        final int size = size();
+        final T[] result;
+        if (a.length < size) {
+            result = (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), size);
+        } else {
+            result = a;
+        }
+        int i = 0;
+        for (Entry<K, V> entry : entrySet){ 
+            result[i++] = (T) entry.getValue();
+        }
+
+        for(int j = i; j < a.length; j++){
+        	result[j] = null;
+        }
+
+        return result;
     }
 }
