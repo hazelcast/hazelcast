@@ -61,7 +61,7 @@ public class MapIndexService {
         byte[] indexTypes = record.getIndexTypes();
         if (indexValues != null && hasIndexedAttributes) {
             if (indexTypes == null || indexValues.length != indexTypes.length) {
-                throw new IllegalArgumentException("index and types don't match " + indexTypes);
+                throw new IllegalArgumentException("index and types don't match " + Arrays.toString(indexTypes));
             }
             Collection<Index> indexes = mapIndexes.values();
             for (Index index : indexes) {
