@@ -569,7 +569,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 }
             }
             for (AsyncRemotelyBooleanCallable call : calls) {
-                if (call.getResultAsBoolean() == Boolean.FALSE) {
+                if (!call.getResultAsBoolean()) {
                     newMemberList.remove(call.getTarget());
                 }
             }
@@ -580,7 +580,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 calls.add(call);
             }
             for (AsyncRemotelyBooleanCallable call : calls) {
-                if (call.getResultAsBoolean() == Boolean.FALSE) {
+                if (!call.getResultAsBoolean()) {
                     newMemberList.remove(call.getTarget());
                 }
             }
@@ -592,7 +592,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 calls.add(call);
             }
             for (AsyncRemotelyBooleanCallable call : calls) {
-                if (call.getResultAsBoolean() == Boolean.FALSE) {
+                if (!call.getResultAsBoolean()) {
                     newMemberList.remove(call.getTarget());
                 }
             }

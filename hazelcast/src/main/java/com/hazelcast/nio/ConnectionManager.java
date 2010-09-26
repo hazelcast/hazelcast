@@ -166,7 +166,8 @@ public class ConnectionManager {
         for (Connection conn : mapConnections.values()) {
             try {
                 remove(conn);
-            } catch (final Exception ignore) {
+            } catch (final Throwable ignore) {
+            	ignore.printStackTrace();
             }
         }
         setConnectionInProgress.clear();
