@@ -137,9 +137,9 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
     }
 
     @Test
-    public void lockMap() throws InterruptedException {
+    public void lockMapKey() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
-        final IMap map = hClient.getMap("lockMap");
+        final IMap map = hClient.getMap("lockMapKey");
         final CountDownLatch latch = new CountDownLatch(1);
         map.put("a", "b");
         Thread.sleep(10);
@@ -153,6 +153,26 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         Thread.sleep(10);
         assertEquals(1, latch.getCount());
         map.unlock("a");
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void lockMap() throws InterruptedException {
+        HazelcastClient hClient = getHazelcastClient();
+        final IMap map = hClient.getMap("lockMap");
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.put("a", "b");
+        Thread.sleep(10);
+        map.lockMap(10, TimeUnit.MILLISECONDS);
+        new Thread(new Runnable() {
+            public void run() {
+            	map.lockMap(10, TimeUnit.MILLISECONDS);
+                latch.countDown();
+            }
+        }).start();
+        Thread.sleep(10);
+        assertEquals(1, latch.getCount());
+        map.unlockMap();
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 

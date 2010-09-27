@@ -64,6 +64,8 @@ public class ClientService implements ConnectionListener {
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_GET_MAP_ENTRY.getValue()] = new GetMapEntryHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_LOCK.getValue()] = new MapLockHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_UNLOCK.getValue()] = new MapUnlockHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_LOCK_MAP.getValue()] = new MapLockMapHandler();
+        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_UNLOCK_MAP.getValue()] = new MapUnlockMapHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_CONTAINS.getValue()] = new MapContainsHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_CONTAINS_VALUE.getValue()] = new MapContainsValueHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ADD_TO_LIST.getValue()] = new ListAddHandler();
@@ -617,6 +619,39 @@ public class ClientService implements ConnectionListener {
     private class MapUnlockHandler extends ClientMapOperationHandler {
         public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
             map.unlock(key);
+            return null;
+        }
+
+        @Override
+        public void processCall(Node node, Packet packet) {
+            IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+            Data value = processMapOp(map, packet.getKeyData(), packet.getValueData());
+            ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
+            clientEndpoint.unlocked(map, packet.getKeyData(), packet.threadId);
+            packet.clearForResponse();
+            packet.setValue(value);
+        }
+    }
+
+    private class MapLockMapHandler extends ClientMapOperationHandler {
+        public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+            throw new RuntimeException("Shouldn't invoke this method");
+        }
+
+        @Override
+        public void processCall(Node node, Packet packet) {
+            IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+            long timeout = packet.timeout;
+            Data value = toData(map.lockMap(timeout, (TimeUnit) toObject(packet.getValueData())));
+            packet.setValue(value);
+            ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
+            clientEndpoint.locked(map, packet.getKeyData(), packet.threadId);
+        }
+    }
+
+    private class MapUnlockMapHandler extends ClientMapOperationHandler {
+        public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+            map.unlockMap();
             return null;
         }
 
