@@ -22,7 +22,6 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -33,35 +32,44 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static com.hazelcast.client.Serializer.toObject;
 
 public class EntryListenerManager {
-	
-	private final ConcurrentMap<String, Map<Object, List<EntryListenerHolder>>> entryListeners = new ConcurrentHashMap<String, Map<Object, List<EntryListenerHolder>>>();
+    
+    private final Object NULL_KEY = new Object();
+    
+    private final ConcurrentMap<String, ConcurrentHashMap<Object, List<EntryListenerHolder>>> entryListeners =
+        new ConcurrentHashMap<String, ConcurrentHashMap<Object, List<EntryListenerHolder>>>();
 
     public synchronized void registerEntryListener(String name, Object key, boolean includeValue, EntryListener<?, ?> entryListener) {
-    	Map<Object, List<EntryListenerHolder>> map = entryListeners.get(name);
+        ConcurrentHashMap<Object, List<EntryListenerHolder>> map = entryListeners.get(name);
+        key = toKey(key);
         if (map == null) {
-        	map = new HashMap<Object, List<EntryListenerHolder>>();
-        	final Map<Object, List<EntryListenerHolder>> map2 = entryListeners.putIfAbsent(name, map);
-			if (map2 != null){
-        		map = map2;
-        	}
+            map = new ConcurrentHashMap<Object, List<EntryListenerHolder>>();
+            final ConcurrentHashMap<Object, List<EntryListenerHolder>> map2 = entryListeners.putIfAbsent(name, map);
+            if (map2 != null){
+                map = map2;
+            }
         }
-        if (!map.containsKey(key)) {
-        	map.put(key, new CopyOnWriteArrayList<EntryListenerHolder>());
+        if (!map.contains(key)){
+            map.putIfAbsent(key, new CopyOnWriteArrayList<EntryListenerHolder>());
         }
         map.get(key).add(new EntryListenerHolder(entryListener, includeValue));
     }
 
+    private Object toKey(final Object key){
+        return key != null ? key : NULL_KEY;
+    }
+    
     public synchronized void removeEntryListener(String name, Object key, EntryListener<?, ?> entryListener) {
         Map<Object, List<EntryListenerHolder>> m = entryListeners.get(name);
         if (m != null) {
+            key = toKey(key);
             List<EntryListenerHolder> list = m.get(key);
             if (list != null) {
-            	for(final Iterator<EntryListenerHolder> it = list.iterator();it.hasNext();){
-            		final EntryListenerHolder entryListenerHolder = it.next();
-            		if (entryListenerHolder.listener.equals(entryListener)){
-            			list.remove(entryListenerHolder);
-            		}
-            	}
+                for(final Iterator<EntryListenerHolder> it = list.iterator();it.hasNext();){
+                    final EntryListenerHolder entryListenerHolder = it.next();
+                    if (entryListenerHolder.listener.equals(entryListener)){
+                        list.remove(entryListenerHolder);
+                    }
+                }
                 if (m.get(key).isEmpty()) {
                     m.remove(key);
                 }
@@ -73,18 +81,19 @@ public class EntryListenerManager {
     }
 
     public synchronized Boolean noEntryListenerRegistered(Object key, String name, boolean includeValue) {
-    	final Map<Object, List<EntryListenerHolder>> map = entryListeners.get(name);
-		if (map == null || map.get(key) == null){
-    		return Boolean.TRUE;
-    	}
+        final Map<Object, List<EntryListenerHolder>> map = entryListeners.get(name);
+        key = toKey(key);
+        if (map == null || map.get(key) == null){
+            return Boolean.TRUE;
+        }
         for (final EntryListenerHolder holder : map.get(key)) {
-			if (holder.includeValue == includeValue){
-				return Boolean.FALSE;
-			} else if (includeValue) {
-				return null;
-			}
-		}
-		return Boolean.TRUE;
+            if (holder.includeValue == includeValue){
+                return Boolean.FALSE;
+            } else if (includeValue) {
+                return null;
+            }
+        }
+        return Boolean.TRUE;
     }
 
     public void notifyEntryListeners(Packet packet) {
@@ -97,13 +106,15 @@ public class EntryListenerManager {
             oldValue = it.hasNext() ? it.next() : null;
         } 
         final EntryEvent event = new EntryEvent(packet.getName(), null, (int) packet.getLongValue(),
-        		toObject(packet.getKey()),
-        		oldValue, value);
+                toObject(packet.getKey()),
+                oldValue, value);
         String name = event.getName();
-        Object key = event.getKey();
+        Object key = toKey(event.getKey());
         if (entryListeners.get(name) != null) {
-            notifyEntryListeners(event, entryListeners.get(name).get(null));
-            notifyEntryListeners(event, entryListeners.get(name).get(key));
+            notifyEntryListeners(event, entryListeners.get(name).get(NULL_KEY));
+            if (key != NULL_KEY){
+                notifyEntryListeners(event, entryListeners.get(name).get(key));
+            }
         }
     }
 
@@ -112,8 +123,8 @@ public class EntryListenerManager {
             return;
         }
         EntryEvent eventNoValue = event.getValue() != null ? 
-        	new EntryEvent(event.getSource(), event.getMember(), event.getEventType().getType(), event.getKey(), null, null) : 
-        	event;
+            new EntryEvent(event.getSource(), event.getMember(), event.getEventType().getType(), event.getKey(), null, null) : 
+            event;
         switch (event.getEventType()) {
             case ADDED:
                 for (EntryListenerHolder holder : collection) {
@@ -121,17 +132,17 @@ public class EntryListenerManager {
                 }
                 break;
             case UPDATED:
-            	for (EntryListenerHolder holder : collection) {
+                for (EntryListenerHolder holder : collection) {
                     holder.listener.entryUpdated(holder.includeValue ? event : eventNoValue);
                 }
                 break;
             case REMOVED:
-            	for (EntryListenerHolder holder : collection) {
+                for (EntryListenerHolder holder : collection) {
                     holder.listener.entryRemoved(holder.includeValue ? event : eventNoValue);
                 }
                 break;
             case EVICTED:
-            	for (EntryListenerHolder holder : collection) {
+                for (EntryListenerHolder holder : collection) {
                     holder.listener.entryEvicted(holder.includeValue ? event : eventNoValue);
                 }
                 break;
@@ -139,12 +150,12 @@ public class EntryListenerManager {
     }
     
     private static class EntryListenerHolder {
-    	private final EntryListener listener;
-    	private boolean includeValue;
-    	
-		public EntryListenerHolder(EntryListener listener, boolean includeValue) {
-			this.listener = listener;
-			this.includeValue = includeValue;
-		}
+        private final EntryListener listener;
+        private boolean includeValue;
+        
+        public EntryListenerHolder(EntryListener listener, boolean includeValue) {
+            this.listener = listener;
+            this.includeValue = includeValue;
+        }
     }
 }

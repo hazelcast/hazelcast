@@ -71,62 +71,67 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
     @Test
     public void testIssue321() throws Exception {
     	HazelcastClient hClient = getHazelcastClient();
-		final IMap<Integer, Integer> imap1 = hClient.getMap("testIssue321_1");
+		final IMap<Integer, Integer> imap = hClient.getMap("testIssue321_1");
 
 		final BlockingQueue<EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<EntryEvent<Integer,Integer>>();
         final BlockingQueue<EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<EntryEvent<Integer,Integer>>();
 
-		imap1.addEntryListener(new EntryAdapter(){
+		imap.addEntryListener(new EntryAdapter(){
 			@Override
 			public void entryAdded(EntryEvent event) {
 				events2.add(event);
 			}
 		}, false);
-		imap1.addEntryListener(new EntryAdapter(){
+		imap.addEntryListener(new EntryAdapter(){
 			@Override
 			public void entryAdded(EntryEvent event) {
 				events1.add(event);
 			}
 		}, true);
 
-		imap1.put(1, 1);
+		imap.put(1, 1);
 		
-		{
-			final EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.MILLISECONDS);
-			final EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.MILLISECONDS);
-			
-			assertNotNull(event1);
-			assertNotNull(event2);
-			
-			assertNotNull(event1.getValue());
-			assertNull(event2.getValue());
-		}
-    	
-    	final IMap<Integer, Integer> imap2 = hClient.getMap("testIssue321_2");
-		imap2.addEntryListener(new EntryAdapter(){
+		final EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.MILLISECONDS);
+		final EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.MILLISECONDS);
+		
+		assertNotNull(event1);
+		assertNotNull(event2);
+		
+		assertNotNull(event1.getValue());
+		assertNull(event2.getValue());
+    
+    }
+    
+    @Test
+    public void testIssue321_2() throws Exception {
+    	HazelcastClient hClient = getHazelcastClient();
+    	final IMap<Integer, Integer> imap = hClient.getMap("testIssue321_2");
+		final BlockingQueue<EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<EntryEvent<Integer,Integer>>();
+        final BlockingQueue<EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<EntryEvent<Integer,Integer>>();
+
+		imap.addEntryListener(new EntryAdapter(){
 			@Override
 			public void entryAdded(EntryEvent event) {
 				events1.add(event);
 			}
 		}, true);
-		imap2.addEntryListener(new EntryAdapter(){
+		Thread.sleep(50L);
+		imap.addEntryListener(new EntryAdapter(){
 			@Override
 			public void entryAdded(EntryEvent event) {
 				events2.add(event);
 			}
 		}, false);
-		imap2.put(1, 1);
+		imap.put(1, 1);
 		
-		{
-			final EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.MILLISECONDS);
-			final EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.MILLISECONDS);
-			
-			assertNotNull(event1);
-			assertNotNull(event2);
-			
-			assertNotNull(event1.getValue());
-			assertNull(event2.getValue());
-		}
+		final EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.MILLISECONDS);
+		final EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.MILLISECONDS);
+		
+		assertNotNull(event1);
+		assertNotNull(event2);
+		
+		assertNotNull(event1.getValue());
+		assertNull(event2.getValue());
     }
     
     @Test
