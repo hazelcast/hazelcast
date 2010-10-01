@@ -52,8 +52,10 @@ public final class Serializer {
     private static final byte SERIALIZER_TYPE_DATE = 7;
 
     private static final byte SERIALIZER_TYPE_BIG_INTEGER = 8;
+    
+    private static final byte SERIALIZER_TYPE_EXTERNALIZABLE = 9;
 
-    private static TypeSerializer[] typeSerializer = new TypeSerializer[9];
+    private static TypeSerializer[] typeSerializer = new TypeSerializer[10];
 
     private static int OUTPUT_STREAM_BUFFER_SIZE = 100 * 1024;
 
@@ -61,6 +63,7 @@ public final class Serializer {
 
     static {
         registerTypeSerializer(new ObjectSerializer());
+        registerTypeSerializer(new Externalizer());
         registerTypeSerializer(new LongSerializer());
         registerTypeSerializer(new IntegerSerializer());
         registerTypeSerializer(new StringSerializer());
@@ -132,6 +135,8 @@ public final class Serializer {
                 typeId = SERIALIZER_TYPE_CLASS;
             } else if (obj instanceof BigInteger) {
                 typeId = SERIALIZER_TYPE_BIG_INTEGER;
+            } else if (obj instanceof Externalizable) {
+                typeId = SERIALIZER_TYPE_EXTERNALIZABLE;
             }
             bbos.writeByte(typeId);
             typeSerializer[typeId].write(bbos, obj);
@@ -294,6 +299,31 @@ public final class Serializer {
         public void write(FastByteArrayOutputStream bbos, DataSerializable obj) throws Exception {
             bbos.writeUTF(obj.getClass().getName());
             obj.writeData(bbos);
+        }
+    }
+    
+    static class Externalizer implements TypeSerializer<Externalizable> {
+        public byte getTypeId() {
+            return SERIALIZER_TYPE_EXTERNALIZABLE;
+        }
+
+        public Externalizable read(FastByteArrayInputStream bbis) throws Exception {
+            String className = bbis.readUTF();
+            try {
+            	Externalizable ds = (Externalizable) newInstance(classForName(className));
+                ds.readExternal(newObjectInputStream(bbis));
+                return ds;
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new IOException("Problem reading Externalizable class : " + className + ", exception: " + e);
+            }
+        }
+
+        public void write(FastByteArrayOutputStream bbos, Externalizable obj) throws Exception {
+            bbos.writeUTF(obj.getClass().getName());
+            final ObjectOutputStream out = new ObjectOutputStream(bbos);
+			obj.writeExternal(out);
+            out.flush();
         }
     }
 

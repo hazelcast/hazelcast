@@ -25,6 +25,10 @@ import org.junit.AfterClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -610,8 +614,83 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
 
     @Test
     public void newSerializer() {
-        byte[] b = Serializer.toByte("Fuad");
-        assertEquals("Fuad", Serializer.toObject(b));
+        final String str = "Fuad";
+        byte[] b = Serializer.toByte(str);
+        assertEquals(str, Serializer.toObject(b));
+    }
+    
+    @Test
+    public void newSerializerExternalizable() {
+        final ExternalizableImpl o = new ExternalizableImpl();
+        o.s = "Gallaxy";
+        o.v = 42;
+        byte[] b = Serializer.toByte(o);
+        assertFalse(b.length == 0);
+        assertFalse(o.readExternal);
+        assertTrue(o.writeExternal);
+        
+        final ExternalizableImpl object = (ExternalizableImpl)Serializer.toObject(b);
+        assertNotNull(object);
+        assertNotSame(o, object);
+        assertEquals(o, object);
+        assertTrue(object.readExternal);
+        assertFalse(object.writeExternal);
+    }
+    
+    @Test
+    public void testExternalizable() {
+        IMap<String, Object> map = getHazelcastClient().getMap("testExternalizable");
+        final ExternalizableImpl o = new ExternalizableImpl();
+        o.s = "Gallaxy";
+        o.v = 42;
+        map.put("Hello", o);
+        
+        assertFalse(o.readExternal);
+        assertTrue(o.writeExternal);
+        
+        final ExternalizableImpl object = (ExternalizableImpl) single.getHazelcastInstance().getMap("testExternalizable").get("Hello");
+        assertNotNull(object);
+        assertNotSame(o, object);
+        assertEquals(o, object);
+        assertTrue(object.readExternal);
+        assertFalse(object.writeExternal);
+    }
+    
+    
+    public static class ExternalizableImpl implements Externalizable {
+        private int v;
+        private String s;
+        
+        private boolean readExternal = false;
+        private boolean writeExternal = false;
+        
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) return true;
+            if (!(obj instanceof ExternalizableImpl)) return false;
+            final ExternalizableImpl other = (ExternalizableImpl) obj;
+            return this.v == other.v &&
+                ((this.s == null && other.s == null) ||
+                        (this.s != null && this.s.equals(other.s)));
+        }
+        
+        @Override
+        public int hashCode() {
+            return this.v  + 31 * (s != null ? s.hashCode() : 0);
+        }
+
+        public void readExternal(ObjectInput in) throws IOException,
+                ClassNotFoundException {
+            v = in.readInt();
+            s = in.readUTF();
+            readExternal = true;
+        }
+        
+        public void writeExternal(ObjectOutput out) throws IOException {
+            out.writeInt(v);
+            out.writeUTF(s);
+            writeExternal = true;
+        }
     }
 
     @Test

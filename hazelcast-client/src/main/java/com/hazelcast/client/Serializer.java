@@ -28,7 +28,7 @@ import java.util.Date;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-public class Serializer {
+public final class Serializer {
     private static final byte SERIALIZER_TYPE_DATA = 0;
 
     private static final byte SERIALIZER_TYPE_OBJECT = 1;
@@ -46,6 +46,8 @@ public class Serializer {
     private static final byte SERIALIZER_TYPE_DATE = 7;
 
     private static final byte SERIALIZER_TYPE_BIG_INTEGER = 8;
+    
+    private static final byte SERIALIZER_TYPE_EXTERNALIZABLE = 9;
 
     private static final boolean gzipEnabled = GroupProperties.SERIALIZER_GZIP_ENABLED.getBoolean();
 
@@ -84,6 +86,12 @@ public class Serializer {
                 byte[] bytes = ((BigInteger) object).toByteArray();
                 dos.writeInt(bytes.length);
                 dos.write(bytes);
+            } else if (object instanceof Externalizable){
+                dos.writeByte(SERIALIZER_TYPE_EXTERNALIZABLE);
+                dos.writeUTF(object.getClass().getName());
+                ObjectOutputStream os = new ObjectOutputStream(dos);
+                ((Externalizable) object).writeExternal(os);
+                os.flush();
             } else {
                 dos.writeByte(SERIALIZER_TYPE_OBJECT);
                 if (gzipEnabled) writeGZip(dos, object);
@@ -135,6 +143,13 @@ public class Serializer {
             } else if (type == SERIALIZER_TYPE_OBJECT) {
                 if (gzipEnabled) return readGZip(dis);
                 else return readNormal(dis);
+            } else if (type == SERIALIZER_TYPE_EXTERNALIZABLE) {
+                String className = dis.readUTF();
+                Externalizable data = (Externalizable) Class.forName(className).newInstance();
+                ObjectInputStream in = new ObjectInputStream(dis);
+                data.readExternal(in);
+                in.close();
+                return data;
             }
             dis.close();
         } catch (Exception e) {
