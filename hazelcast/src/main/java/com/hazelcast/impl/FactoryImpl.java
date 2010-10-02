@@ -433,7 +433,7 @@ public class FactoryImpl implements HazelcastInstance {
     public ExecutorService getExecutorService(String name) {
         if (name == null) throw new IllegalArgumentException("ExecutorService name cannot be null");
         initialChecks();
-        name = "x:" + name;
+        name = Prefix.EXECUTOR_SERVICE + name;
         ExecutorServiceProxy executorServiceProxy = executorServiceProxies.get(name);
         if (executorServiceProxy == null) {
             executorServiceProxy = new ExecutorServiceProxy(node, name);
@@ -802,7 +802,7 @@ public class FactoryImpl implements HazelcastInstance {
         if (proxies.containsKey(proxyKey)) {
             if (name.equals("lock")) {
                 locksMapProxy.remove(key);
-            } else if (name.startsWith("i:")) {
+            } else if (name.startsWith(Prefix.IDGEN)) {
                 idGeneratorMapProxy.remove(name);
             }
             globalProxies.remove(proxyKey);

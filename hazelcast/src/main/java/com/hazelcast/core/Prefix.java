@@ -68,7 +68,7 @@ public final class Prefix {
     public static final String IDGEN = "i:";
 
     /**
-     * The Constant ATOMIC_NUMBER: a:"
+     * The Constant ATOMIC_NUMBER: "a:"
      */
     public static final String ATOMIC_NUMBER = "a:";
 
@@ -81,6 +81,11 @@ public final class Prefix {
      * The Constant MULTIMAP: "m:u:"
      */
     public static final String MULTIMAP = MAP_BASED + AS_MULTIMAP;
+    
+    /**
+     * The Constant EXECUTOR_SERVICE: "x:"
+     */
+    public static final String EXECUTOR_SERVICE = "x:";
 
     /**
      * Private constructor to avoid instances of the class.

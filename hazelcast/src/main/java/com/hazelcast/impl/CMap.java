@@ -17,6 +17,8 @@
 
 package com.hazelcast.impl;
 
+import static com.hazelcast.core.Prefix.*;
+
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
@@ -142,7 +144,7 @@ public class CMap {
         this.name = name;
         MapConfig mapConfig = null;
         String mapConfigName = name.substring(2);
-        if (mapConfigName.startsWith("__hz_") || mapConfigName.startsWith("l:") || mapConfigName.startsWith("s:")) {
+        if (mapConfigName.startsWith("__hz_") || mapConfigName.startsWith(AS_LIST) || mapConfigName.startsWith(AS_SET)) {
             mapConfig = new MapConfig();
         } else {
             mapConfig = node.getConfig().getMapConfig(mapConfigName);

@@ -282,7 +282,7 @@ public class HazelcastClient implements HazelcastInstance {
 
     public ExecutorService getExecutorService(String name) {
         if (name == null) throw new IllegalArgumentException("ExecutorService name cannot be null");
-        name = "x:" + name;
+        name = Prefix.EXECUTOR_SERVICE + name;
         ExecutorServiceClientProxy executorServiceProxy = mapExecutors.get(name);
         if (executorServiceProxy == null) {
             executorServiceProxy = new ExecutorServiceClientProxy(this, name);
