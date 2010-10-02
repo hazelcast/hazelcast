@@ -96,7 +96,7 @@ public class MapNearCache {
             }
         }
     }
-
+    
     private List<Data> getInvalidEntries(long now) {
         List<Data> lsKeysToInvalidate = null;
         if (now - lastEvictionTime > 10000) {
@@ -197,6 +197,10 @@ public class MapNearCache {
 
     public int getMaxSize() {
         return maxSize;
+    }
+    
+    public boolean isEmpty(){
+    	return cache.isEmpty();
     }
 
     private class CacheEntry implements Processable {

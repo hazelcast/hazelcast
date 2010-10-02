@@ -359,6 +359,14 @@ public class ConcurrentMapManager extends BaseManager {
                     return false;
                 }
             }
+            
+            final CMap cMap = maps.get(name);
+            if (cMap != null && cMap.useBackupData){
+            	final Record record = cMap.mapRecords.get(dataKey);
+            	if (record != null && record.isActive() && record.isValid() && record.getValue() != null){
+           			return true;
+            	}
+            }
             return booleanCall(CONCURRENT_MAP_CONTAINS, name, dataKey, null, 0, -1);
         }
 
@@ -497,6 +505,18 @@ public class ConcurrentMapManager extends BaseManager {
                     return value;
                 }
             }
+            final CMap cMap = maps.get(name);
+            if (cMap != null && cMap.useBackupData){
+            	final Data dataKey = toData(key);
+            	final Record record = cMap.mapRecords.get(dataKey);
+            	if (record != null && record.isActive() && record.isValid()){
+            		final Data valueData = record.getValue();
+            		if (valueData != null){
+            			return toObject(valueData);
+            		}
+            	}
+            }
+            
             Object value = objectCall(CONCURRENT_MAP_GET, name, key, null, timeout, -1);
             if (value instanceof AddressAwareException) {
                 rethrowException(request.operation, (AddressAwareException) value);
@@ -1209,6 +1229,33 @@ public class ConcurrentMapManager extends BaseManager {
                 setLocal(CONCURRENT_MAP_SIZE, name);
                 request.setLongRequest();
             }
+        }
+    }
+    
+    public class MEmpty extends MSize {
+
+        public boolean isEmpty() {
+        	MapNearCache nearCache = mapCaches.get(name);
+            if (nearCache != null && !nearCache.isEmpty()) {
+                return false;
+            }
+            LocallyOwnedMap locallyOwnedMap = mapLocallyOwnedMaps.get(name);
+            if (locallyOwnedMap != null && !locallyOwnedMap.isEmpty()){
+           		return false;
+            }
+            final CMap cMap = maps.get(name);
+            if (cMap != null && cMap.useBackupData){
+            	for (final Record record : cMap.mapRecords.values()) {
+					if (record != null && record.isActive() && record.isValid() && record.getValue() != null){
+						return false;
+					}
+				}
+            }
+            return super.getSize() == 0;
+        }
+
+        public MEmpty(String name) {
+            super(name);
         }
     }
 

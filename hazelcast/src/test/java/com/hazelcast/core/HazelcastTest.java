@@ -20,6 +20,7 @@ package com.hazelcast.core;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.XmlConfigBuilder;
+
 import org.junit.*;
 
 import java.util.*;
@@ -120,6 +121,47 @@ public class HazelcastTest {
         assertEquals("Hello", entry.getKey());
         assertEquals("New World", entry.getValue());
     }
+    
+    @Test
+    public void testMapPutAndGetUseBackupData() throws Exception {
+        Config config = new XmlConfigBuilder().build();
+
+        String mapName1 = "testMapPutAndGetUseBackupData";
+        String mapName2 = "testMapPutAndGetUseBackupData2";
+        
+        MapConfig mapConfig1 = new MapConfig();
+        mapConfig1.setName(mapName1);
+        mapConfig1.setUseBackupData(true);
+        
+        MapConfig mapConfig2 = new MapConfig();
+        mapConfig2.setName(mapName2);
+        mapConfig2.setUseBackupData(false);
+        
+        config.getMapConfigs().put(mapName1, mapConfig1);
+        config.getMapConfigs().put(mapName2, mapConfig2);
+        
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        try {
+            IMap<Object, Object> m1 = h1.getMap(mapName1);
+            IMap<Object, Object> m2 = h1.getMap(mapName2);
+            
+            m1.put(1, 1);
+            m2.put(1, 1);
+            
+            assertEquals(1, m1.get(1));
+            assertEquals(1, m1.get(1));
+            assertEquals(1, m1.get(1));
+            
+            assertEquals(1, m2.get(1));
+            assertEquals(1, m2.get(1));
+            assertEquals(1, m2.get(1));
+            
+            assertEquals(0, m1.getLocalMapStats().getHits());
+            assertEquals(3, m2.getLocalMapStats().getHits());
+        } finally {
+            h1.getLifecycleService().shutdown();
+        }
+    }
 
     @Test
     public void testAtomicNumber() {
@@ -169,6 +211,46 @@ public class HazelcastTest {
             assertFalse(map.containsKey("Hello"));
         } finally {
             map.unlock("Hello");
+        }
+    }
+    
+    @Test
+    public void testLockKeyWithUseBackupData() {
+        Config config = new XmlConfigBuilder().build();
+
+        String mapName1 = "testLockKeyWithUseBackupData";
+        
+        MapConfig mapConfig1 = new MapConfig();
+        mapConfig1.setName(mapName1);
+        mapConfig1.setUseBackupData(true);
+        
+        config.getMapConfigs().put(mapName1, mapConfig1);
+        
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        try {
+            IMap<String, String> map = h1.getMap(mapName1);
+            map.lock("Hello");
+            try{
+                assertFalse(map.containsKey("Hello"));
+            } finally {
+                map.unlock("Hello");
+            }
+            map.put("Hello", "World");
+            map.lock("Hello");
+            try{
+                assertTrue(map.containsKey("Hello"));
+            } finally {
+                map.unlock("Hello");
+            }
+            map.remove("Hello");
+            map.lock("Hello");
+            try{
+                assertFalse(map.containsKey("Hello"));
+            } finally {
+                map.unlock("Hello");
+            }
+        } finally {
+            h1.getLifecycleService().shutdown();
         }
     }
 
@@ -418,17 +500,21 @@ public class HazelcastTest {
         Config config = new XmlConfigBuilder().build();
         MapConfig mapConfig = new MapConfig();
         mapConfig.setName(mapName);
-        mapConfig.setTimeToLiveSeconds(3);
+        mapConfig.setTimeToLiveSeconds(1);
         config.getMapConfigs().put(mapName, mapConfig);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        IMap<Object, Object> m1 = h1.getMap(mapName);
-        m1.put(1, 1);
-        assertEquals(1, m1.get(1));
-        assertEquals(1, m1.get(1));
-        Thread.sleep(4000);
-        assertEquals(null, m1.get(1));
-        m1.put(1, 1);
-        assertEquals(1, m1.get(1));
+        try{
+            IMap<Object, Object> m1 = h1.getMap(mapName);
+            m1.put(1, 1);
+            assertEquals(1, m1.get(1));
+            assertEquals(1, m1.get(1));
+            Thread.sleep(2500);
+            assertEquals(null, m1.get(1));
+            m1.put(1, 1);
+            assertEquals(1, m1.get(1));
+        } finally {
+            h1.getLifecycleService().shutdown();
+        }
     }
 
     @Test

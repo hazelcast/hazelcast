@@ -2581,7 +2581,9 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public boolean isEmpty() {
-                return (size() == 0);
+            	mapOperationStats.incrementOtherOperations();
+                MEmpty mempty = concurrentMapManager.new MEmpty(name);
+                return mempty.isEmpty();
             }
 
             public void putAll(Map map) {

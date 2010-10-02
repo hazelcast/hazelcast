@@ -125,9 +125,11 @@ public class CMap {
     final MapNearCache mapNearCache;
 
     final long creationTime;
+    
+    final boolean useBackupData;
 
     volatile boolean ttlPerRecord = false;
-
+    
     volatile long lastEvictionTime = 0;
 
     DistributedLock lockEntireMap = null;
@@ -155,6 +157,7 @@ public class CMap {
         evictionDelayMillis = mapConfig.getEvictionDelaySeconds() * 1000L;
         maxIdle = mapConfig.getMaxIdleSeconds() * 1000L;
         evictionPolicy = EvictionPolicy.valueOf(mapConfig.getEvictionPolicy());
+        useBackupData = mapConfig.isUseBackupData();
         if (evictionPolicy == EvictionPolicy.NONE) {
             maxSize = Integer.MAX_VALUE;
             evictionComparator = null;
@@ -408,7 +411,7 @@ public class CMap {
             record.runBackupOps();
         }
         return true;
-    }
+    } 
 
     public void doBackup(Request req) {
         if (req.key == null || req.key.size() == 0) {

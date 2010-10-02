@@ -55,6 +55,8 @@ public class MapConfig {
     private MapStoreConfig mapStoreConfig = null;
 
     private NearCacheConfig nearCacheConfig = null;
+    
+    private boolean useBackupData = false;
 
     private String mergePolicy = DEFAULT_MERGE_POLICY;
 
@@ -273,6 +275,15 @@ public class MapConfig {
         return this;
     }
 
+    public boolean isUseBackupData() {
+		return useBackupData;
+	}
+    
+    public MapConfig setUseBackupData(boolean useBackupData) {
+		this.useBackupData = useBackupData;
+		return this;
+	}
+    
     @Override
     public String toString() {
         return "MapConfig{" +
@@ -287,6 +298,7 @@ public class MapConfig {
                 ", evictionPolicy='" + evictionPolicy + '\'' +
                 ", mapStoreConfig=" + mapStoreConfig +
                 ", nearCacheConfig=" + nearCacheConfig +
+                ", useBackupData=" + useBackupData +
                 '}';
     }
 }
