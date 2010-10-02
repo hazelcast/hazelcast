@@ -133,7 +133,7 @@ public class ValueCollectionTest {
         assertFalse(valueCollection.retainAll(new ArrayList()));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test(expected = NullPointerException.class)
     public void testToArrayWithArgument() throws Exception {
         EntryHolder entryHolder = mock(EntryHolder.class);
         Set set = new HashSet();
