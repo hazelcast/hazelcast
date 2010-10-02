@@ -15,7 +15,7 @@
  *
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.client;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -29,9 +29,8 @@ import org.junit.Test;
 
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.FactoryImpl.ProxyKey;
+import com.hazelcast.nio.DataSerializable;
 
-import static com.hazelcast.nio.IOUtil.toData;
-import static com.hazelcast.nio.IOUtil.toObject;
 import static junit.framework.Assert.assertFalse;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -39,83 +38,45 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 public class SerializationTest {
-    @Test
-    public void testLongValueIncrement() {
-        Data zero = toData(0L);
-        Data five = IOUtil.addDelta(zero, 5L);
-        assertEquals (5L, toObject(five));
-        Data minusThree = IOUtil.addDelta(five, -8L);
-        assertEquals (-3L, toObject(minusThree));
-        Data minusTwo = IOUtil.addDelta(minusThree, 1L);
-        assertEquals (-2L, toObject(minusTwo));
-        Data twenty = IOUtil.addDelta(minusThree, 23L);
-        assertEquals (20L, toObject(twenty));
-    }
     
     @Test(expected=RuntimeException.class)
     public void newNotSerializableException() {
-        final Serializer serializer = new Serializer();
         final Object o = new Object();
-        serializer.writeObject(o);
+        Serializer.toByte(o);
     }
     
     @Test
     public void newNullSerializer() {
-        final Serializer serializer = new Serializer();
         final Object o = null;
-        final Data data = serializer.writeObject(o);
-        assertEquals (o, serializer.readObject(data));
+        final byte[] data =  Serializer.toByte(o);
+        assertEquals (o, Serializer.toObject(data));
     }
     
     @Test
     public void newStringSerializer() {
-        final Serializer serializer = new Serializer();
         final String s = "newStringSerializer 2@Z";
-        final Data data = serializer.writeObject(s);
-        assertEquals (s, serializer.readObject(data));
+        final byte[] data = Serializer.toByte(s);
+        assertEquals (s, Serializer.toObject(data));
     }
 
     @Test
     public void newDateSerializer() {
-        final Serializer serializer = new Serializer();
         final Date date = new Date();
-        final Data data = serializer.writeObject(date);
-        assertEquals (date, serializer.readObject(data));
+        final byte[] data = Serializer.toByte(date);
+        assertEquals (date, Serializer.toObject(data));
     }
     
     @Test
     public void newSerializerExternalizable() {
-        final Serializer serializer = new Serializer();
         final ExternalizableImpl o = new ExternalizableImpl();
         o.s = "Gallaxy";
         o.v = 42;
-        final Data data = serializer.writeObject(o);
-        byte[] b = data.buffer;
-        assertFalse(b.length == 0);
+        final byte[] data = Serializer.toByte(o);
+        assertFalse(data.length == 0);
         assertFalse(o.readExternal);
         assertTrue(o.writeExternal);
         
-        final ExternalizableImpl object = (ExternalizableImpl)serializer.readObject(data);
-        assertNotNull(object);
-        assertNotSame(o, object);
-        assertEquals(o, object);
-        assertTrue(object.readExternal);
-        assertFalse(object.writeExternal);
-    }
-    
-    @Test
-    public void newSerializerDataSerializable() {
-    	final Serializer serializer = new Serializer();
-        final DataSerializableImpl o = new DataSerializableImpl();
-        o.s = "Gallaxy";
-        o.v = 42;
-        final Data data = serializer.writeObject(o);
-		byte[] b = data.buffer;
-        assertFalse(b.length == 0);
-        assertFalse(o.readExternal);
-        assertTrue(o.writeExternal);
-        
-        final DataSerializableImpl object = (DataSerializableImpl)serializer.readObject(data);
+        final ExternalizableImpl object = (ExternalizableImpl)Serializer.toObject(data);
         assertNotNull(object);
         assertNotSame(o, object);
         assertEquals(o, object);
@@ -125,13 +86,11 @@ public class SerializationTest {
     
     @Test
     public void newSerializerProxyKey() {
-        final Serializer serializer = new Serializer();
         final FactoryImpl.ProxyKey o = new ProxyKey("key", 15L);
-        final Data data = serializer.writeObject(o);
-        byte[] b = data.buffer;
-        assertFalse(b.length == 0);
+        final byte[] data = Serializer.toByte(o);
+        assertFalse(data.length == 0);
         
-        final ProxyKey object = (ProxyKey)serializer.readObject(data);
+        final ProxyKey object = (ProxyKey)Serializer.toObject(data);
         assertNotNull(object);
         assertNotSame(o, object);
         assertEquals(o, object);

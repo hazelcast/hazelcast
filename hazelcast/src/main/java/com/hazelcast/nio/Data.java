@@ -55,11 +55,7 @@ public final class Data implements DataSerializable {
     @Override
     public int hashCode() {
         if (buffer == null) return Integer.MIN_VALUE;
-        int h = 1;
-        for (int i = 0; i < size(); i++) {
-            h = 31 * h + buffer[i];
-        }
-        return h;
+        return Arrays.hashCode(buffer);
     }
 
     @Override
@@ -69,10 +65,7 @@ public final class Data implements DataSerializable {
         if (this == obj)
             return true;
         Data data = (Data) obj;
-        if (size() != data.size())
-            return false;
-        if (size() == 0) return (data.buffer == null);
-        return Arrays.equals(buffer, data.buffer);
+        return size() == data.size() && Arrays.equals(buffer, data.buffer); 
     }
 
     @Override
