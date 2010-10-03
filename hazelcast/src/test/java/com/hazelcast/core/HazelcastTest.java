@@ -18,6 +18,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 
@@ -140,6 +141,8 @@ public class HazelcastTest {
         config.getMapConfigs().put(mapName1, mapConfig1);
         config.getMapConfigs().put(mapName2, mapConfig2);
         
+        //config.setGroupConfig(new GroupConfig("testMapPutAndGetUseBackupData", "testMapPutAndGetUseBackupData"));
+        
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         try {
             IMap<Object, Object> m1 = h1.getMap(mapName1);
@@ -225,6 +228,7 @@ public class HazelcastTest {
         mapConfig1.setUseBackupData(true);
         
         config.getMapConfigs().put(mapName1, mapConfig1);
+        //config.setGroupConfig(new GroupConfig("testLockKeyWithUseBackupData", "testLockKeyWithUseBackupData"));
         
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         try {
@@ -502,13 +506,15 @@ public class HazelcastTest {
         mapConfig.setName(mapName);
         mapConfig.setTimeToLiveSeconds(1);
         config.getMapConfigs().put(mapName, mapConfig);
+        config.setGroupConfig(new GroupConfig("testIssue290", "testIssue290"));
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        assertEquals(1, h1.getCluster().getMembers().size());
         try{
             IMap<Object, Object> m1 = h1.getMap(mapName);
             m1.put(1, 1);
             assertEquals(1, m1.get(1));
             assertEquals(1, m1.get(1));
-            Thread.sleep(2500);
+            Thread.sleep(1050);
             assertEquals(null, m1.get(1));
             m1.put(1, 1);
             assertEquals(1, m1.get(1));
@@ -516,7 +522,36 @@ public class HazelcastTest {
             h1.getLifecycleService().shutdown();
         }
     }
-
+    
+    @Ignore
+    @Test
+    public void testIssue290WithMigration() throws Exception {
+        // TODO: issue is not fixed 
+        // run the whole test (HazelcastTest)
+        // due to migration to exists node - the record migrate w/o expiration time
+        // as it has no specific map config, so it takes "default" MapConfig
+        String mapName = "testIssue290WithMigration";
+        Config config = new XmlConfigBuilder().build();
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setName(mapName);
+        mapConfig.setTimeToLiveSeconds(1);
+        config.getMapConfigs().put(mapName, mapConfig);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        assertEquals(2, h1.getCluster().getMembers().size());
+        try{
+            IMap<Object, Object> m1 = h1.getMap(mapName);
+            m1.put(1, 1);
+            assertEquals(1, m1.get(1));
+            assertEquals(1, m1.get(1));
+            Thread.sleep(1050);
+            assertEquals(null, m1.get(1));
+            m1.put(1, 1);
+            assertEquals(1, m1.get(1));
+        } finally {
+            h1.getLifecycleService().shutdown();
+        }
+    }
+    
     @Test
     public void testListAdd() {
         IList<String> list = Hazelcast.getList("testListAdd");

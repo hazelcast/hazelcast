@@ -1406,7 +1406,10 @@ public class ConcurrentMapManager extends BaseManager {
         CMap map = maps.get(name);
         if (map == null) {
             map = new CMap(this, name);
-            maps.put(name, map);
+            CMap anotherMap = maps.putIfAbsent(name, map);
+            if (anotherMap != null){
+                map = anotherMap;
+            }
         }
         return map;
     }

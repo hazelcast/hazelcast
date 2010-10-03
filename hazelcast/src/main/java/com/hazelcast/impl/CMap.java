@@ -136,7 +136,7 @@ public class CMap {
 
     CleanupState cleanupState = CleanupState.NONE;
 
-    public CMap(ConcurrentMapManager concurrentMapManager, String name) {
+    CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
         this.logger = concurrentMapManager.node.getLogger(CMap.class.getName());
         this.PARTITION_COUNT = concurrentMapManager.PARTITION_COUNT;
@@ -191,8 +191,12 @@ public class CMap {
             writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
         }
         if (!node.isSuperClient() && evictionPolicy == EvictionPolicy.NONE && instanceType == Instance.InstanceType.MAP) {
-            locallyOwnedMap = new LocallyOwnedMap();
-            concurrentMapManager.mapLocallyOwnedMaps.put(name, locallyOwnedMap);
+            LocallyOwnedMap locallyOwnedMap = new LocallyOwnedMap();
+            LocallyOwnedMap anotherLocallyOwnedMap = concurrentMapManager.mapLocallyOwnedMaps.putIfAbsent(name, locallyOwnedMap);
+            if (anotherLocallyOwnedMap != null){
+                locallyOwnedMap = anotherLocallyOwnedMap;
+            }
+            this.locallyOwnedMap = locallyOwnedMap;
         } else {
             locallyOwnedMap = null;
         }
@@ -208,13 +212,17 @@ public class CMap {
         if (nearCacheConfig == null) {
             mapNearCache = null;
         } else {
-            mapNearCache = new MapNearCache(this,
+            MapNearCache mapNearCache = new MapNearCache(this,
                     SortedHashMap.getOrderingTypeByName(nearCacheConfig.getEvictionPolicy()),
                     nearCacheConfig.getMaxSize(),
                     nearCacheConfig.getTimeToLiveSeconds() * 1000L,
                     nearCacheConfig.getMaxIdleSeconds() * 1000L,
                     nearCacheConfig.isInvalidateOnChange());
-            concurrentMapManager.mapCaches.put(name, mapNearCache);
+            final MapNearCache anotherMapNearCache = concurrentMapManager.mapCaches.putIfAbsent(name, mapNearCache);
+            if (anotherMapNearCache != null){
+                mapNearCache = anotherMapNearCache;
+            }
+            this.mapNearCache = mapNearCache;
         }
         MergePolicy mergePolicyTemp = null;
         String mergePolicyName = mapConfig.getMergePolicy();
