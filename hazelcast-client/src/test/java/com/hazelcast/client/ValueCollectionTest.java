@@ -132,12 +132,65 @@ public class ValueCollectionTest {
         ValueCollection valueCollection = new ValueCollection(entryHolder, set);
         assertFalse(valueCollection.retainAll(new ArrayList()));
     }
+    
+    @Test
+    public void testToArrayWithArgument() {
+        EntryHolder entryHolder = mock(EntryHolder.class);
+        Set set = new HashSet();
+        set.add(new MapEntry("1", "1"));
+        set.add(new MapEntry("2", "2"));
+        set.add(new MapEntry("3", "3"));
+        ValueCollection valueCollection = new ValueCollection(entryHolder, set);
+        {
+            final Object[] values = valueCollection.toArray();
+            Arrays.sort(values);
+            assertArrayEquals(new Object[]{"1", "2", "3"}, values);
+        }
+        {
+            final String[] values = (String[])valueCollection.toArray(new String[3]);
+            Arrays.sort(values);
+            assertArrayEquals(new String[]{"1", "2", "3"}, values);
+        }
+        {
+            final String[] values = (String[])valueCollection.toArray(new String[2]);
+            Arrays.sort(values);
+            assertArrayEquals(new String[]{"1", "2", "3"}, values);
+        }
+        {
+            final String[] values = (String[])valueCollection.toArray(new String[5]);
+            Arrays.sort(values, 0, 3);
+            assertArrayEquals(new String[]{"1", "2", "3", null, null}, values);
+        }
+    }
 
     @Test(expected = NullPointerException.class)
-    public void testToArrayWithArgument() throws Exception {
+    public void testToArrayWithArgumentNPE() throws Exception {
         EntryHolder entryHolder = mock(EntryHolder.class);
         Set set = new HashSet();
         ValueCollection valueCollection = new ValueCollection(entryHolder, set);
         valueCollection.toArray(null);
+    }
+    
+    private static final class MapEntry<K, V> implements Map.Entry<K, V> {
+        final K key;
+        final V value;
+        
+        public MapEntry(K key, V value) {
+            this.key = key;
+            this.value = value;
+        }
+        
+        public K getKey() {
+            return key;
+        }
+        
+        public V getValue() {
+            return value;
+        }
+
+        public V setValue(V value) {
+            throw new UnsupportedOperationException();
+        }
+        
     }
 }
