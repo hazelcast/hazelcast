@@ -50,7 +50,7 @@ import java.util.*;
  */
 public class ConcurrentSkipListSet<E>
         extends AbstractSet<E>
-        implements NavigableSet<E>, Cloneable, java.io.Serializable {
+        implements NavigableSet<E>, java.io.Serializable {
 
     private static final long serialVersionUID = -2479143111061671589L;
 
@@ -117,14 +117,6 @@ public class ConcurrentSkipListSet<E>
         this.m = m;
     }
 
-    /**
-     * Unsupported!
-     *
-     * @return
-     */
-    public ConcurrentSkipListSet<E> clone() {
-        throw new UnsupportedOperationException();
-    }
     /* ---------------- Set operations -------------- */
 
     /**

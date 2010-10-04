@@ -181,6 +181,7 @@ public class AddressPicker {
                     } else {
                         isa = new InetSocketAddress(inetAddress, port);
                     }
+                    logger.log(Level.FINEST, "inet socket address:" + isa);
                     serverSocket.bind(isa, 100);
                     break;
                 } catch (final Exception e) {
@@ -191,7 +192,7 @@ public class AddressPicker {
                     } else {
                         String msg = "Port [" + port + "] is already in use and auto-increment is " +
                                 "disabled. Hazelcast cannot start.";
-                        logger.log(Level.SEVERE, msg);
+                        logger.log(Level.SEVERE, msg, e);
                         throw e;
                     }
                 }
@@ -199,7 +200,7 @@ public class AddressPicker {
             serverSocketChannel.configureBlocking(false);
             return new Address(currentAddress, port);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, e.getMessage(), e);
             throw e;
         }
     }

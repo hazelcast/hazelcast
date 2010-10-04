@@ -30,7 +30,7 @@ public class Blocks extends AbstractRemotelyProcessable {
 
     public void addBlock(Block block) {
         if (block == null) {
-            throw new IllegalArgumentException("Block cannot be null. " + block);
+            throw new IllegalArgumentException("Block cannot be null. ");
         }
         lsBlocks.add(block);
 

@@ -77,18 +77,18 @@ public class ConcurrentMapManager extends BaseManager {
             public void doRun() {
                 logState();
                 long now = System.currentTimeMillis();
-                Collection<CMap> cmaps = maps.values();
+                                Collection<CMap> cmaps = maps.values();
                 for (final CMap cmap : cmaps) {
                     if (cmap.cleanupState == CMap.CleanupState.SHOULD_CLEAN) {
                         executeCleanup(cmap, true);
                     }
-                }
+                                }
                 if (now > nextCleanup) {
                     for (final CMap cmap : cmaps) {
                         if (cmap.cleanupState == CMap.CleanupState.NONE) {
                             executeCleanup(cmap, false);
+                            }
                         }
-                    }
                     nextCleanup = now + CLEANUP_DELAY_MILLIS;
                 }
             }
@@ -143,7 +143,7 @@ public class ConcurrentMapManager extends BaseManager {
         if (cmap.cleanupState == CMap.CleanupState.CLEANING) {
             return;
         }
-        cmap.cleanupState = CMap.CleanupState.CLEANING;
+        cmap.cleanupState = CMap.CleanupState.CLEANING;        
         executeLocally(new FallThroughRunnable() {
             public void doRun() {
                 try {
@@ -284,7 +284,7 @@ public class ConcurrentMapManager extends BaseManager {
 
     public PartitionManager getPartitionManager() {
         return partitionManager;
-    }
+        }
 
     public Map<String, CMap> getCMaps() {
         return maps;
@@ -463,6 +463,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     class MAddKeyListener extends MTargetAwareOp {
+
         public boolean addListener(String name, boolean add, Object key, boolean includeValue) {
             ClusterOperation operation = (add) ? ADD_LISTENER : REMOVE_LISTENER;
             setLocal(operation, name, key, null, -1, -1);
@@ -782,7 +783,7 @@ public class ConcurrentMapManager extends BaseManager {
             if (returnObject instanceof AddressAwareException) {
                 rethrowException(op, (AddressAwareException) returnObject);
             }
-            return returnObject != Boolean.FALSE;
+            return !Boolean.FALSE.equals(returnObject);
         }
 
         long doLongAtomic() {
@@ -887,7 +888,7 @@ public class ConcurrentMapManager extends BaseManager {
                 if (returnObject instanceof AddressAwareException) {
                     rethrowException(operation, (AddressAwareException) returnObject);
                 }
-                if (returnObject != Boolean.FALSE) {
+                if (!Boolean.FALSE.equals(returnObject)) {
                     request.value = dataNew;
                     backup(CONCURRENT_MAP_BACKUP_PUT);
                 }
@@ -1102,7 +1103,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
-                     final int eventType, final Record record, Address callerAddress) {
+                      final int eventType, final Record record, Address callerAddress) {
         fireMapEvent(mapListeners, name, eventType, null, record, callerAddress);
     }
 
@@ -1550,6 +1551,7 @@ public class ConcurrentMapManager extends BaseManager {
             if (request.operation == CONCURRENT_MAP_TRY_PUT) {
                 request.response = Boolean.TRUE;
             }
+            //logger.log(Level.FINEST, " [" + request.name + "] put " + toObject(request.key));
         }
     }
 
@@ -1661,6 +1663,7 @@ public class ConcurrentMapManager extends BaseManager {
             Data value = cmap.get(request);
             request.clearForResponse();
             request.response = value;
+            //logger.log(Level.FINEST, " [" + request.name + "] get " + toObject(request.key));
         }
 
         public void afterExecute(Request request) {
@@ -1723,7 +1726,7 @@ public class ConcurrentMapManager extends BaseManager {
                     request.lockCount = record.getLockCount();
                     cmap.fireScheduledActions(record);
                 }
-                logger.log(Level.FINEST, unlocked + " now lock " + record.getLock());
+                logger.log(Level.FINEST, unlocked + " [" + record.getName() + "] now lock " + record.getLock());
             }
             if (unlocked) {
                 request.response = Boolean.TRUE;
@@ -1844,21 +1847,21 @@ public class ConcurrentMapManager extends BaseManager {
                 boolean success = false;
                 Object winner = null;
                 if (cmap.mergePolicy != null) {
-                    Record existing = cmap.getRecord(request.key);
-                    RecordEntry existingEntry = (existing == null) ? null : cmap.getRecordEntry(existing);
-                    DataRecordEntry newEntry = (DataRecordEntry) toObject(request.value);
-                    Object key = newEntry.getKey();
-                    if (key != null && newEntry.getValue() != null) {
-                        winner = cmap.mergePolicy.merge(cmap.getName(), newEntry, existingEntry);
-                        if (winner != null) {
-                            success = true;
-                            if (cmap.writeDelayMillis == 0 && cmap.store != null) {
-                                cmap.store.store(key, winner);
-                                success = (request.response == null);
-                            }
+                Record existing = cmap.getRecord(request.key);
+                RecordEntry existingEntry = (existing == null) ? null : cmap.getRecordEntry(existing);
+                DataRecordEntry newEntry = (DataRecordEntry) toObject(request.value);
+                Object key = newEntry.getKey();
+                if (key != null && newEntry.getValue() != null) {
+                    winner = cmap.mergePolicy.merge(cmap.getName(), newEntry, existingEntry);
+                    if (winner != null) {
+                        success = true;
+                        if (cmap.writeDelayMillis == 0 && cmap.store != null) {
+                            cmap.store.store(key, winner);
+                            success = (request.response == null);
                         }
                     }
                 }
+            }
                 if (success) {
                     request.value = toData(winner);
                     request.response = Boolean.TRUE;

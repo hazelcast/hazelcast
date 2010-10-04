@@ -100,7 +100,7 @@ public final class OutSelector extends SelectorBase {
                     // ignore
                 }
                 socketChannel.register(selector, SelectionKey.OP_CONNECT, Connector.this);
-            } catch (final Exception e) {
+            } catch (final Throwable e) {
                 if (socketChannel != null) {
                     try {
                         socketChannel.close();

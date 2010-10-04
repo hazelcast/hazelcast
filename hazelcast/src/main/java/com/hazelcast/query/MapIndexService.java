@@ -46,7 +46,10 @@ public class MapIndexService {
     public void index(Record record) {
         final long recordId = record.getId();
         if (record.isActive()) {
-            records.putIfAbsent(recordId, record);
+            final Record anotherRecord = records.putIfAbsent(recordId, record);
+            if (anotherRecord != null){
+                record = anotherRecord;
+            }
         } else {
             remove(record);
         }

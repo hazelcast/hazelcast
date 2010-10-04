@@ -183,7 +183,7 @@ public class ManagementService {
 
         public void run() {
             synchronized (this) {
-                average = events / interval;
+                average = (double) events / interval;
                 events = 0;
                 min = average < min ? average : min;
                 max = average > max ? average : max;

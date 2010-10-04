@@ -135,8 +135,8 @@ public class XmlConfigBuilder implements ConfigBuilder {
                     logger.log(Level.WARNING, msg);
                 }
             }
-        } catch (final Exception e) {
-            logger.log(Level.SEVERE, "Error while creating configuration", e);
+        } catch (final Throwable e) {
+            logger.log(Level.SEVERE, "Error while creating configuration:" + e.getMessage(), e);
             e.printStackTrace();
         }
     }

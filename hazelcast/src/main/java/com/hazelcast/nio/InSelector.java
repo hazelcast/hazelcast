@@ -46,7 +46,7 @@ public final class InSelector extends SelectorBase {
                 + serverSocketChannel.socket().getLocalPort());
         selector.wakeup();
     }
-
+    
     public void processSelectionQueue() {
         while (live) {
             final Runnable runnable = selectorQueue.poll();
@@ -73,7 +73,7 @@ public final class InSelector extends SelectorBase {
         public void handle() {
             try {
                 final SocketChannel channel = serverSocketChannel.accept();
-                logger.log(Level.FINEST, channel.socket().getLocalPort()
+                logger.log(Level.INFO, channel.socket().getLocalPort()
                         + " this socket is connected to "
                         + channel.socket().getRemoteSocketAddress());
                 final Connection connection = initChannel(channel, true);

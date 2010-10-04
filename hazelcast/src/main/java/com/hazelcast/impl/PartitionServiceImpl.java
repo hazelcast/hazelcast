@@ -104,7 +104,7 @@ public class PartitionServiceImpl implements PartitionService {
 
     void doFireMigrationEvent(final boolean started, final MigrationEvent migrationEvent) {
         partitionVersion.incrementAndGet();
-        if (migrationEvent == null) throw new RuntimeException("MigrationEvent: " + migrationEvent);
+        if (migrationEvent == null) throw new IllegalArgumentException("MigrationEvent is null.");
         Member owner = (started) ? migrationEvent.getOldOwner() : migrationEvent.getNewOwner();
         Member migrationMember = (started) ? migrationEvent.getNewOwner() : null;
         final PartitionReal partitionReal = new PartitionReal(migrationEvent.getPartitionId(), owner, migrationMember);

@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.impl.base.Call;
 import com.hazelcast.nio.Address;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -29,7 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class NodeBaseVariables {
     final LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
 
-    final Map<Address, MemberImpl> mapMembers = new HashMap<Address, MemberImpl>(100);
+    final Map<Address, MemberImpl> mapMembers = Collections.synchronizedMap(new HashMap<Address, MemberImpl>(100));
 
     final Map<Long, Call> mapCalls = new ConcurrentHashMap<Long, Call>();
 

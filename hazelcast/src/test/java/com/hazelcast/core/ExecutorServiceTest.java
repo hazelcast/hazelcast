@@ -94,7 +94,7 @@ public class ExecutorServiceTest {
                     Hazelcast.getExecutorService().submit(dtask);//instance usage
                     Member member = dtask.get();
                     qResponse.offer(member);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     qResponse.offer(e);
                 }
             }

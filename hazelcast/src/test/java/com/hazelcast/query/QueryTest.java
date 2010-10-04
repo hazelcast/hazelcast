@@ -68,7 +68,7 @@ public class QueryTest extends TestUtil {
         imap.addIndex("active", false);
         int expectedCount = 0;
         for (int i = 0; i < 1000; i++) {
-            Employee employee = new Employee("joe" + i, i % 60, ((i % 2) == 1), Double.valueOf(i));
+            Employee employee = new Employee("joe" + i, i % 60, ((i & 1) == 1), Double.valueOf(i));
             if (employee.getName().startsWith("joe15") && employee.isActive()) {
                 expectedCount++;
                 System.out.println(employee);
@@ -99,7 +99,7 @@ public class QueryTest extends TestUtil {
         imap.addIndex("age", true);
         imap.addIndex("active", false);
         for (int i = 0; i < 10000; i++) {
-            imap.put(String.valueOf(i), new Employee("joe" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+            imap.put(String.valueOf(i), new Employee("joe" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(cfg);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(cfg);
@@ -143,7 +143,7 @@ public class QueryTest extends TestUtil {
         imap.addIndex("age", true);
         imap.addIndex("active", false);
         for (int i = 0; i < 5000; i++) {
-            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
@@ -152,7 +152,7 @@ public class QueryTest extends TestUtil {
         imap.addIndex("age", true);
         imap.addIndex("active", false);
         for (int i = 0; i < 5000; i++) {
-            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
@@ -169,7 +169,7 @@ public class QueryTest extends TestUtil {
             Map temp = new HashMap(100);
             for (int j = 0; j < 100; j++) {
                 String key = String.valueOf((i * 100000) + j);
-                temp.put(key, new Employee("name" + key, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+                temp.put(key, new Employee("name" + key, i % 60, ((i & 1) == 1), Double.valueOf(i)));
             }
             imap.putAll(temp);
         }
@@ -224,7 +224,7 @@ public class QueryTest extends TestUtil {
         HazelcastInstance h1 = newInstance();
         IMap imap = h1.getMap("employees");
         for (int i = 0; i < 5000; i++) {
-            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         long start = System.currentTimeMillis();
         Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active=true and age=23"));
@@ -241,7 +241,7 @@ public class QueryTest extends TestUtil {
         imap.addIndex("age", true);
         imap.addIndex("active", false);
         for (int i = 0; i < 5000; i++) {
-            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         start = System.currentTimeMillis();
         entries = imap.entrySet(new SqlPredicate("active and age=23"));
@@ -260,7 +260,7 @@ public class QueryTest extends TestUtil {
         HazelcastInstance h1 = newInstance();
         IMap imap = h1.getMap("employees");
         for (int i = 0; i < 50000; i++) {
-            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         long start = System.currentTimeMillis();
         Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and salary between 4010.99 and 4032.01"));
@@ -277,7 +277,7 @@ public class QueryTest extends TestUtil {
         imap.addIndex("salary", true);
         imap.addIndex("active", false);
         for (int i = 0; i < 50000; i++) {
-            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         imap.put(String.valueOf(10), new Employee("name" + 10, 10, true, 44010.99D));
         imap.put(String.valueOf(11), new Employee("name" + 11, 11, true, 44032.01D));
@@ -302,7 +302,7 @@ public class QueryTest extends TestUtil {
         System.out.println(tookWithIndex + " vs. " + tookWithout);
         assertTrue(tookWithIndex < (tookWithout / 2));
         for (int i = 0; i < 50000; i++) {
-            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), 100.25D));
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), 100.25D));
         }
         entries = imap.entrySet(new SqlPredicate("salary between 99.99 and 100.25"));
         assertEquals(50000, entries.size());
@@ -317,7 +317,7 @@ public class QueryTest extends TestUtil {
         HazelcastInstance h1 = newInstance();
         IMap imap = h1.getMap("employees");
         for (int i = 0; i < 5000; i++) {
-            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         EntryObject e = new PredicateBuilder().getEntryObject();
         Predicate predicate = e.is("active").and(e.get("age").equal(23));
@@ -336,7 +336,7 @@ public class QueryTest extends TestUtil {
         imap.addIndex("age", true);
         imap.addIndex("active", false);
         for (int i = 0; i < 5000; i++) {
-            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         e = new PredicateBuilder().getEntryObject();
         predicate = e.is("active").and(e.get("age").equal(23));
@@ -357,7 +357,7 @@ public class QueryTest extends TestUtil {
         HazelcastInstance h1 = newInstance();
         IMap imap = h1.getMap("employees");
         for (int i = 0; i < 5000; i++) {
-            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         EntryObject e = new PredicateBuilder().getEntryObject();
         Predicate predicate = e.is("active").and(e.get("age").equal(23));
@@ -376,7 +376,7 @@ public class QueryTest extends TestUtil {
         imap.addIndex(Predicates.get("active"), false);
         imap.addIndex(Predicates.get("age"), true);
         for (int i = 0; i < 5000; i++) {
-            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         e = new PredicateBuilder().getEntryObject();
         predicate = e.is("active").and(e.get("age").equal(23));
@@ -511,7 +511,7 @@ public class QueryTest extends TestUtil {
         imap.put("1", new Employee("joe", 33, false, 14.56));
         imap.put("2", new Employee("ali", 23, true, 15.00));
         for (int i = 3; i < 103; i++) {
-            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         Set<Map.Entry> entries = imap.entrySet();
         assertEquals(102, entries.size());
@@ -552,7 +552,7 @@ public class QueryTest extends TestUtil {
         imap.put("1", new Employee("joe", 33, false, 14.56));
         imap.put("2", new Employee("ali", 23, true, 15.00));
         for (int i = 3; i < 103; i++) {
-            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i % 2) == 1), Double.valueOf(i)));
+            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         Set<Map.Entry> entries = imap.entrySet();
         assertEquals(102, entries.size());

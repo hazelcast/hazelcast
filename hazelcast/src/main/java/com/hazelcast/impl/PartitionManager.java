@@ -26,6 +26,7 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.partition.MigrationEvent;
 
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -46,7 +47,7 @@ public class PartitionManager implements Runnable {
     final ParallelExecutor parallelExecutorMigration;
     final ParallelExecutor parallelExecutorBackups;
 
-    final long MIGRATION_INTERVAL_MILLIS = TimeUnit.SECONDS.toMillis(10);
+    final long MIGRATION_INTERVAL_MILLIS = 100L;
 
     final long timeToInitiateMigration;
 
@@ -157,8 +158,9 @@ public class PartitionManager implements Runnable {
             }
         }
         int aveBlockOwnCount = PARTITION_COUNT / (addressBlocks.size());
-        for (Address address : addressBlocks.keySet()) {
-            List<Block> blocks = addressBlocks.get(address);
+        for (final Entry<Address, List<Block>> entry : addressBlocks.entrySet()) {
+        	final Address address = entry.getKey();
+            List<Block> blocks = entry.getValue();
             int diff = (aveBlockOwnCount - blocks.size());
             for (int i = 0; i < diff && lsEmptyBlocks.size() > 0; i++) {
                 Block block = lsEmptyBlocks.remove(0);

@@ -163,7 +163,10 @@ class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
 			if(m == null) {
 				m = object.getClass().getMethod(methodName, types);
 				m.setAccessible(true);
-				methods.putIfAbsent(mKey, m);
+				final Method anotherMethod = methods.putIfAbsent(mKey, m);
+				if (anotherMethod != null){
+					m = anotherMethod;
+				}
 			}
 			return (T) m.invoke(object, params);
 		} catch (Exception e) {

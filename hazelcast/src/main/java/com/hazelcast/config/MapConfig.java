@@ -17,6 +17,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.merge.LatestUpdateMergePolicy;
+
 public class MapConfig {
 
     public final static int MIN_BACKUP_COUNT = 0;
@@ -32,7 +34,7 @@ public class MapConfig {
     public final static int DEFAULT_MAX_IDLE_SECONDS = 0;
     public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
     public final static String DEFAULT_EVICTION_POLICY = "NONE";
-    public final static String DEFAULT_MERGE_POLICY = "hz.ADD_NEW_ENTRY";
+    public final static String DEFAULT_MERGE_POLICY = LatestUpdateMergePolicy.NAME;
 
     private String name = null;
 

@@ -50,6 +50,7 @@ public class PerformanceTest {
         while ((line = reader.readLine()) != null) {
             line.split(",");
         }
+        reader.close();
     }
 
     public static void writeBaseline() throws IOException {

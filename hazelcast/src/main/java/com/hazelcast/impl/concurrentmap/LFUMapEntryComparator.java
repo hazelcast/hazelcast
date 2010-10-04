@@ -23,10 +23,8 @@ import java.util.Comparator;
 
 public class LFUMapEntryComparator implements Comparator<MapEntry> {
     public int compare(MapEntry r1, MapEntry r2) {
-        if (r1.getHits() > r2.getHits()) {
-            return 1;
-        } else {
-            return -1;
-        }
+        final int h1 = r1.getHits();
+        final int h2 = r2.getHits();
+        return h1 > h2 ? 1 : h1 == h2 ? 0 : -1;
     }
 }

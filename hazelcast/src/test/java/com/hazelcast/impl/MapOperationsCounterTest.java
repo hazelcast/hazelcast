@@ -112,7 +112,7 @@ public class MapOperationsCounterTest {
         LocalMapOperationStats stats = mapOperationStats.getPublishedStats();
         long interval = stats.getPeriodEnd() - stats.getPeriodStart();
         double statTps = stats.getNumberOfPuts() / interval;
-        double totalTps = counter / (System.currentTimeMillis() - start);
+        double totalTps = (double) counter / (System.currentTimeMillis() - start);
         assertTrue(statTps < totalTps + 5);
         assertTrue(statTps > totalTps - 5);
     }
@@ -136,7 +136,7 @@ public class MapOperationsCounterTest {
         LocalMapOperationStats stats = mapOperationStats.getPublishedStats();
         long interval = stats.getPeriodEnd() - stats.getPeriodStart();
         double statTps = stats.getNumberOfPuts() / interval;
-        double totalTps = counter / (System.currentTimeMillis() - start);
+        double totalTps = (double) counter / (System.currentTimeMillis() - start);
         assertTrue(statTps < totalTps + 5);
         assertTrue(statTps > totalTps - 5);
     }
@@ -160,7 +160,7 @@ public class MapOperationsCounterTest {
         LocalMapOperationStats stats = mapOperationStats.getPublishedStats();
         long interval = stats.getPeriodEnd() - stats.getPeriodStart();
         double statTps = stats.getNumberOfPuts() / interval;
-        double totalTps = counter / (System.currentTimeMillis() - start);
+        double totalTps = (double)counter / (System.currentTimeMillis() - start);
         assertTrue(statTps < totalTps + 5);
         assertTrue(statTps > totalTps - 5);
     }
@@ -184,7 +184,7 @@ public class MapOperationsCounterTest {
         LocalMapOperationStats stats = mapOperationStats.getPublishedStats();
         long interval = stats.getPeriodEnd() - stats.getPeriodStart();
         double statTps = stats.getNumberOfPuts() / interval;
-        double totalTps = counter / (System.currentTimeMillis() - start);
+        double totalTps = (double) counter / (System.currentTimeMillis() - start);
         assertTrue(statTps < totalTps + 5);
         assertTrue(statTps > totalTps - 5);
     }

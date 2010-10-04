@@ -222,11 +222,9 @@ final class CipherHelper {
                 }
                 cipher.init(mode, key, paramSpec);
                 return cipher;
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.exit(0);
+            } catch (Throwable e) {
+                throw new RuntimeException("unable to create Cipher:" + e.getMessage(), e);
             }
-            return null;
         }
 
         public Cipher getWriterCipher() {
