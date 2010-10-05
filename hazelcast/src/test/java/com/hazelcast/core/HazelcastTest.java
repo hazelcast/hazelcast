@@ -17,11 +17,6 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.XmlConfigBuilder;
-
 import org.junit.*;
 
 import java.util.*;
@@ -37,6 +32,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+/**
+ * HazelcastTest tests general behavior for one node. 
+ * Node is created in the beginning of the tests and the same for all test methods.  
+ * 
+ * Unit test is quick'n'fast.
+ */
 public class HazelcastTest {
 
     @BeforeClass
@@ -124,49 +125,6 @@ public class HazelcastTest {
     }
     
     @Test
-    public void testMapPutAndGetUseBackupData() throws Exception {
-        Config config = new XmlConfigBuilder().build();
-
-        String mapName1 = "testMapPutAndGetUseBackupData";
-        String mapName2 = "testMapPutAndGetUseBackupData2";
-        
-        MapConfig mapConfig1 = new MapConfig();
-        mapConfig1.setName(mapName1);
-        mapConfig1.setUseBackupData(true);
-        
-        MapConfig mapConfig2 = new MapConfig();
-        mapConfig2.setName(mapName2);
-        mapConfig2.setUseBackupData(false);
-        
-        config.getMapConfigs().put(mapName1, mapConfig1);
-        config.getMapConfigs().put(mapName2, mapConfig2);
-        
-        //config.setGroupConfig(new GroupConfig("testMapPutAndGetUseBackupData", "testMapPutAndGetUseBackupData"));
-        
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        try {
-            IMap<Object, Object> m1 = h1.getMap(mapName1);
-            IMap<Object, Object> m2 = h1.getMap(mapName2);
-            
-            m1.put(1, 1);
-            m2.put(1, 1);
-            
-            assertEquals(1, m1.get(1));
-            assertEquals(1, m1.get(1));
-            assertEquals(1, m1.get(1));
-            
-            assertEquals(1, m2.get(1));
-            assertEquals(1, m2.get(1));
-            assertEquals(1, m2.get(1));
-            
-            assertEquals(0, m1.getLocalMapStats().getHits());
-            assertEquals(3, m2.getLocalMapStats().getHits());
-        } finally {
-            h1.getLifecycleService().shutdown();
-        }
-    }
-
-    @Test
     public void testAtomicNumber() {
         AtomicNumber an = Hazelcast.getAtomicNumber("testAtomicNumber");
         assertEquals(0, an.get());
@@ -217,47 +175,6 @@ public class HazelcastTest {
         }
     }
     
-    @Test
-    public void testLockKeyWithUseBackupData() {
-        Config config = new XmlConfigBuilder().build();
-
-        String mapName1 = "testLockKeyWithUseBackupData";
-        
-        MapConfig mapConfig1 = new MapConfig();
-        mapConfig1.setName(mapName1);
-        mapConfig1.setUseBackupData(true);
-        
-        config.getMapConfigs().put(mapName1, mapConfig1);
-        //config.setGroupConfig(new GroupConfig("testLockKeyWithUseBackupData", "testLockKeyWithUseBackupData"));
-        
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        try {
-            IMap<String, String> map = h1.getMap(mapName1);
-            map.lock("Hello");
-            try{
-                assertFalse(map.containsKey("Hello"));
-            } finally {
-                map.unlock("Hello");
-            }
-            map.put("Hello", "World");
-            map.lock("Hello");
-            try{
-                assertTrue(map.containsKey("Hello"));
-            } finally {
-                map.unlock("Hello");
-            }
-            map.remove("Hello");
-            map.lock("Hello");
-            try{
-                assertFalse(map.containsKey("Hello"));
-            } finally {
-                map.unlock("Hello");
-            }
-        } finally {
-            h1.getLifecycleService().shutdown();
-        }
-    }
-
     @Test
     public void testMapReplaceIfSame() {
         IMap<String, String> map = Hazelcast.getMap("testMapReplaceIfSame");
@@ -498,60 +415,6 @@ public class HazelcastTest {
         assertEquals(false, map.containsKey("key"));
     }
 
-    @Test
-    public void testIssue290() throws Exception {
-        String mapName = "testIssue290";
-        Config config = new XmlConfigBuilder().build();
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setName(mapName);
-        mapConfig.setTimeToLiveSeconds(1);
-        config.getMapConfigs().put(mapName, mapConfig);
-        config.setGroupConfig(new GroupConfig("testIssue290", "testIssue290"));
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        assertEquals(1, h1.getCluster().getMembers().size());
-        try{
-            IMap<Object, Object> m1 = h1.getMap(mapName);
-            m1.put(1, 1);
-            assertEquals(1, m1.get(1));
-            assertEquals(1, m1.get(1));
-            Thread.sleep(1050);
-            assertEquals(null, m1.get(1));
-            m1.put(1, 1);
-            assertEquals(1, m1.get(1));
-        } finally {
-            h1.getLifecycleService().shutdown();
-        }
-    }
-    
-    @Ignore
-    @Test
-    public void testIssue290WithMigration() throws Exception {
-        // TODO: issue is not fixed 
-        // run the whole test (HazelcastTest)
-        // due to migration to exists node - the record migrate w/o expiration time
-        // as it has no specific map config, so it takes "default" MapConfig
-        String mapName = "testIssue290WithMigration";
-        Config config = new XmlConfigBuilder().build();
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setName(mapName);
-        mapConfig.setTimeToLiveSeconds(1);
-        config.getMapConfigs().put(mapName, mapConfig);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        assertEquals(2, h1.getCluster().getMembers().size());
-        try{
-            IMap<Object, Object> m1 = h1.getMap(mapName);
-            m1.put(1, 1);
-            assertEquals(1, m1.get(1));
-            assertEquals(1, m1.get(1));
-            Thread.sleep(1050);
-            assertEquals(null, m1.get(1));
-            m1.put(1, 1);
-            assertEquals(1, m1.get(1));
-        } finally {
-            h1.getLifecycleService().shutdown();
-        }
-    }
-    
     @Test
     public void testListAdd() {
         IList<String> list = Hazelcast.getList("testListAdd");
