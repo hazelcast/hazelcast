@@ -24,13 +24,11 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public class OutRunnable extends IORunnable {
     final PacketWriter writer;
     final BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
-    final BlockingQueue<Call> temp = new LinkedBlockingQueue<Call>();
     private Connection connection = null;
 
     ILogger logger = Logger.getLogger(this.getClass().getName());
@@ -74,9 +72,10 @@ public class OutRunnable extends IORunnable {
     }
 
     private void redoUnfinishedCalls(Call call, Connection oldConnection) {
+        final BlockingQueue<Call> temp = new LinkedBlockingQueue<Call>();
         temp.add(call);
         queue.drainTo(temp);
-        client.getListenerManager().getListenerCalls().drainTo(queue);
+        queue.addAll(client.getListenerManager().getListenerCalls());
         temp.drainTo(queue);
         onDisconnect(oldConnection);
     }
