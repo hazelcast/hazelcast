@@ -608,8 +608,9 @@ public class Node {
         while (!joined) {
             try {
                 logger.log(Level.FINEST, "joining... " + masterAddress);
+                masterAddress = null;
+                masterAddress = findMaster();
                 if (masterAddress == null) {
-                    masterAddress = findMaster();
                     if (masterAddress == null || masterAddress.equals(address)) {
                         TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
                         if (tcpIpConfig != null && tcpIpConfig.isEnabled()) {
