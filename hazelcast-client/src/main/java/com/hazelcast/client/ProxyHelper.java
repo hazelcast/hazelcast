@@ -47,7 +47,7 @@ public class ProxyHelper {
     }
 
     public String getName() {
-        return name.substring(2);
+        return name;
     }
 
     protected Packet callAndGetResult(Packet request) {

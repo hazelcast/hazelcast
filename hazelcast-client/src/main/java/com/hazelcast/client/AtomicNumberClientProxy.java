@@ -18,6 +18,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.AtomicNumber;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.ClusterOperation;
 
 public class AtomicNumberClientProxy implements AtomicNumber {
@@ -30,7 +31,7 @@ public class AtomicNumberClientProxy implements AtomicNumber {
     }
 
     public String getName() {
-        return name.substring(2);
+        return name.substring(Prefix.ATOMIC_NUMBER.length());
     }
 
     public long addAndGet(long delta) {

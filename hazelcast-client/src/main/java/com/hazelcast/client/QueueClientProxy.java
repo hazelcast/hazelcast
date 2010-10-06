@@ -19,6 +19,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.monitor.LocalQueueStats;
 
@@ -34,11 +35,11 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
     }
 
     public String getName() {
-        return name.substring(2);  //To change body of implemented methods use File | Settings | File Templates.
+        return name.substring(Prefix.QUEUE.length());
     }
 
     public InstanceType getInstanceType() {
-        return InstanceType.QUEUE;  //To change body of implemented methods use File | Settings | File Templates.
+        return InstanceType.QUEUE;
     }
 
     @Override

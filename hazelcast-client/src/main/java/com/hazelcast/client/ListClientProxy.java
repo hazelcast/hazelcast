@@ -18,6 +18,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.IList;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.ClusterOperation;
 
 import java.util.Collection;
@@ -59,7 +60,7 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
     }
 
     public String getName() {
-        return name.substring(4);
+        return name.substring(Prefix.LIST.length());
     }
 
     public InstanceType getInstanceType() {
