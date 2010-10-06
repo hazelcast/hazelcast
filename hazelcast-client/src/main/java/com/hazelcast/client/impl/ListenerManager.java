@@ -24,6 +24,9 @@ import com.hazelcast.client.Packet;
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.InstanceEvent.InstanceEventType;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -33,7 +36,6 @@ import static com.hazelcast.impl.BaseManager.getInstanceType;
 
 public class ListenerManager extends ClientRunnable {
     final private HazelcastClient client;
-    final private BlockingQueue<Call> listenerCalls = new LinkedBlockingQueue<Call>();
     final BlockingQueue<Packet> queue = new LinkedBlockingQueue<Packet>();
 
     final private InstanceListenerManager instanceListenerManager;
@@ -59,14 +61,6 @@ public class ListenerManager extends ClientRunnable {
         }
     }
 
-    public synchronized void addListenerCall(Call call) {
-        listenerCalls.add(call);
-    }
-
-    public BlockingQueue<Call> getListenerCalls() {
-        return listenerCalls;
-    }
-
     protected void customRun() throws InterruptedException {
         try {
             Packet packet = queue.poll(100, TimeUnit.MILLISECONDS);
@@ -90,6 +84,15 @@ public class ListenerManager extends ClientRunnable {
         }
         catch (Exception ignored) {
         }
+    }
+    
+    public Collection<Call> getListenerCalls(){
+    	final List<Call> calls = new ArrayList<Call>();
+    	calls.addAll(instanceListenerManager.calls(client));
+    	calls.addAll(entryListenerManager.calls(client));
+    	calls.addAll(itemListenerManager.calls(client));
+    	calls.addAll(messageListenerManager.calls(client));
+    	return calls;
     }
 
     public InstanceListenerManager getInstanceListenerManager() {

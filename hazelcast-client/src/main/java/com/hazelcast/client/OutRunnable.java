@@ -48,7 +48,7 @@ public class OutRunnable extends IORunnable {
                 Connection oldConnection = connection;
                 connection = client.getConnectionManager().getConnection();
                 if (restoredConnection(oldConnection, connection)) {
-                    redoUnfinishedCalls(call, oldConnection);
+                    resubscribe(call, oldConnection);
                 } else if (connection != null) {
                     logger.log(Level.FINEST, "Sending: " + call);
                     writer.write(connection, call.getRequest());
@@ -71,7 +71,7 @@ public class OutRunnable extends IORunnable {
         }
     }
 
-    private void redoUnfinishedCalls(Call call, Connection oldConnection) {
+    private void resubscribe(Call call, Connection oldConnection) {
         final BlockingQueue<Call> temp = new LinkedBlockingQueue<Call>();
         temp.add(call);
         queue.drainTo(temp);

@@ -17,9 +17,11 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.impl.EntryListenerManager;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.CMap.CMapEntry;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.monitor.LocalMapStats;
@@ -31,7 +33,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.ProxyHelper.check;
-import static com.hazelcast.client.Serializer.toByte;
 
 public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     final ProxyHelper proxyHelper;
@@ -48,32 +49,33 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         check(listener);
-        Boolean noEntryListenerRegistered = proxyHelper.getHazelcastClient().getListenerManager().getEntryListenerManager().noEntryListenerRegistered(key, name, includeValue);
+        Boolean noEntryListenerRegistered = listenerManager().noEntryListenerRegistered(key, name, includeValue);
         if (noEntryListenerRegistered == null){
         	proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
         	noEntryListenerRegistered = Boolean.TRUE;
         }
 		if (noEntryListenerRegistered) {
-            Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, toByte(key), null);
-            request.setLongValue(includeValue ? 1 : 0);
-            Call c = proxyHelper.createCall(request);
-            proxyHelper.getHazelcastClient().getListenerManager().addListenerCall(c);
+            Call c = listenerManager().createNewAddListenerCall(proxyHelper, key, includeValue);
             proxyHelper.doCall(c);
         }
-        proxyHelper.getHazelcastClient().getListenerManager().getEntryListenerManager().registerEntryListener(name, key, includeValue, listener);
+        listenerManager().registerEntryListener(name, key, includeValue, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener) {
         check(listener);
         proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, null, null);
-        proxyHelper.getHazelcastClient().getListenerManager().getEntryListenerManager().removeEntryListener(name, null, listener);
+        listenerManager().removeEntryListener(name, null, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener, K key) {
         check(listener);
         check(key);
         proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
-        proxyHelper.getHazelcastClient().getListenerManager().getEntryListenerManager().removeEntryListener(name, key, listener);
+        listenerManager().removeEntryListener(name, key, listener);
+    }
+    
+    private EntryListenerManager listenerManager() {
+        return proxyHelper.getHazelcastClient().getListenerManager().getEntryListenerManager();
     }
 
     public Set<java.util.Map.Entry<K, V>> entrySet(Predicate predicate) {
@@ -300,7 +302,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public String getName() {
-        return name.substring(2);
+        return name.substring(Prefix.MAP.length());
     }
 
     public void destroy() {
@@ -309,11 +311,10 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof IMap && o != null) {
+        if (o instanceof IMap) {
             return getName().equals(((IMap) o).getName());
-        } else {
-            return false;
         }
+        return false;
     }
 
     @Override

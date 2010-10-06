@@ -41,7 +41,7 @@ public class InRunnable extends IORunnable implements Runnable {
             Connection oldConnection = connection;
             connection = client.connectionManager.getConnection();
             if (restoredConnection(oldConnection, connection)) {
-                onDisconnect(oldConnection);
+            	redoUnfinishedCalls(oldConnection);
             }
             if (connection == null) {
                 interruptWaitingCalls();
@@ -67,6 +67,10 @@ public class InRunnable extends IORunnable implements Runnable {
             logger.log(Level.FINE, "InRunnable got an exception:" + e.toString());
             client.connectionManager.destroyConnection(connection);
         }
+    }
+    
+    private void redoUnfinishedCalls(Connection oldConnection) {
+        onDisconnect(oldConnection);
     }
 
     public void shutdown() {

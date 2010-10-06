@@ -17,8 +17,10 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.impl.EntryListenerManager;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.ClusterOperation;
 
 import java.util.Collection;
@@ -28,7 +30,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.ProxyHelper.check;
-import static com.hazelcast.client.Serializer.toByte;
 
 public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
     private final String name;
@@ -42,7 +43,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
     }
 
     public String getName() {
-        return name.substring(4);
+        return name.substring(Prefix.MULTIMAP.length());
     }
 
     public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
@@ -51,32 +52,33 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
 
     public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         check(listener);
-        Boolean noEntryListenerRegistered = client.getListenerManager().getEntryListenerManager().noEntryListenerRegistered(key, name, includeValue);
+        Boolean noEntryListenerRegistered = entryListenerManager().noEntryListenerRegistered(key, name, includeValue);
         if (noEntryListenerRegistered == null){
         	proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
         	noEntryListenerRegistered = Boolean.TRUE;
         }
 		if (noEntryListenerRegistered.booleanValue()) {
-            Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, toByte(key), null);
-            request.setLongValue(includeValue ? 1 : 0);
-            Call c = proxyHelper.createCall(request);
-            client.getListenerManager().addListenerCall(c);
+            Call c = entryListenerManager().createNewAddListenerCall(proxyHelper, key, includeValue);
             proxyHelper.doCall(c);
         } 
-        client.getListenerManager().getEntryListenerManager().registerEntryListener(name, key, includeValue, listener);
+        entryListenerManager().registerEntryListener(name, key, includeValue, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener) {
         check(listener);
         proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, null, null);
-        client.getListenerManager().getEntryListenerManager().removeEntryListener(name, null, listener);
+        entryListenerManager().removeEntryListener(name, null, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener, K key) {
         check(listener);
         check(key);
         proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
-        client.getListenerManager().getEntryListenerManager().removeEntryListener(name, key, listener);
+        entryListenerManager().removeEntryListener(name, key, listener);
+    }
+
+	private EntryListenerManager entryListenerManager() {
+	    return client.getListenerManager().getEntryListenerManager();
     }
 
     public void lock(K key) {
@@ -200,11 +202,10 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof MultiMap && o != null) {
+        if (o instanceof MultiMap) {
             return getName().equals(((MultiMap) o).getName());
-        } else {
-            return false;
         }
+        return false;
     }
 
     @Override

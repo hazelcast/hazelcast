@@ -24,10 +24,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.query.Predicate;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EventListener;
-import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;

@@ -17,8 +17,8 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.nio.DataSerializable;
@@ -52,22 +52,6 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         imap.put(1, null);
     }
 
-    private static class EntryAdapter<K, V> implements EntryListener<K, V> {
-
-		public void entryAdded(EntryEvent<K, V> event) {
-		}
-
-		public void entryRemoved(EntryEvent<K, V> event) {
-		}
-
-		public void entryUpdated(EntryEvent<K, V> event) {
-		}
-
-		public void entryEvicted(EntryEvent<K, V> event) {
-		}
-    	
-    }
-    
     @Test
     public void testIssue321() throws Exception {
     	HazelcastClient hClient = getHazelcastClient();
@@ -76,13 +60,13 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
 		final BlockingQueue<EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<EntryEvent<Integer,Integer>>();
         final BlockingQueue<EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<EntryEvent<Integer,Integer>>();
 
-		imap.addEntryListener(new EntryAdapter(){
+		imap.addEntryListener(new EntryAdapter<Integer, Integer>(){
 			@Override
 			public void entryAdded(EntryEvent event) {
 				events2.add(event);
 			}
 		}, false);
-		imap.addEntryListener(new EntryAdapter(){
+		imap.addEntryListener(new EntryAdapter<Integer, Integer>(){
 			@Override
 			public void entryAdded(EntryEvent event) {
 				events1.add(event);

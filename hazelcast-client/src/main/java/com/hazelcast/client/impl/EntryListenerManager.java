@@ -17,18 +17,25 @@
 
 package com.hazelcast.client.impl;
 
+import com.hazelcast.client.Call;
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.Packet;
+import com.hazelcast.client.ProxyHelper;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.impl.ClusterOperation;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.hazelcast.client.Serializer.toByte;
 import static com.hazelcast.client.Serializer.toObject;
 
 public class EntryListenerManager {
@@ -56,6 +63,10 @@ public class EntryListenerManager {
 
     private Object toKey(final Object key){
         return key != null ? key : NULL_KEY;
+    }
+    
+    private Object fromKey(final Object key){
+        return key != NULL_KEY ? key : null;
     }
     
     public synchronized void removeEntryListener(String name, Object key, EntryListener<?, ?> entryListener) {
@@ -147,6 +158,31 @@ public class EntryListenerManager {
                 }
                 break;
         }
+    }
+    
+    public Call createNewAddListenerCall(final ProxyHelper proxyHelper, final Object key, boolean includeValue){
+    	Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, toByte(key), null);
+        request.setLongValue(includeValue ? 1 : 0);
+        return proxyHelper.createCall(request);
+    }
+    
+    public Collection<Call> calls(final HazelcastClient client){
+        final List<Call> calls = new ArrayList<Call>();
+        for (final Entry<String, ConcurrentHashMap<Object, List<EntryListenerHolder>>> entry : entryListeners.entrySet()) {
+            final String name = entry.getKey();
+            final ConcurrentHashMap<Object, List<EntryListenerHolder>> value = entry.getValue();
+            for (final Entry<Object, List<EntryListenerHolder>> anotherEntry : value.entrySet()) {
+                boolean includeValue = false;
+                final Object key = fromKey(anotherEntry.getKey());
+                for (final EntryListenerHolder entryListenerHolder : anotherEntry.getValue()) {
+                    includeValue |= entryListenerHolder.includeValue;
+                    if (includeValue) break;
+                }
+                final ProxyHelper proxyHelper = new ProxyHelper(name, client);
+                calls.add(createNewAddListenerCall(proxyHelper, key, includeValue));
+            }
+        }
+        return calls;
     }
     
     private static class EntryListenerHolder {

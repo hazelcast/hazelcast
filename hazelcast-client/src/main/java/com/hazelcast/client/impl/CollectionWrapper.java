@@ -43,7 +43,7 @@ public class CollectionWrapper<K> implements DataSerializable {
 
     public void readData(DataInput in) throws IOException {
         int size = in.readInt();
-        keys = new ArrayList<K>();
+        keys = new ArrayList<K>(size);
         for (int i = 0; i < size; i++) {
             int length = in.readInt();
             byte[] data = new byte[length];

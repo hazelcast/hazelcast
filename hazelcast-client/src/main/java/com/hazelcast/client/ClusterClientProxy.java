@@ -18,6 +18,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.impl.CollectionWrapper;
+import com.hazelcast.client.impl.InstanceListenerManager;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.FactoryImpl;
@@ -78,23 +79,26 @@ public class ClusterClientProxy implements Cluster {
         return (result == null) ? false : (Boolean) result;
     }
 
+
     public void addInstanceListener(InstanceListener listener) {
         check(listener);
-        if (client.getListenerManager().getInstanceListenerManager().noInstanceListenerRegistered()) {
-            Packet request = proxyHelper.createRequestPacket(ClusterOperation.CLIENT_ADD_INSTANCE_LISTENER, null, null);
-            Call c = proxyHelper.createCall(request);
-            client.getListenerManager().addListenerCall(c);
+        if (instanceListenerManager().noInstanceListenerRegistered()) {
+        	Call c = instanceListenerManager().createNewAddListenerCall(proxyHelper);
             proxyHelper.doCall(c);
         }
-        client.getListenerManager().getInstanceListenerManager().registerInstanceListener(listener);
+        instanceListenerManager().registerInstanceListener(listener);
     }
 
     public void removeInstanceListener(InstanceListener instanceListener) {
         check(instanceListener);
-        client.getListenerManager().getInstanceListenerManager().removeInstanceListener(instanceListener);
+        instanceListenerManager().removeInstanceListener(instanceListener);
     }
 
-@Override
+	private InstanceListenerManager instanceListenerManager() {
+	    return client.getListenerManager().getInstanceListenerManager();
+    }
+
+	@Override
     public String toString() {
         Set<Member> members = getMembers();
         StringBuffer sb = new StringBuffer("Cluster [");

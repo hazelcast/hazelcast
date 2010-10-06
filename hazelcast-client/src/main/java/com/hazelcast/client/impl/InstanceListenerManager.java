@@ -17,13 +17,17 @@
 
 package com.hazelcast.client.impl;
 
+import com.hazelcast.client.Call;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.Packet;
+import com.hazelcast.client.ProxyHelper;
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.InstanceEvent;
 import com.hazelcast.core.InstanceListener;
+import com.hazelcast.impl.ClusterOperation;
 
-import java.util.Iterator;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -53,13 +57,28 @@ public class InstanceListenerManager {
         String id = (String) toObject(packet.getKey());
         InstanceEvent.InstanceEventType instanceEventType = (InstanceEvent.InstanceEventType) toObject(packet.getValue());
         InstanceEvent event = new InstanceEvent(instanceEventType, (Instance) client.getClientProxy(id));
-        for (Iterator<InstanceListener> it = instanceListeners.iterator(); it.hasNext();) {
-            InstanceListener listener = it.next();
-            if (InstanceEvent.InstanceEventType.CREATED.equals(event.getEventType())) {
+        for (final InstanceListener listener : instanceListeners) {
+            switch(instanceEventType){
+            case CREATED:
                 listener.instanceCreated(event);
-            } else if (InstanceEvent.InstanceEventType.DESTROYED.equals(event.getEventType())) {
+                break;
+            case DESTROYED:
                 listener.instanceDestroyed(event);
+                break;
+            default:
+            	break;
             }
         }
+    }
+    
+    public Call createNewAddListenerCall(final ProxyHelper proxyHelper){
+    	Packet request = proxyHelper.createRequestPacket(ClusterOperation.CLIENT_ADD_INSTANCE_LISTENER, null, null);
+        return proxyHelper.createCall(request);
+    }
+    
+    public Collection<Call> calls(final HazelcastClient client){
+    	if (instanceListeners.isEmpty())
+    		return Collections.emptyList();
+        return Collections.singletonList(createNewAddListenerCall(new ProxyHelper("", client)));
     }
 }

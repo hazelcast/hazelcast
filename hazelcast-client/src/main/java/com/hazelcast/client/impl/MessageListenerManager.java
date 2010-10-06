@@ -17,9 +17,15 @@
 
 package com.hazelcast.client.impl;
 
+import com.hazelcast.client.Call;
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.Packet;
+import com.hazelcast.client.ProxyHelper;
 import com.hazelcast.core.MessageListener;
+import com.hazelcast.impl.ClusterOperation;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -27,11 +33,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static com.hazelcast.client.Serializer.toObject;
 
 public class MessageListenerManager {
-    final private ConcurrentHashMap<String, List<MessageListener<Object>>> messageListeners = new ConcurrentHashMap<String, List<MessageListener<Object>>>();
+    final private ConcurrentHashMap<String, List<MessageListener>> messageListeners = new ConcurrentHashMap<String, List<MessageListener>>();
 
     public void registerMessageListener(String name, MessageListener messageListener) {
-        List<MessageListener<Object>> newListenersList = new CopyOnWriteArrayList<MessageListener<Object>>();
-        List<MessageListener<Object>> listeners = messageListeners.putIfAbsent(name, newListenersList);
+        List<MessageListener> newListenersList = new CopyOnWriteArrayList<MessageListener>();
+        List<MessageListener> listeners = messageListeners.putIfAbsent(name, newListenersList);
         if (listeners == null) {
             listeners = newListenersList;
         }
@@ -56,12 +62,26 @@ public class MessageListenerManager {
     }
 
     public void notifyMessageListeners(Packet packet) {
-        List<MessageListener<Object>> list = messageListeners.get(packet.getName());
+        List<MessageListener> list = messageListeners.get(packet.getName());
         if (list != null) {
             for (MessageListener<Object> messageListener : list) {
                 Object message = toObject(packet.getKey());
                 messageListener.onMessage(message);
             }
         }
+    }
+    
+    public Call createNewAddListenerCall(final ProxyHelper proxyHelper){
+    	Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
+        return proxyHelper.createCall(request);
+    }
+    
+    public Collection<Call> calls(final HazelcastClient client){
+        final List<Call> calls = new ArrayList<Call>();
+        for (final String name : messageListeners.keySet()) {
+            final ProxyHelper proxyHelper = new ProxyHelper(name, client);
+            calls.add(createNewAddListenerCall(proxyHelper));
+        }
+        return calls;
     }
 }

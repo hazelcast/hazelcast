@@ -17,8 +17,10 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.impl.MessageListenerManager;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MessageListener;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.ClusterOperation;
 
 import static com.hazelcast.client.ProxyHelper.check;
@@ -33,7 +35,7 @@ public class TopicClientProxy<T> implements ITopic {
     }
 
     public String getName() {
-        return name.substring(2);  //To change body of implemented methods use File | Settings | File Templates.
+        return name.substring(Prefix.TOPIC.length());  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void publish(Object message) {
@@ -43,28 +45,30 @@ public class TopicClientProxy<T> implements ITopic {
 
     public synchronized void addMessageListener(MessageListener messageListener) {
         check(messageListener);
-        boolean shouldCall = proxyHelper.getHazelcastClient().getListenerManager().getMessageListenerManager().noMessageListenerRegistered(name);
-        proxyHelper.getHazelcastClient().getListenerManager().getMessageListenerManager().registerMessageListener(name, messageListener);
+        boolean shouldCall = messageListenerManager().noMessageListenerRegistered(name);
+        messageListenerManager().registerMessageListener(name, messageListener);
         if (shouldCall) {
             doAddListenerCall(messageListener);
         }
     }
 
     private void doAddListenerCall(MessageListener messageListener) {
-        Packet request = proxyHelper.prepareRequest(ClusterOperation.ADD_LISTENER, null, null);
-        Call c = proxyHelper.createCall(request);
-        proxyHelper.getHazelcastClient().getListenerManager().addListenerCall(c);
+        Call c = messageListenerManager().createNewAddListenerCall(proxyHelper);
         proxyHelper.doCall(c);
     }
 
     public synchronized void removeMessageListener(MessageListener messageListener) {
         check(messageListener);
-        proxyHelper.getHazelcastClient().getListenerManager().getMessageListenerManager().removeMessageListener(name, messageListener);
-        if (proxyHelper.getHazelcastClient().getListenerManager().getMessageListenerManager().noMessageListenerRegistered(name)) {
+        messageListenerManager().removeMessageListener(name, messageListener);
+        if (messageListenerManager().noMessageListenerRegistered(name)) {
             proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, null, null);
         }
     }
-
+    
+	private MessageListenerManager messageListenerManager() {
+	    return proxyHelper.getHazelcastClient().getListenerManager().getMessageListenerManager();
+    }
+    
     public InstanceType getInstanceType() {
         return InstanceType.TOPIC;
     }
@@ -79,11 +83,10 @@ public class TopicClientProxy<T> implements ITopic {
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof ITopic && o != null) {
+        if (o instanceof ITopic) {
             return getName().equals(((ITopic) o).getName());
-        } else {
-            return false;
         }
+        return false;
     }
 
     @Override

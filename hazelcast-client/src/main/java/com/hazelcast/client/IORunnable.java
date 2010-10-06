@@ -72,11 +72,8 @@ public abstract class IORunnable extends ClientRunnable {
     }
 
     protected boolean restoredConnection(Connection oldConnection, Connection newConnection) {
-        long oldConnectionId = -1;
-        boolean isOldConnectionNull = (oldConnection == null);
-        if (!isOldConnectionNull) {
-            oldConnectionId = oldConnection.getVersion();
-        }
+        final boolean isOldConnectionNull = oldConnection == null;
+        final long oldConnectionId = oldConnection == null ? -1 : oldConnection.getVersion();
         return restoredConnection(newConnection, isOldConnectionNull, oldConnectionId);
     }
 }
