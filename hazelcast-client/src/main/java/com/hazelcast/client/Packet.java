@@ -18,6 +18,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.util.ByteUtil;
 
 import java.io.DataInputStream;
@@ -63,7 +64,7 @@ public class Packet {
 
     private byte[] indexTypes = new byte[10];
 
-    private static final byte PACKET_VERSION = 5;
+    private static final byte PACKET_VERSION = GroupProperties.PACKET_VERSION.getByte();
 
     private final static ByteBuffer readHeaderBuffer = ByteBuffer.allocate(1000);
 
@@ -92,7 +93,7 @@ public class Packet {
         int valueSize = dis.readInt();
         byte packetVersion = dis.readByte();
         if (packetVersion != PACKET_VERSION) {
-            throw new RuntimeException("Invalid packet version. Expected:"
+            throw new ClusterClientException("Invalid packet version. Expected:"
                     + PACKET_VERSION + ", Found:" + packetVersion);
         }
         readHeaderBuffer.clear();
@@ -121,7 +122,7 @@ public class Packet {
             version = readHeaderBuffer.getLong();
         }
         if (!ByteUtil.isTrue(booleans, 7)) {
-            throw new RuntimeException("LockAddress cannot be sent to the client!" + operation);
+            throw new ClusterClientException("LockAddress cannot be sent to the client!" + operation);
         }
         this.callId = readHeaderBuffer.getLong();
         this.responseType = readHeaderBuffer.get();

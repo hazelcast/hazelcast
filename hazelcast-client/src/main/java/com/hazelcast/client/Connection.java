@@ -63,7 +63,7 @@ public class Connection {
             dos = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), BUFFER_SIZE));
             dis = new DataInputStream(new BufferedInputStream(socket.getInputStream(), BUFFER_SIZE));
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new ClusterClientException(e);
         }
     }
 

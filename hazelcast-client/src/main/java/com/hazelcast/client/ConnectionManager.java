@@ -17,6 +17,8 @@
 
 package com.hazelcast.client;
 
+import static java.text.MessageFormat.format;
+
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
@@ -41,6 +43,9 @@ public class ConnectionManager implements MembershipListener {
     private final HazelcastClient client;
     private volatile int lastDisconnectedConnectionId = -1;
     private ClientBinder binder;
+    
+    private final int RECONNECTION_ATTEMPTS_LIMIT = 6;
+    private final long RECONNECTION_TIMEOUT = 5000L;
 
     public ConnectionManager(HazelcastClient client, InetSocketAddress[] clusterMembers, boolean shuffle) {
         this.client = client;
@@ -55,6 +60,35 @@ public class ConnectionManager implements MembershipListener {
         this.clusterMembers.add(address);
     }
 
+    public Connection getAliveConnection() {
+        if (currentConnection == null) {
+            synchronized (this) {
+                int attempt = 0;
+                while(currentConnection == null){
+                	Connection connection = searchForAvailableConnection();
+                    if (connection != null) {
+                        logger.log(Level.FINE, "Client is connecting to " + connection);
+                        currentConnection = connection;
+                    } else {
+                        if (attempt >= RECONNECTION_ATTEMPTS_LIMIT){
+                            break;
+                        }
+                        attempt++;
+                        logger.log(Level.INFO, format("Unable to get alive cluster connection," +
+                            " try in {0} ms later, attempt {1} of {2}.",
+                            RECONNECTION_TIMEOUT, attempt, RECONNECTION_ATTEMPTS_LIMIT));
+                        try {
+                            Thread.sleep(RECONNECTION_TIMEOUT);
+                        } catch (InterruptedException e) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return currentConnection;
+    }
+
     public Connection getConnection() throws IOException {
         if (currentConnection == null) {
             synchronized (this) {
@@ -62,7 +96,7 @@ public class ConnectionManager implements MembershipListener {
                     Connection connection = searchForAvailableConnection();
                     if (connection != null) {
                         logger.log(Level.FINE, "Client is connecting to " + connection);
-                        binder.bind(connection);
+                        bindConnection(connection);
                         currentConnection = connection;
                     }
                 }
@@ -71,10 +105,14 @@ public class ConnectionManager implements MembershipListener {
         return currentConnection;
     }
 
+    void bindConnection(Connection connection) throws IOException {
+        binder.bind(connection);
+    }
+
     public synchronized void destroyConnection(Connection connection) {
         if (currentConnection != null && currentConnection.getVersion() == connection.getVersion()) {
-            logger.log(Level.WARNING, "Connection to " + currentConnection + " is lost");
-            currentConnection = null;
+        	logger.log(Level.WARNING, "Connection to " + currentConnection + " is lost");
+        	currentConnection = null;
         }
     }
 

@@ -72,7 +72,7 @@ public final class Serializer {
                 dos.close();
                 return dos.toByteArray();
             } catch (Throwable e){
-                throw new RuntimeException(e);
+                throw new ClusterClientException(e);
             }
         }
 
@@ -87,7 +87,7 @@ public final class Serializer {
                 dis.close();
                 return object;
             } catch (final Throwable e){
-                throw new RuntimeException(e);
+                throw new ClusterClientException(e);
             }
         }
 

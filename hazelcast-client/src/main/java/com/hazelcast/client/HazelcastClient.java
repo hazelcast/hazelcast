@@ -88,6 +88,10 @@ public class HazelcastClient implements HazelcastInstance {
             this.connectionManager = new ConnectionManager(this, clusterMembers, shuffle);
         }
         this.connectionManager.setBinder(new DefaultClientBinder(this));
+        final Connection aliveConnection = connectionManager.getAliveConnection();
+        if (aliveConnection == null){
+            throw new IllegalStateException("Unable to connect to cluster");
+        }
         out = new OutRunnable(this, calls, new PacketWriter());
         new Thread(out, "hz.client.OutThread").start();
         in = new InRunnable(this, calls, new PacketReader());
@@ -97,15 +101,20 @@ public class HazelcastClient implements HazelcastInstance {
         mapLockProxy = getMap("__hz_Locks");
         clusterClientProxy = new ClusterClientProxy(this);
         partitionClientProxy = new PartitionClientProxy(this);
+        
         Boolean authenticate = clusterClientProxy.authenticate(groupName, groupPassword);
         if (!authenticate) {
             this.shutdown();
-            throw new RuntimeException("Wrong group name and password.");
+            throw new AuthenticationException("Wrong group name and password.");
         }
+        
         try {
-            connectionManager.getConnection();
-        } catch (IOException ignored) {
+            this.connectionManager.bindConnection(aliveConnection);
+        } catch (IOException e) {
+            this.shutdown();
+            throw new ClusterClientException(e.getMessage(), e);
         }
+        
         if (automatic) {
             this.getCluster().addMembershipListener(connectionManager);
             connectionManager.updateMembers();
