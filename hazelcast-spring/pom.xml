@@ -1,0 +1,49 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.hazelcast</groupId>
+        <artifactId>hazelcast-root</artifactId>
+        <version>1.9</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+ 
+	<groupId>hazelcast-spring</groupId>
+	<artifactId>hazelcast-spring</artifactId>
+	<packaging>jar</packaging>
+
+	<name>hazelcast-spring</name>
+	<url>http://maven.apache.org</url>
+
+	<properties>
+		<org.springframework.version>3.0.3.RELEASE</org.springframework.version>
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-core</artifactId>
+			<version>${org.springframework.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-beans</artifactId>
+			<version>${org.springframework.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<version>${org.springframework.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-test</artifactId>
+			<version>${org.springframework.version}</version>
+		</dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+	</dependencies>
+</project>
