@@ -1,4 +1,7 @@
-<hazelcast>
+<?xml version="1.0" encoding="UTF-8"?>
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-basic.xsd" 
+xmlns="http://www.hazelcast.com/schema/config" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
         <name>dev</name>
         <password>dev-pass</password>
@@ -120,13 +123,12 @@
         -->
         <merge-policy>hz.ADD_NEW_ENTRY</merge-policy>
     </map>
-    <merge-policies>
-        <!-- Add your own map merge policy implementations here -->
-        <!--
-        <map-merge-policy name="MY_MERGE_POLICY">
-            <class-name>com.acme.MyOwnMergePolicy</class-name>
-        </map-merge-policy>
-        -->
-    </merge-policies>
+    <!-- Add your own map merge policy implementations here:     
+    	<merge-policies>
+           	<map-merge-policy name="MY_MERGE_POLICY">
+            	<class-name>com.acme.MyOwnMergePolicy</class-name>
+        	</map-merge-policy>
+    	</merge-policies>
+    -->
 
 </hazelcast>

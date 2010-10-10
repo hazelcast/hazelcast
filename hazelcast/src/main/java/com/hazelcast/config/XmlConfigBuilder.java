@@ -192,7 +192,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
             domLevel3 = false;
         }
         for (org.w3c.dom.Node node : new IterableNodeList(docElement.getChildNodes())) {
-            final String nodeName = node.getNodeName();
+            final String nodeName = cleanNodeName(node.getNodeName());
             if ("network".equals(nodeName)) {
                 handleNetwork(node);
             } else if ("group".equals(nodeName)) {
@@ -226,9 +226,9 @@ public class XmlConfigBuilder implements ConfigBuilder {
         return false;
     }
 
-    private void handleNetwork(final org.w3c.dom.Node node) throws Exception {
+    public void handleNetwork(final org.w3c.dom.Node node) throws Exception {
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
-            final String nodeName = child.getNodeName();
+            final String nodeName = cleanNodeName(child.getNodeName());
             if ("port".equals(nodeName)) {
                 handlePort(child);
             } else if ("join".equals(nodeName)) {
@@ -288,15 +288,15 @@ public class XmlConfigBuilder implements ConfigBuilder {
         }
     }
 
-    private void handleExecutor(final org.w3c.dom.Node node) throws Exception {
+    public void handleExecutor(final org.w3c.dom.Node node) throws Exception {
         final ExecutorConfig executorConfig = new ExecutorConfig();
         handleViaReflection(node, config, executorConfig);
     }
 
-    private void handleGroup(final org.w3c.dom.Node node) {
+    public void handleGroup(final org.w3c.dom.Node node) {
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();
-            final String nodeName = n.getNodeName().toLowerCase();
+            final String nodeName = cleanNodeName(n.getNodeName());
             if ("name".equals(nodeName)) {
                 config.getGroupConfig().setName(value);
             } else if ("password".equals(nodeName)) {
@@ -305,10 +305,10 @@ public class XmlConfigBuilder implements ConfigBuilder {
         }
     }
 
-    private void handleProperties(final org.w3c.dom.Node node, Properties properties) {
+    public void handleProperties(final org.w3c.dom.Node node, Properties properties) {
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();
-            final String name = n.getNodeName().toLowerCase();
+            final String name = cleanNodeName(n.getNodeName());
             properties.setProperty(name, value);
         }
     }
@@ -324,7 +324,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
             }
         }
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
-            if ("interface".equalsIgnoreCase(n.getNodeName())) {
+            if ("interface".equalsIgnoreCase(cleanNodeName(n.getNodeName()))) {
                 final String value = getTextContent(n).trim();
                 interfaces.addInterface(value);
             }
@@ -344,7 +344,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
         }
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();
-            String methodName = "set" + getMethodName(n.getNodeName());
+            String methodName = "set" + getMethodName(cleanNodeName(n.getNodeName()));
             Method method = getMethod(target, methodName);
             invoke(target, method, value);
         }
@@ -409,7 +409,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
 
     private void handleJoin(final org.w3c.dom.Node node) {
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
-            final String name = child.getNodeName().toLowerCase();
+            final String name = cleanNodeName(child.getNodeName());
             if ("multicast".equals(name)) {
                 handleMulticast(child);
             } else if ("tcp-ip".equals(name)) {
@@ -430,11 +430,11 @@ public class XmlConfigBuilder implements ConfigBuilder {
         }
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();
-            if ("multicast-group".equalsIgnoreCase(n.getNodeName())) {
+            if ("multicast-group".equals(cleanNodeName(n.getNodeName()))) {
                 join.getMulticastConfig().setMulticastGroup(value);
-            } else if ("multicast-port".equalsIgnoreCase(n.getNodeName())) {
+            } else if ("multicast-port".equals(cleanNodeName(n.getNodeName()))) {
                 join.getMulticastConfig().setMulticastPort(Integer.parseInt(value));
-            } else if ("multicast-timeout-seconds".equalsIgnoreCase(n.getNodeName())) {
+            } else if ("multicast-timeout-seconds".equals(cleanNodeName(n.getNodeName()))) {
                 join.getMulticastConfig().setMulticastTimeoutSeconds(Integer.parseInt(value));
             }
         }
@@ -455,13 +455,13 @@ public class XmlConfigBuilder implements ConfigBuilder {
         }
     }
 
-    private void handleQueue(final org.w3c.dom.Node node) {
+    public void handleQueue(final org.w3c.dom.Node node) {
         final Node attName = node.getAttributes().getNamedItem("name");
         final String name = getTextContent(attName);
         final QueueConfig qConfig = new QueueConfig();
         qConfig.setName(name);
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
-            final String nodeName = n.getNodeName().toLowerCase();
+            final String nodeName = cleanNodeName(n.getNodeName());
             final String value = getTextContent(n).trim();
             if ("max-size-per-jvm".equals(nodeName)) {
                 qConfig.setMaxSizePerJVM(getIntegerValue("max-size-per-jvm", value, QueueConfig.DEFAULT_MAX_SIZE_PER_JVM));
@@ -472,13 +472,13 @@ public class XmlConfigBuilder implements ConfigBuilder {
         this.config.getQConfigs().put(name, qConfig);
     }
 
-    private void handleMap(final org.w3c.dom.Node node) throws Exception {
+    public void handleMap(final org.w3c.dom.Node node) throws Exception {
         final Node attName = node.getAttributes().getNamedItem("name");
         final String name = getTextContent(attName);
         final MapConfig mapConfig = new MapConfig();
         mapConfig.setName(name);
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
-            final String nodeName = n.getNodeName().toLowerCase();
+            final String nodeName = cleanNodeName(n.getNodeName());
             final String value = getTextContent(n).trim();
             if ("backup-count".equals(nodeName)) {
                 mapConfig.setBackupCount(getIntegerValue("backup-count", value, MapConfig.DEFAULT_BACKUP_COUNT));
@@ -522,7 +522,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
             }
         }
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
-            final String nodeName = n.getNodeName().toLowerCase();
+            final String nodeName = cleanNodeName(n.getNodeName());
             final String value = getTextContent(n).trim();
             if ("class-name".equals(nodeName)) {
                 mapStoreConfig.setClassName(value);
@@ -551,11 +551,11 @@ public class XmlConfigBuilder implements ConfigBuilder {
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String value = getTextContent(n).trim();
-            if (n.getNodeName().equalsIgnoreCase("required-member")) {
+            if (cleanNodeName(n.getNodeName()).equals("required-member")) {
                 join.getTcpIpConfig().setRequiredMember(value);
-            } else if (n.getNodeName().equalsIgnoreCase("hostname")) {
+            } else if (cleanNodeName(n.getNodeName()).equals("hostname")) {
                 join.getTcpIpConfig().addMember(value);
-            } else if (n.getNodeName().equalsIgnoreCase("address")) {
+            } else if (cleanNodeName(n.getNodeName()).equals("address")) {
                 int colonIndex = value.indexOf(':');
                 if (colonIndex == -1) {
                     logger.log(Level.WARNING, "Address should be in the form of ip:port. Address [" + value + "] is not valid.");
@@ -568,7 +568,7 @@ public class XmlConfigBuilder implements ConfigBuilder {
                         e.printStackTrace();
                     }
                 }
-            } else if ("interface".equalsIgnoreCase(n.getNodeName())) {
+            } else if ("interface".equals(cleanNodeName(n.getNodeName()))) {
                 final int indexStar = value.indexOf('*');
                 final int indexDash = value.indexOf('-');
                 if (indexStar == -1 && indexDash == -1) {
@@ -600,23 +600,23 @@ public class XmlConfigBuilder implements ConfigBuilder {
         }
     }
 
-    private void handleTopic(final org.w3c.dom.Node node) {
+    public void handleTopic(final org.w3c.dom.Node node) {
         final Node attName = node.getAttributes().getNamedItem("name");
         final String name = getTextContent(attName);
         final TopicConfig tConfig = new TopicConfig();
         tConfig.setName(name);
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();
-            if (n.getNodeName().equalsIgnoreCase("global-ordering-enabled")) {
+            if (cleanNodeName(n.getNodeName()).equals("global-ordering-enabled")) {
                 tConfig.setGlobalOrderingEnabled(checkTrue(value));
             }
         }
         config.getTopicConfigs().put(name, tConfig);
     }
 
-    private void handleMergePolicies(final org.w3c.dom.Node node) throws Exception {
+    public void handleMergePolicies(final org.w3c.dom.Node node) throws Exception {
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
-            final String nodeName = n.getNodeName().toLowerCase();
+            final String nodeName = cleanNodeName(n.getNodeName());
             if (nodeName.equals("map-merge-policy")) {
                 handleViaReflection(n, config, new MergePolicyConfig());
             }
@@ -628,4 +628,12 @@ public class XmlConfigBuilder implements ConfigBuilder {
                 && child.getNodeType() != Node.PROCESSING_INSTRUCTION_NODE;
         return result;
     }
+    
+	public String cleanNodeName(final String nodeName) {
+		String name = nodeName;
+		if (name != null ) {
+			name = nodeName.replaceAll("\\w+:", "").toLowerCase();
+		}
+		return name;
+	}
 }

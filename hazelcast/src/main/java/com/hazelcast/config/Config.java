@@ -98,6 +98,10 @@ public class Config {
         return this;
     }
 
+    public void setProperties(final Properties properties) {
+        this.properties = properties;
+    }
+
     public Properties getProperties() {
         return properties;
     }
@@ -300,6 +304,16 @@ public class Config {
         return mapExecutors.values();
     }
 
+    
+    public Map<String, ExecutorConfig> getExecutorConfigMap() {
+        return mapExecutors;
+    }
+
+
+    public void setExecutorConfigMap(Map<String, ExecutorConfig> mapExecutors) {
+        this.mapExecutors = mapExecutors;
+    }   
+    
     /**
      * @return the mapTopicConfigs
      */
@@ -321,7 +335,14 @@ public class Config {
     public Map<String, QueueConfig> getQConfigs() {
         return mapQueueConfigs;
     }
-
+    
+    /**
+     * @param mapQConfigs the mapQConfigs to set
+     */
+    public void setQConfigs(Map<String, QueueConfig> mapQConfigs) {
+        this.mapQueueConfigs = mapQConfigs;
+    }
+    
     /**
      * @param mapQConfigs the mapQConfigs to set
      */
