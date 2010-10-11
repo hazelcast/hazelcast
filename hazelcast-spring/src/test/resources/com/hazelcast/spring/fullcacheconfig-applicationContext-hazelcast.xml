@@ -9,24 +9,24 @@ http://www.hazelcast.com/schema/config/hazelcast-basic.xsd">
 
 	<cache:hazelcast id="config">
 		<cache:group>
-			<cache:name>dev</cache:name>
-			<cache:password>dev-pass</cache:password>
+			<cache:name>group</cache:name>
+			<cache:password>group-pass</cache:password>
 		</cache:group>
 		<cache:network>
-			<cache:port auto-increment="true">5701</cache:port>
+			<cache:port auto-increment="true">5800</cache:port>
 			<cache:join>
-				<cache:multicast enabled="true">
+				<cache:multicast enabled="false">
 					<cache:multicast-group>224.2.2.3</cache:multicast-group>
 					<cache:multicast-port>54327</cache:multicast-port>
 				</cache:multicast>
-				<cache:tcp-ip enabled="false">
+				<cache:tcp-ip enabled="true">
 					<cache:interface>127.0.0.1</cache:interface>
 				</cache:tcp-ip>
 			</cache:join>
 			<cache:interfaces enabled="false">
 				<cache:interface>10.10.1.*</cache:interface>
 			</cache:interfaces>
-			<cache:symmetric-encryption enabled="false">
+			<cache:symmetric-encryption enabled="true">
 				<cache:algorithm>PBEWithMD5AndDES</cache:algorithm>
 				<cache:salt>thesalt</cache:salt>
 				<cache:password>thepass</cache:password>
@@ -41,7 +41,7 @@ http://www.hazelcast.com/schema/config/hazelcast-basic.xsd">
 				<cache:storePath>keystore</cache:storePath>
 			</cache:asymmetric-encryption>
 		</cache:network>
-		<cache:executor-service>
+		<cache:executor-service name="testExec">
 			<cache:core-pool-size>2</cache:core-pool-size>
 			<cache:max-pool-size>32</cache:max-pool-size>
 			<cache:keep-alive-seconds>30</cache:keep-alive-seconds>

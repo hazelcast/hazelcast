@@ -18,7 +18,9 @@
 package com.hazelcast.spring;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,8 +29,12 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.QueueConfig;
+import com.hazelcast.config.TcpIpConfig;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 
@@ -36,11 +42,11 @@ import com.hazelcast.config.QueueConfig;
 public class TestFullApplicationContext {
 
 	@Autowired
-	Config config;
+	private Config config;
 	
 	
 	@Test
-	public void testConfig() {
+	public void testMapConfig() {
 		assertNotNull(config);
 		
 		MapConfig mapConfig = config.getMapConfig("testMap");
@@ -48,12 +54,45 @@ public class TestFullApplicationContext {
 		assertEquals("testMap", mapConfig.getName());
 		assertEquals(2, mapConfig.getBackupCount());
 
+	}
+	
+	@Test
+	public void testQueueConfig() {
 		QueueConfig qConfig = config.getQueueConfig("testQ");
 		assertNotNull(qConfig);
 		assertEquals("testQ", qConfig.getName());
 		assertEquals(1000, qConfig.getMaxSizePerJVM());
-
 		
 	}
 	
+	@Test
+	public void testGroupConfig() {
+		GroupConfig groupConfig = config.getGroupConfig();
+		assertNotNull(groupConfig);
+		assertEquals("group", groupConfig.getName());
+		assertEquals("group-pass", groupConfig.getPassword());
+	}
+
+	@Test
+	public void testExecutorCnnfig(){
+		ExecutorConfig execConfig = config.getExecutorConfig("testExec");
+		assertNotNull(execConfig);
+		assertEquals(2, execConfig.getCorePoolSize());
+		assertEquals(32, execConfig.getMaxPoolSize());
+		assertEquals(30, execConfig.getKeepAliveSeconds());
+	}
+	
+	@Test
+	public void testNetworkConfig() {
+		NetworkConfig networkConfig = config.getNetworkConfig();
+		assertNotNull(networkConfig);
+		assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
+		TcpIpConfig tcp = networkConfig.getJoin().getTcpIpConfig();
+		assertNotNull(tcp);
+		assertTrue(tcp.isEnabled());
+		assertTrue(networkConfig.getSymmetricEncryptionConfig().isEnabled());
+		
+	}
+
+
 }

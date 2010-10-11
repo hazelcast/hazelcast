@@ -71,7 +71,7 @@ public class HazelcastBeanDefinitionParser extends AbstractSimpleBeanDefinitionP
         builder.addPropertyValue("properties", config.getProperties());
         builder.addPropertyValue("executorConfigMap", config.getExecutorConfigMap());
         builder.addPropertyValue("mapConfigs", config.getMapConfigs());
-        builder.addPropertyValue("qConfigs", config.getQConfigs());
+        builder.addPropertyValue("QConfigs", config.getQConfigs());
         
     }
 
