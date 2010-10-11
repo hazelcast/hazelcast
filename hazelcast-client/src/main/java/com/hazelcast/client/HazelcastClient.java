@@ -94,13 +94,13 @@ public class HazelcastClient implements HazelcastInstance {
             this.connectionManager = new ConnectionManager(this, lifecycleService,  clusterMembers, shuffle);
         }
         this.connectionManager.setBinder(new DefaultClientBinder(this));
-        final Connection aliveConnection = connectionManager.getAliveConnection();
+        final Connection aliveConnection = connectionManager.getInitConnection();
         if (aliveConnection == null){
             throw new IllegalStateException("Unable to connect to cluster");
         }
         out = new OutRunnable(this, calls, new PacketWriter());
         new Thread(out, "hz.client.OutThread").start();
-        in = new InRunnable(this, calls, new PacketReader());
+        in = new InRunnable(this, out, calls, new PacketReader());
         new Thread(in, "hz.client.InThread").start();
         listenerManager = new ListenerManager(this);
         new Thread(listenerManager, "hz.client.Listener").start();

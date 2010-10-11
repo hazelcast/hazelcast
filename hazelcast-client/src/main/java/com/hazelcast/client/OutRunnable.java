@@ -30,6 +30,7 @@ public class OutRunnable extends IORunnable {
     final PacketWriter writer;
     final BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
     private Connection connection = null;
+    private static final Call RECONNECT_CALL = new Call(0, new Packet()); 
     
     private volatile boolean reconnection;
 
@@ -47,14 +48,18 @@ public class OutRunnable extends IORunnable {
             if (call == null) return;
             int count = 0;
             while (call != null) {
-                callMap.put(call.getId(), call);
+                if (call != RECONNECT_CALL){
+                    callMap.put(call.getId(), call);
+                }
                 Connection oldConnection = connection;
                 connection = client.getConnectionManager().getConnection();
                 if (restoredConnection(oldConnection, connection)) {
                     resubscribe(call, oldConnection);
                 } else if (connection != null) {
-                    logger.log(Level.FINEST, "Sending: " + call);
-                    writer.write(connection, call.getRequest());
+                    if (call != RECONNECT_CALL){
+                        logger.log(Level.FINEST, "Sending: " + call);
+                        writer.write(connection, call.getRequest());
+                    }
                 } else {
                     clusterIsDown();
                 }
@@ -74,23 +79,22 @@ public class OutRunnable extends IORunnable {
         }
     }
 
-    private void clusterIsDown() {
+    void clusterIsDown() {
         interruptWaitingCalls();
         if (!reconnection){
             reconnection = true;
             final Thread thread = new Thread(new Runnable() {
                 public void run() {
                     try {
-                        final Connection c = client.getConnectionManager().lookForAliveConnection();
-                        final Connection oldConnection = connection;
-                        connection = c;
-                        if (connection == null){
+                        if (client.getConnectionManager().lookForAliveConnection() == null){
                             if (reconnection){
-                                reconnection = false;
                                 interruptWaitingCallsAndShutdown();
                             }
-                        } else if (restoredConnection(oldConnection, connection)) {
-                            resubscribe(oldConnection);
+                        } else {
+                            try {
+                                queue.put(RECONNECT_CALL);
+                            } catch (InterruptedException e) {
+                            }
                         }
                     } finally {
                         reconnection = false;
@@ -110,13 +114,6 @@ public class OutRunnable extends IORunnable {
         queue.addAll(client.getListenerManager().getListenerCalls());
         temp.drainTo(queue);
         onDisconnect(oldConnection);
-    }
-    
-    private void resubscribe(Connection oldConnection) {
-        queue.addAll(client.getListenerManager().getListenerCalls());
-        if (oldConnection != null) {
-            onDisconnect(oldConnection);
-        }
     }
 
     public void enQueue(Call call) {

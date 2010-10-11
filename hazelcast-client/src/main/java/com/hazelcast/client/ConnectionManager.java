@@ -64,9 +64,12 @@ public class ConnectionManager implements MembershipListener {
         this.clusterMembers.add(address);
     }
 
-    public Connection getAliveConnection() {
+    public Connection getInitConnection() {
         if (currentConnection == null) {
             synchronized (this) {
+                final int attemptsLimit = client.getProperties().getInteger(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT);
+                final int reconnectionTimeout = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_TIMEOUT);
+                currentConnection =  lookForAliveConnection(attemptsLimit, reconnectionTimeout);
                 currentConnection = lookForAliveConnection();
             }
         }
@@ -76,6 +79,11 @@ public class ConnectionManager implements MembershipListener {
     public Connection lookForAliveConnection() {
         final int attemptsLimit = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_ATTEMPTS_LIMIT);
         final int reconnectionTimeout = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_TIMEOUT);
+        return lookForAliveConnection(attemptsLimit, reconnectionTimeout);
+    }
+
+    private Connection lookForAliveConnection(final int attemptsLimit,
+            final int reconnectionTimeout) {
         boolean restored = false;
         int attempt = 0;
         while(currentConnection == null){

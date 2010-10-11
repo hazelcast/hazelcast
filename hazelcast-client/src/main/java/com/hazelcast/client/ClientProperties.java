@@ -25,6 +25,7 @@ public final class ClientProperties {
     public static enum ClientPropertyName {
         GROUP_NAME("hazelcast.client.group.name", null),
         GROUP_PASSWORD("hazelcast.client.group.password", null),
+        INIT_CONNECTION_ATTEMPTS_LIMIT("hazelcast.client.init.connection.attempts.limit", "5"),
         RECONNECTION_ATTEMPTS_LIMIT("hazelcast.client.reconnection.attempts.limit", "5"),
         RECONNECTION_TIMEOUT("hazelcast.client.reconnection.timeout", "5000");
         

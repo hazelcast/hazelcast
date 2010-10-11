@@ -29,9 +29,11 @@ public class InRunnable extends IORunnable implements Runnable {
     final PacketReader reader;
     final ILogger logger = Logger.getLogger(this.getClass().getName());
     Connection connection = null;
+    private final OutRunnable outRunnable;
 
-    public InRunnable(HazelcastClient client, Map<Long, Call> calls, PacketReader reader) {
+    public InRunnable(HazelcastClient client, OutRunnable outRunnable, Map<Long, Call> calls, PacketReader reader) {
         super(client, calls);
+        this.outRunnable = outRunnable;
         this.reader = reader;
     }
 
@@ -44,7 +46,7 @@ public class InRunnable extends IORunnable implements Runnable {
             	redoUnfinishedCalls(oldConnection);
             }
             if (connection == null) {
-                interruptWaitingCalls();
+                outRunnable.clusterIsDown();
                 Thread.sleep(50);
             } else {
                 packet = reader.readPacket(connection);
