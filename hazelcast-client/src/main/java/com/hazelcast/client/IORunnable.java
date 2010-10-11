@@ -22,6 +22,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -36,7 +37,7 @@ public abstract class IORunnable extends ClientRunnable {
         this.callMap = calls;
     }
 
-    public void interruptWaitingCalls() {
+    public void interruptWaitingCallsAndShutdown() {
         Collection<Call> calls = callMap.values();
         for (Call call : calls) {
             call.setResponse(new NoMemberAvailableException());
@@ -47,6 +48,15 @@ public abstract class IORunnable extends ClientRunnable {
                 client.shutdown();
             }
         }).start();
+    }
+    
+    public void interruptWaitingCalls() {
+        final Collection<Call> values = callMap.values();
+        for (Iterator<Call> it = values.iterator(); it.hasNext();) {
+            Call call = it.next();
+            call.setResponse(new NoMemberAvailableException());
+            it.remove();
+        }
     }
 
     protected synchronized void onDisconnect(Connection oldConnection) {
@@ -67,13 +77,12 @@ public abstract class IORunnable extends ClientRunnable {
         }
     }
 
-    private boolean restoredConnection(Connection connection, boolean isOldConnectionNull, long oldConnectionId) {
-        return !isOldConnectionNull && connection != null && connection.getVersion() != oldConnectionId;
+    private boolean restoredConnection(Connection connection, long oldConnectionId) {
+        return connection != null && connection.getVersion() != oldConnectionId;
     }
 
     protected boolean restoredConnection(Connection oldConnection, Connection newConnection) {
-        final boolean isOldConnectionNull = oldConnection == null;
         final long oldConnectionId = oldConnection == null ? -1 : oldConnection.getVersion();
-        return restoredConnection(newConnection, isOldConnectionNull, oldConnectionId);
+        return restoredConnection(newConnection, oldConnectionId);
     }
 }

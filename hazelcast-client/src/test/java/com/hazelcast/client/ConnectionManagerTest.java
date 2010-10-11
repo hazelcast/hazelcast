@@ -18,12 +18,17 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.Cluster;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleEvent.LifecycleState;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -32,13 +37,26 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class ConnectionManagerTest {
+    private LifecycleServiceClientImpl createLifecycleServiceClientImpl(HazelcastClient hazelcastClient, final List<LifecycleState> lifecycleEvents){
+        final LifecycleServiceClientImpl lifecycleService = new LifecycleServiceClientImpl(hazelcastClient);
+        lifecycleService.addLifecycleListener(new LifecycleListener() {
+            
+            public void stateChanged(LifecycleEvent event) {
+                lifecycleEvents.add(event.getState());
+            }
+        });
+        return lifecycleService;
+    }
+    
     @Test
     public void testGetConnection() throws Exception {
         HazelcastClient client = mock(HazelcastClient.class);
         InetSocketAddress inetSocketAddress = new InetSocketAddress("localhost", 5701);
         final Connection connection = mock(Connection.class);
         final CountDownLatch latch = new CountDownLatch(2);
-        ConnectionManager connectionManager = new ConnectionManager(client, inetSocketAddress) {
+        final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
+        final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
+        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress) {
             protected Connection getNextConnection() {
                 latch.countDown();
                 return connection;
@@ -51,13 +69,16 @@ public class ConnectionManagerTest {
         verify(binder).bind(connection);
         assertEquals(connection, connectionManager.getConnection());
         assertEquals(1, latch.getCount());
+        assertArrayEquals(new Object[]{LifecycleState.CLIENT_CONNECTION_OPENED}, lifecycleEvents.toArray());
     }
 
     @Test
     public void testGetConnectionWhenThereIsNoConnection() throws Exception {
         HazelcastClient client = mock(HazelcastClient.class);
         InetSocketAddress inetSocketAddress = new InetSocketAddress("localhost", 5701);
-        ConnectionManager connectionManager = new ConnectionManager(client, inetSocketAddress) {
+        final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
+        final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
+        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress) {
             protected Connection getNextConnection() {
                 return null;
             }
@@ -67,6 +88,7 @@ public class ConnectionManagerTest {
         connectionManager.getConnection();
         assertEquals(null, connectionManager.getConnection());
         assertEquals(null, connectionManager.getConnection());
+        assertArrayEquals(new Object[0], lifecycleEvents.toArray());
     }
 
     @Test
@@ -75,7 +97,9 @@ public class ConnectionManagerTest {
         InetSocketAddress inetSocketAddress = new InetSocketAddress("localhost", 5701);
         final Connection connection = mock(Connection.class);
         final CountDownLatch latch = new CountDownLatch(2);
-        ConnectionManager connectionManager = new ConnectionManager(client, inetSocketAddress) {
+        final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
+        final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
+        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress) {
             protected Connection getNextConnection() {
                 latch.countDown();
                 return connection;
@@ -87,6 +111,10 @@ public class ConnectionManagerTest {
         connectionManager.destroyConnection(connection);
         connectionManager.getConnection();
         assertTrue(latch.await(1, TimeUnit.SECONDS));
+        assertArrayEquals(new Object[]{LifecycleState.CLIENT_CONNECTION_OPENED,
+                LifecycleState.CLIENT_CONNECTION_LOST,
+                LifecycleState.CLIENT_CONNECTION_OPENED},
+            lifecycleEvents.toArray());
     }
 
     @Test
@@ -95,7 +123,9 @@ public class ConnectionManagerTest {
         InetSocketAddress inetSocketAddress = new InetSocketAddress("localhost", 5701);
         final Connection connection = mock(Connection.class);
         final CountDownLatch latch = new CountDownLatch(2);
-        ConnectionManager connectionManager = new ConnectionManager(client, inetSocketAddress) {
+        final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
+        final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
+        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress) {
             protected Connection getNextConnection() {
                 latch.countDown();
                 return connection;
@@ -110,6 +140,7 @@ public class ConnectionManagerTest {
         connectionManager.memberAdded(membershipEvent);
         connectionManager.getClusterMembers().contains(inetSocketAddress);
         assertEquals(1, connectionManager.getClusterMembers().size());
+        assertArrayEquals(new Object[0], lifecycleEvents.toArray());
     }
 
     @Test
@@ -117,7 +148,9 @@ public class ConnectionManagerTest {
         HazelcastClient client = mock(HazelcastClient.class);
         InetSocketAddress inetSocketAddress = new InetSocketAddress("localhost", 5701);
         final Connection connection = mock(Connection.class);
-        ConnectionManager connectionManager = new ConnectionManager(client, inetSocketAddress) {
+        final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
+        final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
+        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress) {
             protected Connection getNextConnection() {
                 return connection;
             }
@@ -132,6 +165,7 @@ public class ConnectionManagerTest {
         connectionManager.memberAdded(membershipEvent);
         connectionManager.getClusterMembers().contains(inetSocketAddress2);
         assertEquals(2, connectionManager.getClusterMembers().size());
+        assertArrayEquals(new Object[0], lifecycleEvents.toArray());
     }
 
     @Test
@@ -139,7 +173,9 @@ public class ConnectionManagerTest {
         HazelcastClient client = mock(HazelcastClient.class);
         InetSocketAddress inetSocketAddress = new InetSocketAddress("localhost", 5701);
         final Connection connection = mock(Connection.class);
-        ConnectionManager connectionManager = new ConnectionManager(client, inetSocketAddress) {
+        final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
+        final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
+        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress) {
             protected Connection getNextConnection() {
                 return connection;
             }
@@ -152,6 +188,7 @@ public class ConnectionManagerTest {
         MembershipEvent membershipEvent = new MembershipEvent(cluster, member, MembershipEvent.MEMBER_REMOVED);
         connectionManager.memberRemoved(membershipEvent);
         assertEquals(0, connectionManager.getClusterMembers().size());
+        assertArrayEquals(new Object[0], lifecycleEvents.toArray());
     }
 
     @Test
@@ -175,7 +212,9 @@ public class ConnectionManagerTest {
         when(cluster.getMembers()).thenReturn(members);
         InetSocketAddress inetSocketAddress = new InetSocketAddress("localhost", 5701);
         final Connection connection = mock(Connection.class);
-        ConnectionManager connectionManager = new ConnectionManager(client, inetSocketAddress) {
+        final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
+        final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
+        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress) {
             protected Connection getNextConnection() {
                 return connection;
             }
@@ -188,6 +227,7 @@ public class ConnectionManagerTest {
         assertTrue(connectionManager.getClusterMembers().contains(inetSocketAddress3));
         assertFalse(connectionManager.getClusterMembers().contains(inetSocketAddress));
         assertEquals(3, connectionManager.getClusterMembers().size());
+        assertArrayEquals(new Object[0], lifecycleEvents.toArray());
     }
 
     @Test
@@ -195,12 +235,15 @@ public class ConnectionManagerTest {
         HazelcastClient client = mock(HazelcastClient.class);
         InetSocketAddress inetSocketAddress = new InetSocketAddress("localhost", 5701);
         final Connection connection = mock(Connection.class);
-        ConnectionManager connectionManager = new ConnectionManager(client, inetSocketAddress) {
+        final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
+        final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
+        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress) {
             protected Connection getNextConnection() {
                 return connection;
             }
         };
         assertTrue(connectionManager.shouldExecuteOnDisconnect(connection));
         assertFalse(connectionManager.shouldExecuteOnDisconnect(connection));
+        assertArrayEquals(new Object[0], lifecycleEvents.toArray());
     }
 }

@@ -17,7 +17,7 @@
 
 package com.hazelcast.core;
 
-public class LifecycleEvent {
+public final class LifecycleEvent {
     public enum LifecycleState {
         STARTING,
         STARTED,
@@ -29,6 +29,8 @@ public class LifecycleEvent {
         RESUMED,
         SHUTTING_DOWN,
         SHUTDOWN,
+        CLIENT_CONNECTION_LOST,
+        CLIENT_CONNECTION_OPENED;
     }
 
     final LifecycleState state;
@@ -40,4 +42,10 @@ public class LifecycleEvent {
     public LifecycleState getState() {
         return state;
     }
+
+    @Override
+    public String toString() {
+        return "LifecycleEvent [state=" + state + "]";
+    }
+    
 }

@@ -17,7 +17,10 @@
 
 package com.hazelcast.impl;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
+
 import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.impl.executor.ParallelExecutor;
@@ -53,6 +56,10 @@ public class LifecycleServiceImpl implements LifecycleService {
         lsLifecycleListeners.remove(lifecycleListener);
     }
 
+    public void fireLifecycleEvent(LifecycleState lifecycleState) {
+        fireLifecycleEvent(new LifecycleEvent(lifecycleState));
+    }
+    
     public void fireLifecycleEvent(LifecycleEvent lifecycleEvent) {
         logger.log(Level.INFO, node.getThisAddress() + " is " + lifecycleEvent.getState());
         for (LifecycleListener lifecycleListener : lsLifecycleListeners) {
@@ -63,12 +70,12 @@ public class LifecycleServiceImpl implements LifecycleService {
     public boolean pause() {
         synchronized (lifecycleLock) {
             if (!paused.get()) {
-                fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.PAUSING));
+                fireLifecycleEvent(PAUSING);
             } else {
                 return false;
             }
             paused.set(true);
-            fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.PAUSED));
+            fireLifecycleEvent(PAUSED);
             return true;
         }
     }
@@ -76,12 +83,12 @@ public class LifecycleServiceImpl implements LifecycleService {
     public boolean resume() {
         synchronized (lifecycleLock) {
             if (paused.get()) {
-                fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.RESUMING));
+                fireLifecycleEvent(RESUMING);
             } else {
                 return false;
             }
             paused.set(false);
-            fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.RESUMED));
+            fireLifecycleEvent(RESUMED);
             return true;
         }
     }
@@ -94,15 +101,15 @@ public class LifecycleServiceImpl implements LifecycleService {
 
     public void shutdown() {
         synchronized (lifecycleLock) {
-            fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.SHUTTING_DOWN));
+            fireLifecycleEvent(SHUTTING_DOWN);
             FactoryImpl.shutdown(factory.getHazelcastInstanceProxy());
-            fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.SHUTDOWN));
+            fireLifecycleEvent(SHUTDOWN);
         }
     }
 
     public void restart() {
         synchronized (lifecycleLock) {
-            fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.RESTARTING));
+            fireLifecycleEvent(RESTARTING);
             paused.set(true);
             List<Record> lsOwnedRecords = new ArrayList<Record>();
             for (CMap cmap : node.concurrentMapManager.getCMaps().values()) {
@@ -135,7 +142,7 @@ public class LifecycleServiceImpl implements LifecycleService {
             }
             logger.log(Level.INFO, node.getThisAddress() + " is restarted!");
             paused.set(false);
-            fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.RESTARTED));
+            fireLifecycleEvent(RESTARTED);
         }
     }
 }

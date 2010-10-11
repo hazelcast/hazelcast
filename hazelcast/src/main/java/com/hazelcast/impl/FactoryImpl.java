@@ -17,6 +17,8 @@
 
 package com.hazelcast.impl;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
+
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
@@ -132,7 +134,7 @@ public class FactoryImpl implements HazelcastInstance {
                 } catch (InterruptedException ignored) {
                 }
             }
-            factory.lifecycleService.fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.STARTED));
+            factory.lifecycleService.fireLifecycleEvent(STARTED);
             return factory.hazelcastInstanceProxy;
         } catch (Throwable t) {
             throw new RuntimeException(t);
@@ -309,7 +311,7 @@ public class FactoryImpl implements HazelcastInstance {
         idGeneratorMapProxy = new MProxyImpl(Prefix.MAP + "__hz_IdGenerator", this);
         memberStatsMultimapProxy = new MultiMapProxy(Prefix.MULTIMAP + MemberStatePublisher.STATS_MULTIMAP_NAME, this);
         memberStatsTopicProxy = new TopicProxyImpl(Prefix.TOPIC + MemberStatePublisher.STATS_TOPIC_NAME, this);
-        lifecycleService.fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.STARTING));
+        lifecycleService.fireLifecycleEvent(STARTING);
         node.start();
         memberStatePublisher = new MemberStatePublisher(memberStatsTopicProxy, memberStatsMultimapProxy, node);
         globalProxies.addEntryListener(new EntryListener() {

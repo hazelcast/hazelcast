@@ -17,6 +17,8 @@
 
 package com.hazelcast.client;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
+
 import com.hazelcast.client.impl.ListenerManager;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
@@ -79,13 +81,13 @@ public class HazelcastClient implements HazelcastInstance {
         };
         executor = Executors.newCachedThreadPool(threadFactory);
         lifecycleService = new LifecycleServiceClientImpl(this);
-        lifecycleService.fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.STARTING));
+        lifecycleService.fireLifecycleEvent(STARTING);
         parallelExecutorService = new ParallelExecutorService(executor);
         parallelExecutorDefault = parallelExecutorService.newParallelExecutor(10);
         if (automatic) {
-            this.connectionManager = new ConnectionManager(this, clusterMembers[0]);
+            this.connectionManager = new ConnectionManager(this, lifecycleService, clusterMembers[0]);
         } else {
-            this.connectionManager = new ConnectionManager(this, clusterMembers, shuffle);
+            this.connectionManager = new ConnectionManager(this, lifecycleService,  clusterMembers, shuffle);
         }
         this.connectionManager.setBinder(new DefaultClientBinder(this));
         final Connection aliveConnection = connectionManager.getAliveConnection();
@@ -119,7 +121,7 @@ public class HazelcastClient implements HazelcastInstance {
             this.getCluster().addMembershipListener(connectionManager);
             connectionManager.updateMembers();
         }
-        lifecycleService.fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.STARTED));
+        lifecycleService.fireLifecycleEvent(STARTED);
     }
 
     public ParallelExecutor getDefaultParallelExecutor() {

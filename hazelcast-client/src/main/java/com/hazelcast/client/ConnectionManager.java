@@ -17,13 +17,9 @@
 
 package com.hazelcast.client;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTION_LOST;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTION_OPENED;
 import static java.text.MessageFormat.format;
-
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -32,8 +28,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
+
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 public class ConnectionManager implements MembershipListener {
     private volatile Connection currentConnection;
@@ -44,53 +47,70 @@ public class ConnectionManager implements MembershipListener {
     private volatile int lastDisconnectedConnectionId = -1;
     private ClientBinder binder;
     
-    private final int RECONNECTION_ATTEMPTS_LIMIT = 6;
-    private final long RECONNECTION_TIMEOUT = 5000L;
+    private final int RECONNECTION_ATTEMPTS_LIMIT = 3;
+    private final long RECONNECTION_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
+    private final LifecycleServiceClientImpl lifecycleService;
 
-    public ConnectionManager(HazelcastClient client, InetSocketAddress[] clusterMembers, boolean shuffle) {
+    public ConnectionManager(HazelcastClient client, LifecycleServiceClientImpl lifecycleService, InetSocketAddress[] clusterMembers, boolean shuffle) {
         this.client = client;
+        this.lifecycleService = lifecycleService;
         this.clusterMembers.addAll(Arrays.asList(clusterMembers));
         if (shuffle) {
             Collections.shuffle(this.clusterMembers);
         }
     }
 
-    public ConnectionManager(final HazelcastClient client, InetSocketAddress address) {
+    public ConnectionManager(final HazelcastClient client, LifecycleServiceClientImpl lifecycleService, InetSocketAddress address) {
         this.client = client;
+        this.lifecycleService = lifecycleService;
         this.clusterMembers.add(address);
     }
 
     public Connection getAliveConnection() {
         if (currentConnection == null) {
             synchronized (this) {
-                int attempt = 0;
-                while(currentConnection == null){
-                	Connection connection = searchForAvailableConnection();
-                    if (connection != null) {
-                        logger.log(Level.FINE, "Client is connecting to " + connection);
-                        currentConnection = connection;
-                    } else {
-                        if (attempt >= RECONNECTION_ATTEMPTS_LIMIT){
-                            break;
-                        }
-                        attempt++;
-                        logger.log(Level.INFO, format("Unable to get alive cluster connection," +
-                            " try in {0} ms later, attempt {1} of {2}.",
-                            RECONNECTION_TIMEOUT, attempt, RECONNECTION_ATTEMPTS_LIMIT));
-                        try {
-                            Thread.sleep(RECONNECTION_TIMEOUT);
-                        } catch (InterruptedException e) {
-                            break;
-                        }
-                    }
+                currentConnection = lookForAliveConnection();
+            }
+        }
+        return currentConnection;
+    }
+    
+    public Connection lookForAliveConnection() {
+        boolean restored = false;
+        int attempt = 0;
+        while(currentConnection == null){
+            synchronized (this) {
+                if (currentConnection == null) {
+                    currentConnection = searchForAvailableConnection();
+                    restored = currentConnection != null;
                 }
             }
+            if (currentConnection != null) {
+                logger.log(Level.FINE, "Client is connecting to " + currentConnection);
+                break;
+            }
+            if (attempt >= RECONNECTION_ATTEMPTS_LIMIT){
+                break;
+            }
+            attempt++;
+            logger.log(Level.INFO, format("Unable to get alive cluster connection," +
+                " try in {0} ms later, attempt {1} of {2}.",
+                RECONNECTION_TIMEOUT, attempt, RECONNECTION_ATTEMPTS_LIMIT));
+            try {
+                Thread.sleep(RECONNECTION_TIMEOUT);
+            } catch (InterruptedException e) {
+                break;
+            }
+        }
+        if (restored) {
+            notifyConnectionIsRestored();
         }
         return currentConnection;
     }
 
     public Connection getConnection() throws IOException {
         if (currentConnection == null) {
+            boolean restored = false;
             synchronized (this) {
                 if (currentConnection == null) {
                     Connection connection = searchForAvailableConnection();
@@ -99,20 +119,35 @@ public class ConnectionManager implements MembershipListener {
                         bindConnection(connection);
                         currentConnection = connection;
                     }
+                    restored = currentConnection != null;
                 }
+            }
+            if (restored) {
+                notifyConnectionIsRestored();
             }
         }
         return currentConnection;
+    }
+
+    private void notifyConnectionIsRestored() {
+        lifecycleService.fireLifecycleEvent(CLIENT_CONNECTION_OPENED);
     }
 
     void bindConnection(Connection connection) throws IOException {
         binder.bind(connection);
     }
 
-    public synchronized void destroyConnection(Connection connection) {
-        if (currentConnection != null && currentConnection.getVersion() == connection.getVersion()) {
-        	logger.log(Level.WARNING, "Connection to " + currentConnection + " is lost");
-        	currentConnection = null;
+    public void destroyConnection(Connection connection) {
+        boolean lost = false;
+        synchronized (this) {
+            if (currentConnection != null && currentConnection.getVersion() == connection.getVersion()) {
+                logger.log(Level.WARNING, "Connection to " + currentConnection + " is lost");
+                currentConnection = null;
+                lost = true;
+            }
+        }
+        if (lost) {
+            lifecycleService.fireLifecycleEvent(CLIENT_CONNECTION_LOST);
         }
     }
 
@@ -162,7 +197,7 @@ public class ConnectionManager implements MembershipListener {
     }
 
     public synchronized boolean shouldExecuteOnDisconnect(Connection connection) {
-        if (lastDisconnectedConnectionId >= connection.getVersion()) {
+        if (connection == null || lastDisconnectedConnectionId >= connection.getVersion()) {
             return false;
         }
         lastDisconnectedConnectionId = connection.getVersion();

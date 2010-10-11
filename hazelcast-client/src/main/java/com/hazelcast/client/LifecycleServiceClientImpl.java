@@ -17,7 +17,10 @@
 
 package com.hazelcast.client;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
+
 import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
@@ -47,22 +50,26 @@ public class LifecycleServiceClientImpl implements LifecycleService {
         lsLifecycleListeners.remove(lifecycleListener);
     }
 
-    public void fireLifecycleEvent(LifecycleEvent lifecycleEvent) {
-        logger.log(Level.INFO, "HazelcastClient is " + lifecycleEvent.getState());
+    public void fireLifecycleEvent(LifecycleState lifecycleState) {
+        fireLifecycleEvent(new LifecycleEvent(lifecycleState));
+    }
+    
+    public void fireLifecycleEvent(final LifecycleEvent event) {
+        logger.log(Level.INFO, "HazelcastClient is " + event.getState());
         for (LifecycleListener lifecycleListener : lsLifecycleListeners) {
-            lifecycleListener.stateChanged(lifecycleEvent);
+            lifecycleListener.stateChanged(event);
         }
     }
 
     public boolean pause() {
         synchronized (lifecycleLock) {
             if (!paused.get()) {
-                fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.PAUSING));
+                fireLifecycleEvent(PAUSING);
             } else {
                 return false;
             }
             paused.set(true);
-            fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.PAUSED));
+            fireLifecycleEvent(PAUSED);
             return true;
         }
     }
@@ -70,12 +77,12 @@ public class LifecycleServiceClientImpl implements LifecycleService {
     public boolean resume() {
         synchronized (lifecycleLock) {
             if (paused.get()) {
-                fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.RESUMING));
+                fireLifecycleEvent(RESUMING);
             } else {
                 return false;
             }
             paused.set(false);
-            fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.RESUMED));
+            fireLifecycleEvent(RESUMED);
             return true;
         }
     }
@@ -87,12 +94,12 @@ public class LifecycleServiceClientImpl implements LifecycleService {
     public void shutdown() {
         synchronized (lifecycleLock) {
             long begin = System.currentTimeMillis();
-            fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.SHUTTING_DOWN));
+            fireLifecycleEvent(SHUTTING_DOWN);
             hazelcastClient.doShutdown();
             running.set(false);
             long time = System.currentTimeMillis() - begin;
             logger.log(Level.FINE, "HazelcastClient shutdown completed in " + time + " ms.");
-            fireLifecycleEvent(new LifecycleEvent(LifecycleEvent.LifecycleState.SHUTDOWN));
+            fireLifecycleEvent(SHUTDOWN);
         }
     }
 

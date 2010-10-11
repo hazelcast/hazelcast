@@ -20,6 +20,8 @@ package com.hazelcast.client;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -30,12 +32,15 @@ public class OutRunnable extends IORunnable {
     final PacketWriter writer;
     final BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
     private Connection connection = null;
+    
+    private volatile boolean reconnection;
 
     ILogger logger = Logger.getLogger(this.getClass().getName());
 
     public OutRunnable(final HazelcastClient client, final Map<Long, Call> calls, final PacketWriter writer) {
         super(client, calls);
         this.writer = writer;
+        this.reconnection = false;
     }
 
     protected void customRun() throws InterruptedException {
@@ -53,7 +58,7 @@ public class OutRunnable extends IORunnable {
                     logger.log(Level.FINEST, "Sending: " + call);
                     writer.write(connection, call.getRequest());
                 } else {
-                    interruptWaitingCalls();
+                    clusterIsDown();
                 }
                 call = null;
                 if (count++ < 24) {
@@ -71,6 +76,35 @@ public class OutRunnable extends IORunnable {
         }
     }
 
+    private void clusterIsDown() {
+        interruptWaitingCalls();
+        if (!reconnection){
+            reconnection = true;
+            final Thread thread = new Thread(new Runnable() {
+                public void run() {
+                    try {
+                        final Connection c = client.getConnectionManager().lookForAliveConnection();
+                        final Connection oldConnection = connection;
+                        connection = c;
+                        if (connection == null){
+                            if (reconnection){
+                                reconnection = false;
+                                interruptWaitingCallsAndShutdown();
+                            }
+                        } else if (restoredConnection(oldConnection, connection)) {
+                            resubscribe(oldConnection);
+                        }
+                    } finally {
+                        reconnection = false;
+                    }
+                }
+            });
+            thread.setName("hz.client.ReconnectionThread");
+            thread.setDaemon(true);
+            thread.start();
+        }
+    }
+    
     private void resubscribe(Call call, Connection oldConnection) {
         final BlockingQueue<Call> temp = new LinkedBlockingQueue<Call>();
         temp.add(call);
@@ -78,6 +112,13 @@ public class OutRunnable extends IORunnable {
         queue.addAll(client.getListenerManager().getListenerCalls());
         temp.drainTo(queue);
         onDisconnect(oldConnection);
+    }
+    
+    private void resubscribe(Connection oldConnection) {
+        queue.addAll(client.getListenerManager().getListenerCalls());
+        if (oldConnection != null) {
+            onDisconnect(oldConnection);
+        }
     }
 
     public void enQueue(Call call) {

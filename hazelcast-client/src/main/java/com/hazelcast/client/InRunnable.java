@@ -40,7 +40,7 @@ public class InRunnable extends IORunnable implements Runnable {
         try {
             Connection oldConnection = connection;
             connection = client.connectionManager.getConnection();
-            if (restoredConnection(oldConnection, connection)) {
+            if (oldConnection != null && restoredConnection(oldConnection, connection)) {
             	redoUnfinishedCalls(oldConnection);
             }
             if (connection == null) {

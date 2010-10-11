@@ -19,8 +19,12 @@ package com.hazelcast.client;
 
 import org.junit.Test;
 
+import com.hazelcast.client.impl.ListenerManager;
+
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -45,6 +49,10 @@ public class MapClientProxyTest {
         Connection connection = mock(Connection.class);
         when(connectionManager.getConnection()).thenReturn(connection);
         when(client.getConnectionManager()).thenReturn(connectionManager);
+        ListenerManager listenerManager = mock(ListenerManager.class); 
+        when(client.getListenerManager()).thenReturn(listenerManager);
+        final List<Call> calls = Collections.emptyList();
+        when(listenerManager.getListenerCalls()).thenReturn(calls);
         final MapClientProxy<String, String> imap = new MapClientProxy(client, "default");
         final CountDownLatch latch = new CountDownLatch(1);
         final CountDownLatch correct = new CountDownLatch(1);
