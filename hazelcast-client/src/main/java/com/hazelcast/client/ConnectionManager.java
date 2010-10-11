@@ -28,10 +28,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
+import com.hazelcast.client.ClientProperties.ClientPropertyName;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
@@ -47,8 +47,6 @@ public class ConnectionManager implements MembershipListener {
     private volatile int lastDisconnectedConnectionId = -1;
     private ClientBinder binder;
     
-    private final int RECONNECTION_ATTEMPTS_LIMIT = 3;
-    private final long RECONNECTION_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
     private final LifecycleServiceClientImpl lifecycleService;
 
     public ConnectionManager(HazelcastClient client, LifecycleServiceClientImpl lifecycleService, InetSocketAddress[] clusterMembers, boolean shuffle) {
@@ -76,6 +74,8 @@ public class ConnectionManager implements MembershipListener {
     }
     
     public Connection lookForAliveConnection() {
+        final int attemptsLimit = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_ATTEMPTS_LIMIT);
+        final int reconnectionTimeout = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_TIMEOUT);
         boolean restored = false;
         int attempt = 0;
         while(currentConnection == null){
@@ -89,15 +89,15 @@ public class ConnectionManager implements MembershipListener {
                 logger.log(Level.FINE, "Client is connecting to " + currentConnection);
                 break;
             }
-            if (attempt >= RECONNECTION_ATTEMPTS_LIMIT){
+            if (attempt >= attemptsLimit){
                 break;
             }
             attempt++;
             logger.log(Level.INFO, format("Unable to get alive cluster connection," +
                 " try in {0} ms later, attempt {1} of {2}.",
-                RECONNECTION_TIMEOUT, attempt, RECONNECTION_ATTEMPTS_LIMIT));
+                reconnectionTimeout, attempt, attemptsLimit));
             try {
-                Thread.sleep(RECONNECTION_TIMEOUT);
+                Thread.sleep(reconnectionTimeout);
             } catch (InterruptedException e) {
                 break;
             }

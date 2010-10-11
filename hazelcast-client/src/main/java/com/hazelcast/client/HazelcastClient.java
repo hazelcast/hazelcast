@@ -19,6 +19,7 @@ package com.hazelcast.client;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 
+import com.hazelcast.client.ClientProperties.ClientPropertyName;
 import com.hazelcast.client.impl.ListenerManager;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
@@ -56,20 +57,23 @@ public class HazelcastClient implements HazelcastInstance {
     final IMap mapLockProxy;
     final ClusterClientProxy clusterClientProxy;
     final PartitionClientProxy partitionClientProxy;
-    final String groupName;
     final ExecutorService executor;
     final ParallelExecutorService parallelExecutorService;
     final ParallelExecutor parallelExecutorDefault;
     final LifecycleServiceClientImpl lifecycleService;
     final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
 
-    private HazelcastClient(String groupName, String groupPassword, boolean shuffle, InetSocketAddress[] clusterMembers, boolean automatic) {
-        this.groupName = groupName;
+    private final ClientProperties properties;
+
+    private HazelcastClient(ClientProperties properties, boolean shuffle, InetSocketAddress[] clusterMembers, boolean automatic) {
+        this.properties = properties;
+        final String groupName = properties.getProperty(ClientPropertyName.GROUP_NAME);
+        final String groupPassword = properties.getProperty(ClientPropertyName.GROUP_PASSWORD);
         final ThreadFactory threadFactory = new ThreadFactory() {
             final AtomicInteger atomicInteger = new AtomicInteger();
 
             public Thread newThread(Runnable r) {
-                Thread t = new Thread(r, "hz.client." + HazelcastClient.this.groupName + "_cached_thread_" + atomicInteger.incrementAndGet());
+                Thread t = new Thread(r, "hz.client." + groupName + "_cached_thread_" + atomicInteger.incrementAndGet());
                 if (t.isDaemon()) {
                     t.setDaemon(false);
                 }
@@ -136,8 +140,8 @@ public class HazelcastClient implements HazelcastInstance {
         return listenerManager;
     }
 
-    private HazelcastClient(String groupName, String groupPassword, InetSocketAddress address) {
-        this(groupName, groupPassword, false, new InetSocketAddress[]{address}, true);
+    private HazelcastClient(ClientProperties properties, InetSocketAddress address) {
+        this(properties, false, new InetSocketAddress[]{address}, true);
     }
 
     /**
@@ -153,7 +157,11 @@ public class HazelcastClient implements HazelcastInstance {
      * @return Returns a new Hazelcast Client instance.
      */
     public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, String... addresses) {
-        return newHazelcastClient(groupName, groupPassword, true, addresses);
+        return newHazelcastClient(ClientProperties.crateBaseClientProperties(groupName, groupPassword), addresses);
+    }
+    
+    public static HazelcastClient newHazelcastClient(ClientProperties properties, String... addresses) {
+        return newHazelcastClient(properties, true, addresses);
     }
 
     /**
@@ -170,12 +178,16 @@ public class HazelcastClient implements HazelcastInstance {
      * @return Returns a new Hazelcast Client instance.
      */
     public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, boolean shuffle, String... addresses) {
+        return newHazelcastClient(ClientProperties.crateBaseClientProperties(groupName, groupPassword), shuffle, addresses);
+    }
+    
+    public static HazelcastClient newHazelcastClient(ClientProperties properties, boolean shuffle, String... addresses) {
         InetSocketAddress[] socketAddressArr = new InetSocketAddress[addresses.length];
         for (int i = 0; i < addresses.length; i++) {
             InetSocketAddress inetSocketAddress = parse(addresses[i]);
             socketAddressArr[i] = inetSocketAddress;
         }
-        return newHazelcastClient(groupName, groupPassword, shuffle, socketAddressArr);
+        return newHazelcastClient(properties, shuffle, socketAddressArr);
     }
 
     private static InetSocketAddress parse(String address) {
@@ -197,7 +209,11 @@ public class HazelcastClient implements HazelcastInstance {
      * @return Returns a new Hazelcast Client instance.
      */
     public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, boolean shuffle, InetSocketAddress... addresses) {
-        return new HazelcastClient(groupName, groupPassword, shuffle, addresses, false);
+        return newHazelcastClient(ClientProperties.crateBaseClientProperties(groupName, groupPassword), shuffle, addresses);
+    }
+    
+    public static HazelcastClient newHazelcastClient(ClientProperties clientProperties, boolean shuffle, InetSocketAddress... addresses) {
+        return new HazelcastClient(clientProperties, shuffle, addresses, false);
     }
 
     /**
@@ -213,7 +229,7 @@ public class HazelcastClient implements HazelcastInstance {
      */
     public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, String address) {
         InetSocketAddress inetSocketAddress = parse(address);
-        return new HazelcastClient(groupName, groupPassword, inetSocketAddress);
+        return new HazelcastClient(ClientProperties.crateBaseClientProperties(groupName, groupPassword), inetSocketAddress);
     }
 
     public Config getConfig() {
@@ -286,6 +302,10 @@ public class HazelcastClient implements HazelcastInstance {
     public Cluster getCluster() {
         return clusterClientProxy;
     }
+    
+    public ClientProperties getProperties() {
+        return properties;
+    }
 
     public ExecutorService getExecutorService() {
         return getExecutorService("default");
@@ -330,7 +350,7 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public String getName() {
-        return groupName;
+        return properties.getProperty(ClientPropertyName.GROUP_NAME);
     }
 
     public <E> IQueue<E> getQueue(String name) {
