@@ -320,6 +320,11 @@ targetNamespace="http://www.hazelcast.com/schema/config">
 				<xs:element ref="max-pool-size"/>
 				<xs:element ref="keep-alive-seconds"/>
 			</xs:sequence>
+			<xs:attribute name="name" use="optional" default="default">
+				<xs:simpleType>
+					<xs:restriction base="xs:string"/>
+				</xs:simpleType>
+			</xs:attribute>			
 		</xs:complexType>
 	</xs:element>
 	<xs:element name="eviction-policy" default="NONE">
