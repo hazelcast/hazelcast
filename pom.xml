@@ -49,6 +49,7 @@
                     <include>**/*.sh</include>
                     <include>**/*.properties</include>
                     <include>**/*.xml</include>
+                    <include>**/*.xsd</include>
                 </includes>
             </resource> 
         </resources>
