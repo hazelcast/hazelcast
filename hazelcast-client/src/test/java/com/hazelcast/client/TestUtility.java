@@ -24,12 +24,16 @@ import java.net.InetSocketAddress;
 public class TestUtility {
 
     public synchronized static HazelcastClient newHazelcastClient(HazelcastInstance... h) {
+        String name = h[0].getConfig().getGroupConfig().getName();
+        String pass = h[0].getConfig().getGroupConfig().getPassword();
+        return newHazelcastClient(ClientProperties.crateBaseClientProperties(name, pass), h);
+    }
+    
+    public synchronized static HazelcastClient newHazelcastClient(ClientProperties properties, HazelcastInstance... h) {
         InetSocketAddress[] addresses = new InetSocketAddress[h.length];
         for (int i = 0; i < h.length; i++) {
             addresses[i] = h[i].getCluster().getLocalMember().getInetSocketAddress();
         }
-        String name = h[0].getConfig().getGroupConfig().getName();
-        String pass = h[0].getConfig().getGroupConfig().getPassword();
-        return HazelcastClient.newHazelcastClient(name, pass, true, addresses);
+        return HazelcastClient.newHazelcastClient(properties, true, addresses);
     }
 }

@@ -17,21 +17,28 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.ClientProperties.ClientPropertyName;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
+import com.hazelcast.config.GroupConfig;
+import com.hazelcast.core.*;
+import com.hazelcast.core.LifecycleEvent.LifecycleState;
+
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.TestUtility.newHazelcastClient;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class HazelcastClientClusterTest {
 
@@ -61,5 +68,138 @@ public class HazelcastClientClusterTest {
         assertTrue(memberAddLatch.await(10, TimeUnit.SECONDS));
         assertTrue(memberRemoveLatch.await(10, TimeUnit.SECONDS));
         client.shutdown();
+    }
+    
+    @Test(expected=IllegalStateException.class, timeout=5000L)
+    public void testNoClusterOnStart() throws Exception {
+        final ClientProperties clientProperties = 
+            ClientProperties.crateBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
+        clientProperties.setPropertyValue(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT, "2");
+        clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_TIMEOUT, "500");
+        HazelcastClient.newHazelcastClient(clientProperties, "localhost:5701");
+    }
+    
+    @Test(expected=NoMemberAvailableException.class, timeout=5000L)
+    public void testNoClusterAfterStart() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        final ClientProperties clientProperties = 
+            ClientProperties.crateBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
+        clientProperties.setPropertyValue(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT, "2");
+        clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_TIMEOUT, "500");
+        HazelcastClient client = newHazelcastClient(clientProperties, h1);
+        final IMap<Object, Object> map = client.getMap("default");
+        map.put("smth", "nothing");
+        h1.getLifecycleService().shutdown();
+        map.put("smth", "nothing");
+        client.getLifecycleService().shutdown();
+    }
+    
+    @Test(timeout=10000L)
+    public void testRestartCluster() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        final ClientProperties clientProperties = 
+            ClientProperties.crateBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
+        clientProperties.setPropertyValue(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT, "2");
+        clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_ATTEMPTS_LIMIT, "5");
+        clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_TIMEOUT, "1000");
+        HazelcastClient client = newHazelcastClient(clientProperties, h1);
+        final IMap<String, String> map = client.getMap("default");
+        
+        final List<String> values = new ArrayList<String>();
+        map.addEntryListener(new EntryAdapter<String, String>(){
+            @Override
+            public void entryAdded(EntryEvent<String, String> event) {
+                values.add(event.getValue());
+            }
+            @Override
+            public void entryUpdated(EntryEvent<String, String> event) {
+                values.add(event.getValue());
+            }
+        }, true);
+        final BlockingQueue<LifecycleState> states = new LinkedBlockingQueue<LifecycleState>();  
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            
+            public void stateChanged(LifecycleEvent event) {
+                states.add(event.getState());
+            }
+        });
+        map.put("smth", "nothing1");
+        h1.getLifecycleService().shutdown();
+        assertEquals(LifecycleState.CLIENT_CONNECTION_LOST, states.poll(500L, TimeUnit.MILLISECONDS));
+        try{
+            map.put("smth", "nothing2");
+            fail();
+        } catch(NoMemberAvailableException e){
+        }
+        h1 = Hazelcast.newHazelcastInstance(new Config());
+        assertEquals(LifecycleState.CLIENT_CONNECTION_OPENED, states.poll(500L, TimeUnit.MILLISECONDS));
+        // TODO looks like hidden issue? 
+        Thread.sleep(1000L);
+        map.put("smth", "nothing3");
+        assertArrayEquals(new String[]{"nothing1", "nothing3"}, values.toArray(new String[0]));
+        client.getLifecycleService().shutdown();
+    }
+    
+    @Test(timeout=20000L)
+    public void testRestartClusterTwice() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        final ClientProperties clientProperties = 
+            ClientProperties.crateBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
+        clientProperties.setPropertyValue(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT, "2");
+        clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_ATTEMPTS_LIMIT, "5");
+        clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_TIMEOUT, "1000");
+        HazelcastClient client = newHazelcastClient(clientProperties, h1);
+        final IMap<String, String> map = client.getMap("default");
+        final List<String> values = new ArrayList<String>();
+        map.addEntryListener(new EntryAdapter<String, String>(){
+            @Override
+            public void entryAdded(EntryEvent<String, String> event) {
+                values.add(event.getValue());
+            }
+            @Override
+            public void entryUpdated(EntryEvent<String, String> event) {
+                values.add(event.getValue());
+            }
+        }, true);
+        final BlockingQueue<LifecycleState> states = new LinkedBlockingQueue<LifecycleState>();  
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            
+            public void stateChanged(LifecycleEvent event) {
+                states.add(event.getState());
+            }
+        });
+        map.put("smth", "nothing");
+        for(int i = 0; i < 2; i++){
+            h1.getLifecycleService().shutdown();
+            assertEquals(LifecycleState.CLIENT_CONNECTION_LOST, states.poll(500L, TimeUnit.MILLISECONDS));
+            try{
+                map.put("smth", "nothing_" + i);
+                fail();
+            } catch(NoMemberAvailableException e){
+            }
+            Thread.sleep(500L);
+            h1 = Hazelcast.newHazelcastInstance(new Config());
+            assertEquals(LifecycleState.CLIENT_CONNECTION_OPENED, states.poll(500L, TimeUnit.MILLISECONDS));
+            // TODO looks like hidden issue? 
+            Thread.sleep(1000L);
+            
+            map.put("smth", "nothing" + i);
+        }
+        assertArrayEquals(new String[]{"nothing", "nothing0", "nothing1"}, values.toArray(new String[0]));
+        client.getLifecycleService().shutdown();
+    }
+    
+    @Ignore
+    @Test(expected=NoMemberAvailableException.class)
+    public void testNoClusterAfterStartIssue328() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        final ClientProperties clientProperties = 
+            ClientProperties.crateBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
+        clientProperties.setPropertyValue(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT, "2");
+        clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_TIMEOUT, "500");
+        HazelcastClient client = newHazelcastClient(clientProperties, h1);
+        final IMap<Object, Object> map = client.getMap("default");
+        h1.getLifecycleService().shutdown();
+        map.put("smth", "nothing");
     }
 }

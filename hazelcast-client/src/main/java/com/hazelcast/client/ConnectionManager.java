@@ -70,7 +70,6 @@ public class ConnectionManager implements MembershipListener {
                 final int attemptsLimit = client.getProperties().getInteger(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT);
                 final int reconnectionTimeout = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_TIMEOUT);
                 currentConnection =  lookForAliveConnection(attemptsLimit, reconnectionTimeout);
-                currentConnection = lookForAliveConnection();
             }
         }
         return currentConnection;
