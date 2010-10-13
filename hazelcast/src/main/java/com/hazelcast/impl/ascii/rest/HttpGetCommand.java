@@ -92,6 +92,5 @@ public class HttpGetCommand extends HttpCommand {
     }
 
     public void sendClusterInfo() {
-        
     }
 }

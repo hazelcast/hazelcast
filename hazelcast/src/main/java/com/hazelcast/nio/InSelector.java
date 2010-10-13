@@ -46,7 +46,7 @@ public final class InSelector extends SelectorBase {
                 + serverSocketChannel.socket().getLocalPort());
         selector.wakeup();
     }
-    
+
     public void processSelectionQueue() {
         while (live) {
             final Runnable runnable = selectorQueue.poll();

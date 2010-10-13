@@ -17,29 +17,27 @@
 
 package com.hazelcast.config;
 
-import java.io.InputStream;
-import java.util.logging.Level;
-
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import java.io.InputStream;
+import java.util.logging.Level;
+
 public class ClasspathXmlConfig extends Config {
-	
-	private final ILogger logger = Logger.getLogger(ClasspathXmlConfig.class.getName());
-	
-	public ClasspathXmlConfig(String resource) {
-		this(Thread.currentThread().getContextClassLoader(), resource);
-	}
-	
-	public ClasspathXmlConfig(ClassLoader classLoader, String resource) {
-		super();
-		
-		logger.log(Level.INFO, "Configuring Hazelcast from '" + resource + "'.");
-		InputStream in = classLoader.getResourceAsStream(resource);
-		if(in == null) {
-			throw new NullPointerException("Specified resource '" + resource + "' could not be found!");
-		}
-		new XmlConfigBuilder(in).build(this);
-	}
-	
+
+    private final ILogger logger = Logger.getLogger(ClasspathXmlConfig.class.getName());
+
+    public ClasspathXmlConfig(String resource) {
+        this(Thread.currentThread().getContextClassLoader(), resource);
+    }
+
+    public ClasspathXmlConfig(ClassLoader classLoader, String resource) {
+        super();
+        logger.log(Level.INFO, "Configuring Hazelcast from '" + resource + "'.");
+        InputStream in = classLoader.getResourceAsStream(resource);
+        if (in == null) {
+            throw new NullPointerException("Specified resource '" + resource + "' could not be found!");
+        }
+        new XmlConfigBuilder(in).build(this);
+    }
 }

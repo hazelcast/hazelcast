@@ -284,6 +284,4 @@ public class SocketPacketWriter implements SocketWriter<Packet> {
             return 0;
         }
     }
-
-
 }

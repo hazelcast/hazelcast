@@ -60,7 +60,7 @@ public class SimpleMapTest {
         System.out.println("        Value Size: " + VALUE_SIZE);
         System.out.println("    Get Percentage: " + GET_PERCENTAGE);
         System.out.println("    Put Percentage: " + PUT_PERCENTAGE);
-        System.out.println(" Remove Percentage: " + (100-(PUT_PERCENTAGE+GET_PERCENTAGE)));
+        System.out.println(" Remove Percentage: " + (100 - (PUT_PERCENTAGE + GET_PERCENTAGE)));
         ExecutorService es = Executors.newFixedThreadPool(THREAD_COUNT);
         for (int i = 0; i < THREAD_COUNT; i++) {
             es.submit(new Runnable() {

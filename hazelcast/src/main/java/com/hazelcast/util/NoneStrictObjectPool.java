@@ -45,7 +45,7 @@ public abstract class NoneStrictObjectPool<T> {
             t = createNew();
         } else {
             size.decrementAndGet();
-            onObtain(t);            
+            onObtain(t);
         }
         return t;
     }

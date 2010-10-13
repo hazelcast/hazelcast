@@ -48,7 +48,7 @@ public class ClusterImpl implements Cluster {
         clusterMembers.clear();
         distances.clear();
         members.set(null);
-        this.setMembers(Arrays.asList((MemberImpl)localMember.get()));
+        this.setMembers(Arrays.asList((MemberImpl) localMember.get()));
     }
 
     public int getDistanceFrom(Member member) {
@@ -143,7 +143,6 @@ public class ClusterImpl implements Cluster {
             node.executorManager.getEventExecutorService().execute(notification);
         }
     }
-
 
     public void addMembershipListener(MembershipListener listener) {
         listeners.add(listener);

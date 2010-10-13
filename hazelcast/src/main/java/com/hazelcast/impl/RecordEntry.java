@@ -18,8 +18,6 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.impl.MProxy;
-import com.hazelcast.impl.Record;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -49,7 +47,7 @@ public class RecordEntry implements MapEntry {
             valueObject = toObject(record.getValue());
         }
         return valueObject;
-    } 
+    }
 
     public Object setValue(Object value) {
         MProxy proxy = (MProxy) record.getCMap().concurrentMapManager.node.factory.getOrCreateProxyByName(record.getName());

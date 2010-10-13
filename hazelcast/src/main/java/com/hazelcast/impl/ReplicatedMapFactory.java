@@ -154,7 +154,7 @@ public final class ReplicatedMapFactory {
         }
 
         public boolean lockMap(long time, TimeUnit timeunit) {
-            return distributedMap.lockMap(time,timeunit);
+            return distributedMap.lockMap(time, timeunit);
         }
 
         public void unlockMap() {

@@ -114,7 +114,6 @@ public class QueryTest extends TestUtil {
         }
     }
 
-
     @Test
     public void testQueryDuringAndAfterMigration() throws Exception {
         Config cfg = null;
@@ -537,14 +536,14 @@ public class QueryTest extends TestUtil {
             assertTrue(c.isActive());
         }
         entries = imap.entrySet(new SqlPredicate("age!=33"));
-        for(Map.Entry entry : entries) {
-        	Employee c = (Employee) entry.getValue();
-        	assertTrue(c.getAge() != 33);
+        for (Map.Entry entry : entries) {
+            Employee c = (Employee) entry.getValue();
+            assertTrue(c.getAge() != 33);
         }
         entries = imap.entrySet(new SqlPredicate("active!=false"));
         for (Map.Entry entry : entries) {
-        	Employee c = (Employee) entry.getValue();
-        	assertTrue(c.isActive());
+            Employee c = (Employee) entry.getValue();
+            assertTrue(c.isActive());
         }
     }
 

@@ -22,6 +22,7 @@ import java.util.Iterator;
 
 /**
  * Not Thread-Safe
+ *
  * @param <E>
  */
 public final class SimpleBoundedQueue<E> extends AbstractQueue<E> {

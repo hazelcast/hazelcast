@@ -18,6 +18,7 @@
 package com.hazelcast.impl.ascii.rest;
 
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.nio.ConnectionManager;
 
@@ -41,9 +42,11 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             } else {
                 if (value instanceof byte[]) {
                     command.setResponse(null, (byte[]) value);
-                } else {
+                } else if (value instanceof RestValue) {
                     RestValue restValue = (RestValue) value;
                     command.setResponse(restValue.getContentType(), restValue.getValue());
+                } else {
+                    command.setResponse(ThreadContext.get().toByteArray(value));
                 }
             }
         } else if (uri.startsWith(URI_CLUSTER)) {

@@ -712,7 +712,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                     member = m;
                 }
             }
-            mapMembers.put(member.getAddress(),  member);
+            mapMembers.put(member.getAddress(), member);
         } else {
             lsMembers.add(member);
             mapMembers.put(member.getAddress(), member);

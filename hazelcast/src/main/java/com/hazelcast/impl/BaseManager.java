@@ -903,6 +903,10 @@ public abstract class BaseManager {
         return packet;
     }
 
+    public Call getCall(long id) {
+        return mapCalls.get(id);
+    }
+
     public long addCall(Call call) {
         final long id = localIdGen.incrementAndGet();
         call.setCallId(id);
@@ -1233,24 +1237,24 @@ public abstract class BaseManager {
             }
             return key;
         }
-        
-        private void fillValues(){
-        	oldValue = null;
+
+        private void fillValues() {
+            oldValue = null;
             Object v = toObject(dataValue);
-    		if (v instanceof Keys){
-    			final Keys keys = (Keys) v;
-    			final Iterator<Data> it = keys.getKeys().iterator();
-				value = it.hasNext() ? toObject(it.next()) : null;
-				oldValue = it.hasNext() ? toObject(it.next()) : null;
-    		} else {
-    			value = v;
-    		}
+            if (v instanceof Keys) {
+                final Keys keys = (Keys) v;
+                final Iterator<Data> it = keys.getKeys().iterator();
+                value = it.hasNext() ? toObject(it.next()) : null;
+                oldValue = it.hasNext() ? toObject(it.next()) : null;
+            } else {
+                value = v;
+            }
         }
-        
+
         public Object getOldValue() {
-        	if (oldValue == null) {
+            if (oldValue == null) {
                 if (dataValue != null) {
-                	fillValues();
+                    fillValues();
                 } else if (collection) {
                     value = null;
                 }
@@ -1261,7 +1265,7 @@ public abstract class BaseManager {
         public Object getValue() {
             if (value == null) {
                 if (dataValue != null) {
-                	fillValues();
+                    fillValues();
                 } else if (collection) {
                     value = key;
                 }
@@ -1271,7 +1275,7 @@ public abstract class BaseManager {
     }
 
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
-            final int eventType, final Data value, Address callerAddress) {
+                      final int eventType, final Data value, Address callerAddress) {
         fireMapEvent(mapListeners, name, eventType, null, value, callerAddress);
     }
 
@@ -1311,38 +1315,6 @@ public abstract class BaseManager {
             }
             Data packetValue = oldValue != null ? toData(new Keys(Arrays.asList(value, oldValue))) : value;
             sendEvents(eventType, name, key, packetValue, mapTargetListeners, callerAddress);
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    void fireMapEvent2(final Map<Address, Boolean> mapListeners, final String name,
-                       final int eventType, final Data key, final Data value,
-                       Map<Address, Boolean> keyListeners, Address callerAddress) {
-        try {
-            Map<Address, Boolean> mapTargetListeners = null;
-            if (keyListeners != null) {
-                mapTargetListeners = new HashMap<Address, Boolean>(keyListeners);
-            }
-            if (mapListeners != null && mapListeners.size() > 0) {
-                if (mapTargetListeners == null) {
-                    mapTargetListeners = new HashMap<Address, Boolean>(mapListeners);
-                } else {
-                    final Set<Map.Entry<Address, Boolean>> entries = mapListeners.entrySet();
-                    for (final Map.Entry<Address, Boolean> entry : entries) {
-                        if (mapTargetListeners.containsKey(entry.getKey())) {
-                            if (entry.getValue()) {
-                                mapTargetListeners.put(entry.getKey(), entry.getValue());
-                            }
-                        } else
-                            mapTargetListeners.put(entry.getKey(), entry.getValue());
-                    }
-                }
-            }
-            if (mapTargetListeners == null || mapTargetListeners.size() == 0) {
-                return;
-            }
-            sendEvents(eventType, name, key, value, mapTargetListeners, callerAddress);
         } catch (final Exception e) {
             e.printStackTrace();
         }

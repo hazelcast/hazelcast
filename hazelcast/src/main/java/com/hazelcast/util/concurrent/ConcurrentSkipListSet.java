@@ -116,7 +116,6 @@ public class ConcurrentSkipListSet<E>
     ConcurrentSkipListSet(ConcurrentNavigableMap<E, Object> m) {
         this.m = m;
     }
-
     /* ---------------- Set operations -------------- */
 
     /**

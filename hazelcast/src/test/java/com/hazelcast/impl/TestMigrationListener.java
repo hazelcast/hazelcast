@@ -24,7 +24,7 @@ import org.junit.Ignore;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-@Ignore 
+@Ignore
 class TestMigrationListener implements MigrationListener {
     final CountDownLatch latchStarted;
     final CountDownLatch latchCompleted;

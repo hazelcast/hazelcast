@@ -45,7 +45,7 @@ public class Block implements DataSerializable {
     }
 
     public Block(int blockId, Address owner, Address migrationAddress) {
-        this (blockId, owner);
+        this(blockId, owner);
         setMigrationAddress(migrationAddress);
     }
 

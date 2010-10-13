@@ -27,15 +27,15 @@ import java.util.concurrent.TimeUnit;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 /**
- * HazelcastTest tests general behavior for one node. 
- * Node is created in the beginning of the tests and the same for all test methods.  
- * 
+ * HazelcastTest tests general behavior for one node.
+ * Node is created in the beginning of the tests and the same for all test methods.
+ * <p/>
  * Unit test is quick'n'fast.
  */
 public class HazelcastTest {
@@ -123,7 +123,7 @@ public class HazelcastTest {
         assertEquals("Hello", entry.getKey());
         assertEquals("New World", entry.getValue());
     }
-    
+
     @Test
     public void testAtomicNumber() {
         AtomicNumber an = Hazelcast.getAtomicNumber("testAtomicNumber");
@@ -141,7 +141,7 @@ public class HazelcastTest {
         Assert.assertFalse(an.compareAndSet(23, 50));
         assertTrue(an.compareAndSet(24, 50));
     }
-    
+
     @Test
     public void testMapIsEmpty() {
         IMap<String, String> map = Hazelcast.getMap("testMapIsEmpty");
@@ -149,32 +149,32 @@ public class HazelcastTest {
         map.put("Hello", "World");
         assertFalse(map.isEmpty());
     }
-    
+
     @Test
     public void testLockKey() {
         IMap<String, String> map = Hazelcast.getMap("testLockKey");
         map.lock("Hello");
-        try{
+        try {
             assertFalse(map.containsKey("Hello"));
         } finally {
             map.unlock("Hello");
         }
         map.put("Hello", "World");
         map.lock("Hello");
-        try{
+        try {
             assertTrue(map.containsKey("Hello"));
         } finally {
             map.unlock("Hello");
         }
         map.remove("Hello");
         map.lock("Hello");
-        try{
+        try {
             assertFalse(map.containsKey("Hello"));
         } finally {
             map.unlock("Hello");
         }
     }
-    
+
     @Test
     public void testMapReplaceIfSame() {
         IMap<String, String> map = Hazelcast.getMap("testMapReplaceIfSame");
@@ -246,7 +246,7 @@ public class HazelcastTest {
 
     @Test
     public void valuesToArray() {
-    	IMap<String, String> map = Hazelcast.getMap("valuesToArray");
+        IMap<String, String> map = Hazelcast.getMap("valuesToArray");
         assertEquals(0, map.size());
         map.put("a", "1");
         map.put("b", "2");
@@ -273,7 +273,7 @@ public class HazelcastTest {
             assertArrayEquals(new String[]{"1", "2", "3", null, null}, values);
         }
     }
-    
+
     @Test
     public void testMapEntrySet() {
         IMap<String, String> map = Hazelcast.getMap("testMapEntrySet");
@@ -316,7 +316,7 @@ public class HazelcastTest {
             }
 
             public void entryUpdated(EntryEvent event) {
-            	assertEquals("world", event.getOldValue());
+                assertEquals("world", event.getOldValue());
                 assertEquals("new world", event.getValue());
                 assertEquals("hello", event.getKey());
                 latchUpdated.countDown();

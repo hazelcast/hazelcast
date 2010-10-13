@@ -57,7 +57,7 @@ public class MapConfig {
     private MapStoreConfig mapStoreConfig = null;
 
     private NearCacheConfig nearCacheConfig = null;
-    
+
     private boolean useBackupData = false;
 
     private String mergePolicy = DEFAULT_MERGE_POLICY;
@@ -95,7 +95,7 @@ public class MapConfig {
      * <p/>
      * Default is false.
      *
-     * @param valueIndexed 
+     * @param valueIndexed
      */
     public void setValueIndexed(boolean valueIndexed) {
         this.valueIndexed = valueIndexed;
@@ -278,14 +278,14 @@ public class MapConfig {
     }
 
     public boolean isUseBackupData() {
-		return useBackupData;
-	}
-    
+        return useBackupData;
+    }
+
     public MapConfig setUseBackupData(boolean useBackupData) {
-		this.useBackupData = useBackupData;
-		return this;
-	}
-    
+        this.useBackupData = useBackupData;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "MapConfig{" +

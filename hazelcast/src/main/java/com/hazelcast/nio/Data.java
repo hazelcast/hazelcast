@@ -65,7 +65,7 @@ public final class Data implements DataSerializable {
         if (this == obj)
             return true;
         Data data = (Data) obj;
-        return size() == data.size() && Arrays.equals(buffer, data.buffer); 
+        return size() == data.size() && Arrays.equals(buffer, data.buffer);
     }
 
     @Override

@@ -36,16 +36,16 @@ public class LFUMapEntryComparatorTest extends TestUtil {
             lsEntries.add(e);
             mapEntries.put(e.getId(), e);
         }
-        assertEquals (10, lsEntries.size());
+        assertEquals(10, lsEntries.size());
         Collections.shuffle(lsEntries);
-        assertEquals (10, lsEntries.size());
+        assertEquals(10, lsEntries.size());
         for (int i = 0; i < 10; i++) {
             EmptyMapEntry entry = mapEntries.get(Long.valueOf(i));
             entry.setHits(i);
         }
         Set<MapEntry> sorted = new TreeSet<MapEntry>(new LFUMapEntryComparator());
         sorted.addAll(lsEntries);
-        assertEquals (10, sorted.size());
+        assertEquals(10, sorted.size());
         long count = 0;
         for (MapEntry e : sorted) {
             EmptyMapEntry entry = (EmptyMapEntry) e;

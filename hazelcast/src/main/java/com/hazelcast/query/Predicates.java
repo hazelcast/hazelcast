@@ -18,7 +18,6 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.query.Index;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.SerializationHelper;
 
@@ -137,7 +136,7 @@ public class
         }
     }
 
-    public static class NotEqualPredicate extends EqualPredicate implements IndexAwarePredicate{
+    public static class NotEqualPredicate extends EqualPredicate implements IndexAwarePredicate {
         public NotEqualPredicate() {
         }
 
@@ -152,7 +151,7 @@ public class
         public boolean apply(MapEntry entry) {
             return !super.apply(entry);
         }
-        
+
         public Set<MapEntry> filter(QueryContext queryContext) {
             Index index = queryContext.getMapIndexes().get(first);
             if (index != null) {
@@ -161,7 +160,7 @@ public class
                 return null;
             }
         }
-        
+
         @Override
         public String toString() {
             final StringBuffer sb = new StringBuffer();
@@ -316,6 +315,59 @@ public class
         }
     }
 
+    public static class RegexPredicate extends AbstractPredicate {
+        Expression<String> first;
+        String regex;
+        Pattern pattern = null;
+
+        public RegexPredicate() {
+        }
+
+        public RegexPredicate(Expression<String> first, String regex) {
+            this.first = first;
+            this.regex = regex;
+        }
+
+        public boolean apply(MapEntry entry) {
+            String firstVal = first.getValue(entry);
+            if (firstVal == null) {
+                return (regex == null);
+            } else if (regex == null) {
+                return false;
+            } else {
+                if (pattern == null) {
+                    pattern = Pattern.compile(regex);
+                }
+                Matcher m = pattern.matcher(firstVal);
+                return m.matches();
+            }
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            writeObject(out, first);
+            out.writeUTF(regex);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            try {
+                first = (Expression) readObject(in);
+                regex = in.readUTF();
+            } catch (Exception e) {
+                throw new IOException(e.getMessage());
+            }
+        }
+
+        @Override
+        public String toString() {
+            final StringBuffer sb = new StringBuffer();
+            sb.append(first);
+            sb.append(" REGEX '");
+            sb.append(regex);
+            sb.append("'");
+            return sb.toString();
+        }
+    }
+
     public static class LikePredicate extends AbstractPredicate {
         Expression<String> first;
         String second;
@@ -327,8 +379,6 @@ public class
         public LikePredicate(Expression<String> first, String second) {
             this.first = first;
             this.second = second;
-            second = second.replaceAll("%", ".*").replaceAll("_", ".");
-            pattern = Pattern.compile(second);
         }
 
         public boolean apply(MapEntry entry) {
@@ -338,6 +388,9 @@ public class
             } else if (second == null) {
                 return false;
             } else {
+                if (pattern == null) {
+                    pattern = Pattern.compile(second.replaceAll("%", ".*").replaceAll("_", "."));
+                }
                 Matcher m = pattern.matcher(firstVal);
                 return m.matches();
             }

@@ -25,7 +25,6 @@ import java.util.Properties;
  * interface will be called by Hazelcast on init and destroy so that
  * implementation can do necessary configuration when initializing and
  * cleanup when destroying.
- *  
  */
 public interface MapLoaderLifecycleSupport {
     /**

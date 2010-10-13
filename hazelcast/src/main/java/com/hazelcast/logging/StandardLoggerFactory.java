@@ -47,7 +47,7 @@ public class StandardLoggerFactory implements LoggerFactory {
         }
 
         public void log(Level level, String message) {
-            log (level, message, null);
+            log(level, message, null);
         }
 
         public void log(Level level, String message, Throwable thrown) {

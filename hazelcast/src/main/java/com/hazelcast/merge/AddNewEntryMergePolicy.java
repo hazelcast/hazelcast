@@ -21,6 +21,7 @@ import com.hazelcast.core.MapEntry;
 
 public class AddNewEntryMergePolicy implements MergePolicy {
     public static final String NAME = "hz.ADD_NEW_ENTRY";
+
     public Object merge(String mapName, MapEntry mergingEntry, MapEntry existingEntry) {
         return (existingEntry == null || existingEntry.getValue() == null) ? mergingEntry.getValue() : null;
     }

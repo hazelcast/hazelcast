@@ -26,9 +26,8 @@ import com.hazelcast.util.ByteUtil;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
 
-public final class Packet implements SocketWritable{
+public final class Packet implements SocketWritable {
 
     public String name;
 

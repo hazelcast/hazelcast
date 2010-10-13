@@ -31,16 +31,16 @@ public class Keys implements DataSerializable {
     private Collection<Data> keys;
 
     public Keys() {
-    	keys = new ArrayList<Data>();
-	}
-    
+        keys = new ArrayList<Data>();
+    }
+
     public Keys(Collection<Data> keys) {
         this.keys = keys;
     }
-    
+
     public Collection<Data> getKeys() {
-		return this.keys;
-	}
+        return this.keys;
+    }
 
     public void readData(DataInput in) throws IOException {
         int size = in.readInt();

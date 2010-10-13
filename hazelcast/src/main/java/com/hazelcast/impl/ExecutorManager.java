@@ -36,9 +36,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.impl.ClusterOperation.CANCEL_EXECUTION;
 import static com.hazelcast.impl.ClusterOperation.EXECUTE;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_NO_RESPONSE;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_MEMBER_LEFT;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
+import static com.hazelcast.impl.Constants.Objects.*;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 

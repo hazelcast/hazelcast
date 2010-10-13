@@ -31,10 +31,10 @@ import java.util.Set;
 
 public class MemberStateImpl implements MemberState {
     /**
-	 *
-	 */
-	private static final long serialVersionUID = -1817978625085375340L;
-	Member member;
+     *
+     */
+    private static final long serialVersionUID = -1817978625085375340L;
+    Member member;
     Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
     Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
 

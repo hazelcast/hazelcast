@@ -20,7 +20,7 @@ package com.hazelcast.core;
 public interface Instance {
 
     enum InstanceType {
-        QUEUE(1), MAP (2), SET(3), LIST (4), LOCK(5), TOPIC(6), MULTIMAP(7), ID_GENERATOR (8), ATOMIC_NUMBER(9);
+        QUEUE(1), MAP(2), SET(3), LIST(4), LOCK(5), TOPIC(6), MULTIMAP(7), ID_GENERATOR(8), ATOMIC_NUMBER(9);
         private final int typeId;
 
         InstanceType(int typeId) {
@@ -28,7 +28,7 @@ public interface Instance {
         }
 
         public boolean isMap() {
-          return typeId == 2;
+            return typeId == 2;
         }
 
         public boolean isMultiMap() {
@@ -40,7 +40,7 @@ public interface Instance {
         }
 
         public boolean isSet() {
-            return typeId ==3;
+            return typeId == 3;
         }
 
         public boolean isList() {

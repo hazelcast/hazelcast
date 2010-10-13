@@ -20,7 +20,6 @@ package com.hazelcast.monitor;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.MemberStateImpl;
-import com.hazelcast.monitor.MemberState;
 import com.hazelcast.nio.DataSerializable;
 
 import java.io.DataInput;
@@ -43,12 +42,11 @@ public class TimedClusterState implements DataSerializable {
             memberStatEntry.getKey().writeData(out);
             memberStatEntry.getValue().writeData(out);
         }
-        if(clusterStateView != null) {
-        	out.writeBoolean(true);
-        	clusterStateView.writeData(out);
-        }
-        else {
-        	out.writeBoolean(false);
+        if (clusterStateView != null) {
+            out.writeBoolean(true);
+            clusterStateView.writeData(out);
+        } else {
+            out.writeBoolean(false);
         }
     }
 
@@ -62,9 +60,9 @@ public class TimedClusterState implements DataSerializable {
             memberStateImpl.readData(in);
             memberStates.put(member, memberStateImpl);
         }
-        if(in.readBoolean()) {
-        	clusterStateView = new ClusterStateViewImpl();
-        	clusterStateView.readData(in);
+        if (in.readBoolean()) {
+            clusterStateView = new ClusterStateViewImpl();
+            clusterStateView.readData(in);
         }
     }
 

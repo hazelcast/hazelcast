@@ -99,12 +99,12 @@ public class ParserTest {
         assertEquals(Arrays.asList("a", "b", "not", "and", "c", "4,5,6", "in", "not", "OR"), list);
     }
 
-	@Test
-	public void testNotEqual() {
-		String s = "b != 30";
-		List<String> list = parser.toPrefix(s);
-		assertEquals(Arrays.asList("b", "30", "!="), list);
-	}
+    @Test
+    public void testNotEqual() {
+        String s = "b != 30";
+        List<String> list = parser.toPrefix(s);
+        assertEquals(Arrays.asList("b", "30", "!="), list);
+    }
 
     @Test
     public void split1() {

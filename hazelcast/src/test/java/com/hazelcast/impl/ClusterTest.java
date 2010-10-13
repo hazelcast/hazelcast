@@ -27,7 +27,10 @@ import com.hazelcast.monitor.DistributedMapStatsCallable;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.Partition;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.Serializable;
 import java.util.*;
@@ -161,7 +164,7 @@ public class ClusterTest {
 
     @Test
     public void testFirstNodeNoWait() throws Exception {
-        final Config config = new XmlConfigBuilder().build();
+        final Config config = new Config();
         final BlockingQueue<Integer> counts = new ArrayBlockingQueue<Integer>(2);
         for (int j = 0; j < 2; j++) {
             new Thread(new Runnable() {
@@ -176,6 +179,7 @@ public class ClusterTest {
         }
         int first = counts.take();
         int second = counts.take();
+        System.out.println(first + " ** " + second);
         assertTrue(first == 0 || first == 271);
         assertTrue(second == 0 || second == 271);
         assertEquals(271, Math.abs(second - first));
@@ -183,7 +187,7 @@ public class ClusterTest {
 
     @Test
     public void testFirstNodeWait() throws Exception {
-        final Config config = new XmlConfigBuilder().build();
+        final Config config = new Config();
         config.setProperty(GroupProperties.PROP_INITIAL_WAIT_SECONDS, "7");
         final CountDownLatch latch = new CountDownLatch(2);
         for (int j = 0; j < 2; j++) {
@@ -780,7 +784,7 @@ public class ClusterTest {
     @Test(timeout = 60000)
     public void testMapMaxSize() throws Exception {
         int maxSize = 40;
-        Config c = new XmlConfigBuilder().build();
+        Config c = new Config();
         MapConfig mapConfig = new MapConfig();
         mapConfig.setEvictionPolicy("LRU");
         mapConfig.setMaxSize(maxSize);

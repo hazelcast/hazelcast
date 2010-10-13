@@ -17,8 +17,6 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.core.Prefix.*;
-
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
@@ -46,6 +44,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
+import static com.hazelcast.core.Prefix.AS_LIST;
+import static com.hazelcast.core.Prefix.AS_SET;
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.nio.IOUtil.toData;
@@ -125,11 +125,11 @@ public class CMap {
     final MapNearCache mapNearCache;
 
     final long creationTime;
-    
+
     final boolean useBackupData;
 
     volatile boolean ttlPerRecord = false;
-    
+
     volatile long lastEvictionTime = 0;
 
     DistributedLock lockEntireMap = null;
@@ -164,9 +164,9 @@ public class CMap {
         } else {
             maxSize = (mapConfig.getMaxSize() == 0) ? MapConfig.DEFAULT_MAX_SIZE : mapConfig.getMaxSize();
             if (evictionPolicy == EvictionPolicy.LRU) {
-                evictionComparator = LRU_COMPARATOR;
+                evictionComparator = new ComparatorWrapper(LRU_COMPARATOR);
             } else {
-                evictionComparator = LFU_COMPARATOR;
+                evictionComparator = new ComparatorWrapper(LFU_COMPARATOR);
             }
         }
         evictionRate = mapConfig.getEvictionPercentage() / 100f;
@@ -193,7 +193,7 @@ public class CMap {
         if (!node.isSuperClient() && evictionPolicy == EvictionPolicy.NONE && instanceType == Instance.InstanceType.MAP) {
             LocallyOwnedMap locallyOwnedMap = new LocallyOwnedMap();
             LocallyOwnedMap anotherLocallyOwnedMap = concurrentMapManager.mapLocallyOwnedMaps.putIfAbsent(name, locallyOwnedMap);
-            if (anotherLocallyOwnedMap != null){
+            if (anotherLocallyOwnedMap != null) {
                 locallyOwnedMap = anotherLocallyOwnedMap;
             }
             this.locallyOwnedMap = locallyOwnedMap;
@@ -219,7 +219,7 @@ public class CMap {
                     nearCacheConfig.getMaxIdleSeconds() * 1000L,
                     nearCacheConfig.isInvalidateOnChange());
             final MapNearCache anotherMapNearCache = concurrentMapManager.mapCaches.putIfAbsent(name, mapNearCache);
-            if (anotherMapNearCache != null){
+            if (anotherMapNearCache != null) {
                 mapNearCache = anotherMapNearCache;
             }
             this.mapNearCache = mapNearCache;
@@ -419,7 +419,7 @@ public class CMap {
             record.runBackupOps();
         }
         return true;
-    } 
+    }
 
     public void doBackup(Request req) {
         if (req.key == null || req.key.size() == 0) {
@@ -1039,6 +1039,25 @@ public class CMap {
         return (value > 0) ? value : 0;
     }
 
+    class ComparatorWrapper implements Comparator<MapEntry> {
+        final Comparator<MapEntry> comparator;
+
+        ComparatorWrapper(Comparator<MapEntry> comparator) {
+            this.comparator = comparator;
+        }
+
+        public int compare(MapEntry o1, MapEntry o2) {
+            int result = comparator.compare(o1, o2);
+            if (result == 0) {
+                Record r1 = (Record) o1;
+                Record r2 = (Record) o2;
+                return (r1.getId() > r2.getId()) ? 1 : -1;
+            } else {
+                return result;
+            }
+        }
+    }
+
     void startCleanup(boolean forced) {
         final long now = System.currentTimeMillis();
         if (locallyOwnedMap != null) {
@@ -1051,7 +1070,7 @@ public class CMap {
         final Set<Record> recordsUnknown = new HashSet<Record>();
         final Set<Record> recordsToPurge = new HashSet<Record>();
         final Set<Record> recordsToEvict = new HashSet<Record>();
-        final Set<Record> sortedRecords = new TreeSet<Record>(evictionComparator);
+        final Set<Record> sortedRecords = new TreeSet<Record>(new ComparatorWrapper(evictionComparator));
         final Collection<Record> records = mapRecords.values();
         final int clusterMemberSize = node.getClusterImpl().getMembers().size();
         final int memberCount = (clusterMemberSize == 0) ? 1 : clusterMemberSize;
@@ -1524,7 +1543,7 @@ public class CMap {
             }
         }
     }
-    
+
     public static class CMapEntry implements HazelcastInstanceAware, MapEntry, DataSerializable {
         private long cost = 0;
         private long expirationTime = 0;

@@ -24,7 +24,7 @@ import com.hazelcast.nio.DataSerializable;
  * has start and end times. Given the number of operations in that period, one can calculate the number of
  * operations per second.
  */
-public interface LocalQueueOperationStats extends DataSerializable{
+public interface LocalQueueOperationStats extends DataSerializable {
     /**
      * Gets the start time of the period in milliseconds.
      *
@@ -53,6 +53,7 @@ public interface LocalQueueOperationStats extends DataSerializable{
      * Returns the number of rejected offers. Offer
      * can be rejected because of max-size limit
      * on the queue.
+     *
      * @return number of rejected offers.
      */
     public long getNumberOfRejectedOffers();
@@ -74,5 +75,4 @@ public interface LocalQueueOperationStats extends DataSerializable{
      * @return number of null returning poll operations.
      */
     public long getNumberOfEmptyPolls();
-
 }

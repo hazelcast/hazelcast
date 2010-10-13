@@ -31,7 +31,6 @@ public final class MapStoreConfig {
     private Object implementation;
     private Properties properties = new Properties();
 
-
     /**
      * Returns the name of the MapStore implementation class
      *

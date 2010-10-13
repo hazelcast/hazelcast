@@ -19,6 +19,7 @@ package com.hazelcast.impl.ascii;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.ascii.memcache.*;
 import com.hazelcast.impl.ascii.rest.HttpDeleteCommandProcessor;
 import com.hazelcast.impl.ascii.rest.HttpGetCommandProcessor;
@@ -129,12 +130,18 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
 
     public byte[] getByteArray(String mapName, String key) {
         Object value = hazelcast.getMap(mapName).get(key);
-        if (value != null && value instanceof RestValue) {
-            RestValue restValue = (RestValue) value;
-            return restValue.getValue();
-        } else {
-            return (byte[]) value;
+        byte[] result = null;
+        if (value != null) {
+            if (value instanceof RestValue) {
+                RestValue restValue = (RestValue) value;
+                result = restValue.getValue();
+            } else if (value instanceof byte[]) {
+                result = (byte[]) value;
+            } else {
+                result = ThreadContext.get().toByteArray(value);
+            }
         }
+        return result;
     }
 
     public Object put(String mapName, String key, Object value, int ttlSeconds) {
@@ -187,8 +194,12 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         }
 
         public void run() {
-            TextCommandConstants.TextCommandType type = command.getType();
-            textCommandProcessors[type.getValue()].handle(command);
+            try {
+                TextCommandType type = command.getType();
+                textCommandProcessors[type.getValue()].handle(command);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 

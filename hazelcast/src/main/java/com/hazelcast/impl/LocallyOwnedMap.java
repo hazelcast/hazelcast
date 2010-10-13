@@ -82,9 +82,9 @@ class LocallyOwnedMap {
         localRecords.clear();
         mapCache.clear();
     }
-    
-    public boolean isEmpty(){
-    	return mapCache.isEmpty();
+
+    public boolean isEmpty() {
+        return mapCache.isEmpty();
     }
 
     private void processLocalRecords() {

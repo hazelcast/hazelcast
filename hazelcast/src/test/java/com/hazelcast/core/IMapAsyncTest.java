@@ -22,7 +22,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -75,7 +74,7 @@ public class IMapAsyncTest {
         try {
             TestCase.assertEquals(value1, f1.get(0L, TimeUnit.MILLISECONDS));
         }
-        catch(TimeoutException e) {
+        catch (TimeoutException e) {
             // expected
             return;
         }

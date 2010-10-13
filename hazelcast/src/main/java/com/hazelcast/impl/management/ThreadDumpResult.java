@@ -17,48 +17,48 @@
 
 package com.hazelcast.impl.management;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.nio.DataSerializable;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
 public class ThreadDumpResult implements DataSerializable {
-	
-	private static final long serialVersionUID = -3773059443581186911L;
-	
-	private Member member;
-	private String result;
-	
-	// for serialization
-	public ThreadDumpResult() {
-		super();
-	}
-	
-	public ThreadDumpResult(Member member, String result) {
-		super();
-		this.member = member;
-		this.result = result;
-	}
 
-	public Member getMember() {
-		return member;
-	}
+    private static final long serialVersionUID = -3773059443581186911L;
 
-	public String getResult() {
-		return result;
-	}
+    private Member member;
+    private String result;
 
-	public void writeData(DataOutput out) throws IOException {
-		member.writeData(out);
-		out.writeUTF(result);
-	}
+    // for serialization
+    public ThreadDumpResult() {
+        super();
+    }
 
-	public void readData(DataInput in) throws IOException {
-		member = new MemberImpl();
-		member.readData(in);
-		result = in.readUTF();
-	}
+    public ThreadDumpResult(Member member, String result) {
+        super();
+        this.member = member;
+        this.result = result;
+    }
+
+    public Member getMember() {
+        return member;
+    }
+
+    public String getResult() {
+        return result;
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        member.writeData(out);
+        out.writeUTF(result);
+    }
+
+    public void readData(DataInput in) throws IOException {
+        member = new MemberImpl();
+        member.readData(in);
+        result = in.readUTF();
+    }
 }

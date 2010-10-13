@@ -17,29 +17,27 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.logging.Level;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-
 public class FileSystemXmlConfig extends Config {
-	
-	private final ILogger logger = Logger.getLogger(FileSystemXmlConfig.class.getName());
-	
-	public FileSystemXmlConfig(String configFilename) throws FileNotFoundException {
-		this(new File(configFilename));
-	}
-	
-	public FileSystemXmlConfig(File configFile) throws FileNotFoundException {
-		super();
-		
-		logger.log(Level.INFO, "Configuring Hazelcast from '" + configFile.getAbsolutePath() + "'.");
-		InputStream in = new FileInputStream(configFile);
-		new XmlConfigBuilder(in).build(this);
-	}
-	
+
+    private final ILogger logger = Logger.getLogger(FileSystemXmlConfig.class.getName());
+
+    public FileSystemXmlConfig(String configFilename) throws FileNotFoundException {
+        this(new File(configFilename));
+    }
+
+    public FileSystemXmlConfig(File configFile) throws FileNotFoundException {
+        super();
+        logger.log(Level.INFO, "Configuring Hazelcast from '" + configFile.getAbsolutePath() + "'.");
+        InputStream in = new FileInputStream(configFile);
+        new XmlConfigBuilder(in).build(this);
+    }
 }

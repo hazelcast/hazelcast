@@ -167,7 +167,7 @@ public class ConnectionManager {
             try {
                 remove(conn);
             } catch (final Throwable ignore) {
-            	ignore.printStackTrace();
+                ignore.printStackTrace();
             }
         }
         setConnectionInProgress.clear();

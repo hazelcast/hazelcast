@@ -176,7 +176,7 @@ public class MapStoreTest extends TestUtil {
         map.put("1", employee, 1, TimeUnit.SECONDS);
         Thread.sleep(2000);
         assertEquals(employee, testMapStore.getStore().get("1"));
-        assertEquals(employee, map.get("1"));        
+        assertEquals(employee, map.get("1"));
     }
 
     @Test

@@ -86,7 +86,7 @@ public abstract class SelectorBase implements Runnable {
     }
 
     abstract void processSelectionQueue();
-    
+
     public final void run() {
         try {
             while (live) {
@@ -123,7 +123,7 @@ public abstract class SelectorBase implements Runnable {
                 }
             }
         } catch (Throwable e) {
-        	logger.log(Level.WARNING, "unhandled exception in " + Thread.currentThread().getName(), e);
+            logger.log(Level.WARNING, "unhandled exception in " + Thread.currentThread().getName(), e);
         } finally {
             try {
                 logger.log(Level.FINE, "closing selector " + Thread.currentThread().getName());

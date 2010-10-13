@@ -62,7 +62,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     public void enqueueSocketWritable(SocketWritable socketWritable) {
         socketWritable.onEnqueue();
-        final boolean offer = writeQueue.offer(socketWritable);
+        writeQueue.offer(socketWritable);
         if (informSelector.compareAndSet(true, false)) {
             // we don't have to call wake up if this WriteHandler is
             // already in the task queue.

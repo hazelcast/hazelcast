@@ -23,7 +23,10 @@ import com.hazelcast.merge.LatestUpdateMergePolicy;
 
 import java.io.File;
 import java.net.URL;
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Config {
@@ -304,16 +307,14 @@ public class Config {
         return mapExecutors.values();
     }
 
-    
     public Map<String, ExecutorConfig> getExecutorConfigMap() {
         return mapExecutors;
     }
 
-
     public void setExecutorConfigMap(Map<String, ExecutorConfig> mapExecutors) {
         this.mapExecutors = mapExecutors;
-    }   
-    
+    }
+
     /**
      * @return the mapTopicConfigs
      */
@@ -335,14 +336,14 @@ public class Config {
     public Map<String, QueueConfig> getQConfigs() {
         return mapQueueConfigs;
     }
-    
+
     /**
      * @param mapQConfigs the mapQConfigs to set
      */
     public void setQConfigs(Map<String, QueueConfig> mapQConfigs) {
         this.mapQueueConfigs = mapQConfigs;
     }
-    
+
     /**
      * @param mapQConfigs the mapQConfigs to set
      */

@@ -17,62 +17,53 @@
 
 package com.hazelcast.nio;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.Date;
-
-import org.junit.Test;
-
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.FactoryImpl.ProxyKey;
+import org.junit.Test;
+
+import java.io.*;
+import java.util.Date;
 
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 import static junit.framework.Assert.assertFalse;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class SerializationTest {
     @Test
     public void testLongValueIncrement() {
         Data zero = toData(0L);
         Data five = IOUtil.addDelta(zero, 5L);
-        assertEquals (5L, toObject(five));
+        assertEquals(5L, toObject(five));
         Data minusThree = IOUtil.addDelta(five, -8L);
-        assertEquals (-3L, toObject(minusThree));
+        assertEquals(-3L, toObject(minusThree));
         Data minusTwo = IOUtil.addDelta(minusThree, 1L);
-        assertEquals (-2L, toObject(minusTwo));
+        assertEquals(-2L, toObject(minusTwo));
         Data twenty = IOUtil.addDelta(minusThree, 23L);
-        assertEquals (20L, toObject(twenty));
+        assertEquals(20L, toObject(twenty));
     }
-    
-    @Test(expected=RuntimeException.class)
+
+    @Test(expected = RuntimeException.class)
     public void newNotSerializableException() {
         final Serializer serializer = new Serializer();
         final Object o = new Object();
         serializer.writeObject(o);
     }
-    
+
     @Test
     public void newNullSerializer() {
         final Serializer serializer = new Serializer();
         final Object o = null;
         final Data data = serializer.writeObject(o);
-        assertEquals (o, serializer.readObject(data));
+        assertEquals(o, serializer.readObject(data));
     }
-    
+
     @Test
     public void newStringSerializer() {
         final Serializer serializer = new Serializer();
         final String s = "newStringSerializer 2@Z";
         final Data data = serializer.writeObject(s);
-        assertEquals (s, serializer.readObject(data));
+        assertEquals(s, serializer.readObject(data));
     }
 
     @Test
@@ -80,9 +71,9 @@ public class SerializationTest {
         final Serializer serializer = new Serializer();
         final Date date = new Date();
         final Data data = serializer.writeObject(date);
-        assertEquals (date, serializer.readObject(data));
+        assertEquals(date, serializer.readObject(data));
     }
-    
+
     @Test
     public void newSerializerExternalizable() {
         final Serializer serializer = new Serializer();
@@ -94,35 +85,33 @@ public class SerializationTest {
         assertFalse(b.length == 0);
         assertFalse(o.readExternal);
         assertTrue(o.writeExternal);
-        
-        final ExternalizableImpl object = (ExternalizableImpl)serializer.readObject(data);
+        final ExternalizableImpl object = (ExternalizableImpl) serializer.readObject(data);
         assertNotNull(object);
         assertNotSame(o, object);
         assertEquals(o, object);
         assertTrue(object.readExternal);
         assertFalse(object.writeExternal);
     }
-    
+
     @Test
     public void newSerializerDataSerializable() {
-    	final Serializer serializer = new Serializer();
+        final Serializer serializer = new Serializer();
         final DataSerializableImpl o = new DataSerializableImpl();
         o.s = "Gallaxy";
         o.v = 42;
         final Data data = serializer.writeObject(o);
-		byte[] b = data.buffer;
+        byte[] b = data.buffer;
         assertFalse(b.length == 0);
         assertFalse(o.readExternal);
         assertTrue(o.writeExternal);
-        
-        final DataSerializableImpl object = (DataSerializableImpl)serializer.readObject(data);
+        final DataSerializableImpl object = (DataSerializableImpl) serializer.readObject(data);
         assertNotNull(object);
         assertNotSame(o, object);
         assertEquals(o, object);
         assertTrue(object.readExternal);
         assertFalse(object.writeExternal);
     }
-    
+
     @Test
     public void newSerializerProxyKey() {
         final Serializer serializer = new Serializer();
@@ -130,33 +119,32 @@ public class SerializationTest {
         final Data data = serializer.writeObject(o);
         byte[] b = data.buffer;
         assertFalse(b.length == 0);
-        
-        final ProxyKey object = (ProxyKey)serializer.readObject(data);
+        final ProxyKey object = (ProxyKey) serializer.readObject(data);
         assertNotNull(object);
         assertNotSame(o, object);
         assertEquals(o, object);
     }
-    
+
     private static class ExternalizableImpl implements Externalizable {
         private int v;
         private String s;
-        
+
         private boolean readExternal = false;
         private boolean writeExternal = false;
-        
+
         @Override
         public boolean equals(Object obj) {
             if (obj == this) return true;
             if (!(obj instanceof ExternalizableImpl)) return false;
             final ExternalizableImpl other = (ExternalizableImpl) obj;
             return this.v == other.v &&
-                ((this.s == null && other.s == null) ||
-                        (this.s != null && this.s.equals(other.s)));
+                    ((this.s == null && other.s == null) ||
+                            (this.s != null && this.s.equals(other.s)));
         }
-        
+
         @Override
         public int hashCode() {
-            return this.v  + 31 * (s != null ? s.hashCode() : 0);
+            return this.v + 31 * (s != null ? s.hashCode() : 0);
         }
 
         public void readExternal(ObjectInput in) throws IOException,
@@ -165,34 +153,34 @@ public class SerializationTest {
             s = in.readUTF();
             readExternal = true;
         }
-        
+
         public void writeExternal(ObjectOutput out) throws IOException {
             out.writeInt(v);
             out.writeUTF(s);
             writeExternal = true;
         }
     }
-    
+
     private static class DataSerializableImpl implements DataSerializable {
         private int v;
         private String s;
-        
+
         private boolean readExternal = false;
         private boolean writeExternal = false;
-        
+
         @Override
         public boolean equals(Object obj) {
             if (obj == this) return true;
             if (!(obj instanceof DataSerializableImpl)) return false;
             final DataSerializableImpl other = (DataSerializableImpl) obj;
             return this.v == other.v &&
-                ((this.s == null && other.s == null) ||
-                        (this.s != null && this.s.equals(other.s)));
+                    ((this.s == null && other.s == null) ||
+                            (this.s != null && this.s.equals(other.s)));
         }
-        
+
         @Override
         public int hashCode() {
-            return this.v  + 31 * (s != null ? s.hashCode() : 0);
+            return this.v + 31 * (s != null ? s.hashCode() : 0);
         }
 
         public void readData(DataInput in) throws IOException {
@@ -200,7 +188,7 @@ public class SerializationTest {
             s = in.readUTF();
             readExternal = true;
         }
-        
+
         public void writeData(DataOutput out) throws IOException {
             out.writeInt(v);
             out.writeUTF(s);

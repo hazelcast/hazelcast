@@ -145,6 +145,5 @@ public class SimpleImmutableEntry<K, V>
      */
     public String toString() {
         return key + "=" + value;
-	}
-
     }
+}

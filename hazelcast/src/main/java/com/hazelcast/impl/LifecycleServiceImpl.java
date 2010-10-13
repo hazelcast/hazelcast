@@ -17,8 +17,6 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
-
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
@@ -33,6 +31,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
+
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 
 public class LifecycleServiceImpl implements LifecycleService {
     final FactoryImpl factory;
@@ -59,7 +59,7 @@ public class LifecycleServiceImpl implements LifecycleService {
     public void fireLifecycleEvent(LifecycleState lifecycleState) {
         fireLifecycleEvent(new LifecycleEvent(lifecycleState));
     }
-    
+
     public void fireLifecycleEvent(LifecycleEvent lifecycleEvent) {
         logger.log(Level.INFO, node.getThisAddress() + " is " + lifecycleEvent.getState());
         for (LifecycleListener lifecycleListener : lsLifecycleListeners) {

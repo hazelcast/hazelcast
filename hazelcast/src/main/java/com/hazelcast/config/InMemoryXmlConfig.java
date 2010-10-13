@@ -17,28 +17,24 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.logging.Level;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-
 public class InMemoryXmlConfig extends Config {
-	
-	private final ILogger logger = Logger.getLogger(InMemoryXmlConfig.class.getName());
-	
-	public InMemoryXmlConfig(String xml) {
-		super();
-		logger.log(Level.INFO, "Configuring Hazelcast from 'in-memory xml'.");
-		
-		if(xml == null || "".equals(xml.trim())) {
-			throw new IllegalArgumentException("XML configuration is null or empty! Please use a well-structured xml.");
-		}
-		
-		InputStream in = new ByteArrayInputStream(xml.getBytes());
-		new XmlConfigBuilder(in).build(this);
-	}
-	
-	
+
+    private final ILogger logger = Logger.getLogger(InMemoryXmlConfig.class.getName());
+
+    public InMemoryXmlConfig(String xml) {
+        super();
+        logger.log(Level.INFO, "Configuring Hazelcast from 'in-memory xml'.");
+        if (xml == null || "".equals(xml.trim())) {
+            throw new IllegalArgumentException("XML configuration is null or empty! Please use a well-structured xml.");
+        }
+        InputStream in = new ByteArrayInputStream(xml.getBytes());
+        new XmlConfigBuilder(in).build(this);
+    }
 }

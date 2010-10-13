@@ -21,6 +21,7 @@ import com.hazelcast.core.MapEntry;
 
 public class HigherHitsMergePolicy implements MergePolicy {
     public static final String NAME = "hz.HIGHER_HITS";
+
     public Object merge(String mapName, MapEntry mergingEntry, MapEntry existingEntry) {
         if (existingEntry == null || existingEntry.getValue() == null) {
             return mergingEntry.getValue();

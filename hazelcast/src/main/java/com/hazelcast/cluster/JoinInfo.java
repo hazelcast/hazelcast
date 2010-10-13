@@ -20,7 +20,6 @@ package com.hazelcast.cluster;
 import com.hazelcast.impl.NodeType;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.Packet;
 
 import java.io.*;
 import java.net.DatagramPacket;

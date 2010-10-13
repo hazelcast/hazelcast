@@ -37,20 +37,23 @@ public class SplitBrainHandler implements Runnable {
     volatile boolean inProgress = false;
     final long FIRST_RUN_DELAY_MILLIS;
     final long NEXT_RUN_DELAY_MILLIS;
+    final boolean multicastEnabled;
+    final boolean tcpEnabled;
 
     public SplitBrainHandler(Node node) {
         this.node = node;
         this.logger = node.getLogger(SplitBrainHandler.class.getName());
         FIRST_RUN_DELAY_MILLIS = node.getGroupProperties().MERGE_FIRST_RUN_DELAY_SECONDS.getLong() * 1000L;
         NEXT_RUN_DELAY_MILLIS = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong() * 1000L;
+        Config config = node.getConfig();
+        multicastEnabled = config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled();
+        tcpEnabled = config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled();
+        lastRun = System.currentTimeMillis() + FIRST_RUN_DELAY_MILLIS;
     }
 
     public void run() {
         if (node.isMaster() && node.joined() && node.isActive()) {
             long now = System.currentTimeMillis();
-            if (lastRun == 0) {
-                lastRun = now + FIRST_RUN_DELAY_MILLIS;
-            }
             if (!inProgress && (now - lastRun > NEXT_RUN_DELAY_MILLIS) && node.clusterManager.shouldTryMerge()) {
                 inProgress = true;
                 node.executorManager.executeNow(new Runnable() {
@@ -65,10 +68,7 @@ public class SplitBrainHandler implements Runnable {
     }
 
     private void searchForOtherClusters() {
-        Config config = node.getConfig();
-        boolean multicastEnabled = config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled();
-        boolean tcpEnabled = config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled();
-        if (multicastEnabled) {
+        if (multicastEnabled && node.multicastService != null) {
             final BlockingQueue q = new LinkedBlockingQueue();
             MulticastListener listener = new MulticastListener() {
                 public void onMessage(Object msg) {

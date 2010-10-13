@@ -37,6 +37,4 @@ public class EntryAdapter<K, V> implements EntryListener<K, V> {
 
     public void entryEvicted(EntryEvent<K, V> event) {
     }
-
-    
 }

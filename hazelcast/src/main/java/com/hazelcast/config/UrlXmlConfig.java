@@ -17,29 +17,27 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Level;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-
 public class UrlXmlConfig extends Config {
-	
-	private final ILogger logger = Logger.getLogger(UrlXmlConfig.class.getName());
-	
-	public UrlXmlConfig(String url) throws MalformedURLException, IOException {
-		this(new URL(url));
-	}
-	
-	public UrlXmlConfig(URL url) throws IOException {
-		super();
-		
-		logger.log(Level.INFO, "Configuring Hazelcast from '" + url.toString() + "'.");
-		InputStream in = url.openStream();
-		new XmlConfigBuilder(in).build(this);
-	}
-	
+
+    private final ILogger logger = Logger.getLogger(UrlXmlConfig.class.getName());
+
+    public UrlXmlConfig(String url) throws MalformedURLException, IOException {
+        this(new URL(url));
+    }
+
+    public UrlXmlConfig(URL url) throws IOException {
+        super();
+        logger.log(Level.INFO, "Configuring Hazelcast from '" + url.toString() + "'.");
+        InputStream in = url.openStream();
+        new XmlConfigBuilder(in).build(this);
+    }
 }

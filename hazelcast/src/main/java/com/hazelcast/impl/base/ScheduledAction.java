@@ -77,7 +77,6 @@ public abstract class ScheduledAction {
     }
 
     public void onMigrate() {
-
     }
 
     public void setTimeout(long timeout) {

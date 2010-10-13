@@ -26,23 +26,23 @@ import java.lang.management.ThreadMXBean;
 
 class ThreadDumpGeneratorImpl_15 extends ThreadDumpGenerator {
 
-	public ThreadDumpGeneratorImpl_15(ThreadMXBean bean) {
-		super(bean);
-	}
+    public ThreadDumpGeneratorImpl_15(ThreadMXBean bean) {
+        super(bean);
+    }
 
-	/**
-	 * copied from JDK 1.6 {@link ThreadInfo} toString()
-	 */
-	protected void appendThreadInfo(ThreadInfo info, StringBuilder sb) {
+    /**
+     * copied from JDK 1.6 {@link ThreadInfo} toString()
+     */
+    protected void appendThreadInfo(ThreadInfo info, StringBuilder sb) {
         sb.append("\"" + info.getThreadName() + "\"" +
-                                             " Id=" + info.getThreadId() + " " +
-                                             info.getThreadState());
+                " Id=" + info.getThreadId() + " " +
+                info.getThreadState());
         if (info.getLockName() != null) {
             sb.append(" on " + info.getLockName());
         }
         if (info.getLockOwnerName() != null) {
             sb.append(" owned by \"" + info.getLockOwnerName() +
-                      "\" Id=" + info.getLockOwnerId());
+                    "\" Id=" + info.getLockOwnerId());
         }
         if (info.isSuspended()) {
             sb.append(" (suspended)");
@@ -51,13 +51,12 @@ class ThreadDumpGeneratorImpl_15 extends ThreadDumpGenerator {
             sb.append(" (in native)");
         }
         sb.append('\n');
-        
         StackTraceElement[] stackTrace = info.getStackTrace();
         for (int i = 0; i < stackTrace.length; i++) {
             StackTraceElement ste = stackTrace[i];
             sb.append("\tat " + ste.toString());
             sb.append('\n');
-       }
-       sb.append('\n');
-	}
+        }
+        sb.append('\n');
+    }
 }

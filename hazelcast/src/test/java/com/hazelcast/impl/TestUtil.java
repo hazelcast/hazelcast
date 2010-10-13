@@ -20,10 +20,6 @@ package com.hazelcast.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Prefix;
-import com.hazelcast.impl.CMap;
-import com.hazelcast.impl.ConcurrentMapManager;
-import com.hazelcast.impl.FactoryImpl;
-import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Data;
 import org.junit.Ignore;
 

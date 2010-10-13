@@ -47,7 +47,7 @@ public class MapIndexService {
         final long recordId = record.getId();
         if (record.isActive()) {
             final Record anotherRecord = records.putIfAbsent(recordId, record);
-            if (anotherRecord != null){
+            if (anotherRecord != null) {
                 record = anotherRecord;
             }
         } else {
@@ -155,13 +155,14 @@ public class MapIndexService {
                     if (sub == null || sub.size() == 0) {
                         return null;
                     } else {
-                        results = new HashSet<MapEntry>(sub.size());
-                        for (MapEntry entry : sub) {
-                            Record record = (Record) entry;
-                            if (record.isActive()) {
-                                results.add(record);
-                            }
-                        }
+                        results = sub;
+//                        results =  new HashSet<MapEntry>(sub.size());
+//                        for (MapEntry entry : sub) {
+//                            Record record = (Record) entry;
+//                            if (record.isActive()) {
+//                                results.add(record);
+//                            }
+//                        }
                     }
                 } else if (lsIndexAwarePredicates.size() > 0) {
                     Set<MapEntry> smallestSet = null;
@@ -260,7 +261,7 @@ public class MapIndexService {
 
     public void clear() {
         mapIndexes.clear();
-        records.clear(); 
+        records.clear();
     }
 
     public int size() {

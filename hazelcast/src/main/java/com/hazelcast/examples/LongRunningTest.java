@@ -125,7 +125,7 @@ public class LongRunningTest {
 
     int random(int from, int to) {
         double diff = (to - from);
-        return (int)(diff * Math.random() + from);
+        return (int) (diff * Math.random() + from);
     }
 
     class TheNode {

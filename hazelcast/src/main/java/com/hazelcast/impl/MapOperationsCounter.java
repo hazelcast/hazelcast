@@ -72,7 +72,7 @@ public class MapOperationsCounter {
                 }
             }
         }
-        if(published.getPeriodEnd() < now() - interval){
+        if (published.getPeriodEnd() < now() - interval) {
             return empty;
         }
         return published;

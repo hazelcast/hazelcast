@@ -17,6 +17,10 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.math.BigInteger;
@@ -26,12 +30,6 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
-import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.impl.GroupProperties;
-import com.hazelcast.impl.ThreadContext;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 
 public abstract class AbstractSerializer {
 
@@ -62,12 +60,12 @@ public abstract class AbstractSerializer {
 
     private final TypeSerializer[] serializer;
     private final TypeSerializer[] typeSerializer;
-    
-    protected static TypeSerializer[] sort(final TypeSerializer[] serializers){
+
+    protected static TypeSerializer[] sort(final TypeSerializer[] serializers) {
         Arrays.sort(serializers, new Comparator<TypeSerializer>() {
             public int compare(TypeSerializer o1, TypeSerializer o2) {
                 final int p1 = o1.priority();
-                final int p2 = o1.priority();
+                final int p2 = o2.priority();
                 return p1 < p2 ? -1 : p1 == p2 ? 0 : 1;
             }
         });
@@ -75,10 +73,9 @@ public abstract class AbstractSerializer {
     }
 
     public AbstractSerializer(final TypeSerializer[] serializer) {
-        
         this.serializer = serializer;
         this.typeSerializer = new TypeSerializer[serializer.length];
-        for(int i = 0; i < serializer.length; i++){
+        for (int i = 0; i < serializer.length; i++) {
             this.typeSerializer[serializer[i].getTypeId()] = serializer[i];
         }
     }
@@ -116,21 +113,21 @@ public abstract class AbstractSerializer {
         if (object == null) {
             return;
         }
-        try{
+        try {
             byte typeId = -1;
-            for(int i = 0; i < this.serializer.length; i++){
-                if (this.serializer[i].isSuitable(object)){
+            for (int i = 0; i < this.serializer.length; i++) {
+                if (this.serializer[i].isSuitable(object)) {
                     typeId = this.serializer[i].getTypeId();
                     break;
                 }
             }
-            if (typeId == -1){
+            if (typeId == -1) {
                 throw new NotSerializableException("There is no suitable serializer for " + object.getClass().getName());
             }
             bos.writeByte(typeId);
             this.typeSerializer[typeId].write(bos, object);
             bos.flush();
-        } catch (final Throwable e){
+        } catch (final Throwable e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new RuntimeException(e);
         }
@@ -139,9 +136,9 @@ public abstract class AbstractSerializer {
     protected final Object toObject(final FastByteArrayInputStream bis) {
         try {
             final byte typeId = bis.readByte();
-            if ((typeId < 0) || (typeId >= this.typeSerializer.length)){
-                throw new IllegalArgumentException("There is no suitable deseializer for type 0x"
-                    + Integer.toHexString(typeId));
+            if ((typeId < 0) || (typeId >= this.typeSerializer.length)) {
+                throw new IllegalArgumentException("There is no suitable deserializer for type 0x"
+                        + Integer.toHexString(typeId));
             }
             return this.typeSerializer[typeId].read(bis);
         } catch (final Throwable e) {
@@ -209,7 +206,7 @@ public abstract class AbstractSerializer {
 
         public final BigInteger read(final FastByteArrayInputStream bbis) throws Exception {
             final byte[] bytes = new byte[bbis.readInt()];
-            bbis.read(bytes);
+            bbis.readFully(bytes);
             return new BigInteger(bytes);
         }
 
@@ -306,7 +303,7 @@ public abstract class AbstractSerializer {
         public final byte[] read(final FastByteArrayInputStream bbis) throws Exception {
             final int size = bbis.readInt();
             final byte[] bytes = new byte[size];
-            bbis.read(bytes);
+            bbis.readFully(bytes);
             return bytes;
         }
 
@@ -371,7 +368,7 @@ public abstract class AbstractSerializer {
         public final Externalizable read(final FastByteArrayInputStream bbis) throws Exception {
             final String className = bbis.readUTF();
             try {
-            	final Externalizable ds = (Externalizable) newInstance(classForName(className));
+                final Externalizable ds = (Externalizable) newInstance(classForName(className));
                 ds.readExternal(newObjectInputStream(bbis));
                 return ds;
             } catch (final Exception e) {
@@ -383,7 +380,7 @@ public abstract class AbstractSerializer {
         public final void write(final FastByteArrayOutputStream bbos, final Externalizable obj) throws Exception {
             bbos.writeUTF(obj.getClass().getName());
             final ObjectOutputStream out = new ObjectOutputStream(bbos);
-			obj.writeExternal(out);
+            obj.writeExternal(out);
             out.flush();
         }
     }

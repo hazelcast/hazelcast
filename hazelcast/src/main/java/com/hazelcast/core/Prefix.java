@@ -81,7 +81,7 @@ public final class Prefix {
      * The Constant MULTIMAP: "m:u:"
      */
     public static final String MULTIMAP = MAP_BASED + AS_MULTIMAP;
-    
+
     /**
      * The Constant EXECUTOR_SERVICE: "x:"
      */

@@ -43,8 +43,7 @@ import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class
-        BlockingQueueManager extends BaseManager {
+public class BlockingQueueManager extends BaseManager {
     private final int BLOCK_SIZE;
     private final Map<String, Q> mapQueues = new ConcurrentHashMap<String, Q>(10);
     private final Map<Long, List<Data>> mapTxnPolledElements = new HashMap<Long, List<Data>>(10);
@@ -873,7 +872,7 @@ public class
                 ThreadContext threadContext = ThreadContext.get();
                 TransactionImpl txn = threadContext.getCallContext().getTransaction();
                 if (transactional && txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-                    txn.attachPutOp(name, null, value, timeout, true);  
+                    txn.attachPutOp(name, null, value, timeout, true);
                 } else {
                     return booleanCall(ClusterOperation.BLOCKING_QUEUE_OFFER, name, null, value, timeout, -1);
                 }
@@ -881,27 +880,6 @@ public class
             } catch (RuntimeInterruptedException e) {
                 throw new InterruptedException();
             }
-        }
-
-        @Override
-        public void handleNoneRedoResponse(Packet packet) {
-            if (request.operation == ClusterOperation.BLOCKING_QUEUE_OFFER
-                    && packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
-                if (!zeroBackup) {
-                    if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(
-                            packet.conn.getEndPoint())) {
-                        int itemIndex = (int) packet.longValue;
-                        if (itemIndex != -1) {
-                            Q q = getQ(request.name);
-                            if (request.value == null || request.value.size() == 0) {
-                                throw new RuntimeException("Invalid data " + request.value);
-                            }
-                            q.doBackup(true, request.value, request.blockId, (int) packet.longValue);
-                        }
-                    }
-                }
-            }
-            super.handleNoneRedoResponse(packet);
         }
 
         @Override
@@ -989,23 +967,6 @@ public class
             } else {
                 setResult(OBJECT_REDO);
             }
-        }
-
-        @Override
-        public void handleNoneRedoResponse(Packet packet) {
-            if (request.operation == ClusterOperation.BLOCKING_QUEUE_POLL
-                    && packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
-                if (!zeroBackup) {
-                    if (getPreviousMemberBefore(thisAddress, true, 1).getAddress().equals(
-                            packet.conn.getEndPoint())) {
-                        if (packet.getValueData() != null) {
-                            Q q = getQ(packet.name);
-                            q.doBackup(false, null, request.blockId, (int) packet.longValue);
-                        }
-                    }
-                }
-            }
-            super.handleNoneRedoResponse(packet);
         }
     }
 
@@ -1232,6 +1193,7 @@ public class
         }
 
         public void schedulePoll(Request request) {
+//            System.out.println(request.name + " scheduled polled " + request.caller);
             ScheduledPollAction action = new ScheduledPollAction(request);
             lsScheduledPollActions.add(action);
             node.clusterManager.registerScheduledAction(action);
@@ -1556,7 +1518,7 @@ public class
                 throw new RuntimeException("addIndex cannot be -1");
             if (lsMembers.size() > 1) {
                 MemberImpl memberBackup = getNextMemberAfter(thisAddress, true, 1);
-                if (memberBackup == null || memberBackup.getAddress().equals(caller)) {
+                if (memberBackup == null) {
                     return true;
                 }
                 ClusterOperation operation = ClusterOperation.BLOCKING_QUEUE_BACKUP_REMOVE;
@@ -1674,8 +1636,7 @@ public class
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Q q = (Q) o;
-            if (name != null ? !name.equals(q.name) : q.name != null) return false;
-            return true;
+            return !(name != null ? !name.equals(q.name) : q.name != null);
         }
 
         @Override

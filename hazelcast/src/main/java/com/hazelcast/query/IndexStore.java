@@ -37,5 +37,4 @@ public interface IndexStore {
     void getRecords(MultiResultSet results, long[] values);
 
     ConcurrentMap<Long, ConcurrentMap<Long, Record>> getMapRecords();
-
 }

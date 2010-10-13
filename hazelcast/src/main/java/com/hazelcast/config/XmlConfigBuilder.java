@@ -628,12 +628,12 @@ public class XmlConfigBuilder implements ConfigBuilder {
                 && child.getNodeType() != Node.PROCESSING_INSTRUCTION_NODE;
         return result;
     }
-    
-	public String cleanNodeName(final String nodeName) {
-		String name = nodeName;
-		if (name != null ) {
-			name = nodeName.replaceAll("\\w+:", "").toLowerCase();
-		}
-		return name;
-	}
+
+    public String cleanNodeName(final String nodeName) {
+        String name = nodeName;
+        if (name != null) {
+            name = nodeName.replaceAll("\\w+:", "").toLowerCase();
+        }
+        return name;
+    }
 }

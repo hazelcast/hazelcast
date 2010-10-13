@@ -797,14 +797,14 @@ public class TransactionTest {
             final Object[] newArgs = (args.length == 1) ? null : (Object[]) args[1];
             int len = (newArgs == null) ? 0 : newArgs.length;
             final Method method = findMethod(methodName, len);
-            return es.submit(new Callable () {
+            return es.submit(new Callable() {
                 public Object call() throws Exception {
                     return method.invoke(target, newArgs);
                 }
             });
         }
 
-        private Method findMethod (String name, int argLen) {
+        private Method findMethod(String name, int argLen) {
             Method[] methods = target.getClass().getMethods();
             for (Method method : methods) {
                 if (method.getName().equals(name)) {

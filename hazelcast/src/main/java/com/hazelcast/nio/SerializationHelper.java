@@ -18,7 +18,6 @@
 package com.hazelcast.nio;
 
 import java.io.*;
-import java.lang.reflect.Constructor;
 import java.util.Date;
 
 public class SerializationHelper {

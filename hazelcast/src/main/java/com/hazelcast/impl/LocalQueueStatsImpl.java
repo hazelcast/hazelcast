@@ -24,7 +24,6 @@ import com.hazelcast.nio.DataSerializable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.Serializable;
 
 public class LocalQueueStatsImpl implements LocalQueueStats, DataSerializable {
     private int ownedItemCount;
@@ -44,7 +43,6 @@ public class LocalQueueStatsImpl implements LocalQueueStats, DataSerializable {
         this.minAge = minAge;
         this.maxAge = maxAge;
         this.aveAge = aveAge;
-
     }
 
     public void writeData(DataOutput out) throws IOException {

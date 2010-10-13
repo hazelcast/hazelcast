@@ -24,69 +24,69 @@ import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 
 public class MultiResultSet extends AbstractSet<MapEntry> {
-        private final List<Collection<Record>> resultSets = new ArrayList<Collection<Record>>();
-        private final Set<Long> indexValues = new HashSet<Long>();
-        private final ConcurrentMap<Long, Long> recordValues;
+    private final List<Collection<Record>> resultSets = new ArrayList<Collection<Record>>();
+    private final Set<Long> indexValues = new HashSet<Long>();
+    private final ConcurrentMap<Long, Long> recordValues;
 
-        MultiResultSet(ConcurrentMap<Long, Long> recordValues) {
-            this.recordValues = recordValues;
-        }
+    MultiResultSet(ConcurrentMap<Long, Long> recordValues) {
+        this.recordValues = recordValues;
+    }
 
-        public void addResultSet(Long indexValue, Collection<Record> resultSet) {
-            resultSets.add(resultSet);
-            indexValues.add(indexValue);
-        }
+    public void addResultSet(Long indexValue, Collection<Record> resultSet) {
+        resultSets.add(resultSet);
+        indexValues.add(indexValue);
+    }
 
-        @Override
-        public Iterator<MapEntry> iterator() {
-            return new It();
-        }
+    @Override
+    public Iterator<MapEntry> iterator() {
+        return new It();
+    }
 
-        @Override
-        public boolean contains(Object mapEntry) {
-            Long indexValue = recordValues.get(((Record) mapEntry).getId());
-            return indexValue != null && indexValues.contains(indexValue);
-        }
+    @Override
+    public boolean contains(Object mapEntry) {
+        Long indexValue = recordValues.get(((Record) mapEntry).getId());
+        return indexValue != null && indexValues.contains(indexValue);
+    }
 
-        class It implements Iterator<MapEntry> {
-            int currentIndex = 0;
-            Iterator<Record> currentIterator;
+    class It implements Iterator<MapEntry> {
+        int currentIndex = 0;
+        Iterator<Record> currentIterator;
 
-            public boolean hasNext() {
-                if (resultSets.size() == 0) return false;
-                if (currentIterator != null && currentIterator.hasNext()) {
+        public boolean hasNext() {
+            if (resultSets.size() == 0) return false;
+            if (currentIterator != null && currentIterator.hasNext()) {
+                return true;
+            }
+            while (currentIndex < resultSets.size()) {
+                currentIterator = resultSets.get(currentIndex++).iterator();
+                if (currentIterator.hasNext()) {
                     return true;
                 }
-                while (currentIndex < resultSets.size()) {
-                    currentIterator = resultSets.get(currentIndex++).iterator();
-                    if (currentIterator.hasNext()) {
-                        return true;
-                    }
-                }
-                return false;
             }
-
-            public MapEntry next() {
-                if (resultSets.size() == 0) return null;
-                return currentIterator.next();
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
+            return false;
         }
 
-        @Override
-        public boolean add(MapEntry obj) {
+        public MapEntry next() {
+            if (resultSets.size() == 0) return null;
+            return currentIterator.next();
+        }
+
+        public void remove() {
             throw new UnsupportedOperationException();
         }
-
-        @Override
-        public int size() {
-            int size = 0;
-            for (Collection<Record> resultSet : resultSets) {
-                size += resultSet.size();
-            }
-            return size;
-        }
     }
+
+    @Override
+    public boolean add(MapEntry obj) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int size() {
+        int size = 0;
+        for (Collection<Record> resultSet : resultSets) {
+            size += resultSet.size();
+        }
+        return size;
+    }
+}

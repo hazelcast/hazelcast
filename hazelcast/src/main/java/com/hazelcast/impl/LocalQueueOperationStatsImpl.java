@@ -18,7 +18,6 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.monitor.LocalQueueOperationStats;
-import com.hazelcast.nio.DataSerializable;
 
 import java.io.DataInput;
 import java.io.DataOutput;

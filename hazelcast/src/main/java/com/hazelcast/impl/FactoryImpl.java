@@ -17,8 +17,6 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
-
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
@@ -53,6 +51,9 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.logging.Level;
+
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 
 public class FactoryImpl implements HazelcastInstance {
 
@@ -2583,7 +2584,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public boolean isEmpty() {
-            	mapOperationStats.incrementOtherOperations();
+                mapOperationStats.incrementOtherOperations();
                 MEmpty mempty = concurrentMapManager.new MEmpty(name);
                 return mempty.isEmpty();
             }

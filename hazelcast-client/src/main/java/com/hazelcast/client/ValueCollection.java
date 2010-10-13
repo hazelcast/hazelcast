@@ -93,6 +93,9 @@ public class ValueCollection<K, V> implements Collection<V> {
     }
 
     public <T> T[] toArray(final T[] a) {
+        if (a == null) {
+            throw new NullPointerException();
+        }
         final int size = size();
         final T[] result;
         if (a.length < size) {

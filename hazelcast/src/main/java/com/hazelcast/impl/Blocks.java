@@ -33,7 +33,6 @@ public class Blocks extends AbstractRemotelyProcessable {
             throw new IllegalArgumentException("Block cannot be null. ");
         }
         lsBlocks.add(block);
-
     }
 
     public void readData(DataInput in) throws IOException {

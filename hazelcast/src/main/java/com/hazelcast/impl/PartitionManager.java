@@ -47,7 +47,7 @@ public class PartitionManager implements Runnable {
     final ParallelExecutor parallelExecutorMigration;
     final ParallelExecutor parallelExecutorBackups;
 
-    final long MIGRATION_INTERVAL_MILLIS = 100L;
+    final long MIGRATION_INTERVAL_MILLIS = 10000L;
 
     final long timeToInitiateMigration;
 
@@ -159,7 +159,7 @@ public class PartitionManager implements Runnable {
         }
         int aveBlockOwnCount = PARTITION_COUNT / (addressBlocks.size());
         for (final Entry<Address, List<Block>> entry : addressBlocks.entrySet()) {
-        	final Address address = entry.getKey();
+            final Address address = entry.getKey();
             List<Block> blocks = entry.getValue();
             int diff = (aveBlockOwnCount - blocks.size());
             for (int i = 0; i < diff && lsEmptyBlocks.size() > 0; i++) {

@@ -18,7 +18,6 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.query.Index;
 
 import java.io.DataInput;
 import java.io.DataOutput;

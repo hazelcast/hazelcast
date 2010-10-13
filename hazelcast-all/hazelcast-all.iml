@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_5" inherit-compiler-output="false">
+    <output url="file://$MODULE_DIR$/target/classes" />
+    <output-test url="file://$MODULE_DIR$/target/test-classes" />
+    <content url="file://$MODULE_DIR$">
+      <excludeFolder url="file://$MODULE_DIR$/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="hazelcast" />
+    <orderEntry type="module" module-name="hazelcast-client" />
+    <orderEntry type="module" module-name="hazelcast-hibernate" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: junit:junit:4.6" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: junit-addons:junit-addons:1.4" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: xerces:xercesImpl:2.6.2" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: xerces:xmlParserAPIs:2.6.2" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.mockito:mockito-all:1.8.2" level="project" />
+  </component>
+</module>
+

@@ -22,7 +22,6 @@ public abstract class FallThroughRunnable implements Runnable {
         try {
             doRun();
         } catch (Throwable ignored) {
-            ignored.printStackTrace();
         }
     }
 

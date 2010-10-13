@@ -24,7 +24,7 @@ import org.junit.Ignore;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-@Ignore 
+@Ignore
 public class TestEntryListener implements EntryListener {
     final CountDownLatch latchAdded;
     final CountDownLatch latchRemoved;

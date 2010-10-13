@@ -24,5 +24,4 @@ import java.util.concurrent.BlockingQueue;
 public interface IQueue<E> extends ICollection<E>, BlockingQueue<E>, Instance {
 
     LocalQueueStats getLocalQueueStats();
-
 }

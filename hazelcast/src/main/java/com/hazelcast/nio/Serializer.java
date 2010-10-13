@@ -17,12 +17,12 @@
 
 package com.hazelcast.nio;
 
-import java.util.logging.Level;
-
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+
+import java.util.logging.Level;
 
 public final class Serializer extends AbstractSerializer {
 
@@ -31,19 +31,18 @@ public final class Serializer extends AbstractSerializer {
     private static int OUTPUT_STREAM_BUFFER_SIZE = 100 << 10;
 
     private static final TypeSerializer[] serializers =
-        sort(new TypeSerializer[]{
-            new DataSerializer(),
-            new ByteArraySerializer(),
-            new LongSerializer(),
-            new IntegerSerializer(),
-            new StringSerializer(),
-            new ClassSerializer(),
-            new DateSerializer(),
-            new BigIntegerSerializer(),
-            new Externalizer(),
-            new ObjectSerializer()
-        });
-
+            sort(new TypeSerializer[]{
+                    new DataSerializer(),
+                    new ByteArraySerializer(),
+                    new LongSerializer(),
+                    new IntegerSerializer(),
+                    new StringSerializer(),
+                    new ClassSerializer(),
+                    new DateSerializer(),
+                    new BigIntegerSerializer(),
+                    new Externalizer(),
+                    new ObjectSerializer()
+            });
 
     final FastByteArrayOutputStream bbos;
 
@@ -67,24 +66,33 @@ public final class Serializer extends AbstractSerializer {
         return AbstractSerializer.classForName(classLoader, className);
     }
 
-    public Data writeObject(final Object obj) {
+    public byte[] toByteArray(Object obj) {
         if (obj == null) {
             return null;
-        }
-        if (obj instanceof Data) {
-            return (Data) obj;
         }
         try {
             this.bbos.reset();
             toByte(this.bbos, obj);
-            final Data data = new Data(this.bbos.toByteArray());
+            final byte[] result = this.bbos.toByteArray();
             if (this.bbos.size() > OUTPUT_STREAM_BUFFER_SIZE) {
                 this.bbos.set(new byte[OUTPUT_STREAM_BUFFER_SIZE]);
             }
-            return data;
+            return result;
         } catch (final Throwable e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    public Data writeObject(final Object obj) {
+        if (obj instanceof Data) {
+            return (Data) obj;
+        }
+        byte[] bytes = toByteArray(obj);
+        if (bytes == null) {
+            return null;
+        } else {
+            return new Data(bytes);
         }
     }
 
@@ -99,5 +107,4 @@ public final class Serializer extends AbstractSerializer {
         }
         return obj;
     }
-
 }

@@ -77,6 +77,10 @@ public final class ThreadContext {
         finalizeTxn();
     }
 
+    public byte[] toByteArray(Object obj) {
+        return serializer.toByteArray(obj);
+    }
+
     public Data toData(Object obj) {
         return serializer.writeObject(obj);
     }

@@ -62,7 +62,7 @@ public class EntryEvent<K, V> extends EventObject {
     public EntryEvent(Object source, Member member, int eventType, K key, V value) {
         this(source, member, eventType, key, null, value);
     }
-    
+
     public EntryEvent(Object source, Member member, int eventType, K key, V oldValue, V value) {
         this(source);
         this.member = member;
@@ -85,15 +85,15 @@ public class EntryEvent<K, V> extends EventObject {
     public K getKey() {
         return key;
     }
-    
+
     /**
      * Returns the old value of the entry event
-     * 
+     *
      * @return
      */
     public V getOldValue() {
-		return this.oldValue;
-	}
+        return this.oldValue;
+    }
 
     /**
      * Returns the value of the entry event
@@ -106,6 +106,7 @@ public class EntryEvent<K, V> extends EventObject {
 
     /**
      * Returns the member fired this event.
+     *
      * @return the member fired this event.
      */
     public Member getMember() {
@@ -132,10 +133,10 @@ public class EntryEvent<K, V> extends EventObject {
 
     @Override
     public String toString() {
-        return "EntryEvent {" + getSource() 
-                + "} key=" + getKey() 
+        return "EntryEvent {" + getSource()
+                + "} key=" + getKey()
                 + ", oldValue=" + getOldValue()
-                + ", value=" + getValue() 
+                + ", value=" + getValue()
                 + ", event=" + entryEventType
                 + ", by " + member;
     }

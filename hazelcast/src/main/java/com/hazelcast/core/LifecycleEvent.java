@@ -47,5 +47,4 @@ public final class LifecycleEvent {
     public String toString() {
         return "LifecycleEvent [state=" + state + "]";
     }
-    
 }

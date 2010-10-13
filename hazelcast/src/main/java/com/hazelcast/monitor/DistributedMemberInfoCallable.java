@@ -52,7 +52,7 @@ public class DistributedMemberInfoCallable implements Callable<DistributedMember
         this.hazelcastInstance = hazelcastInstance;
     }
 
-    public static class MemberInfo implements Serializable{
+    public static class MemberInfo implements Serializable {
         private Set<Integer> partitions;
         private long time;
         private long totalMemory;
