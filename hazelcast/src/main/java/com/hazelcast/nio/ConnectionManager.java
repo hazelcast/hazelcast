@@ -170,9 +170,15 @@ public class ConnectionManager {
                 ignore.printStackTrace();
             }
         }
+        for (Connection conn : setActiveConnections) {
+            try {
+                remove(conn);
+            } catch (final Throwable ignore) {
+                ignore.printStackTrace();
+            }
+        }
         setConnectionInProgress.clear();
         mapConnections.clear();
-        setActiveConnections.clear();
     }
 
     @Override

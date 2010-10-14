@@ -45,6 +45,7 @@ public class DefaultClientBinder implements ClientBinder {
         Packet bind = new Packet();
         bind.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, Serializer.toByte(null), Serializer.toByte(b));
         client.getOutRunnable().writer.write(connection, bind);
+        client.getOutRunnable().writer.flush(connection);
         try {
             Thread.sleep(10);
         } catch (InterruptedException e) {

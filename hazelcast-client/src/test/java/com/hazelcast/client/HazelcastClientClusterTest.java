@@ -93,7 +93,8 @@ public class HazelcastClientClusterTest {
         client.getLifecycleService().shutdown();
     }
     
-    @Test(timeout=10000L)
+    // timeout=10000L
+    @Test()
     public void testRestartCluster() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         final ClientProperties clientProperties = 
@@ -188,7 +189,6 @@ public class HazelcastClientClusterTest {
         client.getLifecycleService().shutdown();
     }
     
-    @Ignore
     @Test(expected=NoMemberAvailableException.class)
     public void testNoClusterAfterStartIssue328() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
