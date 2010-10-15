@@ -20,6 +20,9 @@ package com.hazelcast.client;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -29,9 +32,11 @@ import java.util.logging.Level;
 public class OutRunnable extends IORunnable {
     final PacketWriter writer;
     final BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
+    
     private Connection connection = null;
     private static final Call RECONNECT_CALL = new Call(0, new Packet()); 
     
+    volatile Collection<Call> reconnectionCalls;
     private volatile boolean reconnection;
 
     ILogger logger = Logger.getLogger(this.getClass().getName());
@@ -63,6 +68,9 @@ public class OutRunnable extends IORunnable {
                 } else {
                     clusterIsDown();
                 }
+                if (reconnectionCalls != null){
+                    break;
+                }
                 call = null;
                 if (count++ < 24) {
                     call = queue.poll();
@@ -71,10 +79,25 @@ public class OutRunnable extends IORunnable {
             if (connection != null) {
                 writer.flush(connection);
             }
+            if (call != null && reconnectionCalls != null && reconnectionCalls.contains(call)) {
+                Object response = null;
+                for(int i = 0; i < 20 && response == null; i++) {
+                    response = call.getResponse(500, TimeUnit.MILLISECONDS);
+                }
+                if (response != null) {
+                    if (reconnectionCalls.remove(call) && reconnectionCalls.isEmpty()){
+                        reconnectionCalls = null;
+                    }
+                } else {
+                    logger.log(Level.WARNING, "There is no responce on reconnection call:" + call);
+                }
+            }
         } catch (Throwable io) {
-            logger.log(Level.FINE, "OutRunnable got exception:" + io.getMessage());
+            logger.log(Level.WARNING, "OutRunnable got exception:" + io.getMessage());
             io.printStackTrace();
-            enQueue(call);
+            if (call != null){
+                enQueue(call);
+            }
             client.getConnectionManager().destroyConnection(connection);
         }
     }
@@ -96,6 +119,8 @@ public class OutRunnable extends IORunnable {
                             } catch (InterruptedException e) {
                             }
                         }
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "hz.client.ReconnectionThread got exception:" + e.getMessage(), e);
                     } finally {
                         reconnection = false;
                     }
@@ -109,9 +134,10 @@ public class OutRunnable extends IORunnable {
     
     private void resubscribe(Call call, Connection oldConnection) {
         final BlockingQueue<Call> temp = new LinkedBlockingQueue<Call>();
-        temp.add(call);
         queue.drainTo(temp);
-        queue.addAll(client.getListenerManager().getListenerCalls());
+        temp.add(call);
+        reconnectionCalls = new HashSet<Call>(client.getListenerManager().getListenerCalls());
+        queue.addAll(reconnectionCalls);
         temp.drainTo(queue);
         onDisconnect(oldConnection);
     }

@@ -64,25 +64,25 @@ public class ConnectionManager implements MembershipListener {
         this.clusterMembers.add(address);
     }
 
-    public Connection getInitConnection() {
+    public Connection getInitConnection() throws IOException {
         if (currentConnection == null) {
             synchronized (this) {
                 final int attemptsLimit = client.getProperties().getInteger(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT);
                 final int reconnectionTimeout = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_TIMEOUT);
-                currentConnection =  lookForAliveConnection(attemptsLimit, reconnectionTimeout);
+                currentConnection =  lookForAliveConnection(attemptsLimit, reconnectionTimeout, false);
             }
         }
         return currentConnection;
     }
     
-    public Connection lookForAliveConnection() {
+    public Connection lookForAliveConnection() throws IOException {
         final int attemptsLimit = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_ATTEMPTS_LIMIT);
         final int reconnectionTimeout = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_TIMEOUT);
-        return lookForAliveConnection(attemptsLimit, reconnectionTimeout);
+        return lookForAliveConnection(attemptsLimit, reconnectionTimeout, true);
     }
 
     private Connection lookForAliveConnection(final int attemptsLimit,
-            final int reconnectionTimeout) {
+            final int reconnectionTimeout, final boolean bind) throws IOException {
         boolean restored = false;
         int attempt = 0;
         while(currentConnection == null){
@@ -90,6 +90,9 @@ public class ConnectionManager implements MembershipListener {
                 if (currentConnection == null) {
                     currentConnection = searchForAvailableConnection();
                     restored = currentConnection != null;
+                    if (restored && bind){
+                        bindConnection(currentConnection);
+                    }
                 }
             }
             if (currentConnection != null) {
@@ -176,6 +179,7 @@ public class ConnectionManager implements MembershipListener {
                 counter--;
             }
         }
+        logger.log(Level.FINEST, format("searchForAvailableConnection connection:{1}", connection));
         return connection;
     }
 

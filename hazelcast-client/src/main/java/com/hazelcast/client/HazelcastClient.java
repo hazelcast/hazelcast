@@ -94,7 +94,12 @@ public class HazelcastClient implements HazelcastInstance {
             this.connectionManager = new ConnectionManager(this, lifecycleService,  clusterMembers, shuffle);
         }
         this.connectionManager.setBinder(new DefaultClientBinder(this));
-        final Connection aliveConnection = connectionManager.getInitConnection();
+        Connection aliveConnection;
+        try {
+            aliveConnection = connectionManager.getInitConnection();
+        } catch (IOException e) {
+            throw new ClusterClientException(e.getMessage(), e);
+        }
         if (aliveConnection == null){
             throw new IllegalStateException("Unable to connect to cluster");
         }
