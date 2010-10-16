@@ -23,6 +23,7 @@ import com.hazelcast.logging.Logger;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -34,7 +35,7 @@ public class OutRunnable extends IORunnable {
     final BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
     
     private Connection connection = null;
-    private static final Call RECONNECT_CALL = new Call(0, new Packet()); 
+    private static final Call RECONNECT_CALL = new Call(0L, new Packet()); 
     
     volatile Collection<Call> reconnectionCalls;
     private volatile boolean reconnection;
@@ -101,7 +102,7 @@ public class OutRunnable extends IORunnable {
             client.getConnectionManager().destroyConnection(connection);
         }
     }
-
+    
     void clusterIsDown() {
         interruptWaitingCalls();
         if (!reconnection){
@@ -136,6 +137,12 @@ public class OutRunnable extends IORunnable {
         final BlockingQueue<Call> temp = new LinkedBlockingQueue<Call>();
         queue.drainTo(temp);
         temp.add(call);
+        for(final Iterator<Call> it = temp.iterator();it.hasNext();){
+            final Call c = it.next();
+            if (!callMap.containsKey(c.getId())){
+                it.remove();
+            }
+        }
         reconnectionCalls = new HashSet<Call>(client.getListenerManager().getListenerCalls());
         queue.addAll(reconnectionCalls);
         temp.drainTo(queue);
