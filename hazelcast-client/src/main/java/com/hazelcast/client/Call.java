@@ -25,13 +25,13 @@ import java.util.concurrent.TimeUnit;
 
 public class Call {
 
-    private final long id;
+    private final Long id;
 
     private final Packet request;
 
     private final BlockingQueue<Object> responseQueue = new LinkedBlockingQueue<Object>();
 
-    public Call(long id, Packet request) {
+    public Call(Long id, Packet request) {
         this.id = id;
         this.request = request;
         this.request.setCallId(id);
@@ -41,7 +41,7 @@ public class Call {
         return request;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -70,7 +70,7 @@ public class Call {
             return null;
         }
     }
-
+    
     public void onDisconnect(Member member) {
     }
 

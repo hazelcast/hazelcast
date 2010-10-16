@@ -68,7 +68,7 @@ public class ProxyHelper {
     }
 
     public Call createCall(Packet request) {
-        final long id = newCallId();
+        final Long id = newCallId();
         return new Call(id, request) {
             @Override
             public void onDisconnect(Member member) {
@@ -80,7 +80,7 @@ public class ProxyHelper {
         };
     }
 
-    public static long newCallId() {
+    public static Long newCallId() {
         return callIdGen.incrementAndGet();
     }
 
