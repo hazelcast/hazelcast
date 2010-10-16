@@ -18,8 +18,7 @@
 package com.hazelcast.core;
 
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.hazelcast.config.XmlConfigBuilder;
@@ -265,5 +264,39 @@ public class UnresolvedIssues {
         }
         topic.destroy();
         assertEquals(0, Hazelcast.getInstances().size());
+    }
+    
+    @Ignore
+    @Test
+    public void issue393(){
+        final IMap<String, Value> map = Hazelcast.getMap("default");
+        map.addIndex("name", true);
+        
+        for(int i = 0; i < 4; i++){
+            final Value v = new Value("name" + i);
+            map.put("" + i, v);
+        }
+        
+        final PredicateBuilder predicate = new PredicateBuilder().getEntryObject().get("name").in("name0", "name2");
+        final Collection<Value> values = map.values(predicate);
+        
+        final List<String> names = new ArrayList<String>();
+        for (final Value configObject : values) {
+            names.add(configObject.name);
+        }
+        assertArrayEquals(names.toString(), new String[]{"name0", "name2"}, names.toArray(new String[0]));
+    }
+    
+    public static class Value implements Serializable {
+        private String name;
+
+        public Value(String name) {
+            this.name = name;
+        }
+        
+        public String getName() {
+            return this.name;
+        }
+        
     }
 }
