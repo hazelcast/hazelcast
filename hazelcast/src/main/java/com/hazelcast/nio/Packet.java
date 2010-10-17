@@ -41,7 +41,7 @@ public final class Packet implements SocketWritable {
 
     private DataHolder value = null;
 
-    public long[] indexes = null;
+    public Long[] indexes = null;
 
     public byte[] indexTypes = null;
 
@@ -234,7 +234,7 @@ public final class Packet implements SocketWritable {
         name = getString(bbHeader);
         byte indexCount = bbHeader.get();
         if (indexCount > 0) {
-            indexes = new long[indexCount];
+            indexes = new Long[indexCount];
             indexTypes = new byte[indexCount];
             for (byte i = 0; i < indexCount; i++) {
                 indexes[i] = bbHeader.getLong();

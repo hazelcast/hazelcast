@@ -364,7 +364,6 @@ public abstract class BaseManager {
         public Object objectCall(final ClusterOperation operation, final String name, final Object key,
                                  final Object value, final long timeout, final long ttl) {
             setLocal(operation, name, key, value, timeout, ttl);
-            request.setObjectRequest();
             return objectCall();
         }
 

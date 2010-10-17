@@ -735,7 +735,7 @@ public class ConcurrentMapManager extends BaseManager {
     void setIndexValues(Request request, Object value) {
         CMap cmap = getMap(request.name);
         if (cmap != null) {
-            long[] indexes = cmap.getMapIndexService().getIndexValues(value);
+            Long[] indexes = cmap.getMapIndexService().getIndexValues(value);
             if (indexes != null) {
                 byte[] indexTypes = cmap.getMapIndexService().getIndexTypes();
                 request.setIndexes(indexes, indexTypes);

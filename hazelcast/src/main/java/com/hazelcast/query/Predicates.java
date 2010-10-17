@@ -264,11 +264,14 @@ public class
         public Set<MapEntry> filter(QueryContext queryContext) {
             Index index = queryContext.getMapIndexes().get(first);
             if (index != null) {
-                long[] longValues = new long[values.length];
+                List<Long> lsLongValues = new ArrayList<Long>(values.length);
                 for (int i = 0; i < values.length; i++) {
-                    longValues[i] = index.getLongValue(values[i]);
+                    final Long value = index.getLongValue(values[i]);
+                    if (!lsLongValues.contains(value)) {
+                        lsLongValues.add(value);
+                    }
                 }
-                return index.getRecords(longValues);
+                return index.getRecords(lsLongValues.toArray(new Long[lsLongValues.size()]));
             } else {
                 return null;
             }

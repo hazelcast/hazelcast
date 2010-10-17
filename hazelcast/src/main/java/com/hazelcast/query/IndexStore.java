@@ -24,17 +24,17 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 public interface IndexStore {
-    void getSubRecordsBetween(MultiResultSet results, long from, long to);
+    void getSubRecordsBetween(MultiResultSet results, Long from, Long to);
 
-    void getSubRecords(MultiResultSet results, boolean equal, boolean lessThan, long searchedValue);
+    void getSubRecords(MultiResultSet results, boolean equal, boolean lessThan, Long searchedValue);
 
-    void newRecordIndex(long newValue, Record record);
+    void newRecordIndex(Long newValue, Record record);
 
-    void removeRecordIndex(long oldValue, long recordId);
+    void removeRecordIndex(Long oldValue, Long recordId);
 
-    Set<MapEntry> getRecords(long value);
+    Set<MapEntry> getRecords(Long value);
 
-    void getRecords(MultiResultSet results, long[] values);
+    void getRecords(MultiResultSet results, Long[] values);
 
     ConcurrentMap<Long, ConcurrentMap<Long, Record>> getMapRecords();
 }

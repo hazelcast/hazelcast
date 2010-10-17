@@ -59,7 +59,7 @@ public class Request {
     public long longValue = Long.MIN_VALUE;
     public long version = DEFAULT_VERSION;
     public long txnId = DEFAULT_TXN_ID;
-    public long[] indexes;
+    public Long[] indexes;
     public byte[] indexTypes;
     public Object attachment = null;
     public Object response = null;
@@ -105,7 +105,7 @@ public class Request {
         this.responseType = ResponseType.OBJECT;
     }
 
-    public void setIndexes(long[] newIndexes, byte[] indexTypes) {
+    public void setIndexes(Long[] newIndexes, byte[] indexTypes) {
         this.indexes = newIndexes;
         this.indexTypes = indexTypes;
         if (indexes.length != indexTypes.length) {

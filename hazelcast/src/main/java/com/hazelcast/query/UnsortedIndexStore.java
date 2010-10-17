@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 public class UnsortedIndexStore implements IndexStore {
     private final ConcurrentMap<Long, ConcurrentMap<Long, Record>> mapRecords = new ConcurrentHashMap<Long, ConcurrentMap<Long, Record>>(100, 0.75f, 1);
 
-    public void getSubRecordsBetween(MultiResultSet results, long from, long to) {
+    public void getSubRecordsBetween(MultiResultSet results, Long from, Long to) {
         Set<Long> values = mapRecords.keySet();
         for (Long value : values) {
             if (value >= from && value <= to) {
@@ -39,7 +39,7 @@ public class UnsortedIndexStore implements IndexStore {
         }
     }
 
-    public void getSubRecords(MultiResultSet results, boolean equal, boolean lessThan, long searchedValue) {
+    public void getSubRecords(MultiResultSet results, boolean equal, boolean lessThan, Long searchedValue) {
         Set<Long> values = mapRecords.keySet();
         for (Long value : values) {
             boolean valid;
@@ -57,8 +57,8 @@ public class UnsortedIndexStore implements IndexStore {
         }
     }
 
-    public void newRecordIndex(long newValue, Record record) {
-        long recordId = record.getId();
+    public void newRecordIndex(Long newValue, Record record) {
+        Long recordId = record.getId();
         ConcurrentMap<Long, Record> records = mapRecords.get(newValue);
         if (records == null) {
             records = new ConcurrentHashMap<Long, Record>(1, 0.75f, 1);
@@ -67,7 +67,7 @@ public class UnsortedIndexStore implements IndexStore {
         records.put(recordId, record);
     }
 
-    public void removeRecordIndex(long oldValue, long recordId) {
+    public void removeRecordIndex(Long oldValue, Long recordId) {
         ConcurrentMap<Long, Record> records = mapRecords.get(oldValue);
         if (records != null) {
             records.remove(recordId);
@@ -77,11 +77,11 @@ public class UnsortedIndexStore implements IndexStore {
         }
     }
 
-    public Set<MapEntry> getRecords(long value) {
+    public Set<MapEntry> getRecords(Long value) {
         return new SingleResultSet(mapRecords.get(value));
     }
 
-    public void getRecords(MultiResultSet results, long[] values) {
+    public void getRecords(MultiResultSet results, Long[] values) {
         for (Long value : values) {
             ConcurrentMap<Long, Record> records = mapRecords.get(value);
             if (records != null) {

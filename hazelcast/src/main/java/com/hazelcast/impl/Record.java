@@ -25,10 +25,10 @@ import com.hazelcast.nio.Data;
 
 import java.util.*;
 
-public class Record implements MapEntry {
+public final class Record implements MapEntry {
 
     private final CMap cmap;
-    private final long id;
+    private final Long id;
     private final short blockId;
     private final Data key;
 
@@ -50,7 +50,7 @@ public class Record implements MapEntry {
 
     private OptionalInfo optionalInfo = null;
 
-    public Record(CMap cmap, int blockId, Data key, Data value, long ttl, long maxIdleMillis, long id) {
+    public Record(CMap cmap, int blockId, Data key, Data value, long ttl, long maxIdleMillis, Long id) {
         super();
         this.id = id;
         this.cmap = cmap;
@@ -141,7 +141,7 @@ public class Record implements MapEntry {
         this.value = value;
     }
 
-    public long[] getIndexes() {
+    public Long[] getIndexes() {
         if (optionalInfo == null) return null;
         return getOptionalInfo().indexes;
     }
@@ -151,7 +151,7 @@ public class Record implements MapEntry {
         return getOptionalInfo().indexTypes;
     }
 
-    public void setIndexes(long[] indexes, byte[] indexTypes) {
+    public void setIndexes(Long[] indexes, byte[] indexTypes) {
         if (indexes != null) {
             this.getOptionalInfo().indexes = indexes;
             this.getOptionalInfo().indexTypes = indexTypes;
@@ -343,14 +343,14 @@ public class Record implements MapEntry {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if ((o instanceof Record)) return false;
         Record record = (Record) o;
-        return (record.getId() == getId());
+        return record.getId().equals(getId());
     }
 
     @Override
     public int hashCode() {
-        return (int) (id ^ (id >>> 32));
+        return id.hashCode();
     }
 
     public String toString() {
@@ -476,7 +476,7 @@ public class Record implements MapEntry {
         this.removeTime = removeTime;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -538,7 +538,7 @@ public class Record implements MapEntry {
     }
 
     class OptionalInfo {
-        private long[] indexes; // indexes of the current value;
+        private Long[] indexes; // indexes of the current value;
         private byte[] indexTypes; // index types of the current value;
         private List<ScheduledAction> lsScheduledActions = null;
         private Map<Address, Boolean> mapListeners = null;

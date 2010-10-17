@@ -57,11 +57,11 @@ public class Index {
         }
     }
 
-    public void index(long newValue, Record record) {
+    public void index(Long newValue, Record record) {
         if (expression != null && returnType == -1) {
             returnType = record.getIndexTypes()[attributeIndex];
         }
-        final long recordId = record.getId();
+        final Long recordId = record.getId();
         Long oldValue = recordValues.get(recordId);
         if (record.isActive()) {
             // add or update
@@ -82,7 +82,7 @@ public class Index {
         }
     }
 
-    public long extractLongValue(Object value) {
+    public Long extractLongValue(Object value) {
         Object extractedValue = expression.getValue(value);
         if (extractedValue == null) {
             return Long.MAX_VALUE;
@@ -97,13 +97,13 @@ public class Index {
         }
     }
 
-    private void newRecordIndex(long newValue, Record record) {
-        long recordId = record.getId();
+    private void newRecordIndex(Long newValue, Record record) {
+        Long recordId = record.getId();
         indexStore.newRecordIndex(newValue, record);
         recordValues.put(recordId, newValue);
     }
 
-    private void removeRecordIndex(long oldValue, long recordId) {
+    private void removeRecordIndex(Long oldValue, Long recordId) {
         recordValues.remove(recordId);
         indexStore.removeRecordIndex(oldValue, recordId);
     }
@@ -112,23 +112,23 @@ public class Index {
         sbState.append("\nexp:" + expression + ", recordValues:" + recordValues.size() + ", " + indexStore);
     }
 
-    public Set<MapEntry> getRecords(long[] values) {
+    public Set<MapEntry> getRecords(Long[] values) {
         MultiResultSet results = new MultiResultSet(recordValues);
         indexStore.getRecords(results, values);
         return results;
     }
 
-    public Set<MapEntry> getRecords(long value) {
+    public Set<MapEntry> getRecords(Long value) {
         return indexStore.getRecords(value);
     }
 
-    public Set<MapEntry> getSubRecordsBetween(long from, long to) {
+    public Set<MapEntry> getSubRecordsBetween(Long from, Long to) {
         MultiResultSet results = new MultiResultSet(recordValues);
         indexStore.getSubRecordsBetween(results, from, to);
         return results;
     }
 
-    public Set<MapEntry> getSubRecords(boolean equal, boolean lessThan, long searchedValue) {
+    public Set<MapEntry> getSubRecords(boolean equal, boolean lessThan, Long searchedValue) {
         MultiResultSet results = new MultiResultSet(recordValues);
         indexStore.getSubRecords(results, equal, lessThan, searchedValue);
         return results;

@@ -44,7 +44,7 @@ public class MapIndexService {
     }
 
     public void index(Record record) {
-        final long recordId = record.getId();
+        final Long recordId = record.getId();
         if (record.isActive()) {
             final Record anotherRecord = records.putIfAbsent(recordId, record);
             if (anotherRecord != null) {
@@ -53,14 +53,14 @@ public class MapIndexService {
         } else {
             remove(record);
         }
-        int newValueIndex = -1;
+        Long newValueIndex = -1L;
         if (record.isActive() && record.getValue() != null) {
-            newValueIndex = record.getValue().hashCode();
+            newValueIndex = (long) record.getValue().hashCode();
         }
         if (indexValue != null) {
             indexValue.index(newValueIndex, record);
         }
-        long[] indexValues = record.getIndexes();
+        Long[] indexValues = record.getIndexes();
         byte[] indexTypes = record.getIndexTypes();
         if (indexValues != null && hasIndexedAttributes) {
             if (indexTypes == null || indexValues.length != indexTypes.length) {
@@ -69,7 +69,7 @@ public class MapIndexService {
             Collection<Index> indexes = mapIndexes.values();
             for (Index index : indexes) {
                 if (indexValues.length > index.getAttributeIndex()) {
-                    long newValue = indexValues[index.getAttributeIndex()];
+                    Long newValue = indexValues[index.getAttributeIndex()];
                     index.index(newValue, record);
                 }
             }
@@ -80,10 +80,10 @@ public class MapIndexService {
         return records.values();
     }
 
-    public long[] getIndexValues(Object value) {
+    public Long[] getIndexValues(Object value) {
         if (hasIndexedAttributes) {
             int indexCount = mapIndexes.size();
-            long[] newIndexes = new long[indexCount];
+            Long[] newIndexes = new Long[indexCount];
             if (value instanceof Data) {
                 value = toObject((Data) value);
             }
@@ -224,7 +224,7 @@ public class MapIndexService {
 
     public boolean containsValue(Data value) {
         if (indexValue != null) {
-            Set<MapEntry> results = indexValue.getRecords(value.hashCode());
+            Set<MapEntry> results = indexValue.getRecords((long)value.hashCode());
             if (results == null || results.size() == 0) return false;
             for (MapEntry entry : results) {
                 Record record = (Record) entry;

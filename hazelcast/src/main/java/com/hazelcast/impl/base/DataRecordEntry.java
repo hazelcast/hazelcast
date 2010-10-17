@@ -41,7 +41,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
     private String name = null;
     private Data keyData = null;
     private Data valueData = null;
-    private long[] indexes;
+    private Long[] indexes;
     private byte[] indexTypes;
     private Object key = null;
     private Object value = null;
@@ -101,7 +101,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
         valueData.readData(in);
         byte indexCount = in.readByte();
         if (indexCount > 0) {
-            indexes = new long[indexCount];
+            indexes = new Long[indexCount];
             indexTypes = new byte[indexCount];
             for (byte i = 0; i < indexCount; i++) {
                 indexes[i] = in.readLong();

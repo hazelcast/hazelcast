@@ -1051,7 +1051,7 @@ public class CMap {
             if (result == 0) {
                 Record r1 = (Record) o1;
                 Record r2 = (Record) o2;
-                return (r1.getId() > r2.getId()) ? 1 : -1;
+                return r1.getId().compareTo(r2.getId());
             } else {
                 return result;
             }

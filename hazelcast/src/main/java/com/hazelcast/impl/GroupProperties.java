@@ -154,5 +154,11 @@ public class GroupProperties {
         public long getLong() {
             return Long.parseLong(this.value);
         }
+
+        @Override
+        public String toString() {
+            return "GroupProperty [name=" + this.name + ", value=" + this.value + "]";
+        }
+        
     }
 }
