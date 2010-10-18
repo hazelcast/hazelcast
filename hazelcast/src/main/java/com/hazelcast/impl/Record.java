@@ -343,7 +343,7 @@ public final class Record implements MapEntry {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if ((o instanceof Record)) return false;
+        if (!(o instanceof Record)) return false;
         Record record = (Record) o;
         return record.getId().equals(getId());
     }
