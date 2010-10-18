@@ -20,6 +20,7 @@ package com.hazelcast.query;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.Record;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -113,9 +114,17 @@ public class Index {
     }
 
     public Set<MapEntry> getRecords(Long[] values) {
-        MultiResultSet results = new MultiResultSet(recordValues);
-        indexStore.getRecords(results, values);
-        return results;
+        Set<Long> uniqueValues = new HashSet<Long>(values.length);
+        for (long value : values) {
+            uniqueValues.add(value);
+        }
+        if (uniqueValues.size() == 1) {
+            return indexStore.getRecords(uniqueValues.iterator().next());
+        } else {
+            MultiResultSet results = new MultiResultSet(recordValues);
+            indexStore.getRecords(results, uniqueValues);
+            return results;
+        }
     }
 
     public Set<MapEntry> getRecords(Long value) {

@@ -81,7 +81,7 @@ public class UnsortedIndexStore implements IndexStore {
         return new SingleResultSet(mapRecords.get(value));
     }
 
-    public void getRecords(MultiResultSet results, Long[] values) {
+    public void getRecords(MultiResultSet results, Set<Long> values) {
         for (Long value : values) {
             ConcurrentMap<Long, Record> records = mapRecords.get(value);
             if (records != null) {

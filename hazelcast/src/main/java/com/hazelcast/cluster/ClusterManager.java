@@ -73,6 +73,12 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 releasePacket(packet);
             }
         });
+        registerPacketProcessor(ClusterOperation.LOG, new PacketProcessor() {
+            public void process(Packet packet) {
+                logger.log(Level.parse(packet.name), toObject(packet.getValueData()).toString());
+                releasePacket(packet);
+            }
+        });
         registerPacketProcessor(ClusterOperation.JOIN_CHECK, new PacketProcessor() {
             public void process(Packet packet) {
                 Connection conn = packet.conn;
@@ -179,6 +185,25 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
     }
 
+    void logMissingConnection(Address address) {
+        String msg = thisMember + " has no connection to " + address;
+        logAtMaster(Level.WARNING, msg);
+        logger.log(Level.WARNING, msg);
+    }
+
+    public void logAtMaster(Level level, String msg) {
+        Address master = getMasterAddress();
+        if (!isMaster() && master != null) {
+            Connection connMaster = node.connectionManager.getConnection(getMasterAddress());
+            if (connMaster != null) {
+                Packet packet = obtainPacket(level.toString(), null, toData(msg), ClusterOperation.LOG, 0);
+                sendOrReleasePacket(packet, connMaster);
+            }
+        } else {
+            logger.log(level, msg);
+        }
+    }
+
     public final void heartBeater() {
         if (!node.joined() || !node.isActive()) return;
         long now = System.currentTimeMillis();
@@ -198,12 +223,12 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                                 logger.log(Level.WARNING, "Added " + address + " to list of dead addresses because of timeout since last read");
                                 lsDeadAddresses.add(address);
                             }
-                        }
-                        if (conn != null && conn.live()) {
                             if ((now - memberImpl.getLastWrite()) > 500) {
                                 Packet packet = obtainPacket("heartbeat", null, null, ClusterOperation.HEARTBEAT, 0);
                                 sendOrReleasePacket(packet, conn);
                             }
+                        } else if (conn == null && (now - memberImpl.getLastRead()) > 5000) {
+                            logMissingConnection(address);
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -257,6 +282,9 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                             }
                         } else {
                             logger.log(Level.FINEST, "not sending heartbeat because connection is null or not live " + address);
+                            if (conn == null && (now - member.getLastRead()) > 5000) {
+                                logMissingConnection(address);
+                            }
                         }
                     }
                 }

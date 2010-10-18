@@ -35,25 +35,23 @@ import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_BLOCKS;
 
 public class PartitionManager implements Runnable {
 
-    final ILogger logger;
+    final int PARTITION_COUNT;
+    final long MIGRATION_INTERVAL_MILLIS = 10000L;
 
+    final ILogger logger;
     final ConcurrentMapManager concurrentMapManager;
     final PartitionServiceImpl partitionServiceImpl;
     final Node node;
-    final int PARTITION_COUNT;
     final Block[] blocks;
     final Address thisAddress;
     final List<Block> lsBlocksToMigrate = new ArrayList<Block>(100);
     final ParallelExecutor parallelExecutorMigration;
     final ParallelExecutor parallelExecutorBackups;
-
-    final long MIGRATION_INTERVAL_MILLIS = 10000L;
-
     final long timeToInitiateMigration;
 
     long nextMigrationMillis = System.currentTimeMillis() + MIGRATION_INTERVAL_MILLIS;
-
     boolean dirty = false;
+    long migrationStartTime = 0;
 
     public PartitionManager(ConcurrentMapManager concurrentMapManager) {
         this.logger = concurrentMapManager.getNode().getLogger(PartitionManager.class.getName());
@@ -79,6 +77,13 @@ public class PartitionManager implements Runnable {
     public void run() {
         long now = System.currentTimeMillis();
         if (now > nextMigrationMillis) {
+            if (migrationStartTime != 0) {
+                logger.log(Level.WARNING,
+                        "Migration is not completed for " + ((now - migrationStartTime) / 1000) + " seconds.");
+                for (Block block : blocks) {
+                    logger.log(Level.WARNING, block == null ? "null" : block.toString());
+                }
+            }
             nextMigrationMillis = now + MIGRATION_INTERVAL_MILLIS;
             if (!concurrentMapManager.isMaster()) return;
             if (concurrentMapManager.getMembers().size() < 2) return;
@@ -622,6 +627,13 @@ public class PartitionManager implements Runnable {
     }
 
     void fireMigrationEvent(final boolean started, Block block) {
+        if (node.isMaster()) {
+            if (started) {
+                migrationStartTime = System.currentTimeMillis();
+            } else {
+                migrationStartTime = 0;
+            }
+        }
         final MemberImpl memberOwner = concurrentMapManager.getMember(block.getOwner());
         final MemberImpl memberMigration = concurrentMapManager.getMember(block.getMigrationAddress());
         final MigrationEvent migrationEvent = new MigrationEvent(concurrentMapManager.node, block.getBlockId(), memberOwner, memberMigration);

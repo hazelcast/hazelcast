@@ -34,7 +34,7 @@ public interface IndexStore {
 
     Set<MapEntry> getRecords(Long value);
 
-    void getRecords(MultiResultSet results, Long[] values);
+    void getRecords(MultiResultSet results, Set<Long> values);
 
     ConcurrentMap<Long, ConcurrentMap<Long, Record>> getMapRecords();
 }

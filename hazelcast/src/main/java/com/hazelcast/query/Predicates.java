@@ -284,8 +284,8 @@ public class
         public void writeData(DataOutput out) throws IOException {
             writeObject(out, first);
             out.writeInt(values.length);
-            for (int i = 0; i < values.length; i++) {
-                writeObject(out, values[i]);
+            for (Object value : values) {
+                writeObject(out, value);
             }
         }
 
@@ -550,6 +550,7 @@ public class
             } else if (type instanceof Long) {
                 result = Long.valueOf(value);
             } else {
+                System.out.println(">>>>>>>>>");
                 throw new RuntimeException("Unknown type " + type.getClass() + " value=" + value);
             }
             return result;

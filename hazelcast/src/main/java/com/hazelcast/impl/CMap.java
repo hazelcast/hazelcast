@@ -1039,6 +1039,10 @@ public class CMap {
         return (value > 0) ? value : 0;
     }
 
+    /**
+     * Comparator that never returns 0. It is 
+     * either 1 or -1;
+     */
     class ComparatorWrapper implements Comparator<MapEntry> {
         final Comparator<MapEntry> comparator;
 
@@ -1046,12 +1050,14 @@ public class CMap {
             this.comparator = comparator;
         }
 
+
         public int compare(MapEntry o1, MapEntry o2) {
             int result = comparator.compare(o1, o2);
             if (result == 0) {
                 Record r1 = (Record) o1;
                 Record r2 = (Record) o2;
-                return r1.getId().compareTo(r2.getId());
+                // we don't want to return 0 here.
+                return (r1.getId() > r2.getId()) ? 1 : -1;
             } else {
                 return result;
             }
