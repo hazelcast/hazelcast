@@ -184,12 +184,7 @@ public class Index {
         } else if (value instanceof Boolean) {
             return (Boolean.TRUE.equals(value)) ? 1 : -1;
         } else if (value instanceof String) {
-            String str = (String) value;
-            if (str.length() == 0) {
-                return 0;
-            } else {
-                return str.charAt(0);
-            }
+            return value.hashCode();
         } else {
             return value.hashCode();
         }
@@ -214,7 +209,7 @@ public class Index {
                 } else if (returnType == TYPE_BYTE) {
                     value = Byte.valueOf(str);
                 } else if (returnType == TYPE_CLASS) {
-                    value = Character.valueOf(str.charAt(0));
+                    value =str.hashCode();
                 }
             }
         }

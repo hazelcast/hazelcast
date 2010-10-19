@@ -26,10 +26,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -205,41 +202,47 @@ public class
 
     public static class InPredicate extends AbstractPredicate implements IndexAwarePredicate {
         Expression first;
-        Object[] values = null;
-        Object[] convertedValues = null;
+        Object[] inValueArray = null;
+        Set inValues = null;
+        Set convertedInValues = null;
+        Object firstValueObject = null;
 
         public InPredicate() {
         }
 
         public InPredicate(Expression first, Object... second) {
             this.first = first;
-            this.values = second;
+            this.inValues = new HashSet(second.length);
+            for (Object o : second) {
+                inValues.add(o);
+            }
+            this.inValueArray = second;
         }
 
         public boolean apply(MapEntry entry) {
-            Object firstVal = first.getValue(entry);
-            if (firstVal == null) return false;
-            if (convertedValues != null) {
-                return in(firstVal, convertedValues);
+            if (firstValueObject == null) {
+                firstValueObject = inValues.iterator().next();
+            }
+            Object entryValue = first.getValue(entry);
+            if (entryValue == null) return false;
+            if (convertedInValues != null) {
+                return in(entryValue, convertedInValues);
             } else {
-                if (firstVal.getClass() == values[0].getClass()) {
-                    return in(firstVal, values);
-                } else if (values[0] instanceof String) {
-                    convertedValues = new Object[values.length];
-                    for (int i = 0; i < values.length; i++) {
-                        convertedValues[i] = getRealObject(firstVal.getClass(), (String) values[i]);
+                if (entryValue.getClass() == firstValueObject.getClass()) {
+                    return in(entryValue, inValues);
+                } else if (firstValueObject instanceof String) {
+                    convertedInValues = new HashSet(inValues.size());
+                    for (Object objValue : inValues) {
+                        convertedInValues.add(getRealObject(entryValue.getClass(), (String) objValue));
                     }
-                    return in(firstVal, convertedValues);
+                    return in(entryValue, convertedInValues);
                 }
             }
-            return in(firstVal, values);
+            return in(entryValue, inValues);
         }
 
-        private boolean in(Object firstVal, Object[] values) {
-            for (Object o : values) {
-                if (firstVal.equals(o)) return true;
-            }
-            return false;
+        private boolean in(Object firstVal, Set values) {
+            return values.contains(firstVal);
         }
 
         public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index> mapIndexes) {
@@ -264,9 +267,9 @@ public class
         public Set<MapEntry> filter(QueryContext queryContext) {
             Index index = queryContext.getMapIndexes().get(first);
             if (index != null) {
-                List<Long> lsLongValues = new ArrayList<Long>(values.length);
-                for (int i = 0; i < values.length; i++) {
-                    final Long value = index.getLongValue(values[i]);
+                List<Long> lsLongValues = new ArrayList<Long>(inValues.size());
+                for (Object valueObj : inValues) {
+                    final Long value = index.getLongValue(valueObj);
                     if (!lsLongValues.contains(value)) {
                         lsLongValues.add(value);
                     }
@@ -278,13 +281,13 @@ public class
         }
 
         public Object getValue() {
-            return values;
+            return inValues;
         }
 
         public void writeData(DataOutput out) throws IOException {
             writeObject(out, first);
-            out.writeInt(values.length);
-            for (Object value : values) {
+            out.writeInt(inValues.size());
+            for (Object value : inValues) {
                 writeObject(out, value);
             }
         }
@@ -293,9 +296,9 @@ public class
             try {
                 first = (Expression) readObject(in);
                 int len = in.readInt();
-                values = new Object[len];
-                for (int i = 0; i < values.length; i++) {
-                    values[i] = readObject(in);
+                inValues = new HashSet(len);
+                for (int i = 0; i < inValues.size(); i++) {
+                    inValues.add(readObject(in));
                 }
             } catch (Exception e) {
                 throw new IOException(e.getMessage());
@@ -307,10 +310,20 @@ public class
             final StringBuffer sb = new StringBuffer();
             sb.append(first);
             sb.append(" IN (");
-            for (int i = 0; i < values.length; i++) {
-                sb.append(values[i]);
-                if (i < (values.length - 1)) {
-                    sb.append(",");
+            if (inValueArray != null) {
+                for (int i = 0; i < inValueArray.length; i++) {
+                    sb.append(inValueArray[i]);
+                    if (i < (inValueArray.length - 1)) {
+                        sb.append(",");
+                    }
+                }
+            } else {
+                Iterator it = inValues.iterator();
+                while (it.hasNext()) {
+                    sb.append(it.next());
+                    if (it.hasNext()) {
+                        sb.append(",");
+                    }
                 }
             }
             sb.append(")");
@@ -550,7 +563,6 @@ public class
             } else if (type instanceof Long) {
                 result = Long.valueOf(value);
             } else {
-                System.out.println(">>>>>>>>>");
                 throw new RuntimeException("Unknown type " + type.getClass() + " value=" + value);
             }
             return result;
