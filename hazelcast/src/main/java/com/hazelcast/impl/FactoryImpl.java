@@ -100,8 +100,8 @@ public class FactoryImpl implements HazelcastInstance {
     final LifecycleServiceImpl lifecycleService;
 
     public static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config) {
+        FactoryImpl factory = null;
         try {
-            FactoryImpl factory = null;
             synchronized (factoryLock) {
                 if (config == null) {
                     config = new XmlConfigBuilder().build();
@@ -110,6 +110,7 @@ public class FactoryImpl implements HazelcastInstance {
                 factory = new FactoryImpl(name, config);
                 FactoryImpl old = factories.put(name, factory);
                 if (old != null) {
+                    factory.logger.log(Level.SEVERE, "HazelcastInstance with [" + name + "] already exist!");
                     throw new RuntimeException();
                 }
                 if (!jmxRegistered) {
@@ -138,6 +139,9 @@ public class FactoryImpl implements HazelcastInstance {
             factory.lifecycleService.fireLifecycleEvent(STARTED);
             return factory.hazelcastInstanceProxy;
         } catch (Throwable t) {
+            if (factory != null) {
+                factory.logger.log(Level.SEVERE, t.getMessage(), t);
+            }
             throw new RuntimeException(t);
         }
     }
@@ -490,6 +494,9 @@ public class FactoryImpl implements HazelcastInstance {
 
     public void shutdown() {
         lifecycleService.shutdown();
+        for (ExecutorServiceProxy esp : executorServiceProxies.values()) {
+            esp.shutdown();
+        }
     }
 
     public <K, V> IMap<K, V> getMap(String name) {

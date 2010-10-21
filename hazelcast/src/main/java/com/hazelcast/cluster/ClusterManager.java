@@ -641,6 +641,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     void updateMembers(Collection<MemberInfo> lsMemberInfos) {
+        checkServiceThread(); 
         logger.log(Level.FINEST, "MEMBERS UPDATE!!");
         // Copy lsMembers to lsMembersBefore
         lsMembersBefore.clear();
@@ -732,7 +733,14 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
     }
 
-    private Member addMember(MemberImpl member) {
+    public Member addMember(MemberImpl member) {
+        return addMember(true, member);
+    }
+
+    public Member addMember(boolean checkServiceThread, MemberImpl member) {
+        if (checkServiceThread) {
+            checkServiceThread();
+        }
         logger.log(Level.FINEST, "ClusterManager adding " + member);
         if (lsMembers.contains(member)) {
             for (MemberImpl m : lsMembers) {
@@ -749,6 +757,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     protected void removeMember(MemberImpl member) {
+        checkServiceThread();
         logger.log(Level.FINEST, "removing  " + member);
         mapMembers.remove(member.getAddress());
         lsMembers.remove(member);
@@ -763,6 +772,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     final public MemberImpl addMember(Address address, NodeType nodeType) {
+        checkServiceThread();
         if (address == null) {
             logger.log(Level.FINEST, "Address cannot be null");
             return null;

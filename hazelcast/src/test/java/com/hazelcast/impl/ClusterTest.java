@@ -1920,6 +1920,72 @@ public class ClusterTest {
     }
 
     @Test
+    public void issue370() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        Queue<String> q1 = h1.getQueue("q");
+        Queue<String> q2 = h2.getQueue("q");
+        for (int i = 0; i < 5; i++) {
+            q1.offer("item" + i);
+        }
+        assertEquals(5, q1.size());
+        assertEquals(5, q2.size());
+        assertEquals("item0", q2.poll());
+        assertEquals("item1", q2.poll());
+        assertEquals("item2", q2.poll());
+        Thread.sleep(1000);
+        assertEquals(2, q1.size());
+        assertEquals(2, q2.size());
+        h1.shutdown();
+        Thread.sleep(1000);
+        assertEquals(2, q2.size());
+        h1 = Hazelcast.newHazelcastInstance(null);
+        q1 = h1.getQueue("q");
+        assertEquals(2, q1.size());
+        assertEquals(2, q2.size());
+        Thread.sleep(1000);
+        h2.shutdown();
+        Thread.sleep(1000);
+        assertEquals(2, q1.size());
+    }
+
+    @Test
+    public void issue391() throws Exception {
+        // passed
+        final Collection<String> results = new CopyOnWriteArrayList<String>();
+        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(null);
+        final CountDownLatch latchOffer = new CountDownLatch(1);
+        final CountDownLatch latchTake = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    for (int i = 0; i < 5; i++) {
+                        results.add((String) hz1.getQueue("q").take());
+                    }
+                    latchTake.countDown();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }).start();
+        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(null);
+        new Thread(new Runnable() {
+            public void run() {
+                for (int i = 0; i < 5; i++) {
+                    hz2.getQueue("q").offer(Integer.toString(i));
+                }
+                latchOffer.countDown();
+            }
+        }).start();
+        Assert.assertTrue(latchOffer.await(10, TimeUnit.SECONDS));
+        Assert.assertTrue(latchTake.await(10, TimeUnit.SECONDS));
+        Assert.assertTrue(hz1.getQueue("q").isEmpty());
+        hz1.getLifecycleService().shutdown();
+        Assert.assertTrue(hz2.getQueue("q").isEmpty());
+        assertArrayEquals(new Object[]{"0", "1", "2", "3", "4"}, results.toArray());
+    }
+
+    @Test
     public void queueEntriesShouldBeConsistentAfterShutdown() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);

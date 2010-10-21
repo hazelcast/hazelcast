@@ -212,14 +212,20 @@ public class
 
         public InPredicate(Expression first, Object... second) {
             this.first = first;
-            this.inValues = new HashSet(second.length);
-            for (Object o : second) {
-                inValues.add(o);
-            }
             this.inValueArray = second;
         }
 
+        private void checkInValues() {
+            if (inValues == null) {
+                this.inValues = new HashSet(inValueArray.length);
+                for (Object o : inValueArray) {
+                    inValues.add(o);
+                }
+            }
+        }
+
         public boolean apply(MapEntry entry) {
+            checkInValues();
             if (firstValueObject == null) {
                 firstValueObject = inValues.iterator().next();
             }
@@ -233,7 +239,7 @@ public class
                 } else if (firstValueObject instanceof String) {
                     convertedInValues = new HashSet(inValues.size());
                     for (Object objValue : inValues) {
-                        convertedInValues.add(getRealObject(entryValue.getClass(), (String) objValue));
+                        convertedInValues.add(getRealObject(entryValue, (String) objValue));
                     }
                     return in(entryValue, convertedInValues);
                 }
@@ -241,7 +247,7 @@ public class
             return in(entryValue, inValues);
         }
 
-        private boolean in(Object firstVal, Set values) {
+        private static boolean in(Object firstVal, Set values) {
             return values.contains(firstVal);
         }
 
@@ -265,16 +271,15 @@ public class
         }
 
         public Set<MapEntry> filter(QueryContext queryContext) {
+            checkInValues();            
             Index index = queryContext.getMapIndexes().get(first);
             if (index != null) {
-                List<Long> lsLongValues = new ArrayList<Long>(inValues.size());
+                Set<Long> setLongValues = new HashSet<Long>(inValues.size());
                 for (Object valueObj : inValues) {
                     final Long value = index.getLongValue(valueObj);
-                    if (!lsLongValues.contains(value)) {
-                        lsLongValues.add(value);
-                    }
+                    setLongValues.add(value);
                 }
-                return index.getRecords(lsLongValues.toArray(new Long[lsLongValues.size()]));
+                return index.getRecords(setLongValues);
             } else {
                 return null;
             }
@@ -286,8 +291,8 @@ public class
 
         public void writeData(DataOutput out) throws IOException {
             writeObject(out, first);
-            out.writeInt(inValues.size());
-            for (Object value : inValues) {
+            out.writeInt(inValueArray.length);
+            for (Object value : inValueArray) {
                 writeObject(out, value);
             }
         }
@@ -563,7 +568,7 @@ public class
             } else if (type instanceof Long) {
                 result = Long.valueOf(value);
             } else {
-                throw new RuntimeException("Unknown type " + type.getClass() + " value=" + value);
+                throw new RuntimeException("Unknown type " + type + " value=" + value);
             }
             return result;
         }

@@ -1411,13 +1411,7 @@ public class ConcurrentMapManager extends BaseManager {
             }
         }
         return map;
-    }
-
-    void checkServiceThread() {
-        if (Thread.currentThread() != node.serviceThread) {
-            throw new Error("Only ServiceThread can access this method. " + Thread.currentThread());
-        }
-    }
+    }    
 
     @Override
     void handleListenerRegistrations(boolean add, String name, Data key, Address address, boolean includeValue) {
@@ -2025,6 +2019,7 @@ public class ConcurrentMapManager extends BaseManager {
                     Set<MapEntry> results = cmap.getMapIndexService().doQuery(queryContext);
                     boolean evaluateValues = (predicate != null && !queryContext.isStrong());
 //                    long b = System.currentTimeMillis();
+//                    System.out.println(results.size() + " " + evaluateValues);
                     createResultPairs(request, results, evaluateValues, predicate);
 //                    long c = System.currentTimeMillis();
 //                    System.out.println((b-a) + " query-run " + (c-b));

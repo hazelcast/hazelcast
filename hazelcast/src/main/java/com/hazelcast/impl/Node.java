@@ -189,12 +189,8 @@ public class Node {
         blockingQueueManager = new BlockingQueueManager(this);
         listenerManager = new ListenerManager(this);
         topicManager = new TopicManager(this);
-        clusterService.enqueueAndReturn(new Processable() {
-            public void process() {
-                clusterManager.addMember(getThisAddress(), localNodeType);
-            }
-        });
         textCommandService = new TextCommandServiceImpl(this);
+        clusterManager.addMember(false, localMember);
         ILogger systemLogger = getLogger("com.hazelcast.system");
         systemLogger.log(Level.INFO, "Hazelcast " + version + " ("
                 + build + ") starting at " + address);
@@ -224,6 +220,18 @@ public class Node {
             logger.log(Level.SEVERE, e.getMessage(), e);
         }
         this.multicastService = mcService;
+    }
+
+    private boolean addMember(final Address address, final NodeType nodeType) {
+        if (!clusterManager.enqueueAndWait(new Processable() {
+            public void process() {
+                clusterManager.addMember(address, nodeType);
+            }
+        }, 5)) {
+            logger.log(Level.WARNING, "Adding member failed!");
+            return false;
+        }
+        return true;
     }
 
     public void failedConnection(Address address) {
@@ -585,21 +593,29 @@ public class Node {
             joinWithMulticast();
         }
         clusterManager.finalizeJoin();
-        if (baseVariables.lsMembers.size() == 1) {
-            final StringBuilder sb = new StringBuilder();
-            sb.append("\n");
-            sb.append(clusterManager);
-            logger.log(Level.INFO, sb.toString());
-        }
+        clusterManager.enqueueAndWait(new Processable() {
+            public void process() {
+                if (baseVariables.lsMembers.size() == 1) {
+                    final StringBuilder sb = new StringBuilder();
+                    sb.append("\n");
+                    sb.append(clusterManager);
+                    logger.log(Level.INFO, sb.toString());
+                }
+            }
+        }, 5);
     }
 
     void setAsMaster() {
         logger.log(Level.FINEST, "This node is being set as the master");
         masterAddress = address;
         logger.log(Level.FINEST, "adding member myself");
-        clusterManager.addMember(address, getLocalNodeType()); // add
-        // myself
-        clusterImpl.setMembers(baseVariables.lsMembers);
+        clusterManager.enqueueAndWait(new Processable() {
+            public void process() {
+                clusterManager.addMember(address, getLocalNodeType()); // add
+                // myself
+                clusterImpl.setMembers(baseVariables.lsMembers);
+            }
+        }, 5);
         unlock();
     }
 

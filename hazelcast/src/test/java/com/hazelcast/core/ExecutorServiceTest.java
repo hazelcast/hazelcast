@@ -17,6 +17,9 @@
 
 package com.hazelcast.core;
 
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.Serializable;
@@ -36,6 +39,17 @@ import static org.junit.Assert.assertEquals;
 public class ExecutorServiceTest {
 
     public static int COUNT = 1000;
+
+    @BeforeClass
+    @AfterClass
+    public static void init() throws Exception {
+        Hazelcast.shutdownAll();
+    }
+
+    @After
+    public void cleanup() throws Exception {
+        Hazelcast.shutdownAll();
+    }
 
     /**
      * Get a service instance.
@@ -314,6 +328,7 @@ public class ExecutorServiceTest {
     public void testClusterShutdown() throws Exception {
         ExecutorService executor = Hazelcast.getExecutorService();
         Hazelcast.shutdown();
+        Thread.sleep(2000);
         assertNotNull(executor);
         assertTrue(executor.isShutdown());
         assertTrue(executor.isTerminated());

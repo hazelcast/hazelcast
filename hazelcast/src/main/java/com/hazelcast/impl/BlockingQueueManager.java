@@ -159,24 +159,18 @@ public class BlockingQueueManager extends BaseManager {
         final Block block;
         final Q q;
         int index = 0;
-        final int indexUpto;
         volatile boolean done = false;
 
-        public BlockBackupSync(Q q, Block block, int indexUpto) {
+        public BlockBackupSync(Q q, Block block) {
             super();
             this.q = q;
             this.block = block;
-            this.indexUpto = indexUpto;
         }
 
         public void process() {
             Data data = next();
             if (data != null && data.size() != 0) {
                 q.sendBackup(true, thisAddress, data, block.blockId, index);
-                index++;
-                if (index > indexUpto) {
-                    done = true;
-                }
             } else {
                 done = true;
             }
@@ -186,17 +180,13 @@ public class BlockingQueueManager extends BaseManager {
         }
 
         private Data next() {
-            while (true) {
-                QData data = block.get(index);
+            while (index < BLOCK_SIZE) {
+                QData data = block.get(index++);
                 if (data != null) {
                     return data.data;
                 }
-                index++;
-                if (index > indexUpto)
-                    return null;
-                if (index >= BLOCK_SIZE)
-                    return null;
             }
+            return null;
         }
     }
 
@@ -215,9 +205,9 @@ public class BlockingQueueManager extends BaseManager {
                     if (lsMembers.size() > 1) {
                         if (addressNewOwner.equals(thisAddress)) {
                             // I am the new owner so backup to next member
-                            int indexUpto = block.size() - 1;
-                            if (indexUpto > -1) {
-                                executeLocally(new BlockBackupSyncRunner(new BlockBackupSync(q, block, indexUpto)));
+                            int size = block.size();
+                            if (size > 0) {
+                                executeLocally(new BlockBackupSyncRunner(new BlockBackupSync(q, block)));
                             }
                         }
                     }
@@ -229,9 +219,9 @@ public class BlockingQueueManager extends BaseManager {
                         MemberImpl memberBackupWas = getNextMemberBeforeSync(thisAddress, true, 1);
                         if (memberBackupWas == null
                                 || memberBackupWas.getAddress().equals(deadAddress)) {
-                            int indexUpto = block.size() - 1;
-                            if (indexUpto > -1) {
-                                executeLocally(new BlockBackupSyncRunner(new BlockBackupSync(q, block, indexUpto)));
+                            int size = block.size();
+                            if (size > 0) {
+                                executeLocally(new BlockBackupSyncRunner(new BlockBackupSync(q, block)));
                             }
                         }
                     }
@@ -282,9 +272,9 @@ public class BlockingQueueManager extends BaseManager {
                         MemberImpl memberBackupWas = getNextMemberBeforeSync(thisAddress, true, 1);
                         MemberImpl memberBackupIs = getNextMemberAfter(thisAddress, true, 1);
                         if (memberBackupWas == null || !memberBackupWas.equals(memberBackupIs)) {
-                            int indexUpto = block.size() - 1;
-                            if (indexUpto > -1) {
-                                executeLocally(new BlockBackupSyncRunner(new BlockBackupSync(q, block, indexUpto)));
+                            int size = block.size();
+                            if (size > 0) {
+                                executeLocally(new BlockBackupSyncRunner(new BlockBackupSync(q, block)));
                             }
                         }
                     }

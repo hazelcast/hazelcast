@@ -17,90 +17,53 @@
 
 package com.hazelcast.core;
 
-import java.io.Serializable;
-import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.impl.ReplicatedMapFactory;
+import com.hazelcast.impl.TestUtil;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Queue;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.Assert.*;
 
 /**
- * UnresolvedIssues is a set of unit test for known issues 
+ * UnresolvedIssues is a set of unit test for known issues
  */
-public class UnresolvedIssues {
+public class UnresolvedIssues extends TestUtil {
 
     @Before
     @After
     public void init() throws Exception {
         Hazelcast.shutdownAll();
     }
-    
-    @Ignore
-    @Test
-    public void issue370() throws Exception {
-        // failed
-        
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        Queue<String> q1 = h1.getQueue("q");
-        Queue<String> q2 = h2.getQueue("q");
-        for (int i = 0; i < 5; i++) {
-            q1.offer("item" + i);
-        }
-        assertEquals(5, q1.size());
-        assertEquals(5, q2.size());
-        assertEquals("item0", q2.poll());
-        assertEquals("item1", q2.poll());
-        assertEquals("item2", q2.poll());
-        Thread.sleep(10000);
-        assertEquals(2, q1.size());
-        assertEquals(2, q2.size());
-        h1.shutdown();
-        Thread.sleep(5000);
-        assertEquals(2, q2.size());
 
-        h1 = Hazelcast.newHazelcastInstance(null);
-        q1 = h1.getQueue("q");
-        assertEquals(2, q1.size());
-        assertEquals(2, q2.size());
-        Thread.sleep(5000);
-        h2.shutdown();
-        Thread.sleep(5000);
-        assertEquals(2, q1.size());
-    }
-    
     @Ignore
     @Test
     public void issue371NearCachePutGetRemove() throws Exception {
-     // looks like passed ok
+        // looks like passed ok
         final HazelcastInstance hz = Hazelcast.newHazelcastInstance(new XmlConfigBuilder(ClassLoader.getSystemResourceAsStream("hazelcast-issue371.xml")).build());
         IMap<Object, Object> cache = hz.getMap("ipp-2nd-level-cache-near");
-
         assertNotNull(cache);
-
         Object value = cache.get("my-key");
         assertNull(value);
-
         value = cache.put("my-key", "my-value");
         assertNull(value);
-
         value = cache.get("my-key");
         assertEquals("my-value", value);
-
         value = cache.remove("my-key");
         assertEquals("my-value", value);
-
         value = cache.get("my-key");
         assertNull(value);
     }
@@ -111,18 +74,13 @@ public class UnresolvedIssues {
         // looks like passed ok
         final HazelcastInstance hz = Hazelcast.newHazelcastInstance(new XmlConfigBuilder(ClassLoader.getSystemResourceAsStream("hazelcast-issue371.xml")).build());
         IMap<Object, Object> cache = hz.getMap("ipp-2nd-level-cache-near");
-
         assertNotNull(cache);
-
         Object value = cache.get("my-key");
         assertNull(value);
-
         boolean foundKey = cache.containsKey("my-key");
         assertFalse(foundKey);
-
         value = cache.remove("my-key");
         assertNull(value);
-
         value = cache.get("my-key");
         assertNull(value);
     }
@@ -135,26 +93,19 @@ public class UnresolvedIssues {
         // at com.hazelcast.impl.MapNearCache.invalidate(MapNearCache.java:181)
         final HazelcastInstance hz = Hazelcast.newHazelcastInstance(new XmlConfigBuilder(ClassLoader.getSystemResourceAsStream("hazelcast-issue371.xml")).build());
         IMap<Object, Object> cache = hz.getMap("ipp-2nd-level-cache-near");
-
         assertNotNull(cache);
-
         Object value = cache.get("my-key");
         assertNull(value);
-
         value = cache.put("my-key", "my-value");
         assertNull(value);
-
         boolean foundKey = cache.containsKey("my-key");
         assertTrue(foundKey);
-
         value = cache.remove("my-key");
         assertEquals("my-value", value);
-
         value = cache.get("my-key");
         assertNull(value);
     }
 
-    
     @Ignore
     @Test
     public void issue386() {
@@ -173,7 +124,7 @@ public class UnresolvedIssues {
             }
         }
     }
-    
+
     @Ignore
     @Test
     public void issue387() {
@@ -181,14 +132,12 @@ public class UnresolvedIssues {
         // java.util.concurrent.ConcurrentHashMap$WriteThroughEntry cannot be cast to com.hazelcast.core.MapEntry
         IMap cache = ReplicatedMapFactory.getMap("exampleMap");
         ExampleObject object1 = new ExampleObject("1", "Value");
-
         cache.put(object1.getId(), object1);
-
         EntryObject e = new PredicateBuilder().getEntryObject();
         Predicate predicate = e.get("id").equal("1");
         Collection<Object> queryResultCollection = cache.values(predicate);
     }
-    
+
     static class ExampleObject implements Serializable {
         private static final long serialVersionUID = -5966060029235919352L;
         private String id;
@@ -216,87 +165,17 @@ public class UnresolvedIssues {
         }
     }
 
-
-    @Ignore
-    @Test
-    public void issue391() throws Exception{
-        // passed
-        final Collection<String> results = new CopyOnWriteArrayList<String>();
-        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(null);
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    for (int i = 0; i < 5; i++) {
-                        results.add((String)hz1.getQueue("q").take());
-                    }
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }).start();
-
-        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(null);
-        new Thread(new Runnable() {
-            public void run() {
-                for (int i = 0; i < 5; i++) {
-                    hz2.getQueue("q").offer(Integer.toString(i));
-                }
-            }
-        }).start();
-
-        
-        Thread.sleep(5000);
-        assertTrue(hz1.getQueue("q").isEmpty());
-        hz1.getLifecycleService().shutdown();
-        assertTrue(hz2.getQueue("q").isEmpty());
-        
-        assertArrayEquals(new Object[]{"0", "1", "2", "3", "4"}, results.toArray());
-    }
-    
     @Ignore
     @Test
     public void issue392() {
         // failed
+        assertEquals(0, Hazelcast.getInstances().size());
         ITopic<Object> topic = Hazelcast.getTopic("default");
         assertEquals(1, Hazelcast.getInstances().size());
-        for(Instance instance : Hazelcast.getInstances()) {
+        for (Instance instance : Hazelcast.getInstances()) {
             assertEquals(InstanceType.TOPIC, instance.getInstanceType());
         }
         topic.destroy();
         assertEquals(0, Hazelcast.getInstances().size());
-    }
-    
-    @Ignore
-    @Test
-    public void issue393(){
-        final IMap<String, Value> map = Hazelcast.getMap("default");
-        map.addIndex("name", true);
-        
-        for(int i = 0; i < 4; i++){
-            final Value v = new Value("name" + i);
-            map.put("" + i, v);
-        }
-        
-        final PredicateBuilder predicate = new PredicateBuilder().getEntryObject().get("name").in("name0", "name2");
-        final Collection<Value> values = map.values(predicate);
-        
-        final List<String> names = new ArrayList<String>();
-        for (final Value configObject : values) {
-            names.add(configObject.name);
-        }
-        assertArrayEquals(names.toString(), new String[]{"name0", "name2"}, names.toArray(new String[0]));
-    }
-    
-    public static class Value implements Serializable {
-        private String name;
-
-        public Value(String name) {
-            this.name = name;
-        }
-        
-        public String getName() {
-            return this.name;
-        }
-        
     }
 }

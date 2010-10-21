@@ -1199,6 +1199,14 @@ public abstract class BaseManager {
         }
     }
 
+    public void checkServiceThread() {
+        if (Thread.currentThread() != node.serviceThread) {
+            String msg = "Only ServiceThread can access this method. " + Thread.currentThread();
+            logger.log(Level.SEVERE, msg);
+            throw new Error(msg);
+        }
+    }
+
     static int hashTwo(int hash1, int hash2) {
         return hash1 * 29 + hash2;
     }

@@ -25,13 +25,12 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.impl.TestUtil;
 import org.junit.After;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -49,6 +48,24 @@ public class QueryTest extends TestUtil {
 
     HazelcastInstance newInstance() {
         return Hazelcast.newHazelcastInstance(null);
+    }
+
+    @Test
+    public void issue393() {
+        final IMap<String, Value> map = Hazelcast.getMap("default");
+        map.addIndex("name", true);
+        for (int i = 0; i < 4; i++) {
+            final Value v = new Value("name" + i);
+            map.put("" + i, v);
+        }
+        final PredicateBuilder predicate = new PredicateBuilder().getEntryObject().get("name").in("name0", "name2");
+        final Collection<Value> values = map.values(predicate);
+        assertEquals(2, values.size());
+        final List<String> names = new ArrayList<String>();
+        for (final Value configObject : values) {
+            names.add(configObject.getName());
+        }
+        assertArrayEquals(names.toString(), new String[]{"name0", "name2"}, names.toArray(new String[0]));
     }
 
     @Test

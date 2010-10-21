@@ -113,11 +113,7 @@ public class Index {
         sbState.append("\nexp:" + expression + ", recordValues:" + recordValues.size() + ", " + indexStore);
     }
 
-    public Set<MapEntry> getRecords(Long[] values) {
-        Set<Long> uniqueValues = new HashSet<Long>(values.length);
-        for (long value : values) {
-            uniqueValues.add(value);
-        }
+    public Set<MapEntry> getRecords(Set<Long> uniqueValues) {
         if (uniqueValues.size() == 1) {
             return indexStore.getRecords(uniqueValues.iterator().next());
         } else {

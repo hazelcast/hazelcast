@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Prefix;
@@ -36,15 +37,30 @@ public class TestUtil {
         return hiProxy.getFactory().node.concurrentMapManager;
     }
 
+    public static CMap mockCMap(String name) {
+        FactoryImpl mockFactory = mock(FactoryImpl.class);
+        Node node = new Node(mockFactory, new Config());
+        node.serviceThread = Thread.currentThread();
+        return new CMap(node.concurrentMapManager, "c:" + name);
+    }
+
     public static CMap getCMap(HazelcastInstance h, String name) {
         ConcurrentMapManager concurrentMapManager = getConcurrentMapManager(h);
         String fullName = Prefix.MAP + name;
         return concurrentMapManager.getMap(fullName);
     }
 
+    public static Record newRecord(CMap cmap, long recordId, Data key, Data value) {
+        return new Record(cmap, 1, key, value, 0, 0, recordId);
+    }
+
     public static Record newRecord(long recordId, Data key, Data value) {
         CMap cmap = mock(CMap.class);
-        return new Record(cmap, 1, null, null, 0, 0, recordId);
+        return newRecord(cmap, recordId, key, value);
+    }
+
+    public static Record newRecord(CMap cmap, long recordId, Object key, Object value) {
+        return newRecord(cmap, recordId, toData(key), toData(value));
     }
 
     public static Record newRecord(long recordId, Object key, Object value) {
@@ -53,6 +69,19 @@ public class TestUtil {
 
     public static Record newRecord(long recordId) {
         return newRecord(recordId, null, null);
+    }
+
+    @Ignore
+    public static class Value implements Serializable {
+        String name;
+
+        public Value(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return this.name;
+        }
     }
 
     @Ignore
@@ -193,16 +222,22 @@ public class TestUtil {
 
     @Ignore
     public static class Employee implements Serializable {
+        long id;
         String name;
         int age;
         boolean active;
         double salary;
 
-        public Employee(String name, int age, boolean live, double price) {
+        public Employee(long id, String name, int age, boolean live, double price) {
+            this.id = id;
             this.name = name;
             this.age = age;
             this.active = live;
             this.salary = price;
+        }
+
+        public Employee(String name, int age, boolean live, double price) {
+            this(-1, name, age, live, price);
         }
 
         public Employee() {

@@ -21,6 +21,9 @@ import com.hazelcast.impl.Record;
 import com.hazelcast.impl.TestUtil;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentMap;
 
 import static org.junit.Assert.*;
@@ -85,8 +88,8 @@ public class IndexTest extends TestUtil {
         assertEquals(2, index.getSubRecords(false, false, 66L).size());
         assertEquals(3, index.getSubRecords(true, false, 66L).size());
         assertEquals(3, index.getSubRecords(true, false, 61L).size());
-        assertEquals(3, index.getRecords(new Long[]{66L, 555L, 34234L}).size());
-        assertEquals(2, index.getRecords(new Long[]{555L, 34234L}).size());
+        assertEquals(3, index.getRecords(new HashSet<Long>(Arrays.asList(66L, 555L, 34234L))).size());
+        assertEquals(2, index.getRecords(new HashSet<Long>(Arrays.asList(555L, 34234L))).size());
         record5.setActive(false);
         index.index(-1L, record5);
         assertEquals(2, index.getRecordValues().size());

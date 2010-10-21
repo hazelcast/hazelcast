@@ -148,70 +148,77 @@ public class MapIndexService {
                         }
                     }
                 }
-                queryContext.setIndexedPredicateCount(lsIndexAwarePredicates.size());
-                if (lsIndexAwarePredicates.size() == 1) {
+                int indexAwarePredicateCount = lsIndexAwarePredicates.size();
+                queryContext.setIndexedPredicateCount(indexAwarePredicateCount);
+                if (indexAwarePredicateCount == 1) {
                     IndexAwarePredicate indexAwarePredicate = lsIndexAwarePredicates.get(0);
                     Set<MapEntry> sub = indexAwarePredicate.filter(queryContext);
                     if (sub == null || sub.size() == 0) {
                         return null;
                     } else {
-                        results = sub;
-//                        results =  new HashSet<MapEntry>(sub.size());
-//                        for (MapEntry entry : sub) {
-//                            Record record = (Record) entry;
-//                            if (record.isActive()) {
-//                                results.add(record);
-//                            }
-//                        }
+                        return sub;
                     }
-                } else if (lsIndexAwarePredicates.size() > 0) {
-                    Set<MapEntry> smallestSet = null;
-                    List<Set<MapEntry>> lsSubResults = new ArrayList<Set<MapEntry>>(lsIndexAwarePredicates.size());
-                    for (IndexAwarePredicate indexAwarePredicate : lsIndexAwarePredicates) {
-                        Set<MapEntry> sub = indexAwarePredicate.filter(queryContext);
-                        if (sub == null) {
-                            strong = false;
-                        } else if (sub.size() == 0) {
-                            strong = true;
-                            return null;
-                        } else {
-                            if (smallestSet == null) {
-                                smallestSet = sub;
-                            } else {
-                                if (sub.size() < smallestSet.size()) {
-                                    lsSubResults.add(smallestSet);
-                                    smallestSet = sub;
-                                } else {
-                                    lsSubResults.add(sub);
+                } else if (indexAwarePredicateCount > 0) {
+                    IndexAwarePredicate indexAwarePredicateFirst = lsIndexAwarePredicates.get(0);
+                    Set<MapEntry> subFirst = indexAwarePredicateFirst.filter(queryContext);
+                    if (subFirst != null && subFirst.size() < 11) {
+                        strong = true;
+                        Set<MapEntry> resultSet = new HashSet<MapEntry>(subFirst);
+                        for (int i = 1; i < lsIndexAwarePredicates.size(); i++) {
+                            IndexAwarePredicate p = lsIndexAwarePredicates.get(i);
+                            Iterator<MapEntry> it = resultSet.iterator();
+                            while (it.hasNext()) {
+                                Record record = (Record) it.next();
+                                if (!p.apply(record.getRecordEntry())) {
+                                    it.remove();
                                 }
                             }
                         }
-                    }
-                    if (smallestSet == null) {
-                        return null;
-                    }
-                    results = new HashSet<MapEntry>(smallestSet.size());
-                    Iterator<MapEntry> it = smallestSet.iterator();
-                    smallestLoop:
-                    while (it.hasNext()) {
-                        MapEntry entry = it.next();
-                        for (Set<MapEntry> sub : lsSubResults) {
-                            if (!sub.contains(entry)) {
-                                continue smallestLoop;
+                        return resultSet;
+                    } else if (subFirst != null) {
+                        List<Set<MapEntry>> lsSubResults = new ArrayList<Set<MapEntry>>(indexAwarePredicateCount);
+                        lsSubResults.add(subFirst);
+                        Set<MapEntry> smallestSet = subFirst;
+                        for (int i = 1; i < indexAwarePredicateCount; i++) {
+                            IndexAwarePredicate p = lsIndexAwarePredicates.get(i);
+                            Set<MapEntry> sub = p.filter(queryContext);
+                            if (sub == null) {
+                                strong = false;
+                            } else if (sub.size() == 0) {
+                                strong = true;
+                                return null;
+                            } else {
+                                if (sub.size() < smallestSet.size()) {
+                                    smallestSet = sub;
+                                }
+                                lsSubResults.add(sub);
                             }
                         }
-                        results.add(entry);
+                        if (smallestSet == null) {
+                            return null;
+                        }
+                        results = new HashSet<MapEntry>(smallestSet.size());
+                        Iterator<MapEntry> it = smallestSet.iterator();
+                        smallestLoop:
+                        while (it.hasNext()) {
+                            MapEntry entry = it.next();
+                            for (Set<MapEntry> sub : lsSubResults) {
+                                if (!sub.contains(entry)) {
+                                    continue smallestLoop;
+                                }
+                            }
+                            results.add(entry);
+                        }
+                        return results;
                     }
-                } else {
-                    results = new SingleResultSet(records);
                 }
-            } else {
-                results = new SingleResultSet(records);
             }
+            // no matching condition yet!
+            // return everything.
+            return new SingleResultSet(records);
         } finally {
             queryContext.setStrong(strong);
         }
-        return results;
     }
 
     public Map<Expression, Index> getIndexes() {
@@ -224,7 +231,7 @@ public class MapIndexService {
 
     public boolean containsValue(Data value) {
         if (indexValue != null) {
-            Set<MapEntry> results = indexValue.getRecords((long)value.hashCode());
+            Set<MapEntry> results = indexValue.getRecords((long) value.hashCode());
             if (results == null || results.size() == 0) return false;
             for (MapEntry entry : results) {
                 Record record = (Record) entry;
