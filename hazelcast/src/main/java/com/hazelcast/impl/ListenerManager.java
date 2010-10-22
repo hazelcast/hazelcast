@@ -268,7 +268,7 @@ public class ListenerManager extends BaseManager {
 
     public synchronized void removeListener(String name, Object listener, Object key) {
         for (ListenerItem listenerItem : listeners) {
-            if (listener == listenerItem.listener) {
+            if (listener == listenerItem.listener && listenerItem.name.equals(name)) {
                 if (key == null && listenerItem.key == null) {
                     listeners.remove(listenerItem);
                 } else if (key != null && key.equals(listenerItem.key)) {
@@ -309,6 +309,7 @@ public class ListenerManager extends BaseManager {
                 }
             }
         }
+        
         switch (listenerItem.instanceType) {
             case MAP:
             case MULTIMAP:

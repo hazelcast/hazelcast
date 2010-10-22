@@ -21,6 +21,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -69,9 +70,7 @@ public class OutRunnable extends IORunnable {
                 } else {
                     clusterIsDown();
                 }
-                if (reconnectionCalls != null){
-                    break;
-                }
+                if (reconnectionCalls != null) break;
                 call = null;
                 if (count++ < 24) {
                     call = queue.poll();
@@ -83,7 +82,7 @@ public class OutRunnable extends IORunnable {
             if (call != null && reconnectionCalls != null && reconnectionCalls.contains(call)) {
                 Object response = null;
                 for(int i = 0; i < 20 && response == null; i++) {
-                    response = call.getResponse(500, TimeUnit.MILLISECONDS);
+                    response = call.getResponse(1000, TimeUnit.MILLISECONDS);
                 }
                 if (response != null) {
                     if (reconnectionCalls.remove(call) && reconnectionCalls.isEmpty()){
@@ -134,6 +133,7 @@ public class OutRunnable extends IORunnable {
     }
     
     private void resubscribe(Call call, Connection oldConnection) {
+        onDisconnect(oldConnection);
         final BlockingQueue<Call> temp = new LinkedBlockingQueue<Call>();
         queue.drainTo(temp);
         temp.add(call);
@@ -143,10 +143,9 @@ public class OutRunnable extends IORunnable {
                 it.remove();
             }
         }
-        reconnectionCalls = new HashSet<Call>(client.getListenerManager().getListenerCalls());
+        reconnectionCalls = new ArrayList<Call>(client.getListenerManager().getListenerCalls());
         queue.addAll(reconnectionCalls);
         temp.drainTo(queue);
-        onDisconnect(oldConnection);
     }
 
     public void enQueue(Call call) {

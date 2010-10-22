@@ -598,7 +598,11 @@ public class FactoryImpl implements HazelcastInstance {
             } else if (name.equals("lock")) {
                 proxy = new LockProxy(this, proxyKey.key);
             }
-            proxies.put(proxyKey, proxy);
+            final HazelcastInstanceAwareInstance anotherProxy = proxies.putIfAbsent(proxyKey, proxy);
+            if (anotherProxy != null){
+                created = false;
+                proxy = anotherProxy;
+            }
             if (proxyKey.key == null) {
                 proxiesByName.put(proxyKey.name, proxy);
             }
