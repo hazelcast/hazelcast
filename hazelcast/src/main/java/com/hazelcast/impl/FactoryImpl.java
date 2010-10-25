@@ -2604,11 +2604,17 @@ public class FactoryImpl implements HazelcastInstance {
                 Set<Entry> entries = map.entrySet();
                 final ExecutorService es = Executors.newFixedThreadPool(10);
                 final CountDownLatch latch = new CountDownLatch(entries.size());
+                final List<Throwable> throwables = new CopyOnWriteArrayList<Throwable>();
                 for (final Entry entry : entries) {
                     es.execute(new Runnable() {
                         public void run() {
-                            put(entry.getKey(), entry.getValue());
-                            latch.countDown();
+                            try {
+                                put(entry.getKey(), entry.getValue());
+                            } catch (Throwable e) {
+                                throwables.add(e);
+                            } finally {
+                                latch.countDown();
+                            }
                         }
                     });
                 }
@@ -2616,6 +2622,10 @@ public class FactoryImpl implements HazelcastInstance {
                     latch.await();
                     es.shutdown();
                 } catch (InterruptedException ignored) {
+                }
+                if (!throwables.isEmpty()){
+                    final Throwable throwable = throwables.get(0);
+                    throw new RuntimeException(throwable.getMessage(), throwable);
                 }
             }
 
