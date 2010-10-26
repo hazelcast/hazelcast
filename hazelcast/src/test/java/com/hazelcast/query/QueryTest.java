@@ -23,6 +23,8 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.impl.TestUtil;
+import com.hazelcast.impl.TestUtil.Value;
+
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -69,7 +71,7 @@ public class QueryTest extends TestUtil {
     }
     
     @Test
-    public void issue393Sql() {
+    public void issue393SqlEq() {
         final IMap<String, Value> map = Hazelcast.getMap("default");
         map.addIndex("name", true);
         for (int i = 0; i < 4; i++) {
@@ -78,12 +80,32 @@ public class QueryTest extends TestUtil {
         }
         final Predicate predicate = new SqlPredicate("name='name0'");
         final Collection<Value> values = map.values(predicate);
-        assertEquals(1, values.size());
+        final String[] expectedValues = new String[]{"name0"};
+        assertEquals(expectedValues.length, values.size());
         final List<String> names = new ArrayList<String>();
         for (final Value configObject : values) {
             names.add(configObject.getName());
         }
-        assertArrayEquals(names.toString(), new String[]{"name0"}, names.toArray(new String[0]));
+        assertArrayEquals(names.toString(), expectedValues, names.toArray(new String[0]));
+    }
+    
+    @Test
+    public void issue393SqlIn() {
+        final IMap<String, Value> map = Hazelcast.getMap("default");
+        map.addIndex("name", true);
+        for (int i = 0; i < 4; i++) {
+            final Value v = new Value("name" + i);
+            map.put("" + i, v);
+        }
+        final Predicate predicate = new SqlPredicate("name IN ('name0', 'name2')");
+        final Collection<Value> values = map.values(predicate);
+        final String[] expectedValues = new String[]{"name0", "name2"};
+        assertEquals(expectedValues.length, values.size());
+        final List<String> names = new ArrayList<String>();
+        for (final Value configObject : values) {
+            names.add(configObject.getName());
+        }
+        assertArrayEquals(names.toString(), expectedValues, names.toArray(new String[0]));
     }
     
     @Test
@@ -91,18 +113,20 @@ public class QueryTest extends TestUtil {
         final IMap<String, Value> map = Hazelcast.getMap("default");
         map.addIndex("name", false);
         map.addIndex("type.typeName", false);
-        for (int i = 0; i < 4; i++) {
-            final Value v = new Value("name" + i, new ValueType("type" + i));
+        for (int i = 0; i < 10; i++) {
+            final Value v = new Value("name" + i, i < 5 ? null : new ValueType("type" + i));
             map.put("" + i, v);
         }
-        final Predicate predicate = new PredicateBuilder().getEntryObject().get("type.typeName").in("type1", "type2");
+        final Predicate predicate = new PredicateBuilder().getEntryObject().get("type.typeName").in("type8", "type6");
         final Collection<Value> values = map.values(predicate);
         assertEquals(2, values.size());
         final List<String> typeNames = new ArrayList<String>();
         for (final Value configObject : values) {
             typeNames.add(configObject.getType().getTypeName());
         }
-        assertArrayEquals(typeNames.toString(), new String[]{"type1", "type2"}, typeNames.toArray(new String[0]));
+        final String[] array = typeNames.toArray(new String[0]);
+        Arrays.sort(array);
+        assertArrayEquals(typeNames.toString(), new String[]{"type6", "type8"}, array);
     }
     
     @Test

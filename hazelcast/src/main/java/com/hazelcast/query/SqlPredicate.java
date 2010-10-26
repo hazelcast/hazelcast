@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
+import java.util.Map.Entry;
 
 import static com.hazelcast.query.Predicates.*;
 
@@ -102,14 +103,16 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         List<Object> tokens = new ArrayList<Object>(sqlTokens.size());
         for (String token : sqlTokens) {
             String finalToken = token;
-            String value = mapPhrases.get(token);
-            if (value != null) {
-                finalToken = value;
+            for (final Entry<String, String> entry : mapPhrases.entrySet()) {
+                final String key = entry.getKey();
+                final int indexOf = finalToken.indexOf(key);
+                if (indexOf >= 0){
+                    finalToken = (indexOf > 0 ? finalToken.substring(0, indexOf) : "") + entry.getValue() 
+                        + finalToken.substring(indexOf + key.length());
+                }
             }
             tokens.add(finalToken);
         }
-//        System.out.println(sql);
-//        System.out.println("token " + tokens);
         if (tokens.size() == 0) throw new RuntimeException("Invalid SQL :" + sql);
         if (tokens.size() == 1) {
             return eval(tokens.get(0));

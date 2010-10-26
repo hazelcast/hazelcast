@@ -52,26 +52,6 @@ public class UnresolvedIssues extends TestUtil {
 
     @Ignore
     @Test
-    public void issue393Sql() {
-        final IMap<String, Value> map = Hazelcast.getMap("default");
-        map.addIndex("name", true);
-        for (int i = 0; i < 4; i++) {
-            final Value v = new Value("name" + i);
-            map.put("" + i, v);
-        }
-        final Predicate predicate = new SqlPredicate("name IN ('name0', 'name2')");
-        final Collection<Value> values = map.values(predicate);
-        final String[] expectedValues = new String[]{"name0", "name2"};
-        assertEquals(expectedValues.length, values.size());
-        final List<String> names = new ArrayList<String>();
-        for (final Value configObject : values) {
-            names.add(configObject.getName());
-        }
-        assertArrayEquals(names.toString(), expectedValues, names.toArray(new String[0]));
-    }
-    
-    @Ignore
-    @Test
     public void issue371NearCachePutGetRemove() throws Exception {
         // looks like passed ok
         final HazelcastInstance hz = Hazelcast.newHazelcastInstance(new XmlConfigBuilder(ClassLoader.getSystemResourceAsStream("hazelcast-issue371.xml")).build());
