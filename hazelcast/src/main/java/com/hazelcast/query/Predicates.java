@@ -775,14 +775,10 @@ public final class Predicates {
             try {
                 if (getter == null) {
                     Getter parent = null;
-                    Object o = obj;
+                    Class clazz = obj.getClass();
                     List<String> possibleMethodNames = new ArrayList<String>(3);
                     for (final String name : input.split("\\.")) {
                         Getter localGetter = null;
-                        o = parent != null ? parent.getValue(obj) : obj;
-                        if (o == null) return null;
-                        Class clazz = o.getClass();
-                        
                         possibleMethodNames.clear();
                         possibleMethodNames.add(name);
                         final String camelName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
@@ -790,14 +786,20 @@ public final class Predicates {
                         possibleMethodNames.add("is" + camelName);
                         for (String methodName : possibleMethodNames) {
                             try {
-                                localGetter = new MethodGetter(parent, clazz.getMethod(methodName, null));
+                                final Method method = clazz.getMethod(methodName, null);
+                                method.setAccessible(true);
+                                localGetter = new MethodGetter(parent, method);
+                                clazz = method.getReturnType();
                                 break;
                             } catch (NoSuchMethodException ignored) {
                             }
                         }
                         if (localGetter == null) {
                             try {
-                                localGetter = new FieldGetter(parent, clazz.getField(name));
+                                final Field field = clazz.getField(name);
+                                field.setAccessible(true);
+                                localGetter = new FieldGetter(parent, field);
+                                clazz = field.getType();
                             } catch (NoSuchFieldException ignored) {
                             }
                         }
@@ -833,7 +835,6 @@ public final class Predicates {
             MethodGetter(Getter parent, Method method) {
                 super(parent);
                 this.method = method;
-                this.method.setAccessible(true);
             }
 
             Object getValue(Object obj) throws Exception {
@@ -858,7 +859,6 @@ public final class Predicates {
             FieldGetter(Getter parent, Field field) {
                 super(parent);
                 this.field = field;
-                this.field.setAccessible(true);
             }
 
             Object getValue(Object obj) throws Exception {
