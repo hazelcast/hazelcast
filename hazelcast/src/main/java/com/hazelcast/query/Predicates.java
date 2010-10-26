@@ -581,7 +581,7 @@ public final class Predicates {
                 if (predicate instanceof IndexAwarePredicate) {
                     IndexAwarePredicate p = (IndexAwarePredicate) predicate;
                     final Set<MapEntry> filter = p.filter(queryContext);
-                    if (and && filter.isEmpty()) return null;
+                    if (and && (filter == null || filter.isEmpty())) return null;
                     if (results == null){
                         results = and ? filter : new HashSet<MapEntry>(filter);
                     } else {

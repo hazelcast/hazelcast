@@ -72,15 +72,38 @@ public class TestUtil {
     }
 
     @Ignore
+    public static class ValueType implements Serializable {
+        String typeName;
+
+        public ValueType(String typeName) {
+            this.typeName = typeName;
+        }
+
+        public String getTypeName() {
+            return typeName;
+        }
+    }
+    
+    @Ignore
     public static class Value implements Serializable {
         String name;
+        ValueType type;
 
-        public Value(String name) {
+        public Value(String name, ValueType type) {
             this.name = name;
+            this.type = type;
+        }
+        
+        public Value(String name) {
+            this(name, null);
         }
 
         public String getName() {
             return this.name;
+        }
+        
+        public ValueType getType() {
+            return type;
         }
     }
 

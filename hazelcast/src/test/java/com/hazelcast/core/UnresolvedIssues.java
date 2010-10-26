@@ -21,20 +21,21 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.impl.ReplicatedMapFactory;
 import com.hazelcast.impl.TestUtil;
+import com.hazelcast.impl.TestUtil.Value;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.SqlPredicate;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Queue;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -49,6 +50,26 @@ public class UnresolvedIssues extends TestUtil {
         Hazelcast.shutdownAll();
     }
 
+    @Ignore
+    @Test
+    public void issue393Sql() {
+        final IMap<String, Value> map = Hazelcast.getMap("default");
+        map.addIndex("name", true);
+        for (int i = 0; i < 4; i++) {
+            final Value v = new Value("name" + i);
+            map.put("" + i, v);
+        }
+        final Predicate predicate = new SqlPredicate("name IN ('name0', 'name2')");
+        final Collection<Value> values = map.values(predicate);
+        final String[] expectedValues = new String[]{"name0", "name2"};
+        assertEquals(expectedValues.length, values.size());
+        final List<String> names = new ArrayList<String>();
+        for (final Value configObject : values) {
+            names.add(configObject.getName());
+        }
+        assertArrayEquals(names.toString(), expectedValues, names.toArray(new String[0]));
+    }
+    
     @Ignore
     @Test
     public void issue371NearCachePutGetRemove() throws Exception {

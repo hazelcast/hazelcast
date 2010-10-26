@@ -58,7 +58,7 @@ public class QueryTest extends TestUtil {
             final Value v = new Value("name" + i);
             map.put("" + i, v);
         }
-        final PredicateBuilder predicate = new PredicateBuilder().getEntryObject().get("name").in("name0", "name2");
+        final Predicate predicate = new PredicateBuilder().getEntryObject().get("name").in("name0", "name2");
         final Collection<Value> values = map.values(predicate);
         assertEquals(2, values.size());
         final List<String> names = new ArrayList<String>();
@@ -66,6 +66,62 @@ public class QueryTest extends TestUtil {
             names.add(configObject.getName());
         }
         assertArrayEquals(names.toString(), new String[]{"name0", "name2"}, names.toArray(new String[0]));
+    }
+    
+    @Test
+    public void issue393Sql() {
+        final IMap<String, Value> map = Hazelcast.getMap("default");
+        map.addIndex("name", true);
+        for (int i = 0; i < 4; i++) {
+            final Value v = new Value("name" + i);
+            map.put("" + i, v);
+        }
+        final Predicate predicate = new SqlPredicate("name='name0'");
+        final Collection<Value> values = map.values(predicate);
+        assertEquals(1, values.size());
+        final List<String> names = new ArrayList<String>();
+        for (final Value configObject : values) {
+            names.add(configObject.getName());
+        }
+        assertArrayEquals(names.toString(), new String[]{"name0"}, names.toArray(new String[0]));
+    }
+    
+    @Test
+    public void testInnerIndex() {
+        final IMap<String, Value> map = Hazelcast.getMap("default");
+        map.addIndex("name", false);
+        map.addIndex("type.typeName", false);
+        for (int i = 0; i < 4; i++) {
+            final Value v = new Value("name" + i, new ValueType("type" + i));
+            map.put("" + i, v);
+        }
+        final Predicate predicate = new PredicateBuilder().getEntryObject().get("type.typeName").in("type1", "type2");
+        final Collection<Value> values = map.values(predicate);
+        assertEquals(2, values.size());
+        final List<String> typeNames = new ArrayList<String>();
+        for (final Value configObject : values) {
+            typeNames.add(configObject.getType().getTypeName());
+        }
+        assertArrayEquals(typeNames.toString(), new String[]{"type1", "type2"}, typeNames.toArray(new String[0]));
+    }
+    
+    @Test
+    public void testInnerIndexSql() {
+        final IMap<String, Value> map = Hazelcast.getMap("default");
+        map.addIndex("name", false);
+        map.addIndex("type.typeName", false);
+        for (int i = 0; i < 4; i++) {
+            final Value v = new Value("name" + i, new ValueType("type" + i));
+            map.put("" + i, v);
+        }
+        final Predicate predicate = new SqlPredicate("type.typeName='type1'");
+        final Collection<Value> values = map.values(predicate);
+        assertEquals(1, values.size());
+        final List<String> typeNames = new ArrayList<String>();
+        for (final Value configObject : values) {
+            typeNames.add(configObject.getType().getTypeName());
+        }
+        assertArrayEquals(typeNames.toString(), new String[]{"type1"}, typeNames.toArray(new String[0]));
     }
 
     @Test
