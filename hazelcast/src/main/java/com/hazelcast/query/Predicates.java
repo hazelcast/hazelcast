@@ -30,8 +30,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class
-        Predicates {
+public final class Predicates {
 
     public static class GreaterLessPredicate extends EqualPredicate {
         boolean equal = false;
@@ -68,7 +67,7 @@ public class
             final StringBuffer sb = new StringBuffer();
             sb.append(first);
             sb.append(less ? "<" : ">");
-            sb.append(equal ? "=" : "");
+            if (equal) sb.append("=");
             sb.append(second);
             return sb.toString();
         }
@@ -123,13 +122,7 @@ public class
 
         @Override
         public String toString() {
-            final StringBuffer sb = new StringBuffer();
-            sb.append(first);
-            sb.append(" BETWEEN ");
-            sb.append(second);
-            sb.append(" AND ");
-            sb.append(to);
-            return sb.toString();
+            return first + " BETWEEN " + second + " AND " + to;
         }
     }
 
@@ -160,11 +153,7 @@ public class
 
         @Override
         public String toString() {
-            final StringBuffer sb = new StringBuffer();
-            sb.append(first);
-            sb.append("!=");
-            sb.append(second);
-            return sb.toString();
+            return first + " != " + second;
         }
     }
 
@@ -192,11 +181,7 @@ public class
 
         @Override
         public String toString() {
-            final StringBuffer sb = new StringBuffer();
-            sb.append("NOT(");
-            sb.append(predicate.toString());
-            sb.append(")");
-            return sb.toString();
+            return "NOT(" + predicate + ")";
         }
     }
 
@@ -271,7 +256,7 @@ public class
         }
 
         public Set<MapEntry> filter(QueryContext queryContext) {
-            checkInValues();            
+            checkInValues();
             Index index = queryContext.getMapIndexes().get(first);
             if (index != null) {
                 Set<Long> setLongValues = new HashSet<Long>(inValues.size());
@@ -323,8 +308,7 @@ public class
                     }
                 }
             } else {
-                Iterator it = inValues.iterator();
-                while (it.hasNext()) {
+                for(Iterator it = inValues.iterator();it.hasNext();) {
                     sb.append(it.next());
                     if (it.hasNext()) {
                         sb.append(",");
@@ -380,12 +364,7 @@ public class
 
         @Override
         public String toString() {
-            final StringBuffer sb = new StringBuffer();
-            sb.append(first);
-            sb.append(" REGEX '");
-            sb.append(regex);
-            sb.append("'");
-            return sb.toString();
+            return first + " REGEX '" + regex + "'";
         }
     }
 
@@ -433,12 +412,7 @@ public class
 
         @Override
         public String toString() {
-            final StringBuffer sb = new StringBuffer();
-            sb.append(first);
-            sb.append(" LIKE '");
-            sb.append(second);
-            sb.append("'");
-            return sb.toString();
+            return first + " LIKE '" + second + "'";
         }
     }
 
@@ -544,11 +518,7 @@ public class
 
         @Override
         public String toString() {
-            final StringBuffer sb = new StringBuffer();
-            sb.append(first);
-            sb.append("=");
-            sb.append(second);
-            return sb.toString();
+            return first + "=" + second;
         }
     }
 
@@ -601,24 +571,39 @@ public class
         }
 
         public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index> mapIndexes) {
-            boolean strong = and;
-            if (and) {
-                for (Predicate predicate : predicates) {
-                    if (predicate instanceof IndexAwarePredicate) {
-                        IndexAwarePredicate p = (IndexAwarePredicate) predicate;
-                        if (!p.collectIndexAwarePredicates(lsIndexPredicates, mapIndexes)) {
-                            strong = false;
-                        }
-                    } else {
-                        strong = false;
-                    }
-                }
-            }
-            return strong;
+            lsIndexPredicates.add(this);
+            return false;
         }
 
         public Set<MapEntry> filter(QueryContext queryContext) {
-            return null;
+            Set<MapEntry> results = null;
+            for (Predicate predicate : predicates) {
+                if (predicate instanceof IndexAwarePredicate) {
+                    IndexAwarePredicate p = (IndexAwarePredicate) predicate;
+                    final Set<MapEntry> filter = p.filter(queryContext);
+                    if (and && filter.isEmpty()) return null;
+                    if (results == null){
+                        results = and ? filter : new HashSet<MapEntry>(filter);
+                    } else {
+                        if (and){
+                            boolean direct = results.size() < filter.size();
+                            final Set<MapEntry> s1 = direct ? results : filter;
+                            final Set<MapEntry> s2 = direct ? filter : results;
+                            results = new HashSet<MapEntry>();
+                            for(final Iterator<MapEntry> it = s1.iterator();it.hasNext();){
+                                final MapEntry next = it.next();
+                                if (s2.contains(next)){
+                                    results.add(next);
+                                }
+                            }
+                            if (results.isEmpty()) return null;
+                        } else {
+                            results.addAll(filter);
+                        }
+                    }
+                }
+            }
+            return results;
         }
 
         public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index> mapIndexes) {
@@ -656,10 +641,10 @@ public class
             String andOr = (and) ? " AND " : " OR ";
             int size = predicates.length;
             for (int i = 0; i < size; i++) {
-                sb.append(predicates[i]);
-                if (i < size - 1) {
+                if (i > 0) {
                     sb.append(andOr);
                 }
+                sb.append(predicates[i]);
             }
             sb.append(")");
             return sb.toString();
@@ -676,11 +661,7 @@ public class
 
             @Override
             public String toString() {
-                final StringBuffer sb = new StringBuffer();
-                sb.append(" instanceOf (");
-                sb.append(klass.getName());
-                sb.append(")");
-                return sb.toString();
+                return " instanceOf (" + klass.getName() + ")";
             }
         };
     }
@@ -754,7 +735,7 @@ public class
         GetExpression get(String fieldName);
     }
 
-    public static class GetExpressionImpl<T> extends AbstractExpression implements GetExpression, DataSerializable {
+    public static final class GetExpressionImpl<T> extends AbstractExpression implements GetExpression, DataSerializable {
         transient Getter getter = null;
         String input;
         List<GetExpressionImpl<T>> ls = null;
@@ -793,27 +774,39 @@ public class
             if (obj == null) return null;
             try {
                 if (getter == null) {
+                    Getter parent = null;
+                    Object o = obj;
                     List<String> possibleMethodNames = new ArrayList<String>(3);
-                    possibleMethodNames.add(input);
-                    possibleMethodNames.add("get" + input.substring(0, 1).toUpperCase() + input.substring(1));
-                    possibleMethodNames.add("is" + input.substring(0, 1).toUpperCase() + input.substring(1));
-                    getter:
-                    for (String methodName : possibleMethodNames) {
-                        try {
-                            getter = new MethodGetter(obj.getClass().getMethod(methodName, null));
-                            break getter;
-                        } catch (NoSuchMethodException ignored) {
+                    for (final String name : input.split("\\.")) {
+                        Getter localGetter = null;
+                        o = parent != null ? parent.getValue(obj) : obj;
+                        if (o == null) return null;
+                        Class clazz = o.getClass();
+                        
+                        possibleMethodNames.clear();
+                        possibleMethodNames.add(name);
+                        final String camelName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
+                        possibleMethodNames.add("get" + camelName);
+                        possibleMethodNames.add("is" + camelName);
+                        for (String methodName : possibleMethodNames) {
+                            try {
+                                localGetter = new MethodGetter(parent, clazz.getMethod(methodName, null));
+                                break;
+                            } catch (NoSuchMethodException ignored) {
+                            }
                         }
-                    }
-                    if (getter == null) {
-                        try {
-                            getter = new FieldGetter(obj.getClass().getField(input));
-                        } catch (NoSuchFieldException ignored) {
+                        if (localGetter == null) {
+                            try {
+                                localGetter = new FieldGetter(parent, clazz.getField(name));
+                            } catch (NoSuchFieldException ignored) {
+                            }
                         }
+                        if (localGetter == null) {
+                            throw new RuntimeException("There is no method of field matching " + name);
+                        }
+                        parent = localGetter;
                     }
-                    if (getter == null) {
-                        throw new RuntimeException("There is no method of field matching " + input);
-                    }
+                    getter = parent;
                 }
                 return getter.getValue(obj);
             } catch (Throwable e) {
@@ -823,6 +816,12 @@ public class
         }
 
         abstract class Getter {
+            protected final Getter parent;
+            
+            public Getter(final Getter parent) {
+                this.parent = parent;
+            }
+            
             abstract Object getValue(Object obj) throws Exception;
 
             abstract Class getReturnType();
@@ -831,32 +830,49 @@ public class
         class MethodGetter extends Getter {
             final Method method;
 
-            MethodGetter(Method method) {
+            MethodGetter(Getter parent, Method method) {
+                super(parent);
                 this.method = method;
+                this.method.setAccessible(true);
             }
 
             Object getValue(Object obj) throws Exception {
-                return method.invoke(obj);
+                obj = parent != null ? parent.getValue(obj) : obj;
+                return obj != null ? method.invoke(obj) : null;
             }
 
             Class getReturnType() {
                 return this.method.getReturnType();
             }
+
+            @Override
+            public String toString() {
+                return "MethodGetter [parent=" + parent + ", method=" + method.getName() + "]";
+            }
+            
         }
 
         class FieldGetter extends Getter {
             final Field field;
 
-            FieldGetter(Field field) {
+            FieldGetter(Getter parent, Field field) {
+                super(parent);
                 this.field = field;
+                this.field.setAccessible(true);
             }
 
             Object getValue(Object obj) throws Exception {
-                return field.get(obj);
+                obj = parent != null ? parent.getValue(obj) : obj;
+                return obj != null ? field.get(obj) : null;
             }
 
             Class getReturnType() {
                 return this.field.getType();
+            }
+
+            @Override
+            public String toString() {
+                return "FieldGetter [parent=" + parent + ", field=" + field + "]";
             }
         }
 
@@ -871,10 +887,9 @@ public class
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (!(o instanceof GetExpressionImpl)) return false;
             GetExpressionImpl that = (GetExpressionImpl) o;
-            if (!input.equals(that.input)) return false;
-            return true;
+            return input.equals(that.input);
         }
 
         @Override
