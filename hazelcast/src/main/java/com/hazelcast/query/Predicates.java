@@ -286,9 +286,9 @@ public final class Predicates {
             try {
                 first = (Expression) readObject(in);
                 int len = in.readInt();
-                inValues = new HashSet(len);
-                for (int i = 0; i < inValues.size(); i++) {
-                    inValues.add(readObject(in));
+                inValueArray = new Object[len];
+                for (int i = 0; i < len; i++) {
+                    inValueArray[i] = readObject(in);
                 }
             } catch (Exception e) {
                 throw new IOException(e.getMessage());
@@ -300,20 +300,9 @@ public final class Predicates {
             final StringBuffer sb = new StringBuffer();
             sb.append(first);
             sb.append(" IN (");
-            if (inValueArray != null) {
-                for (int i = 0; i < inValueArray.length; i++) {
-                    sb.append(inValueArray[i]);
-                    if (i < (inValueArray.length - 1)) {
-                        sb.append(",");
-                    }
-                }
-            } else {
-                for(Iterator it = inValues.iterator();it.hasNext();) {
-                    sb.append(it.next());
-                    if (it.hasNext()) {
-                        sb.append(",");
-                    }
-                }
+            for (int i = 0; i < inValueArray.length; i++) {
+                if (i > 0) sb.append(",");
+                sb.append(inValueArray[i]);
             }
             sb.append(")");
             return sb.toString();

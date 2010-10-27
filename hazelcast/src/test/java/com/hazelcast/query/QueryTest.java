@@ -62,12 +62,15 @@ public class QueryTest extends TestUtil {
         }
         final Predicate predicate = new PredicateBuilder().getEntryObject().get("name").in("name0", "name2");
         final Collection<Value> values = map.values(predicate);
-        assertEquals(2, values.size());
+        final String[] expectedValues = new String[]{"name0", "name2"};
+        assertEquals(expectedValues.length, values.size());
         final List<String> names = new ArrayList<String>();
         for (final Value configObject : values) {
             names.add(configObject.getName());
         }
-        assertArrayEquals(names.toString(), new String[]{"name0", "name2"}, names.toArray(new String[0]));
+        final String[] array = names.toArray(new String[0]);
+        Arrays.sort(array);
+        assertArrayEquals(names.toString(), expectedValues, array);
     }
     
     @Test
@@ -86,7 +89,9 @@ public class QueryTest extends TestUtil {
         for (final Value configObject : values) {
             names.add(configObject.getName());
         }
-        assertArrayEquals(names.toString(), expectedValues, names.toArray(new String[0]));
+        final String[] array = names.toArray(new String[0]);
+        Arrays.sort(array);
+        assertArrayEquals(names.toString(), expectedValues, array);
     }
     
     @Test
@@ -105,7 +110,30 @@ public class QueryTest extends TestUtil {
         for (final Value configObject : values) {
             names.add(configObject.getName());
         }
-        assertArrayEquals(names.toString(), expectedValues, names.toArray(new String[0]));
+        final String[] array = names.toArray(new String[0]);
+        Arrays.sort(array);
+        assertArrayEquals(names.toString(), expectedValues, array);
+    }
+    
+    @Test
+    public void issue393SqlInInteger() {
+        final IMap<String, Value> map = Hazelcast.getMap("default");
+        map.addIndex("index", false);
+        for (int i = 0; i < 4; i++) {
+            final Value v = new Value("name" + i, new ValueType("type" + i), i);
+            map.put("" + i, v);
+        }
+        final Predicate predicate = new SqlPredicate("index IN (0, 2)");
+        final Collection<Value> values = map.values(predicate);
+        final String[] expectedValues = new String[]{"name0", "name2"};
+        assertEquals(expectedValues.length, values.size());
+        final List<String> names = new ArrayList<String>();
+        for (final Value configObject : values) {
+            names.add(configObject.getName());
+        }
+        final String[] array = names.toArray(new String[0]);
+        Arrays.sort(array);
+        assertArrayEquals(names.toString(), expectedValues, array);
     }
     
     @Test
@@ -114,7 +142,7 @@ public class QueryTest extends TestUtil {
         map.addIndex("name", false);
         map.addIndex("type.typeName", false);
         for (int i = 0; i < 10; i++) {
-            final Value v = new Value("name" + i, i < 5 ? null : new ValueType("type" + i));
+            final Value v = new Value("name" + i, i < 5 ? null : new ValueType("type" + i), i);
             map.put("" + i, v);
         }
         final Predicate predicate = new PredicateBuilder().getEntryObject().get("type.typeName").in("type8", "type6");
@@ -135,7 +163,7 @@ public class QueryTest extends TestUtil {
         map.addIndex("name", false);
         map.addIndex("type.typeName", false);
         for (int i = 0; i < 4; i++) {
-            final Value v = new Value("name" + i, new ValueType("type" + i));
+            final Value v = new Value("name" + i, new ValueType("type" + i), i);
             map.put("" + i, v);
         }
         final Predicate predicate = new SqlPredicate("type.typeName='type1'");

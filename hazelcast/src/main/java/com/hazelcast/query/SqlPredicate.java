@@ -100,19 +100,7 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         }
         Parser parser = new Parser();
         List<String> sqlTokens = parser.toPrefix(sql);
-        List<Object> tokens = new ArrayList<Object>(sqlTokens.size());
-        for (String token : sqlTokens) {
-            String finalToken = token;
-            for (final Entry<String, String> entry : mapPhrases.entrySet()) {
-                final String key = entry.getKey();
-                final int indexOf = finalToken.indexOf(key);
-                if (indexOf >= 0){
-                    finalToken = (indexOf > 0 ? finalToken.substring(0, indexOf) : "") + entry.getValue() 
-                        + finalToken.substring(indexOf + key.length());
-                }
-            }
-            tokens.add(finalToken);
-        }
+        List<Object> tokens = new ArrayList<Object>(sqlTokens);
         if (tokens.size() == 0) throw new RuntimeException("Invalid SQL :" + sql);
         if (tokens.size() == 1) {
             return eval(tokens.get(0));
@@ -126,47 +114,47 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
                     String token = (String) tokenObj;
                     if ("=".equals(token) || "==".equals(token)) {
                         int position = (i - 2);
-                        Object first = tokens.remove(position);
-                        Object second = tokens.remove(position);
+                        Object first = toValue(tokens.remove(position), mapPhrases);
+                        Object second = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, equal(get((String) first), second));
                     } else if ("!=".equals(token)) {
                         int position = (i - 2);
-                        Object first = tokens.remove(position);
-                        Object second = tokens.remove(position);
+                        Object first = toValue(tokens.remove(position), mapPhrases);
+                        Object second = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, notEqual(get((String) first), second));
                     } else if (">".equals(token)) {
                         int position = (i - 2);
-                        Object first = tokens.remove(position);
-                        Object second = tokens.remove(position);
+                        Object first = toValue(tokens.remove(position), mapPhrases);
+                        Object second = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, greaterThan(get((String) first), (Comparable) second));
                     } else if (">=".equals(token)) {
                         int position = (i - 2);
-                        Object first = tokens.remove(position);
-                        Object second = tokens.remove(position);
+                        Object first = toValue(tokens.remove(position), mapPhrases);
+                        Object second = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, greaterEqual(get((String) first), (Comparable) second));
                     } else if ("<=".equals(token)) {
                         int position = (i - 2);
-                        Object first = tokens.remove(position);
-                        Object second = tokens.remove(position);
+                        Object first = toValue(tokens.remove(position), mapPhrases);
+                        Object second = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, lessEqual(get((String) first), (Comparable) second));
                     } else if ("<".equals(token)) {
                         int position = (i - 2);
-                        Object first = tokens.remove(position);
-                        Object second = tokens.remove(position);
+                        Object first = toValue(tokens.remove(position), mapPhrases);
+                        Object second = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, lessThan(get((String) first), (Comparable) second));
                     } else if ("LIKE".equalsIgnoreCase(token)) {
                         int position = (i - 2);
-                        Object first = tokens.remove(position);
-                        Object second = tokens.remove(position);
+                        Object first = toValue(tokens.remove(position), mapPhrases);
+                        Object second = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, like(get((String) first), (String) second));
                     } else if ("IN".equalsIgnoreCase(token)) {
                         int position = i - 2;
-                        Object exp = tokens.remove(position);
-                        String[] values = ((String) tokens.remove(position)).split(",");
+                        Object exp = toValue(tokens.remove(position), mapPhrases);
+                        String[] values = toValue(((String) tokens.remove(position)).split(","), mapPhrases);
                         setOrAdd(tokens, position, Predicates.in(get((String) exp), values));
                     } else if ("NOT".equalsIgnoreCase(token)) {
                         int position = i - 1;
-                        Object exp = tokens.remove(position);
+                        Object exp = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, Predicates.not(eval(exp)));
                     } else if ("BETWEEN".equalsIgnoreCase(token)) {
                         int position = i - 3;
@@ -176,13 +164,13 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
                         setOrAdd(tokens, position, between(get((String) expression), (Comparable) from, (Comparable) to));
                     } else if ("AND".equalsIgnoreCase(token)) {
                         int position = i - 2;
-                        Object first = tokens.remove(position);
-                        Object second = tokens.remove(position);
+                        Object first = toValue(tokens.remove(position), mapPhrases);
+                        Object second = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, and(eval(first), eval(second)));
                     } else if ("OR".equalsIgnoreCase(token)) {
                         int position = i - 2;
-                        Object first = tokens.remove(position);
-                        Object second = tokens.remove(position);
+                        Object first = toValue(tokens.remove(position), mapPhrases);
+                        Object second = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, or(eval(first), eval(second)));
                     } else throw new RuntimeException("Unknown token " + token);
                     continue root;
@@ -190,6 +178,19 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
             }
         }
         return (Predicate) tokens.get(0);
+    }
+    
+    private Object toValue(final Object key, final Map<String, String> phrases){
+        final String value = phrases.get(key);
+        return value != null ? value : key;
+    }
+    
+    private String[] toValue(final String[] keys, final Map<String, String> phrases){
+        for (int i = 0; i < keys.length; i++) {
+            final String value = phrases.get(keys[i]);
+            if (value != null) keys[i] = value;
+        }
+        return keys;
     }
 
     private void setOrAdd(List tokens, int position, Predicate predicate) {

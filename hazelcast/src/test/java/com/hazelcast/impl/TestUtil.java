@@ -88,14 +88,16 @@ public class TestUtil {
     public static class Value implements Serializable {
         String name;
         ValueType type;
+        int index;
 
-        public Value(String name, ValueType type) {
+        public Value(String name, ValueType type, int index) {
             this.name = name;
             this.type = type;
+            this.index = index;
         }
         
         public Value(String name) {
-            this(name, null);
+            this(name, null, 0);
         }
 
         public String getName() {
@@ -104,6 +106,10 @@ public class TestUtil {
         
         public ValueType getType() {
             return type;
+        }
+        
+        public int getIndex() {
+            return index;
         }
     }
 
