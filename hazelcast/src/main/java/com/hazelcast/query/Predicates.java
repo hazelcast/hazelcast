@@ -558,10 +558,43 @@ public final class Predicates {
             }
             return and;
         }
+        
+        public boolean _collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index> mapIndexes) {
+            boolean strong = and;
+            if (and) {
+                for (Predicate predicate : predicates) {
+                    if (predicate instanceof IndexAwarePredicate) {
+                        IndexAwarePredicate p = (IndexAwarePredicate) predicate;
+                        if (!p.collectIndexAwarePredicates(lsIndexPredicates, mapIndexes)) {
+                            strong = false;
+                        }
+                    } else {
+                        strong = false;
+                    }
+                }
+            }
+            return strong;
+        }
 
         public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index> mapIndexes) {
-            lsIndexPredicates.add(this);
-            return false;
+            if (!mapIndexes.isEmpty()){
+                lsIndexPredicates.add(this);
+                return false;
+            }
+            boolean strong = and;
+            if (and) {
+                for (Predicate predicate : predicates) {
+                    if (predicate instanceof IndexAwarePredicate) {
+                        IndexAwarePredicate p = (IndexAwarePredicate) predicate;
+                        if (!p.collectIndexAwarePredicates(lsIndexPredicates, mapIndexes)) {
+                            strong = false;
+                        }
+                    } else {
+                        strong = false;
+                    }
+                }
+            }
+            return strong;
         }
 
         public Set<MapEntry> filter(QueryContext queryContext) {
