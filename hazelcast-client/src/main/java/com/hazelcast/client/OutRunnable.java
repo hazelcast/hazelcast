@@ -23,7 +23,6 @@ import com.hazelcast.logging.Logger;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -36,7 +35,6 @@ public class OutRunnable extends IORunnable {
     final BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
     
     private Connection connection = null;
-    private static final Call RECONNECT_CALL = new Call(0L, new Packet()); 
     
     volatile Collection<Call> reconnectionCalls;
     private volatile boolean reconnection;
@@ -68,7 +66,7 @@ public class OutRunnable extends IORunnable {
                         writer.write(connection, call.getRequest());
                     }
                 } else {
-                    clusterIsDown();
+                    clusterIsDown(oldConnection);
                 }
                 if (reconnectionCalls != null) break;
                 call = null;
@@ -102,7 +100,14 @@ public class OutRunnable extends IORunnable {
         }
     }
     
-    void clusterIsDown() {
+    void clusterIsDown(Connection oldConnection) {
+        if (oldConnection != null){
+            try {
+                oldConnection.close();
+            } catch (IOException e) {
+                // nothing to do
+            }
+        }
         interruptWaitingCalls();
         if (!reconnection){
             reconnection = true;
@@ -139,7 +144,8 @@ public class OutRunnable extends IORunnable {
         temp.add(call);
         for(final Iterator<Call> it = temp.iterator();it.hasNext();){
             final Call c = it.next();
-            if (!callMap.containsKey(c.getId())){
+            if (c.hasResponse()){
+                c.setResponse(new NoMemberAvailableException());
                 it.remove();
             }
         }

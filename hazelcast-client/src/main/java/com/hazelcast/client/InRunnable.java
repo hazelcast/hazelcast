@@ -46,7 +46,7 @@ public class InRunnable extends IORunnable implements Runnable {
             	redoUnfinishedCalls(oldConnection);
             }
             if (connection == null) {
-                outRunnable.clusterIsDown();
+                outRunnable.clusterIsDown(oldConnection);
                 Thread.sleep(50);
             } else {
                 packet = reader.readPacket(connection);
@@ -82,7 +82,7 @@ public class InRunnable extends IORunnable implements Runnable {
                 try {
                     Connection connection = client.connectionManager.getConnection();
                     if (connection != null) {
-                        connection.getSocket().close();
+                        connection.close();
                     }
                 } catch (IOException ignored) {
                 }

@@ -59,9 +59,11 @@ public class Connection {
         this.address = address;
         try {
             this.socket = SocketFactory.getDefault().createSocket(address.getAddress(), address.getPort());
-            socket.setKeepAlive(true);
-            dos = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), BUFFER_SIZE));
-            dis = new DataInputStream(new BufferedInputStream(socket.getInputStream(), BUFFER_SIZE));
+            this.socket.setKeepAlive(true);
+            this.socket.setTcpNoDelay(true);
+            this.socket.setSoLinger(true, 1);
+            this.dos = new DataOutputStream(new BufferedOutputStream(this.socket.getOutputStream(), BUFFER_SIZE));
+            this.dis = new DataInputStream(new BufferedInputStream(this.socket.getInputStream(), BUFFER_SIZE));
         } catch (Exception e) {
             throw new ClusterClientException(e);
         }
@@ -77,6 +79,12 @@ public class Connection {
 
     public int getVersion() {
         return id;
+    }
+    
+    public void close() throws IOException{
+        socket.close();
+        dos.close();
+        dis.close();
     }
 
     @Override

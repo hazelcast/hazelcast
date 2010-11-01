@@ -31,6 +31,7 @@ public abstract class IORunnable extends ClientRunnable {
     protected Map<Long, Call> callMap;
     protected final HazelcastClient client;
     final ILogger logger = Logger.getLogger(this.getClass().getName());
+    protected static final Call RECONNECT_CALL = new Call(-1L, null);
 
     public IORunnable(HazelcastClient client, Map<Long, Call> calls) {
         this.client = client;
@@ -40,6 +41,7 @@ public abstract class IORunnable extends ClientRunnable {
     public void interruptWaitingCallsAndShutdown() {
         Collection<Call> calls = callMap.values();
         for (Call call : calls) {
+            if (call == RECONNECT_CALL) continue;
             call.setResponse(new NoMemberAvailableException());
         }
         calls.clear();
@@ -54,6 +56,7 @@ public abstract class IORunnable extends ClientRunnable {
         final Collection<Call> values = callMap.values();
         for (Iterator<Call> it = values.iterator(); it.hasNext();) {
             Call call = it.next();
+            if (call == RECONNECT_CALL) continue;
             call.setResponse(new NoMemberAvailableException());
             it.remove();
         }
@@ -67,6 +70,7 @@ public abstract class IORunnable extends ClientRunnable {
         Member leftMember = oldConnection.getMember();
         Collection<Call> calls = callMap.values();
         for (Call call : calls) {
+            if (call == RECONNECT_CALL) continue;
             Call removed = callMap.remove(call.getId());
             if (removed != null) {
                 if (!client.getOutRunnable().queue.contains(removed)) {

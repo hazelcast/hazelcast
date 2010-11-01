@@ -47,6 +47,8 @@ public class ConnectionManager implements MembershipListener {
     private volatile int lastDisconnectedConnectionId = -1;
     private ClientBinder binder;
     
+    private volatile boolean lookinglForAlive = false;
+    
     private final LifecycleServiceClientImpl lifecycleService;
 
     public ConnectionManager(HazelcastClient client, LifecycleServiceClientImpl lifecycleService, InetSocketAddress[] clusterMembers, boolean shuffle) {
@@ -83,43 +85,49 @@ public class ConnectionManager implements MembershipListener {
 
     private Connection lookForAliveConnection(final int attemptsLimit,
             final int reconnectionTimeout, final boolean bind) throws IOException {
-        boolean restored = false;
-        int attempt = 0;
-        while(currentConnection == null){
-            synchronized (this) {
-                if (currentConnection == null) {
-                    currentConnection = searchForAvailableConnection();
-                    restored = currentConnection != null;
-                    if (restored && bind){
-                        bindConnection(currentConnection);
+        lookinglForAlive = true;
+        try {
+            boolean restored = false;
+            int attempt = 0;
+            while(currentConnection == null){
+                synchronized (this) {
+                    if (currentConnection == null) {
+                        currentConnection = searchForAvailableConnection();
+                        restored = currentConnection != null;
+                        if (restored && bind){
+                            bindConnection(currentConnection);
+                        }
                     }
                 }
+                if (currentConnection != null) {
+                    logger.log(Level.FINE, "Client is connecting to " + currentConnection);
+                    lookinglForAlive = false;
+                    break;
+                }
+                if (attempt >= attemptsLimit){
+                    break;
+                }
+                attempt++;
+                logger.log(Level.INFO, format("Unable to get alive cluster connection," +
+                    " try in {0} ms later, attempt {1} of {2}.",
+                    reconnectionTimeout, attempt, attemptsLimit));
+                try {
+                    Thread.sleep(reconnectionTimeout);
+                } catch (InterruptedException e) {
+                    break;
+                }
             }
-            if (currentConnection != null) {
-                logger.log(Level.FINE, "Client is connecting to " + currentConnection);
-                break;
+            if (restored) {
+                notifyConnectionIsRestored();
             }
-            if (attempt >= attemptsLimit){
-                break;
-            }
-            attempt++;
-            logger.log(Level.INFO, format("Unable to get alive cluster connection," +
-                " try in {0} ms later, attempt {1} of {2}.",
-                reconnectionTimeout, attempt, attemptsLimit));
-            try {
-                Thread.sleep(reconnectionTimeout);
-            } catch (InterruptedException e) {
-                break;
-            }
-        }
-        if (restored) {
-            notifyConnectionIsRestored();
+        } finally {
+            lookinglForAlive = false;
         }
         return currentConnection;
     }
 
     public Connection getConnection() throws IOException {
-        if (currentConnection == null) {
+        if (currentConnection == null && !lookinglForAlive) {
             boolean restored = false;
             synchronized (this) {
                 if (currentConnection == null) {
@@ -179,7 +187,7 @@ public class ConnectionManager implements MembershipListener {
                 counter--;
             }
         }
-        logger.log(Level.FINEST, format("searchForAvailableConnection connection:{1}", connection));
+        logger.log(Level.FINEST, format("searchForAvailableConnection connection:{0}", connection));
         return connection;
     }
 

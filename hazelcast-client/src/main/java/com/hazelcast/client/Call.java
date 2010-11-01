@@ -29,12 +29,16 @@ public class Call {
 
     private final Packet request;
 
+    private volatile boolean response = false;
+    
     private final BlockingQueue<Object> responseQueue = new LinkedBlockingQueue<Object>();
 
     public Call(Long id, Packet request) {
         this.id = id;
         this.request = request;
-        this.request.setCallId(id);
+        if (request != null) {
+            this.request.setCallId(id);
+        }
     }
 
     public Packet getRequest() {
@@ -74,12 +78,26 @@ public class Call {
     public void onDisconnect(Member member) {
     }
 
+    public boolean hasResponse() {
+        return this.response;
+    }
+    
     public void setResponse(Object response) {
-        responseQueue.offer(response);
+        this.response = true;
+        this.responseQueue.offer(response);
     }
 
     @Override
     public String toString() {
-        return "Call " + "[" + id + "] operation=" + request.getOperation();
+        return "Call " + "[" + id + "] operation=" + 
+            (request != null ? request.getOperation()
+             /*/
+             + " " + request.getName() + " " 
+             + Serializer.toObject(request.getKey())
+             + "=" + Serializer.toObject(request.getValue()) 
+             /*/
+             //*/
+             : 
+             null);
     }
 }
