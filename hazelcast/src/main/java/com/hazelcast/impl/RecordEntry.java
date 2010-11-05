@@ -83,4 +83,8 @@ public class RecordEntry implements MapEntry {
     public int getHits() {
         return record.getHits();
     }
+
+    public void invalidateValue() {
+        valueObject = null;
+    }
 }

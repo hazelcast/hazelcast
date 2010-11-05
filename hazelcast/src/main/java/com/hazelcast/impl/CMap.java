@@ -284,8 +284,15 @@ public class CMap {
         return recordEntry;
     }
 
-    public void invalidateRecordEntryValue(Record record) {
+    public void removeRecordEntry(Record record) {
         mapRecordEntries.remove(record.getId());
+    }
+
+    public void invalidateRecordEntryValue(Record record) {
+        RecordEntry recordEntry = mapRecordEntries.get(record.getId());
+        if (recordEntry!= null) {
+            recordEntry.invalidateValue();
+        }
     }
 
     public void lockMap(Request request) {

@@ -851,8 +851,6 @@ public class BlockingQueueManager extends BaseManager {
 
     class Offer extends TargetAwareOp {
 
-        int doCount = 1;
-
         public boolean offer(String name, Object value, long timeout) throws InterruptedException {
             return offer(name, value, timeout, true);
         }
@@ -870,14 +868,6 @@ public class BlockingQueueManager extends BaseManager {
             } catch (RuntimeInterruptedException e) {
                 throw new InterruptedException();
             }
-        }
-
-        @Override
-        public void process() {
-            if (doCount++ % 4 == 0) {
-                printState(request, true, target, doCount);
-            }
-            super.process();
         }
 
         @Override
@@ -1063,7 +1053,7 @@ public class BlockingQueueManager extends BaseManager {
         }
     }
 
-    public void sendFullMessage(Block block) {
+    public void sendFullMessageToMaster(Block block) {
         Packet packet = obtainPacket();
         packet.set(block.name, ClusterOperation.BLOCKING_QUEUE_FULL_BLOCK, null, null);
         packet.blockId = block.blockId;
@@ -1541,7 +1531,8 @@ public class BlockingQueueManager extends BaseManager {
             if (isMaster()) {
                 doFullBlock(Q.this, block.blockId, null);
             } else {
-                sendFullMessage(block);
+                setBlockFull(block.blockId);
+                sendFullMessageToMaster(block);
             }
         }
 
@@ -1590,7 +1581,7 @@ public class BlockingQueueManager extends BaseManager {
                 int size = lsBlocks.size();
                 for (int i = 0; i < size; i++) {
                     Block block = lsBlocks.get(i);
-                    if (!block.isFull()) {
+                    if (block != null && !block.isFull()) {
                         blCurrentPut = block;
                         return;
                     }

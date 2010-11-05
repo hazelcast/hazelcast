@@ -409,7 +409,7 @@ public final class Record implements MapEntry {
     public void setActive(boolean active) {
         this.active = active;
         if (!active) {
-            cmap.invalidateRecordEntryValue(this);
+            cmap.removeRecordEntry(this);
         }
     }
 

@@ -74,7 +74,7 @@ class LocallyOwnedMap {
             }
             for (Object key : lsKeysToRemove) {
                 mapCache.remove(key);
-            }
+            }               
         }
     }
 
