@@ -325,7 +325,7 @@ public abstract class BaseManager {
 
         public boolean getResultAsBoolean() {
             Object resultObj = getResult();
-            boolean result = !(resultObj == OBJECT_NULL || resultObj == null) && resultObj == Boolean.TRUE;
+            boolean result = Boolean.TRUE.equals(resultObj);
             afterGettingResult(request);
             return result;
         }
@@ -451,8 +451,10 @@ public abstract class BaseManager {
             return getRedoAwareResult();
         }
 
-        protected Object getRedoAwareResult() {
-            Object result = waitAndGetResult();
+        protected final Object getRedoAwareResult() {
+            for(;;)
+            {
+            Object result =  waitAndGetResult();
             if (Thread.interrupted()) {
                 handleInterruptedException();
             }
@@ -463,33 +465,46 @@ public abstract class BaseManager {
                     final Request reqCopy = request.hardCopy();
                     reqCopy.redoCount = request.redoCount;
                     final Address targetCopy = getTarget();
-                    enqueueAndReturn(new Processable() {
-                        public void process() {
-                            StringBuffer sb = new StringBuffer();
-                            Connection targetConnection = null;
-                            MemberImpl targetMember = null;
-                            Object key = toObject(reqCopy.key);
-                            Block block = (reqCopy.key == null) ? null : node.concurrentMapManager.getOrCreateBlock(reqCopy.key);
-                            if (targetCopy != null) {
-                                targetMember = getMember(targetCopy);
-                                targetConnection = node.connectionManager.getConnection(targetCopy);
-                                if (targetMember != null) {
-                                    if (!lsMembers.contains(targetMember)) {
-                                        logger.log(Level.SEVERE, targetMember + " is not in member list!");
+                    if (!thisAddress.equals(targetCopy)){
+                        enqueueAndReturn(new Processable() {
+                            public void process() {
+                                Connection targetConnection = null;
+                                MemberImpl targetMember = null;
+                                Object key = toObject(reqCopy.key);
+                                Block block = (reqCopy.key == null) ? null : node.concurrentMapManager.getOrCreateBlock(reqCopy.key);
+                                if (targetCopy != null) {
+                                    targetMember = getMember(targetCopy);
+                                    targetConnection = node.connectionManager.getConnection(targetCopy);
+                                    if (targetMember != null) {
+                                        if (!lsMembers.contains(targetMember)) {
+                                            logger.log(Level.SEVERE, targetMember + " is not in member list!");
+                                        }
                                     }
                                 }
+                                final String msg = 
+                                    "======= " + reqCopy.callId + ": " + reqCopy.operation + " ======== " +
+                                    "\n\t" +
+                                    "thisAddress= " + thisAddress + ", target= " + targetCopy +
+                                    "\n\t" +
+                                    "targetMember= " + targetMember + ", targetConn=" + targetConnection + ", targetBlock=" + block +
+                                    "\n\t" +
+                                    key + " Re-doing [" + reqCopy.redoCount + "] times! " + 
+                                    reqCopy.name + " : " + toObject(reqCopy.value);
+                                logger.log(Level.INFO,  msg);
+                                l.countDown();
                             }
-                            sb.append("======= " + reqCopy.callId + ": " + reqCopy.operation + " ======== ");
-                            sb.append("\n\t");
-                            sb.append("thisAddress= " + thisAddress + ", target= " + targetCopy);
-                            sb.append("\n\t");
-                            sb.append("targetMember= " + targetMember + ", targetConn=" + targetConnection + ", targetBlock=" + block);
-                            sb.append("\n\t");
-                            sb.append(key + " Re-doing [" + reqCopy.redoCount + "] times! " + reqCopy.name);
-                            logger.log(Level.INFO, sb.toString());
-                            l.countDown();
-                        }
-                    });
+                        });
+                    } else {
+                        final String msg = 
+                            "======= " + reqCopy.callId + ": " + reqCopy.operation + " ======== " +
+                            "\n\t" +
+                            "thisAddress= " + thisAddress + ", target= " + targetCopy +
+                            "\n\t" +
+                            " Re-doing [" + reqCopy.redoCount + "] times! " + 
+                            reqCopy.name + " : " + toObject(reqCopy.key) + "=" + toObject(reqCopy.value);
+                        logger.log(Level.WARNING,  msg);
+                        l.countDown();
+                    }
                     try {
                         l.await();
                     } catch (InterruptedException e) {
@@ -503,9 +518,14 @@ public abstract class BaseManager {
                 }
                 beforeRedo();
                 doOp();
+                //*/
+                continue;
+                /*/
                 return getResult();
+                //*/
             }
             return result;
+            }
         }
 
         protected Address getTarget() {
@@ -571,11 +591,7 @@ public abstract class BaseManager {
         }
 
         protected void setResult(final Object obj) {
-            if (obj == null) {
-                responses.offer(OBJECT_NULL);
-            } else {
-                responses.offer(obj);
-            }
+            responses.offer(obj == null ? OBJECT_NULL : obj);
         }
     }
 
@@ -1244,24 +1260,24 @@ public abstract class BaseManager {
             }
             return key;
         }
-
-        private void fillValues() {
-            oldValue = null;
+        
+        private void fillValues(){
+        	oldValue = null;
             Object v = toObject(dataValue);
-            if (v instanceof Keys) {
-                final Keys keys = (Keys) v;
-                final Iterator<Data> it = keys.getKeys().iterator();
-                value = it.hasNext() ? toObject(it.next()) : null;
-                oldValue = it.hasNext() ? toObject(it.next()) : null;
-            } else {
-                value = v;
-            }
+    		if (v instanceof Keys){
+    			final Keys keys = (Keys) v;
+    			final Iterator<Data> it = keys.getKeys().iterator();
+				value = it.hasNext() ? toObject(it.next()) : null;
+				oldValue = it.hasNext() ? toObject(it.next()) : null;
+    		} else {
+    			value = v;
+    		}
         }
-
+        
         public Object getOldValue() {
-            if (oldValue == null) {
+        	if (oldValue == null) {
                 if (dataValue != null) {
-                    fillValues();
+                	fillValues();
                 } else if (collection) {
                     value = null;
                 }
@@ -1272,7 +1288,7 @@ public abstract class BaseManager {
         public Object getValue() {
             if (value == null) {
                 if (dataValue != null) {
-                    fillValues();
+                	fillValues();
                 } else if (collection) {
                     value = key;
                 }
@@ -1282,7 +1298,7 @@ public abstract class BaseManager {
     }
 
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
-                      final int eventType, final Data value, Address callerAddress) {
+            final int eventType, final Data value, Address callerAddress) {
         fireMapEvent(mapListeners, name, eventType, null, value, callerAddress);
     }
 

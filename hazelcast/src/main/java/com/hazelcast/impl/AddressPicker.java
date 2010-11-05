@@ -170,7 +170,9 @@ public class AddressPicker {
              *
              * By default if the OS is Windows then reuseaddress will be false.
              */
+            logger.log(Level.FINEST, "inet reuseAddress:" + reuseAddress);
             serverSocket.setReuseAddress(reuseAddress);
+            serverSocket.setSoTimeout(1000);
             InetSocketAddress isa;
             int port = config.getPort();
             for (int i = 0; i < 100; i++) {

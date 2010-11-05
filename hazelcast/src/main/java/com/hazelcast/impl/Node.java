@@ -115,17 +115,19 @@ public class Node {
         this.groupProperties = new GroupProperties(config);
         this.superClient = config.isSuperClient();
         this.localNodeType = (superClient) ? NodeType.SUPER_CLIENT : NodeType.MEMBER;
-        String version = "unknown";
-        String build = "unknown";
-        try {
-            InputStream inRuntimeProperties = Node.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
-            if (inRuntimeProperties != null) {
-                Properties runtimeProperties = new Properties();
-                runtimeProperties.load(inRuntimeProperties);
-                version = runtimeProperties.getProperty("hazelcast.version");
-                build = runtimeProperties.getProperty("hazelcast.build");
+        String version = System.getProperty("hazelcast.version", "unknown");
+        String build = System.getProperty("hazelcast.build", "unknown");
+        if ("unknown".equals(version) || "unknown".equals(build)){
+            try {
+                InputStream inRuntimeProperties = Node.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
+                if (inRuntimeProperties != null) {
+                    Properties runtimeProperties = new Properties();
+                    runtimeProperties.load(inRuntimeProperties);
+                    version = runtimeProperties.getProperty("hazelcast.version");
+                    build = runtimeProperties.getProperty("hazelcast.build");
+                }
+            } catch (Exception ignored) {
             }
-        } catch (Exception ignored) {
         }
         int tmpBuildNumber = 0;
         try {
@@ -172,10 +174,10 @@ public class Node {
                 return new Packet();
             }
         };
-        clusterImpl = new ClusterImpl(this, localMember);
-        baseVariables = new NodeBaseVariables(address, localMember);
         this.loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), localMember);
         this.logger = loggingService.getLogger(Node.class.getName());
+        clusterImpl = new ClusterImpl(this, localMember);
+        baseVariables = new NodeBaseVariables(address, localMember);
         //initialize managers..
         clusterService = new ClusterService(this);
         clusterService.start();
@@ -552,30 +554,31 @@ public class Node {
                             addrs = new Address(inetAddress.getAddress(), port);
                             shouldCheck = AddressPicker.matchAddress(addrs.getHost(), interfaces.getInterfaces());
                         }
-                        if (indexColon < 0) {
-                            // port is not set
-                            if (shouldCheck) {
-                                for (int i = -2; i < 3; i++) {
-                                    final Address addressProper = new Address(inetAddress.getAddress(), port + i);
-                                    if (!addressProper.equals(getThisAddress())) {
+                        if (indexColon < 0){ 
+                        	// port is not set
+	                        if (shouldCheck) {
+	                            for (int i = -2; i < 3; i++) {
+	                                final Address addressProper = new Address(inetAddress.getAddress(), port + i);
+	                                if (!addressProper.equals(getThisAddress())) {
                                         setPossibleAddresses.add(addressProper);
-                                    }
-                                }
-                            }
+	                                    }
+	                                }
+	                            }
                         } else {
-                            final Address addressProper = new Address(inetAddress.getAddress(), port);
+                        	final Address addressProper = new Address(inetAddress.getAddress(), port);
                             if (!addressProper.equals(getThisAddress())) {
                                 setPossibleAddresses.add(addressProper);
+                                }
                             }
                         }
                     }
-                }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
+                logger.log(Level.SEVERE, e.getMessage(), e);
             }
         }
-        setPossibleAddresses.addAll(config.getNetworkConfig().getJoin().getTcpIpConfig().getAddresses());
-        return setPossibleAddresses;
+         setPossibleAddresses.addAll(config.getNetworkConfig().getJoin().getTcpIpConfig().getAddresses());
+        return  setPossibleAddresses;
     }
 
     void rejoin() {
@@ -595,13 +598,13 @@ public class Node {
         clusterManager.finalizeJoin();
         clusterManager.enqueueAndWait(new Processable() {
             public void process() {
-                if (baseVariables.lsMembers.size() == 1) {
-                    final StringBuilder sb = new StringBuilder();
-                    sb.append("\n");
-                    sb.append(clusterManager);
-                    logger.log(Level.INFO, sb.toString());
-                }
-            }
+        if (baseVariables.lsMembers.size() == 1) {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("\n");
+            sb.append(clusterManager);
+            logger.log(Level.INFO, sb.toString());
+        }
+    }
         }, 5);
     }
 
@@ -611,9 +614,9 @@ public class Node {
         logger.log(Level.FINEST, "adding member myself");
         clusterManager.enqueueAndWait(new Processable() {
             public void process() {
-                clusterManager.addMember(address, getLocalNodeType()); // add
-                // myself
-                clusterImpl.setMembers(baseVariables.lsMembers);
+        clusterManager.addMember(address, getLocalNodeType()); // add
+        // myself
+        clusterImpl.setMembers(baseVariables.lsMembers);
             }
         }, 5);
         unlock();
@@ -644,13 +647,13 @@ public class Node {
                     sb.append("\n");
                     sb.append("===========================");
                     sb.append("\n");
-                    sb.append("Couldn't connect to discovered master! tryCount: " + tryCount);
+                    sb.append("Couldn't connect to discovered master! tryCount: ").append(tryCount);
                     sb.append("\n");
-                    sb.append("thisAddress: " + address);
+                    sb.append("thisAddress: ").append(address);
                     sb.append("\n");
-                    sb.append("masterAddress: " + masterAddress);
+                    sb.append("masterAddress: ").append(masterAddress);
                     sb.append("\n");
-                    sb.append("connection: " + connectionManager.getConnection(masterAddress));
+                    sb.append("connection: ").append(connectionManager.getConnection(masterAddress));
                     sb.append("===========================");
                     sb.append("\n");
                     logger.log(Level.WARNING, sb.toString());

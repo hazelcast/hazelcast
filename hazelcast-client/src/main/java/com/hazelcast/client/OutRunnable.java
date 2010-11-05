@@ -36,10 +36,11 @@ public class OutRunnable extends IORunnable {
     
     private Connection connection = null;
     
-    volatile Collection<Call> reconnectionCalls;
     private volatile boolean reconnection;
 
     ILogger logger = Logger.getLogger(this.getClass().getName());
+    
+    private Collection<Call> reconnectionCalls;
 
     public OutRunnable(final HazelcastClient client, final Map<Long, Call> calls, final PacketWriter writer) {
         super(client, calls);
@@ -50,64 +51,96 @@ public class OutRunnable extends IORunnable {
     protected void customRun() throws InterruptedException {
         Call call = queue.poll(100, TimeUnit.MILLISECONDS);
         try {
-            if (call == null) return;
-            int count = 0;
-            while (call != null) {
-                if (call != RECONNECT_CALL){
-                    callMap.put(call.getId(), call);
+            if (call == null) {
+                if (reconnectionCalls != null) {
+                    checkOnReconnect(call);
                 }
-                Connection oldConnection = connection;
-                connection = client.getConnectionManager().getConnection();
-                if (restoredConnection(oldConnection, connection)) {
-                    resubscribe(call, oldConnection);
-                } else if (connection != null) {
-                    if (call != RECONNECT_CALL){
-                        logger.log(Level.FINEST, "Sending: " + call);
-                        writer.write(connection, call.getRequest());
-                    }
-                } else {
-                    clusterIsDown(oldConnection);
-                }
-                if (reconnectionCalls != null) break;
-                call = null;
-                if (count++ < 24) {
-                    call = queue.poll();
-                }
+                return;
             }
-            if (connection != null) {
+            if (call != RECONNECT_CALL){
+                callMap.put(call.getId(), call);
+            }
+            Connection oldConnection = connection;
+            connection = client.getConnectionManager().getConnection();
+            boolean wrote = false;
+            if (restoredConnection(oldConnection, connection)) {
+                resubscribe(call, oldConnection);
+            } else if (connection != null) {
+                if (call != RECONNECT_CALL){
+                    logger.log(Level.FINEST, "Sending: " + call);
+                    wrote = true;
+                    writer.write(connection, call.getRequest());
+                }
+            } else {
+                clusterIsDown(oldConnection);
+            }
+            if (connection != null && wrote) {
                 writer.flush(connection);
             }
-            if (call != null && reconnectionCalls != null && reconnectionCalls.contains(call)) {
-                Object response = null;
-                for(int i = 0; i < 20 && response == null; i++) {
-                    response = call.getResponse(1000, TimeUnit.MILLISECONDS);
-                }
-                if (response != null) {
-                    if (reconnectionCalls.remove(call) && reconnectionCalls.isEmpty()){
-                        reconnectionCalls = null;
-                    }
-                } else {
-                    logger.log(Level.WARNING, "There is no responce on reconnection call:" + call);
-                }
+            if (reconnectionCalls != null) {
+                checkOnReconnect(call);
             }
         } catch (Throwable io) {
-            logger.log(Level.WARNING, "OutRunnable got exception:" + io.getMessage());
-            io.printStackTrace();
+            logger.log(Level.WARNING, "OutRunnable got exception:" + io.getMessage(), io);
             if (call != null){
                 enQueue(call);
             }
-            client.getConnectionManager().destroyConnection(connection);
+            clusterIsDown(connection);
+        }
+    }
+
+    private void checkOnReconnect(Call call) {
+        final Collection oldCalls = reconnectionCalls; 
+        try{
+            Object response = reconnectionCalls.contains(call) ? 
+                call.getResponse(100L, TimeUnit.MILLISECONDS) :
+                null;
+            if (response != null){
+                reconnectionCalls.remove(call);
+            } else {
+                for (final Iterator<Call> it = reconnectionCalls.iterator();it.hasNext();) {
+                    final Call c = it.next();
+                    response = !c.hasResponse() ? c.getResponse(100L, TimeUnit.MILLISECONDS) : Boolean.TRUE;
+                    if (response != null){
+                        it.remove();
+                    }
+                }
+            }
+        } catch (Throwable e){
+            // nothing to do
+        }
+        
+        if (reconnectionCalls.isEmpty()){
+            reconnectionCalls = null;
+        }
+        
+        if (oldCalls != null && reconnectionCalls == null){
+            client.getConnectionManager().notifyConnectionIsOpened();
+        }
+    }
+    
+    @Override
+    public void interruptWaitingCalls() {
+        super.interruptWaitingCalls();
+        final BlockingQueue<Call> temp = new LinkedBlockingQueue<Call>();
+        queue.drainTo(temp);
+        clearCalls(temp);
+        clearCalls(reconnectionCalls);
+        reconnectionCalls = null;
+    }
+    
+    private void clearCalls(final Collection<Call> calls) {
+        if (calls == null) return;
+        for(final Iterator<Call> it = calls.iterator();it.hasNext();){
+            final Call c = it.next();
+            if (c == RECONNECT_CALL) continue;
+            c.setResponse(new NoMemberAvailableException());
+            it.remove();
         }
     }
     
     void clusterIsDown(Connection oldConnection) {
-        if (oldConnection != null){
-            try {
-                oldConnection.close();
-            } catch (IOException e) {
-                // nothing to do
-            }
-        }
+        client.getConnectionManager().destroyConnection(oldConnection);
         interruptWaitingCalls();
         if (!reconnection){
             reconnection = true;
@@ -125,7 +158,8 @@ public class OutRunnable extends IORunnable {
                             }
                         }
                     } catch (IOException e) {
-                        logger.log(Level.WARNING, "hz.client.ReconnectionThread got exception:" + e.getMessage(), e);
+                        logger.log(Level.WARNING, 
+                            Thread.currentThread().getName() + " got exception:" + e.getMessage(), e);
                     } finally {
                         reconnection = false;
                     }
@@ -142,13 +176,6 @@ public class OutRunnable extends IORunnable {
         final BlockingQueue<Call> temp = new LinkedBlockingQueue<Call>();
         queue.drainTo(temp);
         temp.add(call);
-        for(final Iterator<Call> it = temp.iterator();it.hasNext();){
-            final Call c = it.next();
-            if (c.hasResponse()){
-                c.setResponse(new NoMemberAvailableException());
-                it.remove();
-            }
-        }
         reconnectionCalls = new ArrayList<Call>(client.getListenerManager().getListenerCalls());
         queue.addAll(reconnectionCalls);
         temp.drainTo(queue);

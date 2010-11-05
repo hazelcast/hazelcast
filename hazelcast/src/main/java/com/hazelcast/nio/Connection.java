@@ -23,7 +23,7 @@ import com.hazelcast.logging.ILogger;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 
-public class Connection {
+public final class Connection {
     final SocketChannel socketChannel;
 
     final ReadHandler readHandler;
@@ -120,7 +120,7 @@ public class Connection {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof Connection)) return false;
         Connection that = (Connection) o;
         return connectionId == that.connectionId;
     }

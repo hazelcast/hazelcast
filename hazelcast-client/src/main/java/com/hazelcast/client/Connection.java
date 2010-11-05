@@ -21,7 +21,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.nio.Address;
 
-import javax.net.SocketFactory;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -33,7 +32,7 @@ import java.net.UnknownHostException;
  * @author fuad-malikov
  */
 public class Connection {
-    private static final int BUFFER_SIZE = 32 * 1024;
+    private static final int BUFFER_SIZE = 32 << 10; // 32k
     private final Socket socket;
     private final InetSocketAddress address;
     private final int id;
@@ -58,10 +57,18 @@ public class Connection {
         this.id = id;
         this.address = address;
         try {
-            this.socket = SocketFactory.getDefault().createSocket(address.getAddress(), address.getPort());
-            this.socket.setKeepAlive(true);
-            this.socket.setTcpNoDelay(true);
-            this.socket.setSoLinger(true, 1);
+            final InetSocketAddress isa = new InetSocketAddress(address.getAddress(), address.getPort());
+            final Socket socket = new Socket();
+            try{
+                socket.setKeepAlive(true);
+                socket.setTcpNoDelay(true);
+                socket.setSoLinger(true, 1);
+                socket.connect(isa);
+            } catch(IOException e){
+                socket.close();
+                throw e;
+            }
+            this.socket = socket;
             this.dos = new DataOutputStream(new BufferedOutputStream(this.socket.getOutputStream(), BUFFER_SIZE));
             this.dis = new DataInputStream(new BufferedInputStream(this.socket.getInputStream(), BUFFER_SIZE));
         } catch (Exception e) {

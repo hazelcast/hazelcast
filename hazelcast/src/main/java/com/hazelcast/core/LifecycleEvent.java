@@ -30,6 +30,7 @@ public final class LifecycleEvent {
         SHUTTING_DOWN,
         SHUTDOWN,
         CLIENT_CONNECTION_LOST,
+        CLIENT_CONNECTION_OPENING,
         CLIENT_CONNECTION_OPENED;
     }
 

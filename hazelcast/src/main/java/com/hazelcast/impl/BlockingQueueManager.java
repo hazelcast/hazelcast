@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
@@ -36,6 +37,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.impl.ClusterOperation.BLOCKING_QUEUE_SIZE;
@@ -1070,15 +1072,15 @@ public class BlockingQueueManager extends BaseManager {
         }
     }
 
-    public class Q {
+    public final class Q {
         String name;
-        List<Block> lsBlocks = new ArrayList<Block>(10);
+        final List<Block> lsBlocks;
         Block blCurrentPut = null;
         Block blCurrentTake = null;
         int latestAddedBlock = -1;
 
-        List<ScheduledPollAction> lsScheduledPollActions = new ArrayList<ScheduledPollAction>(100);
-        List<ScheduledOfferAction> lsScheduledOfferActions = new ArrayList<ScheduledOfferAction>(100);
+        final List<ScheduledPollAction> lsScheduledPollActions = new ArrayList<ScheduledPollAction>(100);
+        final List<ScheduledOfferAction> lsScheduledOfferActions = new ArrayList<ScheduledOfferAction>(100);
         final int maxSizePerJVM;
 
         Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(2);
@@ -1086,19 +1088,25 @@ public class BlockingQueueManager extends BaseManager {
         final long maxAge;
 
         public Q(String name) {
-            QueueConfig qconfig = node.getConfig().getQueueConfig(name.substring(2));
+            QueueConfig qconfig = node.getConfig().getQueueConfig(name.substring(Prefix.QUEUE.length()));
             maxSizePerJVM = (qconfig.getMaxSizePerJVM() == 0) ? QueueConfig.DEFAULT_MAX_SIZE_PER_JVM : qconfig.getMaxSizePerJVM();
-            maxAge = (qconfig.getTimeToLiveSeconds() == 0) ? QueueConfig.DEFAULT_TTL_SECONDS : qconfig.getTimeToLiveSeconds() * 1000l;
+            maxAge = (qconfig.getTimeToLiveSeconds() == 0) ? QueueConfig.DEFAULT_TTL_SECONDS : 
+                TimeUnit.SECONDS.toMillis(qconfig.getTimeToLiveSeconds());
             logger.log(Level.FINEST, name + ".maxSizePerJVM=" + maxSizePerJVM);
             logger.log(Level.FINEST, name + ".maxAge=" + maxAge);
             this.name = name;
+            final int blocksLimit = 10;
+            lsBlocks = new ArrayList<Block>(blocksLimit);
             Address master = getMasterAddress();
-            if (master != null && master.isThisAddress()) {
+            if (master == null){
+                throw new IllegalStateException("Master is " + master);
+            }
+            if (master.isThisAddress()) {
                 Block block = createBlock(master, 0);
                 addBlock(block);
                 sendAddBlockMessageToOthers(block, -1, null, true);
-                for (int i = 0; i < 9; i++) {
-                    int blockId = i + 1;
+                for (int i = 1; i < blocksLimit; i++) {
+                    int blockId = i;
                     Address target = nextTarget();
                     block = createBlock(target, blockId);
                     addBlock(block);
@@ -1135,14 +1143,16 @@ public class BlockingQueueManager extends BaseManager {
         }
 
         public void appendState(StringBuffer sb) {
-            sb.append("\nQ.name: " + name + " this:" + thisAddress);
-            sb.append("\n\tlatestAdded:" + latestAddedBlock);
-            sb.append(" put:" + blCurrentPut);
-            sb.append(" take:" + blCurrentTake);
-            sb.append(" s.polls:" + lsScheduledPollActions.size());
-            sb.append(", s.offers:" + lsScheduledOfferActions.size());
+            sb.append("\nQ.name: ").append(name).append(" this:").append(thisAddress);
+            sb.append("\n\tlatestAdded:").append(latestAddedBlock);
+            sb.append(" put:").append(blCurrentPut);
+            sb.append(" take:").append(blCurrentTake);
+            sb.append(" s.polls:").append(lsScheduledPollActions.size());
+            sb.append(", s.offers:").append(lsScheduledOfferActions.size());
+            sb.append(", lsBlocks:").append(lsBlocks.size());
             for (Block block : lsBlocks) {
-                sb.append("\n\t" + block.blockId + ":" + block.size() + " " + block.address);
+                sb.append("\n\t").append(block.blockId).append(":").
+                    append(block.size()).append(" ").append(block.address);
             }
         }
 
@@ -1615,9 +1625,9 @@ public class BlockingQueueManager extends BaseManager {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (!(o instanceof Q)) return false;
             Q q = (Q) o;
-            return !(name != null ? !name.equals(q.name) : q.name != null);
+            return name == null ? q.name == null : name.equals(q.name);
         }
 
         @Override

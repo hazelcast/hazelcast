@@ -21,6 +21,8 @@ import com.hazelcast.impl.Node;
 import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
+import java.net.Socket;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -116,7 +118,9 @@ public abstract class SelectorBase implements Runnable {
                         sk.interestOps(sk.interestOps() & ~sk.readyOps());
                         SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
                         selectionHandler.handle();
-                    } catch (Exception e) {
+                    } catch (CancelledKeyException e){
+                        // nothing do
+                    } catch (Throwable e) {
                         handleSelectorException(e);
                         //break;
                     }
@@ -133,17 +137,19 @@ public abstract class SelectorBase implements Runnable {
         }
     }
 
-    protected void handleSelectorException(final Exception e) {
+    protected void handleSelectorException(final Throwable e) {
         String msg = "Selector exception at  " + Thread.currentThread().getName() + ", cause= " + e.toString();
         logger.log(Level.WARNING, msg, e);
     }
 
     protected Connection initChannel(final SocketChannel socketChannel, final boolean acceptor)
             throws Exception {
-        socketChannel.socket().setReceiveBufferSize(AbstractSelectionHandler.RECEIVE_SOCKET_BUFFER_SIZE);
-        socketChannel.socket().setSendBufferSize(AbstractSelectionHandler.SEND_SOCKET_BUFFER_SIZE);
-        socketChannel.socket().setKeepAlive(true);
-//        socketChannel.socket().setTcpNoDelay(true);
+        final Socket socket = socketChannel.socket();
+        socket.setKeepAlive(true);
+        socket.setTcpNoDelay(true);
+        socket.setSoLinger(true, 1);
+        socket.setReceiveBufferSize(AbstractSelectionHandler.RECEIVE_SOCKET_BUFFER_SIZE);
+        socket.setSendBufferSize(AbstractSelectionHandler.SEND_SOCKET_BUFFER_SIZE);
         socketChannel.configureBlocking(false);
         return node.connectionManager.createConnection(socketChannel, acceptor);
     }

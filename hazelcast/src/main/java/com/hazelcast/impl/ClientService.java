@@ -23,6 +23,7 @@ import com.hazelcast.impl.ConcurrentMapManager.Entries;
 import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl;
 import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl.CollectionProxyReal;
 import com.hazelcast.impl.base.KeyValue;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
@@ -36,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 import static com.hazelcast.impl.BaseManager.getInstanceType;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_SUCCESS;
@@ -46,9 +48,11 @@ public class ClientService implements ConnectionListener {
     private final Node node;
     private final Map<Connection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<Connection, ClientEndpoint>();
     private final ClientOperationHandler[] clientOperationHandlers = new ClientOperationHandler[300];
+    private final ILogger    logger;
 
     public ClientService(Node node) {
         this.node = node;
+        this.logger = node.getLogger(this.getClass().getName());
         node.getClusterImpl().addMembershipListener(new ClientServiceMembershipListener());
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_PUT.getValue()] = new MapPutHandler();
         clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_PUT_MULTI.getValue()] = new MapPutMultiHandler();
@@ -409,9 +413,15 @@ public class ClientService implements ConnectionListener {
 
     private class ClientAuthenticateHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            String groupName = node.factory.getConfig().getGroupConfig().getName();
-            String pass = node.factory.getConfig().getGroupConfig().getPassword();
-            Boolean value = (groupName.equals(toObject(packet.getKeyData())) && pass.equals(toObject(packet.getValueData())));
+            String nodeGroupName = node.factory.getConfig().getGroupConfig().getName();
+            String nodeGroupPassword = node.factory.getConfig().getGroupConfig().getPassword();
+            Object groupName = toObject(packet.getKeyData());
+            Object groupPassword = toObject(packet.getValueData());
+            boolean value = (nodeGroupName.equals(groupName) && nodeGroupPassword.equals(groupPassword));
+            logger.log(Level.INFO, "received auth from " + packet.conn 
+                    + ", this group name:" + nodeGroupName + ", auth group name:" + groupName
+                    + ", " + (value ? 
+                        "sucessfull authenicated" : "authenication failed"));
             packet.clearForResponse();
             packet.setValue(toData(value));
         }
@@ -736,7 +746,7 @@ public class ClientService implements ConnectionListener {
             final IQueue queue = (IQueue) node.factory.getOrCreateProxyByName(packet.name);
         }
     }
-
+    
     private class MapIterateKeysHandler extends ClientCollectionOperationHandler {
         public Data getMapKeys(IMap<Object, Object> map, Data key, Data value, Collection<Data> collection) {
             ConcurrentMapManager.Entries entries = null;
@@ -861,7 +871,7 @@ public class ClientService implements ConnectionListener {
     public abstract class ClientOperationHandler {
         public abstract void processCall(Node node, Packet packet);
 
-        public void handle(Node node, Packet packet) {
+        public final void handle(Node node, Packet packet) {
             processCall(node, packet);
             sendResponse(packet);
         }
@@ -872,6 +882,8 @@ public class ClientService implements ConnectionListener {
             request.responseType = RESPONSE_SUCCESS;
             if (request.conn != null && request.conn.live()) {
                 request.conn.getWriteHandler().enqueueSocketWritable(request);
+            } else {
+                logger.log(Level.WARNING, "unable to send response " + request);
             }
         }
     }

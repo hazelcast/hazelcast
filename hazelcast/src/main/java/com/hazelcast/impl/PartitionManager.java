@@ -36,7 +36,7 @@ import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_BLOCKS;
 public class PartitionManager implements Runnable {
 
     final int PARTITION_COUNT;
-    final long MIGRATION_INTERVAL_MILLIS = 10000L;
+    final long MIGRATION_INTERVAL_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
     final ILogger logger;
     final ConcurrentMapManager concurrentMapManager;

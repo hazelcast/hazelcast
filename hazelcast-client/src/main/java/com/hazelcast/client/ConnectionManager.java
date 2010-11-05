@@ -18,6 +18,7 @@
 package com.hazelcast.client;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTION_LOST;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTION_OPENING;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTION_OPENED;
 import static java.text.MessageFormat.format;
 
@@ -147,8 +148,22 @@ public class ConnectionManager implements MembershipListener {
         return currentConnection;
     }
 
-    private void notifyConnectionIsRestored() {
-        lifecycleService.fireLifecycleEvent(CLIENT_CONNECTION_OPENED);
+    void notifyConnectionIsRestored() {
+         lifecycleService.fireLifecycleEvent(CLIENT_CONNECTION_OPENING);
+    }
+    
+    void notifyConnectionIsOpened() {
+        notify(new Runnable() {
+            public void run() {
+                lifecycleService.fireLifecycleEvent(CLIENT_CONNECTION_OPENED);
+            }
+        });
+    }
+
+    private void notify(final Runnable target) {
+        final Thread thread = new Thread(target);
+        thread.setName("hz.Client.Notification");
+        thread.run();
     }
 
     void bindConnection(Connection connection) throws IOException {
@@ -158,14 +173,20 @@ public class ConnectionManager implements MembershipListener {
     public void destroyConnection(Connection connection) {
         boolean lost = false;
         synchronized (this) {
-            if (currentConnection != null && currentConnection.getVersion() == connection.getVersion()) {
+            if (currentConnection != null && 
+                    connection != null &&
+                    currentConnection.getVersion() == connection.getVersion()) {
                 logger.log(Level.WARNING, "Connection to " + currentConnection + " is lost");
                 currentConnection = null;
                 lost = true;
             }
         }
         if (lost) {
-            lifecycleService.fireLifecycleEvent(CLIENT_CONNECTION_LOST);
+            notify(new Runnable() {
+                public void run() {
+                    lifecycleService.fireLifecycleEvent(CLIENT_CONNECTION_LOST);
+                }
+            });
         }
     }
 

@@ -27,7 +27,7 @@ public class InitialProcess extends AbstractRemotelyProcessable {
 
     private static final long serialVersionUID = 4803635299019880729L;
 
-    private List<AbstractRemotelyProcessable> processables = new ArrayList<AbstractRemotelyProcessable>(10);
+    private final List<AbstractRemotelyProcessable> processables = new ArrayList<AbstractRemotelyProcessable>(10);
 
     public List<AbstractRemotelyProcessable> getProcessables() {
         return processables;

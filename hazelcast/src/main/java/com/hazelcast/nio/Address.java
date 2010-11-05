@@ -27,11 +27,8 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.StringTokenizer;
 
-public class Address implements DataSerializable {
+public final class Address implements DataSerializable {
 
-    /**
-     *
-     */
     private static final long serialVersionUID = -7626390274220424603L;
 
     private String host = null;
@@ -166,17 +163,10 @@ public class Address implements DataSerializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null)
-            return false;
-        if (!(o instanceof Address))
-            return false;
+        if (this == o) return true;
+        if (!(o instanceof Address)) return false;
         final Address address = (Address) o;
-        if (hashCode() != address.hashCode()) {
-            return false;
-        }
-        return port == address.port && Arrays.equals(ip, address.ip);
+        return hashCode() == address.hashCode() && port == address.port && Arrays.equals(ip, address.ip);
     }
 
     @Override

@@ -69,7 +69,7 @@ public class ConnectionManagerTest {
         verify(binder).bind(connection);
         assertEquals(connection, connectionManager.getConnection());
         assertEquals(1, latch.getCount());
-        assertArrayEquals(new Object[]{LifecycleState.CLIENT_CONNECTION_OPENED}, lifecycleEvents.toArray());
+        assertArrayEquals(new Object[]{LifecycleState.CLIENT_CONNECTION_OPENING}, lifecycleEvents.toArray());
     }
 
     @Test
@@ -111,9 +111,9 @@ public class ConnectionManagerTest {
         connectionManager.destroyConnection(connection);
         connectionManager.getConnection();
         assertTrue(latch.await(1, TimeUnit.SECONDS));
-        assertArrayEquals(new Object[]{LifecycleState.CLIENT_CONNECTION_OPENED,
+        assertArrayEquals(new Object[]{LifecycleState.CLIENT_CONNECTION_OPENING,
                 LifecycleState.CLIENT_CONNECTION_LOST,
-                LifecycleState.CLIENT_CONNECTION_OPENED},
+                LifecycleState.CLIENT_CONNECTION_OPENING},
             lifecycleEvents.toArray());
     }
 

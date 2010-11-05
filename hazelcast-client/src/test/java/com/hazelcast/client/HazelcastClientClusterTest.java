@@ -143,7 +143,8 @@ public class HazelcastClientClusterTest {
             }
             h1 = Hazelcast.newHazelcastInstance(new Config());
             
-            assertEquals(LifecycleState.CLIENT_CONNECTION_OPENED, states.poll(500L, TimeUnit.MILLISECONDS));
+            assertEquals(LifecycleState.CLIENT_CONNECTION_OPENING, states.poll(500L, TimeUnit.MILLISECONDS));
+            assertEquals(LifecycleState.CLIENT_CONNECTION_OPENED, states.poll(1000L, TimeUnit.MILLISECONDS));
             map.put("smth", "nothing4");
             Thread.sleep(50L);
             assertArrayEquals(values.toString(), new String[]{"nothing1", "nothing4"}, values.toArray(new String[0]));
@@ -198,8 +199,8 @@ public class HazelcastClientClusterTest {
             }
             Thread.sleep(50L);
             h1 = Hazelcast.newHazelcastInstance(new Config());
-            assertEquals(LifecycleState.CLIENT_CONNECTION_OPENED, states.poll(500L, TimeUnit.MILLISECONDS));
-            
+            assertEquals(LifecycleState.CLIENT_CONNECTION_OPENING, states.poll(500L, TimeUnit.MILLISECONDS));
+            assertEquals(LifecycleState.CLIENT_CONNECTION_OPENED, states.poll(1000L, TimeUnit.MILLISECONDS));
             map.put("smth", "nothing" + i);
             Thread.sleep(50L);
         }

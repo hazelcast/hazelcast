@@ -209,7 +209,7 @@ public class PartitionServiceImpl implements PartitionService {
         }
     }
 
-    class PartitionReal implements Partition, Comparable {
+    static class PartitionReal implements Partition, Comparable {
         final int partitionId;
         final Member owner;
         final Member migrationMember;
