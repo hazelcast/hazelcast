@@ -35,6 +35,7 @@ import java.util.*;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class QueryTest extends TestUtil {
 
@@ -71,6 +72,20 @@ public class QueryTest extends TestUtil {
         final String[] array = names.toArray(new String[0]);
         Arrays.sort(array);
         assertArrayEquals(names.toString(), expectedValues, array);
+    }
+    
+    @Test
+    public void issue393Fail() {
+        final IMap<String, Value> map = Hazelcast.getMap("default");
+        map.addIndex("qwe", true);
+        final Value v = new Value("name");
+        try{
+            map.put("0", v);
+            fail();
+        } catch(Throwable e){
+            e = e.getCause();
+            assertEquals("There is no suitable accessor for 'qwe'", e.getMessage());
+        }
     }
     
     @Test

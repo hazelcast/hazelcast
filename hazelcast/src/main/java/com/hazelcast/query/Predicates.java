@@ -817,8 +817,16 @@ public final class Predicates {
                             }
                         }
                         if (localGetter == null) {
+                            try {
+                                final Field field = clazz.getField(name);
+                                localGetter = new FieldGetter(parent, field);
+                                clazz = field.getType();
+                            } catch (NoSuchFieldException ignored) {
+                            }
+                        }
+                        if (localGetter == null) {
                             Class c = clazz;
-                            while(!Object.class.equals(clazz)){
+                            while(!Object.class.equals(c)) {
                                 try {
                                     final Field field = c.getDeclaredField(name);
                                     field.setAccessible(true);
@@ -831,7 +839,7 @@ public final class Predicates {
                             }
                         }
                         if (localGetter == null) {
-                            throw new RuntimeException("There is no method of field matching " + name);
+                            throw new RuntimeException("There is no suitable accessor for '" + name + "'");
                         }
                         parent = localGetter;
                     }
