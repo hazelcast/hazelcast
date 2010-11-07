@@ -144,10 +144,18 @@ public class XmlConfigBuilder implements ConfigBuilder {
     public Config build() {
         return build(new Config());
     }
+    
+    public Config build(Config config) {
+        return build(config, null);
+    }
+    
+    public Config build(Element element) {
+        return build(new Config(), element);
+    }
 
-    Config build(Config config) {
+    Config build(Config config, Element element) {
         try {
-            parse(config);
+            parse(config, element);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -156,41 +164,53 @@ public class XmlConfigBuilder implements ConfigBuilder {
         return config;
     }
 
-    private void parse(final Config config) throws Exception {
+    private void parse(final Config config, Element element) throws Exception {
         this.config = config;
-        final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document doc = null;
-        try {
-            doc = builder.parse(in);
-            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            Util.streamXML(doc, baos);
-            final byte[] bytes = baos.toByteArray();
-            final ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-            config.setXmlConfig(Util.inputStreamToString(bais));
-            if ("true".equals(System.getProperty("hazelcast.config.print"))) {
-                logger.log(Level.INFO, "Hazelcast config URL : " + config.getConfigurationUrl());
-                logger.log(Level.INFO, "=== Hazelcast config xml ===");
-                logger.log(Level.INFO, config.getXmlConfig());
-                logger.log(Level.INFO, "==============================");
-                logger.log(Level.INFO, "");
+        if (element == null){
+            final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            Document doc = null;
+            try {
+                doc = builder.parse(in);
+                final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                Util.streamXML(doc, baos);
+                final byte[] bytes = baos.toByteArray();
+                final ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+                config.setXmlConfig(Util.inputStreamToString(bais));
+                if ("true".equals(System.getProperty("hazelcast.config.print"))) {
+                    logger.log(Level.INFO, "Hazelcast config URL : " + config.getConfigurationUrl());
+                    logger.log(Level.INFO, "=== Hazelcast config xml ===");
+                    logger.log(Level.INFO, config.getXmlConfig());
+                    logger.log(Level.INFO, "==============================");
+                    logger.log(Level.INFO, "");
+                }
+            } catch (final Exception e) {
+                String msgPart = "config file '" + config.getConfigurationFile() + "' set as a system property.";
+                if (!usingSystemConfig) {
+                    msgPart = "hazelcast-default.xml config file in the classpath.";
+                }
+                String msg = "Having problem parsing the " + msgPart;
+                msg += "\nException: " + e.getMessage();
+                msg += "\nHazelcast will start with default configuration.";
+                logger.log(Level.WARNING, msg);
+                return;
             }
-        } catch (final Exception e) {
-            String msgPart = "config file '" + config.getConfigurationFile() + "' set as a system property.";
-            if (!usingSystemConfig) {
-                msgPart = "hazelcast-default.xml config file in the classpath.";
-            }
-            String msg = "Having problem parsing the " + msgPart;
-            msg += "\nException: " + e.getMessage();
-            msg += "\nHazelcast will start with default configuration.";
-            logger.log(Level.WARNING, msg);
-            return;
+            element = doc.getDocumentElement();
         }
-        final Element docElement = doc.getDocumentElement();
         try {
-            docElement.getTextContent();
+            element.getTextContent();
         } catch (final Throwable e) {
             domLevel3 = false;
         }
+        handleConfig(element);
+    }
+
+    private boolean checkTrue(final String value) {
+        return "true".equalsIgnoreCase(value) || 
+               "yes".equalsIgnoreCase(value) ||
+               "on".equalsIgnoreCase(value);
+    }
+    
+    private void handleConfig(final Element docElement) throws Exception {
         for (org.w3c.dom.Node node : new IterableNodeList(docElement.getChildNodes())) {
             final String nodeName = cleanNodeName(node.getNodeName());
             if ("network".equals(nodeName)) {
@@ -211,19 +231,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
                 handleMergePolicies(node);
             }
         }
-    }
-
-    private boolean checkTrue(final String value) {
-        if ("true".equalsIgnoreCase(value)) {
-            return true;
-        }
-        if ("yes".equalsIgnoreCase(value)) {
-            return true;
-        }
-        if ("on".equalsIgnoreCase(value)) {
-            return true;
-        }
-        return false;
     }
 
     public void handleNetwork(final org.w3c.dom.Node node) throws Exception {

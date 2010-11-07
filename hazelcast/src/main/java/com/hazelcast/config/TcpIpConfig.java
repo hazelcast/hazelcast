@@ -118,6 +118,15 @@ public class TcpIpConfig implements DataSerializable {
         return this;
     }
 
+    @Override
+    public String toString() {
+        return "TcpIpConfig [enabled=" + this.enabled 
+            + ", requiredMember=" + this.requiredMember 
+            + ", connectionTimeoutSeconds=" + this.connectionTimeoutSeconds 
+            + ", members=" + this.members 
+            + ", addresses=" + this.addresses + "]";
+    }
+
     public void writeData(DataOutput out) throws IOException {
         boolean hasMembers = members != null && !members.isEmpty();
         boolean hasAddresses = addresses != null && !addresses.isEmpty();

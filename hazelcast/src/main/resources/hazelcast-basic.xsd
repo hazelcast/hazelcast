@@ -73,10 +73,10 @@
             <xs:choice>
                 <xs:element ref="members"/>
                 <xs:sequence>
-                    <xs:element ref="member"/>
+                    <xs:element ref="member" minOccurs="0" maxOccurs="unbounded"/>
                 </xs:sequence>
                 <xs:sequence>
-                    <xs:element ref="interface"/>
+                    <xs:element ref="interface" minOccurs="0" maxOccurs="unbounded"/>
                 </xs:sequence>
             </xs:choice>
             <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>

@@ -19,8 +19,13 @@ package com.hazelcast.spring;
 
 import static org.junit.Assert.*;
 
+import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +39,9 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
 import com.hazelcast.impl.GroupProperties;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -44,6 +52,14 @@ public class TestFullApplicationContext {
 	@Autowired
 	private Config config;
 	
+	@Autowired
+	private HazelcastInstance instance;
+	
+	@AfterClass
+	@BeforeClass
+	public static void shutdown(){
+	    Hazelcast.shutdownAll();
+	}
 	
 	@Test
 	public void testMapConfig() {
@@ -69,8 +85,8 @@ public class TestFullApplicationContext {
 	public void testGroupConfig() {
 		GroupConfig groupConfig = config.getGroupConfig();
 		assertNotNull(groupConfig);
-		assertEquals("group", groupConfig.getName());
-		assertEquals("group-pass", groupConfig.getPassword());
+		assertEquals("spring-group", groupConfig.getName());
+		assertEquals("spring-group-pass", groupConfig.getPassword());
 	}
 
 	@Test
@@ -86,12 +102,17 @@ public class TestFullApplicationContext {
 	public void testNetworkConfig() {
 		NetworkConfig networkConfig = config.getNetworkConfig();
 		assertNotNull(networkConfig);
+		assertEquals(5800, config.getPort());
+		assertFalse(config.isPortAutoIncrement());
 		assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
 		TcpIpConfig tcp = networkConfig.getJoin().getTcpIpConfig();
 		assertNotNull(tcp);
 		assertTrue(tcp.isEnabled());
 		assertTrue(networkConfig.getSymmetricEncryptionConfig().isEnabled());
-		
+		final List<String> members = tcp.getMembers();
+		assertEquals(members.toString(), 2, members.size());
+		assertEquals("127.0.0.1:5800", members.get(0));
+		assertEquals("127.0.0.1:5801", members.get(1));
 	}
 
 	@Test
@@ -101,5 +122,15 @@ public class TestFullApplicationContext {
         assertEquals("5", properties.get(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS));
         assertEquals("5", properties.get(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS));
     }
+	
+	@Test
+	public void testInstance(){
+	    assertNotNull(instance);
+	    final Set<Member> members = instance.getCluster().getMembers();
+	    assertEquals(1, members.size());
+	    final Member member = members.iterator().next();
+	    final InetSocketAddress inetSocketAddress = member.getInetSocketAddress();
+	    assertEquals(5800, inetSocketAddress.getPort());
+	}
 
 }

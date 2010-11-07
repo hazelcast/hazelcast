@@ -24,7 +24,6 @@ import org.w3c.dom.Element;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.config.XmlConfigBuilder.IterableNodeList;
 
 public class HazelcastBeanDefinitionParser extends AbstractSimpleBeanDefinitionParser {
 
@@ -38,34 +37,12 @@ public class HazelcastBeanDefinitionParser extends AbstractSimpleBeanDefinitionP
         super.doParse(element, parserContext, builder);
         
         XmlConfigBuilder util = new XmlConfigBuilder();
-        Config config = util.build();
-        try {
-            for (org.w3c.dom.Node node : new IterableNodeList(element.getChildNodes())) {
-                final String nodeName = util.cleanNodeName(node.getNodeName());
-               
-                if ("network".equals(nodeName)) {
-                    util.handleNetwork(node);
-                } else if ("group".equals(nodeName)) {
-                    util.handleGroup(node);
-                } else if ("properties".equals(nodeName)) {
-                    util.handleProperties(node, config.getProperties());
-                } else if ("executor-service".equals(nodeName)) {
-                    util.handleExecutor(node);
-                } else if ("queue".equals(nodeName)) {
-                    util.handleQueue(node);
-                } else if ("map".equals(nodeName)) {
-                    util.handleMap(node);
-                } else if ("topic".equals(nodeName)) {
-                    util.handleTopic(node);
-                } else if ("merge-policies".equals(nodeName)) {
-                    util.handleMergePolicies(node);
-                }
-            }
+        Config config = util.build(element);
 
-        } catch (Exception e) {
-            throw new IllegalStateException("Configuration failed due to:" + e.getMessage(), e);
-        }
-
+        builder.addPropertyValue("port", config.getPort());
+        builder.addPropertyValue("portAutoIncrement", config.isPortAutoIncrement());
+        builder.addPropertyValue("reuseAddress", config.isReuseAddress());
+        builder.addPropertyValue("superClient", config.isSuperClient());
         builder.addPropertyValue("networkConfig", config.getNetworkConfig());
         builder.addPropertyValue("groupConfig", config.getGroupConfig());
         builder.addPropertyValue("properties", config.getProperties());

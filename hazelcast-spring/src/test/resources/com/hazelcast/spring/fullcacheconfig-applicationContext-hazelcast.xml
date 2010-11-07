@@ -9,15 +9,15 @@
 
 	<cache:hazelcast id="config">
 		<cache:group>
-			<cache:name>group</cache:name>
-			<cache:password>group-pass</cache:password>
+			<cache:name>spring-group</cache:name>
+			<cache:password>spring-group-pass</cache:password>
 		</cache:group>
 		<cache:properties>
 			<cache:property name="hazelcast.merge.first.run.delay.seconds">5</cache:property>
 			<cache:property name="hazelcast.merge.next.run.delay.seconds">5</cache:property>
 		</cache:properties>
 		<cache:network>
-			<cache:port auto-increment="true">5800</cache:port>
+			<cache:port auto-increment="false">5800</cache:port>
 			<cache:join>
 				<cache:multicast enabled="false">
 					<cache:multicast-group>224.2.2.3</cache:multicast-group>
@@ -63,5 +63,10 @@
 		</cache:map>
 	</cache:hazelcast>
 
-
+	<bean id="hazelcastInstance"
+		class="com.hazelcast.core.Hazelcast"
+		factory-method="newHazelcastInstance">
+		<constructor-arg ref="config" />
+	</bean>
+	
 </beans>
