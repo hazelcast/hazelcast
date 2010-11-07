@@ -17,12 +17,18 @@
 
 package com.hazelcast.config;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Interfaces {
+import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.IOUtil;
+
+public class Interfaces implements DataSerializable {
 
     private boolean enabled = false;
 
@@ -79,4 +85,29 @@ public class Interfaces {
         this.interfaceSet.addAll(interfaces);
         return this;
     }
+
+    public void writeData(DataOutput out) throws IOException {
+        boolean hasInterfaceSet = interfaceSet != null && !interfaceSet.isEmpty();
+        out.writeByte(IOUtil.toByte(enabled, hasInterfaceSet));
+        if (hasInterfaceSet){
+            out.writeInt(interfaceSet.size());
+            for(final String iface : interfaceSet){
+                out.writeUTF(iface);
+            }
+        }
+    }
+
+    public void readData(DataInput in) throws IOException {
+        boolean b[] = IOUtil.fromByte(in.readByte());
+        enabled = b[0];
+        boolean hasInterfaceSet = b[1];
+        if (hasInterfaceSet){
+            interfaceSet.clear();
+            int size = in.readInt();
+            for(int i = 0; i < size; i++){
+                interfaceSet.add(in.readUTF());
+            }
+        }
+    }
+    
 }

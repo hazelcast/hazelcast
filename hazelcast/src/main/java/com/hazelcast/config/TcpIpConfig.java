@@ -18,11 +18,16 @@
 package com.hazelcast.config;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.IOUtil;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TcpIpConfig {
+public class TcpIpConfig implements DataSerializable {
     private int connectionTimeoutSeconds = 5;
 
     private boolean enabled = false;
@@ -112,4 +117,61 @@ public class TcpIpConfig {
         this.requiredMember = requiredMember;
         return this;
     }
+
+    public void writeData(DataOutput out) throws IOException {
+        boolean hasMembers = members != null && !members.isEmpty();
+        boolean hasAddresses = addresses != null && !addresses.isEmpty();
+        boolean hasRequiredMember = requiredMember != null;
+        out.writeByte(IOUtil.toByte(enabled, hasRequiredMember, hasMembers, hasAddresses));
+        out.writeInt(connectionTimeoutSeconds);
+        if (hasRequiredMember) {
+            out.writeUTF(requiredMember);
+        }
+        
+        if (hasMembers){
+            out.writeInt(members.size());
+            for (final String member : members) {
+                out.writeUTF(member);
+            }
+        }
+        
+        if (hasAddresses){
+            out.writeInt(addresses.size());
+            for (final Address address : addresses) {
+                address.writeData(out);
+            }
+        }
+    }
+
+    public void readData(DataInput in) throws IOException {
+        boolean[] b = IOUtil.fromByte(in.readByte());
+        enabled = b[0];
+        boolean hasRequiredMember = b[1];
+        boolean hasMembers = b[2];
+        boolean hasAddresses = b[3];
+        
+        connectionTimeoutSeconds = in.readInt();
+        if (hasRequiredMember) {
+            requiredMember = in.readUTF();
+        }
+        
+        if (hasMembers){
+            int size = in.readInt();
+            members = new ArrayList<String>(size);
+            for(int i = 0; i < size; i++){
+                members.add(in.readUTF());
+            }
+        }
+        
+        if (hasAddresses){
+            int size = in.readInt();
+            addresses.clear();
+            for(int i = 0; i < size; i++){
+                Address address = new Address();
+                address.readData(in);
+                addresses.add(address);
+            }
+        }
+    }
+    
 }

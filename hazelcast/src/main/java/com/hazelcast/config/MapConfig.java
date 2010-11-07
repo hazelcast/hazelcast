@@ -17,9 +17,15 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.merge.LatestUpdateMergePolicy;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
-public class MapConfig {
+import com.hazelcast.merge.LatestUpdateMergePolicy;
+import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.IOUtil;
+
+public class MapConfig implements DataSerializable {
 
     public final static int MIN_BACKUP_COUNT = 0;
     public final static int DEFAULT_BACKUP_COUNT = 1;
@@ -285,6 +291,77 @@ public class MapConfig {
         this.useBackupData = useBackupData;
         return this;
     }
+    
+    public boolean isCompatible(MapConfig other) {
+        if (this == other)
+            return true;
+        return other != null &&
+            (this.name != null ? this.name.equals(other.name) : other.name == null) &&
+            this.backupCount == other.backupCount &&
+            this.evictionDelaySeconds == other.evictionDelaySeconds &&
+            this.evictionPercentage == other.evictionPercentage &&
+            this.maxIdleSeconds == other.maxIdleSeconds &&
+            (this.maxSize == other.maxSize || 
+                (Math.min(maxSize, other.maxSize) == 0 && Math.max(maxSize, other.maxSize) == Integer.MAX_VALUE)) &&
+            this.timeToLiveSeconds == other.timeToLiveSeconds &&
+            this.useBackupData == other.useBackupData &&
+            this.valueIndexed == other.valueIndexed;
+    }
+    
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + this.backupCount;
+        result = prime * result + this.evictionDelaySeconds;
+        result = prime * result + this.evictionPercentage;
+        result = prime
+                * result
+                + ((this.evictionPolicy == null) ? 0 : this.evictionPolicy
+                        .hashCode());
+        result = prime
+                * result
+                + ((this.mapStoreConfig == null) ? 0 : this.mapStoreConfig
+                        .hashCode());
+        result = prime * result + this.maxIdleSeconds;
+        result = prime * result + this.maxSize;
+        result = prime
+                * result
+                + ((this.mergePolicy == null) ? 0 : this.mergePolicy.hashCode());
+        result = prime * result
+                + ((this.name == null) ? 0 : this.name.hashCode());
+        result = prime
+                * result
+                + ((this.nearCacheConfig == null) ? 0 : this.nearCacheConfig
+                        .hashCode());
+        result = prime * result + this.timeToLiveSeconds;
+        result = prime * result + (this.useBackupData ? 1231 : 1237);
+        result = prime * result + (this.valueIndexed ? 1231 : 1237);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (!(obj instanceof MapConfig))
+            return false;
+        MapConfig other = (MapConfig) obj;
+        return 
+            (this.name != null ? this.name.equals(other.name) : other.name == null) &&
+            this.backupCount == other.backupCount &&
+            this.evictionDelaySeconds == other.evictionDelaySeconds &&
+            this.evictionPercentage == other.evictionPercentage &&
+            this.maxIdleSeconds == other.maxIdleSeconds &&
+            this.maxSize == other.maxSize &&
+            this.timeToLiveSeconds == other.timeToLiveSeconds &&
+            this.useBackupData == other.useBackupData &&
+            this.valueIndexed == other.valueIndexed &&
+            (this.mergePolicy != null ? this.mergePolicy.equals(other.mergePolicy) : other.mergePolicy == null) &&
+            (this.evictionPolicy != null ? this.evictionPolicy.equals(other.evictionPolicy) : other.evictionPolicy == null) &&
+            (this.mapStoreConfig != null ? this.mapStoreConfig.equals(other.mapStoreConfig) : other.mapStoreConfig == null) &&
+            (this.nearCacheConfig != null ? this.nearCacheConfig.equals(other.nearCacheConfig) : other.nearCacheConfig == null);
+    }
 
     @Override
     public String toString() {
@@ -302,5 +379,40 @@ public class MapConfig {
                 ", nearCacheConfig=" + nearCacheConfig +
                 ", useBackupData=" + useBackupData +
                 '}';
+    }
+    
+    public void readData(DataInput in) throws IOException {
+        name = in.readUTF();
+        backupCount = in.readInt();
+        evictionPercentage = in.readInt();
+        timeToLiveSeconds = in.readInt();
+        maxIdleSeconds = in.readInt();
+        evictionDelaySeconds = in.readInt();
+        maxSize = in.readInt();
+        boolean[] b = IOUtil.fromByte(in.readByte());
+        valueIndexed = b[0];
+        useBackupData = b[1];
+        evictionPolicy = in.readUTF();
+        mergePolicy = in.readUTF();
+        
+        // TODO: MapStoreConfig mapStoreConfig
+        // TODO: NearCacheConfig nearCacheConfig
+
+    }
+    
+    public void writeData(DataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeInt(backupCount);
+        out.writeInt(evictionPercentage);
+        out.writeInt(timeToLiveSeconds);
+        out.writeInt(maxIdleSeconds);
+        out.writeInt(evictionDelaySeconds);
+        out.writeInt(maxSize);
+        out.writeByte(IOUtil.toByte(valueIndexed, useBackupData));
+        out.writeUTF(evictionPolicy);
+        out.writeUTF(mergePolicy);
+        
+        // TODO: MapStoreConfig mapStoreConfig
+        // TODO: NearCacheConfig nearCacheConfig
     }
 }

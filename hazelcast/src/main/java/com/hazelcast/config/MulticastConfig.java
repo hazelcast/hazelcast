@@ -17,7 +17,13 @@
 
 package com.hazelcast.config;
 
-public class MulticastConfig {
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+import com.hazelcast.nio.DataSerializable;
+
+public class MulticastConfig implements DataSerializable {
 
     public final static boolean DEFAULT_ENABLED = true;
     public final static String DEFAULT_MULTICAST_GROUP = "224.2.2.3";
@@ -90,5 +96,19 @@ public class MulticastConfig {
     public MulticastConfig setMulticastTimeoutSeconds(int multicastTimeoutSeconds) {
         this.multicastTimeoutSeconds = multicastTimeoutSeconds;
         return this;
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        out.writeBoolean(enabled);
+        out.writeUTF(multicastGroup);
+        out.writeInt(multicastPort);
+        out.writeInt(multicastTimeoutSeconds);
+    }
+
+    public void readData(DataInput in) throws IOException {
+        enabled = in.readBoolean();
+        multicastGroup = in.readUTF();
+        multicastPort = in.readInt();
+        multicastTimeoutSeconds = in.readInt();
     }
 }

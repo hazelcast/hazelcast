@@ -17,7 +17,13 @@
 
 package com.hazelcast.config;
 
-public class AsymmetricEncryptionConfig {
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+import com.hazelcast.nio.DataSerializable;
+
+public class AsymmetricEncryptionConfig implements DataSerializable {
     private boolean enabled = false;
     private String algorithm = "RSA/NONE/PKCS1PADDING";
     private String keyPassword = "thekeypass";
@@ -103,4 +109,29 @@ public class AsymmetricEncryptionConfig {
                 .append('}')
                 .toString();
     }
+
+    public void writeData(DataOutput out) throws IOException {
+        out.writeBoolean(enabled);
+        if (enabled){
+            out.writeUTF(algorithm);
+            out.writeUTF(keyPassword);
+            out.writeUTF(keyAlias);
+            out.writeUTF(storeType);
+            out.writeUTF(storePassword);
+            out.writeUTF(storePath);
+        }
+    }
+
+    public void readData(DataInput in) throws IOException {
+        enabled = in.readBoolean();
+        if (enabled){
+            algorithm = in.readUTF();
+            keyPassword = in.readUTF();
+            keyAlias = in.readUTF();
+            storeType = in.readUTF();
+            storePassword = in.readUTF();
+            storePath = in.readUTF();
+        }
+    }
+    
 }

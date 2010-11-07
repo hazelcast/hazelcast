@@ -17,7 +17,14 @@
 
 package com.hazelcast.config;
 
-public class NetworkConfig {
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.IOUtil;
+
+public class NetworkConfig implements DataSerializable {
     private Interfaces interfaces = new Interfaces();
 
     private Join join = new Join();
@@ -72,5 +79,38 @@ public class NetworkConfig {
     public NetworkConfig setAsymmetricEncryptionConfig(final AsymmetricEncryptionConfig asymmetricEncryptionConfig) {
         this.asymmetricEncryptionConfig = asymmetricEncryptionConfig;
         return this;
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        interfaces.writeData(out);
+        join.writeData(out);
+        boolean hasSymmetricEncryptionConfig = symmetricEncryptionConfig != null;
+        boolean hasAsymmetricEncryptionConfig = asymmetricEncryptionConfig != null;
+        out.writeByte(IOUtil.toByte(hasSymmetricEncryptionConfig, hasAsymmetricEncryptionConfig));
+        if (hasSymmetricEncryptionConfig){
+            symmetricEncryptionConfig.writeData(out);
+        }
+        if (hasAsymmetricEncryptionConfig){
+            asymmetricEncryptionConfig.writeData(out);
+        }
+    }
+
+    public void readData(DataInput in) throws IOException {
+        interfaces = new Interfaces();
+        interfaces.readData(in);
+        join = new Join();
+        join.readData(in);
+        boolean[] b = IOUtil.fromByte(in.readByte());
+        boolean hasSymmetricEncryptionConfig = b[0];
+        boolean hasAsymmetricEncryptionConfig = b[1];
+        
+        if (hasSymmetricEncryptionConfig){
+            symmetricEncryptionConfig = new SymmetricEncryptionConfig();
+            symmetricEncryptionConfig.readData(in);
+        }
+        if (hasAsymmetricEncryptionConfig){
+            asymmetricEncryptionConfig = new AsymmetricEncryptionConfig();
+            asymmetricEncryptionConfig.readData(in);
+        }
     }
 }

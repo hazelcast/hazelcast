@@ -17,6 +17,7 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.impl.NodeType;
 import com.hazelcast.nio.Address;
 
@@ -29,25 +30,23 @@ public class JoinRequest extends AbstractRemotelyProcessable {
     protected NodeType nodeType = NodeType.MEMBER;
     public Address address;
     public Address to;
-    public String groupName;
-    public String groupPassword;
     public byte packetVersion;
     public int buildNumber;
+    public Config config;
 
     public JoinRequest() {
         super();
     }
 
-    public JoinRequest(Address address, String groupName, String groupPassword, NodeType type, byte packetVersion, int buildNumber) {
-        this(null, address, groupName, groupPassword, type, packetVersion, buildNumber);
+    public JoinRequest(Address address, Config config, NodeType type, byte packetVersion, int buildNumber) {
+        this(null, address, config, type, packetVersion, buildNumber);
     }
 
-    public JoinRequest(Address to, Address address, String groupName, String groupPassword, NodeType type, byte packetVersion, int buildNumber) {
+    public JoinRequest(Address to, Address address, Config config, NodeType type, byte packetVersion, int buildNumber) {
         super();
         this.to = to;
         this.address = address;
-        this.groupName = groupName;
-        this.groupPassword = groupPassword;
+        this.config = config;
         this.nodeType = type;
         this.packetVersion = packetVersion;
         this.buildNumber = buildNumber;
@@ -55,6 +54,8 @@ public class JoinRequest extends AbstractRemotelyProcessable {
 
     @Override
     public void readData(DataInput in) throws IOException {
+        packetVersion = in.readByte();
+        buildNumber = in.readInt();
         boolean hasTo = in.readBoolean();
         if (hasTo) {
             to = new Address();
@@ -63,14 +64,14 @@ public class JoinRequest extends AbstractRemotelyProcessable {
         address = new Address();
         address.readData(in);
         nodeType = NodeType.create(in.readInt());
-        groupName = in.readUTF();
-        groupPassword = in.readUTF();
-        packetVersion = in.readByte();
-        buildNumber = in.readInt();
+        config = new Config();
+        config.readData(in);
     }
 
     @Override
     public void writeData(DataOutput out) throws IOException {
+        out.writeByte(packetVersion);
+        out.writeInt(buildNumber);
         boolean hasTo = (to != null);
         out.writeBoolean(hasTo);
         if (hasTo) {
@@ -78,10 +79,7 @@ public class JoinRequest extends AbstractRemotelyProcessable {
         }
         address.writeData(out);
         out.writeInt(nodeType.getValue());
-        out.writeUTF(groupName);
-        out.writeUTF(groupPassword);
-        out.writeByte(packetVersion);
-        out.writeInt(buildNumber);
+        config.writeData(out);
     }
 
     @Override
@@ -90,12 +88,10 @@ public class JoinRequest extends AbstractRemotelyProcessable {
                 .append("JoinRequest{")
                 .append("nodeType=").append(nodeType)
                 .append(", address=").append(address)
-                .append(", groupName='").append(groupName).append('\'')
-                .append(", groupPassword='").append(groupPassword).append('\'')
                 .append(", buildNumber='").append(buildNumber).append('\'')
                 .append(", packetVersion='").append(packetVersion).append('\'')
-                .append('}')
-                .toString();
+                .append(", config='").append(config).append('\'')
+                .append('}').toString();
     }
 
     public void process() {

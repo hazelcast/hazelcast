@@ -17,7 +17,13 @@
 
 package com.hazelcast.config;
 
-public class GroupConfig {
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+import com.hazelcast.nio.DataSerializable;
+
+public final class GroupConfig implements DataSerializable {
 
     public static final String DEFAULT_GROUP_PASSWORD = "dev-pass";
     public static final String DEFAULT_GROUP_NAME = "dev";
@@ -71,5 +77,45 @@ public class GroupConfig {
         }
         this.password = password;
         return this;
+    }
+    
+    @Override
+    public int hashCode() {
+        return (name != null ? name.hashCode() : 0) + 
+            31 * (password != null ? password.hashCode() : 0);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (!(obj instanceof GroupConfig))
+            return false;
+        GroupConfig other = (GroupConfig) obj;
+        return (this.name == null ? other.name == null : this.name.equals(other.name)) &&
+            (this.password == null ? other.password == null : this.password.equals(other.password));
+    }
+    
+    
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("GroupConfig [name=").append(this.name).append(", password=");
+        for(int i = 0, len = password.length(); i < len; i++){
+            builder.append('*');
+        }
+        builder.append("]");
+        return builder.toString();
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeUTF(password);
+    }
+    
+    public void readData(DataInput in) throws IOException {
+        name = in.readUTF();
+        password = in.readUTF();
     }
 }

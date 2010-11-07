@@ -17,7 +17,13 @@
 
 package com.hazelcast.config;
 
-public class Join {
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+import com.hazelcast.nio.DataSerializable;
+
+public class Join implements DataSerializable {
 
     private MulticastConfig multicastConfig = new MulticastConfig();
 
@@ -52,4 +58,18 @@ public class Join {
         this.tcpIpConfig = tcpIpConfig;
         return this;
     }
+
+    public void writeData(DataOutput out) throws IOException {
+        multicastConfig.writeData(out);
+        tcpIpConfig.writeData(out);
+    }
+
+    public void readData(DataInput in) throws IOException {
+        multicastConfig = new MulticastConfig();
+        multicastConfig.readData(in);
+        tcpIpConfig = new TcpIpConfig();
+        tcpIpConfig.readData(in);
+    }
+    
+    
 }

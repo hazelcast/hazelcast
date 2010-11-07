@@ -441,8 +441,7 @@ public class Node {
     }
 
     public JoinInfo createJoinInfo() {
-        return new JoinInfo(true, address, config.getGroupConfig().getName(),
-                config.getGroupConfig().getPassword(), getLocalNodeType(),
+        return new JoinInfo(true, address, config, getLocalNodeType(),
                 Packet.PACKET_VERSION, buildNumber, clusterImpl.getMembers().size());
     }
 
@@ -471,10 +470,17 @@ public class Node {
     }
 
     public boolean validateJoinRequest(JoinRequest joinRequest) {
-        return config.getGroupConfig().getName().equals(joinRequest.groupName) &&
-                config.getGroupConfig().getPassword().equals(joinRequest.groupPassword) &&
-                Packet.PACKET_VERSION == joinRequest.packetVersion &&
+        boolean valid = Packet.PACKET_VERSION == joinRequest.packetVersion &&
                 buildNumber == joinRequest.buildNumber;
+        if (valid) {
+            try {
+                config.checkCompatible(joinRequest.config);
+            } catch(Exception e){
+                valid = false;
+                logger.log(Level.INFO, "Invalid join request, reason:" + e.getMessage());
+            }
+        }
+        return valid;
     }
 
     private Address getAddressFor(String host) {

@@ -17,7 +17,13 @@
 
 package com.hazelcast.config;
 
-public final class QueueConfig {
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+import com.hazelcast.nio.DataSerializable;
+
+public final class QueueConfig implements DataSerializable {
 
     public final static int DEFAULT_MAX_SIZE_PER_JVM = Integer.MAX_VALUE;
     public final static int DEFAULT_TTL_SECONDS = Integer.MAX_VALUE;
@@ -78,4 +84,30 @@ public final class QueueConfig {
         this.timeToLiveSeconds = timeToLiveSeconds;
         return this;
     }
+    
+    public boolean isCompatible(final QueueConfig queueConfig){
+        if (queueConfig == null) return false;
+        return this.name.equals(queueConfig.name) &&
+            this.timeToLiveSeconds == queueConfig.timeToLiveSeconds;
+    }
+    
+    @Override
+    public String toString() {
+        return "QueueConfig [name=" + this.name + ", timeToLiveSeconds="
+                + this.timeToLiveSeconds + ", maxSizePerJVM="
+                + this.maxSizePerJVM + "]";
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeInt(maxSizePerJVM);
+        out.writeInt(timeToLiveSeconds);
+    }
+
+    public void readData(DataInput in) throws IOException {
+        name = in.readUTF();
+        maxSizePerJVM = in.readInt();
+        timeToLiveSeconds = in.readInt();
+    }
+    
 }

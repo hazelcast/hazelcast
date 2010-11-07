@@ -17,6 +17,7 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.impl.NodeType;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
@@ -26,29 +27,29 @@ import java.net.DatagramPacket;
 
 public class JoinInfo extends JoinRequest implements DataSerializable {
 
-    private static final long serialVersionUID = 1088129500826234941L;
+    
     private boolean request = true;
     private int memberCount = 0;
 
     public JoinInfo() {
     }
 
-    public JoinInfo(boolean request, Address address, String groupName, String groupPassword,
+    public JoinInfo(boolean request, Address address, Config config,
                     NodeType type, byte packetVersion, int buildNumber, int memberCount) {
-        super(address, groupName, groupPassword, type, packetVersion, buildNumber);
-        this.setRequest(request);
+        super(address, config, type, packetVersion, buildNumber);
+        this.request = request;
         this.memberCount = memberCount;
     }
 
     public JoinInfo copy(boolean newRequest, Address newAddress) {
-        return new JoinInfo(newRequest, newAddress, groupName, groupPassword,
+        return new JoinInfo(newRequest, newAddress, config,
                 nodeType, packetVersion, buildNumber, memberCount);
     }
 
     @Override
     public void readData(DataInput dis) throws IOException {
         super.readData(dis);
-        setRequest(dis.readBoolean());
+        this.request = dis.readBoolean();
         memberCount = dis.readInt();
     }
 
@@ -68,6 +69,7 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
         DataOutputStream dos = new DataOutputStream(bos);
         try {
             writeData(dos);
+            dos.flush();
             packet.setData(bos.toByteArray());
             packet.setLength(bos.size());
         } catch (IOException e) {

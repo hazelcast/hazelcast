@@ -17,7 +17,13 @@
 
 package com.hazelcast.config;
 
-public class ExecutorConfig {
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+import com.hazelcast.nio.DataSerializable;
+
+public class ExecutorConfig implements DataSerializable {
 
     public final static int DEFAULT_CORE_POOL_SIZE = 40;
     public final static int DEFAULT_MAX_POOL_SIZE = 40;
@@ -107,4 +113,20 @@ public class ExecutorConfig {
         this.keepAliveSeconds = keepAliveSeconds;
         return this;
     }
+
+    public void writeData(DataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeInt(corePoolSize);
+        out.writeInt(maxPoolSize);
+        out.writeInt(keepAliveSeconds);
+    }
+
+    public void readData(DataInput in) throws IOException {
+        name = in.readUTF();
+        corePoolSize = in.readInt();
+        maxPoolSize = in.readInt();
+        keepAliveSeconds = in.readInt();
+    }
+    
+    
 }

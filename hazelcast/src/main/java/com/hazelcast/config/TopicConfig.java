@@ -17,7 +17,13 @@
 
 package com.hazelcast.config;
 
-public class TopicConfig {
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+import com.hazelcast.nio.DataSerializable;
+
+public final class TopicConfig  implements DataSerializable{
 
     public final static boolean DEFAULT_GLOBAL_ORDERING_ENABLED = false;
 
@@ -54,4 +60,39 @@ public class TopicConfig {
         this.globalOrderingEnabled = globalOrderingEnabled;
         return this;
     }
+    
+    @Override
+    public int hashCode() {
+        return (globalOrderingEnabled ? 1231 : 1237) +
+            31 * (name != null ? name.hashCode() : 0);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (!(obj instanceof TopicConfig))
+            return false;
+        TopicConfig other = (TopicConfig) obj;
+        return 
+        (this.name != null ? this.name.equals(other.name) : other.name == null) &&
+            this.globalOrderingEnabled == other.globalOrderingEnabled;
+    }
+    
+    @Override
+    public String toString() {
+        return "TopicConfig [name=" + name + ", globalOrderingEnabled=" + globalOrderingEnabled + "]";
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeBoolean(globalOrderingEnabled);
+    }
+
+    public void readData(DataInput in) throws IOException {
+        name = in.readUTF();
+        globalOrderingEnabled = in.readBoolean();
+    }
+    
+    
 }

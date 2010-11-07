@@ -20,16 +20,23 @@ package com.hazelcast.config;
 import com.hazelcast.merge.AddNewEntryMergePolicy;
 import com.hazelcast.merge.HigherHitsMergePolicy;
 import com.hazelcast.merge.LatestUpdateMergePolicy;
+import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.IOUtil;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Config {
+public class Config implements DataSerializable {
 
     public static final int DEFAULT_PORT = 5701;
 
@@ -138,6 +145,7 @@ public class Config {
         MapConfig defaultConfig = mapConfigs.get("default");
         if (defaultConfig == null) {
             defaultConfig = new MapConfig();
+            defaultConfig.setName("default");
             mapConfigs.put("default", defaultConfig);
         }
         return defaultConfig;
@@ -405,4 +413,217 @@ public class Config {
         this.superClient = superClient;
         return this;
     }
+    
+    public void checkCompatible(final Config config){
+        if (config == null){
+            throw new IllegalArgumentException("Expected not null config");
+        }
+        if (!this.groupConfig.equals(config.getGroupConfig())){
+            throw new RuntimeException("Incompatible group config:" + config.getGroupConfig());
+        }
+        checkMapConfigCompatible(config);
+        checkQueueConfigCompatible(config);
+        checkTopicConfigCompatible(config);
+    }
+
+    private void checkMapConfigCompatible(final Config config) {
+        Set<String> mapConfigNames = new HashSet<String>(mapConfigs.keySet());
+        mapConfigNames.addAll(config.mapConfigs.keySet());
+        for (final String name : mapConfigNames) {
+            final MapConfig thisMapConfig = getMapConfig(name);
+            final MapConfig thatMapConfig = config.getMapConfig(name);
+            if (!thisMapConfig.isCompatible(thatMapConfig)) {
+                throw new RuntimeException("Incompatible map config:" + thatMapConfig);
+            }
+        }
+    }
+    
+    private void checkQueueConfigCompatible(final Config config) {
+        Set<String> queueConfigNames = new HashSet<String>(mapQueueConfigs.keySet());
+        queueConfigNames.addAll(config.mapQueueConfigs.keySet());
+        for (final String name : queueConfigNames) {
+            final QueueConfig thisQueueConfig = getQueueConfig(name);
+            final QueueConfig thatQueueConfig = config.getQueueConfig(name);
+            if (!thisQueueConfig.isCompatible(thatQueueConfig)) {
+                throw new RuntimeException("Incompatible queue config:" + thatQueueConfig);
+            }
+        }
+    }
+    
+    private void checkTopicConfigCompatible(final Config config) {
+        Set<String> topicConfigNames = new HashSet<String>(mapTopicConfigs.keySet());
+        topicConfigNames.addAll(config.mapTopicConfigs.keySet());
+        for (final String name : topicConfigNames) {
+            final TopicConfig thisTopicConfig = getTopicConfig(name);
+            final TopicConfig thatTopicConfig = config.getTopicConfig(name);
+            if (!thisTopicConfig.equals(thatTopicConfig)) {
+                throw new RuntimeException("Incompatible topic config:" + thatTopicConfig);
+            }
+        }
+    }
+    
+    public void readData(DataInput in) throws IOException {
+        groupConfig = new GroupConfig();
+        groupConfig.readData(in);
+        port = in.readInt();
+        boolean[] b1 = IOUtil.fromByte(in.readByte());
+        reuseAddress = b1[0];
+        portAutoIncrement = b1[1];
+        superClient = b1[2];
+        
+        boolean[] b2 = IOUtil.fromByte(in.readByte());
+        
+        boolean hasMapConfigs = b2[0];
+        boolean hasMapExecutors = b2[1];
+        boolean hasMapTopicConfigs = b2[2];
+        boolean hasMapQueueConfigs = b2[3];
+        boolean hasMapMergePolicyConfigs = b2[4];
+        boolean hasProperties = b2[5];
+        
+        networkConfig = new NetworkConfig();
+        networkConfig.readData(in);
+        
+        executorConfig = new ExecutorConfig();
+        executorConfig.readData(in);
+        
+        if (hasMapConfigs){
+            int size = in.readInt();
+            mapConfigs = new ConcurrentHashMap<String, MapConfig>(size);
+            for(int i = 0; i < size; i++){
+                final String name = in.readUTF();
+                final MapConfig mapConfig = new MapConfig();
+                mapConfig.readData(in);
+                mapConfigs.put(name, mapConfig);
+            }
+        }
+        if (hasMapExecutors){
+            int size = in.readInt();
+            mapExecutors = new ConcurrentHashMap<String, ExecutorConfig>(size);
+            for(int i = 0; i < size; i++){
+                final String name = in.readUTF();
+                final ExecutorConfig executorConfig = new ExecutorConfig();
+                executorConfig.readData(in);
+                mapExecutors.put(name, executorConfig);
+            }
+        }
+        if (hasMapTopicConfigs){
+            int size = in.readInt();
+            mapTopicConfigs = new ConcurrentHashMap<String, TopicConfig>(size);
+            for(int i = 0; i < size; i++){
+                final String name = in.readUTF();
+                final TopicConfig topicConfig = new TopicConfig();
+                topicConfig.readData(in);
+                mapTopicConfigs.put(name, topicConfig);
+            }
+        }
+        if (hasMapQueueConfigs){
+            int size = in.readInt();
+            mapQueueConfigs = new ConcurrentHashMap<String, QueueConfig>(size);
+            for(int i = 0; i < size; i++){
+                final String name = in.readUTF();
+                final QueueConfig queueConfig = new QueueConfig();
+                queueConfig.readData(in);
+                mapQueueConfigs.put(name, queueConfig);
+            }
+        }
+        if (hasMapMergePolicyConfigs){
+            // TODO: Map<String, MergePolicyConfig> mapMergePolicyConfigs
+        }
+        if (hasProperties){
+            int size = in.readInt();
+            properties = new Properties();
+            for(int i = 0; i < size; i++){
+                final String name = in.readUTF();
+                final String value = in.readUTF();
+                properties.put(name, value);
+            }
+        }
+    }
+    
+    public void writeData(DataOutput out) throws IOException {
+        getGroupConfig().writeData(out);
+        out.writeInt(port);
+        boolean hasMapConfigs = mapConfigs != null && !mapConfigs.isEmpty();
+        boolean hasMapExecutors = mapExecutors != null && !mapExecutors.isEmpty();
+        boolean hasMapTopicConfigs = mapTopicConfigs != null && !mapTopicConfigs.isEmpty();
+        boolean hasMapQueueConfigs = mapQueueConfigs != null && !mapQueueConfigs.isEmpty();
+        boolean hasMapMergePolicyConfigs = mapMergePolicyConfigs != null && !mapMergePolicyConfigs.isEmpty();
+        boolean hasProperties = properties != null && !properties.isEmpty();
+        
+        out.writeByte(IOUtil.toByte(reuseAddress, 
+            portAutoIncrement,
+            superClient));
+        
+        out.writeByte(IOUtil.toByte(
+            hasMapConfigs,
+            hasMapExecutors,
+            hasMapTopicConfigs,
+            hasMapQueueConfigs,
+            hasMapMergePolicyConfigs,
+            hasProperties));
+        
+        networkConfig.writeData(out);
+        executorConfig.writeData(out);
+        
+        if (hasMapConfigs){
+            out.writeInt(mapConfigs.size());
+            for (final Entry<String, MapConfig> entry : mapConfigs.entrySet()) {
+                out.writeUTF(entry.getKey());
+                entry.getValue().writeData(out);
+            }
+        }
+        if (hasMapExecutors){
+            out.writeInt(mapExecutors.size());
+            for (final Entry<String, ExecutorConfig> entry : mapExecutors.entrySet()) {
+                out.writeUTF(entry.getKey());
+                entry.getValue().writeData(out);
+            }
+        }
+        if (hasMapTopicConfigs){
+            out.writeInt(mapTopicConfigs.size());
+            for (final Entry<String, TopicConfig> entry : mapTopicConfigs.entrySet()) {
+                out.writeUTF(entry.getKey());
+                entry.getValue().writeData(out);
+            }
+        }
+        if (hasMapQueueConfigs){
+            out.writeInt(mapQueueConfigs.size());
+            for (final Entry<String, QueueConfig> entry : mapQueueConfigs.entrySet()) {
+                out.writeUTF(entry.getKey());
+                entry.getValue().writeData(out);
+            }
+        }
+        if (hasMapMergePolicyConfigs){
+            // TODO: Map<String, MergePolicyConfig> mapMergePolicyConfigs
+        }
+        if (hasProperties){
+            out.writeInt(properties.size());
+            for (final Entry<Object, Object> entry : properties.entrySet()) {
+                final String key = (String) entry.getKey();
+                final String value = (String) entry.getValue();
+                out.writeUTF(key);
+                out.writeUTF(value);
+            }
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "Config [groupConfig=" + this.groupConfig 
+            + ", port=" + this.port 
+            + ", superClient=" + this.superClient
+            + ", reuseAddress=" + this.reuseAddress
+            + ", portAutoIncrement=" + this.portAutoIncrement
+            + ", properties=" + this.properties 
+            + ", networkConfig=" + this.networkConfig 
+            + ", mapConfigs=" + this.mapConfigs
+            + ", mapMergePolicyConfigs=" + this.mapMergePolicyConfigs
+            + ", executorConfig=" + this.executorConfig 
+            + ", mapExecutors=" + this.mapExecutors 
+            + ", mapTopicConfigs=" + this.mapTopicConfigs 
+            + ", mapQueueConfigs=" + this.mapQueueConfigs 
+            + "]";
+    }
+    
+    
 }

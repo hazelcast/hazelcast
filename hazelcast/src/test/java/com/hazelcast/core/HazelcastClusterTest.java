@@ -39,6 +39,33 @@ public class HazelcastClusterTest {
     }
 
     @Test
+    public void testJoinWithCompatibleConfigs() throws Exception {
+        Config config = new XmlConfigBuilder().build();
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        
+        final int s1 = h1.getCluster().getMembers().size();
+        final int s2 = h2.getCluster().getMembers().size();
+        assertEquals(s1, s2);
+        assertEquals(2, s2);
+    }
+    
+    @Test
+    public void testJoinWithIncompatibleConfigs() throws Exception {
+        Config config1 = new XmlConfigBuilder().build();
+        Config config2 = new XmlConfigBuilder().build();
+        config2.getMapConfigs().get("default").setTimeToLiveSeconds(1);
+        
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
+        
+        final int s1 = h1.getCluster().getMembers().size();
+        final int s2 = h2.getCluster().getMembers().size();
+        assertEquals(1, s1);
+        assertEquals(1, s2);
+    }
+    
+    @Test
     public void testMapPutAndGetUseBackupData() throws Exception {
         Config config = new XmlConfigBuilder().build();
         String mapName1 = "testMapPutAndGetUseBackupData";
