@@ -817,12 +817,17 @@ public final class Predicates {
                             }
                         }
                         if (localGetter == null) {
-                            try {
-                                final Field field = clazz.getField(name);
-                                field.setAccessible(true);
-                                localGetter = new FieldGetter(parent, field);
-                                clazz = field.getType();
-                            } catch (NoSuchFieldException ignored) {
+                            Class c = clazz;
+                            while(!Object.class.equals(clazz)){
+                                try {
+                                    final Field field = c.getDeclaredField(name);
+                                    field.setAccessible(true);
+                                    localGetter = new FieldGetter(parent, field);
+                                    clazz = field.getType();
+                                    break;
+                                } catch (NoSuchFieldException ignored) {
+                                    c = c.getSuperclass();
+                                }
                             }
                         }
                         if (localGetter == null) {

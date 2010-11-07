@@ -66,7 +66,7 @@ public class QueryTest extends TestUtil {
         assertEquals(expectedValues.length, values.size());
         final List<String> names = new ArrayList<String>();
         for (final Value configObject : values) {
-            names.add(configObject.getName());
+            names.add(configObject.name);
         }
         final String[] array = names.toArray(new String[0]);
         Arrays.sort(array);
@@ -87,7 +87,7 @@ public class QueryTest extends TestUtil {
         assertEquals(expectedValues.length, values.size());
         final List<String> names = new ArrayList<String>();
         for (final Value configObject : values) {
-            names.add(configObject.getName());
+            names.add(configObject.name);
         }
         final String[] array = names.toArray(new String[0]);
         Arrays.sort(array);
@@ -108,7 +108,7 @@ public class QueryTest extends TestUtil {
         assertEquals(expectedValues.length, values.size());
         final List<String> names = new ArrayList<String>();
         for (final Value configObject : values) {
-            names.add(configObject.getName());
+            names.add(configObject.name);
         }
         final String[] array = names.toArray(new String[0]);
         Arrays.sort(array);
@@ -129,7 +129,7 @@ public class QueryTest extends TestUtil {
         assertEquals(expectedValues.length, values.size());
         final List<String> names = new ArrayList<String>();
         for (final Value configObject : values) {
-            names.add(configObject.getName());
+            names.add(configObject.name);
         }
         final String[] array = names.toArray(new String[0]);
         Arrays.sort(array);

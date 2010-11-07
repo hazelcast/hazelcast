@@ -85,13 +85,22 @@ public class TestUtil {
     }
     
     @Ignore
-    public static class Value implements Serializable {
-        String name;
+    public static abstract class AbstractValue implements Serializable {
+        public String name;
+
+        public AbstractValue(String name) {
+            this.name = name;
+        }
+        
+    }
+    
+    @Ignore
+    public static class Value extends AbstractValue implements Serializable {
         ValueType type;
         int index;
 
         public Value(String name, ValueType type, int index) {
-            this.name = name;
+            super(name);
             this.type = type;
             this.index = index;
         }
@@ -100,10 +109,6 @@ public class TestUtil {
             this(name, null, 0);
         }
 
-        public String getName() {
-            return this.name;
-        }
-        
         public ValueType getType() {
             return type;
         }
