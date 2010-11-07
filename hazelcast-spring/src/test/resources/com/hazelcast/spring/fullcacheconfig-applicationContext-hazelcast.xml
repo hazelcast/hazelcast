@@ -3,15 +3,19 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
 	xmlns:cache="http://www.hazelcast.com/schema/config"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans
-http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-http://www.hazelcast.com/schema/config
-http://www.hazelcast.com/schema/config/hazelcast-basic.xsd">
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.hazelcast.com/schema/config
+		http://www.hazelcast.com/schema/config/hazelcast-basic.xsd">
 
 	<cache:hazelcast id="config">
 		<cache:group>
 			<cache:name>group</cache:name>
 			<cache:password>group-pass</cache:password>
 		</cache:group>
+		<cache:properties>
+			<cache:property name="hazelcast.merge.first.run.delay.seconds">5</cache:property>
+			<cache:property name="hazelcast.merge.next.run.delay.seconds">5</cache:property>
+		</cache:properties>
 		<cache:network>
 			<cache:port auto-increment="true">5800</cache:port>
 			<cache:join>
@@ -20,7 +24,7 @@ http://www.hazelcast.com/schema/config/hazelcast-basic.xsd">
 					<cache:multicast-port>54327</cache:multicast-port>
 				</cache:multicast>
 				<cache:tcp-ip enabled="true">
-					<cache:interface>127.0.0.1</cache:interface>
+					<cache:members>127.0.0.1:5800, 127.0.0.1:5801</cache:members>
 				</cache:tcp-ip>
 			</cache:join>
 			<cache:interfaces enabled="false">

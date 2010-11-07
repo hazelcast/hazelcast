@@ -307,9 +307,16 @@ public class XmlConfigBuilder implements ConfigBuilder {
 
     public void handleProperties(final org.w3c.dom.Node node, Properties properties) {
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
-            final String value = getTextContent(n).trim();
             final String name = cleanNodeName(n.getNodeName());
-            properties.setProperty(name, value);
+            final String propertyName;
+            if ("property".equals(name)){
+                 propertyName = getTextContent(n.getAttributes().getNamedItem("name")).trim();
+            } else {
+                // old way - probably should be deprecated
+                propertyName = name;
+            }
+            final String value = getTextContent(n).trim();
+            properties.setProperty(propertyName, value);
         }
     }
 
@@ -547,7 +554,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
             }
         }
         final NodeList nodelist = node.getChildNodes();
-        members:
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String value = getTextContent(n).trim();
@@ -569,32 +575,41 @@ public class XmlConfigBuilder implements ConfigBuilder {
                     }
                 }
             } else if ("interface".equals(cleanNodeName(n.getNodeName()))) {
-                final int indexStar = value.indexOf('*');
-                final int indexDash = value.indexOf('-');
-                if (indexStar == -1 && indexDash == -1) {
-                    join.getTcpIpConfig().addMember(value);
-                } else {
-                    final String first3 = value.substring(0, value.lastIndexOf('.'));
-                    final String lastOne = value.substring(value.lastIndexOf('.') + 1);
-                    if (first3.indexOf('*') != -1 && first3.indexOf('-') != -1) {
-                        String msg = "First 3 parts of interface definition cannot contain '*' and '-'.";
-                        msg += "\nPlease change the value '" + value + "' in the config file.";
-                        logger.log(Level.WARNING, msg);
-                        continue members;
-                    }
-                    if (lastOne.equals("*")) {
-                        for (int j = 0; j < 256; j++) {
-                            join.getTcpIpConfig().addMember(first3 + "." + String.valueOf(j));
-                        }
-                    } else if (lastOne.indexOf('-') != -1) {
-                        final int start = Integer.parseInt(lastOne.substring(0, lastOne
-                                .indexOf('-')));
-                        final int end = Integer.parseInt(lastOne
-                                .substring(lastOne.indexOf('-') + 1));
-                        for (int j = start; j <= end; j++) {
-                            join.getTcpIpConfig().addMember(first3 + "." + String.valueOf(j));
-                        }
-                    }
+                handleMember(join, value);
+            } else if ("member".equals(cleanNodeName(n.getNodeName()))) {
+                handleMember(join, value);
+            } else if ("members".equals(cleanNodeName(n.getNodeName()))) {
+                for(String v : value.split(",")){
+                    handleMember(join, v.trim());
+                }
+            }
+        }
+    }
+
+    private void handleMember(final Join join, final String value) {
+        final int indexStar = value.indexOf('*');
+        final int indexDash = value.indexOf('-');
+        if (indexStar == -1 && indexDash == -1) {
+            join.getTcpIpConfig().addMember(value);
+        } else {
+            final String first3 = value.substring(0, value.lastIndexOf('.'));
+            final String lastOne = value.substring(value.lastIndexOf('.') + 1);
+            if (first3.indexOf('*') != -1 && first3.indexOf('-') != -1) {
+                String msg = "First 3 parts of interface definition cannot contain '*' and '-'." +
+                    "\nPlease change the value '" + value + "' in the config file.";
+                throw new IllegalStateException(msg);
+            }
+            if (lastOne.equals("*")) {
+                for (int j = 0; j < 256; j++) {
+                    join.getTcpIpConfig().addMember(first3 + "." + String.valueOf(j));
+                }
+            } else if (lastOne.indexOf('-') != -1) {
+                final int start = Integer.parseInt(lastOne.substring(0, lastOne
+                        .indexOf('-')));
+                final int end = Integer.parseInt(lastOne
+                        .substring(lastOne.indexOf('-') + 1));
+                for (int j = start; j <= end; j++) {
+                    join.getTcpIpConfig().addMember(first3 + "." + String.valueOf(j));
                 }
             }
         }

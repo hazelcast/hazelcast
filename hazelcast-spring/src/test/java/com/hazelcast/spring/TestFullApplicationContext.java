@@ -17,10 +17,9 @@
 
 package com.hazelcast.spring;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+
+import java.util.Properties;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,6 +34,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.impl.GroupProperties;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 
@@ -94,5 +94,12 @@ public class TestFullApplicationContext {
 		
 	}
 
+	@Test
+    public void testProperties() {
+        final Properties properties = config.getProperties();
+        assertNotNull(properties);
+        assertEquals("5", properties.get(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS));
+        assertEquals("5", properties.get(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS));
+    }
 
 }

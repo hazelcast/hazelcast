@@ -17,6 +17,7 @@
         <module>hazelcast-ra</module>
         <module>hazelcast-client</module>
         <module>hazelcast-monitor</module>
+        <module>hazelcast-spring</module>
         <module>hazelcast-all</module>
     </modules>
     <properties>

@@ -6,6 +6,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element ref="group" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="properties" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="network" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="executor-service" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="queue" minOccurs="0" maxOccurs="unbounded"/>
@@ -69,9 +70,15 @@
     </xs:element>
     <xs:element name="tcp-ip">
         <xs:complexType>
-            <xs:sequence>
-                <xs:element ref="interface"/>
-            </xs:sequence>
+            <xs:choice>
+                <xs:element ref="members"/>
+                <xs:sequence>
+                    <xs:element ref="member"/>
+                </xs:sequence>
+                <xs:sequence>
+                    <xs:element ref="interface"/>
+                </xs:sequence>
+            </xs:choice>
             <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
         </xs:complexType>
     </xs:element>
@@ -308,11 +315,63 @@
             <xs:restriction base="xs:string"/>
         </xs:simpleType>
     </xs:element>
+    <xs:element name="member" default="127.0.0.1">
+        <xs:simpleType>
+            <xs:restriction base="xs:string"/>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="members" default="127.0.0.1">
+        <xs:simpleType>
+            <xs:restriction base="xs:string"/>
+        </xs:simpleType>
+    </xs:element>
     <xs:element name="group">
         <xs:complexType>
             <xs:sequence>
                 <xs:element ref="name"/>
                 <xs:element ref="password"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:simpleType name="propertyName">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="hazelcast.merge.first.run.delay.seconds"/>
+            <xs:enumeration value="hazelcast.merge.next.run.delay.seconds"/>
+            <xs:enumeration value="hazelcast.redo.wait.millis"/>
+            <xs:enumeration value="hazelcast.socket.bind.any"/>
+            <xs:enumeration value="hazelcast.serializer.gzip.enabled"/>
+            <xs:enumeration value="hazelcast.serializer.shared"/>
+            <xs:enumeration value="hazelcast.packet.version"/>
+            <xs:enumeration value="hazelcast.shutdownhook.enabled"/>
+            <xs:enumeration value="hazelcast.wait.seconds.before.join"/>
+            <xs:enumeration value="hazelcast.max.no.heartbeat.seconds"/>
+            <xs:enumeration value="hazelcast.initial.wait.seconds"/>
+            <xs:enumeration value="hazelcast.restart.on.max.idle"/>
+            <xs:enumeration value="hazelcast.map.partition.count"/>
+            <xs:enumeration value="hazelcast.queue.block.size"/>
+            <xs:enumeration value="hazelcast.map.remove.delay.seconds"/>
+            <xs:enumeration value="hazelcast.map.cleanup.delay.seconds"/>
+            <xs:enumeration value="hazelcast.executor.query.thread.count"/>
+            <xs:enumeration value="hazelcast.executor.event.thread.count"/>
+            <xs:enumeration value="hazelcast.executor.migration.thread.count"/>
+            <xs:enumeration value="hazelcast.executor.client.thread.count"/>
+            <xs:enumeration value="hazelcast.executor.store.thread.count"/>
+            <xs:enumeration value="hazelcast.log.state"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:element name="property">
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:attribute name="name" use="required" type="propertyName"/>
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="properties">
+        <xs:complexType>
+            <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="property"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
