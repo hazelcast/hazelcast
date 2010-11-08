@@ -1,12 +1,12 @@
-/* 
+/*
  * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at 
- * 
+ * You may obtain a copy of the License at
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,15 +23,20 @@ import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.monitor.LocalQueueStats;
 
+import java.util.AbstractQueue;
 import java.util.Collection;
-import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.ProxyHelper.check;
 
-public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQueue<E> {
+public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
+    final protected ProxyHelper proxyHelper;
+    final protected String name;
+
     public QueueClientProxy(HazelcastClient hazelcastClient, String name) {
-        super(hazelcastClient, name);
+        super();
+        this.name = name;
+        proxyHelper = new ProxyHelper(name, hazelcastClient);
     }
 
     public String getName() {
@@ -42,14 +47,12 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
         return InstanceType.QUEUE;
     }
 
-    @Override
-    public boolean add(E e) {
-        check(e);
-        boolean result = offer(e);
-        if (!result) {
-            throw new IllegalStateException("no space is currently available");
-        }
-        return true;
+    public void destroy() {
+        proxyHelper.destroy();
+    }
+
+    public Object getId() {
+        return name;
     }
 
     @Override
@@ -57,6 +60,11 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
         return "Queue{" +
                 "name='" + name + '\'' +
                 '}';
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
     }
 
     public LocalQueueStats getLocalQueueStats() {
@@ -72,19 +80,8 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
         return innerPoll(0);
     }
 
-    public E remove() {
-        return (E) proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_REMOVE, null, null);
-    }
-
     public E peek() {
         return (E) proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_PEEK, null, null);
-    }
-
-    public E element() {
-        if (this.size() == 0) {
-            throw new NoSuchElementException();
-        }
-        return peek();
     }
 
     public boolean offer(E e, long l, TimeUnit timeUnit) throws InterruptedException {
@@ -161,27 +158,15 @@ public class QueueClientProxy<E> extends CollectionClientProxy<E> implements IQu
     }
 
     @Override
-    public void clear() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean containsAll(java.util.Collection<?> objects) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean removeAll(java.util.Collection<?> objects) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public java.util.Iterator<E> iterator() {
         throw new UnsupportedOperationException();
     }
 
-    @Override
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void removeItemListener(ItemListener<E> eItemListener) {
         throw new UnsupportedOperationException();
     }
 }
