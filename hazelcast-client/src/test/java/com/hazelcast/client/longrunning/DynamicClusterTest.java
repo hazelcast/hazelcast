@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.client.HazelcastClientMapTest.getAllThreads;
@@ -179,9 +180,38 @@ public class DynamicClusterTest {
         map.put("hello", "new world");
         map.remove("hello");
         memberMap.remove(client.getConnectionManager().getConnection().getAddress().getPort()).shutdown();
+        map.size();
         map.put("hello", "world");
         map.put("hello", "new world");
         map.remove("hello");
+        assertTrue(entryAddLatch.await(10, SECONDS));
+        assertTrue(entryUpdatedLatch.await(10, SECONDS));
+        assertTrue(entryRemovedLatch.await(10, SECONDS));
+    }
+
+    @Test
+    public void addListenerWithTwoMemberClusterAndKillOnePutFromNodes
+            () throws InterruptedException, IOException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        Map<Integer, HazelcastInstance> memberMap = getMapOfClusterMembers(h1, h2);
+        client = newHazelcastClient(h1, h2);
+        IMap<String, String> clientMap = client.getMap("default");
+        IMap<String, String> map1 = h1.getMap("default");
+        IMap<String, String> map2 = h2.getMap("default");
+        final CountDownLatch entryAddLatch = new CountDownLatch(2);
+        final CountDownLatch entryUpdatedLatch = new CountDownLatch(2);
+        final CountDownLatch entryRemovedLatch = new CountDownLatch(2);
+        CountDownLatchEntryListener<String, String> listener = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
+        clientMap.addEntryListener(listener, true);
+        map1.put("hello", "world");
+        map1.put("hello", "new world");
+        map1.remove("hello");
+        memberMap.remove(client.getConnectionManager().getConnection().getAddress().getPort()).shutdown();
+        clientMap.size();
+        clientMap.put("hello", "world");
+        clientMap.put("hello", "new world");
+        clientMap.remove("hello");
         assertTrue(entryAddLatch.await(10, SECONDS));
         assertTrue(entryUpdatedLatch.await(10, SECONDS));
         assertTrue(entryRemovedLatch.await(10, SECONDS));
@@ -879,6 +909,50 @@ public class DynamicClusterTest {
         map.put(2, 2);
         Thread.sleep(1000);
         assertEquals(1, map.getLocalMapStats().getOperationStats().getNumberOfEvents());
+    }
+
+    @Test
+    @Ignore
+    public void oneNode2Clients() throws InterruptedException {
+        final AtomicBoolean finished = new AtomicBoolean(false);
+        final HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        int threadCount = 2;
+        int operationCount = 100;
+        final BlockingQueue queue = new LinkedBlockingQueue();
+        for (int i = 0; i < operationCount; i++) {
+            queue.add(i);
+        }
+        final CountDownLatch latch = new CountDownLatch(operationCount);
+        final CountDownLatch startUpLatch = new CountDownLatch(threadCount);
+        for (int i = 0; i < threadCount; i++) {
+            new Thread(new Runnable() {
+                public void run() {
+                    int count = 0;
+                    try {
+                        System.out.println(Thread.currentThread() + " Running....");
+//                        HazelcastClient client = newHazelcastClient(h);
+                        HazelcastClient client;
+                        synchronized (finished) {
+                            client = HazelcastClient.newHazelcastClient("dev", "dev-pass", "localhost");
+                        }
+                        System.out.println(Thread.currentThread() + " Client init");
+                        startUpLatch.countDown();
+                        startUpLatch.await();
+                        while (!finished.get()) {
+                            queue.take();
+                            client.getMap("map").put(latch.getCount(), latch.getCount());
+                            count++;
+                            latch.countDown();
+                        }
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                    System.out.println(Thread.currentThread() + "processed: " + count);
+                }
+            }).start();
+        }
+        assertTrue(latch.await(200, TimeUnit.SECONDS));
+        finished.set(true);
     }
 
     private int getNumberOfClientsConnected(HazelcastInstance h) {
