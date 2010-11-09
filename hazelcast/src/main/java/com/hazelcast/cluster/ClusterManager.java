@@ -85,8 +85,14 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 Request request = Request.copy(packet);
                 JoinInfo joinInfo = (JoinInfo) toObject(request.value);
                 request.clearForResponse();
-                if (joinInfo != null && node.joined() && node.isActive() && node.validateJoinRequest(joinInfo)) {
-                    request.response = toData(node.createJoinInfo());
+                if (joinInfo != null && node.joined() && node.isActive()) {
+                    try {
+                        node.validateJoinRequest(joinInfo);
+                        request.response = toData(node.createJoinInfo());
+                    } catch (Exception e) {
+                        request.response = toData(e);
+                    }
+                    
                 }
                 returnResponse(request, conn);
                 releasePacket(packet);
@@ -417,7 +423,12 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             return;
         }
         Connection conn = joinRequest.getConnection();
-        final boolean validateJoinRequest = node.validateJoinRequest(joinRequest);
+        boolean validateJoinRequest;
+        try {
+            validateJoinRequest = node.validateJoinRequest(joinRequest);
+        } catch (Exception e) {
+            validateJoinRequest = false;
+        }
         if (validateJoinRequest) {
             if (!node.getConfig().getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
                 if (node.isActive() && node.joined() && node.getMasterAddress() != null && !isMaster()) {

@@ -22,7 +22,7 @@ public class XMLConfigBuilderTest {
         XmlConfigBuilder configBuilder = new XmlConfigBuilder();
         assertEquals("nocolon", configBuilder.cleanNodeName("noColon"));
         assertEquals("after", configBuilder.cleanNodeName("Before:After"));
-        assertNull(configBuilder.cleanNodeName(null));
+        assertNull(configBuilder.cleanNodeName((String)null));
     }
 
     @Test

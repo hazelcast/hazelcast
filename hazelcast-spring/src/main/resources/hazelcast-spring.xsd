@@ -31,6 +31,7 @@
                 <xs:element ref="max-size" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="eviction-percentage" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="merge-policy" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="time-to-live-seconds" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="name" use="required">
                 <xs:simpleType>
@@ -72,7 +73,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:simpleType>
-            <xs:restriction base="xs:byte"/>
+            <xs:restriction base="xs:int"/>
         </xs:simpleType>
     </xs:element>
     <xs:element name="tcp-ip">

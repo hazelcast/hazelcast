@@ -72,20 +72,42 @@ public class TestFullApplicationContext {
 	public void testMapConfig() {
 		assertNotNull(config);
 		
-		MapConfig mapConfig = config.getMapConfig("testMap");
-		assertNotNull(mapConfig);
-		assertEquals("testMap", mapConfig.getName());
-		assertEquals(2, mapConfig.getBackupCount());
-
+		assertEquals(2, config.getMapConfigs().size());
+		
+		MapConfig testMapConfig = config.getMapConfig("testMap");
+		assertNotNull(testMapConfig);
+        assertEquals("testMap", testMapConfig.getName());
+        assertEquals(2, testMapConfig.getBackupCount());
+        assertEquals("NONE", testMapConfig.getEvictionPolicy());
+        assertEquals(0, testMapConfig.getMaxSize());
+        assertEquals(30, testMapConfig.getEvictionPercentage());
+        assertEquals(0, testMapConfig.getTimeToLiveSeconds());
+        assertEquals("hz.ADD_NEW_ENTRY", testMapConfig.getMergePolicy());
+        
+		MapConfig simpleMapConfig = config.getMapConfig("simpleMap");
+        assertNotNull(simpleMapConfig);
+        assertEquals("simpleMap", simpleMapConfig.getName());
+        assertEquals(3, simpleMapConfig.getBackupCount());
+        assertEquals("LRU", simpleMapConfig.getEvictionPolicy());
+        assertEquals(10, simpleMapConfig.getMaxSize());
+        assertEquals(50, simpleMapConfig.getEvictionPercentage());
+        assertEquals(1, simpleMapConfig.getTimeToLiveSeconds());
+        assertEquals("hz.LATEST_UPDATE", simpleMapConfig.getMergePolicy());
 	}
 	
 	@Test
 	public void testQueueConfig() {
-		QueueConfig qConfig = config.getQueueConfig("testQ");
-		assertNotNull(qConfig);
-		assertEquals("testQ", qConfig.getName());
-		assertEquals(1000, qConfig.getMaxSizePerJVM());
+		QueueConfig testQConfig = config.getQueueConfig("testQ");
+		assertNotNull(testQConfig);
+		assertEquals("testQ", testQConfig.getName());
+		assertEquals(1000, testQConfig.getMaxSizePerJVM());
+		assertEquals(0, testQConfig.getTimeToLiveSeconds());
 		
+		QueueConfig qConfig = config.getQueueConfig("q");
+        assertNotNull(qConfig);
+        assertEquals("q", qConfig.getName());
+        assertEquals(2500, qConfig.getMaxSizePerJVM());
+        assertEquals(1, qConfig.getTimeToLiveSeconds());
 	}
 	
 	@Test
@@ -97,12 +119,20 @@ public class TestFullApplicationContext {
 	}
 
 	@Test
-	public void testExecutorCnnfig(){
-		ExecutorConfig execConfig = config.getExecutorConfig("testExec");
-		assertNotNull(execConfig);
-		assertEquals(2, execConfig.getCorePoolSize());
-		assertEquals(32, execConfig.getMaxPoolSize());
-		assertEquals(30, execConfig.getKeepAliveSeconds());
+	public void testExecutorConfig(){
+		ExecutorConfig testExecConfig = config.getExecutorConfig("testExec");
+		assertNotNull(testExecConfig);
+		assertEquals("testExec", testExecConfig.getName());
+		assertEquals(2, testExecConfig.getCorePoolSize());
+		assertEquals(32, testExecConfig.getMaxPoolSize());
+		assertEquals(30, testExecConfig.getKeepAliveSeconds());
+		
+		ExecutorConfig testExec2Config = config.getExecutorConfig("testExec2");
+        assertNotNull(testExec2Config);
+        assertEquals("testExec2", testExec2Config.getName());
+        assertEquals(5, testExec2Config.getCorePoolSize());
+        assertEquals(10, testExec2Config.getMaxPoolSize());
+        assertEquals(20, testExec2Config.getKeepAliveSeconds());
 	}
 	
 	@Test
@@ -118,7 +148,7 @@ public class TestFullApplicationContext {
 		TcpIpConfig tcp = networkConfig.getJoin().getTcpIpConfig();
 		assertNotNull(tcp);
 		assertTrue(tcp.isEnabled());
-//		assertTrue(networkConfig.getSymmetricEncryptionConfig().isEnabled());
+		assertTrue(networkConfig.getSymmetricEncryptionConfig().isEnabled());
 		final List<String> members = tcp.getMembers();
 		assertEquals(members.toString(), 2, members.size());
 		assertEquals("127.0.0.1:5800", members.get(0));

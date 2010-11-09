@@ -71,6 +71,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
         private ManagedMap mapConfigManagedMap;
         private ManagedMap queueManagedMap;
         private ManagedMap topicManagedMap;
+        private ManagedMap executorManagedMap;
         
         final Map<String, Integer> counter = new HashMap<String, Integer>();
 
@@ -81,10 +82,13 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
             this.mapConfigManagedMap = new ManagedMap();
             this.queueManagedMap = new ManagedMap();
             this.topicManagedMap = new ManagedMap();
+            this.executorManagedMap = new ManagedMap();
             
             this.configBuilder.addPropertyValue("mapConfigs", mapConfigManagedMap);
             this.configBuilder.addPropertyValue("QConfigs", queueManagedMap);
             this.configBuilder.addPropertyValue("topicConfigs", topicManagedMap);
+            this.configBuilder.addPropertyValue("executorConfigMap", executorManagedMap);
+            
         }
         
         public AbstractBeanDefinition getBeanDefinition(){
@@ -291,7 +295,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
         }
 
         public void handleExecutor(Node node) {
-            createAndFillBeanBuilder(node, ExecutorConfig.class, "executorConfig", configBuilder);
+            createAndFillListedBean(node, ExecutorConfig.class, "executorConfig", executorManagedMap);
         }
         
         public void handleMulticast(Node node, BeanDefinitionBuilder joinConfigBuilder) {

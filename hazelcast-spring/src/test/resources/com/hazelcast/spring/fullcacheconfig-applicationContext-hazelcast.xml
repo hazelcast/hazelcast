@@ -65,10 +65,19 @@
 			<cache:max-pool-size>32</cache:max-pool-size>
 			<cache:keep-alive-seconds>30</cache:keep-alive-seconds>
 		</cache:executor-service>
+		<cache:executor-service name="testExec2">
+            <cache:core-pool-size>5</cache:core-pool-size>
+            <cache:max-pool-size>10</cache:max-pool-size>
+            <cache:keep-alive-seconds>20</cache:keep-alive-seconds>
+        </cache:executor-service>
 		<cache:queue name="testQ">
 			<cache:max-size-per-jvm>1000</cache:max-size-per-jvm>
 			<cache:time-to-live-seconds>0</cache:time-to-live-seconds>
 		</cache:queue>
+		<cache:queue name="q">
+            <cache:max-size-per-jvm>2500</cache:max-size-per-jvm>
+            <cache:time-to-live-seconds>1</cache:time-to-live-seconds>
+        </cache:queue>
 		<cache:map name="testMap">
 			<cache:backup-count>2</cache:backup-count>
 			<cache:eviction-policy>NONE</cache:eviction-policy>
@@ -76,6 +85,14 @@
 			<cache:eviction-percentage>30</cache:eviction-percentage>
 			<cache:merge-policy>hz.ADD_NEW_ENTRY</cache:merge-policy>
 		</cache:map>
+		<cache:map name="simpleMap">
+            <cache:backup-count>3</cache:backup-count>
+            <cache:eviction-policy>LRU</cache:eviction-policy>
+            <cache:max-size>10</cache:max-size>
+            <cache:eviction-percentage>50</cache:eviction-percentage>
+            <cache:merge-policy>hz.LATEST_UPDATE</cache:merge-policy>
+            <cache:time-to-live-seconds>1</cache:time-to-live-seconds>
+        </cache:map>
 	</cache:config>
 
 	<bean id="hazelcastInstance"
