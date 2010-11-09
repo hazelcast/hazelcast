@@ -22,7 +22,7 @@ import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
 public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
 
     public void init() {
-        registerBeanDefinitionParser("hazelcast", new HazelcastBeanDefinitionParser());
+        registerBeanDefinitionParser("config", new HazelcastConfigBeanDefinitionParser());
     }  
 
 }

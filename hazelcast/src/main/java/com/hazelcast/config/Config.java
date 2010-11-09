@@ -130,6 +130,7 @@ public class Config implements DataSerializable {
         QueueConfig defaultConfig = mapQueueConfigs.get("default");
         if (defaultConfig == null) {
             defaultConfig = new QueueConfig();
+            defaultConfig.setName("default");
             mapQueueConfigs.put("default", defaultConfig);
         }
         return defaultConfig;
@@ -161,6 +162,7 @@ public class Config implements DataSerializable {
         TopicConfig defaultConfig = mapTopicConfigs.get("default");
         if (defaultConfig == null) {
             defaultConfig = new TopicConfig();
+            defaultConfig.setName("default");
             mapTopicConfigs.put("default", defaultConfig);
         }
         return defaultConfig;
@@ -414,7 +416,7 @@ public class Config implements DataSerializable {
         return this;
     }
     
-    public void checkCompatible(final Config config){
+    public void checkCompatibility(final Config config){
         if (config == null){
             throw new IllegalArgumentException("Expected not null config");
         }

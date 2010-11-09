@@ -87,15 +87,15 @@ public final class QueueConfig implements DataSerializable {
     
     public boolean isCompatible(final QueueConfig queueConfig){
         if (queueConfig == null) return false;
-        return this.name.equals(queueConfig.name) &&
+        return (name != null ? name.equals(queueConfig.name)  : queueConfig.name == null) &&
             this.timeToLiveSeconds == queueConfig.timeToLiveSeconds;
     }
     
     @Override
     public String toString() {
-        return "QueueConfig [name=" + this.name + ", timeToLiveSeconds="
-                + this.timeToLiveSeconds + ", maxSizePerJVM="
-                + this.maxSizePerJVM + "]";
+        return "QueueConfig [name=" + this.name 
+            + ", timeToLiveSeconds=" + this.timeToLiveSeconds 
+            + ", maxSizePerJVM=" + this.maxSizePerJVM + "]";
     }
 
     public void writeData(DataOutput out) throws IOException {

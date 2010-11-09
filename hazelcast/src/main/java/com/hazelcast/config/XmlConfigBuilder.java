@@ -33,7 +33,7 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.logging.Level;
 
-public class XmlConfigBuilder implements ConfigBuilder {
+public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigBuilder {
 
     private final ILogger logger = Logger.getLogger(XmlConfigBuilder.class.getName());
     private boolean domLevel3 = true;
@@ -42,36 +42,6 @@ public class XmlConfigBuilder implements ConfigBuilder {
     private File configurationFile;
     private URL configurationUrl;
     boolean usingSystemConfig = false;
-
-    public static class IterableNodeList implements Iterable<Node> {
-
-        private final NodeList parent;
-        private final int maximum;
-
-        public IterableNodeList(final NodeList parent) {
-            this.parent = parent;
-            this.maximum = parent.getLength();
-        }
-
-        public Iterator<Node> iterator() {
-            return new Iterator<Node>() {
-
-                private int index = 0;
-
-                public boolean hasNext() {
-                    return (index < maximum);
-                }
-
-                public Node next() {
-                    return parent.item(index++);
-                }
-
-                public void remove() {
-                    throw new UnsupportedOperationException();
-                }
-            };
-        }
-    }
 
     public XmlConfigBuilder(String xmlFileName) throws FileNotFoundException {
         this(new FileInputStream(xmlFileName));
@@ -263,35 +233,11 @@ public class XmlConfigBuilder implements ConfigBuilder {
         }
     }
 
-    private String getTextContent(final Node node) {
+    protected String getTextContent(final Node node) {
         if (domLevel3) {
             return node.getTextContent();
         } else {
             return getTextContent2(node);
-        }
-    }
-
-    private String getTextContent2(final Node node) {
-        final Node child = node.getFirstChild();
-        if (child != null) {
-            final Node next = child.getNextSibling();
-            if (next == null) {
-                return hasTextContent(child) ? child.getNodeValue() : "";
-            }
-            final StringBuffer buf = new StringBuffer();
-            getTextContent2(node, buf);
-            return buf.toString();
-        }
-        return "";
-    }
-
-    private void getTextContent2(final Node node, final StringBuffer buf) {
-        Node child = node.getFirstChild();
-        while (child != null) {
-            if (hasTextContent(child)) {
-                getTextContent2(child, buf);
-            }
-            child = child.getNextSibling();
         }
     }
 
@@ -643,19 +589,5 @@ public class XmlConfigBuilder implements ConfigBuilder {
                 handleViaReflection(n, config, new MergePolicyConfig());
             }
         }
-    }
-
-    private boolean hasTextContent(final Node child) {
-        final boolean result = child.getNodeType() != Node.COMMENT_NODE
-                && child.getNodeType() != Node.PROCESSING_INSTRUCTION_NODE;
-        return result;
-    }
-
-    public String cleanNodeName(final String nodeName) {
-        String name = nodeName;
-        if (name != null) {
-            name = nodeName.replaceAll("\\w+:", "").toLowerCase();
-        }
-        return name;
     }
 }

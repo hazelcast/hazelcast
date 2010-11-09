@@ -469,15 +469,16 @@ public class Node {
         return null;
     }
 
-    public boolean validateJoinRequest(JoinRequest joinRequest) {
+    public boolean validateJoinRequest(JoinRequest joinRequest) throws Exception {
         boolean valid = Packet.PACKET_VERSION == joinRequest.packetVersion &&
                 buildNumber == joinRequest.buildNumber;
         if (valid) {
             try {
-                config.checkCompatible(joinRequest.config);
+                config.checkCompatibility(joinRequest.config);
             } catch(Exception e){
                 valid = false;
                 logger.log(Level.INFO, "Invalid join request, reason:" + e.getMessage());
+                throw e;
             }
         }
         return valid;

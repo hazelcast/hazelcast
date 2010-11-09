@@ -51,6 +51,8 @@
                     <include>**/*.properties</include>
                     <include>**/*.xml</include>
                     <include>**/*.xsd</include>
+                    <include>**/*.handlers</include>
+                    <include>**/*.schemas</include>
                 </includes>
             </resource> 
         </resources>

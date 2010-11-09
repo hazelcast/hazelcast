@@ -31,7 +31,13 @@ public class NodeMulticastListener implements MulticastListener {
         if (msg != null && msg instanceof JoinInfo) {
             JoinInfo joinInfo = (JoinInfo) msg;
             if (node.address != null && !node.address.equals(joinInfo.address)) {
-                if (node.validateJoinRequest(joinInfo)) {
+                boolean validJoinRequest;
+                try {
+                    validJoinRequest = node.validateJoinRequest(joinInfo);
+                } catch (Exception e) {
+                    validJoinRequest = false;
+                }
+                if (validJoinRequest) {
                     if (node.isMaster() && node.isActive() && node.joined()) {
                         if (joinInfo.isRequest()) {
                             node.multicastService.send(joinInfo.copy(false, node.address));

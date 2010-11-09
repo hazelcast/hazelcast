@@ -45,7 +45,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.impl.GroupProperties;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-
 @ContextConfiguration(locations = { "fullcacheconfig-applicationContext-hazelcast.xml" })
 public class TestFullApplicationContext {
 
@@ -55,11 +54,19 @@ public class TestFullApplicationContext {
 	@Autowired
 	private HazelcastInstance instance;
 	
+	@Autowired
+    private String string;
+	
 	@AfterClass
 	@BeforeClass
 	public static void shutdown(){
 	    Hazelcast.shutdownAll();
 	}
+	
+	@Test
+    public void testname() throws Exception {
+        assertEquals("spring-group", string);
+    }
 	
 	@Test
 	public void testMapConfig() {
@@ -105,10 +112,13 @@ public class TestFullApplicationContext {
 		assertEquals(5800, config.getPort());
 		assertFalse(config.isPortAutoIncrement());
 		assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
+		assertFalse(networkConfig.getInterfaces().isEnabled());
+		assertEquals(1, networkConfig.getInterfaces().getInterfaces().size());
+		assertEquals("10.10.1.*", networkConfig.getInterfaces().getInterfaces().iterator().next());
 		TcpIpConfig tcp = networkConfig.getJoin().getTcpIpConfig();
 		assertNotNull(tcp);
 		assertTrue(tcp.isEnabled());
-		assertTrue(networkConfig.getSymmetricEncryptionConfig().isEnabled());
+//		assertTrue(networkConfig.getSymmetricEncryptionConfig().isEnabled());
 		final List<String> members = tcp.getMembers();
 		assertEquals(members.toString(), 2, members.size());
 		assertEquals("127.0.0.1:5800", members.get(0));

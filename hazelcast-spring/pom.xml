@@ -43,5 +43,10 @@
             <artifactId>hazelcast</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-client</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
 	</dependencies>
 </project>

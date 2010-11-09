@@ -113,12 +113,16 @@ public final class MapStoreConfig {
         return this;
     }
 
+    public String getProperty(String name) {
+        return properties.getProperty(name);
+    }
+
     public Properties getProperties() {
         return properties;
     }
-
-    public String getProperty(String name) {
-        return properties.getProperty(name);
+    
+    public void setProperties(Properties properties) {
+        this.properties = properties;
     }
 
     @Override

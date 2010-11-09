@@ -131,15 +131,23 @@ public class SplitBrainHandler implements Runnable {
 
     boolean shouldMerge(JoinInfo joinInfo) {
         boolean shouldMerge = false;
-        if (joinInfo != null && node.validateJoinRequest(joinInfo)) {
-            int currentMemberCount = node.getClusterImpl().getMembers().size();
-            if (joinInfo.getMemberCount() > currentMemberCount) {
-                // I should join the other cluster
-                shouldMerge = true;
-            } else if (joinInfo.getMemberCount() == currentMemberCount) {
-                // compare the hashes
-                if (node.getThisAddress().hashCode() > joinInfo.address.hashCode()) {
+        if (joinInfo != null) {
+            boolean validJoinRequest;
+            try {
+                validJoinRequest = node.validateJoinRequest(joinInfo);
+            } catch (Exception e) {
+                validJoinRequest = false;
+            }
+            if (validJoinRequest){
+                int currentMemberCount = node.getClusterImpl().getMembers().size();
+                if (joinInfo.getMemberCount() > currentMemberCount) {
+                    // I should join the other cluster
                     shouldMerge = true;
+                } else if (joinInfo.getMemberCount() == currentMemberCount) {
+                    // compare the hashes
+                    if (node.getThisAddress().hashCode() > joinInfo.address.hashCode()) {
+                        shouldMerge = true;
+                    }
                 }
             }
         }

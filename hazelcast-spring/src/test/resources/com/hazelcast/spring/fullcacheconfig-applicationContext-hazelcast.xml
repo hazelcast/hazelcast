@@ -1,23 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:p="http://www.springframework.org/schema/p"
 	xmlns:cache="http://www.hazelcast.com/schema/config"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
 		http://www.hazelcast.com/schema/config
-		http://www.hazelcast.com/schema/config/hazelcast-basic.xsd">
+		http://www.hazelcast.com/schema/config/hazelcast-spring.xsd">
+		
+	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
+		p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
+		<property name="locations">
+			<list>
+				<value>classpath:/hazelcast-default.properties</value>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="string" class="java.lang.String">
+		<constructor-arg><value>${cluster.group.name}</value></constructor-arg>
+	</bean>
 
-	<cache:hazelcast id="config">
+	<cache:config id="config">
 		<cache:group>
-			<cache:name>spring-group</cache:name>
-			<cache:password>spring-group-pass</cache:password>
+			<cache:name>${cluster.group.name}</cache:name>
+			<cache:password>${cluster.group.password}</cache:password>
 		</cache:group>
 		<cache:properties>
 			<cache:property name="hazelcast.merge.first.run.delay.seconds">5</cache:property>
 			<cache:property name="hazelcast.merge.next.run.delay.seconds">5</cache:property>
 		</cache:properties>
 		<cache:network>
-			<cache:port auto-increment="false">5800</cache:port>
+			<cache:port auto-increment="false">${cluster.port}</cache:port>
 			<cache:join>
 				<cache:multicast enabled="false">
 					<cache:multicast-group>224.2.2.3</cache:multicast-group>
@@ -38,11 +53,11 @@
 			</cache:symmetric-encryption>
 			<cache:asymmetric-encryption enabled="false">
 				<cache:algorithm></cache:algorithm>
-				<cache:keyPassword>thekeypass</cache:keyPassword>
-				<cache:keyAlias>local</cache:keyAlias>
-				<cache:storeType>JKS</cache:storeType>
-				<cache:storePassword>thestorepass</cache:storePassword>
-				<cache:storePath>keystore</cache:storePath>
+				<cache:key-password>thekeypass</cache:key-password>
+				<cache:key-alias>local</cache:key-alias>
+				<cache:store-type>JKS</cache:store-type>
+				<cache:store-password>thestorepass</cache:store-password>
+				<cache:store-path>keystore</cache:store-path>
 			</cache:asymmetric-encryption>
 		</cache:network>
 		<cache:executor-service name="testExec">
@@ -61,7 +76,7 @@
 			<cache:eviction-percentage>30</cache:eviction-percentage>
 			<cache:merge-policy>hz.ADD_NEW_ENTRY</cache:merge-policy>
 		</cache:map>
-	</cache:hazelcast>
+	</cache:config>
 
 	<bean id="hazelcastInstance"
 		class="com.hazelcast.core.Hazelcast"
