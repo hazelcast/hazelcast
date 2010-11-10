@@ -118,7 +118,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     }
 
     public int remainingCapacity() {
-        throw new UnsupportedOperationException();
+        return (Integer) proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_RAMAINING_CAPACITY, null, null);
     }
 
     public int drainTo(Collection<? super E> objects) {
@@ -158,8 +158,14 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     }
 
     @Override
+    public boolean remove(Object o) {
+        return (Boolean) proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_REMOVE, null, o);
+    }
+
+    @Override
     public java.util.Iterator<E> iterator() {
-        throw new UnsupportedOperationException();
+        E[] entries = (E[]) proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_ENTRIES, null, null);
+        return new QueueItemIterator(entries, this);
     }
 
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {

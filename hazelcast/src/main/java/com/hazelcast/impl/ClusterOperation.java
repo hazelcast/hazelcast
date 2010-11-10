@@ -102,7 +102,9 @@ public enum ClusterOperation {
     GET_CLUSTER_TIME(),
     CLIENT_AUTHENTICATE(),
     CLIENT_ADD_INSTANCE_LISTENER(),
-    CLIENT_GET_PARTITIONS();
+    CLIENT_GET_PARTITIONS(),
+    BLOCKING_QUEUE_RAMAINING_CAPACITY(),
+    BLOCKING_QUEUE_ENTRIES();
 
     public final static byte OPERATION_COUNT = 127;
     private final static ClusterOperation[] clusterOperations = new ClusterOperation[OPERATION_COUNT];

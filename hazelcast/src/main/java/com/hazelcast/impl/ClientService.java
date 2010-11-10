@@ -48,7 +48,7 @@ public class ClientService implements ConnectionListener {
     private final Node node;
     private final Map<Connection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<Connection, ClientEndpoint>();
     private final ClientOperationHandler[] clientOperationHandlers = new ClientOperationHandler[300];
-    private final ILogger    logger;
+    private final ILogger logger;
 
     public ClientService(Node node) {
         this.node = node;
@@ -84,6 +84,8 @@ public class ClientService implements ConnectionListener {
         clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_PEEK.getValue()] = new QueuePeekHandler();
         clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_SIZE.getValue()] = new QueueSizeHandler();
         clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_PUBLISH.getValue()] = new QueuePublishHandler();
+        clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_RAMAINING_CAPACITY.getValue()] = new QueueRemainingCapacityHandler();
+        clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_ENTRIES.getValue()] = new QueueEntriesHandler();
         clientOperationHandlers[ClusterOperation.TRANSACTION_BEGIN.getValue()] = new TransactionBeginHandler();
         clientOperationHandlers[ClusterOperation.TRANSACTION_COMMIT.getValue()] = new TransactionCommitHandler();
         clientOperationHandlers[ClusterOperation.TRANSACTION_ROLLBACK.getValue()] = new TransactionRollbackHandler();
@@ -180,7 +182,11 @@ public class ClientService implements ConnectionListener {
 
     private class QueueRemoveHandler extends ClientQueueOperationHandler {
         public Data processQueueOp(IQueue<Object> queue, Data key, Data value) {
-            return (Data) queue.remove();
+            if (value != null) {
+                return toData(queue.remove(toObject(value)));
+            } else {
+                return (Data) queue.remove();
+            }
         }
     }
 
@@ -200,6 +206,19 @@ public class ClientService implements ConnectionListener {
         public void processCall(Node node, Packet packet) {
             ITopic<Object> topic = (ITopic) node.factory.getOrCreateProxyByName(packet.name);
             topic.publish(packet.getKeyData());
+        }
+    }
+
+    private class QueueRemainingCapacityHandler extends ClientQueueOperationHandler {
+        public Data processQueueOp(IQueue<Object> queue, Data key, Data value) {
+            return toData(queue.remainingCapacity());
+        }
+    }
+
+    private class QueueEntriesHandler extends ClientQueueOperationHandler {
+        public Data processQueueOp(IQueue<Object> queue, Data key, Data value) {
+            Object[] array = queue.toArray();
+            return toData(array);
         }
     }
 
@@ -418,10 +437,10 @@ public class ClientService implements ConnectionListener {
             Object groupName = toObject(packet.getKeyData());
             Object groupPassword = toObject(packet.getValueData());
             boolean value = (nodeGroupName.equals(groupName) && nodeGroupPassword.equals(groupPassword));
-            logger.log(Level.INFO, "received auth from " + packet.conn 
+            logger.log(Level.INFO, "received auth from " + packet.conn
                     + ", this group name:" + nodeGroupName + ", auth group name:" + groupName
-                    + ", " + (value ? 
-                        "sucessfull authenicated" : "authenication failed"));
+                    + ", " + (value ?
+                    "sucessfull authenicated" : "authenication failed"));
             packet.clearForResponse();
             packet.setValue(toData(value));
         }
@@ -746,7 +765,7 @@ public class ClientService implements ConnectionListener {
             final IQueue queue = (IQueue) node.factory.getOrCreateProxyByName(packet.name);
         }
     }
-    
+
     private class MapIterateKeysHandler extends ClientCollectionOperationHandler {
         public Data getMapKeys(IMap<Object, Object> map, Data key, Data value, Collection<Data> collection) {
             ConcurrentMapManager.Entries entries = null;

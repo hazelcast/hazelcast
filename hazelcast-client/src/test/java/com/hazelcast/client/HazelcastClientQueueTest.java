@@ -113,7 +113,7 @@ public class HazelcastClientQueueTest extends HazelcastClientTestBase {
         assertEquals("b", queue.poll());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void clear() {
         HazelcastClient hClient = getHazelcastClient();
         IQueue<String> queue = hClient.getQueue("clear");
@@ -127,7 +127,7 @@ public class HazelcastClientQueueTest extends HazelcastClientTestBase {
         assertTrue(queue.size() == 0);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void containsAll() {
         HazelcastClient hClient = getHazelcastClient();
         IQueue<String> queue = hClient.getQueue("containsAll");
@@ -149,7 +149,7 @@ public class HazelcastClientQueueTest extends HazelcastClientTestBase {
         assertFalse(queue.isEmpty());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void iterator() {
         HazelcastClient hClient = getHazelcastClient();
         IQueue<String> queue = hClient.getQueue("iterator");
@@ -170,7 +170,7 @@ public class HazelcastClientQueueTest extends HazelcastClientTestBase {
         }
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void removeAll() {
         HazelcastClient hClient = getHazelcastClient();
         IQueue<String> queue = hClient.getQueue("removeAll");
@@ -187,6 +187,28 @@ public class HazelcastClientQueueTest extends HazelcastClientTestBase {
         }
         queue.removeAll(list);
         assertTrue(queue.size() == count / 2);
+    }
+
+    @Test
+    public void testiterator() {
+        HazelcastClient hClient = getHazelcastClient();
+        IQueue<String> queue = hClient.getQueue("testiterator");
+        assertTrue(queue.isEmpty());
+        int count = 100;
+        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+        for (int i = 0; i < count; i++) {
+            queue.offer("" + i);
+            map.put(i, 1);
+        }
+        Iterator<String> it = queue.iterator();
+        while (it.hasNext()) {
+            String item = it.next();
+            System.out.println("item:" + item);
+            map.remove(Integer.valueOf(item));
+            it.remove();
+        }
+        assertEquals(0, queue.size());
+        assertEquals(0, map.size());
     }
 
     @AfterClass
