@@ -258,7 +258,7 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
             }
 
             public void entryUpdated(EntryEvent<String, String> event) {
-            	assertEquals("world", event.getOldValue());
+                assertEquals("world", event.getOldValue());
                 assertEquals("new world", event.getValue());
                 assertEquals("hello", event.getKey());
                 latchUpdated.countDown();
@@ -520,7 +520,7 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         assertEquals(8, queue.size());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testQueueContains() {
         IQueue<String> queue = getHazelcastClient().getQueue("testQueueContains");
         String[] items = new String[]{"one", "two", "three", "four"};
@@ -531,7 +531,7 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         assertTrue(queue.contains("four"));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testQueueContainsAll() {
         IQueue<String> queue = getHazelcastClient().getQueue("testQueueContainsAll");
         String[] items = new String[]{"one", "two", "three", "four"};
@@ -618,7 +618,7 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         byte[] b = Serializer.toByte(str);
         assertEquals(str, Serializer.toObject(b));
     }
-    
+
     @Test
     public void newSerializerExternalizable() {
         final ExternalizableImpl o = new ExternalizableImpl();
@@ -628,15 +628,14 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         assertFalse(b.length == 0);
         assertFalse(o.readExternal);
         assertTrue(o.writeExternal);
-        
-        final ExternalizableImpl object = (ExternalizableImpl)Serializer.toObject(b);
+        final ExternalizableImpl object = (ExternalizableImpl) Serializer.toObject(b);
         assertNotNull(object);
         assertNotSame(o, object);
         assertEquals(o, object);
         assertTrue(object.readExternal);
         assertFalse(object.writeExternal);
     }
-    
+
     @Test
     public void testExternalizable() {
         IMap<String, Object> map = getHazelcastClient().getMap("testExternalizable");
@@ -644,10 +643,8 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         o.s = "Gallaxy";
         o.v = 42;
         map.put("Hello", o);
-        
         assertFalse(o.readExternal);
         assertTrue(o.writeExternal);
-        
         final ExternalizableImpl object = (ExternalizableImpl) single.getHazelcastInstance().getMap("testExternalizable").get("Hello");
         assertNotNull(object);
         assertNotSame(o, object);
@@ -655,28 +652,27 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         assertTrue(object.readExternal);
         assertFalse(object.writeExternal);
     }
-    
-    
+
     public static class ExternalizableImpl implements Externalizable {
         private int v;
         private String s;
-        
+
         private boolean readExternal = false;
         private boolean writeExternal = false;
-        
+
         @Override
         public boolean equals(Object obj) {
             if (obj == this) return true;
             if (!(obj instanceof ExternalizableImpl)) return false;
             final ExternalizableImpl other = (ExternalizableImpl) obj;
             return this.v == other.v &&
-                ((this.s == null && other.s == null) ||
-                        (this.s != null && this.s.equals(other.s)));
+                    ((this.s == null && other.s == null) ||
+                            (this.s != null && this.s.equals(other.s)));
         }
-        
+
         @Override
         public int hashCode() {
-            return this.v  + 31 * (s != null ? s.hashCode() : 0);
+            return this.v + 31 * (s != null ? s.hashCode() : 0);
         }
 
         public void readExternal(ObjectInput in) throws IOException,
@@ -685,7 +681,7 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
             s = in.readUTF();
             readExternal = true;
         }
-        
+
         public void writeExternal(ObjectOutput out) throws IOException {
             out.writeInt(v);
             out.writeUTF(s);
