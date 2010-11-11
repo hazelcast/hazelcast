@@ -92,7 +92,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                     } catch (Exception e) {
                         request.response = toData(e);
                     }
-                    
                 }
                 returnResponse(request, conn);
                 releasePacket(packet);
@@ -570,11 +569,18 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         @Override
         public void setTarget() {
         }
+
+        @Override
+        protected void packetNotSent() {
+            setResult(Boolean.FALSE);
+        }
     }
 
     public void finalizeJoin() {
+        Set<Member> members = node.getClusterImpl().getMembers();
         List<AsyncRemotelyBooleanCallable> calls = new ArrayList<AsyncRemotelyBooleanCallable>();
-        for (final MemberImpl member : lsMembers) {
+        for (Member m : members) {
+            MemberImpl member = (MemberImpl) m;
             if (!member.localMember()) {
                 AsyncRemotelyBooleanCallable rrp = new AsyncRemotelyBooleanCallable();
                 rrp.executeProcess(member.getAddress(), new FinalizeJoin());
@@ -653,7 +659,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     void updateMembers(Collection<MemberInfo> lsMemberInfos) {
-        checkServiceThread(); 
+        checkServiceThread();
         logger.log(Level.FINEST, "MEMBERS UPDATE!!");
         // Copy lsMembers to lsMembersBefore
         lsMembersBefore.clear();
@@ -726,9 +732,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 MemberImpl member = getMember(connection.getEndPoint());
                 if (member != null) {
                     member.didRead();
-                }
-                if (!thisAddress.equals(connection.getEndPoint())) {
-                    sendProcessableTo(createInitialProcess(), connection);
                 }
             }
         });

@@ -190,9 +190,9 @@ public class HazelcastClientQueueTest extends HazelcastClientTestBase {
     }
 
     @Test
-    public void testiterator() {
+    public void testIterator() {
         HazelcastClient hClient = getHazelcastClient();
-        IQueue<String> queue = hClient.getQueue("testiterator");
+        IQueue<String> queue = hClient.getQueue("testIterator");
         assertTrue(queue.isEmpty());
         int count = 100;
         Map<Integer, Integer> map = new HashMap<Integer, Integer>();
@@ -203,7 +203,6 @@ public class HazelcastClientQueueTest extends HazelcastClientTestBase {
         Iterator<String> it = queue.iterator();
         while (it.hasNext()) {
             String item = it.next();
-            System.out.println("item:" + item);
             map.remove(Integer.valueOf(item));
             it.remove();
         }

@@ -452,79 +452,78 @@ public abstract class BaseManager {
         }
 
         protected final Object getRedoAwareResult() {
-            for(;;)
-            {
-            Object result =  waitAndGetResult();
-            if (Thread.interrupted()) {
-                handleInterruptedException();
-            }
-            if (result == OBJECT_REDO) {
-                request.redoCount++;
-                if (request.redoCount > 19 && (request.redoCount % 10 == 0)) {
-                    final CountDownLatch l = new CountDownLatch(1);
-                    final Request reqCopy = request.hardCopy();
-                    reqCopy.redoCount = request.redoCount;
-                    final Address targetCopy = getTarget();
-                    if (!thisAddress.equals(targetCopy)){
-                        enqueueAndReturn(new Processable() {
-                            public void process() {
-                                Connection targetConnection = null;
-                                MemberImpl targetMember = null;
-                                Object key = toObject(reqCopy.key);
-                                Block block = (reqCopy.key == null) ? null : node.concurrentMapManager.getOrCreateBlock(reqCopy.key);
-                                if (targetCopy != null) {
-                                    targetMember = getMember(targetCopy);
-                                    targetConnection = node.connectionManager.getConnection(targetCopy);
-                                    if (targetMember != null) {
-                                        if (!lsMembers.contains(targetMember)) {
-                                            logger.log(Level.SEVERE, targetMember + " is not in member list!");
+            for (; ;) {
+                Object result = waitAndGetResult();
+                if (Thread.interrupted()) {
+                    handleInterruptedException();
+                }
+                if (result == OBJECT_REDO) {
+                    request.redoCount++;
+                    if (request.redoCount > 19 && (request.redoCount % 10 == 0)) {
+                        final CountDownLatch l = new CountDownLatch(1);
+                        final Request reqCopy = request.hardCopy();
+                        reqCopy.redoCount = request.redoCount;
+                        final Address targetCopy = getTarget();
+                        if (!thisAddress.equals(targetCopy)) {
+                            enqueueAndReturn(new Processable() {
+                                public void process() {
+                                    Connection targetConnection = null;
+                                    MemberImpl targetMember = null;
+                                    Object key = toObject(reqCopy.key);
+                                    Block block = (reqCopy.key == null) ? null : node.concurrentMapManager.getOrCreateBlock(reqCopy.key);
+                                    if (targetCopy != null) {
+                                        targetMember = getMember(targetCopy);
+                                        targetConnection = node.connectionManager.getConnection(targetCopy);
+                                        if (targetMember != null) {
+                                            if (!lsMembers.contains(targetMember)) {
+                                                logger.log(Level.SEVERE, targetMember + " is not in member list!");
+                                            }
                                         }
                                     }
+                                    final String msg =
+                                            "======= " + reqCopy.callId + ": " + reqCopy.operation + " ======== " +
+                                                    "\n\t" +
+                                                    "thisAddress= " + thisAddress + ", target= " + targetCopy +
+                                                    "\n\t" +
+                                                    "targetMember= " + targetMember + ", targetConn=" + targetConnection + ", targetBlock=" + block +
+                                                    "\n\t" +
+                                                    key + " Re-doing [" + reqCopy.redoCount + "] times! " +
+                                                    reqCopy.name + " : " + toObject(reqCopy.value);
+                                    logger.log(Level.INFO, msg);
+                                    l.countDown();
                                 }
-                                final String msg = 
+                            });
+                        } else {
+                            final String msg =
                                     "======= " + reqCopy.callId + ": " + reqCopy.operation + " ======== " +
-                                    "\n\t" +
-                                    "thisAddress= " + thisAddress + ", target= " + targetCopy +
-                                    "\n\t" +
-                                    "targetMember= " + targetMember + ", targetConn=" + targetConnection + ", targetBlock=" + block +
-                                    "\n\t" +
-                                    key + " Re-doing [" + reqCopy.redoCount + "] times! " + 
-                                    reqCopy.name + " : " + toObject(reqCopy.value);
-                                logger.log(Level.INFO,  msg);
-                                l.countDown();
-                            }
-                        });
-                    } else {
-                        final String msg = 
-                            "======= " + reqCopy.callId + ": " + reqCopy.operation + " ======== " +
-                            "\n\t" +
-                            "thisAddress= " + thisAddress + ", target= " + targetCopy +
-                            "\n\t" +
-                            " Re-doing [" + reqCopy.redoCount + "] times! " + 
-                            reqCopy.name + " : " + toObject(reqCopy.key) + "=" + toObject(reqCopy.value);
-                        logger.log(Level.WARNING,  msg);
-                        l.countDown();
+                                            "\n\t" +
+                                            "thisAddress= " + thisAddress + ", target= " + targetCopy +
+                                            "\n\t" +
+                                            " Re-doing [" + reqCopy.redoCount + "] times! " +
+                                            reqCopy.name + " : " + toObject(reqCopy.key) + "=" + toObject(reqCopy.value);
+                            logger.log(Level.WARNING, msg);
+                            l.countDown();
+                        }
+                        try {
+                            l.await();
+                        } catch (InterruptedException e) {
+                            handleInterruptedException();
+                        }
                     }
                     try {
-                        l.await();
+                        Thread.sleep(redoWaitMillis);
                     } catch (InterruptedException e) {
                         handleInterruptedException();
                     }
+                    beforeRedo();
+                    doOp();
+                    //*/
+                    continue;
+                    /*/
+                    return getResult();
+                    //*/
                 }
-                try {
-                    Thread.sleep(redoWaitMillis);
-                } catch (InterruptedException e) {
-                    handleInterruptedException();
-                }
-                beforeRedo();
-                doOp();
-                //*/
-                continue;
-                /*/
-                return getResult();
-                //*/
-            }
-            return result;
+                return result;
             }
         }
 
@@ -1260,24 +1259,24 @@ public abstract class BaseManager {
             }
             return key;
         }
-        
-        private void fillValues(){
-        	oldValue = null;
+
+        private void fillValues() {
+            oldValue = null;
             Object v = toObject(dataValue);
-    		if (v instanceof Keys){
-    			final Keys keys = (Keys) v;
-    			final Iterator<Data> it = keys.getKeys().iterator();
-				value = it.hasNext() ? toObject(it.next()) : null;
-				oldValue = it.hasNext() ? toObject(it.next()) : null;
-    		} else {
-    			value = v;
-    		}
+            if (v instanceof Keys) {
+                final Keys keys = (Keys) v;
+                final Iterator<Data> it = keys.getKeys().iterator();
+                value = it.hasNext() ? toObject(it.next()) : null;
+                oldValue = it.hasNext() ? toObject(it.next()) : null;
+            } else {
+                value = v;
+            }
         }
-        
+
         public Object getOldValue() {
-        	if (oldValue == null) {
+            if (oldValue == null) {
                 if (dataValue != null) {
-                	fillValues();
+                    fillValues();
                 } else if (collection) {
                     value = null;
                 }
@@ -1288,7 +1287,7 @@ public abstract class BaseManager {
         public Object getValue() {
             if (value == null) {
                 if (dataValue != null) {
-                	fillValues();
+                    fillValues();
                 } else if (collection) {
                     value = key;
                 }
@@ -1298,7 +1297,7 @@ public abstract class BaseManager {
     }
 
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
-            final int eventType, final Data value, Address callerAddress) {
+                      final int eventType, final Data value, Address callerAddress) {
         fireMapEvent(mapListeners, name, eventType, null, value, callerAddress);
     }
 
@@ -1370,7 +1369,7 @@ public abstract class BaseManager {
         }
     }
 
-    final boolean send(final Packet packet, final Address address) {
+    protected boolean send(final Packet packet, final Address address) {
         if (address == null) return false;
         final Connection conn = node.connectionManager.getConnection(address);
         return conn != null && conn.live() && writePacket(conn, packet);

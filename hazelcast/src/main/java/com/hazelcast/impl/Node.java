@@ -22,6 +22,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.Interfaces;
 import com.hazelcast.config.Join;
 import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.core.Member;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.ascii.TextCommandServiceImpl;
 import com.hazelcast.logging.ILogger;
@@ -117,7 +118,7 @@ public class Node {
         this.localNodeType = (superClient) ? NodeType.SUPER_CLIENT : NodeType.MEMBER;
         String version = System.getProperty("hazelcast.version", "unknown");
         String build = System.getProperty("hazelcast.build", "unknown");
-        if ("unknown".equals(version) || "unknown".equals(build)){
+        if ("unknown".equals(version) || "unknown".equals(build)) {
             try {
                 InputStream inRuntimeProperties = Node.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
                 if (inRuntimeProperties != null) {
@@ -391,6 +392,51 @@ public class Node {
         }
         logger.log(Level.FINEST, "finished starting threads, calling join");
         join();
+        postJoin();
+    }
+
+    private void postJoin() {
+        if (!isMaster()) {
+            Set<Member> members = null;
+            boolean allConnected = false;
+            int checkCount = 0;
+            while (checkCount++ < 10 && !allConnected) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {
+                }
+                members = clusterImpl.getMembers();
+                allConnected = true;
+                for (Member member : members) {
+                    MemberImpl memberImpl = (MemberImpl) member;
+                    if (!memberImpl.localMember() && connectionManager.getConnection(memberImpl.getAddress()) == null) {
+                        allConnected = false;
+                    }
+                }
+            }
+            if (!allConnected) {
+                logger.log(Level.WARNING, "Failed to connect to all other members after " + checkCount + "seconds.");
+                logger.log(Level.WARNING, "Rebooting after 10 seconds.");
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    shutdown();
+                }
+                rejoin();
+            } else {
+                clusterManager.finalizeJoin();
+                clusterManager.enqueueAndWait(new Processable() {
+                    public void process() {
+                        if (baseVariables.lsMembers.size() == 1) {
+                            final StringBuilder sb = new StringBuilder();
+                            sb.append("\n");
+                            sb.append(clusterManager);
+                            logger.log(Level.INFO, sb.toString());
+                        }
+                    }
+                }, 5);
+            }
+        }
     }
 
     public ILogger getLogger(String name) {
@@ -475,7 +521,7 @@ public class Node {
         if (valid) {
             try {
                 config.checkCompatibility(joinRequest.config);
-            } catch(Exception e){
+            } catch (Exception e) {
                 valid = false;
                 logger.log(Level.INFO, "Invalid join request, reason:" + e.getMessage());
                 throw e;
@@ -561,31 +607,31 @@ public class Node {
                             addrs = new Address(inetAddress.getAddress(), port);
                             shouldCheck = AddressPicker.matchAddress(addrs.getHost(), interfaces.getInterfaces());
                         }
-                        if (indexColon < 0){ 
-                        	// port is not set
-	                        if (shouldCheck) {
-	                            for (int i = -2; i < 3; i++) {
-	                                final Address addressProper = new Address(inetAddress.getAddress(), port + i);
-	                                if (!addressProper.equals(getThisAddress())) {
+                        if (indexColon < 0) {
+                            // port is not set
+                            if (shouldCheck) {
+                                for (int i = -2; i < 3; i++) {
+                                    final Address addressProper = new Address(inetAddress.getAddress(), port + i);
+                                    if (!addressProper.equals(getThisAddress())) {
                                         setPossibleAddresses.add(addressProper);
-	                                    }
-	                                }
-	                            }
+                                    }
+                                }
+                            }
                         } else {
-                        	final Address addressProper = new Address(inetAddress.getAddress(), port);
+                            final Address addressProper = new Address(inetAddress.getAddress(), port);
                             if (!addressProper.equals(getThisAddress())) {
                                 setPossibleAddresses.add(addressProper);
-                                }
                             }
                         }
                     }
+                }
             } catch (Throwable e) {
                 e.printStackTrace();
                 logger.log(Level.SEVERE, e.getMessage(), e);
             }
         }
-         setPossibleAddresses.addAll(config.getNetworkConfig().getJoin().getTcpIpConfig().getAddresses());
-        return  setPossibleAddresses;
+        setPossibleAddresses.addAll(config.getNetworkConfig().getJoin().getTcpIpConfig().getAddresses());
+        return setPossibleAddresses;
     }
 
     void rejoin() {
@@ -594,6 +640,7 @@ public class Node {
         clusterImpl.reset();
         failedConnections.clear();
         join();
+        postJoin();
     }
 
     void join() {
@@ -602,17 +649,6 @@ public class Node {
         } else {
             joinWithMulticast();
         }
-        clusterManager.finalizeJoin();
-        clusterManager.enqueueAndWait(new Processable() {
-            public void process() {
-        if (baseVariables.lsMembers.size() == 1) {
-            final StringBuilder sb = new StringBuilder();
-            sb.append("\n");
-            sb.append(clusterManager);
-            logger.log(Level.INFO, sb.toString());
-        }
-    }
-        }, 5);
     }
 
     void setAsMaster() {
@@ -621,9 +657,9 @@ public class Node {
         logger.log(Level.FINEST, "adding member myself");
         clusterManager.enqueueAndWait(new Processable() {
             public void process() {
-        clusterManager.addMember(address, getLocalNodeType()); // add
-        // myself
-        clusterImpl.setMembers(baseVariables.lsMembers);
+                clusterManager.addMember(address, getLocalNodeType()); // add
+                // myself
+                clusterImpl.setMembers(baseVariables.lsMembers);
             }
         }, 5);
         unlock();
