@@ -163,7 +163,7 @@ public class ConnectionManager implements MembershipListener {
     private void notify(final Runnable target) {
         final Thread thread = new Thread(target);
         thread.setName("hz.Client.Notification");
-        thread.run();
+        thread.start();
     }
 
     void bindConnection(Connection connection) throws IOException {

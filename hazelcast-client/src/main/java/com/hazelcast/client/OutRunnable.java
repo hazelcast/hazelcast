@@ -17,9 +17,6 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,8 +35,6 @@ public class OutRunnable extends IORunnable {
     
     private volatile boolean reconnection;
 
-    ILogger logger = Logger.getLogger(this.getClass().getName());
-    
     private Collection<Call> reconnectionCalls;
 
     public OutRunnable(final HazelcastClient client, final Map<Long, Call> calls, final PacketWriter writer) {
@@ -90,7 +85,7 @@ public class OutRunnable extends IORunnable {
     }
 
     private void checkOnReconnect(Call call) {
-        final Collection oldCalls = reconnectionCalls; 
+        final Collection oldCalls = reconnectionCalls;
         try{
             Object response = reconnectionCalls.contains(call) ? 
                 call.getResponse(100L, TimeUnit.MILLISECONDS) :
@@ -147,15 +142,13 @@ public class OutRunnable extends IORunnable {
             final Thread thread = new Thread(new Runnable() {
                 public void run() {
                     try {
-                        if (client.getConnectionManager().lookForAliveConnection() == null){
+                        final Connection lookForAliveConnection = client.getConnectionManager().lookForAliveConnection();
+                        if (lookForAliveConnection == null){
                             if (reconnection){
                                 interruptWaitingCallsAndShutdown();
                             }
                         } else {
-                            try {
-                                queue.put(RECONNECT_CALL);
-                            } catch (InterruptedException e) {
-                            }
+                            sendReconnectCall();
                         }
                     } catch (IOException e) {
                         logger.log(Level.WARNING, 
@@ -196,5 +189,10 @@ public class OutRunnable extends IORunnable {
 
     public int getQueueSize() {
         return queue.size();
+    }
+
+    void sendReconnectCall() {
+        interruptWaitingCalls();
+        enQueue(RECONNECT_CALL);
     }
 }

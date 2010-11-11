@@ -18,8 +18,6 @@
 package com.hazelcast.client;
 
 import com.hazelcast.impl.ClusterOperation;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 
 import java.io.IOException;
 import java.util.Map;
@@ -27,7 +25,6 @@ import java.util.logging.Level;
 
 public class InRunnable extends IORunnable implements Runnable {
     final PacketReader reader;
-    final ILogger logger = Logger.getLogger(this.getClass().getName());
     Connection connection = null;
     private final OutRunnable outRunnable;
 
@@ -44,6 +41,7 @@ public class InRunnable extends IORunnable implements Runnable {
             connection = client.connectionManager.getConnection();
             if (oldConnection != null && restoredConnection(oldConnection, connection)) {
             	redoUnfinishedCalls(oldConnection);
+            	outRunnable.sendReconnectCall();
             }
             if (connection == null) {
                 outRunnable.clusterIsDown(oldConnection);

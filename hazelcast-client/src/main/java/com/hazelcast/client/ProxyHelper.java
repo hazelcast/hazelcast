@@ -57,7 +57,13 @@ public class ProxyHelper {
 
     protected Packet doCall(Call c) {
         sendCall(c);
-        return (Packet) c.getResponse();
+        final int timeout = 5;
+        for(int i = 0;;i++){
+            final Object response = c.getResponse(timeout, TimeUnit.SECONDS);
+            if (response != null) return (Packet) response;
+            logger.log(Level.INFO, "There is no responce for " + c 
+                    + " in " + ( timeout * i ) + " seconds.");
+        }
     }
 
     public void sendCall(Call c) {
