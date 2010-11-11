@@ -60,18 +60,28 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
 
 		Config config = null;
 		if (StringHelper.isEmpty(configResourcePath)) {
-			// load config from hazelcast-default.xml
+			// If HazelcastInstance will not be super-client
+			// then just return default instance. 
+			// We do not need to edit configuration. 
+			if(!useSuperClient) {
+				return Hazelcast.getDefaultInstance();
+			}
+			
+			// Load config from hazelcast-default.xml
+			// And set super client property.
 			config = new XmlConfigBuilder().build();
+			config.setSuperClient(true);
+			
 		} else {
 			URL url = ConfigHelper.locateConfig(configResourcePath);
 			try {
 				config = new UrlXmlConfig(url);
+				config.setSuperClient(useSuperClient);
 			} catch (IOException e) {
 				throw new CacheException(e);
 			}
 		}
 		
-		config.setSuperClient(useSuperClient);
 		return Hazelcast.newHazelcastInstance(config);
 	}
 
