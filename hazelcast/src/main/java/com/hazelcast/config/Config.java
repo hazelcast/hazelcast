@@ -492,40 +492,36 @@ public class Config implements DataSerializable {
             int size = in.readInt();
             mapConfigs = new ConcurrentHashMap<String, MapConfig>(size);
             for(int i = 0; i < size; i++){
-                final String name = in.readUTF();
                 final MapConfig mapConfig = new MapConfig();
                 mapConfig.readData(in);
-                mapConfigs.put(name, mapConfig);
+                mapConfigs.put(mapConfig.getName(), mapConfig);
             }
         }
         if (hasMapExecutors){
             int size = in.readInt();
             mapExecutors = new ConcurrentHashMap<String, ExecutorConfig>(size);
             for(int i = 0; i < size; i++){
-                final String name = in.readUTF();
                 final ExecutorConfig executorConfig = new ExecutorConfig();
                 executorConfig.readData(in);
-                mapExecutors.put(name, executorConfig);
+                mapExecutors.put(executorConfig.getName(), executorConfig);
             }
         }
         if (hasMapTopicConfigs){
             int size = in.readInt();
             mapTopicConfigs = new ConcurrentHashMap<String, TopicConfig>(size);
             for(int i = 0; i < size; i++){
-                final String name = in.readUTF();
                 final TopicConfig topicConfig = new TopicConfig();
                 topicConfig.readData(in);
-                mapTopicConfigs.put(name, topicConfig);
+                mapTopicConfigs.put(topicConfig.getName(), topicConfig);
             }
         }
         if (hasMapQueueConfigs){
             int size = in.readInt();
             mapQueueConfigs = new ConcurrentHashMap<String, QueueConfig>(size);
             for(int i = 0; i < size; i++){
-                final String name = in.readUTF();
                 final QueueConfig queueConfig = new QueueConfig();
                 queueConfig.readData(in);
-                mapQueueConfigs.put(name, queueConfig);
+                mapQueueConfigs.put(queueConfig.getName(), queueConfig);
             }
         }
         if (hasMapMergePolicyConfigs){
@@ -570,29 +566,37 @@ public class Config implements DataSerializable {
         if (hasMapConfigs){
             out.writeInt(mapConfigs.size());
             for (final Entry<String, MapConfig> entry : mapConfigs.entrySet()) {
-                out.writeUTF(entry.getKey());
-                entry.getValue().writeData(out);
+                final String name = entry.getKey();
+                final MapConfig mapConfig = entry.getValue();
+                mapConfig.setName(name);
+                mapConfig.writeData(out);
             }
         }
         if (hasMapExecutors){
             out.writeInt(mapExecutors.size());
             for (final Entry<String, ExecutorConfig> entry : mapExecutors.entrySet()) {
-                out.writeUTF(entry.getKey());
-                entry.getValue().writeData(out);
+                final String name = entry.getKey();
+                final ExecutorConfig executorConfig = entry.getValue();
+                executorConfig.setName(name);
+                executorConfig.writeData(out);
             }
         }
         if (hasMapTopicConfigs){
             out.writeInt(mapTopicConfigs.size());
             for (final Entry<String, TopicConfig> entry : mapTopicConfigs.entrySet()) {
-                out.writeUTF(entry.getKey());
-                entry.getValue().writeData(out);
+                final String name = entry.getKey();
+                final TopicConfig topicConfig = entry.getValue();
+                topicConfig.setName(name);
+                topicConfig.writeData(out);
             }
         }
         if (hasMapQueueConfigs){
             out.writeInt(mapQueueConfigs.size());
             for (final Entry<String, QueueConfig> entry : mapQueueConfigs.entrySet()) {
-                out.writeUTF(entry.getKey());
-                entry.getValue().writeData(out);
+                final String name = entry.getKey();
+                final QueueConfig queueConfig = entry.getValue();
+                queueConfig.setName(name);
+                queueConfig.writeData(out);
             }
         }
         if (hasMapMergePolicyConfigs){
