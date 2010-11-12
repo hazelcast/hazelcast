@@ -104,7 +104,7 @@ public class OutRunnable extends IORunnable {
         } catch (Throwable e) {
             // nothing to do
         }
-        if (reconnectionCalls.isEmpty()) {
+        if (reconnectionCalls != null && reconnectionCalls.isEmpty()) {
             reconnectionCalls = null;
         }
         if (oldCalls != null && reconnectionCalls == null) {
