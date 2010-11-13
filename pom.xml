@@ -130,6 +130,12 @@
             <id>ssh-repository</id>
             <url>scp://shell.sourceforge.net/home/groups/h/ha/hazelcast/htdocs/m2repo</url>
         </repository>
+        <snapshotRepository>
+			<id>snapshot-repository</id>
+			<name>Maven2 Snapshot Repository</name>
+			<url>scp://hazelcast.com/root/tomcat/webapps/maven2/snapshots</url>
+			<uniqueVersion>false</uniqueVersion>
+		</snapshotRepository>
     </distributionManagement>
 
     <dependencies>
