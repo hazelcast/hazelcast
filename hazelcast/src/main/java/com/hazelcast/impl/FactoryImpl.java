@@ -599,7 +599,7 @@ public class FactoryImpl implements HazelcastInstance {
                 proxy = new LockProxy(this, proxyKey.key);
             }
             final HazelcastInstanceAwareInstance anotherProxy = proxies.putIfAbsent(proxyKey, proxy);
-            if (anotherProxy != null){
+            if (anotherProxy != null) {
                 created = false;
                 proxy = anotherProxy;
             }
@@ -820,20 +820,16 @@ public class FactoryImpl implements HazelcastInstance {
                 idGeneratorMapProxy.remove(name);
             }
             globalProxies.remove(proxyKey);
-            final BlockingQueue<Object> result = ResponseQueueFactory.newResponseQueue();
-            node.clusterService.enqueueAndReturn(new Processable() {
+            node.clusterService.enqueueAndWait(new Processable() {
                 public void process() {
                     try {
                         destroyProxy(proxyKey);
-                        result.put(Boolean.TRUE);
                     } catch (Exception e) {
                     }
                 }
-            });
-            try {
-                result.take();
-            } catch (InterruptedException e) {
-            }
+            }, 5);
+        } else {
+            logger.log(Level.WARNING, "Destroying unknown instance name: " + name);
         }
     }
 
@@ -972,11 +968,8 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public void destroy() {
-            Instance instance = factory.proxies.remove(name);
-            if (instance != null) {
-                ensure();
-                base.destroy();
-            }
+            ensure();
+            base.destroy();
         }
 
         public InstanceType getInstanceType() {
@@ -2623,7 +2616,7 @@ public class FactoryImpl implements HazelcastInstance {
                     es.shutdown();
                 } catch (InterruptedException ignored) {
                 }
-                if (!throwables.isEmpty()){
+                if (!throwables.isEmpty()) {
                     final Throwable throwable = throwables.get(0);
                     throw new RuntimeException(throwable.getMessage(), throwable);
                 }
