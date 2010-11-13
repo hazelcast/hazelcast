@@ -48,7 +48,7 @@ import static org.junit.Assert.*;
 
 public class DynamicClusterTest {
     HazelcastClient client;
-    final List<HazelcastClient> clients = new CopyOnWriteArrayList<HazelcastClient>(); 
+    final List<HazelcastClient> clients = new CopyOnWriteArrayList<HazelcastClient>();
     Config config = new Config();
 
     @Before
@@ -57,8 +57,8 @@ public class DynamicClusterTest {
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(Arrays.asList(Inet4Address.getLocalHost().getHostName()));
     }
-    
-    HazelcastClient newHazelcastClient(HazelcastInstance ... hazelcastInstances){
+
+    HazelcastClient newHazelcastClient(HazelcastInstance... hazelcastInstances) {
         final HazelcastClient hazelcastClient = TestUtility.newHazelcastClient(hazelcastInstances);
         clients.add(hazelcastClient);
         return hazelcastClient;
@@ -67,14 +67,13 @@ public class DynamicClusterTest {
     @After
     @Before
     public void after() throws Exception {
-        for(final HazelcastClient c : clients){
+        for (final HazelcastClient c : clients) {
             c.shutdown();
         }
         clients.clear();
-        
         Hazelcast.shutdownAll();
     }
-    
+
     //@After
     public void afterAwait() throws Exception {
         System.err.println("-------------------");
@@ -94,14 +93,13 @@ public class DynamicClusterTest {
         while (counter < 2) {
             try {
                 map.put("currentIteratedKey", counter);
-            } catch (Throwable e){
+            } catch (Throwable e) {
                 fail(e.getMessage());
             }
             assertEquals(counter, realMap.get("currentIteratedKey"));
             assertEquals(counter, map.get("currentIteratedKey"));
             final int port = client.getConnectionManager().getConnection().getAddress().getPort();
             memberMap.get(port).shutdown();
-            
             counter++;
         }
         h3.shutdown();
@@ -798,6 +796,7 @@ public class DynamicClusterTest {
         HazelcastClient client = newHazelcastClient(h);
         client.getCluster().getMembers();
         h.shutdown();
+        client.shutdown();
         Thread.sleep(1000);
         Thread[] threads = getAllThreads();
         List<Thread> listOfThreads = new ArrayList<Thread>(Arrays.asList(threads));
