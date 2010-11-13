@@ -70,8 +70,13 @@ public class Call {
     public Object getResponse(long timeout, TimeUnit unit) {
         try {
             return handleResponse(responseQueue.poll(timeout, unit));
-        } catch (InterruptedException ignored) {
+        } catch (InterruptedException e) {
+            //*/
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+            /*/
             return null;
+            //*/
         }
     }
     
@@ -91,7 +96,7 @@ public class Call {
     public String toString() {
         return "Call " + "[" + id + "] operation=" + 
             (request != null ? request.getOperation()
-             /*/
+             //*/
              + " " + request.getName() + " " 
              + (response ? "+ " : "- ")
              + Serializer.toObject(request.getKey())

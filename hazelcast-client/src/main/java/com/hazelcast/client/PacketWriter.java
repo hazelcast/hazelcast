@@ -29,9 +29,9 @@ public class PacketWriter extends PacketHandler {
     public void write(Connection connection, Packet request) throws IOException {
         if (connection != null) {
             if (!connection.headersWritten) {
-                connection.getOutputStream().write("HZC".getBytes());
-                connection.headersWritten = true;
+                connection.getOutputStream().write(HEADER);
                 connection.getOutputStream().flush();
+                connection.headersWritten = true;
             }
             DataOutputStream dos = connection.getOutputStream();
             request.writeTo(dos);

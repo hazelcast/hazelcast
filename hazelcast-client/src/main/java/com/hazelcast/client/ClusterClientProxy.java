@@ -19,6 +19,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.impl.CollectionWrapper;
 import com.hazelcast.client.impl.InstanceListenerManager;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.FactoryImpl;
@@ -74,9 +75,10 @@ public class ClusterClientProxy implements Cluster {
         return (Long) proxyHelper.doOp(ClusterOperation.GET_CLUSTER_TIME, null, null);
     }
 
-    public boolean authenticate(String groupName, String groupPassword) {
-        Object result = proxyHelper.doOp(ClusterOperation.CLIENT_AUTHENTICATE, groupName, groupPassword);
-        return (result == null) ? false : (Boolean) result;
+    public boolean authenticate(GroupConfig groupConfig) {
+        Object result = proxyHelper.doOp(ClusterOperation.CLIENT_AUTHENTICATE,
+             groupConfig.getName(), groupConfig.getPassword());
+        return result != null && (Boolean) result;
     }
 
 

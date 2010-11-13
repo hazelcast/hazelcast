@@ -146,7 +146,7 @@ public abstract class SelectorBase implements Runnable {
             throws Exception {
         final Socket socket = socketChannel.socket();
         socket.setKeepAlive(true);
-        socket.setTcpNoDelay(true);
+        //socket.setTcpNoDelay(true);
         socket.setSoLinger(true, 1);
         socket.setReceiveBufferSize(AbstractSelectionHandler.RECEIVE_SOCKET_BUFFER_SIZE);
         socket.setSendBufferSize(AbstractSelectionHandler.SEND_SOCKET_BUFFER_SIZE);

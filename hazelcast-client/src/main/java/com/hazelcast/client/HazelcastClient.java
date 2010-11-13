@@ -22,6 +22,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 import com.hazelcast.client.ClientProperties.ClientPropertyName;
 import com.hazelcast.client.impl.ListenerManager;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.impl.executor.ParallelExecutorService;
@@ -36,6 +37,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 /**
  * Hazelcast Client enables you to do all Hazelcast operations without
@@ -46,6 +48,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class HazelcastClient implements HazelcastInstance {
 
+    private final static AtomicInteger counter = new AtomicInteger();
+    
     final Map<Long, Call> calls = new ConcurrentHashMap<Long, Call>();
 
     final private ListenerManager listenerManager;
@@ -62,18 +66,21 @@ public class HazelcastClient implements HazelcastInstance {
     final ParallelExecutor parallelExecutorDefault;
     final LifecycleServiceClientImpl lifecycleService;
     final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
+    
+    final int id; 
 
     private final ClientProperties properties;
 
     private HazelcastClient(ClientProperties properties, boolean shuffle, InetSocketAddress[] clusterMembers, boolean automatic) {
         this.properties = properties;
+        this.id = counter.incrementAndGet();
         final String groupName = properties.getProperty(ClientPropertyName.GROUP_NAME);
-        final String groupPassword = properties.getProperty(ClientPropertyName.GROUP_PASSWORD);
+        final String prefix = "hz.client." + this.id + ".";
         final ThreadFactory threadFactory = new ThreadFactory() {
             final AtomicInteger atomicInteger = new AtomicInteger();
 
             public Thread newThread(Runnable r) {
-                Thread t = new Thread(r, "hz.client." + groupName + "_cached_thread_" + atomicInteger.incrementAndGet());
+                Thread t = new Thread(r, prefix + groupName + "_cached_thread_" + atomicInteger.incrementAndGet());
                 if (t.isDaemon()) {
                     t.setDaemon(false);
                 }
@@ -88,43 +95,31 @@ public class HazelcastClient implements HazelcastInstance {
         lifecycleService.fireLifecycleEvent(STARTING);
         parallelExecutorService = new ParallelExecutorService(executor);
         parallelExecutorDefault = parallelExecutorService.newParallelExecutor(10);
-        if (automatic) {
-            this.connectionManager = new ConnectionManager(this, lifecycleService, clusterMembers[0]);
-        } else {
-            this.connectionManager = new ConnectionManager(this, lifecycleService,  clusterMembers, shuffle);
-        }
-        this.connectionManager.setBinder(new DefaultClientBinder(this));
-        Connection aliveConnection;
+        connectionManager = automatic ?
+                new ConnectionManager(this, lifecycleService, clusterMembers[0]) :
+                new ConnectionManager(this, lifecycleService,  clusterMembers, shuffle);
+        connectionManager.setBinder(new DefaultClientBinder(this));
+        
+        out = new OutRunnable(this, calls, new PacketWriter());
+        in = new InRunnable(this, out, calls, new PacketReader());
+        listenerManager = new ListenerManager(this);
+
         try {
-            aliveConnection = connectionManager.getInitConnection();
+            final Connection c = connectionManager.getInitConnection();
+            if (c == null){
+                throw new IllegalStateException("Unable to connect to cluster");
+            }
         } catch (IOException e) {
             throw new ClusterClientException(e.getMessage(), e);
         }
-        if (aliveConnection == null){
-            throw new IllegalStateException("Unable to connect to cluster");
-        }
-        out = new OutRunnable(this, calls, new PacketWriter());
-        new Thread(out, "hz.client.OutThread").start();
-        in = new InRunnable(this, out, calls, new PacketReader());
-        new Thread(in, "hz.client.InThread").start();
-        listenerManager = new ListenerManager(this);
-        new Thread(listenerManager, "hz.client.Listener").start();
+        
+        new Thread(out, prefix + "OutThread").start();
+        new Thread(in, prefix + "InThread").start();
+        new Thread(listenerManager, prefix + "Listener").start();
+        
         mapLockProxy = getMap("__hz_Locks");
         clusterClientProxy = new ClusterClientProxy(this);
         partitionClientProxy = new PartitionClientProxy(this);
-        
-        Boolean authenticate = clusterClientProxy.authenticate(groupName, groupPassword);
-        if (!authenticate) {
-            this.shutdown();
-            throw new AuthenticationException("Wrong group name and password.");
-        }
-        
-        try {
-            this.connectionManager.bindConnection(aliveConnection);
-        } catch (IOException e) {
-            this.shutdown();
-            throw new ClusterClientException(e.getMessage(), e);
-        }
         
         if (automatic) {
             this.getCluster().addMembershipListener(connectionManager);
@@ -133,10 +128,21 @@ public class HazelcastClient implements HazelcastInstance {
         lifecycleService.fireLifecycleEvent(STARTED);
     }
 
+    
+    GroupConfig groupConfig(){
+        final String groupName = properties.getProperty(ClientPropertyName.GROUP_NAME);
+        final String groupPassword = properties.getProperty(ClientPropertyName.GROUP_PASSWORD);
+        return new GroupConfig(groupName, groupPassword);
+    }
+    
     public ParallelExecutor getDefaultParallelExecutor() {
         return parallelExecutorDefault;
     }
 
+    public InRunnable getInRunnable() {
+        return in;
+    }
+    
     public OutRunnable getOutRunnable() {
         return out;
     }
@@ -379,9 +385,11 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     void doShutdown() {
+        logger.log(Level.INFO, "going to shutdown client " + this.id);
         out.shutdown();
         listenerManager.shutdown();
         in.shutdown();
+        connectionManager.shutdown();
         executor.shutdownNow();
         try {
             executor.awaitTermination(5, TimeUnit.SECONDS);

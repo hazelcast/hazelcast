@@ -39,9 +39,12 @@ public class InRunnable extends IORunnable implements Runnable {
         try {
             Connection oldConnection = connection;
             connection = client.connectionManager.getConnection();
-            if (oldConnection != null && restoredConnection(oldConnection, connection)) {
-            	redoUnfinishedCalls(oldConnection);
+            if (oldConnection == null || restoredConnection(oldConnection, connection)) {
+                logger.log(Level.FINEST, "restoredConnection");
             	outRunnable.sendReconnectCall();
+            	if (oldConnection != null) {
+                    redoUnfinishedCalls(oldConnection);
+                }
             }
             if (connection == null) {
                 outRunnable.clusterIsDown(oldConnection);
@@ -63,16 +66,16 @@ public class InRunnable extends IORunnable implements Runnable {
             }
         } catch (RuntimeException re) {
             throw re;
-        } catch (Exception e) {
-            logger.log(Level.FINE, "InRunnable got an exception:" + e.toString());
-            client.connectionManager.destroyConnection(connection);
+        } catch (Throwable e) {
+            logger.log(Level.FINE, "InRunnable [" + connection + "] got an exception:" + e.toString());
+            outRunnable.clusterIsDown(connection);
         }
     }
     
     private void redoUnfinishedCalls(Connection oldConnection) {
         onDisconnect(oldConnection);
     }
-
+    
     public void shutdown() {
         synchronized (monitor) {
             if (running) {
@@ -85,7 +88,7 @@ public class InRunnable extends IORunnable implements Runnable {
                 } catch (IOException ignored) {
                 }
                 try {
-                    monitor.wait();
+                    monitor.wait(5000L);
                 } catch (InterruptedException ignored) {
                 }
             }

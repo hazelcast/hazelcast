@@ -38,8 +38,8 @@ public class Connection {
     private final int id;
     private final DataOutputStream dos;
     private final DataInputStream dis;
-    boolean headersWritten = false;
-    boolean headerRead = false;
+    volatile boolean headersWritten = false;
+    volatile boolean headerRead = false;
 
     /**
      * Creates the Socket to the given host and port
@@ -61,7 +61,7 @@ public class Connection {
             final Socket socket = new Socket();
             try{
                 socket.setKeepAlive(true);
-                socket.setTcpNoDelay(true);
+                //socket.setTcpNoDelay(true);
                 socket.setSoLinger(true, 1);
                 socket.connect(isa);
             } catch(IOException e){

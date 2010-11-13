@@ -49,6 +49,7 @@ public class ConnectionManager implements MembershipListener {
     private ClientBinder binder;
     
     private volatile boolean lookinglForAlive = false;
+    private volatile boolean running = true;
     
     private final LifecycleServiceClientImpl lifecycleService;
 
@@ -72,7 +73,7 @@ public class ConnectionManager implements MembershipListener {
             synchronized (this) {
                 final int attemptsLimit = client.getProperties().getInteger(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT);
                 final int reconnectionTimeout = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_TIMEOUT);
-                currentConnection =  lookForAliveConnection(attemptsLimit, reconnectionTimeout, false);
+                currentConnection =  lookForAliveConnection(attemptsLimit, reconnectionTimeout);
             }
         }
         return currentConnection;
@@ -81,22 +82,29 @@ public class ConnectionManager implements MembershipListener {
     public Connection lookForAliveConnection() throws IOException {
         final int attemptsLimit = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_ATTEMPTS_LIMIT);
         final int reconnectionTimeout = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_TIMEOUT);
-        return lookForAliveConnection(attemptsLimit, reconnectionTimeout, true);
+        return lookForAliveConnection(attemptsLimit, reconnectionTimeout);
     }
 
     private Connection lookForAliveConnection(final int attemptsLimit,
-            final int reconnectionTimeout, final boolean bind) throws IOException {
+            final int reconnectionTimeout) throws IOException {
         lookinglForAlive = true;
         try {
             boolean restored = false;
             int attempt = 0;
-            while(currentConnection == null){
+            while(currentConnection == null && running && !Thread.interrupted()){
+                final long next = System.currentTimeMillis() + reconnectionTimeout;
                 synchronized (this) {
                     if (currentConnection == null) {
-                        currentConnection = searchForAvailableConnection();
-                        restored = currentConnection != null;
-                        if (restored && bind){
-                            bindConnection(currentConnection);
+                        final Connection connection = searchForAvailableConnection();
+                        restored = connection != null;
+                        if (restored){
+                            try {
+                                bindConnection(connection);
+                                currentConnection = connection;
+                            } catch (Throwable e){
+                                logger.log(Level.INFO, "got an exception on getConnection:" + e.getMessage(), e);
+                                restored = false;
+                            }
                         }
                     }
                 }
@@ -109,13 +117,16 @@ public class ConnectionManager implements MembershipListener {
                     break;
                 }
                 attempt++;
+                final long t = next - System.currentTimeMillis();
                 logger.log(Level.INFO, format("Unable to get alive cluster connection," +
                     " try in {0} ms later, attempt {1} of {2}.",
-                    reconnectionTimeout, attempt, attemptsLimit));
-                try {
-                    Thread.sleep(reconnectionTimeout);
-                } catch (InterruptedException e) {
-                    break;
+                    Math.max(0, t), attempt, attemptsLimit));
+                if (t > 0) {
+                    try {
+                        Thread.sleep(t);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
                 }
             }
             if (restored) {
@@ -128,15 +139,19 @@ public class ConnectionManager implements MembershipListener {
     }
 
     public Connection getConnection() throws IOException {
-        if (currentConnection == null && !lookinglForAlive) {
+        if (currentConnection == null && running && !lookinglForAlive) {
             boolean restored = false;
             synchronized (this) {
                 if (currentConnection == null) {
                     Connection connection = searchForAvailableConnection();
                     if (connection != null) {
                         logger.log(Level.FINE, "Client is connecting to " + connection);
-                        bindConnection(connection);
-                        currentConnection = connection;
+                        try {
+                            bindConnection(connection);
+                            currentConnection = connection;
+                        } catch (Throwable e){
+                            logger.log(Level.INFO, "got an exception on getConnection:" + e.getMessage(), e);
+                        }
                     }
                     restored = currentConnection != null;
                 }
@@ -161,9 +176,7 @@ public class ConnectionManager implements MembershipListener {
     }
 
     private void notify(final Runnable target) {
-        final Thread thread = new Thread(target);
-        thread.setName("hz.Client.Notification");
-        thread.start();
+        client.executor.execute(target);
     }
 
     void bindConnection(Connection connection) throws IOException {
@@ -250,5 +263,10 @@ public class ConnectionManager implements MembershipListener {
 
     List<InetSocketAddress> getClusterMembers() {
         return clusterMembers;
+    }
+
+    public void shutdown() {
+        logger.log(Level.INFO, getClass().getSimpleName() + " shutdown");
+        running = false;
     }
 }

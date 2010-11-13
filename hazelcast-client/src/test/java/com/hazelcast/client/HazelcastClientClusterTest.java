@@ -25,25 +25,48 @@ import com.hazelcast.core.LifecycleEvent.LifecycleState;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.TestUtility.newHazelcastClient;
 import static org.junit.Assert.*;
 
 public class HazelcastClientClusterTest {
+    
+    final List<HazelcastClient> clients = new CopyOnWriteArrayList<HazelcastClient>(); 
+    
+    HazelcastClient newHazelcastClient(HazelcastInstance ... hazelcastInstances){
+        final HazelcastClient hazelcastClient = TestUtility.newHazelcastClient(hazelcastInstances);
+        clients.add(hazelcastClient);
+        return hazelcastClient;
+    }
+    
+    HazelcastClient newHazelcastClient(ClientProperties properties, HazelcastInstance ... hazelcastInstances){
+        final HazelcastClient hazelcastClient = TestUtility.newHazelcastClient(properties, hazelcastInstances);
+        clients.add(hazelcastClient);
+        return hazelcastClient;
+    }
 
     @After
     @Before
     public void cleanup() throws Exception {
         Hazelcast.shutdownAll();
+    }
+    
+    @After
+    public void after() throws Exception{
+        //System.err.println("--------");
+        for(final HazelcastClient c : clients){
+            c.shutdown();
+        }
+        clients.clear();
+        //System.in.read();
     }
 
     @Test
@@ -83,77 +106,72 @@ public class HazelcastClientClusterTest {
         final ClientProperties clientProperties = 
             ClientProperties.crateBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
         clientProperties.setPropertyValue(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT, "2");
-        clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_TIMEOUT, "500");
+        clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_TIMEOUT, "100");
         HazelcastClient client = newHazelcastClient(clientProperties, h1);
-        try{
-            final IMap<Object, Object> map = client.getMap("default");
-            map.put("smth", "nothing");
-            h1.getLifecycleService().shutdown();
-            map.put("smth", "nothing");
-        } finally {
-            client.getLifecycleService().shutdown();
-        }
+        final IMap<Object, Object> map = client.getMap("default");
+        map.put("smth", "nothing");
+        h1.getLifecycleService().shutdown();
+        map.put("smth", "nothing");
     }
     
-    @Test(timeout=15000L)
+    @Test(timeout=120000L)
     public void testRestartCluster() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         final ClientProperties clientProperties = 
             ClientProperties.crateBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
         clientProperties.setPropertyValue(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT, "2");
-        clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_ATTEMPTS_LIMIT, "5");
-        clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_TIMEOUT, "1000");
+        clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_ATTEMPTS_LIMIT, "2");
+        clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_TIMEOUT, "500");
         HazelcastClient client = newHazelcastClient(clientProperties, h1);
+        final IMap<String, String> map = client.getMap("default");
+        
+        final List<String> values = new ArrayList<String>();
+        map.addEntryListener(new EntryAdapter<String, String>(){
+            @Override
+            public void entryAdded(EntryEvent<String, String> event) {
+                values.add(event.getValue());
+            }
+            @Override
+            public void entryUpdated(EntryEvent<String, String> event) {
+                values.add(event.getValue());
+            }
+        }, true);
+        final BlockingQueue<LifecycleState> states = new LinkedBlockingQueue<LifecycleState>();  
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            
+            public void stateChanged(LifecycleEvent event) {
+                states.add(event.getState());
+            }
+        });
+        map.put("smth", "nothing1");
+        Thread.sleep(50L);
+        assertArrayEquals(values.toString(), new String[]{"nothing1"}, values.toArray(new String[0]));
+        h1.getLifecycleService().shutdown();
+        assertEquals(LifecycleState.CLIENT_CONNECTION_LOST, states.poll(500L, TimeUnit.MILLISECONDS));
+        Thread.sleep(50L);
         try{
-            final IMap<String, String> map = client.getMap("default");
-            
-            final List<String> values = new ArrayList<String>();
-            map.addEntryListener(new EntryAdapter<String, String>(){
-                @Override
-                public void entryAdded(EntryEvent<String, String> event) {
-                    values.add(event.getValue());
-                }
-                @Override
-                public void entryUpdated(EntryEvent<String, String> event) {
-                    values.add(event.getValue());
-                }
-            }, true);
-            final BlockingQueue<LifecycleState> states = new LinkedBlockingQueue<LifecycleState>();  
-            client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-                
-                public void stateChanged(LifecycleEvent event) {
-                    states.add(event.getState());
-                }
-            });
-            map.put("smth", "nothing1");
-            Thread.sleep(50L);
-            assertArrayEquals(values.toString(), new String[]{"nothing1"}, values.toArray(new String[0]));
-            h1.getLifecycleService().shutdown();
-            assertEquals(LifecycleState.CLIENT_CONNECTION_LOST, states.poll(500L, TimeUnit.MILLISECONDS));
-            Thread.sleep(50L);
-            try{
-                map.put("smth", "nothing2");
-                fail();
-            } catch(NoMemberAvailableException e){
-            }
-            try{
-                map.put("smth", "nothing3");
-                fail();
-            } catch(NoMemberAvailableException e){
-            }
-            h1 = Hazelcast.newHazelcastInstance(new Config());
-            
-            assertEquals(LifecycleState.CLIENT_CONNECTION_OPENING, states.poll(500L, TimeUnit.MILLISECONDS));
-            assertEquals(LifecycleState.CLIENT_CONNECTION_OPENED, states.poll(1000L, TimeUnit.MILLISECONDS));
-            map.put("smth", "nothing4");
-            Thread.sleep(50L);
-            assertArrayEquals(values.toString(), new String[]{"nothing1", "nothing4"}, values.toArray(new String[0]));
-        } finally {
-            client.getLifecycleService().shutdown();
+            map.put("smth", "nothing2");
+            fail("nothing2");
+        } catch(NoMemberAvailableException e){
         }
+        
+        try{
+            map.put("smth", "nothing3");
+            fail("nothing3");
+        } catch(NoMemberAvailableException e){
+        }
+        h1 = Hazelcast.newHazelcastInstance(new Config());
+        
+        
+        assertEquals(LifecycleState.CLIENT_CONNECTION_OPENING, states.poll(500L, TimeUnit.MILLISECONDS));
+        assertEquals(LifecycleState.CLIENT_CONNECTION_OPENED, states.poll(30000L, TimeUnit.MILLISECONDS));
+        map.put("smth", "nothing4");
+        
+        Thread.sleep(50L);
+        assertArrayEquals(values.toString(), new String[]{"nothing1", "nothing4"}, values.toArray(new String[0])); 
     }
     
-    @Test(timeout=20000L)
+    @Test(timeout=120000L)
     public void testRestartClusterTwice() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         final ClientProperties clientProperties = 
@@ -162,7 +180,6 @@ public class HazelcastClientClusterTest {
         clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_ATTEMPTS_LIMIT, "5");
         clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_TIMEOUT, "1000");
         HazelcastClient client = newHazelcastClient(clientProperties, h1);
-        try{
         final IMap<String, String> map = client.getMap("default");
         final List<String> values = new ArrayList<String>();
         map.addEntryListener(new EntryAdapter<String, String>(){
@@ -205,9 +222,6 @@ public class HazelcastClientClusterTest {
             Thread.sleep(50L);
         }
         assertArrayEquals(values.toString(), new String[]{"nothing", "nothing0", "nothing1"}, values.toArray(new String[0]));
-        } finally {
-            client.getLifecycleService().shutdown();
-        }
     }
     
     @Test(expected=NoMemberAvailableException.class)
@@ -218,12 +232,8 @@ public class HazelcastClientClusterTest {
         clientProperties.setPropertyValue(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT, "2");
         clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_TIMEOUT, "500");
         HazelcastClient client = newHazelcastClient(clientProperties, h1);
-        try{
-            final IMap<Object, Object> map = client.getMap("default");
-            h1.getLifecycleService().shutdown();
-            map.put("smth", "nothing");
-        } finally {
-            client.getLifecycleService().shutdown();
-        }
+        final IMap<Object, Object> map = client.getMap("default");
+        h1.getLifecycleService().shutdown();
+        map.put("smth", "nothing");
     }
 }

@@ -27,6 +27,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+import com.hazelcast.client.impl.ListenerManager;
+
 public class OutRunnable extends IORunnable {
     final PacketWriter writer;
     final BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
@@ -76,7 +78,8 @@ public class OutRunnable extends IORunnable {
                 checkOnReconnect(call);
             }
         } catch (Throwable io) {
-            logger.log(Level.WARNING, "OutRunnable got exception:" + io.getMessage(), io);
+            logger.log(Level.WARNING, 
+                "OutRunnable [" + connection + "] got exception:" + io.getMessage(), io);
             if (call != null) {
                 enQueue(call);
             }
@@ -104,7 +107,7 @@ public class OutRunnable extends IORunnable {
         } catch (Throwable e) {
             // nothing to do
         }
-        if (reconnectionCalls != null && reconnectionCalls.isEmpty()) {
+        if (reconnectionCalls.isEmpty()) {
             reconnectionCalls = null;
         }
         if (oldCalls != null && reconnectionCalls == null) {
@@ -134,16 +137,16 @@ public class OutRunnable extends IORunnable {
 
     void clusterIsDown(Connection oldConnection) {
         client.getConnectionManager().destroyConnection(oldConnection);
-        interruptWaitingCalls();
         if (!reconnection) {
             reconnection = true;
-            final Thread thread = new Thread(new Runnable() {
+            client.executor.execute(new Runnable() {
                 public void run() {
                     try {
                         final Connection lookForAliveConnection = client.getConnectionManager().lookForAliveConnection();
                         if (lookForAliveConnection == null) {
+                            logger.log(Level.WARNING,"lookForAliveConnection is null, reconnection: " + reconnection); 
                             if (reconnection) {
-                                interruptWaitingCallsAndShutdown();
+                                interruptWaitingCalls();
                             }
                         } else {
                             sendReconnectCall();
@@ -156,9 +159,6 @@ public class OutRunnable extends IORunnable {
                     }
                 }
             });
-            thread.setName("hz.client.ReconnectionThread");
-            thread.setDaemon(true);
-            thread.start();
         }
     }
 
@@ -189,7 +189,9 @@ public class OutRunnable extends IORunnable {
     }
 
     void sendReconnectCall() {
-        interruptWaitingCalls();
-        enQueue(RECONNECT_CALL);
+        if (running) {
+            enQueue(RECONNECT_CALL);
+        }
     }
+    
 }

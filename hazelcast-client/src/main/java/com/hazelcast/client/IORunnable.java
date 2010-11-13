@@ -32,24 +32,35 @@ public abstract class IORunnable extends ClientRunnable {
     protected final HazelcastClient client;
     final ILogger logger = Logger.getLogger(this.getClass().getName());
     protected static final Call RECONNECT_CALL = new Call(-1L, null);
-
+    
     public IORunnable(HazelcastClient client, Map<Long, Call> calls) {
         this.client = client;
         this.callMap = calls;
     }
-
-    public void interruptWaitingCallsAndShutdown() {
-        Collection<Call> calls = callMap.values();
-        for (Call call : calls) {
-            if (call == RECONNECT_CALL) continue;
-            call.setResponse(new NoMemberAvailableException());
+    
+    @Override
+    public void run() {
+        try {
+            super.run();
+            logger.log(Level.INFO, getClass().getSimpleName() + " is finished ok.");
+        } catch (Throwable e){
+            logger.log(Level.WARNING, getClass().getSimpleName() 
+                + " got exception:" + e.getMessage() + ", shutdown client.", e);
+            interruptWaitingCallsAndShutdown(true);
+        } finally {
+            logger.log(Level.INFO, getClass().getSimpleName() + " is finished.");
         }
-        calls.clear();
-        new Thread(new Runnable() {
-            public void run() {
-                client.shutdown();
-            }
-        }).start();
+    }
+    
+    public void interruptWaitingCallsAndShutdown(boolean shutdown) {
+        interruptWaitingCalls();
+        if (shutdown) {
+            client.executor.execute(new Runnable() {
+                public void run() {
+                    client.shutdown();
+                }
+            });
+        }
     }
     
     public void interruptWaitingCalls() {
@@ -57,6 +68,15 @@ public abstract class IORunnable extends ClientRunnable {
         for (Iterator<Call> it = values.iterator(); it.hasNext();) {
             Call call = it.next();
             if (call == RECONNECT_CALL) continue;
+            //*/
+            logger.log(Level.INFO, "cancel call " + call);
+            /*/
+            try {
+                throw new Exception("cancel call " + call);
+            } catch (Exception e) {
+                logger.log(Level.INFO, e.getMessage(), e);
+            }
+            //*/
             call.setResponse(new NoMemberAvailableException());
             it.remove();
         }
@@ -80,7 +100,7 @@ public abstract class IORunnable extends ClientRunnable {
             }
         }
     }
-
+    
     private boolean restoredConnection(Connection connection, long oldConnectionId) {
         return connection != null && connection.getVersion() != oldConnectionId;
     }

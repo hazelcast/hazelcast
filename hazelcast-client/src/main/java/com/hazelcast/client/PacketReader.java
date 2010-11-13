@@ -19,12 +19,17 @@ package com.hazelcast.client;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 public class PacketReader extends PacketHandler {
 
     public Packet readPacket(Connection connection) throws IOException {
         if (!connection.headerRead) {
-            connection.getInputStream().readFully(new byte[3]);
+            final byte[] b = new byte[3];
+            connection.getInputStream().readFully(b);
+            if (!Arrays.equals(HEADER, b)){
+                throw new IllegalStateException("Illegal header " + Arrays.toString(b));
+            }
             connection.headerRead = true;
         }
         DataInputStream dis = connection.getInputStream();

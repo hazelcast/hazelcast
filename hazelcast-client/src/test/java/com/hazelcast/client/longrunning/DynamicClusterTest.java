@@ -20,6 +20,7 @@ package com.hazelcast.client.longrunning;
 import com.hazelcast.client.CountDownLatchEntryListener;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.NoMemberAvailableException;
+import com.hazelcast.client.TestUtility;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.XmlConfigBuilder;
@@ -35,33 +36,49 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.Inet4Address;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.client.HazelcastClientMapTest.getAllThreads;
-import static com.hazelcast.client.TestUtility.newHazelcastClient;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.*;
 
 public class DynamicClusterTest {
     HazelcastClient client;
+    final List<HazelcastClient> clients = new CopyOnWriteArrayList<HazelcastClient>(); 
     Config config = new Config();
 
     @Before
-    public void before() {
+    public void before() throws Exception {
         config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(Arrays.asList(Inet4Address.getLocalHost().getHostName()));
+    }
+    
+    HazelcastClient newHazelcastClient(HazelcastInstance ... hazelcastInstances){
+        final HazelcastClient hazelcastClient = TestUtility.newHazelcastClient(hazelcastInstances);
+        clients.add(hazelcastClient);
+        return hazelcastClient;
     }
 
     @After
     @Before
-    public void after() throws InterruptedException {
-        if (client != null) {
-            client.shutdown();
-            client = null;
+    public void after() throws Exception {
+        for(final HazelcastClient c : clients){
+            c.shutdown();
         }
+        clients.clear();
+        
         Hazelcast.shutdownAll();
+    }
+    
+    //@After
+    public void afterAwait() throws Exception {
+        System.err.println("-------------------");
+        System.in.read();
     }
 
     @Test
@@ -75,10 +92,16 @@ public class DynamicClusterTest {
         Map map = client.getMap("default");
         int counter = 0;
         while (counter < 2) {
-            map.put("currentIteratedKey", counter);
+            try {
+                map.put("currentIteratedKey", counter);
+            } catch (Throwable e){
+                fail(e.getMessage());
+            }
             assertEquals(counter, realMap.get("currentIteratedKey"));
             assertEquals(counter, map.get("currentIteratedKey"));
-            memberMap.get(client.getConnectionManager().getConnection().getAddress().getPort()).shutdown();
+            final int port = client.getConnectionManager().getConnection().getAddress().getPort();
+            memberMap.get(port).shutdown();
+            
             counter++;
         }
         h3.shutdown();
@@ -286,8 +309,7 @@ public class DynamicClusterTest {
     }
 
     @Test
-    public void shutdown
-            () throws InterruptedException {
+    public void shutdown() throws InterruptedException {
         for (int i = 0; i < 3; i++) {
             HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
             client = newHazelcastClient(h1);
@@ -461,7 +483,7 @@ public class DynamicClusterTest {
         user.setAge(30);
         user.setAddress(new DataSerializableUser.Address());
         final CountDownLatch cdl = new CountDownLatch(2);
-        EntryListener<Integer, DataSerializableUser> listener = new EntryListener<Integer, DataSerializableUser>() {
+        EntryListener<Integer, DataSerializableUser> listener = new EntryAdapter<Integer, DataSerializableUser>() {
             public void entryAdded(EntryEvent<Integer, DataSerializableUser> entryEvent) {
                 DataSerializableUser u = entryEvent.getValue();
                 assertEquals(user.getName(), u.getName());
@@ -469,15 +491,6 @@ public class DynamicClusterTest {
                 assertEquals(user.getAge(), u.getAge());
                 assertEquals(user.getAddress().getAddress(), u.getAddress().getAddress());
                 cdl.countDown();
-            }
-
-            public void entryRemoved(EntryEvent entryEvent) {
-            }
-
-            public void entryUpdated(EntryEvent entryEvent) {
-            }
-
-            public void entryEvicted(EntryEvent entryEvent) {
             }
         };
         clientMap.addEntryListener(listener, true);
@@ -884,23 +897,7 @@ public class DynamicClusterTest {
         HazelcastClient client = newHazelcastClient(h);
         String mapName = "afterClientTerminationListenersAttachedByItShouldBeRemovedFromMember";
         IMap clientMap = client.getMap(mapName);
-        clientMap.addEntryListener(new EntryListener() {
-            public void entryAdded(EntryEvent entryEvent) {
-                //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            public void entryRemoved(EntryEvent entryEvent) {
-                //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            public void entryUpdated(EntryEvent entryEvent) {
-                //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            public void entryEvicted(EntryEvent entryEvent) {
-                //To change body of implemented methods use File | Settings | File Templates.
-            }
-        }, true);
+        clientMap.addEntryListener(new EntryAdapter(), true);
         IMap map = h.getMap(mapName);
         map.put("1", "1");
         Thread.sleep(100);
