@@ -132,7 +132,7 @@ public class ListenerManager extends BaseManager {
             return Boolean.TRUE;
         }
 
-        class AddListenerAtTarget extends TargetAwareOp {
+        private final class AddListenerAtTarget extends TargetAwareOp {
             public AddListenerAtTarget(Address target) {
                 request.reset();
                 this.target = target;

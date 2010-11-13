@@ -1089,7 +1089,7 @@ public class BlockingQueueManager extends BaseManager {
 
         public Q(String name) {
             QueueConfig qconfig = node.getConfig().getQueueConfig(name.substring(Prefix.QUEUE.length()));
-            maxSizePerJVM = (qconfig.getMaxSizePerJVM() == 0) ? QueueConfig.DEFAULT_MAX_SIZE_PER_JVM : qconfig.getMaxSizePerJVM();
+            maxSizePerJVM = (qconfig.getMaxSizePerJVM() == 0) ? Integer.MAX_VALUE : qconfig.getMaxSizePerJVM();
             maxAge = (qconfig.getTimeToLiveSeconds() == 0) ? QueueConfig.DEFAULT_TTL_SECONDS : 
                 TimeUnit.SECONDS.toMillis(qconfig.getTimeToLiveSeconds());
             logger.log(Level.FINEST, name + ".maxSizePerJVM=" + maxSizePerJVM);

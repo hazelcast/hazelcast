@@ -65,7 +65,7 @@
             Any integer between 0 and Integer.MAX_VALUE. 0 means
             Integer.MAX_VALUE. Default is 0.
         -->
-        <max-size-per-jvm>10000</max-size-per-jvm>
+        <max-size-per-jvm>0</max-size-per-jvm>
         <!--
             Maximum number of seconds for each item to stay in the queue. Items that are
             not consumed in <time-to-live-seconds> will automatically
