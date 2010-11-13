@@ -136,7 +136,7 @@ public final class ClusterService implements Runnable, Constants {
         }
         PacketProcessor packetProcessor = packetProcessors[packet.operation.getValue()];
         if (packetProcessor == null) {
-            String msg = "No Packet processor found for operation : " + packet.operation;
+            String msg = "No Packet processor found for operation : " + packet.operation + " from " + packet.conn;
             logger.log(Level.SEVERE, msg);
             throw new RuntimeException(msg);
         }

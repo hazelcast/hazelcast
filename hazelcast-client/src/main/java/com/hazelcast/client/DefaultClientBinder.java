@@ -40,6 +40,11 @@ public class DefaultClientBinder implements ClientBinder {
     }
 
     public void bind(Connection connection) throws IOException {
+        logger.log(Level.FINEST, connection + " -> "
+                + connection.getAddress().getHostName() + ":" + connection.getSocket().getLocalPort());
+
+        auth(connection);
+        
         Bind b = null;
         try {
             b = new Bind(new Address(connection.getAddress().getHostName(), connection.getSocket().getLocalPort()));
@@ -49,11 +54,7 @@ public class DefaultClientBinder implements ClientBinder {
         }
         Packet bind = new Packet();
         bind.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, toByte(null), toByte(b));
-        logger.log(Level.FINEST, "bind");
         write(connection, bind);
-        logger.log(Level.FINEST, "bind responce");
-        
-        auth(connection);
     }
 
     void auth(Connection connection) throws IOException {

@@ -40,14 +40,15 @@ public class InRunnable extends IORunnable implements Runnable {
             Connection oldConnection = connection;
             connection = client.connectionManager.getConnection();
             if (oldConnection == null || restoredConnection(oldConnection, connection)) {
-                logger.log(Level.FINEST, "restoredConnection");
-            	outRunnable.sendReconnectCall();
-            	if (oldConnection != null) {
-                    redoUnfinishedCalls(oldConnection);
-                }
+            	if (outRunnable.sendReconnectCall()){
+            	    logger.log(Level.FINEST, "restoredConnection");
+                	if (oldConnection != null) {
+                        redoUnfinishedCalls(oldConnection);
+                    }
+            	}
             }
             if (connection == null) {
-                outRunnable.clusterIsDown(oldConnection);
+                outRunnable.clusterIsDown(null, oldConnection);
                 Thread.sleep(50);
             } else {
                 packet = reader.readPacket(connection);
@@ -68,7 +69,7 @@ public class InRunnable extends IORunnable implements Runnable {
             throw re;
         } catch (Throwable e) {
             logger.log(Level.FINE, "InRunnable [" + connection + "] got an exception:" + e.toString());
-            outRunnable.clusterIsDown(connection);
+            outRunnable.clusterIsDown(null, connection);
         }
     }
     

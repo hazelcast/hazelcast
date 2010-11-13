@@ -142,7 +142,7 @@ public final class Connection {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        logger.log(Level.FINE, "Connection lost " + endPoint);
+        logger.log(Level.FINE, "Connection lost " + this.socketChannel.socket().getRemoteSocketAddress());
         connectionManager.remove(this);
         AddOrRemoveConnection addOrRemoveConnection = new AddOrRemoveConnection(endPoint, false);
         addOrRemoveConnection.setNode(connectionManager.node);
@@ -151,6 +151,13 @@ public final class Connection {
 
     @Override
     public String toString() {
-        return "Connection [" + this.endPoint + "] live=" + live;
+        switch (type) {
+        case NONE:
+            return "Connection [" + this.socketChannel.socket().getRemoteSocketAddress() 
+                + "] live=" + live + ", client=" + isClient();
+        default:
+            break;
+        }
+        return "Connection [" + this.endPoint + "] live=" + live + ", client=" + isClient();
     }
 }

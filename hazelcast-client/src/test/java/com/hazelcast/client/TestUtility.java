@@ -20,9 +20,20 @@ package com.hazelcast.client;
 import com.hazelcast.core.HazelcastInstance;
 
 import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TestUtility {
+    
+    static final List<HazelcastClient> clients = new CopyOnWriteArrayList<HazelcastClient>(); 
 
+    public synchronized static void destroyClients(){
+        for(final HazelcastClient c : clients){
+            c.shutdown();
+        }
+        clients.clear();
+    }
+    
     public synchronized static HazelcastClient newHazelcastClient(HazelcastInstance... h) {
         String name = h[0].getConfig().getGroupConfig().getName();
         String pass = h[0].getConfig().getGroupConfig().getPassword();

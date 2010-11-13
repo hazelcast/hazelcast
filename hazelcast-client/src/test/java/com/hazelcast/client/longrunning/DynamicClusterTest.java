@@ -17,10 +17,12 @@
 
 package com.hazelcast.client.longrunning;
 
+import com.hazelcast.client.ClientProperties;
 import com.hazelcast.client.CountDownLatchEntryListener;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.NoMemberAvailableException;
 import com.hazelcast.client.TestUtility;
+import com.hazelcast.client.ClientProperties.ClientPropertyName;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.XmlConfigBuilder;
@@ -42,13 +44,13 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 
+import static com.hazelcast.client.TestUtility.*;
 import static com.hazelcast.client.HazelcastClientMapTest.getAllThreads;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.*;
 
 public class DynamicClusterTest {
     HazelcastClient client;
-    final List<HazelcastClient> clients = new CopyOnWriteArrayList<HazelcastClient>();
     Config config = new Config();
 
     @Before
@@ -57,23 +59,14 @@ public class DynamicClusterTest {
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(Arrays.asList(Inet4Address.getLocalHost().getHostName()));
     }
-
-    HazelcastClient newHazelcastClient(HazelcastInstance... hazelcastInstances) {
-        final HazelcastClient hazelcastClient = TestUtility.newHazelcastClient(hazelcastInstances);
-        clients.add(hazelcastClient);
-        return hazelcastClient;
-    }
-
+    
     @After
     @Before
     public void after() throws Exception {
-        for (final HazelcastClient c : clients) {
-            c.shutdown();
-        }
-        clients.clear();
+        destroyClients();
         Hazelcast.shutdownAll();
     }
-
+    
     //@After
     public void afterAwait() throws Exception {
         System.err.println("-------------------");
@@ -81,7 +74,7 @@ public class DynamicClusterTest {
     }
 
     @Test
-    public void continuePutAndGetIfOneOfConnectedClusterMemberFails() throws InterruptedException, IOException {
+    public void continuePutAndGetIfOneOfConnectedClusterMemberFails() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
@@ -93,20 +86,21 @@ public class DynamicClusterTest {
         while (counter < 2) {
             try {
                 map.put("currentIteratedKey", counter);
-            } catch (Throwable e) {
+            } catch (Throwable e){
                 fail(e.getMessage());
             }
             assertEquals(counter, realMap.get("currentIteratedKey"));
             assertEquals(counter, map.get("currentIteratedKey"));
             final int port = client.getConnectionManager().getConnection().getAddress().getPort();
             memberMap.get(port).shutdown();
+            
             counter++;
         }
         h3.shutdown();
     }
 
     @Test
-    public void fiveTimesContinuePutAndGetIfOneOfConnectedClusterMemberFails() throws IOException, InterruptedException {
+    public void fiveTimesContinuePutAndGetIfOneOfConnectedClusterMemberFails() throws Exception {
         for (int i = 0; i < 5; i++) {
             continuePutAndGetIfOneOfConnectedClusterMemberFails();
         }
@@ -789,15 +783,27 @@ public class DynamicClusterTest {
         }
     }
 
-    @Test
-    public void shutdownClientOnNoMemberAvailable() throws InterruptedException {
+    @Test(timeout=30000)
+    public void shutdownClient() throws InterruptedException {
         Thread[] initialThreads = getAllThreads();
         HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-        HazelcastClient client = newHazelcastClient(h);
+        
+        final ClientProperties clientProperties = 
+            ClientProperties.crateBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
+        clientProperties.setPropertyValue(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT, "2");
+        clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_ATTEMPTS_LIMIT, "2");
+        clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_TIMEOUT, "500");
+        
+        HazelcastClient client = newHazelcastClient(clientProperties, h);
         client.getCluster().getMembers();
         h.shutdown();
+        try {
+            client.getMap("default").put("1", "1");
+            fail();
+        } catch (NoMemberAvailableException e){
+        }
         client.shutdown();
-        Thread.sleep(1000);
+
         Thread[] threads = getAllThreads();
         List<Thread> listOfThreads = new ArrayList<Thread>(Arrays.asList(threads));
         for (Thread thread : initialThreads) {

@@ -30,29 +30,15 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
+import static com.hazelcast.client.TestUtility.*;
 
 public class HazelcastClientClusterTest {
     
-    final List<HazelcastClient> clients = new CopyOnWriteArrayList<HazelcastClient>(); 
-    
-    HazelcastClient newHazelcastClient(HazelcastInstance ... hazelcastInstances){
-        final HazelcastClient hazelcastClient = TestUtility.newHazelcastClient(hazelcastInstances);
-        clients.add(hazelcastClient);
-        return hazelcastClient;
-    }
-    
-    HazelcastClient newHazelcastClient(ClientProperties properties, HazelcastInstance ... hazelcastInstances){
-        final HazelcastClient hazelcastClient = TestUtility.newHazelcastClient(properties, hazelcastInstances);
-        clients.add(hazelcastClient);
-        return hazelcastClient;
-    }
-
     @After
     @Before
     public void cleanup() throws Exception {
@@ -62,10 +48,7 @@ public class HazelcastClientClusterTest {
     @After
     public void after() throws Exception{
         //System.err.println("--------");
-        for(final HazelcastClient c : clients){
-            c.shutdown();
-        }
-        clients.clear();
+        destroyClients();
         //System.in.read();
     }
 

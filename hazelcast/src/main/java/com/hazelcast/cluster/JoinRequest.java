@@ -84,14 +84,12 @@ public class JoinRequest extends AbstractRemotelyProcessable {
 
     @Override
     public String toString() {
-        return new StringBuilder(128)
-                .append("JoinRequest{")
-                .append("nodeType=").append(nodeType)
-                .append(", address=").append(address)
-                .append(", buildNumber='").append(buildNumber).append('\'')
-                .append(", packetVersion='").append(packetVersion).append('\'')
-                .append(", config='").append(config).append('\'')
-                .append('}').toString();
+        return "JoinRequest{" 
+            + "nodeType=" + nodeType 
+            + ", address=" + address 
+            + ", buildNumber='" + buildNumber + '\'' 
+            + ", packetVersion='" + packetVersion + '\'' 
+            + ", config='" + config + "'}";
     }
 
     public void process() {

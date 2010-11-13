@@ -27,8 +27,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import com.hazelcast.client.impl.ListenerManager;
-
 public class OutRunnable extends IORunnable {
     final PacketWriter writer;
     final BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
@@ -55,6 +53,7 @@ public class OutRunnable extends IORunnable {
                 return;
             }
             if (call != RECONNECT_CALL) {
+//                logger.log(Level.FINEST, "call: " + call);
                 callMap.put(call.getId(), call);
             }
             Connection oldConnection = connection;
@@ -69,7 +68,8 @@ public class OutRunnable extends IORunnable {
                     writer.write(connection, call.getRequest());
                 }
             } else {
-                clusterIsDown(oldConnection);
+//                logger.log(Level.FINEST, "clusterIsDown call: " + call);
+                clusterIsDown(call, oldConnection);
             }
             if (connection != null && wrote) {
                 writer.flush(connection);
@@ -80,10 +80,7 @@ public class OutRunnable extends IORunnable {
         } catch (Throwable io) {
             logger.log(Level.WARNING, 
                 "OutRunnable [" + connection + "] got exception:" + io.getMessage(), io);
-            if (call != null) {
-                enQueue(call);
-            }
-            clusterIsDown(connection);
+            clusterIsDown(call, connection);
         }
     }
 
@@ -135,8 +132,11 @@ public class OutRunnable extends IORunnable {
         }
     }
 
-    void clusterIsDown(Connection oldConnection) {
+    void clusterIsDown(Call call, Connection oldConnection) {
         client.getConnectionManager().destroyConnection(oldConnection);
+        if (call != null) {
+            enQueue(call);
+        }
         if (!reconnection) {
             reconnection = true;
             client.executor.execute(new Runnable() {
@@ -144,12 +144,14 @@ public class OutRunnable extends IORunnable {
                     try {
                         final Connection lookForAliveConnection = client.getConnectionManager().lookForAliveConnection();
                         if (lookForAliveConnection == null) {
-                            logger.log(Level.WARNING,"lookForAliveConnection is null, reconnection: " + reconnection); 
+//                            logger.log(Level.WARNING,"lookForAliveConnection is null, reconnection: " + reconnection); 
                             if (reconnection) {
                                 interruptWaitingCalls();
                             }
                         } else {
-                            sendReconnectCall();
+                            if (running){
+                                enQueue(RECONNECT_CALL);
+                            }
                         }
                     } catch (IOException e) {
                         logger.log(Level.WARNING,
@@ -164,11 +166,14 @@ public class OutRunnable extends IORunnable {
 
     private void resubscribe(Call call, Connection oldConnection) {
         onDisconnect(oldConnection);
+//        logger.log(Level.INFO, "resubscribe: call " + call);
         final BlockingQueue<Call> temp = new LinkedBlockingQueue<Call>();
         queue.drainTo(temp);
         temp.add(call);
         reconnectionCalls = new ArrayList<Call>(client.getListenerManager().getListenerCalls());
+//        logger.log(Level.INFO, "resubscribe: reconnectionCalls " + reconnectionCalls);
         queue.addAll(reconnectionCalls);
+//        logger.log(Level.INFO, "resubscribe: temp " + temp);
         temp.drainTo(queue);
     }
 
@@ -188,10 +193,12 @@ public class OutRunnable extends IORunnable {
         return queue.size();
     }
 
-    void sendReconnectCall() {
-        if (running) {
+    boolean sendReconnectCall() {
+        if (running && !reconnection && !queue.contains(RECONNECT_CALL)) {
             enQueue(RECONNECT_CALL);
+            return true;
         }
+        return false;
     }
     
 }
