@@ -36,6 +36,7 @@
                                     <fileset dir="../hazelcast/target/classes/"/>
                                     <fileset dir="../hazelcast-client/target/classes/"/>
                                     <fileset dir="../hazelcast-hibernate/target/classes/"/>
+                                    <fileset dir="../hazelcast-spring/target/classes/"/>
                                     <manifest>
                                         <attribute name="Built-By" value="Hazelcast.com"/>
                                         <attribute name="Main-Class"
@@ -58,19 +59,19 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
             <version>${project.parent.version}</version>
-            <scope>compile</scope>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-client</artifactId>
             <version>${project.parent.version}</version>
-            <scope>compile</scope>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-hibernate</artifactId>
             <version>${project.parent.version}</version>
-            <scope>compile</scope>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
