@@ -789,9 +789,6 @@ public class ConcurrentMapManager extends BaseManager {
             request.longValue = value;
             doOp();
             Object returnObject = getResultAsObject();
-            if (returnObject instanceof AddressAwareException) {
-                rethrowException(op, (AddressAwareException) returnObject);
-            }
             return (Long) returnObject;
         }
 
@@ -883,9 +880,6 @@ public class ConcurrentMapManager extends BaseManager {
                 request.setBooleanRequest();
                 doOp();
                 Object returnObject = getResultAsBoolean();
-                if (returnObject instanceof AddressAwareException) {
-                    rethrowException(operation, (AddressAwareException) returnObject);
-                }
                 if (!Boolean.FALSE.equals(returnObject)) {
                     request.value = dataNew;
                     backup(CONCURRENT_MAP_BACKUP_PUT);
