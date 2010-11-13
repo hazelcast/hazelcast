@@ -284,7 +284,7 @@ public final class Hazelcast {
      */
     public static void shutdown() {
         synchronized (initLock) {
-            if (defaultInstance != null) {
+            if (defaultInstance.get() != null) {
                 getDefaultInstance().shutdown();
                 defaultInstance.set(null);
             }
@@ -312,8 +312,8 @@ public final class Hazelcast {
      */
     public static void restart() {
         synchronized (initLock) {
-            if (defaultInstance != null) {
-//                defaultInstance.set(com.hazelcast.impl.FactoryImpl.restart((FactoryImpl.HazelcastInstanceProxy) defaultInstance));
+            if (defaultInstance.get() != null) {
+                getLifecycleService().restart();
             } else {
                 getDefaultInstance();
             }
