@@ -234,6 +234,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                             }
                         } else if (conn == null && (now - memberImpl.getLastRead()) > 5000) {
                             logMissingConnection(address);
+                            memberImpl.didRead();
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -289,6 +290,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                             logger.log(Level.FINEST, "not sending heartbeat because connection is null or not live " + address);
                             if (conn == null && (now - member.getLastRead()) > 5000) {
                                 logMissingConnection(address);
+                                member.didRead();
                             }
                         }
                     }

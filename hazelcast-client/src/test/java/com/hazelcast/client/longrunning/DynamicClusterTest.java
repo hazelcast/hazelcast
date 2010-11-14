@@ -55,6 +55,7 @@ public class DynamicClusterTest {
 
     @Before
     public void before() throws Exception {
+        System.setProperty("junit.default.timeout", "300000");
         config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(Arrays.asList(Inet4Address.getLocalHost().getHostName()));

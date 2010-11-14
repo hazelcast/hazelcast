@@ -29,7 +29,7 @@ public class Call {
 
     private final Packet request;
 
-    private volatile boolean response = false;
+    private volatile Object response;
     
     private final BlockingQueue<Object> responseQueue = new LinkedBlockingQueue<Object>();
 
@@ -51,9 +51,10 @@ public class Call {
 
     public Object getResponse() {
         try {
-            return handleResponse(responseQueue.take());
-        } catch (InterruptedException ignored) {
-            return null;
+            Object res = (response != null) ? response : responseQueue.take();
+            return handleResponse(res);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -69,7 +70,8 @@ public class Call {
 
     public Object getResponse(long timeout, TimeUnit unit) {
         try {
-            return handleResponse(responseQueue.poll(timeout, unit));
+            Object res = (response != null) ? response : responseQueue.poll(timeout, unit);
+            return handleResponse(res);
         } catch (InterruptedException e) {
             //*/
             Thread.currentThread().interrupt();
@@ -84,11 +86,11 @@ public class Call {
     }
 
     public boolean hasResponse() {
-        return this.response;
+        return this.response != null || responseQueue.size() > 0;
     }
     
     public void setResponse(Object response) {
-        this.response = true;
+        this.response = response;
         this.responseQueue.offer(response);
     }
 
@@ -98,7 +100,7 @@ public class Call {
             (request != null ? request.getOperation()
              //*/
              + " " + request.getName() + " " 
-             + (response ? "+ " : "- ")
+             + (hasResponse() ? "+ " : "- ")
              + Serializer.toObject(request.getKey())
              + "=" + Serializer.toObject(request.getValue()) 
              /*/

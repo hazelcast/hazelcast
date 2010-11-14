@@ -167,6 +167,7 @@ public class OutRunnable extends IORunnable {
         queue.addAll(reconnectionCalls);
 //        logger.log(Level.INFO, "resubscribe: temp " + temp);
         temp.drainTo(queue);
+        queue.addAll(callMap.values());
     }
 
     public void enQueue(Call call) {

@@ -400,7 +400,7 @@ public class Node {
             Set<Member> members = null;
             boolean allConnected = false;
             int checkCount = 0;
-            while (checkCount++ < 10 && !allConnected) {
+            while (checkCount++ < 100 && !allConnected) {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException ignored) {

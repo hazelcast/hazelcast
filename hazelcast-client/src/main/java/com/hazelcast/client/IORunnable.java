@@ -32,26 +32,26 @@ public abstract class IORunnable extends ClientRunnable {
     protected final HazelcastClient client;
     final ILogger logger = Logger.getLogger(this.getClass().getName());
     protected static final Call RECONNECT_CALL = new Call(-1L, null);
-    
+
     public IORunnable(HazelcastClient client, Map<Long, Call> calls) {
         this.client = client;
         this.callMap = calls;
     }
-    
+
     @Override
     public void run() {
         try {
             super.run();
             logger.log(Level.INFO, getClass().getSimpleName() + " is finished ok.");
-        } catch (Throwable e){
-            logger.log(Level.WARNING, getClass().getSimpleName() 
-                + " got exception:" + e.getMessage() + ", shutdown client.", e);
+        } catch (Throwable e) {
+            logger.log(Level.WARNING, getClass().getSimpleName()
+                    + " got exception:" + e.getMessage() + ", shutdown client.", e);
             interruptWaitingCallsAndShutdown(true);
         } finally {
             logger.log(Level.INFO, getClass().getSimpleName() + " is finished.");
         }
     }
-    
+
     public void interruptWaitingCallsAndShutdown(boolean shutdown) {
         interruptWaitingCalls();
         if (shutdown) {
@@ -62,7 +62,7 @@ public abstract class IORunnable extends ClientRunnable {
             });
         }
     }
-    
+
     public void interruptWaitingCalls() {
         final Collection<Call> values = callMap.values();
         for (Iterator<Call> it = values.iterator(); it.hasNext();) {
@@ -82,10 +82,10 @@ public abstract class IORunnable extends ClientRunnable {
         }
     }
 
-    protected synchronized void onDisconnect(Connection oldConnection) {
+    protected synchronized boolean onDisconnect(Connection oldConnection) {
         boolean shouldExecuteOnDisconnect = client.getConnectionManager().shouldExecuteOnDisconnect(oldConnection);
         if (!shouldExecuteOnDisconnect) {
-            return;
+            return false;
         }
         Member leftMember = oldConnection.getMember();
         Collection<Call> calls = callMap.values();
@@ -99,8 +99,9 @@ public abstract class IORunnable extends ClientRunnable {
                 }
             }
         }
+        return true;
     }
-    
+
     private boolean restoredConnection(Connection connection, long oldConnectionId) {
         return connection != null && connection.getVersion() != oldConnectionId;
     }

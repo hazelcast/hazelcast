@@ -74,14 +74,14 @@ public final class InSelector extends SelectorBase {
             try {
                 final SocketChannel channel = serverSocketChannel.accept();
                 logger.log(Level.INFO, channel.socket().getLocalPort()
-                        + " this socket is connecting to "
+                        + " is accepting socket connection from "
                         + channel.socket().getRemoteSocketAddress());
                 final Connection connection = initChannel(channel, true);
                 channel.register(selector, SelectionKey.OP_READ, connection.getReadHandler());
                 serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, Acceptor.this);
                 selector.wakeup();
                 logger.log(Level.INFO, channel.socket().getLocalPort()
-                        + " this socket is connected to "
+                        + " is accepted socket connection from "
                         + channel.socket().getRemoteSocketAddress());
             } catch (final Exception e) {
                 logger.log(Level.FINEST, e.getMessage(), e);
