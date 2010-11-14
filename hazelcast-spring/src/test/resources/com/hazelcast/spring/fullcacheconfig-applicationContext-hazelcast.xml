@@ -3,7 +3,7 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:aop="http://www.springframework.org/schema/aop"
 	xmlns:p="http://www.springframework.org/schema/p"
-	xmlns:cache="http://www.hazelcast.com/schema/config"
+	xmlns:hz="http://www.hazelcast.com/schema/config"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
 		http://www.hazelcast.com/schema/config
@@ -17,88 +17,80 @@
 			</list>
 		</property>
 	</bean>
-	
-	<bean id="string" class="java.lang.String">
-		<constructor-arg><value>${cluster.group.name}</value></constructor-arg>
-	</bean>
 
-	<cache:config id="config">
-		<cache:group>
-			<cache:name>${cluster.group.name}</cache:name>
-			<cache:password>${cluster.group.password}</cache:password>
-		</cache:group>
-		<cache:properties>
-			<cache:property name="hazelcast.merge.first.run.delay.seconds">5</cache:property>
-			<cache:property name="hazelcast.merge.next.run.delay.seconds">5</cache:property>
-		</cache:properties>
-		<cache:network>
-			<cache:port auto-increment="false">${cluster.port}</cache:port>
-			<cache:join>
-				<cache:multicast enabled="false">
-					<cache:multicast-group>224.2.2.3</cache:multicast-group>
-					<cache:multicast-port>54327</cache:multicast-port>
-				</cache:multicast>
-				<cache:tcp-ip enabled="true">
-					<cache:members>127.0.0.1:5800, 127.0.0.1:5801</cache:members>
-				</cache:tcp-ip>
-			</cache:join>
-			<cache:interfaces enabled="false">
-				<cache:interface>10.10.1.*</cache:interface>
-			</cache:interfaces>
-			<cache:symmetric-encryption enabled="true">
-				<cache:algorithm>PBEWithMD5AndDES</cache:algorithm>
-				<cache:salt>thesalt</cache:salt>
-				<cache:password>thepass</cache:password>
-				<cache:iteration-count>19</cache:iteration-count>
-			</cache:symmetric-encryption>
-			<cache:asymmetric-encryption enabled="false">
-				<cache:algorithm></cache:algorithm>
-				<cache:key-password>thekeypass</cache:key-password>
-				<cache:key-alias>local</cache:key-alias>
-				<cache:store-type>JKS</cache:store-type>
-				<cache:store-password>thestorepass</cache:store-password>
-				<cache:store-path>keystore</cache:store-path>
-			</cache:asymmetric-encryption>
-		</cache:network>
-		<cache:executor-service name="testExec">
-			<cache:core-pool-size>2</cache:core-pool-size>
-			<cache:max-pool-size>32</cache:max-pool-size>
-			<cache:keep-alive-seconds>30</cache:keep-alive-seconds>
-		</cache:executor-service>
-		<cache:executor-service name="testExec2">
-            <cache:core-pool-size>5</cache:core-pool-size>
-            <cache:max-pool-size>10</cache:max-pool-size>
-            <cache:keep-alive-seconds>20</cache:keep-alive-seconds>
-        </cache:executor-service>
-		<cache:queue name="testQ">
-			<cache:max-size-per-jvm>1000</cache:max-size-per-jvm>
-			<cache:time-to-live-seconds>0</cache:time-to-live-seconds>
-		</cache:queue>
-		<cache:queue name="q">
-            <cache:max-size-per-jvm>2500</cache:max-size-per-jvm>
-            <cache:time-to-live-seconds>1</cache:time-to-live-seconds>
-        </cache:queue>
-		<cache:map name="testMap">
-			<cache:backup-count>2</cache:backup-count>
-			<cache:eviction-policy>NONE</cache:eviction-policy>
-			<cache:max-size>0</cache:max-size>
-			<cache:eviction-percentage>30</cache:eviction-percentage>
-			<cache:merge-policy>hz.ADD_NEW_ENTRY</cache:merge-policy>
-		</cache:map>
-		<cache:map name="simpleMap">
-            <cache:backup-count>3</cache:backup-count>
-            <cache:eviction-policy>LRU</cache:eviction-policy>
-            <cache:max-size>10</cache:max-size>
-            <cache:eviction-percentage>50</cache:eviction-percentage>
-            <cache:merge-policy>hz.LATEST_UPDATE</cache:merge-policy>
-            <cache:time-to-live-seconds>1</cache:time-to-live-seconds>
-        </cache:map>
-	</cache:config>
-
-	<bean id="hazelcastInstance"
-		class="com.hazelcast.core.Hazelcast"
-		factory-method="newHazelcastInstance">
-		<constructor-arg ref="config" />
-	</bean>
-	
+    <hz:hazelcast id="instance">
+        <hz:config>
+	        <hz:group>
+	            <hz:name>${cluster.group.name}</hz:name>
+	            <hz:password>${cluster.group.password}</hz:password>
+	        </hz:group>
+	        <hz:properties>
+	            <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
+	            <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
+	        </hz:properties>
+	        <hz:network>
+	            <hz:port auto-increment="false">${cluster.port}</hz:port>
+	            <hz:join>
+	                <hz:multicast enabled="false">
+	                    <hz:multicast-group>224.2.2.3</hz:multicast-group>
+	                    <hz:multicast-port>54327</hz:multicast-port>
+	                </hz:multicast>
+	                <hz:tcp-ip enabled="true">
+	                    <hz:members>${cluster.members}</hz:members>
+	                </hz:tcp-ip>
+	            </hz:join>
+	            <hz:interfaces enabled="false">
+	                <hz:interface>10.10.1.*</hz:interface>
+	            </hz:interfaces>
+	            <hz:symmetric-encryption enabled="true">
+	                <hz:algorithm>PBEWithMD5AndDES</hz:algorithm>
+	                <hz:salt>thesalt</hz:salt>
+	                <hz:password>thepass</hz:password>
+	                <hz:iteration-count>19</hz:iteration-count>
+	            </hz:symmetric-encryption>
+	            <hz:asymmetric-encryption enabled="false">
+	                <hz:algorithm></hz:algorithm>
+	                <hz:key-password>thekeypass</hz:key-password>
+	                <hz:key-alias>local</hz:key-alias>
+	                <hz:store-type>JKS</hz:store-type>
+	                <hz:store-password>thestorepass</hz:store-password>
+	                <hz:store-path>keystore</hz:store-path>
+	            </hz:asymmetric-encryption>
+	        </hz:network>
+	        <hz:executor-service name="testExec">
+	            <hz:core-pool-size>2</hz:core-pool-size>
+	            <hz:max-pool-size>32</hz:max-pool-size>
+	            <hz:keep-alive-seconds>30</hz:keep-alive-seconds>
+	        </hz:executor-service>
+	        <hz:executor-service name="testExec2">
+	            <hz:core-pool-size>5</hz:core-pool-size>
+	            <hz:max-pool-size>10</hz:max-pool-size>
+	            <hz:keep-alive-seconds>20</hz:keep-alive-seconds>
+	        </hz:executor-service>
+	        <hz:queue name="testQ">
+	            <hz:max-size-per-jvm>1000</hz:max-size-per-jvm>
+	            <hz:time-to-live-seconds>0</hz:time-to-live-seconds>
+	        </hz:queue>
+	        <hz:queue name="q">
+	            <hz:max-size-per-jvm>2500</hz:max-size-per-jvm>
+	            <hz:time-to-live-seconds>1</hz:time-to-live-seconds>
+	        </hz:queue>
+	        <hz:map name="testMap">
+	            <hz:backup-count>2</hz:backup-count>
+	            <hz:eviction-policy>NONE</hz:eviction-policy>
+	            <hz:max-size>0</hz:max-size>
+	            <hz:eviction-percentage>30</hz:eviction-percentage>
+	            <hz:merge-policy>hz.ADD_NEW_ENTRY</hz:merge-policy>
+	        </hz:map>
+	        <hz:map name="simpleMap">
+	            <hz:backup-count>3</hz:backup-count>
+	            <hz:eviction-policy>LRU</hz:eviction-policy>
+	            <hz:max-size>10</hz:max-size>
+	            <hz:eviction-percentage>50</hz:eviction-percentage>
+	            <hz:merge-policy>hz.LATEST_UPDATE</hz:merge-policy>
+	            <hz:time-to-live-seconds>1</hz:time-to-live-seconds>
+	        </hz:map>
+	    </hz:config>
+    </hz:hazelcast>
+    
 </beans>

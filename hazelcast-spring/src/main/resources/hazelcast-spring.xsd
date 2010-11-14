@@ -13,7 +13,7 @@
                 <xs:element ref="map" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="merge-policies" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
-            <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
+            <xs:attribute name="id" type="xs:string" use="optional"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="hazelcast">
@@ -21,6 +21,16 @@
             <xs:sequence>
                 <xs:element ref="config" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
+            <xs:attribute name="id" type="xs:string" use="required"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="client">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="client-properties"/>
+                <xs:element ref="members" minOccurs="1" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute name="id" type="xs:string" use="required"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="map">
@@ -341,6 +351,24 @@
             </xs:sequence>
         </xs:complexType>
     </xs:element>
+    <xs:simpleType name="clientPropertyName">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="hazelcast.client.group.name"/>
+            <xs:enumeration value="hazelcast.client.group.password"/>
+            <xs:enumeration value="hazelcast.client.init.connection.attempts.limit"/>
+            <xs:enumeration value="hazelcast.client.reconnection.attempts.limit"/>
+            <xs:enumeration value="hazelcast.client.reconnection.timeout"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:element name="client-property">
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:attribute name="name" use="required" type="clientPropertyName"/>
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
     <xs:simpleType name="propertyName">
         <xs:restriction base="xs:string">
             <xs:enumeration value="hazelcast.merge.first.run.delay.seconds"/>
@@ -374,6 +402,13 @@
                     <xs:attribute name="name" use="required" type="propertyName"/>
                 </xs:extension>
             </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="client-properties">
+        <xs:complexType>
+            <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="client-property"/>
+            </xs:sequence>
         </xs:complexType>
     </xs:element>
     <xs:element name="properties">

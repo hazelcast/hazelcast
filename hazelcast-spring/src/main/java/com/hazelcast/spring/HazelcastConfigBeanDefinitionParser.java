@@ -309,24 +309,16 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
                     joinConfigBuilder, 
                     "interface", "member", "members");
             
-            ManagedList members = new ManagedList();
             for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                 String name = xmlToJavaName(cleanNodeName(n.getNodeName()));
                 if ("member".equals(name)){
                     String value = getValue(n);
-                    members.addAll(handleMember(value));
+                    builder.addPropertyValue("members", value);
                 } else if ("members".equals(name)){
                     String value = getValue(n);
-                    for(String member : value.split("[,; ]")){
-                        member = member.trim();
-                        if (member.length() > 0){
-                            members.addAll(handleMember(member));
-                        }
-                    }
+                    builder.addPropertyValue("members", value);
                 }
-                
             }
-            builder.addPropertyValue("members", members);
         }
         
         public void handleQueue(Node node) {

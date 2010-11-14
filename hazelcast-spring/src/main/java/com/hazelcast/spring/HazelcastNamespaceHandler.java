@@ -23,6 +23,8 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
 
     public void init() {
         registerBeanDefinitionParser("config", new HazelcastConfigBeanDefinitionParser());
+        registerBeanDefinitionParser("hazelcast", new HazelcastBeanDefinitionParser());
+        registerBeanDefinitionParser("client", new HazelcastClientBeanDefinitionParser());
     }  
 
 }

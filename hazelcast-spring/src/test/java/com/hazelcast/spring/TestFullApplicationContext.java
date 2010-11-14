@@ -25,10 +25,12 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -48,25 +50,15 @@ import com.hazelcast.impl.GroupProperties;
 @ContextConfiguration(locations = { "fullcacheconfig-applicationContext-hazelcast.xml" })
 public class TestFullApplicationContext {
 
-	@Autowired
 	private Config config;
 	
 	@Autowired
-	private HazelcastInstance instance;
+    private HazelcastInstance instance;
 	
-	@Autowired
-    private String string;
-	
-	@AfterClass
-	@BeforeClass
-	public static void shutdown(){
-	    Hazelcast.shutdownAll();
+	@Before
+	public void before(){
+	    config = instance.getConfig();
 	}
-	
-	@Test
-    public void testname() throws Exception {
-        assertEquals("spring-group", string);
-    }
 	
 	@Test
 	public void testMapConfig() {
