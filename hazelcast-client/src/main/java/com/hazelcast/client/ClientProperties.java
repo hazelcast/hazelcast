@@ -19,6 +19,7 @@ package com.hazelcast.client;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public final class ClientProperties {
 
@@ -59,6 +60,17 @@ public final class ClientProperties {
     
     public ClientProperties() {
         this.properties = new HashMap<ClientProperties.ClientPropertyName, String>();
+    }
+    
+    public Map<ClientPropertyName, String> getProperties() {
+        return this.properties;
+    }
+    
+    public ClientProperties setProperties(final Map<String, String> properties){
+        for (final Entry<String, String> entry : properties.entrySet()) {
+            setPropertyValue(entry.getKey(), entry.getValue());
+        }
+        return this;
     }
     
     public ClientProperties setPropertyValue(final String name, final String value){

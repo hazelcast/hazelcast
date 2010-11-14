@@ -39,7 +39,7 @@ public class TcpIpConfig implements DataSerializable {
     private final List<Address> addresses = new ArrayList<Address>();
 
     public TcpIpConfig addMember(final String member) {
-        members.add(member);
+        this.members.addAll(AbstractXmlConfigHelper.handleMember(member));
         return this;
     }
 
@@ -99,10 +99,13 @@ public class TcpIpConfig implements DataSerializable {
      * @param members the members to set
      */
     public TcpIpConfig setMembers(final List<String> members) {
-        this.members = members;
+        this.members.clear();
+        for (final String member : members) {
+            this.members.addAll(AbstractXmlConfigHelper.handleMember(member));
+        }
         return this;
     }
-
+    
     /**
      * @return the requiredMember
      */

@@ -19,6 +19,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.ClientProperties.ClientPropertyName;
 import com.hazelcast.client.impl.ListenerManager;
+import com.hazelcast.config.AbstractXmlConfigHelper;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
@@ -31,7 +32,9 @@ import com.hazelcast.partition.PartitionService;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -172,6 +175,14 @@ public class HazelcastClient implements HazelcastInstance {
 
     public static HazelcastClient newHazelcastClient(ClientProperties properties, String... addresses) {
         return newHazelcastClient(properties, true, addresses);
+    }
+    
+    public static HazelcastClient newHazelcastClient(ClientProperties properties, List<String> addresses) {
+        List<String> lsAddresses = new ArrayList<String>();
+        for (final String address : addresses) {
+            lsAddresses.addAll(AbstractXmlConfigHelper.handleMember(address));
+        }
+        return newHazelcastClient(properties, lsAddresses.toArray(new String[0]));
     }
 
     /**
