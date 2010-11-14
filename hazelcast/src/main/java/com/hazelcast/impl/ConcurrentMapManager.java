@@ -341,7 +341,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     class MContainsKey extends MTargetAwareOp {
-        Object key = null;
+        Object keyObject = null;
         MapNearCache nearCache = null;
 
         public boolean containsEntry(String name, Object key, Object value) {
@@ -349,7 +349,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         public boolean containsKey(String name, Object key) {
-            this.key = key;
+            this.keyObject = key;
             this.nearCache = mapCaches.get(name);
             Data dataKey = toData(key);
             if (nearCache != null) {
@@ -371,7 +371,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void reset() {
-            key = null;
+            keyObject = null;
             nearCache = null;
             super.reset();
         }
@@ -380,7 +380,7 @@ public class ConcurrentMapManager extends BaseManager {
         protected void setResult(Object obj) {
             if (obj != null && obj == Boolean.TRUE) {
                 if (nearCache != null) {
-                    nearCache.setContainsKey(key, request.key);
+                    nearCache.setContainsKey(keyObject, request.key);
                 }
             }
             super.setResult(obj);
@@ -407,6 +407,15 @@ public class ConcurrentMapManager extends BaseManager {
                 backup(CONCURRENT_MAP_BACKUP_REMOVE);
             }
             return result;
+        }
+
+        @Override
+        public final void handleNoneRedoResponse(Packet packet) {
+            MapNearCache nearCache = mapCaches.get(request.name);
+            if (nearCache != null) {
+                nearCache.invalidate(request.key);
+            }
+            super.handleNoneRedoResponse(packet);
         }
     }
 
@@ -479,11 +488,11 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     class MGet extends MTargetAwareOp {
-        Object key = null;
+        Object keyObject = null;
         MapNearCache nearCache = null;
 
         public Object get(String name, Object key, long timeout) {
-            this.key = key;
+            this.keyObject = key;
             final ThreadContext tc = ThreadContext.get();
             TransactionImpl txn = tc.getCallContext().getTransaction();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
@@ -525,7 +534,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void reset() {
-            key = null;
+            keyObject = null;
             nearCache = null;
             super.reset();
         }
@@ -535,7 +544,7 @@ public class ConcurrentMapManager extends BaseManager {
             if (nearCache != null) {
                 Data value = packet.getValueData();
                 if (value != null && value.size() > 0) {
-                    nearCache.put(this.key, request.key, packet.getValueData());
+                    nearCache.put(this.keyObject, request.key, packet.getValueData());
                 }
             }
             super.handleNoneRedoResponse(packet);
@@ -651,6 +660,15 @@ public class ConcurrentMapManager extends BaseManager {
                 }
                 return oldValue;
             }
+        }
+
+        @Override
+        public final void handleNoneRedoResponse(Packet packet) {
+            MapNearCache nearCache = mapCaches.get(request.name);
+            if (nearCache != null) {
+                nearCache.invalidate(request.key);
+            }
+            super.handleNoneRedoResponse(packet);
         }
     }
 
@@ -1405,7 +1423,7 @@ public class ConcurrentMapManager extends BaseManager {
             }
         }
         return map;
-    }    
+    }
 
     @Override
     void handleListenerRegistrations(boolean add, String name, Data key, Address address, boolean includeValue) {

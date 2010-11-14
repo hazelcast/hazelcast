@@ -1333,6 +1333,9 @@ public class CMap {
         if (locallyOwnedMap != null) {
             locallyOwnedMap.reset();
         }
+        if (mapNearCache != null) {
+            mapNearCache.reset();
+        }
         mapRecords.clear();
         mapIndexService.clear();
     }

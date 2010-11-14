@@ -151,8 +151,14 @@ public class MapNearCache {
         }
         if (!sortedMap.containsKey(keyData)) {
             sortedMap.put(keyData, key);
-            cache.put(key, new CacheEntry(key, keyData, value));
         }
+        CacheEntry cacheEntry = cache.get(key);
+        if (cacheEntry == null) {
+            cacheEntry = new CacheEntry(key, keyData, value);
+        } else {
+            cacheEntry.setValue(value);
+        }
+        cache.put(key, cacheEntry);
     }
 
     void startEviction() {
@@ -203,6 +209,11 @@ public class MapNearCache {
         return cache.isEmpty();
     }
 
+    public void reset() {
+        sortedMap.clear();
+        cache.clear();
+    }
+
     private class CacheEntry implements Processable {
         final Object key;
         final Data keyData;
@@ -217,9 +228,6 @@ public class MapNearCache {
             }
             if (keyData == null) {
                 throw new IllegalStateException("keyData cannot be null");
-            }
-            if (valueData == null) {
-                throw new IllegalStateException("valueData cannot be null");
             }
             this.key = key;
             this.keyData = keyData;
@@ -244,6 +252,11 @@ public class MapNearCache {
                 }
             }
             return true;
+        }
+
+        public void setValue(Data valueData) {
+            this.valueData = valueData;
+            this.value = null;
         }
 
         public Object getValue() {

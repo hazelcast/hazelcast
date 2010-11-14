@@ -62,7 +62,7 @@ public class ClusterTest {
 
     @Test
     public void testIdle() throws Exception {
-        Config config = new XmlConfigBuilder().build();
+        Config config = new Config();
         MapConfig mapConfig = config.getMapConfig("default");
         mapConfig.setMaxIdleSeconds(3);
         mapConfig.setEvictionDelaySeconds(10);
@@ -278,7 +278,7 @@ public class ClusterTest {
 
     @Test
     public void testSuperBeingMaster() throws Exception {
-        Config config = new XmlConfigBuilder().build();
+        Config config = new Config();
         config.setSuperClient(true);
         final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance hSuper2 = Hazelcast.newHazelcastInstance(config);
@@ -750,7 +750,7 @@ public class ClusterTest {
     @Test(timeout = 60000)
     public void testTcpIpWithDifferentBuildNumber() throws Exception {
         System.setProperty("hazelcast.build", "1");
-        Config c = new XmlConfigBuilder().build();
+        Config c = new Config();
         c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         c.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
         c.getNetworkConfig().getInterfaces().setEnabled(true);

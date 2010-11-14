@@ -25,8 +25,8 @@ import com.hazelcast.nio.DataSerializable;
 
 public final class QueueConfig implements DataSerializable {
 
-    public final static int DEFAULT_MAX_SIZE_PER_JVM = Integer.MAX_VALUE;
-    public final static int DEFAULT_TTL_SECONDS = Integer.MAX_VALUE;
+    public final static int DEFAULT_MAX_SIZE_PER_JVM = 0;
+    public final static int DEFAULT_TTL_SECONDS = 0;
 
     private String name;
 

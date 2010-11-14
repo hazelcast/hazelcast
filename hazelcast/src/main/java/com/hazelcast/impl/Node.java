@@ -423,20 +423,21 @@ public class Node {
                     shutdown();
                 }
                 rejoin();
+                return;
             } else {
                 clusterManager.finalizeJoin();
-                clusterManager.enqueueAndWait(new Processable() {
-                    public void process() {
-                        if (baseVariables.lsMembers.size() == 1) {
-                            final StringBuilder sb = new StringBuilder();
-                            sb.append("\n");
-                            sb.append(clusterManager);
-                            logger.log(Level.INFO, sb.toString());
-                        }
-                    }
-                }, 5);
             }
         }
+        clusterManager.enqueueAndWait(new Processable() {
+            public void process() {
+                if (baseVariables.lsMembers.size() == 1) {
+                    final StringBuilder sb = new StringBuilder();
+                    sb.append("\n");
+                    sb.append(clusterManager);
+                    logger.log(Level.INFO, sb.toString());
+                }
+            }
+        }, 5);
     }
 
     public ILogger getLogger(String name) {
