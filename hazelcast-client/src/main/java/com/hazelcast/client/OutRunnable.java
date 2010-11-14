@@ -18,7 +18,6 @@
 package com.hazelcast.client;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -33,21 +32,21 @@ public class OutRunnable extends IORunnable {
 
     private Connection connection = null;
 
-    private volatile boolean reconnection;
+    private volatile boolean reconnecting;
 
-    private Collection<Call> reconnectionCalls;
+    private final Collection<Call> reconnectionCalls = new LinkedBlockingQueue<Call>();
 
     public OutRunnable(final HazelcastClient client, final Map<Long, Call> calls, final PacketWriter writer) {
         super(client, calls);
         this.writer = writer;
-        this.reconnection = false;
+        this.reconnecting = false;
     }
 
     protected void customRun() throws InterruptedException {
         Call call = queue.poll(100, TimeUnit.MILLISECONDS);
         try {
             if (call == null) {
-                if (reconnectionCalls != null) {
+                if (reconnectionCalls.size() > 0) {
                     checkOnReconnect(call);
                 }
                 return;
@@ -64,28 +63,27 @@ public class OutRunnable extends IORunnable {
             } else if (connection != null) {
                 if (call != RECONNECT_CALL) {
                     logger.log(Level.FINEST, "Sending: " + call);
-                    wrote = true;
                     writer.write(connection, call.getRequest());
+                    wrote = true;
                 }
             } else {
 //                logger.log(Level.FINEST, "clusterIsDown call: " + call);
-                clusterIsDown(call, oldConnection);
+                clusterIsDown(oldConnection);
             }
             if (connection != null && wrote) {
                 writer.flush(connection);
             }
-            if (reconnectionCalls != null) {
+            if (reconnectionCalls.size() > 0) {
                 checkOnReconnect(call);
             }
         } catch (Throwable io) {
-            logger.log(Level.WARNING, 
-                "OutRunnable [" + connection + "] got exception:" + io.getMessage(), io);
-            clusterIsDown(call, connection);
+            logger.log(Level.WARNING,
+                    "OutRunnable [" + connection + "] got exception:" + io.getMessage(), io);
+            clusterIsDown(connection);
         }
     }
 
     private void checkOnReconnect(Call call) {
-        final Collection oldCalls = reconnectionCalls;
         try {
             Object response = reconnectionCalls.contains(call) ?
                     call.getResponse(100L, TimeUnit.MILLISECONDS) :
@@ -104,10 +102,7 @@ public class OutRunnable extends IORunnable {
         } catch (Throwable e) {
             // nothing to do
         }
-        if (reconnectionCalls.isEmpty()) {
-            reconnectionCalls = null;
-        }
-        if (oldCalls != null && reconnectionCalls == null) {
+        if (reconnectionCalls.size() == 0) {
             client.getConnectionManager().notifyConnectionIsOpened();
         }
     }
@@ -119,7 +114,7 @@ public class OutRunnable extends IORunnable {
         queue.drainTo(temp);
         clearCalls(temp);
         clearCalls(reconnectionCalls);
-        reconnectionCalls = null;
+        reconnectionCalls.clear();
     }
 
     private void clearCalls(final Collection<Call> calls) {
@@ -132,24 +127,21 @@ public class OutRunnable extends IORunnable {
         }
     }
 
-    void clusterIsDown(Call call, Connection oldConnection) {
+    void clusterIsDown(Connection oldConnection) {
         client.getConnectionManager().destroyConnection(oldConnection);
-        if (call != null) {
-            enQueue(call);
-        }
-        if (!reconnection) {
-            reconnection = true;
+        if (!reconnecting) {
+            reconnecting = true;
             client.executor.execute(new Runnable() {
                 public void run() {
                     try {
                         final Connection lookForAliveConnection = client.getConnectionManager().lookForAliveConnection();
                         if (lookForAliveConnection == null) {
 //                            logger.log(Level.WARNING,"lookForAliveConnection is null, reconnection: " + reconnection); 
-                            if (reconnection) {
+                            if (reconnecting) {
                                 interruptWaitingCalls();
                             }
                         } else {
-                            if (running){
+                            if (running) {
                                 enQueue(RECONNECT_CALL);
                             }
                         }
@@ -157,7 +149,7 @@ public class OutRunnable extends IORunnable {
                         logger.log(Level.WARNING,
                                 Thread.currentThread().getName() + " got exception:" + e.getMessage(), e);
                     } finally {
-                        reconnection = false;
+                        reconnecting = false;
                     }
                 }
             });
@@ -170,7 +162,7 @@ public class OutRunnable extends IORunnable {
         final BlockingQueue<Call> temp = new LinkedBlockingQueue<Call>();
         queue.drainTo(temp);
         temp.add(call);
-        reconnectionCalls = new ArrayList<Call>(client.getListenerManager().getListenerCalls());
+        reconnectionCalls.addAll(client.getListenerManager().getListenerCalls());
 //        logger.log(Level.INFO, "resubscribe: reconnectionCalls " + reconnectionCalls);
         queue.addAll(reconnectionCalls);
 //        logger.log(Level.INFO, "resubscribe: temp " + temp);
@@ -194,11 +186,10 @@ public class OutRunnable extends IORunnable {
     }
 
     boolean sendReconnectCall() {
-        if (running && !reconnection && !queue.contains(RECONNECT_CALL)) {
+        if (running && !reconnecting && !queue.contains(RECONNECT_CALL)) {
             enQueue(RECONNECT_CALL);
             return true;
         }
         return false;
     }
-    
 }

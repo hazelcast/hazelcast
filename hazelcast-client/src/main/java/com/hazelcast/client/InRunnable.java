@@ -48,7 +48,7 @@ public class InRunnable extends IORunnable implements Runnable {
             	}
             }
             if (connection == null) {
-                outRunnable.clusterIsDown(null, oldConnection);
+                outRunnable.clusterIsDown(oldConnection);
                 Thread.sleep(50);
             } else {
                 packet = reader.readPacket(connection);
@@ -69,7 +69,7 @@ public class InRunnable extends IORunnable implements Runnable {
             throw re;
         } catch (Throwable e) {
             logger.log(Level.FINE, "InRunnable [" + connection + "] got an exception:" + e.toString());
-            outRunnable.clusterIsDown(null, connection);
+            outRunnable.clusterIsDown(connection);
         }
     }
     

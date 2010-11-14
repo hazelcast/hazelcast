@@ -17,8 +17,6 @@
 
 package com.hazelcast.client;
 
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
-
 import com.hazelcast.client.ClientProperties.ClientPropertyName;
 import com.hazelcast.client.impl.ListenerManager;
 import com.hazelcast.config.Config;
@@ -39,6 +37,9 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
+
 /**
  * Hazelcast Client enables you to do all Hazelcast operations without
  * being a member of the cluster. It connects to one of the
@@ -49,7 +50,7 @@ import java.util.logging.Level;
 public class HazelcastClient implements HazelcastInstance {
 
     private final static AtomicInteger counter = new AtomicInteger();
-    
+
     final Map<Long, Call> calls = new ConcurrentHashMap<Long, Call>();
 
     final private ListenerManager listenerManager;
@@ -66,8 +67,8 @@ public class HazelcastClient implements HazelcastInstance {
     final ParallelExecutor parallelExecutorDefault;
     final LifecycleServiceClientImpl lifecycleService;
     final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
-    
-    final int id; 
+
+    final int id;
 
     private final ClientProperties properties;
 
@@ -97,30 +98,25 @@ public class HazelcastClient implements HazelcastInstance {
         parallelExecutorDefault = parallelExecutorService.newParallelExecutor(10);
         connectionManager = automatic ?
                 new ConnectionManager(this, lifecycleService, clusterMembers[0]) :
-                new ConnectionManager(this, lifecycleService,  clusterMembers, shuffle);
+                new ConnectionManager(this, lifecycleService, clusterMembers, shuffle);
         connectionManager.setBinder(new DefaultClientBinder(this));
-        
         out = new OutRunnable(this, calls, new PacketWriter());
         in = new InRunnable(this, out, calls, new PacketReader());
         listenerManager = new ListenerManager(this);
-
         try {
             final Connection c = connectionManager.getInitConnection();
-            if (c == null){
+            if (c == null) {
                 throw new IllegalStateException("Unable to connect to cluster");
             }
         } catch (IOException e) {
             throw new ClusterClientException(e.getMessage(), e);
         }
-        
         new Thread(out, prefix + "OutThread").start();
         new Thread(in, prefix + "InThread").start();
         new Thread(listenerManager, prefix + "Listener").start();
-        
         mapLockProxy = getMap("__hz_Locks");
         clusterClientProxy = new ClusterClientProxy(this);
         partitionClientProxy = new PartitionClientProxy(this);
-        
         if (automatic) {
             this.getCluster().addMembershipListener(connectionManager);
             connectionManager.updateMembers();
@@ -128,13 +124,16 @@ public class HazelcastClient implements HazelcastInstance {
         lifecycleService.fireLifecycleEvent(STARTED);
     }
 
-    
-    GroupConfig groupConfig(){
+    public ExecutorService getExecutor() {
+        return executor;
+    }
+
+    GroupConfig groupConfig() {
         final String groupName = properties.getProperty(ClientPropertyName.GROUP_NAME);
         final String groupPassword = properties.getProperty(ClientPropertyName.GROUP_PASSWORD);
         return new GroupConfig(groupName, groupPassword);
     }
-    
+
     public ParallelExecutor getDefaultParallelExecutor() {
         return parallelExecutorDefault;
     }
@@ -142,7 +141,7 @@ public class HazelcastClient implements HazelcastInstance {
     public InRunnable getInRunnable() {
         return in;
     }
-    
+
     public OutRunnable getOutRunnable() {
         return out;
     }
@@ -170,7 +169,7 @@ public class HazelcastClient implements HazelcastInstance {
     public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, String... addresses) {
         return newHazelcastClient(ClientProperties.crateBaseClientProperties(groupName, groupPassword), addresses);
     }
-    
+
     public static HazelcastClient newHazelcastClient(ClientProperties properties, String... addresses) {
         return newHazelcastClient(properties, true, addresses);
     }
@@ -191,7 +190,7 @@ public class HazelcastClient implements HazelcastInstance {
     public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, boolean shuffle, String... addresses) {
         return newHazelcastClient(ClientProperties.crateBaseClientProperties(groupName, groupPassword), shuffle, addresses);
     }
-    
+
     public static HazelcastClient newHazelcastClient(ClientProperties properties, boolean shuffle, String... addresses) {
         InetSocketAddress[] socketAddressArr = new InetSocketAddress[addresses.length];
         for (int i = 0; i < addresses.length; i++) {
@@ -222,7 +221,7 @@ public class HazelcastClient implements HazelcastInstance {
     public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, boolean shuffle, InetSocketAddress... addresses) {
         return newHazelcastClient(ClientProperties.crateBaseClientProperties(groupName, groupPassword), shuffle, addresses);
     }
-    
+
     public static HazelcastClient newHazelcastClient(ClientProperties clientProperties, boolean shuffle, InetSocketAddress... addresses) {
         return new HazelcastClient(clientProperties, shuffle, addresses, false);
     }
@@ -313,7 +312,7 @@ public class HazelcastClient implements HazelcastInstance {
     public Cluster getCluster() {
         return clusterClientProxy;
     }
-    
+
     public ClientProperties getProperties() {
         return properties;
     }

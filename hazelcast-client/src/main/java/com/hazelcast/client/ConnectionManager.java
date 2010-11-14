@@ -176,7 +176,7 @@ public class ConnectionManager implements MembershipListener {
     }
 
     private void notify(final Runnable target) {
-        client.executor.execute(target);
+        client.getExecutor().execute(target);
     }
 
     void bindConnection(Connection connection) throws IOException {

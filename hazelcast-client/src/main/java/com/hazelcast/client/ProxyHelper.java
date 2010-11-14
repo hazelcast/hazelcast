@@ -78,7 +78,7 @@ public class ProxyHelper {
         return new Call(id, request) {
             @Override
             public void onDisconnect(Member member) {
-                logger.log(Level.FINE, "Re enqueue " + this);
+                logger.log(Level.FINEST, "Re enqueue " + this);
                 if (!client.getOutRunnable().queue.contains(this)) {
                     client.getOutRunnable().enQueue(this);
                 }

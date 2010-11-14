@@ -29,10 +29,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.junit.Assert.*;
 import static com.hazelcast.client.TestUtility.*;
@@ -108,7 +105,7 @@ public class HazelcastClientClusterTest {
         HazelcastClient client = newHazelcastClient(clientProperties, h1);
         final IMap<String, String> map = client.getMap("default");
         
-        final List<String> values = new ArrayList<String>();
+        final List<String> values = new CopyOnWriteArrayList<String>();
         map.addEntryListener(new EntryAdapter<String, String>(){
             @Override
             public void entryAdded(EntryEvent<String, String> event) {
@@ -151,7 +148,7 @@ public class HazelcastClientClusterTest {
         map.put("smth", "nothing4");
         
         Thread.sleep(50L);
-        assertArrayEquals(values.toString(), new String[]{"nothing1", "nothing4"}, values.toArray(new String[0])); 
+        assertArrayEquals(values.toString(), new String[]{"nothing1", "nothing4"}, values.toArray(new String[0]));
     }
     
     @Test(timeout=120000L)

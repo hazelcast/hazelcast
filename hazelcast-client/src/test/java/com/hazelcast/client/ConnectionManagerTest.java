@@ -31,6 +31,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -94,6 +96,8 @@ public class ConnectionManagerTest {
     @Test
     public void testDestroyConnection() throws Exception {
         HazelcastClient client = mock(HazelcastClient.class);
+        ExecutorService es  = Executors.newCachedThreadPool();
+        when(client.getExecutor()).thenReturn(es);
         InetSocketAddress inetSocketAddress = new InetSocketAddress("localhost", 5701);
         final Connection connection = mock(Connection.class);
         final CountDownLatch latch = new CountDownLatch(2);
@@ -115,6 +119,7 @@ public class ConnectionManagerTest {
                 LifecycleState.CLIENT_CONNECTION_LOST,
                 LifecycleState.CLIENT_CONNECTION_OPENING},
             lifecycleEvents.toArray());
+        es.shutdownNow();
     }
 
     @Test
