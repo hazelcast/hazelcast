@@ -26,7 +26,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.util.ByteUtil;
 
 public class Interfaces implements DataSerializable {
 
@@ -88,7 +88,7 @@ public class Interfaces implements DataSerializable {
 
     public void writeData(DataOutput out) throws IOException {
         boolean hasInterfaceSet = interfaceSet != null && !interfaceSet.isEmpty();
-        out.writeByte(IOUtil.toByte(enabled, hasInterfaceSet));
+        out.writeByte(ByteUtil.toByte(enabled, hasInterfaceSet));
         if (hasInterfaceSet){
             out.writeInt(interfaceSet.size());
             for(final String iface : interfaceSet){
@@ -98,7 +98,7 @@ public class Interfaces implements DataSerializable {
     }
 
     public void readData(DataInput in) throws IOException {
-        boolean b[] = IOUtil.fromByte(in.readByte());
+        boolean b[] = ByteUtil.fromByte(in.readByte());
         enabled = b[0];
         boolean hasInterfaceSet = b[1];
         if (hasInterfaceSet){

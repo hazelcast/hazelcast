@@ -18,9 +18,10 @@
 package com.hazelcast.util;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Unit tests for ByteUtil class.
@@ -94,5 +95,37 @@ public class ByteUtilTest {
         for (int i = 0; i < 8; i++) {
             assertTrue(ByteUtil.isFalse(b, i));
         }
+    }
+    
+    @Test
+    public void testToByte() throws Exception {
+        assertEquals("00000101", ByteUtil.toBinaryString(ByteUtil.toByte(true, false, true, false)));
+        assertEquals("11111111", ByteUtil.toBinaryString(ByteUtil.toByte(true, true, true, true,true, true, true, true)));
+        assertEquals("11011011", ByteUtil.toBinaryString(ByteUtil.toByte(true, true, false, true,true, false, true, true)));
+        assertEquals("01111111", ByteUtil.toBinaryString(ByteUtil.toByte(true, true, true, true,true, true, true, false)));
+    }
+    
+    @Ignore
+    private void checkFromByte(boolean[] b){
+        final boolean[] fromByte = ByteUtil.fromByte(ByteUtil.toByte(b));
+        for(int i = 0; i < b.length; i++){
+            assertEquals(b[i], fromByte[i]);
+        }
+    }
+    
+    @Test
+    public void testFromByte() throws Exception {
+        checkFromByte(new boolean[]{true, false, true, false});
+        checkFromByte(new boolean[]{true, true, true, true,true, true, true, true});
+        checkFromByte(new boolean[]{true, true, false, true,true, false, true, true});
+        checkFromByte(new boolean[]{true, true, true, true,true, true, true, false});
+    }
+    
+    @Test
+    public void testToBinaryString() throws Exception {
+        assertEquals("00000000", ByteUtil.toBinaryString(b));
+        assertEquals("00000001", ByteUtil.toBinaryString((byte) 1));
+        assertEquals("00000111", ByteUtil.toBinaryString((byte) 7));
+        assertEquals("10000000", ByteUtil.toBinaryString((byte) (1 << 7)));
     }
 }

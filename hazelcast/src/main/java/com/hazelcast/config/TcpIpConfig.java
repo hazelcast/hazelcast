@@ -19,7 +19,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.util.ByteUtil;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -131,7 +131,7 @@ public class TcpIpConfig implements DataSerializable {
         boolean hasMembers = members != null && !members.isEmpty();
         boolean hasAddresses = addresses != null && !addresses.isEmpty();
         boolean hasRequiredMember = requiredMember != null;
-        out.writeByte(IOUtil.toByte(enabled, hasRequiredMember, hasMembers, hasAddresses));
+        out.writeByte(ByteUtil.toByte(enabled, hasRequiredMember, hasMembers, hasAddresses));
         out.writeInt(connectionTimeoutSeconds);
         if (hasRequiredMember) {
             out.writeUTF(requiredMember);
@@ -153,7 +153,7 @@ public class TcpIpConfig implements DataSerializable {
     }
 
     public void readData(DataInput in) throws IOException {
-        boolean[] b = IOUtil.fromByte(in.readByte());
+        boolean[] b = ByteUtil.fromByte(in.readByte());
         enabled = b[0];
         boolean hasRequiredMember = b[1];
         boolean hasMembers = b[2];

@@ -89,24 +89,4 @@ public final class IOUtil {
     public static Object toObject(DataHolder dataHolder) {
         return toObject(dataHolder.toData());
     }
-    
-    public static byte toByte(boolean ... values){
-        if (values.length > Byte.SIZE){
-            throw new IllegalArgumentException(
-                "Expected less or equal to " + Byte.SIZE + " arguments");
-        }
-        byte b = 0;
-        for(int i = 0; i < values.length; i++){
-            b |= (values[i] ? 1 : 0) << i;
-        }
-        return b;
-    }
-    
-    public static boolean[] fromByte(byte b){
-        boolean[] values = new boolean[Byte.SIZE];
-        for(int i = 0; i < values.length; i++){
-            values[i] = (b & (1 << i)) != 0;
-        }
-        return values;
-    }
 }

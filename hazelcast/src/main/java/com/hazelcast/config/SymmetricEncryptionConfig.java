@@ -22,7 +22,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.util.ByteUtil;
 
 public class SymmetricEncryptionConfig implements DataSerializable {
     private boolean enabled = false;
@@ -101,7 +101,7 @@ public class SymmetricEncryptionConfig implements DataSerializable {
 
     public void writeData(DataOutput out) throws IOException {
         boolean hasKey = key != null && key.length > 0;
-        out.writeByte(IOUtil.toByte(enabled, hasKey));
+        out.writeByte(ByteUtil.toByte(enabled, hasKey));
         if (enabled){
             out.writeUTF(salt);
             out.writeUTF(password);
@@ -115,7 +115,7 @@ public class SymmetricEncryptionConfig implements DataSerializable {
     }
 
     public void readData(DataInput in) throws IOException {
-        boolean[] b = IOUtil.fromByte(in.readByte());
+        boolean[] b = ByteUtil.fromByte(in.readByte());
         enabled = b[0];
         if (enabled){
             salt = in.readUTF();

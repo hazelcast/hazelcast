@@ -22,7 +22,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.util.ByteUtil;
 
 public class NetworkConfig implements DataSerializable {
     private Interfaces interfaces = new Interfaces();
@@ -86,7 +86,7 @@ public class NetworkConfig implements DataSerializable {
         join.writeData(out);
         boolean hasSymmetricEncryptionConfig = symmetricEncryptionConfig != null;
         boolean hasAsymmetricEncryptionConfig = asymmetricEncryptionConfig != null;
-        out.writeByte(IOUtil.toByte(hasSymmetricEncryptionConfig, hasAsymmetricEncryptionConfig));
+        out.writeByte(ByteUtil.toByte(hasSymmetricEncryptionConfig, hasAsymmetricEncryptionConfig));
         if (hasSymmetricEncryptionConfig){
             symmetricEncryptionConfig.writeData(out);
         }
@@ -100,7 +100,7 @@ public class NetworkConfig implements DataSerializable {
         interfaces.readData(in);
         join = new Join();
         join.readData(in);
-        boolean[] b = IOUtil.fromByte(in.readByte());
+        boolean[] b = ByteUtil.fromByte(in.readByte());
         boolean hasSymmetricEncryptionConfig = b[0];
         boolean hasAsymmetricEncryptionConfig = b[1];
         

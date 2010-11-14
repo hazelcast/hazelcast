@@ -23,7 +23,7 @@ import java.io.IOException;
 
 import com.hazelcast.merge.LatestUpdateMergePolicy;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.util.ByteUtil;
 
 public class MapConfig implements DataSerializable {
 
@@ -389,7 +389,7 @@ public class MapConfig implements DataSerializable {
         maxIdleSeconds = in.readInt();
         evictionDelaySeconds = in.readInt();
         maxSize = in.readInt();
-        boolean[] b = IOUtil.fromByte(in.readByte());
+        boolean[] b = ByteUtil.fromByte(in.readByte());
         valueIndexed = b[0];
         useBackupData = b[1];
         evictionPolicy = in.readUTF();
@@ -408,7 +408,7 @@ public class MapConfig implements DataSerializable {
         out.writeInt(maxIdleSeconds);
         out.writeInt(evictionDelaySeconds);
         out.writeInt(maxSize);
-        out.writeByte(IOUtil.toByte(valueIndexed, useBackupData));
+        out.writeByte(ByteUtil.toByte(valueIndexed, useBackupData));
         out.writeUTF(evictionPolicy);
         out.writeUTF(mergePolicy);
         

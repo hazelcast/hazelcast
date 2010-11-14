@@ -21,7 +21,7 @@ import com.hazelcast.merge.AddNewEntryMergePolicy;
 import com.hazelcast.merge.HigherHitsMergePolicy;
 import com.hazelcast.merge.LatestUpdateMergePolicy;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.util.ByteUtil;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -468,12 +468,12 @@ public class Config implements DataSerializable {
         groupConfig = new GroupConfig();
         groupConfig.readData(in);
         port = in.readInt();
-        boolean[] b1 = IOUtil.fromByte(in.readByte());
+        boolean[] b1 = ByteUtil.fromByte(in.readByte());
         reuseAddress = b1[0];
         portAutoIncrement = b1[1];
         superClient = b1[2];
         
-        boolean[] b2 = IOUtil.fromByte(in.readByte());
+        boolean[] b2 = ByteUtil.fromByte(in.readByte());
         
         boolean hasMapConfigs = b2[0];
         boolean hasMapExecutors = b2[1];
@@ -548,11 +548,11 @@ public class Config implements DataSerializable {
         boolean hasMapMergePolicyConfigs = mapMergePolicyConfigs != null && !mapMergePolicyConfigs.isEmpty();
         boolean hasProperties = properties != null && !properties.isEmpty();
         
-        out.writeByte(IOUtil.toByte(reuseAddress, 
+        out.writeByte(ByteUtil.toByte(reuseAddress, 
             portAutoIncrement,
             superClient));
         
-        out.writeByte(IOUtil.toByte(
+        out.writeByte(ByteUtil.toByte(
             hasMapConfigs,
             hasMapExecutors,
             hasMapTopicConfigs,
