@@ -17,10 +17,12 @@
 
 package com.hazelcast.client;
 
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTION_LOST;
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTION_OPENING;
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTION_OPENED;
-import static java.text.MessageFormat.format;
+import com.hazelcast.client.ClientProperties.ClientPropertyName;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -32,12 +34,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
-import com.hazelcast.client.ClientProperties.ClientPropertyName;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
+import static java.text.MessageFormat.format;
 
 public class ConnectionManager implements MembershipListener {
     private volatile Connection currentConnection;
@@ -47,10 +45,10 @@ public class ConnectionManager implements MembershipListener {
     private final HazelcastClient client;
     private volatile int lastDisconnectedConnectionId = -1;
     private ClientBinder binder;
-    
+
     private volatile boolean lookinglForAlive = false;
     private volatile boolean running = true;
-    
+
     private final LifecycleServiceClientImpl lifecycleService;
 
     public ConnectionManager(HazelcastClient client, LifecycleServiceClientImpl lifecycleService, InetSocketAddress[] clusterMembers, boolean shuffle) {
@@ -73,12 +71,12 @@ public class ConnectionManager implements MembershipListener {
             synchronized (this) {
                 final int attemptsLimit = client.getProperties().getInteger(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT);
                 final int reconnectionTimeout = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_TIMEOUT);
-                currentConnection =  lookForAliveConnection(attemptsLimit, reconnectionTimeout);
+                currentConnection = lookForAliveConnection(attemptsLimit, reconnectionTimeout);
             }
         }
         return currentConnection;
     }
-    
+
     public Connection lookForAliveConnection() throws IOException {
         final int attemptsLimit = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_ATTEMPTS_LIMIT);
         final int reconnectionTimeout = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_TIMEOUT);
@@ -86,22 +84,24 @@ public class ConnectionManager implements MembershipListener {
     }
 
     private Connection lookForAliveConnection(final int attemptsLimit,
-            final int reconnectionTimeout) throws IOException {
+                                              final int reconnectionTimeout) throws IOException {
         lookinglForAlive = true;
         try {
             boolean restored = false;
             int attempt = 0;
-            while(currentConnection == null && running && !Thread.interrupted()){
+            while (currentConnection == null && running && !Thread.interrupted()) {
                 final long next = System.currentTimeMillis() + reconnectionTimeout;
                 synchronized (this) {
                     if (currentConnection == null) {
                         final Connection connection = searchForAvailableConnection();
                         restored = connection != null;
-                        if (restored){
+                        if (restored) {
                             try {
                                 bindConnection(connection);
                                 currentConnection = connection;
-                            } catch (Throwable e){
+                            } catch (AuthenticationException authEx) {
+                                throw authEx;
+                            } catch (Throwable e) {
                                 logger.log(Level.INFO, "got an exception on getConnection:" + e.getMessage(), e);
                                 restored = false;
                             }
@@ -113,14 +113,14 @@ public class ConnectionManager implements MembershipListener {
                     lookinglForAlive = false;
                     break;
                 }
-                if (attempt >= attemptsLimit){
+                if (attempt >= attemptsLimit) {
                     break;
                 }
                 attempt++;
                 final long t = next - System.currentTimeMillis();
                 logger.log(Level.INFO, format("Unable to get alive cluster connection," +
-                    " try in {0} ms later, attempt {1} of {2}.",
-                    Math.max(0, t), attempt, attemptsLimit));
+                        " try in {0} ms later, attempt {1} of {2}.",
+                        Math.max(0, t), attempt, attemptsLimit));
                 if (t > 0) {
                     try {
                         Thread.sleep(t);
@@ -149,7 +149,7 @@ public class ConnectionManager implements MembershipListener {
                         try {
                             bindConnection(connection);
                             currentConnection = connection;
-                        } catch (Throwable e){
+                        } catch (Throwable e) {
                             logger.log(Level.INFO, "got an exception on getConnection:" + e.getMessage(), e);
                         }
                     }
@@ -164,9 +164,9 @@ public class ConnectionManager implements MembershipListener {
     }
 
     void notifyConnectionIsRestored() {
-         lifecycleService.fireLifecycleEvent(CLIENT_CONNECTION_OPENING);
+        lifecycleService.fireLifecycleEvent(CLIENT_CONNECTION_OPENING);
     }
-    
+
     void notifyConnectionIsOpened() {
         notify(new Runnable() {
             public void run() {
@@ -183,10 +183,10 @@ public class ConnectionManager implements MembershipListener {
         binder.bind(connection);
     }
 
-    public void destroyConnection(Connection connection) {
+    public void destroyConnection(final Connection connection) {
         boolean lost = false;
         synchronized (this) {
-            if (currentConnection != null && 
+            if (currentConnection != null &&
                     connection != null &&
                     currentConnection.getVersion() == connection.getVersion()) {
                 logger.log(Level.WARNING, "Connection to " + currentConnection + " is lost");
@@ -249,7 +249,7 @@ public class ConnectionManager implements MembershipListener {
         }
     }
 
-    public synchronized boolean shouldExecuteOnDisconnect(Connection connection) {
+    public boolean shouldExecuteOnDisconnect(Connection connection) {
         if (connection == null || lastDisconnectedConnectionId >= connection.getVersion()) {
             return false;
         }

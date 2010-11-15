@@ -82,24 +82,26 @@ public abstract class IORunnable extends ClientRunnable {
         }
     }
 
-    protected synchronized boolean onDisconnect(Connection oldConnection) {
-        boolean shouldExecuteOnDisconnect = client.getConnectionManager().shouldExecuteOnDisconnect(oldConnection);
-        if (!shouldExecuteOnDisconnect) {
-            return false;
-        }
-        Member leftMember = oldConnection.getMember();
-        Collection<Call> calls = callMap.values();
-        for (Call call : calls) {
-            if (call == RECONNECT_CALL) continue;
-            Call removed = callMap.remove(call.getId());
-            if (removed != null) {
-                if (!client.getOutRunnable().queue.contains(removed)) {
-                    logger.log(Level.FINE, Thread.currentThread() + ": Calling on disconnect " + leftMember);
-                    removed.onDisconnect(leftMember);
+    protected boolean onDisconnect(Connection oldConnection) {
+        synchronized (callMap) {
+            boolean shouldExecuteOnDisconnect = client.getConnectionManager().shouldExecuteOnDisconnect(oldConnection);
+            if (!shouldExecuteOnDisconnect) {
+                return false;
+            }
+            Member leftMember = oldConnection.getMember();
+            Collection<Call> calls = callMap.values();
+            for (Call call : calls) {
+                if (call == RECONNECT_CALL) continue;
+                Call removed = callMap.remove(call.getId());
+                if (removed != null) {
+                    if (!client.getOutRunnable().queue.contains(removed)) {
+                        logger.log(Level.FINE, Thread.currentThread() + ": Calling on disconnect " + leftMember);
+                        removed.onDisconnect(leftMember);
+                    }
                 }
             }
+            return true;
         }
-        return true;
     }
 
     private boolean restoredConnection(Connection connection, long oldConnectionId) {
