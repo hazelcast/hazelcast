@@ -45,6 +45,8 @@ public class TestUtility {
         for (int i = 0; i < h.length; i++) {
             addresses[i] = h[i].getCluster().getLocalMember().getInetSocketAddress();
         }
-        return HazelcastClient.newHazelcastClient(properties, true, addresses);
+        final HazelcastClient client = HazelcastClient.newHazelcastClient(properties, true, addresses);
+        clients.add(client);
+        return client;
     }
 }

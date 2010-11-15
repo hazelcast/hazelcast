@@ -124,7 +124,7 @@ public class ExecutorManager extends BaseManager {
     }
 
     public String getThreadNamePrefix(String executorServiceName) {
-        return "hz.executor." + node.getName() + "." + executorServiceName + ".thread-";
+        return "hz." + node.id + ".executor." + node.getName() + "." + executorServiceName + ".thread-";
     }
 
     private NamedExecutorService newNamedExecutorService(String name, ExecutorConfig executorConfig) {

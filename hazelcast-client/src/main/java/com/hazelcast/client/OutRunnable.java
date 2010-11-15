@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 public class OutRunnable extends IORunnable {
@@ -32,17 +33,21 @@ public class OutRunnable extends IORunnable {
 
     private Connection connection = null;
 
-    private volatile boolean reconnecting;
+    final AtomicBoolean reconnection;
 
     private final Collection<Call> reconnectionCalls = new LinkedBlockingQueue<Call>();
 
     public OutRunnable(final HazelcastClient client, final Map<Long, Call> calls, final PacketWriter writer) {
         super(client, calls);
         this.writer = writer;
-        this.reconnecting = false;
+        this.reconnection = new AtomicBoolean(false);
     }
 
     protected void customRun() throws InterruptedException {
+        if (reconnection.get()) {
+            Thread.sleep(50L);
+            return;
+        }
         Call call = queue.poll(100, TimeUnit.MILLISECONDS);
         try {
             if (call == null) {
@@ -52,7 +57,6 @@ public class OutRunnable extends IORunnable {
                 return;
             }
             if (call != RECONNECT_CALL) {
-//                logger.log(Level.FINEST, "call: " + call);
                 callMap.put(call.getId(), call);
             }
             Connection oldConnection = connection;
@@ -67,8 +71,9 @@ public class OutRunnable extends IORunnable {
                     wrote = true;
                 }
             } else {
-//                logger.log(Level.FINEST, "clusterIsDown call: " + call);
+                enQueue(call);
                 clusterIsDown(oldConnection);
+                return;
             }
             if (connection != null && wrote) {
                 writer.flush(connection);
@@ -77,8 +82,8 @@ public class OutRunnable extends IORunnable {
                 checkOnReconnect(call);
             }
         } catch (Throwable io) {
-            logger.log(Level.WARNING,
-                    "OutRunnable [" + connection + "] got exception:" + io.getMessage(), io);
+            logger.log(Level.WARNING, 
+                "OutRunnable [" + connection + "] got exception:" + io.getMessage(), io);
             clusterIsDown(connection);
         }
     }
@@ -129,19 +134,18 @@ public class OutRunnable extends IORunnable {
 
     void clusterIsDown(Connection oldConnection) {
         client.getConnectionManager().destroyConnection(oldConnection);
-        if (!reconnecting) {
-            reconnecting = true;
+        if (reconnection.compareAndSet(false, true)) {
             client.executor.execute(new Runnable() {
                 public void run() {
                     try {
                         final Connection lookForAliveConnection = client.getConnectionManager().lookForAliveConnection();
                         if (lookForAliveConnection == null) {
-//                            logger.log(Level.WARNING,"lookForAliveConnection is null, reconnection: " + reconnection); 
-                            if (reconnecting) {
+                            logger.log(Level.WARNING,"lookForAliveConnection is null, reconnection: " + reconnection); 
+                            if (reconnection.get()) {
                                 interruptWaitingCalls();
                             }
                         } else {
-                            if (running) {
+                            if (running){
                                 enQueue(RECONNECT_CALL);
                             }
                         }
@@ -149,7 +153,7 @@ public class OutRunnable extends IORunnable {
                         logger.log(Level.WARNING,
                                 Thread.currentThread().getName() + " got exception:" + e.getMessage(), e);
                     } finally {
-                        reconnecting = false;
+                        reconnection.compareAndSet(true, false);
                     }
                 }
             });
@@ -158,14 +162,12 @@ public class OutRunnable extends IORunnable {
 
     private void resubscribe(Call call, Connection oldConnection) {
         onDisconnect(oldConnection);
-//        logger.log(Level.INFO, "resubscribe: call " + call);
         final BlockingQueue<Call> temp = new LinkedBlockingQueue<Call>();
         queue.drainTo(temp);
         temp.add(call);
+        temp.remove(RECONNECT_CALL);
         reconnectionCalls.addAll(client.getListenerManager().getListenerCalls());
-//        logger.log(Level.INFO, "resubscribe: reconnectionCalls " + reconnectionCalls);
         queue.addAll(reconnectionCalls);
-//        logger.log(Level.INFO, "resubscribe: temp " + temp);
         temp.drainTo(queue);
         queue.addAll(callMap.values());
     }
@@ -186,11 +188,12 @@ public class OutRunnable extends IORunnable {
         return queue.size();
     }
 
-    boolean sendReconnectCall() {
-        if (running && !reconnecting && !queue.contains(RECONNECT_CALL)) {
+    boolean sendReconnectCall(Connection connection) {
+        if (running && !reconnection.get() && this.connection != connection && !queue.contains(RECONNECT_CALL)) {
             enQueue(RECONNECT_CALL);
             return true;
         }
         return false;
     }
+    
 }

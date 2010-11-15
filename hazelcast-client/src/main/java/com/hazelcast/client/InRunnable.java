@@ -34,25 +34,30 @@ public class InRunnable extends IORunnable implements Runnable {
         this.reader = reader;
     }
 
-    protected void customRun() {
+    protected void customRun() throws InterruptedException {
+        if (outRunnable.reconnection.get()) {
+            Thread.sleep(50L);
+            return;
+        }
         Packet packet;
         try {
             Connection oldConnection = connection;
             connection = client.connectionManager.getConnection();
             if (oldConnection == null || restoredConnection(oldConnection, connection)) {
-            	if (outRunnable.sendReconnectCall()){
+            	if (outRunnable.sendReconnectCall(connection)){
             	    logger.log(Level.FINEST, "restoredConnection");
                 	if (oldConnection != null) {
                         redoUnfinishedCalls(oldConnection);
                     }
             	}
+            	return;
             }
             if (connection == null) {
                 outRunnable.clusterIsDown(oldConnection);
                 Thread.sleep(50);
             } else {
                 packet = reader.readPacket(connection);
-                logger.log(Level.FINEST, "Reading " + packet.getOperation() + " Call id: " + packet.getCallId());
+                //logger.log(Level.FINEST, "Reading " + packet.getOperation() + " Call id: " + packet.getCallId());
                 Call call = callMap.remove(packet.getCallId());
                 if (call != null) {
                     call.setResponse(packet);
@@ -65,10 +70,8 @@ public class InRunnable extends IORunnable implements Runnable {
                     }
                 }
             }
-        } catch (RuntimeException re) {
-            throw re;
         } catch (Throwable e) {
-            logger.log(Level.FINE, "InRunnable [" + connection + "] got an exception:" + e.toString());
+            logger.log(Level.FINE, "InRunnable [" + connection + "] got an exception:" + e.toString(), e);
             outRunnable.clusterIsDown(connection);
         }
     }

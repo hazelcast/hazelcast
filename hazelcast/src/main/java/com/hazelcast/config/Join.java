@@ -70,6 +70,10 @@ public class Join implements DataSerializable {
         tcpIpConfig = new TcpIpConfig();
         tcpIpConfig.readData(in);
     }
-    
+
+    @Override
+    public String toString() {
+        return "Join [multicastConfig=" + multicastConfig + ", tcpIpConfig=" + tcpIpConfig + "]";
+    }
     
 }

@@ -24,15 +24,14 @@ import java.util.Arrays;
 public class PacketReader extends PacketHandler {
 
     public Packet readPacket(Connection connection) throws IOException {
-        if (!connection.headerRead) {
+        final DataInputStream dis = connection.getInputStream();
+        if (connection.headerRead.compareAndSet(false, true)) {
             final byte[] b = new byte[3];
-            connection.getInputStream().readFully(b);
+            dis.readFully(b);
             if (!Arrays.equals(HEADER, b)){
                 throw new IllegalStateException("Illegal header " + Arrays.toString(b));
             }
-            connection.headerRead = true;
         }
-        DataInputStream dis = connection.getInputStream();
         Packet response = new Packet();
         response.readFrom(dis);
         return response;

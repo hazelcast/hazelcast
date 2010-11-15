@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class Packet {
-
+    
     private byte[] headerInBytes;
 
     private byte[] key;
@@ -65,10 +65,10 @@ public class Packet {
     private byte[] indexTypes = new byte[10];
 
     private static final byte PACKET_VERSION = GroupProperties.PACKET_VERSION.getByte();
-
-    private final static ByteBuffer readHeaderBuffer = ByteBuffer.allocate(1000);
-
-    private final static ByteBuffer writeHeaderBuffer = ByteBuffer.allocate(1000);
+    
+    private final ByteBuffer readHeaderBuffer = ByteBuffer.allocate(1 << 10); // 1k
+    
+    private final ByteBuffer writeHeaderBuffer = ByteBuffer.allocate(1 << 10); // 1k
 
     public Packet() {
     }
@@ -88,7 +88,7 @@ public class Packet {
     }
 
     public void readFrom(DataInputStream dis) throws IOException {
-        int headerSize = dis.readInt();
+        final int headerSize = dis.readInt();
         int keySize = dis.readInt();
         int valueSize = dis.readInt();
         byte packetVersion = dis.readByte();
@@ -169,6 +169,7 @@ public class Packet {
         }
         booleans = ByteUtil.setTrue(booleans, 6); // client = true
         booleans = ByteUtil.setTrue(booleans, 7); // lockAddressNull = true
+        //logger.log(Level.INFO, "getHeader booleans:" + ByteUtil.toBinaryString(booleans));
         writeHeaderBuffer.put(booleans);
         if (lockCount != 0) {
             writeHeaderBuffer.putInt(lockCount);

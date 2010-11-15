@@ -28,12 +28,12 @@ public class PacketWriter extends PacketHandler {
 
     public void write(Connection connection, Packet request) throws IOException {
         if (connection != null) {
-            if (!connection.headersWritten) {
-                connection.getOutputStream().write(HEADER);
-                connection.getOutputStream().flush();
-                connection.headersWritten = true;
+            final DataOutputStream dos = connection.getOutputStream();
+            if (connection.headersWritten.compareAndSet(false, true)) {
+                dos.write(HEADER);
+                dos.flush();
             }
-            DataOutputStream dos = connection.getOutputStream();
+            
             request.writeTo(dos);
         }
     }

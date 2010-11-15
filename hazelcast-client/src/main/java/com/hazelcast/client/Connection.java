@@ -25,6 +25,7 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Holds the socket to one of the members of Hazelcast Cluster.
@@ -32,15 +33,15 @@ import java.net.UnknownHostException;
  * @author fuad-malikov
  */
 public class Connection {
-    private static final int BUFFER_SIZE = 32 << 10; // 32k
+    private static final int BUFFER_SIZE = 16 << 10; // 32k
     private final Socket socket;
     private final InetSocketAddress address;
     private final int id;
     private final DataOutputStream dos;
     private final DataInputStream dis;
-    volatile boolean headersWritten = false;
-    volatile boolean headerRead = false;
-
+    final AtomicBoolean headersWritten = new AtomicBoolean(false);
+    final AtomicBoolean headerRead = new AtomicBoolean(false);
+    
     /**
      * Creates the Socket to the given host and port
      *
@@ -62,7 +63,7 @@ public class Connection {
             try{
                 socket.setKeepAlive(true);
                 //socket.setTcpNoDelay(true);
-                socket.setSoLinger(true, 1);
+                socket.setSoLinger(true, 5);
                 socket.connect(isa);
             } catch(IOException e){
                 socket.close();
@@ -96,7 +97,8 @@ public class Connection {
 
     @Override
     public String toString() {
-        return "Connection [" + id + "]" + " [" + address + "]";
+        return "Connection [" + id + "]" + " [" + address + " -> " +
+            socket.getInetAddress().getHostAddress() + ":" + socket.getPort() + "]";
     }
 
     public DataOutputStream getOutputStream() {

@@ -20,6 +20,8 @@ package com.hazelcast.spring;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.Hazelcast;
 
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -37,6 +40,11 @@ public class TestBasicApplicationContext {
 	@Autowired
 	Config config;
 	
+	@BeforeClass
+    @AfterClass
+    public static void start(){
+        Hazelcast.shutdownAll();
+    }
 	
 	@Test
 	public void testConfig() {

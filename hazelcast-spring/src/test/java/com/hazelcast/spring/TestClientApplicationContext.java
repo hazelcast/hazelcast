@@ -29,6 +29,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 
@@ -42,6 +43,12 @@ public class TestClientApplicationContext {
 	@Autowired
 	@Qualifier(value="instance")
     private HazelcastInstance instance;
+	
+	@BeforeClass
+    @AfterClass
+    public static void start(){
+        Hazelcast.shutdownAll();
+    }
 	
 	@Test
 	public void testClient() {

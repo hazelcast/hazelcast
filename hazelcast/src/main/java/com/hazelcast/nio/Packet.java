@@ -33,9 +33,9 @@ public final class Packet implements SocketWritable {
 
     public ClusterOperation operation = ClusterOperation.NONE;
 
-    public ByteBuffer bbSizes = ByteBuffer.allocate(13);
+    public final ByteBuffer bbSizes = ByteBuffer.allocate(13);
 
-    public ByteBuffer bbHeader = ByteBuffer.allocate(500);
+    public final ByteBuffer bbHeader = ByteBuffer.allocate(500);
 
     private DataHolder key = null;
 

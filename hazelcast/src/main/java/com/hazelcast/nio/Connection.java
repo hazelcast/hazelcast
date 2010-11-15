@@ -149,15 +149,10 @@ public final class Connection {
         connectionManager.node.clusterManager.enqueueAndReturn(addOrRemoveConnection);
     }
 
+    
     @Override
     public String toString() {
-        switch (type) {
-        case NONE:
-            return "Connection [" + this.socketChannel.socket().getRemoteSocketAddress() 
-                + "] live=" + live + ", client=" + isClient();
-        default:
-            break;
-        }
-        return "Connection [" + this.endPoint + "] live=" + live + ", client=" + isClient();
+        final String ep = this.socketChannel.socket().getRemoteSocketAddress().toString();
+        return "Connection [" + ep + " -> " + endPoint + "] live=" + live + ", client=" + isClient() + ", type=" + type;
     }
 }

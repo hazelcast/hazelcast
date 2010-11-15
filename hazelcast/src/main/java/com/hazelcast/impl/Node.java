@@ -38,6 +38,7 @@ import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public class Node {
@@ -108,8 +109,13 @@ public class Node {
     public final LoggingServiceImpl loggingService;
 
     private final NoneStrictObjectPool<Packet> packetPool;
+    
+    private final static AtomicInteger counter = new AtomicInteger();
+    
+    final int id; 
 
     public Node(FactoryImpl factory, Config config) {
+        this.id = counter.incrementAndGet();
         this.threadGroup = new ThreadGroup(factory.getName());
         this.factory = factory;
         this.config = config;
@@ -364,17 +370,18 @@ public class Node {
     public void start() {
         logger.log(Level.FINEST, "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
         if (completelyShutdown) return;
-        Thread inThread = new Thread(threadGroup, inSelector, "hz.InThread");
+        final String prefix = "hz." + this.id + ".";
+        Thread inThread = new Thread(threadGroup, inSelector, prefix + "InThread");
 //        inThread.setContextClassLoader(config.getClassLoader());
         inThread.setPriority(7);
         logger.log(Level.FINEST, "Starting thread " + inThread.getName());
         inThread.start();
-        Thread outThread = new Thread(threadGroup, outSelector, "hz.OutThread");
+        Thread outThread = new Thread(threadGroup, outSelector, prefix + "OutThread");
 //        outThread.setContextClassLoader(config.getClassLoader());
         outThread.setPriority(7);
         logger.log(Level.FINEST, "Starting thread " + outThread.getName());
         outThread.start();
-        serviceThread = new Thread(threadGroup, clusterService, "hz.ServiceThread");
+        serviceThread = new Thread(threadGroup, clusterService, prefix + "ServiceThread");
 //        serviceThread.setContextClassLoader(config.getClassLoader());
         serviceThread.setPriority(8);
         logger.log(Level.FINEST, "Starting thread " + serviceThread.getName());

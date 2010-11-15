@@ -61,8 +61,10 @@ public class ProxyHelper {
         for(int i = 0;;i++){
             final Object response = c.getResponse(timeout, TimeUnit.SECONDS);
             if (response != null) return (Packet) response;
+            if (i > 0) {
             logger.log(Level.INFO, "There is no response for " + c
-                    + " in " + ( timeout * i ) + " seconds.");
+                        + " in " + ( timeout * i ) + " seconds.");
+            }
         }
     }
 

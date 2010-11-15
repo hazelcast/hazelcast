@@ -113,4 +113,13 @@ public class NetworkConfig implements DataSerializable {
             asymmetricEncryptionConfig.readData(in);
         }
     }
+
+    @Override
+    public String toString() {
+        return "NetworkConfig [join=" + join 
+            + ", interfaces=" + interfaces
+            + ", symmetricEncryptionConfig=" + symmetricEncryptionConfig
+            + ", asymmetricEncryptionConfig=" + asymmetricEncryptionConfig + "]";
+    }
+    
 }

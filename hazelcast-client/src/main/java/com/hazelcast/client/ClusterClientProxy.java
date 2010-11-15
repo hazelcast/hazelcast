@@ -75,13 +75,6 @@ public class ClusterClientProxy implements Cluster {
         return (Long) proxyHelper.doOp(ClusterOperation.GET_CLUSTER_TIME, null, null);
     }
 
-    public boolean authenticate(GroupConfig groupConfig) {
-        Object result = proxyHelper.doOp(ClusterOperation.CLIENT_AUTHENTICATE,
-             groupConfig.getName(), groupConfig.getPassword());
-        return result != null && (Boolean) result;
-    }
-
-
     public void addInstanceListener(InstanceListener listener) {
         check(listener);
         if (instanceListenerManager().noInstanceListenerRegistered()) {

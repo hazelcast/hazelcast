@@ -55,6 +55,12 @@ public class TestFullApplicationContext {
 	@Autowired
     private HazelcastInstance instance;
 	
+	@BeforeClass
+	@AfterClass
+	public static void start(){
+	    Hazelcast.shutdownAll();
+	}
+	
 	@Before
 	public void before(){
 	    config = instance.getConfig();

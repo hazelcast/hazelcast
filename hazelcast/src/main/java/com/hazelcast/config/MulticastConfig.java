@@ -111,4 +111,14 @@ public class MulticastConfig implements DataSerializable {
         multicastPort = in.readInt();
         multicastTimeoutSeconds = in.readInt();
     }
+
+    @Override
+    public String toString() {
+        return "MulticastConfig [enabled=" + enabled 
+            + ", multicastGroup=" + multicastGroup
+            + ", multicastPort=" + multicastPort 
+            + ", multicastTimeoutSeconds=" + multicastTimeoutSeconds + "]";
+    }
+    
+    
 }

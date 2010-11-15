@@ -32,6 +32,7 @@ import com.hazelcast.partition.PartitionService;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -70,6 +71,9 @@ public class HazelcastClient implements HazelcastInstance {
     final ParallelExecutor parallelExecutorDefault;
     final LifecycleServiceClientImpl lifecycleService;
     final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
+    
+    final ByteBuffer readBuffer = ByteBuffer.allocate(1 << 10);
+    final ByteBuffer writeBuffer = ByteBuffer.allocate(1 << 10);
 
     final int id;
 

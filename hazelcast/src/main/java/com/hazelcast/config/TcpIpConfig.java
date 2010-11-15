@@ -123,11 +123,11 @@ public class TcpIpConfig implements DataSerializable {
 
     @Override
     public String toString() {
-        return "TcpIpConfig [enabled=" + this.enabled 
-            + ", requiredMember=" + this.requiredMember 
-            + ", connectionTimeoutSeconds=" + this.connectionTimeoutSeconds 
-            + ", members=" + this.members 
-            + ", addresses=" + this.addresses + "]";
+        return "TcpIpConfig [enabled=" + enabled 
+            + ", connectionTimeoutSeconds=" + connectionTimeoutSeconds 
+            + ", members=" + members 
+            + ", requiredMember=" + requiredMember 
+            + ", addresses=" + addresses + "]";
     }
 
     public void writeData(DataOutput out) throws IOException {
@@ -185,5 +185,6 @@ public class TcpIpConfig implements DataSerializable {
             }
         }
     }
+    
     
 }
