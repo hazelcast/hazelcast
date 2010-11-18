@@ -21,11 +21,9 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.impl.ReplicatedMapFactory;
 import com.hazelcast.impl.TestUtil;
-import com.hazelcast.impl.TestUtil.Value;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
-import com.hazelcast.query.SqlPredicate;
 
 import org.junit.After;
 import org.junit.Before;
@@ -33,9 +31,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.concurrent.BlockingQueue;
 
 import static org.junit.Assert.*;
 
@@ -178,5 +175,37 @@ public class UnresolvedIssues extends TestUtil {
         }
         topic.destroy();
         assertEquals(0, Hazelcast.getInstances().size());
+    }
+
+    @Ignore
+    @Test
+    public void issue423() throws Exception {
+        final int SIZE = 3;
+        BlockingQueue<Integer> queue = Hazelcast.getQueue("issue423");
+
+        Transaction txn = Hazelcast.getTransaction();
+        txn.begin();
+
+        for (int i = 0; i < SIZE; i++) {
+            assertTrue(queue.offer(i));
+        }
+
+        txn.commit();
+
+        assertNotNull(queue.peek());
+        assertEquals(SIZE, queue.size());
+
+        txn = Hazelcast.getTransaction();
+        txn.begin();
+
+        Integer value = queue.poll();
+        assertNotNull(value);
+        assertEquals(0, value.intValue());
+
+        txn.rollback();
+
+        assertEquals(0, queue.poll().intValue());
+        assertEquals(1, queue.poll().intValue());
+        assertEquals(2, queue.poll().intValue());
     }
 }
