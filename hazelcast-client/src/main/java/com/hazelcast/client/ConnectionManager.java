@@ -99,9 +99,8 @@ public class ConnectionManager implements MembershipListener {
                             try {
                                 bindConnection(connection);
                                 currentConnection = connection;
-                            } catch (AuthenticationException authEx) {
-                                throw authEx;
                             } catch (Throwable e) {
+                                closeConnection(connection);
                                 logger.log(Level.INFO, "got an exception on getConnection:" + e.getMessage(), e);
                                 restored = false;
                             }
@@ -138,6 +137,17 @@ public class ConnectionManager implements MembershipListener {
         return currentConnection;
     }
 
+    void closeConnection(final Connection connection) {
+        try {
+            if (connection != null){
+                connection.close();
+            }
+        } catch (Throwable e){
+            logger.log(Level.INFO, "got an exception on closeConnection " 
+                + connection + ":" + e.getMessage(), e);
+        }
+    }
+
     public Connection getConnection() throws IOException {
         if (currentConnection == null && running && !lookinglForAlive) {
             boolean restored = false;
@@ -150,6 +160,7 @@ public class ConnectionManager implements MembershipListener {
                             bindConnection(connection);
                             currentConnection = connection;
                         } catch (Throwable e) {
+                            closeConnection(connection);
                             logger.log(Level.INFO, "got an exception on getConnection:" + e.getMessage(), e);
                         }
                     }
