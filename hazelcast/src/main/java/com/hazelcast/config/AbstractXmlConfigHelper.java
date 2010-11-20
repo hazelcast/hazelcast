@@ -17,9 +17,7 @@
 
 package com.hazelcast.config;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 import org.w3c.dom.Node;
@@ -163,38 +161,5 @@ public abstract class AbstractXmlConfigHelper {
             name = nodeName.replaceAll("\\w+:", "").toLowerCase();
         }
         return name;
-    }
-    
-    public static List<String> handleMember(final String value) {
-        final List<String> members = new ArrayList<String>();
-        for (String token : value.split("[;, ]")) {
-            token = token.trim();
-            if (token.length() == 0) continue;
-            final int indexStar = token.indexOf('*');
-            final int indexDash = token.indexOf('-');
-            if (indexStar == -1 && indexDash == -1) {
-                members.add(token);
-            } else {
-                final String first3 = token.substring(0, token.lastIndexOf('.'));
-                final String lastOne = token.substring(token.lastIndexOf('.') + 1);
-                if (first3.indexOf('*') != -1 && first3.indexOf('-') != -1) {
-                    String msg = "First 3 parts of interface definition cannot contain '*' and '-'." +
-                        "\nPlease change the value '" + token + "' in the config file.";
-                    throw new IllegalStateException(msg);
-                }
-                if (lastOne.equals("*")) {
-                    for (int j = 0; j < 256; j++) {
-                        members.add(first3 + "." + String.valueOf(j));
-                    }
-                } else if (lastOne.indexOf('-') != -1) {
-                    final int start = Integer.parseInt(lastOne.substring(0, lastOne.indexOf('-')));
-                    final int end = Integer.parseInt(lastOne.substring(lastOne.indexOf('-') + 1));
-                    for (int j = start; j <= end; j++) {
-                        members.add(first3 + "." + String.valueOf(j));
-                    }
-                }
-            }
-        }
-        return members;
     }
 }

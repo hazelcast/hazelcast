@@ -21,6 +21,7 @@ import com.hazelcast.impl.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
+
 import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -29,7 +30,6 @@ import java.io.*;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.Iterator;
 import java.util.Properties;
 import java.util.logging.Level;
 
@@ -528,42 +528,11 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                     }
                 }
             } else if ("interface".equals(cleanNodeName(n.getNodeName()))) {
-                handleMember(join, value);
+                join.getTcpIpConfig().addMember(value);
             } else if ("member".equals(cleanNodeName(n.getNodeName()))) {
-                handleMember(join, value);
+                join.getTcpIpConfig().addMember(value);
             } else if ("members".equals(cleanNodeName(n.getNodeName()))) {
-                for(String v : value.split(",")){
-                    handleMember(join, v.trim());
-                }
-            }
-        }
-    }
-
-    private void handleMember(final Join join, final String value) {
-        final int indexStar = value.indexOf('*');
-        final int indexDash = value.indexOf('-');
-        if (indexStar == -1 && indexDash == -1) {
-            join.getTcpIpConfig().addMember(value);
-        } else {
-            final String first3 = value.substring(0, value.lastIndexOf('.'));
-            final String lastOne = value.substring(value.lastIndexOf('.') + 1);
-            if (first3.indexOf('*') != -1 && first3.indexOf('-') != -1) {
-                String msg = "First 3 parts of interface definition cannot contain '*' and '-'." +
-                    "\nPlease change the value '" + value + "' in the config file.";
-                throw new IllegalStateException(msg);
-            }
-            if (lastOne.equals("*")) {
-                for (int j = 0; j < 256; j++) {
-                    join.getTcpIpConfig().addMember(first3 + "." + String.valueOf(j));
-                }
-            } else if (lastOne.indexOf('-') != -1) {
-                final int start = Integer.parseInt(lastOne.substring(0, lastOne
-                        .indexOf('-')));
-                final int end = Integer.parseInt(lastOne
-                        .substring(lastOne.indexOf('-') + 1));
-                for (int j = start; j <= end; j++) {
-                    join.getTcpIpConfig().addMember(first3 + "." + String.valueOf(j));
-                }
+                join.getTcpIpConfig().addMember(value);
             }
         }
     }

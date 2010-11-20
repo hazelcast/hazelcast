@@ -19,6 +19,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.ByteUtil;
 
 import java.io.DataInput;
@@ -39,7 +40,7 @@ public class TcpIpConfig implements DataSerializable {
     private final List<Address> addresses = new ArrayList<Address>();
 
     public TcpIpConfig addMember(final String member) {
-        this.members.addAll(AbstractXmlConfigHelper.handleMember(member));
+        this.members.addAll(AddressUtil.handleMember(member));
         return this;
     }
 
@@ -100,9 +101,7 @@ public class TcpIpConfig implements DataSerializable {
      */
     public TcpIpConfig setMembers(final List<String> members) {
         this.members.clear();
-        for (final String member : members) {
-            this.members.addAll(AbstractXmlConfigHelper.handleMember(member));
-        }
+        this.members.addAll(AddressUtil.handleMembers(members));
         return this;
     }
     

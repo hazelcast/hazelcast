@@ -29,6 +29,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -182,11 +183,8 @@ public class HazelcastClient implements HazelcastInstance {
     }
     
     public static HazelcastClient newHazelcastClient(ClientProperties properties, List<String> addresses) {
-        List<String> lsAddresses = new ArrayList<String>();
-        for (final String address : addresses) {
-            lsAddresses.addAll(AbstractXmlConfigHelper.handleMember(address));
-        }
-        return newHazelcastClient(properties, lsAddresses.toArray(new String[0]));
+        final List<String> handleMembers = AddressUtil.handleMembers(addresses);
+        return newHazelcastClient(properties, handleMembers.toArray(new String[0]));
     }
 
     /**
