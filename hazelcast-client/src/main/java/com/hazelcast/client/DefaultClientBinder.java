@@ -17,9 +17,6 @@
 
 package com.hazelcast.client;
 
-import static com.hazelcast.client.Serializer.toByte;
-import static com.hazelcast.client.Serializer.toObject;
-
 import com.hazelcast.client.cluster.Bind;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.impl.ClusterOperation;
@@ -30,6 +27,9 @@ import com.hazelcast.nio.Address;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
+
+import static com.hazelcast.client.Serializer.toByte;
+import static com.hazelcast.client.Serializer.toObject;
 
 public class DefaultClientBinder implements ClientBinder {
     private HazelcastClient client;
@@ -42,9 +42,7 @@ public class DefaultClientBinder implements ClientBinder {
     public void bind(Connection connection) throws IOException {
         logger.log(Level.FINEST, connection + " -> "
                 + connection.getAddress().getHostName() + ":" + connection.getSocket().getLocalPort());
-
         auth(connection);
-        
         Bind b = null;
         try {
             b = new Bind(new Address(connection.getAddress().getHostName(), connection.getSocket().getLocalPort()));
@@ -60,15 +58,15 @@ public class DefaultClientBinder implements ClientBinder {
     void auth(Connection connection) throws IOException {
         Packet auth = new Packet();
         final GroupConfig groupConfig = client.groupConfig();
-        auth.set("", ClusterOperation.CLIENT_AUTHENTICATE, 
-            toByte(groupConfig.getName()), toByte(groupConfig.getPassword()));
+        auth.set("", ClusterOperation.CLIENT_AUTHENTICATE,
+                toByte(groupConfig.getName()), toByte(groupConfig.getPassword()));
         Packet packet = writeAndRead(connection, auth);
         final Object response = toObject(packet.getValue());
         logger.log(Level.FINEST, "auth responce:" + response);
-        if (response instanceof Exception){
-            throw new RuntimeException((Exception)response);
+        if (response instanceof Exception) {
+            throw new RuntimeException((Exception) response);
         }
-        if (!Boolean.TRUE.equals(response)){
+        if (!Boolean.TRUE.equals(response)) {
             throw new AuthenticationException("Client [" + connection + "] has failed authentication");
         }
     }
@@ -79,7 +77,6 @@ public class DefaultClientBinder implements ClientBinder {
     }
 
     void write(Connection connection, Packet packet) throws IOException {
-        client.getOutRunnable().writer.write(connection, packet);
-        client.getOutRunnable().writer.flush(connection);
+        client.getOutRunnable().write(connection, packet);
     }
 }

@@ -554,7 +554,7 @@ public class DynamicClusterTest {
         task.get();
     }
 
-    @Test(timeout = 25000, expected = ExecutionException.class)
+    @Test(timeout = 60000, expected = ExecutionException.class)
     public void shouldThrowExExcptnWhenTheOnlyConnectedMemberDiesWhileExecuting() throws ExecutionException, InterruptedException {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         client = newHazelcastClient(h2);
@@ -741,7 +741,7 @@ public class DynamicClusterTest {
         l1.await(10, SECONDS);
         Thread.sleep(5000);
         h.shutdown();
-        assertTrue(l2.await(10, SECONDS));
+        assertTrue(l2.await(100, SECONDS));
     }
 
     @Test
@@ -870,7 +870,7 @@ public class DynamicClusterTest {
             assertEquals(1, getNumberOfClientsConnected(h));
             client.shutdown();
         }
-        Thread.sleep(1000);
+        Thread.sleep(5000);
         assertEquals(0, getNumberOfClientsConnected(h));
         h.shutdown();
     }
@@ -906,7 +906,7 @@ public class DynamicClusterTest {
         assertEquals(1, map.getLocalMapStats().getOperationStats().getNumberOfEvents());
         client.shutdown();
         map.put(2, 2);
-        Thread.sleep(1000);
+        Thread.sleep(5000);
         assertEquals(1, map.getLocalMapStats().getOperationStats().getNumberOfEvents());
     }
 

@@ -58,12 +58,12 @@ public class ProxyHelper {
     protected Packet doCall(Call c) {
         sendCall(c);
         final int timeout = 5;
-        for(int i = 0;;i++){
+        for (int i = 0; ; i++) {
             final Object response = c.getResponse(timeout, TimeUnit.SECONDS);
             if (response != null) return (Packet) response;
             if (i > 0) {
-            logger.log(Level.INFO, "There is no response for " + c
-                        + " in " + ( timeout * i ) + " seconds.");
+                logger.log(Level.INFO, "There is no response for " + c
+                        + " in " + (timeout * i) + " seconds.");
             }
         }
     }
@@ -80,8 +80,8 @@ public class ProxyHelper {
         return new Call(id, request) {
             @Override
             public void onDisconnect(Member member) {
-                logger.log(Level.FINEST, "Re enqueue " + this);
                 if (!client.getOutRunnable().queue.contains(this)) {
+                    logger.log(Level.FINEST, "Re enqueue " + this);
                     client.getOutRunnable().enQueue(this);
                 }
             }
@@ -160,7 +160,7 @@ public class ProxyHelper {
     public <K> Collection<K> keys(Predicate predicate) {
         return ((CollectionWrapper<K>) doOp(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS, null, predicate)).getKeys();
     }
-    
+
     public <K> Collection<K> entries(final Predicate predicate) {
         return ((CollectionWrapper<K>) doOp(ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES, null, predicate)).getKeys();
     }

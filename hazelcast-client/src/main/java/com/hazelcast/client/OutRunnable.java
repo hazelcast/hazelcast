@@ -82,8 +82,8 @@ public class OutRunnable extends IORunnable {
                 checkOnReconnect(call);
             }
         } catch (Throwable io) {
-            logger.log(Level.WARNING, 
-                "OutRunnable [" + connection + "] got exception:" + io.getMessage(), io);
+            logger.log(Level.WARNING,
+                    "OutRunnable [" + connection + "] got exception:" + io.getMessage(), io);
             clusterIsDown(connection);
         }
     }
@@ -133,6 +133,9 @@ public class OutRunnable extends IORunnable {
     }
 
     void clusterIsDown(Connection oldConnection) {
+        if (!running) {
+            return;
+        }
         client.getConnectionManager().destroyConnection(oldConnection);
         if (reconnection.compareAndSet(false, true)) {
             client.executor.execute(new Runnable() {
@@ -140,12 +143,12 @@ public class OutRunnable extends IORunnable {
                     try {
                         final Connection lookForAliveConnection = client.getConnectionManager().lookForAliveConnection();
                         if (lookForAliveConnection == null) {
-                            logger.log(Level.WARNING,"lookForAliveConnection is null, reconnection: " + reconnection); 
+                            logger.log(Level.WARNING, "lookForAliveConnection is null, reconnection: " + reconnection);
                             if (reconnection.get()) {
                                 interruptWaitingCalls();
                             }
                         } else {
-                            if (running){
+                            if (running) {
                                 enQueue(RECONNECT_CALL);
                             }
                         }
@@ -164,7 +167,6 @@ public class OutRunnable extends IORunnable {
         onDisconnect(oldConnection);
         final BlockingQueue<Call> temp = new LinkedBlockingQueue<Call>();
         queue.drainTo(temp);
-        temp.add(call);
         temp.remove(RECONNECT_CALL);
         reconnectionCalls.addAll(client.getListenerManager().getListenerCalls());
         queue.addAll(reconnectionCalls);
@@ -177,7 +179,7 @@ public class OutRunnable extends IORunnable {
             if (running == false) {
                 throw new NoMemberAvailableException("Client is shutdown.");
             }
-            logger.log(Level.FINEST, "Enqueue: " + call);
+            logger.log(Level.FINEST, "From " + Thread.currentThread() + ": Enqueue: " + call);
             queue.put(call);
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -195,5 +197,11 @@ public class OutRunnable extends IORunnable {
         }
         return false;
     }
-    
+
+    void write(Connection connection, Packet packet) throws IOException {
+        if (running) {
+            client.getOutRunnable().writer.write(connection, packet);
+            client.getOutRunnable().writer.flush(connection);
+        }
+    }
 }
