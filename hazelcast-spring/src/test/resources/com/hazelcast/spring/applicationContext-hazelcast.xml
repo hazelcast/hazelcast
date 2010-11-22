@@ -3,18 +3,17 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
 	xmlns:cache="http://www.hazelcast.com/schema/config"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans
-http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-http://www.hazelcast.com/schema/config
-http://www.hazelcast.com/schema/config/hazelcast-spring.xsd">
+		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+		http://www.hazelcast.com/schema/config
+		http://www.hazelcast.com/schema/config/hazelcast-spring.xsd">
 
 	<cache:config id="config">
-		<cache:map name="testCache" >
-			<cache:backup-count>2</cache:backup-count>
-			<cache:eviction-policy>NONE</cache:eviction-policy>
-			<cache:max-size>0</cache:max-size>
-			<cache:eviction-percentage>30</cache:eviction-percentage>
-			<cache:merge-policy>hz.ADD_NEW_ENTRY</cache:merge-policy>
-		</cache:map>
+		<cache:map name="testCache"
+			backup-count="2"
+			eviction-policy="NONE"
+			max-size="0"
+			eviction-percentage="30"
+			merge-policy="hz.ADD_NEW_ENTRY"/>
 	</cache:config>
 
 </beans>

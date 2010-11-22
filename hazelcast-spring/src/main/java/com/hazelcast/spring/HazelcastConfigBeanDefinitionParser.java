@@ -139,9 +139,20 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
         }
         
         protected void fillValues(Node node, BeanDefinitionBuilder builder, String ... excludeNames) {
-            final NamedNodeMap atts = node.getAttributes();
             Collection<String> epn = excludeNames != null && excludeNames.length > 0 ?
                     new HashSet<String>(Arrays.asList(excludeNames)) : null;
+            fillAttributeValues(node, builder, epn);
+            for (org.w3c.dom.Node n : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+                String name = xmlToJavaName(cleanNodeName(n));
+                if (epn != null && epn.contains(name)) continue;
+                String value = getValue(n);
+                builder.addPropertyValue(name, value);
+            }
+        }
+
+        private void fillAttributeValues(Node node,
+                BeanDefinitionBuilder builder, Collection<String> epn) {
+            final NamedNodeMap atts = node.getAttributes();
             if (atts != null) {
                 for (int a = 0; a < atts.getLength(); a++) {
                     final org.w3c.dom.Node att = atts.item(a);
@@ -150,12 +161,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
                     final String value = att.getNodeValue();
                     builder.addPropertyValue(name, value);
                 }
-            }
-            for (org.w3c.dom.Node n : new IterableNodeList(node, Node.ELEMENT_NODE)) {
-                String name = xmlToJavaName(cleanNodeName(n));
-                if (epn != null && epn.contains(name)) continue;
-                String value = getValue(n);
-                builder.addPropertyValue(name, value);
             }
         }
         
@@ -187,11 +192,11 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
             BeanDefinitionBuilder networkConfigBuilder = createBeanBuilder(NetworkConfig.class, "networkConfig");
             final AbstractBeanDefinition beanDefinition = networkConfigBuilder.getBeanDefinition();
             
+            fillAttributeValues(node, configBuilder, null);
+            
             for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(child);
-                if ("port".equals(nodeName)) {
-                    handlePort(child);
-                } else if ("join".equals(nodeName)) {
+                if ("join".equals(nodeName)) {
                     handleJoin(child, networkConfigBuilder);
                 } else if ("interfaces".equals(nodeName)) {
                     handleInterfaces(child, networkConfigBuilder);
@@ -221,21 +226,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
             }
         }
 
-        protected void handlePort(org.w3c.dom.Node node) {
-            final String portStr = getTextContent(node).trim();
-            if (portStr != null && portStr.length() > 0) {
-                configBuilder.addPropertyValue("port", getValue(node));
-            }
-            final NamedNodeMap atts = node.getAttributes();
-            for (int a = 0; a < atts.getLength(); a++) {
-                final org.w3c.dom.Node att = atts.item(a);
-                final String value = getValue(att);
-                if (att.getNodeName().equals("auto-increment")) {
-                    configBuilder.addPropertyValue("portAutoIncrement", value);
-                }
-            }
-        }
-        
         public void handleGroup(Node node) {
             createAndFillBeanBuilder(node, GroupConfig.class, "groupConfig", configBuilder);
         }

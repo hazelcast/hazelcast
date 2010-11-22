@@ -26,13 +26,12 @@ import org.springframework.beans.factory.support.ManagedMap;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import com.hazelcast.client.ClientProperties;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.AbstractXmlConfigHelper;
-import com.hazelcast.config.AbstractXmlConfigHelper.IterableNodeList;
-import com.hazelcast.core.Hazelcast;
 
 
 public class HazelcastClientBeanDefinitionParser extends AbstractBeanDefinitionParser {
@@ -73,12 +72,30 @@ public class HazelcastClientBeanDefinitionParser extends AbstractBeanDefinitionP
         }
 
         public void handle(Element element) {
+            ManagedMap properties = new ManagedMap();
+            final NamedNodeMap atts = element.getAttributes();
+            if (atts != null) {
+                for (int a = 0; a < atts.getLength(); a++) {
+                    final org.w3c.dom.Node att = atts.item(a);
+                    String name = att.getNodeName();
+                    final String value = att.getNodeValue();
+                    if ("group-name".equals(name)){
+                        name = ClientProperties.ClientPropertyName.GROUP_NAME.getName();
+                    } else if ("group-password".equals(name)){
+                        name = ClientProperties.ClientPropertyName.GROUP_PASSWORD.getName();
+                    } else {
+                        continue;
+                    }
+                    
+                    properties.put(name, value);
+                }
+            }
+            
             for (org.w3c.dom.Node node : new IterableNodeList(element, Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(node.getNodeName());
                 if ("members".equals(nodeName)) {
                     members.add(getValue(node));
                 } else if ("client-properties".equals(nodeName)){
-                    ManagedMap properties = new ManagedMap();
                     for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                         final String name = cleanNodeName(n.getNodeName());
                         final String propertyName;
@@ -88,9 +105,10 @@ public class HazelcastClientBeanDefinitionParser extends AbstractBeanDefinitionP
                             properties.put(propertyName, value);
                         }
                     }
-                    propertiesBuilder.addPropertyValue("properties", properties);
                 }
             }
+            
+            propertiesBuilder.addPropertyValue("properties", properties);
             
             this.builder.addConstructorArgValue(propertiesBuilder.getBeanDefinition());
             this.builder.addConstructorArgValue(members);

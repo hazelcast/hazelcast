@@ -20,21 +20,18 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
-	        <hz:group>
-	            <hz:name>${cluster.group.name}</hz:name>
-	            <hz:password>${cluster.group.password}</hz:password>
-	        </hz:group>
+	        <hz:group  
+	           name="${cluster.group.name}"
+	           password="${cluster.group.password}"/>
 	        <hz:properties>
 	            <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
 	            <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
 	        </hz:properties>
-	        <hz:network>
-	            <hz:port auto-increment="false">${cluster.port}</hz:port>
+	        <hz:network port="${cluster.port}" port-auto-increment="false">
 	            <hz:join>
-	                <hz:multicast enabled="false">
-	                    <hz:multicast-group>224.2.2.3</hz:multicast-group>
-	                    <hz:multicast-port>54327</hz:multicast-port>
-	                </hz:multicast>
+	                <hz:multicast enabled="false"
+	                   multicast-group="224.2.2.3"
+	                   multicast-port="54327"/>
 	                <hz:tcp-ip enabled="true">
 	                    <hz:members>${cluster.members}</hz:members>
 	                </hz:tcp-ip>
@@ -42,54 +39,46 @@
 	            <hz:interfaces enabled="false">
 	                <hz:interface>10.10.1.*</hz:interface>
 	            </hz:interfaces>
-	            <hz:symmetric-encryption enabled="true">
-	                <hz:algorithm>PBEWithMD5AndDES</hz:algorithm>
-	                <hz:salt>thesalt</hz:salt>
-	                <hz:password>thepass</hz:password>
-	                <hz:iteration-count>19</hz:iteration-count>
-	            </hz:symmetric-encryption>
-	            <hz:asymmetric-encryption enabled="false">
-	                <hz:algorithm></hz:algorithm>
-	                <hz:key-password>thekeypass</hz:key-password>
-	                <hz:key-alias>local</hz:key-alias>
-	                <hz:store-type>JKS</hz:store-type>
-	                <hz:store-password>thestorepass</hz:store-password>
-	                <hz:store-path>keystore</hz:store-path>
-	            </hz:asymmetric-encryption>
+	            <hz:symmetric-encryption enabled="true"
+	               algorithm="PBEWithMD5AndDES"
+	               salt="thesalt"
+	               password="thepass"
+	               iteration-count="19"/>
+	            <hz:asymmetric-encryption enabled="false"
+	               key-password="thekeypass"
+	               key-alias="local"
+	               store-type="JKS"
+	               store-password="thestorepass"
+	               store-path="keystore"/>
 	        </hz:network>
-	        <hz:executor-service name="testExec">
-	            <hz:core-pool-size>2</hz:core-pool-size>
-	            <hz:max-pool-size>32</hz:max-pool-size>
-	            <hz:keep-alive-seconds>30</hz:keep-alive-seconds>
-	        </hz:executor-service>
-	        <hz:executor-service name="testExec2">
-	            <hz:core-pool-size>5</hz:core-pool-size>
-	            <hz:max-pool-size>10</hz:max-pool-size>
-	            <hz:keep-alive-seconds>20</hz:keep-alive-seconds>
-	        </hz:executor-service>
-	        <hz:queue name="testQ">
-	            <hz:max-size-per-jvm>1000</hz:max-size-per-jvm>
-	            <hz:time-to-live-seconds>0</hz:time-to-live-seconds>
-	        </hz:queue>
-	        <hz:queue name="q">
-	            <hz:max-size-per-jvm>2500</hz:max-size-per-jvm>
-	            <hz:time-to-live-seconds>1</hz:time-to-live-seconds>
-	        </hz:queue>
-	        <hz:map name="testMap">
-	            <hz:backup-count>2</hz:backup-count>
-	            <hz:eviction-policy>NONE</hz:eviction-policy>
-	            <hz:max-size>0</hz:max-size>
-	            <hz:eviction-percentage>30</hz:eviction-percentage>
-	            <hz:merge-policy>hz.ADD_NEW_ENTRY</hz:merge-policy>
-	        </hz:map>
-	        <hz:map name="simpleMap">
-	            <hz:backup-count>3</hz:backup-count>
-	            <hz:eviction-policy>LRU</hz:eviction-policy>
-	            <hz:max-size>10</hz:max-size>
-	            <hz:eviction-percentage>50</hz:eviction-percentage>
-	            <hz:merge-policy>hz.LATEST_UPDATE</hz:merge-policy>
-	            <hz:time-to-live-seconds>1</hz:time-to-live-seconds>
-	        </hz:map>
+	        <hz:executor-service name="testExec"
+	           core-pool-size="2"
+	           max-pool-size="32"
+	           keep-alive-seconds="30"/>
+	        <hz:executor-service name="testExec2"
+	           core-pool-size="5"
+	           max-pool-size="10"
+	           keep-alive-seconds="20"/>
+	        <hz:queue name="testQ"
+	            max-size-per-jvm="1000"
+                time-to-live-seconds="0"/>
+	        <hz:queue name="q"
+	            max-size-per-jvm="2500"
+	            time-to-live-seconds="1"/>
+	        <hz:map name="testMap"
+	           backup-count="2"
+	           max-size="0"
+	           eviction-percentage="30"
+	           use-backup-data="true"
+	           eviction-policy="NONE"
+	           merge-policy="hz.ADD_NEW_ENTRY"/>
+	        <hz:map name="simpleMap"
+	           backup-count="3"
+	           time-to-live-seconds="1"
+	           max-size="10"
+	           eviction-percentage="50"
+	           eviction-policy="LRU"
+	           merge-policy="hz.LATEST_UPDATE"/>
 	    </hz:config>
     </hz:hazelcast>
     
