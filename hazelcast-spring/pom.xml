@@ -10,7 +10,6 @@
     </parent>
 
 	<name>hazelcast-spring</name> 
-	<groupId>hazelcast-spring</groupId>
 	<artifactId>hazelcast-spring</artifactId>
 	<packaging>jar</packaging>
 

@@ -440,7 +440,7 @@ public class ClientService implements ConnectionListener {
             logger.log(Level.INFO, "received auth from " + packet.conn
                     + ", this group name:" + nodeGroupName + ", auth group name:" + groupName
                     + ", " + (value ?
-                    "sucessfull authenicated" : "authenication failed"));
+                    "successfully authenticated" : "authentication failed"));
             packet.clearForResponse();
             packet.setValue(toData(value));
         }
