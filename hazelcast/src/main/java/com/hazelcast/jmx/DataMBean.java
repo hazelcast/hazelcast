@@ -106,6 +106,9 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Insta
             creationStats = ManagementService.newStatisticsCollector();
             destructionStats = ManagementService.newStatisticsCollector();
             getManagedObject().addInstanceListener(this);
+            for (final Instance instance : getManagedObject().getInstances()) {
+                registerInstance(instance);
+            }
         }
     }
 

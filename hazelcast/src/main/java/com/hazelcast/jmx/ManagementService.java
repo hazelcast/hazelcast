@@ -17,7 +17,6 @@
 
 package com.hazelcast.jmx;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.impl.ExecutorThreadFactory;
 import com.hazelcast.impl.FactoryImpl;
 
@@ -28,6 +27,7 @@ import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -51,22 +51,27 @@ public class ManagementService {
 
     public final static String HAZELCAST_JMX_DETAILED = "hazelcast.jmx.detailed";
 
+    private static final AtomicInteger counter = new AtomicInteger(0); 
+    
     private volatile static ScheduledThreadPoolExecutor statCollectors;
 
-    private static boolean started = false;
+    private boolean started = false;
 
-    private static boolean showDetail = false;
+    private final FactoryImpl instance;
 
-    private static synchronized void start() {
+    public ManagementService(FactoryImpl instance) {
+        this.instance = instance;
+    }
+    
+    private synchronized void start() {
         final boolean jmxProperty = Boolean.getBoolean(ENABLE_JMX);
         if (!jmxProperty) {
          // JMX disabled
             return;
         }
-        showDetail = Boolean.getBoolean(HAZELCAST_JMX_DETAILED);
         logger.log(Level.INFO, "Hazelcast JMX agent enabled");
         // Scheduler of the statistics collectors
-        if (showDetail) {
+        if (showDetails()) {
             if (statCollectors == null) {
                 statCollectors = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(null, "jmx", null));
             }
@@ -77,7 +82,7 @@ public class ManagementService {
     /**
      * Register all the MBeans.
      */
-    public static synchronized void register(FactoryImpl instance, Config config) {
+    public synchronized void register() {
         if (!started) {
             start();
         }
@@ -87,7 +92,7 @@ public class ManagementService {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         // Register the cluster monitor
         try {
-            ClusterMBean clusterMBean = new ClusterMBean(instance, config);
+            ClusterMBean clusterMBean = new ClusterMBean(instance, instance.getConfig());
             mbs.registerMBean(clusterMBean, clusterMBean.getObjectName());
             DataMBean dataMBean = new DataMBean(instance);
             dataMBean.setParentName(clusterMBean.getRootName());
@@ -97,12 +102,13 @@ public class ManagementService {
             logger.log(Level.WARNING, "Unable to start JMX service", e);
             return;
         }
+        counter.incrementAndGet();
     }
 
     /**
      * Unregister a cluster instance.
      */
-    public static synchronized void unregister(FactoryImpl instance) {
+    public synchronized void unregister() {
         if (!started) {
             return;
         }
@@ -121,13 +127,14 @@ public class ManagementService {
         catch (Exception e) {
             logger.log(Level.FINE, "Error unregistering MBeans", e);
         }
+        counter.decrementAndGet();
     }
 
     /**
      * Stop the management service
      */
-    public static synchronized void shutdown() {
-        if (!started) {
+    public synchronized static void shutdown() {
+        if (counter.get() > 0) {
             return;
         }
         // Remove all registered entries
@@ -156,8 +163,8 @@ public class ManagementService {
      * statistics at detailed level.
      * For forward compatibility, return always true.
      */
-    protected static boolean showDetails() {
-        return showDetail;
+    protected static final boolean showDetails() {
+        return Boolean.getBoolean(HAZELCAST_JMX_DETAILED);
     }
 
     protected static class ScheduledCollector implements Runnable, StatisticsCollector {

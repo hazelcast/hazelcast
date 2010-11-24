@@ -91,7 +91,7 @@ public class FactoryImpl implements HazelcastInstance {
 
     volatile boolean restarted = false;
 
-    private static boolean jmxRegistered = false;
+    private final ManagementService managementService;
 
     private MemberStatePublisher memberStatePublisher;
 
@@ -112,10 +112,6 @@ public class FactoryImpl implements HazelcastInstance {
                 if (old != null) {
                     factory.logger.log(Level.SEVERE, "HazelcastInstance with [" + name + "] already exist!");
                     throw new RuntimeException();
-                }
-                if (!jmxRegistered) {
-                    ManagementService.register(factory, config);
-                    jmxRegistered = true;
                 }
             }
             boolean firstMember = (factory.node.getClusterImpl().getMembers().iterator().next().localMember());
@@ -281,7 +277,7 @@ public class FactoryImpl implements HazelcastInstance {
                  * shutting down.
                  *
                  */
-                ManagementService.unregister(factory);
+                factory.managementService.unregister();
             } catch (Throwable e) {
                 e.printStackTrace();
             }
@@ -295,10 +291,7 @@ public class FactoryImpl implements HazelcastInstance {
 
     private static void shutdownManagementService() {
         try {
-            if (jmxRegistered) {
-                ManagementService.shutdown();
-                jmxRegistered = false;
-            }
+            ManagementService.shutdown();
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -365,6 +358,8 @@ public class FactoryImpl implements HazelcastInstance {
                 }
             }
         }
+        managementService = new ManagementService(this);
+        managementService.register();
     }
 
     public Set<String> getLongInstanceNames() {
