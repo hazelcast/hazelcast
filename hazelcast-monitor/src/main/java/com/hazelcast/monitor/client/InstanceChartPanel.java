@@ -17,6 +17,7 @@
 
 package com.hazelcast.monitor.client;
 
+import com.google.gwt.http.client.URL;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import com.hazelcast.monitor.client.event.ChangeEvent;
@@ -46,9 +47,10 @@ public abstract class InstanceChartPanel extends InstancePanel {
         }
         HorizontalPanel horizontalPanel = (HorizontalPanel) vPanel.getWidget(1);
         Image sizeChart = (Image) ((AbsolutePanel) horizontalPanel.getWidget(0)).getWidget(0);
-        sizeChart.setUrl(getServletName() + "?name=" + name + "&type=size&random=" + Math.random() * 10);
+        String encodeName = URL.encodeComponent(name);
+        sizeChart.setUrl(getServletName() + "?name=" + encodeName + "&type=size&random=" + Math.random() * 10);
         Image opsChart = (Image) ((AbsolutePanel) horizontalPanel.getWidget(1)).getWidget(0);
-        opsChart.setUrl(getServletName() + "?name=" + name + "&type=ops&random=" + Math.random() * 10);
+        opsChart.setUrl(getServletName() + "?name=" + encodeName + "&type=ops&random=" + Math.random() * 10);
     }
 
     private AbsolutePanel createAbsPanelWithImage() {

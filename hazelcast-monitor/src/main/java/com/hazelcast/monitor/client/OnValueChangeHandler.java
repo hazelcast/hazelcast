@@ -32,32 +32,18 @@ public class OnValueChangeHandler {
         initPageBuilders();
     }
 
-    public void handle(String token) {
-        Map<String, String> map = parseParamString(token);
-        String name = map.get("name");
-        int clusterId = Integer.valueOf(map.get("clusterId"));
-        String type = map.get("type");
+    public void handle(ConfigLink intanceLink) {
         hazelcastMonitor.closeClusterAddPanel();
         deRegisterAllActivePanels();
-        ClusterWidgets clusterWidgets = hazelcastMonitor.getMapClusterWidgets().get(clusterId);
-        PageBuilder pageBuilder = mapPageBuilders.get(type);
-        pageBuilder.buildPage(clusterWidgets, name, new RegisterEventCallBack(hazelcastMonitor), servicesFactory);
+        ClusterWidgets clusterWidgets = hazelcastMonitor.getMapClusterWidgets().get(intanceLink.getClusterId());
+        PageBuilder pageBuilder = mapPageBuilders.get(intanceLink.getType());
+        pageBuilder.buildPage(clusterWidgets, intanceLink.getName(), new RegisterEventCallBack(hazelcastMonitor), servicesFactory);
     }
 
     private void deRegisterAllActivePanels() {
         for (ClusterWidgets cw : hazelcastMonitor.getMapClusterWidgets().values()) {
             cw.deRegisterAll();
         }
-    }
-
-    private HashMap<String, String> parseParamString(String string) {
-        String[] ray = string.substring(0, string.length()).split("&");
-        HashMap<String, String> map = new HashMap<String, String>();
-        for (int i = 0; i < ray.length; i++) {
-            String[] substrRay = ray[i].split("=");
-            map.put(substrRay[0], substrRay[1]);
-        }
-        return map;
     }
 
     private void initPageBuilders() {

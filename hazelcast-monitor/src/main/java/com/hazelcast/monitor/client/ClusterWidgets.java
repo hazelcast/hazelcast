@@ -136,7 +136,10 @@ public class ClusterWidgets {
         itemMap.put(InstanceType.LOCK, new InstanceWidgets(InstanceType.LOCK,
                 addTreeItem(tree, "Locks", cv.getLocks(), clusterId, InstanceType.LOCK)));
         TreeItem treeItem = new TreeItem("Internals");
-        Anchor anchor = createLink("Partitions", "clusterId=" + clusterId + "&type=PARTITIONS");
+        ConfigLink config = new ConfigLink();
+        config.setClusterId(clusterId);
+        config.setType("PARTITIONS");
+        Anchor anchor = createLink("Partitions", config);
         treeItem.addItem(anchor);
         tree.addItem(treeItem);
         return tree;
@@ -158,19 +161,19 @@ public class ClusterWidgets {
     }
 
     public Anchor getInstanceLink(InstanceType type, String name) {
-        final String token =
-                "clusterId=" + clusterId +
-                        "&type=" + ((type == null) ? "MEMBER" : type) +
-                        "&name=" + name;
-        Anchor anchor = createLink(name, token);
+        ConfigLink config = new ConfigLink();
+        config.setClusterId(clusterId);
+        config.setType(type == null ? "MEMBER" : type.toString());
+        config.setName(name);
+        Anchor anchor = createLink(name, config);
         return anchor;
     }
 
-    private Anchor createLink(String name, final String token) {
+    private Anchor createLink(String name, final ConfigLink config) {
         Anchor anchor = new Anchor(name);
         anchor.addClickHandler(new ClickHandler() {
             public void onClick(ClickEvent clickEvent) {
-                hazelcastMonitor.onValueChangeHandler.handle(token);
+                hazelcastMonitor.onValueChangeHandler.handle(config);
             }
         });
         return anchor;

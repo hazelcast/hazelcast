@@ -37,11 +37,14 @@ public class OnValueChangeHandlerTest {
         mapOfCLusterWidgets.put(0, clusterWidgets);
         when(hazelcastMonitor.getMapClusterWidgets()).thenReturn(mapOfCLusterWidgets);
         OnValueChangeHandler handler = new OnValueChangeHandler(servicesFactory, hazelcastMonitor);
-        String token = "clusterId=0&type=MAP&name=MyMAP";
+        ConfigLink configLink = new ConfigLink();
+        configLink.setClusterId(0);
+        configLink.setType("MAP");
+        configLink.setName("MyMAP");
         handler.mapPageBuilders.clear();
         PageBuilder pageBuilder = mock(PageBuilder.class);
         handler.mapPageBuilders.put("MAP", pageBuilder);
-        handler.handle(token);
+        handler.handle(configLink);
         verify(pageBuilder, times(1)).buildPage(eq(clusterWidgets), eq("MyMAP"), any(AsyncCallback.class), eq(servicesFactory));
         verify(clusterWidgets, times(1)).deRegisterAll();
     }

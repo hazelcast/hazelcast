@@ -108,8 +108,8 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
     }
 
     public void onValueChange(final ValueChangeEvent event) {
-        String token = event.getValue().toString();
-        onValueChangeHandler.handle(token);
+        ConfigLink config = (ConfigLink) event.getValue();
+        onValueChangeHandler.handle(config);
     }
 
     public void createAndAddClusterWidgets(ClusterView clusterView) {
