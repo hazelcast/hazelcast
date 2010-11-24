@@ -37,8 +37,8 @@ public class SetMBean extends AbstractMBean<ISet<?>> {
     private StatisticsCollector receivedStats = null;
     private StatisticsCollector servedStats = null;
 
-    public SetMBean(ISet<?> managedObject) {
-        super(managedObject);
+    public SetMBean(ISet<?> managedObject, ManagementService managementService) {
+        super(managedObject, managementService);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class SetMBean extends AbstractMBean<ISet<?>> {
         if (!registrationDone) {
             return;
         }
-        if (ManagementService.showDetails()) {
+        if (managementService.showDetails()) {
             receivedStats = ManagementService.newStatisticsCollector();
             servedStats = ManagementService.newStatisticsCollector();
             listener = new ItemListener() {

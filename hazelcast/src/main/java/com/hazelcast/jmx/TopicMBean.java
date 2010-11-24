@@ -33,8 +33,8 @@ public class TopicMBean extends AbstractMBean<ITopic<?>> {
 
     private StatisticsCollector servedStats = null;
 
-    public TopicMBean(ITopic<?> topic) {
-        super(topic);
+    public TopicMBean(ITopic<?> topic, ManagementService managementService) {
+        super(topic, managementService);
     }
 
     @Override
@@ -49,7 +49,7 @@ public class TopicMBean extends AbstractMBean<ITopic<?>> {
         if (!registrationDone) {
             return;
         }
-        if (ManagementService.showDetails()) {
+        if (managementService.showDetails()) {
             servedStats = ManagementService.newStatisticsCollector();
             listener = new MessageListener() {
 

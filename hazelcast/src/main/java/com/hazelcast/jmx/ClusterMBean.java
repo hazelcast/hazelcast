@@ -46,10 +46,10 @@ public class ClusterMBean extends AbstractMBean<HazelcastInstance> {
     private final Config config;
     private final Cluster cluster;
 
-    public ClusterMBean(HazelcastInstance instance, Config config) {
-        super(instance);
-        this.config = config;
-        this.cluster = instance.getCluster();
+    public ClusterMBean(ManagementService service) {
+        super(service.instance, service);
+        this.config = service.instance.getConfig();
+        this.cluster = service.instance.getCluster();
         clusterObjectNames = new ObjectNameSpec(getManagedObject().getName());
     }
 
@@ -106,7 +106,7 @@ public class ClusterMBean extends AbstractMBean<HazelcastInstance> {
     private void registerMember(Member member) {
         try {
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            MemberMBean mbean = new MemberMBean(member);
+            MemberMBean mbean = new MemberMBean(member, managementService);
             mbean.setParentName(clusterObjectNames);
             if (!mbs.isRegistered(mbean.getObjectName())) {
                 mbs.registerMBean(mbean, mbean.getObjectName());
@@ -125,7 +125,7 @@ public class ClusterMBean extends AbstractMBean<HazelcastInstance> {
     private void unregisterMember(Member member) {
         try {
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            MemberMBean mbean = new MemberMBean(member);
+            MemberMBean mbean = new MemberMBean(member, managementService);
             mbean.setParentName(clusterObjectNames);
             if (mbs.isRegistered(mbean.getObjectName())) {
                 mbs.unregisterMBean(mbean.getObjectName());

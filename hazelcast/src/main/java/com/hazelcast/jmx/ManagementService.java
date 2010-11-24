@@ -47,24 +47,20 @@ public class ManagementService {
 
     private final static Logger logger = Logger.getLogger(ManagementService.class.getName());
 
-    public final static String ENABLE_JMX = "hazelcast.jmx";
-
-    public final static String HAZELCAST_JMX_DETAILED = "hazelcast.jmx.detailed";
-
     private static final AtomicInteger counter = new AtomicInteger(0); 
     
     private volatile static ScheduledThreadPoolExecutor statCollectors;
 
     private boolean started = false;
 
-    private final FactoryImpl instance;
+    final FactoryImpl instance;
 
     public ManagementService(FactoryImpl instance) {
         this.instance = instance;
     }
     
     private synchronized void start() {
-        final boolean jmxProperty = Boolean.getBoolean(ENABLE_JMX);
+        final boolean jmxProperty = instance.node.groupProperties.ENABLE_JMX.getBoolean();
         if (!jmxProperty) {
          // JMX disabled
             return;
@@ -92,9 +88,9 @@ public class ManagementService {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         // Register the cluster monitor
         try {
-            ClusterMBean clusterMBean = new ClusterMBean(instance, instance.getConfig());
+            ClusterMBean clusterMBean = new ClusterMBean(this);
             mbs.registerMBean(clusterMBean, clusterMBean.getObjectName());
-            DataMBean dataMBean = new DataMBean(instance);
+            DataMBean dataMBean = new DataMBean(this);
             dataMBean.setParentName(clusterMBean.getRootName());
             mbs.registerMBean(dataMBean, dataMBean.getObjectName());
         }
@@ -163,8 +159,8 @@ public class ManagementService {
      * statistics at detailed level.
      * For forward compatibility, return always true.
      */
-    protected static final boolean showDetails() {
-        return Boolean.getBoolean(HAZELCAST_JMX_DETAILED);
+    final boolean showDetails() {
+        return instance.node.groupProperties.ENABLE_JMX_DETAILED.getBoolean();
     }
 
     protected static class ScheduledCollector implements Runnable, StatisticsCollector {

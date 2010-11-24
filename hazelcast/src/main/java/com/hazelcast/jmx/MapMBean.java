@@ -38,8 +38,8 @@ public class MapMBean extends AbstractMBean<IMap> {
 
     protected EntryListener listener;
 
-    public MapMBean(IMap managedObject) {
-        super(managedObject);
+    public MapMBean(IMap managedObject, ManagementService managementService) {
+        super(managedObject, managementService);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class MapMBean extends AbstractMBean<IMap> {
         if (!registrationDone) {
             return;
         }
-        if (ManagementService.showDetails()) {
+        if (managementService.showDetails()) {
             listener = new EntryListener() {
 
                 public void entryAdded(EntryEvent event) {

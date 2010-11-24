@@ -48,6 +48,8 @@ public abstract class AbstractMBean<E> implements DynamicMBean, MBeanRegistratio
     private E managedObject;
 
     private String description;
+    
+    protected final ManagementService managementService;
 
     /**
      * Attribute infos
@@ -102,8 +104,9 @@ public abstract class AbstractMBean<E> implements DynamicMBean, MBeanRegistratio
     private HashMap<String, OperationInfo> operationInfos
             = new HashMap<String, OperationInfo>();
 
-    public AbstractMBean(E managedObject) {
+    public AbstractMBean(E managedObject, ManagementService service) {
         this.managedObject = managedObject;
+        this.managementService = service;
     }
 
     public final E getManagedObject() {

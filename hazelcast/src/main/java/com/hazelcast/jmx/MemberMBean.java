@@ -32,8 +32,8 @@ public class MemberMBean extends AbstractMBean<Member> {
 
     private ObjectName name;
 
-    public MemberMBean(Member managedObject) {
-        super(managedObject);
+    public MemberMBean(Member managedObject, ManagementService managementService) {
+        super(managedObject, managementService);
     }
 //	public ObjectName getObjectName() throws Exception {
 //		String memberName = "Local";

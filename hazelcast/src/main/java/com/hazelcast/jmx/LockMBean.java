@@ -27,8 +27,8 @@ import com.hazelcast.core.ILock;
 @JMXDescription("A distributed Lock")
 public class LockMBean extends AbstractMBean<ILock> {
 
-    public LockMBean(ILock lock) {
-        super(lock);
+    public LockMBean(ILock lock, ManagementService managementService) {
+        super(lock, managementService);
     }
 
     @Override

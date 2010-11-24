@@ -27,8 +27,8 @@ import com.hazelcast.core.AtomicNumber;
 @JMXDescription("A distributed atomic number")
 public class AtomicNumberMBean extends AbstractMBean<AtomicNumber> {
 
-    public AtomicNumberMBean(AtomicNumber managedObject) {
-        super(managedObject);
+    public AtomicNumberMBean(AtomicNumber managedObject, ManagementService managementService) {
+        super(managedObject, managementService);
     }
 
     @Override

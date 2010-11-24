@@ -34,8 +34,8 @@ public class QueueMBean extends AbstractMBean<IQueue<?>> {
     private StatisticsCollector receivedStats = null;
     private StatisticsCollector servedStats = null;
 
-    public QueueMBean(IQueue<?> queue) {
-        super(queue);
+    public QueueMBean(IQueue<?> queue, ManagementService managementService) {
+        super(queue, managementService);
     }
 
     @Override
@@ -50,7 +50,7 @@ public class QueueMBean extends AbstractMBean<IQueue<?>> {
         if (!registrationDone) {
             return;
         }
-        if (ManagementService.showDetails()) {
+        if (managementService.showDetails()) {
             receivedStats = ManagementService.newStatisticsCollector();
             servedStats = ManagementService.newStatisticsCollector();
             listener = new ItemListener() {

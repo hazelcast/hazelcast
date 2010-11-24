@@ -28,8 +28,8 @@ import com.hazelcast.core.MultiMap;
 @JMXDescription("A distributed MultiMap")
 public class MultiMapMBean extends AbstractMBean<MultiMap> {
 
-    public MultiMapMBean(MultiMap managedObject) {
-        super(managedObject);
+    public MultiMapMBean(MultiMap managedObject, ManagementService managementService) {
+        super(managedObject, managementService);
     }
 
     @Override

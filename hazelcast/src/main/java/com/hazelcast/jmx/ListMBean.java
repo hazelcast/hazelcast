@@ -37,8 +37,8 @@ public class ListMBean extends AbstractMBean<IList<?>> {
     private StatisticsCollector receivedStats = null;
     private StatisticsCollector servedStats = null;
 
-    public ListMBean(IList<?> managedObject) {
-        super(managedObject);
+    public ListMBean(IList<?> managedObject, ManagementService managementService) {
+        super(managedObject, managementService);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class ListMBean extends AbstractMBean<IList<?>> {
         if (!registrationDone) {
             return;
         }
-        if (ManagementService.showDetails()) {
+        if (managementService.showDetails()) {
             receivedStats = ManagementService.newStatisticsCollector();
             servedStats = ManagementService.newStatisticsCollector();
             listener = new ItemListener() {

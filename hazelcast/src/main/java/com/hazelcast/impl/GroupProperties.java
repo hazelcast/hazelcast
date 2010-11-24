@@ -43,6 +43,8 @@ public class GroupProperties {
     public static final String PROP_EXECUTOR_CLIENT_THREAD_COUNT = "hazelcast.executor.client.thread.count";
     public static final String PROP_EXECUTOR_STORE_THREAD_COUNT = "hazelcast.executor.store.thread.count";
     public static final String PROP_LOG_STATE = "hazelcast.log.state";
+    public static final String PROP_ENABLE_JMX = "hazelcast.jmx";
+    public static final String PROP_ENABLE_JMX_DETAILED = "hazelcast.jmx.detailed";
 
     public static final GroupProperty SERIALIZER_GZIP_ENABLED = new GroupProperty(null, PROP_SERIALIZER_GZIP_ENABLED, "false");
 
@@ -87,6 +89,10 @@ public class GroupProperties {
     public final GroupProperty EXECUTOR_STORE_THREAD_COUNT;
 
     public final GroupProperty LOG_STATE;
+    
+    public final GroupProperty ENABLE_JMX;
+    
+    public final GroupProperty ENABLE_JMX_DETAILED;
 
     public GroupProperties(Config config) {
         MERGE_FIRST_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "300");
@@ -108,6 +114,8 @@ public class GroupProperties {
         EXECUTOR_CLIENT_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_CLIENT_THREAD_COUNT, "40");
         EXECUTOR_STORE_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_STORE_THREAD_COUNT, "16");
         LOG_STATE = new GroupProperty(config, PROP_LOG_STATE, "false");
+        ENABLE_JMX = new GroupProperty(config, PROP_ENABLE_JMX, "false");
+        ENABLE_JMX_DETAILED = new GroupProperty(config, PROP_ENABLE_JMX_DETAILED, "false");
     }
 
     public static class GroupProperty {

@@ -357,6 +357,8 @@
             <xs:enumeration value="hazelcast.executor.client.thread.count"/>
             <xs:enumeration value="hazelcast.executor.store.thread.count"/>
             <xs:enumeration value="hazelcast.log.state"/>
+            <xs:enumeration value="hazelcast.jmx"/>
+            <xs:enumeration value="hazelcast.jmx.detailed"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:element name="property">

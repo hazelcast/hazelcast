@@ -51,49 +51,49 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Insta
     private AbstractMBean buildMBean(Instance instance) throws Exception {
         if (instance instanceof ITopic) {
             // Topic
-            TopicMBean mbean = new TopicMBean((ITopic) instance);
+            TopicMBean mbean = new TopicMBean((ITopic) instance, managementService);
             return mbean;
         }
         if (instance instanceof IQueue) {
             // Queue
-            QueueMBean mbean = new QueueMBean((IQueue) instance);
+            QueueMBean mbean = new QueueMBean((IQueue) instance, managementService);
             return mbean;
         }
         if (instance instanceof IList) {
             // List
-            ListMBean mbean = new ListMBean((IList) instance);
+            ListMBean mbean = new ListMBean((IList) instance, managementService);
             return mbean;
         }
         if (instance instanceof ISet) {
             // Set
-            SetMBean mbean = new SetMBean((ISet) instance);
+            SetMBean mbean = new SetMBean((ISet) instance, managementService);
             return mbean;
         }
         if (instance instanceof MultiMap) {
             // Map
-            MultiMapMBean mbean = new MultiMapMBean((MultiMap) instance);
+            MultiMapMBean mbean = new MultiMapMBean((MultiMap) instance, managementService);
             return mbean;
         }
         if (instance instanceof IMap) {
             // Map
-            MapMBean mbean = new MapMBean((IMap) instance);
+            MapMBean mbean = new MapMBean((IMap) instance, managementService);
             return mbean;
         }
         if (instance instanceof ILock) {
             // Lock
-            LockMBean mbean = new LockMBean((ILock) instance);
+            LockMBean mbean = new LockMBean((ILock) instance, managementService);
             return mbean;
         }
         if (instance instanceof AtomicNumber) {
             // AtomicNumber
-            AtomicNumberMBean mbean = new AtomicNumberMBean((AtomicNumber) instance);
+            AtomicNumberMBean mbean = new AtomicNumberMBean((AtomicNumber) instance, managementService);
             return mbean;
         }
         return null;
     }
 
-    protected DataMBean(HazelcastInstance instance) {
-        super(instance);
+    protected DataMBean(ManagementService managementService) {
+        super(managementService.instance, managementService);
     }
 
     @Override
