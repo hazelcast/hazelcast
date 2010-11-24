@@ -698,6 +698,23 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
     }
 
     @Test
+    public void testGetPartition() throws InterruptedException {
+        IMap map = getHazelcastClient().getMap("def");
+        for (int i = 0; i < 1000; i++) {
+            map.put(i, i);
+        }
+        Set<Integer> set = new HashSet<Integer>();
+        for (int i = 0; i < 1000; i++) {
+            Partition p1 = single.getHazelcastInstance().getPartitionService().getPartition(i);
+            Partition p2 = single.getHazelcastClient().getPartitionService().getPartition(i);
+            assertEquals(p1.getPartitionId(), p2.getPartitionId());
+            assertEquals(p1.getOwner(), p2.getOwner());
+            set.add(p1.getPartitionId());
+        }
+        System.out.println("Size: " + set.size());
+    }
+
+    @Test
     public void testGetPartitionsFromDifferentThread() throws InterruptedException {
         for (int i = 0; i < 1000; i++) {
             getHazelcastClient().getMap("def").put(i, i);

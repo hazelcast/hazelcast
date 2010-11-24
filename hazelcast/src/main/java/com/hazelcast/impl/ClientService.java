@@ -340,14 +340,21 @@ public class ClientService implements ConnectionListener {
     private class GetPartitionsHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
             PartitionService partitionService = node.factory.getPartitionService();
-            Set<Partition> partitions = partitionService.getPartitions();
-            Set<Data> setData = new LinkedHashSet<Data>();
-            for (Iterator<Partition> iterator = partitions.iterator(); iterator.hasNext();) {
-                Partition partition = iterator.next();
-                setData.add(toData(new PartitionImpl(partition.getPartitionId(), (MemberImpl) partition.getOwner())));
+            if (packet.getKeyData() != null && packet.getKeyData().size() > 0) {
+                Object key = toObject(packet.getKeyData());
+                Partition partition = partitionService.getPartition(key);
+                Data value = toData(new PartitionImpl(partition.getPartitionId(), (MemberImpl) partition.getOwner()));
+                packet.setValue(value);
+            } else {
+                Set<Partition> partitions = partitionService.getPartitions();
+                Set<Data> setData = new LinkedHashSet<Data>();
+                for (Iterator<Partition> iterator = partitions.iterator(); iterator.hasNext();) {
+                    Partition partition = iterator.next();
+                    setData.add(toData(new PartitionImpl(partition.getPartitionId(), (MemberImpl) partition.getOwner())));
+                }
+                Keys keys = new Keys(setData);
+                packet.setValue(toData(keys));
             }
-            Keys keys = new Keys(setData);
-            packet.setValue(toData(keys));
         }
     }
 

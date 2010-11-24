@@ -39,7 +39,7 @@ public class PartitionClientProxy implements PartitionService {
     }
 
     public Partition getPartition(Object key) {
-        return null;
+        return (Partition) proxyHelper.doOp(ClusterOperation.CLIENT_GET_PARTITIONS, key, null);
     }
 
     public void addMigrationListener(MigrationListener migrationListener) {
