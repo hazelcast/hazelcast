@@ -1007,7 +1007,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public String getName() {
-                return name.substring(2);
+                return name.substring(Prefix.TOPIC.length());
             }
 
             public Object getId() {
@@ -1188,7 +1188,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public String getName() {
-                return name.substring(4);
+                return name.substring(Prefix.LIST.length());
             }
 
             @Override
@@ -1519,7 +1519,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public String getName() {
-                return name.substring(2);
+                return name.substring(Prefix.QUEUE.length());
             }
 
             @Override
@@ -1759,7 +1759,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public String getName() {
-                return name.substring(4);
+                return name.substring(Prefix.MULTIMAP.length());
             }
 
             public void clear() {
@@ -2173,7 +2173,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public String getName() {
-            return name.substring(2);
+            return name.substring(Prefix.MAP.length());
         }
 
         public boolean lockMap(long time, TimeUnit timeunit) {
@@ -2284,7 +2284,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public String getName() {
-                return name.substring(2);
+                return name.substring(Prefix.MAP.length());
             }
 
             public void addIndex(final String attribute, final boolean ordered) {
@@ -2779,7 +2779,7 @@ public class FactoryImpl implements HazelcastInstance {
             final AtomicLong currentId = new AtomicLong(2 * MILLION);
 
             public String getName() {
-                return name.substring(2);
+                return name.substring(Prefix.IDGEN.length());
             }
 
             public long newId() {

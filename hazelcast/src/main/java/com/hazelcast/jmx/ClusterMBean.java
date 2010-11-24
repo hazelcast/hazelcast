@@ -24,6 +24,7 @@ import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import java.io.File;
 import java.lang.management.ManagementFactory;
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -134,6 +135,12 @@ public class ClusterMBean extends AbstractMBean<HazelcastInstance> {
             logger.log(Level.FINE, "Unable to unregister Member MBeans", e);
         }
     }
+    
+    @JMXAttribute("config")
+    @JMXDescription("Config.toString() result")
+    public String getConfig() {
+        return config.toString();
+    }
 
     @JMXAttribute("ConfigSource")
     @JMXDescription("The source of the cluster instance configuration")
@@ -186,7 +193,8 @@ public class ClusterMBean extends AbstractMBean<HazelcastInstance> {
         Set<Member> members = cluster.getMembers();
         ArrayList<String> result = new ArrayList<String>();
         for (Member m : members) {
-            result.add(m.getInetAddress().getHostAddress() + ':' + m.getPort());
+            final InetSocketAddress socketAddress = m.getInetSocketAddress();
+            result.add(socketAddress.getHostName() + ':' + socketAddress.getPort());
         }
         return result;
     }

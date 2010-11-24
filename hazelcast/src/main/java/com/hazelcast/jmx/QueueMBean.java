@@ -95,6 +95,14 @@ public class QueueMBean extends AbstractMBean<IQueue<?>> {
         if (servedStats != null)
             servedStats.reset();
     }
+    
+    /**
+     * Clear queue
+     */
+    @JMXOperation("clear")
+    public void clear() {
+        getManagedObject().clear();
+    }
 
     @JMXAttribute("Name")
     @JMXDescription("Registration name of the queue")

@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.AtomicNumber;
 import com.hazelcast.core.Instance;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
@@ -143,7 +144,7 @@ public class AtomicNumberImpl extends FactoryAwareNamedProxy implements AtomicNu
         }
 
         public String getName() {
-            return name.substring(4);
+            return name.substring(Prefix.ATOMIC_NUMBER.length());
         }
 
         ConcurrentMapManager.MAtomic newMAtomic(ClusterOperation op, long value, long expected) {

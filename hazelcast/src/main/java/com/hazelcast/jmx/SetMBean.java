@@ -93,7 +93,7 @@ public class SetMBean extends AbstractMBean<ISet<?>> {
         }
         super.preDeregister();
     }
-
+    
     protected void addItem(Object item) {
         // Manage items?
     }
@@ -111,6 +111,12 @@ public class SetMBean extends AbstractMBean<ISet<?>> {
             receivedStats.reset();
         if (servedStats != null)
             servedStats.reset();
+    }
+    
+    @JMXOperation("clear")
+    @JMXDescription("Clear set")
+    public void clear() {
+        getManagedObject().clear();
     }
 
     @JMXAttribute("Name")

@@ -317,12 +317,12 @@ public abstract class AbstractMBean<E> implements DynamicMBean, MBeanRegistratio
                 if (logger.isLoggable(Level.FINEST)) {
                     logger.log(Level.FINEST, "Operation '" + actionName + "' belonging to MBean");
                 }
-                result = method.invoke(this);
+                result = method.invoke(this, params);
             } else {
                 if (logger.isLoggable(Level.FINEST)) {
                     logger.log(Level.FINEST, "Operation '" + actionName + "' belonging to managed object", actionName);
                 }
-                result = method.invoke(managedObject);
+                result = method.invoke(managedObject, params);
             }
         }
         catch (Exception e) {

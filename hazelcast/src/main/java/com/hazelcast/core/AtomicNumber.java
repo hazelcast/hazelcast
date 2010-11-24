@@ -44,4 +44,6 @@ public interface AtomicNumber extends Instance {
     void lazySet(long newValue);
 
     void set(long newValue);
+    
+    String getName();
 }

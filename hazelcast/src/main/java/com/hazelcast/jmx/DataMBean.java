@@ -84,6 +84,11 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Insta
             LockMBean mbean = new LockMBean((ILock) instance);
             return mbean;
         }
+        if (instance instanceof AtomicNumber) {
+            // AtomicNumber
+            AtomicNumberMBean mbean = new AtomicNumberMBean((AtomicNumber) instance);
+            return mbean;
+        }
         return null;
     }
 

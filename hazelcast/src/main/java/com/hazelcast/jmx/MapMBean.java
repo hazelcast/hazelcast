@@ -97,6 +97,12 @@ public class MapMBean extends AbstractMBean<IMap> {
             }
         }
     }
+    
+    @JMXOperation("clear")
+    @JMXDescription("Clear map")
+    public void clear() {
+        getManagedObject().clear();
+    }
 
     protected void addEntry(Object key) {
         try {
@@ -126,7 +132,7 @@ public class MapMBean extends AbstractMBean<IMap> {
     }
 
     @JMXAttribute("Name")
-    @JMXDescription("Registration name of the list")
+    @JMXDescription("Registration name of the map")
     public String getName() {
         return getManagedObject().getName();
     }

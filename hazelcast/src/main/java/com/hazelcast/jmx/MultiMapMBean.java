@@ -37,6 +37,12 @@ public class MultiMapMBean extends AbstractMBean<MultiMap> {
         return getParentName().getNested("MultiMap", getName());
     }
 
+    @JMXOperation("clear")
+    @JMXDescription("Clear multi map")
+    public void clear() {
+        getManagedObject().clear();
+    }
+
     @JMXAttribute("Name")
     @JMXDescription("Registration name of the list")
     public String getName() {

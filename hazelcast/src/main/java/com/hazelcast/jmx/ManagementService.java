@@ -58,21 +58,15 @@ public class ManagementService {
     private static boolean showDetail = false;
 
     private static synchronized void start() {
-        String jmxProperty = System.getProperty(ENABLE_JMX);
-        if ("FALSE".equalsIgnoreCase(jmxProperty)) {
+        final boolean jmxProperty = Boolean.getBoolean(ENABLE_JMX);
+        if (!jmxProperty) {
+         // JMX disabled
             return;
         }
-        if (!("TRUE".equalsIgnoreCase(jmxProperty)
-                || System.getProperties().containsKey("com.sun.management.jmxremote"))) {
-            // JMX disabled
-            return;
-        }
-        if ("TRUE".equalsIgnoreCase(System.getProperty(HAZELCAST_JMX_DETAILED))) {
-            showDetail = true;
-        }
+        showDetail = Boolean.getBoolean(HAZELCAST_JMX_DETAILED);
         logger.log(Level.INFO, "Hazelcast JMX agent enabled");
         // Scheduler of the statistics collectors
-        if (showDetails()) {
+        if (showDetail) {
             if (statCollectors == null) {
                 statCollectors = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(null, "jmx", null));
             }
@@ -168,7 +162,7 @@ public class ManagementService {
 
     protected static class ScheduledCollector implements Runnable, StatisticsCollector {
 
-        private long interval = 1;  // sec
+        private final long interval;  // sec
         private volatile long events = 0;
         private volatile long total = 0;
         private volatile double min = Long.MAX_VALUE;

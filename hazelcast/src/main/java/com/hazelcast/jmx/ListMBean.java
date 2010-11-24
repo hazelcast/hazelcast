@@ -93,7 +93,7 @@ public class ListMBean extends AbstractMBean<IList<?>> {
         }
         super.preDeregister();
     }
-
+    
     protected void addItem(Object item) {
         // Manage items?
     }
@@ -111,6 +111,12 @@ public class ListMBean extends AbstractMBean<IList<?>> {
             receivedStats.reset();
         if (servedStats != null)
             servedStats.reset();
+    }
+
+    @JMXOperation("clear")
+    @JMXDescription("Clear list")
+    public void clear() {
+        getManagedObject().clear();
     }
 
     @JMXAttribute("Name")
