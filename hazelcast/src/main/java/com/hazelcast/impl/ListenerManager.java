@@ -237,24 +237,19 @@ public class ListenerManager extends BaseManager {
                             Instance.InstanceType instanceType) {
         boolean remotelyRegister = true;
         for (ListenerItem listenerItem : listeners) {
-            if (remotelyRegister) {
-                if (listenerItem.listener == listener) {
-                    if (listenerItem.name.equals(name)) {
-                        if (key == null) {
-                            if (listenerItem.key == null) {
-                                if (!includeValue || listenerItem.includeValue == includeValue) {
-                                    remotelyRegister = false;
-                                }
-                            }
-                        } else {
-                            if (listenerItem.key != null) {
-                                if (listenerItem.key.equals(key)) {
-                                    if (!includeValue || listenerItem.includeValue == includeValue) {
-                                        remotelyRegister = false;
-                                    }
-                                }
-                            }
-                        }
+            if (!remotelyRegister) {
+                break;
+            }
+            if (listenerItem.name.equals(name)) {
+                if (key == null) {
+                    if (listenerItem.key == null && 
+                        (!includeValue || listenerItem.includeValue == includeValue)) {
+                        remotelyRegister = false;
+                    }
+                } else if (listenerItem.key != null) {
+                    if (listenerItem.key.equals(key) && 
+                        (!includeValue || listenerItem.includeValue == includeValue)) {
+                        remotelyRegister = false;
                     }
                 }
             }
@@ -290,6 +285,7 @@ public class ListenerManager extends BaseManager {
     }
 
     void callListeners(EventTask event) {
+        
         for (ListenerItem listenerItem : listeners) {
             if (listenerItem.listens(event)) {
                 callListener(listenerItem, event);
@@ -297,9 +293,9 @@ public class ListenerManager extends BaseManager {
         }
     }
 
-    private void callListener(ListenerItem listenerItem, EntryEvent event) {
-        Object listener = listenerItem.listener;
-        EntryEventType entryEventType = event.getEventType();
+    private void callListener(final ListenerItem listenerItem, final EntryEvent event) {
+        final Object listener = listenerItem.listener;
+        final EntryEventType entryEventType = event.getEventType();
         if (listenerItem.instanceType == Instance.InstanceType.MAP) {
             if (!listenerItem.name.startsWith("c:__hz_")) {
                 Object proxy = node.factory.getOrCreateProxyByName(listenerItem.name);
@@ -310,22 +306,32 @@ public class ListenerManager extends BaseManager {
             }
         }
         
+        final EntryEvent event2 = listenerItem.includeValue ? 
+                event : 
+                (event.getValue() != null ? 
+                    new EntryEvent(event.getSource(),
+                        event.getMember(),
+                        event.getEventType().getType(),
+                        event.getKey(),
+                        null,
+                        null) : 
+                    event);
         switch (listenerItem.instanceType) {
             case MAP:
             case MULTIMAP:
                 EntryListener entryListener = (EntryListener) listener;
                 switch (entryEventType) {
                     case ADDED:
-                        entryListener.entryAdded(event);
+                        entryListener.entryAdded(event2);
                         break;
                     case REMOVED:
-                        entryListener.entryRemoved(event);
+                        entryListener.entryRemoved(event2);
                         break;
                     case UPDATED:
-                        entryListener.entryUpdated(event);
+                        entryListener.entryUpdated(event2);
                         break;
                     case EVICTED:
-                        entryListener.entryEvicted(event);
+                        entryListener.entryEvicted(event2);
                         break;
                 }
                 break;
@@ -334,25 +340,25 @@ public class ListenerManager extends BaseManager {
                 ItemListener itemListener = (ItemListener) listener;
                 switch (entryEventType) {
                     case ADDED:
-                        itemListener.itemAdded(event.getKey());
+                        itemListener.itemAdded(event2.getKey());
                         break;
                     case REMOVED:
-                        itemListener.itemRemoved(event.getKey());
+                        itemListener.itemRemoved(event2.getKey());
                         break;
                 }
                 break;
             case TOPIC:
                 MessageListener messageListener = (MessageListener) listener;
-                messageListener.onMessage(event.getValue());
+                messageListener.onMessage(event2.getValue());
                 break;
             case QUEUE:
                 ItemListener queueItemListener = (ItemListener) listener;
                 switch (entryEventType) {
                     case ADDED:
-                        queueItemListener.itemAdded(event.getValue());
+                        queueItemListener.itemAdded(event2.getValue());
                         break;
                     case REMOVED:
-                        queueItemListener.itemRemoved(event.getValue());
+                        queueItemListener.itemRemoved(event2.getValue());
                         break;
                 }
                 break;

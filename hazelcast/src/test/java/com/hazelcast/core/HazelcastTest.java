@@ -20,17 +20,16 @@ package com.hazelcast.core;
 import org.junit.*;
 
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
 /**
  * HazelcastTest tests general behavior for one node.
@@ -45,6 +44,96 @@ public class HazelcastTest {
     public static void init() throws Exception {
         Hazelcast.shutdownAll();
     }
+    
+    @Test
+    public void testIssue321_1() throws Exception {
+        final IMap<Integer, Integer> imap = Hazelcast.getMap("testIssue321_1");
+
+        final BlockingQueue<EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<EntryEvent<Integer,Integer>>();
+        final BlockingQueue<EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<EntryEvent<Integer,Integer>>();
+
+        imap.addEntryListener(new EntryAdapter<Integer, Integer>(){
+            @Override
+            public void entryAdded(EntryEvent event) {
+                events2.add(event);
+            }
+        }, false);
+        imap.addEntryListener(new EntryAdapter<Integer, Integer>(){
+            @Override
+            public void entryAdded(EntryEvent event) {
+                events1.add(event);
+            }
+        }, true);
+
+        imap.put(1, 1);
+        
+        final EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.MILLISECONDS);
+        final EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.MILLISECONDS);
+        
+        assertNotNull(event1);
+        assertNotNull(event2);
+        
+        assertNotNull(event1.getValue());
+        assertNull(event2.getValue());
+    }
+    
+    @Test
+    public void testIssue321_2() throws Exception {
+        final IMap<Integer, Integer> imap = Hazelcast.getMap("testIssue321_2");
+        final BlockingQueue<EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<EntryEvent<Integer,Integer>>();
+        final BlockingQueue<EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<EntryEvent<Integer,Integer>>();
+
+        imap.addEntryListener(new EntryAdapter(){
+            @Override
+            public void entryAdded(EntryEvent event) {
+                events1.add(event);
+            }
+        }, true);
+        Thread.sleep(50L);
+        imap.addEntryListener(new EntryAdapter(){
+            @Override
+            public void entryAdded(EntryEvent event) {
+                events2.add(event);
+            }
+        }, false);
+        imap.put(1, 1);
+        
+        final EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.MILLISECONDS);
+        final EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.MILLISECONDS);
+        
+        assertNotNull(event1);
+        assertNotNull(event2);
+        
+        assertNotNull(event1.getValue());
+        assertNull(event2.getValue());
+    }
+    
+    @Test
+    public void testIssue321_3() throws Exception {
+        final IMap<Integer, Integer> imap = Hazelcast.getMap("testIssue321_3");
+        final BlockingQueue<EntryEvent<Integer, Integer>> events = new LinkedBlockingQueue<EntryEvent<Integer,Integer>>();
+
+        final EntryAdapter listener = new EntryAdapter(){
+            @Override
+            public void entryAdded(EntryEvent event) {
+                events.add(event);
+            }
+        };
+        imap.addEntryListener(listener, true);
+        Thread.sleep(50L);
+        imap.addEntryListener(listener, false);
+        imap.put(1, 1);
+        
+        final EntryEvent<Integer, Integer> event1 = events.poll(10, TimeUnit.MILLISECONDS);
+        final EntryEvent<Integer, Integer> event2 = events.poll(10, TimeUnit.MILLISECONDS);
+        
+        assertNotNull(event1);
+        assertNotNull(event2);
+        
+        assertNotNull(event1.getValue());
+        assertNull(event2.getValue());
+    }
+    
 
     @Test
     @Ignore

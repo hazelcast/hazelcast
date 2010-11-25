@@ -19,6 +19,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.nio.DataSerializable;
@@ -116,6 +117,33 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
 		
 		assertNotNull(event1.getValue());
 		assertNull(event2.getValue());
+    }
+    
+    @Test
+    public void testIssue321_3() throws Exception {
+        HazelcastClient hClient = getHazelcastClient();
+        final IMap<Integer, Integer> imap = hClient.getMap("testIssue321_3");
+        final BlockingQueue<EntryEvent<Integer, Integer>> events = new LinkedBlockingQueue<EntryEvent<Integer,Integer>>();
+
+        final EntryAdapter listener = new EntryAdapter(){
+            @Override
+            public void entryAdded(EntryEvent event) {
+                events.add(event);
+            }
+        };
+        imap.addEntryListener(listener, true);
+        Thread.sleep(50L);
+        imap.addEntryListener(listener, false);
+        imap.put(1, 1);
+        
+        final EntryEvent<Integer, Integer> event1 = events.poll(10, TimeUnit.MILLISECONDS);
+        final EntryEvent<Integer, Integer> event2 = events.poll(10, TimeUnit.MILLISECONDS);
+        
+        assertNotNull(event1);
+        assertNotNull(event2);
+        
+        assertNotNull(event1.getValue());
+        assertNull(event2.getValue());
     }
     
     @Test
