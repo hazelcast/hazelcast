@@ -2089,7 +2089,12 @@ public class ClusterTest {
         h2.getLifecycleService().addLifecycleListener(l);
         for (int i = 0; i < 500; i++) {
             h2.getMap("default").put(i, "value" + i);
+            h2.getMultiMap("default").put(i, "value" + i);
+            h2.getMultiMap("default").put(i, "value0" + i);
+
         }
+        assertEquals(500, h2.getMap("default").size());        
+        assertEquals(1000, h2.getMultiMap("default").size());
         assertEquals(1, h1.getCluster().getMembers().size());
         assertEquals(1, h2.getCluster().getMembers().size());
         Thread.sleep(2000);
@@ -2101,6 +2106,8 @@ public class ClusterTest {
         assertEquals(2, h2.getCluster().getMembers().size());
         assertEquals(500, h1.getMap("default").size());
         assertEquals(500, h2.getMap("default").size());
+        assertEquals(1000, h2.getMultiMap("default").size());
+        assertEquals(1000, h1.getMultiMap("default").size());
     }
 
     class LifecycleCountingListener implements LifecycleListener {

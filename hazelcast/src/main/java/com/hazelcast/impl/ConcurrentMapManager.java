@@ -835,21 +835,31 @@ public class ConcurrentMapManager extends BaseManager {
             return txnalPut(CONCURRENT_MAP_PUT, name, key, value, timeout, ttl);
         }
 
-        public Object merge(Record record) {
-            DataRecordEntry dataRecordEntry = new DataRecordEntry(record);
-            ClusterOperation operation = CONCURRENT_MAP_MERGE;
-            setLocal(operation, record.getName(), record.getKey(), dataRecordEntry, 0, -1);
-            request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
-            Object value = record.getRecordEntry().getValue();
-            setIndexValues(request, value);
+        public void merge(Record record) {
+            if (getInstanceType(record.getName()).isMultiMap()) {
+                Set<Data> values = record.getMultiValues();
+                if (values != null && values.size() > 0) {
+                    for (Data value : values) {
+                        mergeOne(record, value);
+                    }
+                }
+            } else {
+                mergeOne(record, record.getValue());
+            }
+        }
+
+        public void mergeOne(Record record, Data valueData) {
+            DataRecordEntry dataRecordEntry = new DataRecordEntry(record, valueData);
+            request.setFromRecord(record);
+            request.operation = CONCURRENT_MAP_MERGE;
+            request.value = toData(dataRecordEntry);
             request.setBooleanRequest();
             doOp();
             Boolean returnObject = getResultAsBoolean();
             if (returnObject) {
-                request.value = record.getValue();
+                request.value = valueData;
                 backup(CONCURRENT_MAP_BACKUP_PUT);
             }
-            return returnObject;
         }
 
         public boolean tryPut(String name, Object key, Object value, long timeout, long ttl) {
@@ -1625,7 +1635,11 @@ public class ConcurrentMapManager extends BaseManager {
 
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            cmap.put(request);
+            if (cmap.isMultiMap()) {
+                cmap.putMulti(request);
+            } else {
+                cmap.put(request);
+            }
             request.response = Boolean.TRUE;
         }
 

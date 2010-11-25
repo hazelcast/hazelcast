@@ -50,6 +50,10 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
     }
 
     public DataRecordEntry(Record record) {
+        this (record, record.getValue());
+    }
+
+    public DataRecordEntry(Record record, Data value) {
         cost = record.getCost();
         expirationTime = record.getExpirationTime();
         lastAccessTime = record.getLastAccessTime();
@@ -60,7 +64,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
         valid = record.isValid();
         name = record.getName();
         keyData = record.getKey();
-        valueData = record.getValue();
+        valueData = value;
         indexes = record.getIndexes();
         indexTypes = record.getIndexTypes();
     }
