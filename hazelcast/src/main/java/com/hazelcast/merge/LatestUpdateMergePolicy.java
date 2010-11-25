@@ -18,17 +18,20 @@
 package com.hazelcast.merge;
 
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.impl.base.DataRecordEntry;
 
 public class LatestUpdateMergePolicy implements MergePolicy {
     public static final String NAME = "hz.LATEST_UPDATE";
 
     public Object merge(String mapName, MapEntry mergingEntry, MapEntry existingEntry) {
-        if (existingEntry == null || existingEntry.getValue() == null) {
-            return mergingEntry.getValue();
+        DataRecordEntry mergingDataEntry = (DataRecordEntry) mergingEntry;
+        DataRecordEntry existingDataEntry = (DataRecordEntry) existingEntry;
+        if (existingEntry == null || !existingDataEntry.hasValue()) {
+            return mergingDataEntry.getValueData();
         }
         return (mergingEntry.getLastUpdateTime() > existingEntry.getLastUpdateTime())
-                ? mergingEntry.getValue()
-                : existingEntry.getValue();
+                ? mergingDataEntry.getValueData()
+                : existingDataEntry.getValueData();
     }
 }
 

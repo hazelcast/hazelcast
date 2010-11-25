@@ -18,16 +18,19 @@
 package com.hazelcast.merge;
 
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.impl.base.DataRecordEntry;
 
 public class HigherHitsMergePolicy implements MergePolicy {
     public static final String NAME = "hz.HIGHER_HITS";
 
     public Object merge(String mapName, MapEntry mergingEntry, MapEntry existingEntry) {
-        if (existingEntry == null || existingEntry.getValue() == null) {
-            return mergingEntry.getValue();
+        DataRecordEntry mergingDataEntry = (DataRecordEntry) mergingEntry;
+        DataRecordEntry existingDataEntry = (DataRecordEntry) existingEntry;
+        if (existingEntry == null || !existingDataEntry.hasValue()) {
+            return mergingDataEntry.getValueData();
         }
         return (mergingEntry.getHits() > existingEntry.getHits())
-                ? mergingEntry.getValue()
-                : existingEntry.getValue();
+                ? mergingDataEntry.getValueData()
+                : existingDataEntry.getValueData();
     }
 }

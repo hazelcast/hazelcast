@@ -153,6 +153,10 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
         return valid;
     }
 
+    public boolean hasValue() {
+        return valueData != null || value != null;
+    }
+
     public Object getValue() {
         if (value == null) {
             value = toObject(valueData);

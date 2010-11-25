@@ -1855,12 +1855,13 @@ public class ConcurrentMapManager extends BaseManager {
                     RecordEntry existingEntry = (existing == null) ? null : cmap.getRecordEntry(existing);
                     DataRecordEntry newEntry = (DataRecordEntry) toObject(request.value);
                     Object key = newEntry.getKey();
-                    if (key != null && newEntry.getValue() != null) {
+                    if (key != null && newEntry.hasValue()) {
                         winner = cmap.mergePolicy.merge(cmap.getName(), newEntry, existingEntry);
                         if (winner != null) {
                             success = true;
                             if (cmap.writeDelayMillis == 0 && cmap.store != null) {
-                                cmap.store.store(key, winner);
+                                Object winnerObject = (winner instanceof Data) ? toObject((Data) winner) : winner;
+                                cmap.store.store(key, winnerObject);
                                 success = (request.response == null);
                             }
                         }

@@ -18,11 +18,14 @@
 package com.hazelcast.merge;
 
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.impl.base.DataRecordEntry;
 
 public class AddNewEntryMergePolicy implements MergePolicy {
     public static final String NAME = "hz.ADD_NEW_ENTRY";
 
     public Object merge(String mapName, MapEntry mergingEntry, MapEntry existingEntry) {
-        return (existingEntry == null || existingEntry.getValue() == null) ? mergingEntry.getValue() : null;
+        DataRecordEntry mergingDataEntry = (DataRecordEntry) mergingEntry;
+        DataRecordEntry existingDataEntry = (DataRecordEntry) existingEntry;
+        return (existingEntry == null || !existingDataEntry.hasValue()) ? mergingDataEntry.getValueData() : null;
     }
 }
