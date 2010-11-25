@@ -16,9 +16,10 @@
  */
 package com.hazelcast.spring;
 
-import static com.hazelcast.client.HazelcastClientMapTest.getAllThreads;
 import static org.junit.Assert.*;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -69,5 +70,31 @@ public class TestApplicationContext {
         final HazelcastInstance client = (HazelcastInstance) context.getBean("client");
         assertNotNull(client);
         context.destroy();
+    }
+    
+    static ThreadGroup rootThreadGroup = null;
+
+    public static ThreadGroup getRootThreadGroup() {
+        if (rootThreadGroup != null)
+            return rootThreadGroup;
+        ThreadGroup tg = Thread.currentThread().getThreadGroup();
+        ThreadGroup ptg;
+        while ((ptg = tg.getParent()) != null)
+            tg = ptg;
+        return tg;
+    }
+    
+    public static Thread[] getAllThreads() {
+        final ThreadGroup root = getRootThreadGroup();
+        final ThreadMXBean thbean = ManagementFactory.getThreadMXBean();
+        int nAlloc = thbean.getThreadCount();
+        int n = 0;
+        Thread[] threads;
+        do {
+            nAlloc *= 2;
+            threads = new Thread[nAlloc];
+            n = root.enumerate(threads, true);
+        } while (n == nAlloc);
+        return threads;
     }
 }
