@@ -20,6 +20,7 @@ package com.hazelcast.client;
 import com.hazelcast.client.ClientProperties.ClientPropertyName;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 
@@ -28,6 +29,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -47,6 +49,21 @@ public class HazelcastClientClusterTest {
         //System.err.println("--------");
         destroyClients();
         //System.in.read();
+    }
+    
+    @Test
+    public void testUseBackupDataGet() throws Exception {
+        final Config config = new Config();
+        final MapConfig mapConfig = new MapConfig();
+        mapConfig.setName("q");
+        mapConfig.setUseBackupData(true);
+        config.setMapConfigs(Collections.singletonMap(mapConfig.getName(), mapConfig));
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        h1.getMap("q").put("q", "Q");
+        Thread.sleep(50L);
+        HazelcastClient client = newHazelcastClient(h2);
+        assertEquals("Q", client.getMap("q").get("q"));
     }
 
     @Test

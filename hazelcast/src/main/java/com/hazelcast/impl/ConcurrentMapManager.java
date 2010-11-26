@@ -362,7 +362,9 @@ public class ConcurrentMapManager extends BaseManager {
             final CMap cMap = maps.get(name);
             if (cMap != null && cMap.useBackupData) {
                 final Record record = cMap.mapRecords.get(dataKey);
-                if (record != null && record.isActive() && record.isValid() && record.getValue() != null) {
+                if (record != null && 
+                    cMap.isBackup(record) && 
+                    record.isActive() &&  record.isValid() && record.getValue() != null) {
                     return true;
                 }
             }
@@ -518,10 +520,11 @@ public class ConcurrentMapManager extends BaseManager {
             if (cMap != null && cMap.useBackupData) {
                 final Data dataKey = toData(key);
                 final Record record = cMap.mapRecords.get(dataKey);
-                if (record != null && record.isActive() && record.isValid()) {
+                if (record != null && cMap.isBackup(record) && 
+                    record.isActive() && record.isValid()) {
                     final Data valueData = record.getValue();
                     if (valueData != null) {
-                        return toObject(valueData);
+                        return ThreadContext.get().isClient() ? valueData : toObject(valueData);
                     }
                 }
             }
@@ -1267,7 +1270,9 @@ public class ConcurrentMapManager extends BaseManager {
             final CMap cMap = maps.get(name);
             if (cMap != null && cMap.useBackupData) {
                 for (final Record record : cMap.mapRecords.values()) {
-                    if (record != null && record.isActive() && record.isValid() && record.getValue() != null) {
+                    if (record != null &&
+                        cMap.isBackup(record) &&
+                        record.isActive() && record.isValid() && record.getValue() != null) {
                         return false;
                     }
                 }

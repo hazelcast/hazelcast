@@ -517,14 +517,14 @@ public class CMap {
         }
     }
 
-    private boolean isOwned(Record record) {
+    boolean isOwned(Record record) {
         PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
         PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
         Member owner = partition.getOwner();
         return (owner != null && owner.localMember());
     }
 
-    private boolean isBackup(Record record) {
+    boolean isBackup(Record record) {
         PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
         PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
         Member ownerNow = partition.getOwner();

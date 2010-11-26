@@ -17,6 +17,8 @@
 
 package com.hazelcast.core;
 
+import java.util.Collections;
+
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.XmlConfigBuilder;
@@ -36,6 +38,21 @@ public class HazelcastClusterTest {
     @After
     public void init() throws Exception {
         Hazelcast.shutdownAll();
+    }
+    
+    @Test
+    public void testUseBackupDataGet() throws Exception {
+        final Config config = new Config();
+        final MapConfig mapConfig = new MapConfig();
+        mapConfig.setName("q");
+        mapConfig.setUseBackupData(true);
+        config.setMapConfigs(Collections.singletonMap(mapConfig.getName(), mapConfig));
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        h1.getMap("q").put("q", "Q");
+        Thread.sleep(50L);
+        final IMap<Object, Object> map2 = h2.getMap("q");
+        assertEquals("Q", map2.get("q"));
     }
 
     @Test
@@ -89,7 +106,7 @@ public class HazelcastClusterTest {
         assertEquals(1, m2.get(1));
         assertEquals(1, m2.get(1));
         assertEquals(1, m2.get(1));
-        assertEquals(0, m1.getLocalMapStats().getHits());
+        assertEquals(3, m1.getLocalMapStats().getHits());
         assertEquals(3, m2.getLocalMapStats().getHits());
     }
 

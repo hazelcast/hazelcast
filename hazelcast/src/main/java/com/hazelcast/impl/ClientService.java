@@ -898,7 +898,14 @@ public class ClientService implements ConnectionListener {
         public abstract void processCall(Node node, Packet packet);
 
         public final void handle(Node node, Packet packet) {
-            processCall(node, packet);
+            try {
+                processCall(node, packet);
+            } catch (RuntimeException e){
+                logger.log(Level.WARNING,
+                    "exception during handling " + packet.operation + ": " + e.getMessage(), e);
+                packet.clearForResponse();
+                packet.setValue(toData(e));
+            }
             sendResponse(packet);
         }
 
