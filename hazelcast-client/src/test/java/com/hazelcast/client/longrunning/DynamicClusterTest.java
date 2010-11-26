@@ -991,4 +991,25 @@ public class DynamicClusterTest {
         int size = factory.node.clientService.numberOfConnectedClients();
         return size;
     }
+
+    public static class MyTask extends HazelcastInstanceAwareObject implements Callable, Serializable {
+        final int x;
+        byte[] b = new byte[100];
+        String str = "asdadsddad";
+//    final private CountDownLatch latch;
+
+        public MyTask(int x) {
+            this.x = x;
+//        this.latch = latch;
+        }
+
+        public Object call() throws Exception {
+            Map<Integer, byte[]> map = hazelcastInstance.getMap("myMap");
+            byte[] value = map.get(x);
+            map.put(x, value);
+            Thread.sleep(10);
+//        latch.countDown();
+            return x;
+        }
+    }
 }
