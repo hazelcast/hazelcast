@@ -23,6 +23,7 @@ import com.hazelcast.client.CountDownLatchEntryListener;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.NoMemberAvailableException;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
@@ -951,6 +952,37 @@ public class DynamicClusterTest {
         }
         assertTrue(latch.await(200, TimeUnit.SECONDS));
         finished.set(true);
+    }
+
+    @Test
+    public void perfomanceWithLotsOfExecutingTasks() throws InterruptedException, ExecutionException {
+        Config config = new Config();
+        config.addExecutorConfig(new ExecutorConfig("esname", 128, 512, 60));
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        System.out.println("Putting: ");
+        for (int i = 0; i < 1000; i++) {
+            Map<Integer, byte[]> map = h1.getMap("myMap");
+            map.put(i, new byte[100000]);
+        }
+        System.out.println("Put finished: ");
+        HazelcastClient client = newHazelcastClient(h2);
+        ExecutorService executor = client.getExecutorService("esname");
+        Map<Integer, FutureTask> taskMap = new ConcurrentHashMap<Integer, FutureTask>();
+        long start = System.currentTimeMillis();
+        CountDownLatch latch = new CountDownLatch(100);
+        for (int i = 0; i < 1000; i++) {
+            FutureTask<Integer> task = new DistributedTask<Integer>(
+                    new MyTask(i), i);
+            executor.execute(task);
+            taskMap.put(i, task);
+        }
+        int counter = 0;
+        for (Integer task : taskMap.keySet()) {
+            int x = (Integer) (taskMap.get(task).get());
+            assertEquals(task.intValue(), x);
+            counter++;
+        }
     }
 
     private int getNumberOfClientsConnected(HazelcastInstance h) {

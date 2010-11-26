@@ -33,10 +33,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 
 import static com.hazelcast.impl.BaseManager.getInstanceType;
@@ -274,13 +271,18 @@ public class ClientService implements ConnectionListener {
         }
     }
 
+    //    private class ExecutorServiceHandler extends ClientOperationHandler {
     private class ExecutorServiceHandler extends ClientOperationHandler {
+        @Override
         public void processCall(Node node, Packet packet) {
-            String name = packet.name;
-            ExecutorService executorService = node.factory.getExecutorService(name);
+        }
+
+        @Override
+        public final void handle(Node node, final Packet packet) {
             try {
+                String name = packet.name;
+                ExecutorService executorService = node.factory.getExecutorService(name);
                 ClientDistributedTask cdt = (ClientDistributedTask) toObject(packet.getKeyData());
-                Object result;
                 DistributedTask task;
                 if (cdt.getKey() != null) {
                     task = new DistributedTask(cdt.getCallable(), cdt.getKey());
@@ -292,11 +294,24 @@ public class ClientService implements ConnectionListener {
                     task = new DistributedTask(cdt.getCallable());
                 }
                 executorService.execute(task);
-                result = task.get();
-                packet.setValue(toData(result));
-            } catch (InterruptedException e) {
-                return;
-            } catch (ExecutionException e) {
+                task.setExecutionCallback(new ExecutionCallback() {
+                    public void done(Future future) {
+                        Object result;
+                        try {
+                            result = future.get();
+                            packet.setValue(toData(result));
+                        } catch (InterruptedException e) {
+                            return;
+                        } catch (ExecutionException e) {
+                            packet.setValue(toData(e));
+                        }
+                        sendResponse(packet);
+                    }
+                });
+            } catch (RuntimeException e) {
+                logger.log(Level.WARNING,
+                        "exception during handling " + packet.operation + ": " + e.getMessage(), e);
+                packet.clearForResponse();
                 packet.setValue(toData(e));
             }
         }
@@ -898,7 +913,7 @@ public class ClientService implements ConnectionListener {
     public abstract class ClientOperationHandler {
         public abstract void processCall(Node node, Packet packet);
 
-        public final void handle(Node node, Packet packet) {
+        public void handle(Node node, Packet packet) {
             try {
                 processCall(node, packet);
             } catch (RuntimeException e) {
