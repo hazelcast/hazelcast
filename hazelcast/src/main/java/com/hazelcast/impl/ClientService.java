@@ -276,7 +276,8 @@ public class ClientService implements ConnectionListener {
 
     private class ExecutorServiceHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            ExecutorService executorService = node.factory.getExecutorService();
+            String name = packet.name;
+            ExecutorService executorService = node.factory.getExecutorService(name);
             try {
                 ClientDistributedTask cdt = (ClientDistributedTask) toObject(packet.getKeyData());
                 Object result;
@@ -900,9 +901,9 @@ public class ClientService implements ConnectionListener {
         public final void handle(Node node, Packet packet) {
             try {
                 processCall(node, packet);
-            } catch (RuntimeException e){
+            } catch (RuntimeException e) {
                 logger.log(Level.WARNING,
-                    "exception during handling " + packet.operation + ": " + e.getMessage(), e);
+                        "exception during handling " + packet.operation + ": " + e.getMessage(), e);
                 packet.clearForResponse();
                 packet.setValue(toData(e));
             }

@@ -19,7 +19,6 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.ClientProperties.ClientPropertyName;
 import com.hazelcast.client.impl.ListenerManager;
-import com.hazelcast.config.AbstractXmlConfigHelper;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
@@ -34,7 +33,6 @@ import com.hazelcast.util.AddressUtil;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +70,7 @@ public class HazelcastClient implements HazelcastInstance {
     final ParallelExecutor parallelExecutorDefault;
     final LifecycleServiceClientImpl lifecycleService;
     final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
-    
+
     final ByteBuffer readBuffer = ByteBuffer.allocate(1 << 10);
     final ByteBuffer writeBuffer = ByteBuffer.allocate(1 << 10);
 
@@ -181,7 +179,7 @@ public class HazelcastClient implements HazelcastInstance {
     public static HazelcastClient newHazelcastClient(ClientProperties properties, String... addresses) {
         return newHazelcastClient(properties, true, addresses);
     }
-    
+
     public static HazelcastClient newHazelcastClient(ClientProperties properties, List<String> addresses) {
         final List<String> handleMembers = AddressUtil.handleMembers(addresses);
         return newHazelcastClient(properties, handleMembers.toArray(new String[0]));
@@ -336,7 +334,7 @@ public class HazelcastClient implements HazelcastInstance {
 
     public ExecutorService getExecutorService(String name) {
         if (name == null) throw new IllegalArgumentException("ExecutorService name cannot be null");
-        name = Prefix.EXECUTOR_SERVICE + name;
+//        name = Prefix.EXECUTOR_SERVICE + name;
         ExecutorServiceClientProxy executorServiceProxy = mapExecutors.get(name);
         if (executorServiceProxy == null) {
             executorServiceProxy = new ExecutorServiceClientProxy(this, name);
