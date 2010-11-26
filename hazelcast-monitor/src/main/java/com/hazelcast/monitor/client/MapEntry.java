@@ -33,19 +33,35 @@ public class MapEntry implements Map.Entry, IsSerializable, Serializable {
     private long hits = 0;
     private boolean valid = true;
     private String key = null;
+    private String keyClass = null;
     private String value = null;
+    private String valueClass = null;
 
     public String getKey() {
         return key;
     }
 
+    public String getKeyClass() {
+        return keyClass;
+    }
+    
     public String getValue() {
         return value;
+    }
+    
+    public String getValueClass() {
+        return valueClass;
+    }
+    
+    public void setKey(Object key) {
+        this.key = String.valueOf(key);
+        this.keyClass = key.getClass().getName();
     }
 
     public Object setValue(Object value) {
         Object oldValue = this.value;
         this.value = String.valueOf(value);
+        this.valueClass = value.getClass().getName();
         return oldValue;
     }
 

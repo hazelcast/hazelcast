@@ -56,7 +56,7 @@ public abstract class InstancePanel extends AbstractMonitoringPanel implements M
         return disclosurePanel;
     }
 
-    protected abstract FlexTable createTable();
+    protected abstract HTMLTable createTable();
 
     public Widget getPanelWidget() {
         if (disclosurePanel == null) {

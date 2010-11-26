@@ -20,5 +20,7 @@ import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;/*
 
 @RemoteServiceRelativePath("map")
 public interface MapService extends RemoteService {
-    public MapEntry get(int clusterId, String name, String key);
+    MapEntry get(int clusterId, String name, String key);
+    
+    MapEntry[] getEntries(int clusterId, String name);
 }

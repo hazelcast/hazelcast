@@ -21,6 +21,7 @@ import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
+import com.google.gwt.user.client.Cookies;
 import com.google.gwt.user.client.History;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -34,6 +35,10 @@ import java.util.Map;
  * Entry point classes define <code>onModuleLoad()</code>.
  */
 public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
+    public static final String GROUP_MEMBERS_COOKIE_NAME = "com.hazelcast.monitor.client.GroupMembers";
+    public static final String GROUP_PASSWORD_COOKIE_NAME = "com.hazelcast.monitor.client.GroupPassword";
+    public static final String GROUP_NAME_COOKIE_NAME = "com.hazelcast.monitor.client.GroupName";
+    
     private static final String LEFT_PANEL_SIZE = "230";
     private static final int REFRESH_INTERVAL = 1000;
     Map<Integer, ClusterWidgets> mapClusterWidgets = new HashMap<Integer, ClusterWidgets>();
@@ -135,15 +140,16 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
     private DisclosurePanel createClusterAddPanel() {
         final DisclosurePanel disclosurePanel = new DisclosurePanel(
                 "Add Cluster to Monitor");
+        
         final TextBox tbGroupName = new TextBox();
-        tbGroupName.setText("dev");
+        tbGroupName.setText(getTextValue(GROUP_NAME_COOKIE_NAME, "dev"));
         tbGroupName.setWidth("120px");
-        final TextBox tbGroupPass = new PasswordTextBox();
-        tbGroupPass.setText("dev-pass");
+        final TextBox tbGroupPass = new TextBox();
+        tbGroupPass.setText(getTextValue(GROUP_PASSWORD_COOKIE_NAME, "dev-pass"));
         tbGroupPass.setWidth("120px");
         final TextBox tbAddresses = new TextBox();
         tbAddresses.setWidth("120px");
-//        tbAddresses.setText("192.168.1.3");
+        tbAddresses.setText(getTextValue(GROUP_MEMBERS_COOKIE_NAME, "127.0.0.1:5701"));
         final Label lbError = new Label("");
         lbError.setVisible(false);
         final Button btAddCluster = new Button("Add Cluster");
@@ -165,5 +171,10 @@ public class HazelcastMonitor implements EntryPoint, ValueChangeHandler {
         disclosurePanel.add(table);
         disclosurePanel.setOpen(true);
         return disclosurePanel;
+    }
+
+    private String getTextValue(String name, String defValue) {
+        final String value = Cookies.getCookie(name);
+        return value != null ? value : defValue;
     }
 }

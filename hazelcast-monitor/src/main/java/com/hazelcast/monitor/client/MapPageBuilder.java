@@ -30,7 +30,13 @@ public class MapPageBuilder implements PageBuilder {
         ((DisclosurePanel) mapThroughputPanel.getPanelWidget()).setOpen(true);
         MapEntryOwnerShipPanel mapStatisticsPanel = new MapEntryOwnerShipPanel(name, callBack, servicesFactory);
         MapBrowserPanel mapBrowserPanel = new MapBrowserPanel(name, callBack, servicesFactory);
+        MapEntrySetBrowserPanel mapEntrySetBrowserPanel = new MapEntrySetBrowserPanel(name, callBack, servicesFactory);
         MapTimesPanel mapTimesPanel = new MapTimesPanel(name, callBack, servicesFactory);
-        clusterWidgets.register(mapChartPanel, mapThroughputPanel, mapStatisticsPanel, mapTimesPanel, mapBrowserPanel);
+        clusterWidgets.register(mapChartPanel,
+           mapThroughputPanel,
+           mapStatisticsPanel,
+           mapTimesPanel,
+           mapBrowserPanel,
+           mapEntrySetBrowserPanel);
     }
 }

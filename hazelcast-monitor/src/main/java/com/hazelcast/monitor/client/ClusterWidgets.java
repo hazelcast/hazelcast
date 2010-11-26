@@ -144,9 +144,10 @@ public class ClusterWidgets {
         tree.addItem(treeItem);
         return tree;
     }
-
+    
     private TreeItem addTreeItem(Tree tree, String headerName, List<String> itemList, int clusterId, InstanceType type) {
         TreeItem treeItem = new TreeItem(headerName);
+        Collections.sort(itemList);
         addItems(itemList, treeItem, clusterId, type);
         tree.addItem(treeItem);
         return treeItem;

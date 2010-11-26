@@ -16,6 +16,12 @@
  */
 package com.hazelcast.monitor.server;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import com.hazelcast.client.NoMemberAvailableException;
 import com.hazelcast.core.HazelcastInstance;
@@ -39,6 +45,29 @@ public class MapServiceImpl extends RemoteServiceServlet implements MapService {
                 mapEntry = map.getMapEntry(key);
             }
             return convertToMonitorMapEntry(mapEntry);
+        } catch (NoMemberAvailableException e) {
+            sessionObject.mapOfHz.get(clusterId).shutdown();
+            sessionObject.mapOfHz.remove(clusterId);
+            throw new ClientDisconnectedException();
+        }
+    }
+    
+    public MapEntry[] getEntries(int clusterId, String name) {
+        final SessionObject sessionObject = getSessionObject(this.getThreadLocalRequest().getSession());
+        try {
+            HazelcastInstance hz = sessionObject.mapOfHz.get(clusterId);
+            List<MapEntry> mapEntries = new ArrayList<MapEntry>();
+            if (hz != null) {
+                IMap map = hz.getMap(name);
+                final Set<Map.Entry> entrySet = map.entrySet();
+                for (final Map.Entry entry : entrySet) {
+                    MapEntry mapEntry = new MapEntry();
+                    mapEntry.setKey(entry.getKey());
+                    mapEntry.setValue(entry.getValue());
+                    mapEntries.add(mapEntry);
+                }
+            }
+            return mapEntries.toArray(new MapEntry[mapEntries.size()]);
         } catch (NoMemberAvailableException e) {
             sessionObject.mapOfHz.get(clusterId).shutdown();
             sessionObject.mapOfHz.remove(clusterId);

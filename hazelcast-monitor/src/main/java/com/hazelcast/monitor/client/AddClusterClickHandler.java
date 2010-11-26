@@ -20,14 +20,15 @@ package com.hazelcast.monitor.client;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.user.client.Cookies;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.TextBox;
 
 public class AddClusterClickHandler implements ClickHandler {
-    private TextBox groupName;
-    private TextBox pass;
-    private TextBox addresses;
+    private TextBox groupNameBox;
+    private TextBox passBox;
+    private TextBox addressesBox;
     private Label lbError;
     final private HazelcastMonitor hazelcastMonitor;
 
@@ -41,9 +42,9 @@ public class AddClusterClickHandler implements ClickHandler {
     public AddClusterClickHandler(HazelcastMonitor hazelcastMonitor, TextBox groupName, TextBox pass, TextBox addresses,
                                   Label lbError) {
         this.hazelcastMonitor = hazelcastMonitor;
-        this.groupName = groupName;
-        this.pass = pass;
-        this.addresses = addresses;
+        this.groupNameBox = groupName;
+        this.passBox = pass;
+        this.addressesBox = addresses;
         this.lbError = lbError;
     }
 
@@ -54,16 +55,24 @@ public class AddClusterClickHandler implements ClickHandler {
 
     private void connectToCluster() {
         try {
-            hazelcastService.connectCluster(groupName.getText().trim(), pass.getText().trim(),
-                    addresses.getText().trim(), new AsyncCallback<ClusterView>() {
-                        public void onSuccess(ClusterView clusterView) {
-                            hazelcastMonitor.createAndAddClusterWidgets(clusterView);
-                        }
+            final String groupName = groupNameBox.getText().trim();
+            final String password = passBox.getText().trim();
+            final String members = addressesBox.getText().trim();
+            
+            hazelcastService.connectCluster(groupName, password, members,
+                new AsyncCallback<ClusterView>() {
+                    public void onSuccess(ClusterView clusterView) {
+                        Cookies.setCookie(HazelcastMonitor.GROUP_NAME_COOKIE_NAME, groupName);
+                        Cookies.setCookie(HazelcastMonitor.GROUP_PASSWORD_COOKIE_NAME, password);
+                        Cookies.setCookie(HazelcastMonitor.GROUP_MEMBERS_COOKIE_NAME, members);
 
-                        public void onFailure(Throwable caught) {
-                            handleException(caught, lbError);
-                        }
-                    });
+                        hazelcastMonitor.createAndAddClusterWidgets(clusterView);
+                    }
+
+                    public void onFailure(Throwable caught) {
+                        handleException(caught, lbError);
+                    }
+                });
         } catch (ConnectionExceptoin e) {
             handleException(e, lbError);
         }
