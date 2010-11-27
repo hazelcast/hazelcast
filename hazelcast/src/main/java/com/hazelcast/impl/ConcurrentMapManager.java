@@ -362,9 +362,9 @@ public class ConcurrentMapManager extends BaseManager {
             final CMap cMap = maps.get(name);
             if (cMap != null && cMap.useBackupData) {
                 final Record record = cMap.mapRecords.get(dataKey);
-                if (record != null && 
-                    cMap.isBackup(record) && 
-                    record.isActive() &&  record.isValid() && record.getValue() != null) {
+                if (record != null &&
+                        cMap.isBackup(record) &&
+                        record.isActive() && record.isValid() && record.getValue() != null) {
                     return true;
                 }
             }
@@ -520,8 +520,8 @@ public class ConcurrentMapManager extends BaseManager {
             if (cMap != null && cMap.useBackupData) {
                 final Data dataKey = toData(key);
                 final Record record = cMap.mapRecords.get(dataKey);
-                if (record != null && cMap.isBackup(record) && 
-                    record.isActive() && record.isValid()) {
+                if (record != null && cMap.isBackup(record) &&
+                        record.isActive() && record.isValid()) {
                     final Data valueData = record.getValue();
                     if (valueData != null) {
                         return ThreadContext.get().isClient() ? valueData : toObject(valueData);
@@ -938,7 +938,7 @@ public class ConcurrentMapManager extends BaseManager {
                     return threadContext.isClient() ? oldValue : oldObject;
                 } else {
                     if (operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
-                        Object existingValue = txn.get(name, key); 
+                        Object existingValue = txn.get(name, key);
                         if (existingValue != null) {
                             return existingValue;
                         }
@@ -1184,7 +1184,7 @@ public class ConcurrentMapManager extends BaseManager {
 
     public class MLockMap extends MultiCall<Boolean> {
         private final String name;
-        private final long timeout;
+        private volatile long timeout;
         private final ClusterOperation operation;
 
         public MLockMap(String name, boolean lock, long timeout) {
@@ -1204,8 +1204,19 @@ public class ConcurrentMapManager extends BaseManager {
         void onCall() {
         }
 
+        @Override
+        void onRedo() {
+            long remaining = this.timeout - redoWaitMillis;
+            this.timeout = (remaining > 0) ? remaining : 0l;
+        }
+
         Boolean returnResult() {
             return true;
+        }
+
+        @Override
+        protected Address getFirstAddressToMakeCall() {
+            return node.getMasterAddress();
         }
 
         class MTargetLockMap extends MMigrationAwareTargetedCall {
@@ -1277,8 +1288,8 @@ public class ConcurrentMapManager extends BaseManager {
             if (cMap != null && cMap.useBackupData) {
                 for (final Record record : cMap.mapRecords.values()) {
                     if (record != null &&
-                        cMap.isBackup(record) &&
-                        record.isActive() && record.isValid() && record.getValue() != null) {
+                            cMap.isBackup(record) &&
+                            record.isActive() && record.isValid() && record.getValue() != null) {
                         return false;
                     }
                 }

@@ -2091,9 +2091,8 @@ public class ClusterTest {
             h2.getMap("default").put(i, "value" + i);
             h2.getMultiMap("default").put(i, "value" + i);
             h2.getMultiMap("default").put(i, "value0" + i);
-
         }
-        assertEquals(500, h2.getMap("default").size());        
+        assertEquals(500, h2.getMap("default").size());
         assertEquals(1000, h2.getMultiMap("default").size());
         assertEquals(1, h1.getCluster().getMembers().size());
         assertEquals(1, h2.getCluster().getMembers().size());
@@ -2146,5 +2145,51 @@ public class ClusterTest {
             }
             return false;
         }
+    }
+
+    @Test(timeout = 100000)
+    public void testTwoNodesSameTimeLockMap() throws InterruptedException {
+        final String MAP_NAME = "testmap";
+        final String KEY = "testkey";
+        final CountDownLatch latch = new CountDownLatch(10000);
+        final CountDownLatch start = new CountDownLatch(2);
+        for (int i = 0; i < 2; i++) {
+            new Thread(new Runnable() {
+                public void run() {
+                    HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+                    IMap<String, Integer> map = h.getMap(MAP_NAME);
+                    start.countDown();
+                    try {
+                        start.await();
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                    while (latch.getCount() > 0) {
+//                        System.out.println("Attempting to lock.");
+                        if (!map.lockMap(1, TimeUnit.SECONDS)) {
+//                            System.out.println("Failed to lock. Retrying.");
+                            continue;
+                        }
+                        try {
+//                            System.out.println("Locked :" + h.getCluster().getLocalMember());
+                            Integer value = map.get(KEY);
+                            if (value == null)
+                                value = 0;
+                            map.put(KEY, value + 1);
+//                            System.out.println("Put: " + (value + 1));
+                        }
+                        finally {
+//                            System.out.println("Unlocking");
+                            map.unlockMap();
+//                            System.out.println("Unlocked");
+                            latch.countDown();
+                        }
+                    }
+                    h.getLifecycleService().shutdown();
+                }
+            }).start();
+        }
+        latch.await();
+        Thread.sleep(2000);
     }
 }

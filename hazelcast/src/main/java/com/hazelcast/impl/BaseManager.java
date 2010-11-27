@@ -27,6 +27,7 @@ import com.hazelcast.nio.*;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -798,12 +799,16 @@ public abstract class BaseManager {
 
         abstract Object returnResult();
 
+        protected Address getFirstAddressToMakeCall() {
+            return thisAddress;
+        }
+
         T call() {
             try {
                 node.checkNodeState();
                 onCall();
                 //local call first
-                TargetAwareOp localCall = createNewTargetAwareOp(thisAddress);
+                TargetAwareOp localCall = createNewTargetAwareOp(getFirstAddressToMakeCall());
                 localCall.doOp();
                 Object result = localCall.getResultAsObject();
                 if (result == OBJECT_REDO) {
@@ -815,7 +820,7 @@ public abstract class BaseManager {
                     Set<Member> members = node.getClusterImpl().getMembers();
                     List<TargetAwareOp> lsCalls = new ArrayList<TargetAwareOp>();
                     for (Member member : members) {
-                        if (!member.localMember()) { // now other members
+                        if (!member.getInetSocketAddress().equals(getFirstAddressToMakeCall().getInetSocketAddress())) { // now other members
                             MemberImpl cMember = (MemberImpl) member;
                             TargetAwareOp targetAwareOp = createNewTargetAwareOp(cMember.getAddress());
                             targetAwareOp.doOp();
@@ -838,6 +843,8 @@ public abstract class BaseManager {
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
             }
             return (T) returnResult();
         }
