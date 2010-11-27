@@ -68,6 +68,12 @@ public class MapStoreWrapper implements MapStore {
         }
     }
 
+    public void destroy() {
+        if (impl instanceof MapLoaderLifecycleSupport) {
+            ((MapLoaderLifecycleSupport) impl).destroy();
+        }
+    }
+
     public boolean isMapStore() {
         return (mapStore != null);
     }

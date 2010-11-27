@@ -290,7 +290,7 @@ public class CMap {
 
     public void invalidateRecordEntryValue(Record record) {
         RecordEntry recordEntry = mapRecordEntries.get(record.getId());
-        if (recordEntry!= null) {
+        if (recordEntry != null) {
             recordEntry.invalidateValue();
         }
     }
@@ -336,9 +336,10 @@ public class CMap {
         if (req.key == null || req.key.size() == 0) {
             throw new RuntimeException("Key cannot be null " + req.key);
         }
-        if (req.value == null) {
-            req.value = new Data();
-        }
+//        if (req.value == null) {
+//            System.out.println("NEW DATA!!!!!!!");
+//            req.value = new Data();
+//        }
         Record record = toRecord(req);
         if (req.ttl <= 0 || req.timeout <= 0) {
             record.setInvalid();
@@ -350,7 +351,9 @@ public class CMap {
         if (store != null && writeDelayMillis > 0) {
             markAsDirty(record);
         }
-        updateIndexes(record);
+        if (req.value != null) {
+            updateIndexes(record);
+        }
         record.setVersion(req.version);
     }
 
@@ -445,7 +448,7 @@ public class CMap {
                 }
                 record.setIndexes(req.indexes, req.indexTypes);
             }
-            if (req.ttl > 0) {
+            if (req.ttl > 0 && req.ttl < Long.MAX_VALUE) {
                 record.setExpirationTime(req.ttl);
                 ttlPerRecord = true;
             }
@@ -914,7 +917,7 @@ public class CMap {
             record.incrementVersion();
             record.setLastUpdated();
         }
-        if (req.ttl > 0) {
+        if (req.ttl > 0 && req.ttl < Long.MAX_VALUE) {
             record.setExpirationTime(req.ttl);
             ttlPerRecord = true;
         }
@@ -1047,7 +1050,7 @@ public class CMap {
     }
 
     /**
-     * Comparator that never returns 0. It is 
+     * Comparator that never returns 0. It is
      * either 1 or -1;
      */
     class ComparatorWrapper implements Comparator<MapEntry> {
@@ -1056,7 +1059,6 @@ public class CMap {
         ComparatorWrapper(Comparator<MapEntry> comparator) {
             this.comparator = comparator;
         }
-
 
         public int compare(MapEntry o1, MapEntry o2) {
             int result = comparator.compare(o1, o2);
@@ -1338,6 +1340,13 @@ public class CMap {
         }
         mapRecords.clear();
         mapIndexService.clear();
+        if (store != null && store instanceof MapStoreWrapper) {
+            try {
+                ((MapStoreWrapper) store).destroy();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     void markAsDirty(Record record) {

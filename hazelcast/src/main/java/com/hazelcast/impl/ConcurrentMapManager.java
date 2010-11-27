@@ -934,9 +934,15 @@ public class ConcurrentMapManager extends BaseManager {
                     if (oldValue != null) {
                         oldObject = toObject(oldValue);
                     }
-                    txn.attachPutOp(name, key, value, (oldObject == null));
+                    txn.attachPutOp(name, key, value, 0, ttl, (oldObject == null));
                     return threadContext.isClient() ? oldValue : oldObject;
                 } else {
+                    if (operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
+                        Object existingValue = txn.get(name, key); 
+                        if (existingValue != null) {
+                            return existingValue;
+                        }
+                    }
                     return txn.attachPutOp(name, key, value, false);
                 }
             } else {

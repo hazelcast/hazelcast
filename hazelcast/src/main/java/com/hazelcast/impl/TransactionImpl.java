@@ -55,16 +55,21 @@ class TransactionImpl implements Transaction {
     }
 
     public Object attachPutOp(String name, Object key, Object value, boolean newRecord) {
-        return attachPutOp(name, key, value, 0, newRecord);
+        return attachPutOp(name, key, value, 0, -1, newRecord);
     }
 
     public Object attachPutOp(String name, Object key, Object value, long timeout, boolean newRecord) {
+        return attachPutOp(name, key, value, timeout, -1, newRecord);
+    }
+
+    public Object attachPutOp(String name, Object key, Object value, long timeout, long ttl, boolean newRecord) {
         Instance.InstanceType instanceType = ConcurrentMapManager.getInstanceType(name);
         Object matchValue = (instanceType.isMultiMap()) ? value : null;
         TransactionRecord rec = findTransactionRecord(name, key, matchValue);
         if (rec == null) {
             rec = new TransactionRecord(name, key, value, newRecord);
             rec.timeout = timeout;
+            rec.ttl = ttl;
             transactionRecords.add(rec);
             return null;
         } else {
@@ -297,6 +302,8 @@ class TransactionImpl implements Transaction {
 
         public long timeout = 0; // for commit
 
+        public long ttl = -1;
+
         public TransactionRecord(String name, Object key, Object value, boolean newRecord) {
             this.name = name;
             this.key = key;
@@ -335,7 +342,7 @@ class TransactionImpl implements Transaction {
                 } else if (instanceType.isMultiMap()) {
                     factory.node.concurrentMapManager.new MPutMulti().put(name, key, value);
                 } else {
-                    factory.node.concurrentMapManager.new MPut().put(name, key, value, -1, -1);
+                    factory.node.concurrentMapManager.new MPut().put(name, key, value, -1, ttl);
                 }
             }
         }

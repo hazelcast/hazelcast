@@ -140,7 +140,6 @@ public class LifecycleServiceImpl implements LifecycleService {
                 latch.await(60, TimeUnit.SECONDS);
             } catch (InterruptedException ignored) {
             }
-            logger.log(Level.INFO, node.getThisAddress() + " is restarted!");
             paused.set(false);
             fireLifecycleEvent(RESTARTED);
         }
