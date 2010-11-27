@@ -42,7 +42,7 @@ class Parser {
         precedence.put("or", 3);
     }
 
-    private static final List<String> charOperators = Arrays.asList("(", ")", "+", "-", "=", "<", ">", "*", "/", "!");
+    private static final List<String> charOperators = Arrays.asList("(", ")", " + ", " - ", "=", "<", ">", " * ", " / ", "!");
 
     public Parser() {
     }

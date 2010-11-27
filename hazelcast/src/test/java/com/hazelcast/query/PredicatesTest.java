@@ -116,6 +116,7 @@ public class PredicatesTest {
         assertEquals("(active=false OR name LIKE 'J%')", sql("active =false or name like 'J%'"));
         assertEquals("(active=false OR name LIKE 'Java World')", sql("active =false or name like 'Java World'"));
         assertEquals("(active=false OR name LIKE 'Java W% Again')", sql("active =false or name like 'Java W% Again'"));
+        assertEquals("age IN (-1)", sql("age in (-1)"));
         assertEquals("age IN (10,15)", sql("age in (10, 15)"));
         assertEquals("NOT(age IN (10,15))", sql("age not in ( 10 , 15 )"));
         assertEquals("(active=true AND age BETWEEN 10 AND 15)", sql("active and age between 10 and 15"));
