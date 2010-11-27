@@ -106,7 +106,8 @@ public class FactoryImpl implements HazelcastInstance {
                 if (config == null) {
                     config = new XmlConfigBuilder().build();
                 }
-                String name = "_hzInstance_" + nextFactoryId++ + "_" + config.getGroupConfig().getName();
+                int classLoaderHash = FactoryImpl.class.getClassLoader().hashCode();
+                String name = "_hzInstance_" + classLoaderHash + "_" + nextFactoryId++ + "_" + config.getGroupConfig().getName();
                 factory = new FactoryImpl(name, config);
                 FactoryImpl old = factories.put(name, factory);
                 if (old != null) {
