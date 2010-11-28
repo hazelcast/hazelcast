@@ -1186,6 +1186,7 @@ public class ConcurrentMapManager extends BaseManager {
         private final String name;
         private volatile long timeout;
         private final ClusterOperation operation;
+        private volatile boolean result;
 
         public MLockMap(String name, boolean lock, long timeout) {
             this.name = name;
@@ -1198,10 +1199,15 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         boolean onResponse(Object response) {
-            return true;
+            return (Boolean.TRUE.equals(response));
         }
 
         void onCall() {
+        }
+
+        @Override
+        void onComplete() {
+            this.result = true;
         }
 
         @Override
@@ -1211,7 +1217,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         Boolean returnResult() {
-            return true;
+            return result;
         }
 
         @Override

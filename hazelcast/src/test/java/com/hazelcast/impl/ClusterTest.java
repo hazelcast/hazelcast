@@ -2192,4 +2192,46 @@ public class ClusterTest {
         latch.await();
         Thread.sleep(2000);
     }
+
+    @Test
+    public void secondLockOnMapShouldReturnFalse() {
+        HazelcastInstance hzi1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance hzi2 = Hazelcast.newHazelcastInstance(null);
+        IMap<Object, Object> map1 = hzi1.getMap("dummymap");
+        IMap<Object, Object> map2 = hzi2.getMap("dummymap");
+        boolean lockMap1 = map1.lockMap(0,
+                TimeUnit.SECONDS);           // A
+        assertTrue(lockMap1);
+        boolean lockMap2 = map2.lockMap(1,
+                TimeUnit.SECONDS);           // B
+        assertFalse(lockMap2);
+        hzi1.getLifecycleService().shutdown();
+        hzi2.getLifecycleService().shutdown();
+    }
+
+    @Test
+    public void secondLockOnMapShouldReturnTrueWhenFirstLockReleased() throws InterruptedException {
+        final HazelcastInstance hzi1 = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance hzi2 = Hazelcast.newHazelcastInstance(null);
+        final IMap<Object, Object> map1 = hzi1.getMap("dummymap");
+        final IMap<Object, Object> map2 = hzi2.getMap("dummymap");
+        final CountDownLatch acquireLock = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            public void run() {
+                map1.lockMap(0, TimeUnit.SECONDS);
+                acquireLock.countDown();
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                }
+                map1.unlockMap();
+            }
+        }).start();
+        acquireLock.await();
+        boolean lockMap2 = map2.lockMap(10,
+                TimeUnit.SECONDS);
+        assertTrue(lockMap2);
+        hzi1.getLifecycleService().shutdown();
+        hzi2.getLifecycleService().shutdown();
+    }
 }

@@ -301,9 +301,10 @@ public class CMap {
                 lockEntireMap = new DistributedLock();
             }
             boolean locked = lockEntireMap.lock(request.lockAddress, request.lockThreadId);
+            boolean isTimeOut = request.timeout == 0;
             request.clearForResponse();
             if (!locked) {
-                if (request.timeout == 0) {
+                if (isTimeOut) {
                     request.response = Boolean.FALSE;
                 } else {
                     request.response = OBJECT_REDO;
