@@ -41,6 +41,10 @@ public class ObjectNameSpec {
         return new ObjectName(NAME_DOMAIN + "Cluster=" + clusterName);
     }
 
+    public static ObjectName getClustersFilter() throws MalformedObjectNameException {
+        return new ObjectName(NAME_DOMAIN + "type=Cluster,*");
+    }
+
     public ObjectNameSpec() {
     }
 

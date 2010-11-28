@@ -106,8 +106,7 @@ public class FactoryImpl implements HazelcastInstance {
                 if (config == null) {
                     config = new XmlConfigBuilder().build();
                 }
-                int classLoaderHash = FactoryImpl.class.getClassLoader().hashCode();
-                String name = "_hzInstance_" + classLoaderHash + "_" + nextFactoryId++ + "_" + config.getGroupConfig().getName();
+                String name = "_hzInstance_" + nextFactoryId++ + "_" + config.getGroupConfig().getName();
                 factory = new FactoryImpl(name, config);
                 FactoryImpl old = factories.put(name, factory);
                 if (old != null) {
@@ -405,11 +404,7 @@ public class FactoryImpl implements HazelcastInstance {
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer();
-        sb.append("HazelcastInstance");
-        sb.append("{name='").append(name).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return "HazelcastInstance {name='" + name + "'}";
     }
 
     public Config getConfig() {
@@ -417,10 +412,7 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public Collection<Instance> getInstances() {
-        final int totalSize = proxies.size();
-        List<Instance> lsProxies = new ArrayList<Instance>(totalSize);
-        lsProxies.addAll(proxies.values());
-        return lsProxies;
+        return new ArrayList<Instance>(proxies.values());
     }
 
     public Collection<HazelcastInstanceAwareInstance> getProxies() {
@@ -876,12 +868,7 @@ public class FactoryImpl implements HazelcastInstance {
 
         @Override
         public String toString() {
-            final StringBuffer sb = new StringBuffer();
-            sb.append("ProxyKey");
-            sb.append("{name='").append(name).append('\'');
-            sb.append(", key=").append(key);
-            sb.append('}');
-            return sb.toString();
+            return "ProxyKey {name='" + name + "', key=" + key + '}';
         }
 
         public String getName() {

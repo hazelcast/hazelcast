@@ -21,6 +21,8 @@ import com.hazelcast.impl.ExecutorThreadFactory;
 import com.hazelcast.impl.FactoryImpl;
 
 import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.util.Set;
@@ -54,6 +56,7 @@ public class ManagementService {
     private boolean started = false;
 
     final FactoryImpl instance;
+    private String name;
 
     public ManagementService(FactoryImpl instance) {
         this.instance = instance;
@@ -75,6 +78,22 @@ public class ManagementService {
         started = true;
     }
 
+    private void nameLookup() throws MalformedObjectNameException {
+        MBeanServer mbs = mBeanServer();
+        int idx = -1;
+        final Set<ObjectInstance> queryNames = mbs.queryMBeans(ObjectNameSpec.getClustersFilter(), null);
+        for (final ObjectInstance object : queryNames) {
+            final String name = object.getObjectName().getKeyProperty("name");
+            try {
+                idx = Math.max(idx, Integer.parseInt(name));
+            } catch(NumberFormatException e){
+                // ignore
+            }
+        }
+        
+        this.name = Integer.toString(idx + 1);
+    }
+    
     /**
      * Register all the MBeans.
      */
@@ -85,10 +104,12 @@ public class ManagementService {
         if (!started) {
             return;
         }
-        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        MBeanServer mbs = mBeanServer();
         // Register the cluster monitor
         try {
-            ClusterMBean clusterMBean = new ClusterMBean(this);
+            nameLookup();
+            
+            ClusterMBean clusterMBean = new ClusterMBean(this, this.name);
             mbs.registerMBean(clusterMBean, clusterMBean.getObjectName());
             DataMBean dataMBean = new DataMBean(this);
             dataMBean.setParentName(clusterMBean.getRootName());
@@ -109,10 +130,10 @@ public class ManagementService {
             return;
         }
         // Remove all entries register for the cluster
-        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        MBeanServer mbs = mBeanServer();
         Set<ObjectName> entries;
         try {
-            entries = mbs.queryNames(ObjectNameSpec.getClusterNameFilter(instance.getName()), null);
+            entries = mbs.queryNames(ObjectNameSpec.getClusterNameFilter(this.name), null);
             for (ObjectName name : entries) {
                 // Double check, in case the entry has been removed whiletime
                 if (mbs.isRegistered(name)) {
@@ -126,6 +147,10 @@ public class ManagementService {
         counter.decrementAndGet();
     }
 
+    private static MBeanServer mBeanServer() {
+        return ManagementFactory.getPlatformMBeanServer();
+    }
+
     /**
      * Stop the management service
      */
@@ -133,8 +158,7 @@ public class ManagementService {
         if (counter.get() > 0) {
             return;
         }
-        // Remove all registered entries
-        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        MBeanServer mbs = mBeanServer();
         Set<ObjectName> entries;
         try {
             entries = mbs.queryNames(new ObjectName(ObjectNameSpec.NAME_DOMAIN + "*"), null);
