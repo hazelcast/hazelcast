@@ -668,7 +668,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
     }
 
     @Test
-    public void destroy() throws InterruptedException {
+    public void destroyMap() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
         IMap map = hClient.getMap("destroy");
         for (int i = 0; i < 100; i++) {

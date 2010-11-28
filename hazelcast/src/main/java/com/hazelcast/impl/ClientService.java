@@ -293,7 +293,6 @@ public class ClientService implements ConnectionListener {
                 } else {
                     task = new DistributedTask(cdt.getCallable());
                 }
-                executorService.execute(task);
                 task.setExecutionCallback(new ExecutionCallback() {
                     public void done(Future future) {
                         Object result;
@@ -308,6 +307,7 @@ public class ClientService implements ConnectionListener {
                         sendResponse(packet);
                     }
                 });
+                executorService.execute(task);
             } catch (RuntimeException e) {
                 logger.log(Level.WARNING,
                         "exception during handling " + packet.operation + ": " + e.getMessage(), e);

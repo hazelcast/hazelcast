@@ -41,6 +41,10 @@ public class HazelcastClientTestBase {
         return single.getHazelcastInstance();
     }
 
+    protected void destroy() {
+        single.destroy();
+    }
+
     @BeforeClass
     public static void before() {
         single.destroy();

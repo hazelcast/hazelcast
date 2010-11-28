@@ -39,7 +39,7 @@ public class HazelcastClientExecutorServiceTest extends HazelcastClientTestBase 
     private static final int COUNT = 10;
 
     /**
-     * Test multiple Future.get() invokation
+     * Test multiple Future.get() invocation
      */
     @Test
     public void isTwoGetFromFuture() throws Exception {
@@ -128,7 +128,7 @@ public class HazelcastClientExecutorServiceTest extends HazelcastClientTestBase 
 
     /**
      * Test for the issue 129.
-     * Repeadetly runs tasks and checkTime for isDone() status after
+     * Repeatedly runs tasks and checkTime for isDone() status after
      * get().
      */
     @Test
