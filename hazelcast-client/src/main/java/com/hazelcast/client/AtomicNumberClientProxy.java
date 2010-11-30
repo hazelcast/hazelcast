@@ -27,7 +27,7 @@ public class AtomicNumberClientProxy implements AtomicNumber {
 
     public AtomicNumberClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        proxyHelper = new ProxyHelper(name, hazelcastClient);
+        this.proxyHelper = new ProxyHelper(getName(), hazelcastClient);
     }
 
     public String getName() {
@@ -46,11 +46,13 @@ public class AtomicNumberClientProxy implements AtomicNumber {
     }
 
     public boolean compareAndSet(long expect, long update) {
-        return false;
+        Packet request = proxyHelper.prepareRequest(ClusterOperation.ATOMIC_NUMBER_COMPARE_AND_SET, expect, update);
+        Packet response = proxyHelper.callAndGetResult(request);
+        return (Boolean) proxyHelper.getValue(response);
     }
 
     public boolean weakCompareAndSet(long expect, long update) {
-        return false;
+        return compareAndSet(expect, update);
     }
 
     public long decrementAndGet() {
@@ -58,7 +60,7 @@ public class AtomicNumberClientProxy implements AtomicNumber {
     }
 
     public long get() {
-        return setLongGetLong(ClusterOperation.ATOMIC_NUMBER_GET_AND_SET, 0L);
+        return getAndAdd(0L);
     }
 
     public long getAndAdd(long delta) {

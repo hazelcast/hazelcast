@@ -332,13 +332,17 @@ public abstract class BaseManager {
         }
 
         public Object getResultAsObject() {
+            return getResultAsObject(true);
+        }
+        
+        public Object getResultAsObject(boolean force) {
             Object result = getResult();
             if (result == OBJECT_NULL || result == null) {
                 result = null;
             } else {
                 if (result instanceof Data) {
                     final Data data = (Data) result;
-                    if (ThreadContext.get().isClient()) {
+                    if (ThreadContext.get().isClient() && force) {
                         result = data;
                     } else {
                         if (data.size() == 0) {

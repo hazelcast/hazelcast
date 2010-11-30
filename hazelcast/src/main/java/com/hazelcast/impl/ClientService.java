@@ -37,6 +37,7 @@ import java.util.concurrent.*;
 import java.util.logging.Level;
 
 import static com.hazelcast.impl.BaseManager.getInstanceType;
+import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_SUCCESS;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
@@ -51,55 +52,59 @@ public class ClientService implements ConnectionListener {
         this.node = node;
         this.logger = node.getLogger(this.getClass().getName());
         node.getClusterImpl().addMembershipListener(new ClientServiceMembershipListener());
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_PUT.getValue()] = new MapPutHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_PUT_MULTI.getValue()] = new MapPutMultiHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT.getValue()] = new MapPutIfAbsentHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_GET.getValue()] = new MapGetHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REMOVE.getValue()] = new MapRemoveHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REMOVE_IF_SAME.getValue()] = new MapRemoveIfSameHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REMOVE_MULTI.getValue()] = new MapRemoveMultiHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_EVICT.getValue()] = new MapEvictHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REPLACE_IF_NOT_NULL.getValue()] = new MapReplaceIfNotNullHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REPLACE_IF_SAME.getValue()] = new MapReplaceIfSameHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_SIZE.getValue()] = new MapSizeHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_GET_MAP_ENTRY.getValue()] = new GetMapEntryHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_LOCK.getValue()] = new MapLockHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_UNLOCK.getValue()] = new MapUnlockHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_LOCK_MAP.getValue()] = new MapLockMapHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_UNLOCK_MAP.getValue()] = new MapUnlockMapHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_CONTAINS.getValue()] = new MapContainsHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_CONTAINS_VALUE.getValue()] = new MapContainsValueHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ADD_TO_LIST.getValue()] = new ListAddHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ADD_TO_SET.getValue()] = new SetAddHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_REMOVE_ITEM.getValue()] = new MapItemRemoveHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS.getValue()] = new MapIterateKeysHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES.getValue()] = new MapIterateEntriesHandler();
-        clientOperationHandlers[ClusterOperation.CONCURRENT_MAP_VALUE_COUNT.getValue()] = new MapValueCountHandler();
-        clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_OFFER.getValue()] = new QueueOfferHandler();
-        clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_POLL.getValue()] = new QueuePollHandler();
-        clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_REMOVE.getValue()] = new QueueRemoveHandler();
-        clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_PEEK.getValue()] = new QueuePeekHandler();
-        clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_SIZE.getValue()] = new QueueSizeHandler();
-        clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_PUBLISH.getValue()] = new QueuePublishHandler();
-        clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_RAMAINING_CAPACITY.getValue()] = new QueueRemainingCapacityHandler();
-        clientOperationHandlers[ClusterOperation.BLOCKING_QUEUE_ENTRIES.getValue()] = new QueueEntriesHandler();
-        clientOperationHandlers[ClusterOperation.TRANSACTION_BEGIN.getValue()] = new TransactionBeginHandler();
-        clientOperationHandlers[ClusterOperation.TRANSACTION_COMMIT.getValue()] = new TransactionCommitHandler();
-        clientOperationHandlers[ClusterOperation.TRANSACTION_ROLLBACK.getValue()] = new TransactionRollbackHandler();
-        clientOperationHandlers[ClusterOperation.ADD_LISTENER.getValue()] = new AddListenerHandler();
-        clientOperationHandlers[ClusterOperation.REMOVE_LISTENER.getValue()] = new RemoveListenerHandler();
-        clientOperationHandlers[ClusterOperation.REMOTELY_PROCESS.getValue()] = new RemotelyProcessHandler();
-        clientOperationHandlers[ClusterOperation.DESTROY.getValue()] = new DestroyHandler();
-        clientOperationHandlers[ClusterOperation.GET_ID.getValue()] = new GetIdHandler();
-        clientOperationHandlers[ClusterOperation.ADD_INDEX.getValue()] = new AddIndexHandler();
-        clientOperationHandlers[ClusterOperation.NEW_ID.getValue()] = new NewIdHandler();
-        clientOperationHandlers[ClusterOperation.EXECUTE.getValue()] = new ExecutorServiceHandler();
-        clientOperationHandlers[ClusterOperation.GET_INSTANCES.getValue()] = new GetInstancesHandler();
-        clientOperationHandlers[ClusterOperation.GET_MEMBERS.getValue()] = new GetMembersHandler();
-        clientOperationHandlers[ClusterOperation.GET_CLUSTER_TIME.getValue()] = new GetClusterTimeHandler();
-        clientOperationHandlers[ClusterOperation.CLIENT_AUTHENTICATE.getValue()] = new ClientAuthenticateHandler();
-        clientOperationHandlers[ClusterOperation.CLIENT_ADD_INSTANCE_LISTENER.getValue()] = new ClientAddInstanceListenerHandler();
-        clientOperationHandlers[ClusterOperation.CLIENT_GET_PARTITIONS.getValue()] = new GetPartitionsHandler();
+        clientOperationHandlers[CONCURRENT_MAP_PUT.getValue()] = new MapPutHandler();
+        clientOperationHandlers[CONCURRENT_MAP_PUT_MULTI.getValue()] = new MapPutMultiHandler();
+        clientOperationHandlers[CONCURRENT_MAP_PUT_IF_ABSENT.getValue()] = new MapPutIfAbsentHandler();
+        clientOperationHandlers[CONCURRENT_MAP_GET.getValue()] = new MapGetHandler();
+        clientOperationHandlers[CONCURRENT_MAP_REMOVE.getValue()] = new MapRemoveHandler();
+        clientOperationHandlers[CONCURRENT_MAP_REMOVE_IF_SAME.getValue()] = new MapRemoveIfSameHandler();
+        clientOperationHandlers[CONCURRENT_MAP_REMOVE_MULTI.getValue()] = new MapRemoveMultiHandler();
+        clientOperationHandlers[CONCURRENT_MAP_EVICT.getValue()] = new MapEvictHandler();
+        clientOperationHandlers[CONCURRENT_MAP_REPLACE_IF_NOT_NULL.getValue()] = new MapReplaceIfNotNullHandler();
+        clientOperationHandlers[CONCURRENT_MAP_REPLACE_IF_SAME.getValue()] = new MapReplaceIfSameHandler();
+        clientOperationHandlers[CONCURRENT_MAP_SIZE.getValue()] = new MapSizeHandler();
+        clientOperationHandlers[CONCURRENT_MAP_GET_MAP_ENTRY.getValue()] = new GetMapEntryHandler();
+        clientOperationHandlers[CONCURRENT_MAP_LOCK.getValue()] = new MapLockHandler();
+        clientOperationHandlers[CONCURRENT_MAP_UNLOCK.getValue()] = new MapUnlockHandler();
+        clientOperationHandlers[CONCURRENT_MAP_LOCK_MAP.getValue()] = new MapLockMapHandler();
+        clientOperationHandlers[CONCURRENT_MAP_UNLOCK_MAP.getValue()] = new MapUnlockMapHandler();
+        clientOperationHandlers[CONCURRENT_MAP_CONTAINS.getValue()] = new MapContainsHandler();
+        clientOperationHandlers[CONCURRENT_MAP_CONTAINS_VALUE.getValue()] = new MapContainsValueHandler();
+        clientOperationHandlers[CONCURRENT_MAP_ADD_TO_LIST.getValue()] = new ListAddHandler();
+        clientOperationHandlers[CONCURRENT_MAP_ADD_TO_SET.getValue()] = new SetAddHandler();
+        clientOperationHandlers[CONCURRENT_MAP_REMOVE_ITEM.getValue()] = new MapItemRemoveHandler();
+        clientOperationHandlers[CONCURRENT_MAP_ITERATE_KEYS.getValue()] = new MapIterateKeysHandler();
+        clientOperationHandlers[CONCURRENT_MAP_ITERATE_ENTRIES.getValue()] = new MapIterateEntriesHandler();
+        clientOperationHandlers[CONCURRENT_MAP_VALUE_COUNT.getValue()] = new MapValueCountHandler();
+        clientOperationHandlers[BLOCKING_QUEUE_OFFER.getValue()] = new QueueOfferHandler();
+        clientOperationHandlers[BLOCKING_QUEUE_POLL.getValue()] = new QueuePollHandler();
+        clientOperationHandlers[BLOCKING_QUEUE_REMOVE.getValue()] = new QueueRemoveHandler();
+        clientOperationHandlers[BLOCKING_QUEUE_PEEK.getValue()] = new QueuePeekHandler();
+        clientOperationHandlers[BLOCKING_QUEUE_SIZE.getValue()] = new QueueSizeHandler();
+        clientOperationHandlers[BLOCKING_QUEUE_PUBLISH.getValue()] = new QueuePublishHandler();
+        clientOperationHandlers[BLOCKING_QUEUE_RAMAINING_CAPACITY.getValue()] = new QueueRemainingCapacityHandler();
+        clientOperationHandlers[BLOCKING_QUEUE_ENTRIES.getValue()] = new QueueEntriesHandler();
+        clientOperationHandlers[TRANSACTION_BEGIN.getValue()] = new TransactionBeginHandler();
+        clientOperationHandlers[TRANSACTION_COMMIT.getValue()] = new TransactionCommitHandler();
+        clientOperationHandlers[TRANSACTION_ROLLBACK.getValue()] = new TransactionRollbackHandler();
+        clientOperationHandlers[ADD_LISTENER.getValue()] = new AddListenerHandler();
+        clientOperationHandlers[REMOVE_LISTENER.getValue()] = new RemoveListenerHandler();
+        clientOperationHandlers[REMOTELY_PROCESS.getValue()] = new RemotelyProcessHandler();
+        clientOperationHandlers[DESTROY.getValue()] = new DestroyHandler();
+        clientOperationHandlers[GET_ID.getValue()] = new GetIdHandler();
+        clientOperationHandlers[ADD_INDEX.getValue()] = new AddIndexHandler();
+        clientOperationHandlers[NEW_ID.getValue()] = new NewIdHandler();
+        clientOperationHandlers[EXECUTE.getValue()] = new ExecutorServiceHandler();
+        clientOperationHandlers[GET_INSTANCES.getValue()] = new GetInstancesHandler();
+        clientOperationHandlers[GET_MEMBERS.getValue()] = new GetMembersHandler();
+        clientOperationHandlers[GET_CLUSTER_TIME.getValue()] = new GetClusterTimeHandler();
+        clientOperationHandlers[CLIENT_AUTHENTICATE.getValue()] = new ClientAuthenticateHandler();
+        clientOperationHandlers[CLIENT_ADD_INSTANCE_LISTENER.getValue()] = new ClientAddInstanceListenerHandler();
+        clientOperationHandlers[CLIENT_GET_PARTITIONS.getValue()] = new GetPartitionsHandler();
+        clientOperationHandlers[ATOMIC_NUMBER_GET_AND_SET.getValue()] = new AtomicOperationHandler();
+        clientOperationHandlers[ATOMIC_NUMBER_GET_AND_ADD.getValue()] = new AtomicOperationHandler();
+        clientOperationHandlers[ATOMIC_NUMBER_COMPARE_AND_SET.getValue()] = new AtomicOperationHandler();
+        clientOperationHandlers[ATOMIC_NUMBER_ADD_AND_GET.getValue()] = new AtomicOperationHandler();
         node.connectionManager.addConnectionListener(this);
     }
     // always called by InThread
@@ -371,6 +376,35 @@ public class ClientService implements ConnectionListener {
                 Keys keys = new Keys(setData);
                 packet.setValue(toData(keys));
             }
+        }
+    }
+    
+    private class AtomicOperationHandler extends ClientOperationHandler {
+        public void processCall(Node node, Packet packet) {
+            final String name = packet.name;
+            AtomicNumber atomicNumber = node.factory.getAtomicNumber(name);
+            final Object result;
+            switch (packet.operation) {
+            case ATOMIC_NUMBER_GET_AND_SET:
+                result = atomicNumber.getAndSet(packet.longValue);
+                break;
+            case ATOMIC_NUMBER_GET_AND_ADD:
+                result = atomicNumber.getAndAdd(packet.longValue);
+                break;
+            case ATOMIC_NUMBER_COMPARE_AND_SET:
+                final Long expected = (Long)toObject(packet.getKey());
+                final Long update = (Long)toObject(packet.getValue());
+                result = atomicNumber.compareAndSet(expected, update);
+                break;
+            case ATOMIC_NUMBER_ADD_AND_GET:
+                result = atomicNumber.addAndGet(packet.longValue);
+                break;
+            default:
+                logger.log(Level.WARNING, "operation " + packet.operation + " is unsupported.");
+                result = new UnsupportedOperationException("operation " + packet.operation + " is unsupported.");
+                break;
+            }
+            packet.setValue(toData(result));
         }
     }
 
@@ -927,7 +961,7 @@ public class ClientService implements ConnectionListener {
 
         protected void sendResponse(Packet request) {
             request.lockAddress = null;
-            request.operation = ClusterOperation.RESPONSE;
+            request.operation = RESPONSE;
             request.responseType = RESPONSE_SUCCESS;
             if (request.conn != null && request.conn.live()) {
                 request.conn.getWriteHandler().enqueueSocketWritable(request);

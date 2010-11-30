@@ -809,7 +809,7 @@ public class ConcurrentMapManager extends BaseManager {
             setLocal(op, "c:hz_AtomicNumber", nameAsKey, null, 0, 0);
             request.longValue = value;
             doOp();
-            Object returnObject = getResultAsObject();
+            Object returnObject = getResultAsObject(false);
             return (Long) returnObject;
         }
 
