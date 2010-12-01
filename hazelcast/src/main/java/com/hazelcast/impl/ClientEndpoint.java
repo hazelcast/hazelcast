@@ -39,6 +39,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     final Map<Integer, Map<IMap, List<Data>>> locks = new ConcurrentHashMap<Integer, Map<IMap, List<Data>>>();
     final List<IMap> listeningMaps = new ArrayList<IMap>();
     final List<Map.Entry<IMap, Object>> listeningKeysOfMaps = new ArrayList<Map.Entry<IMap, Object>>();
+    public Map<IQueue, ItemListener<Object>> queueItemListeners = new HashMap<IQueue, ItemListener<Object>>();
 
     ClientEndpoint(Connection conn) {
         this.conn = conn;

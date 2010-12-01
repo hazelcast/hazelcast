@@ -49,38 +49,38 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         check(listener);
-        Boolean noEntryListenerRegistered = listenerManager().noEntryListenerRegistered(key, name, includeValue);
-        if (noEntryListenerRegistered == null){
-        	proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
-        	noEntryListenerRegistered = Boolean.TRUE;
+        Boolean noEntryListenerRegistered = listenerManager().noListenerRegistered(key, name, includeValue);
+        if (noEntryListenerRegistered == null) {
+            proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
+            noEntryListenerRegistered = Boolean.TRUE;
         }
-		if (noEntryListenerRegistered) {
+        if (noEntryListenerRegistered) {
             Call c = listenerManager().createNewAddListenerCall(proxyHelper, key, includeValue);
             proxyHelper.doCall(c);
         }
-        listenerManager().registerEntryListener(name, key, includeValue, listener);
+        listenerManager().registerListener(name, key, includeValue, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener) {
         check(listener);
         proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, null, null);
-        listenerManager().removeEntryListener(name, null, listener);
+        listenerManager().removeListener(name, null, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener, K key) {
         check(listener);
         check(key);
         proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
-        listenerManager().removeEntryListener(name, key, listener);
+        listenerManager().removeListener(name, key, listener);
     }
-    
+
     private EntryListenerManager listenerManager() {
         return proxyHelper.getHazelcastClient().getListenerManager().getEntryListenerManager();
     }
 
     public Set<java.util.Map.Entry<K, V>> entrySet(Predicate predicate) {
-    	final Collection collection = proxyHelper.entries(predicate);
-    	return new LightEntrySetSet<K, V>(collection, this, getInstanceType());
+        final Collection collection = proxyHelper.entries(predicate);
+        return new LightEntrySetSet<K, V>(collection, this, getInstanceType());
     }
 
     public boolean evict(Object key) {
@@ -221,7 +221,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public Future<V> getAsync(K key) {
-        check(key); 
+        check(key);
         return proxyHelper.doAsync(ClusterOperation.CONCURRENT_MAP_GET, key, null);
     }
 

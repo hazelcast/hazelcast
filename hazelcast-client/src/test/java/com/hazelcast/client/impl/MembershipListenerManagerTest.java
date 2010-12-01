@@ -51,8 +51,8 @@ public class MembershipListenerManagerTest {
                 //To change body of implemented methods use File | Settings | File Templates.
             }
         };
-        listenerManager.registerMembershipListener(listener);
-        assertFalse(listenerManager.noMembershipListenerRegistered());
+        listenerManager.registerListener(listener);
+        assertFalse(listenerManager.noListenerRegistered());
     }
 
     @Test
@@ -69,9 +69,9 @@ public class MembershipListenerManagerTest {
                 //To change body of implemented methods use File | Settings | File Templates.
             }
         };
-        listenerManager.registerMembershipListener(listener);
-        listenerManager.removeMembershipListener(listener);
-        assertTrue(listenerManager.noMembershipListenerRegistered());
+        listenerManager.registerListener(listener);
+        listenerManager.removeListener(listener);
+        assertTrue(listenerManager.noListenerRegistered());
     }
 
     @Test
@@ -101,7 +101,7 @@ public class MembershipListenerManagerTest {
                 memberRemoved.countDown();
             }
         };
-        membershipListenerManager.registerMembershipListener(listener);
+        membershipListenerManager.registerListener(listener);
         new Thread(new Runnable() {
 
             public void run() {
@@ -110,7 +110,7 @@ public class MembershipListenerManagerTest {
                 Member member = new MemberImpl(address, false);
                 packet.setKey(toByte(member));
                 packet.setValue(toByte(type));
-                membershipListenerManager.notifyMembershipListeners(packet);
+                membershipListenerManager.notifyListeners(packet);
             }
         }).start();
         if (type == MembershipEvent.MEMBER_ADDED) {

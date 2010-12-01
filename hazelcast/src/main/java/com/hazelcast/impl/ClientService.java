@@ -378,31 +378,31 @@ public class ClientService implements ConnectionListener {
             }
         }
     }
-    
+
     private class AtomicOperationHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
             final String name = packet.name;
             AtomicNumber atomicNumber = node.factory.getAtomicNumber(name);
             final Object result;
             switch (packet.operation) {
-            case ATOMIC_NUMBER_GET_AND_SET:
-                result = atomicNumber.getAndSet(packet.longValue);
-                break;
-            case ATOMIC_NUMBER_GET_AND_ADD:
-                result = atomicNumber.getAndAdd(packet.longValue);
-                break;
-            case ATOMIC_NUMBER_COMPARE_AND_SET:
-                final Long expected = (Long)toObject(packet.getKey());
-                final Long update = (Long)toObject(packet.getValue());
-                result = atomicNumber.compareAndSet(expected, update);
-                break;
-            case ATOMIC_NUMBER_ADD_AND_GET:
-                result = atomicNumber.addAndGet(packet.longValue);
-                break;
-            default:
-                logger.log(Level.WARNING, "operation " + packet.operation + " is unsupported.");
-                result = new UnsupportedOperationException("operation " + packet.operation + " is unsupported.");
-                break;
+                case ATOMIC_NUMBER_GET_AND_SET:
+                    result = atomicNumber.getAndSet(packet.longValue);
+                    break;
+                case ATOMIC_NUMBER_GET_AND_ADD:
+                    result = atomicNumber.getAndAdd(packet.longValue);
+                    break;
+                case ATOMIC_NUMBER_COMPARE_AND_SET:
+                    final Long expected = (Long) toObject(packet.getKey());
+                    final Long update = (Long) toObject(packet.getValue());
+                    result = atomicNumber.compareAndSet(expected, update);
+                    break;
+                case ATOMIC_NUMBER_ADD_AND_GET:
+                    result = atomicNumber.addAndGet(packet.longValue);
+                    break;
+                default:
+                    logger.log(Level.WARNING, "operation " + packet.operation + " is unsupported.");
+                    result = new UnsupportedOperationException("operation " + packet.operation + " is unsupported.");
+                    break;
             }
             packet.setValue(toData(result));
         }
@@ -885,6 +885,25 @@ public class ClientService implements ConnectionListener {
                 CollectionProxyImpl collectionProxy = (CollectionProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
                 IMap map = ((CollectionProxyReal) collectionProxy.getBase()).mapProxy;
                 clientEndpoint.addThisAsListener(map, null, includeValue);
+            } else if (getInstanceType(packet.name).equals(InstanceType.QUEUE)) {
+                IQueue<Object> queue = (IQueue) node.factory.getOrCreateProxyByName(packet.name);
+                final String packetName = packet.name;
+                ItemListener itemListener = new ItemListener() {
+                    public void itemAdded(Object item) {
+                        Packet p = new Packet();
+                        System.out.println("Item is: " + item);
+                        p.set(packetName, ClusterOperation.EVENT, item, true);
+                        clientEndpoint.sendPacket(p);
+                    }
+
+                    public void itemRemoved(Object item) {
+                        Packet p = new Packet();
+                        p.set(packetName, ClusterOperation.EVENT, item, false);
+                        clientEndpoint.sendPacket(p);
+                    }
+                };
+                queue.addItemListener(itemListener, includeValue);
+                clientEndpoint.queueItemListeners.put(queue, itemListener);
             } else if (getInstanceType(packet.name).equals(InstanceType.TOPIC)) {
                 ITopic<Object> topic = (ITopic) node.factory.getOrCreateProxyByName(packet.name);
                 final String packetName = packet.name;
@@ -911,6 +930,9 @@ public class ClientService implements ConnectionListener {
             } else if (getInstanceType(packet.name).equals(InstanceType.TOPIC)) {
                 ITopic topic = (ITopic) node.factory.getOrCreateProxyByName(packet.name);
                 topic.removeMessageListener(clientEndpoint.messageListeners.remove(topic));
+            } else if (getInstanceType(packet.name).equals(InstanceType.QUEUE)) {
+                IQueue queue = (IQueue) node.factory.getOrCreateProxyByName(packet.name);
+                queue.removeItemListener(clientEndpoint.queueItemListeners.remove(queue));
             }
         }
     }

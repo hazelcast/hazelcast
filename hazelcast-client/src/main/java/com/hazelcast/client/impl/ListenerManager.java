@@ -43,6 +43,7 @@ public class ListenerManager extends ClientRunnable {
     final private MessageListenerManager messageListenerManager;
     final private EntryListenerManager entryListenerManager;
     final private ItemListenerManager itemListenerManager;
+    final private QueueItemListenerManager queueItemListenerManager;
 
     public ListenerManager(HazelcastClient hazelcastClient) {
         this.client = hazelcastClient;
@@ -51,6 +52,7 @@ public class ListenerManager extends ClientRunnable {
         messageListenerManager = new MessageListenerManager();
         entryListenerManager = new EntryListenerManager();
         itemListenerManager = new ItemListenerManager(entryListenerManager);
+        queueItemListenerManager = new QueueItemListenerManager(this.client);
     }
 
     public void enqueue(Packet packet) {
@@ -70,14 +72,16 @@ public class ListenerManager extends ClientRunnable {
             if (packet.getName() == null) {
                 Object eventType = toObject(packet.getValue());
                 if (eventType instanceof InstanceEventType) {
-                    instanceListenerManager.notifyInstanceListeners(packet);
+                    instanceListenerManager.notifyListeners(packet);
                 } else {
-                    membershipListenerManager.notifyMembershipListeners(packet);
+                    membershipListenerManager.notifyListeners(packet);
                 }
             } else if (getInstanceType(packet.getName()).equals(Instance.InstanceType.TOPIC)) {
                 messageListenerManager.notifyMessageListeners(packet);
+            } else if (getInstanceType(packet.getName()).equals(Instance.InstanceType.QUEUE)) {
+                queueItemListenerManager.notifyListeners(packet);
             } else {
-                entryListenerManager.notifyEntryListeners(packet);
+                entryListenerManager.notifyListeners(packet);
             }
         } catch (InterruptedException ine) {
             throw ine;
@@ -85,14 +89,15 @@ public class ListenerManager extends ClientRunnable {
         catch (Exception ignored) {
         }
     }
-    
-    public Collection<Call> getListenerCalls(){
-    	final List<Call> calls = new ArrayList<Call>();
-    	calls.addAll(instanceListenerManager.calls(client));
-    	calls.addAll(entryListenerManager.calls(client));
-    	calls.addAll(itemListenerManager.calls(client));
-    	calls.addAll(messageListenerManager.calls(client));
-    	return calls;
+
+    public Collection<Call> getListenerCalls() {
+        final List<Call> calls = new ArrayList<Call>();
+        calls.addAll(instanceListenerManager.calls(client));
+        calls.addAll(entryListenerManager.calls(client));
+        calls.addAll(itemListenerManager.calls(client));
+        calls.addAll(queueItemListenerManager.calls(client));
+        calls.addAll(messageListenerManager.calls(client));
+        return calls;
     }
 
     public InstanceListenerManager getInstanceListenerManager() {
@@ -113,5 +118,9 @@ public class ListenerManager extends ClientRunnable {
 
     public ItemListenerManager getItemListenerManager() {
         return itemListenerManager;
+    }
+
+    public QueueItemListenerManager getQueueItemListenerManager() {
+        return queueItemListenerManager;
     }
 }

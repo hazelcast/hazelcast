@@ -52,33 +52,33 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
 
     public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         check(listener);
-        Boolean noEntryListenerRegistered = entryListenerManager().noEntryListenerRegistered(key, name, includeValue);
-        if (noEntryListenerRegistered == null){
-        	proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
-        	noEntryListenerRegistered = Boolean.TRUE;
+        Boolean noEntryListenerRegistered = entryListenerManager().noListenerRegistered(key, name, includeValue);
+        if (noEntryListenerRegistered == null) {
+            proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
+            noEntryListenerRegistered = Boolean.TRUE;
         }
-		if (noEntryListenerRegistered.booleanValue()) {
+        if (noEntryListenerRegistered.booleanValue()) {
             Call c = entryListenerManager().createNewAddListenerCall(proxyHelper, key, includeValue);
             proxyHelper.doCall(c);
-        } 
-        entryListenerManager().registerEntryListener(name, key, includeValue, listener);
+        }
+        entryListenerManager().registerListener(name, key, includeValue, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener) {
         check(listener);
         proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, null, null);
-        entryListenerManager().removeEntryListener(name, null, listener);
+        entryListenerManager().removeListener(name, null, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener, K key) {
         check(listener);
         check(key);
         proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
-        entryListenerManager().removeEntryListener(name, key, listener);
+        entryListenerManager().removeListener(name, key, listener);
     }
 
-	private EntryListenerManager entryListenerManager() {
-	    return client.getListenerManager().getEntryListenerManager();
+    private EntryListenerManager entryListenerManager() {
+        return client.getListenerManager().getEntryListenerManager();
     }
 
     public void lock(K key) {

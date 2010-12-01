@@ -19,7 +19,6 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.impl.CollectionWrapper;
 import com.hazelcast.client.impl.InstanceListenerManager;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.FactoryImpl;
@@ -55,11 +54,11 @@ public class ClusterClientProxy implements Cluster {
 
     public void addMembershipListener(MembershipListener listener) {
         check(listener);
-        client.getListenerManager().getMembershipListenerManager().registerMembershipListener(listener);
+        client.getListenerManager().getMembershipListenerManager().registerListener(listener);
     }
 
     public void removeMembershipListener(MembershipListener listener) {
-        client.getListenerManager().getMembershipListenerManager().removeMembershipListener(listener);
+        client.getListenerManager().getMembershipListenerManager().removeListener(listener);
     }
 
     public Set<Member> getMembers() {
@@ -77,23 +76,23 @@ public class ClusterClientProxy implements Cluster {
 
     public void addInstanceListener(InstanceListener listener) {
         check(listener);
-        if (instanceListenerManager().noInstanceListenerRegistered()) {
-        	Call c = instanceListenerManager().createNewAddListenerCall(proxyHelper);
+        if (instanceListenerManager().noListenerRegistered()) {
+            Call c = instanceListenerManager().createNewAddListenerCall(proxyHelper);
             proxyHelper.doCall(c);
         }
-        instanceListenerManager().registerInstanceListener(listener);
+        instanceListenerManager().registerListener(listener);
     }
 
     public void removeInstanceListener(InstanceListener instanceListener) {
         check(instanceListener);
-        instanceListenerManager().removeInstanceListener(instanceListener);
+        instanceListenerManager().removeListener(instanceListener);
     }
 
-	private InstanceListenerManager instanceListenerManager() {
-	    return client.getListenerManager().getInstanceListenerManager();
+    private InstanceListenerManager instanceListenerManager() {
+        return client.getListenerManager().getInstanceListenerManager();
     }
 
-	@Override
+    @Override
     public String toString() {
         Set<Member> members = getMembers();
         StringBuffer sb = new StringBuffer("Cluster [");
@@ -107,5 +106,4 @@ public class ClusterClientProxy implements Cluster {
         sb.append("\n}\n");
         return sb.toString();
     }
-
 }

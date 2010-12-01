@@ -33,39 +33,39 @@ public class MessageListenerManagerTest {
     public void testRegisterMessageListener() throws Exception {
         MessageListenerManager manager = new MessageListenerManager();
         String name = "default";
-        assertTrue(manager.noMessageListenerRegistered(name));
+        assertTrue(manager.noListenerRegistered(name));
         MessageListener listener = new MessageListener() {
 
             public void onMessage(Object message) {
             }
         };
-        manager.registerMessageListener(name, listener);
-        assertFalse(manager.noMessageListenerRegistered(name));
+        manager.registerListener(name, listener);
+        assertFalse(manager.noListenerRegistered(name));
     }
 
     @Test
     public void testRemoveMessageListener() throws Exception {
         MessageListenerManager manager = new MessageListenerManager();
         String name = "default";
-        assertTrue(manager.noMessageListenerRegistered(name));
+        assertTrue(manager.noListenerRegistered(name));
         MessageListener listener = new MessageListener() {
 
             public void onMessage(Object message) {
             }
         };
-        manager.registerMessageListener(name, listener);
-        assertFalse(manager.noMessageListenerRegistered(name));
-        manager.removeMessageListener(name, listener);
-        assertTrue(manager.noMessageListenerRegistered(name));
-        manager.removeMessageListener(name, listener);
-        assertTrue(manager.noMessageListenerRegistered(name));
+        manager.registerListener(name, listener);
+        assertFalse(manager.noListenerRegistered(name));
+        manager.removeListener(name, listener);
+        assertTrue(manager.noListenerRegistered(name));
+        manager.removeListener(name, listener);
+        assertTrue(manager.noListenerRegistered(name));
     }
 
     @Test
     public void testNotifyMessageListeners() throws Exception {
         final MessageListenerManager manager = new MessageListenerManager();
         final String name = "default";
-        assertTrue(manager.noMessageListenerRegistered(name));
+        assertTrue(manager.noListenerRegistered(name));
         final String myMessage = "my myMessage";
         final CountDownLatch latch = new CountDownLatch(1);
         MessageListener listener = new MessageListener() {
@@ -76,8 +76,8 @@ public class MessageListenerManagerTest {
                 }
             }
         };
-        manager.registerMessageListener(name, listener);
-        assertFalse(manager.noMessageListenerRegistered(name));
+        manager.registerListener(name, listener);
+        assertFalse(manager.noListenerRegistered(name));
         new Thread(new Runnable() {
             public void run() {
                 Packet packet = new Packet();

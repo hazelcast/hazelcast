@@ -83,13 +83,13 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E> {
     public synchronized void addItemListener(ItemListener<E> listener, boolean includeValue) {
         check(listener);
         Call c = itemListenerManager().createNewAddListenerCall(proxyHelper, includeValue);
-        itemListenerManager().registerItemListener(name, listener);
+        itemListenerManager().registerListener(name, listener);
         proxyHelper.doCall(c);
     }
 
     public synchronized void removeItemListener(ItemListener<E> listener) {
         check(listener);
-        itemListenerManager().removeItemListener(name, listener);
+        itemListenerManager().removeListener(name, listener);
         Packet request = proxyHelper.createRequestPacket(ClusterOperation.REMOVE_LISTENER, null, null);
         Call c = proxyHelper.createCall(request);
         proxyHelper.doCall(c);
@@ -99,7 +99,7 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E> {
         return proxyHelper.getHazelcastClient().getListenerManager().getItemListenerManager();
     }
 
-	@Override
+    @Override
     public int size() {
         return (Integer) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_SIZE, null, null);
     }

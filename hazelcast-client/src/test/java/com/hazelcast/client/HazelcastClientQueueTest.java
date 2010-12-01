@@ -18,6 +18,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ItemListener;
 import org.junit.AfterClass;
 import org.junit.Test;
 
@@ -25,7 +26,9 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class HazelcastClientQueueTest extends HazelcastClientTestBase {
 
@@ -208,6 +211,30 @@ public class HazelcastClientQueueTest extends HazelcastClientTestBase {
         }
         assertEquals(0, queue.size());
         assertEquals(0, map.size());
+    }
+
+    @Test
+    public void testQueueItemListener() {
+        final CountDownLatch latch = new CountDownLatch(2);
+        HazelcastClient hClient = getHazelcastClient();
+        IQueue<String> queue = hClient.getQueue("testQueueListener");
+        queue.addItemListener(new ItemListener<String>() {
+            public void itemAdded(String item) {
+                assertEquals("hello", item);
+                latch.countDown();
+            }
+
+            public void itemRemoved(String item) {
+                assertEquals("hello", item);
+                latch.countDown();
+            }
+        }, true);
+        queue.offer("hello");
+        assertEquals("hello", queue.poll());
+        try {
+            assertTrue(latch.await(5, TimeUnit.SECONDS));
+        } catch (InterruptedException ignored) {
+        }
     }
 
     @AfterClass

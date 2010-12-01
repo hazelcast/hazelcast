@@ -2234,4 +2234,33 @@ public class ClusterTest {
         hzi1.getLifecycleService().shutdown();
         hzi2.getLifecycleService().shutdown();
     }
+
+    @Test
+    public void mapLock() throws InterruptedException {
+        final HazelcastInstance hzi1 = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance hzi2 = Hazelcast.newHazelcastInstance(null);
+        final IMap<Object, Object> map1 = hzi1.getMap("dummymap");
+        final IMap<Object, Object> map2 = hzi2.getMap("dummymap");
+        final CountDownLatch acquireLock = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            public void run() {
+                map1.lockMap(0, TimeUnit.SECONDS);
+                acquireLock.countDown();
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                }
+                map1.put(1, 1);
+                map1.unlockMap();
+            }
+        }).start();
+        acquireLock.await();
+        map2.put(2, 2);
+        System.out.println("Put to the map");
+        boolean lockMap2 = map2.lockMap(10,
+                TimeUnit.SECONDS);
+        assertTrue(lockMap2);
+        hzi1.getLifecycleService().shutdown();
+        hzi2.getLifecycleService().shutdown();
+    }
 }

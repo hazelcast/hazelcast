@@ -29,6 +29,8 @@ public class TopicClientProxy<T> implements ITopic {
     private final String name;
     private final ProxyHelper proxyHelper;
 
+    private final Object lock = new Object();
+
     public TopicClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
         proxyHelper = new ProxyHelper(name, hazelcastClient);
@@ -43,12 +45,14 @@ public class TopicClientProxy<T> implements ITopic {
         proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_PUBLISH, message, null);
     }
 
-    public synchronized void addMessageListener(MessageListener messageListener) {
+    public void addMessageListener(MessageListener messageListener) {
         check(messageListener);
-        boolean shouldCall = messageListenerManager().noMessageListenerRegistered(name);
-        messageListenerManager().registerMessageListener(name, messageListener);
-        if (shouldCall) {
-            doAddListenerCall(messageListener);
+        synchronized (lock) {
+            boolean shouldCall = messageListenerManager().noListenerRegistered(name);
+            messageListenerManager().registerListener(name, messageListener);
+            if (shouldCall) {
+                doAddListenerCall(messageListener);
+            }
         }
     }
 
@@ -57,18 +61,20 @@ public class TopicClientProxy<T> implements ITopic {
         proxyHelper.doCall(c);
     }
 
-    public synchronized void removeMessageListener(MessageListener messageListener) {
+    public void removeMessageListener(MessageListener messageListener) {
         check(messageListener);
-        messageListenerManager().removeMessageListener(name, messageListener);
-        if (messageListenerManager().noMessageListenerRegistered(name)) {
-            proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, null, null);
+        synchronized (lock) {
+            messageListenerManager().removeListener(name, messageListener);
+            if (messageListenerManager().noListenerRegistered(name)) {
+                proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, null, null);
+            }
         }
     }
-    
-	private MessageListenerManager messageListenerManager() {
-	    return proxyHelper.getHazelcastClient().getListenerManager().getMessageListenerManager();
+
+    private MessageListenerManager messageListenerManager() {
+        return proxyHelper.getHazelcastClient().getListenerManager().getMessageListenerManager();
     }
-    
+
     public InstanceType getInstanceType() {
         return InstanceType.TOPIC;
     }

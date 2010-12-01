@@ -36,19 +36,19 @@ public class MembershipListenerManager {
         this.client = client;
     }
 
-    public void registerMembershipListener(MembershipListener listener) {
+    public void registerListener(MembershipListener listener) {
         this.memberShipListeners.add(listener);
     }
 
-    public void removeMembershipListener(MembershipListener listener) {
+    public void removeListener(MembershipListener listener) {
         this.memberShipListeners.remove(listener);
     }
 
-    public boolean noMembershipListenerRegistered() {
+    public boolean noListenerRegistered() {
         return memberShipListeners.isEmpty();
     }
 
-    public void notifyMembershipListeners(Packet packet) {
+    public void notifyListeners(Packet packet) {
         if (memberShipListeners.size() > 0) {
             Member member = (Member) toObject(packet.getKey());
             Integer type = (Integer) toObject(packet.getValue());

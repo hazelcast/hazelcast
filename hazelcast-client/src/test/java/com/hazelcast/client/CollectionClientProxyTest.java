@@ -67,7 +67,7 @@ public class CollectionClientProxyTest {
         };
         proxy.addItemListener(listener, includeValue);
         //verify(listenerManager).addListenerCall(argThat(new CallMatcher()));
-        verify(itemListenerManager).registerItemListener(name, listener);
+        verify(itemListenerManager).registerListener(name, listener);
         verify(proxyHelper).doCall(argThat(new CallMatcher()));
     }
 

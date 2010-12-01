@@ -41,44 +41,44 @@ public class InstanceListenerManager {
         this.client = client;
     }
 
-    public void registerInstanceListener(InstanceListener listener) {
+    public void registerListener(InstanceListener listener) {
         this.instanceListeners.add(listener);
     }
 
-    public void removeInstanceListener(InstanceListener instanceListener) {
+    public void removeListener(InstanceListener instanceListener) {
         this.instanceListeners.remove(instanceListener);
     }
 
-    public synchronized boolean noInstanceListenerRegistered() {
+    public synchronized boolean noListenerRegistered() {
         return instanceListeners.isEmpty();
     }
 
-    public void notifyInstanceListeners(Packet packet) {
+    public void notifyListeners(Packet packet) {
         String id = (String) toObject(packet.getKey());
         InstanceEvent.InstanceEventType instanceEventType = (InstanceEvent.InstanceEventType) toObject(packet.getValue());
         InstanceEvent event = new InstanceEvent(instanceEventType, (Instance) client.getClientProxy(id));
         for (final InstanceListener listener : instanceListeners) {
-            switch(instanceEventType){
-            case CREATED:
-                listener.instanceCreated(event);
-                break;
-            case DESTROYED:
-                listener.instanceDestroyed(event);
-                break;
-            default:
-            	break;
+            switch (instanceEventType) {
+                case CREATED:
+                    listener.instanceCreated(event);
+                    break;
+                case DESTROYED:
+                    listener.instanceDestroyed(event);
+                    break;
+                default:
+                    break;
             }
         }
     }
-    
-    public Call createNewAddListenerCall(final ProxyHelper proxyHelper){
-    	Packet request = proxyHelper.createRequestPacket(ClusterOperation.CLIENT_ADD_INSTANCE_LISTENER, null, null);
+
+    public Call createNewAddListenerCall(final ProxyHelper proxyHelper) {
+        Packet request = proxyHelper.createRequestPacket(ClusterOperation.CLIENT_ADD_INSTANCE_LISTENER, null, null);
         return proxyHelper.createCall(request);
     }
-    
-    public Collection<Call> calls(final HazelcastClient client){
-    	if (instanceListeners.isEmpty())
-    		return Collections.emptyList();
+
+    public Collection<Call> calls(final HazelcastClient client) {
+        if (instanceListeners.isEmpty())
+            return Collections.emptyList();
         return Collections.singletonList(createNewAddListenerCall(new ProxyHelper("", client)));
     }
 }

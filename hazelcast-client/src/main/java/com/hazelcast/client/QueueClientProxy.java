@@ -17,6 +17,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.impl.QueueItemListenerManager;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Prefix;
@@ -32,6 +33,8 @@ import static com.hazelcast.client.ProxyHelper.check;
 public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     final protected ProxyHelper proxyHelper;
     final protected String name;
+
+    final Object lock = new Object();
 
     public QueueClientProxy(HazelcastClient hazelcastClient, String name) {
         super();
@@ -169,10 +172,28 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     }
 
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {
-        throw new UnsupportedOperationException();
+        check(listener);
+        synchronized (lock) {
+            boolean shouldCall = listenerManager().noListenerRegistered(name);
+            listenerManager().registerListener(name, listener);
+            if (shouldCall) {
+                Call c = listenerManager().createNewAddItemListenerCall(proxyHelper);
+                proxyHelper.doCall(c);
+            }
+        }
     }
 
-    public void removeItemListener(ItemListener<E> eItemListener) {
-        throw new UnsupportedOperationException();
+    public void removeItemListener(ItemListener<E> listener) {
+        check(listener);
+        synchronized (lock) {
+            listenerManager().removeListener(name, listener);
+            Packet request = proxyHelper.createRequestPacket(ClusterOperation.REMOVE_LISTENER, null, null);
+            Call c = proxyHelper.createCall(request);
+            proxyHelper.doCall(c);
+        }
+    }
+
+    private QueueItemListenerManager listenerManager() {
+        return proxyHelper.getHazelcastClient().getListenerManager().getQueueItemListenerManager();
     }
 }

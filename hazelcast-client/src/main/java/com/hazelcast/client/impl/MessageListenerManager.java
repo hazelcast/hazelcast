@@ -35,7 +35,7 @@ import static com.hazelcast.client.Serializer.toObject;
 public class MessageListenerManager {
     final private ConcurrentHashMap<String, List<MessageListener>> messageListeners = new ConcurrentHashMap<String, List<MessageListener>>();
 
-    public void registerMessageListener(String name, MessageListener messageListener) {
+    public void registerListener(String name, MessageListener messageListener) {
         List<MessageListener> newListenersList = new CopyOnWriteArrayList<MessageListener>();
         List<MessageListener> listeners = messageListeners.putIfAbsent(name, newListenersList);
         if (listeners == null) {
@@ -44,7 +44,7 @@ public class MessageListenerManager {
         listeners.add(messageListener);
     }
 
-    public void removeMessageListener(String name, MessageListener messageListener) {
+    public void removeListener(String name, MessageListener messageListener) {
         if (!messageListeners.containsKey(name)) {
             return;
         }
@@ -54,7 +54,7 @@ public class MessageListenerManager {
         }
     }
 
-    public boolean noMessageListenerRegistered(String name) {
+    public boolean noListenerRegistered(String name) {
         if (!messageListeners.containsKey(name)) {
             return true;
         }
@@ -70,13 +70,13 @@ public class MessageListenerManager {
             }
         }
     }
-    
-    public Call createNewAddListenerCall(final ProxyHelper proxyHelper){
-    	Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
+
+    public Call createNewAddListenerCall(final ProxyHelper proxyHelper) {
+        Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
         return proxyHelper.createCall(request);
     }
-    
-    public Collection<Call> calls(final HazelcastClient client){
+
+    public Collection<Call> calls(final HazelcastClient client) {
         final List<Call> calls = new ArrayList<Call>();
         for (final String name : messageListeners.keySet()) {
             final ProxyHelper proxyHelper = new ProxyHelper(name, client);
