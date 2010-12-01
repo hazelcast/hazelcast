@@ -40,6 +40,7 @@ public interface Cluster {
 
     /**
      * Set of current members of the cluster.
+     * Returning set instance is not modifiable.
      *
      * @return current members of the cluster
      */

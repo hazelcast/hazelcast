@@ -136,7 +136,7 @@ public class ClusterImpl implements Cluster {
         for (Member member : setNew) {
             clusterMembers.put(member, member);
         }
-        members.set(setNew);
+        members.set(Collections.unmodifiableSet(setNew));
         distances.clear();
         // send notifications now
         for (Runnable notification : notifications) {
