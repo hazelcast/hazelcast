@@ -62,37 +62,37 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     public IQueue<Object> getQueue() {
-        if (queue == null) {
-            queue = hazelcast.getQueue(namespace);
-        }
+//        if (queue == null) {
+        queue = hazelcast.getQueue(namespace);
+//        }
         return queue;
     }
 
     public ITopic<Object> getTopic() {
-        if (topic == null) {
-            topic = hazelcast.getTopic(namespace);
-        }
+//        if (topic == null) {
+        topic = hazelcast.getTopic(namespace);
+//        }
         return topic;
     }
 
     public IMap<Object, Object> getMap() {
-        if (map == null) {
-            map = hazelcast.getMap(namespace);
-        }
+//        if (map == null) {
+        map = hazelcast.getMap(namespace);
+//        }
         return map;
     }
 
     public ISet<Object> getSet() {
-        if (set == null) {
-            set = hazelcast.getSet(namespace);
-        }
+//        if (set == null) {
+        set = hazelcast.getSet(namespace);
+//        }
         return set;
     }
 
     public IList<Object> getList() {
-        if (list == null) {
-            list = hazelcast.getList(namespace);
-        }
+//        if (list == null) {
+        list = hazelcast.getList(namespace);
+//        }
         return list;
     }
 
