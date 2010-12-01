@@ -624,6 +624,27 @@ public class TransactionTest {
     }
 
     @Test
+    public void testQueueOrderAfterPollRollback() {
+        IQueue<Integer> queue = newQueueProxy("testQueueOrderAfterPollRollback");
+        TransactionalQueue<Integer> txn1 = newTransactionalQueueProxy("testQueueOrderAfterPollRollback");
+        txn1.begin();
+        txn1.offer(1);
+        txn1.offer(2);
+        txn1.offer(3);
+        txn1.commit();
+        assertEquals(3, queue.size());
+        assertEquals(3, txn1.size());
+        TransactionalQueue<Integer> txn2 = newTransactionalQueueProxy("testQueueOrderAfterPollRollback");
+        txn2.begin();
+        assertEquals(1, txn2.poll().intValue());
+        assertEquals(2, txn2.peek().intValue());
+        txn2.rollback();
+        assertEquals(1, queue.poll().intValue());
+        assertEquals(2, queue.poll().intValue());
+        assertEquals(3, queue.poll().intValue());
+    }
+
+    @Test
     @Ignore
     public void testMapEntryLastAccessTime() {
         TransactionalMap txnMap = newTransactionalMapProxy("testMapEntryLastAccessTime");
@@ -688,6 +709,15 @@ public class TransactionTest {
         return proxy;
     }
 
+    IQueue newQueueProxy(String name) {
+        IQueue queue = Hazelcast.getQueue(name);
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        Class[] interfaces = new Class[]{IQueue.class};
+        IQueue proxy = (IQueue) Proxy.newProxyInstance(classLoader, interfaces, new ThreadBoundInvocationHandler(queue));
+        mapsUsed.add(proxy);
+        return proxy;
+    }
+
     interface TransactionalMultiMap extends MultiMap {
         void begin();
 
@@ -707,7 +737,7 @@ public class TransactionTest {
         void rollback();
     }
 
-    interface TransactionalQueue extends IQueue {
+    interface TransactionalQueue<E> extends IQueue<E> {
         void begin();
 
         void commit();

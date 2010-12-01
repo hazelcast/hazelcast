@@ -352,7 +352,7 @@ class TransactionImpl implements Transaction {
                 commitPoll();
                 // remove the backup at the next member
             } else {
-                offerAgain();
+                offerAgain(false);
             }
         }
 
@@ -374,7 +374,7 @@ class TransactionImpl implements Transaction {
 
         public void rollbackQueue() {
             if (removed) {
-                offerAgain();
+                offerAgain(true);
                 // if offer fails, no worries.
                 // there is a backup at the next member
             }
@@ -385,8 +385,13 @@ class TransactionImpl implements Transaction {
             commitPoll.commitPoll(name);
         }
 
-        private void offerAgain() {
-            Offer offer = factory.node.blockingQueueManager.new Offer();
+        private void offerAgain(boolean first) {
+            Offer offer = null;
+            if (first) {
+                offer = factory.node.blockingQueueManager.new OfferFirst();
+            } else {
+                offer = factory.node.blockingQueueManager.new Offer();
+            }
             try {
                 boolean offered = offer.offer(name, value, timeout, false);
                 if (!offered) {

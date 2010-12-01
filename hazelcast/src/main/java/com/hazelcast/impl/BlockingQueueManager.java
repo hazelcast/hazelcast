@@ -70,6 +70,11 @@ public class BlockingQueueManager extends BaseManager {
                 handleOffer(packet);
             }
         });
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_OFFER_FIRST, new PacketProcessor() {
+            public void process(Packet packet) {
+                handleOfferFirst(packet);
+            }
+        });
         node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_BACKUP_ADD, new PacketProcessor() {
             public void process(Packet packet) {
                 handleBackup(packet);
@@ -428,6 +433,23 @@ public class BlockingQueueManager extends BaseManager {
         if (rightRemoteOfferTarget(packet)) {
             Request request = Request.copy(packet);
             doOffer(request);
+            packet.longValue = request.longValue;
+            if (!request.scheduled) {
+                if (request.response == Boolean.TRUE) {
+                    sendResponse(packet);
+                } else {
+                    sendResponseFailure(packet);
+                }
+            } else {
+                releasePacket(packet);
+            }
+        }
+    }
+
+    final void handleOfferFirst(Packet packet) {
+        if (rightRemotePollTarget(packet)) {
+            Request request = Request.copy(packet);
+            doOfferFirst(request);
             packet.longValue = request.longValue;
             if (!request.scheduled) {
                 if (request.response == Boolean.TRUE) {
@@ -854,17 +876,21 @@ public class BlockingQueueManager extends BaseManager {
     class Offer extends TargetAwareOp {
 
         public boolean offer(String name, Object value, long timeout) throws InterruptedException {
-            return offer(name, value, timeout, true);
+            return offer(ClusterOperation.BLOCKING_QUEUE_OFFER, name, value, timeout, true);
         }
 
         public boolean offer(String name, Object value, long timeout, boolean transactional) throws InterruptedException {
+            return offer(ClusterOperation.BLOCKING_QUEUE_OFFER, name, value, timeout, transactional);
+        }
+
+        protected boolean offer(ClusterOperation operation, String name, Object value, long timeout, boolean transactional) throws InterruptedException {
             try {
                 ThreadContext threadContext = ThreadContext.get();
                 TransactionImpl txn = threadContext.getCallContext().getTransaction();
                 if (transactional && txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                     txn.attachPutOp(name, null, value, timeout, true);
                 } else {
-                    return booleanCall(ClusterOperation.BLOCKING_QUEUE_OFFER, name, null, value, timeout, -1);
+                    return booleanCall(operation, name, null, value, timeout, -1);
                 }
                 return true;
             } catch (RuntimeInterruptedException e) {
@@ -882,6 +908,42 @@ public class BlockingQueueManager extends BaseManager {
             Q q = getQ(request.name);
             if (q.rightPutTarget(request.blockId)) {
                 doOffer(request);
+                if (!request.scheduled) {
+                    setResult(request.response);
+                }
+            } else {
+                setResult(OBJECT_REDO);
+            }
+        }
+    }
+
+    class OfferFirst extends Offer {
+        public boolean offer(String name, Object value, long timeout) throws InterruptedException {
+            return offer(name, value, timeout, true);
+        }
+
+        public boolean offer(String name, Object value, long timeout, boolean transactional) throws InterruptedException {
+            return offer(ClusterOperation.BLOCKING_QUEUE_OFFER_FIRST, name, value, timeout, transactional);
+        }
+
+        @Override
+        public void setTarget() {
+            Q q = getQ(request.name);
+            Block takeBlock = q.getCurrentTakeBlock();
+            if (takeBlock == null) {
+                target = getMasterAddress();
+                request.blockId = 0;
+            } else {
+                target = takeBlock.address;
+                request.blockId = takeBlock.blockId;
+            }
+        }
+
+        @Override
+        public void doLocalOp() {
+            Q q = getQ(request.name);
+            if (q.rightTakeTarget(request.blockId)) {
+                doOfferFirst(request);
                 if (!request.scheduled) {
                     setResult(request.response);
                 }
@@ -981,7 +1043,7 @@ public class BlockingQueueManager extends BaseManager {
                 final Request reqScheduled = (req.local) ? req : req.hardCopy();
                 if (reqScheduled.local) {
                     if (reqScheduled.attachment == null) {
-                        throw new RuntimeException("Scheduled local but attachement is null");
+                        throw new RuntimeException("Scheduled local but attachment is null");
                     }
                 }
                 q.scheduleOffer(reqScheduled);
@@ -990,7 +1052,37 @@ public class BlockingQueueManager extends BaseManager {
             }
             return;
         }
-        q.offer(req);
+        q.offer(req, false);
+        req.response = Boolean.TRUE;
+    }
+
+    void doOfferFirst(Request req) {
+        if (req.value == null) {
+            throw new RuntimeException("OfferFirst request value cannot be null. Local:" + req.local);
+        }
+        if (req.value.size() == 0) {
+            throw new RuntimeException("OfferFirst request value size cannot be zero. Local:" + req.local);
+        }
+        Q q = getQ(req.name);
+        if (q.blCurrentTake == null) {
+            q.setCurrentTake();
+        }
+        if (q.quickSize() >= q.maxSizePerJVM || q.blCurrentTake.hasNoSpace()) {
+            if (req.hasEnoughTimeToSchedule()) {
+                req.scheduled = true;
+                final Request reqScheduled = (req.local) ? req : req.hardCopy();
+                if (reqScheduled.local) {
+                    if (reqScheduled.attachment == null) {
+                        throw new RuntimeException("Scheduled local but attachment is null");
+                    }
+                }
+                q.scheduleOfferFirst(reqScheduled);
+            } else {
+                req.response = Boolean.FALSE;
+            }
+            return;
+        }
+        q.offer(req, true);
         req.response = Boolean.TRUE;
     }
 
@@ -1090,15 +1182,15 @@ public class BlockingQueueManager extends BaseManager {
         public Q(String name) {
             QueueConfig qconfig = node.getConfig().getQueueConfig(name.substring(Prefix.QUEUE.length()));
             maxSizePerJVM = (qconfig.getMaxSizePerJVM() == 0) ? Integer.MAX_VALUE : qconfig.getMaxSizePerJVM();
-            maxAge = (qconfig.getTimeToLiveSeconds() == 0) ? Integer.MAX_VALUE : 
-                TimeUnit.SECONDS.toMillis(qconfig.getTimeToLiveSeconds());
+            maxAge = (qconfig.getTimeToLiveSeconds() == 0) ? Integer.MAX_VALUE :
+                    TimeUnit.SECONDS.toMillis(qconfig.getTimeToLiveSeconds());
             logger.log(Level.FINEST, name + ".maxSizePerJVM=" + maxSizePerJVM);
             logger.log(Level.FINEST, name + ".maxAge=" + maxAge);
             this.name = name;
             final int blocksLimit = 10;
             lsBlocks = new ArrayList<Block>(blocksLimit);
             Address master = getMasterAddress();
-            if (master == null){
+            if (master == null) {
                 throw new IllegalStateException("Master is " + master);
             }
             if (master.isThisAddress()) {
@@ -1152,7 +1244,7 @@ public class BlockingQueueManager extends BaseManager {
             sb.append(", lsBlocks:").append(lsBlocks.size());
             for (Block block : lsBlocks) {
                 sb.append("\n\t").append(block.blockId).append(":").
-                    append(block.size()).append(" ").append(block.address);
+                        append(block.size()).append(" ").append(block.address);
             }
         }
 
@@ -1182,8 +1274,13 @@ public class BlockingQueueManager extends BaseManager {
             node.clusterManager.registerScheduledAction(action);
         }
 
+        public void scheduleOfferFirst(Request request) {
+            ScheduledOfferFirstAction action = new ScheduledOfferFirstAction(request);
+            lsScheduledOfferActions.add(action);
+            node.clusterManager.registerScheduledAction(action);
+        }
+
         public void schedulePoll(Request request) {
-//            System.out.println(request.name + " scheduled polled " + request.caller);
             ScheduledPollAction action = new ScheduledPollAction(request);
             lsScheduledPollActions.add(action);
             node.clusterManager.registerScheduledAction(action);
@@ -1225,6 +1322,28 @@ public class BlockingQueueManager extends BaseManager {
             }
         }
 
+        public class ScheduledOfferFirstAction extends ScheduledOfferAction {
+
+            public ScheduledOfferFirstAction(Request request) {
+                super(request);
+            }
+
+            @Override
+            public boolean consume() {
+                valid = rightTakeTarget(request.blockId);
+                if (valid) {
+                    offer(request, true);
+                    request.response = Boolean.TRUE;
+                    returnScheduledAsBoolean(request);
+                    return true;
+                } else {
+                    request.response = OBJECT_REDO;
+                    returnResponse(request);
+                    return false;
+                }
+            }
+        }
+
         public class ScheduledOfferAction extends ScheduledAction {
 
             public ScheduledOfferAction(Request request) {
@@ -1236,7 +1355,7 @@ public class BlockingQueueManager extends BaseManager {
                 // didn't expire but is it valid?
                 valid = rightPutTarget(request.blockId);
                 if (valid) {
-                    offer(request);
+                    offer(request, false);
                     request.response = Boolean.TRUE;
                     returnScheduledAsBoolean(request);
                     return true;
@@ -1384,7 +1503,7 @@ public class BlockingQueueManager extends BaseManager {
             }
         }
 
-        int offer(Request req) {
+        int offer(Request req, boolean first) {
             if (req.value == null) {
                 throw new RuntimeException("Offer request value cannot be null. Local:" + req.local);
             }
@@ -1392,7 +1511,7 @@ public class BlockingQueueManager extends BaseManager {
                 throw new RuntimeException("Offer request value size cannot be zero. Local:" + req.local);
             }
             try {
-                int addIndex = blCurrentPut.add(req.value);
+                int addIndex = (first) ? blCurrentTake.addFirst(req.value) : blCurrentPut.add(req.value);
                 doFireEntryEvent(true, req.value, req.caller);
                 sendBackup(true, req.caller, req.value, blCurrentPut.blockId, addIndex);
                 req.longValue = addIndex;
@@ -1712,6 +1831,24 @@ public class BlockingQueueManager extends BaseManager {
             index = 0;
         }
 
+        public int addFirst(Data item) {
+            final QData data = new QData(item);
+            List<QData> ordered = new ArrayList<QData>(BLOCK_SIZE);
+            for (QData d : values) {
+                if (d != null) {
+                    ordered.add(d);
+                }
+            }
+            values[0] = data;
+            int i = 1;
+            for (QData d : ordered) {
+                values[i++] = d;
+            }
+            addIndex = i;
+            removeIndex = 0;
+            return 0;
+        }
+
         public int add(Data item) {
             QData data = new QData(item);
             if (values != null) {
@@ -1759,6 +1896,15 @@ public class BlockingQueueManager extends BaseManager {
                 }
             }
             return null;
+        }
+
+        public boolean hasNoSpace() {
+            for (int i = 0; i < BLOCK_SIZE; i++) {
+                if (values[i] == null) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         public boolean containsValidItem() {
