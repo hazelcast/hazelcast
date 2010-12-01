@@ -392,7 +392,7 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         }
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testQueueItemListener() {
         final CountDownLatch latch = new CountDownLatch(2);
         IQueue<String> queue = getHazelcastClient().getQueue("testQueueListener");
