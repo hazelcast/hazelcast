@@ -855,7 +855,7 @@ public class ConcurrentMapManager extends BaseManager {
             DataRecordEntry dataRecordEntry = new DataRecordEntry(record, valueData);
             request.setFromRecord(record);
             request.operation = CONCURRENT_MAP_MERGE;
-            request.value = toData(dataRecordEntry);
+            request.value = toData(dataRecordEntry.getValue());
             request.setBooleanRequest();
             doOp();
             Boolean returnObject = getResultAsBoolean();
