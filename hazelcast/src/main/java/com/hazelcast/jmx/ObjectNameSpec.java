@@ -19,6 +19,8 @@ package com.hazelcast.jmx;
 
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
+
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -64,11 +66,9 @@ public class ObjectNameSpec {
         if (name == null) {
             return null;
         }
-        if (Pattern.matches(":\",=\\*\\?", name)) {
-            return ObjectName.quote(name);
-        } else {
-            return name;
-        }
+        final Pattern pattern = Pattern.compile("[:\",=*?]");
+        final Matcher matcher = pattern.matcher(name);
+        return matcher.find() ? ObjectName.quote(name) : name;
     }
 
     /**
