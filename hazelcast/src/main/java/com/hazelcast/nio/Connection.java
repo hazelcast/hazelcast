@@ -20,6 +20,8 @@ package com.hazelcast.nio;
 import com.hazelcast.cluster.AddOrRemoveConnection;
 import com.hazelcast.logging.ILogger;
 
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 
@@ -152,7 +154,8 @@ public final class Connection {
     
     @Override
     public String toString() {
-        final String ep = this.socketChannel.socket().getRemoteSocketAddress().toString();
-        return "Connection [" + ep + " -> " + endPoint + "] live=" + live + ", client=" + isClient() + ", type=" + type;
+        final Socket socket = this.socketChannel.socket();
+        final SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
+        return "Connection [" + remoteSocketAddress + " -> " + endPoint + "] live=" + live + ", client=" + isClient() + ", type=" + type;
     }
 }
