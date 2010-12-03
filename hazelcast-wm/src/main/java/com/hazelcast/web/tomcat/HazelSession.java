@@ -39,7 +39,6 @@ import javax.servlet.http.HttpSessionEvent;
 import org.apache.catalina.Context;
 import org.apache.catalina.Manager;
 import org.apache.catalina.Session;
-import org.apache.catalina.SessionListener;
 import org.apache.catalina.security.SecurityUtil;
 import org.apache.catalina.session.StandardSession;
 
@@ -78,9 +77,8 @@ public class HazelSession extends StandardSession {
         if (facade == null){
             if (SecurityUtil.isPackageProtectionEnabled()){
                 final HazelSession fsession = this;
-                facade = AccessController.doPrivileged(
-                        new PrivilegedAction<HazelSessionFacade>(){
-                    public HazelSessionFacade run(){
+                facade = (HazelSessionFacade)AccessController.doPrivileged(new PrivilegedAction(){
+                    public Object run(){
                         return new HazelSessionFacade(fsession);
                     }
                 });
@@ -169,12 +167,12 @@ public class HazelSession extends StandardSession {
 
         // Validate our current state
         if (!isValidInternal())
-            throw new IllegalStateException(sm.getString(
-                    "standardSession.setAttribute.ise", getIdInternal()));
+            throw new IllegalStateException
+                (sm.getString("standardSession.setAttribute.ise"));
         if ((manager != null) && manager.getDistributable() &&
           !(value instanceof Serializable))
             throw new IllegalArgumentException
-                (sm.getString("standardSession.setAttribute.iae", name));
+                (sm.getString("standardSession.setAttribute.iae"));
         
         HazelAttribute oldHattribute = (HazelAttribute)attributes.get(name);
         
@@ -185,7 +183,7 @@ public class HazelSession extends StandardSession {
         if (notify && value instanceof HttpSessionBindingListener) {
             // Don't call any notification if replacing with the same value
             if (oldHattribute != null && value != oldHattribute.getValue()) {
-                event = new HttpSessionBindingEvent(getSession(), name, value);
+            	event = new HttpSessionBindingEvent(getSession(), name, value);
                 try {
                     ((HttpSessionBindingListener) value).valueBound(event);
                 } catch (Throwable t){
@@ -194,7 +192,6 @@ public class HazelSession extends StandardSession {
                 }
             }
         }
-        
 
         // Replace or add this attribute
         if(oldHattribute == null){
@@ -208,14 +205,13 @@ public class HazelSession extends StandardSession {
         HazelAttribute unboundHattribute = (HazelAttribute)attributes.put(name, oldHattribute);
         Object unbound = unboundHattribute != null ? unboundHattribute.getValue() : null;
 
-        // Call the valueUnbound() method if necessary
+     // Call the valueUnbound() method if necessary
         if (notify && (unbound != null) && (unbound != value) &&
             (unbound instanceof HttpSessionBindingListener)) {
             try {
                 ((HttpSessionBindingListener) unbound).valueUnbound
                     (new HttpSessionBindingEvent(getSession(), name));
             } catch (Throwable t) {
-                ExceptionUtils.handleThrowable(t);
                 manager.getContainer().getLogger().error
                     (sm.getString("standardSession.bindingEvent"), t);
             }
@@ -260,7 +256,6 @@ public class HazelSession extends StandardSession {
                                        listener);
                 }
             } catch (Throwable t) {
-                ExceptionUtils.handleThrowable(t);
                 try {
                     if (unbound != null) {
                         fireContainerEvent(context,
@@ -272,7 +267,7 @@ public class HazelSession extends StandardSession {
                                            listener);
                     }
                 } catch (Exception e) {
-                    // Ignore
+                    ;
                 }
                 manager.getContainer().getLogger().error
                     (sm.getString("standardSession.attributeEvent"), t);
@@ -346,13 +341,12 @@ public class HazelSession extends StandardSession {
                                    "afterSessionAttributeRemoved",
                                    listener);
             } catch (Throwable t) {
-                ExceptionUtils.handleThrowable(t);
                 try {
                     fireContainerEvent(context,
                                        "afterSessionAttributeRemoved",
                                        listener);
                 } catch (Exception e) {
-                    // Ignore
+                    ;
                 }
                 manager.getContainer().getLogger().error
                     (sm.getString("standardSession.attributeEvent"), t);
@@ -387,7 +381,6 @@ public class HazelSession extends StandardSession {
                     ((HttpSessionActivationListener)attribute)
                         .sessionDidActivate(event);
                 } catch (Throwable t) {
-                    ExceptionUtils.handleThrowable(t);
                     manager.getContainer().getLogger().error
                         (sm.getString("standardSession.attributeEvent"), t);
                 }
@@ -417,7 +410,6 @@ public class HazelSession extends StandardSession {
                     ((HttpSessionActivationListener)attribute)
                         .sessionWillPassivate(event);
                 } catch (Throwable t) {
-                    ExceptionUtils.handleThrowable(t);
                     manager.getContainer().getLogger().error
                         (sm.getString("standardSession.attributeEvent"), t);
                 }
@@ -458,13 +450,13 @@ public class HazelSession extends StandardSession {
 
         // Deserialize the attribute count and attribute values
         if (attributes == null)
-            attributes = new Hashtable<String, Object>();
+            attributes = new Hashtable();
         int n = ((Integer) stream.readObject()).intValue();
         boolean isValidSave = isValid;
         isValid = true;
         for (int i = 0; i < n; i++) {
             String name = (String) stream.readObject();
-            Object value = stream.readObject();
+            Object value = (Object) stream.readObject();
             if ((value instanceof String) && (value.equals(NOT_SERIALIZED)))
                 continue;
             if (manager.getContainer().getLogger().isDebugEnabled())
@@ -475,11 +467,11 @@ public class HazelSession extends StandardSession {
         isValid = isValidSave;
 
         if (listeners == null) {
-            listeners = new ArrayList<SessionListener>();
+            listeners = new ArrayList();
         }
 
         if (notes == null) {
-            notes = new Hashtable<String, Object>();
+            notes = new Hashtable();
         }
     }
 
@@ -506,12 +498,12 @@ public class HazelSession extends StandardSession {
     protected void writeObject(ObjectOutputStream stream) throws IOException {
 
         // Write the scalar instance variables (except Manager)
-        stream.writeObject(Long.valueOf(creationTime));
-        stream.writeObject(Long.valueOf(lastAccessedTime));
-        stream.writeObject(Integer.valueOf(maxInactiveInterval));
-        stream.writeObject(Boolean.valueOf(isNew));
-        stream.writeObject(Boolean.valueOf(isValid));
-        stream.writeObject(Long.valueOf(thisAccessedTime));
+        stream.writeObject(new Long(creationTime));
+        stream.writeObject(new Long(lastAccessedTime));
+        stream.writeObject(new Integer(maxInactiveInterval));
+        stream.writeObject(new Boolean(isNew));
+        stream.writeObject(new Boolean(isValid));
+        stream.writeObject(new Long(thisAccessedTime));
         stream.writeObject(id);
         if (manager.getContainer().getLogger().isDebugEnabled())
             manager.getContainer().getLogger().debug
@@ -519,8 +511,8 @@ public class HazelSession extends StandardSession {
 
         // Accumulate the names of serializable and non-serializable attributes
         String keys[] = keys();
-        ArrayList<String> saveNames = new ArrayList<String>();
-        ArrayList<Object> saveValues = new ArrayList<Object>();
+        ArrayList saveNames = new ArrayList();
+        ArrayList saveValues = new ArrayList();
         for (int i = 0; i < keys.length; i++) {
             HazelAttribute hattribute = (HazelAttribute)attributes.get(keys[i]);
             if(hattribute == null)
@@ -540,9 +532,9 @@ public class HazelSession extends StandardSession {
 
         // Serialize the attribute count and the Serializable attributes
         int n = saveNames.size();
-        stream.writeObject(Integer.valueOf(n));
+        stream.writeObject(new Integer(n));
         for (int i = 0; i < n; i++) {
-            stream.writeObject(saveNames.get(i));
+            stream.writeObject((String) saveNames.get(i));
             try {
                 stream.writeObject(saveValues.get(i));
                 if (manager.getContainer().getLogger().isDebugEnabled())
@@ -580,6 +572,5 @@ public class HazelSession extends StandardSession {
             manager.add(this);
         tellNew();
     }
-
 
 }
