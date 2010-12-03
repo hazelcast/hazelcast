@@ -17,6 +17,8 @@
 
 package com.hazelcast.config;
 
+import static java.text.MessageFormat.format;
+
 import com.hazelcast.merge.AddNewEntryMergePolicy;
 import com.hazelcast.merge.HigherHitsMergePolicy;
 import com.hazelcast.merge.LatestUpdateMergePolicy;
@@ -28,12 +30,8 @@ import java.io.DataOutput;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Config implements DataSerializable {
@@ -121,54 +119,60 @@ public class Config implements DataSerializable {
     }
 
     public QueueConfig getQueueConfig(final String name) {
-        final Set<String> qNames = mapQueueConfigs.keySet();
-        for (final String pattern : qNames) {
-            if (nameMatches(name, pattern)) {
-                return mapQueueConfigs.get(pattern);
-            }
+        QueueConfig config;
+        if ((config = lookupByPattern(mapQueueConfigs, name)) != null) return config;
+        
+        config = mapQueueConfigs.get("default");
+        if (config == null) {
+            config = new QueueConfig();
+            config.setName("default");
+            mapQueueConfigs.put("default", config);
         }
-        QueueConfig defaultConfig = mapQueueConfigs.get("default");
-        if (defaultConfig == null) {
-            defaultConfig = new QueueConfig();
-            defaultConfig.setName("default");
-            mapQueueConfigs.put("default", defaultConfig);
-        }
-        return defaultConfig;
+        return config;
     }
 
     public MapConfig getMapConfig(final String name) {
-        final Set<String> qNames = mapConfigs.keySet();
-        for (final String pattern : qNames) {
-            if (nameMatches(name, pattern)) {
-                return mapConfigs.get(pattern);
-            }
+        MapConfig config;
+        if ((config = lookupByPattern(mapConfigs, name)) != null) return config;
+        
+        config = mapConfigs.get("default");
+        if (config == null) {
+            config = new MapConfig();
+            config.setName("default");
+            mapConfigs.put("default", config);
         }
-        MapConfig defaultConfig = mapConfigs.get("default");
-        if (defaultConfig == null) {
-            defaultConfig = new MapConfig();
-            defaultConfig.setName("default");
-            mapConfigs.put("default", defaultConfig);
-        }
-        return defaultConfig;
+        return config;
     }
 
     public TopicConfig getTopicConfig(final String name) {
-        final Set<String> tNames = mapTopicConfigs.keySet();
-        for (final String pattern : tNames) {
-            if (nameMatches(name, pattern)) {
-                return mapTopicConfigs.get(pattern);
-            }
+        TopicConfig config;
+        if ((config = lookupByPattern(mapTopicConfigs, name)) != null) {
+            return config;
         }
-        TopicConfig defaultConfig = mapTopicConfigs.get("default");
-        if (defaultConfig == null) {
-            defaultConfig = new TopicConfig();
-            defaultConfig.setName("default");
-            mapTopicConfigs.put("default", defaultConfig);
+        
+        config = mapTopicConfigs.get("default");
+        if (config == null) {
+            config = new TopicConfig();
+            config.setName("default");
+            mapTopicConfigs.put("default", config);
         }
-        return defaultConfig;
+        return config;
     }
 
-    private boolean nameMatches(final String name, final String pattern) {
+    private static <T> T lookupByPattern(Map<String, T> map, String name) {
+        T t = name.indexOf('*') < 0 ? map.get(name) : null;
+        if (t == null){
+            final Set<String> tNames = map.keySet();
+            for (final String pattern : tNames) {
+                if (nameMatches(name, pattern)) {
+                    return map.get(pattern);
+                }
+            }
+        }
+        return t;
+    }
+
+    private static boolean nameMatches(final String name, final String pattern) {
         final int index = pattern.indexOf('*');
         if (index == -1) {
             return name.equals(pattern);
@@ -318,18 +322,21 @@ public class Config implements DataSerializable {
     }
 
     public Map<String, ExecutorConfig> getExecutorConfigMap() {
-        return mapExecutors;
+        return Collections.unmodifiableMap(mapExecutors);
     }
 
     public void setExecutorConfigMap(Map<String, ExecutorConfig> mapExecutors) {
         this.mapExecutors = mapExecutors;
+        for (final Entry<String, ExecutorConfig> entry : this.mapExecutors.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
     }
 
     /**
      * @return the mapTopicConfigs
      */
     public Map<String, TopicConfig> getTopicConfigs() {
-        return mapTopicConfigs;
+        return Collections.unmodifiableMap(mapTopicConfigs);
     }
 
     /**
@@ -337,6 +344,9 @@ public class Config implements DataSerializable {
      */
     public Config setTopicConfigs(Map<String, TopicConfig> mapTopicConfigs) {
         this.mapTopicConfigs = mapTopicConfigs;
+        for (final Entry<String, TopicConfig> entry : this.mapTopicConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
         return this;
     }
 
@@ -344,7 +354,7 @@ public class Config implements DataSerializable {
      * @return the mapQConfigs
      */
     public Map<String, QueueConfig> getQConfigs() {
-        return mapQueueConfigs;
+        return Collections.unmodifiableMap(mapQueueConfigs);
     }
 
     /**
@@ -352,6 +362,9 @@ public class Config implements DataSerializable {
      */
     public void setQConfigs(Map<String, QueueConfig> mapQConfigs) {
         this.mapQueueConfigs = mapQConfigs;
+        for (final Entry<String, QueueConfig> entry : this.mapQueueConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
     }
 
     /**
@@ -359,6 +372,9 @@ public class Config implements DataSerializable {
      */
     public Config setMapQConfigs(Map<String, QueueConfig> mapQConfigs) {
         this.mapQueueConfigs = mapQConfigs;
+        for (final Entry<String, QueueConfig> entry : this.mapQueueConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
         return this;
     }
 
@@ -366,7 +382,7 @@ public class Config implements DataSerializable {
      * @return the mapConfigs
      */
     public Map<String, MapConfig> getMapConfigs() {
-        return mapConfigs;
+        return Collections.unmodifiableMap(mapConfigs);
     }
 
     /**
@@ -374,6 +390,9 @@ public class Config implements DataSerializable {
      */
     public Config setMapConfigs(Map<String, MapConfig> mapConfigs) {
         this.mapConfigs = mapConfigs;
+        for (final Entry<String, MapConfig> entry : this.mapConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
         return this;
     }
 
@@ -421,7 +440,8 @@ public class Config implements DataSerializable {
             throw new IllegalArgumentException("Expected not null config");
         }
         if (!this.groupConfig.equals(config.getGroupConfig())){
-            throw new RuntimeException("Incompatible group config:" + config.getGroupConfig());
+            throw new RuntimeException(format("Incompatible group config this:\n{0}\nanother:\n{1}",
+                this.groupConfig, config.getGroupConfig()));
         }
         checkMapConfigCompatible(config);
         checkQueueConfigCompatible(config);
@@ -435,7 +455,8 @@ public class Config implements DataSerializable {
             final MapConfig thisMapConfig = getMapConfig(name);
             final MapConfig thatMapConfig = config.getMapConfig(name);
             if (!thisMapConfig.isCompatible(thatMapConfig)) {
-                throw new RuntimeException("Incompatible map config:" + thatMapConfig);
+                throw new RuntimeException(format("Incompatible map config this:\n{0}\nanother:\n{1}",
+                    thisMapConfig, thatMapConfig));
             }
         }
     }
@@ -447,7 +468,8 @@ public class Config implements DataSerializable {
             final QueueConfig thisQueueConfig = getQueueConfig(name);
             final QueueConfig thatQueueConfig = config.getQueueConfig(name);
             if (!thisQueueConfig.isCompatible(thatQueueConfig)) {
-                throw new RuntimeException("Incompatible queue config:" + thatQueueConfig);
+                throw new RuntimeException(format("Incompatible queue config this:\n{0}\nanother:\n{1}",
+                    thisQueueConfig, thatQueueConfig));
             }
         }
     }
@@ -459,7 +481,8 @@ public class Config implements DataSerializable {
             final TopicConfig thisTopicConfig = getTopicConfig(name);
             final TopicConfig thatTopicConfig = config.getTopicConfig(name);
             if (!thisTopicConfig.equals(thatTopicConfig)) {
-                throw new RuntimeException("Incompatible topic config:" + thatTopicConfig);
+                throw new RuntimeException(format("Incompatible topic config this:\n{0}\nanother:\n{1}",
+                    thisTopicConfig, thatTopicConfig));
             }
         }
     }
