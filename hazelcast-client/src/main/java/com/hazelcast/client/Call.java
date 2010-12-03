@@ -30,7 +30,7 @@ public class Call {
     private final Packet request;
 
     private volatile Object response;
-    
+
     private final BlockingQueue<Object> responseQueue = new LinkedBlockingQueue<Object>();
 
     public Call(Long id, Packet request) {
@@ -81,14 +81,14 @@ public class Call {
             //*/
         }
     }
-    
+
     public void onDisconnect(Member member) {
     }
 
     public boolean hasResponse() {
         return this.response != null || responseQueue.size() > 0;
     }
-    
+
     public void setResponse(Object response) {
         this.response = response;
         this.responseQueue.offer(response);
@@ -96,16 +96,15 @@ public class Call {
 
     @Override
     public String toString() {
-        return "Call " + "[" + id + "] operation=" + 
-            (request != null ? request.getOperation()
-             //*/
-             + " " + request.getName() + " " 
-             + (hasResponse() ? "+ " : "- ")
-             + Serializer.toObject(request.getKey())
-             + "=" + Serializer.toObject(request.getValue()) 
-             /*/
-             //*/
-             : 
-             null);
+        return "Call " + "[" + id + "] operation=" +
+                (request != null ? request.getOperation()
+                        /*
+                        + " " + request.getName() + " "
+                        + (hasResponse() ? "+ " : "- ")
+                        + Serializer.toObject(request.getKey())
+                        + "=" + Serializer.toObject(request.getValue())
+                        */
+                        :
+                        null);
     }
 }
