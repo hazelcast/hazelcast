@@ -199,6 +199,8 @@ public class UnresolvedIssues extends TestUtil {
         assertEquals(0, map1.getLocalMapStats().getBackupEntryCount());
         IMap map2 = h2.getMap("def");
         assertEquals(0, map2.getLocalMapStats().getBackupEntryCount());
+        h1.getLifecycleService().shutdown();
+        h2.getLifecycleService().shutdown();
     }
 
     @Test
@@ -229,6 +231,9 @@ public class UnresolvedIssues extends TestUtil {
         assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
         System.out.println("MAP1: " + map1.getLocalMapStats());
         System.out.println("MAP2: " + map2.getLocalMapStats());
+        h1.getLifecycleService().shutdown();
+        h2.getLifecycleService().shutdown();
+        sc.getLifecycleService().shutdown();
     }
 
     @Test
@@ -248,5 +253,25 @@ public class UnresolvedIssues extends TestUtil {
         assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
         System.out.println("MAP1: " + map1.getLocalMapStats());
         System.out.println("MAP2: " + map2.getLocalMapStats());
+        h1.getLifecycleService().shutdown();
+        h2.getLifecycleService().shutdown();
+        sc.getLifecycleService().shutdown();
+    }
+
+    @Test
+    @Ignore
+    public void issue427QOfferIncorrectWithinTransaction() {
+        Config config = new Config();
+        config.getQueueConfig("default").setMaxSizePerJVM(100);
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+        h.getTransaction().begin();
+        IQueue q = h.getQueue("default");
+        for (int i = 0; i < 100; i++) {
+            q.offer(i);
+        }
+        boolean result = q.offer(101);
+        assertEquals(100, q.size());
+        assertFalse(result);
+        h.getLifecycleService().shutdown();
     }
 }
