@@ -17,14 +17,13 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.impl.ReplicatedMapFactory;
 import com.hazelcast.impl.TestUtil;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -32,7 +31,6 @@ import org.junit.Test;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.concurrent.BlockingQueue;
 
 import static org.junit.Assert.*;
 
@@ -161,5 +159,29 @@ public class UnresolvedIssues extends TestUtil {
         public void setValue(String value) {
             this.value = value;
         }
+    }
+
+    @Test
+    @Ignore
+    public void issue395BackupProblemWithBCount2() {
+        Config config = new Config();
+        config.getMapConfig("default").setBackupCount(2);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        IMap map1 = h1.getMap("default");
+        IMap map2 = h2.getMap("default");
+        for (int i = 0; i < 1000; i++) {
+            map1.put(i, i);
+        }
+        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        IMap map3 = h3.getMap("default");
+        assertEquals(map1.getLocalMapStats().getOwnedEntryCount() + map3.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map2.getLocalMapStats().getOwnedEntryCount() + map3.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map1.getLocalMapStats().getOwnedEntryCount() + map2.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
+        h1.getLifecycleService().shutdown();
+        h2.getLifecycleService().shutdown();
+        h3.getLifecycleService().shutdown();
     }
 }
