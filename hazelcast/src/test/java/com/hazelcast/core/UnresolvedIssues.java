@@ -184,4 +184,17 @@ public class UnresolvedIssues extends TestUtil {
         h2.getLifecycleService().shutdown();
         h3.getLifecycleService().shutdown();
     }
+
+    @Test
+    @Ignore
+    public void issue397MapReplaceLeadsToMemoryLeak() {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        IMap map1 = h1.getMap("def");
+        Object old = map1.replace("k", "v");
+        assertNull(old);
+        assertEquals(0, map1.getLocalMapStats().getBackupEntryCount());
+        IMap map2 = h2.getMap("def");
+        assertEquals(0, map2.getLocalMapStats().getBackupEntryCount());
+    }
 }
