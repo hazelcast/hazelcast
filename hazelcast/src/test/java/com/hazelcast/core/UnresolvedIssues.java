@@ -21,6 +21,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.impl.ReplicatedMapFactory;
 import com.hazelcast.impl.TestUtil;
+import com.hazelcast.partition.MigrationEvent;
+import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
@@ -31,6 +33,7 @@ import org.junit.Test;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.*;
 
@@ -196,5 +199,35 @@ public class UnresolvedIssues extends TestUtil {
         assertEquals(0, map1.getLocalMapStats().getBackupEntryCount());
         IMap map2 = h2.getMap("def");
         assertEquals(0, map2.getLocalMapStats().getBackupEntryCount());
+    }
+
+    @Test
+    @Ignore
+    public void issue390NoBackupWhenSuperClient() throws InterruptedException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        IMap map1 = h1.getMap("def");
+        for (int i = 0; i < 200; i++) {
+            map1.put(i, new byte[1000]);
+        }
+        Config scconfig = new Config();
+        scconfig.setSuperClient(true);
+        HazelcastInstance sc = Hazelcast.newHazelcastInstance(scconfig);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        IMap map2 = h2.getMap("def");
+        final CountDownLatch latch = new CountDownLatch(2);
+        h2.getPartitionService().addMigrationListener(new MigrationListener() {
+            public void migrationStarted(MigrationEvent migrationEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            public void migrationCompleted(MigrationEvent migrationEvent) {
+                latch.countDown();
+            }
+        });
+        latch.await();
+        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
+        System.out.println("MAP1: " + map1.getLocalMapStats());
+        System.out.println("MAP2: " + map2.getLocalMapStats());
     }
 }
