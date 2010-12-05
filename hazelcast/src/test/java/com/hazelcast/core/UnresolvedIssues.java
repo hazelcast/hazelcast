@@ -230,4 +230,23 @@ public class UnresolvedIssues extends TestUtil {
         System.out.println("MAP1: " + map1.getLocalMapStats());
         System.out.println("MAP2: " + map2.getLocalMapStats());
     }
+
+    @Test
+    @Ignore
+    public void issue388NoBackupWhenSuperClient() throws InterruptedException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        Config scconfig = new Config();
+        scconfig.setSuperClient(true);
+        HazelcastInstance sc = Hazelcast.newHazelcastInstance(scconfig);
+        IMap map1 = h1.getMap("def");
+        for (int i = 0; i < 200; i++) {
+            map1.put(i, new byte[1000]);
+        }
+        IMap map2 = h2.getMap("def");
+        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
+        System.out.println("MAP1: " + map1.getLocalMapStats());
+        System.out.println("MAP2: " + map2.getLocalMapStats());
+    }
 }
