@@ -429,7 +429,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 qConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value, QueueConfig.DEFAULT_TTL_SECONDS));
             }
         }
-        this.config.getQConfigs().put(name, qConfig);
+        this.config.addQueueConfig(qConfig);
     }
 
     public void handleMap(final org.w3c.dom.Node node) throws Exception {
@@ -468,7 +468,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 mapConfig.setMergePolicy(value);
             }
         }
-        this.config.getMapConfigs().put(name, mapConfig);
+        this.config.addMapConfig(mapConfig);
     }
 
     private MapStoreConfig createMapStoreConfig(final org.w3c.dom.Node node) {
@@ -548,7 +548,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 tConfig.setGlobalOrderingEnabled(checkTrue(value));
             }
         }
-        config.getTopicConfigs().put(name, tConfig);
+        config.addTopicConfig(tConfig);
     }
 
     public void handleMergePolicies(final org.w3c.dom.Node node) throws Exception {

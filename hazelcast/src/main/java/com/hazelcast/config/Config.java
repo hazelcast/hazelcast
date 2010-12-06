@@ -332,6 +332,10 @@ public class Config implements DataSerializable {
         }
     }
 
+    public void addTopicConfig(TopicConfig topicConfig) {
+        mapTopicConfigs.put(topicConfig.getName(), topicConfig);
+    }
+
     /**
      * @return the mapTopicConfigs
      */
@@ -357,6 +361,10 @@ public class Config implements DataSerializable {
         return Collections.unmodifiableMap(mapQueueConfigs);
     }
 
+    public void addQueueConfig(QueueConfig queueConfig) {
+        mapQueueConfigs.put(queueConfig.getName(), queueConfig);
+    }
+
     /**
      * @param mapQConfigs the mapQConfigs to set
      */
@@ -376,6 +384,10 @@ public class Config implements DataSerializable {
             entry.getValue().setName(entry.getKey());
         }
         return this;
+    }
+
+    public void addMapConfig(MapConfig mapConfig) {
+        mapConfigs.put(mapConfig.getName(),  mapConfig);
     }
 
     /**

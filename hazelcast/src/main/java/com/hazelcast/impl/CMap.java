@@ -1282,6 +1282,7 @@ public class CMap {
             concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_EVICTED, record.getKey(), null, record.getValue(), record.getListeners(), req.caller);
             record.incrementVersion();
             markAsRemoved(record);
+            record.setDirty(false);
             req.clearForResponse();
             req.version = record.getVersion();
             req.longValue = record.getCopyCount();

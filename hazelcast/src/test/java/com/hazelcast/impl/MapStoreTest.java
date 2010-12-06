@@ -261,6 +261,47 @@ public class MapStoreTest extends TestUtil {
         assertEquals(0, testMapStore.getStore().size());
     }
 
+    @Test
+    public void testOneMemberWriteBehindWithEvictions() throws Exception {
+        TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
+        Config config = newConfig(testMapStore, 2);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap map = h1.getMap("default");
+        for (int i = 0; i < 100; i++) {
+            map.put(i, "value" + i);
+        }
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE_ALL, testMapStore.waitForEvent(20));
+        assertEquals(100, testMapStore.getStore().size());
+        for (int i = 0; i < 100; i++) {
+            map.evict(i);
+        }
+        // we should not receive any store event.
+        assertEquals(null, testMapStore.waitForEvent(10));
+        assertEquals(100, testMapStore.getStore().size());
+        for (int i = 0; i < 100; i++) {
+            map.put(i, "value" + i);
+        }
+        for (int i = 0; i < 100; i++) {
+            map.evict(i);
+        }
+        for (int i = 0; i < 100; i++) {
+            assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE, testMapStore.waitForEvent(10));
+        }
+        assertEquals(null, testMapStore.waitForEvent(10));
+        assertEquals(100, testMapStore.getStore().size());
+        assertEquals(0, map.size());
+        for (int i = 0; i < 100; i++) {
+            map.put(i, "value" + i);
+        }
+        for (int i = 0; i < 100; i++) {
+            map.remove(i);
+        }
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.DELETE_ALL, testMapStore.waitForEvent(20));
+        assertEquals(0, testMapStore.getStore().size());
+        assertEquals(0, map.size());
+        assertEquals(null, testMapStore.waitForEvent(10));        
+    }
+
     private Config newConfig(Object storeImpl, int writeDelaySeconds) {
         Config config = new XmlConfigBuilder().build();
         MapConfig mapConfig = config.getMapConfig("default");
@@ -345,6 +386,7 @@ public class MapStoreTest extends TestUtil {
         }
 
         public void store(Object key, Object value) {
+            System.out.println("store");
             store.put(key, value);
             callCount.incrementAndGet();
             latchStore.countDown();
@@ -357,6 +399,7 @@ public class MapStoreTest extends TestUtil {
         }
 
         public void storeAll(Map map) {
+            System.out.println("storeAll " + map.size());
             store.putAll(map);
             callCount.incrementAndGet();
             latchStoreAll.countDown();
@@ -387,6 +430,104 @@ public class MapStoreTest extends TestUtil {
             }
             callCount.incrementAndGet();
             latchDeleteAll.countDown();
+        }
+    }
+
+    public static class TestEventBasedMapStore implements MapLoaderLifecycleSupport, MapStore {
+
+        enum STORE_EVENTS {
+            STORE, STORE_ALL, DELETE, DELETE_ALL, LOAD, LOAD_ALL
+        }
+
+        final Map store = new ConcurrentHashMap();
+        final BlockingQueue events = new LinkedBlockingQueue();
+        final AtomicInteger callCount = new AtomicInteger();
+        final AtomicInteger initCount = new AtomicInteger();
+        private HazelcastInstance hazelcastInstance;
+        private Properties properties;
+        private String mapName;
+
+        public void init(HazelcastInstance hazelcastInstance, Properties properties, String mapName) {
+            this.hazelcastInstance = hazelcastInstance;
+            this.properties = properties;
+            this.mapName = mapName;
+            initCount.incrementAndGet();
+        }
+
+        public void destroy() {
+        }
+
+        public int getInitCount() {
+            return initCount.get();
+        }
+
+        public HazelcastInstance getHazelcastInstance() {
+            return hazelcastInstance;
+        }
+
+        public String getMapName() {
+            return mapName;
+        }
+
+        public Properties getProperties() {
+            return properties;
+        }
+
+        Object waitForEvent(int seconds) throws InterruptedException {
+            return events.poll(seconds, TimeUnit.SECONDS);
+        }
+
+        Map getStore() {
+            return store;
+        }
+
+        public void insert(Object key, Object value) {
+            store.put(key, value);
+        }
+
+        public void store(Object key, Object value) {
+            store.put(key, value);
+            callCount.incrementAndGet();
+            events.offer(STORE_EVENTS.STORE);
+        }
+
+        public Object load(Object key) {
+            callCount.incrementAndGet();
+            events.offer(STORE_EVENTS.LOAD);
+            return store.get(key);
+        }
+
+        public void storeAll(Map map) {
+            store.putAll(map);
+            callCount.incrementAndGet();
+            events.offer(STORE_EVENTS.STORE_ALL);
+        }
+
+        public void delete(Object key) {
+            store.remove(key);
+            callCount.incrementAndGet();
+            events.offer(STORE_EVENTS.DELETE);
+        }
+
+        public Map loadAll(Collection keys) {
+            Map map = new HashMap(keys.size());
+            for (Object key : keys) {
+                Object value = store.get(key);
+                if (value != null) {
+                    map.put(key, value);
+                }
+            }
+            callCount.incrementAndGet();
+            events.offer(STORE_EVENTS.LOAD_ALL);
+            return map;
+        }
+
+        public void deleteAll(Collection keys) {
+            for (Object key : keys) {
+                store.remove(key);
+            }
+            callCount.incrementAndGet();
+            events.offer(STORE_EVENTS.DELETE_ALL);
         }
     }
 

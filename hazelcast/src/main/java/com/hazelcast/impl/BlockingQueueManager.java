@@ -175,9 +175,9 @@ public class BlockingQueueManager extends BaseManager {
         }
 
         public void process() {
-            Data data = next();
-            if (data != null && data.size() != 0) {
-                q.sendBackup(true, thisAddress, data, block.blockId, index);
+            BackupData backupdata = next();
+            if (backupdata != null) {
+                q.sendBackup(true, thisAddress, backupdata.data, block.blockId, backupdata.index);
             } else {
                 done = true;
             }
@@ -186,14 +186,28 @@ public class BlockingQueueManager extends BaseManager {
             }
         }
 
-        private Data next() {
+        private BackupData next() {
             while (index < BLOCK_SIZE) {
-                QData data = block.get(index++);
-                if (data != null) {
-                    return data.data;
+                int dataIndex = index++;
+                QData qData = block.get(dataIndex);
+                if (qData != null) {
+                    Data data = qData.data;
+                    if (data != null && data.size() != 0) {
+                        return new BackupData(data, dataIndex);
+                    }
                 }
             }
             return null;
+        }
+
+        class BackupData {
+            final Data data;
+            final int index;
+
+            BackupData(Data data, int index) {
+                this.data = data;
+                this.index = index;
+            }
         }
     }
 
@@ -351,6 +365,7 @@ public class BlockingQueueManager extends BaseManager {
                 q.doBackup(false, null, blockId, (int) packet.longValue);
             }
         } catch (Exception e) {
+            System.out.println("backup index : " + packet.longValue);
             e.printStackTrace();
         } finally {
             releasePacket(packet);
@@ -1636,6 +1651,9 @@ public class BlockingQueueManager extends BaseManager {
                 }
                 Packet packet = obtainPacket(name, null, data, operation, 0);
                 packet.blockId = blockId;
+                if (addIndex >= 1000) {
+                    throw new RuntimeException("Invalid sendBackup.addIndex " + addIndex);
+                }
                 packet.longValue = addIndex;
                 boolean sent = send(packet, memberBackup.getAddress());
                 if (!sent) {
