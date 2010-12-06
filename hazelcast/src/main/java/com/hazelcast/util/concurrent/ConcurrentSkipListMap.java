@@ -807,54 +807,6 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      */
     private V doGet(Object okey) {
         Comparable<? super K> key = comparable(okey);
-        Node<K, V> bound = null;
-        Index<K, V> q = head;
-        Index<K, V> r = q.right;
-        Node<K, V> n;
-        K k;
-        int c;
-        for (; ;) {
-            Index<K, V> d;
-            // Traverse rights
-            if (r != null && (n = r.node) != bound && (k = n.key) != null) {
-                if ((c = key.compareTo(k)) > 0) {
-                    q = r;
-                    r = r.right;
-                    continue;
-                } else if (c == 0) {
-                    Object v = n.value;
-                    return (v != null) ? (V) v : getUsingFindNode(key);
-                } else
-                    bound = n;
-            }
-            // Traverse down
-            if ((d = q.down) != null) {
-                q = d;
-                r = d.right;
-            } else
-                break;
-        }
-        // Traverse nexts
-        for (n = q.node.next; n != null; n = n.next) {
-            if ((k = n.key) != null) {
-                if ((c = key.compareTo(k)) == 0) {
-                    Object v = n.value;
-                    return (v != null) ? (V) v : getUsingFindNode(key);
-                } else if (c < 0)
-                    break;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Performs map.get via findNode.  Used as a backup if doGet
-     * encounters an in-progress deletion.
-     *
-     * @param key the key
-     * @return the value, or null if absent
-     */
-    private V getUsingFindNode(Comparable<? super K> key) {
         /*
          * Loop needed here and elsewhere in case value field goes
          * null just as it is about to be returned, in which case we
