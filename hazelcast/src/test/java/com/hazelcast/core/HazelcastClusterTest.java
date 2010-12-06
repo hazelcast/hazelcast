@@ -71,7 +71,7 @@ public class HazelcastClusterTest {
     public void testJoinWithIncompatibleConfigs() throws Exception {
         Config config1 = new XmlConfigBuilder().build();
         Config config2 = new XmlConfigBuilder().build();
-        config2.getMapConfigs().get("default").setTimeToLiveSeconds(1);
+        config2.getMapConfig("default").setTimeToLiveSeconds(1);
         
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
@@ -93,8 +93,8 @@ public class HazelcastClusterTest {
         MapConfig mapConfig2 = new MapConfig();
         mapConfig2.setName(mapName2);
         mapConfig2.setUseBackupData(false);
-        config.getMapConfigs().put(mapName1, mapConfig1);
-        config.getMapConfigs().put(mapName2, mapConfig2);
+        config.addMapConfig(mapConfig1);
+        config.addMapConfig(mapConfig2);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         IMap<Object, Object> m1 = h1.getMap(mapName1);
         IMap<Object, Object> m2 = h1.getMap(mapName2);
@@ -117,7 +117,7 @@ public class HazelcastClusterTest {
         MapConfig mapConfig1 = new MapConfig();
         mapConfig1.setName(mapName1);
         mapConfig1.setUseBackupData(true);
-        config.getMapConfigs().put(mapName1, mapConfig1);
+        config.addMapConfig(mapConfig1);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         IMap<String, String> map = h1.getMap(mapName1);
         map.lock("Hello");
@@ -149,7 +149,7 @@ public class HazelcastClusterTest {
         MapConfig mapConfig = new MapConfig();
         mapConfig.setName(mapName);
         mapConfig.setTimeToLiveSeconds(1);
-        config.getMapConfigs().put(mapName, mapConfig);
+        config.addMapConfig(mapConfig);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         IMap<Object, Object> m1 = h1.getMap(mapName);
         m1.put(1, 1);

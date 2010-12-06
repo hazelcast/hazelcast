@@ -468,7 +468,7 @@ public class ClusterTest {
             myMapConfig = new MapConfig();
             myMapConfig.setName(mapName);
             myMapConfig.setTimeToLiveSeconds(ttl);
-            myHazelcastMapConfigs.put(mapName, myMapConfig);
+            myConfig.addMapConfig(myMapConfig);
         } else {
             myMapConfig.setTimeToLiveSeconds(ttl);
         }
@@ -785,11 +785,10 @@ public class ClusterTest {
     public void testMapMaxSize() throws Exception {
         int maxSize = 40;
         Config c = new Config();
-        MapConfig mapConfig = new MapConfig();
+        MapConfig mapConfig = c.getMapConfig("default");
         mapConfig.setEvictionPolicy("LRU");
         mapConfig.setMaxSize(maxSize);
         mapConfig.setEvictionPercentage(25);
-        c.getMapConfigs().put("default", mapConfig);
         HazelcastInstance h = Hazelcast.newHazelcastInstance(c);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
         IMap map = h.getMap("default");

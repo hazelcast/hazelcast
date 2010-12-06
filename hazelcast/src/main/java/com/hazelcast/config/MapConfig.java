@@ -68,6 +68,13 @@ public class MapConfig implements DataSerializable {
 
     private String mergePolicy = DEFAULT_MERGE_POLICY;
 
+    public MapConfig(String name) {
+        this.name = name;
+    }
+
+    public MapConfig() {
+    }
+
     /**
      * @return the name
      */
