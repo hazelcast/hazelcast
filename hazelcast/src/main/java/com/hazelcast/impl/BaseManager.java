@@ -1405,7 +1405,6 @@ public abstract class BaseManager {
         if (memberImpl != null) {
             memberImpl.didWrite();
         }
-        packet.currentCallCount = mapCalls.size();
         if (packet.lockAddress != null) {
             if (thisAddress.equals(packet.lockAddress)) {
                 packet.lockAddress = null;

@@ -57,8 +57,6 @@ public final class Packet implements SocketWritable {
 
     public long ttl = -1;
 
-    public int currentCallCount = 0;
-
     public int blockId = -1;
 
     public byte responseType = Constants.ResponseTypes.RESPONSE_NONE;
@@ -253,7 +251,6 @@ public final class Packet implements SocketWritable {
         ttl = -1;
         txnId = -1;
         responseType = Constants.ResponseTypes.RESPONSE_NONE;
-        currentCallCount = 0;
         blockId = -1;
         longValue = Long.MIN_VALUE;
         version = -1;

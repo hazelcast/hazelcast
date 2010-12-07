@@ -386,7 +386,6 @@ public class MapStoreTest extends TestUtil {
         }
 
         public void store(Object key, Object value) {
-            System.out.println("store");
             store.put(key, value);
             callCount.incrementAndGet();
             latchStore.countDown();
@@ -399,7 +398,6 @@ public class MapStoreTest extends TestUtil {
         }
 
         public void storeAll(Map map) {
-            System.out.println("storeAll " + map.size());
             store.putAll(map);
             callCount.incrementAndGet();
             latchStoreAll.countDown();
