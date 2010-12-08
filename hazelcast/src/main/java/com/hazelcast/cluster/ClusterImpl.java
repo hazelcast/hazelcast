@@ -36,6 +36,7 @@ public class ClusterImpl implements Cluster {
     final AtomicReference<Member> localMember = new AtomicReference<Member>();
     final Map<Member, Member> clusterMembers = new ConcurrentHashMap<Member, Member>();
     final Map<Member, Integer> distances = new ConcurrentHashMap<Member, Integer>();
+    final Map<Member, Integer> distancesWithoutSuper = new ConcurrentHashMap<Member, Integer>();
     volatile long clusterTimeDiff = Long.MAX_VALUE;
     final Node node;
 
@@ -46,9 +47,35 @@ public class ClusterImpl implements Cluster {
 
     public void reset() {
         clusterMembers.clear();
+        distancesWithoutSuper.clear();
         distances.clear();
         members.set(null);
         this.setMembers(Arrays.asList((MemberImpl) localMember.get()));
+    }
+
+    public int getDistanceFrom(Member member, boolean skipSuper) {
+        if (member.localMember()) {
+            return 0;
+        }
+        if (skipSuper) {
+            Integer distance = distancesWithoutSuper.get(member);
+            if (distance != null) {
+                return distance;
+            }
+        } else {
+            Integer distance = distances.get(member);
+            if (distance != null) {
+                return distance;
+            }
+        }
+        calculateDistances();
+        if (skipSuper) {
+            Integer distance = distancesWithoutSuper.get(member);
+            return (distance == null) ? -1 : distance;
+        } else {
+            Integer distance = distances.get(member);
+            return (distance == null) ? -1 : distance;
+        }
     }
 
     public int getDistanceFrom(Member member) {
@@ -59,31 +86,41 @@ public class ClusterImpl implements Cluster {
         if (distance != null) {
             return distance;
         }
-        Set<Member> currentMembers = members.get();
-        int size = currentMembers.size();
-        Member localMember = getLocalMember();
-        int index = 0;
-        int toIndex = getIndexOf(localMember, currentMembers);
-        for (Member m : currentMembers) {
-            if (!m.equals(localMember)) {
-                distance = ((toIndex - index) + size) % size;
-                distances.put(m, distance);
-            }
-            index++;
-        }
+        calculateDistances();
         Integer d = distances.get(member);
         return (d == null) ? -1 : d;
     }
 
-    private int getIndexOf(Member member, Set<Member> memberSet) {
-        int count = 0;
-        for (Member m : memberSet) {
-            if (m.equals(member)) {
-                return count;
+    private void calculateDistances() {
+        List<Member> currentMembers = new ArrayList<Member>(members.get());
+        for (int i = 0; i < currentMembers.size(); i++) {
+            Member member = currentMembers.get(i);
+            if (!member.localMember()) {
+                distances.put(member, calculateDistance(currentMembers, member, localMember.get(), false));
+                distancesWithoutSuper.put(member, calculateDistance(currentMembers, member, localMember.get(), true));
             }
-            count++;
         }
-        return count;
+    }
+
+    public static int calculateDistance(List<Member> members, Member from, Member to, boolean skipSuper) {
+        int indexFrom = members.indexOf(from);
+        int indexTo = members.indexOf(to);
+        if (indexTo < indexFrom) {
+            indexTo += members.size();
+        }
+        if (skipSuper) {
+            int d = 0;
+            for (int i = indexFrom; i < indexTo; i++) {
+                int a = i % members.size();
+                Member member = members.get(a);
+                if (!member.isSuperClient()) {
+                    d++;
+                }
+            }
+            return d;
+        } else {
+            return indexTo - indexFrom;
+        }
     }
 
     public void setMembers(List<MemberImpl> lsMembers) {
@@ -138,6 +175,7 @@ public class ClusterImpl implements Cluster {
         }
         members.set(Collections.unmodifiableSet(setNew));
         distances.clear();
+        distancesWithoutSuper.clear();
         // send notifications now
         for (Runnable notification : notifications) {
             node.executorManager.getEventExecutorService().execute(notification);

@@ -26,6 +26,8 @@ import com.hazelcast.examples.TestApp;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.MigrationEvent;
+import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 import org.junit.After;
 import org.junit.Assert;
@@ -350,6 +352,51 @@ public class ClusterTest {
         assertEquals("value2", h.getMap("default").get("1"));
     }
 
+    @Test
+    public void issue390NoBackupWhenSuperClient() throws InterruptedException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        IMap map1 = h1.getMap("def");
+        for (int i = 0; i < 200; i++) {
+            map1.put(i, new byte[1000]);
+        }
+        Config scconfig = new Config();
+        scconfig.setSuperClient(true);
+        HazelcastInstance sc = Hazelcast.newHazelcastInstance(scconfig);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        IMap map2 = h2.getMap("def");
+        final CountDownLatch latch = new CountDownLatch(2);
+        h2.getPartitionService().addMigrationListener(new MigrationListener() {
+            public void migrationStarted(MigrationEvent migrationEvent) {
+            }
+
+            public void migrationCompleted(MigrationEvent migrationEvent) {
+                latch.countDown();
+            }
+        });
+        latch.await();
+        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
+    }
+
+    @Test
+    public void issue388NoBackupWhenSuperClient() throws InterruptedException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        Config scconfig = new Config();
+        scconfig.setSuperClient(true);
+        HazelcastInstance sc = Hazelcast.newHazelcastInstance(scconfig);
+        IMap map1 = h1.getMap("def");
+        IMap map2 = h2.getMap("def");
+        IMap map3 = sc.getMap("def");
+        for (int i = 0; i < 300;) {
+            map1.put(i++, new byte[1000]);
+            map2.put(i++, new byte[1000]);
+            map3.put(i++, new byte[1000]);
+        }
+        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
+    }
+
     @Test(timeout = 160000)
     public void testBackupCount() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
@@ -363,7 +410,16 @@ public class ClusterTest {
         assertEquals(map2.getLocalMapStats().getBackupEntryCount(), map1.getLocalMapStats().getOwnedEntryCount());
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
         IMap map3 = h3.getMap("default");
-        sleep(12000);
+        final CountDownLatch latch = new CountDownLatch(1);
+        h2.getPartitionService().addMigrationListener(new MigrationListener() {
+            public void migrationStarted(MigrationEvent migrationEvent) {
+            }
+
+            public void migrationCompleted(MigrationEvent migrationEvent) {
+                latch.countDown();
+            }
+        });
+        latch.await();
         assertEquals(map2.getLocalMapStats().getBackupEntryCount(), map1.getLocalMapStats().getOwnedEntryCount());
         assertEquals(map1.getLocalMapStats().getBackupEntryCount(), map3.getLocalMapStats().getOwnedEntryCount());
         assertEquals(map3.getLocalMapStats().getBackupEntryCount(), map2.getLocalMapStats().getOwnedEntryCount());

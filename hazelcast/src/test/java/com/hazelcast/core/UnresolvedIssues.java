@@ -19,6 +19,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.ReplicatedMapFactory;
 import com.hazelcast.impl.TestUtil;
 import com.hazelcast.partition.MigrationEvent;
@@ -45,6 +46,7 @@ public class UnresolvedIssues extends TestUtil {
     @Before
     @After
     public void init() throws Exception {
+        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         Hazelcast.shutdownAll();
     }
 
@@ -183,9 +185,6 @@ public class UnresolvedIssues extends TestUtil {
         assertEquals(map1.getLocalMapStats().getOwnedEntryCount() + map3.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
         assertEquals(map2.getLocalMapStats().getOwnedEntryCount() + map3.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
         assertEquals(map1.getLocalMapStats().getOwnedEntryCount() + map2.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
-        h3.getLifecycleService().shutdown();
     }
 
     @Test
@@ -201,61 +200,6 @@ public class UnresolvedIssues extends TestUtil {
         assertEquals(0, map2.getLocalMapStats().getBackupEntryCount());
         h1.getLifecycleService().shutdown();
         h2.getLifecycleService().shutdown();
-    }
-
-    @Test
-    @Ignore
-    public void issue390NoBackupWhenSuperClient() throws InterruptedException {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        IMap map1 = h1.getMap("def");
-        for (int i = 0; i < 200; i++) {
-            map1.put(i, new byte[1000]);
-        }
-        Config scconfig = new Config();
-        scconfig.setSuperClient(true);
-        HazelcastInstance sc = Hazelcast.newHazelcastInstance(scconfig);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        IMap map2 = h2.getMap("def");
-        final CountDownLatch latch = new CountDownLatch(2);
-        h2.getPartitionService().addMigrationListener(new MigrationListener() {
-            public void migrationStarted(MigrationEvent migrationEvent) {
-                //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            public void migrationCompleted(MigrationEvent migrationEvent) {
-                latch.countDown();
-            }
-        });
-        latch.await();
-        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
-        System.out.println("MAP1: " + map1.getLocalMapStats());
-        System.out.println("MAP2: " + map2.getLocalMapStats());
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
-        sc.getLifecycleService().shutdown();
-    }
-
-    @Test
-    @Ignore
-    public void issue388NoBackupWhenSuperClient() throws InterruptedException {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        Config scconfig = new Config();
-        scconfig.setSuperClient(true);
-        HazelcastInstance sc = Hazelcast.newHazelcastInstance(scconfig);
-        IMap map1 = h1.getMap("def");
-        for (int i = 0; i < 200; i++) {
-            map1.put(i, new byte[1000]);
-        }
-        IMap map2 = h2.getMap("def");
-        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
-        System.out.println("MAP1: " + map1.getLocalMapStats());
-        System.out.println("MAP2: " + map2.getLocalMapStats());
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
-        sc.getLifecycleService().shutdown();
     }
 
     @Test

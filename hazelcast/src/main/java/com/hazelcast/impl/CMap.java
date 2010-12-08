@@ -1018,7 +1018,7 @@ public class CMap {
                         Member ownerEventual = partition.getEventualOwner();
                         boolean backup = false;
                         if (ownerEventual != null && !owner.localMember()) {
-                            int distance = node.getClusterImpl().getDistanceFrom(ownerEventual);
+                            int distance = node.getClusterImpl().getDistanceFrom(ownerEventual, true);
                             backup = (distance != -1 && distance <= getBackupCount());
                         }
                         if (backup && !shouldPurgeRecord(record, now)) {
@@ -1120,7 +1120,7 @@ public class CMap {
                     Member ownerEventual = partition.getEventualOwner();
                     boolean backup = false;
                     if (ownerEventual != null && owner != null && !owner.localMember()) {
-                        int distance = node.getClusterImpl().getDistanceFrom(ownerEventual);
+                        int distance = node.getClusterImpl().getDistanceFrom(ownerEventual, true);
                         backup = (distance != -1 && distance <= getBackupCount());
                     }
                     if (backup) {

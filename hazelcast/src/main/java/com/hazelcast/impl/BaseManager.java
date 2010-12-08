@@ -1068,13 +1068,14 @@ public abstract class BaseManager {
         if (indexOfMember == -1)
             return null;
         int foundDistance = 0;
-        for (int i = 1; i < size; i++) {
-            final MemberImpl member = lsMembers.get((indexOfMember + i) % size);
+        for (int i = indexOfMember; i < size + indexOfMember; i++) {
+            final MemberImpl member = lsMembers.get((1 + i) % size);
             if (!(skipSuperClient && member.isSuperClient())) {
                 foundDistance++;
             }
-            if (foundDistance == distance)
+            if (foundDistance == distance) {
                 return member;
+            }
         }
         return null;
     }
