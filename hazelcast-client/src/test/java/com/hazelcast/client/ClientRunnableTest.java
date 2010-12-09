@@ -37,10 +37,12 @@ public class ClientRunnableTest {
             }
         };
         final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch waitLatch = new CountDownLatch(1);
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    Thread.sleep(50);
+                    waitLatch.countDown();
+                    Thread.sleep(100);
                     clientRunnable.running = false;
                     synchronized (clientRunnable.monitor) {
                         clientRunnable.monitor.wait();
@@ -51,6 +53,7 @@ public class ClientRunnableTest {
             }
         }).start();
         clientRunnable.run();
+        waitLatch.countDown();
         assertTrue(counter.get() > 1);
         assertTrue("Not notified", latch.await(25, TimeUnit.SECONDS));
     }

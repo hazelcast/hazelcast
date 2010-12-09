@@ -314,6 +314,9 @@ public class FactoryImpl implements HazelcastInstance {
         memberStatePublisher = new MemberStatePublisher(memberStatsTopicProxy, memberStatsMultimapProxy, node);
         globalProxies.addEntryListener(new EntryListener() {
             public void entryAdded(EntryEvent event) {
+                if (node.localMember.equals(event.getMember())) {
+                    return;
+                }
                 final ProxyKey proxyKey = (ProxyKey) event.getKey();
                 if (!proxies.containsKey(proxyKey)) {
                     logger.log(Level.FINEST, "Instance created " + proxyKey);
@@ -326,15 +329,16 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public void entryRemoved(EntryEvent event) {
-                final ProxyKey proxyKey = (ProxyKey) event.getKey();
-                if (proxies.containsKey(proxyKey)) {
-                    logger.log(Level.FINEST, "Instance removed " + proxyKey);
-                    node.clusterService.enqueueAndReturn(new Processable() {
-                        public void process() {
-                            destroyProxy(proxyKey);
-                        }
-                    });
+                if (node.localMember.equals(event.getMember())) {
+                    return;
                 }
+                final ProxyKey proxyKey = (ProxyKey) event.getKey();
+                logger.log(Level.FINEST, "Instance removed " + proxyKey);
+                node.clusterService.enqueueAndReturn(new Processable() {
+                    public void process() {
+                        destroyProxy(proxyKey);
+                    }
+                });
             }
 
             public void entryUpdated(EntryEvent event) {
