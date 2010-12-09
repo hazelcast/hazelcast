@@ -55,16 +55,6 @@ public class PartitionServiceImpl implements PartitionService {
         return partitions;
     }
 
-    public boolean isMigrating() {
-        Set<Partition> partitions = getPartitions();
-        for (Partition partition : partitions) {
-            if (((PartitionProxy) partition).isMigrating()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public PartitionProxy getPartition(Object key) {
         final Data keyData = toData(key);
         final int partitionId = concurrentMapManager.getBlockId(keyData);

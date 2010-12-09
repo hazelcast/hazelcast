@@ -29,10 +29,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.Serializable;
 import java.util.*;
@@ -374,6 +371,8 @@ public class ClusterTest {
             }
         });
         latch.await();
+        System.out.println(map1.getLocalMapStats());
+        System.out.println(map2.getLocalMapStats());
         assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
         assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
     }
@@ -395,6 +394,39 @@ public class ClusterTest {
         }
         assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
         assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
+    }
+
+    @Test
+    public void issue395BackupProblemWithBCount2() {
+        Config config = new Config();
+        config.getMapConfig("default").setBackupCount(2);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        IMap map1 = h1.getMap("default");
+        IMap map2 = h2.getMap("default");
+        for (int i = 0; i < 1000; i++) {
+            map1.put(i, i);
+        }
+        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        IMap map3 = h3.getMap("default");
+        assertEquals(map1.getLocalMapStats().getOwnedEntryCount() + map3.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map2.getLocalMapStats().getOwnedEntryCount() + map3.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
+        assertEquals(map1.getLocalMapStats().getOwnedEntryCount() + map2.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
+    }
+
+    @Test
+    public void issue397MapReplaceLeadsToMemoryLeak() {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        IMap map1 = h1.getMap("def");
+        Object old = map1.replace("k", "v");
+        assertNull(old);
+        assertFalse(map1.containsKey("k"));
+        assertEquals(0, map1.getLocalMapStats().getBackupEntryCount());
+        IMap map2 = h2.getMap("def");
+        assertEquals(0, map2.getLocalMapStats().getBackupEntryCount());
     }
 
     @Test(timeout = 160000)

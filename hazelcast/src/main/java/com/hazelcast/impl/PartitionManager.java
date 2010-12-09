@@ -454,17 +454,19 @@ public class PartitionManager implements Runnable {
     }
 
     void backupIfNextOrPreviousChanged(boolean add) {
-        boolean shouldBackup = false;
-        if (add) {
-            shouldBackup = node.clusterManager.isNextChanged();
-        } else {
-            shouldBackup = node.clusterManager.isNextChanged() || node.clusterManager.isPreviousChanged();
-        }
-        //todo  should we check member size. if <=1 we should skip this
-        if (shouldBackup) {
-            List<Record> lsOwnedRecords = new ArrayList<Record>(1000);
-            Collection<CMap> cmaps = concurrentMapManager.maps.values();
-            for (final CMap cmap : cmaps) {
+        List<Record> lsOwnedRecords = new ArrayList<Record>(1000);
+        Collection<CMap> cmaps = concurrentMapManager.maps.values();
+        for (final CMap cmap : cmaps) {
+            boolean shouldBackup = false;
+            if (cmap.backupCount > 0) {
+                if (add) {
+                    shouldBackup = node.clusterManager.isNextChanged(cmap.backupCount);
+                } else {
+                    shouldBackup = node.clusterManager.isNextChanged(cmap.backupCount) || node.clusterManager.isPreviousChanged(cmap.backupCount);
+                }
+            }
+//            System.out.println(cmap.name + " " + thisAddress + " backupcount " + cmap.backupCount + " changed : " + node.clusterManager.isNextChanged(cmap.backupCount));
+            if (shouldBackup) {
                 for (Record rec : cmap.mapRecords.values()) {
                     if (rec.isActive()) {
                         if (rec.getKey() == null || rec.getKey().size() == 0) {
@@ -474,14 +476,14 @@ public class PartitionManager implements Runnable {
                     }
                 }
             }
-            if (!add) logger.log(Level.FINEST, thisAddress + " will backup " + lsOwnedRecords.size());
-            for (final Record rec : lsOwnedRecords) {
-                parallelExecutorBackups.execute(new FallThroughRunnable() {
-                    public void doRun() {
-                        concurrentMapManager.backupRecord(rec);
-                    }
-                });
-            }
+        }
+        if (!add) logger.log(Level.FINEST, thisAddress + " will backup " + lsOwnedRecords.size());
+        for (final Record rec : lsOwnedRecords) {
+            parallelExecutorBackups.execute(new FallThroughRunnable() {
+                public void doRun() {
+                    concurrentMapManager.backupRecord(rec);
+                }
+            });
         }
     }
 

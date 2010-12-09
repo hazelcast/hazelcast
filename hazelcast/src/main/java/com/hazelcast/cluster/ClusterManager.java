@@ -392,6 +392,49 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         return isNextChanged() || isPreviousChanged();
     }
 
+    public boolean isNextChanged(int distance) {
+        int indexBefore = lsMembersBefore.indexOf(thisMember);
+        int indexNow = lsMembers.indexOf(thisMember);
+        for (int i = 1; i < distance + 1; i++) {
+            Member before = memberAt(lsMembersBefore, (indexBefore + i) % lsMembersBefore.size());
+            Member now = memberAt(lsMembers, (indexNow + i) % lsMembers.size());
+            if (before == null && now == null) {
+            } else if (before == null
+                    || now == null
+                    || !now.equals(before)
+                    || now.isSuperClient()
+                    || before.isSuperClient()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isPreviousChanged(int distance) {
+        int indexBefore = lsMembersBefore.indexOf(thisMember);
+        int indexNow = lsMembers.indexOf(thisMember);
+        for (int i = 1; i < distance + 1; i++) {
+            Member before = memberAt(lsMembersBefore, (lsMembersBefore.size() + indexBefore - i) % lsMembersBefore.size());
+            Member now = memberAt(lsMembers, (lsMembers.size() + indexNow - i) % lsMembers.size());
+            if (before == null && now == null) {
+            } else if ((before == null)
+                    || (now == null)
+                    || !now.equals(before)
+                    || now.isSuperClient()
+                    || before.isSuperClient()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Member memberAt(List<MemberImpl> lsMembers, int index) {
+        if (index < 0 || index >= lsMembers.size()) {
+            return null;
+        }
+        return lsMembers.get(index);
+    }
+
     public boolean isNextChanged() {
         Member nextMemberBefore = getNextMemberBeforeSync(thisAddress, true, 1);
         Member nextMemberNow = getNextMemberAfter(thisAddress, true, 1);

@@ -961,6 +961,9 @@ public class ConcurrentMapManager extends BaseManager {
                     request.setObjectRequest();
                     doOp();
                     Object returnObject = getResultAsObject();
+                    if (operation == CONCURRENT_MAP_REPLACE_IF_NOT_NULL && returnObject == null) {
+                        return null;
+                    }
                     if (returnObject instanceof AddressAwareException) {
                         rethrowException(operation, (AddressAwareException) returnObject);
                     }
@@ -1770,6 +1773,11 @@ public class ConcurrentMapManager extends BaseManager {
                     record.incrementVersion();
                     request.version = record.getVersion();
                     request.lockCount = record.getLockCount();
+                    if (record.getLockCount() == 0 &&
+                            record.valueCount() == 0 &&
+                            !record.hasScheduledAction()) {
+                        cmap.markAsRemoved(record);
+                    }
                     cmap.fireScheduledActions(record);
                 }
                 logger.log(Level.FINEST, unlocked + " [" + record.getName() + "] now lock " + record.getLock());

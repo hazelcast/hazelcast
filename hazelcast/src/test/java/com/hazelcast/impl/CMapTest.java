@@ -209,7 +209,7 @@ public class CMapTest extends TestUtil {
 
     @Test
     public void testTTL() throws Exception {
-        Config config = new XmlConfigBuilder().build();
+        Config config = new Config();
         FactoryImpl mockFactory = mock(FactoryImpl.class);
         Node node = new Node(mockFactory, config);
         node.serviceThread = Thread.currentThread();
@@ -235,6 +235,19 @@ public class CMapTest extends TestUtil {
         assertEquals(dValue, cmap.get(newGetRequest(dKey)));
         assertEquals(value, cmap.locallyOwnedMap.get(key));
         assertEquals(1, cmap.locallyOwnedMap.mapCache.size());
+        assertTrue(record.getRemainingTTL() > 1000);
+        Thread.sleep(1000);
+        assertTrue(record.getRemainingTTL() < 2001);
+        cmap.put(newPutRequest(dKey, dValue));
+        assertTrue(record.getRemainingTTL() > 2001);
+        assertTrue(record.isActive());
+        assertTrue(record.isValid());
+        Thread.sleep(1000);
+        assertTrue(record.getRemainingTTL() < 2001);
+        cmap.put(newPutRequest(dKey, dValue));
+        assertTrue(record.getRemainingTTL() > 2001);
+        assertTrue(record.isActive());
+        assertTrue(record.isValid());
         Thread.sleep(5000);
         cmap.locallyOwnedMap.evict(System.currentTimeMillis());
         assertEquals(0, cmap.locallyOwnedMap.mapCache.size());

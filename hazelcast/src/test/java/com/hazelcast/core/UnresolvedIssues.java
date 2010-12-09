@@ -22,8 +22,6 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.ReplicatedMapFactory;
 import com.hazelcast.impl.TestUtil;
-import com.hazelcast.partition.MigrationEvent;
-import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
@@ -34,7 +32,6 @@ import org.junit.Test;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.*;
 
@@ -110,8 +107,10 @@ public class UnresolvedIssues extends TestUtil {
     @Ignore
     @Test
     public void issue386() {
-        // failed with OutOfMemoryError
-        IMap<Object, Object> map = Hazelcast.getMap("default");
+        // this passes now!!
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+//        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        IMap map = h1.getMap("default");
         int maxLoopCount = 10000000;
         for (int count = 0; count < maxLoopCount; count++) {
             if (count % 10000 == 0) {
@@ -164,42 +163,6 @@ public class UnresolvedIssues extends TestUtil {
         public void setValue(String value) {
             this.value = value;
         }
-    }
-
-    @Test
-    @Ignore
-    public void issue395BackupProblemWithBCount2() {
-        Config config = new Config();
-        config.getMapConfig("default").setBackupCount(2);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        IMap map1 = h1.getMap("default");
-        IMap map2 = h2.getMap("default");
-        for (int i = 0; i < 1000; i++) {
-            map1.put(i, i);
-        }
-        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
-        IMap map3 = h3.getMap("default");
-        assertEquals(map1.getLocalMapStats().getOwnedEntryCount() + map3.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map2.getLocalMapStats().getOwnedEntryCount() + map3.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map1.getLocalMapStats().getOwnedEntryCount() + map2.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
-    }
-
-    @Test
-    @Ignore
-    public void issue397MapReplaceLeadsToMemoryLeak() {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        IMap map1 = h1.getMap("def");
-        Object old = map1.replace("k", "v");
-        assertNull(old);
-        assertEquals(0, map1.getLocalMapStats().getBackupEntryCount());
-        IMap map2 = h2.getMap("def");
-        assertEquals(0, map2.getLocalMapStats().getBackupEntryCount());
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
     }
 
     @Test

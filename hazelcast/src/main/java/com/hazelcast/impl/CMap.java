@@ -468,6 +468,9 @@ public class CMap {
             if (rec.getVersion() == 0) {
                 rec.setVersion(req.version);
             }
+            if (rec.getLockCount() == 0 && rec.valueCount() == 0) {
+                markAsRemoved(rec);
+            }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_ADD) {
             add(req, true);
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE_MULTI) {
