@@ -26,7 +26,9 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.http.HttpSession;
@@ -35,22 +37,23 @@ import javax.servlet.http.HttpSessionAttributeListener;
 import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionBindingListener;
 import javax.servlet.http.HttpSessionEvent;
+import javax.servlet.http.HttpSessionListener;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.Manager;
 import org.apache.catalina.Session;
 import org.apache.catalina.security.SecurityUtil;
 import org.apache.catalina.session.StandardSession;
+import org.apache.catalina.util.Enumerator;
 
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.query.SqlPredicate;
 
 /**
  * @author ali
- * TODO there are still not overwritten methods which has reference to attributes (setId)
+ * 
  */
 
-public class HazelSession extends StandardSession {
+public class HazelSession extends StandardSession implements HazelConstants {
 	
 
     /**
@@ -106,15 +109,21 @@ public class HazelSession extends StandardSession {
         	throw new IllegalStateException
         	(sm.getString("standardSession.getAttribute.ise"));
         }
+        
+        // Name cannot be null
+        if (name == null)
+            throw new IllegalArgumentException
+                (sm.getString("standardSession.setAttribute.namenull"));
+        
 
-        if (name == null){
-        	return null;
+        if(HAZEL_SESSION_MARK.equals(name)){
+            throw new IllegalArgumentException(HAZEL_MARK_EXCEPTION);
         }
         
         HazelAttribute hattribute = (HazelAttribute)attributes.get(name);
         
         if(hattribute == null){
-        	hattribute = (HazelAttribute) Hazelcast.getMap("attributes").get(getIdInternal() + "_" + name);
+        	hattribute = (HazelAttribute) hazelAttributes.get(getIdInternal() + "_" + name);
         	if(hattribute == null){
         		attributes.put(name, new HazelAttribute(getIdInternal(), name, null));
         		return null;
@@ -158,6 +167,10 @@ public class HazelSession extends StandardSession {
         if (name == null)
             throw new IllegalArgumentException
                 (sm.getString("standardSession.setAttribute.namenull"));
+        
+        if(HAZEL_SESSION_MARK.equals(name)){
+            throw new IllegalArgumentException(HAZEL_MARK_EXCEPTION);
+        }
 
         // Null value is the same as removeAttribute()
         if (value == null) {
@@ -293,6 +306,10 @@ public class HazelSession extends StandardSession {
 
         // Avoid NPE
         if (name == null) return;
+        
+        if(name.equals(HAZEL_SESSION_MARK)){
+            throw new IllegalArgumentException(HAZEL_MARK_EXCEPTION);
+        }
 
         // Remove this attribute from our collection
         HazelAttribute hattribute = (HazelAttribute)attributes.get(name);
@@ -305,8 +322,33 @@ public class HazelSession extends StandardSession {
         long requestId = HazelValve.requestLocal.get();
         hattribute.touch(requestId);
         attributes.put(name, hattribute);
+        
+        notifyRemove(name, value, notify);
+        
+    }
+    
+    protected void removeAttributeHard(String name, boolean notify) {
 
-        // Do we need to do valueUnbound() and attributeRemoved() notification?
+        // Avoid NPE
+        if (name == null) return;
+
+        // Remove this attribute from our collection
+        HazelAttribute hattribute = (HazelAttribute)attributes.get(name);
+        if(hattribute == null){
+        	return;
+        }
+        Object value = hattribute.getValue();
+        
+        hazelAttributes.remove(hattribute.getKey());
+        attributes.remove(name);
+        
+        notifyRemove(name, value, notify);
+        
+    }
+
+    protected void notifyRemove(String name, Object value, boolean notify){
+    	
+    	// Do we need to do valueUnbound() and attributeRemoved() notification?
         if (!notify || (value == null)) {
             return;
         }
@@ -352,7 +394,6 @@ public class HazelSession extends StandardSession {
                     (sm.getString("standardSession.attributeEvent"), t);
             }
         }
-
     }
     
     /**
@@ -464,6 +505,7 @@ public class HazelSession extends StandardSession {
                     "' with value '" + value + "'");
             attributes.put(name, new HazelAttribute(id, name, value));
         }
+        attributes.put(HAZEL_SESSION_MARK, new HazelAttribute(id, HAZEL_SESSION_MARK, System.currentTimeMillis()));
         isValid = isValidSave;
 
         if (listeners == null) {
@@ -567,10 +609,144 @@ public class HazelSession extends StandardSession {
 
         this.id = id;
 
-        Collection<HazelAttribute> colAttributes = Hazelcast.getMap("attributes").values(new SqlPredicate("sessionId="+id));
+        Collection<HazelAttribute> colAttributes = hazelAttributes.values(new SqlPredicate("sessionId="+id));
+        if(colAttributes.size() != 0){
+        	for (HazelAttribute hattribute : colAttributes) {
+        		attributes.put(hattribute.getName(), hattribute);
+        	}
+        }
+        else{
+        	HazelAttribute mark = new HazelAttribute(id, HAZEL_SESSION_MARK, System.currentTimeMillis());
+        	hazelAttributes.put(mark.getKey(),mark);
+        	attributes.put(HAZEL_SESSION_MARK, mark);
+        }
         if (manager != null)
             manager.add(this);
         tellNew();
     }
+ 
+    /**
+     * Perform the internal processing required to invalidate this session,
+     * without triggering an exception if the session has already expired.
+     *
+     * @param notify Should we notify listeners about the demise of
+     *  this session?
+     */
+    public void expire(boolean notify) {
 
+        // Mark this session as "being expired" if needed
+        if (expiring)
+            return;
+
+        synchronized (this) {
+
+            if (manager == null)
+                return;
+
+            expiring = true;
+        
+            // Notify interested application event listeners
+            // FIXME - Assumes we call listeners in reverse order
+            Context context = (Context) manager.getContainer();
+            Object listeners[] = context.getApplicationLifecycleListeners();
+            if (notify && (listeners != null)) {
+                HttpSessionEvent event =
+                    new HttpSessionEvent(getSession());
+                for (int i = 0; i < listeners.length; i++) {
+                    int j = (listeners.length - 1) - i;
+                    if (!(listeners[j] instanceof HttpSessionListener))
+                        continue;
+                    HttpSessionListener listener =
+                        (HttpSessionListener) listeners[j];
+                    try {
+                        fireContainerEvent(context,
+                                           "beforeSessionDestroyed",
+                                           listener);
+                        listener.sessionDestroyed(event);
+                        fireContainerEvent(context,
+                                           "afterSessionDestroyed",
+                                           listener);
+                    } catch (Throwable t) {
+                        try {
+                            fireContainerEvent(context,
+                                               "afterSessionDestroyed",
+                                               listener);
+                        } catch (Exception e) {
+                            ;
+                        }
+                        manager.getContainer().getLogger().error
+                            (sm.getString("standardSession.sessionEvent"), t);
+                    }
+                }
+            }
+            if (ACTIVITY_CHECK) {
+                accessCount.set(0);
+            }
+            setValid(false);
+
+            /*
+             * Compute how long this session has been alive, and update
+             * session manager's related properties accordingly
+             */
+            long timeNow = System.currentTimeMillis();
+            int timeAlive = (int) ((timeNow - creationTime)/1000);
+            synchronized (manager) {
+                if (timeAlive > manager.getSessionMaxAliveTime()) {
+                    manager.setSessionMaxAliveTime(timeAlive);
+                }
+                int numExpired = manager.getExpiredSessions();
+                numExpired++;
+                manager.setExpiredSessions(numExpired);
+                int average = manager.getSessionAverageAliveTime();
+                average = ((average * (numExpired-1)) + timeAlive)/numExpired;
+                manager.setSessionAverageAliveTime(average);
+            }
+
+            // Remove this session from our manager's active sessions
+            manager.remove(this);
+
+            // Notify interested session event listeners
+            if (notify) {
+                fireSessionEvent(Session.SESSION_DESTROYED_EVENT, null);
+            }
+
+            // We have completed expire of this session
+            expiring = false;
+
+            // Unbind any objects associated with this session
+            String keys[] = keys();
+            for (int i = 0; i < keys.length; i++)
+                removeAttributeHard(keys[i], notify);
+            
+            removeAttributeHard(HAZEL_SESSION_MARK, notify);
+        }
+
+    }
+
+    /**
+     * Return the names of all currently defined session attributes
+     * as an array of Strings.  If there are no defined attributes, a
+     * zero-length array is returned.
+     */
+    protected String[] keys() {
+    	Set keySet = attributes.keySet();
+    	keySet.remove(HAZEL_SESSION_MARK);
+    	return ((String[])keySet.toArray(EMPTY_ARRAY));
+    }
+    
+    /**
+     * Return an <code>Enumeration</code> of <code>String</code> objects
+     * containing the names of the objects bound to this session.
+     *
+     * @exception IllegalStateException if this method is called on an
+     *  invalidated session
+     */
+    public Enumeration getAttributeNames() {
+        if (!isValidInternal())
+            throw new IllegalStateException
+                (sm.getString("standardSession.getAttributeNames.ise"));
+        Set keySet = attributes.keySet();
+    	keySet.remove(HAZEL_SESSION_MARK);
+        return (new Enumerator(keySet, true));
+    }
 }
