@@ -39,6 +39,7 @@ public class HazelSessionFacade extends StandardSessionFacade {
 	
 	public HazelSessionFacade(HazelSession session) {
 		super(session);
+		this.session = session;
 	}
 	
 	public List<HazelAttribute> getTouchedAttributes(long requestId){
