@@ -18,26 +18,21 @@
 package com.hazelcast.web.tomcat;
 
 import java.io.IOException;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpSession;
 
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.valves.ValveBase;
-
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.IMap;
 
 /**
  * @author ali
  *
  */
 
-public class HazelValve extends ValveBase {
+public class HazelValve extends ValveBase implements HazelConstants {
 	
 	public static ThreadLocal<Long> requestLocal = new ThreadLocal<Long>();
 	
@@ -51,9 +46,8 @@ public class HazelValve extends ValveBase {
 			getNext().invoke(request, response);
 			HazelSessionFacade ses =  (HazelSessionFacade)request.getSession();
 			List<HazelAttribute> touchedList = ses.getTouchedAttributes(requestId);
-			IMap<String, HazelAttribute> hatributes = Hazelcast.getMap("attributes");
 			for (HazelAttribute hattribute : touchedList) {
-				hatributes.put(hattribute.getKey(), hattribute);
+				hazelAttributes.put(hattribute.getKey(), hattribute);
 			}
 		}
 		finally{
