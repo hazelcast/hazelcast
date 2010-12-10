@@ -17,16 +17,22 @@
 
 package com.hazelcast.web.tomcat;
 
-import java.io.Serializable;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.SerializationHelper;
 
 /**
  * @author ali
  *
  */
 
-public class HazelAttribute implements Serializable {
+public class HazelAttribute implements DataSerializable {
 	
 	private String sessionId = null;
 	
@@ -34,9 +40,14 @@ public class HazelAttribute implements Serializable {
 	
 	private Object value = null;
 	
-	private transient Set<Long> touchedByRequest = new HashSet<Long>();
+	private transient Set<Long> touchedByRequest = null;
+	
+	public HazelAttribute(){
+		touchedByRequest = Collections.synchronizedSet(new HashSet<Long>());
+	}
 	
 	public HazelAttribute(String sessionId, String name, Object value){
+		this();
 		this.sessionId = sessionId;
 		this.name = name;
 		this.value = value;
@@ -76,6 +87,18 @@ public class HazelAttribute implements Serializable {
 	
 	public String getKey(){
 		return sessionId + "_" + name;
+	}
+
+	public void writeData(DataOutput out) throws IOException {
+		out.writeUTF(sessionId);
+		out.writeUTF(name);
+		SerializationHelper.writeObject(out, value);
+	}
+
+	public void readData(DataInput in) throws IOException {
+		sessionId = in.readUTF();
+		name = in.readUTF();
+		value = SerializationHelper.readObject(in);
 	}
 	
 }
