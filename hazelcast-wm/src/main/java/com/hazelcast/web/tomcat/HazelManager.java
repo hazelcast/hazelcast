@@ -17,6 +17,8 @@
 
 package com.hazelcast.web.tomcat;
 
+import java.io.IOException;
+
 import org.apache.catalina.Session;
 import org.apache.catalina.session.StandardManager;
 import org.apache.catalina.session.StandardSession;
@@ -28,7 +30,7 @@ import org.apache.juli.logging.LogFactory;
  *
  */
 
-public class HazelManager extends StandardManager {
+public class HazelManager extends StandardManager implements HazelConstants {
 	
 	private final Log log = LogFactory.getLog(HazelManager.class); // must not be static
 	
@@ -51,15 +53,17 @@ public class HazelManager extends StandardManager {
 	}
 	
 	@Override
-	public void remove(Session session) {
+	public Session findSession(String id) throws IOException {
+		Session session = super.findSession(id);
+		if(session != null){
+			return session;
+		}
 		
-		super.remove(session);
-	}
-	
-	//TODO implement new session generator
-	@Override
-	protected synchronized String generateSessionId() {
-		return super.generateSessionId();
+		HazelAttribute mark = (HazelAttribute)hazelAttributes.get(id +"_" + HAZEL_SESSION_MARK);
+		if(mark != null && mark.getValue() != null){
+			session = createSession(id);
+		}
+		return session;
 	}
 	
 }
