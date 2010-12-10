@@ -140,6 +140,10 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
         return (Collection) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REMOVE_MULTI, key, null);
     }
 
+    public Set<K> localKeySet() {
+        throw new UnsupportedOperationException();
+    }
+
     public Set keySet() {
         final Collection<Object> collection = proxyHelper.keys(null);
         LightKeySet<Object> set = new LightKeySet<Object>(this, new HashSet<Object>(collection));

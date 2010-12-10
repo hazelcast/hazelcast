@@ -1643,6 +1643,11 @@ public class FactoryImpl implements HazelcastInstance {
             return base.remove(key);
         }
 
+        public Set localKeySet() {
+            ensure();
+            return base.localKeySet();
+        }
+
         public Set keySet() {
             ensure();
             return base.keySet();
@@ -1783,6 +1788,10 @@ public class FactoryImpl implements HazelcastInstance {
 
             public int size() {
                 return mapProxy.size();
+            }
+
+            public Set localKeySet() {
+                return mapProxy.localKeySet();
             }
 
             public Set keySet() {

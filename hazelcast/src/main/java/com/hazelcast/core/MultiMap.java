@@ -72,6 +72,20 @@ public interface MultiMap<K, V> extends Instance {
     Collection<V> remove(Object key);
 
     /**
+     * Returns the locally owned set of keys.
+     * <p/>
+     * Each key in this map is owned and managed by a specific
+     * member in the cluster.
+     * <p/>
+     * Note that ownership of these keys might change over time
+     * so that key ownerships can be almost evenly distributed
+     * in the cluster.
+     *
+     * @return locally owned keys.
+     */
+    Set<K> localKeySet();
+
+    /**
      * Returns the set of keys in the multimap.
      *
      * @return the set of keys in the multimap. Returned set might be modifiable

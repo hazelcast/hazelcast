@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>1.9.1-SNAPSHOT</version>
+        <version>1.9.1-RC</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -30,8 +30,8 @@
                         <phase>package</phase>
                         <configuration>
                             <tasks>
-                                <property name="jar.name" value="hazelcast-all-${project.parent.version}.jar"/>                                
-                                <delete file="target/${jar.name}" failonerror="false"/> 
+                                <property name="jar.name" value="hazelcast-all-${project.parent.version}.jar"/>
+                                <delete file="target/${jar.name}" failonerror="false"/>
                                 <jar jarfile="target/${jar.name}">
                                     <fileset dir="../hazelcast/target/classes/"/>
                                     <fileset dir="../hazelcast-client/target/classes/"/>

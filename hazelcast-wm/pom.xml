@@ -7,8 +7,8 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>1.9.1-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>        
+        <version>1.9.1-RC</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <name>hazelcast-wm</name>
@@ -16,7 +16,7 @@
     <packaging>jar</packaging>
 
     <dependencies>
-       <dependency>
+        <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>catalina</artifactId>
             <version>6.0.16</version>
@@ -39,6 +39,6 @@
             <artifactId>hazelcast</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
-    </dependencies> 
+    </dependencies>
 
 </project>

@@ -31,7 +31,7 @@ public class ParallelExecutorService {
 
     public void shutdown() {
         try {
-            executorService.shutdown();
+            executorService.shutdownNow();
             executorService.awaitTermination(5, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
         }

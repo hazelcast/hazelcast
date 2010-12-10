@@ -7,7 +7,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>1.9.1-SNAPSHOT</version>
+    <version>1.9.1-RC</version>
     <name>Hazelcast Root</name>
 
     <modules>
@@ -54,7 +54,7 @@
                     <include>**/*.handlers</include>
                     <include>**/*.schemas</include>
                 </includes>
-            </resource> 
+            </resource>
         </resources>
 
         <plugins>
@@ -112,7 +112,7 @@
                     </descriptors>
                 </configuration>
             </plugin>
-            <plugin> 
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>
                 <version>2.0.1</version>
@@ -131,11 +131,11 @@
             <url>scp://shell.sourceforge.net/home/groups/h/ha/hazelcast/htdocs/m2repo</url>
         </repository>
         <snapshotRepository>
-			<id>snapshot-repository</id>
-			<name>Maven2 Snapshot Repository</name>
-			<url>scp://hazelcast.com/root/tomcat/webapps/maven2/snapshots</url>
-			<uniqueVersion>false</uniqueVersion>
-		</snapshotRepository>
+            <id>snapshot-repository</id>
+            <name>Maven2 Snapshot Repository</name>
+            <url>scp://hazelcast.com/root/tomcat/webapps/maven2/snapshots</url>
+            <uniqueVersion>false</uniqueVersion>
+        </snapshotRepository>
     </distributionManagement>
 
     <dependencies>
