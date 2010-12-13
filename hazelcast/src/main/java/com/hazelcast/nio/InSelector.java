@@ -47,15 +47,9 @@ public final class InSelector extends SelectorBase {
         selector.wakeup();
     }
 
-    public void processSelectionQueue() {
-        while (live) {
-            final Runnable runnable = selectorQueue.poll();
-            if (runnable == null) {
-                return;
-            }
-            runnable.run();
-            size.decrementAndGet();
-        }
+    @Override
+    public void publishUtilization() {
+        node.getCpuUtilization().inThread = threadWatcher.publish();
     }
 
     @Override

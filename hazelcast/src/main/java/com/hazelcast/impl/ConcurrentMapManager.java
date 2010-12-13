@@ -223,6 +223,7 @@ public class ConcurrentMapManager extends BaseManager {
             long total = Runtime.getRuntime().totalMemory();
             long free = Runtime.getRuntime().freeMemory();
             sbState.append("\nCluster Size:" + lsMembers.size());
+            sbState.append("\n" + node.getCpuUtilization());
             sbState.append("\nUsed Memory:");
             sbState.append((total - free) / 1024 / 1024);
             sbState.append("MB");

@@ -18,9 +18,11 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.impl.*;
+import com.hazelcast.impl.base.CpuUtilization;
 import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.util.ThreadWatcher;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -59,6 +61,8 @@ public final class ClusterService implements Runnable, Constants {
     private long lastCheck = 0;
 
     private boolean running = true;
+
+    private final ThreadWatcher threadWatcher = new ThreadWatcher();
 
     public ClusterService(Node node) {
         this.node = node;
@@ -152,13 +156,17 @@ public final class ClusterService implements Runnable, Constants {
         boolean readPackets = false;
         boolean readProcessables = false;
         while (running) {
+            threadWatcher.incrementRunCount();
             readPackets = (dequeuePackets() != 0);
             readProcessables = (dequeueProcessables() != 0);
             if (!readPackets && !readProcessables) {
                 try {
+                    long startWait = System.nanoTime();
                     synchronized (notEmptyLock) {
                         notEmptyLock.wait(10);
                     }
+                    long now = System.nanoTime();
+                    threadWatcher.addWait((now - startWait), now);
                     checkPeriodics();
                 } catch (InterruptedException e) {
                     node.handleInterruptedException(Thread.currentThread(), e);
@@ -167,6 +175,10 @@ public final class ClusterService implements Runnable, Constants {
         }
         packetQueue.clear();
         processableQueue.clear();
+    }
+
+    private void publishUtilization() {
+        node.getCpuUtilization().serviceThread = threadWatcher.publish();
     }
 
     private int dequeuePackets() {
@@ -254,6 +266,7 @@ public final class ClusterService implements Runnable, Constants {
         }
         lastCheck = now;
         if ((now - lastPeriodicCheck) > PERIODIC_CHECK_INTERVAL_MILLIS) {
+            publishUtilization();
             for (Runnable runnable : periodicRunnables) {
                 if (runnable != null) {
                     runnable.run();

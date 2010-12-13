@@ -19,6 +19,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.impl.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.ThreadWatcher;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -32,7 +33,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public abstract class SelectorBase implements Runnable {
@@ -45,11 +45,11 @@ public abstract class SelectorBase implements Runnable {
 
     protected final Node node;
 
-    protected final AtomicInteger size = new AtomicInteger();
-
     private final int waitTime;
 
-    protected volatile boolean live = true;
+    protected boolean live = true;
+
+    protected final ThreadWatcher threadWatcher = new ThreadWatcher();
 
     public SelectorBase(Node node, int waitTime) {
         this.node = node;
@@ -82,23 +82,36 @@ public abstract class SelectorBase implements Runnable {
         }
     }
 
-    public int addTask(final Runnable runnable) {
+    public void addTask(final Runnable runnable) {
         selectorQueue.offer(runnable);
-        return size.incrementAndGet();
     }
 
-    abstract void processSelectionQueue();
+    public void processSelectionQueue() {
+        while (live) {
+            final Runnable runnable = selectorQueue.poll();
+            if (runnable == null) {
+                return;
+            }
+            runnable.run();
+        }
+    }
+
+    public abstract void publishUtilization();
 
     public final void run() {
         try {
             while (live) {
-                if (size.get() > 0) {
-                    processSelectionQueue();
+                if (threadWatcher.incrementRunCount() % 10000 == 0) {
+                    publishUtilization();
                 }
+                processSelectionQueue();
                 if (!live) return;
                 int selectedKeyCount;
                 try {
+                    long startWait = System.nanoTime();
                     selectedKeyCount = selector.select(waitTime);
+                    long now = System.nanoTime();
+                    threadWatcher.addWait((now - startWait), now);
                     if (Thread.interrupted()) {
                         node.handleInterruptedException(Thread.currentThread(), new RuntimeException());
                         return;
@@ -118,7 +131,7 @@ public abstract class SelectorBase implements Runnable {
                         sk.interestOps(sk.interestOps() & ~sk.readyOps());
                         SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
                         selectionHandler.handle();
-                    } catch (CancelledKeyException e){
+                    } catch (CancelledKeyException e) {
                         // nothing do
                     } catch (Throwable e) {
                         handleSelectorException(e);

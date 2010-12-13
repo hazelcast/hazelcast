@@ -37,15 +37,9 @@ public final class OutSelector extends SelectorBase {
         this.addTask(connector);
     }
 
-    public void processSelectionQueue() {
-        while (live) {
-            final Runnable runnable = selectorQueue.poll();
-            if (runnable == null) {
-                return;
-            }
-            runnable.run();
-            size.decrementAndGet();
-        }
+    @Override
+    public void publishUtilization() {
+        node.getCpuUtilization().outThread = threadWatcher.publish();
     }
 
     private class Connector implements Runnable, SelectionHandler {

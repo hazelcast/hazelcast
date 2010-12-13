@@ -25,6 +25,7 @@ import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.ascii.TextCommandServiceImpl;
+import com.hazelcast.impl.base.CpuUtilization;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.*;
@@ -109,10 +110,12 @@ public class Node {
     public final LoggingServiceImpl loggingService;
 
     private final NoneStrictObjectPool<Packet> packetPool;
-    
+
     private final static AtomicInteger counter = new AtomicInteger();
-    
-    final int id; 
+
+    private final CpuUtilization cpuUtilization = new CpuUtilization();
+
+    final int id;
 
     public Node(FactoryImpl factory, Config config) {
         this.id = counter.incrementAndGet();
@@ -383,7 +386,7 @@ public class Node {
         outThread.start();
         serviceThread = new Thread(threadGroup, clusterService, prefix + "ServiceThread");
 //        serviceThread.setContextClassLoader(config.getClassLoader());
-        serviceThread.setPriority(8);
+//        serviceThread.setPriority(8);
         logger.log(Level.FINEST, "Starting thread " + serviceThread.getName());
         serviceThread.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
@@ -894,6 +897,10 @@ public class Node {
      */
     public boolean isActive() {
         return active;
+    }
+
+    public CpuUtilization getCpuUtilization() {
+        return cpuUtilization;
     }
 
     public String toString() {
