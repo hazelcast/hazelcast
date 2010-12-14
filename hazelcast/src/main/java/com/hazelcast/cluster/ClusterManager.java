@@ -393,6 +393,9 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     public boolean isNextChanged(int distance) {
+        if (lsMembersBefore.size() == 0 || lsMembers.size() == 0) {
+            return true;
+        }
         int indexBefore = lsMembersBefore.indexOf(thisMember);
         int indexNow = lsMembers.indexOf(thisMember);
         for (int i = 1; i < distance + 1; i++) {
@@ -411,6 +414,9 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     public boolean isPreviousChanged(int distance) {
+        if (lsMembersBefore.size() == 0 || lsMembers.size() == 0) {
+            return true;
+        }
         int indexBefore = lsMembersBefore.indexOf(thisMember);
         int indexNow = lsMembers.indexOf(thisMember);
         for (int i = 1; i < distance + 1; i++) {

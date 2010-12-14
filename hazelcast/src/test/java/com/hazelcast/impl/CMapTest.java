@@ -26,7 +26,10 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionService;
 import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -41,6 +44,12 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
 public class CMapTest extends TestUtil {
+
+    @BeforeClass
+    public static void init() throws Exception {
+        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
+        Hazelcast.shutdownAll();
+    }
 
     @After
     public void cleanup() throws Exception {
@@ -60,7 +69,7 @@ public class CMapTest extends TestUtil {
 
     @Test
     public void testTwoMemberPut() throws Exception {
-        Config config = new XmlConfigBuilder().build();
+        Config config = new Config();
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         IMap imap1 = h1.getMap("default");
@@ -208,6 +217,143 @@ public class CMapTest extends TestUtil {
     }
 
     @Test
+    public void testShutdownMigratingNode() throws Exception {
+        Config config = new Config();
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap imap1 = h1.getMap("default");
+        for (int i = 0; i < 10000; i++) {
+            imap1.put(i, "value" + i);
+        }
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        migratePartition(28, h1, h2);
+        assertEquals(getPartitionById(h1.getPartitionService(), 28).getOwner(), h2.getCluster().getLocalMember());
+        assertEquals(getPartitionById(h2.getPartitionService(), 28).getOwner(), h2.getCluster().getLocalMember());
+        assertEquals(getPartitionById(h3.getPartitionService(), 28).getOwner(), h2.getCluster().getLocalMember());
+        initiateMigration(28, 20, h1, h2, h1);
+        final ConcurrentMapManager chm2 = getConcurrentMapManager(h2);
+        chm2.enqueueAndWait(new Processable() {
+            public void process() {
+                assertTrue(chm2.partitionManager.blocks[28].isMigrating());
+            }
+        }, 10);
+        final CountDownLatch migrationLatch = new CountDownLatch(2);
+        MigrationListener migrationListener = new MigrationListener() {
+            public void migrationCompleted(MigrationEvent migrationEvent) {
+                if (migrationEvent.getPartitionId() == 28 && migrationEvent.getNewOwner().equals(h1.getCluster().getLocalMember())) {
+                    migrationLatch.countDown();
+                }
+            }
+
+            public void migrationStarted(MigrationEvent migrationEvent) {
+            }
+        };
+        h3.getPartitionService().addMigrationListener(migrationListener);
+        h1.getPartitionService().addMigrationListener(migrationListener);
+        h2.getLifecycleService().shutdown();
+        if (!migrationLatch.await(40, TimeUnit.SECONDS)) {
+            for (Block block : getConcurrentMapManager(h1).partitionManager.blocks) {
+                if (block.isMigrating()) {
+                    System.out.println(block);
+                }
+            }
+            for (Block block : getConcurrentMapManager(h3).partitionManager.blocks) {
+                if (block.isMigrating()) {
+                    System.out.println(block);
+                }
+            }
+            fail("Migration should get completed in 20 seconds!!");
+        }
+    }
+
+    public static boolean migratePartition(int partitionId, HazelcastInstance oldest, HazelcastInstance to) throws Exception {
+        final MemberImpl currentOwnerMember = (MemberImpl) getPartitionById(oldest.getPartitionService(), partitionId).getOwner();
+        final MemberImpl toMember = (MemberImpl) to.getCluster().getLocalMember();
+        if (currentOwnerMember.equals(toMember)) {
+            return false;
+        }
+        final ConcurrentMapManager concurrentMapManagerOldest = getConcurrentMapManager(oldest);
+        final Address addressCurrentOwner = currentOwnerMember.getAddress();
+        final Address addressNewOwner = toMember.getAddress();
+        final int blockId = getPartitionById(oldest.getPartitionService(), partitionId).getPartitionId();
+        final CountDownLatch migrationLatch = new CountDownLatch(2);
+        MigrationListener migrationListener = new MigrationListener() {
+            public void migrationCompleted(MigrationEvent migrationEvent) {
+                if (migrationEvent.getPartitionId() == blockId && migrationEvent.getNewOwner().equals(toMember)) {
+                    migrationLatch.countDown();
+                }
+            }
+
+            public void migrationStarted(MigrationEvent migrationEvent) {
+            }
+        };
+        oldest.getPartitionService().addMigrationListener(migrationListener);
+        to.getPartitionService().addMigrationListener(migrationListener);
+        concurrentMapManagerOldest.enqueueAndReturn(new Processable() {
+            public void process() {
+                Block blockToMigrate = new Block(blockId, addressCurrentOwner, addressNewOwner);
+                concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.add(blockToMigrate);
+                concurrentMapManagerOldest.partitionManager.initiateMigration();
+            }
+        });
+        if (!migrationLatch.await(20, TimeUnit.SECONDS)) {
+            fail("Migration should get completed in 20 seconds!!");
+        }
+        assertEquals(toMember, getPartitionById(oldest.getPartitionService(), partitionId).getOwner());
+        assertEquals(toMember, getPartitionById(to.getPartitionService(), partitionId).getOwner());
+        return true;
+    }
+
+    public static boolean initiateMigration(final int partitionId, final int completeWaitSeconds, HazelcastInstance oldest, HazelcastInstance from, HazelcastInstance to) throws Exception {
+        final MemberImpl currentOwnerMember = (MemberImpl) getPartitionById(oldest.getPartitionService(), partitionId).getOwner();
+        final MemberImpl toMember = (MemberImpl) to.getCluster().getLocalMember();
+        if (currentOwnerMember.equals(toMember)) {
+            return false;
+        }
+        final ConcurrentMapManager concurrentMapManagerOldest = getConcurrentMapManager(oldest);
+        final ConcurrentMapManager concurrentMapManagerFrom = getConcurrentMapManager(from);
+        final Address addressCurrentOwner = currentOwnerMember.getAddress();
+        final Address addressNewOwner = toMember.getAddress();
+        final int blockId = getPartitionById(oldest.getPartitionService(), partitionId).getPartitionId();
+        final CountDownLatch migrationLatch = new CountDownLatch(2);
+        MigrationListener migrationListener = new MigrationListener() {
+            public void migrationCompleted(MigrationEvent migrationEvent) {
+            }
+
+            public void migrationStarted(MigrationEvent migrationEvent) {
+                migrationLatch.countDown();
+            }
+        };
+        from.getPartitionService().addMigrationListener(migrationListener);
+        to.getPartitionService().addMigrationListener(migrationListener);
+        concurrentMapManagerFrom.enqueueAndReturn(new Processable() {
+            public void process() {
+                concurrentMapManagerFrom.partitionManager.MIGRATION_COMPLETE_WAIT_SECONDS = completeWaitSeconds;
+            }
+        });
+        concurrentMapManagerOldest.enqueueAndReturn(new Processable() {
+            public void process() {
+                Block blockToMigrate = new Block(blockId, addressCurrentOwner, addressNewOwner);
+                concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.add(blockToMigrate);
+                concurrentMapManagerOldest.partitionManager.initiateMigration();
+            }
+        });
+        if (!migrationLatch.await(20, TimeUnit.SECONDS)) {
+            fail("Migration should get started in 20 seconds!!");
+        }
+        return true;
+    }
+
+    public static Partition getPartitionById(PartitionService partitionService, int partitionId) {
+        for (Partition partition : partitionService.getPartitions()) {
+            if (partition.getPartitionId() == partitionId) {
+                return partition;
+            }
+        }
+        return null;
+    }
+
+    @Test
     public void testTTL() throws Exception {
         Config config = new Config();
         FactoryImpl mockFactory = mock(FactoryImpl.class);
@@ -261,7 +407,7 @@ public class CMapTest extends TestUtil {
 
     @Test
     public void testPut() throws Exception {
-        Config config = new XmlConfigBuilder().build();
+        Config config = new Config();
         FactoryImpl mockFactory = mock(FactoryImpl.class);
         Node node = new Node(mockFactory, config);
         node.serviceThread = Thread.currentThread();
@@ -291,7 +437,7 @@ public class CMapTest extends TestUtil {
         cmap.put(newPutRequest(dKey, dValue, 1000));
         assertEquals(0, record.getRemoveTime());
         assertTrue(cmap.mapRecords.containsKey(toData(key)));
-        Thread.sleep(1000);
+        Thread.sleep(1500);
         assertEquals(0, cmap.size());
         assertFalse(cmap.contains(newContainsRequest(dKey, null)));
     }

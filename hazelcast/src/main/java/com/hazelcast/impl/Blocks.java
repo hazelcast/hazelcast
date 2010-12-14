@@ -55,4 +55,15 @@ public class Blocks extends AbstractRemotelyProcessable {
     public void process() {
         getNode().concurrentMapManager.partitionManager.handleBlocks(Blocks.this);
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Blocks {");
+        for (Block block : lsBlocks) {
+            sb.append("\n\t");
+            sb.append(block);
+        }
+        sb.append("\n}");
+        return sb.toString();
+    }
 }

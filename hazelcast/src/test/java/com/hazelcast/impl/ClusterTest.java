@@ -282,7 +282,7 @@ public class ClusterTest {
         final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance hSuper2 = Hazelcast.newHazelcastInstance(config);
         sleep(11000);
-        HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(new Config());
         Map map = hSuper.getMap("default");
         map.put("1", "value");
         assertEquals("value", hNormal.getMap("default").get("1"));

@@ -52,6 +52,7 @@ public class PartitionManager implements Runnable {
     long nextMigrationMillis = System.currentTimeMillis() + MIGRATION_INTERVAL_MILLIS;
     boolean dirty = false;
     long migrationStartTime = 0;
+    int MIGRATION_COMPLETE_WAIT_SECONDS = 0;
 
     public PartitionManager(ConcurrentMapManager concurrentMapManager) {
         this.logger = concurrentMapManager.getNode().getLogger(PartitionManager.class.getName());
@@ -490,13 +491,13 @@ public class PartitionManager implements Runnable {
     void migrateBlock(final Block blockInfo) {
         Block blockReal = blocks[blockInfo.getBlockId()];
         if (!thisAddress.equals(blockInfo.getOwner())) {
-            throw new RuntimeException("migrateBlock should be called from owner: " + blockInfo);
+            throw new RuntimeException(thisAddress + ". migrateBlock should be called from owner: " + blockInfo);
         }
         if (!blockInfo.isMigrating()) {
-            throw new RuntimeException("migrateBlock cannot have non-migrating block: " + blockInfo);
+            throw new RuntimeException(thisAddress + ". migrateBlock cannot have non-migrating block: " + blockInfo);
         }
         if (blockInfo.getOwner().equals(blockInfo.getMigrationAddress())) {
-            throw new RuntimeException("migrateBlock cannot have same owner and migrationAddress:" + blockInfo);
+            throw new RuntimeException(thisAddress + ". migrateBlock cannot have same owner and migrationAddress:" + blockInfo);
         }
         if (!node.isActive() || node.factory.restarted) {
             return;
@@ -548,6 +549,9 @@ public class PartitionManager implements Runnable {
                 try {
                     logger.log(Level.FINEST, "migrate blockInfo " + blockInfo + " await ");
                     latch.await(10, TimeUnit.SECONDS);
+                    if (MIGRATION_COMPLETE_WAIT_SECONDS > 0) {
+                        Thread.sleep(MIGRATION_COMPLETE_WAIT_SECONDS * 1000);
+                    }
                 } catch (InterruptedException ignored) {
                 } finally {
                     concurrentMapManager.enqueueAndReturn(new Processable() {
@@ -599,6 +603,10 @@ public class PartitionManager implements Runnable {
                     if (block.isMigrating()) {
                         fireMigrationEvent(true, new Block(block));
                     }
+                }
+            } else {
+                if (thisAddress.equals(block.getOwner()) && block.isMigrating() && !blockReal.isMigrationStarted()) {
+                    startMigration(new Block(block));
                 }
             }
             if (!sameBlocks(block, blockReal)) {
