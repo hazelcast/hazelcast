@@ -429,6 +429,36 @@ public class ClusterTest {
         assertEquals(0, map2.getLocalMapStats().getBackupEntryCount());
     }
 
+    @Test
+    public void issue452SetMigration() throws InterruptedException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        ISet set1 = h1.getSet("mySet");
+        for (int i = 0; i < 1000; i++) {
+            set1.add(i);
+        }
+        assertEquals(1000, set1.size());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
+        ISet set2 = h2.getSet("mySet");
+        ISet set3 = h3.getSet("mySet");
+        final CountDownLatch latch = new CountDownLatch(1);
+        h1.getPartitionService().addMigrationListener(new MigrationListener() {
+            public void migrationCompleted(MigrationEvent migrationEvent) {
+                latch.countDown();
+            }
+
+            public void migrationStarted(MigrationEvent migrationEvent) {
+            }
+        });
+        latch.await(30, TimeUnit.SECONDS);
+        assertEquals(1000, set1.size());
+        assertEquals(1000, set2.size());
+        assertEquals(1000, set3.size());
+        h2.getLifecycleService().shutdown();
+        assertEquals(1000, set1.size());
+        assertEquals(1000, set3.size());
+    }
+
     @Test(timeout = 160000)
     public void testBackupCount() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);

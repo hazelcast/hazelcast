@@ -73,6 +73,8 @@ public class PartitionManager implements Runnable {
             blocks[i] = null;
         }
         partitionServiceImpl.reset();
+        parallelExecutorBackups.shutdown();
+        parallelExecutorMigration.shutdown();
     }
 
     public void run() {
@@ -450,6 +452,11 @@ public class PartitionManager implements Runnable {
         }
         if (block.isMigrating() && block.getMigrationAddress().equals(block.getOwner())) {
             block.setMigrationAddress(null);
+            Member currentOwner = (block.getOwner() == null) ? null : concurrentMapManager.getMember(block.getOwner());
+            MigrationEvent migrationEvent = new MigrationEvent(concurrentMapManager.node,
+                    block.getBlockId(), deadMember, currentOwner);
+            partitionServiceImpl.doFireMigrationEvent(true, migrationEvent);
+            partitionServiceImpl.doFireMigrationEvent(false, migrationEvent);
         }
         partitionServiceImpl.reset();
     }

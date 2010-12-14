@@ -262,14 +262,14 @@ public class ExecutorManager extends BaseManager {
 
     public void stop() {
         if (!started) return;
-        parallelExecutorService.shutdown();
         Collection<NamedExecutorService> executors = mapExecutors.values();
         for (NamedExecutorService namedExecutorService : executors) {
             namedExecutorService.stop();
         }
-        threadPoolExecutor.shutdownNow();
+        parallelExecutorService.shutdown();
         try {
-            threadPoolExecutor.awaitTermination(3, TimeUnit.SECONDS);
+            threadPoolExecutor.shutdownNow();
+            threadPoolExecutor.awaitTermination(5, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
         }
         started = false;

@@ -643,7 +643,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
     }
 
-    class JoinRunnable implements Runnable, Prioritized {
+    class JoinRunnable extends FallThroughRunnable implements Prioritized {
 
         final MembersUpdateCall membersUpdate;
 
@@ -651,7 +651,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             this.membersUpdate = membersUpdate;
         }
 
-        public void run() {
+        @Override
+        public void doRun() {
             Collection<MemberInfo> lsMemberInfos = membersUpdate.getMemberInfos();
             List<Address> newMemberList = new ArrayList<Address>(lsMemberInfos.size());
             for (final MemberInfo memberInfo : lsMemberInfos) {

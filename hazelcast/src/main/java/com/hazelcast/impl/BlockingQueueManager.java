@@ -578,7 +578,10 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     public void destroy(String name) {
-        mapQueues.remove(name);
+        Q q = mapQueues.remove(name);
+        if (q != null) {
+            q.destroy();
+        }
     }
 
     public class QSize extends MultiCall {
@@ -1220,6 +1223,19 @@ public class BlockingQueueManager extends BaseManager {
                     sendAddBlockMessageToOthers(block, -1, null, true);
                 }
             }
+        }
+
+        public void destroy() {
+            lsBlocks.clear();
+            mapListeners.clear();
+            for (ScheduledPollAction scheduledPollAction : lsScheduledPollActions) {
+                scheduledPollAction.setValid(false);
+            }
+            lsScheduledPollActions.clear();
+            for (ScheduledOfferAction scheduledOfferAction : lsScheduledOfferActions) {
+                scheduledOfferAction.setValid(false);
+            }
+            lsScheduledOfferActions.clear();
         }
 
         public LocalQueueStatsImpl getQueueStats() {

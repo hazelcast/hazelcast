@@ -334,7 +334,7 @@ public abstract class BaseManager {
         public Object getResultAsObject() {
             return getResultAsObject(true);
         }
-        
+
         public Object getResultAsObject(boolean force) {
             Object result = getResult();
             if (result == OBJECT_NULL || result == null) {

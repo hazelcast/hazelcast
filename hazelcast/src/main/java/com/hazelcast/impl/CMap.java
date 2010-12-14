@@ -337,10 +337,11 @@ public class CMap {
         if (req.key == null || req.key.size() == 0) {
             throw new RuntimeException("Key cannot be null " + req.key);
         }
-//        if (req.value == null) {
-//            System.out.println("NEW DATA!!!!!!!");
-//            req.value = new Data();
-//        }
+        if (req.value == null) {
+            if (isSet() || isList()) {
+                req.value = new Data();
+            }
+        }
         Record record = toRecord(req);
         if (req.ttl <= 0 || req.timeout <= 0) {
             record.setInvalid();
@@ -1337,12 +1338,23 @@ public class CMap {
     }
 
     void reset() {
+        for (Record record : mapRecords.values()) {
+            if (record.hasScheduledAction()) {
+                List<ScheduledAction> lsScheduledActions = record.getScheduledActions();
+                if (lsScheduledActions != null) {
+                    for (ScheduledAction scheduledAction : lsScheduledActions) {
+                        scheduledAction.setValid(false);
+                    }
+                }
+            }
+        }
         if (locallyOwnedMap != null) {
             locallyOwnedMap.reset();
         }
         if (mapNearCache != null) {
             mapNearCache.reset();
         }
+        mapRecordEntries.clear();
         mapRecords.clear();
         mapIndexService.clear();
         if (store != null && store instanceof MapStoreWrapper) {

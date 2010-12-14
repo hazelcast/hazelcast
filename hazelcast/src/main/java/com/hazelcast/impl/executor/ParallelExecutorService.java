@@ -17,32 +17,36 @@
 
 package com.hazelcast.impl.executor;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ParallelExecutorService {
     private final ExecutorService executorService;
+    private final List<ParallelExecutor> lsParallelExecutors = new CopyOnWriteArrayList<ParallelExecutor>();
 
     public ParallelExecutorService(ExecutorService executorService) {
         this.executorService = executorService;
     }
 
     public void shutdown() {
-        try {
-            executorService.shutdownNow();
-            executorService.awaitTermination(5, TimeUnit.SECONDS);
-        } catch (InterruptedException ignored) {
+        for (ParallelExecutor parallelExecutor : lsParallelExecutors) {
+            parallelExecutor.shutdown();
         }
+        lsParallelExecutors.clear();
     }
 
     public ParallelExecutor newParallelExecutor(int concurrencyLevel) {
+        ParallelExecutor parallelExecutor = null;
         if (concurrencyLevel > 0 && concurrencyLevel < Integer.MAX_VALUE) {
-            return new ParallelExecutorImpl(concurrencyLevel);
+            parallelExecutor = new ParallelExecutorImpl(concurrencyLevel);
         } else {
-            return new FullyParallelExecutorImpl();
+            parallelExecutor = new FullyParallelExecutorImpl();
         }
+        lsParallelExecutors.add(parallelExecutor);
+        return parallelExecutor;
     }
 
     class FullyParallelExecutorImpl implements ParallelExecutor {

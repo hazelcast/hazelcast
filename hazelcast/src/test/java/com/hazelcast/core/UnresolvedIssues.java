@@ -22,6 +22,8 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.ReplicatedMapFactory;
 import com.hazelcast.impl.TestUtil;
+import com.hazelcast.partition.MigrationEvent;
+import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
@@ -32,6 +34,8 @@ import org.junit.Test;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -180,19 +184,5 @@ public class UnresolvedIssues extends TestUtil {
         assertEquals(100, q.size());
         assertFalse(result);
         h.getLifecycleService().shutdown();
-    }
-
-    @Test
-    @Ignore
-    public void issue452setLeaks() throws InterruptedException {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        ISet set = h1.getSet("mySet");
-        for (int i = 0; i < 1000; i++) {
-            set.add(i);
-        }
-        assertEquals(1000, set.size());
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        Thread.sleep(10000);
-        assertEquals(1000, set.size());
     }
 }

@@ -20,7 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.impl.ClientService.ClientOperationHandler;
 import com.hazelcast.nio.Packet;
 
-public class ClientRequestHandler implements Runnable {
+public class ClientRequestHandler extends FallThroughRunnable {
     private final Packet packet;
     private final CallContext callContext;
     private final Node node;
@@ -34,7 +34,8 @@ public class ClientRequestHandler implements Runnable {
         this.clientOperationHandlers = clientOperationHandlers;
     }
 
-    public void run() {
+    @Override
+    public void doRun() {
         ThreadContext.get().setCallContext(callContext);
         ClientOperationHandler clientOperationHandler = clientOperationHandlers[packet.operation.getValue()];
         if (clientOperationHandler != null) {

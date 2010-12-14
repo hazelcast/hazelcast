@@ -53,9 +53,9 @@ public class ClientRunnableTest {
             }
         }).start();
         clientRunnable.run();
-        waitLatch.countDown();
+        assertTrue(waitLatch.await(10, TimeUnit.SECONDS));
         assertTrue(counter.get() > 1);
-        assertTrue("Not notified", latch.await(25, TimeUnit.SECONDS));
+        assertTrue("Not notified", latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test

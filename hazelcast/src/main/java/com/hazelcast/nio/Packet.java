@@ -93,12 +93,13 @@ public final class Packet implements SocketWritable {
         if (str == null) {
             bb.putInt(0);
         } else {
+            // this part is not atomic but
+            // it doesn't have to be.
             byte[] bytes = mapStringByteCache.get(str);
             if (bytes == null) {
                 bytes = str.getBytes();
                 if (mapStringByteCache.size() >= 10000) {
                     mapStringByteCache.clear();
-                    throw new RuntimeException("So many different names!");
                 }
                 mapStringByteCache.put(str, bytes);
             }

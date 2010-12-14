@@ -176,6 +176,7 @@ public class ConcurrentMapManager extends BaseManager {
         maps.clear();
         mapLocallyOwnedMaps.clear();
         mapCaches.clear();
+        partitionManager.reset();
     }
 
     public void syncForDead(MemberImpl deadMember) {
@@ -677,7 +678,12 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     public void destroy(String name) {
-        maps.remove(name);
+        CMap cmap = maps.remove(name);
+        if (cmap != null) {
+            cmap.reset();
+        }
+        mapLocallyOwnedMaps.remove(name);
+        mapCaches.remove(name);
     }
 
     class MAdd extends MBackupAndMigrationAwareOp {

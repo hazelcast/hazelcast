@@ -56,8 +56,9 @@ public class SplitBrainHandler implements Runnable {
             long now = System.currentTimeMillis();
             if (!inProgress && (now - lastRun > NEXT_RUN_DELAY_MILLIS) && node.clusterManager.shouldTryMerge()) {
                 inProgress = true;
-                node.executorManager.executeNow(new Runnable() {
-                    public void run() {
+                node.executorManager.executeNow(new FallThroughRunnable() {
+                    @Override
+                    public void doRun() {
                         searchForOtherClusters();
                         lastRun = System.currentTimeMillis();
                         inProgress = false;
@@ -138,7 +139,7 @@ public class SplitBrainHandler implements Runnable {
             } catch (Exception e) {
                 validJoinRequest = false;
             }
-            if (validJoinRequest){
+            if (validJoinRequest) {
                 int currentMemberCount = node.getClusterImpl().getMembers().size();
                 if (joinInfo.getMemberCount() > currentMemberCount) {
                     // I should join the other cluster
