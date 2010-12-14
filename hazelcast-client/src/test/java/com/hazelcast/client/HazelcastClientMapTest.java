@@ -19,7 +19,6 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.nio.DataSerializable;
@@ -55,77 +54,65 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
 
     @Test
     public void testIssue321() throws Exception {
-    	HazelcastClient hClient = getHazelcastClient();
-		final IMap<Integer, Integer> imap = hClient.getMap("testIssue321_1");
-
-		final BlockingQueue<EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<EntryEvent<Integer,Integer>>();
-        final BlockingQueue<EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<EntryEvent<Integer,Integer>>();
-
-		imap.addEntryListener(new EntryAdapter<Integer, Integer>(){
-			@Override
-			public void entryAdded(EntryEvent event) {
-				events2.add(event);
-			}
-		}, false);
-		imap.addEntryListener(new EntryAdapter<Integer, Integer>(){
-			@Override
-			public void entryAdded(EntryEvent event) {
-				events1.add(event);
-			}
-		}, true);
-
-		imap.put(1, 1);
-		
-		final EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.MILLISECONDS);
-		final EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.MILLISECONDS);
-		
-		assertNotNull(event1);
-		assertNotNull(event2);
-		
-		assertNotNull(event1.getValue());
-		assertNull(event2.getValue());
-    
+        HazelcastClient hClient = getHazelcastClient();
+        final IMap<Integer, Integer> imap = hClient.getMap("testIssue321_1");
+        final BlockingQueue<EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<EntryEvent<Integer, Integer>>();
+        final BlockingQueue<EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<EntryEvent<Integer, Integer>>();
+        imap.addEntryListener(new EntryAdapter<Integer, Integer>() {
+            @Override
+            public void entryAdded(EntryEvent event) {
+                events2.add(event);
+            }
+        }, false);
+        imap.addEntryListener(new EntryAdapter<Integer, Integer>() {
+            @Override
+            public void entryAdded(EntryEvent event) {
+                events1.add(event);
+            }
+        }, true);
+        imap.put(1, 1);
+        final EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.MILLISECONDS);
+        final EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.MILLISECONDS);
+        assertNotNull(event1);
+        assertNotNull(event2);
+        assertNotNull(event1.getValue());
+        assertNull(event2.getValue());
     }
-    
+
     @Test
     public void testIssue321_2() throws Exception {
-    	HazelcastClient hClient = getHazelcastClient();
-    	final IMap<Integer, Integer> imap = hClient.getMap("testIssue321_2");
-		final BlockingQueue<EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<EntryEvent<Integer,Integer>>();
-        final BlockingQueue<EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<EntryEvent<Integer,Integer>>();
-
-		imap.addEntryListener(new EntryAdapter(){
-			@Override
-			public void entryAdded(EntryEvent event) {
-				events1.add(event);
-			}
-		}, true);
-		Thread.sleep(50L);
-		imap.addEntryListener(new EntryAdapter(){
-			@Override
-			public void entryAdded(EntryEvent event) {
-				events2.add(event);
-			}
-		}, false);
-		imap.put(1, 1);
-		
-		final EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.MILLISECONDS);
-		final EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.MILLISECONDS);
-		
-		assertNotNull(event1);
-		assertNotNull(event2);
-		
-		assertNotNull(event1.getValue());
-		assertNull(event2.getValue());
+        HazelcastClient hClient = getHazelcastClient();
+        final IMap<Integer, Integer> imap = hClient.getMap("testIssue321_2");
+        final BlockingQueue<EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<EntryEvent<Integer, Integer>>();
+        final BlockingQueue<EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<EntryEvent<Integer, Integer>>();
+        imap.addEntryListener(new EntryAdapter() {
+            @Override
+            public void entryAdded(EntryEvent event) {
+                events1.add(event);
+            }
+        }, true);
+        Thread.sleep(50L);
+        imap.addEntryListener(new EntryAdapter() {
+            @Override
+            public void entryAdded(EntryEvent event) {
+                events2.add(event);
+            }
+        }, false);
+        imap.put(1, 1);
+        final EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.MILLISECONDS);
+        final EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.MILLISECONDS);
+        assertNotNull(event1);
+        assertNotNull(event2);
+        assertNotNull(event1.getValue());
+        assertNull(event2.getValue());
     }
-    
+
     @Test
     public void testIssue321_3() throws Exception {
         HazelcastClient hClient = getHazelcastClient();
         final IMap<Integer, Integer> imap = hClient.getMap("testIssue321_3");
-        final BlockingQueue<EntryEvent<Integer, Integer>> events = new LinkedBlockingQueue<EntryEvent<Integer,Integer>>();
-
-        final EntryAdapter listener = new EntryAdapter(){
+        final BlockingQueue<EntryEvent<Integer, Integer>> events = new LinkedBlockingQueue<EntryEvent<Integer, Integer>>();
+        final EntryAdapter listener = new EntryAdapter() {
             @Override
             public void entryAdded(EntryEvent event) {
                 events.add(event);
@@ -135,17 +122,14 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         Thread.sleep(50L);
         imap.addEntryListener(listener, false);
         imap.put(1, 1);
-        
         final EntryEvent<Integer, Integer> event1 = events.poll(10, TimeUnit.MILLISECONDS);
         final EntryEvent<Integer, Integer> event2 = events.poll(10, TimeUnit.MILLISECONDS);
-        
         assertNotNull(event1);
         assertNotNull(event2);
-        
         assertNotNull(event1.getValue());
         assertNull(event2.getValue());
     }
-    
+
     @Test
     public void getMapName() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
@@ -183,7 +167,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         map.lockMap(10, TimeUnit.MILLISECONDS);
         new Thread(new Runnable() {
             public void run() {
-            	map.lockMap(10, TimeUnit.MILLISECONDS);
+                map.lockMap(10, TimeUnit.MILLISECONDS);
                 latch.countDown();
             }
         }).start();
@@ -235,6 +219,27 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertEquals(1, clientMap.size());
         result = clientMap.put("1", "B");
         assertEquals("CBDEF", result);
+    }
+
+    @Test
+    public void putWithTtl() throws InterruptedException {
+        HazelcastClient hClient = getHazelcastClient();
+        IMap<String, String> map = hClient.getMap("putWithTtl");
+        assertEquals(0, map.size());
+        map.put("1", "CBDEF", 100, TimeUnit.MILLISECONDS);
+        assertEquals(1, map.size());
+        Thread.sleep(101);
+        assertEquals(0, map.size());
+    }
+
+    @Test
+    public void tryPut() throws InterruptedException {
+        HazelcastClient hClient = getHazelcastClient();
+        IMap<String, String> map = hClient.getMap("tryPut");
+        assertEquals(0, map.size());
+        Boolean result = map.tryPut("1", "CBDEF", 1, TimeUnit.SECONDS);
+        assertTrue(result);
+        assertEquals(1, map.size());
     }
 
     @Test
@@ -355,7 +360,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         }
         assertEquals(0, map.size());
     }
-    
+
     @Test
     public void valuesToArray() {
         HazelcastClient hClient = getHazelcastClient();
@@ -371,17 +376,17 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
             assertArrayEquals(new Object[]{"1", "2", "3"}, values);
         }
         {
-            final String[] values = (String[])map.values().toArray(new String[3]);
+            final String[] values = (String[]) map.values().toArray(new String[3]);
             Arrays.sort(values);
             assertArrayEquals(new String[]{"1", "2", "3"}, values);
         }
         {
-            final String[] values = (String[])map.values().toArray(new String[2]);
+            final String[] values = (String[]) map.values().toArray(new String[2]);
             Arrays.sort(values);
             assertArrayEquals(new String[]{"1", "2", "3"}, values);
         }
         {
-            final String[] values = (String[])map.values().toArray(new String[5]);
+            final String[] values = (String[]) map.values().toArray(new String[5]);
             Arrays.sort(values, 0, 3);
             assertArrayEquals(new String[]{"1", "2", "3", null, null}, values);
         }
@@ -507,7 +512,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         final CountDownLatch entryUpdatedLatch = new CountDownLatch(1);
         final CountDownLatch entryRemovedLatch = new CountDownLatch(1);
         CountDownLatchEntryListener<String, String> listener = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
-        map.addEntryListener(listener,"hello", true);
+        map.addEntryListener(listener, "hello", true);
         assertNull(map.get("hello"));
         map.put("hello", "world");
         map.put("hello", "new world");

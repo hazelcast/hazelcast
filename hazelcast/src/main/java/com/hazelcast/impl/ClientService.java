@@ -55,6 +55,7 @@ public class ClientService implements ConnectionListener {
         clientOperationHandlers[CONCURRENT_MAP_PUT.getValue()] = new MapPutHandler();
         clientOperationHandlers[CONCURRENT_MAP_PUT_MULTI.getValue()] = new MapPutMultiHandler();
         clientOperationHandlers[CONCURRENT_MAP_PUT_IF_ABSENT.getValue()] = new MapPutIfAbsentHandler();
+        clientOperationHandlers[CONCURRENT_MAP_TRY_PUT.getValue()] = new MapTryPutHandler();
         clientOperationHandlers[CONCURRENT_MAP_GET.getValue()] = new MapGetHandler();
         clientOperationHandlers[CONCURRENT_MAP_REMOVE.getValue()] = new MapRemoveHandler();
         clientOperationHandlers[CONCURRENT_MAP_REMOVE_IF_SAME.getValue()] = new MapRemoveIfSameHandler();
@@ -523,14 +524,32 @@ public class ClientService implements ConnectionListener {
         }
     }
 
-    private class MapPutHandler extends ClientMapOperationHandler {
-        public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+    private class MapPutHandler extends ClientMapOperationHandlerWithTTL {
+
+        @Override
+        protected Data processMapOp(IMap<Object, Object> map, Data key, Data value, long ttl) {
             MProxy mproxy = (MProxy) map;
+            Object v = value;
             if (node.concurrentMapManager.isMapIndexed(mproxy.getLongName())) {
-                return (Data) map.put(key, toObject(value));
-            } else {
-                return (Data) map.put(key, value);
+                v = toObject(value);
             }
+            if (ttl <= 0) {
+                return (Data) map.put(key, v);
+            } else {
+                return (Data) map.put(key, v, ttl, TimeUnit.MILLISECONDS);
+            }
+        }
+    }
+
+    private class MapTryPutHandler extends ClientMapOperationHandlerWithTTL {
+        @Override
+        protected Data processMapOp(IMap<Object, Object> map, Data key, Data value, long ttl) {
+            MProxy mproxy = (MProxy) map;
+            Object v = value;
+            if (node.concurrentMapManager.isMapIndexed(mproxy.getLongName())) {
+                v = toObject(value);
+            }
+            return toData(map.tryPut(key, v, ttl, TimeUnit.MILLISECONDS));
         }
     }
 
@@ -541,7 +560,7 @@ public class ClientService implements ConnectionListener {
             if (node.concurrentMapManager.isMapIndexed(mproxy.getLongName())) {
                 v = toObject(value);
             }
-            if (ttl < 0) {
+            if (ttl <= 0) {
                 return (Data) map.putIfAbsent(key, v);
             } else {
                 return (Data) map.putIfAbsent(key, v, ttl, TimeUnit.MILLISECONDS);
@@ -1002,6 +1021,18 @@ public class ClientService implements ConnectionListener {
             packet.clearForResponse();
             packet.setValue(value);
         }
+    }
+
+    private abstract class ClientMapOperationHandlerWithTTL extends ClientOperationHandler {
+        public void processCall(Node node, Packet packet) {
+            IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+            long ttl = packet.timeout;
+            Data value = processMapOp(map, packet.getKeyData(), packet.getValueData(), ttl);
+            packet.clearForResponse();
+            packet.setValue(value);
+        }
+
+        protected abstract Data processMapOp(IMap<Object, Object> map, Data keyData, Data valueData, long ttl);
     }
 
     private abstract class ClientQueueOperationHandler extends ClientOperationHandler {

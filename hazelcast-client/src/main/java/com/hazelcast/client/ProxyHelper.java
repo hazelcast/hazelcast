@@ -104,10 +104,17 @@ public class ProxyHelper {
     }
 
     public Packet createRequestPacket(ClusterOperation operation, byte[] key, byte[] value) {
+        return createRequestPacket(operation, key, value, 0, null);
+    }
+
+    private Packet createRequestPacket(ClusterOperation operation, byte[] key, byte[] value, long ttl, TimeUnit timeunit) {
         Packet request = createRequestPacket();
         request.setOperation(operation);
         request.setKey(key);
         request.setValue(value);
+        if (ttl > 0 && timeunit != null) {
+            request.setTimeout(timeunit.toMillis(ttl));
+        }
         return request;
     }
 
@@ -127,13 +134,16 @@ public class ProxyHelper {
     }
 
     protected Object doOp(ClusterOperation operation, Object key, Object value) {
-        Packet request = prepareRequest(operation, key, value);
+        return doOp(operation, key, value, 0, null);
+    }
+
+    public Object doOp(ClusterOperation operation, Object key, Object value, long ttl, TimeUnit timeunit) {
+        Packet request = prepareRequest(operation, key, value, ttl, timeunit);
         Packet response = callAndGetResult(request);
         return getValue(response);
     }
 
-    protected Packet prepareRequest(ClusterOperation operation, Object key,
-                                    Object value) {
+    private Packet prepareRequest(ClusterOperation operation, Object key, Object value, long ttl, TimeUnit timeunit) {
         byte[] k = null;
         byte[] v = null;
         if (key != null) {
@@ -142,7 +152,12 @@ public class ProxyHelper {
         if (value != null) {
             v = toByte(value);
         }
-        return createRequestPacket(operation, k, v);
+        return createRequestPacket(operation, k, v, ttl, timeunit);
+    }
+
+    protected Packet prepareRequest(ClusterOperation operation, Object key,
+                                    Object value) {
+        return prepareRequest(operation, key, value, 0, null);
     }
 
     protected Object getValue(Packet response) {

@@ -140,12 +140,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     public V putIfAbsent(K key, V value, long ttl, TimeUnit timeunit) {
         check(key);
         check(value);
-        ProxyHelper.checkTime(ttl, timeunit);
-        long micros = timeunit.toMillis(ttl);
-        Packet request = proxyHelper.prepareRequest(ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT, key, value);
-        request.setTimeout(micros);
-        Packet response = proxyHelper.callAndGetResult(request);
-        return (V) proxyHelper.getValue(response);
+        return (V) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT, key, value, ttl, timeunit);
     }
 
     public V putIfAbsent(K key, V value) {
@@ -243,11 +238,15 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public V put(K key, V value, long ttl, TimeUnit timeunit) {
-        throw new UnsupportedOperationException();
+        check(key);
+        check(value);
+        return (V) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_PUT, key, value, ttl, timeunit);
     }
 
     public boolean tryPut(K key, V value, long timeout, TimeUnit timeunit) {
-        throw new UnsupportedOperationException();
+        check(key);
+        check(value);
+        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_TRY_PUT, key, value, timeout, timeunit);
     }
 
     public void putAll(final Map<? extends K, ? extends V> map) {
