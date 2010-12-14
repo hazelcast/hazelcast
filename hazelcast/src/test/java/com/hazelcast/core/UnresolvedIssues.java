@@ -181,4 +181,18 @@ public class UnresolvedIssues extends TestUtil {
         assertFalse(result);
         h.getLifecycleService().shutdown();
     }
+
+    @Test
+    @Ignore
+    public void issue452setLeaks() throws InterruptedException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        ISet set = h1.getSet("mySet");
+        for (int i = 0; i < 1000; i++) {
+            set.add(i);
+        }
+        assertEquals(1000, set.size());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        Thread.sleep(10000);
+        assertEquals(1000, set.size());
+    }
 }
