@@ -17,18 +17,21 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.Prefix;
-import com.hazelcast.nio.DataSerializable;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.Prefix;
+import com.hazelcast.nio.DataSerializable;
+
 public class EvictLocalMapEntriesCallable implements Callable<Boolean>, HazelcastInstanceAware, DataSerializable {
-    private transient HazelcastInstance hazelcastInstance;
+	
+	private static final long serialVersionUID = -8809741591882405286L;
+	
+	private transient HazelcastInstance hazelcastInstance;
     private String mapName;
     private int percentage;
 
@@ -50,12 +53,12 @@ public class EvictLocalMapEntriesCallable implements Callable<Boolean>, Hazelcas
         return true;
     }
 
-    public static ConcurrentMapManager getConcurrentMapManager(HazelcastInstance h) {
-        FactoryImpl.HazelcastInstanceProxy hiProxy = (FactoryImpl.HazelcastInstanceProxy) h;
-        return hiProxy.getFactory().node.concurrentMapManager;
+    private ConcurrentMapManager getConcurrentMapManager(HazelcastInstance h) {
+        FactoryImpl factory = (FactoryImpl) h;
+        return factory.node.concurrentMapManager;
     }
 
-    public static CMap getCMap(HazelcastInstance h, String name) {
+    private CMap getCMap(HazelcastInstance h, String name) {
         ConcurrentMapManager concurrentMapManager = getConcurrentMapManager(h);
         String fullName = Prefix.MAP + name;
         return concurrentMapManager.getMap(fullName);
