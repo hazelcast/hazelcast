@@ -41,7 +41,6 @@ public class ClientRunnableTest {
             public void run() {
                 try {
                     waitLatch.await(10, TimeUnit.SECONDS);
-                    Thread.sleep(1000);
                     synchronized (clientRunnable.monitor) {
                         clientRunnable.running = false;
                         clientRunnable.monitor.wait();
