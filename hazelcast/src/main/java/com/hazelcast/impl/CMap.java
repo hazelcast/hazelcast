@@ -1078,6 +1078,39 @@ public class CMap {
         }
     }
 
+    void evict(int percentage) {
+        final long now = System.currentTimeMillis();
+        final Collection<Record> records = mapRecords.values();
+        final PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
+        final Set<Record> sortedRecords = new TreeSet<Record>(new ComparatorWrapper(evictionComparator));
+        final Set<Record> recordsToEvict = new HashSet<Record>();
+        for (Record record : records) {
+            PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
+            Member owner = partition.getOwner();
+            if (owner != null && !partition.isMigrating()) {
+                boolean owned = owner.localMember();
+                if (owned) {
+                    if (store != null && writeDelayMillis > 0 && record.isDirty()) {
+                    } else if (shouldPurgeRecord(record, now)) {
+                    } else if (record.isActive() && !record.isValid(now)) {
+                        recordsToEvict.add(record);  // expired records
+                    } else if (record.isActive() && record.isEvictable()) {
+                        sortedRecords.add(record);   // sorting for eviction
+                    }
+                }
+            }
+        }
+        int numberOfRecordsToEvict = sortedRecords.size() * percentage / 100;
+        int evictedCount = 0;
+        for (Record record : sortedRecords) {
+            recordsToEvict.add(record);
+            if (++evictedCount >= numberOfRecordsToEvict) {
+                break;
+            }
+        }
+        executeEviction(recordsToEvict);
+    }
+
     void startCleanup(boolean forced) {
         final long now = System.currentTimeMillis();
         if (locallyOwnedMap != null) {
