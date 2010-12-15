@@ -29,22 +29,21 @@ import static org.junit.Assert.assertTrue;
 public class ClientRunnableTest {
     @Test
     public void testRun() throws Exception {
-        final AtomicInteger counter = new AtomicInteger(0);
+        final CountDownLatch waitLatch = new CountDownLatch(1);
         final ClientRunnable clientRunnable = new ClientRunnable() {
             @Override
             protected void customRun() throws InterruptedException {
-                counter.incrementAndGet();
+                waitLatch.countDown();
             }
         };
         final CountDownLatch latch = new CountDownLatch(1);
-        final CountDownLatch waitLatch = new CountDownLatch(1);
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    waitLatch.countDown();
-                    Thread.sleep(100);
-                    clientRunnable.running = false;
+                    waitLatch.await(10, TimeUnit.SECONDS);
+                    Thread.sleep(1000);
                     synchronized (clientRunnable.monitor) {
+                        clientRunnable.running = false;
                         clientRunnable.monitor.wait();
                     }
                     latch.countDown();
@@ -53,8 +52,6 @@ public class ClientRunnableTest {
             }
         }).start();
         clientRunnable.run();
-        assertTrue(waitLatch.await(10, TimeUnit.SECONDS));
-        assertTrue(counter.get() > 1);
         assertTrue("Not notified", latch.await(10, TimeUnit.SECONDS));
     }
 
