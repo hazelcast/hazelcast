@@ -1081,8 +1081,12 @@ public class CMap {
     void evict(int percentage) {
         final long now = System.currentTimeMillis();
         final Collection<Record> records = mapRecords.values();
+        Comparator<MapEntry> comparator = evictionComparator;
+        if (comparator == null) {
+            comparator = new ComparatorWrapper(LRU_COMPARATOR);
+        }
         final PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
-        final Set<Record> sortedRecords = new TreeSet<Record>(new ComparatorWrapper(evictionComparator));
+        final Set<Record> sortedRecords = new TreeSet<Record>(new ComparatorWrapper(comparator));
         final Set<Record> recordsToEvict = new HashSet<Record>();
         for (Record record : records) {
             PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
