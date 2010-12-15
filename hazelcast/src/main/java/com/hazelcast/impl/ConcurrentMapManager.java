@@ -941,7 +941,11 @@ public class ConcurrentMapManager extends BaseManager {
                     if (oldValue != null) {
                         oldObject = toObject(oldValue);
                     }
-                    txn.attachPutOp(name, key, value, 0, ttl, (oldObject == null));
+                    if (operation == ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT && oldObject != null) {
+                        txn.attachPutOp(name, key, oldObject, 0, ttl, false);
+                    } else {
+                        txn.attachPutOp(name, key, value, 0, ttl, (oldObject == null));
+                    }
                     return threadContext.isClient() ? oldValue : oldObject;
                 } else {
                     if (operation == CONCURRENT_MAP_PUT_IF_ABSENT) {

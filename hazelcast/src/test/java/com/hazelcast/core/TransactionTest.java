@@ -238,6 +238,38 @@ public class TransactionTest {
         txnMap2.commit();
     }
 
+    /**
+     * issue 455
+     */
+    @Test
+    public void testPutIfAbsentInTxn() {
+        IMap<String, String> aMap = Hazelcast.getMap("testPutIfAbsentInTransaction");
+        Transaction txn = Hazelcast.getTransaction();
+        txn.begin();
+        try {
+            aMap.put("key1", "value1");
+            assertEquals("value1", aMap.putIfAbsent("key1", "value3"));
+            aMap.put("key1", "value1");
+            txn.commit();
+        } catch (Throwable t) {
+            txn.rollback();
+        }
+        assertEquals("value1", aMap.get("key1"));
+        assertEquals("value1", aMap.putIfAbsent("key1", "value3"));
+        assertEquals("value1", aMap.get("key1"));
+        txn = Hazelcast.getTransaction();
+        txn.begin();
+        try {
+            assertEquals("value1", aMap.get("key1"));
+            assertEquals("value1", aMap.putIfAbsent("key1", "value2"));
+            assertEquals("value1", aMap.get("key1"));
+            txn.commit();
+        } catch (Throwable t) {
+            txn.rollback();
+        }
+        assertEquals("value1", aMap.get("key1"));
+    }
+
     @Test
     public void testMapRemoveWithTwoTxn() {
         IMap map = Hazelcast.getMap("testMapRemoveWithTwoTxn");
