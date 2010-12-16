@@ -1094,6 +1094,9 @@ public abstract class BaseManager {
     protected int getDistance(Address from, Address to) {
         int fromIndex = getMemberIndexOf(from);
         int toIndex = getMemberIndexOf(to);
+        if (fromIndex == -1 || toIndex == -1) {
+            return -1;
+        }
         int size = lsMembers.size();
         return ((toIndex - fromIndex) + size) % size;
     }

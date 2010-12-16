@@ -388,12 +388,13 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         return lsMembersBefore;
     }
 
-    public boolean isNextOrPreviousChanged() {
-        return isNextChanged() || isPreviousChanged();
-    }
-
     public boolean isNextChanged(int distance) {
-        if (lsMembersBefore.size() == 0 || lsMembers.size() == 0) {
+        if (distance <= 0) {
+            return false;
+        }
+        if (lsMembers.size() == 0) {
+            return false;
+        } else if (lsMembersBefore.size() == 0) {
             return true;
         }
         int indexBefore = lsMembersBefore.indexOf(thisMember);
@@ -414,7 +415,12 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     public boolean isPreviousChanged(int distance) {
-        if (lsMembersBefore.size() == 0 || lsMembers.size() == 0) {
+        if (distance <= 0) {
+            return false;
+        }
+        if (lsMembers.size() == 0) {
+            return false;
+        } else if (lsMembersBefore.size() == 0) {
             return true;
         }
         int indexBefore = lsMembersBefore.indexOf(thisMember);
@@ -439,32 +445,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             return null;
         }
         return lsMembers.get(index);
-    }
-
-    public boolean isNextChanged() {
-        Member nextMemberBefore = getNextMemberBeforeSync(thisAddress, true, 1);
-        Member nextMemberNow = getNextMemberAfter(thisAddress, true, 1);
-        if (nextMemberBefore == null) {
-            return (nextMemberNow != null);
-        } else {
-            return (!nextMemberBefore.equals(nextMemberNow));
-        }
-    }
-
-    public boolean isPreviousChanged() {
-        int indexBefore = (lsMembersBefore.indexOf(thisMember));
-        int indexNow = (lsMembers.indexOf(thisMember));
-        MemberImpl previousMemberBefore = getMemberAt(lsMembersBefore, (indexBefore - 1));
-        MemberImpl previousMemberNow = getMemberAt(lsMembers, (indexNow - 1));
-        if (previousMemberBefore == null) {
-            return (previousMemberNow != null);
-        } else {
-            return (!previousMemberBefore.equals(previousMemberNow));
-        }
-    }
-
-    public MemberImpl getMemberAt(List<MemberImpl> members, int index) {
-        return members.get((index + members.size()) % members.size());
     }
 
     void handleJoinRequest(JoinRequest joinRequest) {
