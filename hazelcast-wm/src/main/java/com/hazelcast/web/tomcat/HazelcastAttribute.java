@@ -32,7 +32,7 @@ import com.hazelcast.nio.SerializationHelper;
  *
  */
 
-public class HazelAttribute implements DataSerializable {
+public class HazelcastAttribute implements DataSerializable {
 	
 	private String sessionId = null;
 	
@@ -42,11 +42,11 @@ public class HazelAttribute implements DataSerializable {
 	
 	private transient Set<Long> touchedByRequest = null;
 	
-	public HazelAttribute(){
+	public HazelcastAttribute(){
 		touchedByRequest = Collections.synchronizedSet(new HashSet<Long>());
 	}
 	
-	public HazelAttribute(String sessionId, String name, Object value){
+	public HazelcastAttribute(String sessionId, String name, Object value){
 		this();
 		this.sessionId = sessionId;
 		this.name = name;

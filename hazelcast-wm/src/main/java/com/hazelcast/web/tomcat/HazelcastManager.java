@@ -30,9 +30,9 @@ import org.apache.juli.logging.LogFactory;
  *
  */
 
-public class HazelManager extends StandardManager implements HazelConstants {
+public class HazelcastManager extends StandardManager implements HazelcastConstants {
 	
-	private final Log log = LogFactory.getLog(HazelManager.class); // must not be static
+	private final Log log = LogFactory.getLog(HazelcastManager.class); // must not be static
 	
     /**
      * The descriptive information string for this implementation.
@@ -49,7 +49,7 @@ public class HazelManager extends StandardManager implements HazelConstants {
      * Get new session class to be used in the doLoad() method.
      */
 	protected StandardSession getNewSession() {
-		return new HazelSession(this);
+		return new HazelcastSession(this);
 	}
 	
 	@Override
@@ -59,7 +59,7 @@ public class HazelManager extends StandardManager implements HazelConstants {
 			return session;
 		}
 		
-		HazelAttribute mark = (HazelAttribute)hazelAttributes.get(id +"_" + HAZEL_SESSION_MARK);
+		HazelcastAttribute mark = (HazelcastAttribute)hazelAttributes.get(id +"_" + HAZEL_SESSION_MARK);
 		if(mark != null && mark.getValue() != null){
 			session = createSession(id);
 		}

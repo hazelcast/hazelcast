@@ -30,25 +30,25 @@ import org.apache.catalina.session.StandardSessionFacade;
  *
  */
 
-public class HazelSessionFacade extends StandardSessionFacade {
+public class HazelcastSessionFacade extends StandardSessionFacade {
 	
     /**
      * Wrapped session object.
      */
     private HttpSession session = null;
 	
-	public HazelSessionFacade(HazelSession session) {
+	public HazelcastSessionFacade(HazelcastSession session) {
 		super(session);
 		this.session = session;
 	}
 	
-	public List<HazelAttribute> getTouchedAttributes(long requestId){
-		List<HazelAttribute> touchedList = new ArrayList<HazelAttribute>();
+	public List<HazelcastAttribute> getTouchedAttributes(long requestId){
+		List<HazelcastAttribute> touchedList = new ArrayList<HazelcastAttribute>();
 		Enumeration<String> attNames = session.getAttributeNames();
-		HazelSession hses = (HazelSession)session;
+		HazelcastSession hses = (HazelcastSession)session;
 		while (attNames.hasMoreElements()) {
 			String attName = (String) attNames.nextElement();
-			HazelAttribute hattribute = (HazelAttribute)hses.getLocalAttribute(attName);
+			HazelcastAttribute hattribute = (HazelcastAttribute)hses.getLocalAttribute(attName);
 			if(hattribute != null && hattribute.isTouched(requestId)){
 				touchedList.add(hattribute);
 			}

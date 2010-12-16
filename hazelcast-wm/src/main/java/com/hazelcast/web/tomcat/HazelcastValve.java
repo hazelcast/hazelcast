@@ -32,7 +32,7 @@ import org.apache.catalina.valves.ValveBase;
  *
  */
 
-public class HazelValve extends ValveBase implements HazelConstants {
+public class HazelcastValve extends ValveBase implements HazelcastConstants {
 	
 	public static ThreadLocal<Long> requestLocal = new ThreadLocal<Long>();
 	
@@ -44,9 +44,9 @@ public class HazelValve extends ValveBase implements HazelConstants {
 			long requestId = lastRequestId.addAndGet(1);
 			requestLocal.set(requestId);
 			getNext().invoke(request, response);
-			HazelSessionFacade ses =  (HazelSessionFacade)request.getSession();
-			List<HazelAttribute> touchedList = ses.getTouchedAttributes(requestId);
-			for (HazelAttribute hattribute : touchedList) {
+			HazelcastSessionFacade ses =  (HazelcastSessionFacade)request.getSession();
+			List<HazelcastAttribute> touchedList = ses.getTouchedAttributes(requestId);
+			for (HazelcastAttribute hattribute : touchedList) {
 				hazelAttributes.put(hattribute.getKey(), hattribute);
 			}
 		}

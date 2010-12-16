@@ -8,7 +8,7 @@ import com.hazelcast.core.IMap;
  *
  */
 
-public interface HazelConstants {
+public interface HazelcastConstants {
 	
 	public static final IMap hazelAttributes = Hazelcast.getMap("__hz_ses_attrs");
 	

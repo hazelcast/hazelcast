@@ -53,7 +53,7 @@ import com.hazelcast.query.SqlPredicate;
  * 
  */
 
-public class HazelSession extends StandardSession implements HazelConstants {
+public class HazelcastSession extends StandardSession implements HazelcastConstants {
 	
 
     /**
@@ -61,7 +61,7 @@ public class HazelSession extends StandardSession implements HazelConstants {
      *
      * @param manager The manager with which this Session is associated
      */
-	public HazelSession(Manager manager) {
+	public HazelcastSession(Manager manager) {
 		super(manager);
 	}
 	
@@ -79,14 +79,14 @@ public class HazelSession extends StandardSession implements HazelConstants {
 
         if (facade == null){
             if (SecurityUtil.isPackageProtectionEnabled()){
-                final HazelSession fsession = this;
-                facade = (HazelSessionFacade)AccessController.doPrivileged(new PrivilegedAction(){
+                final HazelcastSession fsession = this;
+                facade = (HazelcastSessionFacade)AccessController.doPrivileged(new PrivilegedAction(){
                     public Object run(){
-                        return new HazelSessionFacade(fsession);
+                        return new HazelcastSessionFacade(fsession);
                     }
                 });
             } else {
-                facade = new HazelSessionFacade(this);
+                facade = new HazelcastSessionFacade(this);
             }
         }
         return (facade);
@@ -120,16 +120,16 @@ public class HazelSession extends StandardSession implements HazelConstants {
             throw new IllegalArgumentException(HAZEL_MARK_EXCEPTION);
         }
         
-        HazelAttribute hattribute = (HazelAttribute)attributes.get(name);
+        HazelcastAttribute hattribute = (HazelcastAttribute)attributes.get(name);
         
         if(hattribute == null){
-        	hattribute = (HazelAttribute) hazelAttributes.get(getIdInternal() + "_" + name);
+        	hattribute = (HazelcastAttribute) hazelAttributes.get(getIdInternal() + "_" + name);
         	if(hattribute == null){
-        		attributes.put(name, new HazelAttribute(getIdInternal(), name, null));
+        		attributes.put(name, new HazelcastAttribute(getIdInternal(), name, null));
         		return null;
         	}
         }
-        long requestId = HazelValve.requestLocal.get();
+        long requestId = HazelcastValve.requestLocal.get();
         hattribute.touch(requestId);
         return hattribute.getValue();
     }
@@ -187,7 +187,7 @@ public class HazelSession extends StandardSession implements HazelConstants {
             throw new IllegalArgumentException
                 (sm.getString("standardSession.setAttribute.iae"));
         
-        HazelAttribute oldHattribute = (HazelAttribute)attributes.get(name);
+        HazelcastAttribute oldHattribute = (HazelcastAttribute)attributes.get(name);
         
         // Construct an event with the new value
         HttpSessionBindingEvent event = null;
@@ -208,14 +208,14 @@ public class HazelSession extends StandardSession implements HazelConstants {
 
         // Replace or add this attribute
         if(oldHattribute == null){
-        	oldHattribute = new HazelAttribute(getIdInternal(), name, value);
+        	oldHattribute = new HazelcastAttribute(getIdInternal(), name, value);
         }
         else{
         	oldHattribute.setValue(value);
         }
-        long requestId = HazelValve.requestLocal.get();
+        long requestId = HazelcastValve.requestLocal.get();
         oldHattribute.touch(requestId);
-        HazelAttribute unboundHattribute = (HazelAttribute)attributes.put(name, oldHattribute);
+        HazelcastAttribute unboundHattribute = (HazelcastAttribute)attributes.put(name, oldHattribute);
         Object unbound = unboundHattribute != null ? unboundHattribute.getValue() : null;
 
      // Call the valueUnbound() method if necessary
@@ -312,14 +312,14 @@ public class HazelSession extends StandardSession implements HazelConstants {
         }
 
         // Remove this attribute from our collection
-        HazelAttribute hattribute = (HazelAttribute)attributes.get(name);
+        HazelcastAttribute hattribute = (HazelcastAttribute)attributes.get(name);
         if(hattribute == null || hattribute.getValue() == null){
         	return;
         }
         
         Object value = hattribute.getValue();
         hattribute.setValue(null);
-        long requestId = HazelValve.requestLocal.get();
+        long requestId = HazelcastValve.requestLocal.get();
         hattribute.touch(requestId);
         attributes.put(name, hattribute);
         
@@ -333,7 +333,7 @@ public class HazelSession extends StandardSession implements HazelConstants {
         if (name == null) return;
 
         // Remove this attribute from our collection
-        HazelAttribute hattribute = (HazelAttribute)attributes.get(name);
+        HazelcastAttribute hattribute = (HazelcastAttribute)attributes.get(name);
         if(hattribute == null){
         	return;
         }
@@ -414,7 +414,7 @@ public class HazelSession extends StandardSession implements HazelConstants {
         HttpSessionEvent event = null;
         String keys[] = keys();
         for (int i = 0; i < keys.length; i++) {
-            Object attribute = ((HazelAttribute)attributes.get(keys[i])).getValue();
+            Object attribute = ((HazelcastAttribute)attributes.get(keys[i])).getValue();
             if (attribute instanceof HttpSessionActivationListener) {
                 if (event == null)
                     event = new HttpSessionEvent(getSession());
@@ -443,7 +443,7 @@ public class HazelSession extends StandardSession implements HazelConstants {
         HttpSessionEvent event = null;
         String keys[] = keys();
         for (int i = 0; i < keys.length; i++) {
-        	Object attribute = ((HazelAttribute)attributes.get(keys[i])).getValue();
+        	Object attribute = ((HazelcastAttribute)attributes.get(keys[i])).getValue();
             if (attribute instanceof HttpSessionActivationListener) {
                 if (event == null)
                     event = new HttpSessionEvent(getSession());
@@ -503,9 +503,9 @@ public class HazelSession extends StandardSession implements HazelConstants {
             if (manager.getContainer().getLogger().isDebugEnabled())
                 manager.getContainer().getLogger().debug("  loading attribute '" + name +
                     "' with value '" + value + "'");
-            attributes.put(name, new HazelAttribute(id, name, value));
+            attributes.put(name, new HazelcastAttribute(id, name, value));
         }
-        attributes.put(HAZEL_SESSION_MARK, new HazelAttribute(id, HAZEL_SESSION_MARK, System.currentTimeMillis()));
+        attributes.put(HAZEL_SESSION_MARK, new HazelcastAttribute(id, HAZEL_SESSION_MARK, System.currentTimeMillis()));
         isValid = isValidSave;
 
         if (listeners == null) {
@@ -556,7 +556,7 @@ public class HazelSession extends StandardSession implements HazelConstants {
         ArrayList saveNames = new ArrayList();
         ArrayList saveValues = new ArrayList();
         for (int i = 0; i < keys.length; i++) {
-            HazelAttribute hattribute = (HazelAttribute)attributes.get(keys[i]);
+            HazelcastAttribute hattribute = (HazelcastAttribute)attributes.get(keys[i]);
             if(hattribute == null)
             	continue;
             Object value = hattribute.getValue();
@@ -609,14 +609,14 @@ public class HazelSession extends StandardSession implements HazelConstants {
 
         this.id = id;
 
-        Collection<HazelAttribute> colAttributes = hazelAttributes.values(new SqlPredicate("sessionId="+id));
+        Collection<HazelcastAttribute> colAttributes = hazelAttributes.values(new SqlPredicate("sessionId="+id));
         if(colAttributes.size() != 0){
-        	for (HazelAttribute hattribute : colAttributes) {
+        	for (HazelcastAttribute hattribute : colAttributes) {
         		attributes.put(hattribute.getName(), hattribute);
         	}
         }
         else{
-        	HazelAttribute mark = new HazelAttribute(id, HAZEL_SESSION_MARK, System.currentTimeMillis());
+        	HazelcastAttribute mark = new HazelcastAttribute(id, HAZEL_SESSION_MARK, System.currentTimeMillis());
         	hazelAttributes.put(mark.getKey(),mark);
         	attributes.put(HAZEL_SESSION_MARK, mark);
         }
