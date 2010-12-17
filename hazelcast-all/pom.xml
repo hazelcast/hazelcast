@@ -32,15 +32,14 @@
                             <tasks>
                                 <property name="jar.name" value="hazelcast-all-${project.parent.version}.jar"/>
                                 <delete file="target/${jar.name}" failonerror="false"/>
-                                <jar jarfile="target/${jar.name}">
+                                <jar jarfile="target/${jar.name}" manifest="src/main/resources/META-INF/MANIFEST.MF">
                                     <fileset dir="../hazelcast/target/classes/"/>
                                     <fileset dir="../hazelcast-client/target/classes/"/>
                                     <fileset dir="../hazelcast-hibernate/target/classes/"/>
                                     <fileset dir="../hazelcast-spring/target/classes/"/>
                                     <manifest>
                                         <attribute name="Built-By" value="Hazelcast.com"/>
-                                        <attribute name="Main-Class"
-                                                   value="com.hazelcast.examples.TestApp"/>
+                                        <attribute name="Main-Class" value="com.hazelcast.examples.TestApp"/>
                                     </manifest>
                                 </jar>
                             </tasks>
